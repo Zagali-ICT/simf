@@ -1,0 +1,53 @@
+# SIMF — .gitignore
+
+# ── .NET build output ──────────────────────────────────────────────
+[Bb]in/
+[Oo]bj/
+artifacts/
+publish/
+*.dll
+*.exe
+*.pdb
+
+# ── Visual Studio / Rider ──────────────────────────────────────────
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ── Flutter / Dart ─────────────────────────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+*.iml
+src/MobileApp/build/
+Pods/
+.gradle/
+local.properties
+
+# ── Secrets & environment ──────────────────────────────────────────
+# Production config is applied via Machine-scope env vars (set-env-*.ps1);
+# real secret values are NEVER committed. Only the placeholder template is.
+appsettings.Production.json
+appsettings.*.Local.json
+*.env
+.env
+secrets.json
+set-env-*.local.ps1
+
+# ── Claude Code local settings ─────────────────────────────────────
+.claude/settings.local.json
+
+# ── Logs & temp ────────────────────────────────────────────────────
+*.log
+logs/
+*.tmp
+
+# ── OS files ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
