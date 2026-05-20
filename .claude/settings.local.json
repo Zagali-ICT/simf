@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python extract.py)",
+      "Bash(python -c \"import pypdf; print\\('pypdf ok'\\)\")",
+      "Bash(python -c \"import PyPDF2; print\\('PyPDF2 ok'\\)\")",
+      "Bash(python -c \"import fitz; print\\('pymupdf ok'\\)\")",
+      "Bash(python -c \"import pdfminer; print\\('pdfminer ok'\\)\")",
+      "Bash(python pdf_extract.py)",
+      "Bash(python sec_extract.py)",
+      "Bash(python -c ' *)",
+      "Skill(humanizer)",
+      "Skill(full-output-enforcement)",
+      "Read(//d/Online_ERP_System/V10/**)",
+      "Read(//d/Online_ERP_System/V10/.claude/**)",
+      "Read(//d/Online_ERP_System/V10/docs/**)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git -c user.name=\"Claude\" -c user.email=\"noreply@anthropic.com\" commit -m \"Add SIMF V1.0.0 controlled documentation and project instructions\" -m \"Co-Authored-By: Claude Opus 4.7 \\(1M context\\) <noreply@anthropic.com>\")"
+    ]
+  }
+}

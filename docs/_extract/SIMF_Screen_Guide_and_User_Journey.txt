@@ -1,0 +1,687 @@
+
+MOBILE APP · PROPOSAL DOCUMENT
+SIMF 2026
+Mobile Application — Screen Guide &amp; User Journey
+Saudi International Maritime Forum 2026 (Riyadh, 23–25 November)
+Document version
+v1.1 — May 2026
+App version
+Proposal v1.1 — 41 screens
+Audience
+Stakeholders, project sponsors, design and engineering review
+Purpose
+Explain every screen, where its links lead, and the overall user journey (User Experience Only, No User Interfaces included)
+
+Contents
+1. About this document
+2. The bottom navigation system
+3. The five main user journeys
+4. Screen-by-screen reference (1–41)
+    · Section A — Onboarding &amp; Authentication (Screens 1–12)
+    · Section B — Main App (Screens 13–20)
+    · Section C — Content &amp; Events (Screens 21–24)
+    · Section D — Live Broadcast &amp; Engagement (Screens 25–28)
+    · Section E — Media Coverage (Screens 29–31)
+    · Section F — Badge &amp; Notifications (Screens 32–33)
+    · Section G — Smart Features (Screens 34–37)
+    · Section H — Settings &amp; Legal (Screens 38–41)
+5. Cross-screen connections map
+
+1. About this document
+This guide walks through every screen of the SIMF 2026 mobile application proposal. For each screen you will find:
+What the screen is for, its purpose in plain language.
+The key elements visible on the screen.
+The links and buttons on the screen, and where each one takes the user.
+Where the screen sits inside the overall user journey.
+At the end of the document, a connections map shows how screens link to each other so reviewers can confirm the flow is complete and consistent.
+Note The mockup is an interactive structural proposal, not a finished visual design. Design, colours, illustrations and motion will be refined in the design phase.
+2. The bottom navigation system
+Every main screen carries the same five-slot bottom navigation bar. The slots are fixed in this order (right to left, since the app is RTL Arabic-primary):
+الرئيسية · Home: returns to the dashboard (Screen 13)
+الأجندة · Agenda: opens the schedule (Screen 16)
+Badge FAB (centre, brass): opens the entry badge &amp; QR (Screen 32)
+الخريطة · Map: opens the 3D venue map (Screen 15)
+التغطية الإعلامية · Media: opens the news + gallery + partners tabs (Screens 29–31)
+The user’s profile and the notifications bell appear in the top bar of the dashboard, not in the bottom nav. The bottom nav stays consistent on every authenticated screen so the user can always reach the main areas in one tap.
+3. The five main user journeys
+Journey A — First-time visitor sign-up
+A new attendee opens the app, picks a role, and finishes registration before the event.
+Splash (1) → Onboarding (2) → Sign-up form (4) → Personal details + role pick (5) → Email OTP verification (6) → Visitor row pick OR Sponsor details (7 or 8) → Terms &amp; conditions (9) → Registration confirmed (10) → Registration status (11).
+Journey B — Returning attendee login
+Splash (1) → Login (3) → Home dashboard (13). From here, every other feature is one tap away.
+Journey C — Browsing as a guest (no account)
+Splash (1) → Guest mode (12). The guest can open the agenda, speakers list, map and media gallery, plus the FAQ and Visit Saudi content. Personal features (smart badge, meeting requests, notifications) are locked behind sign-in.
+Journey D — Conference-day flow (during the event)
+Home (13) → Live broadcast banner → Live screen (25). From inside the live view the user can:
+Send a question to the speaker or host (Screen 26).
+Request an interview with a speaker (Screen 27).
+See audience comments with answer status and likes (Screen 28).
+In parallel: open the QR badge (32) for entry, scan another attendee's QR to save their contact, and react to notifications (33).
+Journey E — Agenda planning
+Home (13) → Agenda (16) → tap a session → Session detail (17). From the detail screen the user can add the session to their device calendar, set a reminder, and view their assigned seat → My Seat map (18). The session also appears in My Area (14) under “today’s schedule”.
+
+4. Screen-by-screen reference
+Section A — Onboarding &amp; Authentication (Screens 1–12)
+SCREEN01
+البداية   Splash
+First screen the user sees when launching the app. Establishes the brand and offers a language choice.
+KEY ELEMENTS
+SIMF brand mark and forum name in Arabic.
+Event dates and city (23–25 November 2026, Riyadh).
+Primary call-to-action: ابدأ (Start).
+Language toggle: العربية / English.
+NAVIGATION / LINKS
+ابدأ: → Onboarding (Screen 2)
+Language toggle: → switches the UI language in place
+WHERE IT FITS IN THE JOURNEY
+Entry point of Journey A, B and C — every user passes through this screen on first launch.
+SCREEN02
+التهيئة   Onboarding
+Three-step onboarding that introduces the app’s value: agenda, speakers, map, smart badge, live broadcast — in one place.
+KEY ELEMENTS
+Step indicator (three dots, first highlighted in brass).
+Hero icon (compass / globe).
+Short value statement.
+تخطي (Skip) and التالي (Next) controls.
+NAVIGATION / LINKS
+التالي: → next onboarding step, then Login (3)
+تخطي: → jumps directly to Login (3)
+WHERE IT FITS IN THE JOURNEY
+One-time screen for new installs — shown on Journeys A, B and C only on the first launch.
+SCREEN03
+تسجيل الدخول   Login
+Returning users sign in with their email and password, or use Nafath.
+KEY ELEMENTS
+Email field.
+Password field.
+Primary button: دخول (Log in).
+Alternative login: الدخول عبر نفاذ (Nafath).
+Footer link to إنشاء حساب (Create account).
+NAVIGATION / LINKS
+دخول: → Home dashboard (13)
+الدخول عبر نفاذ: → Nafath flow → returns to Home (13)
+إنشاء حساب: → Sign-up step 1 (4)
+WHERE IT FITS IN THE JOURNEY
+Start of Journey B (returning attendee).
+SCREEN04
+إنشاء حساب — الخطوة الأولى   Sign-up · Step 1
+Basic account creation: email and password only.
+KEY ELEMENTS
+Email, password and confirm-password fields.
+Primary button: التالي (Next).
+Footer link to تسجيل الدخول (Login).
+NAVIGATION / LINKS
+التالي: → Sign-up step 2 (5)
+تسجيل الدخول: → Login (3)
+WHERE IT FITS IN THE JOURNEY
+First step of Journey A (first-time visitor sign-up).
+SCREEN05
+إنشاء حساب — التفاصيل   Sign-up · Details
+Personal details form. registration type chips in the TOP of the screen so the user picks their role before filling in details. Only two types remain: زائر (Visitor) or جهة عارضة (Exhibitor).
+KEY ELEMENTS
+Registration type chips (top of form): زائر / جهة عارضة.
+Personal fields: gender, organisation, job title, ID number, email, mobile, nationality.
+Primary button: التالي (Next).
+NAVIGATION / LINKS
+If زائر selected, التالي: → Visitor row pick (7)
+If جهة عارضة selected, التالي: → Sponsor details (8)
+Both paths then continue:: → OTP (6) → Terms (9)
+WHERE IT FITS IN THE JOURNEY
+Step 2 of Journey A. The role pick branches the rest of the sign-up flow.
+SCREEN06
+التحقق بالبريد · OTP   Email OTP verification
+Six-digit verification code sent to the user's email.
+KEY ELEMENTS
+Envelope icon in brass.
+Email address shown to the user.
+Six code cells (filled cells highlighted in brass).
+Resend timer counting down (e.g. 00:42).
+Primary button: تحقق (Verify).
+Footer link: إعادة الإرسال (Resend).
+NAVIGATION / LINKS
+تحقق: → continues sign-up → Visitor (7) or Sponsor (8)
+إعادة الإرسال: → triggers a new code to the email
+WHERE IT FITS IN THE JOURNEY
+Verification gate in Journey A. The user must complete this before reaching the role-specific screen or the terms.
+SCREEN07
+إنشاء حساب · زائر   Sign-up · Visitor seat pick
+Visitor row picker. The visitor chooses whether they need a special row (e.g. press / interventions) and then picks a seat from a small grid.
+KEY ELEMENTS
+Visitor type badge at the top.
+Yes/No radios for special-row preference.
+Seat grid (6 × 4) with selected, available and taken states.
+Primary button: التالي (Next).
+NAVIGATION / LINKS
+التالي: → Terms &amp; conditions (9)
+WHERE IT FITS IN THE JOURNEY
+Visitor branch of Journey A.
+SCREEN08
+إنشاء حساب · جهة عارضة   Sign-up · Sponsor details
+Sponsor / exhibitor extra fields collected only when the user picks جهة عارضة on Screen 5.
+KEY ELEMENTS
+Sponsor / company / organisation name.
+Country, organisation type, sector.
+Short organisation bio.
+Commercial registration number.
+Companions add-on (dashed +) to add accompanying delegates.
+Primary button: التالي (Next).
+NAVIGATION / LINKS
+التالي: → Terms &amp; conditions (9)
+WHERE IT FITS IN THE JOURNEY
+Sponsor branch of Journey A.
+SCREEN09
+الشروط والأحكام   Terms &amp; conditions
+Reads the visitor / exhibitor terms and asks the user to consent.
+KEY ELEMENTS
+Scrollable terms document.
+Checkbox: أوافق على الشروط والأحكام (I agree).
+Primary button: تسجيل (Submit).
+NAVIGATION / LINKS
+تسجيل: → Registration confirmed (10)
+WHERE IT FITS IN THE JOURNEY
+Final consent gate in Journey A.
+SCREEN10
+تأكيد التسجيل   Registration confirmed
+Confirmation screen shown right after the user submits their registration.
+KEY ELEMENTS
+Green success check.
+تم التسجيل بنجاح headline.
+Reference badge number (SIMF-2026-××××).
+Two actions: حالة التسجيل (Registration status) or الانتقال للرئيسية (Go to Home).
+NAVIGATION / LINKS
+حالة التسجيل: → Registration status (11)
+الانتقال للرئيسية: → Home dashboard (13)
+WHERE IT FITS IN THE JOURNEY
+End of Journey A. The user is now either waiting for security clearance or ready to enter the app.
+SCREEN11
+حالة التسجيل   Registration status
+Shows where the registration request is in the security review pipeline.
+KEY ELEMENTS
+Current status card: قيد المراجعة (Under review) with a clock icon.
+Stages list: data sent ✓ · email confirmed ✓ · SIMF security review (active) · account activation (pending).
+Request reference number and submission date.
+NAVIGATION / LINKS
+Stages auto-update as the back-office reviews the request.
+WHERE IT FITS IN THE JOURNEY
+Optional follow-up after Journey A — the user can check this any time before approval.
+SCREEN12
+وضع الضيف   Guest mode (no account)
+Limited home shown when the user opens the app without signing in. 
+KEY ELEMENTS
+Dashed brass notice: 'You are browsing as a guest…'
+Open tiles: Agenda, Speakers, Map, Gallery.
+Locked tiles (with padlock): Meeting request, My badge.
+Public-info section: الأسئلة الشائعة (FAQ) and روح السعودية (Visit Saudi).
+Primary button: تسجيل الدخول (Log in).
+NAVIGATION / LINKS
+Tiles (Agenda, Speakers, Map, Gallery): → their main screens (16, 19, 15, 30)
+FAQ: → public FAQ destination (within More section)
+روح السعودية: → Visit Saudi destination
+تسجيل الدخول: → Login (3)
+WHERE IT FITS IN THE JOURNEY
+Entry point for Journey C (guest browsing).
+Section B — Main App (Screens 13–20)
+SCREEN13
+الرئيسية   Home dashboard
+The main landing screen after login. A bento-style dashboard that surfaces the most-used features, plus a live banner during broadcast.
+KEY ELEMENTS
+Top bar: menu (left), bell with red-dot notification, profile avatar (RS in brass).
+Hero card: أكتشف (Discover).
+Live banner (only when a session is being broadcast): red LIVE pill + tap to open.
+Feature tile: عن الملتقى · المحاور.
+Bento grid: المتحدثون, الوفود, الأجنحة, الرعاة, الأخبار والتغطية (wide).
+Two-up row: اللقاءات الثنائية, الأرشيف.
+Smart features section: قابل أشخاص مثلك, المساعد الذكي, ملخص الجلسات, بطاقتي الذكية.
+Discover section: روح السعودية (Visit Saudi card with KSA logo).
+NAVIGATION / LINKS
+Bell: → Notifications (33)
+Profile avatar: → My Area (14)
+Live banner: → Live broadcast (25)
+عن الملتقى · المحاور: → About forum (37)
+المتحدثون: → Speakers (19)
+الوفود: → Delegations (21)
+الأجنحة: → Booths (22)
+الرعاة: → Sponsors (23)
+الأخبار والتغطية: → News (29)
+اللقاءات الثنائية: → Meeting requests (within Live tab 27)
+الأرشيف: → Archive (24)
+قابل أشخاص مثلك: → Meet people like you (35)
+المساعد الذكي: → AI assistant chatbot (36)
+ملخص الجلسات: → AI session summary (34)
+بطاقتي الذكية: → Badge QR (32)
+روح السعودية: → Visit Saudi destination
+WHERE IT FITS IN THE JOURNEY
+The 'home' that every authenticated user returns to. Every primary journey eventually passes through here.
+SCREEN14
+منطقتي   My Area (personal profile)
+Personal hub showing the user's identity, schedule and quick actions.
+KEY ELEMENTS
+Profile card: avatar, name, role (e.g. VIP · enrolled in 8 sessions), reference ID.
+Brass Share button on the profile card (contacts + profile).
+Two quick-share tiles: مشاركة جهة اتصال (Share contact) / مشاركة ملفي (Share my profile).
+Stat tiles: saved sessions (6), confirmed meetings (3).
+جدولي اليوم (Today's schedule): timed list of personal sessions and meetings.
+Two utility links: بطاقتي الذكية (Smart badge), إعدادات الحساب (Account settings).
+NAVIGATION / LINKS
+Share button / share tiles: → trigger native share sheet or open QR scan flow on (32)
+Each schedule item: → Session detail (17)
+بطاقتي الذكية: → Badge QR (32)
+إعدادات الحساب: → More (41)
+WHERE IT FITS IN THE JOURNEY
+A side trip from the dashboard — most users land here when they tap their avatar on Home.
+SCREEN15
+الخريطة   Interactive 3D venue map
+Isometric 3D map of the exhibition halls and booths. Picks up the brass colour of the user's nearest booth.
+KEY ELEMENTS
+Isometric floor with HALL A / HALL B / EXHIBITION zones.
+Booth markers (with selected ones highlighted in brass).
+Anchor pin showing the user's current position.
+Zoom controls (+ / − / reset).
+Booth preview popup: shows logo, hall info, booth number, and an أرشدني (Directions) button + view-details button.
+NAVIGATION / LINKS
+Tap a booth on the map: → preview popup
+أرشدني button in the popup: → starts in-app navigation to that booth
+View details: → Booths screen (22) scrolled to that booth
+WHERE IT FITS IN THE JOURNEY
+Navigation utility — used throughout the event day. Reachable from the dashboard tile, the bottom-nav icon and from booth search results.
+SCREEN16
+الأجندة   Agenda · daily schedule
+Filterable schedule of all sessions, with day selector and search.
+KEY ELEMENTS
+Top pills: أجندة قادمة / أجندة الفعالية (Upcoming / Forum agenda).
+Day selector (SUN–FRI with date numbers).
+Search bar.
+Vertical list of sessions, each with time, index number, title and short description.
+Active session highlighted in brass background.
+Chevron arrow at the end of each row indicating it is tappable.
+NAVIGATION / LINKS
+Each session: → Session detail (17)
+Day selector: → filters the list inline
+Search: → filters the list inline
+WHERE IT FITS IN THE JOURNEY
+Start of Journey E (agenda planning).
+SCREEN17
+تفاصيل الجلسة   Session detail 
+Full information about one agenda session. users can read the full description and add the session to their calendar.
+KEY ELEMENTS
+Session index pill (e.g. 02).
+Date and time band.
+Session title.
+Tags: hall location + session category.
+Description paragraph.
+Speakers list (3 cards with avatar, name, rank).
+مقعدي card (brass-bordered): row + seat number + 'View →' link.
+Two CTAs: أضف إلى تقويمي (Add to my calendar) and تذكير (Reminder).
+NAVIGATION / LINKS
+مقعدي: → My Seat map (18)
+أضف إلى تقويمي: → device calendar (system action)
+تذكير: → schedules a local push notification before the session starts
+Each speaker card: → Speaker profile (20)
+WHERE IT FITS IN THE JOURNEY
+Middle of Journey E. Reached from the Agenda screen or from a 'today's schedule' item on My Area.
+SCREEN18
+مقعدي · خريطة الجلوس   My Seat map
+Visual seat-map showing where in the hall the user's assigned seat is, with one seat highlighted in brass.
+KEY ELEMENTS
+Banner with the session name + the row/seat (e.g. Row B · Seat 12).
+Stage at the top of the hall plan.
+8 × 12 grid of seat cells: available, taken, mine (highlighted in brass with a glow).
+Legend: mine / available / taken.
+Two actions: إرشادي إلى مقعدي (Guide me to my seat) and مشاركة الموقع (Share location).
+NAVIGATION / LINKS
+إرشادي إلى مقعدي: → opens the Map (15) with directions to the seat
+مشاركة الموقع: → native share sheet
+WHERE IT FITS IN THE JOURNEY
+End of Journey E. The user can quickly find their seat just before the session starts.
+SCREEN19
+المتحدثون   Speakers list
+Browsable list of all forum speakers.
+KEY ELEMENTS
+Each speaker card: avatar, rank (e.g. القبطان البحري), name, 'More' link.
+Vertical scroll list.
+NAVIGATION / LINKS
+Each speaker card: → Speaker profile (20)
+WHERE IT FITS IN THE JOURNEY
+Discovery screen — supports preparing for sessions and the meet-people flow.
+SCREEN20
+ملف متحدث · القبطان البحري   Speaker profile
+Full profile for a single speaker.
+KEY ELEMENTS
+Hero with rank + name + big avatar circle.
+Tabs: نبذة عنه / المؤهلات العلمية / الخبرات التدريبية / الجوائز.
+Bio card with the content of the active tab.
+NAVIGATION / LINKS
+Tabs switch content inline
+Back arrow: → previous screen (Speakers list 19 or Session detail 17)
+WHERE IT FITS IN THE JOURNEY
+Detail destination of the speakers flow.
+Section C — Content &amp; Events (Screens 21–24)
+SCREEN21
+الوفود   Delegations
+List of national delegations attending the forum.
+KEY ELEMENTS
+Filter pills: All / Priority / International.
+Priority section (top): top-priority delegations with a brass priority tag.
+Regional delegations section: smaller cards with country + member count.
+NAVIGATION / LINKS
+Filters update the list inline
+Each delegation card: → delegation detail (future screen, not in v1.1)
+WHERE IT FITS IN THE JOURNEY
+Discovery screen for diplomatic / VIP attendees.
+SCREEN22
+الأجنحة   Booths
+Exhibitor booth directory. Each booth card carries enough info for the visitor to plan a stop or get in touch.
+KEY ELEMENTS
+Search bar at the top.
+Booth card: hall + booth number, company logo, full name + Arabic descriptor, booth contact (with avatar), phone, email, and a brass primary أرشدني button.
+NAVIGATION / LINKS
+Search: → filters cards inline
+أرشدني on each card: → Map (15) with directions to that booth
+Phone / email rows: → device dialler / mail composer
+WHERE IT FITS IN THE JOURNEY
+Used heavily during the event day. Reachable from the dashboard, the map preview, and search.
+SCREEN23
+الرعاة   Sponsors
+Tiered list of forum sponsors. 
+KEY ELEMENTS
+Strategic sponsor (hero, brass-bordered): logo + organisation full name + description + arrow.
+Premium sponsors section: list of cards, each with logo, name, short description, arrow.
+Gold sponsors section: compact 3-column grid of small logo cards.
+NAVIGATION / LINKS
+Arrow on each sponsor card: → sponsor detail page.
+WHERE IT FITS IN THE JOURNEY
+Discovery screen reachable from the dashboard tile.
+SCREEN24
+الأرشيف   Archive (past editions)
+Previous editions of SIMF (2020, 2022, 2024, 2026).
+KEY ELEMENTS
+One card per year.
+Year banner with custom illustration (subtle theme per year).
+Stats row: events / attendees / speakers.
+Link: اعرف المزيد · معرض الصور ← (Know more · gallery).
+NAVIGATION / LINKS
+اعرف المزيد link: → Media gallery (30) filtered to that year
+WHERE IT FITS IN THE JOURNEY
+Historical reference — useful for press, returning attendees, sponsors.
+Section D — Live Broadcast &amp; Engagement (Screens 25–28)
+SCREEN25
+البث المباشر   Live broadcast
+Watches the active session live, with AI translation and language picker. This screen establishes the live-frame look that the next three screens reuse.
+KEY ELEMENTS
+Black video pane with a play triangle.
+Red LIVE pill (top-right).
+Language chip (top-left, e.g. 🌐 العربية).
+AI translation caption at the bottom of the video.
+Below the video: live session title + speakers list.
+Upcoming sessions list.
+NAVIGATION / LINKS
+Play triangle: → starts the video stream
+Language chip: → opens the translation language picker
+Upcoming sessions: → Session detail (17)
+WHERE IT FITS IN THE JOURNEY
+Start of Journey D (conference-day flow).
+SCREEN26
+إرسال سؤال   Send a question (within live)
+Composer for sending a question to the speaker or host during the live broadcast.
+KEY ELEMENTS
+Live video frame at the top (same look as Screen 25).
+Three live-mode tabs: طلب مقابلة / تعليقات الجمهور / ارسال سؤال (active).
+Recipient picker: المتحدث (Speaker) / المضيف (Host).
+Question text area.
+Brass primary button: إرسال السؤال.
+Moderation note: questions are reviewed before going on air.
+NAVIGATION / LINKS
+Tabs switch between the three live-mode screens (26 / 27 / 28)
+إرسال السؤال: → submits the question and shows a confirmation
+WHERE IT FITS IN THE JOURNEY
+One of the three live-mode screens in Journey D.
+SCREEN27
+طلب مقابلة   Request interview (within live)
+Form for requesting a private interview with a speaker.
+KEY ELEMENTS
+Live video frame at the top.
+Live-mode tabs: تعليقات الجمهور / إرسال سؤال / طلب مقابلة (active).
+Form: name, interview topic.
+Brass primary button: إرسال الطلب.
+Note: the team will contact the requester if the request is accepted.
+NAVIGATION / LINKS
+Tabs switch between the three live-mode screens
+إرسال الطلب: → submits the request
+WHERE IT FITS IN THE JOURNEY
+Press / media branch of Journey D.
+SCREEN28
+تعليقات الجمهور   Audience comments (within live)
+Live feed of audience comments.
+KEY ELEMENTS
+Live video frame at the top.
+Live-mode tabs: إرسال سؤال / طلب مقابلة / تعليقات الجمهور (active).
+List of comment cards: avatar + author + timestamp, status badge (green 'مُجاب' or brass 'في الانتظار'), comment text, like button with a counter (one comment shown active in red to demonstrate the liked state).
+NAVIGATION / LINKS
+Tabs switch between the three live-mode screens
+Like button toggles user's like + updates counter
+WHERE IT FITS IN THE JOURNEY
+Engagement branch of Journey D. Reachable from any of the other live-mode tabs.
+Section E — Media Coverage (Screens 29–31)
+SCREEN29
+الأخبار   News
+News stream covering the forum.
+KEY ELEMENTS
+Three top tabs (one of which is active): معرض الصور والفيديوهات / الشركاء الإعلاميون / الأخبار.
+News card (new layout): bold title, image thumbnail at the right, date pill, category tag (تغطية / إعلان / افتتاح / تعاون), 'Read more →' link.
+NAVIGATION / LINKS
+Tabs switch to Gallery (30) and Partners (31)
+Each news card: → news article detail (future screen, not in v1.1)
+Read more: → same article detail
+WHERE IT FITS IN THE JOURNEY
+Discovery / press flow. Default tab on the bottom-nav 'Media coverage' slot.
+SCREEN30
+معرض الصور والفيديوهات   Photo &amp; video gallery
+Visual archive of photos and videos from the forum.
+KEY ELEMENTS
+Same three top tabs as Screen 29.
+Gallery grid (Tetris-style): mix of wide and square tiles, video tiles marked with a play overlay.
+NAVIGATION / LINKS
+Each tile: → fullscreen viewer (future screen)
+WHERE IT FITS IN THE JOURNEY
+Press / archive flow.
+SCREEN31
+الشركاء الإعلاميون   Media partners
+Grid of media partners (TV, online, press).
+KEY ELEMENTS
+Same three top tabs.
+2-column grid of partner cards with logo placeholder and small 'media partner' label.
+NAVIGATION / LINKS
+Each partner card: → partner profile (future screen)
+WHERE IT FITS IN THE JOURNEY
+Press relations section.
+Section F — Badge &amp; Notifications (Screens 32–33)
+SCREEN32
+بطاقة الدخول · QR   Entry badge &amp; QR
+Personal entry badge with the user's QR code.
+KEY ELEMENTS
+Toggle tabs: بطاقتي / امسح.
+Hint line under the toggle.
+Badge card: coloured strip (category tint), user photo, name, organisation, QR code (tinted by category), reference ID.
+Saved contacts tile: '12 جهات اتصال محفوظة' + description of the scan-to-save flow.
+NAVIGATION / LINKS
+بطاقتي tab: → shows the user's QR (current state)
+امسح tab: → opens the camera scanner; scanning another badge captures the other person's contact
+Center FAB on the bottom nav also opens this screen
+WHERE IT FITS IN THE JOURNEY
+Used at venue entry and during the day for contact exchange. Also reachable as the centre brass FAB on every screen.
+SCREEN33
+الإشعارات   Notifications
+Inbox of system notifications: registration updates, session reminders, VIP invitations, meeting confirmations.
+KEY ELEMENTS
+Filter pills: الكل / جلسات / VIP.
+Notification items grouped by read/unread (unread have a brass border and a dot).
+Each item has an icon, title, body and timestamp.
+NAVIGATION / LINKS
+Each item: → relevant target (session, meeting, registration status, etc.)
+Bell icon on the Home screen opens this screen
+WHERE IT FITS IN THE JOURNEY
+Action queue — every push from the back-office lands here.
+Section G — Smart Features (Screens 34–37)
+SCREEN34
+ملخص الجلسة بالذكاء الاصطناعي   AI session summary
+AI-generated summary of a forum session.
+KEY ELEMENTS
+Session selector (new): active session card highlighted in brass, plus a list of other sessions for the same day.
+AI banner: 'تم توليد ملخص تلقائي' + session name and start time.
+Sections: أبرز النقاط (key points · bulleted), التوصيات (recommendations · paragraph), المتحدثون (speakers).
+Footer actions: حفظ (Save), مشاركة (Share), النص الكامل (Full transcript).
+NAVIGATION / LINKS
+Selector: → switches the summary content to a different session
+حفظ: → saves summary to the user's library
+مشاركة: → native share sheet
+النص الكامل: → opens full transcript view
+WHERE IT FITS IN THE JOURNEY
+Helpful for press, late attendees, or for VIPs reviewing earlier sessions.
+SCREEN35
+قابل أشخاص مثلك   Meet people like you
+Smart matchmaking based on interests and sessions attended.
+KEY ELEMENTS
+Header card with selected interest chips and a short explanation.
+Match cards: avatar, name, role, reason (e.g. 'same 2 sessions · 3 shared interests'), match score percentage.
+NAVIGATION / LINKS
+Each match card: → speaker / attendee profile + 'request meeting' action
+WHERE IT FITS IN THE JOURNEY
+Networking journey — surfaced both on the home dashboard and on My Area.
+SCREEN36
+المساعد الذكي   AI assistant chatbot
+Conversational helper that answers questions about the forum, agenda, venue, etc.
+KEY ELEMENTS
+Message thread (bot messages aligned right, user messages aligned left).
+Quick-reply chips: 'today's agenda', 'where is the SAMI booth', 'upcoming sessions', 'request meeting'.
+Composer at the bottom: text field + brass send button.
+NAVIGATION / LINKS
+Quick replies: → trigger that intent and stream a response
+Bot deep-links: 'open the map': → Map (15), 'add to agenda' → Session detail (17), etc.
+WHERE IT FITS IN THE JOURNEY
+Floating helper reachable from the dashboard. Used to short-cut into other features.
+SCREEN37
+عن الملتقى — المحاور   About the forum · pillars
+Editorial page describing what the forum is and its five thematic pillars.
+KEY ELEMENTS
+Content hero with kicker, headline and lead paragraph.
+Five pillar cards: numbered, with title and short subtitle (e.g. حماية قاع البحار, الأمن السيبراني للنقل البحري).
+NAVIGATION / LINKS
+Each pillar card: → pillar detail (future screen)
+WHERE IT FITS IN THE JOURNEY
+Reference content — used by press, sponsors and first-time visitors.
+Section H — Settings &amp; Legal (Screens 38–41)
+SCREEN38
+إمكانية الوصول   Accessibility settings
+Accessibility preferences for users with vision, motion or hearing needs.
+KEY ELEMENTS
+Display group: font size (small / medium / large / largest), high contrast toggle, reduce motion toggle.
+Audio &amp; reading group: screen reader toggle, live captions toggle.
+NAVIGATION / LINKS
+Each toggle applies its setting app-wide instantly
+WHERE IT FITS IN THE JOURNEY
+Important for inclusivity and government accessibility compliance.
+SCREEN39
+سياسات وضوابط الأمن السيبراني   Cybersecurity policies
+Statement of the app's compliance with Saudi NCA cybersecurity standards (ECC, CSCC).
+KEY ELEMENTS
+Content hero with NCA reference.
+Five policy pillars: data privacy, encryption &amp; comms, access control, security testing, incident reporting.
+References footer: NCA · ECC – 1:2018 · CSCC – 1:2019 · OWASP ASVS.
+NAVIGATION / LINKS
+Policy items are non-interactive reference content
+WHERE IT FITS IN THE JOURNEY
+Trust / compliance content. Linked from the 'More' section and from the terms.
+SCREEN40
+تقييم   Rate the forum
+Post-event feedback form.
+KEY ELEMENTS
+Five-star headline rating.
+Per-item ratings: organisation, content, app, venue &amp; facilities.
+Free-text feedback field.
+Primary button: إرسال التقييم (Submit).
+NAVIGATION / LINKS
+Submit: → sends feedback to organisers + shows a thank-you state
+WHERE IT FITS IN THE JOURNEY
+Post-event journey — typically triggered by a notification after the forum ends.
+SCREEN41
+المزيد   More (settings hub)
+Catch-all menu page that holds everything not directly on the bottom nav.
+KEY ELEMENTS
+Profile shortcut at the top (links to My Area 14).
+Forum info group: about, forum guide, FAQ, sessions PPT, Visit Saudi.
+Settings group: language, accessibility, notifications.
+Legal group: terms, cybersecurity, contacts, rate the app.
+Sign-out button and app version.
+NAVIGATION / LINKS
+Profile shortcut: → My Area (14)
+About forum: → About forum (37)
+FAQ: → public FAQ destination (also linked from Guest mode 12)
+Visit Saudi: → Visit Saudi destination
+Accessibility: → Accessibility settings (38)
+Notifications: → Notifications (33)
+Terms: → Terms &amp; conditions (9)
+Cybersecurity: → Cybersecurity policies (39)
+Rate the app: → Rate (40)
+Sign out: → returns to Login (3)
+WHERE IT FITS IN THE JOURNEY
+Index page reachable from the hamburger icon on the home top bar.
+
+5. Cross-screen connections map
+This is a quick reference of which screen leads to which. Use it to verify the flow is fully wired before development starts.
+From
+Leads to
+Splash (1)
+Onboarding (2)
+Onboarding (2)
+Login (3)
+Login (3)
+Home (13) · Sign-up step 1 (4)
+Sign-up 1 (4)
+Sign-up details (5)
+Sign-up details (5)
+Visitor (7) OR Sponsor (8) → OTP (6)
+OTP (6)
+Terms (9)
+Visitor (7) / Sponsor (8)
+Terms (9)
+Terms (9)
+Confirmation (10)
+Confirmation (10)
+Status (11) · Home (13)
+Guest mode (12)
+Agenda (16) · Speakers (19) · Map (15) · Gallery (30) · FAQ · Visit Saudi
+Home (13)
+Live (25) · Speakers (19) · Booths (22) · Sponsors (23) · Archive (24) · News (29) · Match (35) · Chatbot (36) · Summary (34) · QR (32) · Visit Saudi
+My Area (14)
+QR (32) · Session detail (17) · Settings (41) · share actions
+Map (15)
+Booths (22) when a booth popup's directions is tapped
+Agenda (16)
+Session detail (17)
+Session detail (17)
+My Seat (18) · Speaker profile (20) · device calendar
+My Seat (18)
+Map (15) for in-venue guidance
+Speakers (19)
+Speaker profile (20)
+Booths (22)
+Map (15) when أرشدني is tapped
+Archive (24)
+Gallery (30) for that year
+Live (25)
+Send Q (26) · Request interview (27) · Audience comments (28)
+Send Q / Request interview / Comments (26–28)
+Each other via the three-tab switcher
+News (29)
+Gallery (30) · Partners (31) via top tabs
+QR (32)
+Scanner overlay (within same screen) · Saved contacts list
+Notifications (33)
+Any deep target referenced by the notification
+Summary (34)
+Other sessions via selector · Full transcript · share
+Chatbot (36)
+Deep links into Map (15), Agenda (17), Booths (22), etc.
+More (41)
+Profile (14) · About (37) · FAQ · Accessibility (38) · Cybersecurity (39) · Rate (40) · Terms (9) · Sign out → Login (3)
+— End of document —

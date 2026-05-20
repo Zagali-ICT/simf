@@ -1,0 +1,463 @@
+
+===== ppt/slides/slide1.xml =====
+
+TECHNOLOGY  ·  METHODOLOGY  ·  APPROVAL
+Proposed Stack &amp; Methodology
+V 1.0.0
+Our team's approach to building, securing, and delivering your platform, with full Agile transparency from sprint one to go-live.
+Prepared for client review  |  Engineering &amp; Architecture Team
+2026-May-14
+
+
+
+===== ppt/slides/slide2.xml =====
+
+AGENDA
+What we'll cover today
+01
+Executive Summary
+02
+Solution Architecture
+03
+Technology Stack
+04
+Security &amp; Real-time
+05
+AI-Powered Audit Intelligence
+06
+Agile Methodology &amp; Team
+07
+DevOps &amp; CI/CD
+08
+Quality &amp; Testing
+09
+Deliverables &amp; Documentation
+10
+Approval &amp; Next Steps
+
+
+===== ppt/slides/slide3.xml =====
+
+EXECUTIVE SUMMARY
+Three pillars of this proposal
+Modern Stack
+.NET 10, Blazor, and Flutter on Windows Server 2022 with SQL Server 2016+, one codebase reaches Web, Android, and iOS.
+Bank-Grade Security
+Defense-in-depth: JWT, OTP, TOTP, anti-forgery, rate limiting, full RBAC, and AI-assisted audit log analysis.
+Agile Team Delivery
+Scrum framework, two-week sprints, Azure DevOps pipelines, and a full documentation package at every milestone.
+
+
+===== ppt/slides/slide4.xml =====
+
+ARCHITECTURE
+High-level solution architecture
+CLIENTS
+Web (Blazor)
+Android (Flutter)
+iOS (Flutter)
+SECURITY LAYER
+Middleware Pipeline
+JWT + Refresh
+OTP, TOTP (Admin)
+Anti-forgery (SFC)
+Rate limiting
+RBAC roles
+Localization (AR/EN)
+APPLICATION
+FastEndpoints API
+Identity + RBAC
+SignalR Hub
+Gemini AI Audit
+PLATFORM &amp; DATA
+Windows Server 2022
+SQL Server 2016+
+Channels
+SMS · Email · WhatsApp · In-App
+Hosted on Windows Server 2022 with SQL Server 2016 or later. Logs streamed via Serilog and analysed by Gemini AI.
+
+
+===== ppt/slides/slide5.xml =====
+
+TECHNOLOGY STACK
+Carefully chosen, industry-proven technologies
+.NET Core 10
+Backend platform
+Microsoft's latest runtime. Fast, cross-platform, long-supported.
+FastEndpoints
+API framework
+REPR pattern, high performance, OpenAPI built in.
+Blazor
+Web UI
+Modern C#-based web framework with shared types end-to-end.
+Flutter
+Android &amp; iOS
+Single codebase, native performance on both mobile platforms.
+SQL Server 2016+
+Database
+Enterprise-grade reliability, strong tooling, transactional integrity.
+Windows Server 2022
+Hosting platform
+Mainstream Microsoft platform with long support window.
+SignalR
+Real-time engine
+Live chat, presence, and in-app notifications.
+Azure DevOps
+Repo + Boards + CI/CD
+Source control, sprint boards, and automated pipelines in one place.
+Google Gemini
+AI audit &amp; analytics
+Intelligent log analysis, anomaly detection, and audit filtering.
+
+
+===== ppt/slides/slide6.xml =====
+
+REACH
+One product. Three platforms. Consistent everywhere.
+Web
+BLAZOR
+Modern browsers, responsive, RTL/LTR support (AR/EN).
+Android
+FLUTTER
+Native performance, Play Store ready.
+iOS
+FLUTTER
+Native feel, App Store ready.
+Shared design system (Smif* component library) keeps every screen consistent across Web, Android, and iOS.
+
+
+===== ppt/slides/slide7.xml =====
+
+SECURITY
+Defense-in-depth at every layer
+Token Headers
+App Key + Device Type + Language + JWT on every request.
+Auth &amp; Refresh
+JWT expires in 30 minutes; refresh tokens rotate; sessions valid 30 days.
+Admin MFA
+Google Authenticator TOTP required for every administrative login.
+Anti-Forgery
+SFC tokens on every state-changing request   CSRF blocked by design.
+Rate Limiting
+Per-IP, per-user, per-endpoint   brute force throttled at the edge.
+RBAC
+Role-based access on every endpoint. No endpoint is implicitly open.
+
+
+===== ppt/slides/slide8.xml =====
+
+REAL-TIME &amp; NOTIFICATIONS
+Reach users wherever they are
+SignalR
+REAL-TIME LAYER
+Live chat &amp; messaging
+Presence &amp; typing state
+Push to active sessions
+Live updates on lists
+Notification channels
+SMS
+Critical alerts, OTPs.
+Email
+Confirmations, receipts.
+WhatsApp
+Conversational reach.
+In-App
+Live, contextual.
+All four channels sit behind a single notification abstraction   channel mix is configuration, not code.
+
+
+===== ppt/slides/slide9.xml =====
+
+AI AUDIT INTELLIGENCE
+Google Gemini for log analysis &amp; filtering
+Gemini AI
+AUDIT &amp; ANALYTICS ENGINE
+Reads Serilog audit streams, surfaces anomalies, and powers natural-language filtering for compliance officers.
+Smart Search
+Find audit events by plain-language queries   no SQL or filters needed.
+Intelligent Filtering
+Surface relevant entries from millions of log records in seconds.
+Anomaly Detection
+Flag unusual login patterns, privilege changes, and access spikes.
+Compliance Reports
+Generate audit summaries for regulators and internal review.
+Gemini access is read-only against the audit store; it never sees production user data.
+
+
+===== ppt/slides/slide10.xml =====
+
+METHODOLOGY
+Agile delivery with a dedicated team
+Two-week sprint cycle
+1
+Sprint Planning
+Backlog refined, stories sized, sprint goal set.
+2
+Daily Standups
+15-minute sync on progress and blockers.
+3
+Development &amp; Review
+Code + peer review + pair programming where useful.
+4
+Sprint Demo
+Working software shown to stakeholders.
+5
+Retrospective
+Continuous improvement, lessons logged.
+Your delivery team
+Product Owner
+Backlog, priorities
+Scrum Master
+Process, blockers
+Solution Architect
+Design, direction
+Backend Engineers
+.NET, SQL Server
+Frontend Engineers
+Blazor, Flutter
+QA Engineers
+Manual + automation
+DevOps Engineer
+Azure DevOps
+
+
+===== ppt/slides/slide11.xml =====
+
+DEVOPS
+Azure DevOps for everything from commit to release
+Repos
+Git source control. Branch policies enforce review before merge.
+Boards
+Sprint backlog, work items, burndown charts visible to you anytime.
+Pipelines
+Automated build, test, and deploy on every commit.
+Test Plans
+Test cases, runs, and traceability tracked alongside the code.
+CI/CD pipeline
+01
+Commit
+Push to feature branch
+02
+Build
+Compile, restore, package
+03
+Test
+Unit + integration
+04
+Deploy
+Dev → Test → Stage → Prod
+05
+Monitor
+Logs, metrics, alerts
+Four environments   Dev, Test, Staging, Production   with automated promotion gated by tests.
+
+
+===== ppt/slides/slide12.xml =====
+
+QUALITY STANDARDS
+Engineering rules we never break
+Zero warnings
+Warnings are treated as errors. The build is clean   always.
+Root-cause fixes
+No guesswork. Every issue is traced to its source before it's patched.
+Peer code review
+Every pull request is reviewed by at least one other engineer before merge.
+No duplication
+Shared logic goes through reusable abstractions, not copy-paste.
+Fully documented
+Every endpoint, class, and config option is documented.
+Freeze governance
+Shipped features are frozen. Changes require recorded approval.
+
+
+===== ppt/slides/slide13.xml =====
+
+DELIVERY CYCLE
+How every feature reaches production
+1
+Plan
+Story refined, acceptance criteria written, work item created in Azure Boards.
+2
+Develop
+Feature branch from Git. Pair programming on complex stories.
+3
+Code Review
+Peer review before merge. Branch policy enforces approval.
+4
+QA
+Manual + automated testing. Defects logged in Azure Boards.
+5
+Deploy
+Azure Pipelines promote Dev → Test → Staging → Production.
+6
+Demo &amp; Sign-off
+Stakeholders accept story. Feature is frozen and documented.
+
+
+===== ppt/slides/slide14.xml =====
+
+TESTING
+Three independent test layers
+Unit Tests
+PER METHOD
+Every branch, every edge case, every error path. Fast and isolated   they run on every commit.
+Integration Tests
+PER API ENDPOINT
+Happy path plus every error code an endpoint can return. Catches contract drift early.
+End-to-End Tests
+PER USER SCENARIO
+Full flow including failure recovery. Proves the system works the way the customer will use it.
+No feature ships unless all three layers pass   and stay passing.
+
+
+===== ppt/slides/slide15.xml =====
+
+DELIVERABLES
+What you receive at every milestone
+Requirements Documents
+BRD, FRS, and user stories   signed off before each phase.
+System Architecture
+High-Level and Low-Level Design documents, ERD, and component diagrams.
+Project Schedule
+Detailed timeline, sprint plan, milestones, and dependencies.
+API Documentation
+Full OpenAPI/Swagger specs with request/response examples.
+Database Schema
+Table definitions, relationships, indexes, and migration scripts.
+User Manuals
+End-user documentation in Arabic and English with screenshots.
+Test Reports
+Coverage reports, defect logs, UAT sign-off records.
+Training Material
+Admin and end-user training decks, recorded sessions on request.
+Every document is reviewed in the sprint demo and version-controlled in Azure DevOps Wiki.
+
+
+===== ppt/slides/slide16.xml =====
+
+WHY THIS APPROACH WINS
+What you get in business terms
+Faster time-to-market
+Sprint demos every two weeks. You see working software, not status decks.
+Lower maintenance cost
+Clean code, full documentation, and tests mean new engineers are productive in days.
+Audit-ready security
+RBAC, MFA, structured logs, Gemini-powered anomaly detection   built in from day one.
+Built to scale
+Stateless API tier, SignalR for real-time, SQL Server 2016+ for transactional integrity.
+
+
+===== ppt/slides/slide17.xml =====
+
+NEXT STEPS
+Approval &amp; kickoff
+Please review the attached approval checklist (Excel) alongside this deck. We will begin sprint one within five business days of sign-off.
+Sign off on the proposed technology stack
+Confirm security and authentication requirements
+Confirm notification channels and AI audit scope
+Align on Agile cadence and sprint length
+Confirm Azure DevOps access and environments
+Schedule kickoff and Sprint 1 planning
+Thank you  ·  Questions welcome  ·  Engineering &amp; Architecture Team
+
+
+----- NOTES ppt/notesSlides/notesSlide1.xml -----
+
+
+1
+
+
+----- NOTES ppt/notesSlides/notesSlide2.xml -----
+
+
+2
+
+
+----- NOTES ppt/notesSlides/notesSlide3.xml -----
+
+
+3
+
+
+----- NOTES ppt/notesSlides/notesSlide4.xml -----
+
+
+4
+
+
+----- NOTES ppt/notesSlides/notesSlide5.xml -----
+
+
+5
+
+
+----- NOTES ppt/notesSlides/notesSlide6.xml -----
+
+
+6
+
+
+----- NOTES ppt/notesSlides/notesSlide7.xml -----
+
+
+7
+
+
+----- NOTES ppt/notesSlides/notesSlide8.xml -----
+
+
+8
+
+
+----- NOTES ppt/notesSlides/notesSlide9.xml -----
+
+
+9
+
+
+----- NOTES ppt/notesSlides/notesSlide10.xml -----
+
+
+10
+
+
+----- NOTES ppt/notesSlides/notesSlide11.xml -----
+
+
+11
+
+
+----- NOTES ppt/notesSlides/notesSlide12.xml -----
+
+
+12
+
+
+----- NOTES ppt/notesSlides/notesSlide13.xml -----
+
+
+13
+
+
+----- NOTES ppt/notesSlides/notesSlide14.xml -----
+
+
+14
+
+
+----- NOTES ppt/notesSlides/notesSlide15.xml -----
+
+
+15
+
+
+----- NOTES ppt/notesSlides/notesSlide16.xml -----
+
+
+16
+
+
+----- NOTES ppt/notesSlides/notesSlide17.xml -----
+
+
+17

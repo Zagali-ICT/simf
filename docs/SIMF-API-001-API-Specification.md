@@ -1,0 +1,522 @@
+# API Specification
+
+| Field | Value |
+|-------|-------|
+| Document ID | SIMF-API-001 |
+| Title | API Specification |
+| Version | 1.0 |
+| Status | Draft |
+| Classification | Confidential — to be confirmed by the owner |
+| Prepared by | Engineering & Architecture Team, STARTIME |
+| Owner | Solution Architect |
+| Approver | Solution Architect |
+| Date issued | 2026-05-20 |
+| Related documents | SIMF-SAD-001, SIMF-SES-001, SIMF-RPM-001, SIMF-SRS-001 |
+
+### Revision history
+
+| Version | Date | Author | Summary of change |
+|---------|------|--------|-------------------|
+| 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. API conventions and the authentication surface. Feature endpoints follow as their requirements close. |
+
+---
+
+## 1. Purpose
+
+This document defines how the SIMF API behaves: its conventions, its response
+shape, its error model, how a client authenticates, and the contract of the
+authentication endpoints. Every SIMF endpoint, present and future, follows the
+conventions in sections 4 to 11. Section 12 specifies the authentication API in
+full, because that is the first thing the team builds.
+
+## 2. Scope
+
+Version 1.0 covers the API conventions and the authentication and session
+endpoints. It does not yet specify the feature endpoints — registration
+completion, sessions, badges, engagement, and the rest — because their request
+and response bodies depend on requirement decisions still open (gates D1–D6 in
+SIMF-PGP-001). Those endpoints are added to this document, following the same
+conventions, as each feature's requirements close.
+
+## 3. API design principles
+
+1. One predictable response shape for everything. A client parses success and
+   failure the same way every time.
+2. The API is the only door. The website, the Control Panel and the mobile app
+   all go through it. No client gets a private side channel.
+3. Endpoints are explicit about authorisation. An endpoint states what it needs;
+   nothing is open by default.
+4. The contract is stable. A breaking change means a new API version, not a
+   quiet change to an existing one.
+5. The API is the same for every client. Device differences are carried in a
+   header, not in separate endpoints.
+
+## 4. Base URL and versioning
+
+All endpoints live under a versioned base path:
+
+```
+/api/v1
+```
+
+The version in the path is the major version. A breaking change to a contract
+introduces `/api/v2`; `/api/v1` keeps working until its clients have moved.
+Non-breaking additions — a new optional field, a new endpoint — do not change
+the version.
+
+## 5. Standard request headers
+
+Every request to the API carries these headers.
+
+| Header | Required | Purpose |
+|--------|----------|---------|
+| `X-App-Key` | Yes | Identifies the calling application. A request without a valid key is rejected. |
+| `X-Device-Type` | Yes | One of `Web`, `ControlPanel`, `Android`, `iOS`. Used for logging and device-aware behaviour. |
+| `Accept-Language` | Yes | `ar` or `en`. Sets the language of messages in the response. `ar` is the default if the value is missing or unrecognised. |
+| `Authorization` | For protected endpoints | `Bearer <access token>`. |
+| `X-Anti-Forgery` | For state-changing requests | The anti-forgery (SFC) token. Required on POST, PUT, PATCH and DELETE. |
+
+A request that is missing `X-App-Key` or, on a protected endpoint, a valid
+`Authorization` header, is rejected before it reaches the endpoint logic.
+
+## 6. The response envelope
+
+Every response — success or failure, every endpoint — is an `ApiResult<T>`.
+
+### 6.1 Shape
+
+```json
+{
+  "success": true,
+  "data": {},
+  "error": null,
+  "meta": null
+}
+```
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `success` | boolean | True if the request succeeded. |
+| `data` | T or null | The result payload on success; null on failure. |
+| `error` | object or null | The error detail on failure; null on success. |
+| `meta` | object or null | Optional extra information, for example pagination. |
+
+### 6.2 Success example
+
+```json
+{
+  "success": true,
+  "data": { "id": "8a3f...", "email": "r.alsalem@example.sa" },
+  "error": null,
+  "meta": null
+}
+```
+
+### 6.3 Failure example
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "AUTH_INVALID_CREDENTIALS",
+    "message": "The email or password is incorrect.",
+    "details": []
+  },
+  "meta": null
+}
+```
+
+A client never has to guess. If `success` is false, `error` is populated and
+`data` is null.
+
+## 7. Error model
+
+### 7.1 The error object
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `code` | string | A stable, machine-readable code. Clients branch on this, not on the message. |
+| `message` | string | A human-readable message in the request's language. Safe to show a user. |
+| `details` | array | Field-level errors, used mainly for validation. Empty when there are none. |
+
+A `details` entry is `{ "field": "<name>", "message": "<reason>" }`.
+
+### 7.2 Error codes
+
+Codes are uppercase, namespaced by area with an underscore. The authentication
+codes are listed in section 12.6. Each feature adds its codes to this document
+when its endpoints are specified. A code, once published, does not change
+meaning.
+
+### 7.3 Validation errors
+
+A validation failure returns `success: false`, the code
+`VALIDATION_FAILED`, and one `details` entry per invalid field:
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "message": "Some fields need your attention.",
+    "details": [
+      { "field": "email", "message": "Enter a valid email address." },
+      { "field": "password", "message": "Password and confirmation do not match." }
+    ]
+  },
+  "meta": null
+}
+```
+
+The field names in `details` match the request body field names exactly, so a
+client can attach each message to the right input.
+
+## 8. HTTP status codes
+
+The envelope carries the application result; the HTTP status carries the
+transport result. They agree.
+
+| Status | Used for |
+|--------|----------|
+| 200 OK | A successful request. |
+| 201 Created | A successful create. |
+| 400 Bad Request | Validation failure, or a malformed request. |
+| 401 Unauthorized | Missing, invalid or expired authentication. |
+| 403 Forbidden | Authenticated, but not permitted. |
+| 404 Not Found | The addressed resource does not exist. |
+| 409 Conflict | The request conflicts with current state, for example a duplicate email. |
+| 429 Too Many Requests | A rate limit was exceeded. |
+| 500 Internal Server Error | An unexpected server fault. |
+
+On any non-200 result the body is still an `ApiResult<T>` with `success: false`,
+so a client reads errors one way regardless of the status.
+
+## 9. Pagination, filtering and sorting
+
+List endpoints accept these query parameters:
+
+| Parameter | Default | Meaning |
+|-----------|---------|---------|
+| `page` | 1 | The page number, starting at 1. |
+| `pageSize` | 20 | Items per page. The server caps this; the cap is set per endpoint. |
+| `sort` | endpoint default | A field name, optionally prefixed with `-` for descending. |
+| `search` | none | A free-text filter where the endpoint supports it. |
+
+A paged response puts the page information in `meta`:
+
+```json
+{
+  "success": true,
+  "data": [],
+  "error": null,
+  "meta": { "page": 1, "pageSize": 20, "totalItems": 137, "totalPages": 7 }
+}
+```
+
+List endpoints return only active records (`IsActive = true`) unless the
+endpoint explicitly offers an option to include inactive ones.
+
+## 10. Rate limiting
+
+The API limits request rate per IP address, per user and per endpoint. The
+authentication endpoints have tighter limits than the rest, because they are the
+ones brute force targets. A caller that exceeds a limit gets HTTP 429 and the
+error code `RATE_LIMIT_EXCEEDED`. The concrete limit values are set in
+configuration and recorded in SIMF-OPS-001.
+
+## 11. Localisation
+
+The response language follows the `Accept-Language` header: `ar` or `en`, with
+`ar` as the default. This applies to `error.message` and to any human-readable
+text in `data`. Codes, field names and identifiers are never localised.
+
+## 12. Authentication API
+
+This section specifies the authentication and session endpoints in full. They
+are the build kickoff item in SIMF-PGP-001.
+
+### 12.1 Overview of the flow
+
+Account creation, then sign-in:
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant A as SIMF API
+    C->>A: POST /auth/sign-up (email, password, confirmPassword)
+    A-->>C: 201 — account pending, code emailed
+    C->>A: POST /auth/verify-email (email, code)
+    A-->>C: 200 — email verified
+    Note over C,A: The user then completes the registration profile<br/>(Registration context — endpoints in SIMF-SRS-001)
+    C->>A: POST /auth/sign-in (email, password)
+    A-->>C: 200 — access token + refresh token
+```
+
+Sign-in is email and password. There is no Nafath and no Face ID (confirmed
+2026-05-20).
+
+### 12.2 Tokens
+
+On a successful sign-in the API returns an access token and a refresh token.
+
+- The **access token** is a JWT. It carries the user id, the user type and the
+  granted permissions, and it expires 30 minutes after issue.
+- The **refresh token** is opaque to the client. It is exchanged for a new
+  access token. Refresh tokens rotate: each refresh issues a new refresh token
+  and invalidates the one used.
+- A **session** stays valid for 30 days. After that the user signs in again.
+
+These three values come from the technology proposal. They are treated as
+confirmed; if the owner wants different values, they change here and nowhere
+else.
+
+### 12.3 Administrative sign-in and TOTP
+
+A Control Panel user signs in with email and password and then a time-based
+one-time code (TOTP) from an authenticator app. The password step returns a
+result that says a second factor is required; the client then calls the TOTP
+endpoint. An access token is issued only after the TOTP step succeeds.
+
+### 12.4 Endpoints
+
+All paths are relative to `/api/v1`. All are anonymous (no `Authorization`
+header) except sign-out and the TOTP step, as noted.
+
+#### POST /auth/sign-up
+
+Starts account creation. Creates an account in a pending, email-unverified
+state and sends a six-digit verification code to the email.
+
+Request:
+
+```json
+{
+  "email": "r.alsalem@example.sa",
+  "password": "<password>",
+  "confirmPassword": "<password>"
+}
+```
+
+Rules:
+
+- `email` is required, is a valid email address, and is not already registered.
+- `password` is required and meets the password policy in section 12.5.
+- `confirmPassword` is required and equals `password`.
+
+Success — 201:
+
+```json
+{
+  "success": true,
+  "data": { "email": "r.alsalem@example.sa", "codeExpiresInSeconds": 600 },
+  "error": null,
+  "meta": null
+}
+```
+
+Failure: `VALIDATION_FAILED` (400); `AUTH_EMAIL_ALREADY_REGISTERED` (409).
+
+#### POST /auth/verify-email
+
+Verifies the email with the code sent by sign-up.
+
+Request:
+
+```json
+{ "email": "r.alsalem@example.sa", "code": "492715" }
+```
+
+Rules:
+
+- `email` is required and identifies a pending account.
+- `code` is required, is six digits, matches the code issued, and has not
+  expired.
+
+Success — 200: `data` is `{ "email": "...", "emailVerified": true }`.
+
+Failure: `AUTH_CODE_INVALID` (400); `AUTH_CODE_EXPIRED` (400);
+`AUTH_ACCOUNT_NOT_FOUND` (404).
+
+After this step the user completes the registration profile. Those endpoints
+belong to the Registration context and are specified in SIMF-SRS-001 once the
+field set per user type is confirmed (gate D1).
+
+#### POST /auth/resend-code
+
+Issues a new verification code for a pending account and invalidates the
+previous one. Rate-limited more tightly than other endpoints.
+
+Request: `{ "email": "r.alsalem@example.sa" }`
+
+Success — 200: `data` is `{ "email": "...", "codeExpiresInSeconds": 600 }`.
+
+Failure: `AUTH_ACCOUNT_NOT_FOUND` (404); `RATE_LIMIT_EXCEEDED` (429).
+
+#### POST /auth/sign-in
+
+Signs a user in with email and password.
+
+Request:
+
+```json
+{ "email": "r.alsalem@example.sa", "password": "<password>" }
+```
+
+Success for a standard user — 200:
+
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "<jwt>",
+    "refreshToken": "<opaque>",
+    "tokenType": "Bearer",
+    "accessTokenExpiresInSeconds": 1800,
+    "user": {
+      "id": "8a3f...",
+      "email": "r.alsalem@example.sa",
+      "userType": "Visitor",
+      "displayName": "Raed Alsalem"
+    }
+  },
+  "error": null,
+  "meta": null
+}
+```
+
+Success for an administrative user whose account requires TOTP — 200, with no
+tokens yet:
+
+```json
+{
+  "success": true,
+  "data": { "mfaRequired": true, "mfaToken": "<short-lived opaque token>" },
+  "error": null,
+  "meta": null
+}
+```
+
+Failure:
+
+- `AUTH_INVALID_CREDENTIALS` (401) — wrong email or password. The message does
+  not say which, on purpose.
+- `AUTH_EMAIL_NOT_VERIFIED` (403) — the account exists but the email is not
+  verified.
+- `AUTH_ACCOUNT_NOT_APPROVED` (403) — the account is verified but the
+  registration is still awaiting approval. Whether a not-yet-approved user may
+  sign in at all, and with what access, depends on gate D1 and is confirmed in
+  SIMF-RPM-001; this code reserves the case.
+- `AUTH_ACCOUNT_DISABLED` (403) — the account is deactivated.
+- `RATE_LIMIT_EXCEEDED` (429).
+
+#### POST /auth/verify-totp
+
+Completes administrative sign-in. Takes the `mfaToken` from the sign-in step and
+the six-digit TOTP code.
+
+Request:
+
+```json
+{ "mfaToken": "<short-lived opaque token>", "code": "204815" }
+```
+
+Success — 200: the same token payload as a standard sign-in success.
+
+Failure: `AUTH_MFA_TOKEN_INVALID` (400); `AUTH_MFA_TOKEN_EXPIRED` (400);
+`AUTH_TOTP_INVALID` (400); `RATE_LIMIT_EXCEEDED` (429).
+
+#### POST /auth/refresh
+
+Exchanges a refresh token for a new access token and a new refresh token.
+
+Request: `{ "refreshToken": "<opaque>" }`
+
+Success — 200: the same token payload as sign-in. The refresh token in the
+response is new; the one in the request is now invalid.
+
+Failure: `AUTH_REFRESH_TOKEN_INVALID` (401);
+`AUTH_REFRESH_TOKEN_EXPIRED` (401) — the 30-day session has ended; the user
+signs in again.
+
+#### POST /auth/sign-out
+
+Ends the current session. Requires a valid `Authorization` header. Invalidates
+the refresh token so it cannot be used again.
+
+Request: `{ "refreshToken": "<opaque>" }`
+
+Success — 200: `data` is `{ "signedOut": true }`.
+
+### 12.5 Password policy
+
+The password rules are applied at sign-up and at any password change.
+
+- At least 8 characters.
+- Contains at least one letter and at least one digit.
+- Is not equal to the email address.
+
+This is a baseline. If the owner's security policy requires a stronger rule, it
+is set here and enforced in one place. Confirming the final policy is open
+item OI-2.
+
+### 12.6 Authentication error codes
+
+| Code | HTTP | Meaning |
+|------|------|---------|
+| `VALIDATION_FAILED` | 400 | One or more fields failed validation; see `details`. |
+| `AUTH_EMAIL_ALREADY_REGISTERED` | 409 | The email already has an account. |
+| `AUTH_ACCOUNT_NOT_FOUND` | 404 | No account for the given email. |
+| `AUTH_CODE_INVALID` | 400 | The email verification code is wrong. |
+| `AUTH_CODE_EXPIRED` | 400 | The email verification code has expired. |
+| `AUTH_INVALID_CREDENTIALS` | 401 | The email or password is incorrect. |
+| `AUTH_EMAIL_NOT_VERIFIED` | 403 | Sign-in attempted before the email was verified. |
+| `AUTH_ACCOUNT_NOT_APPROVED` | 403 | The registration is awaiting approval. |
+| `AUTH_ACCOUNT_DISABLED` | 403 | The account is deactivated. |
+| `AUTH_MFA_TOKEN_INVALID` | 400 | The MFA continuation token is not valid. |
+| `AUTH_MFA_TOKEN_EXPIRED` | 400 | The MFA continuation token has expired. |
+| `AUTH_TOTP_INVALID` | 400 | The TOTP code is wrong. |
+| `AUTH_REFRESH_TOKEN_INVALID` | 401 | The refresh token is not valid. |
+| `AUTH_REFRESH_TOKEN_EXPIRED` | 401 | The 30-day session has ended. |
+| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests. |
+
+### 12.7 Password reset
+
+A password-reset flow (request a reset, receive a code by email, set a new
+password) is a standard need and the project's security rules already treat
+"forgot password" as an allowed anonymous area. The 2026-05-20 meeting did not
+describe it explicitly, so its endpoints are not specified here. They are added
+once the requirement is confirmed — open item OI-3.
+
+## 13. OpenAPI
+
+FastEndpoints generates an OpenAPI (Swagger) description of the API. The
+generated description is the live, machine-readable contract; this document is
+the human explanation of the conventions and the intent behind it. The two are
+kept in step: an endpoint change updates both.
+
+In non-production environments the Swagger UI is available for developers and
+testers. In production it is disabled.
+
+## 14. Conventions for future endpoints
+
+When a feature's requirements close and its endpoints are added to this
+document, they follow the rules already set: the versioned base path, the
+standard headers, the `ApiResult<T>` envelope, the error model, the status code
+table, the pagination convention, and an explicit authorisation declaration.
+A new feature does not invent a new response shape or a new error style.
+
+## 15. Open items
+
+| ID | Item | Needed for |
+|----|------|-----------|
+| OI-1 | Feature endpoint contracts (registration completion, sessions, badges, engagement, and the rest) depend on requirement gates D1–D6 | Sections beyond 12 |
+| OI-2 | Final password policy from the owner's security policy | Section 12.5 |
+| OI-3 | Confirm whether a password-reset flow is in scope, and its rules | Section 12.7 |
+| OI-4 | Whether a not-yet-approved user may sign in, and with what access | `AUTH_ACCOUNT_NOT_APPROVED`, gate D1 |
+| OI-5 | Confirm document classification with the owner | Control block |
+
+---
+
+End of document.
