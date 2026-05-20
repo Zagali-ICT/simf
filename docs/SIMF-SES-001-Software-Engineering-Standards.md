@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-SES-001 |
 | Title | Software Engineering Standards and Conventions |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Draft |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. |
+| 1.1 | 2026-05-20 | Engineering & Architecture Team | Added §4.4 Configuration and environment; added §6.3 Shared component library (Smif*) and amended §6.1; added open item OI-5. |
 
 ---
 
@@ -114,6 +115,32 @@ through the published API.
 do not redeclare these. Project files are not edited as a side effect of
 feature work; a change to a `.csproj` is its own reviewed task.
 
+### 4.4 Configuration and environment
+
+Application configuration is split by environment, and production secrets are
+kept out of the repository entirely.
+
+- `appsettings.json` holds settings that are shared across environments and are
+  not sensitive. No secret — no connection string, key or token — is placed in
+  it.
+- `appsettings.Development.json` holds the overrides for local development.
+- `appsettings.E2E.json` holds the overrides for the end-to-end test
+  environment.
+- There is no `appsettings.Production.json`. Production configuration is not
+  carried in a committed file.
+
+Production configuration — the production overrides and every secret, including
+connection strings, the JWT signing key and external provider keys — is applied
+as Machine-scope environment variables. Each service has its own script,
+`set-env-<service>.ps1` (for example `set-env-api.ps1`), that sets them. The
+variables use the ASP.NET Core double-underscore convention, where `__` maps to
+a nested configuration key — for example `ConnectionStrings__AppData`.
+
+The `set-env-<service>.ps1` script committed to the repository is a placeholder
+template only: it lists the variable names with empty or dummy values. Real
+secret values are never committed. This follows the secrets rule in section 12
+and the data-protection approach in SIMF-SAD-001 section 8.4.
+
 ## 5. Backend conventions (.NET and C#)
 
 ### 5.1 Style
@@ -177,8 +204,10 @@ in the domain throw a domain-specific exception named for the rule it protects.
 ### 6.1 Component model
 
 The Control Panel is a Blazor application using the MudBlazor component library.
-Components are kept small and focused. A page composes components; it does not
-become a thousand-line file.
+A page does not place MudBlazor components directly; it composes its UI from the
+shared `Smif*` component library (section 6.3), whose Control Panel components
+wrap MudBlazor. Components are kept small and focused. A page composes
+components; it does not become a thousand-line file.
 
 ### 6.2 CSS and theming
 
@@ -201,6 +230,35 @@ one visual theme. The CSS rules protect that.
 
 The full theming and layout design, including how RTL/LTR and multi-theme are
 implemented, is specified in SIMF-CPD-001.
+
+### 6.3 Shared component library (Smif*)
+
+SIMF's user interfaces are built from a shared library of wrapper components
+whose names all carry the `Smif` prefix — `SmifButton`, `SmifInputText`,
+`SmifInputNumber`, `SmifInputCheck`, `SmifInputTabs`, `SmifInputDropdownList`,
+`SmifError`, `SmifBanner`, `SmifTable`, `SmifPager`, `SmifPopup`, `SmifConfirm`,
+`SmifLoader`, and the rest as they are needed.
+
+- Both the Control Panel (Blazor) and the mobile application (Flutter) compose
+  their screens from `Smif*` components. The two platforms keep the same
+  component vocabulary even though their underlying technologies differ.
+- A page never places a raw HTML input, a raw framework widget, or a framework
+  primitive directly. It composes `Smif*` components.
+- A UI primitive is added to the `Smif*` library first, and only then used in a
+  page. The library grows ahead of the pages, not as a by-product of them.
+- In the Control Panel, a `Smif*` component wraps the matching MudBlazor
+  component (section 6.1). In the Flutter app, a `Smif*` component wraps the
+  matching widget from the design system delivered by the external designer
+  (SIMF-MAA-001 section 12).
+
+The `Smif*` layer is a thin wrapper, not a replacement for the underlying
+library or the designer's component library. It gives SIMF one consistent
+component vocabulary, one place to apply a cross-cutting change, and the freedom
+to adjust the underlying library without rewriting every page.
+
+How the `Smif*` layer reconciles with the external designer's component-library
+handoff in SIMF-MAA-001 section 12 is recorded as open item OI-5 for the
+Solution Architect to confirm.
 
 ## 7. Mobile application conventions (Flutter)
 
@@ -407,6 +465,7 @@ removed; after it, nothing is deleted, renamed or moved without approval.
 | OI-2 | Coverage floor and the test tooling, to be fixed in SIMF-TST-001 | Section 11.3 |
 | OI-3 | Final .NET project breakdown, to be fixed in SIMF-SAD-001 | Section 4.1 |
 | OI-4 | The shared-constants namespace for SIMF (the `AppRoles` equivalent) | Section 5.1 |
+| OI-5 | Reconcile the `Smif*` shared component library with the external designer's component-library handoff in SIMF-MAA-001 section 12 — confirm that `Smif*` wraps the designer's components and how design tokens flow into the wrappers | Section 6.3 |
 
 ---
 

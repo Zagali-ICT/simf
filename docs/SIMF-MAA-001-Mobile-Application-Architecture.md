@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-MAA-001 |
 | Title | Mobile Application Architecture |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Draft |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. |
+| 1.1 | 2026-05-20 | Engineering & Architecture Team | Made the §10 date and digit formatting explicit (dates display as dd-MM-yyyy, digits are always Latin); added a §12 cross-reference to the Smif* shared component library. |
 
 ---
 
@@ -219,7 +220,14 @@ connection state rather than silently showing stale data.
   right.
 - The chosen language is stored locally and sent on every request as
   `Accept-Language`, so server messages come back in the same language.
-- Numbers, dates and times are formatted for the active locale.
+- Dates are displayed in the format `dd-MM-yyyy`.
+- Numbers — including the digits inside dates and times — are always rendered
+  in Latin (English) digits (`0`–`9`), regardless of the UI language. The app
+  does not use Arabic-Indic digits (`٠`–`٩`). This makes the formatting rule
+  explicit: it overrides any reading of "formatted for the active locale" that
+  would otherwise produce Arabic-Indic digits or a different date format. Other
+  locale-sensitive formatting, such as the wording around a time, still follows
+  the active locale.
 
 ## 11. Theming
 
@@ -271,8 +279,12 @@ For the handoff to apply cleanly, the design delivery needs:
 ### 12.3 How the design is applied
 
 When the design system arrives, its tokens are loaded into `app/theme/`. The
-shared components are styled to match the component library. Each screen's
-placeholder visuals are replaced with the real design. Because the structure,
+shared components are styled to match the component library. These shared
+components are the app's `Smif*` wrapper components (SIMF-SES-001 section 6.3):
+each `Smif*` component wraps the matching widget from the designer's delivered
+component library, so applying the design styles the wrappers in one place
+rather than every screen. Each screen's placeholder visuals are replaced with
+the real design. Because the structure,
 navigation, state and API integration are already built and tested, this stage
 is a visual pass, not a rebuild.
 

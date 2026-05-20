@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-API-001 |
 | Title | API Specification |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Draft |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. API conventions and the authentication surface. Feature endpoints follow as their requirements close. |
+| 1.1 | 2026-05-20 | Engineering & Architecture Team | Specified the password-reset flow in §12.7 (forgot-password / reset-password, six-digit email OTP on ASP.NET Core Identity; reset-password revokes the account's refresh tokens); added AUTH_RESET_CODE_INVALID and AUTH_RESET_CODE_EXPIRED to §12.6; closed open item OI-3. |
 
 ---
 
@@ -470,6 +471,8 @@ item OI-2.
 | `AUTH_ACCOUNT_NOT_FOUND` | 404 | No account for the given email. |
 | `AUTH_CODE_INVALID` | 400 | The email verification code is wrong. |
 | `AUTH_CODE_EXPIRED` | 400 | The email verification code has expired. |
+| `AUTH_RESET_CODE_INVALID` | 400 | The password-reset code is wrong, or the email has no account. |
+| `AUTH_RESET_CODE_EXPIRED` | 400 | The password-reset code has expired. |
 | `AUTH_INVALID_CREDENTIALS` | 401 | The email or password is incorrect. |
 | `AUTH_EMAIL_NOT_VERIFIED` | 403 | Sign-in attempted before the email was verified. |
 | `AUTH_ACCOUNT_NOT_APPROVED` | 403 | The registration is awaiting approval. |
@@ -483,11 +486,98 @@ item OI-2.
 
 ### 12.7 Password reset
 
-A password-reset flow (request a reset, receive a code by email, set a new
-password) is a standard need and the project's security rules already treat
-"forgot password" as an allowed anonymous area. The 2026-05-20 meeting did not
-describe it explicitly, so its endpoints are not specified here. They are added
-once the requirement is confirmed — open item OI-3.
+A user who has forgotten their password recovers it with a two-step,
+email-code flow built on ASP.NET Core Identity. The flow mirrors email
+verification (section 12.4): a six-digit numeric code, sent to the email, with
+the same expiry and the same tighter rate limiting as `resend-code`.
+
+Neither step reveals whether an email address has an account.
+`forgot-password` always reports success, and `reset-password` returns the same
+error for an unknown email as for a wrong code. This prevents account
+enumeration.
+
+Both endpoints are anonymous — they sit on the short, approved anonymous list
+with sign-in and sign-up.
+
+#### POST /auth/forgot-password
+
+Starts a password reset. If the email belongs to an account, a six-digit reset
+code is sent to it and any previous reset code for that account is invalidated.
+If the email has no account, nothing is sent. Either way the response is the
+same. Rate-limited more tightly than other endpoints.
+
+Request:
+
+```json
+{ "email": "r.alsalem@example.sa" }
+```
+
+Rules:
+
+- `email` is required and is a valid email address.
+
+Success — 200:
+
+```json
+{
+  "success": true,
+  "data": { "codeExpiresInSeconds": 600 },
+  "error": null,
+  "meta": null
+}
+```
+
+The response carries no field whose value depends on whether the account
+exists.
+
+Failure: `VALIDATION_FAILED` (400); `RATE_LIMIT_EXCEEDED` (429).
+
+#### POST /auth/reset-password
+
+Completes a password reset. Verifies the six-digit code and sets the new
+password.
+
+Request:
+
+```json
+{
+  "email": "r.alsalem@example.sa",
+  "code": "618402",
+  "newPassword": "<password>",
+  "confirmPassword": "<password>"
+}
+```
+
+Rules:
+
+- `email` is required and is a valid email address.
+- `code` is required, is six digits, matches the code issued to the account,
+  and has not expired.
+- `newPassword` is required and meets the password policy in section 12.5.
+- `confirmPassword` is required and equals `newPassword`.
+
+On success the reset code is consumed and cannot be used again, and any other
+unexpired reset code for the account is invalidated. The account's refresh
+tokens are revoked as well, so every existing session ends; the user signs in
+again with the new password.
+
+Success — 200:
+
+```json
+{
+  "success": true,
+  "data": { "passwordReset": true },
+  "error": null,
+  "meta": null
+}
+```
+
+Failure: `VALIDATION_FAILED` (400); `AUTH_RESET_CODE_INVALID` (400);
+`AUTH_RESET_CODE_EXPIRED` (400); `RATE_LIMIT_EXCEEDED` (429).
+
+A wrong code and an email with no account both return
+`AUTH_RESET_CODE_INVALID`, so the response does not reveal whether the email is
+registered.
 
 ## 13. OpenAPI
 
@@ -513,7 +603,6 @@ A new feature does not invent a new response shape or a new error style.
 |----|------|-----------|
 | OI-1 | Feature endpoint contracts (registration completion, sessions, badges, engagement, and the rest) depend on requirement gates D1–D6 | Sections beyond 12 |
 | OI-2 | Final password policy from the owner's security policy | Section 12.5 |
-| OI-3 | Confirm whether a password-reset flow is in scope, and its rules | Section 12.7 |
 | OI-4 | Whether a not-yet-approved user may sign in, and with what access | `AUTH_ACCOUNT_NOT_APPROVED`, gate D1 |
 | OI-5 | Confirm document classification with the owner | Control block |
 
