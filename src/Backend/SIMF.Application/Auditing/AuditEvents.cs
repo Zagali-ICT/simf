@@ -19,5 +19,11 @@ public static class AuditEvents
     public const string ResendCodeAccountNotRegistered = "ResendCode.AccountNotRegistered";
     public const string ResendCodeCapReached = "ResendCode.CapReached";
     public const string RateLimitRejected = "RateLimit.Rejected";
+    public const string SignInBadCredentials = "SignIn.BadCredentials";
+    public const string SignInAccountLockedOut = "SignIn.AccountLockedOut";
+    public const string SignInStateBlocked = "SignIn.StateBlocked";
+    public const string SignInSecondFactorIssued = "SignIn.SecondFactorIssued";
+    public const string SignInSecondFactorFailed = "SignIn.SecondFactorFailed";
+    public const string SignInSucceeded = "SignIn.Succeeded";
     public const string SuperAdminSeeded = "Admin.SuperAdminSeeded";
 }

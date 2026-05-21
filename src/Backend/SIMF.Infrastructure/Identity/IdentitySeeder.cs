@@ -8,17 +8,20 @@ using SIMF.Domain.IdentityAccess;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// Seeds the bootstrap super-administrator account. Idempotent — running it
-/// again once the account exists is a no-op (decision D4, SIMF-FDS-001
-/// Amendment A.4 and A.5).
+/// Seeds the bootstrap super-administrator account and the Administrator role,
+/// and assigns the one to the other. Idempotent — running it again is a no-op
+/// (decision D4, SIMF-FDS-001 Amendment A.4 and A.5; SIMF-RPM-001 section 5.1).
 /// </summary>
 public sealed class IdentitySeeder(
     UserManager<SimfUser> userManager,
+    RoleManager<SimfRole> roleManager,
     IOptions<SuperAdminOptions> options,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<IdentitySeeder> logger)
 {
+    private const string AdministratorRole = "Administrator";
+
     // ASP.NET Core Identity's internal token coordinates for the TOTP
     // authenticator key, so a pre-provisioned secret is recognised by
     // UserManager.GetAuthenticatorKeyAsync.
@@ -36,11 +39,37 @@ public sealed class IdentitySeeder(
             return;
         }
 
-        if (await userManager.FindByEmailAsync(settings.Email) is not null)
+        await EnsureAdministratorRoleAsync();
+
+        var admin = await userManager.FindByEmailAsync(settings.Email)
+            ?? await CreateSuperAdminAsync(settings, cancellationToken);
+        if (admin is null)
         {
             return;
         }
 
+        if (!await userManager.IsInRoleAsync(admin, AdministratorRole))
+        {
+            await userManager.AddToRoleAsync(admin, AdministratorRole);
+        }
+    }
+
+    private async Task EnsureAdministratorRoleAsync()
+    {
+        if (!await roleManager.RoleExistsAsync(AdministratorRole))
+        {
+            await roleManager.CreateAsync(new SimfRole
+            {
+                Name = AdministratorRole,
+                IsBaseline = true,
+            });
+        }
+    }
+
+    private async Task<SimfUser?> CreateSuperAdminAsync(
+        SuperAdminOptions settings,
+        CancellationToken cancellationToken)
+    {
         var now = timeProvider.GetUtcNow();
         var admin = new SimfUser
         {
@@ -59,7 +88,7 @@ public sealed class IdentitySeeder(
             logger.LogError(
                 "Super-admin seed failed: {Errors}",
                 string.Join("; ", result.Errors.Select(error => error.Description)));
-            return;
+            return null;
         }
 
         if (!string.IsNullOrWhiteSpace(settings.TotpSecret))
@@ -80,5 +109,6 @@ public sealed class IdentitySeeder(
             cancellationToken);
 
         logger.LogInformation("Super-admin account seeded: {Email}", settings.Email);
+        return admin;
     }
 }

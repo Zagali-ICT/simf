@@ -22,6 +22,8 @@ public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> optio
 
     public DbSet<AccountCode> AccountCodes => Set<AccountCode>();
 
+    public DbSet<SecondFactorToken> SecondFactorTokens => Set<SecondFactorToken>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

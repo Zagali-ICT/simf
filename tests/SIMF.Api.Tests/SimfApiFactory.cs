@@ -42,6 +42,8 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("SuperAdmin__TempPassword", "ChangeMe!Test1");
         Environment.SetEnvironmentVariable("SuperAdmin__TotpSecret", "JBSWY3DPEHPK3PXP");
         Environment.SetEnvironmentVariable("RateLimit__PermitLimit", "100000");
+        Environment.SetEnvironmentVariable(
+            "Jwt__SigningKey", "simf-test-signing-key-not-for-production-0123456789");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

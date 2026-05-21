@@ -8,4 +8,7 @@ public enum AccountCodePurpose
 {
     EmailVerification = 0,
     PasswordReset = 1,
+
+    /// <summary>A one-time code emailed to a visitor as the sign-in second factor.</summary>
+    SignInOtp = 2,
 }

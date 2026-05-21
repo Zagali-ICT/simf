@@ -65,3 +65,9 @@ and Application layers gain code from increment 2.
 
 `SimfApiFactory` now applies the EF migrations (rather than `EnsureCreated`), so
 the migrations themselves are exercised by every integration test.
+
+## 7. Increment 4b — sign-in and the second factors
+
+| Test | Type | Verifies |
+|------|------|----------|
+| `SignInTests` | Integration | sign-in 401 (unknown email / wrong password) and 403 before email verification; a visitor completes sign-in with the emailed code; an administrator completes it with a TOTP code; verify-otp and verify-totp reject a wrong code |

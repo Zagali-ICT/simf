@@ -63,6 +63,11 @@ public static class DependencyInjection
                 options.Password.RequireUppercase = false;
                 options.Password.RequireNonAlphanumeric = false;
                 options.User.RequireUniqueEmail = true;
+
+                // Account lockout — the brute-force defence (SIMF-FDS-001 A.1).
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+                options.Lockout.AllowedForNewUsers = true;
             })
             .AddRoles<SimfRole>()
             .AddEntityFrameworkStores<SimfIdentityDbContext>();
@@ -71,14 +76,20 @@ public static class DependencyInjection
             configuration.GetSection(EmailOptions.SectionName));
         services.Configure<SuperAdminOptions>(
             configuration.GetSection(SuperAdminOptions.SectionName));
+        services.Configure<JwtOptions>(
+            configuration.GetSection(JwtOptions.SectionName));
 
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IAccountCodeRepository, AccountCodeRepository>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
+        services.AddScoped<ISecondFactorTokenRepository, SecondFactorTokenRepository>();
 
         services.AddScoped<ITransactionRunner, TransactionRunner>();
         services.AddScoped<IAuditLog, AuditLog>();
         services.AddScoped<IRegistrationService, RegistrationService>();
+        services.AddScoped<ISignInService, SignInService>();
+        services.AddSingleton<IJwtTokenService, JwtTokenService>();
+        services.AddSingleton<ITotpVerifier, TotpVerifier>();
         services.AddScoped<IdentitySeeder>();
 
         // Email — a singleton queue and sender drained by a background worker,
