@@ -27,4 +27,10 @@ public class SimfUser : IdentityUser<Guid>
 
     /// <summary>When the account was last updated (UTC); null if never.</summary>
     public DateTimeOffset? UpdatedAt { get; set; }
+
+    /// <summary>
+    /// The most recent TOTP time-step accepted for this account. A code at or
+    /// below this step is rejected as a replay (RFC 6238 section 5.2).
+    /// </summary>
+    public long? LastUsedTotpTimestep { get; set; }
 }

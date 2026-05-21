@@ -1,11 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using OtpNet;
+using SIMF.Application.Auditing;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
-using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -65,6 +66,38 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task SignIn_for_a_disabled_account_returns_403()
+    {
+        var email = await RegisterVerifiedVisitorAsync();
+        SetAccountState(email, AccountState.Disabled);
+
+        var response = await SignInAsync(email, Password);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.Equal(ErrorCodes.AuthAccountDisabled, body!.Error!.Code);
+    }
+
+    [Fact]
+    public async Task SignIn_locks_the_account_after_five_wrong_passwords()
+    {
+        var email = await RegisterVerifiedVisitorAsync();
+
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            var bad = await SignInAsync(email, "Wrong1!Password");
+            Assert.Equal(HttpStatusCode.Unauthorized, bad.StatusCode);
+        }
+
+        var locked = await SignInAsync(email, "Wrong1!Password");
+        Assert.Equal(HttpStatusCode.Locked, locked.StatusCode);
+
+        // The correct password is refused too while the account is locked.
+        var correctButLocked = await SignInAsync(email, Password);
+        Assert.Equal(HttpStatusCode.Locked, correctButLocked.StatusCode);
+    }
+
+    [Fact]
     public async Task A_visitor_signs_in_and_completes_with_the_emailed_code()
     {
         var email = await RegisterVerifiedVisitorAsync();
@@ -110,14 +143,47 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Verify_otp_rejects_the_ticket_after_five_wrong_codes()
+    {
+        var email = await RegisterVerifiedVisitorAsync();
+        var challenge = await ExpectChallengeAsync(email, Password);
+        var wrong = new VerifyOtpRequest { OtpToken = challenge.OtpToken!, Code = "000001" };
+
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            await _client.PostAsJsonAsync("/api/v1/auth/verify-otp", wrong);
+        }
+
+        var capped = await _client.PostAsJsonAsync("/api/v1/auth/verify-otp", wrong);
+        Assert.Equal(HttpStatusCode.BadRequest, capped.StatusCode);
+        var body = await capped.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.Equal(ErrorCodes.AuthOtpTokenInvalid, body!.Error!.Code);
+    }
+
+    [Fact]
+    public async Task An_otp_token_used_at_verify_totp_is_rejected()
+    {
+        var email = await RegisterVerifiedVisitorAsync();
+        var challenge = await ExpectChallengeAsync(email, Password);
+
+        var verify = await _client.PostAsJsonAsync(
+            "/api/v1/auth/verify-totp",
+            new VerifyTotpRequest { MfaToken = challenge.OtpToken!, Code = "123456" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, verify.StatusCode);
+        var body = await verify.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.Equal(ErrorCodes.AuthMfaTokenInvalid, body!.Error!.Code);
+    }
+
+    [Fact]
     public async Task An_administrator_signs_in_and_completes_with_a_TOTP_code()
     {
-        await SeedSuperAdminAsync();
+        var (adminEmail, secret) = await CreateAdminAsync();
 
-        var challenge = await ExpectChallengeAsync("superadmin@simf.test", "ChangeMe!Test1");
+        var challenge = await ExpectChallengeAsync(adminEmail, Password);
         Assert.NotNull(challenge.MfaToken);
 
-        var totp = new Totp(Base32Encoding.ToBytes("JBSWY3DPEHPK3PXP")).ComputeTotp();
+        var totp = new Totp(Base32Encoding.ToBytes(secret)).ComputeTotp();
         var verify = await _client.PostAsJsonAsync(
             "/api/v1/auth/verify-totp",
             new VerifyTotpRequest { MfaToken = challenge.MfaToken!, Code = totp });
@@ -130,8 +196,8 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Verify_totp_with_a_wrong_code_returns_400()
     {
-        await SeedSuperAdminAsync();
-        var challenge = await ExpectChallengeAsync("superadmin@simf.test", "ChangeMe!Test1");
+        var (adminEmail, _) = await CreateAdminAsync();
+        var challenge = await ExpectChallengeAsync(adminEmail, Password);
 
         var verify = await _client.PostAsJsonAsync(
             "/api/v1/auth/verify-totp",
@@ -140,6 +206,69 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, verify.StatusCode);
         var body = await verify.Content.ReadFromJsonAsync<ApiResult<object>>();
         Assert.Equal(ErrorCodes.AuthTotpInvalid, body!.Error!.Code);
+    }
+
+    [Fact]
+    public async Task A_TOTP_code_cannot_be_used_twice()
+    {
+        var (adminEmail, secret) = await CreateAdminAsync();
+        var totp = new Totp(Base32Encoding.ToBytes(secret)).ComputeTotp();
+
+        var first = await ExpectChallengeAsync(adminEmail, Password);
+        var firstVerify = await _client.PostAsJsonAsync(
+            "/api/v1/auth/verify-totp",
+            new VerifyTotpRequest { MfaToken = first.MfaToken!, Code = totp });
+        Assert.Equal(HttpStatusCode.OK, firstVerify.StatusCode);
+
+        var second = await ExpectChallengeAsync(adminEmail, Password);
+        var replay = await _client.PostAsJsonAsync(
+            "/api/v1/auth/verify-totp",
+            new VerifyTotpRequest { MfaToken = second.MfaToken!, Code = totp });
+
+        Assert.Equal(HttpStatusCode.BadRequest, replay.StatusCode);
+    }
+
+    [Fact]
+    public async Task Verify_totp_after_the_ticket_expires_returns_400()
+    {
+        var (adminEmail, _) = await CreateAdminAsync();
+        var challenge = await ExpectChallengeAsync(adminEmail, Password);
+
+        _factory.Time.Advance(TimeSpan.FromMinutes(6));
+
+        var verify = await _client.PostAsJsonAsync(
+            "/api/v1/auth/verify-totp",
+            new VerifyTotpRequest { MfaToken = challenge.MfaToken!, Code = "000000" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, verify.StatusCode);
+        var body = await verify.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.Equal(ErrorCodes.AuthMfaTokenExpired, body!.Error!.Code);
+    }
+
+    [Fact]
+    public async Task A_completed_sign_in_writes_a_SignInSucceeded_audit_entry()
+    {
+        var email = await RegisterVerifiedVisitorAsync();
+        var challenge = await ExpectChallengeAsync(email, Password);
+        await _client.PostAsJsonAsync(
+            "/api/v1/auth/verify-otp",
+            new VerifyOtpRequest
+            {
+                OtpToken = challenge.OtpToken!,
+                Code = GetActiveCode(email, AccountCodePurpose.SignInOtp),
+            });
+
+        Assert.True(AuditEntryExists(email, AuditEvents.SignInSucceeded));
+    }
+
+    [Fact]
+    public async Task Bad_credentials_write_a_SignInBadCredentials_audit_entry()
+    {
+        var email = await RegisterVerifiedVisitorAsync();
+
+        await SignInAsync(email, "Wrong1!Password");
+
+        Assert.True(AuditEntryExists(email, AuditEvents.SignInBadCredentials));
     }
 
     // -- helpers --------------------------------------------------------------
@@ -175,10 +304,37 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         return email;
     }
 
-    private async Task SeedSuperAdminAsync()
+    /// <summary>
+    /// Creates a fresh Control Panel account with its own authenticator secret.
+    /// Each TOTP test needs its own account — the replay guard is per-account.
+    /// </summary>
+    private async Task<(string Email, string TotpSecret)> CreateAdminAsync()
     {
+        var email = $"admin-{Guid.NewGuid():N}@simf.test";
+        var secret = Base32Encoding.ToString(KeyGeneration.GenerateRandomKey(20));
+
         using var scope = _factory.Services.CreateScope();
-        await scope.ServiceProvider.GetRequiredService<IdentitySeeder>().SeedAsync();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
+        if (!await roleManager.RoleExistsAsync("Administrator"))
+        {
+            await roleManager.CreateAsync(new SimfRole { Name = "Administrator" });
+        }
+
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var user = new SimfUser
+        {
+            UserName = email,
+            Email = email,
+            EmailConfirmed = true,
+            DisplayName = "Test Administrator",
+            AccountState = AccountState.Approved,
+        };
+        await userManager.CreateAsync(user, Password);
+        // ASP.NET Core Identity's internal token coordinates for the TOTP key.
+        await userManager.SetAuthenticationTokenAsync(
+            user, "[AspNetUserStore]", "AuthenticatorKey", secret);
+        await userManager.AddToRoleAsync(user, "Administrator");
+        return (email, secret);
     }
 
     private string GetActiveCode(string email, AccountCodePurpose purpose)
@@ -193,5 +349,22 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
             .OrderByDescending(code => code.CreatedAt)
             .First()
             .Code;
+    }
+
+    private void SetAccountState(string email, AccountState state)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = database.Users.Single(candidate => candidate.Email == email);
+        user.AccountState = state;
+        database.SaveChanges();
+    }
+
+    private bool AuditEntryExists(string email, string eventType)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        return database.OperationLog.Any(
+            entry => entry.SubjectEmail == email && entry.EventType == eventType);
     }
 }

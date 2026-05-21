@@ -24,6 +24,8 @@ public static class AuditEvents
     public const string SignInStateBlocked = "SignIn.StateBlocked";
     public const string SignInSecondFactorIssued = "SignIn.SecondFactorIssued";
     public const string SignInSecondFactorFailed = "SignIn.SecondFactorFailed";
+    public const string SignInSecondFactorRejected = "SignIn.SecondFactorRejected";
     public const string SignInSucceeded = "SignIn.Succeeded";
+    public const string RefreshTokenIssued = "RefreshToken.Issued";
     public const string SuperAdminSeeded = "Admin.SuperAdminSeeded";
 }

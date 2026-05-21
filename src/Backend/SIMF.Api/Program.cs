@@ -98,6 +98,8 @@ builder.Services.AddHealthChecks();
 // proxy. Outside Development and the test host it must be configured.
 var knownProxies =
     builder.Configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? [];
+var jwtSigningKey =
+    builder.Configuration.GetSection(JwtOptions.SectionName)["SigningKey"] ?? string.Empty;
 
 var app = builder.Build();
 
@@ -108,6 +110,14 @@ if (!app.Environment.IsDevelopment()
     throw new InvalidOperationException(
         "ReverseProxy:KnownProxies must be configured outside Development — "
         + "the rate limiter and the audit-log source IP depend on a trusted proxy.");
+}
+
+// The JWT signing key must be present and long enough for HMAC-SHA256 — a
+// missing or weak key would let an attacker forge tokens.
+if (System.Text.Encoding.UTF8.GetByteCount(jwtSigningKey) < 32)
+{
+    throw new InvalidOperationException(
+        "Jwt:SigningKey must be configured and at least 32 bytes long.");
 }
 
 // Apply the migrations and seed the super-admin. Skipped under the test host,

@@ -34,7 +34,9 @@ public sealed class SignInService(
     private static readonly TimeSpan TicketLifetime = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan OtpLifetime = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan RefreshTokenLifetime = TimeSpan.FromDays(30);
+    private static readonly TimeSpan OtpRequestWindow = TimeSpan.FromHours(1);
     private const int MaxSecondFactorAttempts = 5;
+    private const int MaxOtpRequestsPerWindow = 5;
 
     public async Task<SignInResponse> SignInAsync(
         SignInRequest request,
@@ -45,7 +47,8 @@ public sealed class SignInService(
         if (user is not null && await userManager.IsLockedOutAsync(user))
         {
             await AuditAsync(AuditEvents.SignInAccountLockedOut, AuditOutcome.Failure,
-                user.Email!, user.Id, ErrorCodes.AuthAccountLocked, cancellationToken);
+                user.Email!, user.Id, ErrorCodes.AuthAccountLocked,
+                cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthAccountLocked, 423,
                 "The account is locked after too many attempts. Try again later.");
         }
@@ -59,7 +62,8 @@ public sealed class SignInService(
 
             // One generic response — it never reveals whether the email exists.
             await AuditAsync(AuditEvents.SignInBadCredentials, AuditOutcome.Failure,
-                request.Email, user?.Id, ErrorCodes.AuthInvalidCredentials, cancellationToken);
+                request.Email, user?.Id, ErrorCodes.AuthInvalidCredentials,
+                cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthInvalidCredentials, 401,
                 "The email address or password is not correct.");
         }
@@ -70,7 +74,7 @@ public sealed class SignInService(
         if (blockCode is not null)
         {
             await AuditAsync(AuditEvents.SignInStateBlocked, AuditOutcome.Failure,
-                user.Email!, user.Id, blockCode, cancellationToken);
+                user.Email!, user.Id, blockCode, cancellationToken: cancellationToken);
             throw new ApiException(blockCode, 403, blockMessage!);
         }
 
@@ -80,8 +84,16 @@ public sealed class SignInService(
         // A user holding any role is a Control Panel user and uses TOTP; every
         // other user completes sign-in with an emailed code (SIMF-FDS-001 §5.6).
         var kind = roles.Count > 0 ? SecondFactorKind.Totp : SecondFactorKind.EmailOtp;
-        var ticketValue = OpaqueToken.Generate();
 
+        // The emailed code is issued (and re-issue-capped) before the ticket, so
+        // a throttled visitor gets no ticket at all.
+        string? otpCode = null;
+        if (kind == SecondFactorKind.EmailOtp)
+        {
+            otpCode = await IssueSignInOtpAsync(user, now, cancellationToken);
+        }
+
+        var ticketValue = OpaqueToken.Generate();
         await secondFactorTokenRepository.AddAsync(
             new SecondFactorToken
             {
@@ -95,15 +107,14 @@ public sealed class SignInService(
             cancellationToken);
 
         await AuditAsync(AuditEvents.SignInSecondFactorIssued, AuditOutcome.Success,
-            user.Email!, user.Id, cancellationToken: cancellationToken);
+            user.Email!, user.Id, detail: kind.ToString(), cancellationToken: cancellationToken);
 
         if (kind == SecondFactorKind.Totp)
         {
             return new SignInResponse(true, ticketValue, null);
         }
 
-        var code = await IssueSignInOtpAsync(user, now, cancellationToken);
-        EnqueueSignInOtpEmail(user.Email!, code);
+        EnqueueSignInOtpEmail(user.Email!, otpCode!);
         return new SignInResponse(true, null, ticketValue);
     }
 
@@ -117,18 +128,33 @@ public sealed class SignInService(
             ?? throw new ApiException(ErrorCodes.AuthMfaTokenInvalid, 400,
                 "The sign-in session is no longer valid.");
 
+        await EnsureNotLockedOutAsync(user, cancellationToken);
+
         var secret = await userManager.GetAuthenticatorKeyAsync(user);
-        if (string.IsNullOrEmpty(secret) || !totpVerifier.Verify(secret, request.Code))
+        var totp = totpVerifier.Verify(secret ?? string.Empty, request.Code);
+
+        // Reject a wrong code — and a correct code whose time-step was already
+        // used, which is a replay (RFC 6238 §5.2).
+        var isReplay = totp.IsValid
+            && user.LastUsedTotpTimestep is { } lastStep
+            && totp.TimeStep <= lastStep;
+        if (!totp.IsValid || isReplay)
         {
             ticket.AttemptCount++;
             await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
             await AuditAsync(AuditEvents.SignInSecondFactorFailed, AuditOutcome.Failure,
-                user.Email!, user.Id, ErrorCodes.AuthTotpInvalid, cancellationToken);
+                user.Email!, user.Id, ErrorCodes.AuthTotpInvalid,
+                cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthTotpInvalid, 400,
                 "The verification code is not correct.");
         }
 
-        ticket.ConsumedAt = timeProvider.GetUtcNow();
+        var now = timeProvider.GetUtcNow();
+        user.LastUsedTotpTimestep = totp.TimeStep;
+        user.UpdatedAt = now;
+        await userManager.UpdateAsync(user);
+
+        ticket.ConsumedAt = now;
         await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
         return await IssueTokensAsync(user, cancellationToken);
     }
@@ -143,6 +169,8 @@ public sealed class SignInService(
             ?? throw new ApiException(ErrorCodes.AuthOtpTokenInvalid, 400,
                 "The sign-in session is no longer valid.");
 
+        await EnsureNotLockedOutAsync(user, cancellationToken);
+
         var now = timeProvider.GetUtcNow();
         var code = await accountCodeRepository.GetLatestUnconsumedAsync(
             user.Id, AccountCodePurpose.SignInOtp, cancellationToken);
@@ -150,7 +178,8 @@ public sealed class SignInService(
         if (code is null || now >= code.ExpiresAt)
         {
             await AuditAsync(AuditEvents.SignInSecondFactorFailed, AuditOutcome.Failure,
-                user.Email!, user.Id, ErrorCodes.AuthOtpExpired, cancellationToken);
+                user.Email!, user.Id, ErrorCodes.AuthOtpExpired,
+                cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthOtpExpired, 400,
                 "The code has expired. Sign in again to get a new one.");
         }
@@ -160,7 +189,8 @@ public sealed class SignInService(
             ticket.AttemptCount++;
             await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
             await AuditAsync(AuditEvents.SignInSecondFactorFailed, AuditOutcome.Failure,
-                user.Email!, user.Id, ErrorCodes.AuthOtpInvalid, cancellationToken);
+                user.Email!, user.Id, ErrorCodes.AuthOtpInvalid,
+                cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthOtpInvalid, 400,
                 "The code is not correct.");
         }
@@ -188,6 +218,19 @@ public sealed class SignInService(
             _ => (null, null),
         };
 
+    /// <summary>Blocks the second-factor step if the account locked out after the password step.</summary>
+    private async Task EnsureNotLockedOutAsync(SimfUser user, CancellationToken cancellationToken)
+    {
+        if (await userManager.IsLockedOutAsync(user))
+        {
+            await AuditAsync(AuditEvents.SignInAccountLockedOut, AuditOutcome.Failure,
+                user.Email!, user.Id, ErrorCodes.AuthAccountLocked,
+                cancellationToken: cancellationToken);
+            throw new ApiException(ErrorCodes.AuthAccountLocked, 423,
+                "The account is locked after too many attempts. Try again later.");
+        }
+    }
+
     private async Task<SecondFactorToken> GetValidTicketAsync(
         string tokenValue,
         SecondFactorKind expectedKind,
@@ -205,6 +248,8 @@ public sealed class SignInService(
             || ticket.ConsumedAt is not null
             || ticket.AttemptCount >= MaxSecondFactorAttempts)
         {
+            await AuditAsync(AuditEvents.SignInSecondFactorRejected, AuditOutcome.Failure,
+                null, ticket?.UserId, invalidCode, expectedKind.ToString(), cancellationToken);
             throw new ApiException(invalidCode, 400, "The sign-in session is not valid.");
         }
 
@@ -213,6 +258,8 @@ public sealed class SignInService(
             var expiredCode = expectedKind == SecondFactorKind.Totp
                 ? ErrorCodes.AuthMfaTokenExpired
                 : ErrorCodes.AuthOtpTokenInvalid;
+            await AuditAsync(AuditEvents.SignInSecondFactorRejected, AuditOutcome.Failure,
+                null, ticket.UserId, expiredCode, "expired", cancellationToken);
             throw new ApiException(expiredCode, 400, "The sign-in session has expired.");
         }
 
@@ -237,6 +284,8 @@ public sealed class SignInService(
             },
             cancellationToken);
 
+        await AuditAsync(AuditEvents.RefreshTokenIssued, AuditOutcome.Success,
+            user.Email!, user.Id, cancellationToken: cancellationToken);
         await AuditAsync(AuditEvents.SignInSucceeded, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
         logger.LogInformation("Sign-in completed for {Email}", user.Email);
@@ -254,6 +303,19 @@ public sealed class SignInService(
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        // Cap how many sign-in codes one account may request — without this an
+        // attacker could mint unlimited tickets and reset the attempt budget.
+        var recentCodes = await accountCodeRepository.CountCreatedSinceAsync(
+            user.Id, AccountCodePurpose.SignInOtp, now - OtpRequestWindow, cancellationToken);
+        if (recentCodes >= MaxOtpRequestsPerWindow)
+        {
+            await AuditAsync(AuditEvents.SignInSecondFactorRejected, AuditOutcome.Failure,
+                user.Email!, user.Id, ErrorCodes.RateLimitExceeded,
+                cancellationToken: cancellationToken);
+            throw new ApiException(ErrorCodes.RateLimitExceeded, 429,
+                "Too many sign-in codes have been requested. Try again later.");
+        }
+
         var previous = await accountCodeRepository.GetLatestUnconsumedAsync(
             user.Id, AccountCodePurpose.SignInOtp, cancellationToken);
         if (previous is not null)
@@ -287,9 +349,10 @@ public sealed class SignInService(
     private Task AuditAsync(
         string eventType,
         AuditOutcome outcome,
-        string email,
+        string? email,
         Guid? userId = null,
         string? errorCode = null,
+        string? detail = null,
         CancellationToken cancellationToken = default) =>
         auditLog.WriteAsync(
             new AuditEntry
@@ -299,6 +362,7 @@ public sealed class SignInService(
                 SubjectEmail = email,
                 SubjectUserId = userId,
                 ErrorCode = errorCode,
+                Detail = detail,
             },
             cancellationToken);
 
