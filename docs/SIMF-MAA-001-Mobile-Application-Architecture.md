@@ -5,7 +5,7 @@
 | Document ID | SIMF-MAA-001 |
 | Title | Mobile Application Architecture |
 | Version | 1.1 |
-| Status | Draft |
+| Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
 | Owner | Solution Architect |
@@ -234,6 +234,10 @@ connection state rather than silently showing stale data.
 - Theme values — colours, typography, spacing, radii — are defined as tokens in
   `app/theme/`, in one place. A widget references a token, never a literal
   colour or size.
+- The brand tokens — the colour palette and the typography — come from
+  **SIMF-VID-001 (Visual Identity and Design Tokens)**. The `app/theme/` tokens
+  are populated from it, and the external designer's visual design must conform
+  to SIMF-VID-001.
 - The app supports light and dark themes from the start. The token structure
   allows more themes to be added without touching widgets.
 - When the external designer delivers the visual design system, its values are

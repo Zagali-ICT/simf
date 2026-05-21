@@ -5,7 +5,7 @@
 | Document ID | SIMF-SES-001 |
 | Title | Software Engineering Standards and Conventions |
 | Version | 1.1 |
-| Status | Draft |
+| Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
 | Owner | Solution Architect |
@@ -228,8 +228,13 @@ one visual theme. The CSS rules protect that.
   raw values in a component.
 - Class names follow BEM. CSS variables are used, not repeated literals.
 
+The token values themselves come from the brand. **SIMF-VID-001 (Visual
+Identity and Design Tokens)** is the source for the colour palette, the
+typography and the brand tokens; `theme.tokens.css` implements SIMF-VID-001. A
+colour or font is never set from anywhere else.
+
 The full theming and layout design, including how RTL/LTR and multi-theme are
-implemented, is specified in SIMF-CPD-001.
+implemented, is specified in SIMF-CPD-001, which builds on SIMF-VID-001.
 
 ### 6.3 Shared component library (Smif*)
 

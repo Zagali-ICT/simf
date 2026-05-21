@@ -5,7 +5,7 @@
 | Document ID | SIMF-SAD-001 |
 | Title | Software Architecture Document |
 | Version | 1.0 |
-| Status | Draft |
+| Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
 | Owner | Solution Architect |

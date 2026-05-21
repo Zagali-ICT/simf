@@ -4,7 +4,7 @@
 > **Edition:** 4th edition — SIMF 2026
 > **System version:** V1.0.0
 > **Authoritative baseline:** **2026-05-20 client meeting** (see §2)
-> **Document status:** Concept baseline — current
+> **Document status:** Approved 2026-05-21 — part of the V1.0.0 documentation baseline
 > **Updated:** 2026-05-20
 
 This document is the consolidated concept reference for the SIMF system. Its
@@ -484,6 +484,7 @@ Located in `D:\SIMF\System\15-04-2024` plus the 2026-05-20 meeting intake:
 | 9 | معيار أمن تطوير التطبيقات.pdf | NCA Secure Application Development Standard |
 | 10 | Mockup.html | Interactive 41-screen structural mockup |
 | 11 | New Text Document.txt | Pre-review agreement points |
+| 12 | دليل هويه البصريه د copy.pdf | Visual identity guide — captured in SIMF-VID-001 |
 
 > All visual material is a **functional wireframe**, not final UI.
 

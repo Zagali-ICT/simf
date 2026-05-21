@@ -5,7 +5,7 @@
 | Document ID | SIMF-API-001 |
 | Title | API Specification |
 | Version | 1.1 |
-| Status | Draft |
+| Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
 | Owner | Solution Architect |

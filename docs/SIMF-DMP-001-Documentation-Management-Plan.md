@@ -5,7 +5,7 @@
 | Document ID | SIMF-DMP-001 |
 | Title | Documentation Management Plan |
 | Version | 1.0 |
-| Status | Draft |
+| Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
 | Owner | Solution Architect |
@@ -122,14 +122,19 @@ Superseded; the replacement gets the next free number.
 | SRS | Software requirements specification |
 | RPM | Roles and permissions specification |
 | UCS | Use case specifications |
+| RDR | Requirements decision register |
 | DAT | Data model and database design |
 | API | API specification |
 | MAA | Mobile application architecture |
 | CPD | Control panel design specification |
+| VID | Visual identity and design tokens |
 | FDS | Feature design specification (detailed, per feature) |
 | TST | Test plan / test specification |
 | OPS | Deployment and operations document |
 | BSP | Base system plan |
+| PEP | Project execution plan |
+| BLG | Product backlog |
+| OIR | Open items register |
 
 New types are added to this table by updating SIMF-DMP-001, not by inventing a
 code in a filename.
@@ -243,27 +248,47 @@ document traceable to everything it affects.
 
 ## 9. Document register
 
-The current SIMF document set. Status reflects the position on 2026-05-20.
+The SIMF document set. **The V1.0.0 documentation baseline — every document
+below — was approved by the Project Owner on 2026-05-21.** The open items
+raised during the review are tracked to closure in SIMF-OIR-001.
 
 | ID | Title | File | Status |
 |----|-------|------|--------|
-| SIMF-BSP-001 | Base System Plan | base-system-plan.md | Draft |
-| SIMF-CON-001 | System Concept Summary | SIMF-Concept-Summary.md | Draft (baseline) |
+| SIMF-BSP-001 | Base System Plan | base-system-plan.md | Approved 2026-05-21 |
+| SIMF-CON-001 | System Concept Summary | SIMF-Concept-Summary.md | Approved 2026-05-21 |
 | SIMF-PGP-001 | Programme Plan | SIMF-Program-Plan.md | Approved 2026-05-20 |
-| SIMF-DMP-001 | Documentation Management Plan | SIMF-DMP-001-Documentation-Management-Plan.md | Draft |
-| SIMF-SES-001 | Software Engineering Standards | SIMF-SES-001-Software-Engineering-Standards.md | Draft |
-| SIMF-SAD-001 | Software Architecture Document | SIMF-SAD-001-Software-Architecture-Document.md | Draft |
-| SIMF-API-001 | API Specification | SIMF-API-001-API-Specification.md | Draft |
-| SIMF-MAA-001 | Mobile Application Architecture | SIMF-MAA-001-Mobile-Application-Architecture.md | Draft |
-| SIMF-SRS-001 | Software Requirements Specification | planned | Not started — blocked on gates D1–D6 |
-| SIMF-RPM-001 | Roles and Permissions Specification | planned | Not started — blocked on gate D1 |
-| SIMF-UCS-001 | Use Case Specifications | planned | Not started — blocked on gates D1–D6 |
-| SIMF-DAT-001 | Data Model and Database Design | planned | Not started — blocked on gates D1–D6 |
-| SIMF-CPD-001 | Control Panel Design Specification | planned | Not started |
+| SIMF-DMP-001 | Documentation Management Plan | SIMF-DMP-001-Documentation-Management-Plan.md | Approved 2026-05-21 |
+| SIMF-SES-001 | Software Engineering Standards | SIMF-SES-001-Software-Engineering-Standards.md | Approved 2026-05-21 |
+| SIMF-SAD-001 | Software Architecture Document | SIMF-SAD-001-Software-Architecture-Document.md | Approved 2026-05-21 |
+| SIMF-API-001 | API Specification | SIMF-API-001-API-Specification.md | Approved 2026-05-21 |
+| SIMF-MAA-001 | Mobile Application Architecture | SIMF-MAA-001-Mobile-Application-Architecture.md | Approved 2026-05-21 |
+| SIMF-RDR-001 | Requirements Decision Register | SIMF-RDR-001-Requirements-Decision-Register.md | Approved 2026-05-21 |
+| SIMF-SRS-001 | Software Requirements Specification | SIMF-SRS-001-Software-Requirements-Specification.md | Approved 2026-05-21 |
+| SIMF-RPM-001 | Roles and Permissions Specification | SIMF-RPM-001-Roles-and-Permissions-Specification.md | Approved 2026-05-21 |
+| SIMF-UCS-001 | Use Case Specifications | SIMF-UCS-001-Use-Case-Specifications.md | Approved 2026-05-21 |
+| SIMF-DAT-001 | Data Model and Database Design | SIMF-DAT-001-Data-Model-and-Database-Design.md | Approved 2026-05-21 |
+| SIMF-CPD-001 | Control Panel Design Specification | SIMF-CPD-001-Control-Panel-Design-Specification.md | Approved 2026-05-21 |
+| SIMF-VID-001 | Visual Identity and Design Tokens | SIMF-VID-001-Visual-Identity-and-Design-Tokens.md | Approved 2026-05-21 |
+| SIMF-FDS-001 | Authentication and Login — Feature Design Specification | SIMF-FDS-001-Authentication-and-Login.md | Approved 2026-05-21 |
+| SIMF-FDS-002 | Registration and Approval — Feature Design Specification | SIMF-FDS-002-Registration-and-Approval.md | Approved 2026-05-21 |
+| SIMF-FDS-003 | Badge and Access Control — Feature Design Specification | SIMF-FDS-003-Badge-and-Access-Control.md | Approved 2026-05-21 |
+| SIMF-FDS-004 | Forum Programme — Feature Design Specification | SIMF-FDS-004-Forum-Programme.md | Approved 2026-05-21 |
+| SIMF-FDS-005 | Bookings and Attendance — Feature Design Specification | SIMF-FDS-005-Bookings-and-Attendance.md | Approved 2026-05-21 |
+| SIMF-FDS-006 | Exhibition — Feature Design Specification | SIMF-FDS-006-Exhibition.md | Approved 2026-05-21 |
+| SIMF-FDS-007 | Engagement — Feature Design Specification | SIMF-FDS-007-Engagement.md | Approved 2026-05-21 |
+| SIMF-FDS-008 | Networking and Cognitive AI — Feature Design Specification | SIMF-FDS-008-Networking-and-Cognitive-AI.md | Approved 2026-05-21 |
+| SIMF-FDS-009 | Notifications — Feature Design Specification | SIMF-FDS-009-Notifications.md | Approved 2026-05-21 |
+| SIMF-FDS-010 | Media, News and Archive — Feature Design Specification | SIMF-FDS-010-Media-News-and-Archive.md | Approved 2026-05-21 |
+| SIMF-FDS-011 | Statistics and Dashboards — Feature Design Specification | SIMF-FDS-011-Statistics-and-Dashboards.md | Approved 2026-05-21 |
+| SIMF-FDS-012 | Control Panel Configuration — Feature Design Specification | SIMF-FDS-012-Control-Panel-Configuration.md | Approved 2026-05-21 |
+| SIMF-OPS-001 | Deployment and Operations Document | SIMF-OPS-001-Deployment-and-Operations.md | Approved 2026-05-21 |
+| SIMF-TST-001 | Test Plan | SIMF-TST-001-Test-Plan.md | Approved 2026-05-21 |
+| SIMF-PEP-001 | Project Execution Plan | SIMF-PEP-001-Project-Execution-Plan.md | Approved 2026-05-21 |
+| SIMF-BLG-001 | Product Backlog | SIMF-BLG-001-Product-Backlog.md | Approved 2026-05-21 |
+| SIMF-OIR-001 | Open Items Register | SIMF-OIR-001-Open-Items-Register.md | Approved 2026-05-21 |
 
-Feature Design Specifications (SIMF-FDS-NNN), test documents (SIMF-TST-NNN) and
-the operations document (SIMF-OPS-001) are added to this register as they are
-created.
+A document changed after this baseline follows the versioning and approval rules
+in sections 6 and 7; a material change re-enters review.
 
 This register is the single place where the document set is listed. It is
 updated whenever a document is added, approved or superseded.
