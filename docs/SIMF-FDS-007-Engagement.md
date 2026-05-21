@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-FDS-007 |
 | Title | Feature Design Specification — Engagement |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. The engagement feature, build-ready. |
+| 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): SignalR group fan-out and comment batching, the backplane as a deferred decision, graceful degradation. |
 
 ---
 
@@ -237,6 +238,26 @@ showing stale data.
 | OI-3 | Confirm the AI comment-filter rules — what it screens for — with the client | Section 5.4 |
 | OI-4 | Confirm whether a moderator may also act from the Control Panel, or only the app | Section 5.3 |
 | OI-5 | Confirm document classification with the owner | Control block |
+
+---
+
+## Amendment A — Architecture review (2026-05-21)
+
+The scalability review of 2026-05-21 amends this feature.
+
+**SignalR at scale.** The live-session hub sends to **groups**, and the comment
+and question feed is **batched** — updates coalesced every 1–2 seconds rather
+than pushed per message — to bound the fan-out cost when a session has tens of
+thousands of viewers. A per-session concurrent-connection target is set and
+load-tested (SIMF-OPS-001 Amendment A.1). For a multi-node production
+deployment a SignalR **backplane** is required — the deferred scale-out
+decision in SIMF-SAD-001 Amendment A.3. The video stream stays embedded from
+the external platform, so SignalR carries only question / comment / state
+messages.
+
+**Graceful degradation.** If the AI comment filter is unavailable, comments
+still queue for admin review — the AI never auto-approves, so admin moderation
+is unaffected.
 
 ---
 

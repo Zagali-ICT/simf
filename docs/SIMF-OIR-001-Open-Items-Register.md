@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-OIR-001 |
 | Title | Open Items Register |
-| Version | 1.1 |
+| Version | 1.2 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -19,6 +19,7 @@
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-21 | Engineering & Architecture Team | First issue. Consolidates the open items from all 28 documents. |
 | 1.1 | 2026-05-21 | Engineering & Architecture Team | All 14 owner decisions (OD-1…OD-14) answered in the client review; resolutions recorded in section 5. |
+| 1.2 | 2026-05-21 | Engineering & Architecture Team | Recorded the architecture-review decisions and the O-1…O-3 client answers in section 10. |
 
 ---
 
@@ -227,6 +228,29 @@ is the working punch-list. The raw list (121 entries) was compiled on
 - Section 7 items are removed from their documents at the next revision.
 - This register is updated as items close, so it always shows what is
   outstanding.
+
+## 10. Architecture-review decisions (2026-05-21)
+
+Two architecture reviews — an authentication design review and a 150,000-user
+scalability review — and the client answers O-1…O-3 produced the decisions
+below. They are applied across the documents as "Amendment A" sections, each
+document's version bumped through the change process.
+
+| Ref | Decision |
+|-----|----------|
+| O-1 | The IBS reference system is `D:\InsuranceBrokerCompany\System V10.0.3` (`InsuranceBroker.Ammn.V10.0.3.sln`). Its configuration, `set-env` scripts, migration setup and email code are the reference for the SIMF equivalents — reviewed against the SIMF security baseline before use. |
+| O-2 | Registration: email → password + confirm → email verification code → profile → "waiting for approval". Returning sign-in: visitors use email + password + an **email OTP**; admin / Control Panel users use email + password + **TOTP**. |
+| O-3 | The production database is **SQL Server Standard edition**. **No Redis** is adopted now — development uses **in-memory caching** on a single node, with **no high availability**. The event-day production scale-out (a multi-instance API tier, a SignalR backplane, HA SQL Server) is an explicit decision **deferred** to closer to the event. gRPC was considered and is not adopted — it does not replace caching or SignalR. |
+| C-1 | One physical SQL Server database accessed through **two EF Core contexts** (`SimfIdentityDbContext`, `SimfAppDbContext`) with separate migration histories — supersedes the earlier "two physical databases" idea. |
+| AR | The authentication review (3 critical, 8 important, 8 minor findings) and the scalability review are applied as **Amendment A** across SIMF-API-001, SIMF-FDS-001, SIMF-SAD-001, SIMF-DAT-001, SIMF-OPS-001 and SIMF-FDS-003/005/007/009/011, and folded into the Sprint-1 Login API plan. |
+
+New open items raised by the reviews, for the owner, before the event:
+
+| ID | Item |
+|----|------|
+| AR-OI-1 | The event-day production topology and the hosting capacity with STC, including the reverse-proxy WebSocket connection capacity. |
+| AR-OI-2 | The `GpsPresence` retention period and the device location-reporting interval. |
+| AR-OI-3 | The SignalR backplane choice (a SQL Server backplane or Redis) — decided at the production scale-out. |
 
 ---
 

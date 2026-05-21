@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-FDS-001 |
 | Title | Feature Design Specification — Authentication and Login |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. The authentication feature, build-ready. |
+| 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): account lockout; the visitor email-OTP second factor; second-factor token rules; the superadmin TOTP bootstrap; the forced-password-change state; sessions, admin force-sign-out and the token-revocation security stamp. |
 
 ---
 
@@ -358,6 +359,52 @@ The feature is accepted when all of the following hold:
 | OI-2 | Confirm the verification/reset code lifetime (10 minutes assumed) and the auth rate-limit values with the owner | Sections 5, 9 |
 | OI-3 | Confirm whether the website offers sign-in, or only the app and Control Panel do | Section 7 |
 | OI-4 | Confirm document classification with the owner | Control block |
+
+---
+
+## Amendment A — Architecture review (2026-05-21)
+
+The authentication design review of 2026-05-21 amends this feature
+specification. The changes below are authoritative.
+
+### A.1 Account lockout and brute-force control
+ASP.NET Core Identity lockout is enabled — a configured failed-attempt
+threshold and lockout window on the password step. Every verification, reset,
+TOTP and email-OTP code additionally carries a per-code attempt counter and is
+invalidated after a small number of failed attempts, independent of its time
+expiry. A locked account is reported with `AUTH_ACCOUNT_LOCKED`.
+
+### A.2 The visitor second factor
+§5.6 specified TOTP for internal users only. The feature now also gives
+**visitors a second factor by email OTP**: a visitor's password step returns
+`mfaRequired` with an `otpToken` and emails a six-digit code, completed at
+`POST /auth/verify-otp` (SIMF-API-001 Amendment A.1). Admins keep TOTP.
+
+### A.3 Second-factor tokens
+The `mfaToken` (admin) and `otpToken` (visitor) are short-lived (2–5 minutes),
+single-use, stored hashed, invalidated after the per-code attempt cap, and
+bound to the originating sign-in.
+
+### A.4 The superadmin TOTP bootstrap
+The seeded administrator `superadmin@zagali-ict.com` is created **with its TOTP
+secret already provisioned**; the secret / QR is delivered to the operator
+out-of-band through the `set-env-*` script. This removes the bootstrap deadlock
+— the system is administrable from first run. First-sign-in TOTP enrolment for
+other internal users remains with SIMF-FDS-002.
+
+### A.5 Forced password change
+A seeded or admin-created account holding a temporary password is in a
+**password-change-required** state. The only action it may take is
+`change-password`; every other protected endpoint returns
+`AUTH_PASSWORD_CHANGE_REQUIRED` until the password is changed.
+
+### A.6 Sessions and revocation
+Concurrent sessions are allowed (web, app, Control Panel); sign-out is
+per-device. An admin can **force-sign-out a user** — revoke all of that user's
+refresh tokens. Because an access token is valid for 30 minutes, the token
+carries a **per-user security stamp**; sensitive Control Panel endpoints check
+it server-side so that disabling an account or revoking a Control Panel role
+takes effect immediately rather than after the token expires.
 
 ---
 

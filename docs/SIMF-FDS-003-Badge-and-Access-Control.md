@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-FDS-003 |
 | Title | Feature Design Specification — Badge and Access Control |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. The badge and access-control feature, build-ready. |
+| 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): GPS-presence reporting interval and batched writes. |
 
 ---
 
@@ -233,6 +234,20 @@ localised, Arabic and English.
 | OI-3 | Confirm the retention rule for GPS / geofence data with the owner (SIMF-DAT-001 OI-3) | Section 9 |
 | OI-4 | Confirm whether hall-door scanning is done by Staff, a fixed device, or both | Section 5.4 |
 | OI-5 | Confirm document classification with the owner | Control block |
+
+---
+
+## Amendment A — Architecture review (2026-05-21)
+
+The 150,000-user scalability review amends this feature.
+
+**GPS-presence as telemetry.** The mobile app reports location on a **bounded
+interval** — a point every 30–60 seconds, not a continuous stream — and posts a
+**small batch of points per call**, not one row per request. `GpsPresence` is
+append-only telemetry on a high-insert-tuned table, isolated from the
+badge-scan and booking hot paths, with a rolling retention purge (SIMF-DAT-001
+Amendment A.2). Hall-arrival detection still uses the QR scan and the geofence
+as in §5.4; this amendment fixes only the write strategy and the cadence.
 
 ---
 

@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-FDS-009 |
 | Title | Feature Design Specification — Notifications |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. The notifications feature, build-ready. |
+| 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): asynchronous queued sending; the retry policy with backoff and circuit breaker (closes OI-3). |
 
 ---
 
@@ -228,6 +229,22 @@ and are sent in the recipient's language; no string is hardcoded.
 | OI-2 | Confirm the default channel mix per notification type with the client | Section 5.3 |
 | OI-3 | Confirm the retry policy for a failed channel send | Sections 5.2, 9 |
 | OI-4 | Confirm document classification with the owner | Control block |
+
+---
+
+## Amendment A — Architecture review (2026-05-21)
+
+The scalability review of 2026-05-21 amends this feature.
+
+**Asynchronous sending.** Notification sending is asynchronous: a feature raises
+the event and persists the `Notification`; a **background worker drains the
+channel sends**. A user-facing request (sign-up, booking) never blocks on an
+email / SMS / WhatsApp round-trip — which makes the large fan-out (one
+notification to tens of thousands of recipients) safe.
+
+**Retry policy (closes OI-3).** A failed channel send is retried with bounded
+backoff; each channel adapter has a connection and request timeout and a
+circuit breaker, so a slow or unavailable gateway does not exhaust resources.
 
 ---
 

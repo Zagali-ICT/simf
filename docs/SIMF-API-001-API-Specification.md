@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-API-001 |
 | Title | API Specification |
-| Version | 1.1 |
+| Version | 1.2 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -19,6 +19,7 @@
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. API conventions and the authentication surface. Feature endpoints follow as their requirements close. |
 | 1.1 | 2026-05-20 | Engineering & Architecture Team | Specified the password-reset flow in §12.7 (forgot-password / reset-password, six-digit email OTP on ASP.NET Core Identity; reset-password revokes the account's refresh tokens); added AUTH_RESET_CODE_INVALID and AUTH_RESET_CODE_EXPIRED to §12.6; closed open item OI-3. |
+| 1.2 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): added the `verify-otp` and `change-password` endpoints; added `AUTH_ACCOUNT_LOCKED`, `AUTH_OTP_INVALID`, `AUTH_OTP_EXPIRED`, `AUTH_OTP_TOKEN_INVALID`, `AUTH_PASSWORD_CHANGE_REQUIRED`; scoped `X-Anti-Forgery` to the Blazor cookie surfaces. |
 
 ---
 
@@ -605,6 +606,74 @@ A new feature does not invent a new response shape or a new error style.
 | OI-2 | Final password policy from the owner's security policy | Section 12.5 |
 | OI-4 | Whether a not-yet-approved user may sign in, and with what access | `AUTH_ACCOUNT_NOT_APPROVED`, gate D1 |
 | OI-5 | Confirm document classification with the owner | Control block |
+
+---
+
+## Amendment A — Architecture review (2026-05-21)
+
+The authentication design review of 2026-05-21 amends this specification. The
+changes below are authoritative and read together with the sections they cite.
+
+### A.1 New endpoint — visitor email-OTP second factor
+
+`POST /api/v1/auth/verify-otp` completes a **visitor** sign-in. A visitor's
+password step at `/auth/sign-in` returns `mfaRequired: true` with a short-lived
+`otpToken` and emails a six-digit code; the client submits the token and code
+here.
+
+- Request: `{ "otpToken": "<opaque>", "code": "493018" }`
+- Success — 200: the standard token payload (access token, refresh token, user).
+- Failure: `AUTH_OTP_INVALID` (400), `AUTH_OTP_EXPIRED` (400),
+  `AUTH_OTP_TOKEN_INVALID` (400), `RATE_LIMIT_EXCEEDED` (429).
+
+`/auth/sign-in` now has two second-factor branches: `mfaRequired` with an
+`mfaToken` for an admin (TOTP, §12.4) and `mfaRequired` with an `otpToken` for a
+visitor (email OTP, here).
+
+### A.2 New endpoint — change password
+
+`POST /api/v1/auth/change-password` — requires a valid `Authorization` header.
+
+- Request: `{ "currentPassword": "<...>", "newPassword": "<...>", "confirmPassword": "<...>" }`
+- Rules: the current password is correct; the new password meets §12.5 and
+  equals its confirmation. On success every refresh token for the account is
+  revoked.
+- Success — 200: `{ "passwordChanged": true }`.
+- Failure: `VALIDATION_FAILED` (400), `AUTH_INVALID_CREDENTIALS` (401).
+
+A user in the **password-change-required** state (a seeded or admin-created
+account holding a temporary password) may call only this endpoint; every other
+protected endpoint returns `AUTH_PASSWORD_CHANGE_REQUIRED` (403) until the
+password is changed.
+
+### A.3 Second-factor tokens
+
+`mfaToken` (admin TOTP) and `otpToken` (visitor email OTP) are short-lived
+(2–5 minutes), **single-use**, stored **hashed**, invalidated after a small
+number of failed attempts, and bound to the originating sign-in.
+
+### A.4 Account lockout
+
+`/auth/sign-in` and the code-verification endpoints are protected by ASP.NET
+Core Identity lockout and a per-code attempt cap. A locked account returns
+`AUTH_ACCOUNT_LOCKED`.
+
+### A.5 New error codes — added to §12.6
+
+| Code | HTTP | Meaning |
+|------|------|---------|
+| `AUTH_ACCOUNT_LOCKED` | 423 | The account is locked after too many failed attempts. |
+| `AUTH_OTP_INVALID` | 400 | The email-OTP code is wrong. |
+| `AUTH_OTP_EXPIRED` | 400 | The email-OTP code has expired. |
+| `AUTH_OTP_TOKEN_INVALID` | 400 | The `otpToken` is not valid or has expired. |
+| `AUTH_PASSWORD_CHANGE_REQUIRED` | 403 | The account must change its password before any other action. |
+
+### A.6 Anti-forgery scope — amends §5
+
+`X-Anti-Forgery` is **not** required by the bearer-token `/api/v1` API: a
+bearer-token API carries no browser-attached ambient credential and is not
+CSRF-exposed. The `X-Anti-Forgery` requirement in §5 is **scoped to the Blazor
+cookie-authenticated surfaces** (the website and Control Panel) only.
 
 ---
 

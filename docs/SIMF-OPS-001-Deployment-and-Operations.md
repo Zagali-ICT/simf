@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-OPS-001 |
 | Title | Deployment and Operations Document |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-21 | Engineering & Architecture Team | First issue. |
+| 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): the §11 load test rewritten to peak-shaped targets; the production scale-out cross-referenced; connection-pool sizing; a real readiness `/health`. |
 
 ---
 
@@ -209,6 +210,50 @@ A deployment that fails any step does not proceed; it is rolled back
 | OI-3 | Confirm the monitoring and alerting tooling | Section 9 |
 | OI-4 | Confirm the backup schedule and the retention periods with the owner | Section 10 |
 | OI-5 | Confirm document classification with the owner | Control block |
+
+---
+
+## Amendment A — Architecture review (2026-05-21)
+
+The 150,000-user scalability review of 2026-05-21 amends this document.
+
+### A.1 Performance and load testing — rewrites §11
+The §11 load test is replaced. The "one new user every 30 seconds" figure is
+retired as a target — it tests the average, not the peak. The performance test
+uses peak-shaped scenarios, run on a Staging environment matching the intended
+production topology, each with pass/fail thresholds (p95 latency, error rate,
+connection-success rate):
+
+1. **Registration surge** — 30–50 sign-ups/minute sustained for an hour, with
+   burst spikes, the full flow including the email-code send.
+2. **Live-session concurrency** — ramp SignalR to the target concurrent
+   connection count for the busiest session, with a representative
+   question/comment rate; measure fan-out latency.
+3. **Venue-entry scan burst** — the morning rate, thousands of `VenueEntry`
+   writes in 30–60 minutes, plus concurrent hall-arrival scans.
+4. **GPS-presence write load** — the chosen device count × reporting interval,
+   sustained.
+5. **Notification fan-out** — one notification to tens of thousands of
+   recipients; measure time-to-last-delivery and database impact.
+6. **Mixed steady state** — all of the above together, as a real forum morning.
+
+### A.2 Topology — amends §3
+The §3 single-server topology is the **development and test** topology. The
+**event-day production topology** — a multi-instance API tier, a SignalR
+backplane and SQL Server high availability — is the deferred scale-out decision
+in SIMF-SAD-001 Amendment A.3, settled with the host (STC) closer to the event,
+with the reverse-proxy WebSocket connection capacity confirmed then.
+
+### A.3 Database connections — amends §6 and §7
+Each connection string sets an explicit `Max Pool Size`, sized against the SQL
+Server capacity and the node count. EF Core is async throughout, with a command
+timeout and `EnableRetryOnFailure` for transient SQL errors. The database is
+**SQL Server 2022 Standard edition** (decision O-3).
+
+### A.4 Readiness health check — amends §9
+`/health` is a real **readiness** check — it confirms the database is reachable
+and the migrations are applied — so the reverse proxy / load balancer pulls an
+unhealthy instance automatically. It is not a static 200.
 
 ---
 

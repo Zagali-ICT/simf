@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-FDS-011 |
 | Title | Feature Design Specification — Statistics and Dashboards |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. The statistics and dashboards feature, build-ready. |
+| 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): aggregated live counts instead of hot-row counters; the snapshot cadence (closes OI-4). |
 
 ---
 
@@ -203,6 +204,23 @@ English; numbers follow the locale formatting in SIMF-MAA-001 (dates
 | OI-3 | Confirm the GPS-presence retention rule with the owner (SIMF-DAT-001 OI-3) | Section 10 |
 | OI-4 | Confirm the refresh cycle for non-live snapshot figures | Section 5.6 |
 | OI-5 | Confirm document classification with the owner | Control block |
+
+---
+
+## Amendment A — Architecture review (2026-05-21)
+
+The scalability review of 2026-05-21 amends this feature.
+
+**Live counts by aggregation.** Live attendance — venue and per hall — is
+computed by **aggregating the `VenueEntry` / `HallAttendance` records on a short
+cycle** into a cached value the SignalR dashboard reads. It is not maintained as
+an incrementing counter row, which would serialise under the morning scan
+burst.
+
+**Snapshot cadence (closes OI-4).** Heavy figures are recomputed into
+`StatisticSnapshot` on a fixed cycle of a few minutes, so the dashboard never
+triggers a heavy live recompute during the event. The dashboard never queries
+raw `GpsPresence` live — it reads rollups.
 
 ---
 

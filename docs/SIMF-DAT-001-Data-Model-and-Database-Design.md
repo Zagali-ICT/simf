@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-DAT-001 |
 | Title | Data Model and Database Design |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. Logical data model by bounded context, conventions, and the core ERD. |
+| 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): one database with two DbContexts and separate migration histories; GpsPresence as batched append-only telemetry with a retention purge; peak-load indexes; Booking.Status Rejected, Hall geofence, the account-code generalisation; SQL Server Standard edition. |
 
 ---
 
@@ -315,6 +316,49 @@ erDiagram
 | OI-3 | Confirm the retention rule for `GpsPresence` data and any privacy constraint on it | Section 5.11 |
 | OI-4 | Confirm whether SQL Server 2022 Enterprise features (partitioning) are available, once D8 closes | Section 8 |
 | OI-5 | Confirm document classification with the owner | Control block |
+
+---
+
+## Amendment A — Architecture review (2026-05-21)
+
+The two architecture reviews of 2026-05-21 amend this data model. The changes
+below are authoritative.
+
+### A.1 One database, two contexts — amends §3 and §7
+SIMF uses **one physical SQL Server 2022 database** accessed through **two EF
+Core contexts** — `SimfIdentityDbContext` (the Identity & Access tables) and
+`SimfAppDbContext` (all other tables) — each with its **own migration history**,
+so migrations are generated and applied per context. Both contexts target the
+same database, so a unit of work spanning identity and application data remains
+one transaction and foreign keys still hold. This supersedes the earlier
+"two physical databases" proposal.
+
+### A.2 GpsPresence as telemetry — amends §5.11
+`GpsPresence` is **batched append-only telemetry**, not transactional data. The
+mobile app posts location points on a bounded interval (not a continuous
+stream), a small batch per call. The table is tuned for high-insert throughput,
+kept off the booking and authentication hot paths, and governed by an explicit
+**rolling retention purge** — the retention period is confirmed with the owner.
+
+### A.3 Peak-load indexes — amends §8
+In addition to the foreign-key indexes: `HallAttendance` on `(SessionId,
+EnterAt)` and `(UserId, SessionId)`; `VenueEntry` on `(BadgeId, ScannedAt)`;
+`Notification` on `(RecipientUserId, CreatedAt)`; `GpsPresence` on
+`(RecordedAt)`.
+
+### A.4 Entity adjustments
+- `Booking.Status` includes the value **`Rejected`** (with Pending, Approved,
+  Cancelled) — from SIMF-FDS-005.
+- `Hall` carries a **geofence** (a centre and radius, or a polygon) used for
+  hall-arrival detection — from SIMF-FDS-003.
+- `EmailVerificationCode` is generalised to an **account-code** entity with a
+  `Purpose` field (email verification / password reset) — from SIMF-FDS-001.
+
+### A.5 SQL Server edition
+The production database is **SQL Server 2022 Standard edition** (decision O-3);
+the model uses no Enterprise-only feature. High availability is a
+production-deployment decision deferred to closer to the event; development and
+test run a single instance.
 
 ---
 

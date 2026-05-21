@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-FDS-005 |
 | Title | Feature Design Specification — Bookings and Attendance |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. The bookings and attendance feature, build-ready. |
+| 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): graceful seat contention, held-seat expiry, aggregated live counts, Booking.Status Rejected. |
 
 ---
 
@@ -238,6 +239,26 @@ Arabic and English.
 | OI-2 | Confirm whether a booking has a cap per attendee, or is limited only by the no-overlap rule | Section 5.1 |
 | OI-3 | Confirm whether a held seat for a Pending booking expires if approval is slow | Section 5.5 |
 | OI-4 | Confirm document classification with the owner | Control block |
+
+---
+
+## Amendment A — Architecture review (2026-05-21)
+
+The architecture reviews of 2026-05-21 amend this feature.
+
+**Seat contention.** When a popular session opens for booking, many attendees
+contend for the same seats. The seat uniqueness constraint (§5.5) guarantees
+correctness; the application **expects and handles the constraint violation
+gracefully** — "that seat was just taken, choose another" — rather than relying
+on timing. A **held seat for a Pending booking expires** if approval is slow,
+so an abandoned booking releases the seat (closes OI-3).
+
+**Live counts.** Live attendance and per-session counts are computed by
+**aggregating `VenueEntry` / `HallAttendance` on a short cycle** into a cached
+value — not by incrementing a single counter row, which would serialise under
+the morning scan burst.
+
+**`Booking.Status`** includes the value `Rejected` (SIMF-DAT-001 Amendment A.4).
 
 ---
 
