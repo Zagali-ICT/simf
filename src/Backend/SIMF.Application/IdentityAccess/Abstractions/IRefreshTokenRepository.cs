@@ -22,4 +22,14 @@ public interface IRefreshTokenRepository
         Guid userId,
         DateTimeOffset revokedAt,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Revokes the token only if it is still active, and reports the number of
+    /// rows changed — a conditional update, so a concurrent rotation of the
+    /// same token is detected (zero rows means another request won the race).
+    /// </summary>
+    Task<int> RevokeIfActiveAsync(
+        Guid tokenId,
+        DateTimeOffset revokedAt,
+        CancellationToken cancellationToken = default);
 }

@@ -6,11 +6,10 @@ using FastEndpoints;
 using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using SIMF.Api.Authentication;
 using SIMF.Api.Middleware;
 using SIMF.Api.RateLimiting;
 using SIMF.Api.RequestContext;
@@ -18,7 +17,6 @@ using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Common;
 using SIMF.Domain.Auditing;
-using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure;
 using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
@@ -109,42 +107,10 @@ if (Encoding.UTF8.GetByteCount(jwtOptions.SigningKey) < 32)
         "Jwt:SigningKey must be configured and at least 32 bytes long.");
 }
 
-// Bearer authentication — validates the access token on a protected endpoint,
-// and rejects a token whose security stamp no longer matches the account's
-// (SIMF-FDS-001 Amendment A.6).
+// Bearer authentication — validates the access token on a protected endpoint
+// (see JwtBearerSetup for the hardened parameters and the security-stamp check).
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.MapInboundClaims = false;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = jwtOptions.Issuer,
-            ValidateAudience = true,
-            ValidAudience = jwtOptions.Audience,
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.FromSeconds(30),
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
-            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
-        };
-        options.Events = new JwtBearerEvents
-        {
-            OnTokenValidated = async context =>
-            {
-                var userId = context.Principal?.FindFirst("sub")?.Value;
-                var tokenStamp = context.Principal?.FindFirst("security_stamp")?.Value;
-                var userManager = context.HttpContext.RequestServices
-                    .GetRequiredService<UserManager<SimfUser>>();
-                var user = userId is null ? null : await userManager.FindByIdAsync(userId);
-                if (user is null || user.SecurityStamp != tokenStamp)
-                {
-                    context.Fail("The session is no longer valid.");
-                }
-            },
-        };
-    });
+    .AddJwtBearer(options => JwtBearerSetup.Configure(options, jwtOptions));
 builder.Services.AddAuthorization();
 
 // The reverse-proxy allowlist — the rate limiter and the audit-log source IP

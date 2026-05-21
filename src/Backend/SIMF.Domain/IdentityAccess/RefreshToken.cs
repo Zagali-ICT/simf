@@ -2,8 +2,9 @@ namespace SIMF.Domain.IdentityAccess;
 
 /// <summary>
 /// A refresh token issued to a user. The token value itself is never stored —
-/// only its hash. Tokens are rotated on use, and reuse of a rotated token is
-/// detected through the <see cref="RotatedFromId"/> chain (SIMF-FDS-001
+/// only its hash. Tokens are rotated on use; presenting a token that has
+/// already been revoked is detected as reuse. <see cref="RotatedFromId"/>
+/// records the rotation chain for forensic reconstruction (SIMF-FDS-001
 /// section 5.3, SIMF-DAT-001 section 5.1).
 /// </summary>
 public class RefreshToken
@@ -27,7 +28,7 @@ public class RefreshToken
 
     /// <summary>
     /// The token this one replaced when it was rotated; null for the first
-    /// token in a chain. Used to detect reuse of an already-rotated token.
+    /// token in a chain. Kept so a rotation chain can be reconstructed.
     /// </summary>
     public Guid? RotatedFromId { get; set; }
 

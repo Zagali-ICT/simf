@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -17,6 +18,7 @@ namespace SIMF.Application.IdentityAccess;
 public sealed class SessionService(
     UserManager<SimfUser> userManager,
     IRefreshTokenRepository refreshTokenRepository,
+    ITransactionRunner transactionRunner,
     IJwtTokenService jwtTokenService,
     IAuditLog auditLog,
     TimeProvider timeProvider,
@@ -34,6 +36,8 @@ public sealed class SessionService(
 
         if (presented is null)
         {
+            await AuditAsync(AuditEvents.RefreshTokenRejected, AuditOutcome.Failure,
+                null, null, ErrorCodes.AuthRefreshTokenInvalid, "token not found", cancellationToken);
             throw new ApiException(ErrorCodes.AuthRefreshTokenInvalid, 401,
                 "The refresh token is not valid.");
         }
@@ -53,7 +57,7 @@ public sealed class SessionService(
 
             await AuditAsync(AuditEvents.RefreshTokenReused, AuditOutcome.Failure,
                 compromised?.Email, presented.UserId, ErrorCodes.AuthRefreshTokenInvalid,
-                cancellationToken);
+                $"reused token {presented.Id}", cancellationToken);
             logger.LogWarning(
                 "Refresh-token reuse detected for user {UserId}; every session was revoked.",
                 presented.UserId);
@@ -63,6 +67,9 @@ public sealed class SessionService(
 
         if (now >= presented.ExpiresAt)
         {
+            await AuditAsync(AuditEvents.RefreshTokenRejected, AuditOutcome.Failure,
+                null, presented.UserId, ErrorCodes.AuthRefreshTokenExpired, "token expired",
+                cancellationToken);
             throw new ApiException(ErrorCodes.AuthRefreshTokenExpired, 401,
                 "The refresh token has expired. Sign in again.");
         }
@@ -73,24 +80,40 @@ public sealed class SessionService(
 
         if (user.AccountState is AccountState.Disabled or AccountState.Rejected)
         {
+            await AuditAsync(AuditEvents.RefreshTokenRejected, AuditOutcome.Failure,
+                user.Email, user.Id, ErrorCodes.AuthAccountDisabled, "account not active",
+                cancellationToken);
             throw new ApiException(ErrorCodes.AuthAccountDisabled, 403,
                 "This account is not active.");
         }
 
-        // Rotate — revoke the presented token and issue a fresh one in its chain.
-        presented.RevokedAt = now;
-        await refreshTokenRepository.UpdateAsync(presented, cancellationToken);
-
+        // Rotate atomically — the presented token is revoked only if it is still
+        // active, and its replacement is added, in one transaction. A conditional
+        // revoke affecting no row means a concurrent request already rotated this
+        // token, so there is no double-spend.
         var refreshValue = OpaqueToken.Generate();
-        await refreshTokenRepository.AddAsync(
-            new RefreshToken
+        await transactionRunner.ExecuteAsync(
+            async token =>
             {
-                Id = Guid.NewGuid(),
-                UserId = user.Id,
-                TokenHash = OpaqueToken.Hash(refreshValue),
-                CreatedAt = now,
-                ExpiresAt = now.Add(RefreshTokenLifetime),
-                RotatedFromId = presented.Id,
+                var rotatedRows = await refreshTokenRepository.RevokeIfActiveAsync(
+                    presented.Id, now, token);
+                if (rotatedRows == 0)
+                {
+                    throw new ApiException(ErrorCodes.AuthRefreshTokenInvalid, 401,
+                        "The refresh token is not valid.");
+                }
+
+                await refreshTokenRepository.AddAsync(
+                    new RefreshToken
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = user.Id,
+                        TokenHash = OpaqueToken.Hash(refreshValue),
+                        CreatedAt = now,
+                        ExpiresAt = now.Add(RefreshTokenLifetime),
+                        RotatedFromId = presented.Id,
+                    },
+                    token);
             },
             cancellationToken);
 
@@ -113,12 +136,14 @@ public sealed class SessionService(
         var user = await userManager.FindByIdAsync(userId.ToString());
         if (user is null)
         {
+            // A valid token for an account that no longer exists — worth a trace.
+            logger.LogWarning("Sign-out for unknown user {UserId}.", userId);
             return;
         }
 
         // Revoke every refresh token and roll the security stamp — this ends all
         // sessions, since the stamp is per-account and every access token carries
-        // it (SIMF-FDS-001 Amendment A.6).
+        // it (SIMF-FDS-001 Amendment A.6, decision D-012).
         await refreshTokenRepository.RevokeAllForUserAsync(
             user.Id, timeProvider.GetUtcNow(), cancellationToken);
         await userManager.UpdateSecurityStampAsync(user);
@@ -134,6 +159,7 @@ public sealed class SessionService(
         string? email,
         Guid? userId = null,
         string? errorCode = null,
+        string? detail = null,
         CancellationToken cancellationToken = default) =>
         auditLog.WriteAsync(
             new AuditEntry
@@ -143,6 +169,7 @@ public sealed class SessionService(
                 SubjectEmail = email,
                 SubjectUserId = userId,
                 ErrorCode = errorCode,
+                Detail = detail,
             },
             cancellationToken);
 }

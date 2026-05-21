@@ -29,6 +29,8 @@ public static class AuditEvents
     public const string RefreshTokenIssued = "RefreshToken.Issued";
     public const string RefreshTokenRotated = "RefreshToken.Rotated";
     public const string RefreshTokenReused = "RefreshToken.Reused";
+    public const string RefreshTokenRejected = "RefreshToken.Rejected";
+    public const string AccessTokenRejected = "AccessToken.Rejected";
     public const string SignOutSucceeded = "SignOut.Succeeded";
     public const string SuperAdminSeeded = "Admin.SuperAdminSeeded";
 }

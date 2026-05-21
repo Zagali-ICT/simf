@@ -1,11 +1,10 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Microsoft.Extensions.DependencyInjection;
+using SIMF.Application.Auditing;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
-using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -17,8 +16,6 @@ namespace SIMF.Api.Tests;
 /// </summary>
 public sealed class SessionTests : IClassFixture<SimfApiFactory>
 {
-    private const string Password = "Passw0rd!";
-
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
 
@@ -32,7 +29,7 @@ public sealed class SessionTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Refresh_returns_new_tokens_and_rotates_the_refresh_token()
     {
-        var tokens = await SignInVisitorAsync();
+        var tokens = await AuthFlow.SignInVisitorAsync(_client, _factory);
 
         var response = await RefreshAsync(tokens.RefreshToken);
 
@@ -55,7 +52,7 @@ public sealed class SessionTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Reusing_a_rotated_refresh_token_revokes_the_whole_family()
     {
-        var tokens = await SignInVisitorAsync();
+        var tokens = await AuthFlow.SignInVisitorAsync(_client, _factory);
 
         // Rotate once — the original token is now revoked, the rotated one live.
         var rotated = (await (await RefreshAsync(tokens.RefreshToken)).Content
@@ -71,6 +68,19 @@ public sealed class SessionTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task A_disabled_account_cannot_refresh()
+    {
+        var tokens = await AuthFlow.SignInVisitorAsync(_client, _factory);
+        AuthFlow.SetAccountState(_factory, tokens.User.Email, AccountState.Disabled);
+
+        var response = await RefreshAsync(tokens.RefreshToken);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.Equal(ErrorCodes.AuthAccountDisabled, body!.Error!.Code);
+    }
+
+    [Fact]
     public async Task Sign_out_without_a_token_returns_401()
     {
         var response = await _client.PostAsync("/api/v1/auth/sign-out", content: null);
@@ -81,7 +91,7 @@ public sealed class SessionTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Sign_out_with_a_valid_access_token_succeeds()
     {
-        var tokens = await SignInVisitorAsync();
+        var tokens = await AuthFlow.SignInVisitorAsync(_client, _factory);
 
         var response = await SignOutAsync(tokens.AccessToken);
 
@@ -91,7 +101,7 @@ public sealed class SessionTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Sign_out_revokes_the_refresh_token()
     {
-        var tokens = await SignInVisitorAsync();
+        var tokens = await AuthFlow.SignInVisitorAsync(_client, _factory);
         await SignOutAsync(tokens.AccessToken);
 
         var refresh = await RefreshAsync(tokens.RefreshToken);
@@ -102,13 +112,47 @@ public sealed class SessionTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task An_access_token_is_rejected_after_sign_out()
     {
-        var tokens = await SignInVisitorAsync();
+        var tokens = await AuthFlow.SignInVisitorAsync(_client, _factory);
         await SignOutAsync(tokens.AccessToken);
 
         // The same access token, reused after sign-out — the security stamp moved.
         var response = await SignOutAsync(tokens.AccessToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_successful_refresh_writes_a_RefreshTokenRotated_audit_entry()
+    {
+        var tokens = await AuthFlow.SignInVisitorAsync(_client, _factory);
+
+        await RefreshAsync(tokens.RefreshToken);
+
+        Assert.True(AuthFlow.AuditEntryExists(
+            _factory, tokens.User.Email, AuditEvents.RefreshTokenRotated));
+    }
+
+    [Fact]
+    public async Task Refresh_token_reuse_writes_a_RefreshTokenReused_audit_entry()
+    {
+        var tokens = await AuthFlow.SignInVisitorAsync(_client, _factory);
+        await RefreshAsync(tokens.RefreshToken);
+
+        await RefreshAsync(tokens.RefreshToken);
+
+        Assert.True(AuthFlow.AuditEntryExists(
+            _factory, tokens.User.Email, AuditEvents.RefreshTokenReused));
+    }
+
+    [Fact]
+    public async Task Sign_out_writes_a_SignOutSucceeded_audit_entry()
+    {
+        var tokens = await AuthFlow.SignInVisitorAsync(_client, _factory);
+
+        await SignOutAsync(tokens.AccessToken);
+
+        Assert.True(AuthFlow.AuditEntryExists(
+            _factory, tokens.User.Email, AuditEvents.SignOutSucceeded));
     }
 
     // -- helpers --------------------------------------------------------------
@@ -123,49 +167,5 @@ public sealed class SessionTests : IClassFixture<SimfApiFactory>
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/sign-out");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         return _client.SendAsync(request);
-    }
-
-    private async Task<AuthTokens> SignInVisitorAsync()
-    {
-        var email = $"session-{Guid.NewGuid():N}@simf.test";
-
-        await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
-            new SignUpRequest { Email = email, Password = Password, ConfirmPassword = Password });
-        await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
-            new VerifyEmailRequest
-            {
-                Email = email,
-                Code = GetActiveCode(email, AccountCodePurpose.EmailVerification),
-            });
-
-        var signIn = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
-            new SignInRequest { Email = email, Password = Password });
-        var challenge = (await signIn.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!;
-
-        var verify = await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-otp",
-            new VerifyOtpRequest
-            {
-                OtpToken = challenge.OtpToken!,
-                Code = GetActiveCode(email, AccountCodePurpose.SignInOtp),
-            });
-        return (await verify.Content.ReadFromJsonAsync<ApiResult<AuthTokens>>())!.Data!;
-    }
-
-    private string GetActiveCode(string email, AccountCodePurpose purpose)
-    {
-        using var scope = _factory.Services.CreateScope();
-        var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
-        var user = database.Users.Single(candidate => candidate.Email == email);
-        return database.AccountCodes
-            .Where(code => code.UserId == user.Id
-                && code.Purpose == purpose
-                && code.ConsumedAt == null)
-            .OrderByDescending(code => code.CreatedAt)
-            .First()
-            .Code;
     }
 }
