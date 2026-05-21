@@ -11,7 +11,7 @@ namespace SIMF.Api.Tests;
 
 /// <summary>
 /// Integration tests for password recovery — forgot-password, reset-password
-/// and change-password (SIMF-API-001 section 12.4).
+/// and change-password (SIMF-API-001 section 12.7).
 /// </summary>
 public sealed class PasswordTests : IClassFixture<SimfApiFactory>
 {
@@ -33,14 +33,42 @@ public sealed class PasswordTests : IClassFixture<SimfApiFactory>
     {
         var email = await AuthFlow.RegisterVerifiedVisitorAsync(_client, _factory);
 
-        var known = await ForgotAsync(email);
-        var unknown = await ForgotAsync($"nobody-{Guid.NewGuid():N}@simf.test");
+        var knownBody = (await (await ForgotAsync(email)).Content
+            .ReadFromJsonAsync<ApiResult<ForgotPasswordResponse>>())!;
+        var unknownBody = (await (await ForgotAsync($"nobody-{Guid.NewGuid():N}@simf.test")).Content
+            .ReadFromJsonAsync<ApiResult<ForgotPasswordResponse>>())!;
 
-        Assert.Equal(HttpStatusCode.OK, known.StatusCode);
-        Assert.Equal(HttpStatusCode.OK, unknown.StatusCode);
-        var knownBody = (await known.Content.ReadFromJsonAsync<ApiResult<ForgotPasswordResponse>>())!.Data!;
-        var unknownBody = (await unknown.Content.ReadFromJsonAsync<ApiResult<ForgotPasswordResponse>>())!.Data!;
-        Assert.Equal(knownBody.Message, unknownBody.Message);
+        Assert.True(knownBody.Success);
+        Assert.True(unknownBody.Success);
+        Assert.Equal(
+            knownBody.Data!.CodeExpiresInSeconds,
+            unknownBody.Data!.CodeExpiresInSeconds);
+    }
+
+    [Fact]
+    public async Task Forgot_password_for_a_disabled_account_issues_no_code()
+    {
+        var email = await AuthFlow.RegisterVerifiedVisitorAsync(_client, _factory);
+        AuthFlow.SetAccountState(_factory, email, AccountState.Disabled);
+
+        var response = await ForgotAsync(email);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(0, AuthFlow.CodeCount(_factory, email, AccountCodePurpose.PasswordReset));
+    }
+
+    [Fact]
+    public async Task Forgot_password_stops_issuing_codes_after_the_per_account_cap()
+    {
+        var email = await AuthFlow.RegisterVerifiedVisitorAsync(_client, _factory);
+
+        for (var attempt = 0; attempt < 7; attempt++)
+        {
+            await ForgotAsync(email);
+        }
+
+        // The cap is five per hour — the sixth and seventh requests issue nothing.
+        Assert.Equal(5, AuthFlow.CodeCount(_factory, email, AccountCodePurpose.PasswordReset));
     }
 
     [Fact]
@@ -53,7 +81,6 @@ public sealed class PasswordTests : IClassFixture<SimfApiFactory>
         var reset = await ResetAsync(email, code, NewPassword);
 
         Assert.Equal(HttpStatusCode.OK, reset.StatusCode);
-        // The new password works at sign-in; the old one no longer does.
         Assert.Equal(HttpStatusCode.OK, (await SignInAsync(email, NewPassword)).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await SignInAsync(email, Password)).StatusCode);
     }
@@ -80,6 +107,40 @@ public sealed class PasswordTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, reset.StatusCode);
         var body = await reset.Content.ReadFromJsonAsync<ApiResult<object>>();
         Assert.Equal(ErrorCodes.AuthResetCodeInvalid, body!.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Reset_password_is_rejected_after_five_wrong_attempts()
+    {
+        var email = await AuthFlow.RegisterVerifiedVisitorAsync(_client, _factory);
+        await ForgotAsync(email);
+        var realCode = AuthFlow.GetActiveCode(_factory, email, AccountCodePurpose.PasswordReset);
+        var wrongCode = realCode == "000000" ? "999999" : "000000";
+
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            await ResetAsync(email, wrongCode, NewPassword);
+        }
+
+        // The code is now attempt-capped — even the correct code is refused.
+        var capped = await ResetAsync(email, realCode, NewPassword);
+        Assert.Equal(HttpStatusCode.BadRequest, capped.StatusCode);
+    }
+
+    [Fact]
+    public async Task Reset_password_revokes_existing_refresh_tokens()
+    {
+        var tokens = await AuthFlow.SignInVisitorAsync(_client, _factory);
+        await ForgotAsync(tokens.User.Email);
+        var code = AuthFlow.GetActiveCode(
+            _factory, tokens.User.Email, AccountCodePurpose.PasswordReset);
+        await ResetAsync(tokens.User.Email, code, NewPassword);
+
+        var refresh = await _client.PostAsJsonAsync(
+            "/api/v1/auth/refresh",
+            new RefreshRequest { RefreshToken = tokens.RefreshToken });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, refresh.StatusCode);
     }
 
     [Fact]
@@ -134,6 +195,19 @@ public sealed class PasswordTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, change.StatusCode);
         var body = await change.Content.ReadFromJsonAsync<ApiResult<object>>();
         Assert.Equal(ErrorCodes.AuthInvalidCredentials, body!.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Change_password_revokes_existing_refresh_tokens()
+    {
+        var tokens = await AuthFlow.SignInVisitorAsync(_client, _factory);
+
+        await ChangeAsync(tokens.AccessToken, Password, NewPassword);
+
+        var refresh = await _client.PostAsJsonAsync(
+            "/api/v1/auth/refresh",
+            new RefreshRequest { RefreshToken = tokens.RefreshToken });
+        Assert.Equal(HttpStatusCode.Unauthorized, refresh.StatusCode);
     }
 
     // -- helpers --------------------------------------------------------------

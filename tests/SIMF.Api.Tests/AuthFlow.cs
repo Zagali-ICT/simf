@@ -88,4 +88,14 @@ internal static class AuthFlow
         return database.OperationLog.Any(
             entry => entry.SubjectEmail == email && entry.EventType == eventType);
     }
+
+    /// <summary>Counts every code of the given purpose ever created for the user.</summary>
+    public static int CodeCount(SimfApiFactory factory, string email, AccountCodePurpose purpose)
+    {
+        using var scope = factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = database.Users.Single(candidate => candidate.Email == email);
+        return database.AccountCodes.Count(
+            code => code.UserId == user.Id && code.Purpose == purpose);
+    }
 }

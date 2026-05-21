@@ -13,6 +13,7 @@ internal static class PasswordRules
         rule
             .NotEmpty().WithMessage("Password is required.")
             .MinimumLength(8).WithMessage("Password must be at least 8 characters.")
+            .MaximumLength(128).WithMessage("Password must be at most 128 characters.")
             .Matches(@"\d").WithMessage("Password must contain a digit.")
             .Matches("[A-Za-z]").WithMessage("Password must contain a letter.");
 }

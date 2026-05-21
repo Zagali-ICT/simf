@@ -11,7 +11,7 @@ namespace SIMF.Api.Endpoints.Auth;
 /// emailed reset code (SIMF-API-001 section 12.4).
 /// </summary>
 public sealed class ResetPasswordEndpoint(IPasswordService passwordService)
-    : Endpoint<ResetPasswordRequest, ApiResult<PasswordChangedResponse>>
+    : Endpoint<ResetPasswordRequest, ApiResult<ResetPasswordResponse>>
 {
     public override void Configure()
     {
@@ -25,6 +25,6 @@ public sealed class ResetPasswordEndpoint(IPasswordService passwordService)
     public override async Task HandleAsync(ResetPasswordRequest req, CancellationToken ct)
     {
         var response = await passwordService.ResetPasswordAsync(req, ct);
-        await Send.OkAsync(ApiResult<PasswordChangedResponse>.Ok(response), ct);
+        await Send.OkAsync(ApiResult<ResetPasswordResponse>.Ok(response), ct);
     }
 }

@@ -34,7 +34,10 @@ public static class AuditEvents
     public const string SignOutSucceeded = "SignOut.Succeeded";
     public const string ForgotPasswordRequested = "ForgotPassword.Requested";
     public const string PasswordResetCompleted = "PasswordReset.Completed";
-    public const string PasswordResetFailed = "PasswordReset.Failed";
+    public const string PasswordResetCodeIncorrect = "PasswordReset.CodeIncorrect";
+    public const string PasswordResetCodeExpired = "PasswordReset.CodeExpired";
+    public const string PasswordResetAttemptCapReached = "PasswordReset.AttemptCapReached";
+    public const string PasswordResetAccountNotFound = "PasswordReset.AccountNotFound";
     public const string PasswordChanged = "PasswordChange.Succeeded";
     public const string PasswordChangeFailed = "PasswordChange.Failed";
     public const string SuperAdminSeeded = "Admin.SuperAdminSeeded";

@@ -4,7 +4,7 @@ namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
 /// The password-recovery use cases — forgot-password, reset-password (with the
-/// emailed code) and change-password (SIMF-API-001 section 12.4).
+/// emailed code) and change-password (SIMF-API-001 section 12.7).
 /// </summary>
 public interface IPasswordService
 {
@@ -12,11 +12,11 @@ public interface IPasswordService
         ForgotPasswordRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<PasswordChangedResponse> ResetPasswordAsync(
+    Task<ResetPasswordResponse> ResetPasswordAsync(
         ResetPasswordRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<PasswordChangedResponse> ChangePasswordAsync(
+    Task<ChangePasswordResponse> ChangePasswordAsync(
         Guid userId,
         ChangePasswordRequest request,
         CancellationToken cancellationToken = default);

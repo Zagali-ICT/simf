@@ -12,11 +12,12 @@ namespace SIMF.Api.Endpoints.Auth;
 /// their own password (SIMF-API-001 section 12.4). Requires a valid access token.
 /// </summary>
 public sealed class ChangePasswordEndpoint(IPasswordService passwordService)
-    : Endpoint<ChangePasswordRequest, ApiResult<PasswordChangedResponse>>
+    : Endpoint<ChangePasswordRequest, ApiResult<ChangePasswordResponse>>
 {
     public override void Configure()
     {
         Post("/auth/change-password");
+        // No AllowAnonymous() — FastEndpoints requires an authenticated caller.
         Tags("Authentication");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary = "Change your own password (requires sign-in).");
@@ -31,6 +32,6 @@ public sealed class ChangePasswordEndpoint(IPasswordService passwordService)
         }
 
         var response = await passwordService.ChangePasswordAsync(userId, req, ct);
-        await Send.OkAsync(ApiResult<PasswordChangedResponse>.Ok(response), ct);
+        await Send.OkAsync(ApiResult<ChangePasswordResponse>.Ok(response), ct);
     }
 }

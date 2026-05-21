@@ -15,8 +15,8 @@ namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
 /// Implements password recovery — forgot-password, reset-password (with the
-/// emailed code) and change-password (SIMF-API-001 section 12.4, SIMF-FDS-001).
-/// A completed reset or change ends every session for the account.
+/// emailed code) and change-password (SIMF-API-001 section 12.7, SIMF-FDS-001).
+/// A completed reset or change ends every session for the account, atomically.
 /// </summary>
 public sealed class PasswordService(
     UserManager<SimfUser> userManager,
@@ -28,7 +28,7 @@ public sealed class PasswordService(
     TimeProvider timeProvider,
     ILogger<PasswordService> logger) : IPasswordService
 {
-    private static readonly TimeSpan ResetCodeLifetime = TimeSpan.FromMinutes(15);
+    private static readonly TimeSpan ResetCodeLifetime = TimeSpan.FromMinutes(10);
     private static readonly TimeSpan ResetRequestWindow = TimeSpan.FromHours(1);
     private const int MaxResetAttempts = 5;
     private const int MaxResetCodesPerWindow = 5;
@@ -71,11 +71,10 @@ public sealed class PasswordService(
         }
 
         // The same response either way — it never reveals whether the account exists.
-        return new ForgotPasswordResponse(
-            "If an account exists for that email address, a reset code has been sent.");
+        return new ForgotPasswordResponse((int)ResetCodeLifetime.TotalSeconds);
     }
 
-    public async Task<PasswordChangedResponse> ResetPasswordAsync(
+    public async Task<ResetPasswordResponse> ResetPasswordAsync(
         ResetPasswordRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -87,18 +86,29 @@ public sealed class PasswordService(
             : await accountCodeRepository.GetLatestUnconsumedAsync(
                 user.Id, AccountCodePurpose.PasswordReset, cancellationToken);
 
-        if (user is null || code is null || code.AttemptCount >= MaxResetAttempts)
+        // Every failure returns the same generic code — it never reveals which
+        // step failed — while the audit log records the specific reason.
+        if (user is null || code is null)
         {
-            await AuditAsync(AuditEvents.PasswordResetFailed, AuditOutcome.Failure,
+            await AuditAsync(AuditEvents.PasswordResetAccountNotFound, AuditOutcome.Failure,
                 request.Email, user?.Id, ErrorCodes.AuthResetCodeInvalid,
                 cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthResetCodeInvalid, 400,
                 "The reset code is not valid.");
         }
 
+        if (code.AttemptCount >= MaxResetAttempts)
+        {
+            await AuditAsync(AuditEvents.PasswordResetAttemptCapReached, AuditOutcome.Failure,
+                user.Email!, user.Id, ErrorCodes.AuthResetCodeInvalid,
+                cancellationToken: cancellationToken);
+            throw new ApiException(ErrorCodes.AuthResetCodeInvalid, 400,
+                "Too many incorrect attempts. Request a new reset code.");
+        }
+
         if (now >= code.ExpiresAt)
         {
-            await AuditAsync(AuditEvents.PasswordResetFailed, AuditOutcome.Failure,
+            await AuditAsync(AuditEvents.PasswordResetCodeExpired, AuditOutcome.Failure,
                 user.Email!, user.Id, ErrorCodes.AuthResetCodeExpired,
                 cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthResetCodeExpired, 400,
@@ -109,40 +119,32 @@ public sealed class PasswordService(
         {
             code.AttemptCount++;
             await accountCodeRepository.UpdateAsync(code, cancellationToken);
-            await AuditAsync(AuditEvents.PasswordResetFailed, AuditOutcome.Failure,
+            await AuditAsync(AuditEvents.PasswordResetCodeIncorrect, AuditOutcome.Failure,
                 user.Email!, user.Id, ErrorCodes.AuthResetCodeInvalid,
-                cancellationToken: cancellationToken);
+                $"attempt {code.AttemptCount}", cancellationToken);
             throw new ApiException(ErrorCodes.AuthResetCodeInvalid, 400,
                 "The reset code is not correct.");
         }
 
-        // The six-digit code already authorised this reset, so the password is
-        // set directly. Remove-then-add runs the Identity password validators
-        // and rolls the security stamp; the transaction keeps the pair atomic,
-        // so a rejected new password leaves the old one intact.
+        // The code authorised this — set the password, consume the code, clear
+        // the forced-change flag and end every session, all in one transaction.
         await transactionRunner.ExecuteAsync(
-            async _ =>
+            async token =>
             {
-                await userManager.RemovePasswordAsync(user);
-                var addResult = await userManager.AddPasswordAsync(user, request.NewPassword);
-                if (!addResult.Succeeded)
-                {
-                    throw PasswordRejected(addResult);
-                }
+                await SetPasswordAsync(user, request.NewPassword);
+                code.ConsumedAt = now;
+                await accountCodeRepository.UpdateAsync(code, token);
+                await ClearChangeFlagAndEndSessionsAsync(user, now, token);
             },
             cancellationToken);
-
-        code.ConsumedAt = now;
-        await accountCodeRepository.UpdateAsync(code, cancellationToken);
-        await ClearPasswordChangeRequiredAndEndSessionsAsync(user, now, cancellationToken);
 
         await AuditAsync(AuditEvents.PasswordResetCompleted, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
         logger.LogInformation("Password reset for {Email}", user.Email);
-        return new PasswordChangedResponse(true);
+        return new ResetPasswordResponse(true);
     }
 
-    public async Task<PasswordChangedResponse> ChangePasswordAsync(
+    public async Task<ChangePasswordResponse> ChangePasswordAsync(
         Guid userId,
         ChangePasswordRequest request,
         CancellationToken cancellationToken = default)
@@ -151,38 +153,63 @@ public sealed class PasswordService(
             ?? throw new ApiException(ErrorCodes.AuthAccountNotFound, 404,
                 "The account was not found.");
 
-        var result = await userManager.ChangePasswordAsync(
-            user, request.CurrentPassword, request.NewPassword);
-        if (!result.Succeeded)
-        {
-            await AuditAsync(AuditEvents.PasswordChangeFailed, AuditOutcome.Failure,
-                user.Email!, user.Id, ErrorCodes.AuthInvalidCredentials,
-                cancellationToken: cancellationToken);
-
-            if (result.Errors.Any(error => error.Code == "PasswordMismatch"))
+        await transactionRunner.ExecuteAsync(
+            async token =>
             {
-                throw new ApiException(ErrorCodes.AuthInvalidCredentials, 400,
-                    "The current password is not correct.");
-            }
+                var result = await userManager.ChangePasswordAsync(
+                    user, request.CurrentPassword, request.NewPassword);
+                if (!result.Succeeded)
+                {
+                    await AuditAsync(AuditEvents.PasswordChangeFailed, AuditOutcome.Failure,
+                        user.Email!, user.Id, ErrorCodes.AuthInvalidCredentials,
+                        cancellationToken: token);
+                    if (result.Errors.Any(error => error.Code == "PasswordMismatch"))
+                    {
+                        throw new ApiException(ErrorCodes.AuthInvalidCredentials, 400,
+                            "The current password is not correct.");
+                    }
 
-            throw PasswordRejected(result);
-        }
+                    throw PasswordRejected(result);
+                }
 
-        await ClearPasswordChangeRequiredAndEndSessionsAsync(
-            user, timeProvider.GetUtcNow(), cancellationToken);
+                await ClearChangeFlagAndEndSessionsAsync(
+                    user, timeProvider.GetUtcNow(), token);
+            },
+            cancellationToken);
 
         await AuditAsync(AuditEvents.PasswordChanged, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
         logger.LogInformation("Password changed for {Email}", user.Email);
-        return new PasswordChangedResponse(true);
+        return new ChangePasswordResponse(true);
+    }
+
+    /// <summary>
+    /// Sets a new password without the old one — the six-digit code already
+    /// authorised it. Remove-then-add runs the Identity password validators and
+    /// rolls the security stamp; the caller's transaction keeps the pair atomic.
+    /// </summary>
+    private async Task SetPasswordAsync(SimfUser user, string newPassword)
+    {
+        var removeResult = await userManager.RemovePasswordAsync(user);
+        if (!removeResult.Succeeded)
+        {
+            throw new ApiException(ErrorCodes.InternalError, 500,
+                "The password could not be reset.");
+        }
+
+        var addResult = await userManager.AddPasswordAsync(user, newPassword);
+        if (!addResult.Succeeded)
+        {
+            throw PasswordRejected(addResult);
+        }
     }
 
     /// <summary>
     /// Clears the forced-change flag and ends every session — a new password
-    /// must invalidate the old sessions (the security stamp moved when the
-    /// password was set; the refresh tokens are revoked here).
+    /// must invalidate the old ones (the security stamp moved when the password
+    /// was set; the refresh tokens are revoked here).
     /// </summary>
-    private async Task ClearPasswordChangeRequiredAndEndSessionsAsync(
+    private async Task ClearChangeFlagAndEndSessionsAsync(
         SimfUser user,
         DateTimeOffset now,
         CancellationToken cancellationToken)
@@ -246,6 +273,7 @@ public sealed class PasswordService(
         string? email,
         Guid? userId = null,
         string? errorCode = null,
+        string? detail = null,
         CancellationToken cancellationToken = default) =>
         auditLog.WriteAsync(
             new AuditEntry
@@ -255,6 +283,7 @@ public sealed class PasswordService(
                 SubjectEmail = email,
                 SubjectUserId = userId,
                 ErrorCode = errorCode,
+                Detail = detail,
             },
             cancellationToken);
 
