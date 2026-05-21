@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Time.Testing;
 using SIMF.Application.Email;
 using SIMF.Infrastructure.Persistence;
 
@@ -11,20 +12,23 @@ namespace SIMF.Api.Tests;
 /// <summary>
 /// Hosts the API for integration tests against a throwaway SQL Server LocalDB
 /// database (the real provider), with the email sender replaced by a
-/// <see cref="FakeEmailSender"/>.
+/// <see cref="FakeEmailSender"/> and the clock by a controllable
+/// <see cref="FakeTimeProvider"/>.
 /// </summary>
 /// <remarks>
 /// The connection string and the super-admin settings are passed as environment
 /// variables because <c>AddInfrastructure</c> reads configuration eagerly,
 /// before the test host's configuration callbacks would run. Test parallelism
-/// is disabled (see <c>AssemblyInfo.cs</c>) so the process-wide variables are
-/// safe.
+/// is disabled (see <c>AssemblyInfo.cs</c>) so the process-wide variables and
+/// the shared clock are safe.
 /// </remarks>
 public sealed class SimfApiFactory : WebApplicationFactory<Program>
 {
     private readonly string _databaseName = $"SIMF_Test_{Guid.NewGuid():N}";
 
     public FakeEmailSender Email { get; } = new();
+
+    public FakeTimeProvider Time { get; } = new();
 
     public SimfApiFactory()
     {
@@ -45,6 +49,9 @@ public sealed class SimfApiFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<IEmailSender>();
             services.AddSingleton<IEmailSender>(Email);
+
+            services.RemoveAll<TimeProvider>();
+            services.AddSingleton<TimeProvider>(Time);
         });
     }
 

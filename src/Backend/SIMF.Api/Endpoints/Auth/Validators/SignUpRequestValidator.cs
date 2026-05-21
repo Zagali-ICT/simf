@@ -20,6 +20,7 @@ public sealed class SignUpRequestValidator : Validator<SignUpRequest>
         RuleFor(request => request.Password)
             .NotEmpty().WithMessage("Password is required.")
             .MinimumLength(8).WithMessage("The password must be at least 8 characters.")
+            .MaximumLength(128).WithMessage("The password must be at most 128 characters.")
             .Matches("[A-Za-z]").WithMessage("The password must contain at least one letter.")
             .Matches("[0-9]").WithMessage("The password must contain at least one digit.")
             .Must((request, password) =>

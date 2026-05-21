@@ -12,16 +12,14 @@ internal sealed class AccountCodeRepository(SimfIdentityDbContext dbContext) : I
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<AccountCode?> GetLatestActiveAsync(
+    public Task<AccountCode?> GetLatestUnconsumedAsync(
         Guid userId,
         AccountCodePurpose purpose,
-        DateTimeOffset now,
         CancellationToken cancellationToken = default) =>
         dbContext.AccountCodes
             .Where(code => code.UserId == userId
                 && code.Purpose == purpose
-                && code.ConsumedAt == null
-                && code.ExpiresAt > now)
+                && code.ConsumedAt == null)
             .OrderByDescending(code => code.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
 

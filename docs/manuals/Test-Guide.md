@@ -19,8 +19,10 @@ How SIMF tests are organised and run. It grows one section per increment.
 
 Framework: xUnit. API integration tests host the API through `SimfApiFactory`
 (`Microsoft.AspNetCore.Mvc.Testing`) against a throwaway SQL Server LocalDB
-database and a `FakeEmailSender`. Test parallelism is disabled — the factory
-uses process-wide environment variables and a shared LocalDB instance.
+database, with a `FakeEmailSender` and a controllable `FakeTimeProvider` (so
+time-dependent paths such as code expiry can be tested). Test parallelism is
+disabled — the factory uses process-wide environment variables and a shared
+LocalDB instance.
 
 ## 2. Running the tests
 
@@ -49,6 +51,6 @@ and Application layers gain code from increment 2.
 
 | Test | Type | Verifies |
 |------|------|----------|
-| `VerificationCodeGeneratorTests` | Unit | The verification code is six digits |
-| `RegistrationEndpointsTests` | Integration | sign-up 201 / duplicate 409 / weak password 400; verify-email 200 / wrong code 400 / unknown email 404; resend-code invalidates the previous code |
-| `IdentitySeederTests` | Integration | The super-admin is seeded; seeding is idempotent |
+| `VerificationCodeGeneratorTests` | Unit (`SIMF.Application.Tests`) | The code is always six digits and well distributed |
+| `RegistrationEndpointsTests` | Integration | sign-up 201 / duplicate 409 / weak or mismatched password 400; verify-email 200 / wrong code 400 / unknown email 404 / expired code / five-attempt lockout / already-verified rejected; resend-code invalidates the old code, issues a usable new one, 404 for unknown email |
+| `IdentitySeederTests` | Integration | The super-admin is seeded with its TOTP secret; seeding is idempotent |

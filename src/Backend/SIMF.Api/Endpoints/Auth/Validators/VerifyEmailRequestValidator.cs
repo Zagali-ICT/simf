@@ -11,7 +11,8 @@ public sealed class VerifyEmailRequestValidator : Validator<VerifyEmailRequest>
     {
         RuleFor(request => request.Email)
             .NotEmpty().WithMessage("Email is required.")
-            .EmailAddress().WithMessage("A valid email address is required.");
+            .EmailAddress().WithMessage("A valid email address is required.")
+            .MaximumLength(256);
 
         RuleFor(request => request.Code)
             .NotEmpty().WithMessage("The verification code is required.")

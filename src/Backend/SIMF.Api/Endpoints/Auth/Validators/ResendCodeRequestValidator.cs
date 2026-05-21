@@ -11,6 +11,7 @@ public sealed class ResendCodeRequestValidator : Validator<ResendCodeRequest>
     {
         RuleFor(request => request.Email)
             .NotEmpty().WithMessage("Email is required.")
-            .EmailAddress().WithMessage("A valid email address is required.");
+            .EmailAddress().WithMessage("A valid email address is required.")
+            .MaximumLength(256);
     }
 }

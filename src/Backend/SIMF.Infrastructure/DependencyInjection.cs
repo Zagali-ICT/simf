@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.Application.Abstractions;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
@@ -48,12 +49,14 @@ public static class DependencyInjection
             }));
 
         // ASP.NET Core Identity — UserManager / RoleManager over the EF stores.
-        // The §12.5 password policy is enforced by the request validators (one
-        // place — SIMF-API-001 §12.5); Identity's own checks stay permissive.
+        // Identity enforces the SIMF-API-001 §12.5 baseline (length and a digit)
+        // so every credential path is covered, including the seeder; the request
+        // validators add the remaining rules (a letter, not equal to the email)
+        // with field-level messages.
         services.AddIdentityCore<SimfUser>(options =>
             {
-                options.Password.RequiredLength = 1;
-                options.Password.RequireDigit = false;
+                options.Password.RequiredLength = 8;
+                options.Password.RequireDigit = true;
                 options.Password.RequireLowercase = false;
                 options.Password.RequireUppercase = false;
                 options.Password.RequireNonAlphanumeric = false;
@@ -71,6 +74,7 @@ public static class DependencyInjection
         services.AddScoped<IAccountCodeRepository, AccountCodeRepository>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
 
+        services.AddScoped<ITransactionRunner, TransactionRunner>();
         services.AddScoped<IRegistrationService, RegistrationService>();
         services.AddScoped<IdentitySeeder>();
 

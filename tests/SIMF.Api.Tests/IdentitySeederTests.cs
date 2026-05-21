@@ -9,6 +9,8 @@ namespace SIMF.Api.Tests;
 /// <summary>Integration tests for <see cref="IdentitySeeder"/>.</summary>
 public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
 {
+    private const string SuperAdminEmail = "superadmin@simf.test";
+
     private readonly SimfApiFactory _factory;
 
     public IdentitySeederTests(SimfApiFactory factory)
@@ -26,12 +28,26 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         await services.GetRequiredService<IdentitySeeder>().SeedAsync();
 
         var admin = await services.GetRequiredService<UserManager<SimfUser>>()
-            .FindByEmailAsync("superadmin@simf.test");
+            .FindByEmailAsync(SuperAdminEmail);
 
         Assert.NotNull(admin);
         Assert.Equal(AccountState.Approved, admin!.AccountState);
         Assert.True(admin.PasswordChangeRequired);
         Assert.True(admin.EmailConfirmed);
+    }
+
+    [Fact]
+    public async Task SeedAsync_provisions_the_super_admin_TOTP_secret()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+
+        await scope.ServiceProvider.GetRequiredService<IdentitySeeder>().SeedAsync();
+
+        var admin = await userManager.FindByEmailAsync(SuperAdminEmail);
+        Assert.NotNull(admin);
+        Assert.True(await userManager.GetTwoFactorEnabledAsync(admin!));
+        Assert.Equal("JBSWY3DPEHPK3PXP", await userManager.GetAuthenticatorKeyAsync(admin!));
     }
 
     [Fact]
@@ -44,7 +60,7 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         await seeder.SeedAsync();
 
         var admin = await scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>()
-            .FindByEmailAsync("superadmin@simf.test");
+            .FindByEmailAsync(SuperAdminEmail);
         Assert.NotNull(admin);
     }
 }

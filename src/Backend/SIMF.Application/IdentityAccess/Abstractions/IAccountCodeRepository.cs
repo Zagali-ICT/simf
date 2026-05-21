@@ -9,13 +9,13 @@ public interface IAccountCodeRepository
     Task AddAsync(AccountCode code, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// The most recent unconsumed, unexpired code for the user and purpose;
-    /// null if there is none.
+    /// The most recent unconsumed code for the user and purpose, regardless of
+    /// whether it has expired; null if there is none. The caller decides what an
+    /// expired code means, so "expired" and "no code" stay distinguishable.
     /// </summary>
-    Task<AccountCode?> GetLatestActiveAsync(
+    Task<AccountCode?> GetLatestUnconsumedAsync(
         Guid userId,
         AccountCodePurpose purpose,
-        DateTimeOffset now,
         CancellationToken cancellationToken = default);
 
     /// <summary>Persists changes to an existing code (consumption, attempt count).</summary>
