@@ -4,7 +4,7 @@
 |-------|-------|
 | Document | SIMF Developer Guide |
 | Status | Living document — extended each increment |
-| Last updated | 2026-05-22 (Sprint 1, increment 4c) |
+| Last updated | 2026-05-22 (Sprint 1, increment 5) |
 | Related | SIMF-SES-001, SIMF-SAD-001, SIMF-Sprint1-Login-API-Plan |
 
 This guide explains how to build, run and work on the SIMF backend. It grows
@@ -217,3 +217,22 @@ Increment 4c completes the session lifecycle:
 
 The Login API is feature-complete at this increment except password
 reset/change (increment 5).
+
+## 11. Increment 5 — forgot, reset and change password
+
+Increment 5 completes the Login API with password recovery:
+
+- **Endpoints** (`SIMF.Api/Endpoints/Auth`) — `forgot-password` and
+  `reset-password` (both anonymous), and `change-password` (requires sign-in).
+- **`PasswordService`** — `forgot-password` issues a six-digit `PasswordReset`
+  code (an `AccountCode`) and emails it; the response is the same whether or not
+  the account exists, and a per-account re-issue cap stops inbox flooding.
+  `reset-password` verifies the code and sets the new password;
+  `change-password` verifies the current password first. Either one clears the
+  forced-change flag and ends every session for the account.
+- **The password policy** is the shared `PasswordRules.StrongPassword` validator
+  rule (length, a digit, a letter) plus the ASP.NET Identity baseline (D-005).
+- The new password is set with `RemovePasswordAsync` + `AddPasswordAsync` inside
+  a transaction (decision D-014).
+
+The Login API is feature-complete.

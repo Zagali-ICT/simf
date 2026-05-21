@@ -4,7 +4,7 @@
 |-------|-------|
 | Document | SIMF Test Guide |
 | Status | Living document — extended each increment |
-| Last updated | 2026-05-22 (Sprint 1, increment 4c) |
+| Last updated | 2026-05-22 (Sprint 1, increment 5) |
 | Related | SIMF-TST-001, SIMF-SES-001 |
 
 How SIMF tests are organised and run. It grows one section per increment.
@@ -77,3 +77,11 @@ the migrations themselves are exercised by every integration test.
 | Test | Type | Verifies |
 |------|------|----------|
 | `SessionTests` | Integration | refresh rotates the token; an unknown token is rejected; reusing a rotated token revokes the whole family; sign-out needs a token, succeeds, revokes the refresh token, and an access token is rejected after sign-out |
+| `JwtMiddlewareTests` | Integration | the bearer middleware rejects a forged, wrong-issuer, wrong-audience, expired or malformed token |
+| `RefreshExpiryTests` | Integration | an expired refresh token is rejected |
+
+## 9. Increment 5 — forgot, reset and change password
+
+| Test | Type | Verifies |
+|------|------|----------|
+| `PasswordTests` | Integration | forgot-password gives the same response for a known and an unknown account; reset-password with a valid code sets the new password and the old one stops working; a wrong or unknown reset code is rejected; change-password requires authentication, succeeds with the correct current password and invalidates the old token, and rejects a wrong current password |

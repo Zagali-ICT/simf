@@ -32,5 +32,10 @@ public static class AuditEvents
     public const string RefreshTokenRejected = "RefreshToken.Rejected";
     public const string AccessTokenRejected = "AccessToken.Rejected";
     public const string SignOutSucceeded = "SignOut.Succeeded";
+    public const string ForgotPasswordRequested = "ForgotPassword.Requested";
+    public const string PasswordResetCompleted = "PasswordReset.Completed";
+    public const string PasswordResetFailed = "PasswordReset.Failed";
+    public const string PasswordChanged = "PasswordChange.Succeeded";
+    public const string PasswordChangeFailed = "PasswordChange.Failed";
     public const string SuperAdminSeeded = "Admin.SuperAdminSeeded";
 }

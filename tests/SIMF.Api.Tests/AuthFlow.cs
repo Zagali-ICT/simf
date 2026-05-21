@@ -12,8 +12,10 @@ internal static class AuthFlow
 {
     public const string Password = "Passw0rd!";
 
-    /// <summary>Signs a brand-new visitor in fully and returns the issued token pair.</summary>
-    public static async Task<AuthTokens> SignInVisitorAsync(HttpClient client, SimfApiFactory factory)
+    /// <summary>Signs a brand-new visitor up and verifies the email; returns the address.</summary>
+    public static async Task<string> RegisterVerifiedVisitorAsync(
+        HttpClient client,
+        SimfApiFactory factory)
     {
         var email = $"flow-{Guid.NewGuid():N}@simf.test";
 
@@ -27,6 +29,13 @@ internal static class AuthFlow
                 Email = email,
                 Code = GetActiveCode(factory, email, AccountCodePurpose.EmailVerification),
             });
+        return email;
+    }
+
+    /// <summary>Signs a brand-new visitor in fully and returns the issued token pair.</summary>
+    public static async Task<AuthTokens> SignInVisitorAsync(HttpClient client, SimfApiFactory factory)
+    {
+        var email = await RegisterVerifiedVisitorAsync(client, factory);
 
         var signIn = await client.PostAsJsonAsync(
             "/api/v1/auth/sign-in",
