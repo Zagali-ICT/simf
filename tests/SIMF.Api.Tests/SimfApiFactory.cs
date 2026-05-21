@@ -16,13 +16,15 @@ namespace SIMF.Api.Tests;
 /// <see cref="FakeTimeProvider"/>.
 /// </summary>
 /// <remarks>
-/// The connection string and the super-admin settings are passed as environment
+/// The connection string and other settings are passed as environment
 /// variables because <c>AddInfrastructure</c> reads configuration eagerly,
 /// before the test host's configuration callbacks would run. Test parallelism
 /// is disabled (see <c>AssemblyInfo.cs</c>) so the process-wide variables and
-/// the shared clock are safe.
+/// the shared clock are safe. The rate limit is set high so the normal suite is
+/// not throttled; <see cref="RateLimitedApiFactory"/> lowers it for the
+/// rate-limit tests.
 /// </remarks>
-public sealed class SimfApiFactory : WebApplicationFactory<Program>
+public class SimfApiFactory : WebApplicationFactory<Program>
 {
     private readonly string _databaseName = $"SIMF_Test_{Guid.NewGuid():N}";
 
@@ -39,6 +41,7 @@ public sealed class SimfApiFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("SuperAdmin__Email", "superadmin@simf.test");
         Environment.SetEnvironmentVariable("SuperAdmin__TempPassword", "ChangeMe!Test1");
         Environment.SetEnvironmentVariable("SuperAdmin__TotpSecret", "JBSWY3DPEHPK3PXP");
+        Environment.SetEnvironmentVariable("RateLimit__PermitLimit", "100000");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -55,12 +58,13 @@ public sealed class SimfApiFactory : WebApplicationFactory<Program>
         });
     }
 
-    /// <summary>Creates the test database schema. Call once per test class.</summary>
+    /// <summary>Applies the migrations to the test database. Call once per test class.</summary>
     public void EnsureDatabaseCreated()
     {
         using var scope = Services.CreateScope();
-        scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>()
-            .Database.EnsureCreated();
+        var services = scope.ServiceProvider;
+        services.GetRequiredService<SimfIdentityDbContext>().Database.Migrate();
+        services.GetRequiredService<SimfAppDbContext>().Database.Migrate();
     }
 
     protected override void Dispose(bool disposing)

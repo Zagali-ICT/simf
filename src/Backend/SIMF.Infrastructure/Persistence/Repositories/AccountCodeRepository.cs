@@ -23,6 +23,17 @@ internal sealed class AccountCodeRepository(SimfIdentityDbContext dbContext) : I
             .OrderByDescending(code => code.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
+    public Task<int> CountCreatedSinceAsync(
+        Guid userId,
+        AccountCodePurpose purpose,
+        DateTimeOffset since,
+        CancellationToken cancellationToken = default) =>
+        dbContext.AccountCodes.CountAsync(
+            code => code.UserId == userId
+                && code.Purpose == purpose
+                && code.CreatedAt >= since,
+            cancellationToken);
+
     public async Task UpdateAsync(AccountCode code, CancellationToken cancellationToken = default)
     {
         dbContext.AccountCodes.Update(code);

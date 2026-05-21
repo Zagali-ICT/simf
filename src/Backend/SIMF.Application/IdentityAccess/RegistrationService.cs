@@ -3,10 +3,12 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
+using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
+using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
 
 namespace SIMF.Application.IdentityAccess;
@@ -15,18 +17,22 @@ namespace SIMF.Application.IdentityAccess;
 /// Implements account creation — sign-up, email verification and code resend
 /// (SIMF-API-001 section 12.4, SIMF-FDS-001). It takes a self-registered
 /// account as far as <see cref="AccountState.EmailVerified"/>; the registration
-/// profile and the approval workflow belong to SIMF-FDS-002.
+/// profile and the approval workflow belong to SIMF-FDS-002. Every outcome is
+/// written to the operation log.
 /// </summary>
 public sealed class RegistrationService(
     UserManager<SimfUser> userManager,
     IAccountCodeRepository accountCodeRepository,
     IEmailQueue emailQueue,
     ITransactionRunner transactionRunner,
+    IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<RegistrationService> logger) : IRegistrationService
 {
     private static readonly TimeSpan CodeLifetime = TimeSpan.FromMinutes(10);
+    private static readonly TimeSpan ResendWindow = TimeSpan.FromHours(1);
     private const int MaxCodeAttempts = 5;
+    private const int MaxCodesPerWindow = 5;
 
     public async Task<SignUpResponse> SignUpAsync(
         SignUpRequest request,
@@ -34,6 +40,9 @@ public sealed class RegistrationService(
     {
         if (await userManager.FindByEmailAsync(request.Email) is not null)
         {
+            await AuditAsync(
+                AuditEvents.SignUpDuplicateEmail, AuditOutcome.Failure, request.Email,
+                errorCode: ErrorCodes.AuthEmailAlreadyRegistered, cancellationToken: cancellationToken);
             throw new ApiException(
                 ErrorCodes.AuthEmailAlreadyRegistered,
                 409,
@@ -77,6 +86,9 @@ public sealed class RegistrationService(
             cancellationToken);
 
         EnqueueVerificationEmail(user.Email!, issuedCode!.Code);
+        await AuditAsync(
+            AuditEvents.SignUpSucceeded, AuditOutcome.Success, user.Email!,
+            userId: user.Id, cancellationToken: cancellationToken);
         logger.LogInformation("Account registered for {Email}", user.Email);
         return new SignUpResponse(user.Email!, (int)CodeLifetime.TotalSeconds);
     }
@@ -88,6 +100,9 @@ public sealed class RegistrationService(
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user is null)
         {
+            await AuditAsync(
+                AuditEvents.EmailVerificationAccountNotFound, AuditOutcome.Failure, request.Email,
+                errorCode: ErrorCodes.AuthAccountNotFound, cancellationToken: cancellationToken);
             throw new ApiException(
                 ErrorCodes.AuthAccountNotFound,
                 404,
@@ -108,6 +123,9 @@ public sealed class RegistrationService(
 
         if (code is null)
         {
+            await AuditAsync(
+                AuditEvents.EmailVerificationCodeIncorrect, AuditOutcome.Failure, user.Email!,
+                user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken);
             throw new ApiException(
                 ErrorCodes.AuthCodeInvalid,
                 400,
@@ -116,6 +134,9 @@ public sealed class RegistrationService(
 
         if (now >= code.ExpiresAt)
         {
+            await AuditAsync(
+                AuditEvents.EmailVerificationCodeExpired, AuditOutcome.Failure, user.Email!,
+                user.Id, ErrorCodes.AuthCodeExpired, cancellationToken);
             throw new ApiException(
                 ErrorCodes.AuthCodeExpired,
                 400,
@@ -124,6 +145,9 @@ public sealed class RegistrationService(
 
         if (code.AttemptCount >= MaxCodeAttempts)
         {
+            await AuditAsync(
+                AuditEvents.EmailVerificationAttemptCapReached, AuditOutcome.Failure, user.Email!,
+                user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken);
             throw new ApiException(
                 ErrorCodes.AuthCodeInvalid,
                 400,
@@ -134,6 +158,9 @@ public sealed class RegistrationService(
         {
             code.AttemptCount++;
             await accountCodeRepository.UpdateAsync(code, cancellationToken);
+            await AuditAsync(
+                AuditEvents.EmailVerificationCodeIncorrect, AuditOutcome.Failure, user.Email!,
+                user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken);
             throw new ApiException(
                 ErrorCodes.AuthCodeInvalid,
                 400,
@@ -153,6 +180,9 @@ public sealed class RegistrationService(
             },
             cancellationToken);
 
+        await AuditAsync(
+            AuditEvents.EmailVerificationSucceeded, AuditOutcome.Success, user.Email!,
+            userId: user.Id, cancellationToken: cancellationToken);
         logger.LogInformation("Email verified for {Email}", user.Email);
         return new VerifyEmailResponse(user.Email!, true);
     }
@@ -164,6 +194,9 @@ public sealed class RegistrationService(
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user is null)
         {
+            await AuditAsync(
+                AuditEvents.ResendCodeAccountNotFound, AuditOutcome.Failure, request.Email,
+                errorCode: ErrorCodes.AuthAccountNotFound, cancellationToken: cancellationToken);
             throw new ApiException(
                 ErrorCodes.AuthAccountNotFound,
                 404,
@@ -179,8 +212,27 @@ public sealed class RegistrationService(
         }
 
         var now = timeProvider.GetUtcNow();
+
+        // Cap how often a code may be re-issued for one account, independent of
+        // the per-IP rate limiter (resend abuse is keyed on the email).
+        var recentCodes = await accountCodeRepository.CountCreatedSinceAsync(
+            user.Id, AccountCodePurpose.EmailVerification, now - ResendWindow, cancellationToken);
+        if (recentCodes >= MaxCodesPerWindow)
+        {
+            await AuditAsync(
+                AuditEvents.ResendCodeCapReached, AuditOutcome.Failure, user.Email!,
+                user.Id, ErrorCodes.RateLimitExceeded, cancellationToken);
+            throw new ApiException(
+                ErrorCodes.RateLimitExceeded,
+                429,
+                "Too many verification codes have been requested. Try again later.");
+        }
+
         var code = await IssueVerificationCodeAsync(user, now, cancellationToken);
         EnqueueVerificationEmail(user.Email!, code.Code);
+        await AuditAsync(
+            AuditEvents.ResendCodeIssued, AuditOutcome.Success, user.Email!,
+            userId: user.Id, cancellationToken: cancellationToken);
         logger.LogInformation("Verification code re-issued for {Email}", user.Email);
         return new ResendCodeResponse(user.Email!, (int)CodeLifetime.TotalSeconds);
     }
@@ -220,6 +272,24 @@ public sealed class RegistrationService(
             $"<p>The code expires in {minutes} minutes.</p>";
         emailQueue.Enqueue(new EmailMessage(email, "SIMF email verification", body));
     }
+
+    private Task AuditAsync(
+        string eventType,
+        AuditOutcome outcome,
+        string email,
+        Guid? userId = null,
+        string? errorCode = null,
+        CancellationToken cancellationToken = default) =>
+        auditLog.WriteAsync(
+            new AuditEntry
+            {
+                EventType = eventType,
+                Outcome = outcome,
+                SubjectEmail = email,
+                SubjectUserId = userId,
+                ErrorCode = errorCode,
+            },
+            cancellationToken);
 
     /// <summary>Compares the codes in constant time, so no timing side channel leaks.</summary>
     private static bool CodesMatch(string stored, string supplied) =>

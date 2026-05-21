@@ -230,6 +230,25 @@ public sealed class RegistrationEndpointsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact]
+    public async Task ResendCode_returns_429_once_the_per_account_cap_is_reached()
+    {
+        var email = NewEmail();
+        await SignUpAsync(email);
+
+        HttpResponseMessage? lastResponse = null;
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            lastResponse = await _client.PostAsJsonAsync(
+                "/api/v1/auth/resend-code",
+                new ResendCodeRequest { Email = email });
+        }
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, lastResponse!.StatusCode);
+        var body = await lastResponse.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.Equal(ErrorCodes.RateLimitExceeded, body!.Error!.Code);
+    }
+
     // -- helpers --------------------------------------------------------------
 
     private string GetActiveCode(string email)

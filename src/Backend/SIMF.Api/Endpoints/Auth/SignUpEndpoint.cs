@@ -1,4 +1,5 @@
 using FastEndpoints;
+using Microsoft.AspNetCore.RateLimiting;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -14,6 +15,7 @@ public sealed class SignUpEndpoint(IRegistrationService registrationService)
         Post("/auth/sign-up");
         AllowAnonymous();
         Tags("Authentication");
+        Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
             "Create an account and send a six-digit email verification code.");
     }

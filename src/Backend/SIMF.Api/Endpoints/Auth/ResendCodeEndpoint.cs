@@ -1,4 +1,5 @@
 using FastEndpoints;
+using Microsoft.AspNetCore.RateLimiting;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -14,6 +15,7 @@ public sealed class ResendCodeEndpoint(IRegistrationService registrationService)
         Post("/auth/resend-code");
         AllowAnonymous();
         Tags("Authentication");
+        Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
             "Issue a fresh email verification code and invalidate the previous one.");
     }

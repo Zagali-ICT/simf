@@ -4,7 +4,7 @@
 |-------|-------|
 | Document | SIMF Developer Guide |
 | Status | Living document — extended each increment |
-| Last updated | 2026-05-21 (Sprint 1, increment 3) |
+| Last updated | 2026-05-21 (Sprint 1, increment 4a) |
 | Related | SIMF-SES-001, SIMF-SAD-001, SIMF-Sprint1-Login-API-Plan |
 
 This guide explains how to build, run and work on the SIMF backend. It grows
@@ -146,3 +146,24 @@ Increment 3 adds the first API endpoints — account creation:
 
 Rate limiting on the authentication endpoints is part of the middleware
 pipeline and is added in increment 4 (decision D-004).
+
+## 8. Increment 4a — audit log, rate limiting, request context
+
+Increment 4a adds the cross-cutting foundation for the sign-in feature:
+
+- **Operation log** — `OperationLogEntry` (`SIMF.Domain/Auditing`) is the
+  durable audit trail (SIMF-FDS-001 section 9). `IAuditLog` / `AuditLog` write
+  an entry — with the source IP, user-agent and correlation id — to the
+  `OperationLog` table in the application database. The account-creation
+  endpoints record every outcome (`AuditEvents`).
+- **Rate limiting** — a fixed-window limiter per client IP on the `/auth/*`
+  endpoints (`429 RATE_LIMIT_EXCEEDED`), sized by the `RateLimit` configuration
+  section. `RegistrationService` additionally caps verification-code resends
+  per account.
+- **Request context** — `CorrelationIdMiddleware` gives each request a
+  correlation id (the `X-Correlation-Id` header) and pushes it into the log
+  context; `ForwardedHeaders` recovers the real client IP behind the reverse
+  proxy (the production known-proxy list is a deployment setting).
+
+An unhandled 500 is logged through Serilog with its correlation id; it is not
+written to the operation-log table (decision D-007).

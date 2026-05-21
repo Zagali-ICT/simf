@@ -54,3 +54,14 @@ and Application layers gain code from increment 2.
 | `VerificationCodeGeneratorTests` | Unit (`SIMF.Application.Tests`) | The code is always six digits and well distributed |
 | `RegistrationEndpointsTests` | Integration | sign-up 201 / duplicate 409 / weak or mismatched password 400; verify-email 200 / wrong code 400 / unknown email 404 / expired code / five-attempt lockout / already-verified rejected; resend-code invalidates the old code, issues a usable new one, 404 for unknown email |
 | `IdentitySeederTests` | Integration | The super-admin is seeded with its TOTP secret; seeding is idempotent |
+
+## 6. Increment 4a — audit log and rate limiting
+
+| Test | Type | Verifies |
+|------|------|----------|
+| `AuditLogTests` | Integration | Sign-up writes a success operation-log entry; a duplicate writes a failure entry |
+| `RateLimitTests` | Integration | The auth endpoints return 429 once the per-IP limit is exceeded (via `RateLimitedApiFactory`) |
+| `RegistrationEndpointsTests` (added) | Integration | resend-code returns 429 once the per-account cap is reached |
+
+`SimfApiFactory` now applies the EF migrations (rather than `EnsureCreated`), so
+the migrations themselves are exercised by every integration test.

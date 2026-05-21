@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SIMF.Application.Auditing;
+using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
 
 namespace SIMF.Infrastructure.Identity;
@@ -13,6 +15,7 @@ namespace SIMF.Infrastructure.Identity;
 public sealed class IdentitySeeder(
     UserManager<SimfUser> userManager,
     IOptions<SuperAdminOptions> options,
+    IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<IdentitySeeder> logger)
 {
@@ -65,6 +68,16 @@ public sealed class IdentitySeeder(
                 admin, AuthenticatorKeyProvider, AuthenticatorKeyTokenName, settings.TotpSecret);
             await userManager.SetTwoFactorEnabledAsync(admin, true);
         }
+
+        await auditLog.WriteAsync(
+            new AuditEntry
+            {
+                EventType = AuditEvents.SuperAdminSeeded,
+                Outcome = AuditOutcome.Success,
+                SubjectEmail = settings.Email,
+                SubjectUserId = admin.Id,
+            },
+            cancellationToken);
 
         logger.LogInformation("Super-admin account seeded: {Email}", settings.Email);
     }

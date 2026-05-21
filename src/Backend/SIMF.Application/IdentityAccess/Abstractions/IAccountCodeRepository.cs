@@ -18,6 +18,16 @@ public interface IAccountCodeRepository
         AccountCodePurpose purpose,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Counts the codes created for the user and purpose at or after the given
+    /// time — used to cap how often a verification code may be re-issued.
+    /// </summary>
+    Task<int> CountCreatedSinceAsync(
+        Guid userId,
+        AccountCodePurpose purpose,
+        DateTimeOffset since,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Persists changes to an existing code (consumption, attempt count).</summary>
     Task UpdateAsync(AccountCode code, CancellationToken cancellationToken = default);
 }

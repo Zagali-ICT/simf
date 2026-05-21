@@ -1,4 +1,5 @@
 using FastEndpoints;
+using Microsoft.AspNetCore.RateLimiting;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
@@ -14,6 +15,7 @@ public sealed class VerifyEmailEndpoint(IRegistrationService registrationService
         Post("/auth/verify-email");
         AllowAnonymous();
         Tags("Authentication");
+        Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
             "Verify an email address with the code sent at sign-up.");
     }

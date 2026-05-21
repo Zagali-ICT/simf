@@ -2,10 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Application.Abstractions;
+using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Infrastructure.Auditing;
 using SIMF.Infrastructure.Email;
 using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
@@ -75,6 +77,7 @@ public static class DependencyInjection
         services.AddScoped<IPermissionRepository, PermissionRepository>();
 
         services.AddScoped<ITransactionRunner, TransactionRunner>();
+        services.AddScoped<IAuditLog, AuditLog>();
         services.AddScoped<IRegistrationService, RegistrationService>();
         services.AddScoped<IdentitySeeder>();
 
