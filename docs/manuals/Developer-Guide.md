@@ -4,7 +4,7 @@
 |-------|-------|
 | Document | SIMF Developer Guide |
 | Status | Living document — extended each increment |
-| Last updated | 2026-05-21 (Sprint 1, increment 4a) |
+| Last updated | 2026-05-21 (Sprint 1, increment 4b) |
 | Related | SIMF-SES-001, SIMF-SAD-001, SIMF-Sprint1-Login-API-Plan |
 
 This guide explains how to build, run and work on the SIMF backend. It grows
@@ -173,3 +173,26 @@ written to the operation-log table (decision D-007).
 **must** be configured — the startup fails fast if it is empty — because the
 rate limiter and the audit-log source IP depend on a trusted proxy. Logs are
 written to the console and to a rolling daily file (`logs/`).
+
+## 9. Increment 4b — sign-in and the second factors
+
+Increment 4b adds sign-in:
+
+- **Endpoints** (`SIMF.Api/Endpoints/Auth`) — `sign-in` (the password step),
+  `verify-totp` (Control Panel) and `verify-otp` (visitors).
+- **`SignInService`** — checks the password and the lockout state, then issues
+  a short-lived `SecondFactorToken` ticket. A user holding any role is a
+  Control Panel user and completes with an authenticator TOTP code; every other
+  user with a code emailed to them. Tokens are issued only once the second
+  factor passes.
+- **`JwtTokenService`** — issues the HMAC-SHA256 access token (claims: subject,
+  email, display name, the security stamp, roles). The signing key comes from
+  the `Jwt` configuration section — supplied through `set-env`, never committed.
+- **Refresh token** — a random opaque token, stored only as a hash; rotation
+  and the refresh endpoint are increment 4c.
+- **Lockout** — ASP.NET Core Identity lockout (5 failed attempts, 15 minutes).
+- **Seeding** — `IdentitySeeder` now also seeds the **Administrator role** and
+  assigns the super-admin to it, so the super-admin routes to the TOTP path.
+
+The JWT bearer authentication middleware — validating the token on protected
+endpoints — is increment 4c.
