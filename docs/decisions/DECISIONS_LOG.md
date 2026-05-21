@@ -1,0 +1,14 @@
+# SIMF Decisions Log
+
+Implementation decisions and assumptions that are not (or not yet) captured in a
+controlled document. Each entry is dated and explains the reasoning, per the
+project working rules. Newest first.
+
+When a decision is later absorbed into a controlled document, the entry keeps a
+note pointing to that document.
+
+| ID | Date | Decision | Reasoning |
+|----|------|----------|-----------|
+| D-003 | 2026-05-21 | .NET test assertions use xUnit's built-in `Assert`; FluentAssertions is not adopted. | FluentAssertions v8 carries a commercial-licence model that, combined with the warnings-as-errors build, risks breaking the build. xUnit's own assertions are sufficient and dependency-free. Recorded in SIMF-TST-001 v1.1 §5. |
+| D-002 | 2026-05-21 | The solution uses the `.slnx` solution format (`SIMF.slnx`). | The .NET 10 SDK defaults `dotnet new sln` to the new XML solution format. Kept rather than forcing the legacy `.sln` format. |
+| D-001 | 2026-05-21 | FastEndpoints registration (`AddFastEndpoints` / `UseFastEndpoints`) is deferred from increment 1 to increment 3. | FastEndpoints throws at startup when no endpoint is declared, and the first endpoint arrives in increment 3 (the authentication endpoints). The `FastEndpoints` package stays referenced by `SIMF.Api`; only the wiring is deferred. |

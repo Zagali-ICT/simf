@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-TST-001 |
 | Title | Test Plan |
-| Version | 1.0 |
+| Version | 1.1 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-21 | Engineering & Architecture Team | First issue. |
+| 1.1 | 2026-05-21 | Engineering & Architecture Team | §5: stated explicitly that .NET test assertions use xUnit's built-in `Assert`; FluentAssertions is not adopted (its v8 commercial-licence model). |
 
 ---
 
@@ -71,6 +72,7 @@ a change is agreed and recorded here before it is made.
 | Area | Tool |
 |------|------|
 | .NET unit and integration tests | xUnit |
+| .NET test assertions | xUnit's built-in `Assert`. FluentAssertions is not used — its v8 licence model is commercial; xUnit's assertions are sufficient and dependency-free. |
 | .NET coverage | Coverlet, reported in the pipeline |
 | .NET integration tests | Run against a dedicated test database |
 | Web end-to-end tests | Playwright |
