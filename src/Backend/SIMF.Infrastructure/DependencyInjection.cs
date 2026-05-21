@@ -88,6 +88,7 @@ public static class DependencyInjection
         services.AddScoped<IAuditLog, AuditLog>();
         services.AddScoped<IRegistrationService, RegistrationService>();
         services.AddScoped<ISignInService, SignInService>();
+        services.AddScoped<ISessionService, SessionService>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<ITotpVerifier, TotpVerifier>();
         services.AddScoped<IdentitySeeder>();

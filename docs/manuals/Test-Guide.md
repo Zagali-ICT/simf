@@ -4,7 +4,7 @@
 |-------|-------|
 | Document | SIMF Test Guide |
 | Status | Living document — extended each increment |
-| Last updated | 2026-05-21 (Sprint 1, increment 3) |
+| Last updated | 2026-05-22 (Sprint 1, increment 4c) |
 | Related | SIMF-TST-001, SIMF-SES-001 |
 
 How SIMF tests are organised and run. It grows one section per increment.
@@ -70,4 +70,10 @@ the migrations themselves are exercised by every integration test.
 
 | Test | Type | Verifies |
 |------|------|----------|
-| `SignInTests` | Integration | sign-in 401 (unknown email / wrong password) and 403 before email verification; a visitor completes sign-in with the emailed code; an administrator completes it with a TOTP code; verify-otp and verify-totp reject a wrong code |
+| `SignInTests` | Integration | sign-in 401 (unknown email / wrong password) and 403 before email verification; a visitor completes sign-in with the emailed code; an administrator completes it with a TOTP code; verify-otp and verify-totp reject a wrong code; account lockout, ticket expiry, the attempt cap, TOTP replay, the sign-in audit events |
+
+## 8. Increment 4c — refresh, sign-out, the authentication middleware
+
+| Test | Type | Verifies |
+|------|------|----------|
+| `SessionTests` | Integration | refresh rotates the token; an unknown token is rejected; reusing a rotated token revokes the whole family; sign-out needs a token, succeeds, revokes the refresh token, and an access token is rejected after sign-out |

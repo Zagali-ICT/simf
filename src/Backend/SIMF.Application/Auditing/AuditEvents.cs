@@ -27,5 +27,8 @@ public static class AuditEvents
     public const string SignInSecondFactorRejected = "SignIn.SecondFactorRejected";
     public const string SignInSucceeded = "SignIn.Succeeded";
     public const string RefreshTokenIssued = "RefreshToken.Issued";
+    public const string RefreshTokenRotated = "RefreshToken.Rotated";
+    public const string RefreshTokenReused = "RefreshToken.Reused";
+    public const string SignOutSucceeded = "SignOut.Succeeded";
     public const string SuperAdminSeeded = "Admin.SuperAdminSeeded";
 }

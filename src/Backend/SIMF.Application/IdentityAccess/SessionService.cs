@@ -1,0 +1,148 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
+using SIMF.Application.Auditing;
+using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Common;
+using SIMF.Contracts.Authentication;
+using SIMF.Domain.Auditing;
+using SIMF.Domain.IdentityAccess;
+
+namespace SIMF.Application.IdentityAccess;
+
+/// <summary>
+/// Implements the session lifecycle — refresh-token rotation with stolen-token
+/// reuse detection, and sign-out (SIMF-API-001 section 12.4, SIMF-FDS-001
+/// section 5.3 and Amendment A.6).
+/// </summary>
+public sealed class SessionService(
+    UserManager<SimfUser> userManager,
+    IRefreshTokenRepository refreshTokenRepository,
+    IJwtTokenService jwtTokenService,
+    IAuditLog auditLog,
+    TimeProvider timeProvider,
+    ILogger<SessionService> logger) : ISessionService
+{
+    private static readonly TimeSpan RefreshTokenLifetime = TimeSpan.FromDays(30);
+
+    public async Task<AuthTokens> RefreshAsync(
+        RefreshRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.GetUtcNow();
+        var presented = await refreshTokenRepository.GetByTokenHashAsync(
+            OpaqueToken.Hash(request.RefreshToken), cancellationToken);
+
+        if (presented is null)
+        {
+            throw new ApiException(ErrorCodes.AuthRefreshTokenInvalid, 401,
+                "The refresh token is not valid.");
+        }
+
+        // A token that was already revoked is being presented again — it has
+        // been rotated away, so its reuse means it was stolen. Kill every
+        // session for the account (SIMF-FDS-001 section 5.3).
+        if (presented.RevokedAt is not null)
+        {
+            await refreshTokenRepository.RevokeAllForUserAsync(
+                presented.UserId, now, cancellationToken);
+            var compromised = await userManager.FindByIdAsync(presented.UserId.ToString());
+            if (compromised is not null)
+            {
+                await userManager.UpdateSecurityStampAsync(compromised);
+            }
+
+            await AuditAsync(AuditEvents.RefreshTokenReused, AuditOutcome.Failure,
+                compromised?.Email, presented.UserId, ErrorCodes.AuthRefreshTokenInvalid,
+                cancellationToken);
+            logger.LogWarning(
+                "Refresh-token reuse detected for user {UserId}; every session was revoked.",
+                presented.UserId);
+            throw new ApiException(ErrorCodes.AuthRefreshTokenInvalid, 401,
+                "The refresh token is not valid.");
+        }
+
+        if (now >= presented.ExpiresAt)
+        {
+            throw new ApiException(ErrorCodes.AuthRefreshTokenExpired, 401,
+                "The refresh token has expired. Sign in again.");
+        }
+
+        var user = await userManager.FindByIdAsync(presented.UserId.ToString())
+            ?? throw new ApiException(ErrorCodes.AuthRefreshTokenInvalid, 401,
+                "The refresh token is not valid.");
+
+        if (user.AccountState is AccountState.Disabled or AccountState.Rejected)
+        {
+            throw new ApiException(ErrorCodes.AuthAccountDisabled, 403,
+                "This account is not active.");
+        }
+
+        // Rotate — revoke the presented token and issue a fresh one in its chain.
+        presented.RevokedAt = now;
+        await refreshTokenRepository.UpdateAsync(presented, cancellationToken);
+
+        var refreshValue = OpaqueToken.Generate();
+        await refreshTokenRepository.AddAsync(
+            new RefreshToken
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                TokenHash = OpaqueToken.Hash(refreshValue),
+                CreatedAt = now,
+                ExpiresAt = now.Add(RefreshTokenLifetime),
+                RotatedFromId = presented.Id,
+            },
+            cancellationToken);
+
+        var roles = await userManager.GetRolesAsync(user);
+        var accessToken = jwtTokenService.CreateAccessToken(user, roles);
+
+        await AuditAsync(AuditEvents.RefreshTokenRotated, AuditOutcome.Success,
+            user.Email, user.Id, cancellationToken: cancellationToken);
+
+        return new AuthTokens(
+            accessToken.Value,
+            refreshValue,
+            "Bearer",
+            accessToken.ExpiresInSeconds,
+            new AuthUser(user.Id, user.Email!, user.DisplayName));
+    }
+
+    public async Task SignOutAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+        {
+            return;
+        }
+
+        // Revoke every refresh token and roll the security stamp — this ends all
+        // sessions, since the stamp is per-account and every access token carries
+        // it (SIMF-FDS-001 Amendment A.6).
+        await refreshTokenRepository.RevokeAllForUserAsync(
+            user.Id, timeProvider.GetUtcNow(), cancellationToken);
+        await userManager.UpdateSecurityStampAsync(user);
+
+        await AuditAsync(AuditEvents.SignOutSucceeded, AuditOutcome.Success,
+            user.Email, user.Id, cancellationToken: cancellationToken);
+        logger.LogInformation("Sign-out completed for {Email}", user.Email);
+    }
+
+    private Task AuditAsync(
+        string eventType,
+        AuditOutcome outcome,
+        string? email,
+        Guid? userId = null,
+        string? errorCode = null,
+        CancellationToken cancellationToken = default) =>
+        auditLog.WriteAsync(
+            new AuditEntry
+            {
+                EventType = eventType,
+                Outcome = outcome,
+                SubjectEmail = email,
+                SubjectUserId = userId,
+                ErrorCode = errorCode,
+            },
+            cancellationToken);
+}

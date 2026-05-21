@@ -4,7 +4,7 @@
 |-------|-------|
 | Document | SIMF Developer Guide |
 | Status | Living document — extended each increment |
-| Last updated | 2026-05-21 (Sprint 1, increment 4b) |
+| Last updated | 2026-05-22 (Sprint 1, increment 4c) |
 | Related | SIMF-SES-001, SIMF-SAD-001, SIMF-Sprint1-Login-API-Plan |
 
 This guide explains how to build, run and work on the SIMF backend. It grows
@@ -196,3 +196,24 @@ Increment 4b adds sign-in:
 
 The JWT bearer authentication middleware — validating the token on protected
 endpoints — is increment 4c.
+
+## 10. Increment 4c — refresh, sign-out, the authentication middleware
+
+Increment 4c completes the session lifecycle:
+
+- **`refresh`** (`SessionService`) — exchanges a refresh token for a new access
+  token and **rotates** the refresh token (the old one is revoked, the new one
+  chained by `RotatedFromId`). Presenting an already-revoked token is treated as
+  a stolen-token signal: every session for the account is revoked and the event
+  is audited `RefreshToken.Reused`.
+- **`sign-out`** — requires a valid access token; revokes every refresh token
+  for the caller and rolls the security stamp, ending all sessions (decision
+  D-012).
+- **JWT bearer authentication** — `Program.cs` validates the access token with
+  hardened `TokenValidationParameters` (issuer, audience, lifetime, signing key;
+  `HS256` pinned). `OnTokenValidated` compares the token's `security_stamp`
+  claim to the account's current stamp and rejects a token from an ended
+  session — so sign-out revokes live access tokens too.
+
+The Login API is feature-complete at this increment except password
+reset/change (increment 5).

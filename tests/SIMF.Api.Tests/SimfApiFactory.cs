@@ -30,7 +30,10 @@ public class SimfApiFactory : WebApplicationFactory<Program>
 
     public FakeEmailSender Email { get; } = new();
 
-    public FakeTimeProvider Time { get; } = new();
+    // Started near real time so a test-issued JWT — whose lifetime the bearer
+    // middleware validates against the real system clock — is not seen as
+    // expired. Tests advance this clock explicitly when they need to.
+    public FakeTimeProvider Time { get; } = new(DateTimeOffset.UtcNow);
 
     public SimfApiFactory()
     {

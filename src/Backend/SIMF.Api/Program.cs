@@ -1,11 +1,15 @@
 using System.Globalization;
 using System.Net;
+using System.Text;
 using System.Threading.RateLimiting;
 using FastEndpoints;
 using FastEndpoints.Swagger;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using SIMF.Api.Middleware;
 using SIMF.Api.RateLimiting;
@@ -14,6 +18,7 @@ using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Common;
 using SIMF.Domain.Auditing;
+using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure;
 using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
@@ -93,13 +98,60 @@ builder.Services.SwaggerDocument(options =>
 // Readiness checks (SIMF-OPS-001 Amendment A.4).
 builder.Services.AddHealthChecks();
 
+// JWT signing settings. The key must be present and long enough for HMAC-SHA256
+// — a missing or weak key would let an attacker forge tokens.
+var jwtOptions =
+    builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+    ?? new JwtOptions();
+if (Encoding.UTF8.GetByteCount(jwtOptions.SigningKey) < 32)
+{
+    throw new InvalidOperationException(
+        "Jwt:SigningKey must be configured and at least 32 bytes long.");
+}
+
+// Bearer authentication — validates the access token on a protected endpoint,
+// and rejects a token whose security stamp no longer matches the account's
+// (SIMF-FDS-001 Amendment A.6).
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtOptions.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtOptions.Audience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30),
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var userId = context.Principal?.FindFirst("sub")?.Value;
+                var tokenStamp = context.Principal?.FindFirst("security_stamp")?.Value;
+                var userManager = context.HttpContext.RequestServices
+                    .GetRequiredService<UserManager<SimfUser>>();
+                var user = userId is null ? null : await userManager.FindByIdAsync(userId);
+                if (user is null || user.SecurityStamp != tokenStamp)
+                {
+                    context.Fail("The session is no longer valid.");
+                }
+            },
+        };
+    });
+builder.Services.AddAuthorization();
+
 // The reverse-proxy allowlist — the rate limiter and the audit-log source IP
 // depend on it, so an X-Forwarded-For header is honoured only from a trusted
 // proxy. Outside Development and the test host it must be configured.
 var knownProxies =
     builder.Configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? [];
-var jwtSigningKey =
-    builder.Configuration.GetSection(JwtOptions.SectionName)["SigningKey"] ?? string.Empty;
 
 var app = builder.Build();
 
@@ -110,14 +162,6 @@ if (!app.Environment.IsDevelopment()
     throw new InvalidOperationException(
         "ReverseProxy:KnownProxies must be configured outside Development — "
         + "the rate limiter and the audit-log source IP depend on a trusted proxy.");
-}
-
-// The JWT signing key must be present and long enough for HMAC-SHA256 — a
-// missing or weak key would let an attacker forge tokens.
-if (System.Text.Encoding.UTF8.GetByteCount(jwtSigningKey) < 32)
-{
-    throw new InvalidOperationException(
-        "Jwt:SigningKey must be configured and at least 32 bytes long.");
 }
 
 // Apply the migrations and seed the super-admin. Skipped under the test host,
@@ -157,6 +201,9 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.UseRateLimiter();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseFastEndpoints(config =>
 {

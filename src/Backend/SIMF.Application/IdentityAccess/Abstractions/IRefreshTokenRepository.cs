@@ -13,4 +13,13 @@ public interface IRefreshTokenRepository
 
     /// <summary>Persists changes to an existing token (for example, on rotation).</summary>
     Task UpdateAsync(RefreshToken token, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Revokes every still-live refresh token for the user — used on sign-out
+    /// and when reuse of a rotated token is detected.
+    /// </summary>
+    Task RevokeAllForUserAsync(
+        Guid userId,
+        DateTimeOffset revokedAt,
+        CancellationToken cancellationToken = default);
 }

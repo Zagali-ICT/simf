@@ -23,4 +23,14 @@ internal sealed class RefreshTokenRepository(SimfIdentityDbContext dbContext) : 
         dbContext.RefreshTokens.Update(token);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public Task RevokeAllForUserAsync(
+        Guid userId,
+        DateTimeOffset revokedAt,
+        CancellationToken cancellationToken = default) =>
+        dbContext.RefreshTokens
+            .Where(token => token.UserId == userId && token.RevokedAt == null)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(token => token.RevokedAt, revokedAt),
+                cancellationToken);
 }
