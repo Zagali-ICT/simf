@@ -1,0 +1,15 @@
+<Project>
+
+  <!--
+    Shared build settings for every SIMF project (SIMF-SES-001 section 4.3).
+    Nullable, ImplicitUsings and TreatWarningsAsErrors are set here once;
+    individual .csproj files do not redeclare them.
+  -->
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Backend/">
+    <Project Path="src/Backend/SIMF.Api/SIMF.Api.csproj" />
+    <Project Path="src/Backend/SIMF.Application/SIMF.Application.csproj" />
+    <Project Path="src/Backend/SIMF.Domain/SIMF.Domain.csproj" />
+    <Project Path="src/Backend/SIMF.Infrastructure/SIMF.Infrastructure.csproj" />
+    <Project Path="src/Backend/SIMF.RealTime/SIMF.RealTime.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/SIMF.Common/SIMF.Common.csproj" />
+    <Project Path="src/Shared/SIMF.Contracts/SIMF.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SIMF.Api.Tests/SIMF.Api.Tests.csproj" />
+    <Project Path="tests/SIMF.Application.Tests/SIMF.Application.Tests.csproj" />
+    <Project Path="tests/SIMF.Domain.Tests/SIMF.Domain.Tests.csproj" />
+  </Folder>
+</Solution>

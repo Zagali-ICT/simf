@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\SIMF.Domain\SIMF.Domain.csproj" />
+    <ProjectReference Include="..\..\Shared\SIMF.Contracts\SIMF.Contracts.csproj" />
+    <ProjectReference Include="..\..\Shared\SIMF.Common\SIMF.Common.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+</Project>
