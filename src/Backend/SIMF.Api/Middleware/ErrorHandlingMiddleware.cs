@@ -5,15 +5,11 @@ namespace SIMF.Api.Middleware;
 
 /// <summary>
 /// The first middleware in the pipeline (SIMF-Sprint1 plan section 7). It wraps
-/// every request, catches any unhandled exception, logs it, and returns the
-/// standard <see cref="ApiResult{T}"/> error envelope — so no exception ever
-/// reaches the client as a raw stack trace.
+/// every request: an <see cref="ApiException"/> becomes its declared
+/// <see cref="ApiResult{T}"/> failure with the matching HTTP status; any other
+/// exception becomes a 500. No exception reaches the client as a raw stack
+/// trace.
 /// </summary>
-/// <remarks>
-/// Mapping of specific exception types (DataValidationException, domain
-/// exceptions) to their error codes is added with the features that introduce
-/// those exceptions; this scaffold handles the catch-all case.
-/// </remarks>
 public sealed class ErrorHandlingMiddleware(
     RequestDelegate next,
     ILogger<ErrorHandlingMiddleware> logger)
@@ -26,6 +22,27 @@ public sealed class ErrorHandlingMiddleware(
         try
         {
             await next(context);
+        }
+        catch (ApiException ex)
+        {
+            logger.LogWarning(
+                "Request failed for {Method} {Path}: {Code} ({Status})",
+                context.Request.Method,
+                context.Request.Path,
+                ex.Code,
+                ex.StatusCode);
+
+            if (context.Response.HasStarted)
+            {
+                throw;
+            }
+
+            await WriteAsync(context, ex.StatusCode, new ApiError
+            {
+                Code = ex.Code,
+                Message = ex.Message,
+                Details = ex.Details,
+            });
         }
         catch (Exception ex)
         {
@@ -40,18 +57,20 @@ public sealed class ErrorHandlingMiddleware(
                 throw;
             }
 
-            context.Response.Clear();
-            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-            context.Response.ContentType = "application/json";
-
-            var result = ApiResult<object>.Fail(new ApiError
+            await WriteAsync(context, StatusCodes.Status500InternalServerError, new ApiError
             {
                 Code = ErrorCodes.InternalError,
                 Message = "An unexpected error occurred.",
             });
-
-            await context.Response.WriteAsync(
-                JsonSerializer.Serialize(result, JsonOptions));
         }
+    }
+
+    private static async Task WriteAsync(HttpContext context, int statusCode, ApiError error)
+    {
+        context.Response.Clear();
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(
+            JsonSerializer.Serialize(ApiResult<object>.Fail(error), JsonOptions));
     }
 }

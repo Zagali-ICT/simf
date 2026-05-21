@@ -1,5 +1,4 @@
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -8,8 +7,8 @@ namespace SIMF.Api.Tests;
 /// Integration test for the readiness endpoint (SIMF-OPS-001 section 13,
 /// Amendment A.4).
 /// </summary>
-public sealed class HealthEndpointTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public sealed class HealthEndpointTests(SimfApiFactory factory)
+    : IClassFixture<SimfApiFactory>
 {
     [Fact]
     public async Task Health_endpoint_reports_healthy()

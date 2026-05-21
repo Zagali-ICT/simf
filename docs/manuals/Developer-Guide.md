@@ -4,7 +4,7 @@
 |-------|-------|
 | Document | SIMF Developer Guide |
 | Status | Living document — extended each increment |
-| Last updated | 2026-05-21 (Sprint 1, increment 2) |
+| Last updated | 2026-05-21 (Sprint 1, increment 3) |
 | Related | SIMF-SES-001, SIMF-SAD-001, SIMF-Sprint1-Login-API-Plan |
 
 This guide explains how to build, run and work on the SIMF backend. It grows
@@ -117,3 +117,32 @@ Persistence/Migrations/App` for the application context.
 The development connection string (`ConnectionStrings:SimfDb` in
 `appsettings.Development.json`) points at the local SQL Server instance;
 production supplies it through the `set-env-*` script.
+
+## 7. Increment 3 — account creation
+
+Increment 3 adds the first API endpoints — account creation:
+
+- **Endpoints** (`SIMF.Api/Endpoints/Auth`) — `POST /api/v1/auth/sign-up`,
+  `verify-email` and `resend-code` (SIMF-API-001 section 12.4), built on
+  FastEndpoints. The endpoints are thin: they call `RegistrationService` and
+  return the `ApiResult<T>` envelope. Request validation uses FluentValidation
+  (`Validator<T>` classes); the section 12.5 password policy is enforced there,
+  in one place.
+- **`RegistrationService`** (`SIMF.Application/IdentityAccess`) — the sign-up,
+  verify-email and resend-code use cases. It creates the user through ASP.NET
+  Identity's `UserManager`, issues a six-digit `AccountCode`, and queues the
+  verification email. A self-registered account reaches `EmailVerified`; the
+  registration profile and the approval workflow belong to SIMF-FDS-002.
+- **Email pipeline** — `IEmailQueue` accepts a message; `EmailBackgroundService`
+  drains the queue and `SmtpEmailSender` (MailKit) sends it. Sign-up never waits
+  on the mail server (SIMF-SAD-001 Amendment A.2).
+- **`IdentitySeeder`** — seeds the super-admin at startup (skipped under the
+  test host). Supply `SuperAdmin:Email` and `SuperAdmin:TempPassword` through
+  user-secrets or the `set-env` script; they are never committed.
+- **Error handling** — `ErrorHandlingMiddleware` maps an `ApiException` to its
+  declared error code and HTTP status, and any other exception to a 500.
+- **Startup** — outside the test host, the API applies the EF migrations and
+  runs the seeder before it serves requests.
+
+Rate limiting on the authentication endpoints is part of the middleware
+pipeline and is added in increment 4 (decision D-004).
