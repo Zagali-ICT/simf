@@ -167,3 +167,9 @@ Increment 4a adds the cross-cutting foundation for the sign-in feature:
 
 An unhandled 500 is logged through Serilog with its correlation id; it is not
 written to the operation-log table (decision D-007).
+
+**Reverse-proxy trust.** `X-Forwarded-For` is honoured only from an address in
+`ReverseProxy:KnownProxies`. Outside Development and the test host that list
+**must** be configured — the startup fails fast if it is empty — because the
+rate limiter and the audit-log source IP depend on a trusted proxy. Logs are
+written to the console and to a rolling daily file (`logs/`).

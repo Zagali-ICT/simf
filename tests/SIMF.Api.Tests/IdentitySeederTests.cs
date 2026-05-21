@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.Application.Auditing;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Identity;
+using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -48,6 +50,19 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         Assert.NotNull(admin);
         Assert.True(await userManager.GetTwoFactorEnabledAsync(admin!));
         Assert.Equal("JBSWY3DPEHPK3PXP", await userManager.GetAuthenticatorKeyAsync(admin!));
+    }
+
+    [Fact]
+    public async Task SeedAsync_writes_a_SuperAdminSeeded_audit_entry()
+    {
+        using var scope = _factory.Services.CreateScope();
+
+        await scope.ServiceProvider.GetRequiredService<IdentitySeeder>().SeedAsync();
+
+        var database = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        Assert.Contains(
+            database.OperationLog,
+            entry => entry.EventType == AuditEvents.SuperAdminSeeded);
     }
 
     [Fact]

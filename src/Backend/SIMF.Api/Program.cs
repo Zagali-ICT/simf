@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Net;
 using System.Threading.RateLimiting;
 using FastEndpoints;
 using FastEndpoints.Swagger;
@@ -9,7 +11,9 @@ using SIMF.Api.Middleware;
 using SIMF.Api.RateLimiting;
 using SIMF.Api.RequestContext;
 using SIMF.Application.Abstractions;
+using SIMF.Application.Auditing;
 using SIMF.Common;
+using SIMF.Domain.Auditing;
 using SIMF.Infrastructure;
 using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
@@ -45,8 +49,27 @@ builder.Services.AddRateLimiter(rateLimiter =>
 
     rateLimiter.OnRejected = async (context, cancellationToken) =>
     {
-        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-        await context.HttpContext.Response.WriteAsJsonAsync(
+        var http = context.HttpContext;
+        http.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        {
+            http.Response.Headers.RetryAfter =
+                ((int)retryAfter.TotalSeconds).ToString(CultureInfo.InvariantCulture);
+        }
+
+        // Record the rejection — the control that stops abuse must leave a trace.
+        await http.RequestServices.GetRequiredService<IAuditLog>().WriteAsync(
+            new AuditEntry
+            {
+                EventType = AuditEvents.RateLimitRejected,
+                Outcome = AuditOutcome.Failure,
+                ErrorCode = ErrorCodes.RateLimitExceeded,
+                Detail = http.Request.Path,
+            },
+            cancellationToken);
+
+        await http.Response.WriteAsJsonAsync(
             ApiResult<object>.Fail(new ApiError
             {
                 Code = ErrorCodes.RateLimitExceeded,
@@ -70,7 +93,22 @@ builder.Services.SwaggerDocument(options =>
 // Readiness checks (SIMF-OPS-001 Amendment A.4).
 builder.Services.AddHealthChecks();
 
+// The reverse-proxy allowlist — the rate limiter and the audit-log source IP
+// depend on it, so an X-Forwarded-For header is honoured only from a trusted
+// proxy. Outside Development and the test host it must be configured.
+var knownProxies =
+    builder.Configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? [];
+
 var app = builder.Build();
+
+if (!app.Environment.IsDevelopment()
+    && !app.Environment.IsEnvironment("Testing")
+    && knownProxies.Length == 0)
+{
+    throw new InvalidOperationException(
+        "ReverseProxy:KnownProxies must be configured outside Development — "
+        + "the rate limiter and the audit-log source IP depend on a trusted proxy.");
+}
 
 // Apply the migrations and seed the super-admin. Skipped under the test host,
 // which prepares its own database.
@@ -83,14 +121,25 @@ if (!app.Environment.IsEnvironment("Testing"))
     await services.GetRequiredService<IdentitySeeder>().SeedAsync();
 }
 
-// Real client IP from the reverse proxy. The production known-proxy list is a
-// deployment setting (SIMF-OPS-001).
-app.UseForwardedHeaders(new ForwardedHeadersOptions
+// Recover the real client IP — but only from a trusted proxy (see above).
+var forwardedHeaders = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
-});
+    ForwardLimit = 1,
+};
+forwardedHeaders.KnownProxies.Clear();
+forwardedHeaders.KnownIPNetworks.Clear();
+foreach (var proxy in knownProxies)
+{
+    if (IPAddress.TryParse(proxy, out var address))
+    {
+        forwardedHeaders.KnownProxies.Add(address);
+    }
+}
 
-// The correlation id is established first, so every log line for the request —
+app.UseForwardedHeaders(forwardedHeaders);
+
+// The correlation id is established next, so every log line for the request —
 // including a failure — carries it.
 app.UseMiddleware<CorrelationIdMiddleware>();
 

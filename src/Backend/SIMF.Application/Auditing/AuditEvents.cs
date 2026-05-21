@@ -13,8 +13,11 @@ public static class AuditEvents
     public const string EmailVerificationAttemptCapReached = "EmailVerification.AttemptCapReached";
     public const string EmailVerificationCodeExpired = "EmailVerification.CodeExpired";
     public const string EmailVerificationAccountNotFound = "EmailVerification.AccountNotFound";
+    public const string EmailVerificationAccountNotRegistered = "EmailVerification.AccountNotRegistered";
     public const string ResendCodeIssued = "ResendCode.Issued";
     public const string ResendCodeAccountNotFound = "ResendCode.AccountNotFound";
+    public const string ResendCodeAccountNotRegistered = "ResendCode.AccountNotRegistered";
     public const string ResendCodeCapReached = "ResendCode.CapReached";
+    public const string RateLimitRejected = "RateLimit.Rejected";
     public const string SuperAdminSeeded = "Admin.SuperAdminSeeded";
 }

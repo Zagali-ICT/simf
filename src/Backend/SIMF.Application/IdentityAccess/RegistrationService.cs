@@ -111,6 +111,9 @@ public sealed class RegistrationService(
 
         if (user.AccountState != AccountState.Registered)
         {
+            await AuditAsync(
+                AuditEvents.EmailVerificationAccountNotRegistered, AuditOutcome.Failure,
+                user.Email!, user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken);
             throw new ApiException(
                 ErrorCodes.AuthCodeInvalid,
                 400,
@@ -205,6 +208,9 @@ public sealed class RegistrationService(
 
         if (user.AccountState != AccountState.Registered)
         {
+            await AuditAsync(
+                AuditEvents.ResendCodeAccountNotRegistered, AuditOutcome.Failure,
+                user.Email!, user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken);
             throw new ApiException(
                 ErrorCodes.AuthCodeInvalid,
                 400,

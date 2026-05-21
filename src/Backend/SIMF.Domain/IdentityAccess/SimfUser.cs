@@ -20,7 +20,7 @@ public class SimfUser : IdentityUser<Guid>
     /// True when the account holds a temporary password and must change it
     /// before any other action (SIMF-FDS-001 Amendment A.5).
     /// </summary>
-    public bool PasswordChangeRequired { get; set; }
+    public bool PasswordChangeRequired { get; set; } = true;
 
     /// <summary>When the account was created (UTC).</summary>
     public DateTimeOffset CreatedAt { get; set; }
