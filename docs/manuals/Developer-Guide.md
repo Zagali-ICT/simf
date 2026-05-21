@@ -4,7 +4,7 @@
 |-------|-------|
 | Document | SIMF Developer Guide |
 | Status | Living document — extended each increment |
-| Last updated | 2026-05-21 (Sprint 1, increment 1) |
+| Last updated | 2026-05-21 (Sprint 1, increment 2) |
 | Related | SIMF-SES-001, SIMF-SAD-001, SIMF-Sprint1-Login-API-Plan |
 
 This guide explains how to build, run and work on the SIMF backend. It grows
@@ -79,3 +79,41 @@ Increment 1 establishes the solution and its cross-cutting pieces:
 
 FastEndpoints is referenced by `SIMF.Api` but wired in increment 3, with the
 first endpoint — FastEndpoints requires at least one endpoint to start.
+
+## 6. Increment 2 — the data layer
+
+Increment 2 establishes the Identity & Access data foundation:
+
+- **Domain entities** (`SIMF.Domain/IdentityAccess`) — `SimfUser` and `SimfRole`
+  extend ASP.NET Core Identity; `Permission`, `RolePermission`, `RefreshToken`
+  and `AccountCode` are SIMF's own entities, with the `AccountState` and
+  `AccountCodePurpose` enums.
+- **Two database contexts** (`SIMF.Infrastructure/Persistence`) —
+  `SimfIdentityDbContext` (built on `IdentityDbContext`) holds the Identity &
+  Access tables; `SimfAppDbContext` holds the business entities (none yet).
+  Both target **one physical database** (decision C-1) and each keeps its own
+  migration history table (`__EFMigrationsHistory_Identity` and
+  `__EFMigrationsHistory_App`).
+- **Repositories** — `IRefreshTokenRepository`, `IAccountCodeRepository` and
+  `IPermissionRepository` (interfaces in `SIMF.Application`, implementations in
+  `SIMF.Infrastructure`). Users and roles are reached through ASP.NET Identity's
+  `UserManager` and `RoleManager`, so they need no custom repository.
+- **`AddInfrastructure`** (`SIMF.Infrastructure/DependencyInjection.cs`) —
+  registers both contexts (with connection pooling and `EnableRetryOnFailure`)
+  and the repositories. It is wired into the API in increment 3.
+
+### Database migrations
+
+Each context has its own migration folder and a design-time factory, so a
+migration is generated without running the API. For the Identity context:
+
+    dotnet ef migrations add <Name> --project src/Backend/SIMF.Infrastructure
+        --startup-project src/Backend/SIMF.Infrastructure
+        --context SimfIdentityDbContext --output-dir Persistence/Migrations/Identity
+
+(run as one command). Use `--context SimfAppDbContext` and `--output-dir
+Persistence/Migrations/App` for the application context.
+
+The development connection string (`ConnectionStrings:SimfDb` in
+`appsettings.Development.json`) points at the local SQL Server instance;
+production supplies it through the `set-env-*` script.

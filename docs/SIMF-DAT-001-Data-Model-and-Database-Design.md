@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-DAT-001 |
 | Title | Data Model and Database Design |
-| Version | 1.1 |
+| Version | 1.2 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -19,6 +19,7 @@
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. Logical data model by bounded context, conventions, and the core ERD. |
 | 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): one database with two DbContexts and separate migration histories; GpsPresence as batched append-only telemetry with a retention purge; peak-load indexes; Booking.Status Rejected, Hall geofence, the account-code generalisation; SQL Server Standard edition. |
+| 1.2 | 2026-05-21 | Engineering & Architecture Team | Increment-2 build amendment (see Amendment B): records how the §5.1 Identity & Access entities map onto ASP.NET Core Identity. |
 
 ---
 
@@ -359,6 +360,30 @@ The production database is **SQL Server 2022 Standard edition** (decision O-3);
 the model uses no Enterprise-only feature. High availability is a
 production-deployment decision deferred to closer to the event; development and
 test run a single instance.
+
+---
+
+## Amendment B — Increment 2 build (2026-05-21)
+
+The increment-2 build realises §5.1 (Identity & Access) on ASP.NET Core
+Identity. This records how the §5.1 entities map onto the implementation.
+
+- `User`, `Role` and `UserRole` are realised through ASP.NET Core Identity —
+  `SimfUser : IdentityUser<Guid>`, `SimfRole : IdentityRole<Guid>`, and
+  Identity's `AspNetUserRoles` join table. Identity therefore provides
+  `PasswordHash`, the security stamp, the lockout fields and the two-factor
+  state directly.
+- A user's lifecycle is the `AccountState` field; there is **no** separate
+  `IsActive` flag on `User` — the two would compete as the source of truth.
+- `TotpSecret` is realised through ASP.NET Core Identity's authenticator-key
+  token store (the `AspNetUserTokens` table); there is no separate `TotpSecret`
+  table.
+- `EmailVerificationCode` is realised as **`AccountCode`** with the `Purpose`
+  field (Amendment A.4) and an `AttemptCount` for the per-code attempt cap.
+- The Identity tables keep their default ASP.NET Core Identity names
+  (`AspNetUsers`, `AspNetRoles`, and so on); the SIMF-specific entities use the
+  standard SIMF table names (`Permissions`, `RolePermissions`, `RefreshTokens`,
+  `AccountCodes`).
 
 ---
 
