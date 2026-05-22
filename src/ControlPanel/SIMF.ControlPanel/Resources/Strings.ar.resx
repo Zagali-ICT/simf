@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <data name="Shell.AppName" xml:space="preserve"><value>لوحة التحكم</value></data>
+  <data name="Shell.Notifications" xml:space="preserve"><value>الإشعارات</value></data>
+  <data name="Shell.Account" xml:space="preserve"><value>الحساب</value></data>
+  <data name="Shell.SignOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
+  <data name="Shell.ToggleNav" xml:space="preserve"><value>إظهار القائمة</value></data>
+  <data name="Shell.ThemeLight" xml:space="preserve"><value>فاتح</value></data>
+  <data name="Shell.ThemeDark" xml:space="preserve"><value>داكن</value></data>
+  <data name="Shell.SwitchLanguage" xml:space="preserve"><value>English</value></data>
+
+  <data name="Nav.Overview" xml:space="preserve"><value>نظرة عامة</value></data>
+  <data name="Nav.People" xml:space="preserve"><value>الأشخاص</value></data>
+  <data name="Nav.Programme" xml:space="preserve"><value>البرنامج</value></data>
+  <data name="Nav.Exhibition" xml:space="preserve"><value>المعرض</value></data>
+  <data name="Nav.Engagement" xml:space="preserve"><value>التفاعل</value></data>
+  <data name="Nav.Knowledge" xml:space="preserve"><value>المعرفة والذكاء الاصطناعي</value></data>
+  <data name="Nav.Content" xml:space="preserve"><value>المحتوى</value></data>
+  <data name="Nav.Communications" xml:space="preserve"><value>الاتصالات</value></data>
+  <data name="Nav.System" xml:space="preserve"><value>النظام</value></data>
+
+  <data name="Module.Dashboard" xml:space="preserve"><value>لوحة المعلومات</value></data>
+  <data name="Module.RegistrationRequests" xml:space="preserve"><value>طلبات التسجيل</value></data>
+  <data name="Module.Attendees" xml:space="preserve"><value>الحضور</value></data>
+  <data name="Module.Roles" xml:space="preserve"><value>الأدوار والصلاحيات</value></data>
+  <data name="Module.Themes" xml:space="preserve"><value>المحاور والركائز</value></data>
+  <data name="Module.Sessions" xml:space="preserve"><value>الجلسات</value></data>
+  <data name="Module.Halls" xml:space="preserve"><value>القاعات والمقاعد</value></data>
+  <data name="Module.Speakers" xml:space="preserve"><value>المتحدثون</value></data>
+  <data name="Module.Bookings" xml:space="preserve"><value>الحجوزات</value></data>
+  <data name="Module.Exhibitors" xml:space="preserve"><value>العارضون</value></data>
+  <data name="Module.Booths" xml:space="preserve"><value>الأجنحة</value></data>
+  <data name="Module.Sponsors" xml:space="preserve"><value>الرعاة</value></data>
+  <data name="Module.VenueMap" xml:space="preserve"><value>خريطة الموقع</value></data>
+  <data name="Module.LiveSessions" xml:space="preserve"><value>الجلسات المباشرة</value></data>
+  <data name="Module.Moderation" xml:space="preserve"><value>قائمة الإشراف</value></data>
+  <data name="Module.Faq" xml:space="preserve"><value>الأسئلة الشائعة</value></data>
+  <data name="Module.AiSettings" xml:space="preserve"><value>إعدادات الذكاء الاصطناعي</value></data>
+  <data name="Module.Media" xml:space="preserve"><value>المركز الإعلامي</value></data>
+  <data name="Module.News" xml:space="preserve"><value>الأخبار</value></data>
+  <data name="Module.PreviousEditions" xml:space="preserve"><value>الدورات السابقة</value></data>
+  <data name="Module.Notifications" xml:space="preserve"><value>الإشعارات</value></data>
+  <data name="Module.Configuration" xml:space="preserve"><value>الإعدادات العامة</value></data>
+  <data name="Module.OperationLog" xml:space="preserve"><value>سجل العمليات</value></data>
+  <data name="Module.Settings" xml:space="preserve"><value>الإعدادات</value></data>
+
+  <data name="Dashboard.Title" xml:space="preserve"><value>لوحة المعلومات</value></data>
+  <data name="Dashboard.Welcome" xml:space="preserve"><value>مرحبًا بك في لوحة تحكم الملتقى البحري السعودي الدولي</value></data>
+  <data name="Dashboard.Intro" xml:space="preserve"><value>منصة تشغيل الملتقى البحري السعودي الدولي. تظهر هنا الإحصاءات وأعداد الحضور المباشر بمجرد تفعيل وحدات الفعالية.</value></data>
+
+  <data name="Module.ComingSoon.Title" xml:space="preserve"><value>قريبًا</value></data>
+  <data name="Module.ComingSoon.Text" xml:space="preserve"><value>هذه الوحدة قيد الإعداد وستكون متاحة في إصدار لاحق.</value></data>
+
+  <data name="NotPermitted.Title" xml:space="preserve"><value>غير مصرّح</value></data>
+  <data name="NotPermitted.Text" xml:space="preserve"><value>ليس لديك صلاحية لفتح هذه الصفحة. إذا كنت ترى أن هذا خطأ، فيرجى التواصل مع مسؤول النظام.</value></data>
+  <data name="NotPermitted.Back" xml:space="preserve"><value>العودة إلى لوحة المعلومات</value></data>
+</root>

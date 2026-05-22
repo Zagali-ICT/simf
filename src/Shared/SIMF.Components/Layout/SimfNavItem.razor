@@ -1,0 +1,17 @@
+@* SimfNavItem — one navigation link. NavLink marks the current location. *@
+@namespace SIMF.Components.Layout
+
+<li class="simf-nav-item">
+    <NavLink class="simf-nav-item__link" ActiveClass="simf-nav-item__link--active"
+             href="@Href" Match="NavLinkMatch.All">
+        <span class="simf-nav-item__label">@Label</span>
+    </NavLink>
+</li>
+
+@code {
+    /// <summary>The route this item links to.</summary>
+    [Parameter, EditorRequired] public string Href { get; set; } = string.Empty;
+
+    /// <summary>The item label.</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+}

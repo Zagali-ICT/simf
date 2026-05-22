@@ -83,6 +83,7 @@
   --color-action-active: #172F4D;    /* Primary action, pressed (navy -20% L)  */
   --color-link: #007CD8;             /* Links — brand bright blue              */
   --color-link-hover: #1D3D63;
+  --color-wordmark: #244A77;         /* The "SIMF" wordmark on a light surface */
 
   --color-success: #2E7D5B;          /* Success states                         */
   --color-warning: #C9912F;          /* Warning states (never the brand gold)  */
@@ -132,6 +133,7 @@
   --color-action-active: #3E7FA8;
   --color-link: #5BA9E0;
   --color-link-hover: #84C2EC;
+  --color-wordmark: #7FB6DA;         /* The wordmark, lightened for dark surfaces */
 
   --color-success: #4FA37D;
   --color-warning: #D9A648;

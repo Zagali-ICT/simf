@@ -6,10 +6,11 @@ namespace SIMF.ControlPanel.Components;
 internal static class AppRenderMode
 {
     /// <summary>
-    /// Interactive Server with prerendering disabled. The authentication pages
-    /// use this: prerendering would run their initialisation twice (once on a
-    /// separate DI scope) and is the wrong default for a screen that depends on
-    /// the per-circuit <c>SimfAuthSession</c>.
+    /// Interactive Server with prerendering disabled — the Control Panel's
+    /// global render mode (set on <c>Routes</c> and <c>HeadOutlet</c>). It is
+    /// set globally because a page-level render mode does not extend to the
+    /// page's layout, and the shell layout must be interactive. Prerendering is
+    /// off so initialisation does not run twice on a separate DI scope.
     /// </summary>
     public static readonly InteractiveServerRenderMode InteractiveServerNoPrerender =
         new(prerender: false);

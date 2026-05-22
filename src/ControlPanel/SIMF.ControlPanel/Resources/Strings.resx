@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <data name="Shell.AppName" xml:space="preserve"><value>Control Panel</value></data>
+  <data name="Shell.Notifications" xml:space="preserve"><value>Notifications</value></data>
+  <data name="Shell.Account" xml:space="preserve"><value>Account</value></data>
+  <data name="Shell.SignOut" xml:space="preserve"><value>Sign out</value></data>
+  <data name="Shell.ToggleNav" xml:space="preserve"><value>Toggle navigation</value></data>
+  <data name="Shell.ThemeLight" xml:space="preserve"><value>Light</value></data>
+  <data name="Shell.ThemeDark" xml:space="preserve"><value>Dark</value></data>
+  <data name="Shell.SwitchLanguage" xml:space="preserve"><value>العربية</value></data>
+
+  <data name="Nav.Overview" xml:space="preserve"><value>Overview</value></data>
+  <data name="Nav.People" xml:space="preserve"><value>People</value></data>
+  <data name="Nav.Programme" xml:space="preserve"><value>Programme</value></data>
+  <data name="Nav.Exhibition" xml:space="preserve"><value>Exhibition</value></data>
+  <data name="Nav.Engagement" xml:space="preserve"><value>Engagement</value></data>
+  <data name="Nav.Knowledge" xml:space="preserve"><value>Knowledge &amp; AI</value></data>
+  <data name="Nav.Content" xml:space="preserve"><value>Content</value></data>
+  <data name="Nav.Communications" xml:space="preserve"><value>Communications</value></data>
+  <data name="Nav.System" xml:space="preserve"><value>System</value></data>
+
+  <data name="Module.Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="Module.RegistrationRequests" xml:space="preserve"><value>Registration requests</value></data>
+  <data name="Module.Attendees" xml:space="preserve"><value>Attendees</value></data>
+  <data name="Module.Roles" xml:space="preserve"><value>Roles &amp; permissions</value></data>
+  <data name="Module.Themes" xml:space="preserve"><value>Themes &amp; pillars</value></data>
+  <data name="Module.Sessions" xml:space="preserve"><value>Sessions</value></data>
+  <data name="Module.Halls" xml:space="preserve"><value>Halls &amp; seating</value></data>
+  <data name="Module.Speakers" xml:space="preserve"><value>Speakers</value></data>
+  <data name="Module.Bookings" xml:space="preserve"><value>Bookings</value></data>
+  <data name="Module.Exhibitors" xml:space="preserve"><value>Exhibitors</value></data>
+  <data name="Module.Booths" xml:space="preserve"><value>Booths</value></data>
+  <data name="Module.Sponsors" xml:space="preserve"><value>Sponsors</value></data>
+  <data name="Module.VenueMap" xml:space="preserve"><value>Venue map</value></data>
+  <data name="Module.LiveSessions" xml:space="preserve"><value>Live sessions</value></data>
+  <data name="Module.Moderation" xml:space="preserve"><value>Moderation queue</value></data>
+  <data name="Module.Faq" xml:space="preserve"><value>FAQ groups &amp; entries</value></data>
+  <data name="Module.AiSettings" xml:space="preserve"><value>AI settings</value></data>
+  <data name="Module.Media" xml:space="preserve"><value>Media Center</value></data>
+  <data name="Module.News" xml:space="preserve"><value>News</value></data>
+  <data name="Module.PreviousEditions" xml:space="preserve"><value>Previous editions</value></data>
+  <data name="Module.Notifications" xml:space="preserve"><value>Notifications</value></data>
+  <data name="Module.Configuration" xml:space="preserve"><value>Configuration</value></data>
+  <data name="Module.OperationLog" xml:space="preserve"><value>Operation log</value></data>
+  <data name="Module.Settings" xml:space="preserve"><value>Settings</value></data>
+
+  <data name="Dashboard.Title" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="Dashboard.Welcome" xml:space="preserve"><value>Welcome to the SIMF Control Panel</value></data>
+  <data name="Dashboard.Intro" xml:space="preserve"><value>The operations console for the Saudi International Maritime Forum. Statistics and live attendance figures appear here once the event modules are activated.</value></data>
+
+  <data name="Module.ComingSoon.Title" xml:space="preserve"><value>Coming soon</value></data>
+  <data name="Module.ComingSoon.Text" xml:space="preserve"><value>This module is being prepared and will be available in a later release.</value></data>
+
+  <data name="NotPermitted.Title" xml:space="preserve"><value>Not permitted</value></data>
+  <data name="NotPermitted.Text" xml:space="preserve"><value>You do not have permission to open this page. If you believe this is a mistake, contact your administrator.</value></data>
+  <data name="NotPermitted.Back" xml:space="preserve"><value>Back to the dashboard</value></data>
+</root>

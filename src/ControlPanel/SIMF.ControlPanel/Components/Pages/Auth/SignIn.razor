@@ -1,7 +1,6 @@
 @* Control Panel — sign-in (the password step). On success the account holds a
    Control Panel role, so the second factor is an authenticator TOTP code. *@
 @page "/login"
-@rendermode AppRenderMode.InteractiveServerNoPrerender
 @inject SimfAuthClient Api
 @inject SimfAuthSession Session
 @inject NavigationManager Nav

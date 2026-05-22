@@ -4,7 +4,7 @@
 |-------|-------|
 | Document | SIMF Developer Guide |
 | Status | Living document — extended each increment |
-| Last updated | 2026-05-22 (the frontend login increment) |
+| Last updated | 2026-05-22 (the Control Panel base shell) |
 | Related | SIMF-SES-001, SIMF-SAD-001, SIMF-CPD-001, SIMF-VID-001 |
 
 This guide explains how to build, run and work on the SIMF backend. It grows
@@ -300,5 +300,35 @@ host at `/login`, `/login/verify`, `/forgot-password`, `/reset-password`; the
 signed-in landing placeholder is at `/account`. The marketing site is not
 edited and is not built from Razor — it is static content served as-is.
 
-The Control Panel base shell — navigation, the top bar, full localisation —
-is the next increment.
+## 13. The Control Panel base shell
+
+This increment builds the Control Panel's application shell — the frame every
+future module page sits in — with persistent authentication and bilingual
+localisation.
+
+- **Persistent authentication** — sign-in issues a cookie (decision D-026), so
+  the session survives a refresh and `[Authorize]` pages are real. A cookie is
+  written only in an HTTP request context, so the interactive verification page
+  stashes the token pair in `SignInTicketStore` and full-page-navigates to
+  `/auth/complete`, which issues the cookie. `/auth/sign-out` (POST) ends the
+  API session and clears it. `Routes.razor` uses `AuthorizeRouteView`.
+- **The shell** — new `Simf*` components: `SimfAppShell` (top bar, side
+  navigation, content region), `SimfNavGroup`, `SimfNavItem`, `SimfPageHeader`.
+  The layout `CpShellLayout` wires them. The render mode is set globally on the
+  Control Panel (Interactive Server, no prerender) — a page-level render mode
+  does not reach the layout (decision D-027).
+- **Navigation** — `CpNavigation` defines the nine groups and their modules
+  (SIMF-CPD-001 §5.1). Permission filtering is gated on D1 and not yet applied;
+  the navigation shows its full structure. Each module routes to a shared
+  `ModulePlaceholder` until its feature increment is built.
+- **Localisation** — English and Arabic, switched from the top bar through the
+  `/culture` endpoint and a culture cookie; `RequestLocalization` selects the
+  culture; strings come from `Resources/Strings.resx` / `Strings.ar.resx` via
+  `IStringLocalizer<Strings>`. The shell is direction-aware — RTL for Arabic —
+  through CSS logical properties; `<html lang>`/`dir` follow the culture.
+  English is the default; the Control Panel sign-in pages stay English for now
+  (decision D-028).
+- **Pages** — the Dashboard (the Overview landing), the module placeholder, and
+  a "not permitted" page, all inside the shell.
+
+The per-feature Control Panel modules are built in their own later increments.

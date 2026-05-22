@@ -1,33 +1,15 @@
-@* Control Panel — the authenticated landing. This is a placeholder confirming
-   the cookie sign-in works; the navigation shell replaces it next. *@
+@* Control Panel — the Dashboard (the Overview landing). A placeholder until
+   the statistics and live-attendance modules are built. *@
 @page "/"
-@rendermode AppRenderMode.InteractiveServerNoPrerender
+@layout CpShellLayout
 @attribute [Authorize]
+@inject IStringLocalizer<Strings> L
 
-<PageTitle>SIMF Control Panel</PageTitle>
+<PageTitle>@L["Dashboard.Title"] · SIMF</PageTitle>
 
-<SimfSignedInLanding Title="You're signed in"
-                     Text="@_message">
-    <form method="post" action="/auth/sign-out" data-enhance="false">
-        <button type="submit" class="simf-button simf-button--secondary">Sign out</button>
-    </form>
-</SimfSignedInLanding>
+<SimfPageHeader Title='@L["Dashboard.Title"]' />
 
-@code {
-    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
-
-    private string _message = "The SIMF Control Panel shell is being prepared.";
-
-    protected override async Task OnInitializedAsync()
-    {
-        if (AuthState is not null)
-        {
-            var user = (await AuthState).User;
-            var name = user.Identity?.Name;
-            if (!string.IsNullOrEmpty(name))
-            {
-                _message = $"Signed in as {name}. The SIMF Control Panel shell is being prepared.";
-            }
-        }
-    }
-}
+<div class="simf-panel">
+    <h2 class="simf-panel__title">@L["Dashboard.Welcome"]</h2>
+    <p class="simf-panel__text">@L["Dashboard.Intro"]</p>
+</div>

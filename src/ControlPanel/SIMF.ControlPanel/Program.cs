@@ -10,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Localisation — English and Arabic; resources live under Resources/.
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+
 // Cookie authentication. The cookie carries the signed-in user's identity and
 // (encrypted) the SIMF API tokens. An unauthenticated request to a protected
 // page is sent to the sign-in page.
@@ -63,12 +66,20 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
+// Interface language — English or Arabic, chosen by the culture cookie.
+var supportedCultures = new[] { "en", "ar" };
+app.UseRequestLocalization(new RequestLocalizationOptions()
+    .SetDefaultCulture("en")
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures));
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapAuthEndpoints();
+app.MapCultureEndpoint();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
