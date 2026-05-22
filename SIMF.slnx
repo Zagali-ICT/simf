@@ -26,6 +26,7 @@
     <Project Path="tests/SIMF.ApiClient.Tests/SIMF.ApiClient.Tests.csproj" />
     <Project Path="tests/SIMF.Api.Tests/SIMF.Api.Tests.csproj" />
     <Project Path="tests/SIMF.Application.Tests/SIMF.Application.Tests.csproj" />
+    <Project Path="tests/SIMF.ControlPanel.Tests/SIMF.ControlPanel.Tests.csproj" />
     <Project Path="tests/SIMF.Domain.Tests/SIMF.Domain.Tests.csproj" />
   </Folder>
 </Solution>

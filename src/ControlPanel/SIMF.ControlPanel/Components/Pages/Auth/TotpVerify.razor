@@ -1,6 +1,7 @@
 @* Control Panel — the second factor: a 6-digit code from the user's
    authenticator app. Reached only from the sign-in step. *@
 @page "/login/totp"
+@attribute [AllowAnonymous]
 @inject SimfAuthClient Api
 @inject SimfAuthSession Session
 @inject SignInTicketStore Tickets

@@ -1,3 +1,4 @@
+// Tests: SIMF.ControlPanel.Tests/CpNavigationTests.cs
 namespace SIMF.ControlPanel;
 
 /// <summary>

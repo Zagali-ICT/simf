@@ -36,6 +36,6 @@ internal static class CultureEndpoint
                 target = "/";
             }
             return Results.LocalRedirect(target);
-        });
+        }).AllowAnonymous();
     }
 }

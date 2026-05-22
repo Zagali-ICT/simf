@@ -1,3 +1,4 @@
+// Tests: SIMF.ControlPanel.Tests/SignInTicketStoreTests.cs
 using Microsoft.Extensions.Caching.Memory;
 using SIMF.Contracts.Authentication;
 

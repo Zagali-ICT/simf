@@ -1,3 +1,4 @@
+// Tests: SIMF.ControlPanel.Tests/SignInTicketStoreTests.cs (the ticket hand-off).
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -16,12 +17,20 @@ internal static class AuthEndpoints
     {
         // Completes an interactive sign-in: redeems the one-time reference and
         // issues the authentication cookie, then sends the user to the shell.
+        // Intentionally anonymous — it runs before the cookie exists; the
+        // single-use, short-lived ticket reference is the control.
         routes.MapGet("/auth/complete", async (
             string reference, SignInTicketStore tickets, HttpContext http) =>
         {
+            var logger = AuthLog.Of(http);
             var tokens = tickets.Redeem(reference);
-            if (tokens is null)
+            if (tokens is null
+                || string.IsNullOrEmpty(tokens.User.Email)
+                || string.IsNullOrEmpty(tokens.User.DisplayName))
             {
+                logger.LogWarning(
+                    "Control Panel sign-in completion rejected — the ticket was unknown, "
+                    + "already used, expired or incomplete.");
                 return Results.Redirect("/login");
             }
 
@@ -45,21 +54,34 @@ internal static class AuthEndpoints
 
             await http.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);
+            logger.LogInformation("Control Panel sign-in completed for {UserId}.", tokens.User.Id);
             return Results.Redirect("/");
-        });
+        }).AllowAnonymous();
 
-        // Signs out: ends the API session, then clears the cookie. POST so a
-        // cross-site GET cannot trigger it; antiforgery is disabled on this one
-        // endpoint because the worst case is only a nuisance sign-out.
+        // Signs out: ends the API session, then clears the cookie. POST and
+        // authenticated-only — with the SameSite=Lax cookie a cross-site POST
+        // carries no cookie, so a forged request is unauthenticated and
+        // rejected; antiforgery is therefore not the gate here.
         routes.MapPost("/auth/sign-out", async (HttpContext http, SimfAuthClient api) =>
         {
+            var logger = AuthLog.Of(http);
+            var userId = http.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "(unknown)";
+
             var accessToken = await http.GetTokenAsync("access_token");
             if (accessToken is not null)
             {
-                await api.SignOutAsync(accessToken);
+                var result = await api.SignOutAsync(accessToken);
+                if (!result.Success)
+                {
+                    logger.LogWarning(
+                        "Control Panel sign-out: the API session could not be ended for {UserId}.",
+                        userId);
+                }
             }
+
             await http.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            logger.LogInformation("Control Panel sign-out for {UserId}.", userId);
             return Results.Redirect("/login");
-        }).DisableAntiforgery();
+        }).RequireAuthorization().DisableAntiforgery();
     }
 }

@@ -15,7 +15,7 @@ builder.Services.AddLocalization(options => options.ResourcesPath = "Resources")
 
 // Cookie authentication. The cookie carries the signed-in user's identity and
 // (encrypted) the SIMF API tokens. An unauthenticated request to a protected
-// page is sent to the sign-in page.
+// page is sent to the sign-in page; an access-denied event is logged.
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -26,7 +26,20 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.Name = "simf.cp.auth";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        // The cookie carries the API tokens — never send it over plain HTTP
+        // outside Development.
+        options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+            ? CookieSecurePolicy.SameAsRequest
+            : CookieSecurePolicy.Always;
+        options.Events.OnRedirectToAccessDenied = context =>
+        {
+            AuthLog.Of(context.HttpContext).LogWarning(
+                "Control Panel access denied for {User} at {Path}.",
+                context.HttpContext.User.Identity?.Name ?? "(unknown)",
+                context.Request.Path);
+            context.Response.Redirect(context.RedirectUri);
+            return Task.CompletedTask;
+        };
     });
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
@@ -65,6 +78,17 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
+
+// Baseline security response headers. A full Content-Security-Policy is a
+// later hardening item (it needs a nonce for the theme bootstrap script).
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"] = "DENY";
+    headers["Referrer-Policy"] = "no-referrer";
+    await next();
+});
 
 // Interface language — English or Arabic, chosen by the culture cookie.
 var supportedCultures = new[] { "en", "ar" };
