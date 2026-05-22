@@ -4,6 +4,7 @@
 @rendermode AppRenderMode.InteractiveServerNoPrerender
 @inject SimfAuthClient Api
 @inject SimfAuthSession Session
+@inject SignInTicketStore Tickets
 @inject NavigationManager Nav
 
 <PageTitle>Verification · SIMF Control Panel</PageTitle>
@@ -104,8 +105,11 @@
                 return;
             }
 
-            Session.Complete(result.Data);
-            Nav.NavigateTo("/");
+            // Hand the completed sign-in to the cookie-issuing endpoint — a
+            // cookie can only be written in an HTTP request context.
+            var reference = Tickets.Stash(result.Data);
+            Session.Clear();
+            Nav.NavigateTo($"/auth/complete?reference={reference}", forceLoad: true);
         }
         finally
         {
