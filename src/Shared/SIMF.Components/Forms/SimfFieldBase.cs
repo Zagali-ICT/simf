@@ -13,6 +13,7 @@ namespace SIMF.Components.Forms;
 public abstract class SimfFieldBase : ComponentBase, IDisposable
 {
     private EditContext? _subscribedContext;
+    private Expression<Func<string>>? _boundExpression;
     private FieldIdentifier _fieldIdentifier;
 
     /// <summary>A stable DOM id, so the label and the message can reference the input.</summary>
@@ -40,9 +41,11 @@ public abstract class SimfFieldBase : ComponentBase, IDisposable
 
     protected override void OnParametersSet()
     {
-        if (ValueExpression is not null)
+        // The bound expression is stable; only rebuild the identifier when it changes.
+        if (ValueExpression is not null && !ReferenceEquals(ValueExpression, _boundExpression))
         {
             _fieldIdentifier = FieldIdentifier.Create(ValueExpression);
+            _boundExpression = ValueExpression;
         }
 
         if (!ReferenceEquals(EditContext, _subscribedContext))

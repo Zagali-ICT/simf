@@ -1,7 +1,7 @@
 @* Website — the second factor: a 6-digit code emailed to the visitor. Reached
    only from the sign-in step. *@
 @page "/login/verify"
-@rendermode InteractiveServer
+@rendermode AppRenderMode.InteractiveServerNoPrerender
 @inject SimfAuthClient Api
 @inject SimfAuthSession Session
 @inject NavigationManager Nav
@@ -64,6 +64,7 @@
     {
         _editContext = new EditContext(_model);
         _messages = new ValidationMessageStore(_editContext);
+        _editContext.OnFieldChanged += ClearFieldError;
 
         // The verification step is only reachable after the password step.
         if (string.IsNullOrEmpty(Session.PendingOtpToken))
@@ -72,35 +73,52 @@
         }
     }
 
+    private void ClearFieldError(object? sender, FieldChangedEventArgs e)
+    {
+        _messages.Clear(e.FieldIdentifier);
+        _editContext.NotifyValidationStateChanged();
+    }
+
     private async Task HandleSubmitAsync()
     {
-        _error = null;
-        _messages.Clear();
-
-        if (_model.Code.Length != 6 || !_model.Code.All(char.IsAsciiDigit))
-        {
-            _messages.Add(_editContext.Field(nameof(CodeModel.Code)), "Enter the 6-digit code.");
-        }
-
-        _editContext.NotifyValidationStateChanged();
-        if (_editContext.GetValidationMessages().Any())
+        if (_loading)
         {
             return;
         }
 
         _loading = true;
-        var result = await Api.VerifyOtpAsync(
-            new VerifyOtpRequest { OtpToken = Session.PendingOtpToken!, Code = _model.Code });
-        _loading = false;
-
-        if (!result.Success || result.Data is null)
+        _error = null;
+        try
         {
-            _error = result.Error?.Message ?? "Verification could not be completed. Please try again.";
-            return;
-        }
+            _messages.Clear();
 
-        Session.Complete(result.Data);
-        Nav.NavigateTo("/");
+            if (_model.Code.Length != 6 || !_model.Code.All(char.IsAsciiDigit))
+            {
+                _messages.Add(_editContext.Field(nameof(CodeModel.Code)), "Enter the 6-digit code.");
+            }
+
+            _editContext.NotifyValidationStateChanged();
+            if (_editContext.GetValidationMessages().Any())
+            {
+                return;
+            }
+
+            var result = await Api.VerifyOtpAsync(
+                new VerifyOtpRequest { OtpToken = Session.PendingOtpToken!, Code = _model.Code });
+
+            if (!result.Success || result.Data is null)
+            {
+                _error = result.Error?.Message ?? "Verification could not be completed. Please try again.";
+                return;
+            }
+
+            Session.Complete(result.Data);
+            Nav.NavigateTo("/");
+        }
+        finally
+        {
+            _loading = false;
+        }
     }
 
     private sealed class CodeModel

@@ -19,7 +19,13 @@ builder.Services.AddHttpClient<SimfAuthClient>(client =>
     var baseUrl = builder.Configuration["Api:BaseUrl"]
         ?? throw new InvalidOperationException(
             "Configuration value 'Api:BaseUrl' is required but was not found.");
-    client.BaseAddress = new Uri(baseUrl);
+    var baseUri = new Uri(baseUrl);
+    if (!builder.Environment.IsDevelopment() && baseUri.Scheme != Uri.UriSchemeHttps)
+    {
+        throw new InvalidOperationException(
+            "'Api:BaseUrl' must use HTTPS outside the Development environment.");
+    }
+    client.BaseAddress = baseUri;
 });
 
 var app = builder.Build();

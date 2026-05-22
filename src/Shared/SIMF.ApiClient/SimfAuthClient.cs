@@ -85,8 +85,18 @@ public sealed class SimfAuthClient(HttpClient http)
 
             return result ?? TransportFailure<TResponse>("The server returned an empty response.");
         }
-        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            // A genuine caller cancellation — for example the Blazor circuit
+            // ending — is not a service failure; let it propagate.
+            throw;
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException or JsonException or NotSupportedException)
+        {
+            // An unreachable service, a timeout, or a non-JSON body (such as a
+            // reverse-proxy error page) is surfaced as a failed envelope — the
+            // caller never has to catch an exception.
             return TransportFailure<TResponse>(
                 "The SIMF service could not be reached. Please try again.");
         }
