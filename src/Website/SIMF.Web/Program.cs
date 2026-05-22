@@ -39,6 +39,12 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
+// Serve the imported static marketing site (wwwroot/index.html) at "/".
+// UseStaticFiles runs as middleware, so the default-document rewrite is served
+// regardless of endpoint-routing order.
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseAntiforgery();
 
 app.MapStaticAssets();

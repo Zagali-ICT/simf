@@ -289,5 +289,15 @@ The applications read the Login API base address from `Api:BaseUrl` in
 pending delivery (SIMF-VID-001 OI-2); a wordmark placeholder occupies the
 reserved logo box and swaps for the SVG with no layout change.
 
+### 12.1 The public Website content
+
+The Website's public content is the pre-built static SIMF 2026 marketing site,
+imported verbatim into `SIMF.Web/wwwroot` (`index.html`, `content.js`,
+`assets/`) and served at `/` by `UseDefaultFiles` + `UseStaticFiles` (decision
+D-024). The Blazor authentication pages are interactive islands on the same
+host at `/login`, `/login/verify`, `/forgot-password`, `/reset-password`; the
+signed-in landing placeholder is at `/account`. The marketing site is not
+edited and is not built from Razor — it is static content served as-is.
+
 The Control Panel base shell — navigation, the top bar, full localisation —
 is the next increment.
