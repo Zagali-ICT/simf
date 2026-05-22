@@ -1,0 +1,27 @@
+@* SimfAlert — a form-level message above the fields. The error variant is
+   announced assertively (wrong credentials, server errors); the info variant
+   is announced politely (e.g. "a code has been sent"). *@
+@namespace SIMF.Components.Forms
+
+@if (Variant == "error")
+{
+    <div class="simf-alert simf-alert--error" role="alert">
+        <SimfIcon Name="alert" Class="simf-alert__icon" />
+        <p class="simf-alert__text">@ChildContent</p>
+    </div>
+}
+else
+{
+    <div class="simf-alert simf-alert--info" role="status" aria-live="polite">
+        <SimfIcon Name="info" Class="simf-alert__icon" />
+        <p class="simf-alert__text">@ChildContent</p>
+    </div>
+}
+
+@code {
+    /// <summary>The variant — <c>error</c> or <c>info</c>.</summary>
+    [Parameter] public string Variant { get; set; } = "error";
+
+    /// <summary>The message content.</summary>
+    [Parameter, EditorRequired] public RenderFragment? ChildContent { get; set; }
+}

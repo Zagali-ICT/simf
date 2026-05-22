@@ -1,0 +1,24 @@
+@* SimfBrandPanel — the navy brand panel: the reversed wordmark, a subtitle,
+   an optional bottom caption, over a quiet compass-and-anchor texture. *@
+@namespace SIMF.Components.Layout
+
+<div class="simf-brand">
+    <div class="simf-brand__texture" aria-hidden="true"></div>
+    <SimfWordmark Reversed="true" />
+    @if (!string.IsNullOrEmpty(Subtitle))
+    {
+        <p class="simf-brand__subtitle">@Subtitle</p>
+    }
+    @if (!string.IsNullOrEmpty(Caption))
+    {
+        <p class="simf-brand__caption">@Caption</p>
+    }
+</div>
+
+@code {
+    /// <summary>The line under the wordmark — e.g. "Control Panel".</summary>
+    [Parameter] public string? Subtitle { get; set; }
+
+    /// <summary>An optional muted caption anchored to the foot of the panel.</summary>
+    [Parameter] public string? Caption { get; set; }
+}

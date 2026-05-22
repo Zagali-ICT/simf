@@ -1,0 +1,15 @@
+@* SimfLink — a styled text link in the SIMF link colour. *@
+@namespace SIMF.Components.Controls
+
+<a class="simf-link @(Block ? "simf-form__field-link" : null)" href="@Href">@ChildContent</a>
+
+@code {
+    /// <summary>The link target.</summary>
+    [Parameter, EditorRequired] public string Href { get; set; } = string.Empty;
+
+    /// <summary>Render as a block link aligned to the trailing edge (e.g. "Forgot password?").</summary>
+    [Parameter] public bool Block { get; set; }
+
+    /// <summary>The link text.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

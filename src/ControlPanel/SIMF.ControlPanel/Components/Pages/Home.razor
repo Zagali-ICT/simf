@@ -1,0 +1,46 @@
+@* Control Panel — the post-sign-in landing placeholder. The application shell
+   (navigation, modules) is a later increment; this confirms the sign-in and
+   offers sign-out. An unauthenticated visitor is sent to the sign-in page. *@
+@page "/"
+@rendermode InteractiveServer
+@inject SimfAuthClient Api
+@inject SimfAuthSession Session
+@inject NavigationManager Nav
+
+<PageTitle>SIMF Control Panel</PageTitle>
+
+@if (Session.IsSignedIn)
+{
+    <SimfSignedInLanding Title="You're signed in"
+                         Text="The SIMF Control Panel is being prepared. Your account is ready.">
+        <SimfButton Type="button" Disabled="true">Continue</SimfButton>
+        <SimfButton Variant="secondary" Type="button" Loading="_signingOut"
+                    LoadingLabel="Signing out" OnClick="SignOutAsync">
+            Sign out
+        </SimfButton>
+    </SimfSignedInLanding>
+}
+
+@code {
+    private bool _signingOut;
+
+    protected override void OnInitialized()
+    {
+        if (!Session.IsSignedIn)
+        {
+            Nav.NavigateTo("/login");
+        }
+    }
+
+    private async Task SignOutAsync()
+    {
+        _signingOut = true;
+        var accessToken = Session.Tokens?.AccessToken;
+        if (accessToken is not null)
+        {
+            await Api.SignOutAsync(accessToken);
+        }
+        Session.Clear();
+        Nav.NavigateTo("/login");
+    }
+}

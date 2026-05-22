@@ -1,0 +1,110 @@
+@* Website — the second factor: a 6-digit code emailed to the visitor. Reached
+   only from the sign-in step. *@
+@page "/login/verify"
+@rendermode InteractiveServer
+@inject SimfAuthClient Api
+@inject SimfAuthSession Session
+@inject NavigationManager Nav
+
+<PageTitle>Verification · Saudi International Maritime Forum</PageTitle>
+
+@if (Session.PendingOtpToken is not null)
+{
+    <SimfAuthLayout>
+        <Brand>
+            <SimfBrandPanel Subtitle="Saudi International Maritime Forum 2026"
+                            Caption="Royal Saudi Naval Forces" />
+        </Brand>
+        <ChildContent>
+            <SimfAuthCard Title="Verification"
+                          SupportingText="Enter the 6-digit code we sent to your email."
+                          Wide="true">
+                <TopControls>
+                    <SimfThemeToggle />
+                </TopControls>
+                <ChildContent>
+                    <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+                        @if (_error is not null)
+                        {
+                            <SimfAlert Variant="error">@_error</SimfAlert>
+                        }
+                        else if (Session.PendingEmail is not null)
+                        {
+                            <SimfAlert Variant="info">
+                                We've sent a code to @SimfAuthSession.MaskEmail(Session.PendingEmail).
+                            </SimfAlert>
+                        }
+                        <div class="simf-form__fields">
+                            <SimfCodeField Label="Verification code" @bind-Value="_model.Code"
+                                           Helper="Enter the 6-digit code." Disabled="_loading" />
+                        </div>
+                        <div class="simf-form__actions">
+                            <SimfButton Block="true" Loading="_loading" LoadingLabel="Verifying">
+                                Verify
+                            </SimfButton>
+                        </div>
+                        <div class="simf-form__secondary">
+                            <SimfLink Href="/login">Back to sign in</SimfLink>
+                        </div>
+                    </EditForm>
+                </ChildContent>
+            </SimfAuthCard>
+        </ChildContent>
+    </SimfAuthLayout>
+}
+
+@code {
+    private readonly CodeModel _model = new();
+    private EditContext _editContext = default!;
+    private ValidationMessageStore _messages = default!;
+    private bool _loading;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        _editContext = new EditContext(_model);
+        _messages = new ValidationMessageStore(_editContext);
+
+        // The verification step is only reachable after the password step.
+        if (string.IsNullOrEmpty(Session.PendingOtpToken))
+        {
+            Nav.NavigateTo("/login");
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        _error = null;
+        _messages.Clear();
+
+        if (_model.Code.Length != 6 || !_model.Code.All(char.IsAsciiDigit))
+        {
+            _messages.Add(_editContext.Field(nameof(CodeModel.Code)), "Enter the 6-digit code.");
+        }
+
+        _editContext.NotifyValidationStateChanged();
+        if (_editContext.GetValidationMessages().Any())
+        {
+            return;
+        }
+
+        _loading = true;
+        var result = await Api.VerifyOtpAsync(
+            new VerifyOtpRequest { OtpToken = Session.PendingOtpToken!, Code = _model.Code });
+        _loading = false;
+
+        if (!result.Success || result.Data is null)
+        {
+            _error = result.Error?.Message ?? "Verification could not be completed. Please try again.";
+            return;
+        }
+
+        Session.Complete(result.Data);
+        Nav.NavigateTo("/");
+    }
+
+    private sealed class CodeModel
+    {
+        public string Code { get; set; } = string.Empty;
+    }
+}

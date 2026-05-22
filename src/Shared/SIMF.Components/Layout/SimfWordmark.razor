@@ -1,0 +1,16 @@
+@* SimfWordmark — the SIMF logo lockup. A wordmark placeholder occupies a
+   reserved 40px box; the final logo SVG (SIMF-VID-001 OI-2) drops into the
+   same box with no layout change. Use Reversed on the dark brand panel. *@
+@namespace SIMF.Components.Layout
+
+<span class="simf-wordmark @(Reversed ? "simf-wordmark--reversed" : null)"
+      role="img" aria-label="SIMF 2026">
+    <span class="simf-wordmark__name" aria-hidden="true">SIMF</span>
+    <span class="simf-wordmark__divider" aria-hidden="true"></span>
+    <span class="simf-wordmark__year" aria-hidden="true">2026</span>
+</span>
+
+@code {
+    /// <summary>Use the white (negative) wordmark, for the navy brand panel.</summary>
+    [Parameter] public bool Reversed { get; set; }
+}

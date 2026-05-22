@@ -1,0 +1,34 @@
+@* SimfThemeToggle — switches the light / dark theme. The theme is applied and
+   persisted by the simf-theme.js helper, which also sets it before first
+   paint so there is no flash. *@
+@namespace SIMF.Components.Controls
+@inject IJSRuntime JS
+
+<button type="button" class="simf-control" @onclick="ToggleAsync" aria-label="@AriaLabel">
+    <SimfIcon Name="@(_isDark ? "sun" : "moon")" Class="simf-control__icon" />
+    <span>@(_isDark ? LightLabel : DarkLabel)</span>
+</button>
+
+@code {
+    /// <summary>The label shown when the next action switches to the light theme.</summary>
+    [Parameter] public string LightLabel { get; set; } = "Light";
+
+    /// <summary>The label shown when the next action switches to the dark theme.</summary>
+    [Parameter] public string DarkLabel { get; set; } = "Dark";
+
+    /// <summary>The accessible label for the control.</summary>
+    [Parameter] public string AriaLabel { get; set; } = "Switch theme";
+
+    private bool _isDark;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isDark = await JS.InvokeAsync<bool>("simfTheme.isDark");
+            StateHasChanged();
+        }
+    }
+
+    private async Task ToggleAsync() => _isDark = await JS.InvokeAsync<bool>("simfTheme.toggle");
+}

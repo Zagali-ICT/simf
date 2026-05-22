@@ -4,8 +4,8 @@
 |-------|-------|
 | Document | SIMF Developer Guide |
 | Status | Living document — extended each increment |
-| Last updated | 2026-05-22 (Sprint 1, increment 5) |
-| Related | SIMF-SES-001, SIMF-SAD-001, SIMF-Sprint1-Login-API-Plan |
+| Last updated | 2026-05-22 (the frontend login increment) |
+| Related | SIMF-SES-001, SIMF-SAD-001, SIMF-CPD-001, SIMF-VID-001 |
 
 This guide explains how to build, run and work on the SIMF backend. It grows
 one section per delivered increment.
@@ -28,13 +28,20 @@ one section per delivered increment.
         SIMF.Infrastructure    Persistence, external-service adapters
         SIMF.Api               The HTTP API (FastEndpoints) — the host
         SIMF.RealTime          SignalR hubs
+      ControlPanel/
+        SIMF.ControlPanel      The Control Panel — a Blazor Server app
+      Website/
+        SIMF.Web               The public Website — a Blazor SSR app
       Shared/
         SIMF.Contracts         Request and response DTOs
         SIMF.Common            ApiResult envelope, error model, shared constants
+        SIMF.Components        The Simf* Blazor component library
+        SIMF.ApiClient         The typed client for the Login API
     tests/
       SIMF.Domain.Tests
       SIMF.Application.Tests
       SIMF.Api.Tests
+      SIMF.ApiClient.Tests
 
 Project dependencies follow the DDD layering of SIMF-SAD-001 section 6 —
 dependencies point inward: Application depends on Domain; Infrastructure on
@@ -47,6 +54,8 @@ and Common.
 |--------|---------|
 | Build | `dotnet build SIMF.slnx -c Release` |
 | Run the API | `dotnet run --project src/Backend/SIMF.Api` |
+| Run the Control Panel | `dotnet run --project src/ControlPanel/SIMF.ControlPanel` |
+| Run the Website | `dotnet run --project src/Website/SIMF.Web` |
 | Test | `dotnet test SIMF.slnx -c Release` |
 
 The Release build treats warnings as errors and must pass with zero warnings
@@ -236,3 +245,49 @@ Increment 5 completes the Login API with password recovery:
   a transaction (decision D-014).
 
 The Login API is feature-complete.
+
+## 12. The frontend — Control Panel and Website login
+
+This increment starts the two frontend applications and delivers their
+authentication pages against the Login API.
+
+- **`SIMF.ControlPanel`** — the Control Panel, a Blazor Server application
+  (Interactive Server render mode). **`SIMF.Web`** — the public Website, a
+  Blazor application rendered server-side, with the authentication pages as
+  Interactive Server islands. The render-mode choice is decision D-017.
+- **`SIMF.Components`** — the `Simf*` component library. Per the approved
+  2026-05-20 design decision, pages compose UI only from `Simf*` components,
+  never raw primitives: `SimfAuthLayout`, `SimfAuthCard`, `SimfBrandPanel`,
+  `SimfTextField`, `SimfPasswordField`, `SimfCodeField`, `SimfButton`,
+  `SimfAlert`, `SimfLink`, `SimfThemeToggle`, `SimfLanguageSwitch`,
+  `SimfIcon` and the signed-in landing. The login-tier components are semantic
+  HTML styled by the design tokens (decision D-021).
+- **Design tokens** — `theme.tokens.css` (in `SIMF.Components`) is the single
+  source of truth for every colour, font, size and space, built from
+  SIMF-VID-001 section 9 and SIMF-CPD-001 section 8. It carries the brand
+  tokens, the derived functional tokens, and a light and a (proposed) dark
+  theme switched by a `data-theme` attribute. No SIMF stylesheet, component or
+  page uses a raw colour or font name. `app.css` holds resets only;
+  `simf-components.css` holds the BEM component styles.
+- **`SIMF.ApiClient`** — `SimfAuthClient`, a typed client over the Login API
+  that returns the `ApiResult<T>` envelope (a transport failure is mapped to a
+  failed envelope, so a page branches one way only). `SimfAuthSession` holds
+  the signed-in tokens for the lifetime of the Blazor circuit — on the server,
+  never in the browser.
+- **Pages** — each app has `/login`, the second-factor step (`/login/totp`
+  for the Control Panel, `/login/verify` for the Website), `/forgot-password`,
+  `/reset-password`, and a signed-in landing placeholder at `/`. The pages use
+  `EditForm` with a `ValidationMessageStore`; the `Simf*` field components read
+  and render their own validation message.
+- **Bilingual readiness** — the components use CSS logical properties
+  throughout, so the layout mirrors for Arabic (RTL) without a second layout.
+  The pages ship with English text; Arabic/English resource-file localisation
+  arrives with the Control Panel base shell (decision D-022).
+
+The applications read the Login API base address from `Api:BaseUrl` in
+`appsettings`. The real SIMF logo and the compass-and-anchor pattern are
+pending delivery (SIMF-VID-001 OI-2); a wordmark placeholder occupies the
+reserved logo box and swaps for the SVG with no layout change.
+
+The Control Panel base shell — navigation, the top bar, full localisation —
+is the next increment.

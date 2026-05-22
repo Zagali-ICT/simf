@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="myComment.txt" />
+  </Folder>
   <Folder Name="/src/" />
   <Folder Name="/src/Backend/">
     <Project Path="src/Backend/SIMF.Api/SIMF.Api.csproj" />
@@ -8,10 +11,19 @@
     <Project Path="src/Backend/SIMF.RealTime/SIMF.RealTime.csproj" />
   </Folder>
   <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/SIMF.ApiClient/SIMF.ApiClient.csproj" />
     <Project Path="src/Shared/SIMF.Common/SIMF.Common.csproj" />
+    <Project Path="src/Shared/SIMF.Components/SIMF.Components.csproj" />
     <Project Path="src/Shared/SIMF.Contracts/SIMF.Contracts.csproj" />
   </Folder>
+  <Folder Name="/src/ControlPanel/">
+    <Project Path="src/ControlPanel/SIMF.ControlPanel/SIMF.ControlPanel.csproj" />
+  </Folder>
+  <Folder Name="/src/Website/">
+    <Project Path="src/Website/SIMF.Web/SIMF.Web.csproj" />
+  </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/SIMF.ApiClient.Tests/SIMF.ApiClient.Tests.csproj" />
     <Project Path="tests/SIMF.Api.Tests/SIMF.Api.Tests.csproj" />
     <Project Path="tests/SIMF.Application.Tests/SIMF.Application.Tests.csproj" />
     <Project Path="tests/SIMF.Domain.Tests/SIMF.Domain.Tests.csproj" />

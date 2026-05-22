@@ -1,0 +1,107 @@
+@* Website — sign-in (the password step). A visitor account completes with a
+   code emailed to the account. *@
+@page "/login"
+@rendermode InteractiveServer
+@inject SimfAuthClient Api
+@inject SimfAuthSession Session
+@inject NavigationManager Nav
+
+<PageTitle>Sign in · Saudi International Maritime Forum</PageTitle>
+
+<SimfAuthLayout>
+    <Brand>
+        <SimfBrandPanel Subtitle="Saudi International Maritime Forum 2026"
+                        Caption="Royal Saudi Naval Forces" />
+    </Brand>
+    <ChildContent>
+        <SimfAuthCard Title="Sign in" SupportingText="Sign in to your SIMF account." Wide="true">
+            <TopControls>
+                <SimfThemeToggle />
+            </TopControls>
+            <ChildContent>
+                <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+                    @if (_error is not null)
+                    {
+                        <SimfAlert Variant="error">@_error</SimfAlert>
+                    }
+                    <div class="simf-form__fields">
+                        <SimfTextField Label="Email address" @bind-Value="_model.Email"
+                                       Type="email" Icon="mail" InputMode="email"
+                                       Autocomplete="username" Disabled="_loading" />
+                        <SimfPasswordField Label="Password" @bind-Value="_model.Password"
+                                           Autocomplete="current-password" Disabled="_loading" />
+                    </div>
+                    <SimfLink Href="/forgot-password" Block="true">Forgot password?</SimfLink>
+                    <div class="simf-form__actions">
+                        <SimfButton Block="true" Loading="_loading" LoadingLabel="Signing in">
+                            Sign in
+                        </SimfButton>
+                    </div>
+                </EditForm>
+            </ChildContent>
+            <Footer>Saudi International Maritime Forum 2026</Footer>
+        </SimfAuthCard>
+    </ChildContent>
+</SimfAuthLayout>
+
+@code {
+    private readonly SignInModel _model = new();
+    private EditContext _editContext = default!;
+    private ValidationMessageStore _messages = default!;
+    private bool _loading;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        _editContext = new EditContext(_model);
+        _messages = new ValidationMessageStore(_editContext);
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        _error = null;
+        _messages.Clear();
+
+        if (string.IsNullOrWhiteSpace(_model.Email))
+        {
+            _messages.Add(_editContext.Field(nameof(SignInModel.Email)), "Enter your email address.");
+        }
+        else if (!_model.Email.Contains('@', StringComparison.Ordinal))
+        {
+            _messages.Add(_editContext.Field(nameof(SignInModel.Email)), "Enter a valid email address.");
+        }
+
+        if (string.IsNullOrEmpty(_model.Password))
+        {
+            _messages.Add(_editContext.Field(nameof(SignInModel.Password)), "Enter your password.");
+        }
+
+        _editContext.NotifyValidationStateChanged();
+        if (_editContext.GetValidationMessages().Any())
+        {
+            return;
+        }
+
+        _loading = true;
+        var result = await Api.SignInAsync(
+            new SignInRequest { Email = _model.Email, Password = _model.Password });
+        _loading = false;
+
+        if (!result.Success || result.Data is null)
+        {
+            _error = result.Error?.Message ?? "Sign-in could not be completed. Please try again.";
+            return;
+        }
+
+        // A visitor account completes with a code sent to the account's email.
+        Session.PendingEmail = _model.Email;
+        Session.PendingOtpToken = result.Data.OtpToken;
+        Nav.NavigateTo("/login/verify");
+    }
+
+    private sealed class SignInModel
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}

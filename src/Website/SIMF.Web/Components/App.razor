@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    @* Apply the saved theme before first paint so there is no flash. *@
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('simf-theme') === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } catch (e) { /* localStorage may be unavailable */ }
+        })();
+    </script>
+    <ResourcePreloader />
+    <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/theme.tokens.css"]" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/simf-components.css"]" />
+    <link rel="stylesheet" href="@Assets["SIMF.Web.styles.css"]" />
+    <script src="@Assets["_content/SIMF.Components/js/simf-theme.js"]"></script>
+    <ImportMap />
+    <HeadOutlet />
+</head>
+
+<body>
+    <Routes />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+</body>
+
+</html>

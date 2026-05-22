@@ -1,0 +1,43 @@
+/* app.css — global resets only (SIMF-CPD-001 section 8.2).
+   Every colour, font and size comes from theme.tokens.css. */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family-base);
+    background-color: var(--color-background);
+    color: var(--color-text);
+}
+
+/* The Blazor circuit-error banner — hidden until the framework shows it. */
+#blazor-error-ui {
+    display: none;
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    padding: var(--space-3) var(--space-5);
+    background-color: var(--color-error);
+    color: #FFFFFF;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-body);
+    z-index: 1000;
+}
+
+#blazor-error-ui .reload {
+    color: #FFFFFF;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    float: inline-end;
+}

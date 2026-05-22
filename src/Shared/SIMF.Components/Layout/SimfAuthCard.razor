@@ -1,0 +1,48 @@
+@* SimfAuthCard — the white authentication card: an optional top control row
+   (language, theme), the card itself (wordmark, title, supporting line, the
+   form) and an optional footer caption below it. *@
+@namespace SIMF.Components.Layout
+
+<div class="simf-auth__stack">
+    @if (TopControls is not null)
+    {
+        <div class="simf-topbar @(Wide ? "simf-topbar--wide" : null)">
+            @TopControls
+        </div>
+    }
+    <section class="simf-card @(Wide ? "simf-card--wide" : null)">
+        <header class="simf-card__head">
+            <SimfWordmark />
+            <h1 class="simf-card__title">@Title</h1>
+            @if (!string.IsNullOrEmpty(SupportingText))
+            {
+                <p class="simf-card__supporting">@SupportingText</p>
+            }
+        </header>
+        @ChildContent
+    </section>
+    @if (Footer is not null)
+    {
+        <div class="simf-card__footer">@Footer</div>
+    }
+</div>
+
+@code {
+    /// <summary>The screen title — one per card.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    /// <summary>A one-sentence supporting line under the title.</summary>
+    [Parameter] public string? SupportingText { get; set; }
+
+    /// <summary>Use the wider card (the public Website).</summary>
+    [Parameter] public bool Wide { get; set; }
+
+    /// <summary>The control row above the card — language and theme controls.</summary>
+    [Parameter] public RenderFragment? TopControls { get; set; }
+
+    /// <summary>The card body — the form.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>An optional caption below the card.</summary>
+    [Parameter] public RenderFragment? Footer { get; set; }
+}

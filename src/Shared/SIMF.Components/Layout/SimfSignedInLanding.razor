@@ -1,0 +1,25 @@
+@* SimfSignedInLanding — the placeholder screen shown after a successful
+   sign-in, until the real application shell exists. Calm and centred, with one
+   rare gold hairline as a quiet "you've arrived" accent. *@
+@namespace SIMF.Components.Layout
+
+<div class="simf-landing">
+    <SimfWordmark />
+    <hr class="simf-landing__rule" aria-hidden="true" />
+    <h1 class="simf-landing__title">@Title</h1>
+    <p class="simf-landing__text">@Text</p>
+    <div class="simf-landing__actions">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    /// <summary>The heading — e.g. "You're signed in".</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    /// <summary>The supporting line under the heading.</summary>
+    [Parameter] public string? Text { get; set; }
+
+    /// <summary>The actions — normally a continue button and a sign-out link.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

@@ -1,0 +1,18 @@
+@* SimfLanguageSwitch — switches the interface language. It is a full
+   navigation to the host's culture endpoint, which sets the culture cookie
+   and returns to the current page; the host supplies the href and the label
+   of the language being switched to. *@
+@namespace SIMF.Components.Controls
+
+<a class="simf-control" href="@Href">
+    <SimfIcon Name="globe" Class="simf-control__icon" />
+    <span>@Label</span>
+</a>
+
+@code {
+    /// <summary>The host's culture-switch URL, including the target culture and return path.</summary>
+    [Parameter, EditorRequired] public string Href { get; set; } = string.Empty;
+
+    /// <summary>The name of the language being switched to — e.g. "العربية" or "English".</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+}
