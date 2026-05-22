@@ -1,10 +1,13 @@
-@* SimfBrandPanel — the navy brand panel: the reversed wordmark, a subtitle,
-   an optional bottom caption, over a quiet compass-and-anchor texture. *@
+@* SimfBrandPanel — the navy brand panel: the SIMF logo (the white / negative
+   version), a subtitle, an optional bottom caption, over a quiet
+   compass-and-anchor texture. *@
 @namespace SIMF.Components.Layout
 
 <div class="simf-brand">
     <div class="simf-brand__texture" aria-hidden="true"></div>
-    <SimfWordmark Reversed="true" />
+    <img class="simf-brand__logo"
+         src="/_content/SIMF.Components/img/simf-logo.png"
+         alt="SIMF — Saudi International Maritime Forum" />
     @if (!string.IsNullOrEmpty(Subtitle))
     {
         <p class="simf-brand__subtitle">@Subtitle</p>

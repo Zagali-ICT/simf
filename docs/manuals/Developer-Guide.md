@@ -285,9 +285,10 @@ authentication pages against the Login API.
   arrives with the Control Panel base shell (decision D-022).
 
 The applications read the Login API base address from `Api:BaseUrl` in
-`appsettings`. The real SIMF logo and the compass-and-anchor pattern are
-pending delivery (SIMF-VID-001 OI-2); a wordmark placeholder occupies the
-reserved logo box and swaps for the SVG with no layout change.
+`appsettings`. The white (negative) SIMF logo is placed on the navy brand
+panel of the sign-in screens; the white card keeps the wordmark placeholder
+until the standard (dark) logo is delivered, and the compass-and-anchor
+background pattern is still pending (SIMF-VID-001 OI-2).
 
 ### 12.1 The public Website content
 
