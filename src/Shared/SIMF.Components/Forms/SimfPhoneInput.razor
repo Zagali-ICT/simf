@@ -26,15 +26,17 @@
                placeholder="@Placeholder"
                disabled="@Disabled"
                value="@_local"
+               aria-invalid="@(HasError ? "true" : null)"
+               aria-describedby="@DescribedBy"
                @oninput="OnLocalChangedAsync" />
     </div>
     @if (!string.IsNullOrEmpty(Helper) && !HasError)
     {
-        <p class="simf-field__helper">@Helper</p>
+        <p class="simf-field__helper" id="@_helperId">@Helper</p>
     }
     @if (HasError && !string.IsNullOrEmpty(Error))
     {
-        <p class="simf-field__error" role="alert">
+        <p class="simf-field__error" id="@_errorId" role="alert">
             <SimfIcon Name="alert" Size="14" Class="simf-field__error-icon" />
             @Error
         </p>
@@ -43,8 +45,15 @@
 
 @code {
     private readonly string _inputId = "simf-phone-" + Guid.NewGuid().ToString("N");
+    private readonly string _helperId = "simf-phone-helper-" + Guid.NewGuid().ToString("N");
+    private readonly string _errorId = "simf-phone-error-" + Guid.NewGuid().ToString("N");
     private string _dial = "+966";
     private string _local = string.Empty;
+
+    private string? DescribedBy =>
+        HasError ? _errorId
+        : !string.IsNullOrEmpty(Helper) ? _helperId
+        : null;
 
     /// <summary>The field label.</summary>
     [Parameter] public string? Label { get; set; }

@@ -11,7 +11,11 @@
         <span class="simf-field__label" id="@_labelId">@Label</span>
     }
     <div class="simf-radiogroup @(Inline ? "simf-radiogroup--inline" : null)"
-         role="radiogroup" aria-labelledby="@(_labelId)">
+         role="radiogroup"
+         aria-labelledby="@(string.IsNullOrEmpty(Label) ? null : _labelId)"
+         aria-label="@(string.IsNullOrEmpty(Label) ? AriaLabel : null)"
+         aria-invalid="@(HasError ? "true" : null)"
+         aria-describedby="@DescribedBy">
         @foreach (var item in Items ?? Array.Empty<TValue>())
         {
             var optionValue = ValueFor is null ? item?.ToString() ?? string.Empty : ValueFor(item) ?? string.Empty;
@@ -29,11 +33,11 @@
     </div>
     @if (!string.IsNullOrEmpty(Helper) && !HasError)
     {
-        <p class="simf-field__helper">@Helper</p>
+        <p class="simf-field__helper" id="@_helperId">@Helper</p>
     }
     @if (HasError && !string.IsNullOrEmpty(Error))
     {
-        <p class="simf-field__error" role="alert">
+        <p class="simf-field__error" id="@_errorId" role="alert">
             <SimfIcon Name="alert" Size="14" Class="simf-field__error-icon" />
             @Error
         </p>
@@ -43,10 +47,22 @@
 @code {
     private readonly string _groupId = "simf-radio-" + Guid.NewGuid().ToString("N");
     private readonly string _labelId = "simf-radio-label-" + Guid.NewGuid().ToString("N");
+    private readonly string _helperId = "simf-radio-helper-" + Guid.NewGuid().ToString("N");
+    private readonly string _errorId = "simf-radio-error-" + Guid.NewGuid().ToString("N");
     private string _currentValueString = string.Empty;
 
-    /// <summary>The group label.</summary>
+    private string? DescribedBy =>
+        HasError ? _errorId
+        : !string.IsNullOrEmpty(Helper) ? _helperId
+        : null;
+
+    /// <summary>The group label. When omitted, callers should pass
+    /// <see cref="AriaLabel"/> so the radiogroup still has an accessible name
+    /// (D-045 H2).</summary>
     [Parameter] public string? Label { get; set; }
+
+    /// <summary>Fallback accessible name when <see cref="Label"/> is empty.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
 
     /// <summary>Helper text shown under the group.</summary>
     [Parameter] public string? Helper { get; set; }

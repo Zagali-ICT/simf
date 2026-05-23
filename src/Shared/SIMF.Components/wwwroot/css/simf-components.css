@@ -1486,6 +1486,22 @@ body.simf-modal-open { overflow: hidden; }
   display: none;
 }
 
+/* -- Visually-hidden utility (D-045 H2) — content stays in the AT tree but
+   is removed from visual flow. Use for table captions, sr-only labels, etc.
+   The clip-path technique survives every modern browser and forced-colors
+   mode where `display: none` would also be stripped from AT. */
+.simf-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* -- Floating toast (D-045 H1) — transient inline feedback after a grid
    action (bulk-delete result, clipboard count, paste-not-implemented). */
 .simf-toast {
@@ -1534,6 +1550,30 @@ body.simf-modal-open { overflow: hidden; }
 .simf-stat__delta--positive { color: var(--color-success); }
 .simf-stat__delta--negative { color: var(--color-error); }
 .simf-stat__delta--neutral { color: var(--color-text-muted); }
+
+/* -- Forced Colors / High Contrast Mode (D-045 H2) -------------------------
+   In Windows Forced Colors Mode, `box-shadow` is suppressed and the
+   browser repaints `outline` in the system color. Our focus ring is a
+   box-shadow; pairing it with a transparent outline means the focus ring
+   stays visible to forced-colors users without disturbing the regular UI. */
+@media (forced-colors: active) {
+  .simf-button:focus-visible,
+  .simf-link:focus-visible,
+  .simf-control:focus-visible,
+  .simf-tbbtn:focus-visible,
+  .simf-ctxmenu__item:focus-visible,
+  .simf-field__input:focus-visible,
+  .simf-code__input:focus-visible,
+  .simf-password__toggle:focus-visible,
+  .simf-shell__nav-toggle:focus-visible,
+  .simf-nav-item__link:focus-visible,
+  .simf-modal__close:focus-visible,
+  .simf-grid__sort:focus-visible,
+  .simf-grid__filter-input:focus {
+    outline: 2px solid CanvasText;
+    outline-offset: 2px;
+  }
+}
 
 /* -- Reduced motion --------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {

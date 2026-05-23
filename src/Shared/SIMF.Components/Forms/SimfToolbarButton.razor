@@ -8,6 +8,7 @@
         class="simf-tbbtn @(Danger ? "simf-tbbtn--danger" : null)"
         disabled="@Disabled"
         title="@Title"
+        aria-label="@(ChildContent is null ? Title : null)"
         @onclick="OnClick">
     @if (!string.IsNullOrEmpty(Icon))
     {

@@ -1,8 +1,7 @@
-@* SimfModal — the SIMF overlay dialog (decision D-044). One title, body slot,
-   footer slot for the action buttons. Esc closes; clicking the backdrop
-   closes. The page body is scroll-locked while the modal is open through a
-   `simf-modal-open` class on <body> (added on first render, removed on
-   close). Direction-aware through CSS logical properties. *@
+@* SimfModal — the SIMF overlay dialog (decision D-044, hardened D-045 H2).
+   Focus trap, return-focus-on-close and ref-counted body lock now live in
+   simfModal (window.simfModal) so the component code stays tiny and the
+   keydown handler fires regardless of where focus is. *@
 @namespace SIMF.Components.Forms
 @inject IJSRuntime JS
 @implements IAsyncDisposable
@@ -13,7 +12,7 @@
          @onclick="OnBackdropClickAsync">
         <div class="simf-modal__panel" role="dialog" aria-modal="true"
              aria-label="@Title" @onclick:stopPropagation
-             tabindex="-1" @ref="_panelRef" @onkeydown="OnKeyDownAsync">
+             tabindex="-1" @ref="_panelRef">
             <header class="simf-modal__head">
                 <h2 class="simf-modal__title">@Title</h2>
                 <button type="button" class="simf-modal__close"
@@ -34,7 +33,8 @@
 
 @code {
     private ElementReference _panelRef;
-    private bool _bodyLocked;
+    private bool _bound;
+    private DotNetObjectReference<SimfModal>? _selfRef;
 
     /// <summary>True to render the modal; false to hide it.</summary>
     [Parameter] public bool Open { get; set; }
@@ -60,17 +60,17 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Lock body scroll while the modal is open; unlock when it closes.
-        if (Open && !_bodyLocked)
+        if (Open && !_bound)
         {
-            await JS.InvokeVoidAsync("document.body.classList.add", "simf-modal-open");
-            _bodyLocked = true;
-            try { await _panelRef.FocusAsync(); } catch { /* element gone */ }
+            _selfRef ??= DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("simfModal.bind",
+                _panelRef, _selfRef, !RequireExplicitClose);
+            _bound = true;
         }
-        else if (!Open && _bodyLocked)
+        else if (!Open && _bound)
         {
-            await JS.InvokeVoidAsync("document.body.classList.remove", "simf-modal-open");
-            _bodyLocked = false;
+            await JS.InvokeVoidAsync("simfModal.unbind", _panelRef);
+            _bound = false;
         }
     }
 
@@ -80,13 +80,10 @@
         await CloseAsync();
     }
 
-    private async Task OnKeyDownAsync(KeyboardEventArgs e)
-    {
-        if (e.Key == "Escape" && !RequireExplicitClose)
-        {
-            await CloseAsync();
-        }
-    }
+    /// <summary>Invoked from JS when the user presses Escape inside the modal.</summary>
+    [JSInvokable]
+    public Task OnEscPressed() =>
+        RequireExplicitClose ? Task.CompletedTask : CloseAsync();
 
     private async Task CloseAsync()
     {
@@ -98,13 +95,12 @@
 
     public async ValueTask DisposeAsync()
     {
-        if (_bodyLocked)
+        if (_bound)
         {
-            try
-            {
-                await JS.InvokeVoidAsync("document.body.classList.remove", "simf-modal-open");
-            }
+            try { await JS.InvokeVoidAsync("simfModal.unbind", _panelRef); }
             catch { /* circuit closed */ }
+            _bound = false;
         }
+        _selfRef?.Dispose();
     }
 }

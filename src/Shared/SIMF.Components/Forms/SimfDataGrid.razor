@@ -124,6 +124,10 @@
 
     <div class="simf-grid__scroll">
         <table class="simf-grid__table">
+            @if (!string.IsNullOrEmpty(Caption))
+            {
+                <caption class="simf-visually-hidden">@Caption</caption>
+            }
             <colgroup>
                 @if (Multiselect)
                 {
@@ -191,6 +195,7 @@
                                     Query!.Filters.TryGetValue(column.Key, out var current);
                                     <input type="search" class="simf-grid__filter-input"
                                            placeholder="@(column.FilterPlaceholder ?? FilterPlaceholder)"
+                                           aria-label="@($"{FilterColumnLabel} {column.Header}")"
                                            value="@current"
                                            @oninput="@(e => OnFilterInputAsync(column.Key, e.Value?.ToString()))" />
                                 }
@@ -235,7 +240,7 @@
                                 <td class="simf-grid__td simf-grid__td--select">
                                     <input type="checkbox"
                                            checked="@selected"
-                                           aria-label="@SelectRowLabel"
+                                           aria-label="@RowSelectionLabel(row)"
                                            @onchange="@(() => ToggleRowSelection(key))" />
                                 </td>
                             }
@@ -381,6 +386,20 @@
 
     /// <summary>Produces the row key for selection tracking. Required when <see cref="Multiselect"/> is true.</summary>
     [Parameter] public Func<TItem, string>? RowKey { get; set; }
+
+    /// <summary>Produces a per-row label used for the selection checkbox's
+    /// <c>aria-label</c> (D-045 H2). Defaults to the row key, so a screen
+    /// reader gets a useful per-row name instead of "Select row" repeated.</summary>
+    [Parameter] public Func<TItem, string>? RowLabel { get; set; }
+
+    /// <summary>Optional visually-hidden caption announced by screen readers
+    /// when the table receives focus (D-045 H2).</summary>
+    [Parameter] public string? Caption { get; set; }
+
+    /// <summary>The string prefix used to label per-column filter inputs
+    /// (e.g. "Filter") — combined with the column header for the
+    /// <c>aria-label</c> on each input (D-045 H2).</summary>
+    [Parameter] public string FilterColumnLabel { get; set; } = "Filter";
 
     /// <summary>Raised when the selection changes — receives every key currently selected.</summary>
     [Parameter] public EventCallback<IReadOnlySet<string>> OnSelectionChanged { get; set; }
@@ -554,6 +573,16 @@
         await OnSelectionChanged.InvokeAsync(_selectedKeys);
     }
 
+    private string RowSelectionLabel(TItem row)
+    {
+        // D-045 H2: every row checkbox gets a distinct accessible name —
+        // by default the row key, but the caller can supply a richer label
+        // (e.g. the user's email for the admin grid).
+        if (RowLabel is not null) return $"{SelectRowLabel} {RowLabel(row)}";
+        if (RowKey is not null) return $"{SelectRowLabel} {RowKey(row)}";
+        return SelectRowLabel;
+    }
+
     private async Task ToggleSelectAllAsync()
     {
         if (Page is null || RowKey is null) return;
@@ -673,10 +702,23 @@
     {
         if (!_anyContextHandlerWired) return;
         _contextRow = row;
-        _contextX = e.ClientX;
+        // D-045 H2 — RTL fix: SimfContextMenu uses `inset-inline-start`,
+        // which resolves to the RIGHT edge in RTL. The mouse client X is
+        // measured from the viewport's LEFT edge regardless of direction,
+        // so in RTL we must mirror the value before passing it in.
+        var isRtl = await JS.InvokeAsync<bool>("eval",
+            "document.documentElement.getAttribute('dir') === 'rtl'");
+        if (isRtl)
+        {
+            var viewportWidth = await JS.InvokeAsync<double>("eval", "window.innerWidth");
+            _contextX = viewportWidth - e.ClientX;
+        }
+        else
+        {
+            _contextX = e.ClientX;
+        }
         _contextY = e.ClientY;
         _contextMenuOpen = true;
-        await Task.CompletedTask;
     }
 
     private void OnGridContextMenuAsync() { /* swallowed by row handler */ }

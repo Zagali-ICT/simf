@@ -18,6 +18,8 @@
         <select id="@_id" class="simf-field__input simf-field__select"
                 disabled="@Disabled"
                 value="@_currentValueString"
+                aria-invalid="@(HasError ? "true" : null)"
+                aria-describedby="@DescribedBy"
                 @onchange="OnNativeChangedAsync">
             @if (!string.IsNullOrEmpty(Placeholder))
             {
@@ -35,11 +37,11 @@
     </div>
     @if (!string.IsNullOrEmpty(Helper) && !HasError)
     {
-        <p class="simf-field__helper">@Helper</p>
+        <p class="simf-field__helper" id="@_helperId">@Helper</p>
     }
     @if (HasError && !string.IsNullOrEmpty(Error))
     {
-        <p class="simf-field__error" role="alert">
+        <p class="simf-field__error" id="@_errorId" role="alert">
             <SimfIcon Name="alert" Size="14" Class="simf-field__error-icon" />
             @Error
         </p>
@@ -48,7 +50,14 @@
 
 @code {
     private readonly string _id = "simf-select-" + Guid.NewGuid().ToString("N");
+    private readonly string _helperId = "simf-select-helper-" + Guid.NewGuid().ToString("N");
+    private readonly string _errorId = "simf-select-error-" + Guid.NewGuid().ToString("N");
     private string _currentValueString = string.Empty;
+
+    private string? DescribedBy =>
+        HasError ? _errorId
+        : !string.IsNullOrEmpty(Helper) ? _helperId
+        : null;
 
     /// <summary>The field label.</summary>
     [Parameter] public string? Label { get; set; }

@@ -91,6 +91,7 @@
   <data name="Admin.Users.Next" xml:space="preserve"><value>التالي</value></data>
   <data name="Admin.Users.Loading" xml:space="preserve"><value>جارٍ التحميل</value></data>
   <data name="Admin.Users.FilterPlaceholder" xml:space="preserve"><value>تصفية…</value></data>
+  <data name="Admin.Users.FilterColumn" xml:space="preserve"><value>تصفية</value></data>
   <data name="Admin.Users.Pager.Summary" xml:space="preserve"><value>{0}-{1} من {2}</value></data>
   <data name="Admin.Users.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
   <data name="Admin.Users.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>

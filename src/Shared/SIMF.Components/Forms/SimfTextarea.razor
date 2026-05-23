@@ -14,15 +14,17 @@
                   placeholder="@Placeholder"
                   disabled="@Disabled"
                   value="@Value"
+                  aria-invalid="@(HasError ? "true" : null)"
+                  aria-describedby="@DescribedBy"
                   @oninput="OnInputAsync"></textarea>
     </div>
     @if (!string.IsNullOrEmpty(Helper) && !HasError)
     {
-        <p class="simf-field__helper">@Helper</p>
+        <p class="simf-field__helper" id="@_helperId">@Helper</p>
     }
     @if (HasError && !string.IsNullOrEmpty(Error))
     {
-        <p class="simf-field__error" role="alert">
+        <p class="simf-field__error" id="@_errorId" role="alert">
             <SimfIcon Name="alert" Size="14" Class="simf-field__error-icon" />
             @Error
         </p>
@@ -31,6 +33,13 @@
 
 @code {
     private readonly string _id = "simf-textarea-" + Guid.NewGuid().ToString("N");
+    private readonly string _helperId = "simf-textarea-helper-" + Guid.NewGuid().ToString("N");
+    private readonly string _errorId = "simf-textarea-error-" + Guid.NewGuid().ToString("N");
+
+    private string? DescribedBy =>
+        HasError ? _errorId
+        : !string.IsNullOrEmpty(Helper) ? _helperId
+        : null;
 
     /// <summary>The field label.</summary>
     [Parameter] public string? Label { get; set; }
