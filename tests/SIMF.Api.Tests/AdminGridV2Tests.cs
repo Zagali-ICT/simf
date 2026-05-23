@@ -67,6 +67,62 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Bulk_delete_skips_administrator_targets_and_writes_one_audit_row_per_subject()
+    {
+        var (adminToken, _) = await CreateAdminAsync();
+        var regular = await CreateRegularUserAsync(adminToken);
+
+        // Promote a second user to Administrator so we can hit the
+        // admin-vs-admin skip branch.
+        var (_, peerAdminId) = await CreateAdminAsync();
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/users/bulk-delete",
+            new AdminBulkDeleteRequest
+            {
+                Ids = new List<Guid> { regular, peerAdminId, Guid.NewGuid() },
+                Reason = "Hardening test — one regular, one admin peer, one unknown id.",
+            },
+            adminToken);
+
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<AdminBulkDeleteResponse>>())!;
+        Assert.Equal(1, body.Data!.Deleted);
+        Assert.Equal(2, body.Data.Skipped);
+
+        // Audit: one Admin.UserDeleted (success) row + two
+        // Admin.UserDeleteFailed (failure) rows must be written for this
+        // batch — the SOC visibility contract from D-044(b) / D-045 H1.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var rows = await db.OperationLog
+            .Where(row => row.SubjectUserId == regular
+                || row.SubjectUserId == peerAdminId)
+            .ToListAsync();
+        Assert.Contains(rows, row => row.SubjectUserId == regular
+            && row.EventType == "Admin.UserDeleted");
+        Assert.Contains(rows, row => row.SubjectUserId == peerAdminId
+            && row.EventType == "Admin.UserDeleteFailed");
+    }
+
+    [Fact]
+    public async Task Bulk_delete_rejects_a_batch_larger_than_500_ids()
+    {
+        var (adminToken, _) = await CreateAdminAsync();
+        var hugeBatch = Enumerable.Range(0, 501).Select(_ => Guid.NewGuid()).ToList();
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/users/bulk-delete",
+            new AdminBulkDeleteRequest
+            {
+                Ids = hugeBatch,
+                Reason = "A batch over the 500-id cap must be rejected.",
+            },
+            adminToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Bulk_delete_requires_a_reason_of_at_least_ten_characters()
     {
         var (adminToken, _) = await CreateAdminAsync();
@@ -106,6 +162,40 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
         var copy = await users.FindByEmailAsync(newEmail);
         Assert.Equal("Source Name", copy!.DisplayName);
+    }
+
+    [Fact]
+    public async Task Duplicate_with_a_colliding_email_returns_409()
+    {
+        var (adminToken, _) = await CreateAdminAsync();
+        var sourceId = await CreateRegularUserAsync(adminToken, displayName: "Source");
+        // Create a second user we'll then try to duplicate over.
+        var collidingEmail = $"already-{Guid.NewGuid():N}@simf.test";
+        await PostAuthAsync(
+            "/api/v1/admin/users",
+            new AdminCreateUserRequest { Email = collidingEmail, DisplayName = "Already" },
+            adminToken);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/users/duplicate",
+            new AdminDuplicateUserRequest { SourceId = sourceId, NewEmail = collidingEmail },
+            adminToken);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Duplicate_with_an_invalid_email_returns_400()
+    {
+        var (adminToken, _) = await CreateAdminAsync();
+        var sourceId = await CreateRegularUserAsync(adminToken);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/users/duplicate",
+            new AdminDuplicateUserRequest { SourceId = sourceId, NewEmail = "not-an-email" },
+            adminToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -205,6 +295,67 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
         Assert.NotNull(await users.FindByEmailAsync(e1));
         Assert.NotNull(await users.FindByEmailAsync(e2));
+    }
+
+    [Fact]
+    public async Task Import_rejects_a_workbook_whose_sheet_is_not_named_Users()
+    {
+        var (adminToken, _) = await CreateAdminAsync();
+
+        using var workbook = new XLWorkbook();
+        var sheet = workbook.Worksheets.Add("Customers");      // wrong name on purpose
+        sheet.Cell(1, 1).Value = "Email";
+        sheet.Cell(1, 2).Value = "DisplayName";
+        sheet.Cell(2, 1).Value = $"sneak-{Guid.NewGuid():N}@simf.test";
+        sheet.Cell(2, 2).Value = "Sneaky Sheet";
+        using var ms = new MemoryStream();
+        workbook.SaveAs(ms);
+
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(ms.ToArray());
+        file.Headers.ContentType = new MediaTypeHeaderValue(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        form.Add(file, "file", "wrong-sheet.xlsx");
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/users/import")
+        {
+            Content = form,
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        using var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Export_escapes_formula_injection_attempts_in_string_cells()
+    {
+        var (adminToken, _) = await CreateAdminAsync();
+        // Display name carrying a formula that Excel would auto-execute.
+        var displayName = "=HYPERLINK(\"https://attacker.example/x\",\"Click\")";
+        var userId = await CreateRegularUserAsync(adminToken, displayName: displayName);
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/users/export")
+        {
+            Content = JsonContent.Create(
+                new AdminExportUsersRequest { Ids = new List<Guid> { userId } }),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        using var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        using var workbook = new XLWorkbook(new MemoryStream(bytes));
+        var sheet = workbook.Worksheet("Users");
+        var cell = sheet.Cell(2, 2);
+        // D-045 H1 — the cell must be stored as text, NEVER as a formula.
+        // GetString preserves the visible value; the apostrophe prefix
+        // ClosedXmlUserExcelService.SanitiseForExcel writes is the
+        // text-marker that disarms Excel's formula evaluator.
+        Assert.Equal(XLDataType.Text, cell.DataType);
+        Assert.True(string.IsNullOrEmpty(cell.FormulaA1),
+            "The cell must not carry a live formula — formula injection guard failed.");
+        Assert.Contains("HYPERLINK", cell.GetString());
     }
 
     [Fact]

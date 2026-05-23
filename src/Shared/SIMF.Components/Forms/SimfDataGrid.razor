@@ -33,6 +33,7 @@
 @namespace SIMF.Components.Forms
 @typeparam TItem
 @inject IJSRuntime JS
+@implements IDisposable
 
 <CascadingValue Value="this" IsFixed="true">
     @* The column declarations register themselves and render nothing
@@ -72,7 +73,7 @@
                 {
                     <SimfToolbarButton Icon="close" Title="@DeleteLabel"
                                        Danger="true"
-                                       Disabled="@(SelectedCount == 0)"
+                                       Disabled="@(SelectedOnPageCount == 0)"
                                        OnClick="@(() => OnDeleteSelected.InvokeAsync(SelectedItemsOnPage()))">
                         @DeleteLabel
                     </SimfToolbarButton>
@@ -80,7 +81,7 @@
                 @if (OnCopySelected.HasDelegate)
                 {
                     <SimfToolbarButton Icon="check" Title="@CopyLabel"
-                                       Disabled="@(SelectedCount == 0)"
+                                       Disabled="@(SelectedOnPageCount == 0)"
                                        OnClick="OnCopyToClipboardAsync">
                         @CopyLabel
                     </SimfToolbarButton>
@@ -469,9 +470,13 @@
         RowActions is not null
         || OnEditOne.HasDelegate || OnCopyOne.HasDelegate || OnDeleteOne.HasDelegate;
 
-    private bool _anyContextHandlerWired =>
+    private bool AnyContextHandlerWired =>
         OnEditOne.HasDelegate || OnCopyOne.HasDelegate
         || OnDeleteOne.HasDelegate || OnDuplicateOne.HasDelegate;
+
+    /// <summary>Back-compat alias retained because the Razor markup binds to
+    /// this name on conditional <c>@oncontextmenu</c> attributes (D-045 H1).</summary>
+    private bool _anyContextHandlerWired => AnyContextHandlerWired;
 
     private bool HasAnyFilterableColumn => _columns.Any(c => c.Filterable);
 
@@ -484,7 +489,26 @@
 
     // -- Selection helpers -----------------------------------------------------
 
+    /// <summary>Total selected keys across every page.</summary>
     private int SelectedCount => _selectedKeys.Count;
+
+    /// <summary>Selected rows on the current page only — D-045 H1: every
+    /// toolbar Disabled state now reads this rather than <see cref="SelectedCount"/>
+    /// so the act-on-selection buttons disable correctly when the user has
+    /// paged away from their selection.</summary>
+    private int SelectedOnPageCount
+    {
+        get
+        {
+            if (Page is null || RowKey is null) return 0;
+            var count = 0;
+            foreach (var row in Page.Items)
+            {
+                if (_selectedKeys.Contains(RowKey(row))) count++;
+            }
+            return count;
+        }
+    }
 
     private bool AllOnPageSelected
     {
@@ -564,6 +588,11 @@
     private async Task ToggleSortAsync(string key)
     {
         if (Query is null) return;
+        // D-045 H1: a sort/filter/page change drops the selection. The grid
+        // never holds rows it didn't ask for; carrying stale keys across a
+        // query change leads to silent partial deletes when the user clicks
+        // a toolbar action with a now-invisible selection.
+        ClearSelection();
         var next = CopyQuery(Query);
         next.Skip = 0;
         next.Sort = key;
@@ -595,6 +624,7 @@
         {
             filters[key] = value.Trim();
         }
+        ClearSelection();
         var next = CopyQuery(Query);
         next.Skip = 0;
         next.Filters = filters;
@@ -604,6 +634,7 @@
     private async Task GoPrevAsync()
     {
         if (Query is null) return;
+        ClearSelection();
         var next = CopyQuery(Query);
         next.Skip = Math.Max(0, Query.Skip - Query.Top);
         await OnQueryChanged.InvokeAsync(next);
@@ -612,9 +643,18 @@
     private async Task GoNextAsync()
     {
         if (Query is null) return;
+        ClearSelection();
         var next = CopyQuery(Query);
         next.Skip = Query.Skip + Query.Top;
         await OnQueryChanged.InvokeAsync(next);
+    }
+
+    private void ClearSelection()
+    {
+        if (_selectedKeys.Count == 0) return;
+        _selectedKeys.Clear();
+        // Don't fire OnSelectionChanged for an implicit clear — that would
+        // ping every consumer on every page change.
     }
 
     private static GridQuery CopyQuery(GridQuery q) => new()
@@ -706,5 +746,17 @@
             clipboard = string.Empty;
         }
         await OnPaste.InvokeAsync(clipboard);
+    }
+
+    // -- Disposal --------------------------------------------------------------
+    // D-045 H1: dispose the filter-debounce CTS so its OS handle is reclaimed
+    // when the grid leaves the page. Without this, sustained typing in the
+    // filter input leaks a CTS per keystroke until GC notices.
+
+    public void Dispose()
+    {
+        try { _filterDebounce?.Cancel(); } catch { /* already disposed */ }
+        _filterDebounce?.Dispose();
+        _filterDebounce = null;
     }
 }

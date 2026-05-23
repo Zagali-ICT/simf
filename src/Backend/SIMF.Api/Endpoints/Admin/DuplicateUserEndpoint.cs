@@ -19,6 +19,7 @@ public sealed class DuplicateUserEndpoint(IAdminAccountService adminAccountServi
         Post("/admin/users/duplicate");
         Policies(nameof(AuthorizationPolicies.AdministratorOnly));
         Tags("Admin");
+        Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
             "Duplicate an existing user. Requires Administrator role.");
     }
@@ -30,12 +31,7 @@ public sealed class DuplicateUserEndpoint(IAdminAccountService adminAccountServi
             await Send.UnauthorizedAsync(ct);
             return;
         }
-        if (string.IsNullOrWhiteSpace(req.NewEmail) || !req.NewEmail.Contains('@'))
-        {
-            throw new DataValidationException(
-                "A valid new email address is required.",
-                "بريد إلكتروني جديد صالح مطلوب.");
-        }
+        // Email-shape rules live in AdminDuplicateUserRequestValidator.
         var created = await adminAccountService.DuplicateUserAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminCreateUserResponse>.Ok(created), ct);
     }

@@ -37,9 +37,16 @@ public sealed class GridQuery
 
     /// <summary>
     /// Per-column filter values keyed by the column key. Empty values are
-    /// ignored. The endpoint validates the keys.
+    /// ignored. The endpoint validates the keys. A JSON request that sends
+    /// <c>"filters": null</c> is coerced back to an empty dictionary so the
+    /// endpoint never NREs on <c>Filters.TryGetValue</c> (D-045 H1).
     /// </summary>
-    public Dictionary<string, string> Filters { get; set; } = new();
+    public Dictionary<string, string> Filters
+    {
+        get => _filters;
+        set => _filters = value ?? new Dictionary<string, string>();
+    }
+    private Dictionary<string, string> _filters = new();
 }
 
 /// <summary>

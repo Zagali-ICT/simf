@@ -100,6 +100,24 @@
   <data name="Admin.Users.Action.Duplicate" xml:space="preserve"><value>Duplicate</value></data>
   <data name="Admin.Users.Action.Import" xml:space="preserve"><value>Import from Excel</value></data>
   <data name="Admin.Users.Action.Export" xml:space="preserve"><value>Export to Excel</value></data>
+  <data name="Admin.Users.Action.Copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="Admin.Users.Action.Paste" xml:space="preserve"><value>Paste</value></data>
+  <data name="Admin.Users.NoSelection" xml:space="preserve"><value>Select at least one row first.</value></data>
+  <data name="Admin.Users.BulkDelete.Success" xml:space="preserve"><value>{0} deleted, {1} skipped.</value></data>
+  <data name="Admin.Users.BulkDelete.Fallback" xml:space="preserve"><value>The bulk delete failed.</value></data>
+  <data name="Admin.Users.Duplicate.Title" xml:space="preserve"><value>Duplicate user</value></data>
+  <data name="Admin.Users.Duplicate.Confirm" xml:space="preserve"><value>Create a copy of {0} under a new email address.</value></data>
+  <data name="Admin.Users.Duplicate.NewEmail" xml:space="preserve"><value>New email address</value></data>
+  <data name="Admin.Users.Duplicate.NewEmailHint" xml:space="preserve"><value>The new user will receive an invitation here.</value></data>
+  <data name="Admin.Users.Duplicate.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Users.Duplicate.Submit" xml:space="preserve"><value>Duplicate</value></data>
+  <data name="Admin.Users.Duplicate.Success" xml:space="preserve"><value>Created {0}.</value></data>
+  <data name="Admin.Users.Duplicate.Fallback" xml:space="preserve"><value>Duplicate failed.</value></data>
+  <data name="Admin.Users.Copy.One" xml:space="preserve"><value>Copied {0} to the clipboard.</value></data>
+  <data name="Admin.Users.Copy.Count" xml:space="preserve"><value>Copied {0} rows to the clipboard.</value></data>
+  <data name="Admin.Users.Paste.Empty" xml:space="preserve"><value>The clipboard is empty.</value></data>
+  <data name="Admin.Users.Paste.NotImplemented" xml:space="preserve"><value>Paste-to-add will land with the User Management module.</value></data>
+  <data name="Admin.Users.Import.Fallback" xml:space="preserve"><value>Import failed.</value></data>
   <data name="Admin.Users.BulkDelete.Title" xml:space="preserve"><value>Delete users</value></data>
   <data name="Admin.Users.BulkDelete.Confirm" xml:space="preserve"><value>This will disable {0} account(s). Sessions are revoked and the users are notified by email.</value></data>
   <data name="Admin.Users.BulkDelete.Reason" xml:space="preserve"><value>Reason</value></data>

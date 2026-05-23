@@ -100,6 +100,24 @@
   <data name="Admin.Users.Action.Duplicate" xml:space="preserve"><value>تكرار</value></data>
   <data name="Admin.Users.Action.Import" xml:space="preserve"><value>استيراد من Excel</value></data>
   <data name="Admin.Users.Action.Export" xml:space="preserve"><value>تصدير إلى Excel</value></data>
+  <data name="Admin.Users.Action.Copy" xml:space="preserve"><value>نسخ</value></data>
+  <data name="Admin.Users.Action.Paste" xml:space="preserve"><value>لصق</value></data>
+  <data name="Admin.Users.NoSelection" xml:space="preserve"><value>اختر صفًا واحدًا على الأقل.</value></data>
+  <data name="Admin.Users.BulkDelete.Success" xml:space="preserve"><value>تم حذف {0}، تم تخطّي {1}.</value></data>
+  <data name="Admin.Users.BulkDelete.Fallback" xml:space="preserve"><value>فشل الحذف الجماعي.</value></data>
+  <data name="Admin.Users.Duplicate.Title" xml:space="preserve"><value>تكرار المستخدم</value></data>
+  <data name="Admin.Users.Duplicate.Confirm" xml:space="preserve"><value>إنشاء نسخة من {0} ببريد إلكتروني جديد.</value></data>
+  <data name="Admin.Users.Duplicate.NewEmail" xml:space="preserve"><value>البريد الإلكتروني الجديد</value></data>
+  <data name="Admin.Users.Duplicate.NewEmailHint" xml:space="preserve"><value>سيتلقّى المستخدم الجديد الدعوة على هذا البريد.</value></data>
+  <data name="Admin.Users.Duplicate.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Users.Duplicate.Submit" xml:space="preserve"><value>تكرار</value></data>
+  <data name="Admin.Users.Duplicate.Success" xml:space="preserve"><value>تم إنشاء {0}.</value></data>
+  <data name="Admin.Users.Duplicate.Fallback" xml:space="preserve"><value>فشل التكرار.</value></data>
+  <data name="Admin.Users.Copy.One" xml:space="preserve"><value>تم نسخ {0} إلى الحافظة.</value></data>
+  <data name="Admin.Users.Copy.Count" xml:space="preserve"><value>تم نسخ {0} صفًا إلى الحافظة.</value></data>
+  <data name="Admin.Users.Paste.Empty" xml:space="preserve"><value>الحافظة فارغة.</value></data>
+  <data name="Admin.Users.Paste.NotImplemented" xml:space="preserve"><value>اللصق للإضافة سيظهر مع وحدة إدارة المستخدمين.</value></data>
+  <data name="Admin.Users.Import.Fallback" xml:space="preserve"><value>فشل الاستيراد.</value></data>
   <data name="Admin.Users.BulkDelete.Title" xml:space="preserve"><value>حذف المستخدمين</value></data>
   <data name="Admin.Users.BulkDelete.Confirm" xml:space="preserve"><value>سيتم تعطيل {0} حساب/حسابات. سيتم إنهاء الجلسات وإخطار المستخدمين عبر البريد.</value></data>
   <data name="Admin.Users.BulkDelete.Reason" xml:space="preserve"><value>السبب</value></data>

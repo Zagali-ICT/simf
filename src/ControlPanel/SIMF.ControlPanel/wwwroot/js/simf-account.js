@@ -79,8 +79,12 @@ window.simfAccount = {
         });
         if (!response.ok) return;
         const blob = await response.blob();
+
+        // D-045 H1: tightened filename parsing — accept only filename-safe
+        // characters from Content-Disposition. A malicious upstream header
+        // can't drop a "..\evil.lnk.xlsx" into the user's Save dialog.
         const disposition = response.headers.get('Content-Disposition') || '';
-        const match = /filename="?([^";]+)"?/i.exec(disposition);
+        const match = /filename="?([A-Za-z0-9._-]+)"?/i.exec(disposition);
         const fileName = match ? match[1] : 'simf-export.xlsx';
 
         const url2 = URL.createObjectURL(blob);
@@ -90,6 +94,8 @@ window.simfAccount = {
         document.body.appendChild(a);
         a.click();
         a.remove();
-        URL.revokeObjectURL(url2);
+        // D-045 H1: defer revocation so slow disks have time to start the
+        // download before the blob URL is reclaimed.
+        setTimeout(() => URL.revokeObjectURL(url2), 60_000);
     },
 };

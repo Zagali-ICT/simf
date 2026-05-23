@@ -19,6 +19,7 @@ public sealed class ExportUsersEndpoint(IAdminAccountService adminAccountService
         Post("/admin/users/export");
         Policies(nameof(AuthorizationPolicies.AdministratorOnly));
         Tags("Admin");
+        Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         // The request is JSON (the selected ids + grid query); the response
         // is the XLSX bytes with a Content-Disposition for the browser save.
         Summary(summary => summary.Summary =

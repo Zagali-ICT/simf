@@ -3,6 +3,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.Excel;
@@ -12,6 +13,7 @@ using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Identity;
 
@@ -22,12 +24,15 @@ namespace SIMF.Infrastructure.Identity;
 /// </summary>
 internal sealed class AdminAccountService(
     UserManager<SimfUser> userManager,
+    RoleManager<SimfRole> roleManager,
     IRefreshTokenRepository refreshTokenRepository,
     IRecoveryCodeService recoveryCodes,
     IAccountCodeRepository accountCodeRepository,
     IEmailQueue emailQueue,
     IAuditLog auditLog,
     IUserExcelService excel,
+    ITransactionRunner transactionRunner,
+    SimfIdentityDbContext dbContext,
     TimeProvider timeProvider,
     ILogger<AdminAccountService> logger) : IAdminAccountService
 {
@@ -267,27 +272,47 @@ internal sealed class AdminAccountService(
         };
 
         var total = await users.CountAsync(cancellationToken);
-        var page = await users.Skip(skip).Take(top).ToListAsync(cancellationToken);
 
-        // The role flag needs UserManager.IsInRoleAsync (not a join the
-        // store guarantees). Cost: one query per row — acceptable at the
-        // bounded page size; if it ever isn't, fold the role into the
-        // projection by joining AspNetUserRoles directly.
-        var summaries = new List<AdminUserSummary>(page.Count);
-        foreach (var user in page)
-        {
-            var isAdmin = await userManager.IsInRoleAsync(user, AdministratorRole);
-            summaries.Add(new AdminUserSummary(
+        // Resolve the Administrator role id once, then project the role flag
+        // inside the EF query — kills the per-row IsInRoleAsync N+1 (D-045 H1).
+        // A page of 200 users used to issue 201 round-trips; now it is 2.
+        var adminRoleId = await GetAdministratorRoleIdAsync(cancellationToken);
+        var rows = await users
+            .Skip(skip)
+            .Take(top)
+            .Select(user => new
+            {
                 user.Id,
-                user.Email ?? string.Empty,
+                user.Email,
                 user.DisplayName,
-                user.AccountState.ToString(),
+                user.AccountState,
                 user.TwoFactorEnabled,
-                isAdmin,
-                user.CreatedAt));
-        }
+                user.CreatedAt,
+                IsAdmin = adminRoleId != null
+                    && dbContext.UserRoles.Any(ur =>
+                        ur.UserId == user.Id && ur.RoleId == adminRoleId),
+            })
+            .ToListAsync(cancellationToken);
+
+        var summaries = rows
+            .Select(row => new AdminUserSummary(
+                row.Id,
+                row.Email ?? string.Empty,
+                row.DisplayName,
+                row.AccountState.ToString(),
+                row.TwoFactorEnabled,
+                row.IsAdmin,
+                row.CreatedAt))
+            .ToList();
+
         return GridPage<AdminUserSummary>.Of(summaries, total,
             new GridQuery { Skip = skip, Top = top });
+    }
+
+    private async Task<Guid?> GetAdministratorRoleIdAsync(CancellationToken cancellationToken)
+    {
+        var role = await roleManager.FindByNameAsync(AdministratorRole);
+        return role?.Id;
     }
 
     public async Task<AdminBulkDeleteResponse> BulkDeleteUsersAsync(
@@ -301,9 +326,23 @@ internal sealed class AdminAccountService(
 
         foreach (var targetId in request.Ids)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var target = await userManager.FindByIdAsync(targetId.ToString());
             if (target is null)
             {
+                // D-045 H1: unknown-id is now audited (an enumeration probe
+                // against the user table is the exact signature of admin
+                // abuse) — was a silent skip before.
+                await auditLog.WriteAsync(new AuditEntry
+                {
+                    EventType = AuditEvents.AdminUserDeleteFailed,
+                    Outcome = AuditOutcome.Failure,
+                    SubjectUserId = targetId,
+                    ActorUserId = actorUserId,
+                    ErrorCode = ErrorCodes.AdminUserNotFound,
+                    Detail = request.Reason,
+                }, cancellationToken);
                 skipped++;
                 continue;
             }
@@ -329,22 +368,67 @@ internal sealed class AdminAccountService(
                 continue;
             }
 
-            target.AccountState = AccountState.Disabled;
-            target.UpdatedAt = now;
-            await userManager.UpdateAsync(target);
-            await userManager.UpdateSecurityStampAsync(target);
-            await refreshTokenRepository.RevokeAllForUserAsync(target.Id, now, cancellationToken);
-
-            await auditLog.WriteAsync(new AuditEntry
+            // D-045 H1: every subject wipes state + revokes sessions inside
+            // one transaction; check UpdateAsync.Succeeded so a silent
+            // Identity error doesn't pretend success. The audit row is
+            // committed in the same transaction as the state change so SOC
+            // never sees a delete-without-audit pair.
+            var success = false;
+            string? failureDetail = null;
+            try
             {
-                EventType = AuditEvents.AdminUserDeleted,
-                Outcome = AuditOutcome.Success,
-                SubjectEmail = target.Email,
-                SubjectUserId = target.Id,
-                ActorUserId = actorUserId,
-                Detail = request.Reason,
-            }, cancellationToken);
-            deleted++;
+                await transactionRunner.ExecuteAsync(async (innerCt) =>
+                {
+                    target.AccountState = AccountState.Disabled;
+                    target.UpdatedAt = now;
+                    var updateResult = await userManager.UpdateAsync(target);
+                    if (!updateResult.Succeeded)
+                    {
+                        failureDetail = string.Join("; ",
+                            updateResult.Errors.Select(error => error.Description));
+                        return;
+                    }
+                    await userManager.UpdateSecurityStampAsync(target);
+                    await refreshTokenRepository.RevokeAllForUserAsync(
+                        target.Id, now, innerCt);
+                    await auditLog.WriteAsync(new AuditEntry
+                    {
+                        EventType = AuditEvents.AdminUserDeleted,
+                        Outcome = AuditOutcome.Success,
+                        SubjectEmail = target.Email,
+                        SubjectUserId = target.Id,
+                        ActorUserId = actorUserId,
+                        Detail = request.Reason,
+                    }, innerCt);
+                    success = true;
+                }, cancellationToken);
+            }
+            catch (Exception exception) when (
+                exception is not OperationCanceledException)
+            {
+                failureDetail = exception.Message;
+            }
+
+            if (success)
+            {
+                deleted++;
+            }
+            else
+            {
+                // Outside the rolled-back transaction so the failure row
+                // survives even when the work transaction did not.
+                await auditLog.WriteAsync(new AuditEntry
+                {
+                    EventType = AuditEvents.AdminUserDeleteFailed,
+                    Outcome = AuditOutcome.Failure,
+                    SubjectEmail = target.Email,
+                    SubjectUserId = target.Id,
+                    ActorUserId = actorUserId,
+                    ErrorCode = ErrorCodes.InternalError,
+                    Detail = failureDetail ?? "Delete failed without a recorded reason.",
+                }, cancellationToken);
+                skipped++;
+            }
         }
 
         logger.LogInformation(
@@ -395,30 +479,49 @@ internal sealed class AdminAccountService(
         IReadOnlyList<AdminUserSummary> rows;
         if (request.Ids.Count > 0)
         {
-            // Selected-ids path — pull and order to match the on-screen sort.
+            // Selected-ids path — pull, with the role flag projected in one
+            // query (D-045 H1, kills the per-row IsInRoleAsync N+1).
             var idSet = request.Ids.ToHashSet();
-            var users = await userManager.Users
+            var adminRoleId = await GetAdministratorRoleIdAsync(cancellationToken);
+            var projected = await userManager.Users
                 .Where(u => idSet.Contains(u.Id))
+                .Select(u => new
+                {
+                    u.Id, u.Email, u.DisplayName, u.AccountState,
+                    u.TwoFactorEnabled, u.CreatedAt,
+                    IsAdmin = adminRoleId != null
+                        && dbContext.UserRoles.Any(ur =>
+                            ur.UserId == u.Id && ur.RoleId == adminRoleId),
+                })
                 .ToListAsync(cancellationToken);
-            var built = new List<AdminUserSummary>(users.Count);
-            foreach (var user in users)
-            {
-                var isAdmin = await userManager.IsInRoleAsync(user, AdministratorRole);
-                built.Add(new AdminUserSummary(
-                    user.Id, user.Email ?? string.Empty, user.DisplayName,
-                    user.AccountState.ToString(), user.TwoFactorEnabled, isAdmin,
-                    user.CreatedAt));
-            }
-            rows = built;
+            rows = projected
+                .Select(p => new AdminUserSummary(
+                    p.Id, p.Email ?? string.Empty, p.DisplayName,
+                    p.AccountState.ToString(), p.TwoFactorEnabled, p.IsAdmin,
+                    p.CreatedAt))
+                .ToList();
         }
         else
         {
             // Whole-result-set path — re-run the same query the grid used.
             // Bound to 5 000 rows so an accidental "export everything"
             // doesn't load the entire database into RAM.
-            var query = request.Query ?? new GridQuery();
-            query.Skip = 0;
-            query.Top = 5_000;
+            //
+            // D-045 H1: clone the incoming query before mutating Skip/Top —
+            // the caller may still be holding a reference to it (the CP page
+            // does — UsersList.razor passes its own `_query` in), and
+            // mutating it in place silently changed the page-size on the
+            // next list call.
+            var source = request.Query ?? new GridQuery();
+            var query = new GridQuery
+            {
+                Skip = 0,
+                Top = 5_000,
+                Search = source.Search,
+                Sort = source.Sort,
+                SortDescending = source.SortDescending,
+                Filters = new Dictionary<string, string>(source.Filters),
+            };
             var page = await ListUsersAsync(query, cancellationToken);
             rows = page.Items;
         }

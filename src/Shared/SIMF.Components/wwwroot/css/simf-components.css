@@ -1480,6 +1480,26 @@ body.simf-modal-open { overflow: hidden; }
 .simf-tooltip:hover .simf-tooltip__bubble,
 .simf-tooltip:focus-within .simf-tooltip__bubble { opacity: 1; }
 
+/* -- Hidden file input utility (D-045 H1) — replaces inline `style="display:none"`
+   so SIMF-SES-001 §217 "no inline styles" stays clean. */
+.simf-hidden-input {
+  display: none;
+}
+
+/* -- Floating toast (D-045 H1) — transient inline feedback after a grid
+   action (bulk-delete result, clipboard count, paste-not-implemented). */
+.simf-toast {
+  position: fixed;
+  z-index: 110;
+  inset-block-end: var(--space-6);
+  inset-inline-end: var(--space-6);
+  min-inline-size: 280px;
+  max-inline-size: 420px;
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-card);
+}
+.simf-toast .simf-alert { margin-block-end: 0; }
+
 /* -- Stat card (D-044 c) ---------------------------------------------------- */
 .simf-stat {
   display: flex;

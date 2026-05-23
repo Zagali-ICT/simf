@@ -21,6 +21,7 @@ public sealed class BulkDeleteUsersEndpoint(IAdminAccountService adminAccountSer
         Post("/admin/users/bulk-delete");
         Policies(nameof(AuthorizationPolicies.AdministratorOnly));
         Tags("Admin");
+        Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
             "Soft-delete one or many users. Requires Administrator role.");
     }
@@ -32,18 +33,9 @@ public sealed class BulkDeleteUsersEndpoint(IAdminAccountService adminAccountSer
             await Send.UnauthorizedAsync(ct);
             return;
         }
-        if (req.Ids.Count == 0)
-        {
-            throw new DataValidationException(
-                "At least one user id is required.",
-                "يجب تحديد مستخدم واحد على الأقل.");
-        }
-        if (req.Reason.Length is < 10 or > 500)
-        {
-            throw new DataValidationException(
-                "A reason between 10 and 500 characters is required.",
-                "السبب مطلوب وبين 10 و 500 حرفًا.");
-        }
+        // Field-level rules (Ids cap, Reason 10-500) live in
+        // AdminBulkDeleteRequestValidator so the standard VALIDATION_FAILED
+        // envelope (D-030) is the response shape.
         var response = await adminAccountService.BulkDeleteUsersAsync(actorId, req, ct);
         await Send.OkAsync(ApiResult<AdminBulkDeleteResponse>.Ok(response), ct);
     }
