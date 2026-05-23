@@ -240,7 +240,22 @@
 }
 .simf-role-list li { padding-block: var(--space-1); }
 
-/* Simple data table for the admin user list (D-042). */
+/* -- Wide page wrapper — for list / table pages -----------------------------
+   The narrow `.simf-page-card` is right for forms (max 720px). Pages that
+   host a wide table (e.g. /admin/users — D-043) wrap their content in
+   `.simf-panel` for the surface and constrain the page itself with
+   `.simf-page-wide` so the content can grow to a comfortable reading width
+   without becoming a banner. */
+.simf-page-wide {
+  inline-size: 100%;
+  max-inline-size: 1200px;
+}
+
+/* -- SimfTable — list-table primitive (D-043) ------------------------------- */
+.simf-table-wrapper {
+  inline-size: 100%;
+  overflow-x: auto;
+}
 .simf-table {
   inline-size: 100%;
   border-collapse: collapse;
@@ -259,8 +274,13 @@
   color: var(--color-text-muted);
   font-weight: var(--font-weight-heading);
 }
+.simf-table__empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding-block: var(--space-6);
+}
 
-/* Inline status pills used in the user list. */
+/* -- SimfPill — inline status chip (D-043) ---------------------------------- */
 .simf-pill {
   display: inline-block;
   padding: 2px var(--space-2);
@@ -283,13 +303,22 @@
   color: var(--color-text-muted);
 }
 
-/* Inline checkbox label. */
+/* -- SimfCheckbox — labelled checkbox primitive (D-043) --------------------- */
 .simf-checkbox {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   font-size: var(--font-size-body);
   color: var(--color-text);
+  cursor: pointer;
+}
+.simf-checkbox input[type="checkbox"] {
+  inline-size: 1rem;
+  block-size: 1rem;
+  accent-color: var(--color-accent-blue);
+}
+.simf-checkbox__label {
+  flex: 1 1 auto;
 }
 
 /* Recovery codes — shown plaintext exactly once, so make them readable. */

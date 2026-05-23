@@ -1,0 +1,42 @@
+@* SimfTable — the SIMF list-table primitive (decision D-043). A typed
+   wrapper around a plain HTML table that keeps the look-and-feel central
+   and the page markup small. *@
+@namespace SIMF.Components.Forms
+@typeparam TItem
+
+<div class="simf-table-wrapper">
+    <table class="simf-table">
+        <thead>
+            <tr>@HeaderTemplate</tr>
+        </thead>
+        <tbody>
+            @if (Items is null || Items.Count == 0)
+            {
+                <tr>
+                    <td colspan="32" class="simf-table__empty">@EmptyTemplate</td>
+                </tr>
+            }
+            else if (RowTemplate is not null)
+            {
+                @foreach (var item in Items)
+                {
+                    <tr>@RowTemplate(item)</tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    /// <summary>The rows to render.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<TItem>? Items { get; set; }
+
+    /// <summary>The header cells — supply one <c>&lt;th&gt;</c> per column.</summary>
+    [Parameter, EditorRequired] public RenderFragment? HeaderTemplate { get; set; }
+
+    /// <summary>Renders the cells for one row.</summary>
+    [Parameter, EditorRequired] public RenderFragment<TItem>? RowTemplate { get; set; }
+
+    /// <summary>Shown when the list is empty.</summary>
+    [Parameter] public RenderFragment? EmptyTemplate { get; set; }
+}

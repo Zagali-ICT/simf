@@ -1,0 +1,16 @@
+@* SimfPill — a small inline status chip (decision D-043). Used for role
+   tags, 2FA on/off, account-state markers and similar list-row badges. *@
+@namespace SIMF.Components.Forms
+
+<span class="simf-pill simf-pill--@Variant">@ChildContent</span>
+
+@code {
+    /// <summary>
+    /// The pill colour theme: <c>neutral</c> (default), <c>admin</c>,
+    /// <c>on</c>, <c>off</c>.
+    /// </summary>
+    [Parameter] public string Variant { get; set; } = "neutral";
+
+    /// <summary>The label text.</summary>
+    [Parameter, EditorRequired] public RenderFragment? ChildContent { get; set; }
+}

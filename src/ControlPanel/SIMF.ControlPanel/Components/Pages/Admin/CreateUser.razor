@@ -1,12 +1,15 @@
 @* Control Panel — admin creates a new CP user (decision D-042). The new
-   user receives a 7-day password-set invitation by email. *@
+   user receives a 7-day password-set invitation by email. Layout follows
+   the CP form-card convention (D-043): explicit @layout, `.simf-card
+   .simf-page-card` surface, SimfCheckbox primitive. *@
 @page "/admin/users/new"
+@layout CpShellLayout
 @attribute [Authorize(Roles = "Administrator")]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 
-<PageTitle>@L["Admin.CreateUser.Title"]</PageTitle>
+<PageTitle>@L["Admin.CreateUser.Title"] · SIMF</PageTitle>
 
 <SimfPageHeader Title="@L["Admin.CreateUser.Title"]" />
 
@@ -31,10 +34,9 @@
             <SimfTextField Label="@L["Admin.CreateUser.DisplayName"]"
                            @bind-Value="_model.DisplayName"
                            Autocomplete="off" Disabled="_busy" />
-            <label class="simf-checkbox">
-                <input type="checkbox" @bind="_model.GrantAdministratorRole" disabled="@(_busy ? "disabled" : null)" />
-                <span>@L["Admin.CreateUser.GrantAdministrator"]</span>
-            </label>
+            <SimfCheckbox @bind-Value="_model.GrantAdministratorRole" Disabled="_busy">
+                @L["Admin.CreateUser.GrantAdministrator"]
+            </SimfCheckbox>
         </div>
         <div class="simf-form__actions">
             <SimfButton Loading="_busy" LoadingLabel="@L["Admin.CreateUser.Submitting"]">
@@ -80,7 +82,8 @@
 
         if (string.IsNullOrWhiteSpace(_model.Email) || !_model.Email.Contains('@', StringComparison.Ordinal))
         {
-            _messages.Add(_editContext.Field(nameof(Model.Email)), L["Admin.CreateUser.EmailInvalid"]);
+            _messages.Add(_editContext.Field(nameof(Model.Email)),
+                L["Admin.CreateUser.EmailInvalid"]);
         }
         if (_model.DisplayName.Length is < 2 or > 128)
         {

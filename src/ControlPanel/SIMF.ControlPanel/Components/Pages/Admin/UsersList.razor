@@ -1,86 +1,73 @@
 @* Control Panel — list every account (decision D-042). Administrator only.
    No paging today — bounded user count. Each row links to the admin-reset
-   2FA page with the email pre-filled via query string. *@
+   2FA page with the email pre-filled via query string. Layout follows the
+   CP convention (D-043): explicit @layout, `.simf-panel` surface inside a
+   `.simf-page-wide` wrapper, SimfTable + SimfPill primitives. *@
 @page "/admin/users"
+@layout CpShellLayout
 @attribute [Authorize(Roles = "Administrator")]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 
-<PageTitle>@L["Admin.Users.Title"]</PageTitle>
+<PageTitle>@L["Admin.Users.Title"] · SIMF</PageTitle>
 
-<SimfPageHeader Title="@L["Admin.Users.Title"]" />
-
-<section class="simf-card simf-page-card">
-    <div class="simf-form__actions">
+<SimfPageHeader Title="@L["Admin.Users.Title"]">
+    <Actions>
         <SimfButton Type="button" OnClick="@(() => Nav.NavigateTo("/admin/users/new"))">
             @L["Admin.Users.CreateNew"]
         </SimfButton>
-    </div>
+    </Actions>
+</SimfPageHeader>
 
-    @if (_users is null)
-    {
-        <p>@L["Profile.Loading"]</p>
-    }
-    else if (_users.Count == 0)
-    {
-        <p>@L["Admin.Users.None"]</p>
-    }
-    else
-    {
-        <table class="simf-table">
-            <thead>
-                <tr>
-                    <th>@L["Admin.Users.Column.Email"]</th>
-                    <th>@L["Admin.Users.Column.DisplayName"]</th>
-                    <th>@L["Admin.Users.Column.State"]</th>
-                    <th>@L["Admin.Users.Column.Role"]</th>
-                    <th>@L["Admin.Users.Column.TwoFactor"]</th>
-                    <th>@L["Admin.Users.Column.Actions"]</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var user in _users)
-                {
-                    <tr>
-                        <td>@user.Email</td>
-                        <td>@user.DisplayName</td>
-                        <td>@user.AccountState</td>
-                        <td>
-                            @if (user.IsAdministrator)
-                            {
-                                <span class="simf-pill simf-pill--admin">@L["Admin.Users.Role.Administrator"]</span>
-                            }
-                            else
-                            {
-                                <span class="simf-pill">@L["Admin.Users.Role.User"]</span>
-                            }
-                        </td>
-                        <td>
-                            @if (user.TwoFactorEnabled)
-                            {
-                                <span class="simf-pill simf-pill--on">@L["Admin.Users.TwoFactor.On"]</span>
-                            }
-                            else
-                            {
-                                <span class="simf-pill simf-pill--off">@L["Admin.Users.TwoFactor.Off"]</span>
-                            }
-                        </td>
-                        <td>
-                            @if (!user.IsAdministrator && user.TwoFactorEnabled)
-                            {
-                                <a class="simf-link"
-                                   href="@($"/admin/reset-2fa?email={Uri.EscapeDataString(user.Email)}")">
-                                    @L["Admin.Users.Action.Reset2FA"]
-                                </a>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-</section>
+<div class="simf-page-wide">
+    <div class="simf-panel">
+        <SimfTable TItem="AdminUserSummary" Items="_users">
+            <HeaderTemplate>
+                <th>@L["Admin.Users.Column.Email"]</th>
+                <th>@L["Admin.Users.Column.DisplayName"]</th>
+                <th>@L["Admin.Users.Column.State"]</th>
+                <th>@L["Admin.Users.Column.Role"]</th>
+                <th>@L["Admin.Users.Column.TwoFactor"]</th>
+                <th>@L["Admin.Users.Column.Actions"]</th>
+            </HeaderTemplate>
+            <RowTemplate Context="user">
+                <td>@user.Email</td>
+                <td>@user.DisplayName</td>
+                <td>@user.AccountState</td>
+                <td>
+                    @if (user.IsAdministrator)
+                    {
+                        <SimfPill Variant="admin">@L["Admin.Users.Role.Administrator"]</SimfPill>
+                    }
+                    else
+                    {
+                        <SimfPill>@L["Admin.Users.Role.User"]</SimfPill>
+                    }
+                </td>
+                <td>
+                    @if (user.TwoFactorEnabled)
+                    {
+                        <SimfPill Variant="on">@L["Admin.Users.TwoFactor.On"]</SimfPill>
+                    }
+                    else
+                    {
+                        <SimfPill Variant="off">@L["Admin.Users.TwoFactor.Off"]</SimfPill>
+                    }
+                </td>
+                <td>
+                    @if (!user.IsAdministrator && user.TwoFactorEnabled)
+                    {
+                        <SimfLink Href="@($"/admin/reset-2fa?email={Uri.EscapeDataString(user.Email)}")">
+                            @L["Admin.Users.Action.Reset2FA"]
+                        </SimfLink>
+                    }
+                </td>
+            </RowTemplate>
+            <EmptyTemplate>@L["Admin.Users.None"]</EmptyTemplate>
+        </SimfTable>
+    </div>
+</div>
 
 @code {
     private IReadOnlyList<AdminUserSummary>? _users;
@@ -89,13 +76,8 @@
     {
         var envelope = await JS.InvokeAsync<ApiResult<AdminUserListResponse>>(
             "simfAccount.getJson", "/account/api/admin/users");
-        if (envelope is { Success: true, Data: not null })
-        {
-            _users = envelope.Data.Users;
-        }
-        else
-        {
-            _users = Array.Empty<AdminUserSummary>();
-        }
+        _users = envelope is { Success: true, Data: not null }
+            ? envelope.Data.Users
+            : Array.Empty<AdminUserSummary>();
     }
 }
