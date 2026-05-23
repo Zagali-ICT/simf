@@ -31,6 +31,7 @@ internal sealed class AdminAccountService(
     IEmailQueue emailQueue,
     IAuditLog auditLog,
     IUserExcelService excel,
+    IQrIdMinter qrIdMinter,
     ITransactionRunner transactionRunner,
     SimfIdentityDbContext dbContext,
     TimeProvider timeProvider,
@@ -177,6 +178,12 @@ internal sealed class AdminAccountService(
         {
             await userManager.AddToRoleAsync(user, AdministratorRole);
         }
+
+        // D-046: the account is created directly in the Approved state, so
+        // the QR id is minted now. Persist it via UpdateAsync — the user
+        // is already in the store after CreateAsync.
+        await qrIdMinter.MintIfMissingAsync(user, cancellationToken);
+        await userManager.UpdateAsync(user);
 
         // 7-day invite — longer than the 10-min self-service forgot-password
         // code, so the user can act on it without urgency (D-042).

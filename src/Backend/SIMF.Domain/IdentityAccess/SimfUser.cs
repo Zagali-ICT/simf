@@ -42,5 +42,16 @@ public class SimfUser : IdentityUser<Guid>
     /// IBS V10 car-image-upload convention.
     /// </summary>
     public string? AvatarRelativePath { get; set; }
+
+    /// <summary>
+    /// A short, unique, opaque event-entry identifier (decision D-046).
+    /// Minted by <c>IQrIdMinter</c> the moment <see cref="AccountState"/>
+    /// transitions to <see cref="AccountState.Approved"/>. Encoded in the
+    /// visitor's QR code at event entry; staff scan it to check the
+    /// visitor in. Null until the account is approved. Crockford base32
+    /// alphabet (no 0/O/1/I/L/U), 12 chars (≈ 60 bits of entropy), unique
+    /// across the system.
+    /// </summary>
+    public string? QrId { get; set; }
 }
 

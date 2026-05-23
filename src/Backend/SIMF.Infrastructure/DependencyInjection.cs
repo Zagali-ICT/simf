@@ -97,6 +97,7 @@ public static class DependencyInjection
         services.AddScoped<IRecoveryCodeService, RecoveryCodeService>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IAdminAccountService, AdminAccountService>();
+        services.AddScoped<IQrIdMinter, QrIdMinter>();
         services.AddSingleton<IUserExcelService, ClosedXmlUserExcelService>();
         services.AddSingleton<IAvatarStorage, FilesystemAvatarStorage>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();

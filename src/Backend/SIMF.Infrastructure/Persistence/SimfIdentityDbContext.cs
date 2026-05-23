@@ -26,6 +26,8 @@ public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> optio
 
     public DbSet<TotpRecoveryCode> TotpRecoveryCodes => Set<TotpRecoveryCode>();
 
+    public DbSet<VisitorProfile> VisitorProfiles => Set<VisitorProfile>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

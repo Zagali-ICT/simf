@@ -207,6 +207,25 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Creating_a_user_mints_a_QR_id_because_the_account_is_directly_Approved()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var email = $"qr-{Guid.NewGuid():N}@simf.test";
+
+        await PostAuthAsync(
+            "/api/v1/admin/users",
+            new AdminCreateUserRequest { Email = email, DisplayName = "QR Test" },
+            adminToken);
+
+        using var scope = _factory.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var created = (await users.FindByEmailAsync(email))!;
+        Assert.False(string.IsNullOrEmpty(created.QrId),
+            "QR id must be minted at admin-create time per D-046.");
+        Assert.Equal(12, created.QrId!.Length);
+    }
+
+    [Fact]
     public async Task The_invite_code_lets_the_new_user_set_their_password_and_sign_in()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
