@@ -1,20 +1,25 @@
 @* Control Panel — sign-in (the password step). On success the account holds a
-   Control Panel role, so the second factor is an authenticator TOTP code. *@
+   Control Panel role, so the second factor is an authenticator TOTP code —
+   unless TwoFactorEnabled is false on the account, in which case the API
+   returns the tokens directly. *@
 @page "/login"
 @attribute [AllowAnonymous]
+@inject IStringLocalizer<Strings> L
 @inject SimfAuthClient Api
 @inject SimfAuthSession Session
+@inject SignInTicketStore Tickets
 @inject NavigationManager Nav
 
-<PageTitle>Sign in · SIMF Control Panel</PageTitle>
+<PageTitle>@L["Auth.PageTitle.SignIn"]</PageTitle>
 
 <SimfAuthLayout>
     <Brand>
-        <SimfBrandPanel Subtitle="Control Panel" Caption="Royal Saudi Naval Forces" />
+        <SimfBrandPanel Subtitle="@L["Brand.Subtitle"]" Caption="@L["Brand.Caption"]" />
     </Brand>
     <ChildContent>
-        <SimfAuthCard Title="Sign in" SupportingText="Access the SIMF Control Panel.">
+        <SimfAuthCard Title="@L["Auth.SignIn.Title"]" SupportingText="@L["Auth.SignIn.Supporting"]">
             <TopControls>
+                <SimfLanguageSwitch Href="@CultureHref" Label="@L["Auth.LanguageSwitch"]" />
                 <SimfThemeToggle />
             </TopControls>
             <ChildContent>
@@ -24,21 +29,21 @@
                         <SimfAlert Variant="error">@_error</SimfAlert>
                     }
                     <div class="simf-form__fields">
-                        <SimfTextField Label="Email address" @bind-Value="_model.Email"
+                        <SimfTextField Label="@L["Auth.SignIn.Email"]" @bind-Value="_model.Email"
                                        Type="email" Icon="mail" InputMode="email"
                                        Autocomplete="username" Disabled="_loading" />
-                        <SimfPasswordField Label="Password" @bind-Value="_model.Password"
+                        <SimfPasswordField Label="@L["Auth.SignIn.Password"]" @bind-Value="_model.Password"
                                            Autocomplete="current-password" Disabled="_loading" />
                     </div>
-                    <SimfLink Href="/forgot-password" Block="true">Forgot password?</SimfLink>
+                    <SimfLink Href="/forgot-password" Block="true">@L["Auth.SignIn.ForgotLink"]</SimfLink>
                     <div class="simf-form__actions">
-                        <SimfButton Block="true" Loading="_loading" LoadingLabel="Signing in">
-                            Sign in
+                        <SimfButton Block="true" Loading="_loading" LoadingLabel="@L["Auth.SignIn.Submitting"]">
+                            @L["Auth.SignIn.Submit"]
                         </SimfButton>
                     </div>
                 </EditForm>
             </ChildContent>
-            <Footer>SIMF Control Panel · v1.0.0</Footer>
+            <Footer>@L["Auth.Footer"]</Footer>
         </SimfAuthCard>
     </ChildContent>
 </SimfAuthLayout>
@@ -64,6 +69,16 @@
         _editContext.NotifyValidationStateChanged();
     }
 
+    // Switches to the other language and returns to this page.
+    private string CultureHref
+    {
+        get
+        {
+            var next = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar" ? "en" : "ar";
+            return $"/culture?culture={next}&redirectUri={Uri.EscapeDataString("/login")}";
+        }
+    }
+
     private async Task HandleSubmitAsync()
     {
         if (_loading)
@@ -79,16 +94,16 @@
 
             if (string.IsNullOrWhiteSpace(_model.Email))
             {
-                _messages.Add(_editContext.Field(nameof(SignInModel.Email)), "Enter your email address.");
+                _messages.Add(_editContext.Field(nameof(SignInModel.Email)), L["Auth.SignIn.EmailRequired"]);
             }
             else if (!_model.Email.Contains('@', StringComparison.Ordinal))
             {
-                _messages.Add(_editContext.Field(nameof(SignInModel.Email)), "Enter a valid email address.");
+                _messages.Add(_editContext.Field(nameof(SignInModel.Email)), L["Auth.SignIn.EmailInvalid"]);
             }
 
             if (string.IsNullOrEmpty(_model.Password))
             {
-                _messages.Add(_editContext.Field(nameof(SignInModel.Password)), "Enter your password.");
+                _messages.Add(_editContext.Field(nameof(SignInModel.Password)), L["Auth.SignIn.PasswordRequired"]);
             }
 
             _editContext.NotifyValidationStateChanged();
@@ -102,14 +117,22 @@
 
             if (!result.Success || result.Data is null)
             {
-                _error = result.Error?.MessageForCurrentCulture()
-                    ?? ApiErrorExtensions.Bilingual(
-                        "Sign-in could not be completed. Please try again.",
-                        "تعذّر إكمال تسجيل الدخول. حاول مرة أخرى.");
+                _error = result.Error?.MessageForCurrentCulture() ?? L["Auth.SignIn.Fallback"];
                 return;
             }
 
-            // A Control Panel account always completes with an authenticator code.
+            // Skip the second factor when the account has TwoFactorEnabled=false
+            // (myComment #34). The API answers with tokens immediately in that
+            // case; no MfaToken is returned.
+            if (result.Data.MfaToken is null && result.Data.Tokens is not null)
+            {
+                var reference = Tickets.Stash(result.Data.Tokens);
+                Session.Clear();
+                Nav.NavigateTo($"/auth/complete?reference={reference}", forceLoad: true);
+                return;
+            }
+
+            // The usual Control Panel path — complete with the authenticator code.
             Session.PendingEmail = _model.Email;
             Session.PendingMfaToken = result.Data.MfaToken;
             Nav.NavigateTo("/login/totp");

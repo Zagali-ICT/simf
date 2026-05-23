@@ -1,21 +1,23 @@
 @* Website — sign-in (the password step). A visitor account completes with a
-   code emailed to the account. *@
+   code emailed to the account — unless TwoFactorEnabled is false on the
+   account, in which case the API returns the tokens directly. *@
 @page "/login"
 @rendermode AppRenderMode.InteractiveServerNoPrerender
+@inject IStringLocalizer<Strings> L
 @inject SimfAuthClient Api
 @inject SimfAuthSession Session
 @inject NavigationManager Nav
 
-<PageTitle>Sign in · Saudi International Maritime Forum</PageTitle>
+<PageTitle>@L["Auth.PageTitle.SignIn"]</PageTitle>
 
 <SimfAuthLayout>
     <Brand>
-        <SimfBrandPanel Subtitle="Saudi International Maritime Forum 2026"
-                        Caption="Royal Saudi Naval Forces" />
+        <SimfBrandPanel Subtitle="@L["Brand.Subtitle"]" Caption="@L["Brand.Caption"]" />
     </Brand>
     <ChildContent>
-        <SimfAuthCard Title="Sign in" SupportingText="Sign in to your SIMF account." Wide="true">
+        <SimfAuthCard Title="@L["Auth.SignIn.Title"]" SupportingText="@L["Auth.SignIn.Supporting"]" Wide="true">
             <TopControls>
+                <SimfLanguageSwitch Href="@CultureHref" Label="@L["Auth.LanguageSwitch"]" />
                 <SimfThemeToggle />
             </TopControls>
             <ChildContent>
@@ -25,21 +27,21 @@
                         <SimfAlert Variant="error">@_error</SimfAlert>
                     }
                     <div class="simf-form__fields">
-                        <SimfTextField Label="Email address" @bind-Value="_model.Email"
+                        <SimfTextField Label="@L["Auth.SignIn.Email"]" @bind-Value="_model.Email"
                                        Type="email" Icon="mail" InputMode="email"
                                        Autocomplete="username" Disabled="_loading" />
-                        <SimfPasswordField Label="Password" @bind-Value="_model.Password"
+                        <SimfPasswordField Label="@L["Auth.SignIn.Password"]" @bind-Value="_model.Password"
                                            Autocomplete="current-password" Disabled="_loading" />
                     </div>
-                    <SimfLink Href="/forgot-password" Block="true">Forgot password?</SimfLink>
+                    <SimfLink Href="/forgot-password" Block="true">@L["Auth.SignIn.ForgotLink"]</SimfLink>
                     <div class="simf-form__actions">
-                        <SimfButton Block="true" Loading="_loading" LoadingLabel="Signing in">
-                            Sign in
+                        <SimfButton Block="true" Loading="_loading" LoadingLabel="@L["Auth.SignIn.Submitting"]">
+                            @L["Auth.SignIn.Submit"]
                         </SimfButton>
                     </div>
                 </EditForm>
             </ChildContent>
-            <Footer>Saudi International Maritime Forum 2026</Footer>
+            <Footer>@L["Auth.Footer"]</Footer>
         </SimfAuthCard>
     </ChildContent>
 </SimfAuthLayout>
@@ -65,6 +67,15 @@
         _editContext.NotifyValidationStateChanged();
     }
 
+    private string CultureHref
+    {
+        get
+        {
+            var next = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar" ? "en" : "ar";
+            return $"/culture?culture={next}&redirectUri={Uri.EscapeDataString("/login")}";
+        }
+    }
+
     private async Task HandleSubmitAsync()
     {
         if (_loading)
@@ -80,16 +91,16 @@
 
             if (string.IsNullOrWhiteSpace(_model.Email))
             {
-                _messages.Add(_editContext.Field(nameof(SignInModel.Email)), "Enter your email address.");
+                _messages.Add(_editContext.Field(nameof(SignInModel.Email)), L["Auth.SignIn.EmailRequired"]);
             }
             else if (!_model.Email.Contains('@', StringComparison.Ordinal))
             {
-                _messages.Add(_editContext.Field(nameof(SignInModel.Email)), "Enter a valid email address.");
+                _messages.Add(_editContext.Field(nameof(SignInModel.Email)), L["Auth.SignIn.EmailInvalid"]);
             }
 
             if (string.IsNullOrEmpty(_model.Password))
             {
-                _messages.Add(_editContext.Field(nameof(SignInModel.Password)), "Enter your password.");
+                _messages.Add(_editContext.Field(nameof(SignInModel.Password)), L["Auth.SignIn.PasswordRequired"]);
             }
 
             _editContext.NotifyValidationStateChanged();
@@ -103,14 +114,20 @@
 
             if (!result.Success || result.Data is null)
             {
-                _error = result.Error?.MessageForCurrentCulture()
-                    ?? ApiErrorExtensions.Bilingual(
-                        "Sign-in could not be completed. Please try again.",
-                        "تعذّر إكمال تسجيل الدخول. حاول مرة أخرى.");
+                _error = result.Error?.MessageForCurrentCulture() ?? L["Auth.SignIn.Fallback"];
                 return;
             }
 
-            // A visitor account completes with a code sent to the account's email.
+            // Skip the second factor when the account has TwoFactorEnabled=false
+            // (myComment #34). The API answers with tokens immediately.
+            if (result.Data.OtpToken is null && result.Data.Tokens is not null)
+            {
+                Session.Complete(result.Data.Tokens);
+                Nav.NavigateTo("/account");
+                return;
+            }
+
+            // The usual visitor path — a code is emailed to the account.
             Session.PendingEmail = _model.Email;
             Session.PendingOtpToken = result.Data.OtpToken;
             Nav.NavigateTo("/login/verify");

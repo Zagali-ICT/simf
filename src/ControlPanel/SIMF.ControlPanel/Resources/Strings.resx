@@ -67,4 +67,64 @@
   <data name="NotPermitted.Title" xml:space="preserve"><value>Not permitted</value></data>
   <data name="NotPermitted.Text" xml:space="preserve"><value>You do not have permission to open this page. If you believe this is a mistake, contact your administrator.</value></data>
   <data name="NotPermitted.Back" xml:space="preserve"><value>Back to the dashboard</value></data>
+
+  <data name="Brand.Subtitle" xml:space="preserve"><value>Control Panel</value></data>
+  <data name="Brand.Caption" xml:space="preserve"><value>Royal Saudi Naval Forces</value></data>
+
+  <data name="Auth.PageTitle.SignIn" xml:space="preserve"><value>Sign in · SIMF Control Panel</value></data>
+  <data name="Auth.PageTitle.Totp" xml:space="preserve"><value>Verify · SIMF Control Panel</value></data>
+  <data name="Auth.PageTitle.Forgot" xml:space="preserve"><value>Forgot password · SIMF Control Panel</value></data>
+  <data name="Auth.PageTitle.Reset" xml:space="preserve"><value>Reset password · SIMF Control Panel</value></data>
+
+  <data name="Auth.SignIn.Title" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Auth.SignIn.Supporting" xml:space="preserve"><value>Access the SIMF Control Panel.</value></data>
+  <data name="Auth.SignIn.Email" xml:space="preserve"><value>Email address</value></data>
+  <data name="Auth.SignIn.Password" xml:space="preserve"><value>Password</value></data>
+  <data name="Auth.SignIn.ForgotLink" xml:space="preserve"><value>Forgot password?</value></data>
+  <data name="Auth.SignIn.Submit" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Auth.SignIn.Submitting" xml:space="preserve"><value>Signing in</value></data>
+  <data name="Auth.SignIn.EmailRequired" xml:space="preserve"><value>Enter your email address.</value></data>
+  <data name="Auth.SignIn.EmailInvalid" xml:space="preserve"><value>Enter a valid email address.</value></data>
+  <data name="Auth.SignIn.PasswordRequired" xml:space="preserve"><value>Enter your password.</value></data>
+  <data name="Auth.SignIn.Fallback" xml:space="preserve"><value>Sign-in could not be completed. Please try again.</value></data>
+
+  <data name="Auth.Totp.Title" xml:space="preserve"><value>Verify it's you</value></data>
+  <data name="Auth.Totp.Supporting" xml:space="preserve"><value>Enter the six-digit code from your authenticator app.</value></data>
+  <data name="Auth.Totp.Code" xml:space="preserve"><value>Verification code</value></data>
+  <data name="Auth.Totp.Submit" xml:space="preserve"><value>Verify</value></data>
+  <data name="Auth.Totp.Submitting" xml:space="preserve"><value>Verifying</value></data>
+  <data name="Auth.Totp.CodeRequired" xml:space="preserve"><value>Enter the six-digit code.</value></data>
+  <data name="Auth.Totp.CodeFormat" xml:space="preserve"><value>The code is six digits.</value></data>
+  <data name="Auth.Totp.Fallback" xml:space="preserve"><value>Verification could not be completed. Please try again.</value></data>
+  <data name="Auth.Totp.SignedInAs" xml:space="preserve"><value>Signed in as {0}.</value></data>
+  <data name="Auth.Totp.BackToSignIn" xml:space="preserve"><value>Back to sign in</value></data>
+
+  <data name="Auth.Forgot.Title" xml:space="preserve"><value>Forgot password</value></data>
+  <data name="Auth.Forgot.Supporting" xml:space="preserve"><value>Enter your email; we will send a reset code if the account exists.</value></data>
+  <data name="Auth.Forgot.Submit" xml:space="preserve"><value>Send reset code</value></data>
+  <data name="Auth.Forgot.Submitting" xml:space="preserve"><value>Sending</value></data>
+  <data name="Auth.Forgot.Fallback" xml:space="preserve"><value>The request could not be completed. Please try again.</value></data>
+  <data name="Auth.Forgot.BackToSignIn" xml:space="preserve"><value>Back to sign in</value></data>
+
+  <data name="Auth.Reset.Title" xml:space="preserve"><value>Reset password</value></data>
+  <data name="Auth.Reset.Supporting" xml:space="preserve"><value>Enter the code we emailed you and choose a new password.</value></data>
+  <data name="Auth.Reset.Code" xml:space="preserve"><value>Reset code</value></data>
+  <data name="Auth.Reset.NewPassword" xml:space="preserve"><value>New password</value></data>
+  <data name="Auth.Reset.ConfirmPassword" xml:space="preserve"><value>Confirm new password</value></data>
+  <data name="Auth.Reset.Submit" xml:space="preserve"><value>Set new password</value></data>
+  <data name="Auth.Reset.Submitting" xml:space="preserve"><value>Setting</value></data>
+  <data name="Auth.Reset.PasswordsMismatch" xml:space="preserve"><value>The passwords do not match.</value></data>
+  <data name="Auth.Reset.CodeSentTo" xml:space="preserve"><value>We've sent a code to {0}.</value></data>
+  <data name="Auth.Reset.PasswordHelper" xml:space="preserve"><value>At least 8 characters, with a letter and a number.</value></data>
+  <data name="Auth.Reset.PasswordTooShort" xml:space="preserve"><value>Password must be at least 8 characters.</value></data>
+  <data name="Auth.Reset.PasswordTooLong" xml:space="preserve"><value>Password must be at most 128 characters.</value></data>
+  <data name="Auth.Reset.PasswordNoDigit" xml:space="preserve"><value>Password must contain a number.</value></data>
+  <data name="Auth.Reset.PasswordNoLetter" xml:space="preserve"><value>Password must contain a letter.</value></data>
+  <data name="Auth.Reset.Fallback" xml:space="preserve"><value>The password could not be reset. Please try again.</value></data>
+  <data name="Auth.Reset.Done.Title" xml:space="preserve"><value>Password set</value></data>
+  <data name="Auth.Reset.Done.Text" xml:space="preserve"><value>You can now sign in with your new password.</value></data>
+  <data name="Auth.Reset.Done.SignIn" xml:space="preserve"><value>Go to sign in</value></data>
+
+  <data name="Auth.Footer" xml:space="preserve"><value>SIMF Control Panel · v1.0.0</value></data>
+  <data name="Auth.LanguageSwitch" xml:space="preserve"><value>العربية</value></data>
 </root>

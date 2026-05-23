@@ -1,6 +1,8 @@
-@* SimfBrandPanel — the navy brand panel: the SIMF logo (the white / negative
-   version), a subtitle, an optional bottom caption, over a quiet
-   compass-and-anchor texture. *@
+@* SimfBrandPanel — the navy brand panel of the authentication screens. The
+   white SIMF logo sits at the top; the white SIMF wordmark text sits below
+   the logo; an optional subtitle line (for example "Control Panel") and a
+   muted caption anchor the foot. A quiet compass-and-anchor texture is laid
+   behind the lot. *@
 @namespace SIMF.Components.Layout
 
 <div class="simf-brand">
@@ -8,6 +10,9 @@
     <img class="simf-brand__logo"
          src="/_content/SIMF.Components/img/simf-logo.png"
          alt="SIMF — Saudi International Maritime Forum" />
+    <div class="simf-brand__wordmark">
+        <SimfWordmark Reversed="true" />
+    </div>
     @if (!string.IsNullOrEmpty(Subtitle))
     {
         <p class="simf-brand__subtitle">@Subtitle</p>

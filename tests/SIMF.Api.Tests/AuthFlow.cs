@@ -12,7 +12,13 @@ internal static class AuthFlow
 {
     public const string Password = "Passw0rd!";
 
-    /// <summary>Signs a brand-new visitor up and verifies the email; returns the address.</summary>
+    /// <summary>
+    /// Signs a brand-new visitor up, verifies the email, and turns on two-factor
+    /// authentication so the sign-in OTP path runs. Returns the address.
+    /// Decision D-033 (2026-05-23): when <c>TwoFactorEnabled = false</c> the API
+    /// returns tokens directly from sign-in; the existing visitor integration
+    /// tests need the OTP flow, so this helper switches 2FA on for them.
+    /// </summary>
     public static async Task<string> RegisterVerifiedVisitorAsync(
         HttpClient client,
         SimfApiFactory factory)
@@ -29,7 +35,18 @@ internal static class AuthFlow
                 Email = email,
                 Code = GetActiveCode(factory, email, AccountCodePurpose.EmailVerification),
             });
+        EnableTwoFactor(factory, email);
         return email;
+    }
+
+    /// <summary>Turns two-factor authentication on for the account, directly in the database.</summary>
+    public static void EnableTwoFactor(SimfApiFactory factory, string email)
+    {
+        using var scope = factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = database.Users.Single(candidate => candidate.Email == email);
+        user.TwoFactorEnabled = true;
+        database.SaveChanges();
     }
 
     /// <summary>Signs a brand-new visitor in fully and returns the issued token pair.</summary>

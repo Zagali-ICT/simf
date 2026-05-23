@@ -76,6 +76,11 @@
   block-size: auto;
 }
 
+.simf-brand__wordmark {
+  margin-block-start: var(--space-5);
+  display: flex;
+}
+
 .simf-brand__subtitle {
   margin: var(--space-4) 0 0;
   font-size: var(--font-size-subtitle);
@@ -117,6 +122,7 @@
   .simf-brand__subtitle { margin-block-start: var(--space-2); }
   .simf-brand__caption { display: none; }
   .simf-brand__logo { inline-size: 200px; }
+  .simf-brand__wordmark { margin-block-start: var(--space-3); justify-content: center; }
 }
 
 /* -- Wordmark — placeholder logo lockup -------------------------------------

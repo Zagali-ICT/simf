@@ -83,6 +83,15 @@ public sealed class SignInService(
         var now = timeProvider.GetUtcNow();
         var roles = await userManager.GetRolesAsync(user);
 
+        // When 2FA is turned off for the account (myComment #34, D-033), the
+        // password step IS the sign-in — issue tokens directly. This applies
+        // to both Control Panel users and visitors.
+        if (!user.TwoFactorEnabled)
+        {
+            var tokens = await IssueTokensAsync(user, cancellationToken);
+            return new SignInResponse(false, null, null, tokens);
+        }
+
         // A user holding any role is a Control Panel user and uses TOTP; every
         // other user completes sign-in with an emailed code (SIMF-FDS-001 §5.6).
         var kind = roles.Count > 0 ? SecondFactorKind.Totp : SecondFactorKind.EmailOtp;

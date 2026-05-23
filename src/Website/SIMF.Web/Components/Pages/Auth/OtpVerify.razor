@@ -1,25 +1,26 @@
 @* Website — the second factor: a 6-digit code emailed to the visitor. Reached
-   only from the sign-in step. *@
+   only from the sign-in step when the account has TwoFactorEnabled=true. *@
 @page "/login/verify"
 @rendermode AppRenderMode.InteractiveServerNoPrerender
+@inject IStringLocalizer<Strings> L
 @inject SimfAuthClient Api
 @inject SimfAuthSession Session
 @inject NavigationManager Nav
 
-<PageTitle>Verification · Saudi International Maritime Forum</PageTitle>
+<PageTitle>@L["Auth.PageTitle.Verify"]</PageTitle>
 
 @if (Session.PendingOtpToken is not null)
 {
     <SimfAuthLayout>
         <Brand>
-            <SimfBrandPanel Subtitle="Saudi International Maritime Forum 2026"
-                            Caption="Royal Saudi Naval Forces" />
+            <SimfBrandPanel Subtitle="@L["Brand.Subtitle"]" Caption="@L["Brand.Caption"]" />
         </Brand>
         <ChildContent>
-            <SimfAuthCard Title="Verification"
-                          SupportingText="Enter the 6-digit code we sent to your email."
+            <SimfAuthCard Title="@L["Auth.Verify.Title"]"
+                          SupportingText="@L["Auth.Verify.Supporting"]"
                           Wide="true">
                 <TopControls>
+                    <SimfLanguageSwitch Href="@CultureHref" Label="@L["Auth.LanguageSwitch"]" />
                     <SimfThemeToggle />
                 </TopControls>
                 <ChildContent>
@@ -31,23 +32,24 @@
                         else if (Session.PendingEmail is not null)
                         {
                             <SimfAlert Variant="info">
-                                We've sent a code to @SimfAuthSession.MaskEmail(Session.PendingEmail).
+                                @string.Format(L["Auth.Verify.CodeSentTo"], SimfAuthSession.MaskEmail(Session.PendingEmail))
                             </SimfAlert>
                         }
                         <div class="simf-form__fields">
-                            <SimfCodeField Label="Verification code" @bind-Value="_model.Code"
-                                           Helper="Enter the 6-digit code." Disabled="_loading" />
+                            <SimfCodeField Label="@L["Auth.Verify.Code"]" @bind-Value="_model.Code"
+                                           Helper="@L["Auth.Verify.CodeFormat"]" Disabled="_loading" />
                         </div>
                         <div class="simf-form__actions">
-                            <SimfButton Block="true" Loading="_loading" LoadingLabel="Verifying">
-                                Verify
+                            <SimfButton Block="true" Loading="_loading" LoadingLabel="@L["Auth.Verify.Submitting"]">
+                                @L["Auth.Verify.Submit"]
                             </SimfButton>
                         </div>
                         <div class="simf-form__secondary">
-                            <SimfLink Href="/login">Back to sign in</SimfLink>
+                            <SimfLink Href="/login">@L["Auth.Verify.BackToSignIn"]</SimfLink>
                         </div>
                     </EditForm>
                 </ChildContent>
+                <Footer>@L["Auth.Footer"]</Footer>
             </SimfAuthCard>
         </ChildContent>
     </SimfAuthLayout>
@@ -79,6 +81,15 @@
         _editContext.NotifyValidationStateChanged();
     }
 
+    private string CultureHref
+    {
+        get
+        {
+            var next = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar" ? "en" : "ar";
+            return $"/culture?culture={next}&redirectUri={Uri.EscapeDataString("/login/verify")}";
+        }
+    }
+
     private async Task HandleSubmitAsync()
     {
         if (_loading)
@@ -94,7 +105,7 @@
 
             if (_model.Code.Length != 6 || !_model.Code.All(char.IsAsciiDigit))
             {
-                _messages.Add(_editContext.Field(nameof(CodeModel.Code)), "Enter the 6-digit code.");
+                _messages.Add(_editContext.Field(nameof(CodeModel.Code)), L["Auth.Verify.CodeRequired"]);
             }
 
             _editContext.NotifyValidationStateChanged();
@@ -108,10 +119,7 @@
 
             if (!result.Success || result.Data is null)
             {
-                _error = result.Error?.MessageForCurrentCulture()
-                    ?? ApiErrorExtensions.Bilingual(
-                        "Verification could not be completed. Please try again.",
-                        "تعذّر إكمال التحقق. حاول مرة أخرى.");
+                _error = result.Error?.MessageForCurrentCulture() ?? L["Auth.Verify.Fallback"];
                 return;
             }
 

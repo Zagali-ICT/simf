@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <data name="Brand.Subtitle" xml:space="preserve"><value>الملتقى البحري السعودي الدولي 2026</value></data>
+  <data name="Brand.Caption" xml:space="preserve"><value>القوات البحرية الملكية السعودية</value></data>
+
+  <data name="Auth.PageTitle.SignIn" xml:space="preserve"><value>تسجيل الدخول · الملتقى البحري السعودي الدولي</value></data>
+  <data name="Auth.PageTitle.Verify" xml:space="preserve"><value>التحقق · الملتقى البحري السعودي الدولي</value></data>
+  <data name="Auth.PageTitle.Forgot" xml:space="preserve"><value>إعادة تعيين كلمة المرور · الملتقى البحري السعودي الدولي</value></data>
+  <data name="Auth.PageTitle.Reset" xml:space="preserve"><value>تعيين كلمة مرور جديدة · الملتقى البحري السعودي الدولي</value></data>
+
+  <data name="Auth.SignIn.Title" xml:space="preserve"><value>تسجيل الدخول</value></data>
+  <data name="Auth.SignIn.Supporting" xml:space="preserve"><value>سجّل الدخول إلى حسابك في الملتقى.</value></data>
+  <data name="Auth.SignIn.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Auth.SignIn.Password" xml:space="preserve"><value>كلمة المرور</value></data>
+  <data name="Auth.SignIn.ForgotLink" xml:space="preserve"><value>نسيت كلمة المرور؟</value></data>
+  <data name="Auth.SignIn.Submit" xml:space="preserve"><value>تسجيل الدخول</value></data>
+  <data name="Auth.SignIn.Submitting" xml:space="preserve"><value>جارٍ تسجيل الدخول</value></data>
+  <data name="Auth.SignIn.EmailRequired" xml:space="preserve"><value>أدخل بريدك الإلكتروني.</value></data>
+  <data name="Auth.SignIn.EmailInvalid" xml:space="preserve"><value>أدخل بريدًا إلكترونيًا صالحًا.</value></data>
+  <data name="Auth.SignIn.PasswordRequired" xml:space="preserve"><value>أدخل كلمة المرور.</value></data>
+  <data name="Auth.SignIn.Fallback" xml:space="preserve"><value>تعذّر إكمال تسجيل الدخول. حاول مرة أخرى.</value></data>
+
+  <data name="Auth.Verify.Title" xml:space="preserve"><value>التحقق</value></data>
+  <data name="Auth.Verify.Supporting" xml:space="preserve"><value>أدخل الرمز المكوّن من ستة أرقام الذي أرسلناه إلى بريدك.</value></data>
+  <data name="Auth.Verify.Code" xml:space="preserve"><value>رمز التحقق</value></data>
+  <data name="Auth.Verify.CodeFormat" xml:space="preserve"><value>يتكوّن الرمز من ستة أرقام.</value></data>
+  <data name="Auth.Verify.CodeRequired" xml:space="preserve"><value>أدخل الرمز المكوّن من ستة أرقام.</value></data>
+  <data name="Auth.Verify.Submit" xml:space="preserve"><value>تحقّق</value></data>
+  <data name="Auth.Verify.Submitting" xml:space="preserve"><value>جارٍ التحقق</value></data>
+  <data name="Auth.Verify.Fallback" xml:space="preserve"><value>تعذّر إكمال التحقق. حاول مرة أخرى.</value></data>
+  <data name="Auth.Verify.CodeSentTo" xml:space="preserve"><value>تم إرسال رمز إلى {0}.</value></data>
+  <data name="Auth.Verify.BackToSignIn" xml:space="preserve"><value>العودة إلى تسجيل الدخول</value></data>
+
+  <data name="Auth.Forgot.Title" xml:space="preserve"><value>إعادة تعيين كلمة المرور</value></data>
+  <data name="Auth.Forgot.Supporting" xml:space="preserve"><value>أدخل بريدك الإلكتروني وسنرسل لك رمزًا مكوّنًا من ستة أرقام.</value></data>
+  <data name="Auth.Forgot.Submit" xml:space="preserve"><value>إرسال الرمز</value></data>
+  <data name="Auth.Forgot.Submitting" xml:space="preserve"><value>جارٍ الإرسال</value></data>
+  <data name="Auth.Forgot.Fallback" xml:space="preserve"><value>تعذّر إكمال الطلب. حاول مرة أخرى.</value></data>
+  <data name="Auth.Forgot.BackToSignIn" xml:space="preserve"><value>العودة إلى تسجيل الدخول</value></data>
+
+  <data name="Auth.Reset.Title" xml:space="preserve"><value>تعيين كلمة مرور جديدة</value></data>
+  <data name="Auth.Reset.Supporting" xml:space="preserve"><value>أدخل الرمز الذي أرسلناه، ثم اختر كلمة مرور جديدة.</value></data>
+  <data name="Auth.Reset.Code" xml:space="preserve"><value>رمز التحقق</value></data>
+  <data name="Auth.Reset.NewPassword" xml:space="preserve"><value>كلمة المرور الجديدة</value></data>
+  <data name="Auth.Reset.ConfirmPassword" xml:space="preserve"><value>تأكيد كلمة المرور الجديدة</value></data>
+  <data name="Auth.Reset.PasswordHelper" xml:space="preserve"><value>8 أحرف على الأقل، تحتوي على حرف ورقم.</value></data>
+  <data name="Auth.Reset.Submit" xml:space="preserve"><value>تحديث كلمة المرور</value></data>
+  <data name="Auth.Reset.Submitting" xml:space="preserve"><value>جارٍ التحديث</value></data>
+  <data name="Auth.Reset.PasswordsMismatch" xml:space="preserve"><value>كلمتا المرور غير متطابقتين.</value></data>
+  <data name="Auth.Reset.PasswordTooShort" xml:space="preserve"><value>يجب أن تتكوّن كلمة المرور من 8 أحرف على الأقل.</value></data>
+  <data name="Auth.Reset.PasswordTooLong" xml:space="preserve"><value>يجب ألا تتجاوز كلمة المرور 128 حرفًا.</value></data>
+  <data name="Auth.Reset.PasswordNoDigit" xml:space="preserve"><value>يجب أن تحتوي كلمة المرور على رقم.</value></data>
+  <data name="Auth.Reset.PasswordNoLetter" xml:space="preserve"><value>يجب أن تحتوي كلمة المرور على حرف.</value></data>
+  <data name="Auth.Reset.Fallback" xml:space="preserve"><value>تعذّر إعادة تعيين كلمة المرور. حاول مرة أخرى.</value></data>
+  <data name="Auth.Reset.Done.Title" xml:space="preserve"><value>تم تحديث كلمة المرور</value></data>
+  <data name="Auth.Reset.Done.Text" xml:space="preserve"><value>يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.</value></data>
+  <data name="Auth.Reset.Done.SignIn" xml:space="preserve"><value>الانتقال إلى تسجيل الدخول</value></data>
+
+  <data name="Auth.Footer" xml:space="preserve"><value>الملتقى البحري السعودي الدولي 2026</value></data>
+  <data name="Auth.LanguageSwitch" xml:space="preserve"><value>English</value></data>
+</root>

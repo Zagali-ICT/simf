@@ -271,6 +271,82 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         Assert.True(AuditEntryExists(email, AuditEvents.SignInBadCredentials));
     }
 
+    // -- #34 — second factor is conditional on TwoFactorEnabled ----------------
+
+    [Fact]
+    public async Task SignIn_returns_tokens_directly_when_TwoFactorEnabled_is_false_for_a_visitor()
+    {
+        var email = NewEmail();
+        await SignUpAsync(email);
+        await _client.PostAsJsonAsync(
+            "/api/v1/auth/verify-email",
+            new VerifyEmailRequest
+            {
+                Email = email,
+                Code = GetActiveCode(email, AccountCodePurpose.EmailVerification),
+            });
+        // TwoFactorEnabled stays false (Identity default) — the API short-circuits.
+
+        var response = await SignInAsync(email, Password);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        Assert.True(body.Success);
+        Assert.False(body.Data!.MfaRequired);
+        Assert.Null(body.Data.MfaToken);
+        Assert.Null(body.Data.OtpToken);
+        Assert.NotNull(body.Data.Tokens);
+        Assert.NotEmpty(body.Data.Tokens!.AccessToken);
+        Assert.NotEmpty(body.Data.Tokens.RefreshToken);
+    }
+
+    [Fact]
+    public async Task SignIn_returns_tokens_directly_when_TwoFactorEnabled_is_false_for_a_cp_user()
+    {
+        var (email, _) = await CreateAdminAsync();
+        DisableTwoFactor(email);
+
+        var response = await SignInAsync(email, Password);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        Assert.False(body.Data!.MfaRequired);
+        Assert.NotNull(body.Data.Tokens);
+        Assert.NotEmpty(body.Data.Tokens!.AccessToken);
+    }
+
+    [Fact]
+    public async Task SignIn_with_TwoFactor_off_for_a_visitor_does_not_issue_a_sign_in_otp()
+    {
+        var email = NewEmail();
+        await SignUpAsync(email);
+        await _client.PostAsJsonAsync(
+            "/api/v1/auth/verify-email",
+            new VerifyEmailRequest
+            {
+                Email = email,
+                Code = GetActiveCode(email, AccountCodePurpose.EmailVerification),
+            });
+
+        await SignInAsync(email, Password);
+
+        using var scope = _factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = database.Users.Single(u => u.Email == email);
+        var otpCount = database.AccountCodes
+            .Count(c => c.UserId == user.Id && c.Purpose == AccountCodePurpose.SignInOtp);
+        Assert.Equal(0, otpCount);
+    }
+
+    private void DisableTwoFactor(string email)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = database.Users.Single(candidate => candidate.Email == email);
+        user.TwoFactorEnabled = false;
+        database.SaveChanges();
+    }
+
     // -- helpers --------------------------------------------------------------
 
     private Task<HttpResponseMessage> SignInAsync(string email, string password) =>
@@ -301,7 +377,19 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
                 Email = email,
                 Code = GetActiveCode(email, AccountCodePurpose.EmailVerification),
             });
+        // The OTP-path tests in this file expect the sign-in second factor to
+        // run; D-033 makes that conditional on TwoFactorEnabled, so opt in.
+        EnableTwoFactor(email);
         return email;
+    }
+
+    private void EnableTwoFactor(string email)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = database.Users.Single(candidate => candidate.Email == email);
+        user.TwoFactorEnabled = true;
+        database.SaveChanges();
     }
 
     /// <summary>
@@ -328,6 +416,9 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
             EmailConfirmed = true,
             DisplayName = "Test Administrator",
             AccountState = AccountState.Approved,
+            // The TOTP-path tests expect the sign-in second factor to run; D-033
+            // makes that conditional on TwoFactorEnabled, so opt in.
+            TwoFactorEnabled = true,
         };
         await userManager.CreateAsync(user, Password);
         // ASP.NET Core Identity's internal token coordinates for the TOTP key.

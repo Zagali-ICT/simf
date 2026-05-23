@@ -9,11 +9,23 @@ public sealed class SignInRequest
 }
 
 /// <summary>
-/// The result of the password step. SIMF always requires a second factor, so
-/// one of <see cref="MfaToken"/> (Control Panel users — TOTP) or
-/// <see cref="OtpToken"/> (visitors — email OTP) is set.
+/// The result of the password step.
+/// <list type="bullet">
+///   <item>When the account has <c>TwoFactorEnabled = true</c>, exactly one of
+///     <see cref="MfaToken"/> (Control Panel users — TOTP) or
+///     <see cref="OtpToken"/> (visitors — email OTP) is set, and
+///     <see cref="MfaRequired"/> is <c>true</c>.</item>
+///   <item>When the account has <c>TwoFactorEnabled = false</c>, neither token
+///     is set, <see cref="MfaRequired"/> is <c>false</c> and <see cref="Tokens"/>
+///     carries the issued tokens directly — sign-in is complete (myComment #34,
+///     decision D-033).</item>
+/// </list>
 /// </summary>
-public sealed record SignInResponse(bool MfaRequired, string? MfaToken, string? OtpToken);
+public sealed record SignInResponse(
+    bool MfaRequired,
+    string? MfaToken,
+    string? OtpToken,
+    AuthTokens? Tokens = null);
 
 /// <summary>The token payload returned once a sign-in is fully completed.</summary>
 public sealed record AuthTokens(

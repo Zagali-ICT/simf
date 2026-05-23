@@ -1,5 +1,6 @@
 using SIMF.ApiClient;
 using SIMF.Web.Components;
+using SIMF.Web.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 // stay server-side rendered.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Localisation — English and Arabic; resources live under Resources/.
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 
 // The signed-in session is held per Blazor circuit.
 builder.Services.AddScoped<SimfAuthSession>();
@@ -39,6 +43,13 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
+// Interface language — English or Arabic, chosen by the culture cookie.
+var supportedCultures = new[] { "en", "ar" };
+app.UseRequestLocalization(new RequestLocalizationOptions()
+    .SetDefaultCulture("en")
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures));
+
 // Serve the imported static marketing site (wwwroot/index.html) at "/".
 // UseStaticFiles runs as middleware, so the default-document rewrite is served
 // regardless of endpoint-routing order.
@@ -48,6 +59,7 @@ app.UseStaticFiles();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+app.MapCultureEndpoint();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
