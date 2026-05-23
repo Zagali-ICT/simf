@@ -126,7 +126,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task ListUsers_returns_every_account_with_the_role_and_2FA_flags()
+    public async Task ListUsers_returns_a_page_of_accounts_with_the_role_and_2FA_flags()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
         var freshEmail = $"in-list-{Guid.NewGuid():N}@simf.test";
@@ -135,15 +135,75 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
             new AdminCreateUserRequest { Email = freshEmail, DisplayName = "Listed" },
             adminToken);
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/admin/users");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
-        var response = await _client.SendAsync(request);
+        var response = await PostAuthAsync(
+            "/api/v1/admin/users/list",
+            new GridQuery { Top = 200 },
+            adminToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = (await response.Content.ReadFromJsonAsync<ApiResult<AdminUserListResponse>>())!;
-        Assert.Contains(body.Data!.Users, user => user.Email == freshEmail && !user.IsAdministrator);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<GridPage<AdminUserSummary>>>())!;
+        Assert.True(body.Success);
+        Assert.Contains(body.Data!.Items, user => user.Email == freshEmail && !user.IsAdministrator);
         // The actor (an Administrator created for the test) must also appear.
-        Assert.Contains(body.Data.Users, user => user.IsAdministrator);
+        Assert.Contains(body.Data.Items, user => user.IsAdministrator);
+        Assert.True(body.Data.Total >= body.Data.Items.Count);
+    }
+
+    [Fact]
+    public async Task ListUsers_filters_by_email_substring()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var marker = $"f{Guid.NewGuid():N}".Substring(0, 8);
+        var emailA = $"{marker}-a@simf.test";
+        var emailB = $"{marker}-b@simf.test";
+        await PostAuthAsync(
+            "/api/v1/admin/users",
+            new AdminCreateUserRequest { Email = emailA, DisplayName = "Filter A" },
+            adminToken);
+        await PostAuthAsync(
+            "/api/v1/admin/users",
+            new AdminCreateUserRequest { Email = emailB, DisplayName = "Filter B" },
+            adminToken);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/users/list",
+            new GridQuery { Filters = new Dictionary<string, string> { ["email"] = marker } },
+            adminToken);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<GridPage<AdminUserSummary>>>())!;
+        Assert.Equal(2, body.Data!.Total);
+        Assert.All(body.Data.Items, user => Assert.Contains(marker, user.Email));
+    }
+
+    [Fact]
+    public async Task ListUsers_paginates_and_echoes_skip_and_top()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/users/list",
+            new GridQuery { Skip = 0, Top = 1 },
+            adminToken);
+
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<GridPage<AdminUserSummary>>>())!;
+        Assert.Single(body.Data!.Items);
+        Assert.Equal(0, body.Data.Skip);
+        Assert.Equal(1, body.Data.Top);
+    }
+
+    [Fact]
+    public async Task ListUsers_sorts_by_email_ascending_when_asked()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/users/list",
+            new GridQuery { Sort = "email", SortDescending = false, Top = 200 },
+            adminToken);
+
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<GridPage<AdminUserSummary>>>())!;
+        var emails = body.Data!.Items.Select(u => u.Email).ToList();
+        var sorted = emails.OrderBy(e => e, StringComparer.Ordinal).ToList();
+        Assert.Equal(sorted, emails);
     }
 
     [Fact]

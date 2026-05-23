@@ -1,0 +1,47 @@
+@* SimfDataGridColumn — one column declaration inside <SimfDataGrid Columns>
+   (decision D-044). A small "declarative configuration" pattern: the
+   column carries its metadata (Key / Header / Sortable / Filterable) and
+   the cell template, and registers itself with the parent grid through a
+   cascading parameter on first render. The component itself renders
+   nothing — the grid renders the headers and cells from the registered
+   column list. *@
+@namespace SIMF.Components.Forms
+@typeparam TItem
+@implements IDisposable
+
+@code {
+    [CascadingParameter] public SimfDataGrid<TItem>? Parent { get; set; }
+
+    /// <summary>The column key — used by the server for sort and filter.</summary>
+    [Parameter, EditorRequired] public string Key { get; set; } = string.Empty;
+
+    /// <summary>The header text.</summary>
+    [Parameter] public string? Header { get; set; }
+
+    /// <summary>True when the user can click the header to sort by this column.</summary>
+    [Parameter] public bool Sortable { get; set; }
+
+    /// <summary>True when the column shows a filter input under its header.</summary>
+    [Parameter] public bool Filterable { get; set; }
+
+    /// <summary>The placeholder shown in the filter input (e.g. "filter…").</summary>
+    [Parameter] public string? FilterPlaceholder { get; set; }
+
+    /// <summary>The cell template — renders one cell for one row.</summary>
+    [Parameter, EditorRequired] public RenderFragment<TItem>? CellTemplate { get; set; }
+
+    /// <summary>An optional fixed CSS width for the column (e.g. "120px").</summary>
+    [Parameter] public string? Width { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Parent is null)
+        {
+            throw new InvalidOperationException(
+                "SimfDataGridColumn must be declared inside a SimfDataGrid <Columns> slot.");
+        }
+        Parent.RegisterColumn(this);
+    }
+
+    public void Dispose() => Parent?.UnregisterColumn(this);
+}

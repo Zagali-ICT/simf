@@ -14,4 +14,9 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.7" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- GridQuery / GridPage<T> for SimfDataGrid (decision D-044). -->
+    <ProjectReference Include="..\SIMF.Common\SIMF.Common.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -205,17 +205,74 @@ internal sealed class AdminAccountService(
             user.Id, user.Email!, (int)inviteLifetime.TotalSeconds);
     }
 
-    public async Task<AdminUserListResponse> ListUsersAsync(
+    public async Task<GridPage<AdminUserSummary>> ListUsersAsync(
+        GridQuery query,
         CancellationToken cancellationToken = default)
     {
-        // Bounded user count for SIMF — no pagination yet. The wider User
-        // Management module (myComment #33) will add filter / search / paging.
-        var users = await userManager.Users
-            .OrderByDescending(user => user.CreatedAt)
-            .ToListAsync(cancellationToken);
+        // Normalise: clamp Top to [1..200], clamp Skip to [0..). The grid
+        // contract (SIMF.Common.GridQuery) says the endpoint owns the clamp.
+        var skip = query.Skip < 0 ? 0 : query.Skip;
+        var top = query.Top switch { < 1 => 20, > 200 => 200, _ => query.Top };
 
-        var summaries = new List<AdminUserSummary>(users.Count);
-        foreach (var user in users)
+        // Build the query over UserManager.Users so the EF tracker stays out.
+        var users = userManager.Users.AsQueryable();
+
+        // -- Search ---------------------------------------------------------
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var term = query.Search.Trim();
+            users = users.Where(u =>
+                (u.Email != null && EF.Functions.Like(u.Email, $"%{term}%"))
+                || EF.Functions.Like(u.DisplayName, $"%{term}%"));
+        }
+
+        // -- Per-column filters --------------------------------------------
+        if (query.Filters.TryGetValue("email", out var emailFilter)
+            && !string.IsNullOrWhiteSpace(emailFilter))
+        {
+            users = users.Where(u =>
+                u.Email != null && EF.Functions.Like(u.Email, $"%{emailFilter}%"));
+        }
+        if (query.Filters.TryGetValue("displayName", out var nameFilter)
+            && !string.IsNullOrWhiteSpace(nameFilter))
+        {
+            users = users.Where(u => EF.Functions.Like(u.DisplayName, $"%{nameFilter}%"));
+        }
+        if (query.Filters.TryGetValue("state", out var stateFilter)
+            && !string.IsNullOrWhiteSpace(stateFilter)
+            && Enum.TryParse<AccountState>(stateFilter, ignoreCase: true, out var parsedState))
+        {
+            users = users.Where(u => u.AccountState == parsedState);
+        }
+        if (query.Filters.TryGetValue("twoFactor", out var twoFactorFilter)
+            && bool.TryParse(twoFactorFilter, out var twoFactorOn))
+        {
+            users = users.Where(u => u.TwoFactorEnabled == twoFactorOn);
+        }
+
+        // -- Sort -----------------------------------------------------------
+        users = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
+        {
+            ("email", true) => users.OrderByDescending(u => u.Email),
+            ("email", false) => users.OrderBy(u => u.Email),
+            ("displayname", true) => users.OrderByDescending(u => u.DisplayName),
+            ("displayname", false) => users.OrderBy(u => u.DisplayName),
+            ("state", true) => users.OrderByDescending(u => u.AccountState),
+            ("state", false) => users.OrderBy(u => u.AccountState),
+            ("createdat", false) => users.OrderBy(u => u.CreatedAt),
+            // Natural order: newest first (matches the pre-D-044 behaviour).
+            _ => users.OrderByDescending(u => u.CreatedAt),
+        };
+
+        var total = await users.CountAsync(cancellationToken);
+        var page = await users.Skip(skip).Take(top).ToListAsync(cancellationToken);
+
+        // The role flag needs UserManager.IsInRoleAsync (not a join the
+        // store guarantees). Cost: one query per row — acceptable at the
+        // bounded page size; if it ever isn't, fold the role into the
+        // projection by joining AspNetUserRoles directly.
+        var summaries = new List<AdminUserSummary>(page.Count);
+        foreach (var user in page)
         {
             var isAdmin = await userManager.IsInRoleAsync(user, AdministratorRole);
             summaries.Add(new AdminUserSummary(
@@ -227,7 +284,8 @@ internal sealed class AdminAccountService(
                 isAdmin,
                 user.CreatedAt));
         }
-        return new AdminUserListResponse(summaries);
+        return GridPage<AdminUserSummary>.Of(summaries, total,
+            new GridQuery { Skip = skip, Top = top });
     }
 
     private Task AuditFailure(

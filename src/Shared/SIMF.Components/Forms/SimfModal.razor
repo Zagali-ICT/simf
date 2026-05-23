@@ -1,0 +1,110 @@
+@* SimfModal — the SIMF overlay dialog (decision D-044). One title, body slot,
+   footer slot for the action buttons. Esc closes; clicking the backdrop
+   closes. The page body is scroll-locked while the modal is open through a
+   `simf-modal-open` class on <body> (added on first render, removed on
+   close). Direction-aware through CSS logical properties. *@
+@namespace SIMF.Components.Forms
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+@if (Open)
+{
+    <div class="simf-modal" role="presentation"
+         @onclick="OnBackdropClickAsync">
+        <div class="simf-modal__panel" role="dialog" aria-modal="true"
+             aria-label="@Title" @onclick:stopPropagation
+             tabindex="-1" @ref="_panelRef" @onkeydown="OnKeyDownAsync">
+            <header class="simf-modal__head">
+                <h2 class="simf-modal__title">@Title</h2>
+                <button type="button" class="simf-modal__close"
+                        aria-label="@CloseLabel" @onclick="CloseAsync">
+                    <SimfIcon Name="close" Size="18" />
+                </button>
+            </header>
+            <div class="simf-modal__body">
+                @ChildContent
+            </div>
+            @if (Footer is not null)
+            {
+                <footer class="simf-modal__footer">@Footer</footer>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private ElementReference _panelRef;
+    private bool _bodyLocked;
+
+    /// <summary>True to render the modal; false to hide it.</summary>
+    [Parameter] public bool Open { get; set; }
+
+    /// <summary>The dialog title — also the aria-label.</summary>
+    [Parameter] public string Title { get; set; } = string.Empty;
+
+    /// <summary>The accessible label for the close button.</summary>
+    [Parameter] public string CloseLabel { get; set; } = "Close";
+
+    /// <summary>When true, the backdrop click and Esc do nothing — only an
+    /// explicit footer button closes the modal. Use for must-decide flows.</summary>
+    [Parameter] public bool RequireExplicitClose { get; set; }
+
+    /// <summary>The dialog body content.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The dialog footer content — usually one or two SimfButton.</summary>
+    [Parameter] public RenderFragment? Footer { get; set; }
+
+    /// <summary>Raised when the user closes the modal (backdrop / Esc / close button).</summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Lock body scroll while the modal is open; unlock when it closes.
+        if (Open && !_bodyLocked)
+        {
+            await JS.InvokeVoidAsync("document.body.classList.add", "simf-modal-open");
+            _bodyLocked = true;
+            try { await _panelRef.FocusAsync(); } catch { /* element gone */ }
+        }
+        else if (!Open && _bodyLocked)
+        {
+            await JS.InvokeVoidAsync("document.body.classList.remove", "simf-modal-open");
+            _bodyLocked = false;
+        }
+    }
+
+    private async Task OnBackdropClickAsync()
+    {
+        if (RequireExplicitClose) return;
+        await CloseAsync();
+    }
+
+    private async Task OnKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && !RequireExplicitClose)
+        {
+            await CloseAsync();
+        }
+    }
+
+    private async Task CloseAsync()
+    {
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_bodyLocked)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("document.body.classList.remove", "simf-modal-open");
+            }
+            catch { /* circuit closed */ }
+        }
+    }
+}

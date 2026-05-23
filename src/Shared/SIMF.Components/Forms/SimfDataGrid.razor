@@ -1,0 +1,322 @@
+@* SimfDataGrid v1 — the SIMF server-paged data grid (decision D-044). One
+   grid component used by every list page. Server owns the truth: sort,
+   filter, paginate all on the server. The grid never holds the whole
+   table; it asks for one page, the parent fetches it, the grid renders it.
+
+   v1 ships: server-paged + sortable column headers + per-column filter
+   inputs + per-row actions slot + empty state. v2 (next commit) adds the
+   row context menu, the top action toolbar, Excel I/O, and bulk
+   selection (myComment #16).
+
+   Usage:
+     <SimfDataGrid TItem="UserRow"
+                   Query="@_query" Page="@_page" Loading="@_loading"
+                   OnQueryChanged="LoadAsync">
+        <Columns>
+            <SimfDataGridColumn TItem="UserRow" Key="email"
+                                Header="Email" Sortable Filterable>
+                <CellTemplate>@context.Email</CellTemplate>
+            </SimfDataGridColumn>
+            ...
+        </Columns>
+        <RowActions Context="user">
+            <SimfLink Href="@($"/admin/reset-2fa?email={user.Email}")">Reset</SimfLink>
+        </RowActions>
+        <EmptyTemplate>No users yet.</EmptyTemplate>
+     </SimfDataGrid>
+*@
+@namespace SIMF.Components.Forms
+@typeparam TItem
+
+<CascadingValue Value="this" IsFixed="true">
+    @* The column declarations register themselves and render nothing
+       themselves. *@
+    @Columns
+</CascadingValue>
+
+<div class="simf-grid @(Loading ? "simf-grid--loading" : null)">
+    <div class="simf-grid__scroll">
+        <table class="simf-grid__table">
+            <colgroup>
+                @foreach (var column in _columns)
+                {
+                    <col style="@(column.Width is null ? null : $"width: {column.Width};")" />
+                }
+                @if (RowActions is not null)
+                {
+                    <col class="simf-grid__col-actions" />
+                }
+            </colgroup>
+            <thead>
+                <tr class="simf-grid__head-row">
+                    @foreach (var column in _columns)
+                    {
+                        var key = column.Key;
+                        var isSorted = string.Equals(Query?.Sort, key, StringComparison.OrdinalIgnoreCase);
+                        var dir = isSorted ? (Query!.SortDescending ? "desc" : "asc") : null;
+                        <th class="simf-grid__th @(column.Sortable ? "simf-grid__th--sortable" : null)"
+                            aria-sort="@(isSorted ? (Query!.SortDescending ? "descending" : "ascending") : "none")">
+                            @if (column.Sortable)
+                            {
+                                <button type="button" class="simf-grid__sort"
+                                        @onclick="@(() => ToggleSortAsync(key))">
+                                    <span>@column.Header</span>
+                                    <span class="simf-grid__sort-arrow simf-grid__sort-arrow--@(dir ?? "none")"
+                                          aria-hidden="true">@(dir switch { "asc" => "▲", "desc" => "▼", _ => "↕" })</span>
+                                </button>
+                            }
+                            else
+                            {
+                                <span>@column.Header</span>
+                            }
+                        </th>
+                    }
+                    @if (RowActions is not null)
+                    {
+                        <th class="simf-grid__th simf-grid__th--actions">@ActionsHeader</th>
+                    }
+                </tr>
+                @if (HasAnyFilterableColumn)
+                {
+                    <tr class="simf-grid__filter-row">
+                        @foreach (var column in _columns)
+                        {
+                            <td class="simf-grid__filter-cell">
+                                @if (column.Filterable)
+                                {
+                                    Query!.Filters.TryGetValue(column.Key, out var current);
+                                    <input type="search" class="simf-grid__filter-input"
+                                           placeholder="@(column.FilterPlaceholder ?? FilterPlaceholder)"
+                                           value="@current"
+                                           @oninput="@(e => OnFilterInputAsync(column.Key, e.Value?.ToString()))" />
+                                }
+                            </td>
+                        }
+                        @if (RowActions is not null)
+                        {
+                            <td class="simf-grid__filter-cell"></td>
+                        }
+                    </tr>
+                }
+            </thead>
+            <tbody>
+                @if (Page is null || Page.Items.Count == 0)
+                {
+                    <tr>
+                        <td class="simf-grid__empty"
+                            colspan="@(_columns.Count + (RowActions is null ? 0 : 1))">
+                            @if (EmptyTemplate is not null)
+                            {
+                                @EmptyTemplate
+                            }
+                            else
+                            {
+                                @EmptyLabel
+                            }
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in Page.Items)
+                    {
+                        <tr class="simf-grid__row">
+                            @foreach (var column in _columns)
+                            {
+                                <td class="simf-grid__td">@column.CellTemplate?.Invoke(row)</td>
+                            }
+                            @if (RowActions is not null)
+                            {
+                                <td class="simf-grid__td simf-grid__td--actions">
+                                    @RowActions(row)
+                                </td>
+                            }
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+        @if (Loading)
+        {
+            <div class="simf-grid__overlay" aria-busy="true">
+                <SimfSpinner Label="@LoadingLabel" />
+            </div>
+        }
+    </div>
+    <div class="simf-grid__pager">
+        <span class="simf-grid__pager-summary">@RenderSummary()</span>
+        <div class="simf-grid__pager-controls">
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="@(IsFirstPage || Loading)"
+                        OnClick="GoPrevAsync">@PrevLabel</SimfButton>
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="@(IsLastPage || Loading)"
+                        OnClick="GoNextAsync">@NextLabel</SimfButton>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly List<SimfDataGridColumn<TItem>> _columns = new();
+    private CancellationTokenSource? _filterDebounce;
+
+    /// <summary>The current query — the parent owns this and passes it in.</summary>
+    [Parameter, EditorRequired] public GridQuery? Query { get; set; }
+
+    /// <summary>The current page — the parent fetches this and passes it in.</summary>
+    [Parameter] public GridPage<TItem>? Page { get; set; }
+
+    /// <summary>True while the parent is fetching a page.</summary>
+    [Parameter] public bool Loading { get; set; }
+
+    /// <summary>Raised whenever the user changes sort / filter / page —
+    /// the parent should refetch and update <see cref="Page"/>.</summary>
+    [Parameter] public EventCallback<GridQuery> OnQueryChanged { get; set; }
+
+    /// <summary>The column declarations.</summary>
+    [Parameter] public RenderFragment? Columns { get; set; }
+
+    /// <summary>The per-row action slot — rendered as the last cell.</summary>
+    [Parameter] public RenderFragment<TItem>? RowActions { get; set; }
+
+    /// <summary>The header text for the actions column.</summary>
+    [Parameter] public string ActionsHeader { get; set; } = "Actions";
+
+    /// <summary>The body shown when the page is empty.</summary>
+    [Parameter] public RenderFragment? EmptyTemplate { get; set; }
+
+    /// <summary>The default empty label (when no EmptyTemplate is supplied).</summary>
+    [Parameter] public string EmptyLabel { get; set; } = "No records";
+
+    /// <summary>The default placeholder shown in filter inputs.</summary>
+    [Parameter] public string FilterPlaceholder { get; set; } = "filter…";
+
+    /// <summary>The accessible loading label.</summary>
+    [Parameter] public string LoadingLabel { get; set; } = "Loading";
+
+    /// <summary>The label for the Previous-page button.</summary>
+    [Parameter] public string PrevLabel { get; set; } = "Previous";
+
+    /// <summary>The label for the Next-page button.</summary>
+    [Parameter] public string NextLabel { get; set; } = "Next";
+
+    /// <summary>The pager summary template — receives (from, to, total). Defaults
+    /// to "{from}-{to} of {total}".</summary>
+    [Parameter] public Func<int, int, int, string> SummaryFormatter { get; set; } =
+        (from, to, total) => $"{from}-{to} of {total}";
+
+    // -- Column registration (called by SimfDataGridColumn) --------------------
+
+    internal void RegisterColumn(SimfDataGridColumn<TItem> column)
+    {
+        if (_columns.Contains(column)) return;
+        _columns.Add(column);
+        StateHasChanged();
+    }
+
+    internal void UnregisterColumn(SimfDataGridColumn<TItem> column)
+    {
+        if (_columns.Remove(column))
+        {
+            StateHasChanged();
+        }
+    }
+
+    // -- Sort / filter / page handlers -----------------------------------------
+
+    private bool HasAnyFilterableColumn => _columns.Any(c => c.Filterable);
+
+    private bool IsFirstPage =>
+        Query is null || Query.Skip <= 0;
+
+    private bool IsLastPage =>
+        Page is null || Query is null
+        || Query.Skip + Page.Items.Count >= Page.Total;
+
+    private string RenderSummary()
+    {
+        if (Query is null || Page is null) return string.Empty;
+        if (Page.Total == 0) return SummaryFormatter(0, 0, 0);
+        var from = Query.Skip + 1;
+        var to = Query.Skip + Page.Items.Count;
+        return SummaryFormatter(from, to, Page.Total);
+    }
+
+    private async Task ToggleSortAsync(string key)
+    {
+        if (Query is null) return;
+        var next = new GridQuery
+        {
+            Skip = 0,
+            Top = Query.Top,
+            Search = Query.Search,
+            Filters = new Dictionary<string, string>(Query.Filters),
+            Sort = key,
+            SortDescending =
+                string.Equals(Query.Sort, key, StringComparison.OrdinalIgnoreCase)
+                    ? !Query.SortDescending
+                    : false,
+        };
+        await OnQueryChanged.InvokeAsync(next);
+    }
+
+    private async Task OnFilterInputAsync(string key, string? value)
+    {
+        // Debounce: don't fire on every keystroke.
+        _filterDebounce?.Cancel();
+        _filterDebounce = new CancellationTokenSource();
+        var token = _filterDebounce.Token;
+        try
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(300), token);
+        }
+        catch (TaskCanceledException) { return; }
+        if (Query is null || token.IsCancellationRequested) return;
+
+        var filters = new Dictionary<string, string>(Query.Filters);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            filters.Remove(key);
+        }
+        else
+        {
+            filters[key] = value.Trim();
+        }
+        var next = new GridQuery
+        {
+            Skip = 0,
+            Top = Query.Top,
+            Search = Query.Search,
+            Sort = Query.Sort,
+            SortDescending = Query.SortDescending,
+            Filters = filters,
+        };
+        await OnQueryChanged.InvokeAsync(next);
+    }
+
+    private async Task GoPrevAsync()
+    {
+        if (Query is null) return;
+        var next = CopyQuery(Query);
+        next.Skip = Math.Max(0, Query.Skip - Query.Top);
+        await OnQueryChanged.InvokeAsync(next);
+    }
+
+    private async Task GoNextAsync()
+    {
+        if (Query is null) return;
+        var next = CopyQuery(Query);
+        next.Skip = Query.Skip + Query.Top;
+        await OnQueryChanged.InvokeAsync(next);
+    }
+
+    private static GridQuery CopyQuery(GridQuery q) => new()
+    {
+        Skip = q.Skip,
+        Top = q.Top,
+        Search = q.Search,
+        Sort = q.Sort,
+        SortDescending = q.SortDescending,
+        Filters = new Dictionary<string, string>(q.Filters),
+    };
+}

@@ -1,0 +1,18 @@
+@* SimfSpinner — a small loading indicator (decision D-044). The CSS lives
+   in simf-components.css under the `.simf-spinner` block. Use it inside
+   buttons (already covered by SimfButton) or alongside content while a
+   list or detail load is in flight. *@
+@namespace SIMF.Components.Forms
+
+<span class="simf-spinner @(Size == "lg" ? "simf-spinner--lg" : null)"
+      role="status"
+      aria-label="@Label">
+</span>
+
+@code {
+    /// <summary>The visual size — <c>sm</c> (default) or <c>lg</c>.</summary>
+    [Parameter] public string Size { get; set; } = "sm";
+
+    /// <summary>The accessible label — supplied localised.</summary>
+    [Parameter] public string Label { get; set; } = "Loading";
+}

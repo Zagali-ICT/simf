@@ -87,6 +87,11 @@
   <data name="Admin.Users.TwoFactor.On" xml:space="preserve"><value>مفعّلة</value></data>
   <data name="Admin.Users.TwoFactor.Off" xml:space="preserve"><value>معطّلة</value></data>
   <data name="Admin.Users.Action.Reset2FA" xml:space="preserve"><value>إعادة تعيين المصادقة الثنائية</value></data>
+  <data name="Admin.Users.Prev" xml:space="preserve"><value>السابق</value></data>
+  <data name="Admin.Users.Next" xml:space="preserve"><value>التالي</value></data>
+  <data name="Admin.Users.Loading" xml:space="preserve"><value>جارٍ التحميل</value></data>
+  <data name="Admin.Users.FilterPlaceholder" xml:space="preserve"><value>تصفية…</value></data>
+  <data name="Admin.Users.Pager.Summary" xml:space="preserve"><value>{0}-{1} من {2}</value></data>
 
   <data name="Admin.CreateUser.Title" xml:space="preserve"><value>إضافة مستخدم جديد</value></data>
   <data name="Admin.CreateUser.Supporting" xml:space="preserve"><value>سيتلقى المستخدم الجديد بريدًا إلكترونيًا يحتوي على رمز لمرة واحدة لتعيين كلمة المرور. الدعوة صالحة لمدة 7 أيام.</value></data>

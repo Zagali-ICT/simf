@@ -38,11 +38,15 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Returns every account, newest first.</summary>
-    public Task<ApiCallResult<AdminUserListResponse>> ListUsersAsync(
-        string accessToken, CancellationToken cancellationToken = default) =>
-        SendAsync<AdminUserListResponse>(
-            HttpMethod.Get, "users", null, accessToken, cancellationToken);
+    /// <summary>Returns one page of accounts (decision D-044).</summary>
+    public Task<ApiCallResult<GridPage<AdminUserSummary>>> ListUsersAsync(
+        GridQuery query,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminUserSummary>>(
+            HttpMethod.Post, "users/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
 
     private async Task<ApiCallResult<T>> SendAsync<T>(
         HttpMethod method, string path, HttpContent? content,

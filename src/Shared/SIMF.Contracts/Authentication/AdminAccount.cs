@@ -46,7 +46,7 @@ public sealed record AdminCreateUserResponse(
     string Email,
     int InviteExpiresInSeconds);
 
-/// <summary>One row in the admin user-list view (D-042).</summary>
+/// <summary>One row in the admin user-list view (D-042, D-044).</summary>
 public sealed record AdminUserSummary(
     Guid Id,
     string Email,
@@ -55,6 +55,3 @@ public sealed record AdminUserSummary(
     bool TwoFactorEnabled,
     bool IsAdministrator,
     DateTimeOffset CreatedAt);
-
-/// <summary>The body of <c>GET /api/v1/admin/users</c>.</summary>
-public sealed record AdminUserListResponse(IReadOnlyList<AdminUserSummary> Users);

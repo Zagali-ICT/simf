@@ -1,0 +1,31 @@
+@* SimfEmptyState — a centred empty-state panel (decision D-044). Used by
+   SimfDataGrid's EmptyTemplate slot and by list pages that show "no data
+   yet" before any query runs. Three parts: a title, optional description,
+   and an optional action slot for a primary call-to-action. *@
+@namespace SIMF.Components.Forms
+
+<div class="simf-empty">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <p class="simf-empty__title">@Title</p>
+    }
+    @if (!string.IsNullOrEmpty(Description))
+    {
+        <p class="simf-empty__text">@Description</p>
+    }
+    @if (Action is not null)
+    {
+        <div class="simf-empty__action">@Action</div>
+    }
+</div>
+
+@code {
+    /// <summary>The short headline, e.g. "No records yet".</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>A one-line explanation under the title.</summary>
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>The optional call-to-action slot — usually a single SimfButton.</summary>
+    [Parameter] public RenderFragment? Action { get; set; }
+}

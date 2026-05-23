@@ -1,0 +1,116 @@
+@* SimfSelect — a typed labelled select (decision D-044). One field shell to
+   match SimfTextField — same label, helper, error positions and same focus
+   style. The native <select> stays accessible and keyboard-friendly for
+   free; we add nothing custom. *@
+@namespace SIMF.Components.Forms
+@typeparam TValue
+
+<div class="simf-field @(HasError ? "simf-field--error" : null) @(Disabled ? "simf-field--disabled" : null)">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="simf-field__label" for="@_id">@Label</label>
+    }
+    <div class="simf-field__control simf-field__control--select">
+        @if (!string.IsNullOrEmpty(Icon))
+        {
+            <SimfIcon Name="@Icon" Size="18" Class="simf-field__icon" />
+        }
+        <select id="@_id" class="simf-field__input simf-field__select"
+                disabled="@Disabled"
+                value="@_currentValueString"
+                @onchange="OnNativeChangedAsync">
+            @if (!string.IsNullOrEmpty(Placeholder))
+            {
+                <option value="" disabled selected="@(string.IsNullOrEmpty(_currentValueString))">
+                    @Placeholder
+                </option>
+            }
+            @foreach (var item in Items ?? Array.Empty<TValue>())
+            {
+                var raw = ValueFor is null ? item?.ToString() ?? string.Empty : ValueFor(item) ?? string.Empty;
+                var label = LabelFor is null ? raw : LabelFor(item) ?? raw;
+                <option value="@raw">@label</option>
+            }
+        </select>
+    </div>
+    @if (!string.IsNullOrEmpty(Helper) && !HasError)
+    {
+        <p class="simf-field__helper">@Helper</p>
+    }
+    @if (HasError && !string.IsNullOrEmpty(Error))
+    {
+        <p class="simf-field__error" role="alert">
+            <SimfIcon Name="alert" Size="14" Class="simf-field__error-icon" />
+            @Error
+        </p>
+    }
+</div>
+
+@code {
+    private readonly string _id = "simf-select-" + Guid.NewGuid().ToString("N");
+    private string _currentValueString = string.Empty;
+
+    /// <summary>The field label.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>An optional leading icon (from the SIMF icon set).</summary>
+    [Parameter] public string? Icon { get; set; }
+
+    /// <summary>Helper text shown under the field.</summary>
+    [Parameter] public string? Helper { get; set; }
+
+    /// <summary>An optional error message; turns the field red when non-empty.</summary>
+    [Parameter] public string? Error { get; set; }
+
+    /// <summary>An empty-state placeholder option label (only shown while Value is null).</summary>
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>The options to render.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<TValue>? Items { get; set; }
+
+    /// <summary>Produces the option value (the string posted to the server) for an item.
+    /// Defaults to <c>item.ToString()</c>.</summary>
+    [Parameter] public Func<TValue, string?>? ValueFor { get; set; }
+
+    /// <summary>Produces the visible label for an item. Defaults to the value.</summary>
+    [Parameter] public Func<TValue, string?>? LabelFor { get; set; }
+
+    /// <summary>The current value.</summary>
+    [Parameter] public TValue? Value { get; set; }
+
+    /// <summary>Raised whenever the user picks a different option.</summary>
+    [Parameter] public EventCallback<TValue?> ValueChanged { get; set; }
+
+    /// <summary>Disables the select (e.g. while a submit is in flight).</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    private bool HasError => !string.IsNullOrEmpty(Error);
+
+    protected override void OnParametersSet()
+    {
+        if (Value is null)
+        {
+            _currentValueString = string.Empty;
+            return;
+        }
+        _currentValueString = ValueFor is null
+            ? Value.ToString() ?? string.Empty
+            : ValueFor(Value) ?? string.Empty;
+    }
+
+    private async Task OnNativeChangedAsync(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString() ?? string.Empty;
+        _currentValueString = raw;
+        if (Items is null) { await ValueChanged.InvokeAsync(default); return; }
+
+        // Find the matching item by ValueFor / ToString equivalence.
+        TValue? match = default;
+        foreach (var item in Items)
+        {
+            var candidate = ValueFor is null ? item?.ToString() : ValueFor(item);
+            if (candidate == raw) { match = item; break; }
+        }
+        await ValueChanged.InvokeAsync(match);
+    }
+}

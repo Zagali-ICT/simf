@@ -1,3 +1,4 @@
+using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.Application.IdentityAccess;
@@ -31,12 +32,12 @@ public interface IAdminAccountService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Returns every account in the system, ordered by creation date (newest
-    /// first). The summary carries the email, display name, lifecycle state,
-    /// 2FA flag, role flag and creation date. Suitable for an admin table —
-    /// not paged today (bounded user count); pagination follows the wider
-    /// User Management module (D-042).
+    /// Returns one page of accounts (decision D-044). Sortable on Email /
+    /// DisplayName / AccountState / CreatedAt; filterable on the same set
+    /// plus a free-text Search across email and display name. The endpoint
+    /// clamps <c>Top</c> to a sensible ceiling.
     /// </summary>
-    Task<AdminUserListResponse> ListUsersAsync(
+    Task<GridPage<AdminUserSummary>> ListUsersAsync(
+        GridQuery query,
         CancellationToken cancellationToken = default);
 }

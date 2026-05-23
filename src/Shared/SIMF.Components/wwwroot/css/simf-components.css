@@ -888,6 +888,383 @@
 .simf-panel__text { margin: 0; color: var(--color-text-muted); line-height: var(--line-height-body); }
 .simf-panel__action { margin: var(--space-5) 0 0; }
 
+/* ===========================================================================
+   The Simf* component library — additions for D-044 (the data-grid and the
+   wider set of form primitives). All values drawn from theme.tokens.css.
+   ========================================================================= */
+
+/* -- Surface — generic container for grid / table pages ---------------------
+   .simf-panel above is the small placeholder panel (max 640px). For pages
+   that host a wide table (the data grid), use `.simf-surface` instead — it
+   has the same look but no width cap, so the `.simf-page-wide` wrapper's
+   1200px ceiling actually applies (D-044 shell-width fix). */
+.simf-surface {
+  inline-size: 100%;
+  padding: var(--space-6);
+  background-color: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+@media (max-width: 639px) {
+  .simf-surface { padding: var(--space-4); }
+}
+
+/* -- Button — neutral variant (Grey, myComment #17) ------------------------- */
+.simf-button--neutral {
+  background-color: var(--color-surface-sunken);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+.simf-button--neutral:hover {
+  background-color: var(--color-background);
+  border-color: var(--color-secondary);
+}
+.simf-button--neutral:active { background-color: var(--color-border); }
+.simf-button--neutral .simf-button__spinner {
+  border-color: rgba(36, 74, 119, 0.20);
+  border-block-start-color: var(--color-text);
+}
+
+/* -- Button — danger variant ------------------------------------------------ */
+.simf-button--danger {
+  background-color: var(--color-error);
+  color: var(--color-text-on-primary);
+}
+.simf-button--danger:hover { background-color: #8E1F18; }
+.simf-button--danger:active { background-color: #6E1812; }
+
+/* -- Spinner --------------------------------------------------------------- */
+.simf-spinner {
+  display: inline-block;
+  inline-size: 16px;
+  block-size: 16px;
+  border: 2px solid var(--color-border);
+  border-block-start-color: var(--color-accent-blue);
+  border-radius: 50%;
+  animation: simf-spin 700ms linear infinite;
+  vertical-align: -3px;
+}
+.simf-spinner--lg { inline-size: 28px; block-size: 28px; border-width: 3px; }
+
+/* -- Badge — count / dot --------------------------------------------------- */
+.simf-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 18px;
+  block-size: 18px;
+  padding-inline: 6px;
+  border-radius: 999px;
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-caption);
+  line-height: 1;
+  font-weight: var(--font-weight-heading);
+}
+.simf-badge--info { background-color: var(--color-info-surface); color: var(--color-accent-blue); }
+.simf-badge--success { background-color: var(--color-success-surface); color: var(--color-success); }
+.simf-badge--warning { background-color: var(--color-warning-surface); color: var(--color-warning); }
+.simf-badge--danger { background-color: var(--color-error-surface); color: var(--color-error); }
+.simf-badge--dot {
+  min-inline-size: 8px;
+  inline-size: 8px;
+  block-size: 8px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+/* -- Empty state ----------------------------------------------------------- */
+.simf-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-7);
+  color: var(--color-text-muted);
+}
+.simf-empty__title {
+  margin: 0;
+  font-size: var(--font-size-subtitle);
+  font-weight: var(--font-weight-heading);
+  color: var(--color-text);
+}
+.simf-empty__text { margin: var(--space-2) 0 0; }
+.simf-empty__action { margin-block-start: var(--space-5); }
+
+/* -- Modal — overlay dialog ------------------------------------------------- */
+.simf-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  background-color: rgba(26, 36, 51, 0.45);
+}
+
+.simf-modal__panel {
+  inline-size: 100%;
+  max-inline-size: 560px;
+  max-block-size: calc(100vh - var(--space-7));
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  outline: 0;
+}
+
+.simf-modal__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.simf-modal__title {
+  margin: 0;
+  flex: 1 1 auto;
+  font-size: var(--font-size-subtitle);
+  line-height: var(--line-height-subtitle);
+  font-weight: var(--font-weight-heading);
+  color: var(--color-text);
+}
+
+.simf-modal__close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 28px;
+  block-size: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-field);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.simf-modal__close:hover { background-color: var(--color-surface-sunken); color: var(--color-text); }
+.simf-modal__close:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
+
+.simf-modal__body {
+  padding: var(--space-5) var(--space-6);
+  overflow-y: auto;
+  flex: 1 1 auto;
+  color: var(--color-text);
+  line-height: var(--line-height-body);
+}
+
+.simf-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-block-start: var(--border-width) solid var(--color-border);
+  background-color: var(--color-surface-sunken);
+  border-end-start-radius: var(--radius-card);
+  border-end-end-radius: var(--radius-card);
+}
+
+/* Scroll-lock the page body while a modal is open. */
+body.simf-modal-open { overflow: hidden; }
+
+/* -- Field — select / textarea variants ------------------------------------- */
+.simf-field__control--select {
+  padding-inline-end: 0; /* the chevron sits inside the native select */
+}
+.simf-field__select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--color-text-muted) 50%),
+    linear-gradient(135deg, var(--color-text-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 9px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-inline-end: var(--space-7);
+  cursor: pointer;
+}
+[dir="rtl"] .simf-field__select {
+  background-position:
+    14px 50%,
+    9px 50%;
+  padding-inline-end: 0;
+  padding-inline-start: var(--space-7);
+}
+
+.simf-field__control--textarea {
+  block-size: auto;
+  align-items: stretch;
+  padding: var(--space-3) var(--space-4);
+}
+.simf-field__textarea {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  resize: vertical;
+  font-family: inherit;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  color: var(--color-text);
+}
+
+/* ===========================================================================
+   SimfDataGrid — the server-paged list grid (D-044).
+   v1: header sort, per-column filter inputs, paged footer, row-actions slot,
+   loading overlay, empty state. v2 (next commit) adds the row context menu,
+   the top action toolbar, Excel I/O.
+   ========================================================================= */
+
+.simf-grid {
+  inline-size: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.simf-grid__scroll {
+  position: relative;
+  inline-size: 100%;
+  overflow-x: auto;
+}
+
+.simf-grid__table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.simf-grid__head-row { background-color: var(--color-surface-sunken); }
+
+.simf-grid__th {
+  padding: var(--space-3) var(--space-4);
+  text-align: start;
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-heading);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-block-end: var(--border-width) solid var(--color-border);
+  white-space: nowrap;
+}
+
+.simf-grid__th--actions {
+  inline-size: 1%;          /* shrink-to-fit */
+  text-align: end;
+}
+
+.simf-grid__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+.simf-grid__sort:hover { color: var(--color-text); }
+.simf-grid__sort:focus-visible { outline: 0; box-shadow: var(--focus-ring); border-radius: 2px; }
+
+.simf-grid__sort-arrow {
+  inline-size: 0.85em;
+  text-align: center;
+}
+.simf-grid__sort-arrow--none { opacity: 0.35; }
+
+.simf-grid__filter-row {
+  background-color: var(--color-surface);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+.simf-grid__filter-cell { padding: var(--space-2) var(--space-3); }
+
+.simf-grid__filter-input {
+  inline-size: 100%;
+  block-size: 32px;
+  padding-inline: var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-field);
+  background-color: var(--color-field-background);
+  font-family: inherit;
+  font-size: var(--font-size-caption);
+  color: var(--color-text);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.simf-grid__filter-input:focus {
+  outline: 0;
+  border-color: var(--color-accent-blue);
+  box-shadow: var(--focus-ring);
+}
+
+.simf-grid__row { transition: background-color var(--transition-fast); }
+.simf-grid__row:hover { background-color: var(--color-surface-sunken); }
+
+.simf-grid__td {
+  padding: var(--space-3) var(--space-4);
+  border-block-end: var(--border-width) solid var(--color-border);
+  font-size: var(--font-size-body);
+  color: var(--color-text);
+  vertical-align: middle;
+}
+
+.simf-grid__td--actions {
+  text-align: end;
+  white-space: nowrap;
+}
+
+.simf-grid__empty {
+  padding: var(--space-7);
+  text-align: center;
+  color: var(--color-text-muted);
+  border-block-end: 0;
+}
+
+.simf-grid__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.55);
+}
+[data-theme="dark"] .simf-grid__overlay { background-color: rgba(14, 24, 38, 0.55); }
+
+.simf-grid--loading .simf-grid__filter-input,
+.simf-grid--loading .simf-grid__sort { pointer-events: none; }
+
+.simf-grid__pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-block-start: var(--space-4);
+  margin-block-start: var(--space-3);
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.simf-grid__pager-summary {
+  font-size: var(--font-size-caption);
+  color: var(--color-text-muted);
+}
+
+.simf-grid__pager-controls { display: flex; gap: var(--space-2); }
+
+@media (max-width: 639px) {
+  .simf-grid__pager { flex-direction: column; align-items: stretch; }
+  .simf-grid__pager-controls { justify-content: space-between; }
+}
+
 /* -- Reduced motion --------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   .simf-field__control,
@@ -897,6 +1274,9 @@
   .simf-control,
   .simf-password__toggle,
   .simf-shell__nav-toggle,
-  .simf-nav-item__link { transition: none; }
-  /* The button spinner is a status indicator, not decoration — it is kept. */
+  .simf-nav-item__link,
+  .simf-grid__row,
+  .simf-grid__filter-input,
+  .simf-modal__close { transition: none; }
+  /* The button spinner and grid spinner are status indicators, kept. */
 }
