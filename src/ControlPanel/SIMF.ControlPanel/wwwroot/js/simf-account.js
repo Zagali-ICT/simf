@@ -57,4 +57,39 @@ window.simfAccount = {
         const text = await response.text();
         return text.length === 0 ? null : JSON.parse(text);
     },
+
+    // Triggers a click on a hidden file input (used by the SimfDataGrid
+    // Import button to open the OS file picker, decision D-044 b).
+    triggerFileInput(inputId) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.value = '';     // ensure the same file fires the change event again
+            input.click();
+        }
+    },
+
+    // POSTs a JSON body to a binary endpoint and saves the response as a
+    // file download (used by the SimfDataGrid Export, decision D-044 b).
+    async downloadXlsx(url, body) {
+        const response = await fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (!response.ok) return;
+        const blob = await response.blob();
+        const disposition = response.headers.get('Content-Disposition') || '';
+        const match = /filename="?([^";]+)"?/i.exec(disposition);
+        const fileName = match ? match[1] : 'simf-export.xlsx';
+
+        const url2 = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url2;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url2);
+    },
 };

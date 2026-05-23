@@ -92,6 +92,23 @@
   <data name="Admin.Users.Loading" xml:space="preserve"><value>جارٍ التحميل</value></data>
   <data name="Admin.Users.FilterPlaceholder" xml:space="preserve"><value>تصفية…</value></data>
   <data name="Admin.Users.Pager.Summary" xml:space="preserve"><value>{0}-{1} من {2}</value></data>
+  <data name="Admin.Users.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
+  <data name="Admin.Users.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
+  <data name="Admin.Users.Action.Add" xml:space="preserve"><value>إضافة</value></data>
+  <data name="Admin.Users.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Users.Action.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Users.Action.Duplicate" xml:space="preserve"><value>تكرار</value></data>
+  <data name="Admin.Users.Action.Import" xml:space="preserve"><value>استيراد من Excel</value></data>
+  <data name="Admin.Users.Action.Export" xml:space="preserve"><value>تصدير إلى Excel</value></data>
+  <data name="Admin.Users.BulkDelete.Title" xml:space="preserve"><value>حذف المستخدمين</value></data>
+  <data name="Admin.Users.BulkDelete.Confirm" xml:space="preserve"><value>سيتم تعطيل {0} حساب/حسابات. سيتم إنهاء الجلسات وإخطار المستخدمين عبر البريد.</value></data>
+  <data name="Admin.Users.BulkDelete.Reason" xml:space="preserve"><value>السبب</value></data>
+  <data name="Admin.Users.BulkDelete.ReasonHint" xml:space="preserve"><value>10 إلى 500 حرفًا، مدوّن في السجل.</value></data>
+  <data name="Admin.Users.BulkDelete.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Users.BulkDelete.Submit" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Users.Import.ResultTitle" xml:space="preserve"><value>نتيجة الاستيراد</value></data>
+  <data name="Admin.Users.Import.ResultBody" xml:space="preserve"><value>تم إنشاء {0}، تم تخطي {1}.</value></data>
+  <data name="Admin.Users.Import.Close" xml:space="preserve"><value>إغلاق</value></data>
 
   <data name="Admin.CreateUser.Title" xml:space="preserve"><value>إضافة مستخدم جديد</value></data>
   <data name="Admin.CreateUser.Supporting" xml:space="preserve"><value>سيتلقى المستخدم الجديد بريدًا إلكترونيًا يحتوي على رمز لمرة واحدة لتعيين كلمة المرور. الدعوة صالحة لمدة 7 أيام.</value></data>

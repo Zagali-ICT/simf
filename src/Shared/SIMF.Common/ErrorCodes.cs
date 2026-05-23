@@ -52,4 +52,8 @@ public static class ErrorCodes
 
     // Admin user-creation (D-042)
     public const string AdminEmailAlreadyRegistered = "ADMIN_EMAIL_ALREADY_REGISTERED";
+
+    // Admin bulk actions (D-044 b)
+    public const string AdminUserNotFound = "ADMIN_USER_NOT_FOUND";
+    public const string AdminImportEmpty = "ADMIN_IMPORT_EMPTY";
 }

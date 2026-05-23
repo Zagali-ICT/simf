@@ -1,0 +1,40 @@
+@* SimfToolbarButton — a compact icon-first toolbar button (decision D-044 b).
+   Used by SimfDataGrid's top action toolbar. Smaller and tighter than
+   SimfButton; supports a leading icon, label, disabled state and danger
+   variant. *@
+@namespace SIMF.Components.Forms
+
+<button type="button"
+        class="simf-tbbtn @(Danger ? "simf-tbbtn--danger" : null)"
+        disabled="@Disabled"
+        title="@Title"
+        @onclick="OnClick">
+    @if (!string.IsNullOrEmpty(Icon))
+    {
+        <SimfIcon Name="@Icon" Size="16" Class="simf-tbbtn__icon" />
+    }
+    @if (ChildContent is not null)
+    {
+        <span class="simf-tbbtn__label">@ChildContent</span>
+    }
+</button>
+
+@code {
+    /// <summary>The leading icon name (optional).</summary>
+    [Parameter] public string? Icon { get; set; }
+
+    /// <summary>True to style as a destructive (red) action.</summary>
+    [Parameter] public bool Danger { get; set; }
+
+    /// <summary>True to disable the button.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>The title attribute — useful for icon-only buttons.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>The button label (optional — the button can be icon-only).</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The click handler.</summary>
+    [Parameter] public EventCallback OnClick { get; set; }
+}

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
+using SIMF.Application.Excel;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
@@ -26,6 +27,7 @@ internal sealed class AdminAccountService(
     IAccountCodeRepository accountCodeRepository,
     IEmailQueue emailQueue,
     IAuditLog auditLog,
+    IUserExcelService excel,
     TimeProvider timeProvider,
     ILogger<AdminAccountService> logger) : IAdminAccountService
 {
@@ -286,6 +288,224 @@ internal sealed class AdminAccountService(
         }
         return GridPage<AdminUserSummary>.Of(summaries, total,
             new GridQuery { Skip = skip, Top = top });
+    }
+
+    public async Task<AdminBulkDeleteResponse> BulkDeleteUsersAsync(
+        Guid actorUserId,
+        AdminBulkDeleteRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.GetUtcNow();
+        var deleted = 0;
+        var skipped = 0;
+
+        foreach (var targetId in request.Ids)
+        {
+            var target = await userManager.FindByIdAsync(targetId.ToString());
+            if (target is null)
+            {
+                skipped++;
+                continue;
+            }
+            if (target.Id == actorUserId
+                || await userManager.IsInRoleAsync(target, AdministratorRole))
+            {
+                // Self-delete and Administrator-vs-Administrator are blocked
+                // silently per target — never explode the batch. The skipped
+                // count tells the admin how many were left untouched.
+                await auditLog.WriteAsync(new AuditEntry
+                {
+                    EventType = AuditEvents.AdminUserDeleteFailed,
+                    Outcome = AuditOutcome.Failure,
+                    SubjectEmail = target.Email,
+                    SubjectUserId = target.Id,
+                    ActorUserId = actorUserId,
+                    ErrorCode = target.Id == actorUserId
+                        ? ErrorCodes.AdminCannotResetSelf
+                        : ErrorCodes.AdminCannotResetAdministrator,
+                    Detail = request.Reason,
+                }, cancellationToken);
+                skipped++;
+                continue;
+            }
+
+            target.AccountState = AccountState.Disabled;
+            target.UpdatedAt = now;
+            await userManager.UpdateAsync(target);
+            await userManager.UpdateSecurityStampAsync(target);
+            await refreshTokenRepository.RevokeAllForUserAsync(target.Id, now, cancellationToken);
+
+            await auditLog.WriteAsync(new AuditEntry
+            {
+                EventType = AuditEvents.AdminUserDeleted,
+                Outcome = AuditOutcome.Success,
+                SubjectEmail = target.Email,
+                SubjectUserId = target.Id,
+                ActorUserId = actorUserId,
+                Detail = request.Reason,
+            }, cancellationToken);
+            deleted++;
+        }
+
+        logger.LogInformation(
+            "Admin {ActorId} bulk-deleted {Deleted} users (skipped {Skipped})",
+            actorUserId, deleted, skipped);
+        return new AdminBulkDeleteResponse(deleted, skipped);
+    }
+
+    public async Task<AdminCreateUserResponse> DuplicateUserAsync(
+        Guid actorUserId,
+        AdminDuplicateUserRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var source = await userManager.FindByIdAsync(request.SourceId.ToString())
+            ?? throw new ApiException(
+                ErrorCodes.AdminUserNotFound, 404,
+                "The source account was not found.",
+                "لم يتم العثور على الحساب المصدر.");
+
+        var sourceIsAdmin = await userManager.IsInRoleAsync(source, AdministratorRole);
+        var created = await CreateUserAsync(actorUserId,
+            new AdminCreateUserRequest
+            {
+                Email = request.NewEmail,
+                DisplayName = source.DisplayName,
+                GrantAdministratorRole = sourceIsAdmin,
+            },
+            cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AdminUserDuplicated,
+            Outcome = AuditOutcome.Success,
+            SubjectEmail = request.NewEmail,
+            SubjectUserId = created.UserId,
+            ActorUserId = actorUserId,
+            Detail = $"source={request.SourceId}",
+        }, cancellationToken);
+
+        return created;
+    }
+
+    public async Task<byte[]> ExportUsersAsync(
+        Guid actorUserId,
+        AdminExportUsersRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<AdminUserSummary> rows;
+        if (request.Ids.Count > 0)
+        {
+            // Selected-ids path — pull and order to match the on-screen sort.
+            var idSet = request.Ids.ToHashSet();
+            var users = await userManager.Users
+                .Where(u => idSet.Contains(u.Id))
+                .ToListAsync(cancellationToken);
+            var built = new List<AdminUserSummary>(users.Count);
+            foreach (var user in users)
+            {
+                var isAdmin = await userManager.IsInRoleAsync(user, AdministratorRole);
+                built.Add(new AdminUserSummary(
+                    user.Id, user.Email ?? string.Empty, user.DisplayName,
+                    user.AccountState.ToString(), user.TwoFactorEnabled, isAdmin,
+                    user.CreatedAt));
+            }
+            rows = built;
+        }
+        else
+        {
+            // Whole-result-set path — re-run the same query the grid used.
+            // Bound to 5 000 rows so an accidental "export everything"
+            // doesn't load the entire database into RAM.
+            var query = request.Query ?? new GridQuery();
+            query.Skip = 0;
+            query.Top = 5_000;
+            var page = await ListUsersAsync(query, cancellationToken);
+            rows = page.Items;
+        }
+
+        var bytes = excel.Export(rows);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AdminUsersExported,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"count={rows.Count}",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Admin {ActorId} exported {Count} users to XLSX",
+            actorUserId, rows.Count);
+        return bytes;
+    }
+
+    public async Task<AdminImportUsersResponse> ImportUsersAsync(
+        Guid actorUserId,
+        byte[] xlsx,
+        CancellationToken cancellationToken = default)
+    {
+        if (xlsx is null || xlsx.Length == 0)
+        {
+            throw new ApiException(
+                ErrorCodes.AdminImportEmpty, 400,
+                "An Excel file is required.",
+                "ملف Excel مطلوب.");
+        }
+
+        var rows = excel.Parse(xlsx);
+        var errors = new List<AdminImportError>();
+        var created = 0;
+        var skipped = 0;
+
+        foreach (var row in rows)
+        {
+            if (string.IsNullOrWhiteSpace(row.Email) || !row.Email.Contains('@'))
+            {
+                errors.Add(new AdminImportError(row.RowNumber, row.Email,
+                    "The email address is missing or invalid."));
+                skipped++;
+                continue;
+            }
+            if (string.IsNullOrWhiteSpace(row.DisplayName))
+            {
+                errors.Add(new AdminImportError(row.RowNumber, row.Email,
+                    "The display name is missing."));
+                skipped++;
+                continue;
+            }
+            try
+            {
+                await CreateUserAsync(actorUserId,
+                    new AdminCreateUserRequest
+                    {
+                        Email = row.Email,
+                        DisplayName = row.DisplayName,
+                        GrantAdministratorRole = row.IsAdministrator,
+                    },
+                    cancellationToken);
+                created++;
+            }
+            catch (ApiException exception)
+                when (exception.Code == ErrorCodes.AdminEmailAlreadyRegistered)
+            {
+                errors.Add(new AdminImportError(row.RowNumber, row.Email,
+                    "An account with this email already exists."));
+                skipped++;
+            }
+        }
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AdminUsersImported,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"created={created}, skipped={skipped}",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Admin {ActorId} imported {Created} users from XLSX (skipped {Skipped})",
+            actorUserId, created, skipped);
+        return new AdminImportUsersResponse(created, skipped, errors);
     }
 
     private Task AuditFailure(

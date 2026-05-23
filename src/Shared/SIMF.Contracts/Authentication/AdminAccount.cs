@@ -1,3 +1,5 @@
+using SIMF.Common;
+
 namespace SIMF.Contracts.Authentication;
 
 /// <summary>
@@ -55,3 +57,51 @@ public sealed record AdminUserSummary(
     bool TwoFactorEnabled,
     bool IsAdministrator,
     DateTimeOffset CreatedAt);
+
+/// <summary>The body of <c>POST /api/v1/admin/users/bulk-delete</c>
+/// (decision D-044 b). One audit row is written per subject so SOC has
+/// per-user visibility even on a batch action.</summary>
+public sealed class AdminBulkDeleteRequest
+{
+    /// <summary>The user ids to delete. Empty arrays are rejected.</summary>
+    public IList<Guid> Ids { get; set; } = new List<Guid>();
+
+    /// <summary>A free-text reason (10-500 chars) shared across every audit row.</summary>
+    public string Reason { get; set; } = string.Empty;
+}
+
+/// <summary>Result of a bulk-delete (D-044 b).</summary>
+public sealed record AdminBulkDeleteResponse(int Deleted, int Skipped);
+
+/// <summary>The body of <c>POST /api/v1/admin/users/duplicate</c> (D-044 b).
+/// Creates a new user as a copy of the source — same display-name pattern,
+/// same Administrator-role membership, no password, fresh invite email.</summary>
+public sealed class AdminDuplicateUserRequest
+{
+    /// <summary>The user id to copy.</summary>
+    public Guid SourceId { get; set; }
+
+    /// <summary>The email address for the new user.</summary>
+    public string NewEmail { get; set; } = string.Empty;
+}
+
+/// <summary>The body of <c>POST /api/v1/admin/users/export</c> (D-044 b).
+/// When <see cref="Ids"/> is empty, the endpoint exports every user that
+/// matches the (optional) <see cref="Query"/>.</summary>
+public sealed class AdminExportUsersRequest
+{
+    /// <summary>The user ids to export. Empty means "all matching the query".</summary>
+    public IList<Guid> Ids { get; set; } = new List<Guid>();
+
+    /// <summary>The grid query whose result set to export (used only when <see cref="Ids"/> is empty).</summary>
+    public GridQuery? Query { get; set; }
+}
+
+/// <summary>Result of a bulk import — per-row outcome summary (D-044 b).</summary>
+public sealed record AdminImportUsersResponse(
+    int Created,
+    int Skipped,
+    IReadOnlyList<AdminImportError> Errors);
+
+/// <summary>One failed row in an import (D-044 b).</summary>
+public sealed record AdminImportError(int Row, string Email, string Reason);

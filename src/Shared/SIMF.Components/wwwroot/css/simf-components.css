@@ -1129,7 +1129,105 @@ body.simf-modal-open { overflow: hidden; }
   inline-size: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
+
+/* -- Top toolbar (D-044 b) -------------------------------------------------- */
+.simf-grid__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  margin-block-end: var(--space-3);
+  background-color: var(--color-surface-sunken);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-field);
+  flex-wrap: wrap;
+}
+
+.simf-grid__toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+/* -- SimfToolbarButton (D-044 b) ------------------------------------------- */
+.simf-tbbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  block-size: 30px;
+  padding-inline: var(--space-3);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-field);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-caption);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+.simf-tbbtn:hover {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+.simf-tbbtn:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
+.simf-tbbtn:disabled { opacity: 0.38; cursor: not-allowed; }
+.simf-tbbtn--danger { color: var(--color-error); }
+.simf-tbbtn--danger:hover { background-color: var(--color-error-surface); }
+.simf-tbbtn__icon { flex: 0 0 auto; }
+.simf-tbbtn__label { white-space: nowrap; }
+
+/* -- Selection column (D-044 b) -------------------------------------------- */
+.simf-grid__col-select { inline-size: 36px; }
+.simf-grid__th--select { inline-size: 36px; text-align: center; }
+.simf-grid__td--select { text-align: center; vertical-align: middle; }
+.simf-grid__row--selected { background-color: var(--color-info-surface); }
+.simf-grid__row--selected:hover { background-color: var(--color-info-surface); }
+
+/* -- Context menu (D-044 b) ------------------------------------------------ */
+.simf-ctxmenu {
+  position: fixed;
+  z-index: 90;
+  min-inline-size: 160px;
+  padding: var(--space-1) 0;
+  background-color: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-field);
+  box-shadow: var(--shadow-card);
+}
+
+.simf-ctxmenu__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: transparent;
+}
+
+.simf-ctxmenu__item {
+  inline-size: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-body);
+  text-align: start;
+  cursor: pointer;
+}
+.simf-ctxmenu__item:hover { background-color: var(--color-surface-sunken); }
+.simf-ctxmenu__item:focus-visible { outline: 0; background-color: var(--color-surface-sunken); }
+.simf-ctxmenu__item:disabled { opacity: 0.38; cursor: not-allowed; }
+.simf-ctxmenu__item--danger { color: var(--color-error); }
+.simf-ctxmenu__item--danger:hover { background-color: var(--color-error-surface); }
+.simf-ctxmenu__icon { flex: 0 0 auto; color: var(--color-text-muted); }
+.simf-ctxmenu__item--danger .simf-ctxmenu__icon { color: var(--color-error); }
+.simf-ctxmenu__label { flex: 1 1 auto; }
 
 .simf-grid__scroll {
   position: relative;

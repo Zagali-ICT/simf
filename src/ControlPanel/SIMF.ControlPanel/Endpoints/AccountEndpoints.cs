@@ -85,6 +85,62 @@ internal static class AccountEndpoints
             return Forward(await api.ListUsersAsync(body, token));
         });
 
+        group.MapPost("/admin/users/bulk-delete",
+            async (AdminBulkDeleteRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.BulkDeleteUsersAsync(body, token));
+        });
+
+        group.MapPost("/admin/users/duplicate",
+            async (AdminDuplicateUserRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DuplicateUserAsync(body, token));
+        });
+
+        // Binary download — the browser saves the XLSX. Cannot reuse Forward()
+        // because the response body is the workbook bytes, not the JSON envelope.
+        group.MapPost("/admin/users/export",
+            async (AdminExportUsersRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, bytes) = await api.ExportUsersAsync(body, token);
+            if (status != 200 || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            return Results.File(bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"simf-users-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx");
+        });
+
+        // Multipart upload — same SameSite=Lax CSRF stance as /avatar (D-029).
+        group.MapPost("/admin/users/import",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.AdminImportEmpty,
+                    Message = "An Excel file is required.",
+                    MessageArabic = "ملف Excel مطلوب.",
+                }));
+            }
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return Forward(await api.ImportUsersAsync(
+                stream.ToArray(), file.FileName, token));
+        }).DisableAntiforgery();
+
         group.MapPost("/change-password",
             async (ChangePasswordRequest body, HttpContext http, SimfAuthClient api) =>
         {

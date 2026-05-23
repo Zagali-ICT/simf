@@ -52,8 +52,8 @@ Before adding any new UI, check it here first.
 | `SimfPasswordField` | ✅ | Password input with show/hide toggle. |
 | `SimfCodeField` | ✅ | 6-digit code input (centered, large, monospace-spaced). |
 | `SimfCheckbox` | ✅ | Labelled checkbox primitive (D-043). |
-| `SimfSelect<TValue>` | 🚧 | Typed labelled select; shares the field shell with `SimfTextField`. |
-| `SimfTextarea` | 🚧 | Multi-line text field; shares the field shell. |
+| `SimfSelect<TValue>` | ✅ | Typed labelled select; shares the field shell with `SimfTextField`. |
+| `SimfTextarea` | ✅ | Multi-line text field; shares the field shell. |
 | `SimfRadioGroup` | ⏭ | Mutually-exclusive choice — for Saudi / non-Saudi visitor profile (Commit C). |
 | `SimfDatePicker` | ⏭ | Native `<input type="date">` with the SIMF field shell (Commit C). |
 | `SimfPhoneInput` | ⏭ | Saudi / international phone, country-code prefix toggle (Commit C). |
@@ -65,9 +65,8 @@ Before adding any new UI, check it here first.
 
 | Component | Status | Variants |
 |-----------|--------|----------|
-| `SimfButton` | ✅ | `primary` (navy) / `secondary` (outlined) / 🚧 `neutral` (Grey, myComment #17) / 🚧 `danger`. |
+| `SimfButton` | ✅ | `primary` (navy) / `secondary` (outlined) / `neutral` (Grey, myComment #17) / `danger`. |
 | `SimfLink` | ✅ | Anchor styled with the link tokens; focus-ring respected. |
-| `SimfToolbarButton` | ⏭ | Compact icon-first toolbar button — used by the data-grid top toolbar (Commit B). |
 
 ## Indicators and feedback
 
@@ -75,10 +74,10 @@ Before adding any new UI, check it here first.
 |-----------|--------|---------|
 | `SimfAlert` | ✅ | Inline form-level message (`error` / `info` / `success`). |
 | `SimfPill` | ✅ | Inline status chip (`neutral` / `admin` / `on` / `off`, D-043). |
-| `SimfIcon` | ✅ | The inline-SVG icon set — `mail`, `lock`, `eye`, `eye-off`, `alert`, `info`, `check`, `check-circle`, `globe`, `sun`, `moon`, `arrow-back`, `menu`, `bell`, `user`, plus 🚧 `close` / `search`. |
-| `SimfSpinner` | 🚧 | Standalone loading indicator (`sm` / `lg`). |
-| `SimfBadge` | 🚧 | Small count or dot indicator (`neutral` / `info` / `success` / `warning` / `danger`). |
-| `SimfEmptyState` | 🚧 | Centred empty-state panel with title, description and action slot. |
+| `SimfIcon` | ✅ | The inline-SVG icon set — `mail`, `lock`, `eye`, `eye-off`, `alert`, `info`, `check`, `check-circle`, `globe`, `sun`, `moon`, `arrow-back`, `menu`, `bell`, `user`, `close`, `search`. |
+| `SimfSpinner` | ✅ | Standalone loading indicator (`sm` / `lg`). |
+| `SimfBadge` | ✅ | Small count or dot indicator (`neutral` / `info` / `success` / `warning` / `danger`). |
+| `SimfEmptyState` | ✅ | Centred empty-state panel with title, description and action slot. |
 | `SimfTooltip` | ⏭ | CSS-only hover hint (Commit C). |
 
 ## Data display
@@ -86,17 +85,18 @@ Before adding any new UI, check it here first.
 | Component | Status | Purpose |
 |-----------|--------|---------|
 | `SimfTable<TItem>` | ✅ | Typed list table with `HeaderTemplate` / `RowTemplate` / `EmptyTemplate` (D-043). Kept for simple ad-hoc lists; new pages prefer `SimfDataGrid`. |
-| `SimfDataGrid<TItem>` v1 | 🚧 | Server-paged grid — header sort, per-column filter inputs, row-actions slot, loading overlay, paged footer (D-044 a). |
-| `SimfDataGridColumn<TItem>` | 🚧 | Column declaration nested inside `SimfDataGrid <Columns>` slot. |
-| `SimfDataGrid<TItem>` v2 | 🚧 | Adds row right-click context menu (Copy / Delete / Edit), per-row fixed action buttons, top action toolbar (Select All / Add / Edit / Delete / Copy / Paste / Duplicate / Import / Export), bulk-action endpoints, Excel I/O via ClosedXML (D-044 b). |
-| `SimfContextMenu` | 🚧 | Reusable context menu — used by the data-grid (Commit B). |
+| `SimfDataGrid<TItem>` v1 | ✅ | Server-paged grid — header sort, per-column filter inputs, row-actions slot, loading overlay, paged footer (D-044 a). |
+| `SimfDataGridColumn<TItem>` | ✅ | Column declaration nested inside `SimfDataGrid <Columns>` slot. |
+| `SimfDataGrid<TItem>` v2 | ✅ | Adds row right-click context menu (Edit / Copy / Duplicate / Delete), per-row fixed action buttons (Edit / Copy / Delete), top action toolbar (Select All / Add / Edit / Delete / Copy / Paste / Duplicate / Import / Export), per-row selection via a checkbox column, bulk-action endpoints, Excel I/O via ClosedXML (D-044 b). |
+| `SimfContextMenu` + `SimfContextMenuItem` | ✅ | Floating context menu positioned at a mouse coordinate — used by the data-grid (D-044 b). |
+| `SimfToolbarButton` | ✅ | Compact icon-first button used by the data-grid top toolbar (D-044 b). |
 | `SimfChart` | ⏭ | Charting primitives. Library choice deferred. |
 
 ## Overlays
 
 | Component | Status | Purpose |
 |-----------|--------|---------|
-| `SimfModal` | 🚧 | Overlay dialog — Esc / backdrop / explicit close; body scroll-locked. |
+| `SimfModal` | ✅ | Overlay dialog — Esc / backdrop / explicit close; body scroll-locked. |
 
 ## Controls
 
@@ -109,7 +109,8 @@ Before adding any new UI, check it here first.
 
 | Topic | Status | Notes |
 |-------|--------|-------|
-| Grid query / page contract | 🚧 | `GridQuery` + `GridPage<T>` in `SIMF.Common` (D-044 a). Every server-paged list endpoint uses this shape. |
+| Grid query / page contract | ✅ | `GridQuery` + `GridPage<T>` in `SIMF.Common` (D-044 a). Every server-paged list endpoint uses this shape. |
+| Excel I/O | ✅ | `IUserExcelService` + ClosedXML on the server (D-044 b). Used by the grid Import / Export buttons. |
 | Grey theme tokens | ⏭ | Full third theme (Grey) in `theme.tokens.css` — separate increment. The `SimfButton.neutral` variant lands now (D-044 a). |
 | `SimfTabs` | ⏭ | Needs design pass for active/disabled/RTL states. |
 | `SimfBreadcrumbs` | ⏭ | Route-aware crumb-trail; needs the crumb infra. |

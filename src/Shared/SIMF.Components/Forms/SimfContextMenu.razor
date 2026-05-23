@@ -1,0 +1,31 @@
+@* SimfContextMenu — a small floating menu positioned at a mouse coordinate
+   (decision D-044 b). Used by SimfDataGrid's row right-click; reusable
+   wherever a contextual action set is needed. Esc and outside-click both
+   close. Direction-aware via logical properties. *@
+@namespace SIMF.Components.Forms
+
+@if (Open)
+{
+    <div class="simf-ctxmenu"
+         style="@($"top: {Y}px; inset-inline-start: {X}px;")"
+         role="menu"
+         @onmousedown:stopPropagation
+         @onclick:stopPropagation>
+        @ChildContent
+    </div>
+}
+
+@code {
+    /// <summary>True to show the menu.</summary>
+    [Parameter] public bool Open { get; set; }
+
+    /// <summary>The viewport-relative top coordinate (px).</summary>
+    [Parameter] public double Y { get; set; }
+
+    /// <summary>The viewport-relative leading-edge coordinate (px).
+    /// In LTR this is `left`; in RTL it's `right`, handled by `inset-inline-start`.</summary>
+    [Parameter] public double X { get; set; }
+
+    /// <summary>The menu items — usually a stack of <c>&lt;SimfContextMenuItem&gt;</c>.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

@@ -62,4 +62,11 @@ public static class AuditEvents
     public const string AdminTwoFactorResetFailed = "Admin.TwoFactorResetFailed";
     public const string AdminUserCreated = "Admin.UserCreated";
     public const string AdminUserCreateFailed = "Admin.UserCreateFailed";
+
+    // Admin-driven bulk actions (D-044 b)
+    public const string AdminUserDeleted = "Admin.UserDeleted";
+    public const string AdminUserDeleteFailed = "Admin.UserDeleteFailed";
+    public const string AdminUserDuplicated = "Admin.UserDuplicated";
+    public const string AdminUsersExported = "Admin.UsersExported";
+    public const string AdminUsersImported = "Admin.UsersImported";
 }

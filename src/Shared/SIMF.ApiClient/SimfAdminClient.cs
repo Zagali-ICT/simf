@@ -48,6 +48,90 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>Soft-deletes one or many users (D-044 b).</summary>
+    public Task<ApiCallResult<AdminBulkDeleteResponse>> BulkDeleteUsersAsync(
+        AdminBulkDeleteRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBulkDeleteResponse>(
+            HttpMethod.Post, "users/bulk-delete",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Creates a copy of an existing user with a new email (D-044 b).</summary>
+    public Task<ApiCallResult<AdminCreateUserResponse>> DuplicateUserAsync(
+        AdminDuplicateUserRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminCreateUserResponse>(
+            HttpMethod.Post, "users/duplicate",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Returns the bytes of an XLSX workbook with the selected users (D-044 b).</summary>
+    public async Task<(int StatusCode, byte[] Bytes)> ExportUsersAsync(
+        AdminExportUsersRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + "users/export")
+        {
+            Content = JsonContent.Create(request, options: JsonOptions),
+        };
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return ((int)response.StatusCode, bytes);
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException)
+        {
+            return ((int)HttpStatusCode.ServiceUnavailable, Array.Empty<byte>());
+        }
+    }
+
+    /// <summary>Bulk-creates users from an XLSX workbook upload (D-044 b).</summary>
+    public async Task<ApiCallResult<AdminImportUsersResponse>> ImportUsersAsync(
+        byte[] xlsx,
+        string fileName,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        using var content = new MultipartFormDataContent();
+        var file = new ByteArrayContent(xlsx);
+        file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        content.Add(file, "file", fileName);
+
+        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + "users/import")
+        {
+            Content = content,
+        };
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            var body = await response.Content.ReadFromJsonAsync<ApiResult<AdminImportUsersResponse>>(
+                JsonOptions, cancellationToken);
+            return new ApiCallResult<AdminImportUsersResponse>(
+                (int)response.StatusCode,
+                body ?? TransportFailure<AdminImportUsersResponse>(
+                    "The server returned an empty response.",
+                    "أعاد الخادم استجابة فارغة."));
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException or JsonException)
+        {
+            return new ApiCallResult<AdminImportUsersResponse>(
+                (int)HttpStatusCode.ServiceUnavailable,
+                TransportFailure<AdminImportUsersResponse>(
+                    "The SIMF service could not be reached. Please try again.",
+                    "تعذّر الوصول إلى خدمة SIMF. حاول مرة أخرى."));
+        }
+    }
+
     private async Task<ApiCallResult<T>> SendAsync<T>(
         HttpMethod method, string path, HttpContent? content,
         string accessToken, CancellationToken cancellationToken)

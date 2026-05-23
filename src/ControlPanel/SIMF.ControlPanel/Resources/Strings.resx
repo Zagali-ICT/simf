@@ -92,6 +92,23 @@
   <data name="Admin.Users.Loading" xml:space="preserve"><value>Loading</value></data>
   <data name="Admin.Users.FilterPlaceholder" xml:space="preserve"><value>filter…</value></data>
   <data name="Admin.Users.Pager.Summary" xml:space="preserve"><value>{0}-{1} of {2}</value></data>
+  <data name="Admin.Users.Action.SelectAll" xml:space="preserve"><value>Select all</value></data>
+  <data name="Admin.Users.Action.SelectRow" xml:space="preserve"><value>Select row</value></data>
+  <data name="Admin.Users.Action.Add" xml:space="preserve"><value>Add</value></data>
+  <data name="Admin.Users.Action.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.Users.Action.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.Users.Action.Duplicate" xml:space="preserve"><value>Duplicate</value></data>
+  <data name="Admin.Users.Action.Import" xml:space="preserve"><value>Import from Excel</value></data>
+  <data name="Admin.Users.Action.Export" xml:space="preserve"><value>Export to Excel</value></data>
+  <data name="Admin.Users.BulkDelete.Title" xml:space="preserve"><value>Delete users</value></data>
+  <data name="Admin.Users.BulkDelete.Confirm" xml:space="preserve"><value>This will disable {0} account(s). Sessions are revoked and the users are notified by email.</value></data>
+  <data name="Admin.Users.BulkDelete.Reason" xml:space="preserve"><value>Reason</value></data>
+  <data name="Admin.Users.BulkDelete.ReasonHint" xml:space="preserve"><value>10–500 characters, audited.</value></data>
+  <data name="Admin.Users.BulkDelete.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Users.BulkDelete.Submit" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.Users.Import.ResultTitle" xml:space="preserve"><value>Import result</value></data>
+  <data name="Admin.Users.Import.ResultBody" xml:space="preserve"><value>{0} created, {1} skipped.</value></data>
+  <data name="Admin.Users.Import.Close" xml:space="preserve"><value>Close</value></data>
 
   <data name="Admin.CreateUser.Title" xml:space="preserve"><value>Add a new user</value></data>
   <data name="Admin.CreateUser.Supporting" xml:space="preserve"><value>The new user will receive an email invitation with a one-time code to set their password. The invitation is valid for 7 days.</value></data>
