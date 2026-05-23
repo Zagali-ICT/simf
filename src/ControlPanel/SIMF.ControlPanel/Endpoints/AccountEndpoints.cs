@@ -69,6 +69,21 @@ internal static class AccountEndpoints
             return Forward(await api.ResetTwoFactorAsync(body, token));
         });
 
+        group.MapPost("/admin/users",
+            async (AdminCreateUserRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateUserAsync(body, token));
+        });
+
+        group.MapGet("/admin/users", async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListUsersAsync(token));
+        });
+
         group.MapPost("/change-password",
             async (ChangePasswordRequest body, HttpContext http, SimfAuthClient api) =>
         {

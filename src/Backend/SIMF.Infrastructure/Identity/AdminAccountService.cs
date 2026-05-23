@@ -1,5 +1,7 @@
-// Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs
+// Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs,
+//        SIMF.Api.Tests/AdminCreateUserTests.cs
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
@@ -13,14 +15,15 @@ using SIMF.Domain.IdentityAccess;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// Admin-driven user-management use cases (decision D-041). First slice of
-/// the User Management module from <c>myComment</c> #33 — currently only the
-/// 2FA-reset operation.
+/// Admin-driven user-management use cases (decisions D-041, D-042). First
+/// slice of the User Management module from <c>myComment</c> #33 — reset
+/// 2FA, create a new CP user, list every account.
 /// </summary>
 internal sealed class AdminAccountService(
     UserManager<SimfUser> userManager,
     IRefreshTokenRepository refreshTokenRepository,
     IRecoveryCodeService recoveryCodes,
+    IAccountCodeRepository accountCodeRepository,
     IEmailQueue emailQueue,
     IAuditLog auditLog,
     TimeProvider timeProvider,
@@ -122,20 +125,149 @@ internal sealed class AdminAccountService(
             actorUserId, target.Email, request.Reason);
     }
 
+    public async Task<AdminCreateUserResponse> CreateUserAsync(
+        Guid actorUserId,
+        AdminCreateUserRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (await userManager.FindByEmailAsync(request.Email) is not null)
+        {
+            await AuditFailure(
+                AuditEvents.AdminUserCreateFailed, actorUserId, request.Email, null,
+                ErrorCodes.AdminEmailAlreadyRegistered, cancellationToken);
+            throw new ApiException(
+                ErrorCodes.AdminEmailAlreadyRegistered, 409,
+                "An account with this email address already exists.",
+                "يوجد حساب مسجّل بهذا البريد الإلكتروني بالفعل.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var user = new SimfUser
+        {
+            UserName = request.Email,
+            Email = request.Email,
+            EmailConfirmed = true,
+            DisplayName = request.DisplayName,
+            AccountState = AccountState.Approved,
+            PasswordChangeRequired = false,
+            CreatedAt = now,
+        };
+        // No password yet — the new user sets it via the invite link.
+        var createResult = await userManager.CreateAsync(user);
+        if (!createResult.Succeeded)
+        {
+            await AuditFailure(
+                AuditEvents.AdminUserCreateFailed, actorUserId, request.Email, null,
+                ErrorCodes.InternalError, cancellationToken,
+                detail: string.Join("; ", createResult.Errors.Select(error => error.Description)));
+            throw new ApiException(
+                ErrorCodes.InternalError, 500,
+                "The account could not be created.",
+                "تعذّر إنشاء الحساب.");
+        }
+
+        if (request.GrantAdministratorRole)
+        {
+            await userManager.AddToRoleAsync(user, AdministratorRole);
+        }
+
+        // 7-day invite — longer than the 10-min self-service forgot-password
+        // code, so the user can act on it without urgency (D-042).
+        var inviteLifetime = TimeSpan.FromDays(7);
+        var code = new AccountCode
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            Purpose = AccountCodePurpose.PasswordReset,
+            Code = VerificationCodeGenerator.Generate(),
+            CreatedAt = now,
+            ExpiresAt = now.Add(inviteLifetime),
+        };
+        await accountCodeRepository.AddAsync(code, cancellationToken);
+        EnqueueInviteEmail(user.Email!, user.DisplayName, code.Code, inviteLifetime);
+
+        await auditLog.WriteAsync(
+            new AuditEntry
+            {
+                EventType = AuditEvents.AdminUserCreated,
+                Outcome = AuditOutcome.Success,
+                SubjectEmail = user.Email,
+                SubjectUserId = user.Id,
+                ActorUserId = actorUserId,
+                Detail = request.GrantAdministratorRole ? "role=Administrator" : null,
+            },
+            cancellationToken);
+
+        logger.LogInformation(
+            "Admin {ActorId} created user {Email} (Administrator={IsAdmin})",
+            actorUserId, user.Email, request.GrantAdministratorRole);
+        return new AdminCreateUserResponse(
+            user.Id, user.Email!, (int)inviteLifetime.TotalSeconds);
+    }
+
+    public async Task<AdminUserListResponse> ListUsersAsync(
+        CancellationToken cancellationToken = default)
+    {
+        // Bounded user count for SIMF — no pagination yet. The wider User
+        // Management module (myComment #33) will add filter / search / paging.
+        var users = await userManager.Users
+            .OrderByDescending(user => user.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        var summaries = new List<AdminUserSummary>(users.Count);
+        foreach (var user in users)
+        {
+            var isAdmin = await userManager.IsInRoleAsync(user, AdministratorRole);
+            summaries.Add(new AdminUserSummary(
+                user.Id,
+                user.Email ?? string.Empty,
+                user.DisplayName,
+                user.AccountState.ToString(),
+                user.TwoFactorEnabled,
+                isAdmin,
+                user.CreatedAt));
+        }
+        return new AdminUserListResponse(summaries);
+    }
+
     private Task AuditFailure(
         Guid actorUserId, string email, Guid? targetUserId, string errorCode,
         CancellationToken cancellationToken) =>
+        AuditFailure(AuditEvents.AdminTwoFactorResetFailed, actorUserId, email,
+            targetUserId, errorCode, cancellationToken);
+
+    private Task AuditFailure(
+        string eventType, Guid actorUserId, string email, Guid? targetUserId,
+        string errorCode, CancellationToken cancellationToken, string? detail = null) =>
         auditLog.WriteAsync(
             new AuditEntry
             {
-                EventType = AuditEvents.AdminTwoFactorResetFailed,
+                EventType = eventType,
                 Outcome = AuditOutcome.Failure,
                 SubjectEmail = email,
                 SubjectUserId = targetUserId,
                 ActorUserId = actorUserId,
                 ErrorCode = errorCode,
+                Detail = detail,
             },
             cancellationToken);
+
+    private void EnqueueInviteEmail(
+        string targetEmail, string displayName, string code, TimeSpan lifetime)
+    {
+        var days = (int)lifetime.TotalDays;
+        var body =
+            $"<p>Hello {System.Net.WebUtility.HtmlEncode(displayName)},</p>"
+            + "<p>A SIMF account has been created for you. To activate it, "
+            + "open the Control Panel and set your password with the "
+            + "verification code below.</p>"
+            + $"<p><strong>Email:</strong> {System.Net.WebUtility.HtmlEncode(targetEmail)}<br/>"
+            + $"<strong>Code:</strong> <strong>{code}</strong><br/>"
+            + $"<strong>Valid for:</strong> {days} days.</p>"
+            + "<p>If you did not expect this invitation, you can ignore this email.</p>";
+        emailQueue.Enqueue(new EmailMessage(
+            targetEmail, "SIMF — your account invitation", body));
+    }
 
     private void EnqueueNotificationEmail(string targetEmail, string actorEmail, string reason)
     {

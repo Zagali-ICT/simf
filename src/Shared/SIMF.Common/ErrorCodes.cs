@@ -49,4 +49,7 @@ public static class ErrorCodes
     public const string AvatarFileTooLarge = "AVATAR_FILE_TOO_LARGE";
     public const string AvatarMimeUnsupported = "AVATAR_MIME_UNSUPPORTED";
     public const string AvatarFileMissing = "AVATAR_FILE_MISSING";
+
+    // Admin user-creation (D-042)
+    public const string AdminEmailAlreadyRegistered = "ADMIN_EMAIL_ALREADY_REGISTERED";
 }

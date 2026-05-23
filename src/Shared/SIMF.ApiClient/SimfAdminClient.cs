@@ -28,6 +28,22 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>Creates a new CP user and triggers an invitation email (D-042).</summary>
+    public Task<ApiCallResult<AdminCreateUserResponse>> CreateUserAsync(
+        AdminCreateUserRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminCreateUserResponse>(
+            HttpMethod.Post, "users",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Returns every account, newest first.</summary>
+    public Task<ApiCallResult<AdminUserListResponse>> ListUsersAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminUserListResponse>(
+            HttpMethod.Get, "users", null, accessToken, cancellationToken);
+
     private async Task<ApiCallResult<T>> SendAsync<T>(
         HttpMethod method, string path, HttpContent? content,
         string accessToken, CancellationToken cancellationToken)

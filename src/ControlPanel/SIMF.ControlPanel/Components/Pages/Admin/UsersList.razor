@@ -1,0 +1,101 @@
+@* Control Panel — list every account (decision D-042). Administrator only.
+   No paging today — bounded user count. Each row links to the admin-reset
+   2FA page with the email pre-filled via query string. *@
+@page "/admin/users"
+@attribute [Authorize(Roles = "Administrator")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>@L["Admin.Users.Title"]</PageTitle>
+
+<SimfPageHeader Title="@L["Admin.Users.Title"]" />
+
+<section class="simf-card simf-page-card">
+    <div class="simf-form__actions">
+        <SimfButton Type="button" OnClick="@(() => Nav.NavigateTo("/admin/users/new"))">
+            @L["Admin.Users.CreateNew"]
+        </SimfButton>
+    </div>
+
+    @if (_users is null)
+    {
+        <p>@L["Profile.Loading"]</p>
+    }
+    else if (_users.Count == 0)
+    {
+        <p>@L["Admin.Users.None"]</p>
+    }
+    else
+    {
+        <table class="simf-table">
+            <thead>
+                <tr>
+                    <th>@L["Admin.Users.Column.Email"]</th>
+                    <th>@L["Admin.Users.Column.DisplayName"]</th>
+                    <th>@L["Admin.Users.Column.State"]</th>
+                    <th>@L["Admin.Users.Column.Role"]</th>
+                    <th>@L["Admin.Users.Column.TwoFactor"]</th>
+                    <th>@L["Admin.Users.Column.Actions"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in _users)
+                {
+                    <tr>
+                        <td>@user.Email</td>
+                        <td>@user.DisplayName</td>
+                        <td>@user.AccountState</td>
+                        <td>
+                            @if (user.IsAdministrator)
+                            {
+                                <span class="simf-pill simf-pill--admin">@L["Admin.Users.Role.Administrator"]</span>
+                            }
+                            else
+                            {
+                                <span class="simf-pill">@L["Admin.Users.Role.User"]</span>
+                            }
+                        </td>
+                        <td>
+                            @if (user.TwoFactorEnabled)
+                            {
+                                <span class="simf-pill simf-pill--on">@L["Admin.Users.TwoFactor.On"]</span>
+                            }
+                            else
+                            {
+                                <span class="simf-pill simf-pill--off">@L["Admin.Users.TwoFactor.Off"]</span>
+                            }
+                        </td>
+                        <td>
+                            @if (!user.IsAdministrator && user.TwoFactorEnabled)
+                            {
+                                <a class="simf-link"
+                                   href="@($"/admin/reset-2fa?email={Uri.EscapeDataString(user.Email)}")">
+                                    @L["Admin.Users.Action.Reset2FA"]
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@code {
+    private IReadOnlyList<AdminUserSummary>? _users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<AdminUserListResponse>>(
+            "simfAccount.getJson", "/account/api/admin/users");
+        if (envelope is { Success: true, Data: not null })
+        {
+            _users = envelope.Data.Users;
+        }
+        else
+        {
+            _users = Array.Empty<AdminUserSummary>();
+        }
+    }
+}

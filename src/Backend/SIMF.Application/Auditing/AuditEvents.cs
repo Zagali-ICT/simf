@@ -57,7 +57,9 @@ public static class AuditEvents
     public const string AvatarUpdated = "Avatar.Updated";
     public const string AvatarRejected = "Avatar.Rejected";
 
-    // Admin-driven user management (myComment #33 — first slice, D-041)
+    // Admin-driven user management (myComment #33 — D-041, D-042)
     public const string AdminTwoFactorReset = "Admin.TwoFactorReset";
     public const string AdminTwoFactorResetFailed = "Admin.TwoFactorResetFailed";
+    public const string AdminUserCreated = "Admin.UserCreated";
+    public const string AdminUserCreateFailed = "Admin.UserCreateFailed";
 }

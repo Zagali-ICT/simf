@@ -72,6 +72,35 @@
   <data name="Admin.ResetTwoFactor.ReasonRequired" xml:space="preserve"><value>أدخل السبب (من 10 إلى 500 حرف).</value></data>
   <data name="Admin.ResetTwoFactor.Fallback" xml:space="preserve"><value>تعذّر إكمال إعادة التعيين. حاول مرة أخرى.</value></data>
 
+  <data name="Module.AdminUsers" xml:space="preserve"><value>المستخدمون</value></data>
+  <data name="Admin.Users.Title" xml:space="preserve"><value>المستخدمون</value></data>
+  <data name="Admin.Users.None" xml:space="preserve"><value>لا توجد حسابات بعد.</value></data>
+  <data name="Admin.Users.CreateNew" xml:space="preserve"><value>إضافة مستخدم</value></data>
+  <data name="Admin.Users.Column.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Users.Column.DisplayName" xml:space="preserve"><value>الاسم المعروض</value></data>
+  <data name="Admin.Users.Column.State" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Users.Column.Role" xml:space="preserve"><value>الدور</value></data>
+  <data name="Admin.Users.Column.TwoFactor" xml:space="preserve"><value>المصادقة الثنائية</value></data>
+  <data name="Admin.Users.Column.Actions" xml:space="preserve"><value>الإجراءات</value></data>
+  <data name="Admin.Users.Role.Administrator" xml:space="preserve"><value>مسؤول</value></data>
+  <data name="Admin.Users.Role.User" xml:space="preserve"><value>مستخدم</value></data>
+  <data name="Admin.Users.TwoFactor.On" xml:space="preserve"><value>مفعّلة</value></data>
+  <data name="Admin.Users.TwoFactor.Off" xml:space="preserve"><value>معطّلة</value></data>
+  <data name="Admin.Users.Action.Reset2FA" xml:space="preserve"><value>إعادة تعيين المصادقة الثنائية</value></data>
+
+  <data name="Admin.CreateUser.Title" xml:space="preserve"><value>إضافة مستخدم جديد</value></data>
+  <data name="Admin.CreateUser.Supporting" xml:space="preserve"><value>سيتلقى المستخدم الجديد بريدًا إلكترونيًا يحتوي على رمز لمرة واحدة لتعيين كلمة المرور. الدعوة صالحة لمدة 7 أيام.</value></data>
+  <data name="Admin.CreateUser.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.CreateUser.DisplayName" xml:space="preserve"><value>الاسم المعروض</value></data>
+  <data name="Admin.CreateUser.GrantAdministrator" xml:space="preserve"><value>منح صلاحيات المسؤول (وصول كامل إلى لوحة التحكم)</value></data>
+  <data name="Admin.CreateUser.Submit" xml:space="preserve"><value>إنشاء المستخدم</value></data>
+  <data name="Admin.CreateUser.Submitting" xml:space="preserve"><value>جارٍ الإنشاء</value></data>
+  <data name="Admin.CreateUser.BackToList" xml:space="preserve"><value>العودة إلى المستخدمين</value></data>
+  <data name="Admin.CreateUser.Success" xml:space="preserve"><value>تم إنشاء الحساب لـ {0}. سيُرسل بريد الدعوة قريبًا.</value></data>
+  <data name="Admin.CreateUser.EmailInvalid" xml:space="preserve"><value>أدخل بريدًا إلكترونيًا صالحًا.</value></data>
+  <data name="Admin.CreateUser.DisplayNameRequired" xml:space="preserve"><value>يجب أن يتكوّن الاسم المعروض من 2 إلى 128 حرفًا.</value></data>
+  <data name="Admin.CreateUser.Fallback" xml:space="preserve"><value>تعذّر إنشاء الحساب. حاول مرة أخرى.</value></data>
+
   <data name="Dashboard.Title" xml:space="preserve"><value>لوحة المعلومات</value></data>
   <data name="Dashboard.Welcome" xml:space="preserve"><value>مرحبًا بك في لوحة تحكم الملتقى البحري السعودي الدولي</value></data>
   <data name="Dashboard.Intro" xml:space="preserve"><value>منصة تشغيل الملتقى البحري السعودي الدولي. تظهر هنا الإحصاءات وأعداد الحضور المباشر بمجرد تفعيل وحدات الفعالية.</value></data>

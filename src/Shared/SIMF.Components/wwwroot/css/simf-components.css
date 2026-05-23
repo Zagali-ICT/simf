@@ -240,6 +240,58 @@
 }
 .simf-role-list li { padding-block: var(--space-1); }
 
+/* Simple data table for the admin user list (D-042). */
+.simf-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  margin-block-start: var(--space-4);
+}
+.simf-table th,
+.simf-table td {
+  padding: var(--space-3) var(--space-4);
+  text-align: start;
+  border-block-end: var(--border-width) solid var(--color-border);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+}
+.simf-table th {
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-heading);
+}
+
+/* Inline status pills used in the user list. */
+.simf-pill {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text);
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-caption);
+}
+.simf-pill--admin {
+  background-color: var(--color-info-surface);
+  color: var(--color-accent-blue);
+}
+.simf-pill--on {
+  background-color: var(--color-success-surface);
+  color: var(--color-success);
+}
+.simf-pill--off {
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+}
+
+/* Inline checkbox label. */
+.simf-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-body);
+  color: var(--color-text);
+}
+
 /* Recovery codes — shown plaintext exactly once, so make them readable. */
 .simf-recovery-codes {
   margin: var(--space-4) 0;

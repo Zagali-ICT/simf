@@ -18,3 +18,43 @@ public sealed class AdminResetTwoFactorRequest
     /// </summary>
     public string Reason { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// The body of <c>POST /api/v1/admin/users</c>. The actor must hold the
+/// Administrator role; the user is created in the <c>Approved</c> state
+/// with no password — they receive an invitation email carrying a one-time
+/// password-set code (decision D-042).
+/// </summary>
+public sealed class AdminCreateUserRequest
+{
+    /// <summary>The new user's email address; must not already be registered.</summary>
+    public string Email { get; set; } = string.Empty;
+
+    /// <summary>The display name shown in the UI (2–128 characters).</summary>
+    public string DisplayName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// When true, the new user is added to the Administrator role. Defaults to
+    /// false. The wider role catalogue waits for gate D1 / CPD-001 OI-3.
+    /// </summary>
+    public bool GrantAdministratorRole { get; set; }
+}
+
+/// <summary>The body of a successful admin-created account (D-042).</summary>
+public sealed record AdminCreateUserResponse(
+    Guid UserId,
+    string Email,
+    int InviteExpiresInSeconds);
+
+/// <summary>One row in the admin user-list view (D-042).</summary>
+public sealed record AdminUserSummary(
+    Guid Id,
+    string Email,
+    string DisplayName,
+    string AccountState,
+    bool TwoFactorEnabled,
+    bool IsAdministrator,
+    DateTimeOffset CreatedAt);
+
+/// <summary>The body of <c>GET /api/v1/admin/users</c>.</summary>
+public sealed record AdminUserListResponse(IReadOnlyList<AdminUserSummary> Users);
