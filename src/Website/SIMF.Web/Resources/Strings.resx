@@ -70,7 +70,7 @@
   <data name="Auth.Reset.Done.SignIn" xml:space="preserve"><value>Go to sign in</value></data>
 
   <data name="Auth.Footer" xml:space="preserve"><value>Saudi International Maritime Forum 2026</value></data>
-  <data name="Auth.LanguageSwitch" xml:space="preserve"><value>العربية</value></data>
+  <data name="Auth.LanguageSwitch" xml:space="preserve"><value>Arabic</value></data>
 
   <data name="Visitor.Profile.Title" xml:space="preserve"><value>My visitor profile</value></data>
   <data name="Visitor.Profile.SignOut" xml:space="preserve"><value>Sign out</value></data>
