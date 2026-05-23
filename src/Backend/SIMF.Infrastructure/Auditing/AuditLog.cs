@@ -32,6 +32,7 @@ internal sealed class AuditLog(
             Outcome = entry.Outcome,
             SubjectEmail = Clip(entry.SubjectEmail, 256),
             SubjectUserId = entry.SubjectUserId,
+            ActorUserId = entry.ActorUserId,
             SourceIp = Clip(requestContext.SourceIp, 64),
             UserAgent = Clip(requestContext.UserAgent, 512),
             CorrelationId = Clip(requestContext.CorrelationId, 64),

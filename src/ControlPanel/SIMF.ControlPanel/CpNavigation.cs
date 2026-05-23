@@ -67,6 +67,7 @@ public static class CpNavigation
         [
             new("Module.Configuration", "/m/configuration"),
             new("Module.OperationLog", "/m/operation-log"),
+            new("Module.AdminResetTwoFactor", "/admin/reset-2fa"),
             new("Module.Settings", "/m/settings"),
         ]),
     ];

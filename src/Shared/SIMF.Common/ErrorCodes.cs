@@ -41,6 +41,10 @@ public static class ErrorCodes
     public const string TotpNotEnabled = "TOTP_NOT_ENABLED";
     public const string AuthRecoveryCodeInvalid = "AUTH_RECOVERY_CODE_INVALID";
 
+    // Admin-driven 2FA reset (D-041)
+    public const string AdminCannotResetSelf = "ADMIN_CANNOT_RESET_SELF";
+    public const string AdminCannotResetAdministrator = "ADMIN_CANNOT_RESET_ADMINISTRATOR";
+
     // Avatar (myComment #11)
     public const string AvatarFileTooLarge = "AVATAR_FILE_TOO_LARGE";
     public const string AvatarMimeUnsupported = "AVATAR_MIME_UNSUPPORTED";

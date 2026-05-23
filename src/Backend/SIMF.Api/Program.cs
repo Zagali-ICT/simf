@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using SIMF.Api.Authentication;
+using SIMF.Api.Endpoints.Admin;
 using SIMF.Api.Middleware;
 using SIMF.Api.RateLimiting;
 using SIMF.Api.RequestContext;
@@ -120,7 +121,12 @@ if (string.IsNullOrWhiteSpace(builder.Configuration["Storage:AvatarBase"]))
 // (see JwtBearerSetup for the hardened parameters and the security-stamp check).
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options => JwtBearerSetup.Configure(options, jwtOptions));
-builder.Services.AddAuthorization();
+
+// The Administrator-only policy is the gate for the admin-reset endpoint
+// (D-041). Add new role/permission policies here as more admin actions land.
+builder.Services
+    .AddAuthorizationBuilder()
+    .AddSimfAuthorization();
 
 // The reverse-proxy allowlist — the rate limiter and the audit-log source IP
 // depend on it, so an X-Forwarded-For header is honoured only from a trusted

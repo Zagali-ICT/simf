@@ -61,6 +61,14 @@ internal static class AccountEndpoints
             return Forward(await api.RegenerateRecoveryCodesAsync(token));
         });
 
+        group.MapPost("/admin/reset-2fa",
+            async (AdminResetTwoFactorRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ResetTwoFactorAsync(body, token));
+        });
+
         group.MapPost("/change-password",
             async (ChangePasswordRequest body, HttpContext http, SimfAuthClient api) =>
         {

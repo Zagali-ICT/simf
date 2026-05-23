@@ -24,6 +24,13 @@ public class OperationLogEntry
     /// <summary>The user the event concerns; null if not applicable.</summary>
     public Guid? SubjectUserId { get; set; }
 
+    /// <summary>
+    /// The user who performed the action, when distinct from the subject —
+    /// e.g. an admin resetting another user's 2FA (D-041). Null in the usual
+    /// case where the actor is the subject.
+    /// </summary>
+    public Guid? ActorUserId { get; set; }
+
     /// <summary>The client IP the request came from.</summary>
     public string? SourceIp { get; set; }
 

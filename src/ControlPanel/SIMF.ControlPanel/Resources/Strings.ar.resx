@@ -56,6 +56,21 @@
   <data name="Module.Configuration" xml:space="preserve"><value>الإعدادات العامة</value></data>
   <data name="Module.OperationLog" xml:space="preserve"><value>سجل العمليات</value></data>
   <data name="Module.Settings" xml:space="preserve"><value>الإعدادات</value></data>
+  <data name="Module.AdminResetTwoFactor" xml:space="preserve"><value>إعادة تعيين المصادقة الثنائية لمستخدم</value></data>
+
+  <data name="Admin.ResetTwoFactor.Title" xml:space="preserve"><value>إعادة تعيين المصادقة الثنائية لمستخدم آخر</value></data>
+  <data name="Admin.ResetTwoFactor.Supporting" xml:space="preserve"><value>استخدم هذه الخطوة بعد التحقق من هوية المستخدم بقناة خارجية. سيتم محو تطبيق المصادقة ورموز الاسترداد وجميع جلسات المستخدم، وسيُطلب منه إعداد المصادقة الثنائية من جديد عند تسجيل الدخول التالي.</value></data>
+  <data name="Admin.ResetTwoFactor.Email" xml:space="preserve"><value>البريد الإلكتروني للمستخدم</value></data>
+  <data name="Admin.ResetTwoFactor.Reason" xml:space="preserve"><value>السبب (يُسجَّل في السجل)</value></data>
+  <data name="Admin.ResetTwoFactor.ReasonHint" xml:space="preserve"><value>كيف تحققت من هوية المستخدم؟ من أبلغ عن فقدان الجهاز؟</value></data>
+  <data name="Admin.ResetTwoFactor.Submit" xml:space="preserve"><value>إعادة تعيين المصادقة الثنائية</value></data>
+  <data name="Admin.ResetTwoFactor.Submitting" xml:space="preserve"><value>جارٍ إعادة التعيين</value></data>
+  <data name="Admin.ResetTwoFactor.Confirm" xml:space="preserve"><value>سيتم تسجيل خروج المستخدم من جميع الجلسات وسيُطلب منه إعداد المصادقة الثنائية من جديد. هل تريد المتابعة؟</value></data>
+  <data name="Admin.ResetTwoFactor.Success" xml:space="preserve"><value>تمت إعادة تعيين المصادقة الثنائية. أُبلغ المستخدم بالبريد الإلكتروني وسيحتاج إلى إعداد المصادقة الثنائية مرة أخرى عند تسجيل الدخول التالي.</value></data>
+  <data name="Admin.ResetTwoFactor.EmailRequired" xml:space="preserve"><value>أدخل البريد الإلكتروني للمستخدم.</value></data>
+  <data name="Admin.ResetTwoFactor.EmailInvalid" xml:space="preserve"><value>أدخل بريدًا إلكترونيًا صالحًا.</value></data>
+  <data name="Admin.ResetTwoFactor.ReasonRequired" xml:space="preserve"><value>أدخل السبب (من 10 إلى 500 حرف).</value></data>
+  <data name="Admin.ResetTwoFactor.Fallback" xml:space="preserve"><value>تعذّر إكمال إعادة التعيين. حاول مرة أخرى.</value></data>
 
   <data name="Dashboard.Title" xml:space="preserve"><value>لوحة المعلومات</value></data>
   <data name="Dashboard.Welcome" xml:space="preserve"><value>مرحبًا بك في لوحة تحكم الملتقى البحري السعودي الدولي</value></data>
