@@ -7,8 +7,8 @@ namespace SIMF.Api.Middleware;
 /// The first middleware in the pipeline (SIMF-Sprint1 plan section 7). It wraps
 /// every request: an <see cref="ApiException"/> becomes its declared
 /// <see cref="ApiResult{T}"/> failure with the matching HTTP status; any other
-/// exception becomes a 500. No exception reaches the client as a raw stack
-/// trace.
+/// exception becomes a 500. Every error carries both English and Arabic
+/// messages (D-030).
 /// </summary>
 public sealed class ErrorHandlingMiddleware(
     RequestDelegate next,
@@ -41,6 +41,7 @@ public sealed class ErrorHandlingMiddleware(
             {
                 Code = ex.Code,
                 Message = ex.Message,
+                MessageArabic = ex.MessageArabic,
                 Details = ex.Details,
             });
         }
@@ -61,6 +62,7 @@ public sealed class ErrorHandlingMiddleware(
             {
                 Code = ErrorCodes.InternalError,
                 Message = "An unexpected error occurred.",
+                MessageArabic = "حدث خطأ غير متوقع.",
             });
         }
     }

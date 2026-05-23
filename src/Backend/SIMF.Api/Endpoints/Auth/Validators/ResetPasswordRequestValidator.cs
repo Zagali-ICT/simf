@@ -10,22 +10,32 @@ public sealed class ResetPasswordRequestValidator : Validator<ResetPasswordReque
     public ResetPasswordRequestValidator()
     {
         RuleFor(request => request.Email)
-            .NotEmpty().WithMessage("Email is required.")
-            .EmailAddress().WithMessage("A valid email address is required.")
+            .NotEmpty().Bilingual("Email is required.", "البريد الإلكتروني مطلوب.")
+            .EmailAddress().Bilingual(
+                "A valid email address is required.",
+                "يجب إدخال بريد إلكتروني صالح.")
             .MaximumLength(256);
 
         RuleFor(request => request.Code)
-            .NotEmpty().WithMessage("The reset code is required.")
-            .Matches(@"^\d{6}$").WithMessage("The reset code is six digits.");
+            .NotEmpty().Bilingual(
+                "The reset code is required.",
+                "رمز إعادة التعيين مطلوب.")
+            .Matches(@"^\d{6}$").Bilingual(
+                "The reset code is six digits.",
+                "رمز إعادة التعيين يتكوّن من ستة أرقام.");
 
         RuleFor(request => request.NewPassword)
             .StrongPassword()
             .Must((request, password) =>
                 !string.Equals(password, request.Email, StringComparison.OrdinalIgnoreCase))
-            .WithMessage("Password must not be the same as the email address.");
+            .Bilingual(
+                "Password must not be the same as the email address.",
+                "يجب ألا تكون كلمة المرور مطابقة لعنوان البريد الإلكتروني.");
 
         RuleFor(request => request.ConfirmPassword)
             .Equal(request => request.NewPassword)
-            .WithMessage("The passwords do not match.");
+            .Bilingual(
+                "The passwords do not match.",
+                "كلمتا المرور غير متطابقتين.");
     }
 }

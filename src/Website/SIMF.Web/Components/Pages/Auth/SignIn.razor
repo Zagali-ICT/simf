@@ -103,7 +103,10 @@
 
             if (!result.Success || result.Data is null)
             {
-                _error = result.Error?.Message ?? "Sign-in could not be completed. Please try again.";
+                _error = result.Error?.MessageForCurrentCulture()
+                    ?? ApiErrorExtensions.Bilingual(
+                        "Sign-in could not be completed. Please try again.",
+                        "تعذّر إكمال تسجيل الدخول. حاول مرة أخرى.");
                 return;
             }
 

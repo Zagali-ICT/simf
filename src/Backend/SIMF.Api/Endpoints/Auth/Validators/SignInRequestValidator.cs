@@ -10,11 +10,13 @@ public sealed class SignInRequestValidator : Validator<SignInRequest>
     public SignInRequestValidator()
     {
         RuleFor(request => request.Email)
-            .NotEmpty().WithMessage("Email is required.")
-            .EmailAddress().WithMessage("A valid email address is required.")
+            .NotEmpty().Bilingual("Email is required.", "البريد الإلكتروني مطلوب.")
+            .EmailAddress().Bilingual(
+                "A valid email address is required.",
+                "يجب إدخال بريد إلكتروني صالح.")
             .MaximumLength(256);
 
         RuleFor(request => request.Password)
-            .NotEmpty().WithMessage("Password is required.");
+            .NotEmpty().Bilingual("Password is required.", "كلمة المرور مطلوبة.");
     }
 }

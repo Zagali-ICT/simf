@@ -31,6 +31,7 @@ public sealed class SimfAuthClientTests
         {
             Code = ErrorCodes.AuthInvalidCredentials,
             Message = "Incorrect email or password.",
+            MessageArabic = "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
         });
         var client = ClientReturning(HttpStatusCode.Unauthorized, envelope);
 

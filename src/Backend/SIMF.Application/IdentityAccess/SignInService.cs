@@ -50,7 +50,8 @@ public sealed class SignInService(
                 user.Email!, user.Id, ErrorCodes.AuthAccountLocked,
                 cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthAccountLocked, 423,
-                "The account is locked after too many attempts. Try again later.");
+                "The account is locked after too many attempts. Try again later.",
+                "تم قفل الحساب بعد محاولات كثيرة. حاول مرة أخرى لاحقًا.");
         }
 
         if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
@@ -65,17 +66,18 @@ public sealed class SignInService(
                 request.Email, user?.Id, ErrorCodes.AuthInvalidCredentials,
                 cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthInvalidCredentials, 401,
-                "The email address or password is not correct.");
+                "The email address or password is not correct.",
+                "البريد الإلكتروني أو كلمة المرور غير صحيحة.");
         }
 
         await userManager.ResetAccessFailedCountAsync(user);
 
-        var (blockCode, blockMessage) = CheckAccountState(user);
+        var (blockCode, blockMessage, blockMessageArabic) = CheckAccountState(user);
         if (blockCode is not null)
         {
             await AuditAsync(AuditEvents.SignInStateBlocked, AuditOutcome.Failure,
                 user.Email!, user.Id, blockCode, cancellationToken: cancellationToken);
-            throw new ApiException(blockCode, 403, blockMessage!);
+            throw new ApiException(blockCode, 403, blockMessage!, blockMessageArabic!);
         }
 
         var now = timeProvider.GetUtcNow();
@@ -126,7 +128,8 @@ public sealed class SignInService(
             request.MfaToken, SecondFactorKind.Totp, cancellationToken);
         var user = await userManager.FindByIdAsync(ticket.UserId.ToString())
             ?? throw new ApiException(ErrorCodes.AuthMfaTokenInvalid, 400,
-                "The sign-in session is no longer valid.");
+                "The sign-in session is no longer valid.",
+                "جلسة تسجيل الدخول لم تعد صالحة.");
 
         await EnsureNotLockedOutAsync(user, cancellationToken);
 
@@ -146,7 +149,8 @@ public sealed class SignInService(
                 user.Email!, user.Id, ErrorCodes.AuthTotpInvalid,
                 cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthTotpInvalid, 400,
-                "The verification code is not correct.");
+                "The verification code is not correct.",
+                "رمز التحقق غير صحيح.");
         }
 
         var now = timeProvider.GetUtcNow();
@@ -167,7 +171,8 @@ public sealed class SignInService(
             request.OtpToken, SecondFactorKind.EmailOtp, cancellationToken);
         var user = await userManager.FindByIdAsync(ticket.UserId.ToString())
             ?? throw new ApiException(ErrorCodes.AuthOtpTokenInvalid, 400,
-                "The sign-in session is no longer valid.");
+                "The sign-in session is no longer valid.",
+                "جلسة تسجيل الدخول لم تعد صالحة.");
 
         await EnsureNotLockedOutAsync(user, cancellationToken);
 
@@ -181,7 +186,8 @@ public sealed class SignInService(
                 user.Email!, user.Id, ErrorCodes.AuthOtpExpired,
                 cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthOtpExpired, 400,
-                "The code has expired. Sign in again to get a new one.");
+                "The code has expired. Sign in again to get a new one.",
+                "انتهت صلاحية الرمز. سجّل الدخول مرة أخرى للحصول على رمز جديد.");
         }
 
         if (!CodesMatch(code.Code, request.Code))
@@ -192,7 +198,8 @@ public sealed class SignInService(
                 user.Email!, user.Id, ErrorCodes.AuthOtpInvalid,
                 cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthOtpInvalid, 400,
-                "The code is not correct.");
+                "The code is not correct.",
+                "الرمز غير صحيح.");
         }
 
         code.ConsumedAt = now;
@@ -208,14 +215,19 @@ public sealed class SignInService(
     /// not-yet-approved user then has is an authorisation concern (SIMF-RPM-001
     /// section 10, decision D-010).
     /// </summary>
-    private static (string? Code, string? Message) CheckAccountState(SimfUser user) =>
+    private static (string? Code, string? Message, string? MessageArabic) CheckAccountState(
+        SimfUser user) =>
         user.AccountState switch
         {
-            AccountState.Registered =>
-                (ErrorCodes.AuthEmailNotVerified, "Verify your email address before signing in."),
-            AccountState.Disabled or AccountState.Rejected =>
-                (ErrorCodes.AuthAccountDisabled, "This account is not active."),
-            _ => (null, null),
+            AccountState.Registered => (
+                ErrorCodes.AuthEmailNotVerified,
+                "Verify your email address before signing in.",
+                "يرجى التحقق من بريدك الإلكتروني قبل تسجيل الدخول."),
+            AccountState.Disabled or AccountState.Rejected => (
+                ErrorCodes.AuthAccountDisabled,
+                "This account is not active.",
+                "هذا الحساب غير نشط."),
+            _ => (null, null, null),
         };
 
     /// <summary>Blocks the second-factor step if the account locked out after the password step.</summary>
@@ -227,7 +239,8 @@ public sealed class SignInService(
                 user.Email!, user.Id, ErrorCodes.AuthAccountLocked,
                 cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthAccountLocked, 423,
-                "The account is locked after too many attempts. Try again later.");
+                "The account is locked after too many attempts. Try again later.",
+                "تم قفل الحساب بعد محاولات كثيرة. حاول مرة أخرى لاحقًا.");
         }
     }
 
@@ -250,7 +263,8 @@ public sealed class SignInService(
         {
             await AuditAsync(AuditEvents.SignInSecondFactorRejected, AuditOutcome.Failure,
                 null, ticket?.UserId, invalidCode, expectedKind.ToString(), cancellationToken);
-            throw new ApiException(invalidCode, 400, "The sign-in session is not valid.");
+            throw new ApiException(invalidCode, 400, "The sign-in session is not valid.",
+                "جلسة تسجيل الدخول غير صالحة.");
         }
 
         if (timeProvider.GetUtcNow() >= ticket.ExpiresAt)
@@ -260,7 +274,8 @@ public sealed class SignInService(
                 : ErrorCodes.AuthOtpTokenInvalid;
             await AuditAsync(AuditEvents.SignInSecondFactorRejected, AuditOutcome.Failure,
                 null, ticket.UserId, expiredCode, "expired", cancellationToken);
-            throw new ApiException(expiredCode, 400, "The sign-in session has expired.");
+            throw new ApiException(expiredCode, 400, "The sign-in session has expired.",
+                "انتهت صلاحية جلسة تسجيل الدخول.");
         }
 
         return ticket;
@@ -313,7 +328,8 @@ public sealed class SignInService(
                 user.Email!, user.Id, ErrorCodes.RateLimitExceeded,
                 cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.RateLimitExceeded, 429,
-                "Too many sign-in codes have been requested. Try again later.");
+                "Too many sign-in codes have been requested. Try again later.",
+                "تم طلب رموز تسجيل دخول كثيرة. حاول مرة أخرى لاحقًا.");
         }
 
         var previous = await accountCodeRepository.GetLatestUnconsumedAsync(

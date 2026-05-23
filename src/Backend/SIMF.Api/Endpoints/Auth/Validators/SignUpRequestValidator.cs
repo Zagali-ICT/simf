@@ -13,22 +13,36 @@ public sealed class SignUpRequestValidator : Validator<SignUpRequest>
     public SignUpRequestValidator()
     {
         RuleFor(request => request.Email)
-            .NotEmpty().WithMessage("Email is required.")
-            .EmailAddress().WithMessage("A valid email address is required.")
+            .NotEmpty().Bilingual("Email is required.", "البريد الإلكتروني مطلوب.")
+            .EmailAddress().Bilingual(
+                "A valid email address is required.",
+                "يجب إدخال بريد إلكتروني صالح.")
             .MaximumLength(256);
 
         RuleFor(request => request.Password)
-            .NotEmpty().WithMessage("Password is required.")
-            .MinimumLength(8).WithMessage("The password must be at least 8 characters.")
-            .MaximumLength(128).WithMessage("The password must be at most 128 characters.")
-            .Matches("[A-Za-z]").WithMessage("The password must contain at least one letter.")
-            .Matches("[0-9]").WithMessage("The password must contain at least one digit.")
+            .NotEmpty().Bilingual("Password is required.", "كلمة المرور مطلوبة.")
+            .MinimumLength(8).Bilingual(
+                "The password must be at least 8 characters.",
+                "يجب أن تتكوّن كلمة المرور من 8 أحرف على الأقل.")
+            .MaximumLength(128).Bilingual(
+                "The password must be at most 128 characters.",
+                "يجب ألا تتجاوز كلمة المرور 128 حرفًا.")
+            .Matches("[A-Za-z]").Bilingual(
+                "The password must contain at least one letter.",
+                "يجب أن تحتوي كلمة المرور على حرف واحد على الأقل.")
+            .Matches("[0-9]").Bilingual(
+                "The password must contain at least one digit.",
+                "يجب أن تحتوي كلمة المرور على رقم واحد على الأقل.")
             .Must((request, password) =>
                 !string.Equals(password, request.Email, StringComparison.OrdinalIgnoreCase))
-            .WithMessage("The password must not be the same as the email address.");
+            .Bilingual(
+                "The password must not be the same as the email address.",
+                "يجب ألا تكون كلمة المرور مطابقة لعنوان البريد الإلكتروني.");
 
         RuleFor(request => request.ConfirmPassword)
             .Equal(request => request.Password)
-            .WithMessage("The passwords do not match.");
+            .Bilingual(
+                "The passwords do not match.",
+                "كلمتا المرور غير متطابقتين.");
     }
 }

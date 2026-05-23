@@ -39,7 +39,8 @@ public sealed class SessionService(
             await AuditAsync(AuditEvents.RefreshTokenRejected, AuditOutcome.Failure,
                 null, null, ErrorCodes.AuthRefreshTokenInvalid, "token not found", cancellationToken);
             throw new ApiException(ErrorCodes.AuthRefreshTokenInvalid, 401,
-                "The refresh token is not valid.");
+                "The refresh token is not valid.",
+                "رمز التحديث غير صالح.");
         }
 
         // A token that was already revoked is being presented again — it has
@@ -62,7 +63,8 @@ public sealed class SessionService(
                 "Refresh-token reuse detected for user {UserId}; every session was revoked.",
                 presented.UserId);
             throw new ApiException(ErrorCodes.AuthRefreshTokenInvalid, 401,
-                "The refresh token is not valid.");
+                "The refresh token is not valid.",
+                "رمز التحديث غير صالح.");
         }
 
         if (now >= presented.ExpiresAt)
@@ -71,12 +73,14 @@ public sealed class SessionService(
                 null, presented.UserId, ErrorCodes.AuthRefreshTokenExpired, "token expired",
                 cancellationToken);
             throw new ApiException(ErrorCodes.AuthRefreshTokenExpired, 401,
-                "The refresh token has expired. Sign in again.");
+                "The refresh token has expired. Sign in again.",
+                "انتهت صلاحية رمز التحديث. سجّل الدخول مرة أخرى.");
         }
 
         var user = await userManager.FindByIdAsync(presented.UserId.ToString())
             ?? throw new ApiException(ErrorCodes.AuthRefreshTokenInvalid, 401,
-                "The refresh token is not valid.");
+                "The refresh token is not valid.",
+                "رمز التحديث غير صالح.");
 
         if (user.AccountState is AccountState.Disabled or AccountState.Rejected)
         {
@@ -84,7 +88,8 @@ public sealed class SessionService(
                 user.Email, user.Id, ErrorCodes.AuthAccountDisabled, "account not active",
                 cancellationToken);
             throw new ApiException(ErrorCodes.AuthAccountDisabled, 403,
-                "This account is not active.");
+                "This account is not active.",
+                "هذا الحساب غير نشط.");
         }
 
         // Rotate atomically — the presented token is revoked only if it is still
@@ -100,7 +105,8 @@ public sealed class SessionService(
                 if (rotatedRows == 0)
                 {
                     throw new ApiException(ErrorCodes.AuthRefreshTokenInvalid, 401,
-                        "The refresh token is not valid.");
+                        "The refresh token is not valid.",
+                        "رمز التحديث غير صالح.");
                 }
 
                 await refreshTokenRepository.AddAsync(

@@ -77,6 +77,7 @@ internal static class JwtBearerSetup
             {
                 Code = ErrorCodes.AuthInvalidCredentials,
                 Message = "Authentication is required.",
+                MessageArabic = "المصادقة مطلوبة.",
             }));
     }
 

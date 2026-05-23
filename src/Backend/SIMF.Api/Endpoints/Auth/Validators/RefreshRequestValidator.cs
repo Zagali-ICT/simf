@@ -10,6 +10,8 @@ public sealed class RefreshRequestValidator : Validator<RefreshRequest>
     public RefreshRequestValidator()
     {
         RuleFor(request => request.RefreshToken)
-            .NotEmpty().WithMessage("The refresh token is required.");
+            .NotEmpty().Bilingual(
+                "The refresh token is required.",
+                "رمز التحديث مطلوب.");
     }
 }

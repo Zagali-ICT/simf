@@ -94,7 +94,8 @@ public sealed class PasswordService(
                 request.Email, user?.Id, ErrorCodes.AuthResetCodeInvalid,
                 cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthResetCodeInvalid, 400,
-                "The reset code is not valid.");
+                "The reset code is not valid.",
+                "رمز إعادة التعيين غير صالح.");
         }
 
         if (code.AttemptCount >= MaxResetAttempts)
@@ -103,7 +104,8 @@ public sealed class PasswordService(
                 user.Email!, user.Id, ErrorCodes.AuthResetCodeInvalid,
                 cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthResetCodeInvalid, 400,
-                "Too many incorrect attempts. Request a new reset code.");
+                "Too many incorrect attempts. Request a new reset code.",
+                "محاولات غير صحيحة كثيرة. اطلب رمز إعادة تعيين جديدًا.");
         }
 
         if (now >= code.ExpiresAt)
@@ -112,7 +114,8 @@ public sealed class PasswordService(
                 user.Email!, user.Id, ErrorCodes.AuthResetCodeExpired,
                 cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthResetCodeExpired, 400,
-                "The reset code has expired. Request a new one.");
+                "The reset code has expired. Request a new one.",
+                "انتهت صلاحية رمز إعادة التعيين. اطلب رمزًا جديدًا.");
         }
 
         if (!CodesMatch(code.Code, request.Code))
@@ -123,7 +126,8 @@ public sealed class PasswordService(
                 user.Email!, user.Id, ErrorCodes.AuthResetCodeInvalid,
                 $"attempt {code.AttemptCount}", cancellationToken);
             throw new ApiException(ErrorCodes.AuthResetCodeInvalid, 400,
-                "The reset code is not correct.");
+                "The reset code is not correct.",
+                "رمز إعادة التعيين غير صحيح.");
         }
 
         // The code authorised this — set the password, consume the code, clear
@@ -151,7 +155,8 @@ public sealed class PasswordService(
     {
         var user = await userManager.FindByIdAsync(userId.ToString())
             ?? throw new ApiException(ErrorCodes.AuthAccountNotFound, 404,
-                "The account was not found.");
+                "The account was not found.",
+                "لم يتم العثور على الحساب.");
 
         await transactionRunner.ExecuteAsync(
             async token =>
@@ -166,7 +171,8 @@ public sealed class PasswordService(
                     if (result.Errors.Any(error => error.Code == "PasswordMismatch"))
                     {
                         throw new ApiException(ErrorCodes.AuthInvalidCredentials, 400,
-                            "The current password is not correct.");
+                            "The current password is not correct.",
+                            "كلمة المرور الحالية غير صحيحة.");
                     }
 
                     throw PasswordRejected(result);
@@ -194,7 +200,8 @@ public sealed class PasswordService(
         if (!removeResult.Succeeded)
         {
             throw new ApiException(ErrorCodes.InternalError, 500,
-                "The password could not be reset.");
+                "The password could not be reset.",
+                "تعذّر إعادة تعيين كلمة المرور.");
         }
 
         var addResult = await userManager.AddPasswordAsync(user, newPassword);
@@ -259,11 +266,13 @@ public sealed class PasswordService(
     private static DataValidationException PasswordRejected(IdentityResult result) =>
         new(
             "The new password is not allowed.",
+            "كلمة المرور الجديدة غير مسموح بها.",
             result.Errors
                 .Select(error => new ApiErrorDetail
                 {
                     Field = "newPassword",
                     Message = error.Description,
+                    MessageArabic = IdentityErrorTranslator.ToArabic(error),
                 })
                 .ToList());
 

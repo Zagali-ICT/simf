@@ -46,7 +46,8 @@ public sealed class RegistrationService(
             throw new ApiException(
                 ErrorCodes.AuthEmailAlreadyRegistered,
                 409,
-                "An account with this email address already exists.");
+                "An account with this email address already exists.",
+                "يوجد حساب مسجّل بهذا البريد الإلكتروني بالفعل.");
         }
 
         var now = timeProvider.GetUtcNow();
@@ -75,10 +76,13 @@ public sealed class RegistrationService(
                         {
                             Field = "password",
                             Message = error.Description,
+                            MessageArabic = IdentityErrorTranslator.ToArabic(error),
                         })
                         .ToList();
                     throw new DataValidationException(
-                        "The account could not be created.", details);
+                        "The account could not be created.",
+                        "تعذّر إنشاء الحساب.",
+                        details);
                 }
 
                 issuedCode = await IssueVerificationCodeAsync(user, now, token);
@@ -106,7 +110,8 @@ public sealed class RegistrationService(
             throw new ApiException(
                 ErrorCodes.AuthAccountNotFound,
                 404,
-                "No account was found for this email address.");
+                "No account was found for this email address.",
+                "لم يتم العثور على حساب بهذا البريد الإلكتروني.");
         }
 
         if (user.AccountState != AccountState.Registered)
@@ -117,7 +122,8 @@ public sealed class RegistrationService(
             throw new ApiException(
                 ErrorCodes.AuthCodeInvalid,
                 400,
-                "This account's email address is already verified.");
+                "This account's email address is already verified.",
+                "تم التحقق من بريد هذا الحساب مسبقًا.");
         }
 
         var now = timeProvider.GetUtcNow();
@@ -132,7 +138,8 @@ public sealed class RegistrationService(
             throw new ApiException(
                 ErrorCodes.AuthCodeInvalid,
                 400,
-                "No verification code is outstanding. Request a new one.");
+                "No verification code is outstanding. Request a new one.",
+                "لا يوجد رمز تحقق فعّال. اطلب رمزًا جديدًا.");
         }
 
         if (now >= code.ExpiresAt)
@@ -143,7 +150,8 @@ public sealed class RegistrationService(
             throw new ApiException(
                 ErrorCodes.AuthCodeExpired,
                 400,
-                "The verification code has expired. Request a new one.");
+                "The verification code has expired. Request a new one.",
+                "انتهت صلاحية رمز التحقق. اطلب رمزًا جديدًا.");
         }
 
         if (code.AttemptCount >= MaxCodeAttempts)
@@ -154,7 +162,8 @@ public sealed class RegistrationService(
             throw new ApiException(
                 ErrorCodes.AuthCodeInvalid,
                 400,
-                "Too many incorrect attempts. Request a new code.");
+                "Too many incorrect attempts. Request a new code.",
+                "محاولات غير صحيحة كثيرة. اطلب رمزًا جديدًا.");
         }
 
         if (!CodesMatch(code.Code, request.Code))
@@ -167,7 +176,8 @@ public sealed class RegistrationService(
             throw new ApiException(
                 ErrorCodes.AuthCodeInvalid,
                 400,
-                "The verification code is not correct.");
+                "The verification code is not correct.",
+                "رمز التحقق غير صحيح.");
         }
 
         await transactionRunner.ExecuteAsync(
@@ -203,7 +213,8 @@ public sealed class RegistrationService(
             throw new ApiException(
                 ErrorCodes.AuthAccountNotFound,
                 404,
-                "No account was found for this email address.");
+                "No account was found for this email address.",
+                "لم يتم العثور على حساب بهذا البريد الإلكتروني.");
         }
 
         if (user.AccountState != AccountState.Registered)
@@ -214,7 +225,8 @@ public sealed class RegistrationService(
             throw new ApiException(
                 ErrorCodes.AuthCodeInvalid,
                 400,
-                "This account's email address is already verified.");
+                "This account's email address is already verified.",
+                "تم التحقق من بريد هذا الحساب مسبقًا.");
         }
 
         var now = timeProvider.GetUtcNow();
@@ -231,7 +243,8 @@ public sealed class RegistrationService(
             throw new ApiException(
                 ErrorCodes.RateLimitExceeded,
                 429,
-                "Too many verification codes have been requested. Try again later.");
+                "Too many verification codes have been requested. Try again later.",
+                "تم طلب رموز تحقق كثيرة. حاول مرة أخرى لاحقًا.");
         }
 
         var code = await IssueVerificationCodeAsync(user, now, cancellationToken);

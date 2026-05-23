@@ -83,7 +83,9 @@ public sealed class SimfAuthClient(HttpClient http)
             var result = await response.Content.ReadFromJsonAsync<ApiResult<TResponse>>(
                 JsonOptions, cancellationToken);
 
-            return result ?? TransportFailure<TResponse>("The server returned an empty response.");
+            return result ?? TransportFailure<TResponse>(
+                "The server returned an empty response.",
+                "أعاد الخادم استجابة فارغة.");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -98,10 +100,17 @@ public sealed class SimfAuthClient(HttpClient http)
             // reverse-proxy error page) is surfaced as a failed envelope — the
             // caller never has to catch an exception.
             return TransportFailure<TResponse>(
-                "The SIMF service could not be reached. Please try again.");
+                "The SIMF service could not be reached. Please try again.",
+                "تعذّر الوصول إلى خدمة SIMF. حاول مرة أخرى.");
         }
     }
 
-    private static ApiResult<TResponse> TransportFailure<TResponse>(string message) =>
-        ApiResult<TResponse>.Fail(new ApiError { Code = ErrorCodes.InternalError, Message = message });
+    private static ApiResult<TResponse> TransportFailure<TResponse>(
+        string message, string messageArabic) =>
+        ApiResult<TResponse>.Fail(new ApiError
+        {
+            Code = ErrorCodes.InternalError,
+            Message = message,
+            MessageArabic = messageArabic,
+        });
 }

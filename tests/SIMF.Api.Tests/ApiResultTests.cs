@@ -19,7 +19,12 @@ public sealed class ApiResultTests
     [Fact]
     public void Fail_builds_a_failure_result()
     {
-        var error = new ApiError { Code = ErrorCodes.InternalError, Message = "x" };
+        var error = new ApiError
+        {
+            Code = ErrorCodes.InternalError,
+            Message = "x",
+            MessageArabic = "س",
+        };
 
         var result = ApiResult<string>.Fail(error);
 

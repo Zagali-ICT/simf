@@ -77,6 +77,7 @@ builder.Services.AddRateLimiter(rateLimiter =>
             {
                 Code = ErrorCodes.RateLimitExceeded,
                 Message = "Too many requests. Please try again shortly.",
+                MessageArabic = "عدد الطلبات كبير. حاول مرة أخرى بعد قليل.",
             }),
             cancellationToken);
     };
@@ -176,16 +177,20 @@ app.UseFastEndpoints(config =>
     config.Endpoints.RoutePrefix = "api/v1";
 
     // Field-validation failures use the standard ApiResult shape (API-001 §6-7).
+    // Each FluentValidation rule attaches Arabic as its CustomState via the
+    // .Bilingual(en, ar) extension (D-030 / myComment #14).
     config.Errors.ResponseBuilder = (failures, _, _) =>
         ApiResult<object>.Fail(new ApiError
         {
             Code = ErrorCodes.ValidationFailed,
             Message = "One or more fields are invalid.",
+            MessageArabic = "يوجد حقل أو أكثر غير صالح.",
             Details = failures
                 .Select(failure => new ApiErrorDetail
                 {
                     Field = failure.PropertyName,
                     Message = failure.ErrorMessage,
+                    MessageArabic = failure.CustomState as string ?? failure.ErrorMessage,
                 })
                 .ToList(),
         });

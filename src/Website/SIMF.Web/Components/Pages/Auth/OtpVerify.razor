@@ -108,7 +108,10 @@
 
             if (!result.Success || result.Data is null)
             {
-                _error = result.Error?.Message ?? "Verification could not be completed. Please try again.";
+                _error = result.Error?.MessageForCurrentCulture()
+                    ?? ApiErrorExtensions.Bilingual(
+                        "Verification could not be completed. Please try again.",
+                        "تعذّر إكمال التحقق. حاول مرة أخرى.");
                 return;
             }
 

@@ -10,12 +10,16 @@ public sealed class ChangePasswordRequestValidator : Validator<ChangePasswordReq
     public ChangePasswordRequestValidator()
     {
         RuleFor(request => request.CurrentPassword)
-            .NotEmpty().WithMessage("The current password is required.");
+            .NotEmpty().Bilingual(
+                "The current password is required.",
+                "كلمة المرور الحالية مطلوبة.");
 
         RuleFor(request => request.NewPassword).StrongPassword();
 
         RuleFor(request => request.ConfirmPassword)
             .Equal(request => request.NewPassword)
-            .WithMessage("The passwords do not match.");
+            .Bilingual(
+                "The passwords do not match.",
+                "كلمتا المرور غير متطابقتين.");
     }
 }

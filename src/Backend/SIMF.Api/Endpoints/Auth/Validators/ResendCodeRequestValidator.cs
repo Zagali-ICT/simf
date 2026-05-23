@@ -10,8 +10,10 @@ public sealed class ResendCodeRequestValidator : Validator<ResendCodeRequest>
     public ResendCodeRequestValidator()
     {
         RuleFor(request => request.Email)
-            .NotEmpty().WithMessage("Email is required.")
-            .EmailAddress().WithMessage("A valid email address is required.")
+            .NotEmpty().Bilingual("Email is required.", "البريد الإلكتروني مطلوب.")
+            .EmailAddress().Bilingual(
+                "A valid email address is required.",
+                "يجب إدخال بريد إلكتروني صالح.")
             .MaximumLength(256);
     }
 }
