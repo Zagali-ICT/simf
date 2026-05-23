@@ -96,6 +96,44 @@ public sealed class VisitorProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task POST_rejects_a_Saudi_national_id_that_does_not_start_with_1()
+    {
+        // Saudi national IDs are 10 digits starting with 1 (P5 hardening).
+        var token = await CreateUserAndSignInAsync();
+
+        var request = ValidSaudiRequest();
+        request.NationalId = "2234567890";   // 10 digits but starts with 2
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_accepts_a_valid_Iqama_starting_with_2_and_rejects_one_starting_with_1()
+    {
+        // Iqama numbers are 10 digits starting with 2 (P5 hardening).
+        var token = await CreateUserAndSignInAsync();
+
+        var validIqama = ValidSaudiRequest();
+        validIqama.IsSaudi = false;
+        validIqama.NationalId = null;
+        validIqama.NationalityCode = "AE";
+        validIqama.IqamaNumber = "2345678901";
+
+        var ok = await PostAuthAsync(Path, validIqama, token);
+        Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
+
+        var invalidIqama = ValidSaudiRequest();
+        invalidIqama.IsSaudi = false;
+        invalidIqama.NationalId = null;
+        invalidIqama.NationalityCode = "AE";
+        invalidIqama.IqamaNumber = "1234567890";   // starts with 1 — not an Iqama
+
+        var bad = await PostAuthAsync(Path, invalidIqama, token);
+        Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
+    }
+
+    [Fact]
     public async Task POST_requires_either_Iqama_or_Passport_for_a_non_Saudi_visitor()
     {
         var token = await CreateUserAndSignInAsync();

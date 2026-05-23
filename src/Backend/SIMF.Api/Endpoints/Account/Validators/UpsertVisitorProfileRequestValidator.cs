@@ -62,27 +62,29 @@ public sealed class UpsertVisitorProfileRequestValidator
         RuleFor(request => request.PlaceOfBirth)
             .MaximumLength(128);
 
-        // Conditional ID fields — Saudis carry the 10-digit national id;
-        // non-Saudi residents carry an Iqama; non-Saudi visitors carry
-        // a passport.
+        // Conditional ID fields (P5 hardening — strict national-id prefix
+        // rules per the Saudi numbering plan):
+        //   - Saudi national id is exactly 10 digits and starts with 1.
+        //   - Iqama (residency permit) is exactly 10 digits and starts with 2.
+        //   - Non-Saudi visitors who don't hold an Iqama carry a passport.
         When(request => request.IsSaudi, () =>
         {
             RuleFor(r => r.NationalId)
                 .NotEmpty().Bilingual(
                     "The Saudi national id is required.",
                     "رقم الهوية الوطنية مطلوب.")
-                .Matches(@"^\d{10}$").Bilingual(
-                    "The Saudi national id must be exactly 10 digits.",
-                    "يجب أن يتكوّن رقم الهوية الوطنية من 10 أرقام بالضبط.");
+                .Matches(@"^1\d{9}$").Bilingual(
+                    "The Saudi national id must be 10 digits starting with 1.",
+                    "يجب أن يتكوّن رقم الهوية الوطنية من 10 أرقام تبدأ بالرقم 1.");
         });
 
         When(request => !request.IsSaudi, () =>
         {
             RuleFor(r => r.IqamaNumber)
-                .Matches(@"^\d{10}$").When(r => !string.IsNullOrEmpty(r.IqamaNumber))
+                .Matches(@"^2\d{9}$").When(r => !string.IsNullOrEmpty(r.IqamaNumber))
                 .Bilingual(
-                    "An Iqama number must be exactly 10 digits.",
-                    "يجب أن يتكوّن رقم الإقامة من 10 أرقام بالضبط.");
+                    "An Iqama number must be 10 digits starting with 2.",
+                    "يجب أن يتكوّن رقم الإقامة من 10 أرقام تبدأ بالرقم 2.");
 
             RuleFor(r => r.PassportNumber)
                 .MaximumLength(32).When(r => !string.IsNullOrEmpty(r.PassportNumber))

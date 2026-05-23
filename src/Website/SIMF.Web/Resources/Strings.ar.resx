@@ -96,7 +96,7 @@
   <data name="Visitor.Profile.NationalId" xml:space="preserve"><value>رقم الهوية الوطنية</value></data>
   <data name="Visitor.Profile.NationalIdHint" xml:space="preserve"><value>10 أرقام تبدأ بالرقم 1.</value></data>
   <data name="Visitor.Profile.Iqama" xml:space="preserve"><value>رقم الإقامة</value></data>
-  <data name="Visitor.Profile.IqamaHint" xml:space="preserve"><value>10 أرقام — مطلوب إذا كنت مقيمًا في المملكة.</value></data>
+  <data name="Visitor.Profile.IqamaHint" xml:space="preserve"><value>10 أرقام تبدأ بالرقم 2 — مطلوب إذا كنت مقيمًا في المملكة.</value></data>
   <data name="Visitor.Profile.Passport" xml:space="preserve"><value>رقم جواز السفر</value></data>
   <data name="Visitor.Profile.PassportHint" xml:space="preserve"><value>مطلوب إذا كنت زائرًا من خارج المملكة.</value></data>
   <data name="Visitor.Profile.SaudiMobile" xml:space="preserve"><value>الجوال السعودي</value></data>
