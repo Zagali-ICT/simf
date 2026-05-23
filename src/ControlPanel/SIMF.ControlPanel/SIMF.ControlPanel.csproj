@@ -13,4 +13,8 @@
     <ProjectReference Include="..\..\Shared\SIMF.Contracts\SIMF.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.18.0" />
+  </ItemGroup>
+
 </Project>

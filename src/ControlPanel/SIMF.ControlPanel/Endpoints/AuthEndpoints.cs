@@ -1,4 +1,5 @@
 // Tests: SIMF.ControlPanel.Tests/SignInTicketStoreTests.cs (the ticket hand-off).
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -13,6 +14,43 @@ namespace SIMF.ControlPanel.Endpoints;
 /// </summary>
 internal static class AuthEndpoints
 {
+    /// <summary>
+    /// Reads the role claims from a JWT access token without doing signature
+    /// validation — the API already verified the token before issuing it; the
+    /// CP only needs to copy the claim values across.
+    /// </summary>
+    private static IEnumerable<string> ExtractRoleClaims(string accessToken)
+    {
+        if (string.IsNullOrEmpty(accessToken))
+        {
+            return [];
+        }
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+            if (!handler.CanReadToken(accessToken))
+            {
+                return [];
+            }
+            var token = handler.ReadJwtToken(accessToken);
+            // The API issues roles as ClaimTypes.Role; with the standard
+            // claim-type mapping in JwtSecurityTokenHandler that arrives back
+            // as the same long-form URI, so match on either form.
+            return token.Claims
+                .Where(claim => claim.Type == ClaimTypes.Role
+                    || claim.Type == "role")
+                .Select(claim => claim.Value)
+                .ToArray();
+        }
+        catch (Exception)
+        {
+            // A malformed token can't yield roles — fall back to "no roles",
+            // which means every role-gated page denies. The /account/profile
+            // and dashboard are still reachable; the user can re-sign-in.
+            return [];
+        }
+    }
+
     public static void MapAuthEndpoints(this IEndpointRouteBuilder routes)
     {
         // Completes an interactive sign-in: redeems the one-time reference and
@@ -40,6 +78,17 @@ internal static class AuthEndpoints
                 new(ClaimTypes.Email, tokens.User.Email),
                 new(ClaimTypes.Name, tokens.User.DisplayName),
             };
+
+            // The JWT carries the user's roles as ClaimTypes.Role; copy them
+            // into the cookie principal so page-level [Authorize(Roles = …)]
+            // checks pass for Administrator / future role gates. Without this,
+            // the cookie has no role claims and every role-gated page kicks
+            // the user back to /login (D-041, D-042).
+            foreach (var role in ExtractRoleClaims(tokens.AccessToken))
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
 
