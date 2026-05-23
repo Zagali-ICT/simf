@@ -51,6 +51,11 @@ builder.Services.AddSingleton<SignInTicketStore>();
 // The signed-in second-factor flow state is held per Blazor circuit.
 builder.Services.AddScoped<SimfAuthSession>();
 
+// HttpContext access — the profile page captures the access token from the
+// cookie auth result during the initial (prerendered) render, then holds it
+// in the circuit for the interactive callbacks that follow.
+builder.Services.AddHttpContextAccessor();
+
 // The typed client for the SIMF Login API. The call is server-to-server, so
 // the access token never reaches the browser and there is no cross-origin
 // concern.
@@ -66,6 +71,12 @@ builder.Services.AddHttpClient<SimfAuthClient>(client =>
             "'Api:BaseUrl' must use HTTPS outside the Development environment.");
     }
     client.BaseAddress = baseUri;
+});
+
+builder.Services.AddHttpClient<SimfAccountClient>(client =>
+{
+    var baseUrl = builder.Configuration["Api:BaseUrl"]!;
+    client.BaseAddress = new Uri(baseUrl);
 });
 
 var app = builder.Build();
@@ -103,6 +114,7 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapAuthEndpoints();
+app.MapAccountEndpoints();
 app.MapCultureEndpoint();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

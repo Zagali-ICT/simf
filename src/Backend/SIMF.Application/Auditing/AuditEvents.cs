@@ -41,4 +41,15 @@ public static class AuditEvents
     public const string PasswordChanged = "PasswordChange.Succeeded";
     public const string PasswordChangeFailed = "PasswordChange.Failed";
     public const string SuperAdminSeeded = "Admin.SuperAdminSeeded";
+
+    // TOTP enrolment (myComment #11)
+    public const string TotpEnrolmentStarted = "Totp.EnrolmentStarted";
+    public const string TotpEnrolmentConfirmed = "Totp.EnrolmentConfirmed";
+    public const string TotpEnrolmentFailed = "Totp.EnrolmentFailed";
+    public const string TotpDisabled = "Totp.Disabled";
+    public const string TotpDisableFailed = "Totp.DisableFailed";
+
+    // Avatar (myComment #11)
+    public const string AvatarUpdated = "Avatar.Updated";
+    public const string AvatarRejected = "Avatar.Rejected";
 }

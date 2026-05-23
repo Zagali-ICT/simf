@@ -13,10 +13,10 @@
         <SimfLanguageSwitch Href="@CultureHref" Label='@L["Shell.SwitchLanguage"]' />
         <SimfThemeToggle LightLabel='@L["Shell.ThemeLight"]' DarkLabel='@L["Shell.ThemeDark"]' />
         <AuthorizeView>
-            <span class="simf-user">
+            <a class="simf-user" href="/account/profile" title="@L["Shell.MyProfile"]">
                 <SimfIcon Name="user" Class="simf-user__icon" Size="18" />
                 <span>@context.User.Identity?.Name</span>
-            </span>
+            </a>
         </AuthorizeView>
         <form method="post" action="/auth/sign-out" data-enhance="false">
             <button type="submit" class="simf-button simf-button--secondary">@L["Shell.SignOut"]</button>

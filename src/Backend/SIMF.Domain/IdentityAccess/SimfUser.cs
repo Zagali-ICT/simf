@@ -33,4 +33,15 @@ public class SimfUser : IdentityUser<Guid>
     /// below this step is rejected as a replay (RFC 6238 section 5.2).
     /// </summary>
     public long? LastUsedTotpTimestep { get; set; }
+
+    /// <summary>
+    /// The user's avatar image bytes (myComment #11). Held in the row rather
+    /// than the filesystem so the avatar is atomic with the account and there
+    /// is no separate path/permission to manage. Null when not set.
+    /// </summary>
+    public byte[]? Avatar { get; set; }
+
+    /// <summary>The avatar's MIME content type — e.g. <c>image/png</c>.</summary>
+    public string? AvatarContentType { get; set; }
 }
+

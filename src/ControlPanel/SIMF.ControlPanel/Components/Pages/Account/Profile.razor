@@ -1,0 +1,398 @@
+@* Control Panel — the signed-in user's profile (myComment item #11). Four
+   sections: two-factor authentication enrolment, change password, my roles,
+   my avatar. Every action goes through CP-side proxy endpoints
+   (/account/api/…) so the access token never reaches the page. *@
+@page "/account/profile"
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>@L["Profile.Title"]</PageTitle>
+
+<SimfPageHeader Title="@L["Profile.Title"]" />
+
+@if (_profile is null)
+{
+    <div class="simf-card simf-page-card">
+        <p>@L["Profile.Loading"]</p>
+    </div>
+}
+else
+{
+    <div class="simf-profile">
+        @* -- Two-factor authentication ----------------------------------------- *@
+        <section class="simf-card simf-page-card">
+            <h2 class="simf-card__title">@L["Profile.TwoFactor.Title"]</h2>
+            @if (_flashOk is not null)
+            {
+                <SimfAlert Variant="success">@_flashOk</SimfAlert>
+            }
+            @if (_flashError is not null)
+            {
+                <SimfAlert Variant="error">@_flashError</SimfAlert>
+            }
+
+            @if (_setup is null)
+            {
+                <p>@(_profile.TwoFactorEnabled ? L["Profile.TwoFactor.StatusOn"] : L["Profile.TwoFactor.StatusOff"])</p>
+                <div class="simf-form__actions">
+                    @if (_profile.TwoFactorEnabled)
+                    {
+                        <SimfButton Type="button" OnClick="StartDisableAsync">@L["Profile.TwoFactor.Disable"]</SimfButton>
+                        <SimfButton Type="button" Variant="secondary" OnClick="StartSetupAsync">@L["Profile.TwoFactor.Reenrol"]</SimfButton>
+                    }
+                    else
+                    {
+                        <SimfButton Type="button" OnClick="StartSetupAsync">@L["Profile.TwoFactor.Enable"]</SimfButton>
+                    }
+                </div>
+            }
+            else
+            {
+                <p>@L["Profile.TwoFactor.ScanInstruction"]</p>
+                <div class="simf-qr">
+                    @((MarkupString)_setup.QrCodeSvg)
+                </div>
+                <p class="simf-form__helper">@L["Profile.TwoFactor.SecretHint"]</p>
+                <code class="simf-totp-secret">@_setup.Secret</code>
+                <EditForm Model="_codeModel" OnSubmit="ConfirmSetupAsync" class="simf-form">
+                    <div class="simf-form__fields">
+                        <SimfCodeField Label="@L["Profile.TwoFactor.CodeLabel"]"
+                                       @bind-Value="_codeModel.Code" Disabled="_busy" />
+                    </div>
+                    <div class="simf-form__actions">
+                        <SimfButton Loading="_busy" LoadingLabel="@L["Profile.TwoFactor.Confirm"]">
+                            @L["Profile.TwoFactor.Confirm"]
+                        </SimfButton>
+                        <SimfButton Type="button" Variant="secondary"
+                                    OnClick="CancelSetup">@L["Profile.TwoFactor.Cancel"]</SimfButton>
+                    </div>
+                </EditForm>
+            }
+
+            @if (_disablePrompt)
+            {
+                <EditForm Model="_disableModel" OnSubmit="ConfirmDisableAsync" class="simf-form">
+                    <div class="simf-form__fields">
+                        <SimfCodeField Label="@L["Profile.TwoFactor.CodeLabel"]"
+                                       @bind-Value="_disableModel.Code" Disabled="_busy" />
+                    </div>
+                    <div class="simf-form__actions">
+                        <SimfButton Loading="_busy" LoadingLabel="@L["Profile.TwoFactor.Confirm"]">
+                            @L["Profile.TwoFactor.Confirm"]
+                        </SimfButton>
+                        <SimfButton Type="button" Variant="secondary"
+                                    OnClick="CancelDisable">@L["Profile.TwoFactor.Cancel"]</SimfButton>
+                    </div>
+                </EditForm>
+            }
+        </section>
+
+        @* -- Change password ----------------------------------------------------- *@
+        <section class="simf-card simf-page-card">
+            <h2 class="simf-card__title">@L["Profile.Password.Title"]</h2>
+            @if (_passwordError is not null)
+            {
+                <SimfAlert Variant="error">@_passwordError</SimfAlert>
+            }
+            @* No success banner — a successful change rolls the security stamp
+               and signs the user out, so the page navigates away. *@
+            <EditForm Model="_passwordModel" OnSubmit="ChangePasswordAsync" class="simf-form">
+                <div class="simf-form__fields">
+                    <SimfPasswordField Label="@L["Profile.Password.Current"]"
+                                       @bind-Value="_passwordModel.CurrentPassword"
+                                       Autocomplete="current-password" Disabled="_busy" />
+                    <SimfPasswordField Label="@L["Profile.Password.New"]"
+                                       @bind-Value="_passwordModel.NewPassword"
+                                       Autocomplete="new-password" Disabled="_busy" />
+                    <SimfPasswordField Label="@L["Profile.Password.Confirm"]"
+                                       @bind-Value="_passwordModel.ConfirmPassword"
+                                       Autocomplete="new-password" Disabled="_busy" />
+                </div>
+                <div class="simf-form__actions">
+                    <SimfButton Loading="_busy" LoadingLabel="@L["Profile.Password.Submit"]">
+                        @L["Profile.Password.Submit"]
+                    </SimfButton>
+                </div>
+            </EditForm>
+        </section>
+
+        @* -- My roles ------------------------------------------------------------ *@
+        <section class="simf-card simf-page-card">
+            <h2 class="simf-card__title">@L["Profile.Roles.Title"]</h2>
+            @if (_profile.Roles.Count == 0)
+            {
+                <p>@L["Profile.Roles.None"]</p>
+            }
+            else
+            {
+                <ul class="simf-role-list">
+                    @foreach (var role in _profile.Roles)
+                    {
+                        <li>@role</li>
+                    }
+                </ul>
+            }
+        </section>
+
+        @* -- My avatar ----------------------------------------------------------- *@
+        <section class="simf-card simf-page-card">
+            <h2 class="simf-card__title">@L["Profile.Avatar.Title"]</h2>
+            @if (_avatarError is not null)
+            {
+                <SimfAlert Variant="error">@_avatarError</SimfAlert>
+            }
+            else if (_avatarOk is not null)
+            {
+                <SimfAlert Variant="success">@_avatarOk</SimfAlert>
+            }
+            <div class="simf-avatar">
+                @if (!string.IsNullOrEmpty(_profile.AvatarDataUri))
+                {
+                    <img class="simf-avatar__image" src="@_profile.AvatarDataUri" alt="" />
+                }
+                else
+                {
+                    <div class="simf-avatar__placeholder" aria-hidden="true">
+                        <SimfIcon Name="user" Size="48" />
+                    </div>
+                }
+            </div>
+            <p class="simf-form__helper">@L["Profile.Avatar.SizeHint"]</p>
+            @* `disabled="@_busy"` would render `disabled="False"` on a plain
+               HTML input — the browser treats any `disabled` attribute as
+               truthy, so the input would be locked even when not busy. The
+               `?? null` pattern makes Blazor omit the attribute when idle. *@
+            <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp"
+                   class="simf-file"
+                   disabled="@(_busy ? "disabled" : null)" />
+            <div class="simf-form__actions">
+                <SimfButton Type="button" Loading="_busy" LoadingLabel="@L["Profile.Avatar.Upload"]"
+                            OnClick="UploadAvatarAsync">@L["Profile.Avatar.Upload"]</SimfButton>
+                @if (!string.IsNullOrEmpty(_profile.AvatarDataUri))
+                {
+                    <SimfButton Type="button" Variant="secondary" OnClick="RemoveAvatarAsync"
+                                Disabled="_busy">@L["Profile.Avatar.Remove"]</SimfButton>
+                }
+            </div>
+        </section>
+    </div>
+}
+
+@code {
+    private ProfileResponse? _profile;
+    private TotpSetupResponse? _setup;
+    private bool _disablePrompt;
+    private bool _busy;
+    private string? _flashOk;
+    private string? _flashError;
+    private string? _passwordError;
+    private string? _avatarError;
+    private string? _avatarOk;
+    private readonly CodeModel _codeModel = new();
+    private readonly CodeModel _disableModel = new();
+    private readonly PasswordModel _passwordModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProfileAsync();
+    }
+
+    private async Task LoadProfileAsync()
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<ProfileResponse>>(
+            "simfAccount.getJson", "/account/api/profile");
+        if (envelope is { Success: true, Data: not null })
+        {
+            _profile = envelope.Data;
+        }
+    }
+
+    // -- 2FA enrolment --------------------------------------------------------
+
+    private async Task StartSetupAsync()
+    {
+        ClearFlash();
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<TotpSetupResponse>>(
+                "simfAccount.postJson", "/account/api/totp/setup", (object?)null);
+            if (envelope is { Success: true, Data: not null })
+            {
+                _setup = envelope.Data;
+                _codeModel.Code = string.Empty;
+            }
+            else
+            {
+                _flashError = envelope?.Error?.MessageForCurrentCulture();
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task ConfirmSetupAsync()
+    {
+        ClearFlash();
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<TotpConfirmResponse>>(
+                "simfAccount.postJson", "/account/api/totp/confirm",
+                new TotpConfirmRequest { Code = _codeModel.Code });
+            if (envelope is { Success: true })
+            {
+                _setup = null;
+                _flashOk = L["Profile.TwoFactor.ConfirmEnabled"];
+                await LoadProfileAsync();
+            }
+            else
+            {
+                _flashError = envelope?.Error?.MessageForCurrentCulture();
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void CancelSetup()
+    {
+        _setup = null;
+        _codeModel.Code = string.Empty;
+        ClearFlash();
+    }
+
+    private void StartDisableAsync()
+    {
+        _disablePrompt = true;
+        _disableModel.Code = string.Empty;
+        ClearFlash();
+    }
+
+    private void CancelDisable()
+    {
+        _disablePrompt = false;
+        ClearFlash();
+    }
+
+    private async Task ConfirmDisableAsync()
+    {
+        ClearFlash();
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<TotpDisableResponse>>(
+                "simfAccount.postJson", "/account/api/totp/disable",
+                new TotpDisableRequest { Code = _disableModel.Code });
+            if (envelope is { Success: true })
+            {
+                _disablePrompt = false;
+                _flashOk = L["Profile.TwoFactor.ConfirmDisabled"];
+                await LoadProfileAsync();
+            }
+            else
+            {
+                _flashError = envelope?.Error?.MessageForCurrentCulture();
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    // -- Change password ------------------------------------------------------
+
+    private async Task ChangePasswordAsync()
+    {
+        _passwordError = null;
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<ChangePasswordResponse>>(
+                "simfAccount.postJson", "/account/api/change-password",
+                new ChangePasswordRequest
+                {
+                    CurrentPassword = _passwordModel.CurrentPassword,
+                    NewPassword = _passwordModel.NewPassword,
+                    ConfirmPassword = _passwordModel.ConfirmPassword,
+                });
+            if (envelope is { Success: true })
+            {
+                // Changing the password rolls the security stamp and revokes
+                // every session, so the next API call from this circuit would
+                // fail. Submit the hidden sign-out form — /auth/sign-out is
+                // POST-only, a GET via NavigateTo would 404 and leave the
+                // cookie alive.
+                await JS.InvokeVoidAsync("simfAccount.signOut");
+            }
+            else
+            {
+                _passwordError = envelope?.Error?.MessageForCurrentCulture();
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    // -- Avatar ---------------------------------------------------------------
+
+    private async Task UploadAvatarAsync()
+    {
+        _avatarError = null;
+        _avatarOk = null;
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AvatarResponse>>(
+                "simfAccount.uploadFile", "/account/api/avatar", "avatar-input");
+            if (envelope is { Success: true, Data: not null })
+            {
+                await LoadProfileAsync();
+                _avatarOk = L["Profile.Avatar.Updated"];
+            }
+            else
+            {
+                _avatarError = envelope?.Error?.MessageForCurrentCulture();
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task RemoveAvatarAsync()
+    {
+        _avatarError = null;
+        _avatarOk = null;
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AvatarResponse>>(
+                "simfAccount.deleteJson", "/account/api/avatar");
+            if (envelope is { Success: true })
+            {
+                await LoadProfileAsync();
+                _avatarOk = L["Profile.Avatar.Removed"];
+            }
+            else
+            {
+                _avatarError = envelope?.Error?.MessageForCurrentCulture();
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    // -- Misc -----------------------------------------------------------------
+
+    private void ClearFlash()
+    {
+        _flashOk = null;
+        _flashError = null;
+    }
+
+    private sealed class CodeModel
+    {
+        public string Code { get; set; } = string.Empty;
+    }
+
+    private sealed class PasswordModel
+    {
+        public string CurrentPassword { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}

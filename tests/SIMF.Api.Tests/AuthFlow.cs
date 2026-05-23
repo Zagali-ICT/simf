@@ -49,6 +49,36 @@ internal static class AuthFlow
         database.SaveChanges();
     }
 
+    /// <summary>
+    /// Signs a brand-new visitor up, verifies the email and signs in without
+    /// turning 2FA on — so the password step issues tokens directly (D-033).
+    /// Returns the issued token pair, used by the TOTP-enrolment integration tests.
+    /// </summary>
+    public static async Task<AuthTokens> SignInVisitorWithoutTwoFactorAsync(
+        HttpClient client,
+        SimfApiFactory factory)
+    {
+        var email = $"flow-noTfa-{Guid.NewGuid():N}@simf.test";
+
+        await client.PostAsJsonAsync(
+            "/api/v1/auth/sign-up",
+            new SignUpRequest { Email = email, Password = Password, ConfirmPassword = Password });
+        await client.PostAsJsonAsync(
+            "/api/v1/auth/verify-email",
+            new VerifyEmailRequest
+            {
+                Email = email,
+                Code = GetActiveCode(factory, email, AccountCodePurpose.EmailVerification),
+            });
+        // TwoFactorEnabled stays at the Identity default (false).
+
+        var response = await client.PostAsJsonAsync(
+            "/api/v1/auth/sign-in",
+            new SignInRequest { Email = email, Password = Password });
+        var envelope = (await response.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        return envelope.Data!.Tokens!;
+    }
+
     /// <summary>Signs a brand-new visitor in fully and returns the issued token pair.</summary>
     public static async Task<AuthTokens> SignInVisitorAsync(HttpClient client, SimfApiFactory factory)
     {

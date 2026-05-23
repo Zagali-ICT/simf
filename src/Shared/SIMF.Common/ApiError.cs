@@ -33,6 +33,14 @@ public sealed class ApiError
     public IReadOnlyList<ApiErrorDetail> Details { get; init; } = [];
 }
 
+/// <summary>
+/// Pairs an HTTP status with an <see cref="ApiResult{T}"/> body so a proxy
+/// can forward the upstream status verbatim — a 401 / 423 / 429 from the
+/// API stays a 401 / 423 / 429 to the browser, not a generic 400 (5-agent
+/// review SEV-1.3 / D-037 follow-up).
+/// </summary>
+public sealed record ApiCallResult<T>(int StatusCode, ApiResult<T> Body);
+
 /// <summary>One field-level error entry (SIMF-API-001 section 7.1).</summary>
 public sealed class ApiErrorDetail
 {

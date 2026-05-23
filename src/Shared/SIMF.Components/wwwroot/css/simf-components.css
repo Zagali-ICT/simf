@@ -202,6 +202,73 @@
   .simf-card { padding: var(--space-6); }
 }
 
+/* -- Page-card — the inside-the-shell variant: full available width --------- */
+.simf-page-card {
+  inline-size: 100%;
+  max-inline-size: 720px;
+  margin-block-end: var(--space-6);
+}
+
+/* -- Profile page layout ---------------------------------------------------- */
+.simf-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.simf-qr {
+  margin-block: var(--space-5);
+  display: flex;
+  justify-content: center;
+}
+.simf-qr svg { inline-size: 224px; block-size: 224px; }
+
+.simf-totp-secret {
+  display: inline-block;
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-surface-sunken);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-input);
+  font-family: var(--font-family-mono, monospace);
+  letter-spacing: 0.1em;
+  user-select: all;
+}
+
+.simf-role-list {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+}
+.simf-role-list li { padding-block: var(--space-1); }
+
+.simf-avatar {
+  margin-block: var(--space-4);
+}
+.simf-avatar__image {
+  inline-size: 128px;
+  block-size: 128px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: var(--border-width) solid var(--color-border);
+}
+.simf-avatar__placeholder {
+  inline-size: 128px;
+  block-size: 128px;
+  border-radius: 50%;
+  background-color: var(--color-surface-sunken);
+  border: var(--border-width) dashed var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+
+.simf-file {
+  display: block;
+  margin-block: var(--space-3);
+  font-family: var(--font-family-base);
+  color: var(--color-text);
+}
+
 /* -- Auth card stack — top controls, card, footer --------------------------- */
 .simf-auth__stack {
   display: flex;
@@ -428,6 +495,12 @@
   border-color: var(--color-accent-blue);
 }
 .simf-alert--info .simf-alert__icon { color: var(--color-accent-blue); }
+
+.simf-alert--success {
+  background-color: var(--color-success-surface);
+  border-color: var(--color-success);
+}
+.simf-alert--success .simf-alert__icon { color: var(--color-success); }
 
 /* -- Confirmation panel (terminal success, e.g. password updated) ----------- */
 .simf-confirm {
@@ -685,7 +758,10 @@
   padding-inline: var(--space-2);
   font-size: var(--font-size-body);
   color: var(--color-text);
+  text-decoration: none;
+  border-radius: var(--radius-input);
 }
+.simf-user:hover { background-color: var(--color-surface-sunken); }
 .simf-user__icon { color: var(--color-text-muted); }
 
 /* -- A plain content panel for placeholder pages -- */

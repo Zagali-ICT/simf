@@ -127,4 +127,41 @@
 
   <data name="Auth.Footer" xml:space="preserve"><value>لوحة تحكم SIMF · إصدار 1.0.0</value></data>
   <data name="Auth.LanguageSwitch" xml:space="preserve"><value>English</value></data>
+
+  <data name="Shell.MyProfile" xml:space="preserve"><value>ملفي الشخصي</value></data>
+
+  <data name="Profile.Title" xml:space="preserve"><value>ملفي الشخصي</value></data>
+  <data name="Profile.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+
+  <data name="Profile.TwoFactor.Title" xml:space="preserve"><value>المصادقة الثنائية</value></data>
+  <data name="Profile.TwoFactor.StatusOn" xml:space="preserve"><value>المصادقة الثنائية مفعّلة.</value></data>
+  <data name="Profile.TwoFactor.StatusOff" xml:space="preserve"><value>المصادقة الثنائية معطّلة.</value></data>
+  <data name="Profile.TwoFactor.Enable" xml:space="preserve"><value>تفعيل</value></data>
+  <data name="Profile.TwoFactor.Disable" xml:space="preserve"><value>إلغاء التفعيل</value></data>
+  <data name="Profile.TwoFactor.Reenrol" xml:space="preserve"><value>إعادة التسجيل</value></data>
+  <data name="Profile.TwoFactor.ScanInstruction" xml:space="preserve"><value>امسح رمز QR التالي بتطبيق Google Authenticator، ثم أدخل الرمز المكوّن من ستة أرقام أدناه لإكمال التسجيل.</value></data>
+  <data name="Profile.TwoFactor.SecretHint" xml:space="preserve"><value>أو اكتب هذا السر في التطبيق يدويًا:</value></data>
+  <data name="Profile.TwoFactor.CodeLabel" xml:space="preserve"><value>رمز التحقق</value></data>
+  <data name="Profile.TwoFactor.Confirm" xml:space="preserve"><value>تأكيد</value></data>
+  <data name="Profile.TwoFactor.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Profile.TwoFactor.ConfirmEnabled" xml:space="preserve"><value>تم تفعيل المصادقة الثنائية.</value></data>
+  <data name="Profile.TwoFactor.ConfirmDisabled" xml:space="preserve"><value>تم تعطيل المصادقة الثنائية.</value></data>
+
+  <data name="Profile.Password.Title" xml:space="preserve"><value>تغيير كلمة المرور</value></data>
+  <data name="Profile.Password.Current" xml:space="preserve"><value>كلمة المرور الحالية</value></data>
+  <data name="Profile.Password.New" xml:space="preserve"><value>كلمة المرور الجديدة</value></data>
+  <data name="Profile.Password.Confirm" xml:space="preserve"><value>تأكيد كلمة المرور الجديدة</value></data>
+  <data name="Profile.Password.Submit" xml:space="preserve"><value>تحديث كلمة المرور</value></data>
+  <data name="Profile.Password.Updated" xml:space="preserve"><value>تم تحديث كلمة المرور. ستُسجّل خروجك حفاظًا على الأمان.</value></data>
+
+  <data name="Profile.Roles.Title" xml:space="preserve"><value>صلاحياتي</value></data>
+  <data name="Profile.Roles.None" xml:space="preserve"><value>لا توجد صلاحيات معيّنة لهذا الحساب.</value></data>
+
+  <data name="Profile.Avatar.Title" xml:space="preserve"><value>صورتي الشخصية</value></data>
+  <data name="Profile.Avatar.None" xml:space="preserve"><value>لا توجد صورة شخصية.</value></data>
+  <data name="Profile.Avatar.Upload" xml:space="preserve"><value>رفع صورة جديدة</value></data>
+  <data name="Profile.Avatar.Remove" xml:space="preserve"><value>إزالة الصورة</value></data>
+  <data name="Profile.Avatar.Updated" xml:space="preserve"><value>تم تحديث الصورة الشخصية.</value></data>
+  <data name="Profile.Avatar.Removed" xml:space="preserve"><value>تمت إزالة الصورة الشخصية.</value></data>
+  <data name="Profile.Avatar.SizeHint" xml:space="preserve"><value>PNG أو JPEG أو WebP، حتى 2 ميغابايت.</value></data>
 </root>

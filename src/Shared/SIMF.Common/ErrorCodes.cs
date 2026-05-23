@@ -34,4 +34,14 @@ public static class ErrorCodes
     public const string AuthResetCodeInvalid = "AUTH_RESET_CODE_INVALID";
     public const string AuthResetCodeExpired = "AUTH_RESET_CODE_EXPIRED";
     public const string AuthPasswordChangeRequired = "AUTH_PASSWORD_CHANGE_REQUIRED";
+
+    // TOTP enrolment (myComment #11)
+    public const string TotpEnrolmentNotStarted = "TOTP_ENROLMENT_NOT_STARTED";
+    public const string TotpEnrolmentCodeInvalid = "TOTP_ENROLMENT_CODE_INVALID";
+    public const string TotpNotEnabled = "TOTP_NOT_ENABLED";
+
+    // Avatar (myComment #11)
+    public const string AvatarFileTooLarge = "AVATAR_FILE_TOO_LARGE";
+    public const string AvatarMimeUnsupported = "AVATAR_MIME_UNSUPPORTED";
+    public const string AvatarFileMissing = "AVATAR_FILE_MISSING";
 }
