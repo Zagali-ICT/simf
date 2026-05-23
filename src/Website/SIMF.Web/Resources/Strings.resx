@@ -71,4 +71,48 @@
 
   <data name="Auth.Footer" xml:space="preserve"><value>Saudi International Maritime Forum 2026</value></data>
   <data name="Auth.LanguageSwitch" xml:space="preserve"><value>العربية</value></data>
+
+  <data name="Visitor.Profile.Title" xml:space="preserve"><value>My visitor profile</value></data>
+  <data name="Visitor.Profile.SignOut" xml:space="preserve"><value>Sign out</value></data>
+  <data name="Visitor.Profile.Loading" xml:space="preserve"><value>Loading your profile…</value></data>
+  <data name="Visitor.Profile.LoadFailed" xml:space="preserve"><value>The profile could not be loaded. Please try again.</value></data>
+  <data name="Visitor.Profile.QrTitle" xml:space="preserve"><value>Your event QR</value></data>
+  <data name="Visitor.Profile.QrSupporting" xml:space="preserve"><value>Show this code at event entry. RSNF staff scan it to check you in.</value></data>
+  <data name="Visitor.Profile.QrPending" xml:space="preserve"><value>Your QR will appear here once your account is approved.</value></data>
+  <data name="Visitor.Profile.Type" xml:space="preserve"><value>I am attending as</value></data>
+  <data name="Visitor.Profile.Type.Visitor" xml:space="preserve"><value>Visitor</value></data>
+  <data name="Visitor.Profile.Type.Exhibitor" xml:space="preserve"><value>Exhibitor</value></data>
+  <data name="Visitor.Profile.Type.Press" xml:space="preserve"><value>Press</value></data>
+  <data name="Visitor.Profile.ArabicName" xml:space="preserve"><value>Name in Arabic</value></data>
+  <data name="Visitor.Profile.EnglishName" xml:space="preserve"><value>Name in English</value></data>
+  <data name="Visitor.Profile.EnglishNameHint" xml:space="preserve"><value>Exactly as printed on your passport.</value></data>
+  <data name="Visitor.Profile.Nationality" xml:space="preserve"><value>Nationality</value></data>
+  <data name="Visitor.Profile.NationalityPlaceholder" xml:space="preserve"><value>Pick a country</value></data>
+  <data name="Visitor.Profile.DateOfBirth" xml:space="preserve"><value>Date of birth</value></data>
+  <data name="Visitor.Profile.PlaceOfBirth" xml:space="preserve"><value>Place of birth</value></data>
+  <data name="Visitor.Profile.IsSaudi" xml:space="preserve"><value>Are you a Saudi national?</value></data>
+  <data name="Visitor.Profile.IsSaudi.Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="Visitor.Profile.IsSaudi.No" xml:space="preserve"><value>No</value></data>
+  <data name="Visitor.Profile.NationalId" xml:space="preserve"><value>Saudi national ID</value></data>
+  <data name="Visitor.Profile.NationalIdHint" xml:space="preserve"><value>10 digits, starting with 1.</value></data>
+  <data name="Visitor.Profile.Iqama" xml:space="preserve"><value>Iqama number</value></data>
+  <data name="Visitor.Profile.IqamaHint" xml:space="preserve"><value>10 digits — required if you are resident in KSA.</value></data>
+  <data name="Visitor.Profile.Passport" xml:space="preserve"><value>Passport number</value></data>
+  <data name="Visitor.Profile.PassportHint" xml:space="preserve"><value>Required if you are visiting from outside KSA.</value></data>
+  <data name="Visitor.Profile.SaudiMobile" xml:space="preserve"><value>Saudi mobile</value></data>
+  <data name="Visitor.Profile.IntlMobile" xml:space="preserve"><value>International mobile</value></data>
+  <data name="Visitor.Profile.Submit" xml:space="preserve"><value>Save my profile</value></data>
+  <data name="Visitor.Profile.Submitting" xml:space="preserve"><value>Saving</value></data>
+  <data name="Visitor.Profile.Saved" xml:space="preserve"><value>Your profile has been saved.</value></data>
+  <data name="Visitor.Profile.Fallback" xml:space="preserve"><value>The profile could not be saved. Please check the form and try again.</value></data>
+
+  <data name="Visitor.Profile.IdImageTitle" xml:space="preserve"><value>ID image</value></data>
+  <data name="Visitor.Profile.IdImageSupporting" xml:space="preserve"><value>Upload a clear photo of your national ID, Iqama or passport.</value></data>
+  <data name="Visitor.Profile.IdImageOnFile" xml:space="preserve"><value>An ID image is already on file. Upload again to replace it.</value></data>
+  <data name="Visitor.Profile.IdImagePicker" xml:space="preserve"><value>Choose a file</value></data>
+  <data name="Visitor.Profile.IdImageHint" xml:space="preserve"><value>PNG, JPEG or WebP — up to 5 MB.</value></data>
+  <data name="Visitor.Profile.IdImageUpload" xml:space="preserve"><value>Upload</value></data>
+  <data name="Visitor.Profile.IdImageUploading" xml:space="preserve"><value>Uploading</value></data>
+  <data name="Visitor.Profile.IdImageUpdated" xml:space="preserve"><value>Your ID image has been saved.</value></data>
+  <data name="Visitor.Profile.IdImageFallback" xml:space="preserve"><value>The ID image could not be uploaded.</value></data>
 </root>

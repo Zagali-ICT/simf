@@ -13,4 +13,9 @@
     <ProjectReference Include="..\..\Shared\SIMF.Contracts\SIMF.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Visitor QR-id render on the /account/visitor-profile page (D-046 c). -->
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
+
 </Project>

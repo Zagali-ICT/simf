@@ -1516,6 +1516,33 @@ body.simf-modal-open { overflow: hidden; }
 }
 .simf-toast .simf-alert { margin-block-end: 0; }
 
+/* -- Visitor profile page (D-046 c) — centred column on the Website. */
+.simf-account-page {
+  inline-size: 100%;
+  max-inline-size: 760px;
+  margin-inline: auto;
+  padding: var(--space-6) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  color: var(--color-text);
+}
+.simf-account-page__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.simf-account-page__title {
+  margin: 0;
+  font-size: var(--font-size-title);
+  line-height: var(--line-height-title);
+  font-weight: var(--font-weight-heading);
+  color: var(--color-text);
+}
+.simf-qr-card { text-align: center; }
+.simf-qr-card .simf-qr svg { inline-size: 224px; block-size: 224px; }
+
 /* -- Stat card (D-044 c) ---------------------------------------------------- */
 .simf-stat {
   display: flex;

@@ -5,6 +5,7 @@
 @inject IStringLocalizer<Strings> L
 @inject SimfAuthClient Api
 @inject SimfAuthSession Session
+@inject SignInTicketStore Tickets
 @inject NavigationManager Nav
 
 <PageTitle>@L["Auth.PageTitle.Verify"]</PageTitle>
@@ -124,7 +125,11 @@
             }
 
             Session.Complete(result.Data);
-            Nav.NavigateTo("/account");
+            // Hand off to the cookie-writing /auth/complete endpoint via a
+            // one-time ticket so the visitor lands on the profile page with
+            // a real session cookie (D-046 c).
+            var reference = Tickets.Stash(result.Data);
+            Nav.NavigateTo($"/auth/complete?reference={reference}", forceLoad: true);
         }
         finally
         {
