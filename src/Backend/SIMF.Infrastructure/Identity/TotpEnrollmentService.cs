@@ -214,10 +214,15 @@ internal sealed class TotpEnrollmentService(
 
     private static string BuildQrSvg(string otpauthUri)
     {
+        // ECCLevel.M (medium, ~15% error correction) gives a smaller matrix
+        // than Q for the same payload — fewer modules means a smaller SVG
+        // text. pixelsPerModule: 4 keeps the rendered size readable while
+        // halving the SVG byte count compared to 6. The page sizes the SVG
+        // up via CSS (.simf-qr svg { inline-size: 224px }).
         using var generator = new QRCodeGenerator();
-        using var data = generator.CreateQrCode(otpauthUri, QRCodeGenerator.ECCLevel.Q);
+        using var data = generator.CreateQrCode(otpauthUri, QRCodeGenerator.ECCLevel.M);
         return new SvgQRCode(data).GetGraphic(
-            pixelsPerModule: 6,
+            pixelsPerModule: 4,
             darkColorHex: "#0B2545",
             lightColorHex: "#FFFFFF",
             drawQuietZones: true);

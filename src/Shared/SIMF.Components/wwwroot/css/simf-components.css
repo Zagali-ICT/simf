@@ -763,6 +763,13 @@
 }
 .simf-user:hover { background-color: var(--color-surface-sunken); }
 .simf-user__icon { color: var(--color-text-muted); }
+.simf-user__avatar {
+  inline-size: 24px;
+  block-size: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: var(--border-width) solid var(--color-border);
+}
 
 /* -- A plain content panel for placeholder pages -- */
 .simf-panel {

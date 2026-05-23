@@ -35,6 +35,13 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     // expired. Tests advance this clock explicitly when they need to.
     public FakeTimeProvider Time { get; } = new(DateTimeOffset.UtcNow);
 
+    /// <summary>
+    /// Per-test-run temp directory the FilesystemAvatarStorage writes into,
+    /// cleaned up on <see cref="Dispose(bool)"/>.
+    /// </summary>
+    public string AvatarStorageDirectory { get; } =
+        Path.Combine(Path.GetTempPath(), $"simf-avatars-{Guid.NewGuid():N}");
+
     public SimfApiFactory()
     {
         Environment.SetEnvironmentVariable(
@@ -47,6 +54,7 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("RateLimit__PermitLimit", "100000");
         Environment.SetEnvironmentVariable(
             "Jwt__SigningKey", "ytlV1+ke14Pw900IRtH8zT4uIKBeaqjcj6aFfiLozS5jKgSs");
+        Environment.SetEnvironmentVariable("Storage__AvatarBase", AvatarStorageDirectory);
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -86,6 +94,18 @@ public class SimfApiFactory : WebApplicationFactory<Program>
             {
                 // Best-effort cleanup of the throwaway test database; a failure
                 // here must not fail the test run.
+            }
+
+            try
+            {
+                if (Directory.Exists(AvatarStorageDirectory))
+                {
+                    Directory.Delete(AvatarStorageDirectory, recursive: true);
+                }
+            }
+            catch (Exception)
+            {
+                // Best-effort temp-directory cleanup; ditto.
             }
         }
 

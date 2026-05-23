@@ -102,6 +102,29 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.DeleteAvatarAsync(token));
         });
+
+        // Streams the avatar bytes back to the browser — same-origin so the
+        // <img src> the page renders carries the auth cookie automatically.
+        // The CP fetches from the API with the cookie's access token and
+        // forwards the bytes verbatim (D-039).
+        group.MapGet("/avatar/{userId:guid}",
+            async (Guid userId, HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+
+            var (status, contentType, bytes) = await api.FetchAvatarAsync(userId, token);
+            if (status != 200 || contentType is null || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+
+            // Mirror the API's cache policy so the browser doesn't refetch on
+            // every page navigation. The URL itself carries a ?v=ticks
+            // cache-buster, so a fresh upload always replaces the cached one.
+            http.Response.Headers.CacheControl = "private, max-age=300";
+            return Results.File(bytes, contentType);
+        });
     }
 
     /// <summary>

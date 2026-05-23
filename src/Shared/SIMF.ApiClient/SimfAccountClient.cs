@@ -66,6 +66,42 @@ public sealed class SimfAccountClient(HttpClient http)
         SendAsync<AvatarResponse>(
             HttpMethod.Delete, "account/avatar", null, accessToken, cancellationToken);
 
+    /// <summary>
+    /// Streams the user's avatar bytes back. Returns (statusCode, contentType,
+    /// bytes); on a non-success status, <c>Bytes</c> is empty and
+    /// <c>ContentType</c> is null — the caller forwards the status verbatim.
+    /// </summary>
+    public async Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchAvatarAsync(
+        Guid userId, string accessToken, CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(
+            HttpMethod.Get, $"{BasePath}account/avatar/{userId:N}");
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return ((int)response.StatusCode, null, []);
+            }
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return (
+                (int)response.StatusCode,
+                response.Content.Headers.ContentType?.MediaType,
+                bytes);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException)
+        {
+            return ((int)HttpStatusCode.ServiceUnavailable, null, []);
+        }
+    }
+
     private async Task<ApiCallResult<T>> SendAsync<T>(
         HttpMethod method, string path, HttpContent? content,
         string accessToken, CancellationToken cancellationToken)

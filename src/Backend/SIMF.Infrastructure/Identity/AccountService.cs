@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/ProfileEndpointsTests.cs
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common;
@@ -13,9 +14,12 @@ namespace SIMF.Infrastructure.Identity;
 /// <summary>
 /// Implements account-management use cases for the signed-in user
 /// (myComment #11): reading the profile, updating and removing the avatar.
+/// Avatars are stored on the filesystem via <see cref="IAvatarStorage"/>
+/// (D-039); the user row carries only the relative path.
 /// </summary>
 internal sealed class AccountService(
     UserManager<SimfUser> userManager,
+    IAvatarStorage avatarStorage,
     IAuditLog auditLog,
     ILogger<AccountService> logger) : IAccountService
 {
@@ -39,7 +43,7 @@ internal sealed class AccountService(
             user.Id,
             user.Email ?? string.Empty,
             user.DisplayName,
-            BuildDataUri(user.Avatar, user.AvatarContentType),
+            BuildAvatarUrl(user),
             user.TwoFactorEnabled,
             [.. roles]);
     }
@@ -81,8 +85,9 @@ internal sealed class AccountService(
                 "يجب أن تكون الصورة بصيغة PNG أو JPEG أو WebP.");
         }
 
-        user.Avatar = content;
-        user.AvatarContentType = normalisedContentType;
+        var relativePath = await avatarStorage.SaveAsync(
+            user.Id, content, normalisedContentType, cancellationToken);
+        user.AvatarRelativePath = relativePath;
         user.UpdatedAt = DateTimeOffset.UtcNow;
         await userManager.UpdateAsync(user);
 
@@ -98,7 +103,7 @@ internal sealed class AccountService(
             cancellationToken);
 
         logger.LogInformation("Avatar updated for {Email}", user.Email);
-        return new AvatarResponse(BuildDataUri(user.Avatar, user.AvatarContentType));
+        return new AvatarResponse(BuildAvatarUrl(user));
     }
 
     public async Task<AvatarResponse> RemoveAvatarAsync(
@@ -106,10 +111,14 @@ internal sealed class AccountService(
         CancellationToken cancellationToken = default)
     {
         var user = await GetUserAsync(userId);
-        user.Avatar = null;
-        user.AvatarContentType = null;
-        user.UpdatedAt = DateTimeOffset.UtcNow;
-        await userManager.UpdateAsync(user);
+
+        if (!string.IsNullOrEmpty(user.AvatarRelativePath))
+        {
+            await avatarStorage.DeleteAsync(user.AvatarRelativePath, cancellationToken);
+            user.AvatarRelativePath = null;
+            user.UpdatedAt = DateTimeOffset.UtcNow;
+            await userManager.UpdateAsync(user);
+        }
 
         await auditLog.WriteAsync(
             new AuditEntry
@@ -149,8 +158,7 @@ internal sealed class AccountService(
 
     /// <summary>
     /// Sniffs the first few bytes and confirms they match the file-format
-    /// signature the caller claimed (5-agent review SEV-2.1). A polyglot or
-    /// mislabelled payload is rejected before it touches the user row.
+    /// signature the caller claimed (5-agent SEV-2.1 / IBS pattern).
     /// PNG: <c>89 50 4E 47 0D 0A 1A 0A</c>.
     /// JPEG: <c>FF D8 FF</c>.
     /// WebP: <c>52 49 46 46 ?? ?? ?? ?? 57 45 42 50</c> (RIFF…WEBP).
@@ -173,8 +181,13 @@ internal sealed class AccountService(
             _ => false,
         };
 
-    private static string? BuildDataUri(byte[]? content, string? contentType) =>
-        content is { Length: > 0 } && !string.IsNullOrWhiteSpace(contentType)
-            ? $"data:{contentType};base64,{Convert.ToBase64String(content)}"
-            : null;
+    /// <summary>
+    /// Builds the CP-relative URL the browser uses to fetch the avatar. The
+    /// <c>?v=ticks</c> from <c>UpdatedAt</c> is the cache-buster — every avatar
+    /// change moves the URL forward so the browser fetches the new bytes.
+    /// </summary>
+    private static string? BuildAvatarUrl(SimfUser user) =>
+        string.IsNullOrEmpty(user.AvatarRelativePath)
+            ? null
+            : $"/account/api/avatar/{user.Id:N}?v={user.UpdatedAt?.UtcTicks ?? 0}";
 }

@@ -9,7 +9,8 @@ namespace SIMF.Api.Tests;
 
 /// <summary>
 /// Integration tests for the account-profile and avatar endpoints
-/// (myComment item #11).
+/// (myComment item #11). Avatars are persisted on the filesystem via
+/// <c>FilesystemAvatarStorage</c> against the factory's per-run temp dir.
 /// </summary>
 public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
 {
@@ -48,7 +49,7 @@ public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
         Assert.True(body.Success);
         Assert.Equal(tokens.User.Email, body.Data!.Email);
         Assert.False(body.Data.TwoFactorEnabled);
-        Assert.Null(body.Data.AvatarDataUri);
+        Assert.Null(body.Data.AvatarUrl);
         Assert.Empty(body.Data.Roles);
     }
 
@@ -61,16 +62,50 @@ public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Upload_sets_the_avatar_and_GetProfile_returns_the_data_uri()
+    public async Task Upload_sets_the_avatar_GetProfile_returns_the_url_and_FetchAvatar_streams_the_bytes()
     {
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
 
         var upload = await UploadAvatarAsync(OnePixelPng, "image/png", "avatar.png", tokens.AccessToken);
         Assert.Equal(HttpStatusCode.OK, upload.StatusCode);
 
-        var profileResponse = await GetAuthAsync("/api/v1/account/profile", tokens.AccessToken);
-        var profile = (await profileResponse.Content.ReadFromJsonAsync<ApiResult<ProfileResponse>>())!;
-        Assert.StartsWith("data:image/png;base64,", profile.Data!.AvatarDataUri);
+        var profile = (await (await GetAuthAsync("/api/v1/account/profile", tokens.AccessToken))
+            .Content.ReadFromJsonAsync<ApiResult<ProfileResponse>>())!;
+        Assert.NotNull(profile.Data!.AvatarUrl);
+        Assert.Contains($"/account/api/avatar/{tokens.User.Id:N}", profile.Data.AvatarUrl);
+        Assert.Contains("?v=", profile.Data.AvatarUrl);
+
+        // The API fetch endpoint streams the actual bytes back with the right
+        // content type — that's what the CP proxy turns around and serves to
+        // the browser.
+        var fetched = await GetAuthAsync(
+            $"/api/v1/account/avatar/{tokens.User.Id:N}", tokens.AccessToken);
+        Assert.Equal(HttpStatusCode.OK, fetched.StatusCode);
+        Assert.Equal("image/png", fetched.Content.Headers.ContentType?.MediaType);
+        var fetchedBytes = await fetched.Content.ReadAsByteArrayAsync();
+        Assert.Equal(OnePixelPng, fetchedBytes);
+    }
+
+    [Fact]
+    public async Task FetchAvatar_for_a_different_user_returns_403()
+    {
+        var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
+
+        var response = await GetAuthAsync(
+            $"/api/v1/account/avatar/{Guid.NewGuid():N}", tokens.AccessToken);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task FetchAvatar_when_no_avatar_is_set_returns_404()
+    {
+        var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
+
+        var response = await GetAuthAsync(
+            $"/api/v1/account/avatar/{tokens.User.Id:N}", tokens.AccessToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -149,7 +184,7 @@ public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
         await UploadAvatarAsync(OnePixelPng, "image/png", "first.png", tokens.AccessToken);
 
         // A second upload with the same bytes should succeed — the new
-        // avatar replaces the old (no duplicate-record error).
+        // avatar replaces the old (no duplicate-record error, no orphaned file).
         var response = await UploadAvatarAsync(
             OnePixelPng, "image/png", "second.png", tokens.AccessToken);
 
@@ -157,11 +192,17 @@ public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
 
         var profile = (await (await GetAuthAsync("/api/v1/account/profile", tokens.AccessToken))
             .Content.ReadFromJsonAsync<ApiResult<ProfileResponse>>())!;
-        Assert.StartsWith("data:image/png;base64,", profile.Data!.AvatarDataUri);
+        Assert.NotNull(profile.Data!.AvatarUrl);
+
+        // The on-disk file should be exactly one — the replace path deletes
+        // any old file with the user's prefix before writing the new one.
+        var files = Directory.GetFiles(
+            _factory.AvatarStorageDirectory, $"{tokens.User.Id:N}.*");
+        Assert.Single(files);
     }
 
     [Fact]
-    public async Task Delete_clears_the_avatar()
+    public async Task Delete_clears_the_avatar_and_removes_the_file()
     {
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
         await UploadAvatarAsync(OnePixelPng, "image/png", "avatar.png", tokens.AccessToken);
@@ -172,9 +213,13 @@ public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var profileResponse = await GetAuthAsync("/api/v1/account/profile", tokens.AccessToken);
-        var profile = (await profileResponse.Content.ReadFromJsonAsync<ApiResult<ProfileResponse>>())!;
-        Assert.Null(profile.Data!.AvatarDataUri);
+        var profile = (await (await GetAuthAsync("/api/v1/account/profile", tokens.AccessToken))
+            .Content.ReadFromJsonAsync<ApiResult<ProfileResponse>>())!;
+        Assert.Null(profile.Data!.AvatarUrl);
+
+        var files = Directory.GetFiles(
+            _factory.AvatarStorageDirectory, $"{tokens.User.Id:N}.*");
+        Assert.Empty(files);
     }
 
     private async Task<HttpResponseMessage> GetAuthAsync(string url, string token)

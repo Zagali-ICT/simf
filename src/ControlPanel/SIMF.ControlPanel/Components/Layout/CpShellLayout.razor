@@ -2,8 +2,11 @@
    navigation and content region. Used by every signed-in Control Panel page. *@
 @inherits LayoutComponentBase
 @layout MainLayout
+@implements IDisposable
 @inject IStringLocalizer<Strings> L
 @inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject SimfUserChrome UserChrome
 
 <SimfAppShell ToggleNavLabel='@L["Shell.ToggleNav"]' NavLabel='@L["Shell.AppName"]'>
     <Brand>
@@ -14,7 +17,14 @@
         <SimfThemeToggle LightLabel='@L["Shell.ThemeLight"]' DarkLabel='@L["Shell.ThemeDark"]' />
         <AuthorizeView>
             <a class="simf-user" href="/account/profile" title="@L["Shell.MyProfile"]">
-                <SimfIcon Name="user" Class="simf-user__icon" Size="18" />
+                @if (!string.IsNullOrEmpty(UserChrome.AvatarUrl))
+                {
+                    <img class="simf-user__avatar" src="@UserChrome.AvatarUrl" alt="" />
+                }
+                else
+                {
+                    <SimfIcon Name="user" Class="simf-user__icon" Size="18" />
+                }
                 <span>@context.User.Identity?.Name</span>
             </a>
         </AuthorizeView>
@@ -49,4 +59,35 @@
             return $"/culture?culture={next}&redirectUri={Uri.EscapeDataString(path)}";
         }
     }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Re-render whenever the profile page (or anyone else) updates the
+        // user chrome so the top-bar avatar tracks the profile in real time.
+        UserChrome.Changed += OnChromeChanged;
+
+        // Lazy-load the avatar on the first time a signed-in circuit boots —
+        // the profile page would do it on /account/profile, but a user who
+        // never opens that page should still see their avatar in the top bar.
+        if (UserChrome.AvatarUrl is null)
+        {
+            try
+            {
+                var envelope = await JS.InvokeAsync<ApiResult<ProfileResponse>>(
+                    "simfAccount.getJson", "/account/api/profile");
+                if (envelope is { Success: true, Data: not null })
+                {
+                    UserChrome.SetAvatar(envelope.Data.AvatarUrl);
+                }
+            }
+            catch (JSException)
+            {
+                // Best-effort — a failed prefetch leaves the placeholder icon.
+            }
+        }
+    }
+
+    private void OnChromeChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => UserChrome.Changed -= OnChromeChanged;
 }

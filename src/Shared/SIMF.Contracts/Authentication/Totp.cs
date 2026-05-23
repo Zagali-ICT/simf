@@ -32,14 +32,20 @@ public sealed class TotpDisableRequest
 public sealed record TotpDisableResponse(bool TwoFactorEnabled);
 
 /// <summary>The body of <c>GET /api/v1/account/profile</c>.</summary>
+/// <param name="AvatarUrl">
+/// The Control-Panel-relative URL the browser should use to fetch the avatar
+/// (e.g. <c>/account/api/avatar/{userId}?v=ticks</c>), or <c>null</c> when no
+/// avatar is set. The <c>?v=…</c> cache-buster is the user's
+/// <c>UpdatedAt</c> ticks so an avatar replacement defeats browser caches.
+/// </param>
 public sealed record ProfileResponse(
     Guid Id,
     string Email,
     string DisplayName,
-    string? AvatarDataUri,
+    string? AvatarUrl,
     bool TwoFactorEnabled,
     IReadOnlyList<string> Roles);
 
 /// <summary>The body of <c>POST /api/v1/account/avatar</c> and
 /// <c>DELETE /api/v1/account/avatar</c>.</summary>
-public sealed record AvatarResponse(string? AvatarDataUri);
+public sealed record AvatarResponse(string? AvatarUrl);

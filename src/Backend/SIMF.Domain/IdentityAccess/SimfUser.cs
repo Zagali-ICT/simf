@@ -35,13 +35,12 @@ public class SimfUser : IdentityUser<Guid>
     public long? LastUsedTotpTimestep { get; set; }
 
     /// <summary>
-    /// The user's avatar image bytes (myComment #11). Held in the row rather
-    /// than the filesystem so the avatar is atomic with the account and there
-    /// is no separate path/permission to manage. Null when not set.
+    /// The relative path of the user's avatar file on disk, under the
+    /// configured <c>Storage:AvatarBase</c>. For example <c>"abc123.png"</c>.
+    /// Null when no avatar is set. Decision D-039 (2026-05-23) moved storage
+    /// from <c>varbinary(max)</c> in the row to the filesystem, mirroring the
+    /// IBS V10 car-image-upload convention.
     /// </summary>
-    public byte[]? Avatar { get; set; }
-
-    /// <summary>The avatar's MIME content type — e.g. <c>image/png</c>.</summary>
-    public string? AvatarContentType { get; set; }
+    public string? AvatarRelativePath { get; set; }
 }
 

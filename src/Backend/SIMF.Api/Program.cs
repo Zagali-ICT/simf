@@ -108,6 +108,14 @@ if (Encoding.UTF8.GetByteCount(jwtOptions.SigningKey) < 32)
         "Jwt:SigningKey must be configured and at least 32 bytes long.");
 }
 
+// Avatar storage — the FilesystemAvatarStorage constructor enforces that
+// Storage:AvatarBase is configured. Fail fast at boot if it isn't.
+if (string.IsNullOrWhiteSpace(builder.Configuration["Storage:AvatarBase"]))
+{
+    throw new InvalidOperationException(
+        "Storage:AvatarBase must be configured (filesystem path for user avatars).");
+}
+
 // Bearer authentication — validates the access token on a protected endpoint
 // (see JwtBearerSetup for the hardened parameters and the security-stamp check).
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

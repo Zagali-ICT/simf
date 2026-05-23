@@ -92,6 +92,7 @@ public static class DependencyInjection
         services.AddScoped<IPasswordService, PasswordService>();
         services.AddScoped<ITotpEnrollmentService, TotpEnrollmentService>();
         services.AddScoped<IAccountService, AccountService>();
+        services.AddSingleton<IAvatarStorage, FilesystemAvatarStorage>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<ITotpVerifier, TotpVerifier>();
         services.AddScoped<IdentitySeeder>();

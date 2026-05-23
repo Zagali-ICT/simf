@@ -6,6 +6,7 @@
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 @inject NavigationManager Nav
+@inject SimfUserChrome UserChrome
 
 <PageTitle>@L["Profile.Title"]</PageTitle>
 
@@ -147,9 +148,9 @@ else
                 <SimfAlert Variant="success">@_avatarOk</SimfAlert>
             }
             <div class="simf-avatar">
-                @if (!string.IsNullOrEmpty(_profile.AvatarDataUri))
+                @if (!string.IsNullOrEmpty(_profile.AvatarUrl))
                 {
-                    <img class="simf-avatar__image" src="@_profile.AvatarDataUri" alt="" />
+                    <img class="simf-avatar__image" src="@_profile.AvatarUrl" alt="" />
                 }
                 else
                 {
@@ -169,7 +170,7 @@ else
             <div class="simf-form__actions">
                 <SimfButton Type="button" Loading="_busy" LoadingLabel="@L["Profile.Avatar.Upload"]"
                             OnClick="UploadAvatarAsync">@L["Profile.Avatar.Upload"]</SimfButton>
-                @if (!string.IsNullOrEmpty(_profile.AvatarDataUri))
+                @if (!string.IsNullOrEmpty(_profile.AvatarUrl))
                 {
                     <SimfButton Type="button" Variant="secondary" OnClick="RemoveAvatarAsync"
                                 Disabled="_busy">@L["Profile.Avatar.Remove"]</SimfButton>
@@ -205,6 +206,9 @@ else
         if (envelope is { Success: true, Data: not null })
         {
             _profile = envelope.Data;
+            // Push the avatar into the shared chrome so the top-bar avatar
+            // re-renders immediately when the user uploads or removes one.
+            UserChrome.SetAvatar(_profile.AvatarUrl);
         }
     }
 

@@ -6,9 +6,16 @@ using SIMF.ControlPanel.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Razor components with interactive Server rendering.
+// Razor components with interactive Server rendering. The hub's
+// MaximumReceiveMessageSize default (32 KB) is too small for the QR SVG
+// render diff on the /account/profile page — raise to 256 KB, which
+// comfortably fits the QR and any future large server-rendered payload.
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents()
+    .AddHubOptions(options =>
+    {
+        options.MaximumReceiveMessageSize = 256 * 1024;
+    });
 
 // Localisation — English and Arabic; resources live under Resources/.
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
@@ -50,6 +57,10 @@ builder.Services.AddSingleton<SignInTicketStore>();
 
 // The signed-in second-factor flow state is held per Blazor circuit.
 builder.Services.AddScoped<SimfAuthSession>();
+
+// The top-bar avatar / user chrome — shared per circuit between the shell
+// layout (reads to render) and the profile page (writes on load + change).
+builder.Services.AddScoped<SimfUserChrome>();
 
 // HttpContext access — the profile page captures the access token from the
 // cookie auth result during the initial (prerendered) render, then holds it
