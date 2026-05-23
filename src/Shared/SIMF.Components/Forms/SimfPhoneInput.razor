@@ -1,0 +1,129 @@
+@* SimfPhoneInput — a phone-number input with a country-code prefix
+   (decision D-044 c). The Saudi default is +966; the user can pick another
+   country code from a small set, then enter the local number. The full
+   string posted is +<dial>-<local>. Used on the visitor profile
+   (myComment #18 — Saudi mobile / international mobile). *@
+@namespace SIMF.Components.Forms
+
+<div class="simf-field @(HasError ? "simf-field--error" : null) @(Disabled ? "simf-field--disabled" : null)">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="simf-field__label" for="@_inputId">@Label</label>
+    }
+    <div class="simf-field__control simf-field__control--phone">
+        <select class="simf-phone__cc" disabled="@Disabled"
+                aria-label="@CountryCodeLabel"
+                value="@_dial"
+                @onchange="OnDialChangedAsync">
+            @foreach (var country in Countries)
+            {
+                <option value="@country.Dial">@country.Flag @country.Dial</option>
+            }
+        </select>
+        <input id="@_inputId" class="simf-field__input simf-phone__number"
+               type="tel"
+               inputmode="tel"
+               placeholder="@Placeholder"
+               disabled="@Disabled"
+               value="@_local"
+               @oninput="OnLocalChangedAsync" />
+    </div>
+    @if (!string.IsNullOrEmpty(Helper) && !HasError)
+    {
+        <p class="simf-field__helper">@Helper</p>
+    }
+    @if (HasError && !string.IsNullOrEmpty(Error))
+    {
+        <p class="simf-field__error" role="alert">
+            <SimfIcon Name="alert" Size="14" Class="simf-field__error-icon" />
+            @Error
+        </p>
+    }
+</div>
+
+@code {
+    private readonly string _inputId = "simf-phone-" + Guid.NewGuid().ToString("N");
+    private string _dial = "+966";
+    private string _local = string.Empty;
+
+    /// <summary>The field label.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Helper text shown under the field.</summary>
+    [Parameter] public string? Helper { get; set; }
+
+    /// <summary>Error message; turns the field red when non-empty.</summary>
+    [Parameter] public string? Error { get; set; }
+
+    /// <summary>The placeholder for the local-number input.</summary>
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Accessible label for the country-code select.</summary>
+    [Parameter] public string CountryCodeLabel { get; set; } = "Country code";
+
+    /// <summary>The current value as a single string: <c>+<dial>-<local></c>.</summary>
+    [Parameter] public string Value { get; set; } = string.Empty;
+
+    /// <summary>Raised whenever the user types or changes the country code.</summary>
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    /// <summary>Disables the input.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>The supported country codes. Saudi Arabia first; common GCC + UK / US.</summary>
+    private static readonly Country[] Countries =
+    {
+        new("+966", "🇸🇦"),
+        new("+971", "🇦🇪"),
+        new("+973", "🇧🇭"),
+        new("+974", "🇶🇦"),
+        new("+965", "🇰🇼"),
+        new("+968", "🇴🇲"),
+        new("+20", "🇪🇬"),
+        new("+44", "🇬🇧"),
+        new("+1", "🇺🇸"),
+        new("+33", "🇫🇷"),
+        new("+49", "🇩🇪"),
+        new("+90", "🇹🇷"),
+    };
+
+    private bool HasError => !string.IsNullOrEmpty(Error);
+
+    protected override void OnParametersSet()
+    {
+        // Split a "+dial-local" round-trip back into the two fields. Tolerant
+        // of bare "+dial local" (space-separated) too.
+        if (string.IsNullOrWhiteSpace(Value)) { _dial = "+966"; _local = string.Empty; return; }
+        var sep = Value.IndexOf('-');
+        if (sep < 0) sep = Value.IndexOf(' ');
+        if (sep > 0)
+        {
+            _dial = Value[..sep];
+            _local = Value[(sep + 1)..];
+        }
+        else
+        {
+            _dial = "+966";
+            _local = Value;
+        }
+    }
+
+    private async Task OnDialChangedAsync(ChangeEventArgs e)
+    {
+        _dial = e.Value?.ToString() ?? "+966";
+        await EmitAsync();
+    }
+
+    private async Task OnLocalChangedAsync(ChangeEventArgs e)
+    {
+        _local = e.Value?.ToString() ?? string.Empty;
+        await EmitAsync();
+    }
+
+    private Task EmitAsync() =>
+        ValueChanged.InvokeAsync(string.IsNullOrWhiteSpace(_local)
+            ? string.Empty
+            : $"{_dial}-{_local.Trim()}");
+
+    private sealed record Country(string Dial, string Flag);
+}

@@ -1363,6 +1363,158 @@ body.simf-modal-open { overflow: hidden; }
   .simf-grid__pager-controls { justify-content: space-between; }
 }
 
+/* ===========================================================================
+   The Simf* component library — Commit C primitives (D-044 c).
+   Visitor-profile form parts + tooltip + stat card.
+   ========================================================================= */
+
+/* -- Radio group (D-044 c) -------------------------------------------------- */
+.simf-radiogroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.simf-radiogroup--inline {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.simf-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-body);
+  color: var(--color-text);
+  cursor: pointer;
+}
+.simf-radio input[type="radio"] {
+  inline-size: 1rem;
+  block-size: 1rem;
+  accent-color: var(--color-accent-blue);
+}
+.simf-radio__label { flex: 1 1 auto; }
+
+/* -- Date / phone / file — field shell variants (D-044 c) ------------------ */
+.simf-field__date {
+  inline-size: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: var(--font-size-body);
+  color: var(--color-text);
+}
+
+.simf-field__control--phone { padding-inline: var(--space-2); gap: var(--space-2); }
+
+.simf-phone__cc {
+  flex: 0 0 auto;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: var(--font-size-body);
+  color: var(--color-text);
+  padding-inline: var(--space-2);
+  cursor: pointer;
+  border-inline-end: var(--border-width) solid var(--color-border);
+}
+
+.simf-phone__number {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: var(--font-size-body);
+  color: var(--color-text);
+}
+
+.simf-field__control--file { padding-inline: 0; }
+.simf-fileupload__input {
+  inline-size: 100%;
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+/* -- Tooltip (D-044 c) ------------------------------------------------------ */
+.simf-tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.simf-tooltip__bubble {
+  position: absolute;
+  z-index: 50;
+  inline-size: max-content;
+  max-inline-size: 240px;
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-text);
+  color: var(--color-surface);
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-caption);
+  border-radius: var(--radius-field);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  white-space: normal;
+  text-align: start;
+}
+.simf-tooltip--top .simf-tooltip__bubble {
+  inset-block-end: calc(100% + var(--space-2));
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+}
+.simf-tooltip--bottom .simf-tooltip__bubble {
+  inset-block-start: calc(100% + var(--space-2));
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+}
+.simf-tooltip:hover .simf-tooltip__bubble,
+.simf-tooltip:focus-within .simf-tooltip__bubble { opacity: 1; }
+
+/* -- Stat card (D-044 c) ---------------------------------------------------- */
+.simf-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-5);
+  background-color: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  min-inline-size: 200px;
+}
+.simf-stat__title {
+  margin: 0;
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-heading);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.simf-stat__value {
+  margin: 0;
+  font-size: 1.75rem;       /* 28px — bigger than --font-size-title, the headline number */
+  line-height: 1;
+  font-weight: var(--font-weight-heading);
+  color: var(--color-text);
+}
+.simf-stat__delta {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-caption);
+}
+.simf-stat__delta--positive { color: var(--color-success); }
+.simf-stat__delta--negative { color: var(--color-error); }
+.simf-stat__delta--neutral { color: var(--color-text-muted); }
+
 /* -- Reduced motion --------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   .simf-field__control,
@@ -1375,6 +1527,7 @@ body.simf-modal-open { overflow: hidden; }
   .simf-nav-item__link,
   .simf-grid__row,
   .simf-grid__filter-input,
-  .simf-modal__close { transition: none; }
+  .simf-modal__close,
+  .simf-tooltip__bubble { transition: none; }
   /* The button spinner and grid spinner are status indicators, kept. */
 }

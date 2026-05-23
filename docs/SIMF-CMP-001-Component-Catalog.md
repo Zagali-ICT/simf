@@ -42,7 +42,7 @@ Before adding any new UI, check it here first.
 | `SimfAppShell` | ✅ | The CP shell — top bar + side nav + content; toggleable nav; direction-aware. |
 | `SimfNavGroup` / `SimfNavItem` | ✅ | Side-nav grouping + entries with active-route styling. |
 | `SimfPageHeader` | ✅ | Page-level title + `Actions` slot inside the shell content area. |
-| `SimfStatCard` | ⏭ | Dashboard summary tile (title + value + delta). Queued for Commit C. |
+| `SimfStatCard` | ✅ | Dashboard summary tile (title + value + optional positive / negative / neutral delta, D-044 c). |
 
 ## Forms — fields
 
@@ -54,10 +54,10 @@ Before adding any new UI, check it here first.
 | `SimfCheckbox` | ✅ | Labelled checkbox primitive (D-043). |
 | `SimfSelect<TValue>` | ✅ | Typed labelled select; shares the field shell with `SimfTextField`. |
 | `SimfTextarea` | ✅ | Multi-line text field; shares the field shell. |
-| `SimfRadioGroup` | ⏭ | Mutually-exclusive choice — for Saudi / non-Saudi visitor profile (Commit C). |
-| `SimfDatePicker` | ⏭ | Native `<input type="date">` with the SIMF field shell (Commit C). |
-| `SimfPhoneInput` | ⏭ | Saudi / international phone, country-code prefix toggle (Commit C). |
-| `SimfFileUpload` | ⏭ | Magic-byte-validated file upload (ID image attachment, Commit C). |
+| `SimfRadioGroup<TValue>` | ✅ | Typed mutually-exclusive choice with inline / stacked layout (D-044 c). |
+| `SimfDatePicker` | ✅ | Native `<input type="date">` with the SIMF field shell + min/max (D-044 c). |
+| `SimfPhoneInput` | ✅ | Country-code dropdown (Saudi default, GCC + common international) + local number (D-044 c). |
+| `SimfFileUpload` | ✅ | File picker on the SIMF field shell; the server validates by magic bytes (D-044 c). |
 | `SimfNumberField` | ⏭ | Numeric input with stepper. Queued — needed by event capacity / pricing fields. |
 | `SimfChip` | ⏭ | Multi-select tag picker — interests / topics. Queued. |
 
@@ -78,7 +78,7 @@ Before adding any new UI, check it here first.
 | `SimfSpinner` | ✅ | Standalone loading indicator (`sm` / `lg`). |
 | `SimfBadge` | ✅ | Small count or dot indicator (`neutral` / `info` / `success` / `warning` / `danger`). |
 | `SimfEmptyState` | ✅ | Centred empty-state panel with title, description and action slot. |
-| `SimfTooltip` | ⏭ | CSS-only hover hint (Commit C). |
+| `SimfTooltip` | ✅ | CSS-only hover/focus-within hint, top / bottom placement (D-044 c). |
 
 ## Data display
 

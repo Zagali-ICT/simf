@@ -1,0 +1,63 @@
+@* SimfFileUpload — a labelled file picker on the SIMF field shell
+   (decision D-044 c). The client picks the file; the server validates by
+   magic bytes (same pattern as the avatar — decision D-039). For
+   ID-card images on the visitor profile (myComment #18). *@
+@namespace SIMF.Components.Forms
+
+<div class="simf-field @(HasError ? "simf-field--error" : null) @(Disabled ? "simf-field--disabled" : null)">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="simf-field__label" for="@_id">@Label</label>
+    }
+    <div class="simf-field__control simf-field__control--file">
+        <input id="@_id" class="simf-fileupload__input"
+               type="file"
+               accept="@Accept"
+               disabled="@Disabled"
+               @onchange="OnNativeChangedAsync" />
+    </div>
+    @if (!string.IsNullOrEmpty(Helper) && !HasError)
+    {
+        <p class="simf-field__helper">@Helper</p>
+    }
+    @if (HasError && !string.IsNullOrEmpty(Error))
+    {
+        <p class="simf-field__error" role="alert">
+            <SimfIcon Name="alert" Size="14" Class="simf-field__error-icon" />
+            @Error
+        </p>
+    }
+</div>
+
+@code {
+    private readonly string _id = "simf-file-" + Guid.NewGuid().ToString("N");
+
+    /// <summary>The field label.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Helper text shown under the field.</summary>
+    [Parameter] public string? Helper { get; set; }
+
+    /// <summary>Error message; turns the field red when non-empty.</summary>
+    [Parameter] public string? Error { get; set; }
+
+    /// <summary>The MIME / extension filter passed to <c>accept</c>. E.g. <c>image/*,.pdf</c>.</summary>
+    [Parameter] public string? Accept { get; set; }
+
+    /// <summary>The DOM element id — useful so the page can read the chosen
+    /// file from JS interop and POST it to a CP proxy (mirrors the avatar
+    /// upload pattern from D-039).</summary>
+    public string ElementId => _id;
+
+    /// <summary>Raised when the user picks a file — the parent reads
+    /// <see cref="ElementId"/> via JS interop to upload the bytes.</summary>
+    [Parameter] public EventCallback OnFilePicked { get; set; }
+
+    /// <summary>Disables the picker.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    private bool HasError => !string.IsNullOrEmpty(Error);
+
+    private Task OnNativeChangedAsync(ChangeEventArgs _) =>
+        OnFilePicked.InvokeAsync();
+}

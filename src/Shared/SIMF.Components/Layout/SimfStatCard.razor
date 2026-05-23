@@ -1,0 +1,27 @@
+@* SimfStatCard — a dashboard summary tile (decision D-044 c). A surface
+   with a small title, a large value, and an optional delta. Used on
+   /dashboard pages and module home screens. *@
+@namespace SIMF.Components.Layout
+
+<div class="simf-stat">
+    <p class="simf-stat__title">@Title</p>
+    <p class="simf-stat__value">@Value</p>
+    @if (!string.IsNullOrEmpty(Delta))
+    {
+        <p class="simf-stat__delta simf-stat__delta--@DeltaTone">@Delta</p>
+    }
+</div>
+
+@code {
+    /// <summary>The tile title (small caption text above the value).</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    /// <summary>The large value text — e.g. "237" or "$12.3k".</summary>
+    [Parameter, EditorRequired] public string Value { get; set; } = string.Empty;
+
+    /// <summary>Optional delta line — e.g. "+12 this week".</summary>
+    [Parameter] public string? Delta { get; set; }
+
+    /// <summary>Delta tone — <c>positive</c> (default), <c>negative</c>, or <c>neutral</c>.</summary>
+    [Parameter] public string DeltaTone { get; set; } = "positive";
+}
