@@ -42,6 +42,10 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     public string AvatarStorageDirectory { get; } =
         Path.Combine(Path.GetTempPath(), $"simf-avatars-{Guid.NewGuid():N}");
 
+    /// <summary>Temp dir for encrypted visitor ID-image files (D-046 b).</summary>
+    public string VisitorIdStorageDirectory { get; } =
+        Path.Combine(Path.GetTempPath(), $"simf-visitor-ids-{Guid.NewGuid():N}");
+
     public SimfApiFactory()
     {
         Environment.SetEnvironmentVariable(
@@ -55,6 +59,12 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable(
             "Jwt__SigningKey", "ytlV1+ke14Pw900IRtH8zT4uIKBeaqjcj6aFfiLozS5jKgSs");
         Environment.SetEnvironmentVariable("Storage__AvatarBase", AvatarStorageDirectory);
+        // A fixed base64-encoded 32-byte AES key for the test environment so
+        // the encrypted ID-image round-trip is deterministic across runs.
+        Environment.SetEnvironmentVariable("Storage__VisitorIdBase", VisitorIdStorageDirectory);
+        Environment.SetEnvironmentVariable(
+            "Storage__VisitorIdEncryptionKey",
+            "VnY3R0V2YnFwT0ZQUE1XdjJxQjJlbzVwUFp4MnNYbWY=");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

@@ -98,8 +98,10 @@ public static class DependencyInjection
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IAdminAccountService, AdminAccountService>();
         services.AddScoped<IQrIdMinter, QrIdMinter>();
+        services.AddScoped<IVisitorProfileService, VisitorProfileService>();
         services.AddSingleton<IUserExcelService, ClosedXmlUserExcelService>();
         services.AddSingleton<IAvatarStorage, FilesystemAvatarStorage>();
+        services.AddSingleton<IVisitorIdStorage, EncryptedVisitorIdStorage>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<ITotpVerifier, TotpVerifier>();
         services.AddScoped<IdentitySeeder>();

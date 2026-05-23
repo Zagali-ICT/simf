@@ -56,4 +56,11 @@ public static class ErrorCodes
     // Admin bulk actions (D-044 b)
     public const string AdminUserNotFound = "ADMIN_USER_NOT_FOUND";
     public const string AdminImportEmpty = "ADMIN_IMPORT_EMPTY";
+
+    // Visitor profile (D-046 b)
+    public const string VisitorIdImageMissing = "VISITOR_ID_IMAGE_MISSING";
+    public const string VisitorIdImageTooLarge = "VISITOR_ID_IMAGE_TOO_LARGE";
+    public const string VisitorIdImageMimeUnsupported = "VISITOR_ID_IMAGE_MIME_UNSUPPORTED";
+    public const string VisitorIdImageNotFound = "VISITOR_ID_IMAGE_NOT_FOUND";
+    public const string VisitorNationalityUnknown = "VISITOR_NATIONALITY_UNKNOWN";
 }

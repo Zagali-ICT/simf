@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.VisitorProfile;
 
 namespace SIMF.ApiClient;
 
@@ -88,6 +89,75 @@ public sealed class SimfAccountClient(HttpClient http)
             HttpMethod.Get, $"{BasePath}account/avatar/{userId:N}");
         message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return ((int)response.StatusCode, null, []);
+            }
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return (
+                (int)response.StatusCode,
+                response.Content.Headers.ContentType?.MediaType,
+                bytes);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException)
+        {
+            return ((int)HttpStatusCode.ServiceUnavailable, null, []);
+        }
+    }
+
+    /// <summary>Returns the signed-in visitor's profile (D-046 b, myComment #18).</summary>
+    public Task<ApiCallResult<VisitorProfileResponse>> GetVisitorProfileAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<VisitorProfileResponse>(
+            HttpMethod.Get, "account/visitor-profile", null,
+            accessToken, cancellationToken);
+
+    /// <summary>Creates / updates the visitor's profile (D-046 b).</summary>
+    public Task<ApiCallResult<VisitorProfileResponse>> UpsertVisitorProfileAsync(
+        UpsertVisitorProfileRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<VisitorProfileResponse>(
+            HttpMethod.Post, "account/visitor-profile",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Returns the supported nationality picker list (D-046 b).</summary>
+    public Task<ApiCallResult<CountryListResponse>> GetVisitorCountriesAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<CountryListResponse>(
+            HttpMethod.Get, "account/visitor-profile/countries", null,
+            accessToken, cancellationToken);
+
+    /// <summary>Uploads the visitor's ID-image (D-046 b). The bytes are
+    /// magic-byte gated server-side and encrypted-at-rest with AES-GCM.</summary>
+    public Task<ApiCallResult<bool>> UploadVisitorIdImageAsync(
+        byte[] content, string contentType, string fileName, string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var multipart = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(content);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        multipart.Add(fileContent, "File", fileName);
+        return SendAsync<bool>(
+            HttpMethod.Post, "account/visitor-profile/id-image",
+            multipart, accessToken, cancellationToken);
+    }
+
+    /// <summary>Streams the visitor's decrypted ID-image bytes (D-046 b).</summary>
+    public async Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchVisitorIdImageAsync(
+        string accessToken, CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(
+            HttpMethod.Get, $"{BasePath}account/visitor-profile/id-image");
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         try
         {
             using var response = await http.SendAsync(message, cancellationToken);
