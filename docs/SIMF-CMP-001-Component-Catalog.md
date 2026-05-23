@@ -2,7 +2,7 @@
 
 **Doc owner:** SIMF Frontend
 **Status:** Living document — maintained per increment alongside `docs/decisions/DECISIONS_LOG.md`.
-**Last updated:** 2026-05-23 (Commit A of decision D-044 series).
+**Last updated:** 2026-05-23 (Stage 7 D-044 a/b/c + D-045 H1/H2/H3 hardening).
 
 The `Simf*` library is the dependency-light Blazor component set the Control
 Panel and the Website both build against. No MudBlazor, no Radzen, no
@@ -118,6 +118,17 @@ Before adding any new UI, check it here first.
 | `SimfNotificationCenter` | ⏭ | Needs the backend notification table + transport (myComment #33). |
 
 ---
+
+## Honest myComment status
+
+The original D-044 commit messages claimed "closes myComment #16, #17, #18".
+The reality-check reviewer corrected this; the honest position after D-045 H1/H2:
+
+| myComment item | Status | Notes |
+|----------------|--------|-------|
+| #16 — full data-grid spec | ✅ Closed in D-045 H1 | Copy + Paste are now wired in `UsersList` with toast feedback. Paste-to-add is deliberately deferred until the User Management module — the surface tells the admin so explicitly. |
+| #17 — Grey button + Grey theme mode | 🟡 Partial | `SimfButton.neutral` variant ships. The full Grey theme (`[data-theme="grey"]` in `theme.tokens.css`) stays deferred to its own theming increment. |
+| #18 — Visitor profile fields | 🟡 Primitives only | Six new components (`SimfRadioGroup`, `SimfDatePicker`, `SimfPhoneInput`, `SimfFileUpload`, `SimfTooltip`, `SimfStatCard`) ship. **The visitor-profile page that assembles them does not yet exist** — it is the right next deliverable after the hardening lands. |
 
 ## Where do they live?
 

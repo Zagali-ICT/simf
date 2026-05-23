@@ -677,4 +677,88 @@ cookie-authenticated surfaces** (the website and Control Panel) only.
 
 ---
 
+## Amendment B — Server-paged grids (2026-05-23)
+
+Decision **D-044(a)** / **D-045** introduces a second pagination shape for
+**parameter-rich admin and operational lists** that need structured
+per-column filters and a search-text payload of unbounded length. The §9
+shape remains the rule for **read-mostly public lists** (agenda, sessions,
+news, booths) where a GET-with-querystring is browser-, CDN- and
+reverse-proxy-cacheable.
+
+### B.1 When to use which shape
+
+| List shape | When | Method |
+|------------|------|--------|
+| **§9 GET + querystring** | Read-mostly, anonymous or cookie-cached, low-cardinality filter set. Examples: `/programme/sessions`, `/news`, `/exhibitors`. | `GET /…?page=&pageSize=&sort=&search=` |
+| **B GridQuery POST + body** | Admin / operational lists with structured per-column filters, multi-column sort, large search strings. Examples: `/admin/users/list`, future `/admin/audit-log/list`. | `POST /…/list` with the JSON body below |
+
+### B.2 The GridQuery body
+
+```json
+{
+  "skip": 0,
+  "top": 20,
+  "search": "ahmed",
+  "sort": "email",
+  "sortDescending": false,
+  "filters": { "state": "Approved", "twoFactor": "true" }
+}
+```
+
+- `top` is clamped at the endpoint (today: 200 default cap; the export
+  endpoint takes a 5 000 row cap; the import endpoint a 5 000 row cap and
+  a 5 MB upload cap).
+- `filters` is a string-to-string map; the endpoint validates keys against
+  its own allow-list and ignores unknown keys (with structured logging).
+  Unknown values inside a known key fall through (e.g. an unparseable
+  `AccountState` becomes "no filter on state").
+
+### B.3 The GridPage<T> response
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [ … ],
+    "total": 137,
+    "skip": 0,
+    "top": 20
+  },
+  "error": null,
+  "meta": null
+}
+```
+
+Paging information lives in `data` for the GridPage shape (because the
+client always parses the items and paging together, and the typed client
+binds to one DTO). The standard §9 shape continues to use `meta` for the
+same purpose; both shapes are correct, used in different places.
+
+### B.4 Excel I/O on Grid endpoints
+
+A list endpoint that supports bulk export accepts a sibling endpoint
+`POST /…/export` with body `{ "ids": [], "query": GridQuery }`. When
+`ids` is empty, the export applies the query and is bounded at 5 000
+rows. The response is an XLSX workbook (MIME
+`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`) with
+a `Content-Disposition: attachment` header. Every string cell that would
+begin with `=`, `+`, `-`, `@`, TAB or CR is prefixed with an apostrophe
+so Excel does not auto-execute the value (OWASP CWE-1236).
+
+A list endpoint that supports bulk import accepts a sibling endpoint
+`POST /…/import` as multipart with a single `file` field. The endpoint
+validates the file size (5 MB cap), ZIP magic bytes (`50 4B 03 04`) and
+the worksheet name before parsing. Per-row errors are reported in the
+response body, never thrown.
+
+### B.5 Bulk action audit shape
+
+A bulk-action endpoint (delete / approve / archive) writes **one audit
+row per subject**, not one summary row per request. The summary in the
+response gives the admin a count; the per-subject rows give SOC the
+trail it needs to reconstruct who-did-what-to-whom.
+
+---
+
 End of document.
