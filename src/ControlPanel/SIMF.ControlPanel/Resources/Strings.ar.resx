@@ -128,6 +128,29 @@
   <data name="Auth.Footer" xml:space="preserve"><value>لوحة تحكم SIMF · إصدار 1.0.0</value></data>
   <data name="Auth.LanguageSwitch" xml:space="preserve"><value>English</value></data>
 
+  <data name="Auth.PageTitle.RecoveryCode" xml:space="preserve"><value>رمز الاسترداد · لوحة تحكم SIMF</value></data>
+  <data name="Auth.Totp.UseRecoveryCode" xml:space="preserve"><value>استخدام رمز استرداد بدلًا من ذلك</value></data>
+
+  <data name="Auth.RecoveryCode.Title" xml:space="preserve"><value>استخدام رمز استرداد</value></data>
+  <data name="Auth.RecoveryCode.Supporting" xml:space="preserve"><value>أدخل أحد رموز الاسترداد التي حفظتها عند تفعيل المصادقة الثنائية. يعمل كل رمز مرة واحدة فقط.</value></data>
+  <data name="Auth.RecoveryCode.Label" xml:space="preserve"><value>رمز الاسترداد</value></data>
+  <data name="Auth.RecoveryCode.Hint" xml:space="preserve"><value>عشرة أحرف، مع الشرطة أو بدونها.</value></data>
+  <data name="Auth.RecoveryCode.Submit" xml:space="preserve"><value>تحقّق</value></data>
+  <data name="Auth.RecoveryCode.Submitting" xml:space="preserve"><value>جارٍ التحقق</value></data>
+  <data name="Auth.RecoveryCode.Required" xml:space="preserve"><value>أدخل رمز الاسترداد.</value></data>
+  <data name="Auth.RecoveryCode.Fallback" xml:space="preserve"><value>تعذّر التحقق من رمز الاسترداد. حاول مرة أخرى.</value></data>
+  <data name="Auth.RecoveryCode.BackToTotp" xml:space="preserve"><value>العودة إلى تطبيق المصادقة</value></data>
+
+  <data name="Profile.RecoveryCodes.Title" xml:space="preserve"><value>رموز الاسترداد</value></data>
+  <data name="Profile.RecoveryCodes.Status" xml:space="preserve"><value>متبقٍ {0} من أصل 10 رموز استرداد.</value></data>
+  <data name="Profile.RecoveryCodes.None" xml:space="preserve"><value>لا توجد لديك رموز استرداد. أنشئ مجموعة الآن واحفظها — ستحتاج إليها إذا فقدت تطبيق المصادقة.</value></data>
+  <data name="Profile.RecoveryCodes.LowWarning" xml:space="preserve"><value>رموز الاسترداد المتبقية قليلة. أعد إنشاء المجموعة للحفاظ على الحماية.</value></data>
+  <data name="Profile.RecoveryCodes.Generate" xml:space="preserve"><value>إنشاء رموز استرداد</value></data>
+  <data name="Profile.RecoveryCodes.Regenerate" xml:space="preserve"><value>إعادة إنشاء رموز الاسترداد</value></data>
+  <data name="Profile.RecoveryCodes.ShowOnce" xml:space="preserve"><value>احفظ هذه الرموز الآن. لن تُعرض مرة أخرى. يعمل كل رمز مرة واحدة فقط.</value></data>
+  <data name="Profile.RecoveryCodes.Download" xml:space="preserve"><value>تنزيل كملف نصي</value></data>
+  <data name="Profile.RecoveryCodes.Done" xml:space="preserve"><value>لقد حفظت هذه الرموز</value></data>
+
   <data name="Shell.MyProfile" xml:space="preserve"><value>ملفي الشخصي</value></data>
 
   <data name="Profile.Title" xml:space="preserve"><value>ملفي الشخصي</value></data>

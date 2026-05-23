@@ -83,6 +83,7 @@ public static class DependencyInjection
         services.AddScoped<IAccountCodeRepository, AccountCodeRepository>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
         services.AddScoped<ISecondFactorTokenRepository, SecondFactorTokenRepository>();
+        services.AddScoped<ITotpRecoveryCodeRepository, TotpRecoveryCodeRepository>();
 
         services.AddScoped<ITransactionRunner, TransactionRunner>();
         services.AddScoped<IAuditLog, AuditLog>();
@@ -91,6 +92,7 @@ public static class DependencyInjection
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IPasswordService, PasswordService>();
         services.AddScoped<ITotpEnrollmentService, TotpEnrollmentService>();
+        services.AddScoped<IRecoveryCodeService, RecoveryCodeService>();
         services.AddScoped<IAccountService, AccountService>();
         services.AddSingleton<IAvatarStorage, FilesystemAvatarStorage>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();

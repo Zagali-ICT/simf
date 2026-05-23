@@ -67,6 +67,16 @@ public sealed class SimfAccountClient(HttpClient http)
             HttpMethod.Delete, "account/avatar", null, accessToken, cancellationToken);
 
     /// <summary>
+    /// Mints a fresh batch of 10 single-use recovery codes — the response
+    /// carries them plaintext exactly once (D-040).
+    /// </summary>
+    public Task<ApiCallResult<RecoveryCodesResponse>> RegenerateRecoveryCodesAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<RecoveryCodesResponse>(
+            HttpMethod.Post, "account/recovery-codes/regenerate", null,
+            accessToken, cancellationToken);
+
+    /// <summary>
     /// Streams the user's avatar bytes back. Returns (statusCode, contentType,
     /// bytes); on a non-success status, <c>Bytes</c> is empty and
     /// <c>ContentType</c> is null — the caller forwards the status verbatim.

@@ -39,6 +39,7 @@ public static class ErrorCodes
     public const string TotpEnrolmentNotStarted = "TOTP_ENROLMENT_NOT_STARTED";
     public const string TotpEnrolmentCodeInvalid = "TOTP_ENROLMENT_CODE_INVALID";
     public const string TotpNotEnabled = "TOTP_NOT_ENABLED";
+    public const string AuthRecoveryCodeInvalid = "AUTH_RECOVERY_CODE_INVALID";
 
     // Avatar (myComment #11)
     public const string AvatarFileTooLarge = "AVATAR_FILE_TOO_LARGE";

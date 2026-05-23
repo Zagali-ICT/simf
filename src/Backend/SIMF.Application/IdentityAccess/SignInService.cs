@@ -27,6 +27,7 @@ public sealed class SignInService(
     IEmailQueue emailQueue,
     IJwtTokenService jwtTokenService,
     ITotpVerifier totpVerifier,
+    IRecoveryCodeService recoveryCodes,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<SignInService> logger) : ISignInService
@@ -92,9 +93,17 @@ public sealed class SignInService(
             return new SignInResponse(false, null, null, tokens);
         }
 
-        // A user holding any role is a Control Panel user and uses TOTP; every
-        // other user completes sign-in with an emailed code (SIMF-FDS-001 §5.6).
-        var kind = roles.Count > 0 ? SecondFactorKind.Totp : SecondFactorKind.EmailOtp;
+        // The second-factor flavour is the user's own choice, not just their
+        // role: anyone with an authenticator key paired (the new
+        // /account/profile → 2FA enrolment, D-040) completes sign-in with
+        // TOTP; everyone else completes with an emailed code
+        // (SIMF-FDS-001 §5.6 — read forward to D-040). The original
+        // role-only rule (Control Panel → TOTP) is preserved as a fallback
+        // for users who have a role but haven't enrolled.
+        var authenticatorKey = await userManager.GetAuthenticatorKeyAsync(user);
+        var kind = !string.IsNullOrEmpty(authenticatorKey) || roles.Count > 0
+            ? SecondFactorKind.Totp
+            : SecondFactorKind.EmailOtp;
 
         // The emailed code is issued (and re-issue-capped) before the ticket, so
         // a throttled visitor gets no ticket at all.
@@ -169,6 +178,49 @@ public sealed class SignInService(
 
         ticket.ConsumedAt = now;
         await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
+        return await IssueTokensAsync(user, cancellationToken);
+    }
+
+    public async Task<AuthTokens> VerifyRecoveryCodeAsync(
+        VerifyRecoveryCodeRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        // Same ticket the TOTP step uses — the recovery code is an
+        // *alternative* second factor, not a bypass (D-040). A recovery
+        // attempt counts against the ticket's MaxSecondFactorAttempts so
+        // brute-force is bounded the same way as a wrong TOTP code.
+        var ticket = await GetValidTicketAsync(
+            request.MfaToken, SecondFactorKind.Totp, cancellationToken);
+        var user = await userManager.FindByIdAsync(ticket.UserId.ToString())
+            ?? throw new ApiException(ErrorCodes.AuthMfaTokenInvalid, 400,
+                "The sign-in session is no longer valid.",
+                "جلسة تسجيل الدخول لم تعد صالحة.");
+
+        await EnsureNotLockedOutAsync(user, cancellationToken);
+
+        var accepted = await recoveryCodes.VerifyAndConsumeAsync(
+            user.Id, request.Code, cancellationToken);
+        if (!accepted)
+        {
+            ticket.AttemptCount++;
+            await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
+            await userManager.AccessFailedAsync(user);
+            await AuditAsync(AuditEvents.TotpRecoveryCodeFailed, AuditOutcome.Failure,
+                user.Email!, user.Id, ErrorCodes.AuthRecoveryCodeInvalid,
+                cancellationToken: cancellationToken);
+            throw new ApiException(
+                ErrorCodes.AuthRecoveryCodeInvalid, 400,
+                "The recovery code is not valid.",
+                "رمز الاسترداد غير صالح.");
+        }
+
+        await userManager.ResetAccessFailedCountAsync(user);
+        var now = timeProvider.GetUtcNow();
+        ticket.ConsumedAt = now;
+        await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
+
+        await AuditAsync(AuditEvents.TotpRecoveryCodeUsed, AuditOutcome.Success,
+            user.Email!, user.Id, cancellationToken: cancellationToken);
         return await IssueTokensAsync(user, cancellationToken);
     }
 

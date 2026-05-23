@@ -1,7 +1,7 @@
-@* Control Panel — the second factor: a 6-digit code from the user's
-   authenticator app. Reached only from the sign-in step when the account
-   has TwoFactorEnabled=true. *@
-@page "/login/totp"
+@* Control Panel — recovery-code fallback for sign-in (decision D-040). The
+   user reaches this page from the TOTP step's "Use a recovery code" link.
+   Same MFA-token ticket and same cookie hand-off as the TOTP step. *@
+@page "/login/recovery"
 @attribute [AllowAnonymous]
 @inject IStringLocalizer<Strings> L
 @inject SimfAuthClient Api
@@ -9,7 +9,7 @@
 @inject SignInTicketStore Tickets
 @inject NavigationManager Nav
 
-<PageTitle>@L["Auth.PageTitle.Totp"]</PageTitle>
+<PageTitle>@L["Auth.PageTitle.RecoveryCode"]</PageTitle>
 
 @if (Session.PendingMfaToken is not null)
 {
@@ -18,7 +18,8 @@
             <SimfBrandPanel Subtitle="@L["Brand.Subtitle"]" Caption="@L["Brand.Caption"]" />
         </Brand>
         <ChildContent>
-            <SimfAuthCard Title="@L["Auth.Totp.Title"]" SupportingText="@L["Auth.Totp.Supporting"]">
+            <SimfAuthCard Title="@L["Auth.RecoveryCode.Title"]"
+                          SupportingText="@L["Auth.RecoveryCode.Supporting"]">
                 <TopControls>
                     <SimfLanguageSwitch Href="@CultureHref" Label="@L["Auth.LanguageSwitch"]" />
                     <SimfThemeToggle />
@@ -30,16 +31,20 @@
                             <SimfAlert Variant="error">@_error</SimfAlert>
                         }
                         <div class="simf-form__fields">
-                            <SimfCodeField Label="@L["Auth.Totp.Code"]" @bind-Value="_model.Code"
-                                           Helper="@L["Auth.Totp.CodeFormat"]" Disabled="_loading" />
+                            <SimfTextField Label="@L["Auth.RecoveryCode.Label"]"
+                                           @bind-Value="_model.Code"
+                                           Helper="@L["Auth.RecoveryCode.Hint"]"
+                                           Autocomplete="one-time-code"
+                                           Disabled="_loading" />
                         </div>
                         <div class="simf-form__actions">
-                            <SimfButton Block="true" Loading="_loading" LoadingLabel="@L["Auth.Totp.Submitting"]">
-                                @L["Auth.Totp.Submit"]
+                            <SimfButton Block="true" Loading="_loading"
+                                        LoadingLabel="@L["Auth.RecoveryCode.Submitting"]">
+                                @L["Auth.RecoveryCode.Submit"]
                             </SimfButton>
                         </div>
                         <div class="simf-form__secondary">
-                            <SimfLink Href="/login/recovery">@L["Auth.Totp.UseRecoveryCode"]</SimfLink>
+                            <SimfLink Href="/login/totp">@L["Auth.RecoveryCode.BackToTotp"]</SimfLink>
                             <SimfLink Href="/login">@L["Auth.Totp.BackToSignIn"]</SimfLink>
                         </div>
                     </EditForm>
@@ -63,7 +68,6 @@
         _messages = new ValidationMessageStore(_editContext);
         _editContext.OnFieldChanged += ClearFieldError;
 
-        // The TOTP step is only reachable after the password step.
         if (string.IsNullOrEmpty(Session.PendingMfaToken))
         {
             Nav.NavigateTo("/login");
@@ -81,7 +85,7 @@
         get
         {
             var next = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar" ? "en" : "ar";
-            return $"/culture?culture={next}&redirectUri={Uri.EscapeDataString("/login/totp")}";
+            return $"/culture?culture={next}&redirectUri={Uri.EscapeDataString("/login/recovery")}";
         }
     }
 
@@ -98,9 +102,10 @@
         {
             _messages.Clear();
 
-            if (_model.Code.Length != 6 || !_model.Code.All(char.IsAsciiDigit))
+            if (string.IsNullOrWhiteSpace(_model.Code))
             {
-                _messages.Add(_editContext.Field(nameof(CodeModel.Code)), L["Auth.Totp.CodeRequired"]);
+                _messages.Add(_editContext.Field(nameof(CodeModel.Code)),
+                    L["Auth.RecoveryCode.Required"]);
             }
 
             _editContext.NotifyValidationStateChanged();
@@ -109,17 +114,20 @@
                 return;
             }
 
-            var result = await Api.VerifyTotpAsync(
-                new VerifyTotpRequest { MfaToken = Session.PendingMfaToken!, Code = _model.Code });
+            var result = await Api.VerifyRecoveryCodeAsync(
+                new VerifyRecoveryCodeRequest
+                {
+                    MfaToken = Session.PendingMfaToken!,
+                    Code = _model.Code,
+                });
 
             if (!result.Success || result.Data is null)
             {
-                _error = result.Error?.MessageForCurrentCulture() ?? L["Auth.Totp.Fallback"];
+                _error = result.Error?.MessageForCurrentCulture()
+                    ?? L["Auth.RecoveryCode.Fallback"];
                 return;
             }
 
-            // Hand the completed sign-in to the cookie-issuing endpoint — a
-            // cookie can only be written in an HTTP request context.
             var reference = Tickets.Stash(result.Data);
             Session.Clear();
             Nav.NavigateTo($"/auth/complete?reference={reference}", forceLoad: true);

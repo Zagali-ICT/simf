@@ -19,4 +19,13 @@ public interface ISignInService
     Task<AuthTokens> VerifyOtpAsync(
         VerifyOtpRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Completes sign-in using a single-use recovery code instead of a TOTP
+    /// (decision D-040). The MFA token is the same ticket the password step
+    /// issued.
+    /// </summary>
+    Task<AuthTokens> VerifyRecoveryCodeAsync(
+        VerifyRecoveryCodeRequest request,
+        CancellationToken cancellationToken = default);
 }

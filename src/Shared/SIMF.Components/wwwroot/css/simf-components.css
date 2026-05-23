@@ -240,6 +240,25 @@
 }
 .simf-role-list li { padding-block: var(--space-1); }
 
+/* Recovery codes — shown plaintext exactly once, so make them readable. */
+.simf-recovery-codes {
+  margin: var(--space-4) 0;
+  padding-inline-start: var(--space-6);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-5);
+  font-family: var(--font-family-mono, monospace);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+}
+.simf-recovery-codes code {
+  user-select: all;
+  letter-spacing: 0.05em;
+}
+@media (max-width: 639px) {
+  .simf-recovery-codes { grid-template-columns: 1fr; }
+}
+
 .simf-avatar {
   margin-block: var(--space-4);
 }

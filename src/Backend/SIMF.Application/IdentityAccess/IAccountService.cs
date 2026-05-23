@@ -24,4 +24,13 @@ public interface IAccountService
     Task<AvatarResponse> RemoveAvatarAsync(
         Guid userId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Mints a fresh batch of single-use recovery codes for the user,
+    /// invalidating any previous batch (D-040). The plaintext codes are
+    /// returned exactly once.
+    /// </summary>
+    Task<RecoveryCodesResponse> RegenerateRecoveryCodesAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
 }

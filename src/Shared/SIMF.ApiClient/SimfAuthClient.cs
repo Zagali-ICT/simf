@@ -33,6 +33,12 @@ public sealed class SimfAuthClient(HttpClient http)
         VerifyOtpRequest request, CancellationToken cancellationToken = default) =>
         PostAsync<VerifyOtpRequest, AuthTokens>("verify-otp", request, null, cancellationToken);
 
+    /// <summary>The recovery-code fallback for a lost authenticator (D-040).</summary>
+    public Task<ApiResult<AuthTokens>> VerifyRecoveryCodeAsync(
+        VerifyRecoveryCodeRequest request, CancellationToken cancellationToken = default) =>
+        PostAsync<VerifyRecoveryCodeRequest, AuthTokens>(
+            "verify-recovery-code", request, null, cancellationToken);
+
     /// <summary>Exchanges a refresh token for a fresh token pair.</summary>
     public Task<ApiResult<AuthTokens>> RefreshAsync(
         RefreshRequest request, CancellationToken cancellationToken = default) =>

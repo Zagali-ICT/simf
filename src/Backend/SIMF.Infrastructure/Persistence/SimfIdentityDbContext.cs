@@ -24,6 +24,8 @@ public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> optio
 
     public DbSet<SecondFactorToken> SecondFactorTokens => Set<SecondFactorToken>();
 
+    public DbSet<TotpRecoveryCode> TotpRecoveryCodes => Set<TotpRecoveryCode>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

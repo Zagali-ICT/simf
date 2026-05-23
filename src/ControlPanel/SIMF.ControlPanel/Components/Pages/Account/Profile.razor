@@ -89,6 +89,55 @@ else
             }
         </section>
 
+        @* -- Recovery codes ------------------------------------------------------ *@
+        @if (_profile.TwoFactorEnabled)
+        {
+            <section class="simf-card simf-page-card">
+                <h2 class="simf-card__title">@L["Profile.RecoveryCodes.Title"]</h2>
+
+                @if (_recoveryCodes is not null)
+                {
+                    <SimfAlert Variant="success">@L["Profile.RecoveryCodes.ShowOnce"]</SimfAlert>
+                    <ol class="simf-recovery-codes">
+                        @foreach (var recoveryCode in _recoveryCodes)
+                        {
+                            <li><code>@recoveryCode</code></li>
+                        }
+                    </ol>
+                    <div class="simf-form__actions">
+                        <SimfButton Type="button" Variant="secondary"
+                                    OnClick="DismissRecoveryCodes">
+                            @L["Profile.RecoveryCodes.Done"]
+                        </SimfButton>
+                    </div>
+                }
+                else
+                {
+                    @if (_profile.RecoveryCodesRemaining == 0)
+                    {
+                        <SimfAlert Variant="error">@L["Profile.RecoveryCodes.None"]</SimfAlert>
+                    }
+                    else
+                    {
+                        <p>@string.Format(L["Profile.RecoveryCodes.Status"], _profile.RecoveryCodesRemaining)</p>
+                        @if (_profile.RecoveryCodesRemaining <= 3)
+                        {
+                            <SimfAlert Variant="info">@L["Profile.RecoveryCodes.LowWarning"]</SimfAlert>
+                        }
+                    }
+                    <div class="simf-form__actions">
+                        <SimfButton Type="button" Loading="_busy"
+                                    LoadingLabel="@L["Profile.RecoveryCodes.Regenerate"]"
+                                    OnClick="RegenerateRecoveryCodesAsync">
+                            @(_profile.RecoveryCodesRemaining == 0
+                                ? L["Profile.RecoveryCodes.Generate"]
+                                : L["Profile.RecoveryCodes.Regenerate"])
+                        </SimfButton>
+                    </div>
+                }
+            </section>
+        }
+
         @* -- Change password ----------------------------------------------------- *@
         <section class="simf-card simf-page-card">
             <h2 class="simf-card__title">@L["Profile.Password.Title"]</h2>
@@ -190,6 +239,7 @@ else
     private string? _passwordError;
     private string? _avatarError;
     private string? _avatarOk;
+    private IReadOnlyList<string>? _recoveryCodes;
     private readonly CodeModel _codeModel = new();
     private readonly CodeModel _disableModel = new();
     private readonly PasswordModel _passwordModel = new();
@@ -244,10 +294,13 @@ else
             var envelope = await JS.InvokeAsync<ApiResult<TotpConfirmResponse>>(
                 "simfAccount.postJson", "/account/api/totp/confirm",
                 new TotpConfirmRequest { Code = _codeModel.Code });
-            if (envelope is { Success: true })
+            if (envelope is { Success: true, Data: not null })
             {
                 _setup = null;
                 _flashOk = L["Profile.TwoFactor.ConfirmEnabled"];
+                // Surface the fresh recovery-code batch returned by confirm
+                // (D-040) — they're plaintext exactly once.
+                _recoveryCodes = envelope.Data.RecoveryCodes;
                 await LoadProfileAsync();
             }
             else
@@ -257,6 +310,30 @@ else
         }
         finally { _busy = false; }
     }
+
+    private async Task RegenerateRecoveryCodesAsync()
+    {
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<RecoveryCodesResponse>>(
+                "simfAccount.postJson",
+                "/account/api/recovery-codes/regenerate",
+                (object?)null);
+            if (envelope is { Success: true, Data: not null })
+            {
+                _recoveryCodes = envelope.Data.RecoveryCodes;
+                await LoadProfileAsync();
+            }
+            else
+            {
+                _flashError = envelope?.Error?.MessageForCurrentCulture();
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void DismissRecoveryCodes() => _recoveryCodes = null;
 
     private void CancelSetup()
     {

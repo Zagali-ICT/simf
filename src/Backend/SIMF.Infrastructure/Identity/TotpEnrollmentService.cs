@@ -23,6 +23,7 @@ namespace SIMF.Infrastructure.Identity;
 internal sealed class TotpEnrollmentService(
     UserManager<SimfUser> userManager,
     ITotpVerifier totpVerifier,
+    IRecoveryCodeService recoveryCodes,
     IAuditLog auditLog,
     ILogger<TotpEnrollmentService> logger) : ITotpEnrollmentService
 {
@@ -122,6 +123,10 @@ internal sealed class TotpEnrollmentService(
         await userManager.UpdateAsync(user);
         await userManager.SetTwoFactorEnabledAsync(user, true);
 
+        // Mint the user's first batch of recovery codes — shown plaintext
+        // exactly once in the response so the user can save them (D-040).
+        var codes = await recoveryCodes.GenerateAsync(user.Id, cancellationToken);
+
         await auditLog.WriteAsync(
             new AuditEntry
             {
@@ -131,9 +136,18 @@ internal sealed class TotpEnrollmentService(
                 SubjectUserId = user.Id,
             },
             cancellationToken);
+        await auditLog.WriteAsync(
+            new AuditEntry
+            {
+                EventType = AuditEvents.TotpRecoveryCodesGenerated,
+                Outcome = AuditOutcome.Success,
+                SubjectEmail = user.Email,
+                SubjectUserId = user.Id,
+            },
+            cancellationToken);
 
         logger.LogInformation("TOTP enrolment confirmed for {Email}", user.Email);
-        return new TotpConfirmResponse(true);
+        return new TotpConfirmResponse(true, codes);
     }
 
     public async Task<TotpDisableResponse> DisableAsync(
@@ -169,13 +183,17 @@ internal sealed class TotpEnrollmentService(
         await userManager.ResetAccessFailedCountAsync(user);
 
         // Turn 2FA off and remove the active secret — a re-enrolment then
-        // starts cleanly from a fresh QR.
+        // starts cleanly from a fresh QR. Wipe the recovery-code batch too
+        // (D-040): codes only exist while 2FA is on; leaving them behind would
+        // let a leaked code re-enable bypass after the user thought they were
+        // safe.
         await userManager.SetTwoFactorEnabledAsync(user, false);
         await userManager.RemoveAuthenticationTokenAsync(
             user, AuthenticatorProvider, ActiveSecretTokenName);
         user.LastUsedTotpTimestep = null;
         user.UpdatedAt = DateTimeOffset.UtcNow;
         await userManager.UpdateAsync(user);
+        await recoveryCodes.RevokeAllAsync(user.Id, cancellationToken);
 
         await auditLog.WriteAsync(
             new AuditEntry

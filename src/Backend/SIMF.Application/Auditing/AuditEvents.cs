@@ -48,6 +48,10 @@ public static class AuditEvents
     public const string TotpEnrolmentFailed = "Totp.EnrolmentFailed";
     public const string TotpDisabled = "Totp.Disabled";
     public const string TotpDisableFailed = "Totp.DisableFailed";
+    public const string TotpRecoveryCodesGenerated = "Totp.RecoveryCodesGenerated";
+    public const string TotpRecoveryCodesRegenerated = "Totp.RecoveryCodesRegenerated";
+    public const string TotpRecoveryCodeUsed = "Totp.RecoveryCodeUsed";
+    public const string TotpRecoveryCodeFailed = "Totp.RecoveryCodeFailed";
 
     // Avatar (myComment #11)
     public const string AvatarUpdated = "Avatar.Updated";

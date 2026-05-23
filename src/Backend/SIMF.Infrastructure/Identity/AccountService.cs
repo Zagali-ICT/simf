@@ -20,6 +20,7 @@ namespace SIMF.Infrastructure.Identity;
 internal sealed class AccountService(
     UserManager<SimfUser> userManager,
     IAvatarStorage avatarStorage,
+    IRecoveryCodeService recoveryCodes,
     IAuditLog auditLog,
     ILogger<AccountService> logger) : IAccountService
 {
@@ -38,6 +39,7 @@ internal sealed class AccountService(
     {
         var user = await GetUserAsync(userId);
         var roles = await userManager.GetRolesAsync(user);
+        var remaining = await recoveryCodes.CountActiveAsync(user.Id, cancellationToken);
 
         return new ProfileResponse(
             user.Id,
@@ -45,7 +47,27 @@ internal sealed class AccountService(
             user.DisplayName,
             BuildAvatarUrl(user),
             user.TwoFactorEnabled,
+            remaining,
             [.. roles]);
+    }
+
+    public async Task<RecoveryCodesResponse> RegenerateRecoveryCodesAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await GetUserAsync(userId);
+        var codes = await recoveryCodes.GenerateAsync(user.Id, cancellationToken);
+        await auditLog.WriteAsync(
+            new AuditEntry
+            {
+                EventType = AuditEvents.TotpRecoveryCodesRegenerated,
+                Outcome = AuditOutcome.Success,
+                SubjectEmail = user.Email,
+                SubjectUserId = user.Id,
+            },
+            cancellationToken);
+        logger.LogInformation("Recovery codes regenerated for {Email}", user.Email);
+        return new RecoveryCodesResponse(codes);
     }
 
     public async Task<AvatarResponse> SetAvatarAsync(

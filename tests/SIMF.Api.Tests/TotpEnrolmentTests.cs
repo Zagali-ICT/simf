@@ -58,6 +58,10 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<TotpConfirmResponse>>())!;
         Assert.True(body.Success);
         Assert.True(body.Data!.TwoFactorEnabled);
+        // D-040: confirm returns 10 single-use recovery codes plaintext once.
+        Assert.Equal(10, body.Data.RecoveryCodes.Count);
+        Assert.All(body.Data.RecoveryCodes, code => Assert.Matches("^[A-Z2-9]{5}-[A-Z2-9]{5}$", code));
+        Assert.Equal(10, body.Data.RecoveryCodes.Distinct().Count());
 
         using var scope = _factory.Services.CreateScope();
         var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
