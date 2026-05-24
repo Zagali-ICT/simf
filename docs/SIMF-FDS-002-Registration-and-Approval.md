@@ -4,20 +4,22 @@
 |-------|-------|
 | Document ID | SIMF-FDS-002 |
 | Title | Feature Design Specification — Registration and Approval |
-| Version | 1.0 |
+| Version | 2.0 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
 | Owner | Product Owner |
 | Approver | Product Owner |
 | Date issued | 2026-05-20 |
-| Related documents | SIMF-FDS-001, SIMF-SRS-001, SIMF-UCS-001, SIMF-API-001, SIMF-DAT-001, SIMF-RPM-001, SIMF-CON-001 |
+| Last updated | 2026-05-24 |
+| Related documents | SIMF-FDS-001, SIMF-SRS-001, SIMF-UCS-001, SIMF-API-001, SIMF-DAT-001, SIMF-RPM-001, SIMF-CON-001, SIMF-CPD-001, docs/decisions/DECISIONS_LOG.md |
 
 ### Revision history
 
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. The registration and approval feature, build-ready. |
+| 2.0 | 2026-05-24 | Engineering & Architecture Team | **Amendment A — Implementation update.** Documents what was built between 2026-05-22 and 2026-05-24: admin-create-user flow with a 7-day invite code (D-042); the admin user-management page split — staff and visitors live on separate pages, no mixing (P3); the visitor / staff approval workflow with `PendingApproval → Approved/Rejected (with a 10–500 char reason)` (P4a + P4b); the **QR id minted on approval** instead of on create (D-046a + P4a); the visitor-profile feature — service, the curated 60-country ISO 3166-1 list, the encrypted-at-rest ID image (AES-GCM, content-type byte prefix, in-file nonce + tag) (D-046b); the Website cookie + `/account/visitor-profile` page (D-046c); the strict Saudi national-id starts-with-1 and Iqama starts-with-2 validator rules (P5); the bulk-admin features — bulk-delete, duplicate, Excel import / export (D-044b); and the avatar storage migration from DB bytes to the filesystem (D-039). Records the open P7 rework that will introduce the `UserType` model and the `ProfileTypes` lookup. |
 
 ---
 
@@ -355,6 +357,379 @@ field (SIMF-API-001 section 7).
 | OI-2 | Confirm the attachment file types and the size limit | Sections 5.5, 13 |
 | OI-3 | Confirm the Visitor seat/row pick on mockup Screen 7 — flagged for review in SIMF-CON-001 §14 | Section 11 |
 | OI-4 | Confirm document classification with the owner | Control block |
+
+---
+
+## Amendment A — Implementation update (2026-05-24)
+
+This amendment captures what was actually built between 2026-05-22 and
+2026-05-24. The v1.0 body remains the source of truth for the
+*specification*; this amendment is the source of truth for the
+*implementation* where the two have refined each other. Every claim is
+traceable to a decision row in `docs/decisions/DECISIONS_LOG.md` (the
+`D-NNN` references) and to the relevant commit on `feature/login-api`.
+
+### A.1 Admin-create-user flow (D-042)
+
+The v1.0 body §9 said internal-user onboarding starts with an
+Administrator creating an account from the Control Panel. That is built —
+with a specific shape:
+
+- **Endpoint:** `POST /api/v1/admin/staff` (the staff endpoint after the
+  P3 split — see A.2 below), Administrator-only.
+- **Optional `GrantAdministratorRole` flag** — defaults to `false`. When
+  `true`, the new user is added to the `Administrator` RBAC role; today
+  no other CP role exists for the v1.0 surface, so this is the only
+  fine-grained option.
+- **No password is set.** The new user receives an **email invitation**
+  carrying a 7-day single-use code (purpose: `PasswordReset`); the user
+  follows the link to `/reset-password`, enters email + code + a new
+  password, and signs in normally.
+- **Self-issue and duplicate-email cases** both produce a clear error
+  (`AUTH_ACCOUNT_NOT_FOUND` / `ADMIN_EMAIL_ALREADY_REGISTERED`).
+- **Audit:** every creation writes `Admin.UserCreated` (and
+  `Admin.UserCreateFailed` on rejection) carrying both `ActorUserId` (the
+  admin) and `SubjectUserId` (the new user).
+
+Why 7 days: matches the GitHub / Microsoft 365 invite-link convention.
+Self-service forgot-password keeps its short 10-minute code because the
+user is actively waiting there.
+
+Why no plain password at creation: the OWASP / NIST 800-63B baseline
+for admin-issued accounts — the admin is never exposed to a plaintext
+password.
+
+There is **no companion endpoint** that lets the admin pick the
+password directly. Open item OI-5 below covers the user-type / subtype
+picker that P7 introduces.
+
+### A.2 The admin user-management page split — staff vs visitors (P3)
+
+The customer explicitly required (verbatim): *"in CP there are 2
+different pages for create user, one for admin and one for Visitor.
+DON'T MIX."* This is built.
+
+- **`/admin/staff`** — list page for users that hold at least one CP
+  role (Administrator today; Staff / Scientific / Security from the
+  later P4 — pending P7 rework, see A.6).
+- **`/admin/staff/new`** — create form for a staff member. Email,
+  display name, optional `GrantAdministratorRole` checkbox.
+- **`/admin/visitors`** — list page for users without any CP role.
+- **`/admin/visitors/new`** — create form for a visitor. Email, display
+  name only — no role checkbox.
+
+The API was split in lock-step:
+
+| URL (before P3) | URL (after P3) | Notes |
+|---|---|---|
+| `POST /admin/users` | `POST /admin/staff` | Creates a staff user. |
+| (new) | `POST /admin/visitors` | Creates a visitor. |
+| `POST /admin/users/list` | `POST /admin/staff/list` | Lists staff (role-filtered). |
+| (new) | `POST /admin/visitors/list` | Lists visitors (no CP role). |
+| `POST /admin/users/{id}/reset-two-factor` | `POST /admin/staff/reset-two-factor` | Same body. |
+| `POST /admin/users/bulk-delete` | `POST /admin/staff/bulk-delete` | (A.7) |
+| `POST /admin/users/export` / `/import` / `/duplicate` | `POST /admin/staff/export` / `/import` / `/duplicate` | (A.7) |
+
+The nav under the **System** group is `Staff` + `Pending staff` +
+`Visitors` + `Pending visitors` + `Reset user 2FA` + `Logs` (P6) +
+`Configuration` / `Operation log` / `Settings` (placeholders).
+
+### A.3 The visitor / staff approval workflow (P4)
+
+The v1.0 body §6.1 specified the **approval flow** but did not specify
+the **lifecycle hook** for QR-id mint, did not specify which CP role
+approves visitors versus staff, and did not specify the form of a
+rejection reason. Amendment A pins all three:
+
+#### A.3.1 State transitions on the AdminAccountService
+
+- **Create** (`/admin/staff` or `/admin/visitors`) — lands in
+  `AccountState.PendingApproval`. **The QR id is NOT minted at create
+  time.**
+- **Approve staff** (`POST /admin/staff/{id}/approve`) —
+  Administrator-only. Flips `AccountState` to `Approved` and **mints
+  the QR id at this transition**.
+- **Approve visitor** (`POST /admin/visitors/{id}/approve`) — any CP
+  role today (`AdministratorOnly` policy after P7). Same state flip
+  and QR mint.
+- **Reject staff** (`POST /admin/staff/{id}/reject`) and
+  **Reject visitor** (`POST /admin/visitors/{id}/reject`) — both
+  require a **10–500 char free-text reason** captured in the audit
+  row's `Detail` field. Flip `AccountState` to `Rejected`.
+- **List pending** — `POST /admin/staff/pending/list` and
+  `POST /admin/visitors/pending/list` return a `GridQuery`-paged
+  `AdminPendingUserSummary` list filtered to PendingApproval rows.
+
+A re-approve / re-reject returns **409 `ADMIN_USER_NOT_PENDING`** — the
+service refuses to flip a user that is not in `PendingApproval`.
+
+#### A.3.2 Sign-in implications
+
+The v1.0 body §5 (D-010) said a `PendingApproval` user may sign in
+with limited access. The implementation **refines** this:
+
+- A `PendingApproval` user on the **Control Panel** surface (audience
+  `cp`) is **refused** sign-in with `AUTH_ACCOUNT_NOT_APPROVED` (403).
+  A pending CP user cannot do anything until approved; blocking the
+  sign-in is the honest answer.
+- A `PendingApproval` user on the **Web** or **App** surface is
+  **allowed** and sees a "pending" UI on `/account/visitor-profile`.
+  D-010 stands here.
+
+#### A.3.3 CP pages (P4b)
+
+- `/admin/staff/pending` — Administrator-only. SimfDataGrid over
+  pending-staff rows; per-row Approve + Reject buttons; Reject opens a
+  SimfModal with a `SimfTextarea` for the reason (10–500 chars, the
+  Submit button is disabled until the reason is in range).
+- `/admin/visitors/pending` — any CP role today (`AdministratorOnly`
+  after P7). Same shape.
+- Both pages show a toast on success and refresh the grid so the
+  just-handled row drops out of view.
+
+#### A.3.4 Audit events
+
+Every action writes one row with `ActorUserId` + `SubjectUserId`:
+
+| Event type | Detail field |
+|---|---|
+| `Admin.StaffApproved` | The newly-minted QR id |
+| `Admin.StaffRejected` | The rejection reason |
+| `Admin.VisitorApproved` | The newly-minted QR id |
+| `Admin.VisitorRejected` | The rejection reason |
+
+### A.4 QR id format and life cycle (D-046a + P4)
+
+Every account carries a `SimfUser.QrId` — a **12-character Crockford
+base32 token** (alphabet `23456789ABCDEFGHJKMNPQRSTVWXYZ`, no
+`0/1/I/L/O/U`), unique across the system, indexed with a SQL filtered
+unique index (`[QrId] IS NOT NULL`).
+
+- **Generation:** `IQrIdMinter` uses `RandomNumberGenerator.Fill` and
+  retries on the (negligible) chance of a DB clash.
+- **When:** at the **`PendingApproval → Approved` transition**, not at
+  create time (D-046a, P4).
+- **Shared alphabet:** the same Crockford base32 set that TOTP recovery
+  codes use (A.5 in SIMF-FDS-001 Amendment B), so a person who reads a
+  QR id or a recovery code off paper has the same OCR-resistant rules.
+
+### A.5 Visitor profile + encrypted ID image (D-046b)
+
+The `VisitorProfile` entity holds the fields the v1.0 body §5.2–5.4
+listed — Saudi or non-Saudi flag, ID image, etc. — plus:
+
+- Visitor type (radio: Visitor / Exhibitor / Press),
+- Arabic name + English name + place of birth,
+- Nationality (ISO 3166-1 code, from the curated 60-entry
+  `SIMF.Common.Countries` list with EN + AR names),
+- Date of birth,
+- Conditional **national ID** (Saudi) or **Iqama** / **passport**
+  (non-Saudi) — see A.6 for the validation rules,
+- Saudi mobile + international mobile (permissive, see below),
+- ID image — relative path on disk.
+
+#### A.5.1 Encrypted-at-rest ID image (AES-GCM)
+
+The ID-image file format is, on disk, exactly:
+
+```
+[ 1 byte content-type code ] [ 12-byte nonce ] [ 16-byte tag ] [ N-byte ciphertext ]
+```
+
+- **Cipher:** AES-256-GCM.
+- **Key:** a per-installation 32-byte symmetric key supplied via
+  `Storage:VisitorIdEncryptionKey` (base64); a **startup gate** refuses
+  to boot the API if the key is missing or shorter than 32 bytes,
+  mirroring the JWT signing-key check.
+- **Filename:** `{userId:N}.bin` — server-controlled, no path
+  traversal possible.
+- **Magic-byte gate:** the upload endpoint sniffs the JPEG /
+  PNG / WEBP magic bytes before passing the buffer to the cipher
+  (CWE-1236 defence — a polyglot upload is rejected before it touches
+  the user's row).
+- **Storage path:** `{Storage:VisitorIdBase}/{userId:N}.bin`.
+
+The cipher choice and key shape were approved by the customer in
+mid-design as part of the D-046b discussion. A per-user key derived
+via HKDF was considered and rejected for v1 — it would couple the
+cipher to the user id and complicate a future
+admin-impersonation-with-audit flow without adding meaningful
+protection.
+
+#### A.5.2 Endpoints
+
+| Endpoint | Method | Notes |
+|---|---|---|
+| `/api/v1/account/visitor-profile` | GET | Get the signed-in user's visitor profile. |
+| `/api/v1/account/visitor-profile` | POST | Upsert the signed-in user's visitor profile. |
+| `/api/v1/account/visitor-profile/countries` | GET | The curated 60-entry country list (EN + AR names). |
+| `/api/v1/account/visitor-profile/id-image` | POST | Multipart, 5 MB cap, magic-byte gate. |
+| `/api/v1/account/visitor-profile/id-image` | GET | Streams the decrypted bytes back. |
+
+Audit: `VisitorProfile.Saved`, `VisitorProfile.IdImageUploaded`,
+`VisitorProfile.IdImageRejected`.
+
+#### A.5.3 The Website page (D-046c)
+
+`/account/visitor-profile` on the Website — `InteractiveServerNoPrerender`,
+`[Authorize]` — assembles the D-044(c) primitives (SimfRadioGroup,
+SimfTextField, SimfSelect for countries, SimfDatePicker,
+SimfPhoneInput × 2, SimfFileUpload, SimfAlert) and renders a
+**server-side SVG QR via QRCoder** showing the QR id once the account
+is Approved. Conditional rendering: Saudi → national-id field;
+non-Saudi → Iqama + Passport fields. The page reloads from the API on
+save so the QR and the profile state stay in sync.
+
+### A.6 ID-document validation (P5)
+
+The v1.0 body §5.3 and the v1.0 §12 validation table specified the
+**document choice** but not the per-document format rules. P5 pins
+them:
+
+- **Saudi national ID** — exactly 10 digits, **starts with `1`**.
+- **Iqama** (non-Saudi residing in Saudi Arabia) — exactly 10 digits,
+  **starts with `2`**.
+- **Passport** (non-Saudi without an Iqama) — free-form, the v1.0 §12
+  "as written" rule applies.
+- **Phone numbers** — kept permissive (`+?\d{1,4}[-\s]?\d{4,15}`) per
+  the customer's instruction. The customer's visitor population is
+  international + Saudi; a stricter rule would wrongly reject a UK or
+  US number at the form level.
+
+Error codes:
+- `VISITOR_NATIONALITY_UNKNOWN` — the supplied country ISO code is
+  not in the curated list.
+- `VALIDATION_FAILED` — every other validator rejection, with one
+  `details` entry per field.
+
+### A.7 Bulk admin actions on users (D-044b)
+
+Beyond the per-row Approve / Reject of A.3, the admin user pages
+offer bulk actions, all gated by `AdministratorOnly`:
+
+- **`POST /admin/staff/bulk-delete`** — soft-deletes (sets
+  `AccountState = Disabled` + revokes refresh tokens + rolls the
+  security stamp) one or many users. **One audit row per subject**
+  (`Admin.UserDeleted`) so SOC review sees every deletion. A
+  mandatory free-text reason (10–500 chars). Self-delete and
+  admin-vs-administrator-delete are rejected silently per target
+  (counted as `Skipped`); the batch does not fail.
+- **`POST /admin/staff/duplicate`** — creates a copy of an existing
+  user with a new email, the same display-name pattern and the same
+  Administrator-role membership; a fresh 7-day invite email.
+  Duplicate-email yields 409.
+- **`POST /admin/staff/export`** — returns the bytes of an XLSX
+  workbook with the selected users (or every user matching the
+  optional `GridQuery` when `Ids` is empty). The `Users` sheet has
+  the columns the customer asked for. Every string cell is
+  prefix-sanitised against Excel formula injection (CWE-1236) — a
+  leading `= + - @ \t \r` is escaped with a `'`.
+- **`POST /admin/staff/import`** — bulk-creates users from an XLSX
+  upload. 5 MB cap; ZIP magic-byte sniff; strict sheet-name match
+  (`Users`); 5 000-row import cap; one audit row per imported
+  subject.
+
+The CP grid (`SimfDataGrid`) wires Select-All / Add / Edit / Delete /
+Copy / Paste / Duplicate / Import / Export from the same toolbar.
+
+### A.8 Avatar storage migration (D-039)
+
+The v1.0 body did not say where avatars are stored. Initial build
+held them as `varbinary(max)` on `SimfUser`; that inflated every
+profile fetch by 33 % (base64 in JSON) and made the top-bar avatar
+pre-fetch a multi-megabyte payload per circuit boot.
+
+The implementation now stores avatars on the **filesystem** under a
+configured `Storage:AvatarBase` directory (the same convention the
+IBS V10 `UploadCarImagesEndpoint` uses). `SimfUser.AvatarPath` is the
+relative path; the API exposes an authenticated streamer
+`GET /api/v1/account/avatar/{userId:guid}` that resolves the row,
+opens the file via `IAvatarStorage`, and streams it back with the
+right `Content-Type` and `Cache-Control: private, max-age=300`. The
+CP proxies that endpoint at `GET /account/api/avatar/{userId}`.
+
+`ProfileResponse.AvatarUrl` / `AvatarResponse.AvatarUrl` carry a
+`?v={UpdatedAt.UtcTicks}` cache-buster — a fresh upload always
+defeats the browser cache.
+
+Validation: same shape as the visitor ID image — 2 MB cap; PNG /
+JPEG / WebP allow-list; magic-byte sniff against the declared MIME.
+Audit: `Avatar.Updated`, `Avatar.Rejected`.
+
+### A.9 The User Type model — open question (P7)
+
+The v1.0 body and v1.1 of SIMF-FDS-001 refer to a *final user type*
+set at approval (§6.3). The implementation today does not yet have a
+hardcoded `UserType` enum on `SimfUser`; the proxy used in the audience
+gate (P2) is "has any RBAC role" vs "has none".
+
+**The customer's instruction (2026-05-24)** clarifies the model that
+P7 will introduce:
+
+| `UserType` | Where they sign in | RBAC roles? | Subtype |
+|---|---|---|---|
+| `Admin` | CP only | **Yes** — every action gated by a CP role | None |
+| `Other` | App only | **No** | FK → `ProfileTypes` lookup (dynamic) |
+| `Visitor` | App only | **No** | FK → `ProfileTypes` lookup (dynamic) |
+
+`ProfileTypes` schema (new lookup):
+
+| Column | Notes |
+|---|---|
+| `Id` | Guid PK |
+| `Name` | bilingual (EN + AR) display label — VVIP, VIP, Gold, Staff, Exhibitor, Sponsor, … |
+| `PageColor` | UI / bag-colour token used by the app |
+| `UserType` | discriminator — `Admin` / `Other` / `Visitor` (Admin retained for future use; today only Other and Visitor have ProfileTypes) |
+| `IsActive` | soft-delete flag |
+
+P7's scope:
+1. Add `UserType` + `ProfileTypeId` to `SimfUser` with an EF migration.
+2. Create the `ProfileTypes` table + seeder for the v1 set.
+3. **Drop** the P4 `Staff / Scientific / Security` RBAC roles —
+   they become rows in `ProfileTypes` with `UserType = Other`.
+4. Rekey the P2 audience gate off `UserType` (cp → Admin, app →
+   Visitor + Other).
+5. Rekey the P3 staff / visitor list split off `UserType`.
+6. Collapse the P4 `TeamMember` policy back to `AdministratorOnly`
+   for every approval endpoint.
+
+Migration rule for existing rows: users with the `Administrator` RBAC
+role → `UserType = Admin`; **everyone else → `UserType = Visitor`**
+(the safe default; the small number of `Other` users get reclassified
+manually after deployment). The customer confirmed this rule
+on 2026-05-24.
+
+P7 has **not** been built yet. This amendment records the design so
+the owner can approve / amend it before the rework is implemented.
+
+### A.10 Implementation decisions index
+
+The decisions that fed this amendment.
+
+| ID | Date | Subject | FDS section |
+|---|---|---|---|
+| D-039 | 2026-05-23 | Avatar storage migration (DB → filesystem) | A.8 |
+| D-042 | 2026-05-23 | Admin creates a CP user; 7-day invite | A.1 |
+| D-043 | 2026-05-23 | Admin pages aligned with CP layout conventions | A.2 |
+| D-044(a/b/c) | 2026-05-23 | `SimfDataGrid` v1 / v2 + bulk admin actions + visitor-profile primitives | A.2, A.5, A.7 |
+| D-045 | 2026-05-23 | Stage 7 five-agent review SEV-1/2 fixes | A.5, A.7 |
+| D-046(a/b/c) | 2026-05-23 | QR id on approval; visitor-profile service + encrypted ID image; Website cookie + page | A.4, A.5 |
+| **P1** | 2026-05-24 | Web login: Arabic label removed from EN language switch | n/a (SIMF-FDS-001 Amendment B) |
+| **P3** | 2026-05-24 | CP page split — staff vs visitors ("don't mix") | A.2 |
+| **P4a** | 2026-05-24 | Approval workflow backend + reviewer-role split | A.3 |
+| **P4b** | 2026-05-24 | CP pending pages (staff / visitors) | A.3.3 |
+| **P5** | 2026-05-24 | Strict Saudi national-ID + Iqama validator prefixes | A.6 |
+| D-047 | 2026-05-24 | Per-project log files + CP viewer | n/a (orthogonal) |
+
+### A.11 Open items added by Amendment A
+
+| ID | Item | Affects |
+|---|---|---|
+| OI-5 | Approve and ship **P7** — `UserType` enum + `ProfileTypes` lookup; rework P3/P4/P2 off it. | A.2, A.3, A.9 |
+| OI-6 | Decide the **dynamic ProfileTypes seed set** for v1: which Visitor subtypes (VVIP, VIP, Gold, …) and which Other subtypes (Staff, Exhibitor, Sponsor, Media, …) ship at first deployment. Each row needs a `PageColor`. | A.9 |
+| OI-7 | Replace the curated 60-entry country list (`SIMF.Common.Countries`) with the full ISO 3166-1 set when an unmatched code is requested by a visitor. | A.5 |
+| OI-8 | Bring SIMF-API-001 to Amendment B in lock-step with this amendment — the new admin endpoints (A.2, A.3, A.7), the visitor-profile endpoints (A.5), the avatar streamer (A.8). | SIMF-API-001 §12 |
+| OI-9 | Decide whether bulk-approve / bulk-reject is needed on the pending pages (today: per-row only). | A.3.3 |
 
 ---
 

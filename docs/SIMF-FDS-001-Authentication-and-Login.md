@@ -4,14 +4,15 @@
 |-------|-------|
 | Document ID | SIMF-FDS-001 |
 | Title | Feature Design Specification — Authentication and Login |
-| Version | 1.1 |
+| Version | 2.0 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
 | Owner | Product Owner |
 | Approver | Product Owner |
 | Date issued | 2026-05-20 |
-| Related documents | SIMF-SRS-001, SIMF-UCS-001, SIMF-API-001, SIMF-DAT-001, SIMF-RPM-001, SIMF-SAD-001, SIMF-SES-001 |
+| Last updated | 2026-05-24 |
+| Related documents | SIMF-SRS-001, SIMF-UCS-001, SIMF-API-001, SIMF-DAT-001, SIMF-RPM-001, SIMF-SAD-001, SIMF-SES-001, SIMF-CPD-001, docs/decisions/DECISIONS_LOG.md |
 
 ### Revision history
 
@@ -19,6 +20,7 @@
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. The authentication feature, build-ready. |
 | 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): account lockout; the visitor email-OTP second factor; second-factor token rules; the superadmin TOTP bootstrap; the forced-password-change state; sessions, admin force-sign-out and the token-revocation security stamp. |
+| 2.0 | 2026-05-24 | Engineering & Architecture Team | **Amendment B — Implementation update.** Captures everything built between 2026-05-22 and 2026-05-24: bilingual error messages (D-030); the CP cookie-auth + ticket hand-off pattern (D-026, D-029, D-037); TOTP enrolment two-slot pattern (D-036) and the time-source / secret-format fix (D-034); TOTP recovery codes — 10 single-use Crockford codes (D-040); the `TwoFactorEnabled=false` bypass for visitors and non-enrolled admins (D-033); admin-driven 2FA reset with a mandatory reason (D-041); the `change-password` endpoint; the sign-in **audience gate** (cp / web / app — P2); the **PendingApproval-blocks-CP-allows-Web** rule introduced with the approval workflow (P4); the password-reset code reuse policy; and the full implemented endpoint surface (Amendment B section B.13). Records the open P7 rework that will introduce the `UserType` model and `ProfileType` lookup. |
 
 ---
 
@@ -405,6 +407,307 @@ refresh tokens. Because an access token is valid for 30 minutes, the token
 carries a **per-user security stamp**; sensitive Control Panel endpoints check
 it server-side so that disabling an account or revoking a Control Panel role
 takes effect immediately rather than after the token expires.
+
+---
+
+## Amendment B — Implementation update (2026-05-24)
+
+This amendment captures everything actually built between 2026-05-22 and
+2026-05-24. The v1.1 body of this document remains the source of truth for the
+*specification*; this amendment is the source of truth for the *implementation*
+where the two have refined each other. Every claim below is traceable to a
+decision row in `docs/decisions/DECISIONS_LOG.md` (the `D-NNN` references) and
+to the relevant commit on `feature/login-api`.
+
+### B.1 Bilingual error messages (D-030)
+
+§9 of the v1.1 body said the API would negotiate one language per request.
+**This is reversed.** Every `ApiError` and `ApiErrorDetail` now carries
+**both** the English message and the Arabic message at all times. The client
+picks the right one with the user's culture. The two messages travel as
+`message` (EN) and `messageArabic` (AR) on every error envelope; both are
+**required** fields. SIMF-API-001 §7 is updated in a separate amendment.
+
+Why: a single auth call serves any client culture, removes cross-call
+language drift during a language switch, and matches the customer's "apply
+multi-language in error, mandatory" instruction.
+
+Identity error descriptions raised by ASP.NET Core Identity itself are
+mapped to Arabic by `IdentityErrorTranslator` keyed on the Identity error
+code.
+
+### B.2 The Control Panel session — cookie + ticket hand-off (D-026, D-029, D-037)
+
+The Control Panel issues a **persistent authentication cookie** on sign-in.
+A Blazor interactive circuit cannot write a cookie (the response has begun by
+the time the circuit handles the user interaction), so the interactive
+verification page stashes the completed token pair in a short-lived,
+single-use, server-side ticket and **full-page-navigates to a completion
+endpoint** that issues the cookie.
+
+The cookie carries:
+- the user identity (claims set: `NameIdentifier`, `Email`, `Name`, every
+  Control Panel role the user holds),
+- (encrypted) the SIMF API access + refresh tokens, so the CP can call the
+  API on behalf of the user without re-prompting.
+
+Cookie shape: `HttpOnly`, `SameSite=Lax`, **8 h sliding expiration**. The CP
+defaults to **deny** for every page (`[Authorize]` in `Components/_Imports.razor`);
+the anonymous surface is the sign-in pages, password-reset, error and
+not-found pages, the `/auth/complete` ticket-handoff endpoint, and the
+`/culture` language-cookie endpoint.
+
+The Website (SIMF.Web) gained the same cookie-auth shape under D-046(c) so
+that `/account/visitor-profile` can render server-side with the user's API
+tokens kept out of the browser. The Website cookie scheme is named
+`simf.web.auth`; the Control Panel cookie scheme is the ASP.NET Core
+Identity default. Both are independent — a sign-in in one does not affect
+the other.
+
+### B.3 The CP proxy pattern (D-037)
+
+A Control Panel page that needs to call the SIMF API does **not** call the
+API directly from the Blazor circuit. Each call goes through a same-origin
+**CP proxy endpoint** under `/account/api/…`. The browser sends the auth
+cookie (same-origin → automatic); the proxy reads the access token from the
+cookie's stored auth tokens and forwards the request to the API; the proxy
+returns the upstream HTTP status verbatim so the page can react to 401 /
+423 / 429 distinctly.
+
+Why: this keeps the access token entirely server-side (the Blazor page
+never sees it) and is the same pattern as the existing `/auth/sign-out`
+form-post. A future `IAccessTokenSource` populated via `CircuitHandler`
+could let pages call the API directly; until then the proxy stays.
+
+### B.4 TOTP enrolment two-slot pattern (D-036)
+
+Authenticator-app enrolment uses a **two-slot pattern**: a freshly issued
+secret is stashed under the SIMF-owned provider token
+`[SIMF]/PendingAuthenticatorKey` and only promoted to ASP.NET Core
+Identity's active slot `[AspNetUserStore]/AuthenticatorKey` (and
+`TwoFactorEnabled = true`) **once the user proves the QR was paired** by
+submitting a first valid code.
+
+Disable removes the active slot and clears the per-user
+`LastUsedTotpTimestep` (the replay guard) so a re-enrol starts from a clean
+state. The QR is rendered server-side as SVG via `QRCoder` — no client-side
+QR JavaScript dependency, no plain-text secret in HTML outside the QR
+bytes.
+
+A wrong code at enrolment confirm now calls
+`UserManager.AccessFailedAsync`, so brute-force at enrolment is bounded by
+the account lockout budget (matches §A.1).
+
+### B.5 TOTP secret format and time source (D-034)
+
+`TotpVerifier` normalises a TOTP secret before Base32 decoding — strips
+whitespace, uppercases — so a key that an authenticator app shows with
+spaces (e.g. `dbji csx7 c3mj s2qa …`) decodes correctly. The TOTP time
+source is **UTC** (Otp.NET uses `DateTimeOffset.UtcNow`); the verifier
+checks the surrounding ± 1 time-step window.
+
+### B.6 TOTP recovery codes (D-040)
+
+TOTP enrolment issues **ten single-use recovery codes** as a
+lost-authenticator fallback. Codes are 10-character Crockford-base32
+(no `0/O/1/I/L/U`) printed as `XXXXX-XXXXX`; ~49 bits of entropy each;
+stored as SHA-256 hex hashes in the `TotpRecoveryCodes` table; **revealed
+plaintext exactly once** in the `TotpConfirmResponse` (and in
+`RecoveryCodesResponse` on regenerate) and never again.
+
+A user signs in with a recovery code at the new
+`POST /api/v1/auth/verify-recovery-code` endpoint using the same MFA-token
+ticket the TOTP step uses — a recovery code is an *alternative* second
+factor, **not a 2FA bypass**. Wrong recovery-code attempts call
+`AccessFailedAsync` (same lockout budget as a wrong TOTP), and the
+ticket's per-code attempt cap bounds brute force per session. Regenerating
+wipes the previous batch atomically; disabling 2FA wipes the codes too.
+
+Audit events: `Totp.RecoveryCodesGenerated`,
+`Totp.RecoveryCodesRegenerated`, `Totp.RecoveryCodeUsed`,
+`Totp.RecoveryCodeFailed`. The profile page surfaces "X of 10 remaining"
+with a "Regenerate" button and a low-codes warning when ≤ 3 remain.
+
+### B.7 The second-factor flavour is chosen by enrolment, not role (D-040)
+
+Amendment A.2 said TOTP is for internal users and email-OTP is for
+visitors. This is **refined**: the second-factor kind is now TOTP for
+**any user with an authenticator key paired**, not only role-holders, so a
+visitor who enrols in 2FA from the profile page actually signs in via
+TOTP (and can recover via recovery code). The visitor email-OTP path is
+preserved for users with no authenticator key.
+
+The legacy role-only path stays as a fallback for any pre-enrolment user
+who carries a role but has not paired an authenticator.
+
+### B.8 The `TwoFactorEnabled = false` bypass (D-033)
+
+The sign-in second factor is **skipped** when the account has
+`TwoFactorEnabled = false`. The API issues tokens directly on the password
+step and `SignInResponse.Tokens` carries them; `MfaRequired` is `false`,
+`MfaToken` and `OtpToken` are null. This applies to **both** Control Panel
+users (today: TOTP) and Website visitors (today: email OTP).
+
+Why: a visitor who has not opted into 2FA must not be forced through it.
+The Control Panel sign-in page and the Website sign-in page branch on
+`MfaRequired`: tokens present → complete sign-in; otherwise → continue to
+the second-factor page.
+
+### B.9 Admin-driven 2FA reset (D-041)
+
+Recovery from a lost authenticator **and** lost recovery codes is
+**admin-driven**, not self-service email. A new
+`POST /api/v1/admin/staff/reset-two-factor` endpoint, gated on the
+`Administrator` role, wipes the target's authenticator key, recovery
+codes, `TwoFactorEnabled` flag, security stamp and refresh tokens, and
+queues a notification email to the target.
+
+Rules:
+- The actor cannot reset themselves (use the profile-page Disable
+  instead).
+- The actor cannot reset another `Administrator` (separation of
+  privileges — the super-admin's recovery path stays out-of-band via the
+  seeder + `appsettings.json` re-pair).
+- A **mandatory free-text reason** (10–500 chars) is captured in the
+  audit row alongside both actor and subject user ids (the new
+  `OperationLog.ActorUserId` column).
+
+The CP page is `/admin/reset-2fa` with a `[Authorize(Roles = "Administrator")]`
+gate, a confirmation dialog, and bilingual strings. Operator-level SQL
+reset stays documented as the fallback for the super-administrator.
+
+Audit events: `Admin.TwoFactorReset`, `Admin.TwoFactorResetFailed`. An
+admin-reset failure (self-reset, admin-vs-admin, missing target) emits
+the failed event with the error code so a SIEM can alert on abuse
+attempts.
+
+### B.10 The `change-password` endpoint
+
+A new `POST /api/v1/account/change-password` endpoint (authenticated)
+lets a signed-in user change their own password. The endpoint:
+- accepts `currentPassword`, `newPassword`, `confirmPassword`;
+- applies the same password policy as sign-up (§5.1);
+- updates the hash, rolls the security stamp, and revokes every active
+  refresh token for the user (so other devices are signed out);
+- audits `PasswordChange.Succeeded` or `PasswordChange.Failed`.
+
+The CP profile page calls this through the proxy (B.3), then triggers a
+client-side sign-out so the now-stale CP cookie is replaced.
+
+### B.11 Sign-out and the SameSite-Lax CSRF stance (D-029)
+
+The sign-out endpoint accepts only `POST`. The CP profile page invokes it
+via a hidden form-post (`form.method = "POST"; form.action = "/auth/sign-out";`)
+rather than `Nav.NavigateTo(…)` (which would issue a `GET` and 404 against
+the POST-only route, leaving the cookie alive).
+
+Because the CP cookie is `SameSite=Lax`, a cross-site multipart POST never
+carries it — that defeats CSRF without an antiforgery token. This same
+stance is reused for the avatar upload and the visitor ID-image upload.
+If the cookie is ever made `SameSite=None`, both `/auth/sign-out` and
+those multipart upload endpoints need an antiforgery token.
+
+### B.12 Sign-in audience gate — `cp` / `web` / `app` (P2)
+
+A `SignInRequest.Audience` field — enum `Web (0, default) / Cp (1) /
+App (2)` — was added so the API can enforce that **only users with a CP
+role sign in to the Control Panel**, and only **visitors** sign in to the
+Web / App surfaces. A mismatch returns **403** with either
+`AUTH_WRONG_SURFACE_CP` or `AUTH_WRONG_SURFACE_WEB`, and writes one
+`SignIn.WrongSurface` audit row carrying the actor email and the
+attempted audience.
+
+The gate runs **after** the password and account-state checks so the
+response can't be used as a credential-existence oracle. The CP sign-in
+page sets `Audience = Cp`; the Website sets `Audience = Web`; the
+Flutter app will set `Audience = App` when it ships (same rule as Web —
+visitor-only).
+
+This implements the customer's instruction: "never any user type other
+than super admin can access CP, and same for WEB/APP."
+
+> **Open question — P7.** The audience gate currently classifies a user
+> as "staff" if they hold any RBAC role and as "visitor" otherwise. The
+> P7 rework (planned, not yet shipped) replaces this with a hardcoded
+> `UserType` enum (Admin / Other / Visitor) on `SimfUser`, so:
+> * `cp` → `UserType = Admin` only;
+> * `web` → `UserType in (Visitor, Other)`;
+> * `app` → `UserType in (Visitor, Other)`.
+>
+> RBAC roles will then apply **only** to `UserType = Admin`. The
+> previously-planned "reviewer roles" (Staff / Scientific / Security)
+> from P4 are dropped — they become rows in a new `ProfileTypes` lookup,
+> not ASP.NET Identity roles. P7 awaits owner sign-off.
+
+### B.13 The implemented endpoint surface
+
+Every authentication-related endpoint actually shipped on
+`feature/login-api`, with its policy, rate-limit, and audit events.
+
+| Endpoint | Method | Auth | Rate-limit | Notes & main audit events |
+|---|---|---|---|---|
+| `/auth/sign-up` | POST | anonymous | `auth` | `SignUp.Succeeded` / `SignUp.DuplicateEmail` |
+| `/auth/verify-email` | POST | anonymous | `auth` | `EmailVerification.*` (5 outcomes) |
+| `/auth/resend-code` | POST | anonymous | `auth` | `ResendCode.*` (4 outcomes) |
+| `/auth/sign-in` | POST | anonymous | `auth` | Carries `Audience` (B.12). `SignIn.BadCredentials` / `SignIn.AccountLockedOut` / `SignIn.StateBlocked` / `SignIn.SecondFactorIssued` / `SignIn.WrongSurface` / `SignIn.Succeeded` |
+| `/auth/verify-totp` | POST | anonymous | `auth` | TOTP step. `SignIn.SecondFactorFailed/Rejected/Succeeded` |
+| `/auth/verify-otp` | POST | anonymous | `auth` | Email-OTP step. Same audit family as TOTP |
+| `/auth/verify-recovery-code` | POST | anonymous | `auth` | B.6. `Totp.RecoveryCode*` |
+| `/auth/refresh` | POST | anonymous (presents refresh token) | `auth` | `RefreshToken.Issued/Rotated/Reused/Rejected` |
+| `/auth/sign-out` | POST | bearer | `auth` | B.11. `SignOut.Succeeded` |
+| `/auth/forgot-password` | POST | anonymous | `auth` | `ForgotPassword.Requested` |
+| `/auth/reset-password` | POST | anonymous | `auth` | `PasswordReset.*` (5 outcomes) |
+| `/account/change-password` | POST | bearer | `auth` | B.10. `PasswordChange.Succeeded/Failed` |
+| `/account/profile` | GET | bearer | `auth` | the signed-in user's profile (incl. 2FA status, recovery-code count, avatar URL) |
+| `/account/avatar` | POST / DELETE / GET | bearer | `auth` | D-039 filesystem storage |
+| `/account/totp/setup` | POST | bearer | `auth` | B.4. `Totp.EnrolmentStarted` |
+| `/account/totp/confirm` | POST | bearer | `auth` | B.4. `Totp.EnrolmentConfirmed/Failed` |
+| `/account/totp/disable` | POST | bearer | `auth` | `Totp.Disabled/DisableFailed` |
+| `/account/recovery-codes/regenerate` | POST | bearer | `auth` | B.6. `Totp.RecoveryCodesRegenerated` |
+| `/admin/staff/reset-two-factor` | POST | bearer + `AdministratorOnly` | `auth` | B.9. `Admin.TwoFactorReset/Failed` |
+
+The full request / response shape for each endpoint lives in SIMF-API-001
+(Amendment B is owed there in lock-step with this one).
+
+### B.14 Implementation decisions index
+
+The decisions that fed this amendment, in chronological order. Each row
+is a single decision in `docs/decisions/DECISIONS_LOG.md` — the row
+there is the authoritative narrative; this index is the cross-reference
+back to the FDS section.
+
+| ID | Date | Subject | FDS section |
+|---|---|---|---|
+| D-022 → D-028 | 2026-05-22 | Frontend login increment — login UX, brand, language switch, CP base shell | §7 (UI), B.2, B.3 |
+| D-029 | 2026-05-22 | CP default-deny + anonymous surface | B.2 |
+| D-030 | 2026-05-23 | Bilingual error messages | B.1 |
+| D-031 | 2026-05-23 | Login pages localised (EN/AR) | §7 |
+| D-032 | 2026-05-23 | Brand panel — SIMF logo + wordmark | §7 |
+| D-033 | 2026-05-23 | `TwoFactorEnabled=false` bypass | B.8 |
+| D-034 | 2026-05-23 | TOTP secret format + UTC time source | B.5 |
+| D-035 → D-039 | 2026-05-23 | Avatar storage migration (DB → filesystem); related cookie / proxy hardening | B.3 |
+| D-036 | 2026-05-23 | TOTP enrolment two-slot pattern | B.4 |
+| D-037 | 2026-05-23 | CP proxy pattern | B.3 |
+| D-038 | 2026-05-23 | Five-agent review SEV-1/2 fixes for Part B Stage 2 | B.3, B.4, B.8 |
+| D-040 | 2026-05-23 | TOTP recovery codes — 10 single-use Crockford | B.6, B.7 |
+| D-041 | 2026-05-23 | Admin-driven 2FA reset | B.9 |
+| D-046(a/b/c) | 2026-05-23 | Visitor QR id (Crockford 12-char), visitor-profile service + encrypted ID image, Website cookie + visitor-profile page | SIMF-FDS-002 Amendment A |
+| **P1** | 2026-05-24 | Web login: Arabic label removed from EN language switch | §7 |
+| **P2** | 2026-05-24 | Sign-in audience gate | B.12 |
+| **P3** | 2026-05-24 | CP page split — staff vs visitors ("don't mix") | SIMF-FDS-002 Amendment A |
+| **P4** | 2026-05-24 | Approval workflow + reviewer-role split | SIMF-FDS-002 Amendment A |
+| **P5** | 2026-05-24 | Saudi national-ID + Iqama validator prefix rules | SIMF-FDS-002 Amendment A |
+| **P6** | 2026-05-24 | Per-project log files + CP log viewer | n/a (orthogonal) |
+| D-047 | 2026-05-24 | Per-project logs + CP viewer | n/a (orthogonal; SIMF-SAD-001 owed) |
+
+### B.15 Open items added by Amendment B
+
+| ID | Item | Affects |
+|---|---|---|
+| OI-5 | Approve and ship **P7** — replace the audience gate's "any RBAC role = staff" proxy with a hardcoded `UserType` enum on `SimfUser`, and replace the P4 reviewer roles (Staff / Scientific / Security) with rows in a new `ProfileTypes` lookup. | §5.5, B.12 |
+| OI-6 | Bring SIMF-API-001 to Amendment B in lock-step with this amendment — the response envelope changes (D-030), the audience field (P2), the new endpoints (B.13). | SIMF-API-001 §7, §12 |
+| OI-7 | Decide whether to make `MfaToken` and `OtpToken` ciphers in transit (today they are opaque random tokens hashed at rest; transit security relies on TLS). | B.6 |
+| OI-8 | Document the **Flutter app** privilege enum (`Guest=0 / Visitor=1 / Staff / …`) — separate from the CP `UserType` — when SIMF-MAA-001 enters Amendment A. | n/a (Flutter scope) |
 
 ---
 
