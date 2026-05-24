@@ -25,21 +25,33 @@ public sealed class SimfAdminClient(HttpClient http)
         string accessToken,
         CancellationToken cancellationToken = default) =>
         SendAsync<bool>(
-            HttpMethod.Post, "staff/reset-two-factor",
+            HttpMethod.Post, "admins/reset-two-factor",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Creates a new CP staff user (D-042; P3 renamed from CreateUserAsync).</summary>
-    public Task<ApiCallResult<AdminCreateUserResponse>> CreateStaffAsync(
-        AdminCreateUserRequest request,
+    // -- P7c — three-family create + list ------------------------------------
+
+    /// <summary>Creates a new Admin user (P7c — renamed from CreateStaffAsync).</summary>
+    public Task<ApiCallResult<AdminCreateUserResponse>> CreateAdminAsync(
+        AdminCreateAdminRequest request,
         string accessToken,
         CancellationToken cancellationToken = default) =>
         SendAsync<AdminCreateUserResponse>(
-            HttpMethod.Post, "staff",
+            HttpMethod.Post, "admins",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Creates a new visitor account (P3).</summary>
+    /// <summary>Creates a new Other user (P7c — new).</summary>
+    public Task<ApiCallResult<AdminCreateUserResponse>> CreateOtherAsync(
+        AdminCreateOtherRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminCreateUserResponse>(
+            HttpMethod.Post, "others",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Creates a new Visitor user (P3 — P7c added optional ProfileTypeId).</summary>
     public Task<ApiCallResult<AdminCreateUserResponse>> CreateVisitorAsync(
         AdminCreateVisitorRequest request,
         string accessToken,
@@ -49,17 +61,27 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Returns one page of staff accounts (P3 renamed from ListUsersAsync).</summary>
-    public Task<ApiCallResult<GridPage<AdminUserSummary>>> ListStaffAsync(
+    /// <summary>One page of Admin-typed accounts (P7c).</summary>
+    public Task<ApiCallResult<GridPage<AdminUserSummary>>> ListAdminsAsync(
         GridQuery query,
         string accessToken,
         CancellationToken cancellationToken = default) =>
         SendAsync<GridPage<AdminUserSummary>>(
-            HttpMethod.Post, "staff/list",
+            HttpMethod.Post, "admins/list",
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Returns one page of visitor accounts (P3).</summary>
+    /// <summary>One page of Other-typed accounts (P7c — new).</summary>
+    public Task<ApiCallResult<GridPage<AdminUserSummary>>> ListOthersAsync(
+        GridQuery query,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminUserSummary>>(
+            HttpMethod.Post, "others/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>One page of Visitor-typed accounts (P3 — P7c rekeyed to UserType).</summary>
     public Task<ApiCallResult<GridPage<AdminUserSummary>>> ListVisitorsAsync(
         GridQuery query,
         string accessToken,
@@ -69,13 +91,13 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Soft-deletes one or many users (D-044 b).</summary>
+    /// <summary>Soft-deletes one or many users (D-044 b; P7c renamed URL to /admins).</summary>
     public Task<ApiCallResult<AdminBulkDeleteResponse>> BulkDeleteUsersAsync(
         AdminBulkDeleteRequest request,
         string accessToken,
         CancellationToken cancellationToken = default) =>
         SendAsync<AdminBulkDeleteResponse>(
-            HttpMethod.Post, "staff/bulk-delete",
+            HttpMethod.Post, "admins/bulk-delete",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
@@ -85,7 +107,7 @@ public sealed class SimfAdminClient(HttpClient http)
         string accessToken,
         CancellationToken cancellationToken = default) =>
         SendAsync<AdminCreateUserResponse>(
-            HttpMethod.Post, "staff/duplicate",
+            HttpMethod.Post, "admins/duplicate",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
@@ -95,7 +117,7 @@ public sealed class SimfAdminClient(HttpClient http)
         string accessToken,
         CancellationToken cancellationToken = default)
     {
-        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + "staff/export")
+        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + "admins/export")
         {
             Content = JsonContent.Create(request, options: JsonOptions),
         };
@@ -113,26 +135,43 @@ public sealed class SimfAdminClient(HttpClient http)
         }
     }
 
-    // -- P4 — approval workflow ----------------------------------------------
+    // -- P4 + P7c — approval workflow (Admin / Other / Visitor) --------------
 
-    /// <summary>Approves a pending staff account (P4).</summary>
-    public Task<ApiCallResult<bool>> ApproveStaffAsync(
+    /// <summary>Approves a pending Admin (P7c — renamed from ApproveStaffAsync).</summary>
+    public Task<ApiCallResult<bool>> ApproveAdminAsync(
         Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
         SendAsync<bool>(
-            HttpMethod.Post, $"staff/{subjectId}/approve",
+            HttpMethod.Post, $"admins/{subjectId}/approve",
             JsonContent.Create(new { }, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Rejects a pending staff account with a free-text reason (P4).</summary>
-    public Task<ApiCallResult<bool>> RejectStaffAsync(
+    /// <summary>Rejects a pending Admin with a free-text reason (P7c).</summary>
+    public Task<ApiCallResult<bool>> RejectAdminAsync(
         Guid subjectId, AdminRejectRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
         SendAsync<bool>(
-            HttpMethod.Post, $"staff/{subjectId}/reject",
+            HttpMethod.Post, $"admins/{subjectId}/reject",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Approves a pending visitor (P4).</summary>
+    /// <summary>Approves a pending Other (P7c — new).</summary>
+    public Task<ApiCallResult<bool>> ApproveOtherAsync(
+        Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"others/{subjectId}/approve",
+            JsonContent.Create(new { }, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Rejects a pending Other with a free-text reason (P7c — new).</summary>
+    public Task<ApiCallResult<bool>> RejectOtherAsync(
+        Guid subjectId, AdminRejectRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"others/{subjectId}/reject",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Approves a pending Visitor (P4).</summary>
     public Task<ApiCallResult<bool>> ApproveVisitorAsync(
         Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
         SendAsync<bool>(
@@ -140,7 +179,7 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(new { }, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Rejects a pending visitor with a free-text reason (P4).</summary>
+    /// <summary>Rejects a pending Visitor with a free-text reason (P4).</summary>
     public Task<ApiCallResult<bool>> RejectVisitorAsync(
         Guid subjectId, AdminRejectRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
@@ -149,20 +188,37 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>One page of pending-approval staff (P4).</summary>
-    public Task<ApiCallResult<GridPage<AdminPendingUserSummary>>> ListPendingStaffAsync(
+    /// <summary>One page of pending-approval Admins (P7c — renamed from ListPendingStaffAsync).</summary>
+    public Task<ApiCallResult<GridPage<AdminPendingUserSummary>>> ListPendingAdminsAsync(
         GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>
         SendAsync<GridPage<AdminPendingUserSummary>>(
-            HttpMethod.Post, "staff/pending/list",
+            HttpMethod.Post, "admins/pending/list",
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>One page of pending-approval visitors (P4).</summary>
+    /// <summary>One page of pending-approval Others (P7c — new).</summary>
+    public Task<ApiCallResult<GridPage<AdminPendingUserSummary>>> ListPendingOthersAsync(
+        GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminPendingUserSummary>>(
+            HttpMethod.Post, "others/pending/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>One page of pending-approval Visitors (P4).</summary>
     public Task<ApiCallResult<GridPage<AdminPendingUserSummary>>> ListPendingVisitorsAsync(
         GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>
         SendAsync<GridPage<AdminPendingUserSummary>>(
             HttpMethod.Post, "visitors/pending/list",
             JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>ProfileTypes filtered by UserType — for the create-page picker (P7c).</summary>
+    public Task<ApiCallResult<IReadOnlyList<AdminProfileTypeSummary>>> ListProfileTypesAsync(
+        string userType, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<AdminProfileTypeSummary>>(
+            HttpMethod.Get, $"profile-types?userType={Uri.EscapeDataString(userType)}",
+            content: null,
             accessToken, cancellationToken);
 
     /// <summary>Lists every project's log files (P6).</summary>
@@ -230,7 +286,7 @@ public sealed class SimfAdminClient(HttpClient http)
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         content.Add(file, "file", fileName);
 
-        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + "staff/import")
+        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + "admins/import")
         {
             Content = content,
         };

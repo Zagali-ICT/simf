@@ -70,20 +70,37 @@ internal static class AccountEndpoints
             return Forward(await api.ResetTwoFactorAsync(body, token));
         });
 
-        group.MapPost("/admin/staff",
-            async (AdminCreateUserRequest body, HttpContext http, SimfAdminClient api) =>
+        // P7c — three-family proxy surface (Admin / Other / Visitor).
+        group.MapPost("/admin/admins",
+            async (AdminCreateAdminRequest body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.CreateStaffAsync(body, token));
+            return Forward(await api.CreateAdminAsync(body, token));
         });
 
-        group.MapPost("/admin/staff/list",
+        group.MapPost("/admin/admins/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.ListStaffAsync(body, token));
+            return Forward(await api.ListAdminsAsync(body, token));
+        });
+
+        group.MapPost("/admin/others",
+            async (AdminCreateOtherRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateOtherAsync(body, token));
+        });
+
+        group.MapPost("/admin/others/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListOthersAsync(body, token));
         });
 
         group.MapPost("/admin/visitors",
@@ -102,16 +119,21 @@ internal static class AccountEndpoints
             return Forward(await api.ListVisitorsAsync(body, token));
         });
 
-        // P4b — approval workflow proxies. The page uses simfAccount.postJson
-        // for all six; the access token stays server-side. Authorisation is
-        // double-gated: the API enforces AdministratorOnly / TeamMember on
-        // each endpoint, and the CP page carries [Authorize(Roles = …)].
-        group.MapPost("/admin/staff/pending/list",
+        // P7c — pending-list + approval/reject proxies, one per family.
+        group.MapPost("/admin/admins/pending/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.ListPendingStaffAsync(body, token));
+            return Forward(await api.ListPendingAdminsAsync(body, token));
+        });
+
+        group.MapPost("/admin/others/pending/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListPendingOthersAsync(body, token));
         });
 
         group.MapPost("/admin/visitors/pending/list",
@@ -122,20 +144,36 @@ internal static class AccountEndpoints
             return Forward(await api.ListPendingVisitorsAsync(body, token));
         });
 
-        group.MapPost("/admin/staff/{id:guid}/approve",
+        group.MapPost("/admin/admins/{id:guid}/approve",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.ApproveStaffAsync(id, token));
+            return Forward(await api.ApproveAdminAsync(id, token));
         });
 
-        group.MapPost("/admin/staff/{id:guid}/reject",
+        group.MapPost("/admin/admins/{id:guid}/reject",
             async (Guid id, AdminRejectRequest body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.RejectStaffAsync(id, body, token));
+            return Forward(await api.RejectAdminAsync(id, body, token));
+        });
+
+        group.MapPost("/admin/others/{id:guid}/approve",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ApproveOtherAsync(id, token));
+        });
+
+        group.MapPost("/admin/others/{id:guid}/reject",
+            async (Guid id, AdminRejectRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RejectOtherAsync(id, body, token));
         });
 
         group.MapPost("/admin/visitors/{id:guid}/approve",
@@ -154,7 +192,16 @@ internal static class AccountEndpoints
             return Forward(await api.RejectVisitorAsync(id, body, token));
         });
 
-        group.MapPost("/admin/staff/bulk-delete",
+        // P7c — ProfileTypes picker, filtered by UserType.
+        group.MapGet("/admin/profile-types",
+            async (string userType, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListProfileTypesAsync(userType, token));
+        });
+
+        group.MapPost("/admin/admins/bulk-delete",
             async (AdminBulkDeleteRequest body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
@@ -162,7 +209,7 @@ internal static class AccountEndpoints
             return Forward(await api.BulkDeleteUsersAsync(body, token));
         });
 
-        group.MapPost("/admin/staff/duplicate",
+        group.MapPost("/admin/admins/duplicate",
             async (AdminDuplicateUserRequest body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
@@ -172,7 +219,7 @@ internal static class AccountEndpoints
 
         // Binary download — the browser saves the XLSX. Cannot reuse Forward()
         // because the response body is the workbook bytes, not the JSON envelope.
-        group.MapPost("/admin/staff/export",
+        group.MapPost("/admin/admins/export",
             async (AdminExportUsersRequest body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
@@ -188,7 +235,7 @@ internal static class AccountEndpoints
         });
 
         // Multipart upload — same SameSite=Lax CSRF stance as /avatar (D-029).
-        group.MapPost("/admin/staff/import",
+        group.MapPost("/admin/admins/import",
             async (HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");

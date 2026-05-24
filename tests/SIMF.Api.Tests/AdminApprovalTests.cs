@@ -40,11 +40,11 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         var adminToken = await CreateAdministratorAndSignInAsync();
         var subjectEmail = $"staff-{Guid.NewGuid():N}@simf.test";
 
-        await PostAuthAsync("/api/v1/admin/staff",
-            new AdminCreateUserRequest
+        await PostAuthAsync("/api/v1/admin/admins",
+            new AdminCreateAdminRequest
             {
                 Email = subjectEmail, DisplayName = "Pending Staff",
-                GrantAdministratorRole = true,
+                Roles = new List<string> { AppRoles.Administrator },
             },
             adminToken);
 
@@ -62,7 +62,7 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         var subjectId = await CreateStaffSubjectAsync(adminToken);
 
         var response = await PostAuthAsync(
-            $"/api/v1/admin/staff/{subjectId}/approve", new { }, adminToken);
+            $"/api/v1/admin/admins/{subjectId}/approve", new { }, adminToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var scope = _factory.Services.CreateScope();
@@ -80,7 +80,7 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         var subjectId = await CreateStaffSubjectAsync(adminToken);
 
         var response = await PostAuthAsync(
-            $"/api/v1/admin/staff/{subjectId}/reject",
+            $"/api/v1/admin/admins/{subjectId}/reject",
             new AdminRejectRequest
             {
                 Reason = "Not a permitted role-holder per HR list",
@@ -143,11 +143,11 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         var subjectId = await CreateStaffSubjectAsync(adminToken);
 
         var first = await PostAuthAsync(
-            $"/api/v1/admin/staff/{subjectId}/approve", new { }, adminToken);
+            $"/api/v1/admin/admins/{subjectId}/approve", new { }, adminToken);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
 
         var second = await PostAuthAsync(
-            $"/api/v1/admin/staff/{subjectId}/approve", new { }, adminToken);
+            $"/api/v1/admin/admins/{subjectId}/approve", new { }, adminToken);
         Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
         var body = await second.Content.ReadFromJsonAsync<ApiResult<object>>();
         Assert.Equal(ErrorCodes.AdminUserNotPending, body!.Error!.Code);
@@ -160,10 +160,10 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         var pendingId = await CreateStaffSubjectAsync(adminToken);
         var approvedId = await CreateStaffSubjectAsync(adminToken);
         await PostAuthAsync(
-            $"/api/v1/admin/staff/{approvedId}/approve", new { }, adminToken);
+            $"/api/v1/admin/admins/{approvedId}/approve", new { }, adminToken);
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/staff/pending/list",
+            "/api/v1/admin/admins/pending/list",
             new GridQuery { Top = 50 }, adminToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -178,11 +178,11 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
     private async Task<Guid> CreateStaffSubjectAsync(string adminToken)
     {
         var email = $"staff-{Guid.NewGuid():N}@simf.test";
-        var response = await PostAuthAsync("/api/v1/admin/staff",
-            new AdminCreateUserRequest
+        var response = await PostAuthAsync("/api/v1/admin/admins",
+            new AdminCreateAdminRequest
             {
                 Email = email, DisplayName = "Pending Staff",
-                GrantAdministratorRole = true,
+                Roles = new List<string> { AppRoles.Administrator },
             }, adminToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var scope = _factory.Services.CreateScope();

@@ -22,13 +22,40 @@ public sealed class AdminResetTwoFactorRequest
 }
 
 /// <summary>
-/// The body of <c>POST /api/v1/admin/staff</c> (renamed from
-/// <c>/admin/users</c> in P3). The actor must hold the Administrator role;
-/// a new Control Panel staff user is created in the <c>Approved</c> state
-/// with no password — they receive an invitation email carrying a one-time
-/// password-set code (decision D-042; P3 added the staff/visitor split).
+/// The body of <c>POST /api/v1/admin/admins</c> (P7c — renamed from
+/// <c>/admin/staff</c>). Creates a new Control Panel <b>Admin</b> user
+/// — the only <see cref="SIMF.Domain.IdentityAccess.UserType"/> that
+/// carries RBAC roles per the P7 model (decision D-048). The new
+/// account lands in <c>PendingApproval</c> with no password; the user
+/// receives a 7-day invitation code (D-042). Approval is
+/// Administrator-only and mints the QR id (D-046a + P4).
 /// </summary>
-public sealed class AdminCreateUserRequest
+public sealed class AdminCreateAdminRequest
+{
+    /// <summary>The new admin's email address; must not already be registered.</summary>
+    public string Email { get; set; } = string.Empty;
+
+    /// <summary>The display name shown in the UI (2–128 characters).</summary>
+    public string DisplayName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The RBAC roles to grant the new admin. Today the only allowed
+    /// value is <c>"Administrator"</c>; future fine-grained Admin-side
+    /// roles plug in here. An empty list means "no role today" — the
+    /// admin can sign in to the CP (UserType = Admin) but every action
+    /// is gated by RBAC, so they will have very limited access.
+    /// </summary>
+    public IList<string> Roles { get; set; } = new List<string>();
+}
+
+/// <summary>
+/// The body of <c>POST /api/v1/admin/others</c> (P7c — new). Creates a
+/// new <b>Other</b> user — an event team / partner who signs in to the
+/// Flutter app, not the CP. The <see cref="ProfileTypeId"/> picks the
+/// Other subtype (Staff / Exhibitor / Sponsor / …) from the
+/// <c>ProfileTypes</c> lookup. Administrator-only.
+/// </summary>
+public sealed class AdminCreateOtherRequest
 {
     /// <summary>The new user's email address; must not already be registered.</summary>
     public string Email { get; set; } = string.Empty;
@@ -37,19 +64,19 @@ public sealed class AdminCreateUserRequest
     public string DisplayName { get; set; } = string.Empty;
 
     /// <summary>
-    /// When true, the new user is added to the Administrator role. Defaults to
-    /// false. The wider role catalogue (Staff / Scientific / Security) lands
-    /// in P4.
+    /// The <c>ProfileTypes</c> row id that identifies the subtype. Must
+    /// reference an active row with <c>UserType = Other</c>.
     /// </summary>
-    public bool GrantAdministratorRole { get; set; }
+    public Guid ProfileTypeId { get; set; }
 }
 
 /// <summary>
-/// The body of <c>POST /api/v1/admin/visitors</c> (added in P3). A team
-/// member (Staff / Scientific / Security in P4; Administrator-as-fallback
-/// today) creates a visitor account. Visitors carry no role; they sign in
-/// to the Website / Flutter app and complete their own visitor profile
-/// (D-046). The wider visitor-lifecycle approval workflow lands in P4.
+/// The body of <c>POST /api/v1/admin/visitors</c> (P3; P7c added
+/// optional <see cref="ProfileTypeId"/>). Creates a new
+/// <b>Visitor</b> user — an event attendee who signs in to the Flutter
+/// app / Website. The Subtype (VVIP / VIP / Gold / …) is **optional**
+/// at create time because a self-registered visitor has none until
+/// approval. Administrator-only.
 /// </summary>
 public sealed class AdminCreateVisitorRequest
 {
@@ -58,6 +85,15 @@ public sealed class AdminCreateVisitorRequest
 
     /// <summary>The display name shown in the UI (2–128 characters).</summary>
     public string DisplayName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The <c>ProfileTypes</c> row id that identifies the visitor tier
+    /// (VVIP / VIP / Gold / …). Optional — null means "no tier today";
+    /// the admin can set the tier later from the visitor's profile.
+    /// When supplied, the row must be active with
+    /// <c>UserType = Visitor</c>.
+    /// </summary>
+    public Guid? ProfileTypeId { get; set; }
 }
 
 /// <summary>The body of a successful admin-created account (D-042).</summary>
@@ -156,3 +192,15 @@ public sealed record AdminPendingUserSummary(
     string Email,
     string DisplayName,
     DateTimeOffset CreatedAt);
+
+/// <summary>
+/// One row in the <c>ProfileTypes</c> lookup (P7c). Used by the CP
+/// create / list pages to populate the subtype picker.
+/// </summary>
+public sealed record AdminProfileTypeSummary(
+    Guid Id,
+    string Name,
+    string NameArabic,
+    string PageColor,
+    string UserType,
+    bool IsActive);

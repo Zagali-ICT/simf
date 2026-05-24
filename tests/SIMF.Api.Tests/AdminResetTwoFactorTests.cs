@@ -38,7 +38,7 @@ public sealed class AdminResetTwoFactorTests : IClassFixture<SimfApiFactory>
         var (targetEmail, targetUserId) = await EnrolTwoFactorVisitorAsync();
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/staff/reset-two-factor",
+            "/api/v1/admin/admins/reset-two-factor",
             new AdminResetTwoFactorRequest
             {
                 Email = targetEmail,
@@ -65,7 +65,7 @@ public sealed class AdminResetTwoFactorTests : IClassFixture<SimfApiFactory>
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/staff/reset-two-factor",
+            "/api/v1/admin/admins/reset-two-factor",
             new AdminResetTwoFactorRequest
             {
                 Email = "someone@example.com",
@@ -85,7 +85,7 @@ public sealed class AdminResetTwoFactorTests : IClassFixture<SimfApiFactory>
         var adminEmail = ExtractEmailFromAccessToken(adminToken);
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/staff/reset-two-factor",
+            "/api/v1/admin/admins/reset-two-factor",
             new AdminResetTwoFactorRequest
             {
                 Email = adminEmail,
@@ -105,7 +105,7 @@ public sealed class AdminResetTwoFactorTests : IClassFixture<SimfApiFactory>
         var (secondAdminEmail, _) = await CreateAdministratorAsync();
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/staff/reset-two-factor",
+            "/api/v1/admin/admins/reset-two-factor",
             new AdminResetTwoFactorRequest
             {
                 Email = secondAdminEmail,
@@ -125,7 +125,7 @@ public sealed class AdminResetTwoFactorTests : IClassFixture<SimfApiFactory>
         var (targetEmail, targetUserId) = await EnrolTwoFactorVisitorAsync();
 
         await PostAuthAsync(
-            "/api/v1/admin/staff/reset-two-factor",
+            "/api/v1/admin/admins/reset-two-factor",
             new AdminResetTwoFactorRequest
             {
                 Email = targetEmail,
@@ -152,7 +152,7 @@ public sealed class AdminResetTwoFactorTests : IClassFixture<SimfApiFactory>
         var adminToken = await CreateAdministratorAndSignInAsync();
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/staff/reset-two-factor",
+            "/api/v1/admin/admins/reset-two-factor",
             new AdminResetTwoFactorRequest
             {
                 Email = $"missing-{Guid.NewGuid():N}@example.com",

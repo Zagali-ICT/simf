@@ -8,19 +8,20 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/staff/{id:guid}/approve</c> — flip a pending
-/// staff account to Approved + mint the QR id (P4). Administrator-only.
+/// <c>POST /api/v1/admin/admins/{id:guid}/approve</c> — flip a pending
+/// Admin to Approved + mint the QR id (P4; P7c renamed URL from
+/// <c>/admin/staff</c>). Administrator-only.
 /// </summary>
-public sealed class ApproveStaffEndpoint(IAdminAccountService adminAccountService)
+public sealed class ApproveAdminEndpoint(IAdminAccountService adminAccountService)
     : Endpoint<ApproveRouteRequest, ApiResult<bool>>
 {
     public override void Configure()
     {
-        Post("/admin/staff/{id:guid}/approve");
+        Post("/admin/admins/{id:guid}/approve");
         Policies(nameof(AuthorizationPolicies.AdministratorOnly));
         Tags("Admin");
         Summary(summary => summary.Summary =
-            "Approve a pending staff account. Requires Administrator role.");
+            "Approve a pending Admin. Requires Administrator role.");
     }
 
     public override async Task HandleAsync(ApproveRouteRequest req, CancellationToken ct)
@@ -30,7 +31,35 @@ public sealed class ApproveStaffEndpoint(IAdminAccountService adminAccountServic
             await Send.UnauthorizedAsync(ct);
             return;
         }
-        await adminAccountService.ApproveStaffAsync(actorId, req.Id, ct);
+        await adminAccountService.ApproveAdminAsync(actorId, req.Id, ct);
+        await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
+    }
+}
+
+/// <summary>
+/// <c>POST /api/v1/admin/others/{id:guid}/approve</c> — flip a pending
+/// Other to Approved + mint the QR id (P7c — new). Administrator-only.
+/// </summary>
+public sealed class ApproveOtherEndpoint(IAdminAccountService adminAccountService)
+    : Endpoint<ApproveRouteRequest, ApiResult<bool>>
+{
+    public override void Configure()
+    {
+        Post("/admin/others/{id:guid}/approve");
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
+        Tags("Admin");
+        Summary(summary => summary.Summary =
+            "Approve a pending Other. Requires Administrator role.");
+    }
+
+    public override async Task HandleAsync(ApproveRouteRequest req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await adminAccountService.ApproveOtherAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
 }

@@ -80,9 +80,11 @@ public static class AuditEvents
     public const string AdminLogViewed = "Admin.LogViewed";
     public const string AdminLogDownloaded = "Admin.LogDownloaded";
 
-    // Approval workflow (P4 — staff approve staff/visitor; team approves visitors)
+    // Approval workflow (P4 — Admin / Visitor; P7c added the Other pair)
     public const string AdminStaffApproved = "Admin.StaffApproved";
     public const string AdminStaffRejected = "Admin.StaffRejected";
+    public const string AdminOtherApproved = "Admin.OtherApproved";
+    public const string AdminOtherRejected = "Admin.OtherRejected";
     public const string AdminVisitorApproved = "Admin.VisitorApproved";
     public const string AdminVisitorRejected = "Admin.VisitorRejected";
 }

@@ -65,6 +65,9 @@ public static class ErrorCodes
     // Admin approval workflow (P4)
     public const string AdminUserNotPending = "ADMIN_USER_NOT_PENDING";
 
+    // P7c — ProfileTypes lookup validation
+    public const string AdminProfileTypeInvalid = "ADMIN_PROFILE_TYPE_INVALID";
+
     // Visitor profile (D-046 b)
     public const string VisitorIdImageMissing = "VISITOR_ID_IMAGE_MISSING";
     public const string VisitorIdImageTooLarge = "VISITOR_ID_IMAGE_TOO_LARGE";

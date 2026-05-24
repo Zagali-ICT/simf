@@ -98,12 +98,14 @@
         try
         {
             var envelope = await JS.InvokeAsync<ApiResult<AdminCreateUserResponse>>(
-                "simfAccount.postJson", "/account/api/admin/staff",
-                new AdminCreateUserRequest
+                "simfAccount.postJson", "/account/api/admin/admins",
+                new AdminCreateAdminRequest
                 {
                     Email = _model.Email,
                     DisplayName = _model.DisplayName,
-                    GrantAdministratorRole = _model.GrantAdministratorRole,
+                    Roles = _model.GrantAdministratorRole
+                        ? new List<string> { AppRoles.Administrator }
+                        : new List<string>(),
                 });
             if (envelope is { Success: true, Data: not null })
             {

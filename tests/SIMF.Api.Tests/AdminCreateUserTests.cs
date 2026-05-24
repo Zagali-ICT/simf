@@ -37,8 +37,8 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         var newEmail = $"invited-{Guid.NewGuid():N}@simf.test";
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/staff",
-            new AdminCreateUserRequest
+            "/api/v1/admin/admins",
+            new AdminCreateAdminRequest
             {
                 Email = newEmail,
                 DisplayName = "Invited User",
@@ -75,12 +75,12 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         var newEmail = $"second-admin-{Guid.NewGuid():N}@simf.test";
 
         await PostAuthAsync(
-            "/api/v1/admin/staff",
-            new AdminCreateUserRequest
+            "/api/v1/admin/admins",
+            new AdminCreateAdminRequest
             {
                 Email = newEmail,
                 DisplayName = "Second Admin",
-                GrantAdministratorRole = true,
+                Roles = new List<string> { AppRoles.Administrator },
             },
             adminToken);
 
@@ -96,8 +96,8 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         var visitor = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/staff",
-            new AdminCreateUserRequest
+            "/api/v1/admin/admins",
+            new AdminCreateAdminRequest
             {
                 Email = $"x-{Guid.NewGuid():N}@simf.test",
                 DisplayName = "Should never be created",
@@ -114,12 +114,12 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         var email = $"dup-{Guid.NewGuid():N}@simf.test";
 
         await PostAuthAsync(
-            "/api/v1/admin/staff",
-            new AdminCreateUserRequest { Email = email, DisplayName = "First time" },
+            "/api/v1/admin/admins",
+            new AdminCreateAdminRequest { Email = email, DisplayName = "First time" },
             adminToken);
         var response = await PostAuthAsync(
-            "/api/v1/admin/staff",
-            new AdminCreateUserRequest { Email = email, DisplayName = "Second time" },
+            "/api/v1/admin/admins",
+            new AdminCreateAdminRequest { Email = email, DisplayName = "Second time" },
             adminToken);
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
@@ -128,34 +128,37 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Staff_list_returns_only_users_with_a_CP_role_after_P3_split()
+    public async Task Admins_list_returns_only_UserType_Admin_after_P7c_split()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
-        // A non-admin user created via /admin/staff (today the only way to
-        // create from the API regardless of grant) does NOT appear in the
-        // staff list — only role-holders do (P3 filter).
-        var nonAdminEmail = $"in-list-{Guid.NewGuid():N}@simf.test";
+        // P7c — every user created via /admin/admins lands with
+        // UserType = Admin (with or without the Administrator RBAC role).
+        // They all appear in the admins list; visitors do not.
+        var anotherAdminEmail = $"in-list-{Guid.NewGuid():N}@simf.test";
         await PostAuthAsync(
-            "/api/v1/admin/staff",
-            new AdminCreateUserRequest { Email = nonAdminEmail, DisplayName = "Listed" },
+            "/api/v1/admin/admins",
+            new AdminCreateAdminRequest
+            {
+                Email = anotherAdminEmail, DisplayName = "Listed",
+                Roles = new List<string> { AppRoles.Administrator },
+            },
             adminToken);
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/staff/list",
+            "/api/v1/admin/admins/list",
             new GridQuery { Top = 200 },
             adminToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<GridPage<AdminUserSummary>>>())!;
         Assert.True(body.Success);
-        // The actor (an Administrator) must appear.
+        // The actor + the newly-created Admin both appear.
         Assert.Contains(body.Data!.Items, user => user.IsAdministrator);
-        // The non-admin user must NOT appear in the staff list.
-        Assert.DoesNotContain(body.Data.Items, user => user.Email == nonAdminEmail);
+        Assert.Contains(body.Data!.Items, user => user.Email == anotherAdminEmail);
     }
 
     [Fact]
-    public async Task Visitors_list_returns_users_without_a_CP_role_after_P3_split()
+    public async Task Visitors_list_returns_only_UserType_Visitor_after_P7c_split()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
         var visitorEmail = $"visitor-{Guid.NewGuid():N}@simf.test";
@@ -172,7 +175,11 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<GridPage<AdminUserSummary>>>())!;
         Assert.Contains(body.Data!.Items, user => user.Email == visitorEmail);
-        // Admins must NOT appear in the visitor list.
+        // P7c — Admin users (UserType = Admin) must NOT appear in the
+        // visitor list. The IsAdministrator flag on the summary is the
+        // RBAC-role check, which is a sufficient proxy here because today
+        // every Admin user is created via /admin/admins with the
+        // Administrator role.
         Assert.DoesNotContain(body.Data.Items, user => user.IsAdministrator);
     }
 
@@ -207,7 +214,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         var adminToken = await CreateAdministratorAndSignInAsync();
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/staff/list",
+            "/api/v1/admin/admins/list",
             new GridQuery { Skip = 0, Top = 1 },
             adminToken);
 
@@ -223,7 +230,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         var adminToken = await CreateAdministratorAndSignInAsync();
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/staff/list",
+            "/api/v1/admin/admins/list",
             new GridQuery { Sort = "email", SortDescending = false, Top = 200 },
             adminToken);
 
@@ -240,8 +247,8 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         var email = $"qr-{Guid.NewGuid():N}@simf.test";
 
         await PostAuthAsync(
-            "/api/v1/admin/staff",
-            new AdminCreateUserRequest { Email = email, DisplayName = "QR Test" },
+            "/api/v1/admin/admins",
+            new AdminCreateAdminRequest { Email = email, DisplayName = "QR Test" },
             adminToken);
 
         using var scope = _factory.Services.CreateScope();
@@ -263,12 +270,12 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         // otherwise the audience gate treats this user as a visitor and the
         // Cp-audience sign-in below is rejected.
         await PostAuthAsync(
-            "/api/v1/admin/staff",
-            new AdminCreateUserRequest
+            "/api/v1/admin/admins",
+            new AdminCreateAdminRequest
             {
                 Email = newEmail,
                 DisplayName = "Invite Flow",
-                GrantAdministratorRole = true,
+                Roles = new List<string> { AppRoles.Administrator },
             },
             adminToken);
 
@@ -296,7 +303,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
 
         // P4 — invited staff land in PendingApproval; approve before signing in.
         var approve = await PostAuthAsync(
-            $"/api/v1/admin/staff/{user.Id}/approve",
+            $"/api/v1/admin/admins/{user.Id}/approve",
             new { }, adminToken);
         Assert.Equal(HttpStatusCode.OK, approve.StatusCode);
 

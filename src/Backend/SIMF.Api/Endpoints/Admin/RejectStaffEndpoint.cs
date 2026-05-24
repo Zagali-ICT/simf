@@ -8,20 +8,20 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/staff/{id:guid}/reject</c> — set a pending staff
-/// account to Rejected with a mandatory free-text reason (P4).
-/// Administrator-only.
+/// <c>POST /api/v1/admin/admins/{id:guid}/reject</c> — set a pending
+/// Admin to Rejected with a mandatory 10–500 char reason (P4; P7c
+/// renamed URL from <c>/admin/staff</c>). Administrator-only.
 /// </summary>
-public sealed class RejectStaffEndpoint(IAdminAccountService adminAccountService)
+public sealed class RejectAdminEndpoint(IAdminAccountService adminAccountService)
     : Endpoint<RejectRouteRequest, ApiResult<bool>>
 {
     public override void Configure()
     {
-        Post("/admin/staff/{id:guid}/reject");
+        Post("/admin/admins/{id:guid}/reject");
         Policies(nameof(AuthorizationPolicies.AdministratorOnly));
         Tags("Admin");
         Summary(summary => summary.Summary =
-            "Reject a pending staff account. Requires Administrator role.");
+            "Reject a pending Admin. Requires Administrator role.");
     }
 
     public override async Task HandleAsync(RejectRouteRequest req, CancellationToken ct)
@@ -31,7 +31,37 @@ public sealed class RejectStaffEndpoint(IAdminAccountService adminAccountService
             await Send.UnauthorizedAsync(ct);
             return;
         }
-        await adminAccountService.RejectStaffAsync(actorId, req.Id,
+        await adminAccountService.RejectAdminAsync(actorId, req.Id,
+            new AdminRejectRequest { Reason = req.Reason }, ct);
+        await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
+    }
+}
+
+/// <summary>
+/// <c>POST /api/v1/admin/others/{id:guid}/reject</c> — set a pending
+/// Other to Rejected with a mandatory 10–500 char reason (P7c — new).
+/// Administrator-only.
+/// </summary>
+public sealed class RejectOtherEndpoint(IAdminAccountService adminAccountService)
+    : Endpoint<RejectRouteRequest, ApiResult<bool>>
+{
+    public override void Configure()
+    {
+        Post("/admin/others/{id:guid}/reject");
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
+        Tags("Admin");
+        Summary(summary => summary.Summary =
+            "Reject a pending Other. Requires Administrator role.");
+    }
+
+    public override async Task HandleAsync(RejectRouteRequest req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await adminAccountService.RejectOtherAsync(actorId, req.Id,
             new AdminRejectRequest { Reason = req.Reason }, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }

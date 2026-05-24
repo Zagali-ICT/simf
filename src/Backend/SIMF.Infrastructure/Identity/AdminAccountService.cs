@@ -133,29 +133,47 @@ internal sealed class AdminAccountService(
             actorUserId, target.Email, request.Reason);
     }
 
-    public Task<AdminCreateUserResponse> CreateStaffAsync(
+    // -- P7c — Admin / Other / Visitor create dispatch -----------------------
+
+    public Task<AdminCreateUserResponse> CreateAdminAsync(
         Guid actorUserId,
-        AdminCreateUserRequest request,
+        AdminCreateAdminRequest request,
         CancellationToken cancellationToken = default) =>
-        CreateAccountAsync(actorUserId, request.Email, request.DisplayName,
-            request.GrantAdministratorRole, cancellationToken);
+        CreateAccountAsync(
+            actorUserId, request.Email, request.DisplayName,
+            UserType.Admin, profileTypeId: null,
+            roles: request.Roles, cancellationToken);
+
+    public Task<AdminCreateUserResponse> CreateOtherAsync(
+        Guid actorUserId,
+        AdminCreateOtherRequest request,
+        CancellationToken cancellationToken = default) =>
+        CreateAccountAsync(
+            actorUserId, request.Email, request.DisplayName,
+            UserType.Other, profileTypeId: request.ProfileTypeId,
+            roles: Array.Empty<string>(), cancellationToken);
 
     public Task<AdminCreateUserResponse> CreateVisitorAsync(
         Guid actorUserId,
         AdminCreateVisitorRequest request,
         CancellationToken cancellationToken = default) =>
-        CreateAccountAsync(actorUserId, request.Email, request.DisplayName,
-            grantAdministratorRole: false, cancellationToken);
+        CreateAccountAsync(
+            actorUserId, request.Email, request.DisplayName,
+            UserType.Visitor, profileTypeId: request.ProfileTypeId,
+            roles: Array.Empty<string>(), cancellationToken);
 
-    /// <summary>Shared back-end of <see cref="CreateStaffAsync"/> and
-    /// <see cref="CreateVisitorAsync"/>. P3 extracted to keep the staff
-    /// / visitor surfaces split at the contract layer without
-    /// duplicating the audit + invite logic.</summary>
+    /// <summary>
+    /// Shared back-end of every create call (P7c — D-048). Routes a
+    /// <see cref="UserType"/> + optional <c>ProfileTypeId</c> + optional
+    /// RBAC role grants through one create + invite + audit pipeline.
+    /// </summary>
     private async Task<AdminCreateUserResponse> CreateAccountAsync(
         Guid actorUserId,
         string email,
         string displayName,
-        bool grantAdministratorRole,
+        UserType userType,
+        Guid? profileTypeId,
+        IList<string> roles,
         CancellationToken cancellationToken)
     {
         if (await userManager.FindByEmailAsync(email) is not null)
@@ -169,6 +187,28 @@ internal sealed class AdminAccountService(
                 "يوجد حساب مسجّل بهذا البريد الإلكتروني بالفعل.");
         }
 
+        // P7c — validate the ProfileTypeId before creating the user so
+        // the row + the FK land atomically.
+        if (profileTypeId is { } id)
+        {
+            var profileType = await dbContext.ProfileTypes
+                .SingleOrDefaultAsync(p => p.Id == id, cancellationToken);
+            if (profileType is null || !profileType.IsActive)
+            {
+                throw new ApiException(
+                    ErrorCodes.AdminProfileTypeInvalid, 400,
+                    "The selected profile type is not valid or no longer active.",
+                    "نوع الملف الشخصي المحدّد غير صالح أو لم يعد مفعّلاً.");
+            }
+            if (profileType.UserType != userType)
+            {
+                throw new ApiException(
+                    ErrorCodes.AdminProfileTypeInvalid, 400,
+                    "The selected profile type does not apply to this user type.",
+                    "نوع الملف الشخصي المحدّد لا ينطبق على هذا النوع من المستخدمين.");
+            }
+        }
+
         var now = timeProvider.GetUtcNow();
         var user = new SimfUser
         {
@@ -176,19 +216,11 @@ internal sealed class AdminAccountService(
             Email = email,
             EmailConfirmed = true,
             DisplayName = displayName,
-            // P4 — created users land in PendingApproval; the QR id is
-            // minted in ApproveStaffAsync / ApproveVisitorAsync (D-046
-            // QR-on-approval), not here.
+            // Created users land in PendingApproval; the QR id is minted
+            // on approval (D-046a + P4).
             AccountState = AccountState.PendingApproval,
-            // P7b — `UserType = Admin` for accounts that get the
-            // Administrator role at create time; the P7c contract split
-            // will replace this two-way branch with a per-UserType
-            // create method (CreateAdmin / CreateOther / CreateVisitor).
-            // For now the legacy `GrantAdministratorRole` flag is the
-            // signal: true → Admin, false → Visitor (the safe default).
-            UserType = grantAdministratorRole
-                ? UserType.Admin
-                : UserType.Visitor,
+            UserType = userType,
+            ProfileTypeId = profileTypeId,
             PasswordChangeRequired = false,
             CreatedAt = now,
         };
@@ -206,16 +238,19 @@ internal sealed class AdminAccountService(
                 "تعذّر إنشاء الحساب.");
         }
 
-        if (grantAdministratorRole)
+        // P7c — RBAC roles are valid only for Admin-typed users.
+        if (userType == UserType.Admin && roles.Count > 0)
         {
-            await userManager.AddToRoleAsync(user, AdministratorRole);
+            foreach (var role in roles)
+            {
+                if (await roleManager.RoleExistsAsync(role))
+                {
+                    await userManager.AddToRoleAsync(user, role);
+                }
+            }
         }
 
-        // P4 — QR id mint moves from create-time to approve-time. See
-        // ApproveStaffAsync / ApproveVisitorAsync below.
-
-        // 7-day invite — longer than the 10-min self-service forgot-password
-        // code, so the user can act on it without urgency (D-042).
+        // 7-day invite (D-042).
         var inviteLifetime = TimeSpan.FromDays(7);
         var code = new AccountCode
         {
@@ -237,65 +272,48 @@ internal sealed class AdminAccountService(
                 SubjectEmail = user.Email,
                 SubjectUserId = user.Id,
                 ActorUserId = actorUserId,
-                Detail = grantAdministratorRole ? "role=Administrator" : null,
+                Detail = $"userType={userType}; roles={string.Join(",", roles)}",
             },
             cancellationToken);
 
         logger.LogInformation(
-            "Admin {ActorId} created user {Email} (Administrator={IsAdmin})",
-            actorUserId, user.Email, grantAdministratorRole);
+            "Admin {ActorId} created {UserType} {Email}",
+            actorUserId, userType, user.Email);
         return new AdminCreateUserResponse(
             user.Id, user.Email!, (int)inviteLifetime.TotalSeconds);
     }
 
-    public Task<GridPage<AdminUserSummary>> ListStaffAsync(
+    public Task<GridPage<AdminUserSummary>> ListAdminsAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
-        ListAccountsAsync(query, staffOnly: true, cancellationToken);
+        ListAccountsAsync(query, UserType.Admin, cancellationToken);
+
+    public Task<GridPage<AdminUserSummary>> ListOthersAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        ListAccountsAsync(query, UserType.Other, cancellationToken);
 
     public Task<GridPage<AdminUserSummary>> ListVisitorsAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
-        ListAccountsAsync(query, staffOnly: false, cancellationToken);
+        ListAccountsAsync(query, UserType.Visitor, cancellationToken);
 
-    /// <summary>Shared back-end of <see cref="ListStaffAsync"/> and
-    /// <see cref="ListVisitorsAsync"/>. P3 added the role-based filter:
-    /// staff = users with the Administrator role today (Staff / Scientific
-    /// / Security from P4); visitors = users with no CP role.</summary>
+    /// <summary>Shared back-end of every list call (P7c — D-048).
+    /// Narrows to one <see cref="UserType"/> and runs the same filter /
+    /// sort / page pipeline.</summary>
     private async Task<GridPage<AdminUserSummary>> ListAccountsAsync(
-        GridQuery query, bool staffOnly, CancellationToken cancellationToken)
+        GridQuery query, UserType userType, CancellationToken cancellationToken)
     {
         // Normalise: clamp Top to [1..200], clamp Skip to [0..). The grid
         // contract (SIMF.Common.GridQuery) says the endpoint owns the clamp.
         var skip = query.Skip < 0 ? 0 : query.Skip;
         var top = query.Top switch { < 1 => 20, > 200 => 200, _ => query.Top };
 
-        // Resolve the Administrator role id once for the per-row projection
-        // (the 'role' summary still shows Administrator membership only).
+        // Resolve the Administrator role id once for the per-row "is admin"
+        // flag. Only Admin-typed users carry RBAC roles per the P7 model.
         var adminRoleId = await GetAdministratorRoleIdAsync(cancellationToken);
 
-        // P4 — every CP role id (Administrator + Staff/Scientific/Security)
-        // for the staff/visitor split. Staff = "user holds at least one of
-        // these"; visitor = "user holds none of these".
-        var cpRoleIds = await GetCpRoleIdsAsync(cancellationToken);
-
-        // Build the query over UserManager.Users so the EF tracker stays out.
-        var users = userManager.Users.AsQueryable();
-
-        // The list is narrowed BEFORE any filter/sort/page so the totals are
-        // correct.
-        if (cpRoleIds.Count > 0)
-        {
-            users = staffOnly
-                ? users.Where(u => dbContext.UserRoles.Any(ur =>
-                    ur.UserId == u.Id && cpRoleIds.Contains(ur.RoleId)))
-                : users.Where(u => !dbContext.UserRoles.Any(ur =>
-                    ur.UserId == u.Id && cpRoleIds.Contains(ur.RoleId)));
-        }
-        else if (staffOnly)
-        {
-            // No CP roles exist yet — there are no staff users by definition,
-            // so the staff page returns an empty result.
-            users = users.Where(_ => false);
-        }
+        // P7c — narrow by UserType. The list is narrowed BEFORE any
+        // filter/sort/page so the totals are correct.
+        var users = userManager.Users
+            .Where(u => u.UserType == userType);
 
         // -- Search ---------------------------------------------------------
         if (!string.IsNullOrWhiteSpace(query.Search))
@@ -399,30 +417,41 @@ internal sealed class AdminAccountService(
         return ids;
     }
 
-    // -- P4 — approval workflow ----------------------------------------------
+    // -- P4 + P7c — approval workflow (Admin / Other / Visitor) --------------
 
-    public Task ApproveStaffAsync(
+    public Task ApproveAdminAsync(
         Guid actorUserId, Guid subjectUserId, CancellationToken cancellationToken = default) =>
-        ApproveAsync(actorUserId, subjectUserId, isStaff: true, cancellationToken);
+        ApproveAsync(actorUserId, subjectUserId, UserType.Admin, cancellationToken);
+
+    public Task ApproveOtherAsync(
+        Guid actorUserId, Guid subjectUserId, CancellationToken cancellationToken = default) =>
+        ApproveAsync(actorUserId, subjectUserId, UserType.Other, cancellationToken);
 
     public Task ApproveVisitorAsync(
         Guid actorUserId, Guid subjectUserId, CancellationToken cancellationToken = default) =>
-        ApproveAsync(actorUserId, subjectUserId, isStaff: false, cancellationToken);
+        ApproveAsync(actorUserId, subjectUserId, UserType.Visitor, cancellationToken);
 
-    public Task RejectStaffAsync(
+    public Task RejectAdminAsync(
         Guid actorUserId, Guid subjectUserId, AdminRejectRequest request,
         CancellationToken cancellationToken = default) =>
-        RejectAsync(actorUserId, subjectUserId, request, isStaff: true, cancellationToken);
+        RejectAsync(actorUserId, subjectUserId, request, UserType.Admin, cancellationToken);
+
+    public Task RejectOtherAsync(
+        Guid actorUserId, Guid subjectUserId, AdminRejectRequest request,
+        CancellationToken cancellationToken = default) =>
+        RejectAsync(actorUserId, subjectUserId, request, UserType.Other, cancellationToken);
 
     public Task RejectVisitorAsync(
         Guid actorUserId, Guid subjectUserId, AdminRejectRequest request,
         CancellationToken cancellationToken = default) =>
-        RejectAsync(actorUserId, subjectUserId, request, isStaff: false, cancellationToken);
+        RejectAsync(actorUserId, subjectUserId, request, UserType.Visitor, cancellationToken);
 
     private async Task ApproveAsync(
-        Guid actorUserId, Guid subjectUserId, bool isStaff, CancellationToken cancellationToken)
+        Guid actorUserId, Guid subjectUserId, UserType expected,
+        CancellationToken cancellationToken)
     {
-        var subject = await LoadPendingSubjectAsync(subjectUserId, cancellationToken);
+        var subject = await LoadPendingSubjectAsync(
+            subjectUserId, expected, cancellationToken);
         var now = timeProvider.GetUtcNow();
         subject.AccountState = AccountState.Approved;
         subject.UpdatedAt = now;
@@ -431,12 +460,9 @@ internal sealed class AdminAccountService(
         await qrIdMinter.MintIfMissingAsync(subject, cancellationToken);
         await userManager.UpdateAsync(subject);
 
-        var eventType = isStaff
-            ? AuditEvents.AdminStaffApproved
-            : AuditEvents.AdminVisitorApproved;
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = eventType,
+            EventType = ApprovalEventType(expected, approved: true),
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             SubjectUserId = subject.Id,
@@ -447,20 +473,18 @@ internal sealed class AdminAccountService(
 
     private async Task RejectAsync(
         Guid actorUserId, Guid subjectUserId, AdminRejectRequest request,
-        bool isStaff, CancellationToken cancellationToken)
+        UserType expected, CancellationToken cancellationToken)
     {
-        var subject = await LoadPendingSubjectAsync(subjectUserId, cancellationToken);
+        var subject = await LoadPendingSubjectAsync(
+            subjectUserId, expected, cancellationToken);
         var now = timeProvider.GetUtcNow();
         subject.AccountState = AccountState.Rejected;
         subject.UpdatedAt = now;
         await userManager.UpdateAsync(subject);
 
-        var eventType = isStaff
-            ? AuditEvents.AdminStaffRejected
-            : AuditEvents.AdminVisitorRejected;
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = eventType,
+            EventType = ApprovalEventType(expected, approved: false),
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             SubjectUserId = subject.Id,
@@ -469,16 +493,38 @@ internal sealed class AdminAccountService(
         }, cancellationToken);
     }
 
-    /// <summary>Loads a user that must currently be in PendingApproval —
-    /// any other state throws <see cref="ApiException"/>. Shared by the
-    /// four approve/reject helpers above.</summary>
+    /// <summary>P7c — maps a (UserType, approved/rejected) pair to the
+    /// right audit event name. The Admin and Visitor names stay the
+    /// historical "Staff" / "Visitor" pair (P4); the Other names are
+    /// new in P7c.</summary>
+    private static string ApprovalEventType(UserType type, bool approved) => type switch
+    {
+        UserType.Admin when approved => AuditEvents.AdminStaffApproved,
+        UserType.Admin => AuditEvents.AdminStaffRejected,
+        UserType.Other when approved => AuditEvents.AdminOtherApproved,
+        UserType.Other => AuditEvents.AdminOtherRejected,
+        _ when approved => AuditEvents.AdminVisitorApproved,
+        _ => AuditEvents.AdminVisitorRejected,
+    };
+
+    /// <summary>Loads a user that must currently be in PendingApproval
+    /// **and** carry the expected UserType — any other state or a
+    /// type-mismatch throws <see cref="ApiException"/>. Shared by every
+    /// approve/reject path; type-checking here closes the "approve an
+    /// admin via the visitor URL" hole.</summary>
     private async Task<SimfUser> LoadPendingSubjectAsync(
-        Guid subjectUserId, CancellationToken cancellationToken)
+        Guid subjectUserId, UserType expected, CancellationToken cancellationToken)
     {
         var subject = await userManager.FindByIdAsync(subjectUserId.ToString())
             ?? throw new ApiException(ErrorCodes.AdminUserNotFound, 404,
                 "The target account was not found.",
                 "تعذّر العثور على الحساب المستهدف.");
+        if (subject.UserType != expected)
+        {
+            throw new ApiException(ErrorCodes.AdminUserNotFound, 404,
+                "The target account is not of the expected type.",
+                "نوع الحساب المستهدف لا يطابق المتوقع.");
+        }
         if (subject.AccountState != AccountState.PendingApproval)
         {
             throw new ApiException(ErrorCodes.AdminUserNotPending, 409,
@@ -488,37 +534,28 @@ internal sealed class AdminAccountService(
         return subject;
     }
 
-    public Task<GridPage<AdminPendingUserSummary>> ListPendingStaffAsync(
+    public Task<GridPage<AdminPendingUserSummary>> ListPendingAdminsAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
-        ListPendingAsync(query, staffOnly: true, cancellationToken);
+        ListPendingAsync(query, UserType.Admin, cancellationToken);
+
+    public Task<GridPage<AdminPendingUserSummary>> ListPendingOthersAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        ListPendingAsync(query, UserType.Other, cancellationToken);
 
     public Task<GridPage<AdminPendingUserSummary>> ListPendingVisitorsAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
-        ListPendingAsync(query, staffOnly: false, cancellationToken);
+        ListPendingAsync(query, UserType.Visitor, cancellationToken);
 
-    /// <summary>P4 — pending-approval list. Same staff/visitor split as
-    /// <see cref="ListAccountsAsync"/>, narrowed to PendingApproval rows.</summary>
+    /// <summary>P7c — pending-approval list narrowed by UserType.</summary>
     private async Task<GridPage<AdminPendingUserSummary>> ListPendingAsync(
-        GridQuery query, bool staffOnly, CancellationToken cancellationToken)
+        GridQuery query, UserType userType, CancellationToken cancellationToken)
     {
         var skip = query.Skip < 0 ? 0 : query.Skip;
         var top = query.Top switch { < 1 => 20, > 200 => 200, _ => query.Top };
 
-        var cpRoleIds = await GetCpRoleIdsAsync(cancellationToken);
         var users = userManager.Users
-            .Where(u => u.AccountState == AccountState.PendingApproval);
-        if (cpRoleIds.Count > 0)
-        {
-            users = staffOnly
-                ? users.Where(u => dbContext.UserRoles.Any(ur =>
-                    ur.UserId == u.Id && cpRoleIds.Contains(ur.RoleId)))
-                : users.Where(u => !dbContext.UserRoles.Any(ur =>
-                    ur.UserId == u.Id && cpRoleIds.Contains(ur.RoleId)));
-        }
-        else if (staffOnly)
-        {
-            users = users.Where(_ => false);
-        }
+            .Where(u => u.AccountState == AccountState.PendingApproval
+                && u.UserType == userType);
 
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
@@ -538,6 +575,22 @@ internal sealed class AdminAccountService(
 
         return GridPage<AdminPendingUserSummary>.Of(page, total,
             new GridQuery { Skip = skip, Top = top });
+    }
+
+    public async Task<IReadOnlyList<AdminProfileTypeSummary>> ListProfileTypesAsync(
+        UserType userType, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.ProfileTypes
+            .Where(profileType => profileType.UserType == userType && profileType.IsActive)
+            .OrderBy(profileType => profileType.Name)
+            .Select(profileType => new AdminProfileTypeSummary(
+                profileType.Id,
+                profileType.Name,
+                profileType.NameArabic,
+                profileType.PageColor,
+                profileType.UserType.ToString(),
+                profileType.IsActive))
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<AdminBulkDeleteResponse> BulkDeleteUsersAsync(
@@ -673,19 +726,38 @@ internal sealed class AdminAccountService(
                 "The source account was not found.",
                 "لم يتم العثور على الحساب المصدر.");
 
-        var sourceIsAdmin = await userManager.IsInRoleAsync(source, AdministratorRole);
-        // The duplicate keeps the source's role-membership shape: a staff
-        // source duplicates as staff (admin role preserved); a visitor
-        // source duplicates as a visitor (no role). One method handles both
-        // via the staff-creation path with the role flag set appropriately.
-        var created = await CreateStaffAsync(actorUserId,
-            new AdminCreateUserRequest
-            {
-                Email = request.NewEmail,
-                DisplayName = source.DisplayName,
-                GrantAdministratorRole = sourceIsAdmin,
-            },
-            cancellationToken);
+        // P7c — the duplicate keeps the source's UserType + role-membership
+        // shape: an Admin source duplicates as an Admin (with the same roles);
+        // an Other / Visitor source duplicates as the same UserType. The
+        // source's ProfileTypeId is preserved.
+        var sourceRoles = await userManager.GetRolesAsync(source);
+        var created = source.UserType switch
+        {
+            UserType.Admin => await CreateAdminAsync(actorUserId,
+                new AdminCreateAdminRequest
+                {
+                    Email = request.NewEmail,
+                    DisplayName = source.DisplayName,
+                    Roles = sourceRoles.ToList(),
+                },
+                cancellationToken),
+            UserType.Other => await CreateOtherAsync(actorUserId,
+                new AdminCreateOtherRequest
+                {
+                    Email = request.NewEmail,
+                    DisplayName = source.DisplayName,
+                    ProfileTypeId = source.ProfileTypeId ?? Guid.Empty,
+                },
+                cancellationToken),
+            _ => await CreateVisitorAsync(actorUserId,
+                new AdminCreateVisitorRequest
+                {
+                    Email = request.NewEmail,
+                    DisplayName = source.DisplayName,
+                    ProfileTypeId = source.ProfileTypeId,
+                },
+                cancellationToken),
+        };
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -751,10 +823,11 @@ internal sealed class AdminAccountService(
                 SortDescending = source.SortDescending,
                 Filters = new Dictionary<string, string>(source.Filters),
             };
-            // Export operates on STAFF today (the /admin/staff grid is the
-            // only consumer that triggers it). When the visitor grid grows
-            // its own export, this branches.
-            var page = await ListStaffAsync(query, cancellationToken);
+            // P7c — export operates on the Admin family today (the
+            // /admin/admins grid is the only consumer that triggers it).
+            // When the Other / Visitor grids grow their own export, this
+            // branches on a request-side `UserType` filter.
+            var page = await ListAdminsAsync(query, cancellationToken);
             rows = page.Items;
         }
 
@@ -810,14 +883,18 @@ internal sealed class AdminAccountService(
             }
             try
             {
-                // The XLSX import is the staff bulk-create path (the visitor
-                // import is a P4 follow-up).
-                await CreateStaffAsync(actorUserId,
-                    new AdminCreateUserRequest
+                // P7c — the XLSX import is the Admin-family bulk-create
+                // path. The `IsAdministrator` flag on the imported row
+                // chooses whether the new admin gets the Administrator
+                // RBAC role; the UserType is always Admin here.
+                await CreateAdminAsync(actorUserId,
+                    new AdminCreateAdminRequest
                     {
                         Email = row.Email,
                         DisplayName = row.DisplayName,
-                        GrantAdministratorRole = row.IsAdministrator,
+                        Roles = row.IsAdministrator
+                            ? new List<string> { AppRoles.Administrator }
+                            : new List<string>(),
                     },
                     cancellationToken);
                 created++;

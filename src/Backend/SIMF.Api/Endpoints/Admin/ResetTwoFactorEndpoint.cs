@@ -20,7 +20,7 @@ public sealed class ResetTwoFactorEndpoint(IAdminAccountService adminAccountServ
 {
     public override void Configure()
     {
-        Post("/admin/staff/reset-two-factor");
+        Post("/admin/admins/reset-two-factor");
         // No AllowAnonymous — the caller must be authenticated and hold the
         // Administrator role.
         Policies(nameof(AuthorizationPolicies.AdministratorOnly));
