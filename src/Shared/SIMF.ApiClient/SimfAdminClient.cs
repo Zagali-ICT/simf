@@ -24,27 +24,47 @@ public sealed class SimfAdminClient(HttpClient http)
         string accessToken,
         CancellationToken cancellationToken = default) =>
         SendAsync<bool>(
-            HttpMethod.Post, "users/reset-two-factor",
+            HttpMethod.Post, "staff/reset-two-factor",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Creates a new CP user and triggers an invitation email (D-042).</summary>
-    public Task<ApiCallResult<AdminCreateUserResponse>> CreateUserAsync(
+    /// <summary>Creates a new CP staff user (D-042; P3 renamed from CreateUserAsync).</summary>
+    public Task<ApiCallResult<AdminCreateUserResponse>> CreateStaffAsync(
         AdminCreateUserRequest request,
         string accessToken,
         CancellationToken cancellationToken = default) =>
         SendAsync<AdminCreateUserResponse>(
-            HttpMethod.Post, "users",
+            HttpMethod.Post, "staff",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Returns one page of accounts (decision D-044).</summary>
-    public Task<ApiCallResult<GridPage<AdminUserSummary>>> ListUsersAsync(
+    /// <summary>Creates a new visitor account (P3).</summary>
+    public Task<ApiCallResult<AdminCreateUserResponse>> CreateVisitorAsync(
+        AdminCreateVisitorRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminCreateUserResponse>(
+            HttpMethod.Post, "visitors",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Returns one page of staff accounts (P3 renamed from ListUsersAsync).</summary>
+    public Task<ApiCallResult<GridPage<AdminUserSummary>>> ListStaffAsync(
         GridQuery query,
         string accessToken,
         CancellationToken cancellationToken = default) =>
         SendAsync<GridPage<AdminUserSummary>>(
-            HttpMethod.Post, "users/list",
+            HttpMethod.Post, "staff/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Returns one page of visitor accounts (P3).</summary>
+    public Task<ApiCallResult<GridPage<AdminUserSummary>>> ListVisitorsAsync(
+        GridQuery query,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminUserSummary>>(
+            HttpMethod.Post, "visitors/list",
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
@@ -54,7 +74,7 @@ public sealed class SimfAdminClient(HttpClient http)
         string accessToken,
         CancellationToken cancellationToken = default) =>
         SendAsync<AdminBulkDeleteResponse>(
-            HttpMethod.Post, "users/bulk-delete",
+            HttpMethod.Post, "staff/bulk-delete",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
@@ -64,7 +84,7 @@ public sealed class SimfAdminClient(HttpClient http)
         string accessToken,
         CancellationToken cancellationToken = default) =>
         SendAsync<AdminCreateUserResponse>(
-            HttpMethod.Post, "users/duplicate",
+            HttpMethod.Post, "staff/duplicate",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
@@ -74,7 +94,7 @@ public sealed class SimfAdminClient(HttpClient http)
         string accessToken,
         CancellationToken cancellationToken = default)
     {
-        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + "users/export")
+        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + "staff/export")
         {
             Content = JsonContent.Create(request, options: JsonOptions),
         };
@@ -105,7 +125,7 @@ public sealed class SimfAdminClient(HttpClient http)
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         content.Add(file, "file", fileName);
 
-        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + "users/import")
+        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + "staff/import")
         {
             Content = content,
         };

@@ -22,10 +22,11 @@ public sealed class AdminResetTwoFactorRequest
 }
 
 /// <summary>
-/// The body of <c>POST /api/v1/admin/users</c>. The actor must hold the
-/// Administrator role; the user is created in the <c>Approved</c> state
+/// The body of <c>POST /api/v1/admin/staff</c> (renamed from
+/// <c>/admin/users</c> in P3). The actor must hold the Administrator role;
+/// a new Control Panel staff user is created in the <c>Approved</c> state
 /// with no password — they receive an invitation email carrying a one-time
-/// password-set code (decision D-042).
+/// password-set code (decision D-042; P3 added the staff/visitor split).
 /// </summary>
 public sealed class AdminCreateUserRequest
 {
@@ -37,9 +38,26 @@ public sealed class AdminCreateUserRequest
 
     /// <summary>
     /// When true, the new user is added to the Administrator role. Defaults to
-    /// false. The wider role catalogue waits for gate D1 / CPD-001 OI-3.
+    /// false. The wider role catalogue (Staff / Scientific / Security) lands
+    /// in P4.
     /// </summary>
     public bool GrantAdministratorRole { get; set; }
+}
+
+/// <summary>
+/// The body of <c>POST /api/v1/admin/visitors</c> (added in P3). A team
+/// member (Staff / Scientific / Security in P4; Administrator-as-fallback
+/// today) creates a visitor account. Visitors carry no role; they sign in
+/// to the Website / Flutter app and complete their own visitor profile
+/// (D-046). The wider visitor-lifecycle approval workflow lands in P4.
+/// </summary>
+public sealed class AdminCreateVisitorRequest
+{
+    /// <summary>The new visitor's email address; must not already be registered.</summary>
+    public string Email { get; set; } = string.Empty;
+
+    /// <summary>The display name shown in the UI (2–128 characters).</summary>
+    public string DisplayName { get; set; } = string.Empty;
 }
 
 /// <summary>The body of a successful admin-created account (D-042).</summary>

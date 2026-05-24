@@ -21,23 +21,36 @@ public interface IAdminAccountService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Creates a new Control Panel user account in the <c>Approved</c> state
-    /// with no password, mints a 7-day password-set invitation code, and
-    /// emails the new user an invitation link. Audited with actor + subject
-    /// (D-042).
+    /// Creates a new Control Panel **staff** user (P3 renamed from
+    /// <c>CreateUserAsync</c>). Lands in <c>Approved</c> state with no
+    /// password and a 7-day invitation code. Audited (D-042).
     /// </summary>
-    Task<AdminCreateUserResponse> CreateUserAsync(
+    Task<AdminCreateUserResponse> CreateStaffAsync(
         Guid actorUserId,
         AdminCreateUserRequest request,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Returns one page of accounts (decision D-044). Sortable on Email /
-    /// DisplayName / AccountState / CreatedAt; filterable on the same set
-    /// plus a free-text Search across email and display name. The endpoint
-    /// clamps <c>Top</c> to a sensible ceiling.
+    /// Creates a new **visitor** account (P3). Same invitation-code shape
+    /// as staff, but with no role grant and visitor-shape contract.
+    /// Approval workflow + QR-mint-at-approval land in P4.
     /// </summary>
-    Task<GridPage<AdminUserSummary>> ListUsersAsync(
+    Task<AdminCreateUserResponse> CreateVisitorAsync(
+        Guid actorUserId,
+        AdminCreateVisitorRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns one page of staff accounts (those that hold a CP role
+    /// — Administrator today; Staff/Scientific/Security from P4). P3
+    /// renamed from <c>ListUsersAsync</c>.
+    /// </summary>
+    Task<GridPage<AdminUserSummary>> ListStaffAsync(
+        GridQuery query,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Returns one page of visitor accounts — those without any CP role (P3).</summary>
+    Task<GridPage<AdminUserSummary>> ListVisitorsAsync(
         GridQuery query,
         CancellationToken cancellationToken = default);
 

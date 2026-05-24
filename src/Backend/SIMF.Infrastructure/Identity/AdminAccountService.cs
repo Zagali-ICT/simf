@@ -133,15 +133,35 @@ internal sealed class AdminAccountService(
             actorUserId, target.Email, request.Reason);
     }
 
-    public async Task<AdminCreateUserResponse> CreateUserAsync(
+    public Task<AdminCreateUserResponse> CreateStaffAsync(
         Guid actorUserId,
         AdminCreateUserRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        CreateAccountAsync(actorUserId, request.Email, request.DisplayName,
+            request.GrantAdministratorRole, cancellationToken);
+
+    public Task<AdminCreateUserResponse> CreateVisitorAsync(
+        Guid actorUserId,
+        AdminCreateVisitorRequest request,
+        CancellationToken cancellationToken = default) =>
+        CreateAccountAsync(actorUserId, request.Email, request.DisplayName,
+            grantAdministratorRole: false, cancellationToken);
+
+    /// <summary>Shared back-end of <see cref="CreateStaffAsync"/> and
+    /// <see cref="CreateVisitorAsync"/>. P3 extracted to keep the staff
+    /// / visitor surfaces split at the contract layer without
+    /// duplicating the audit + invite logic.</summary>
+    private async Task<AdminCreateUserResponse> CreateAccountAsync(
+        Guid actorUserId,
+        string email,
+        string displayName,
+        bool grantAdministratorRole,
+        CancellationToken cancellationToken)
     {
-        if (await userManager.FindByEmailAsync(request.Email) is not null)
+        if (await userManager.FindByEmailAsync(email) is not null)
         {
             await AuditFailure(
-                AuditEvents.AdminUserCreateFailed, actorUserId, request.Email, null,
+                AuditEvents.AdminUserCreateFailed, actorUserId, email, null,
                 ErrorCodes.AdminEmailAlreadyRegistered, cancellationToken);
             throw new ApiException(
                 ErrorCodes.AdminEmailAlreadyRegistered, 409,
@@ -152,10 +172,10 @@ internal sealed class AdminAccountService(
         var now = timeProvider.GetUtcNow();
         var user = new SimfUser
         {
-            UserName = request.Email,
-            Email = request.Email,
+            UserName = email,
+            Email = email,
             EmailConfirmed = true,
-            DisplayName = request.DisplayName,
+            DisplayName = displayName,
             AccountState = AccountState.Approved,
             PasswordChangeRequired = false,
             CreatedAt = now,
@@ -165,7 +185,7 @@ internal sealed class AdminAccountService(
         if (!createResult.Succeeded)
         {
             await AuditFailure(
-                AuditEvents.AdminUserCreateFailed, actorUserId, request.Email, null,
+                AuditEvents.AdminUserCreateFailed, actorUserId, email, null,
                 ErrorCodes.InternalError, cancellationToken,
                 detail: string.Join("; ", createResult.Errors.Select(error => error.Description)));
             throw new ApiException(
@@ -174,14 +194,15 @@ internal sealed class AdminAccountService(
                 "تعذّر إنشاء الحساب.");
         }
 
-        if (request.GrantAdministratorRole)
+        if (grantAdministratorRole)
         {
             await userManager.AddToRoleAsync(user, AdministratorRole);
         }
 
         // D-046: the account is created directly in the Approved state, so
         // the QR id is minted now. Persist it via UpdateAsync — the user
-        // is already in the store after CreateAsync.
+        // is already in the store after CreateAsync. The QR-mint-at-approval
+        // workflow (P4) will move this hook later.
         await qrIdMinter.MintIfMissingAsync(user, cancellationToken);
         await userManager.UpdateAsync(user);
 
@@ -208,28 +229,61 @@ internal sealed class AdminAccountService(
                 SubjectEmail = user.Email,
                 SubjectUserId = user.Id,
                 ActorUserId = actorUserId,
-                Detail = request.GrantAdministratorRole ? "role=Administrator" : null,
+                Detail = grantAdministratorRole ? "role=Administrator" : null,
             },
             cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created user {Email} (Administrator={IsAdmin})",
-            actorUserId, user.Email, request.GrantAdministratorRole);
+            actorUserId, user.Email, grantAdministratorRole);
         return new AdminCreateUserResponse(
             user.Id, user.Email!, (int)inviteLifetime.TotalSeconds);
     }
 
-    public async Task<GridPage<AdminUserSummary>> ListUsersAsync(
-        GridQuery query,
-        CancellationToken cancellationToken = default)
+    public Task<GridPage<AdminUserSummary>> ListStaffAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        ListAccountsAsync(query, staffOnly: true, cancellationToken);
+
+    public Task<GridPage<AdminUserSummary>> ListVisitorsAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        ListAccountsAsync(query, staffOnly: false, cancellationToken);
+
+    /// <summary>Shared back-end of <see cref="ListStaffAsync"/> and
+    /// <see cref="ListVisitorsAsync"/>. P3 added the role-based filter:
+    /// staff = users with the Administrator role today (Staff / Scientific
+    /// / Security from P4); visitors = users with no CP role.</summary>
+    private async Task<GridPage<AdminUserSummary>> ListAccountsAsync(
+        GridQuery query, bool staffOnly, CancellationToken cancellationToken)
     {
         // Normalise: clamp Top to [1..200], clamp Skip to [0..). The grid
         // contract (SIMF.Common.GridQuery) says the endpoint owns the clamp.
         var skip = query.Skip < 0 ? 0 : query.Skip;
         var top = query.Top switch { < 1 => 20, > 200 => 200, _ => query.Top };
 
+        // Resolve the Administrator role id once for both the staff/visitor
+        // filter AND the per-row projection.
+        var adminRoleId = await GetAdministratorRoleIdAsync(cancellationToken);
+
         // Build the query over UserManager.Users so the EF tracker stays out.
         var users = userManager.Users.AsQueryable();
+
+        // P3 — surface split: staff = users with at least one CP role today
+        // (Administrator); visitors = users with no CP role. The list is
+        // narrowed BEFORE any filter/sort/page so the totals are correct.
+        if (adminRoleId is not null)
+        {
+            users = staffOnly
+                ? users.Where(u => dbContext.UserRoles.Any(ur =>
+                    ur.UserId == u.Id && ur.RoleId == adminRoleId))
+                : users.Where(u => !dbContext.UserRoles.Any(ur =>
+                    ur.UserId == u.Id && ur.RoleId == adminRoleId));
+        }
+        else if (staffOnly)
+        {
+            // No Administrator role exists yet — there are no staff users by
+            // definition, so the staff page returns an empty result.
+            users = users.Where(_ => false);
+        }
 
         // -- Search ---------------------------------------------------------
         if (!string.IsNullOrWhiteSpace(query.Search))
@@ -280,10 +334,7 @@ internal sealed class AdminAccountService(
 
         var total = await users.CountAsync(cancellationToken);
 
-        // Resolve the Administrator role id once, then project the role flag
-        // inside the EF query — kills the per-row IsInRoleAsync N+1 (D-045 H1).
-        // A page of 200 users used to issue 201 round-trips; now it is 2.
-        var adminRoleId = await GetAdministratorRoleIdAsync(cancellationToken);
+        // Per-row role flag — projected inside the EF query (D-045 H1 N+1 fix).
         var rows = await users
             .Skip(skip)
             .Take(top)
@@ -456,7 +507,11 @@ internal sealed class AdminAccountService(
                 "لم يتم العثور على الحساب المصدر.");
 
         var sourceIsAdmin = await userManager.IsInRoleAsync(source, AdministratorRole);
-        var created = await CreateUserAsync(actorUserId,
+        // The duplicate keeps the source's role-membership shape: a staff
+        // source duplicates as staff (admin role preserved); a visitor
+        // source duplicates as a visitor (no role). One method handles both
+        // via the staff-creation path with the role flag set appropriately.
+        var created = await CreateStaffAsync(actorUserId,
             new AdminCreateUserRequest
             {
                 Email = request.NewEmail,
@@ -529,7 +584,10 @@ internal sealed class AdminAccountService(
                 SortDescending = source.SortDescending,
                 Filters = new Dictionary<string, string>(source.Filters),
             };
-            var page = await ListUsersAsync(query, cancellationToken);
+            // Export operates on STAFF today (the /admin/staff grid is the
+            // only consumer that triggers it). When the visitor grid grows
+            // its own export, this branches.
+            var page = await ListStaffAsync(query, cancellationToken);
             rows = page.Items;
         }
 
@@ -585,7 +643,9 @@ internal sealed class AdminAccountService(
             }
             try
             {
-                await CreateUserAsync(actorUserId,
+                // The XLSX import is the staff bulk-create path (the visitor
+                // import is a P4 follow-up).
+                await CreateStaffAsync(actorUserId,
                     new AdminCreateUserRequest
                     {
                         Email = row.Email,

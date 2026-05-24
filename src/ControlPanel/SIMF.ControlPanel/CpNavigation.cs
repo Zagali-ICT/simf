@@ -65,7 +65,8 @@ public static class CpNavigation
         ]),
         new("Nav.System",
         [
-            new("Module.AdminUsers", "/admin/users"),
+            new("Module.AdminStaff", "/admin/staff"),
+            new("Module.AdminVisitors", "/admin/visitors"),
             new("Module.AdminResetTwoFactor", "/admin/reset-2fa"),
             new("Module.Configuration", "/m/configuration"),
             new("Module.OperationLog", "/m/operation-log"),

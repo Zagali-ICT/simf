@@ -29,7 +29,7 @@ public sealed class ImportUsersEndpoint(IAdminAccountService adminAccountService
 
     public override void Configure()
     {
-        Post("/admin/users/import");
+        Post("/admin/staff/import");
         Policies(nameof(AuthorizationPolicies.AdministratorOnly));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));

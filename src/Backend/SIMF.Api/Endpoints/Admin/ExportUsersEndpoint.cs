@@ -16,7 +16,7 @@ public sealed class ExportUsersEndpoint(IAdminAccountService adminAccountService
 {
     public override void Configure()
     {
-        Post("/admin/users/export");
+        Post("/admin/staff/export");
         Policies(nameof(AuthorizationPolicies.AdministratorOnly));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));

@@ -42,7 +42,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         var target2 = await CreateRegularUserAsync(adminToken);
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/users/bulk-delete",
+            "/api/v1/admin/staff/bulk-delete",
             new AdminBulkDeleteRequest
             {
                 // Includes the admin themselves and one regular target — the
@@ -77,7 +77,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         var (_, peerAdminId) = await CreateAdminAsync();
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/users/bulk-delete",
+            "/api/v1/admin/staff/bulk-delete",
             new AdminBulkDeleteRequest
             {
                 Ids = new List<Guid> { regular, peerAdminId, Guid.NewGuid() },
@@ -111,7 +111,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         var hugeBatch = Enumerable.Range(0, 501).Select(_ => Guid.NewGuid()).ToList();
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/users/bulk-delete",
+            "/api/v1/admin/staff/bulk-delete",
             new AdminBulkDeleteRequest
             {
                 Ids = hugeBatch,
@@ -129,7 +129,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         var target = await CreateRegularUserAsync(adminToken);
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/users/bulk-delete",
+            "/api/v1/admin/staff/bulk-delete",
             new AdminBulkDeleteRequest
             {
                 Ids = new List<Guid> { target },
@@ -150,7 +150,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         var newEmail = $"dup-{Guid.NewGuid():N}@simf.test";
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/users/duplicate",
+            "/api/v1/admin/staff/duplicate",
             new AdminDuplicateUserRequest { SourceId = sourceId, NewEmail = newEmail },
             adminToken);
 
@@ -172,12 +172,12 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         // Create a second user we'll then try to duplicate over.
         var collidingEmail = $"already-{Guid.NewGuid():N}@simf.test";
         await PostAuthAsync(
-            "/api/v1/admin/users",
+            "/api/v1/admin/staff",
             new AdminCreateUserRequest { Email = collidingEmail, DisplayName = "Already" },
             adminToken);
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/users/duplicate",
+            "/api/v1/admin/staff/duplicate",
             new AdminDuplicateUserRequest { SourceId = sourceId, NewEmail = collidingEmail },
             adminToken);
 
@@ -191,7 +191,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         var sourceId = await CreateRegularUserAsync(adminToken);
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/users/duplicate",
+            "/api/v1/admin/staff/duplicate",
             new AdminDuplicateUserRequest { SourceId = sourceId, NewEmail = "not-an-email" },
             adminToken);
 
@@ -204,7 +204,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         var (adminToken, _) = await CreateAdminAsync();
 
         var response = await PostAuthAsync(
-            "/api/v1/admin/users/duplicate",
+            "/api/v1/admin/staff/duplicate",
             new AdminDuplicateUserRequest
             {
                 SourceId = Guid.NewGuid(),
@@ -224,7 +224,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         var u1 = await CreateRegularUserAsync(adminToken, displayName: "Export A");
         var u2 = await CreateRegularUserAsync(adminToken, displayName: "Export B");
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/users/export")
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/staff/export")
         {
             Content = JsonContent.Create(
                 new AdminExportUsersRequest { Ids = new List<Guid> { u1, u2 } }),
@@ -280,7 +280,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         form.Add(file, "file", "import.xlsx");
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/users/import")
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/staff/import")
         {
             Content = form,
         };
@@ -317,7 +317,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         form.Add(file, "file", "wrong-sheet.xlsx");
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/users/import")
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/staff/import")
         {
             Content = form,
         };
@@ -335,7 +335,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         var displayName = "=HYPERLINK(\"https://attacker.example/x\",\"Click\")";
         var userId = await CreateRegularUserAsync(adminToken, displayName: displayName);
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/users/export")
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/staff/export")
         {
             Content = JsonContent.Create(
                 new AdminExportUsersRequest { Ids = new List<Guid> { userId } }),
@@ -367,7 +367,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         using var form = new MultipartFormDataContent();
         form.Add(new ByteArrayContent(garbage), "file", "fake.xlsx");
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/users/import")
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/admin/staff/import")
         {
             Content = form,
         };
@@ -414,7 +414,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
     {
         var email = $"u-{Guid.NewGuid():N}@simf.test";
         var response = await PostAuthAsync(
-            "/api/v1/admin/users",
+            "/api/v1/admin/staff",
             new AdminCreateUserRequest
             {
                 Email = email,

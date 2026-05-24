@@ -69,23 +69,39 @@ internal static class AccountEndpoints
             return Forward(await api.ResetTwoFactorAsync(body, token));
         });
 
-        group.MapPost("/admin/users",
+        group.MapPost("/admin/staff",
             async (AdminCreateUserRequest body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.CreateUserAsync(body, token));
+            return Forward(await api.CreateStaffAsync(body, token));
         });
 
-        group.MapPost("/admin/users/list",
+        group.MapPost("/admin/staff/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.ListUsersAsync(body, token));
+            return Forward(await api.ListStaffAsync(body, token));
         });
 
-        group.MapPost("/admin/users/bulk-delete",
+        group.MapPost("/admin/visitors",
+            async (AdminCreateVisitorRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateVisitorAsync(body, token));
+        });
+
+        group.MapPost("/admin/visitors/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListVisitorsAsync(body, token));
+        });
+
+        group.MapPost("/admin/staff/bulk-delete",
             async (AdminBulkDeleteRequest body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
@@ -93,7 +109,7 @@ internal static class AccountEndpoints
             return Forward(await api.BulkDeleteUsersAsync(body, token));
         });
 
-        group.MapPost("/admin/users/duplicate",
+        group.MapPost("/admin/staff/duplicate",
             async (AdminDuplicateUserRequest body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
@@ -103,7 +119,7 @@ internal static class AccountEndpoints
 
         // Binary download — the browser saves the XLSX. Cannot reuse Forward()
         // because the response body is the workbook bytes, not the JSON envelope.
-        group.MapPost("/admin/users/export",
+        group.MapPost("/admin/staff/export",
             async (AdminExportUsersRequest body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
@@ -115,11 +131,11 @@ internal static class AccountEndpoints
             }
             return Results.File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"simf-users-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx");
+                $"simf-staff-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx");
         });
 
         // Multipart upload — same SameSite=Lax CSRF stance as /avatar (D-029).
-        group.MapPost("/admin/users/import",
+        group.MapPost("/admin/staff/import",
             async (HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
