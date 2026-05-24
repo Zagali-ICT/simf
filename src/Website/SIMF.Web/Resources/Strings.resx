@@ -115,4 +115,14 @@
   <data name="Account.Profile.Interests.Title" xml:space="preserve"><value>Your interests</value></data>
   <data name="Account.Profile.Interests.Hint" xml:space="preserve"><value>Pick between 1 and 10 — we'll match you with relevant sessions.</value></data>
   <data name="Account.Profile.Interests.Empty" xml:space="preserve"><value>The interests list has not been published yet. Please check back soon.</value></data>
+
+  <data name="Account.Pending.Title" xml:space="preserve"><value>Your account is waiting for approval</value></data>
+  <data name="Account.Pending.Supporting" xml:space="preserve"><value>An administrator must approve your account before you can use SIMF. We will email you when the decision is made.</value></data>
+  <data name="Account.Pending.AccountEmail" xml:space="preserve"><value>Account</value></data>
+  <data name="Account.Pending.SignOut" xml:space="preserve"><value>Sign out</value></data>
+  <data name="Account.Rejected.Title" xml:space="preserve"><value>Your account was not approved</value></data>
+  <data name="Account.Rejected.Reason" xml:space="preserve"><value>Reason</value></data>
+  <data name="Account.Rejected.NoReasonProvided" xml:space="preserve"><value>No reason was recorded for this decision.</value></data>
+  <data name="Account.Rejected.ContactSupport" xml:space="preserve"><value>If you believe this is a mistake, please contact your event coordinator.</value></data>
+  <data name="Account.Rejected.SignOut" xml:space="preserve"><value>Sign out</value></data>
 </root>

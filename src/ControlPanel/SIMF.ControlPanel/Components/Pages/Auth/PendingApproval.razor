@@ -1,0 +1,54 @@
+@* Control Panel — pending-approval state-banner page (P11 — D-052).
+   Reached when an authenticated user's account_state cookie claim is
+   PendingApproval. Reads the claim, shows a clear message + sign-out
+   button. Uses MainLayout (not CpShellLayout) so the layout guard does
+   not redirect the user back here in a loop. *@
+@page "/auth/pending"
+@layout MainLayout
+@attribute [Authorize]
+@inject IStringLocalizer<Strings> L
+@inject AuthenticationStateProvider AuthState
+@inject NavigationManager Nav
+
+<PageTitle>@L["Auth.Pending.Title"] · SIMF</PageTitle>
+
+<div class="simf-auth-state">
+    <section class="simf-card simf-page-card">
+        <h1 class="simf-card__title">@L["Auth.Pending.Title"]</h1>
+        <p class="simf-card__supporting">@L["Auth.Pending.Supporting"]</p>
+        @if (!string.IsNullOrEmpty(_email))
+        {
+            <p class="simf-card__supporting"><strong>@L["Auth.Pending.AccountEmail"]:</strong> @_email</p>
+        }
+
+        <form method="post" action="/auth/sign-out" class="simf-form__actions">
+            <SimfButton Type="submit" Variant="primary">
+                @L["Auth.Pending.SignOut"]
+            </SimfButton>
+        </form>
+    </section>
+</div>
+
+@code {
+    private string? _email;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthState.GetAuthenticationStateAsync();
+        var state = auth.User.FindFirst("account_state")?.Value;
+        // If the cookie says "Approved", the user has been approved while
+        // sitting on this page — send them to the dashboard.
+        if (string.Equals(state, "Approved", StringComparison.Ordinal))
+        {
+            Nav.NavigateTo("/", forceLoad: true);
+            return;
+        }
+        // If the cookie says "Rejected", they belong on the other page.
+        if (string.Equals(state, "Rejected", StringComparison.Ordinal))
+        {
+            Nav.NavigateTo("/auth/rejected", forceLoad: false);
+            return;
+        }
+        _email = auth.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+    }
+}

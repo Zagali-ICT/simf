@@ -57,10 +57,28 @@ public static class AuthorizationPolicies
     /// </summary>
     public const string AdministratorOnly = "AdministratorOnly";
 
+    /// <summary>
+    /// Requires the caller's <c>account_state</c> JWT claim (P10 — D-051)
+    /// to be <c>"Approved"</c>. Defense-in-depth gate available to any
+    /// endpoint that should not be reachable by a non-approved (guest)
+    /// user. Today (P11 — D-052) no endpoint applies this policy by
+    /// default — the client-side routing on CP + Website is the primary
+    /// gate. A follow-up sweep will opt sensitive endpoints into this
+    /// policy explicitly.
+    /// </summary>
+    public const string RequireApprovedAccount = "RequireApprovedAccount";
+
     /// <summary>Registers the policies with the ASP.NET Core authorization stack.</summary>
     public static void AddSimfAuthorization(this AuthorizationBuilder builder)
     {
         builder.AddPolicy(AdministratorOnly, policy =>
             policy.RequireRole(SIMF.Common.AppRoles.Administrator));
+
+        // P11 — D-052: gate by the account_state claim minted by
+        // JwtTokenService (P10). Non-approved users see the state-banner
+        // page on the client; this policy is the API's matching guard
+        // for any endpoint that opts in.
+        builder.AddPolicy(RequireApprovedAccount, policy =>
+            policy.RequireClaim("account_state", "Approved"));
     }
 }

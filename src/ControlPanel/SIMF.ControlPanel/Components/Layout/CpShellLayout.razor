@@ -7,6 +7,7 @@
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @inject SimfUserChrome UserChrome
+@inject AuthenticationStateProvider AuthState
 
 <SimfAppShell ToggleNavLabel='@L["Shell.ToggleNav"]' NavLabel='@L["Shell.AppName"]'>
     <Brand>
@@ -62,6 +63,23 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // P11 — D-052: guard every CP shell page. A non-Approved user is
+        // routed to the matching state-banner page before any module
+        // content renders. The pending / rejected pages use MainLayout
+        // (not this layout), so they don't trigger this guard themselves.
+        var auth = await AuthState.GetAuthenticationStateAsync();
+        var state = auth.User.FindFirst("account_state")?.Value;
+        if (string.Equals(state, "PendingApproval", StringComparison.Ordinal))
+        {
+            Nav.NavigateTo("/auth/pending", forceLoad: false);
+            return;
+        }
+        if (string.Equals(state, "Rejected", StringComparison.Ordinal))
+        {
+            Nav.NavigateTo("/auth/rejected", forceLoad: false);
+            return;
+        }
+
         // Re-render whenever the profile page (or anyone else) updates the
         // user chrome so the top-bar avatar tracks the profile in real time.
         UserChrome.Changed += OnChromeChanged;

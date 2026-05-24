@@ -1,0 +1,62 @@
+@* Website — rejected state-banner page (P11 — D-052). Reached when an
+   authenticated visitor's account_state cookie claim is Rejected.
+   Reads the bilingual rejection reason from the cookie claims and
+   shows it in the user's culture. *@
+@page "/account/rejected"
+@rendermode AppRenderMode.InteractiveServerNoPrerender
+@attribute [Authorize]
+@inject IStringLocalizer<Strings> L
+@inject AuthenticationStateProvider AuthState
+@inject NavigationManager Nav
+
+<PageTitle>@L["Account.Rejected.Title"]</PageTitle>
+
+<div class="simf-account-page">
+    <section class="simf-card simf-page-card">
+        <h1 class="simf-card__title">@L["Account.Rejected.Title"]</h1>
+
+        @if (!string.IsNullOrEmpty(_reason))
+        {
+            <p class="simf-card__supporting"><strong>@L["Account.Rejected.Reason"]:</strong></p>
+            <SimfAlert Variant="error">@_reason</SimfAlert>
+        }
+        else
+        {
+            <SimfAlert Variant="warning">@L["Account.Rejected.NoReasonProvided"]</SimfAlert>
+        }
+
+        <p class="simf-card__supporting">@L["Account.Rejected.ContactSupport"]</p>
+
+        <form method="post" action="/auth/sign-out" class="simf-form__actions">
+            <SimfButton Type="submit" Variant="primary">
+                @L["Account.Rejected.SignOut"]
+            </SimfButton>
+        </form>
+    </section>
+</div>
+
+@code {
+    private string? _reason;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthState.GetAuthenticationStateAsync();
+        var state = auth.User.FindFirst("account_state")?.Value;
+        if (string.Equals(state, "Approved", StringComparison.Ordinal))
+        {
+            Nav.NavigateTo("/account/profile", forceLoad: true);
+            return;
+        }
+        if (string.Equals(state, "PendingApproval", StringComparison.Ordinal))
+        {
+            Nav.NavigateTo("/account/pending", forceLoad: false);
+            return;
+        }
+        var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+        _reason = isArabic
+            ? auth.User.FindFirst("rejection_reason_ar")?.Value
+              ?? auth.User.FindFirst("rejection_reason")?.Value
+            : auth.User.FindFirst("rejection_reason")?.Value
+              ?? auth.User.FindFirst("rejection_reason_ar")?.Value;
+    }
+}

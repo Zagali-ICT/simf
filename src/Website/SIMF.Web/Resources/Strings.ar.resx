@@ -115,4 +115,14 @@
   <data name="Account.Profile.Interests.Title" xml:space="preserve"><value>اهتماماتك</value></data>
   <data name="Account.Profile.Interests.Hint" xml:space="preserve"><value>اختر ما بين 1 و 10 اهتمامات لمساعدتنا في اقتراح الجلسات المناسبة لك.</value></data>
   <data name="Account.Profile.Interests.Empty" xml:space="preserve"><value>قائمة الاهتمامات لم تُنشر بعد. يُرجى المراجعة لاحقًا.</value></data>
+
+  <data name="Account.Pending.Title" xml:space="preserve"><value>حسابك بانتظار الموافقة</value></data>
+  <data name="Account.Pending.Supporting" xml:space="preserve"><value>يجب أن يوافق المسؤول على حسابك قبل استخدام SIMF. ستصلك رسالة بريد إلكتروني فور اتخاذ القرار.</value></data>
+  <data name="Account.Pending.AccountEmail" xml:space="preserve"><value>الحساب</value></data>
+  <data name="Account.Pending.SignOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
+  <data name="Account.Rejected.Title" xml:space="preserve"><value>تم رفض حسابك</value></data>
+  <data name="Account.Rejected.Reason" xml:space="preserve"><value>السبب</value></data>
+  <data name="Account.Rejected.NoReasonProvided" xml:space="preserve"><value>لم يُسجَّل سبب لهذا القرار.</value></data>
+  <data name="Account.Rejected.ContactSupport" xml:space="preserve"><value>إذا كنت تعتقد أن هذا خطأ، يُرجى التواصل مع منسّق الفعالية.</value></data>
+  <data name="Account.Rejected.SignOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
 </root>

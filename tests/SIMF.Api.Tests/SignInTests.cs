@@ -434,6 +434,61 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task JWT_for_a_pending_admin_carries_account_state_and_user_type_claims()
+    {
+        // P11 — D-052: the cookie-side routing relies on the JWT claims
+        // surfaced through /auth/complete. Pin the wire shape here.
+        var (adminEmail, _) = await CreateAdminAsync();
+        DisableTwoFactor(adminEmail);
+        SetAccountState(adminEmail, AccountState.PendingApproval);
+
+        var response = await SignInAsync(adminEmail, Password, SignInAudience.Cp);
+        var body = await response.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>();
+        var accessToken = body!.Data!.Tokens!.AccessToken;
+
+        var claims = DecodeJwtClaims(accessToken);
+        Assert.Equal("PendingApproval", claims["account_state"]);
+        Assert.Equal("Admin", claims["user_type"]);
+    }
+
+    [Fact]
+    public async Task JWT_for_a_rejected_user_carries_account_state_Rejected()
+    {
+        var (adminEmail, _) = await CreateAdminAsync();
+        DisableTwoFactor(adminEmail);
+        SetAccountState(adminEmail, AccountState.Rejected);
+        SetRejectionReason(adminEmail, "Reason text.", "نص السبب.");
+
+        var response = await SignInAsync(adminEmail, Password, SignInAudience.Cp);
+        var body = await response.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>();
+        var accessToken = body!.Data!.Tokens!.AccessToken;
+
+        var claims = DecodeJwtClaims(accessToken);
+        Assert.Equal("Rejected", claims["account_state"]);
+        Assert.Contains("user_type", claims.Keys);
+    }
+
+    private static Dictionary<string, string> DecodeJwtClaims(string accessToken)
+    {
+        // No signature validation — this is for asserting the shape only.
+        var middle = accessToken.Split('.')[1];
+        var padded = middle.PadRight(
+            middle.Length + (4 - middle.Length % 4) % 4, '=');
+        var json = System.Text.Encoding.UTF8.GetString(
+            Convert.FromBase64String(padded.Replace('-', '+').Replace('_', '/')));
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        var pairs = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var prop in doc.RootElement.EnumerateObject())
+        {
+            if (prop.Value.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                pairs[prop.Name] = prop.Value.GetString()!;
+            }
+        }
+        return pairs;
+    }
+
+    [Fact]
     public async Task SignIn_for_a_pending_visitor_on_Web_is_allowed()
     {
         // Per D-010 / P4 — a pending visitor can sign in to Web and sees a

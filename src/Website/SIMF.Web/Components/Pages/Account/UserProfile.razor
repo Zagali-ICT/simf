@@ -12,6 +12,7 @@
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 @inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthState
 
 <PageTitle>@L["Account.Profile.Title"]</PageTitle>
 
@@ -224,6 +225,25 @@
     {
         _editContext = new EditContext(_model);
         _messages = new ValidationMessageStore(_editContext);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // P11 — D-052 guard: a non-Approved visitor belongs on the
+        // matching state-banner page. The /auth/complete endpoint also
+        // routes non-Approved users on first sign-in; this guard catches
+        // any case where the cookie state has drifted (e.g. admin
+        // rejected the visitor in another tab).
+        var auth = await AuthState.GetAuthenticationStateAsync();
+        var state = auth.User.FindFirst("account_state")?.Value;
+        if (string.Equals(state, "PendingApproval", StringComparison.Ordinal))
+        {
+            Nav.NavigateTo("/account/pending", forceLoad: false);
+        }
+        else if (string.Equals(state, "Rejected", StringComparison.Ordinal))
+        {
+            Nav.NavigateTo("/account/rejected", forceLoad: false);
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

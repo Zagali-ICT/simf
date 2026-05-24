@@ -128,10 +128,12 @@
 
             // Skip the second factor when the account has TwoFactorEnabled=false
             // (myComment #34). The API answers with tokens immediately in that
-            // case; no MfaToken is returned.
+            // case; no MfaToken is returned. P11 — D-052: stash the optional
+            // AccountStateInfo too so the cookie carries the rejection
+            // reason for the state-banner page.
             if (result.Data.MfaToken is null && result.Data.Tokens is not null)
             {
-                var reference = Tickets.Stash(result.Data.Tokens);
+                var reference = Tickets.Stash(result.Data.Tokens, result.Data.AccountState);
                 Session.Clear();
                 Nav.NavigateTo($"/auth/complete?reference={reference}", forceLoad: true);
                 return;

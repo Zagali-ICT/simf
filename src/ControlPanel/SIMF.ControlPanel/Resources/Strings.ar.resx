@@ -364,4 +364,14 @@
   <data name="Profile.Avatar.Updated" xml:space="preserve"><value>تم تحديث الصورة الشخصية.</value></data>
   <data name="Profile.Avatar.Removed" xml:space="preserve"><value>تمت إزالة الصورة الشخصية.</value></data>
   <data name="Profile.Avatar.SizeHint" xml:space="preserve"><value>PNG أو JPEG أو WebP، حتى 2 ميغابايت.</value></data>
+
+  <data name="Auth.Pending.Title" xml:space="preserve"><value>حسابك بانتظار الموافقة</value></data>
+  <data name="Auth.Pending.Supporting" xml:space="preserve"><value>يجب أن يوافق المسؤول على حسابك قبل الوصول إلى لوحة التحكم. ستصلك رسالة بريد إلكتروني فور اتخاذ القرار.</value></data>
+  <data name="Auth.Pending.AccountEmail" xml:space="preserve"><value>الحساب</value></data>
+  <data name="Auth.Pending.SignOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
+  <data name="Auth.Rejected.Title" xml:space="preserve"><value>تم رفض حسابك</value></data>
+  <data name="Auth.Rejected.Reason" xml:space="preserve"><value>السبب</value></data>
+  <data name="Auth.Rejected.NoReasonProvided" xml:space="preserve"><value>لم يُسجَّل سبب لهذا القرار.</value></data>
+  <data name="Auth.Rejected.ContactSupport" xml:space="preserve"><value>إذا كنت تعتقد أن هذا خطأ، يُرجى التواصل مع منسّق الفعالية.</value></data>
+  <data name="Auth.Rejected.SignOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
 </root>

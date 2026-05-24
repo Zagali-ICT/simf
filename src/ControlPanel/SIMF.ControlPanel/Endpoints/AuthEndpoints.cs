@@ -51,6 +51,34 @@ internal static class AuthEndpoints
         }
     }
 
+    /// <summary>
+    /// Reads named single-value claims (P11 — D-052) from the JWT —
+    /// <c>account_state</c>, <c>user_type</c>. Same no-signature-validation
+    /// shape as <see cref="ExtractRoleClaims"/>; the API already verified
+    /// the token. Returns an empty dictionary on a malformed token.
+    /// </summary>
+    private static IReadOnlyDictionary<string, string> ExtractJwtClaims(string accessToken)
+    {
+        var pairs = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (string.IsNullOrEmpty(accessToken))
+        {
+            return pairs;
+        }
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+            if (!handler.CanReadToken(accessToken)) return pairs;
+            var token = handler.ReadJwtToken(accessToken);
+            foreach (var name in new[] { "account_state", "user_type" })
+            {
+                var claim = token.Claims.FirstOrDefault(c => c.Type == name);
+                if (claim is not null) pairs[name] = claim.Value;
+            }
+        }
+        catch (Exception) { /* fall through; defaults apply */ }
+        return pairs;
+    }
+
     public static void MapAuthEndpoints(this IEndpointRouteBuilder routes)
     {
         // Completes an interactive sign-in: redeems the one-time reference and
@@ -61,16 +89,17 @@ internal static class AuthEndpoints
             string reference, SignInTicketStore tickets, HttpContext http) =>
         {
             var logger = AuthLog.Of(http);
-            var tokens = tickets.Redeem(reference);
-            if (tokens is null
-                || string.IsNullOrEmpty(tokens.User.Email)
-                || string.IsNullOrEmpty(tokens.User.DisplayName))
+            var payload = tickets.Redeem(reference);
+            if (payload is null
+                || string.IsNullOrEmpty(payload.Tokens.User.Email)
+                || string.IsNullOrEmpty(payload.Tokens.User.DisplayName))
             {
                 logger.LogWarning(
                     "Control Panel sign-in completion rejected — the ticket was unknown, "
                     + "already used, expired or incomplete.");
                 return Results.Redirect("/login");
             }
+            var tokens = payload.Tokens;
 
             var claims = new List<Claim>
             {
@@ -89,6 +118,29 @@ internal static class AuthEndpoints
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
 
+            // P11 — D-052: copy account_state + user_type from the JWT into
+            // the cookie so layout-level guards + the state-banner pages
+            // can read them without an API round-trip. The bilingual
+            // rejection reason rides on the cookie too, sourced from the
+            // sign-in response (the JWT itself does not carry it).
+            var jwtClaims = ExtractJwtClaims(tokens.AccessToken);
+            var accountState = payload.AccountState?.State
+                ?? jwtClaims.GetValueOrDefault("account_state")
+                ?? "Approved";
+            claims.Add(new Claim("account_state", accountState));
+            if (jwtClaims.TryGetValue("user_type", out var userType))
+            {
+                claims.Add(new Claim("user_type", userType));
+            }
+            if (payload.AccountState?.RejectionReason is { } reason)
+            {
+                claims.Add(new Claim("rejection_reason", reason));
+            }
+            if (payload.AccountState?.RejectionReasonArabic is { } reasonAr)
+            {
+                claims.Add(new Claim("rejection_reason_ar", reasonAr));
+            }
+
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
 
@@ -104,7 +156,16 @@ internal static class AuthEndpoints
             await http.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);
             logger.LogInformation("Control Panel sign-in completed for {UserId}.", tokens.User.Id);
-            return Results.Redirect("/");
+            // P11 — D-052: route non-Approved users to the matching
+            // state-banner page directly; the layout guard would do the
+            // same on the next request but the explicit redirect avoids a
+            // flash of the dashboard.
+            return accountState switch
+            {
+                "PendingApproval" => Results.Redirect("/auth/pending"),
+                "Rejected" => Results.Redirect("/auth/rejected"),
+                _ => Results.Redirect("/"),
+            };
         }).AllowAnonymous();
 
         // Signs out: ends the API session, then clears the cookie. POST and
