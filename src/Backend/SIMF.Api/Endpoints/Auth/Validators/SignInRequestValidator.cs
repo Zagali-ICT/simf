@@ -18,5 +18,12 @@ public sealed class SignInRequestValidator : Validator<SignInRequest>
 
         RuleFor(request => request.Password)
             .NotEmpty().Bilingual("Password is required.", "كلمة المرور مطلوبة.");
+
+        // P2 — audience must be one of the declared enum values; a stray
+        // integer is rejected at the validator boundary, not at the gate.
+        RuleFor(request => request.Audience)
+            .IsInEnum().Bilingual(
+                "The sign-in surface is not valid.",
+                "واجهة تسجيل الدخول غير صالحة.");
     }
 }

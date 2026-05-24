@@ -180,7 +180,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     {
         var (adminEmail, secret) = await CreateAdminAsync();
 
-        var challenge = await ExpectChallengeAsync(adminEmail, Password);
+        var challenge = await ExpectChallengeAsync(adminEmail, Password, SignInAudience.Cp);
         Assert.NotNull(challenge.MfaToken);
 
         var totp = new Totp(Base32Encoding.ToBytes(secret)).ComputeTotp();
@@ -197,7 +197,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     public async Task Verify_totp_with_a_wrong_code_returns_400()
     {
         var (adminEmail, _) = await CreateAdminAsync();
-        var challenge = await ExpectChallengeAsync(adminEmail, Password);
+        var challenge = await ExpectChallengeAsync(adminEmail, Password, SignInAudience.Cp);
 
         var verify = await _client.PostAsJsonAsync(
             "/api/v1/auth/verify-totp",
@@ -214,13 +214,13 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         var (adminEmail, secret) = await CreateAdminAsync();
         var totp = new Totp(Base32Encoding.ToBytes(secret)).ComputeTotp();
 
-        var first = await ExpectChallengeAsync(adminEmail, Password);
+        var first = await ExpectChallengeAsync(adminEmail, Password, SignInAudience.Cp);
         var firstVerify = await _client.PostAsJsonAsync(
             "/api/v1/auth/verify-totp",
             new VerifyTotpRequest { MfaToken = first.MfaToken!, Code = totp });
         Assert.Equal(HttpStatusCode.OK, firstVerify.StatusCode);
 
-        var second = await ExpectChallengeAsync(adminEmail, Password);
+        var second = await ExpectChallengeAsync(adminEmail, Password, SignInAudience.Cp);
         var replay = await _client.PostAsJsonAsync(
             "/api/v1/auth/verify-totp",
             new VerifyTotpRequest { MfaToken = second.MfaToken!, Code = totp });
@@ -232,7 +232,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     public async Task Verify_totp_after_the_ticket_expires_returns_400()
     {
         var (adminEmail, _) = await CreateAdminAsync();
-        var challenge = await ExpectChallengeAsync(adminEmail, Password);
+        var challenge = await ExpectChallengeAsync(adminEmail, Password, SignInAudience.Cp);
 
         _factory.Time.Advance(TimeSpan.FromMinutes(6));
 
@@ -306,7 +306,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         var (email, _) = await CreateAdminAsync();
         DisableTwoFactor(email);
 
-        var response = await SignInAsync(email, Password);
+        var response = await SignInAsync(email, Password, SignInAudience.Cp);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
@@ -338,6 +338,56 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         Assert.Equal(0, otpCount);
     }
 
+    // -- P2 — audience gate ---------------------------------------------------
+
+    [Fact]
+    public async Task CP_audience_rejects_a_visitor_with_AUTH_WRONG_SURFACE_CP()
+    {
+        var email = await RegisterVerifiedVisitorAsync();
+
+        var response = await SignInAsync(email, Password, SignInAudience.Cp);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.Equal(ErrorCodes.AuthWrongSurfaceCp, body!.Error!.Code);
+        Assert.True(AuditEntryExists(email, AuditEvents.SignInWrongSurface));
+    }
+
+    [Fact]
+    public async Task Web_audience_rejects_a_user_with_a_CP_role_with_AUTH_WRONG_SURFACE_WEB()
+    {
+        var (adminEmail, _) = await CreateAdminAsync();
+
+        var response = await SignInAsync(adminEmail, Password, SignInAudience.Web);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.Equal(ErrorCodes.AuthWrongSurfaceWeb, body!.Error!.Code);
+        Assert.True(AuditEntryExists(adminEmail, AuditEvents.SignInWrongSurface));
+    }
+
+    [Fact]
+    public async Task App_audience_uses_the_same_visitor_rule_as_Web()
+    {
+        var (adminEmail, _) = await CreateAdminAsync();
+        var visitorEmail = await RegisterVerifiedVisitorAsync();
+
+        // Staff via App → rejected (App is visitor-only, same rule as Web).
+        var adminViaApp = await SignInAsync(adminEmail, Password, SignInAudience.App);
+        Assert.Equal(HttpStatusCode.Forbidden, adminViaApp.StatusCode);
+        var adminBody = await adminViaApp.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.Equal(ErrorCodes.AuthWrongSurfaceWeb, adminBody!.Error!.Code);
+
+        // Visitor via App → accepted (gets the email-OTP challenge — TwoFactorEnabled
+        // is on because RegisterVerifiedVisitorAsync turns it on for the OTP path).
+        var visitorViaApp = await SignInAsync(visitorEmail, Password, SignInAudience.App);
+        Assert.Equal(HttpStatusCode.OK, visitorViaApp.StatusCode);
+        var visitorBody =
+            (await visitorViaApp.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        Assert.True(visitorBody.Data!.MfaRequired);
+        Assert.NotNull(visitorBody.Data.OtpToken);
+    }
+
     private void DisableTwoFactor(string email)
     {
         using var scope = _factory.Services.CreateScope();
@@ -350,9 +400,14 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     // -- helpers --------------------------------------------------------------
 
     private Task<HttpResponseMessage> SignInAsync(string email, string password) =>
+        SignInAsync(email, password, SignInAudience.Web);
+
+    /// <summary>P2 — variant that lets a test set the audience explicitly.</summary>
+    private Task<HttpResponseMessage> SignInAsync(
+        string email, string password, SignInAudience audience) =>
         _client.PostAsJsonAsync(
             "/api/v1/auth/sign-in",
-            new SignInRequest { Email = email, Password = password });
+            new SignInRequest { Email = email, Password = password, Audience = audience });
 
     private Task<HttpResponseMessage> SignUpAsync(string email) =>
         _client.PostAsJsonAsync(
@@ -362,6 +417,15 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     private async Task<SignInResponse> ExpectChallengeAsync(string email, string password)
     {
         var response = await SignInAsync(email, password);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return (await response.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!;
+    }
+
+    /// <summary>P2 — variant that lets a test set the audience explicitly.</summary>
+    private async Task<SignInResponse> ExpectChallengeAsync(
+        string email, string password, SignInAudience audience)
+    {
+        var response = await SignInAsync(email, password, audience);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return (await response.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!;
     }

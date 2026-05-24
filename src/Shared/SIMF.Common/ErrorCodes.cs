@@ -35,6 +35,11 @@ public static class ErrorCodes
     public const string AuthResetCodeExpired = "AUTH_RESET_CODE_EXPIRED";
     public const string AuthPasswordChangeRequired = "AUTH_PASSWORD_CHANGE_REQUIRED";
 
+    // Sign-in audience gate (P2 — myComment "never any user type other than
+    // super admin can access CP, and same for WEB/APP")
+    public const string AuthWrongSurfaceCp = "AUTH_WRONG_SURFACE_CP";
+    public const string AuthWrongSurfaceWeb = "AUTH_WRONG_SURFACE_WEB";
+
     // TOTP enrolment (myComment #11)
     public const string TotpEnrolmentNotStarted = "TOTP_ENROLMENT_NOT_STARTED";
     public const string TotpEnrolmentCodeInvalid = "TOTP_ENROLMENT_CODE_INVALID";

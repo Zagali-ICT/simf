@@ -172,7 +172,12 @@ public sealed class AdminResetTwoFactorTests : IClassFixture<SimfApiFactory>
         var (email, _) = await CreateAdministratorAsync();
         var sign = await _client.PostAsJsonAsync(
             "/api/v1/auth/sign-in",
-            new SignInRequest { Email = email, Password = AuthFlow.Password });
+            new SignInRequest
+            {
+                Email = email,
+                Password = AuthFlow.Password,
+                Audience = SignInAudience.Cp,   // P2 — CP-only surface
+            });
         var challenge =
             (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!;
 

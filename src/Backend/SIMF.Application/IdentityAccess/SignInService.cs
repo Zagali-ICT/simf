@@ -84,6 +84,12 @@ public sealed class SignInService(
         var now = timeProvider.GetUtcNow();
         var roles = await userManager.GetRolesAsync(user);
 
+        // Audience gate (P2) — runs *after* credentials and account state are
+        // OK so a wrong-surface response can't be used as a credential-
+        // existence oracle. Throws 403 with AUTH_WRONG_SURFACE_CP or
+        // AUTH_WRONG_SURFACE_WEB and writes one SignIn.WrongSurface audit row.
+        await EnforceAudienceAsync(user, roles, request.Audience, cancellationToken);
+
         // When 2FA is turned off for the account (myComment #34, D-033), the
         // password step IS the sign-in — issue tokens directly. This applies
         // to both Control Panel users and visitors.
@@ -268,6 +274,44 @@ public sealed class SignInService(
         ticket.ConsumedAt = now;
         await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
         return await IssueTokensAsync(user, cancellationToken);
+    }
+
+    /// <summary>
+    /// Enforces the audience gate (P2). A user with any CP role can sign in
+    /// only from the Control Panel surface; a user without any CP role can
+    /// sign in only from the visitor surfaces (Web / Flutter app). A mismatch
+    /// audits one <c>SignIn.WrongSurface</c> row and throws 403.
+    /// </summary>
+    private async Task EnforceAudienceAsync(
+        SimfUser user,
+        IList<string> roles,
+        SignInAudience audience,
+        CancellationToken cancellationToken)
+    {
+        var isStaff = roles.Count > 0;
+        var allowed = audience switch
+        {
+            SignInAudience.Cp => isStaff,
+            SignInAudience.Web or SignInAudience.App => !isStaff,
+            _ => false,
+        };
+        if (allowed)
+        {
+            return;
+        }
+
+        var (code, message, messageArabic) = audience == SignInAudience.Cp
+            ? (ErrorCodes.AuthWrongSurfaceCp,
+                "Sign in to the visitor website instead — this account is not allowed on the Control Panel.",
+                "سجّل الدخول إلى موقع الزوار — هذا الحساب غير مسموح به في لوحة التحكم.")
+            : (ErrorCodes.AuthWrongSurfaceWeb,
+                "Sign in to the Control Panel instead — this account is not allowed on the visitor surfaces.",
+                "سجّل الدخول إلى لوحة التحكم — هذا الحساب غير مسموح به في واجهات الزوار.");
+
+        await AuditAsync(AuditEvents.SignInWrongSurface, AuditOutcome.Failure,
+            user.Email!, user.Id, code, detail: audience.ToString(),
+            cancellationToken: cancellationToken);
+        throw new ApiException(code, 403, message, messageArabic);
     }
 
     /// <summary>

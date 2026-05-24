@@ -405,7 +405,12 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         }
         var sign = await _client.PostAsJsonAsync(
             "/api/v1/auth/sign-in",
-            new SignInRequest { Email = email, Password = AuthFlow.Password });
+            new SignInRequest
+            {
+                Email = email,
+                Password = AuthFlow.Password,
+                Audience = SignInAudience.Cp,   // P2 — admin helper
+            });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return (body.Data!.Tokens!.AccessToken, id);
     }

@@ -113,7 +113,12 @@
             }
 
             var result = await Api.SignInAsync(
-                new SignInRequest { Email = _model.Email, Password = _model.Password });
+                new SignInRequest
+                {
+                    Email = _model.Email,
+                    Password = _model.Password,
+                    Audience = SignInAudience.Cp,   // P2 — CP-only surface
+                });
 
             if (!result.Success || result.Data is null)
             {

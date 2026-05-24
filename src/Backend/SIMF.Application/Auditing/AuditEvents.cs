@@ -22,6 +22,7 @@ public static class AuditEvents
     public const string SignInBadCredentials = "SignIn.BadCredentials";
     public const string SignInAccountLockedOut = "SignIn.AccountLockedOut";
     public const string SignInStateBlocked = "SignIn.StateBlocked";
+    public const string SignInWrongSurface = "SignIn.WrongSurface";
     public const string SignInSecondFactorIssued = "SignIn.SecondFactorIssued";
     public const string SignInSecondFactorFailed = "SignIn.SecondFactorFailed";
     public const string SignInSecondFactorRejected = "SignIn.SecondFactorRejected";

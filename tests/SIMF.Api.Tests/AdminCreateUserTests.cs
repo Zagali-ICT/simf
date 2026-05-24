@@ -255,9 +255,17 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
         var newEmail = $"invite-flow-{Guid.NewGuid():N}@simf.test";
+        // P2 — grant Administrator so the new user is real staff (a CP role);
+        // otherwise the audience gate treats this user as a visitor and the
+        // Cp-audience sign-in below is rejected.
         await PostAuthAsync(
             "/api/v1/admin/staff",
-            new AdminCreateUserRequest { Email = newEmail, DisplayName = "Invite Flow" },
+            new AdminCreateUserRequest
+            {
+                Email = newEmail,
+                DisplayName = "Invite Flow",
+                GrantAdministratorRole = true,
+            },
             adminToken);
 
         using var scope = _factory.Services.CreateScope();
@@ -284,7 +292,12 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
 
         var sign = await _client.PostAsJsonAsync(
             "/api/v1/auth/sign-in",
-            new SignInRequest { Email = newEmail, Password = "NewPassw0rd!" });
+            new SignInRequest
+            {
+                Email = newEmail,
+                Password = "NewPassw0rd!",
+                Audience = SignInAudience.Cp,   // P2 — invited user is staff (Administrator role)
+            });
         Assert.Equal(HttpStatusCode.OK, sign.StatusCode);
         var signBody = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         // No 2FA on this account yet, so tokens come back directly (D-033).
@@ -318,7 +331,12 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
 
         var sign = await _client.PostAsJsonAsync(
             "/api/v1/auth/sign-in",
-            new SignInRequest { Email = email, Password = AuthFlow.Password });
+            new SignInRequest
+            {
+                Email = email,
+                Password = AuthFlow.Password,
+                Audience = SignInAudience.Cp,   // P2 — admin helper
+            });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return body.Data!.Tokens!.AccessToken;
     }
