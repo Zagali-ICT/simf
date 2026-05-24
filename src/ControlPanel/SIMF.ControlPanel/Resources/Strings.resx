@@ -392,4 +392,19 @@
   <data name="Account.Notifications.Next" xml:space="preserve"><value>Next</value></data>
   <data name="Account.Notifications.Loading" xml:space="preserve"><value>Loading notifications…</value></data>
   <data name="Account.Notifications.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+
+  <data name="Module.AdminAdmins" xml:space="preserve"><value>Admins</value></data>
+  <data name="Module.AdminAdminsPending" xml:space="preserve"><value>Pending admins</value></data>
+  <data name="Module.AdminOthers" xml:space="preserve"><value>Others</value></data>
+  <data name="Module.AdminOthersPending" xml:space="preserve"><value>Pending others</value></data>
+  <data name="Admin.Others.Title" xml:space="preserve"><value>Others</value></data>
+  <data name="Admin.Others.CreateNew" xml:space="preserve"><value>Add Other</value></data>
+  <data name="Admin.Others.None" xml:space="preserve"><value>No Other accounts yet.</value></data>
+  <data name="Admin.Others.New.Title" xml:space="preserve"><value>Add Other user</value></data>
+  <data name="Admin.Others.New.Supporting" xml:space="preserve"><value>Create a new Other-typed user. The user receives a 7-day password-set invitation by email.</value></data>
+  <data name="Admin.Others.New.Submit" xml:space="preserve"><value>Create Other user</value></data>
+  <data name="Admin.Others.New.ProfileTypeRequired" xml:space="preserve"><value>A profile type is required.</value></data>
+  <data name="Admin.Others.ProfileType" xml:space="preserve"><value>Profile type</value></data>
+  <data name="Admin.Others.ProfileType.Placeholder" xml:space="preserve"><value>Pick a profile type</value></data>
+  <data name="Admin.Pending.Others.Title" xml:space="preserve"><value>Pending Other approvals</value></data>
 </root>

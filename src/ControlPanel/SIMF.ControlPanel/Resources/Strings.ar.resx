@@ -393,4 +393,19 @@
   <data name="Account.Notifications.Next" xml:space="preserve"><value>التالي</value></data>
   <data name="Account.Notifications.Loading" xml:space="preserve"><value>جارٍ تحميل الإشعارات…</value></data>
   <data name="Account.Notifications.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+
+  <data name="Module.AdminAdmins" xml:space="preserve"><value>المسؤولون</value></data>
+  <data name="Module.AdminAdminsPending" xml:space="preserve"><value>المسؤولون — بانتظار الموافقة</value></data>
+  <data name="Module.AdminOthers" xml:space="preserve"><value>مستخدمون آخرون</value></data>
+  <data name="Module.AdminOthersPending" xml:space="preserve"><value>مستخدمون آخرون — بانتظار الموافقة</value></data>
+  <data name="Admin.Others.Title" xml:space="preserve"><value>مستخدمون آخرون</value></data>
+  <data name="Admin.Others.CreateNew" xml:space="preserve"><value>إضافة مستخدم آخر</value></data>
+  <data name="Admin.Others.None" xml:space="preserve"><value>لا يوجد مستخدمون من نوع آخر بعد.</value></data>
+  <data name="Admin.Others.New.Title" xml:space="preserve"><value>إضافة مستخدم من نوع آخر</value></data>
+  <data name="Admin.Others.New.Supporting" xml:space="preserve"><value>أنشئ مستخدمًا جديدًا من النوع "آخر". سيستلم المستخدم دعوة لتعيين كلمة المرور صالحة لمدة 7 أيام عبر البريد الإلكتروني.</value></data>
+  <data name="Admin.Others.New.Submit" xml:space="preserve"><value>إنشاء مستخدم آخر</value></data>
+  <data name="Admin.Others.New.ProfileTypeRequired" xml:space="preserve"><value>نوع الملف الشخصي مطلوب.</value></data>
+  <data name="Admin.Others.ProfileType" xml:space="preserve"><value>نوع الملف الشخصي</value></data>
+  <data name="Admin.Others.ProfileType.Placeholder" xml:space="preserve"><value>اختر نوع الملف الشخصي</value></data>
+  <data name="Admin.Pending.Others.Title" xml:space="preserve"><value>موافقات المستخدمين الآخرين المعلّقة</value></data>
 </root>

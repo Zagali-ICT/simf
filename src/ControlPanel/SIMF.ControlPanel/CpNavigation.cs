@@ -65,8 +65,13 @@ public static class CpNavigation
         ]),
         new("Nav.System",
         [
-            new("Module.AdminStaff", "/admin/staff"),
-            new("Module.AdminStaffPending", "/admin/staff/pending"),
+            // P7e — D-055: three pairs of pages, one per UserType
+            // (Admin / Other / Visitor). The "Staff" label is gone —
+            // P7c renamed the API; P7e finishes the rename on the CP UI.
+            new("Module.AdminAdmins", "/admin/admins"),
+            new("Module.AdminAdminsPending", "/admin/admins/pending"),
+            new("Module.AdminOthers", "/admin/others"),
+            new("Module.AdminOthersPending", "/admin/others/pending"),
             new("Module.AdminVisitors", "/admin/visitors"),
             new("Module.AdminVisitorsPending", "/admin/visitors/pending"),
             new("Module.AdminInterests", "/admin/interests"),

@@ -1,0 +1,93 @@
+@* Control Panel — list Other-typed accounts (P7e — D-055). Sibling of
+   /admin/admins and /admin/visitors per the P7 three-UserType model
+   (Staff / Exhibitor / Sponsor / Media — their actual sub-type lives
+   in UserProfile.ProfileTypeId, set at creation by the admin). *@
+@page "/admin/others"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>@L["Admin.Others.Title"] · SIMF</PageTitle>
+
+<SimfPageHeader Title="@L["Admin.Others.Title"]">
+    <Actions>
+        <SimfButton Type="button" OnClick="@(() => Nav.NavigateTo("/admin/others/new"))">
+            @L["Admin.Others.CreateNew"]
+        </SimfButton>
+    </Actions>
+</SimfPageHeader>
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        <SimfDataGrid TItem="AdminUserSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="false"
+                      RowKey="@(user => user.Id.ToString())"
+                      RowLabel="@(user => user.Email)"
+                      Caption="@L["Admin.Others.Title"]"
+                      FilterColumnLabel="@L["Admin.Users.FilterColumn"]"
+                      PrevLabel="@L["Admin.Users.Prev"]"
+                      NextLabel="@L["Admin.Users.Next"]"
+                      LoadingLabel="@L["Admin.Users.Loading"]"
+                      FilterPlaceholder="@L["Admin.Users.FilterPlaceholder"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminUserSummary" Key="email"
+                                    Header="@L["Admin.Users.Column.Email"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Email</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminUserSummary" Key="displayName"
+                                    Header="@L["Admin.Users.Column.DisplayName"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.DisplayName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminUserSummary" Key="state"
+                                    Header="@L["Admin.Users.Column.State"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.AccountState</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Others.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@code {
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminUserSummary>? _page;
+    private bool _loading;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminUserSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/others/list", _query);
+            _page = envelope is { Success: true, Data: not null }
+                ? envelope.Data
+                : GridPage<AdminUserSummary>.Of(
+                    Array.Empty<AdminUserSummary>(), 0, _query);
+        }
+        finally { _loading = false; }
+    }
+
+    private string FormatSummary(int from, int to, int total) =>
+        string.Format(L["Admin.Users.Pager.Summary"], from, to, total);
+}

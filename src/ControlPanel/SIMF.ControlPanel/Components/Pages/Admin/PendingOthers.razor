@@ -1,17 +1,16 @@
-@* Control Panel — pending staff approval queue (P4b). Administrator-only.
-   Each row gets an Approve button (one-click) and a Reject button that
-   opens a reason modal (10–500 chars). Approval mints the QR id; both
-   actions audit one row per click (P4a backend). *@
-@page "/admin/admins/pending"
+@* Control Panel — pending Other-typed approval queue (P7e — D-055).
+   Mirrors PendingAdmins (P4b); each row gets Approve + Reject buttons
+   wired to the /admin/others/{id}/{approve,reject} API. *@
+@page "/admin/others/pending"
 @layout CpShellLayout
 @attribute [Authorize(Roles = "Administrator")]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 
-<PageTitle>@L["Admin.Pending.Staff.Title"] · SIMF</PageTitle>
+<PageTitle>@L["Admin.Pending.Others.Title"] · SIMF</PageTitle>
 
-<SimfPageHeader Title="@L["Admin.Pending.Staff.Title"]" />
+<SimfPageHeader Title="@L["Admin.Pending.Others.Title"]" />
 
 <div class="simf-page-wide">
     <div class="simf-surface">
@@ -30,7 +29,7 @@
                       Multiselect="false"
                       RowKey="@(u => u.Id.ToString())"
                       RowLabel="@(u => u.Email)"
-                      Caption="@L["Admin.Pending.Staff.Title"]"
+                      Caption="@L["Admin.Pending.Others.Title"]"
                       PrevLabel="@L["Admin.Users.Prev"]"
                       NextLabel="@L["Admin.Users.Next"]"
                       LoadingLabel="@L["Admin.Users.Loading"]"
@@ -38,8 +37,7 @@
                       SummaryFormatter="@FormatSummary">
             <Columns>
                 <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="email"
-                                    Header="@L["Admin.Users.Column.Email"]"
-                                    Sortable="false">
+                                    Header="@L["Admin.Users.Column.Email"]">
                     <CellTemplate>@context.Email</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="displayName"
@@ -122,7 +120,7 @@
         try
         {
             var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminPendingUserSummary>>>(
-                "simfAccount.postJson", "/account/api/admin/admins/pending/list", _query);
+                "simfAccount.postJson", "/account/api/admin/others/pending/list", _query);
             _page = envelope is { Success: true, Data: not null }
                 ? envelope.Data
                 : GridPage<AdminPendingUserSummary>.Of(
@@ -139,7 +137,7 @@
         {
             var envelope = await JS.InvokeAsync<ApiResult<bool>>(
                 "simfAccount.postJson",
-                $"/account/api/admin/admins/{user.Id}/approve", new { });
+                $"/account/api/admin/others/{user.Id}/approve", new { });
             if (envelope is { Success: true })
             {
                 _toast = string.Format(L["Admin.Pending.Approved.Toast"], user.Email);
@@ -170,7 +168,7 @@
         {
             var envelope = await JS.InvokeAsync<ApiResult<bool>>(
                 "simfAccount.postJson",
-                $"/account/api/admin/admins/{_rejectTarget.Id}/reject",
+                $"/account/api/admin/others/{_rejectTarget.Id}/reject",
                 new AdminRejectRequest { Reason = _rejectReason });
             if (envelope is { Success: true })
             {

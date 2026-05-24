@@ -4,7 +4,7 @@
    is omitted on this page until the User Management module ships — the
    grid is wired for it but no callback is provided here, so the toolbar
    Edit and per-row Edit buttons stay hidden. *@
-@page "/admin/staff"
+@page "/admin/admins"
 @layout CpShellLayout
 @attribute [Authorize(Roles = "Administrator")]
 @inject IStringLocalizer<Strings> L
@@ -232,7 +232,7 @@
         try
         {
             var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminUserSummary>>>(
-                "simfAccount.postJson", "/account/api/admin/staff/list", _query);
+                "simfAccount.postJson", "/account/api/admin/admins/list", _query);
             _page = envelope is { Success: true, Data: not null }
                 ? envelope.Data
                 : GridPage<AdminUserSummary>.Of(
@@ -243,7 +243,7 @@
 
     private Task OnAddAsync()
     {
-        Nav.NavigateTo("/admin/staff/new");
+        Nav.NavigateTo("/admin/admins/new");
         return Task.CompletedTask;
     }
 
@@ -275,7 +275,7 @@
         try
         {
             var envelope = await JS.InvokeAsync<ApiResult<AdminBulkDeleteResponse>>(
-                "simfAccount.postJson", "/account/api/admin/staff/bulk-delete",
+                "simfAccount.postJson", "/account/api/admin/admins/bulk-delete",
                 new AdminBulkDeleteRequest
                 {
                     Ids = _bulkDeleteTargets.Select(u => u.Id).ToList(),
@@ -314,7 +314,7 @@
         try
         {
             var envelope = await JS.InvokeAsync<ApiResult<AdminCreateUserResponse>>(
-                "simfAccount.postJson", "/account/api/admin/staff/duplicate",
+                "simfAccount.postJson", "/account/api/admin/admins/duplicate",
                 new AdminDuplicateUserRequest
                 {
                     SourceId = _duplicateSource.Id,
@@ -373,7 +373,7 @@
     {
         var ids = selected.Select(u => u.Id).ToList();
         await JS.InvokeVoidAsync("simfAccount.downloadXlsx",
-            "/account/api/admin/staff/export",
+            "/account/api/admin/admins/export",
             new AdminExportUsersRequest { Ids = ids, Query = ids.Count == 0 ? _query : null });
     }
 
@@ -386,7 +386,7 @@
         try
         {
             var envelope = await JS.InvokeAsync<ApiResult<AdminImportUsersResponse>>(
-                "simfAccount.uploadFile", "/account/api/admin/staff/import", "users-import-input");
+                "simfAccount.uploadFile", "/account/api/admin/admins/import", "users-import-input");
             if (envelope is { Success: true, Data: not null })
             {
                 _importResult = envelope.Data;
