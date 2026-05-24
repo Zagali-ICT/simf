@@ -1,25 +1,25 @@
 namespace SIMF.Common;
 
 /// <summary>
-/// The Control Panel role names (P4). Defined once and never written as
-/// literals elsewhere — adding a new CP role is a one-file change.
+/// The Control Panel **RBAC role** names. Per the P7 model (decision
+/// D-048), RBAC roles apply **only** to users with
+/// <c>UserType = Admin</c>; other users (<c>Visitor</c>, <c>Other</c>)
+/// never carry an RBAC role — their kind comes from the
+/// <c>UserType</c> column and their subtype from <c>ProfileType</c>.
 ///
-/// <para><see cref="Administrator"/> is the highest-trust role (super-admin
-/// + staff promotion); <see cref="Staff"/> / <see cref="Scientific"/> /
-/// <see cref="Security"/> are the reviewer roles (any team member approves
-/// any visitor; only Administrator approves new staff).</para>
+/// <para>Today only one role is needed — <see cref="Administrator"/>.
+/// Future fine-grained Admin-side roles (e.g. <c>AuditViewer</c>,
+/// <c>RegistrationApprover</c>) plug in here.</para>
+///
+/// <para>The P4-era "reviewer roles" (Staff / Scientific / Security)
+/// were removed by P7 — they are now <c>ProfileType</c> rows with
+/// <c>UserType = Other</c>, not RBAC roles.</para>
 /// </summary>
 public static class AppRoles
 {
     public const string Administrator = "Administrator";
-    public const string Staff = "Staff";
-    public const string Scientific = "Scientific";
-    public const string Security = "Security";
 
-    /// <summary>
-    /// Every CP-side role — the audience gate (P2) lets a user sign in to
-    /// the Control Panel only when they hold at least one of these.
-    /// </summary>
+    /// <summary>Every CP-side RBAC role. Today: just Administrator.</summary>
     public static readonly IReadOnlyList<string> CpRoles =
-        [Administrator, Staff, Scientific, Security];
+        [Administrator];
 }

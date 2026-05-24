@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SIMF.Application.Auditing;
 using SIMF.Common;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Identity;
 
@@ -16,6 +18,7 @@ namespace SIMF.Infrastructure.Identity;
 public sealed class IdentitySeeder(
     UserManager<SimfUser> userManager,
     RoleManager<SimfRole> roleManager,
+    SimfIdentityDbContext dbContext,
     IOptions<SuperAdminOptions> options,
     IAuditLog auditLog,
     TimeProvider timeProvider,
@@ -40,9 +43,9 @@ public sealed class IdentitySeeder(
             return;
         }
 
-        // P4 — seed every CP role (Administrator + the three reviewer roles).
-        // The reviewer roles approve visitors; only Administrator approves
-        // new staff or promotes an account to Administrator.
+        // P7 — seed the single CP RBAC role (Administrator). The P4-era
+        // Staff / Scientific / Security roles were removed by the P7 rework
+        // — they live in the ProfileTypes lookup now, not in AspNetRoles.
         foreach (var role in AppRoles.CpRoles)
         {
             await EnsureRoleAsync(role);
@@ -59,6 +62,28 @@ public sealed class IdentitySeeder(
         {
             await userManager.AddToRoleAsync(admin, AdministratorRole);
         }
+
+        // P7 — every seeded admin must end up with UserType = Admin. This
+        // also catches a super-admin row that was migrated up from a
+        // pre-P7 database where the column did not exist.
+        if (admin.UserType != UserType.Admin)
+        {
+            admin.UserType = UserType.Admin;
+            await userManager.UpdateAsync(admin);
+        }
+
+        // P7 — seed the initial ProfileTypes set so the create / pending
+        // pages have non-empty pickers from first boot. The final v1 set
+        // is open item OI-6 against SIMF-FDS-002 v2.0 — the owner picks
+        // the full list (VVIP / VIP / Gold / Staff / Exhibitor / Sponsor
+        // / Media / ...); this seed ships one row per UserType so the
+        // pickers render.
+        await EnsureProfileTypeAsync(
+            "Visitor — General", "زائر — عام", "#3B82F6",
+            UserType.Visitor, cancellationToken);
+        await EnsureProfileTypeAsync(
+            "Other — Staff", "أخرى — فريق", "#10B981",
+            UserType.Other, cancellationToken);
     }
 
     private async Task EnsureRoleAsync(string roleName)
@@ -73,6 +98,33 @@ public sealed class IdentitySeeder(
         }
     }
 
+    /// <summary>P7 — idempotent ProfileTypes seed (lookup by Name + UserType).</summary>
+    private async Task EnsureProfileTypeAsync(
+        string name,
+        string nameArabic,
+        string pageColor,
+        UserType userType,
+        CancellationToken cancellationToken)
+    {
+        var exists = await dbContext.ProfileTypes
+            .AnyAsync(profileType =>
+                profileType.UserType == userType && profileType.Name == name,
+                cancellationToken);
+        if (exists) { return; }
+
+        dbContext.ProfileTypes.Add(new ProfileType
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            NameArabic = nameArabic,
+            PageColor = pageColor,
+            UserType = userType,
+            IsActive = true,
+            CreatedAt = timeProvider.GetUtcNow(),
+        });
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     private async Task<SimfUser?> CreateSuperAdminAsync(
         SuperAdminOptions settings,
         CancellationToken cancellationToken)
@@ -85,6 +137,11 @@ public sealed class IdentitySeeder(
             EmailConfirmed = true,
             DisplayName = "Super Administrator",
             AccountState = AccountState.Approved,
+            // P7 — the seeded super-admin is the only Admin-typed row at first
+            // boot; the data migration in 20260524_AddUserTypeAndProfileType
+            // already sets this for the pre-P7 super-admin, but we also set
+            // it here so a brand-new install on a clean DB lands correctly.
+            UserType = UserType.Admin,
             PasswordChangeRequired = true,
             CreatedAt = now,
         };

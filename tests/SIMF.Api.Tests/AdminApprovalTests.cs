@@ -127,26 +127,14 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    [Fact]
-    public async Task A_Staff_role_user_can_approve_a_visitor_but_not_a_staff_account()
-    {
-        // Promote an Administrator to "Staff" (no Administrator role) so the
-        // Administrator-vs-TeamMember policy split is exercised.
-        var (staffEmail, staffToken) = await CreateStaffRoleHolderAsync();
-        var adminToken = await CreateAdministratorAndSignInAsync();
-        var visitorId = await CreateVisitorSubjectAsync(adminToken);
-        var pendingStaffId = await CreateStaffSubjectAsync(adminToken);
-
-        // Staff role can approve a visitor (TeamMember policy).
-        var visitorApprove = await PostAuthAsync(
-            $"/api/v1/admin/visitors/{visitorId}/approve", new { }, staffToken);
-        Assert.Equal(HttpStatusCode.OK, visitorApprove.StatusCode);
-
-        // Staff role can NOT approve a staff (AdministratorOnly policy).
-        var staffApprove = await PostAuthAsync(
-            $"/api/v1/admin/staff/{pendingStaffId}/approve", new { }, staffToken);
-        Assert.Equal(HttpStatusCode.Forbidden, staffApprove.StatusCode);
-    }
+    // P7 — the AdministratorOnly-vs-TeamMember policy split is gone (the
+    // reviewer roles Staff / Scientific / Security are no longer RBAC
+    // roles, they are ProfileType rows). The previous test
+    // `A_Staff_role_user_can_approve_a_visitor_but_not_a_staff_account`
+    // was removed by P7a because its premise no longer holds. The
+    // narrower "only Administrator can approve" rule is covered by the
+    // existing approve-staff and approve-visitor tests above (they sign
+    // in as Administrator).
 
     [Fact]
     public async Task Approving_an_already_Approved_user_returns_409_ADMIN_USER_NOT_PENDING()
@@ -239,29 +227,6 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         return await SignInAndGetTokenAsync(email, SignInAudience.Cp);
     }
 
-    private async Task<(string Email, string Token)> CreateStaffRoleHolderAsync()
-    {
-        var email = $"team-staff-{Guid.NewGuid():N}@simf.test";
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
-            if (!await roles.RoleExistsAsync(AppRoles.Staff))
-            {
-                await roles.CreateAsync(new SimfRole { Name = AppRoles.Staff });
-            }
-            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
-            var user = new SimfUser
-            {
-                UserName = email, Email = email, EmailConfirmed = true,
-                DisplayName = "Team Staff Tester",
-                AccountState = AccountState.Approved,
-            };
-            await users.CreateAsync(user, Password);
-            await users.AddToRoleAsync(user, AppRoles.Staff);
-        }
-        var token = await SignInAndGetTokenAsync(email, SignInAudience.Cp);
-        return (email, token);
-    }
 
     private async Task<string> SignInAndGetTokenAsync(string email, SignInAudience audience)
     {

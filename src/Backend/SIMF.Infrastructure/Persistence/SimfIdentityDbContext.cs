@@ -28,6 +28,8 @@ public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> optio
 
     public DbSet<VisitorProfile> VisitorProfiles => Set<VisitorProfile>();
 
+    public DbSet<ProfileType> ProfileTypes => Set<ProfileType>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
