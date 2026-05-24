@@ -507,6 +507,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
             EmailConfirmed = true,
             DisplayName = "Test Administrator",
             AccountState = AccountState.Approved,
+            UserType = UserType.Admin,   // P7b — audience gate keys off UserType
             // The TOTP-path tests expect the sign-in second factor to run; D-033
             // makes that conditional on TwoFactorEnabled, so opt in.
             TwoFactorEnabled = true,

@@ -17,10 +17,10 @@ public sealed class RejectVisitorEndpoint(IAdminAccountService adminAccountServi
     public override void Configure()
     {
         Post("/admin/visitors/{id:guid}/reject");
-        Policies(nameof(AuthorizationPolicies.TeamMember));
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
         Tags("Admin");
         Summary(summary => summary.Summary =
-            "Reject a pending visitor. Requires any CP role.");
+            "Reject a pending visitor. Requires the Administrator role (P7b).");
     }
 
     public override async Task HandleAsync(RejectRouteRequest req, CancellationToken ct)

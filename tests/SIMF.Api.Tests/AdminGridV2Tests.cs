@@ -398,6 +398,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
                 EmailConfirmed = true,
                 DisplayName = "GridV2 Admin",
                 AccountState = AccountState.Approved,
+                UserType = UserType.Admin,   // P7b — audience gate keys off UserType
             };
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AdministratorRole);

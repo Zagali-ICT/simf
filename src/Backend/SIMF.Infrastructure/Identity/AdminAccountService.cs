@@ -180,6 +180,15 @@ internal sealed class AdminAccountService(
             // minted in ApproveStaffAsync / ApproveVisitorAsync (D-046
             // QR-on-approval), not here.
             AccountState = AccountState.PendingApproval,
+            // P7b — `UserType = Admin` for accounts that get the
+            // Administrator role at create time; the P7c contract split
+            // will replace this two-way branch with a per-UserType
+            // create method (CreateAdmin / CreateOther / CreateVisitor).
+            // For now the legacy `GrantAdministratorRole` flag is the
+            // signal: true → Admin, false → Visitor (the safe default).
+            UserType = grantAdministratorRole
+                ? UserType.Admin
+                : UserType.Visitor,
             PasswordChangeRequired = false,
             CreatedAt = now,
         };

@@ -220,6 +220,7 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
                 UserName = email, Email = email, EmailConfirmed = true,
                 DisplayName = "Approval Tests Admin",
                 AccountState = AccountState.Approved,
+                UserType = UserType.Admin,   // P7b — audience gate keys off UserType
             };
             await users.CreateAsync(user, Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);

@@ -16,10 +16,10 @@ public sealed class ApproveVisitorEndpoint(IAdminAccountService adminAccountServ
     public override void Configure()
     {
         Post("/admin/visitors/{id:guid}/approve");
-        Policies(nameof(AuthorizationPolicies.TeamMember));
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
         Tags("Admin");
         Summary(summary => summary.Summary =
-            "Approve a pending visitor. Requires any CP role.");
+            "Approve a pending visitor. Requires the Administrator role (P7b).");
     }
 
     public override async Task HandleAsync(ApproveRouteRequest req, CancellationToken ct)

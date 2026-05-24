@@ -39,10 +39,10 @@ public sealed class ListPendingVisitorsEndpoint(IAdminAccountService adminAccoun
     public override void Configure()
     {
         Post("/admin/visitors/pending/list");
-        Policies(nameof(AuthorizationPolicies.TeamMember));
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
         Tags("Admin");
         Summary(summary => summary.Summary =
-            "List pending visitors. Requires any CP role.");
+            "List pending visitors. Requires the Administrator role (P7b).");
     }
 
     public override async Task HandleAsync(GridQuery req, CancellationToken ct)

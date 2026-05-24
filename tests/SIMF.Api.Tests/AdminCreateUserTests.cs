@@ -334,6 +334,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
                 EmailConfirmed = true,
                 DisplayName = "Test Administrator",
                 AccountState = AccountState.Approved,
+                UserType = UserType.Admin,   // P7b — audience gate keys off UserType
             };
             await users.CreateAsync(user, AuthFlow.Password);
             await users.AddToRoleAsync(user, AdministratorRole);

@@ -277,10 +277,16 @@ public sealed class SignInService(
     }
 
     /// <summary>
-    /// Enforces the audience gate (P2). A user with any CP role can sign in
-    /// only from the Control Panel surface; a user without any CP role can
-    /// sign in only from the visitor surfaces (Web / Flutter app). A mismatch
-    /// audits one <c>SignIn.WrongSurface</c> row and throws 403.
+    /// Enforces the audience gate (P2, rekeyed by P7b). The CP surface
+    /// is for <see cref="UserType.Admin"/> only; the visitor surfaces
+    /// (Web, Flutter app) are for <see cref="UserType.Visitor"/> and
+    /// <see cref="UserType.Other"/>. A mismatch audits one
+    /// <c>SignIn.WrongSurface</c> row and throws 403.
+    ///
+    /// <para>The <paramref name="roles"/> argument is kept on the
+    /// signature so the call site does not have to re-fetch them; the
+    /// gate itself does not read roles any more — <c>UserType</c> is
+    /// the authoritative discriminator (decision D-048).</para>
     /// </summary>
     private async Task EnforceAudienceAsync(
         SimfUser user,
@@ -288,11 +294,13 @@ public sealed class SignInService(
         SignInAudience audience,
         CancellationToken cancellationToken)
     {
-        var isStaff = roles.Count > 0;
+        _ = roles; // P7b — no longer read; signature kept stable.
+
+        var isAdmin = user.UserType == UserType.Admin;
         var allowed = audience switch
         {
-            SignInAudience.Cp => isStaff,
-            SignInAudience.Web or SignInAudience.App => !isStaff,
+            SignInAudience.Cp => isAdmin,
+            SignInAudience.Web or SignInAudience.App => !isAdmin,
             _ => false,
         };
         if (allowed)
@@ -302,8 +310,8 @@ public sealed class SignInService(
 
         var (code, message, messageArabic) = audience == SignInAudience.Cp
             ? (ErrorCodes.AuthWrongSurfaceCp,
-                "Sign in to the visitor website instead — this account is not allowed on the Control Panel.",
-                "سجّل الدخول إلى موقع الزوار — هذا الحساب غير مسموح به في لوحة التحكم.")
+                "Sign in to the visitor app instead — this account is not allowed on the Control Panel.",
+                "سجّل الدخول إلى تطبيق الزوار — هذا الحساب غير مسموح به في لوحة التحكم.")
             : (ErrorCodes.AuthWrongSurfaceWeb,
                 "Sign in to the Control Panel instead — this account is not allowed on the visitor surfaces.",
                 "سجّل الدخول إلى لوحة التحكم — هذا الحساب غير مسموح به في واجهات الزوار.");
