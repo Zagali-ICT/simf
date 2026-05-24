@@ -27,6 +27,10 @@ public static class AuditEvents
     public const string SignInSecondFactorFailed = "SignIn.SecondFactorFailed";
     public const string SignInSecondFactorRejected = "SignIn.SecondFactorRejected";
     public const string SignInSucceeded = "SignIn.Succeeded";
+    // P10 — D-051: a non-approved user signed in (PendingApproval or
+    // Rejected). They got tokens + AccountStateInfo; routed to the
+    // state-banner page by the front-end. SOC needs to spot these.
+    public const string SignInAsGuest = "SignIn.AsGuest";
     public const string RefreshTokenIssued = "RefreshToken.Issued";
     public const string RefreshTokenRotated = "RefreshToken.Rotated";
     public const string RefreshTokenReused = "RefreshToken.Reused";

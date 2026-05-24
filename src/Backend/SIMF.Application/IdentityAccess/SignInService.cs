@@ -73,7 +73,7 @@ public sealed class SignInService(
 
         await userManager.ResetAccessFailedCountAsync(user);
 
-        var (blockCode, blockMessage, blockMessageArabic) = CheckAccountState(user, request.Audience);
+        var (blockCode, blockMessage, blockMessageArabic) = CheckAccountState(user);
         if (blockCode is not null)
         {
             await AuditAsync(AuditEvents.SignInStateBlocked, AuditOutcome.Failure,
@@ -96,7 +96,19 @@ public sealed class SignInService(
         if (!user.TwoFactorEnabled)
         {
             var tokens = await IssueTokensAsync(user, cancellationToken);
-            return new SignInResponse(false, null, null, tokens);
+            // P10 — D-051: surface AccountStateInfo on the response when
+            // the user is non-Approved, and audit the guest sign-in
+            // separately so SOC can spot it. The JWT itself also carries
+            // the account_state claim, so 2FA-completed sign-ins are
+            // covered by the claim alone.
+            var stateInfo = BuildAccountStateInfo(user);
+            if (stateInfo is not null)
+            {
+                await AuditAsync(AuditEvents.SignInAsGuest, AuditOutcome.Success,
+                    user.Email!, user.Id, detail: stateInfo.State,
+                    cancellationToken: cancellationToken);
+            }
+            return new SignInResponse(false, null, null, tokens, stateInfo);
         }
 
         // The second-factor flavour is the user's own choice, not just their
@@ -323,30 +335,55 @@ public sealed class SignInService(
     }
 
     /// <summary>
-    /// The account states that block sign-in. <c>EmailVerified</c> and
+    /// The account states that **hard-block** sign-in (P10 — D-051). The
+    /// only hard block left is <c>Disabled</c> (the operator's "this
+    /// account is dead" lever) and <c>Registered</c> (the user has not
+    /// verified their email yet). <c>PendingApproval</c> and
+    /// <c>Rejected</c> now sign in successfully and receive an
+    /// <see cref="AccountStateInfo"/> on the response + the
+    /// <c>account_state</c> JWT claim, so the client routes them to the
+    /// pending / rejected page (P11) — they are not granted any access
+    /// beyond the state-banner surface, but the JWT is the gate the
+    /// authorization handler (P11) checks. <c>EmailVerified</c> and
     /// <c>Approved</c> may always sign in (D-010 — auth and authz are
-    /// separate concerns). P4 added the PendingApproval rule: a pending
-    /// **staff** member cannot sign in to the CP (they can't do anything
-    /// until approved); a pending **visitor** can sign in to Web/App and
-    /// sees a "pending" UI on their profile.
+    /// separate concerns).
     /// </summary>
     private static (string? Code, string? Message, string? MessageArabic) CheckAccountState(
-        SimfUser user, SignInAudience audience) =>
+        SimfUser user) =>
         user.AccountState switch
         {
             AccountState.Registered => (
                 ErrorCodes.AuthEmailNotVerified,
                 "Verify your email address before signing in.",
                 "يرجى التحقق من بريدك الإلكتروني قبل تسجيل الدخول."),
-            AccountState.Disabled or AccountState.Rejected => (
+            AccountState.Disabled => (
                 ErrorCodes.AuthAccountDisabled,
                 "This account is not active.",
                 "هذا الحساب غير نشط."),
-            AccountState.PendingApproval when audience == SignInAudience.Cp => (
-                ErrorCodes.AuthAccountNotApproved,
-                "Your account is pending approval by an administrator.",
-                "حسابك بانتظار موافقة المسؤول."),
             _ => (null, null, null),
+        };
+
+    /// <summary>
+    /// Builds the <see cref="AccountStateInfo"/> surfaced on a
+    /// non-Approved sign-in response (P10 — D-051). Null when the user
+    /// is Approved or in any other state that doesn't need to inform
+    /// the client (the hard-blocked states never reach this helper —
+    /// they 403 before sign-in completes).
+    /// </summary>
+    private static AccountStateInfo? BuildAccountStateInfo(SimfUser user) =>
+        user.AccountState switch
+        {
+            AccountState.PendingApproval => new AccountStateInfo(
+                State: nameof(AccountState.PendingApproval),
+                RejectionReason: null,
+                RejectionReasonArabic: null,
+                StateChangedAt: user.StateChangedAt),
+            AccountState.Rejected => new AccountStateInfo(
+                State: nameof(AccountState.Rejected),
+                RejectionReason: user.RejectionReason,
+                RejectionReasonArabic: user.RejectionReasonArabic,
+                StateChangedAt: user.StateChangedAt),
+            _ => null,
         };
 
     /// <summary>Blocks the second-factor step if the account locked out after the password step.</summary>

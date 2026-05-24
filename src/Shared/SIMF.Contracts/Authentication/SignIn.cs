@@ -50,7 +50,23 @@ public sealed record SignInResponse(
     bool MfaRequired,
     string? MfaToken,
     string? OtpToken,
-    AuthTokens? Tokens = null);
+    AuthTokens? Tokens = null,
+    AccountStateInfo? AccountState = null);
+
+/// <summary>
+/// Carries the user's account state on a sign-in response when the
+/// account is **not** Approved (P10 — D-051). Null on an Approved
+/// sign-in. The front-end branches on <see cref="State"/> to route the
+/// user to the pending / rejected state-banner page (P11). The
+/// <see cref="RejectionReason"/> + <see cref="RejectionReasonArabic"/>
+/// pair is populated only when <see cref="State"/> is
+/// <c>"Rejected"</c>.
+/// </summary>
+public sealed record AccountStateInfo(
+    string State,
+    string? RejectionReason,
+    string? RejectionReasonArabic,
+    DateTimeOffset? StateChangedAt);
 
 /// <summary>The token payload returned once a sign-in is fully completed.</summary>
 public sealed record AuthTokens(

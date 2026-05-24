@@ -74,17 +74,18 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Reject_staff_flips_state_to_Rejected_and_blocks_sign_in()
+    public async Task Reject_admin_persists_reason_and_state_metadata_on_the_user_row()
     {
+        // P10 — D-051: the reason is no longer audit-only; it lives on
+        // the user row so the user's next sign-in surfaces it via
+        // AccountStateInfo.
         var adminToken = await CreateAdministratorAndSignInAsync();
         var subjectId = await CreateStaffSubjectAsync(adminToken);
+        const string reason = "Not a permitted role-holder per HR list";
 
         var response = await PostAuthAsync(
             $"/api/v1/admin/admins/{subjectId}/reject",
-            new AdminRejectRequest
-            {
-                Reason = "Not a permitted role-holder per HR list",
-            },
+            new AdminRejectRequest { Reason = reason },
             adminToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -92,7 +93,51 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var subject = await db.Users.SingleAsync(u => u.Id == subjectId);
         Assert.Equal(AccountState.Rejected, subject.AccountState);
+        Assert.Equal(reason, subject.RejectionReason);
+        // EN-only admin input mirrors to the Arabic field (R1 default).
+        Assert.Equal(reason, subject.RejectionReasonArabic);
+        Assert.NotNull(subject.StateChangedAt);
+        Assert.NotNull(subject.StateChangedByUserId);
         Assert.True(AuditEntryExists(subject.Email!, AuditEvents.AdminStaffRejected));
+    }
+
+    [Fact]
+    public async Task Approve_after_reject_clears_the_rejection_reason_on_the_user_row()
+    {
+        // P10 — D-051: the reconsider path. Admin rejects, then admin
+        // approves — the rejection reason should be wiped so a future
+        // sign-in does not show stale text.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var subjectId = await CreateStaffSubjectAsync(adminToken);
+
+        // First, reject.
+        await PostAuthAsync(
+            $"/api/v1/admin/admins/{subjectId}/reject",
+            new AdminRejectRequest { Reason = "Initial decision pending HR review." },
+            adminToken);
+
+        // Push the subject back to PendingApproval (the natural reconsider
+        // flow would re-create the user; for the test we just flip the
+        // state so the approve endpoint accepts the call).
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var subject = await db.Users.SingleAsync(u => u.Id == subjectId);
+            subject.AccountState = AccountState.PendingApproval;
+            await db.SaveChangesAsync();
+        }
+
+        var response = await PostAuthAsync(
+            $"/api/v1/admin/admins/{subjectId}/approve", new { }, adminToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var verify = _factory.Services.CreateScope();
+        var verifyDb = verify.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var reconsidered = await verifyDb.Users.SingleAsync(u => u.Id == subjectId);
+        Assert.Equal(AccountState.Approved, reconsidered.AccountState);
+        Assert.Null(reconsidered.RejectionReason);
+        Assert.Null(reconsidered.RejectionReasonArabic);
+        Assert.NotNull(reconsidered.StateChangedAt);
     }
 
     [Fact]

@@ -27,6 +27,13 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
             // The security stamp lets a sensitive endpoint detect a revoked
             // session before the token expires (SIMF-FDS-001 Amendment A.6).
             new("security_stamp", user.SecurityStamp ?? string.Empty),
+            // P10 — D-051: account_state + user_type travel in every token
+            // so an authorization handler (P11) can route a non-approved
+            // user to the pending / rejected page without an extra round
+            // trip, and the client can switch surfaces (CP vs App) by
+            // user_type alone.
+            new("account_state", user.AccountState.ToString()),
+            new("user_type", user.UserType.ToString()),
         };
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 

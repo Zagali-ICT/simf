@@ -69,5 +69,38 @@ public class SimfUser : IdentityUser<Guid>
     /// across the system.
     /// </summary>
     public string? QrId { get; set; }
+
+    /// <summary>
+    /// The admin's reason for rejecting the account, in English (P10 —
+    /// D-051). Persisted on the row when <see cref="AccountState"/>
+    /// transitions to <see cref="AccountState.Rejected"/>; cleared when a
+    /// later approval reconsiders the account. Up to 500 characters,
+    /// matching the <c>AdminRejectRequest.Reason</c> validator.
+    /// </summary>
+    public string? RejectionReason { get; set; }
+
+    /// <summary>
+    /// The Arabic version of <see cref="RejectionReason"/> (P10 — D-051).
+    /// When the admin enters only the English reason today, the service
+    /// mirrors it here as a graceful fallback (R1 default); a future
+    /// bilingual admin form may diverge the two.
+    /// </summary>
+    public string? RejectionReasonArabic { get; set; }
+
+    /// <summary>
+    /// When the <see cref="AccountState"/> last changed (UTC) — P10 —
+    /// D-051. Set on every transition through Approve / Reject / Disable
+    /// / unblock, and back-filled to <see cref="CreatedAt"/> by the P10
+    /// migration for existing rows. Lets admins answer "when was this
+    /// rejected?" without joining the audit log.
+    /// </summary>
+    public DateTimeOffset? StateChangedAt { get; set; }
+
+    /// <summary>
+    /// The admin who last changed the <see cref="AccountState"/> (P10 —
+    /// D-051). Nullable so legacy rows (and self-driven transitions like
+    /// email verification) stay valid.
+    /// </summary>
+    public Guid? StateChangedByUserId { get; set; }
 }
 

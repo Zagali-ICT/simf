@@ -473,10 +473,23 @@ internal sealed class AdminAccountService(
         var now = timeProvider.GetUtcNow();
         subject.AccountState = AccountState.Approved;
         subject.UpdatedAt = now;
+        // P10 — D-051: state-change metadata + clear any prior rejection
+        // (the reconsider path: a once-rejected user being approved).
+        subject.StateChangedAt = now;
+        subject.StateChangedByUserId = actorUserId;
+        subject.RejectionReason = null;
+        subject.RejectionReasonArabic = null;
 
         // QR id mints at approval (D-046, P4) — idempotent.
         await qrIdMinter.MintIfMissingAsync(subject, cancellationToken);
         await userManager.UpdateAsync(subject);
+
+        // P10 — revoke every refresh token so the subject's next API
+        // call gets a fresh access token with account_state=Approved.
+        // Without this, a previously-pending session could keep using
+        // its stale token for ≤ 15 minutes.
+        await refreshTokenRepository.RevokeAllForUserAsync(
+            subject.Id, now, cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -498,7 +511,20 @@ internal sealed class AdminAccountService(
         var now = timeProvider.GetUtcNow();
         subject.AccountState = AccountState.Rejected;
         subject.UpdatedAt = now;
+        // P10 — D-051: persist the reason on the user row (was audit-only
+        // before). EN-only admin input mirrors to RejectionReasonArabic
+        // as a graceful fallback (R1 default).
+        subject.RejectionReason = request.Reason;
+        subject.RejectionReasonArabic = request.Reason;
+        subject.StateChangedAt = now;
+        subject.StateChangedByUserId = actorUserId;
         await userManager.UpdateAsync(subject);
+
+        // P10 — revoke every refresh token so the subject's next API
+        // call mints a token with account_state=Rejected (and the P11
+        // authorization handler then routes them to the rejected page).
+        await refreshTokenRepository.RevokeAllForUserAsync(
+            subject.Id, now, cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {

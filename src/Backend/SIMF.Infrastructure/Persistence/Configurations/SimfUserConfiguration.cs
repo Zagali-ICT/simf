@@ -33,5 +33,14 @@ internal sealed class SimfUserConfiguration : IEntityTypeConfiguration<SimfUser>
 
         builder.Property(user => user.AvatarRelativePath)
             .HasMaxLength(256);
+
+        // P10 — D-051: rejection reason (bilingual) + state-change
+        // metadata. The composite index supports "recently rejected" /
+        // "recently approved" admin queries without scanning AspNetUsers.
+        builder.Property(user => user.RejectionReason)
+            .HasMaxLength(500);
+        builder.Property(user => user.RejectionReasonArabic)
+            .HasMaxLength(500);
+        builder.HasIndex(user => new { user.AccountState, user.StateChangedAt });
     }
 }

@@ -367,17 +367,70 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task SignIn_for_a_pending_staff_returns_403_AUTH_ACCOUNT_NOT_APPROVED()
+    public async Task SignIn_for_a_pending_admin_succeeds_with_AccountStateInfo_PendingApproval()
     {
+        // P10 — D-051: the old 403 AUTH_ACCOUNT_NOT_APPROVED is gone. A
+        // pending admin can sign in to the CP and gets tokens + an
+        // AccountStateInfo on the response. The JWT carries
+        // account_state=PendingApproval so the P11 authorization
+        // handler will gate every endpoint except the pending page.
+        // 2FA is off so the password step completes immediately and the
+        // AccountStateInfo lands on the SignInResponse (D-033 / P10 plan).
         var (adminEmail, _) = await CreateAdminAsync();
-        // Force PendingApproval — admin tests usually start in Approved.
+        DisableTwoFactor(adminEmail);
         SetAccountState(adminEmail, AccountState.PendingApproval);
 
         var response = await SignInAsync(adminEmail, Password, SignInAudience.Cp);
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<ApiResult<object>>();
-        Assert.Equal(ErrorCodes.AuthAccountNotApproved, body!.Error!.Code);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>();
+        Assert.True(body!.Success);
+        Assert.NotNull(body.Data!.AccountState);
+        Assert.Equal("PendingApproval", body.Data.AccountState!.State);
+        Assert.True(AuditEntryExists(adminEmail, AuditEvents.SignInAsGuest));
+    }
+
+    [Fact]
+    public async Task SignIn_for_a_rejected_user_succeeds_with_AccountStateInfo_carrying_the_reason()
+    {
+        // P10 — D-051: rejected users also get tokens + AccountStateInfo
+        // including the bilingual rejection reason persisted on the
+        // user row (by RejectAsync on the admin endpoint).
+        var (adminEmail, _) = await CreateAdminAsync();
+        DisableTwoFactor(adminEmail);
+        SetAccountState(adminEmail, AccountState.Rejected);
+        SetRejectionReason(adminEmail,
+            "Identity could not be verified after two follow-up calls.",
+            "تعذّر التحقق من الهوية بعد محاولتي اتصال متابعة.");
+
+        var response = await SignInAsync(adminEmail, Password, SignInAudience.Cp);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>();
+        Assert.True(body!.Success);
+        Assert.NotNull(body.Data!.AccountState);
+        Assert.Equal("Rejected", body.Data.AccountState!.State);
+        Assert.Contains("Identity could not be verified",
+            body.Data.AccountState.RejectionReason ?? string.Empty);
+        Assert.Contains("تعذّر التحقق",
+            body.Data.AccountState.RejectionReasonArabic ?? string.Empty);
+        Assert.True(AuditEntryExists(adminEmail, AuditEvents.SignInAsGuest));
+    }
+
+    [Fact]
+    public async Task SignIn_for_an_approved_user_returns_AccountStateInfo_null()
+    {
+        // Sanity — approved sign-ins keep the clean shape (no state info
+        // on the response; the account_state JWT claim says "Approved").
+        var (adminEmail, _) = await CreateAdminAsync();
+        DisableTwoFactor(adminEmail);
+
+        var response = await SignInAsync(adminEmail, Password, SignInAudience.Cp);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>();
+        Assert.True(body!.Success);
+        Assert.Null(body.Data!.AccountState);
     }
 
     [Fact]
@@ -540,6 +593,17 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var user = database.Users.Single(candidate => candidate.Email == email);
         user.AccountState = state;
+        database.SaveChanges();
+    }
+
+    private void SetRejectionReason(string email, string reason, string reasonArabic)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = database.Users.Single(candidate => candidate.Email == email);
+        user.RejectionReason = reason;
+        user.RejectionReasonArabic = reasonArabic;
+        user.StateChangedAt = DateTimeOffset.UtcNow;
         database.SaveChanges();
     }
 
