@@ -14,8 +14,9 @@
 
 <SimfPageHeader Title="@L["Admin.Logs.Title"]" />
 
-<section class="simf-card simf-page-card">
-    <p>@L["Admin.Logs.Supporting"]</p>
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        <p>@L["Admin.Logs.Supporting"]</p>
 
     @if (_loadingList)
     {
@@ -86,7 +87,8 @@
             <pre class="simf-logs-viewer">@_tail.Content</pre>
         }
     }
-</section>
+    </div>
+</div>
 
 @code {
     private const int RefreshIntervalMs = 5_000;

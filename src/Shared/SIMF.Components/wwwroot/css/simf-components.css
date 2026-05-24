@@ -248,7 +248,11 @@
    without becoming a banner. */
 .simf-page-wide {
   inline-size: 100%;
-  max-inline-size: 1200px;
+  /* Raised from 1200px to 1600px (P6 follow-up) so grids, the logs viewer
+     and the dashboard fill comfortably on 1440 / 1600 / 1920 monitors.
+     Beyond ~1600px tables become harder to read, not easier — same cap
+     Microsoft 365 Admin and Azure Portal use. */
+  max-inline-size: 1600px;
 }
 
 /* -- SimfTable — list-table primitive (D-043) ------------------------------- */
@@ -406,7 +410,7 @@
   font-family: var(--font-mono, ui-monospace, "SFMono-Regular", "Consolas", monospace);
   font-size: var(--font-size-body-small);
   line-height: 1.4;
-  max-height: 60vh;
+  max-height: 75vh;
   overflow: auto;
   white-space: pre;
 }
