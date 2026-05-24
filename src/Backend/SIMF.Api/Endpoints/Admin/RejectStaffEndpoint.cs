@@ -18,7 +18,7 @@ public sealed class RejectAdminEndpoint(IAdminAccountService adminAccountService
     public override void Configure()
     {
         Post("/admin/admins/{id:guid}/reject");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Reject a pending Admin. Requires Administrator role.");
@@ -48,7 +48,7 @@ public sealed class RejectOtherEndpoint(IAdminAccountService adminAccountService
     public override void Configure()
     {
         Post("/admin/others/{id:guid}/reject");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Reject a pending Other. Requires Administrator role.");

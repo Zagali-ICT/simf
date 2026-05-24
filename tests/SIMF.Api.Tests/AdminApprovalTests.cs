@@ -298,4 +298,55 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         return db.OperationLog.Any(
             entry => entry.SubjectEmail == email && entry.EventType == eventType);
     }
+
+    // ---------------------------------------------------------------------
+    // H1 — RequireApprovedAccount policy sweep (D-056)
+    //
+    // P10 lets a Pending/Rejected admin authenticate (they need a token to
+    // reach the /auth/pending and /auth/rejected pages). Without H1, that
+    // same JWT was good enough to call every admin endpoint, because the
+    // gate only checked the Administrator role. H1 adds a second gate —
+    // RequireApprovedAccount — that fails the request unless the JWT
+    // carries account_state=Approved.
+    // ---------------------------------------------------------------------
+
+    [Fact]
+    public async Task Pending_admin_can_sign_in_but_cannot_reach_admin_endpoints()
+    {
+        var pendingToken = await CreatePendingAdministratorAndSignInAsync();
+
+        // Sanity: the sign-in succeeded and we got a usable token.
+        Assert.False(string.IsNullOrEmpty(pendingToken));
+
+        // The /admin/admins/list endpoint requires both Administrator role
+        // AND account_state=Approved. A Pending admin holds the role but
+        // not the state → 403.
+        var listResponse = await PostAuthAsync(
+            "/api/v1/admin/admins/list", new GridQuery(), pendingToken);
+        Assert.Equal(HttpStatusCode.Forbidden, listResponse.StatusCode);
+    }
+
+    private async Task<string> CreatePendingAdministratorAndSignInAsync()
+    {
+        var email = $"pending-admin-{Guid.NewGuid():N}@simf.test";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
+            if (!await roles.RoleExistsAsync(AppRoles.Administrator))
+            {
+                await roles.CreateAsync(new SimfRole { Name = AppRoles.Administrator });
+            }
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
+            {
+                UserName = email, Email = email, EmailConfirmed = true,
+                DisplayName = "Pending Admin (H1)",
+                AccountState = AccountState.PendingApproval,
+                UserType = UserType.Admin,
+            };
+            await users.CreateAsync(user, Password);
+            await users.AddToRoleAsync(user, AppRoles.Administrator);
+        }
+        return await SignInAndGetTokenAsync(email, SignInAudience.Cp);
+    }
 }

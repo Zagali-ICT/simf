@@ -17,7 +17,7 @@ public sealed class ExportUsersEndpoint(IAdminAccountService adminAccountService
     public override void Configure()
     {
         Post("/admin/admins/export");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         // The request is JSON (the selected ids + grid query); the response

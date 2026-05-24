@@ -23,7 +23,7 @@ public sealed class ListProfileTypesEndpoint(IAdminAccountService adminAccountSe
     public override void Configure()
     {
         Get("/admin/profile-types");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return active ProfileTypes filtered by UserType. Requires Administrator role.");

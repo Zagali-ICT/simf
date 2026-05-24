@@ -22,7 +22,7 @@ public sealed class CreateAdminEndpoint(IAdminAccountService adminAccountService
     public override void Configure()
     {
         Post("/admin/admins");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -53,7 +53,7 @@ public sealed class CreateOtherEndpoint(IAdminAccountService adminAccountService
     public override void Configure()
     {
         Post("/admin/others");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -82,7 +82,7 @@ public sealed class CreateVisitorEndpoint(IAdminAccountService adminAccountServi
     public override void Configure()
     {
         Post("/admin/visitors");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

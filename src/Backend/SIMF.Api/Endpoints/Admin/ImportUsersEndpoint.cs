@@ -30,7 +30,7 @@ public sealed class ImportUsersEndpoint(IAdminAccountService adminAccountService
     public override void Configure()
     {
         Post("/admin/admins/import");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         AllowFileUploads();

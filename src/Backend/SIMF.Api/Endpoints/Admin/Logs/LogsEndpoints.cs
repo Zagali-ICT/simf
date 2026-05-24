@@ -19,7 +19,7 @@ public sealed class ListLogsEndpoint(ILogFileService logs) : EndpointWithoutRequ
     public override void Configure()
     {
         Get("/admin/logs/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "List per-project log files. Requires Administrator role.");
@@ -50,7 +50,7 @@ public sealed class TailLogEndpoint(ILogFileService logs, IAuditLog auditLog)
     public override void Configure()
     {
         Get("/admin/logs/tail");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return the last N lines of one log file. Requires Administrator role.");
@@ -95,7 +95,7 @@ public sealed class DownloadLogEndpoint(ILogFileService logs, IAuditLog auditLog
     public override void Configure()
     {
         Get("/admin/logs/download");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Download one full log file. Requires Administrator role.");

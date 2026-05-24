@@ -17,7 +17,7 @@ public sealed class DuplicateUserEndpoint(IAdminAccountService adminAccountServi
     public override void Configure()
     {
         Post("/admin/admins/duplicate");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly));
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
