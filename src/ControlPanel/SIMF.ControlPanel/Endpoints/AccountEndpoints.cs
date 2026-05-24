@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using SIMF.ApiClient;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.Logs;
 
 namespace SIMF.ControlPanel.Endpoints;
 
@@ -156,6 +157,41 @@ internal static class AccountEndpoints
             return Forward(await api.ImportUsersAsync(
                 stream.ToArray(), file.FileName, token));
         }).DisableAntiforgery();
+
+        // P6 — log viewer proxy. The CP page is server-side Blazor, so it
+        // talks to these endpoints via fetch (cookie auth) and they forward
+        // to the API with the access token.
+        group.MapGet("/admin/logs/list",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListLogsAsync(token));
+        });
+
+        group.MapGet("/admin/logs/tail",
+            async (string project, string file, int? lines,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.TailLogAsync(project, file, lines ?? 500, token));
+        });
+
+        group.MapGet("/admin/logs/download",
+            async (string project, string file,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, bytes, safeFileName) =
+                await api.DownloadLogAsync(project, file, token);
+            if (status != 200 || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            return Results.File(bytes, "text/plain", safeFileName);
+        });
 
         group.MapPost("/change-password",
             async (ChangePasswordRequest body, HttpContext http, SimfAuthClient api) =>

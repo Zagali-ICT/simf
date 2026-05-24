@@ -74,4 +74,8 @@ public static class AuditEvents
     public const string VisitorProfileSaved = "VisitorProfile.Saved";
     public const string VisitorProfileIdImageUploaded = "VisitorProfile.IdImageUploaded";
     public const string VisitorProfileIdImageRejected = "VisitorProfile.IdImageRejected";
+
+    // Logs (P6 — per-project log files + CP viewer)
+    public const string AdminLogViewed = "Admin.LogViewed";
+    public const string AdminLogDownloaded = "Admin.LogDownloaded";
 }

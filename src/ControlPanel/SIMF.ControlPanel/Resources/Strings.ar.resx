@@ -75,6 +75,19 @@
   <data name="Module.AdminUsers" xml:space="preserve"><value>المستخدمون</value></data>
   <data name="Module.AdminStaff" xml:space="preserve"><value>الفريق</value></data>
   <data name="Module.AdminVisitors" xml:space="preserve"><value>الزوار</value></data>
+  <data name="Module.AdminLogs" xml:space="preserve"><value>السجلات</value></data>
+  <data name="Admin.Logs.Title" xml:space="preserve"><value>سجلات النظام</value></data>
+  <data name="Admin.Logs.Supporting" xml:space="preserve"><value>ملفات السجل لكل مشروع. تتحدّث الصفحة تلقائياً؛ اختر مشروعاً ويوماً ثم تابع أو نزّل.</value></data>
+  <data name="Admin.Logs.Project" xml:space="preserve"><value>المشروع</value></data>
+  <data name="Admin.Logs.File" xml:space="preserve"><value>اليوم</value></data>
+  <data name="Admin.Logs.Lines" xml:space="preserve"><value>الأسطر</value></data>
+  <data name="Admin.Logs.Refresh" xml:space="preserve"><value>تحديث</value></data>
+  <data name="Admin.Logs.AutoRefresh" xml:space="preserve"><value>متابعة حيّة (5 ث)</value></data>
+  <data name="Admin.Logs.Download" xml:space="preserve"><value>تنزيل</value></data>
+  <data name="Admin.Logs.Empty" xml:space="preserve"><value>لا توجد ملفات سجل بعد — شغّل الـ API أو لوحة التحكّم أو الموقع حتى ينشئها Serilog.</value></data>
+  <data name="Admin.Logs.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.Logs.Size" xml:space="preserve"><value>الحجم</value></data>
+  <data name="Admin.Logs.LastModified" xml:space="preserve"><value>آخر تعديل</value></data>
   <data name="Admin.Users.Title" xml:space="preserve"><value>المستخدمون</value></data>
   <data name="Admin.Users.None" xml:space="preserve"><value>لا توجد حسابات بعد.</value></data>
   <data name="Admin.Users.CreateNew" xml:space="preserve"><value>إضافة مستخدم</value></data>

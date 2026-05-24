@@ -16,6 +16,9 @@
   <ItemGroup>
     <!-- Visitor QR-id render on the /account/visitor-profile page (D-046 c). -->
     <PackageReference Include="QRCoder" Version="1.6.0" />
+    <!-- P6: per-project log files under {Storage:LogDirectory}/SIMF.Web/ -->
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
   </ItemGroup>
 
 </Project>

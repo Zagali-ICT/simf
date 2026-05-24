@@ -25,8 +25,24 @@ using SIMF.Infrastructure.Persistence;
 var builder = WebApplication.CreateBuilder(args);
 
 // Structured logging through Serilog (SIMF-SAD-001 section 11).
+// P6 — per-project log files under {Storage:LogDirectory}/SIMF.Api/log-{Date}.log;
+// the CP /admin/logs page reads from the same root.
 builder.Host.UseSerilog((context, configuration) =>
-    configuration.ReadFrom.Configuration(context.Configuration));
+{
+    var logDir = context.Configuration["Storage:LogDirectory"] ?? "logs";
+    var appName = context.HostingEnvironment.ApplicationName ?? "SIMF.Api";
+    var path = Path.Combine(logDir, appName, "log-.log");
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.FromLogContext()
+        .WriteTo.Console()
+        .WriteTo.File(
+            path: path,
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: 31,
+            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} "
+                + "[{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}");
+});
 
 // Database contexts, ASP.NET Core Identity, repositories, email, the audit log.
 builder.Services.AddInfrastructure(builder.Configuration);

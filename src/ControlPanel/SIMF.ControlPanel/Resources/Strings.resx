@@ -75,6 +75,19 @@
   <data name="Module.AdminUsers" xml:space="preserve"><value>Users</value></data>
   <data name="Module.AdminStaff" xml:space="preserve"><value>Staff</value></data>
   <data name="Module.AdminVisitors" xml:space="preserve"><value>Visitors</value></data>
+  <data name="Module.AdminLogs" xml:space="preserve"><value>Logs</value></data>
+  <data name="Admin.Logs.Title" xml:space="preserve"><value>System logs</value></data>
+  <data name="Admin.Logs.Supporting" xml:space="preserve"><value>Per-project log files. The view auto-refreshes; pick a project and a day, then tail or download.</value></data>
+  <data name="Admin.Logs.Project" xml:space="preserve"><value>Project</value></data>
+  <data name="Admin.Logs.File" xml:space="preserve"><value>Day</value></data>
+  <data name="Admin.Logs.Lines" xml:space="preserve"><value>Lines</value></data>
+  <data name="Admin.Logs.Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Admin.Logs.AutoRefresh" xml:space="preserve"><value>Live tail (5 s)</value></data>
+  <data name="Admin.Logs.Download" xml:space="preserve"><value>Download</value></data>
+  <data name="Admin.Logs.Empty" xml:space="preserve"><value>No log files yet — start the API, CP or Web so Serilog can create one.</value></data>
+  <data name="Admin.Logs.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.Logs.Size" xml:space="preserve"><value>Size</value></data>
+  <data name="Admin.Logs.LastModified" xml:space="preserve"><value>Last modified</value></data>
   <data name="Admin.Users.Title" xml:space="preserve"><value>Users</value></data>
   <data name="Admin.Users.None" xml:space="preserve"><value>No accounts yet.</value></data>
   <data name="Admin.Users.CreateNew" xml:space="preserve"><value>Add user</value></data>

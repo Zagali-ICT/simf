@@ -7,6 +7,8 @@ using SIMF.Application.Email;
 using SIMF.Application.Excel;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Logs;
+using SIMF.Infrastructure.Logs;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Auditing;
 using SIMF.Infrastructure.Email;
@@ -102,6 +104,7 @@ public static class DependencyInjection
         services.AddSingleton<IUserExcelService, ClosedXmlUserExcelService>();
         services.AddSingleton<IAvatarStorage, FilesystemAvatarStorage>();
         services.AddSingleton<IVisitorIdStorage, EncryptedVisitorIdStorage>();
+        services.AddSingleton<ILogFileService, LogFileService>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<ITotpVerifier, TotpVerifier>();
         services.AddScoped<IdentitySeeder>();

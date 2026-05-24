@@ -43,8 +43,10 @@ set-env-*.local.ps1
 .claude/settings.local.json
 
 # ── Logs & temp ────────────────────────────────────────────────────
+# Runtime log output only — root-anchored so source-tree `Logs/` folders
+# (e.g. SIMF.Application/Logs, SIMF.Api/Endpoints/Admin/Logs) stay tracked.
 *.log
-logs/
+/logs/
 *.tmp
 
 # ── OS files ───────────────────────────────────────────────────────

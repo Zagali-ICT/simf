@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.Logs;
 
 namespace SIMF.ApiClient;
 
@@ -109,6 +110,58 @@ public sealed class SimfAdminClient(HttpClient http)
             or TaskCanceledException)
         {
             return ((int)HttpStatusCode.ServiceUnavailable, Array.Empty<byte>());
+        }
+    }
+
+    /// <summary>Lists every project's log files (P6).</summary>
+    public Task<ApiCallResult<LogListResponse>> ListLogsAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<LogListResponse>(
+            HttpMethod.Get, "logs/list",
+            content: null,
+            accessToken, cancellationToken);
+
+    /// <summary>Returns the last <paramref name="lines"/> of one log file (P6).</summary>
+    public Task<ApiCallResult<LogTailResponse>> TailLogAsync(
+        string project,
+        string fileName,
+        int lines,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var query = "logs/tail"
+            + $"?project={Uri.EscapeDataString(project)}"
+            + $"&file={Uri.EscapeDataString(fileName)}"
+            + $"&lines={lines}";
+        return SendAsync<LogTailResponse>(
+            HttpMethod.Get, query,
+            content: null,
+            accessToken, cancellationToken);
+    }
+
+    /// <summary>Streams one full log file (P6).</summary>
+    public async Task<(int StatusCode, byte[] Bytes, string FileName)> DownloadLogAsync(
+        string project,
+        string fileName,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var query = "logs/download"
+            + $"?project={Uri.EscapeDataString(project)}"
+            + $"&file={Uri.EscapeDataString(fileName)}";
+        using var message = new HttpRequestMessage(HttpMethod.Get, BasePath + query);
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return ((int)response.StatusCode, bytes, Path.GetFileName(fileName));
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException)
+        {
+            return ((int)HttpStatusCode.ServiceUnavailable, Array.Empty<byte>(), fileName);
         }
     }
 

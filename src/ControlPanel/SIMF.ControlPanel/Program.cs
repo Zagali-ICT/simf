@@ -1,10 +1,29 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Serilog;
 using SIMF.ApiClient;
 using SIMF.ControlPanel;
 using SIMF.ControlPanel.Components;
 using SIMF.ControlPanel.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// P6 — per-project log files under {Storage:LogDirectory}/SIMF.ControlPanel/log-{Date}.log.
+builder.Host.UseSerilog((context, configuration) =>
+{
+    var logDir = context.Configuration["Storage:LogDirectory"] ?? "logs";
+    var appName = context.HostingEnvironment.ApplicationName ?? "SIMF.ControlPanel";
+    var path = Path.Combine(logDir, appName, "log-.log");
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.FromLogContext()
+        .WriteTo.Console()
+        .WriteTo.File(
+            path: path,
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: 31,
+            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} "
+                + "[{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}");
+});
 
 // Razor components with interactive Server rendering. The hub's
 // MaximumReceiveMessageSize default (32 KB) is too small for the QR SVG

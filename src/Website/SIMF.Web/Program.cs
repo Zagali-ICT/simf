@@ -1,10 +1,29 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Serilog;
 using SIMF.ApiClient;
 using SIMF.Web;
 using SIMF.Web.Components;
 using SIMF.Web.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// P6 — per-project log files under {Storage:LogDirectory}/SIMF.Web/log-{Date}.log.
+builder.Host.UseSerilog((context, configuration) =>
+{
+    var logDir = context.Configuration["Storage:LogDirectory"] ?? "logs";
+    var appName = context.HostingEnvironment.ApplicationName ?? "SIMF.Web";
+    var path = Path.Combine(logDir, appName, "log-.log");
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .Enrich.FromLogContext()
+        .WriteTo.Console()
+        .WriteTo.File(
+            path: path,
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: 31,
+            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} "
+                + "[{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}");
+});
 
 // Razor components — server-side rendered, with interactive Server islands for
 // the pages that need them (the authentication pages, the visitor profile).
