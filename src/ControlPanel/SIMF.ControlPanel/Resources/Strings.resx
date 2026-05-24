@@ -76,6 +76,23 @@
   <data name="Module.AdminStaff" xml:space="preserve"><value>Staff</value></data>
   <data name="Module.AdminVisitors" xml:space="preserve"><value>Visitors</value></data>
   <data name="Module.AdminLogs" xml:space="preserve"><value>Logs</value></data>
+  <data name="Module.AdminStaffPending" xml:space="preserve"><value>Pending staff</value></data>
+  <data name="Module.AdminVisitorsPending" xml:space="preserve"><value>Pending visitors</value></data>
+  <data name="Admin.Pending.Staff.Title" xml:space="preserve"><value>Pending staff approvals</value></data>
+  <data name="Admin.Pending.Visitors.Title" xml:space="preserve"><value>Pending visitor approvals</value></data>
+  <data name="Admin.Pending.Supporting" xml:space="preserve"><value>Approval mints the QR badge and unlocks sign-in (CP for staff, event entry for visitors). Rejection records a reason for audit.</value></data>
+  <data name="Admin.Pending.None" xml:space="preserve"><value>No accounts are waiting for approval.</value></data>
+  <data name="Admin.Pending.Column.Created" xml:space="preserve"><value>Created</value></data>
+  <data name="Admin.Pending.Action.Approve" xml:space="preserve"><value>Approve</value></data>
+  <data name="Admin.Pending.Action.Reject" xml:space="preserve"><value>Reject</value></data>
+  <data name="Admin.Pending.Reject.Title" xml:space="preserve"><value>Reject account</value></data>
+  <data name="Admin.Pending.Reject.Confirm" xml:space="preserve"><value>Reject {0}? This sets the account to Rejected and writes an audit row.</value></data>
+  <data name="Admin.Pending.Reject.Reason" xml:space="preserve"><value>Reason</value></data>
+  <data name="Admin.Pending.Reject.ReasonHint" xml:space="preserve"><value>Between 10 and 500 characters. Shown to operators in the audit log.</value></data>
+  <data name="Admin.Pending.Reject.Submit" xml:space="preserve"><value>Reject</value></data>
+  <data name="Admin.Pending.Reject.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Pending.Approved.Toast" xml:space="preserve"><value>Approved {0}.</value></data>
+  <data name="Admin.Pending.Rejected.Toast" xml:space="preserve"><value>Rejected {0}.</value></data>
   <data name="Admin.Logs.Title" xml:space="preserve"><value>System logs</value></data>
   <data name="Admin.Logs.Supporting" xml:space="preserve"><value>Per-project log files. The view auto-refreshes; pick a project and a day, then tail or download.</value></data>
   <data name="Admin.Logs.Project" xml:space="preserve"><value>Project</value></data>

@@ -102,6 +102,58 @@ internal static class AccountEndpoints
             return Forward(await api.ListVisitorsAsync(body, token));
         });
 
+        // P4b — approval workflow proxies. The page uses simfAccount.postJson
+        // for all six; the access token stays server-side. Authorisation is
+        // double-gated: the API enforces AdministratorOnly / TeamMember on
+        // each endpoint, and the CP page carries [Authorize(Roles = …)].
+        group.MapPost("/admin/staff/pending/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListPendingStaffAsync(body, token));
+        });
+
+        group.MapPost("/admin/visitors/pending/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListPendingVisitorsAsync(body, token));
+        });
+
+        group.MapPost("/admin/staff/{id:guid}/approve",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ApproveStaffAsync(id, token));
+        });
+
+        group.MapPost("/admin/staff/{id:guid}/reject",
+            async (Guid id, AdminRejectRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RejectStaffAsync(id, body, token));
+        });
+
+        group.MapPost("/admin/visitors/{id:guid}/approve",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ApproveVisitorAsync(id, token));
+        });
+
+        group.MapPost("/admin/visitors/{id:guid}/reject",
+            async (Guid id, AdminRejectRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RejectVisitorAsync(id, body, token));
+        });
+
         group.MapPost("/admin/staff/bulk-delete",
             async (AdminBulkDeleteRequest body, HttpContext http, SimfAdminClient api) =>
         {

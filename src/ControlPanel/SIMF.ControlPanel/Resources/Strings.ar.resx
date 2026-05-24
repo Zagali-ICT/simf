@@ -76,6 +76,23 @@
   <data name="Module.AdminStaff" xml:space="preserve"><value>الفريق</value></data>
   <data name="Module.AdminVisitors" xml:space="preserve"><value>الزوار</value></data>
   <data name="Module.AdminLogs" xml:space="preserve"><value>السجلات</value></data>
+  <data name="Module.AdminStaffPending" xml:space="preserve"><value>الفريق — بانتظار الموافقة</value></data>
+  <data name="Module.AdminVisitorsPending" xml:space="preserve"><value>الزوار — بانتظار الموافقة</value></data>
+  <data name="Admin.Pending.Staff.Title" xml:space="preserve"><value>موافقات الفريق المعلّقة</value></data>
+  <data name="Admin.Pending.Visitors.Title" xml:space="preserve"><value>موافقات الزوار المعلّقة</value></data>
+  <data name="Admin.Pending.Supporting" xml:space="preserve"><value>الموافقة تنشئ شارة QR وتفعّل تسجيل الدخول (لوحة التحكم للفريق، دخول الحدث للزوار). الرفض يسجّل سبباً في سجل التدقيق.</value></data>
+  <data name="Admin.Pending.None" xml:space="preserve"><value>لا توجد حسابات بانتظار الموافقة.</value></data>
+  <data name="Admin.Pending.Column.Created" xml:space="preserve"><value>تاريخ الإنشاء</value></data>
+  <data name="Admin.Pending.Action.Approve" xml:space="preserve"><value>موافقة</value></data>
+  <data name="Admin.Pending.Action.Reject" xml:space="preserve"><value>رفض</value></data>
+  <data name="Admin.Pending.Reject.Title" xml:space="preserve"><value>رفض الحساب</value></data>
+  <data name="Admin.Pending.Reject.Confirm" xml:space="preserve"><value>رفض {0}؟ هذا يضبط الحساب إلى مرفوض ويسجّل صفّاً في التدقيق.</value></data>
+  <data name="Admin.Pending.Reject.Reason" xml:space="preserve"><value>السبب</value></data>
+  <data name="Admin.Pending.Reject.ReasonHint" xml:space="preserve"><value>بين 10 و500 حرف. يظهر للمشغّلين في سجل التدقيق.</value></data>
+  <data name="Admin.Pending.Reject.Submit" xml:space="preserve"><value>رفض</value></data>
+  <data name="Admin.Pending.Reject.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Pending.Approved.Toast" xml:space="preserve"><value>تمّت الموافقة على {0}.</value></data>
+  <data name="Admin.Pending.Rejected.Toast" xml:space="preserve"><value>تمّ رفض {0}.</value></data>
   <data name="Admin.Logs.Title" xml:space="preserve"><value>سجلات النظام</value></data>
   <data name="Admin.Logs.Supporting" xml:space="preserve"><value>ملفات السجل لكل مشروع. تتحدّث الصفحة تلقائياً؛ اختر مشروعاً ويوماً ثم تابع أو نزّل.</value></data>
   <data name="Admin.Logs.Project" xml:space="preserve"><value>المشروع</value></data>
