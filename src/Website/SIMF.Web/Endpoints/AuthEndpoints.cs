@@ -18,8 +18,8 @@ internal static class AuthEndpoints
     public static void MapAuthEndpoints(this IEndpointRouteBuilder routes)
     {
         // /auth/complete?reference={ticket} — redeems the ticket and issues
-        // the authentication cookie, then lands the visitor on the
-        // /account/visitor-profile page. Anonymous (the cookie is not yet
+        // the authentication cookie, then lands the user on the
+        // /account/profile page. Anonymous (the cookie is not yet
         // written; the short-lived single-use ticket is the control).
         routes.MapGet("/auth/complete", async (
             string reference, SignInTicketStore tickets, HttpContext http) =>
@@ -48,7 +48,7 @@ internal static class AuthEndpoints
             var principal = new ClaimsPrincipal(identity);
 
             // API tokens travel in the (encrypted) cookie's stored tokens
-            // so the visitor-profile page can call the API through the
+            // so the user-profile page can call the API through the
             // /account/api/ proxy — the access token never reaches the
             // browser.
             var properties = new AuthenticationProperties { IsPersistent = true };
@@ -61,7 +61,7 @@ internal static class AuthEndpoints
             await http.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);
             logger.LogInformation("Website sign-in completed for {UserId}.", tokens.User.Id);
-            return Results.Redirect("/account/visitor-profile");
+            return Results.Redirect("/account/profile");
         }).AllowAnonymous();
 
         // POST /auth/sign-out — ends the API session, then clears the

@@ -1,22 +1,25 @@
-@* Visitor self-service profile — assembles the D-044(c) Simf* primitives
-   on top of the D-046(b) backend (decision D-046 c). Closes myComment #18
-   end-to-end: the visitor signs in, lands here, fills the form, uploads
+@* User self-service profile — assembles the D-044(c) Simf* primitives
+   on top of the D-046(b) backend, renamed in P8 (D-049) from
+   /account/visitor-profile to /account/profile. Closes myComment #18
+   end-to-end: the user signs in, lands here, fills the form, uploads
    their ID, sees the QR code their account was minted with on Approval
-   (D-046 a). *@
-@page "/account/visitor-profile"
+   (D-046 a). The legacy "I am attending as" radio (Visitor / Exhibitor
+   / Press) is gone in P8 — the profile-type now flows through
+   ProfileTypeId, admin-assigned. *@
+@page "/account/profile"
 @rendermode AppRenderMode.InteractiveServerNoPrerender
 @attribute [Authorize]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 
-<PageTitle>@L["Visitor.Profile.Title"]</PageTitle>
+<PageTitle>@L["Account.Profile.Title"]</PageTitle>
 
 <div class="simf-account-page">
     <header class="simf-account-page__head">
-        <h1 class="simf-account-page__title">@L["Visitor.Profile.Title"]</h1>
+        <h1 class="simf-account-page__title">@L["Account.Profile.Title"]</h1>
         <SimfButton Type="button" Variant="secondary"
-                    OnClick="SignOutAsync">@L["Visitor.Profile.SignOut"]</SimfButton>
+                    OnClick="SignOutAsync">@L["Account.Profile.SignOut"]</SimfButton>
     </header>
 
     @if (_loadError is not null)
@@ -25,14 +28,14 @@
     }
     else if (_response is null)
     {
-        <SimfAlert Variant="info">@L["Visitor.Profile.Loading"]</SimfAlert>
+        <SimfAlert Variant="info">@L["Account.Profile.Loading"]</SimfAlert>
     }
     else
     {
         @* Saved-state notice. *@
         @if (_saveSuccess)
         {
-            <SimfAlert Variant="success">@L["Visitor.Profile.Saved"]</SimfAlert>
+            <SimfAlert Variant="success">@L["Account.Profile.Saved"]</SimfAlert>
         }
         @if (_saveError is not null)
         {
@@ -41,16 +44,16 @@
 
         @* QR card. *@
         <section class="simf-card simf-page-card simf-qr-card">
-            <h2 class="simf-card__title">@L["Visitor.Profile.QrTitle"]</h2>
+            <h2 class="simf-card__title">@L["Account.Profile.QrTitle"]</h2>
             @if (!string.IsNullOrEmpty(_response.QrId))
             {
-                <p class="simf-card__supporting">@L["Visitor.Profile.QrSupporting"]</p>
+                <p class="simf-card__supporting">@L["Account.Profile.QrSupporting"]</p>
                 <div class="simf-qr">@((MarkupString)_qrSvg)</div>
                 <p class="simf-totp-secret">@_response.QrId</p>
             }
             else
             {
-                <SimfAlert Variant="info">@L["Visitor.Profile.QrPending"]</SimfAlert>
+                <SimfAlert Variant="info">@L["Account.Profile.QrPending"]</SimfAlert>
             }
         </section>
 
@@ -58,27 +61,18 @@
         <section class="simf-card simf-page-card">
             <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
                 <div class="simf-form__fields">
-                    <SimfRadioGroup TValue="string"
-                                    Label="@L["Visitor.Profile.Type"]"
-                                    Inline="true"
-                                    Items="_visitorTypes"
-                                    ValueFor="@(item => item)"
-                                    LabelFor="@(item => L[$"Visitor.Profile.Type.{item}"])"
-                                    Value="@_model.VisitorType"
-                                    ValueChanged="@(v => _model.VisitorType = v ?? "Visitor")" />
-
-                    <SimfTextField Label="@L["Visitor.Profile.ArabicName"]"
+                    <SimfTextField Label="@L["Account.Profile.ArabicName"]"
                                    @bind-Value="_model.ArabicName"
                                    Disabled="_saving" />
 
-                    <SimfTextField Label="@L["Visitor.Profile.EnglishName"]"
+                    <SimfTextField Label="@L["Account.Profile.EnglishName"]"
                                    @bind-Value="_model.EnglishName"
-                                   Helper="@L["Visitor.Profile.EnglishNameHint"]"
+                                   Helper="@L["Account.Profile.EnglishNameHint"]"
                                    Disabled="_saving" />
 
                     <SimfSelect TValue="string"
-                                Label="@L["Visitor.Profile.Nationality"]"
-                                Placeholder="@L["Visitor.Profile.NationalityPlaceholder"]"
+                                Label="@L["Account.Profile.Nationality"]"
+                                Placeholder="@L["Account.Profile.NationalityPlaceholder"]"
                                 Items="_countryCodes"
                                 ValueFor="@(code => code)"
                                 LabelFor="@(code => CountryLabel(code))"
@@ -86,49 +80,49 @@
                                 ValueChanged="@(v => _model.NationalityCode = v ?? string.Empty)"
                                 Disabled="_saving" />
 
-                    <SimfDatePicker Label="@L["Visitor.Profile.DateOfBirth"]"
+                    <SimfDatePicker Label="@L["Account.Profile.DateOfBirth"]"
                                     Value="@(_model.DateOfBirth?.ToString("yyyy-MM-dd") ?? string.Empty)"
                                     ValueChanged="OnDateOfBirthChangedAsync"
                                     Disabled="_saving" />
 
-                    <SimfTextField Label="@L["Visitor.Profile.PlaceOfBirth"]"
+                    <SimfTextField Label="@L["Account.Profile.PlaceOfBirth"]"
                                    @bind-Value="_model.PlaceOfBirth"
                                    Disabled="_saving" />
 
                     <SimfRadioGroup TValue="bool"
-                                    Label="@L["Visitor.Profile.IsSaudi"]"
+                                    Label="@L["Account.Profile.IsSaudi"]"
                                     Inline="true"
                                     Items="@(new[] { true, false })"
                                     ValueFor="@(b => b ? "true" : "false")"
-                                    LabelFor="@(b => b ? L["Visitor.Profile.IsSaudi.Yes"] : L["Visitor.Profile.IsSaudi.No"])"
+                                    LabelFor="@(b => b ? L["Account.Profile.IsSaudi.Yes"] : L["Account.Profile.IsSaudi.No"])"
                                     Value="@_model.IsSaudi"
                                     ValueChanged="@(v => _model.IsSaudi = v)" />
 
                     @if (_model.IsSaudi)
                     {
-                        <SimfTextField Label="@L["Visitor.Profile.NationalId"]"
+                        <SimfTextField Label="@L["Account.Profile.NationalId"]"
                                        @bind-Value="_nationalIdInput"
-                                       Helper="@L["Visitor.Profile.NationalIdHint"]"
+                                       Helper="@L["Account.Profile.NationalIdHint"]"
                                        Disabled="_saving" />
                     }
                     else
                     {
-                        <SimfTextField Label="@L["Visitor.Profile.Iqama"]"
+                        <SimfTextField Label="@L["Account.Profile.Iqama"]"
                                        @bind-Value="_iqamaInput"
-                                       Helper="@L["Visitor.Profile.IqamaHint"]"
+                                       Helper="@L["Account.Profile.IqamaHint"]"
                                        Disabled="_saving" />
-                        <SimfTextField Label="@L["Visitor.Profile.Passport"]"
+                        <SimfTextField Label="@L["Account.Profile.Passport"]"
                                        @bind-Value="_passportInput"
-                                       Helper="@L["Visitor.Profile.PassportHint"]"
+                                       Helper="@L["Account.Profile.PassportHint"]"
                                        Disabled="_saving" />
                     }
 
-                    <SimfPhoneInput Label="@L["Visitor.Profile.SaudiMobile"]"
+                    <SimfPhoneInput Label="@L["Account.Profile.SaudiMobile"]"
                                     Value="@(_model.SaudiMobile ?? string.Empty)"
                                     ValueChanged="@(v => _model.SaudiMobile = string.IsNullOrWhiteSpace(v) ? null : v)"
                                     Disabled="_saving" />
 
-                    <SimfPhoneInput Label="@L["Visitor.Profile.IntlMobile"]"
+                    <SimfPhoneInput Label="@L["Account.Profile.IntlMobile"]"
                                     Value="@(_model.InternationalMobile ?? string.Empty)"
                                     ValueChanged="@(v => _model.InternationalMobile = string.IsNullOrWhiteSpace(v) ? null : v)"
                                     Disabled="_saving" />
@@ -136,8 +130,8 @@
 
                 <div class="simf-form__actions">
                     <SimfButton Loading="_saving"
-                                LoadingLabel="@L["Visitor.Profile.Submitting"]">
-                        @L["Visitor.Profile.Submit"]
+                                LoadingLabel="@L["Account.Profile.Submitting"]">
+                        @L["Account.Profile.Submit"]
                     </SimfButton>
                 </div>
             </EditForm>
@@ -145,12 +139,12 @@
 
         @* ID image card. *@
         <section class="simf-card simf-page-card">
-            <h2 class="simf-card__title">@L["Visitor.Profile.IdImageTitle"]</h2>
-            <p class="simf-card__supporting">@L["Visitor.Profile.IdImageSupporting"]</p>
+            <h2 class="simf-card__title">@L["Account.Profile.IdImageTitle"]</h2>
+            <p class="simf-card__supporting">@L["Account.Profile.IdImageSupporting"]</p>
 
             @if (_response.HasIdImage)
             {
-                <SimfAlert Variant="success">@L["Visitor.Profile.IdImageOnFile"]</SimfAlert>
+                <SimfAlert Variant="success">@L["Account.Profile.IdImageOnFile"]</SimfAlert>
             }
             @if (_idImageError is not null)
             {
@@ -158,20 +152,20 @@
             }
             @if (_idImageSuccess)
             {
-                <SimfAlert Variant="success">@L["Visitor.Profile.IdImageUpdated"]</SimfAlert>
+                <SimfAlert Variant="success">@L["Account.Profile.IdImageUpdated"]</SimfAlert>
             }
 
-            <SimfFileUpload Label="@L["Visitor.Profile.IdImagePicker"]"
-                            Helper="@L["Visitor.Profile.IdImageHint"]"
+            <SimfFileUpload Label="@L["Account.Profile.IdImagePicker"]"
+                            Helper="@L["Account.Profile.IdImageHint"]"
                             Accept="image/png,image/jpeg,image/webp"
                             Disabled="_uploadingIdImage"
                             @ref="_idImagePicker" />
             <div class="simf-form__actions">
                 <SimfButton Type="button"
                             Loading="_uploadingIdImage"
-                            LoadingLabel="@L["Visitor.Profile.IdImageUploading"]"
+                            LoadingLabel="@L["Account.Profile.IdImageUploading"]"
                             OnClick="UploadIdImageAsync">
-                    @L["Visitor.Profile.IdImageUpload"]
+                    @L["Account.Profile.IdImageUpload"]
                 </SimfButton>
             </div>
         </section>
@@ -179,13 +173,12 @@
 </div>
 
 @code {
-    private VisitorProfileResponse? _response;
+    private UserProfileResponse? _response;
     private string _qrSvg = string.Empty;
     private string[] _countryCodes = Array.Empty<string>();
     private Dictionary<string, CountryDto> _countriesByCode = new();
-    private readonly string[] _visitorTypes = { "Visitor", "Exhibitor", "Press" };
 
-    private readonly UpsertVisitorProfileRequest _model = new();
+    private readonly UpsertUserProfileRequest _model = new();
     private string _nationalIdInput = string.Empty;
     private string _iqamaInput = string.Empty;
     private string _passportInput = string.Empty;
@@ -219,10 +212,10 @@
         try
         {
             // Two parallel fetches — the page can't render without both.
-            var profileTask = JS.InvokeAsync<ApiResult<VisitorProfileResponse>>(
-                "simfAccount.getJson", "/account/api/visitor-profile").AsTask();
+            var profileTask = JS.InvokeAsync<ApiResult<UserProfileResponse>>(
+                "simfAccount.getJson", "/account/api/user-profile").AsTask();
             var countriesTask = JS.InvokeAsync<ApiResult<CountryListResponse>>(
-                "simfAccount.getJson", "/account/api/visitor-profile/countries").AsTask();
+                "simfAccount.getJson", "/account/api/user-profile/countries").AsTask();
             await Task.WhenAll(profileTask, countriesTask);
 
             var profileEnvelope = await profileTask;
@@ -233,7 +226,7 @@
             {
                 _loadError = profileEnvelope?.Error?.MessageForCurrentCulture()
                     ?? countriesEnvelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Visitor.Profile.LoadFailed"];
+                    ?? L["Account.Profile.LoadFailed"];
                 StateHasChanged();
                 return;
             }
@@ -242,7 +235,6 @@
             _countriesByCode = countriesEnvelope.Data.Countries.ToDictionary(c => c.Code);
             _countryCodes = countriesEnvelope.Data.Countries.Select(c => c.Code).ToArray();
 
-            _model.VisitorType = _response.VisitorType;
             _model.ArabicName = _response.ArabicName;
             _model.EnglishName = _response.EnglishName;
             _model.NationalityCode = _response.NationalityCode;
@@ -263,7 +255,7 @@
         }
         catch (Exception ex)
         {
-            _loadError = $"{L["Visitor.Profile.LoadFailed"]} ({ex.Message})";
+            _loadError = $"{L["Account.Profile.LoadFailed"]} ({ex.Message})";
             StateHasChanged();
         }
     }
@@ -291,8 +283,8 @@
         _saving = true;
         try
         {
-            var envelope = await JS.InvokeAsync<ApiResult<VisitorProfileResponse>>(
-                "simfAccount.postJson", "/account/api/visitor-profile", _model);
+            var envelope = await JS.InvokeAsync<ApiResult<UserProfileResponse>>(
+                "simfAccount.postJson", "/account/api/user-profile", _model);
             if (envelope is { Success: true, Data: not null })
             {
                 _response = envelope.Data;
@@ -305,7 +297,7 @@
             else
             {
                 _saveError = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Visitor.Profile.Fallback"];
+                    ?? L["Account.Profile.Fallback"];
             }
         }
         finally { _saving = false; }
@@ -327,7 +319,7 @@
         {
             var envelope = await JS.InvokeAsync<ApiResult<bool>>(
                 "simfAccount.uploadFile",
-                "/account/api/visitor-profile/id-image",
+                "/account/api/user-profile/id-image",
                 _idImagePicker.ElementId);
             if (envelope is { Success: true })
             {
@@ -340,7 +332,7 @@
             else
             {
                 _idImageError = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Visitor.Profile.IdImageFallback"];
+                    ?? L["Account.Profile.IdImageFallback"];
             }
         }
         finally { _uploadingIdImage = false; }

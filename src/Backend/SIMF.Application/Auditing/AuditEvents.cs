@@ -71,10 +71,10 @@ public static class AuditEvents
     public const string AdminUsersExported = "Admin.UsersExported";
     public const string AdminUsersImported = "Admin.UsersImported";
 
-    // Visitor profile (myComment #18 — D-046)
-    public const string VisitorProfileSaved = "VisitorProfile.Saved";
-    public const string VisitorProfileIdImageUploaded = "VisitorProfile.IdImageUploaded";
-    public const string VisitorProfileIdImageRejected = "VisitorProfile.IdImageRejected";
+    // User profile (myComment #18 — D-046; P8 renamed from VisitorProfile.*)
+    public const string UserProfileSaved = "UserProfile.Saved";
+    public const string UserProfileIdImageUploaded = "UserProfile.IdImageUploaded";
+    public const string UserProfileIdImageRejected = "UserProfile.IdImageRejected";
 
     // Logs (P6 — per-project log files + CP viewer)
     public const string AdminLogViewed = "Admin.LogViewed";

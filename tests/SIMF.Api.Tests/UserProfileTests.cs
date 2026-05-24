@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
-using SIMF.Contracts.VisitorProfile;
+using SIMF.Contracts.UserProfile;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
@@ -14,19 +14,20 @@ using Xunit;
 namespace SIMF.Api.Tests;
 
 /// <summary>
-/// Integration tests for the visitor self-service profile endpoints
-/// (decision D-046 b, myComment #18). Each test signs in a freshly-
-/// created Approved user so the QR id is present and the actor can hit
-/// the profile endpoints.
+/// Integration tests for the user self-service profile endpoints
+/// (decisions D-046 b, P8 — D-049; renamed from
+/// <c>VisitorProfileTests</c>). Each test signs in a freshly-created
+/// Approved user so the QR id is present and the actor can hit the
+/// profile endpoints.
 /// </summary>
-public sealed class VisitorProfileTests : IClassFixture<SimfApiFactory>
+public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
 {
-    private const string Path = "/api/v1/account/visitor-profile";
+    private const string Path = "/api/v1/account/user-profile";
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
 
-    public VisitorProfileTests(SimfApiFactory factory)
+    public UserProfileTests(SimfApiFactory factory)
     {
         _factory = factory;
         _factory.EnsureDatabaseCreated();
@@ -41,7 +42,7 @@ public sealed class VisitorProfileTests : IClassFixture<SimfApiFactory>
         var response = await GetAuthAsync(Path, token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var body = (await response.Content.ReadFromJsonAsync<ApiResult<VisitorProfileResponse>>())!;
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
         Assert.True(body.Success);
         Assert.Empty(body.Data!.ArabicName);
         Assert.Empty(body.Data.EnglishName);
@@ -58,7 +59,7 @@ public sealed class VisitorProfileTests : IClassFixture<SimfApiFactory>
         var first = await PostAuthAsync(Path,
             ValidSaudiRequest("Ahmad", "أحمد"), token);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
-        var firstBody = (await first.Content.ReadFromJsonAsync<ApiResult<VisitorProfileResponse>>())!;
+        var firstBody = (await first.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
         Assert.Equal("Ahmad", firstBody.Data!.EnglishName);
         Assert.Equal("أحمد", firstBody.Data.ArabicName);
         Assert.Equal("SA", firstBody.Data.NationalityCode);
@@ -66,7 +67,7 @@ public sealed class VisitorProfileTests : IClassFixture<SimfApiFactory>
         var second = await PostAuthAsync(Path,
             ValidSaudiRequest("Ahmed", "أحمد محمد"), token);
         Assert.Equal(HttpStatusCode.OK, second.StatusCode);
-        var secondBody = (await second.Content.ReadFromJsonAsync<ApiResult<VisitorProfileResponse>>())!;
+        var secondBody = (await second.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
         Assert.Equal("Ahmed", secondBody.Data!.EnglishName);
         Assert.Equal("أحمد محمد", secondBody.Data.ArabicName);
     }
@@ -84,7 +85,7 @@ public sealed class VisitorProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task POST_requires_a_national_id_for_a_Saudi_visitor()
+    public async Task POST_requires_a_national_id_for_a_Saudi_user()
     {
         var token = await CreateUserAndSignInAsync();
 
@@ -134,7 +135,7 @@ public sealed class VisitorProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task POST_requires_either_Iqama_or_Passport_for_a_non_Saudi_visitor()
+    public async Task POST_requires_either_Iqama_or_Passport_for_a_non_Saudi_user()
     {
         var token = await CreateUserAndSignInAsync();
 
@@ -269,7 +270,7 @@ public sealed class VisitorProfileTests : IClassFixture<SimfApiFactory>
 
         // Find the file on disk and confirm the marker is NOT there.
         var filePath = System.IO.Path.Combine(
-            _factory.VisitorIdStorageDirectory, $"{actorId:N}.bin");
+            _factory.UserIdDocumentStorageDirectory, $"{actorId:N}.bin");
         Assert.True(File.Exists(filePath), $"Encrypted file expected at {filePath}");
         var diskBytes = await File.ReadAllBytesAsync(filePath);
         Assert.DoesNotContain(IndexOfSequence(diskBytes, marker),
@@ -278,11 +279,10 @@ public sealed class VisitorProfileTests : IClassFixture<SimfApiFactory>
 
     // -- Helpers ---------------------------------------------------------------
 
-    private static UpsertVisitorProfileRequest ValidSaudiRequest(
+    private static UpsertUserProfileRequest ValidSaudiRequest(
         string englishName = "Test User",
         string arabicName = "مستخدم اختبار") => new()
     {
-        VisitorType = "Visitor",
         ArabicName = arabicName,
         EnglishName = englishName,
         NationalityCode = "SA",
@@ -294,7 +294,7 @@ public sealed class VisitorProfileTests : IClassFixture<SimfApiFactory>
 
     private async Task<string> CreateUserAndSignInAsync()
     {
-        var email = $"vp-{Guid.NewGuid():N}@simf.test";
+        var email = $"up-{Guid.NewGuid():N}@simf.test";
         Guid userId;
         using (var scope = _factory.Services.CreateScope())
         {
@@ -304,7 +304,7 @@ public sealed class VisitorProfileTests : IClassFixture<SimfApiFactory>
                 UserName = email,
                 Email = email,
                 EmailConfirmed = true,
-                DisplayName = "Visitor Test",
+                DisplayName = "Profile Test",
                 AccountState = AccountState.Approved,
                 QrId = $"TEST{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}",
             };

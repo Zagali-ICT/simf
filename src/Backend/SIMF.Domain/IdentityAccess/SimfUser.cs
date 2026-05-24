@@ -17,25 +17,20 @@ public class SimfUser : IdentityUser<Guid>
     public AccountState AccountState { get; set; } = AccountState.Registered;
 
     /// <summary>
-    /// The hardcoded user type (P7 — decision D-048). Determines where
-    /// the user can sign in (CP for <see cref="UserType.Admin"/>; App /
-    /// Website for <see cref="UserType.Visitor"/> and
+    /// The hardcoded user type (P7 — D-048; P8 — D-049). Determines
+    /// where the user can sign in (CP for <see cref="UserType.Admin"/>;
+    /// App / Website for <see cref="UserType.Visitor"/> and
     /// <see cref="UserType.Other"/>) and whether RBAC applies (Admin
     /// only). Defaults to <see cref="UserType.Visitor"/> — the
     /// least-privileged surface — so any row that loses its metadata
     /// falls into the safest bucket.
+    ///
+    /// <para>The user's profile-type (Visitor tier / Other partner-kind)
+    /// no longer lives on this row — P8 moved it to
+    /// <c>UserProfile.ProfileTypeId</c> so the lookup row sits with the
+    /// rest of the per-user profile data.</para>
     /// </summary>
     public UserType UserType { get; set; } = UserType.Visitor;
-
-    /// <summary>
-    /// The user's <see cref="ProfileType"/>, when one is assigned
-    /// (P7 — D-048). For a <see cref="UserType.Visitor"/> this is the
-    /// tier (VVIP / VIP / Gold / …); for a <see cref="UserType.Other"/>
-    /// this is the partner kind (Staff / Exhibitor / Sponsor / …).
-    /// Null until the admin assigns one. Admins do not carry a profile
-    /// type today.
-    /// </summary>
-    public Guid? ProfileTypeId { get; set; }
 
     /// <summary>
     /// True when the account holds a temporary password and must change it

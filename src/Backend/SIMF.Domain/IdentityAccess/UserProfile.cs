@@ -1,15 +1,23 @@
 namespace SIMF.Domain.IdentityAccess;
 
 /// <summary>
-/// A visitor's profile — the per-attendee information captured at
-/// registration (decision D-046, myComment #18). One row per
-/// <see cref="SimfUser"/>; null until the visitor fills the form.
+/// A user's profile — the per-account information captured at registration
+/// (decisions D-046, D-048). One row per non-Admin <see cref="SimfUser"/>;
+/// null until the user fills the form or an admin creates a stub on the
+/// user's behalf. Admin-typed users do not carry a profile today.
+///
+/// <para>The <see cref="ProfileTypeId"/> FK lives here (P8 — D-049) rather
+/// than on <see cref="SimfUser"/>, because the profile-type is a property
+/// of the profile, not of the user identity. Visitors get a tier (VVIP /
+/// VIP / Gold / …); Others get a partner kind (Staff / Exhibitor /
+/// Sponsor / …); the discriminator on <see cref="ProfileType.UserType"/>
+/// keeps each lookup row scoped to a single user kind.</para>
 ///
 /// <para>The ID-image attachment is stored on disk encrypted-at-rest via
-/// <c>IVisitorIdStorage</c>. The relative path lives here; the bytes
+/// <c>IUserIdDocumentStorage</c>. The relative path lives here; the bytes
 /// never sit in the row.</para>
 /// </summary>
-public class VisitorProfile
+public class UserProfile
 {
     /// <summary>Surrogate id — separate from <see cref="UserId"/> so the
     /// row can be re-created if the user is recovered.</summary>
@@ -18,8 +26,17 @@ public class VisitorProfile
     /// <summary>The owning user.</summary>
     public Guid UserId { get; set; }
 
-    /// <summary>Visitor type — "Visitor" / "Exhibitor" / "Press". Persisted as a string for forward-compatibility.</summary>
-    public string VisitorType { get; set; } = "Visitor";
+    /// <summary>
+    /// The user's <see cref="ProfileType"/> when one is assigned
+    /// (P8 — D-049). Null until the admin assigns one. The lookup row's
+    /// <see cref="ProfileType.UserType"/> must match the owning user's
+    /// <see cref="SimfUser.UserType"/> — enforced by
+    /// <c>AdminAccountService</c> at create / approve time.
+    /// </summary>
+    public Guid? ProfileTypeId { get; set; }
+
+    /// <summary>Navigation to the assigned <see cref="ProfileType"/>.</summary>
+    public ProfileType? ProfileType { get; set; }
 
     /// <summary>Full name in Arabic.</summary>
     public string ArabicName { get; set; } = string.Empty;
@@ -36,7 +53,7 @@ public class VisitorProfile
     /// <summary>Place of birth — free text, up to 128 chars.</summary>
     public string PlaceOfBirth { get; set; } = string.Empty;
 
-    /// <summary>True when the visitor holds a Saudi national identity (controls
+    /// <summary>True when the user holds a Saudi national identity (controls
     /// which of <see cref="NationalId"/> / <see cref="IqamaNumber"/> /
     /// <see cref="PassportNumber"/> is required).</summary>
     public bool IsSaudi { get; set; }
@@ -47,7 +64,7 @@ public class VisitorProfile
     /// <summary>Iqama number (10 digits) — populated for non-Saudi residents.</summary>
     public string? IqamaNumber { get; set; }
 
-    /// <summary>Passport number — populated for non-Saudi visitors.</summary>
+    /// <summary>Passport number — populated for non-Saudi users.</summary>
     public string? PassportNumber { get; set; }
 
     /// <summary>Saudi-format mobile number (+966xxxxxxxxx) — optional.</summary>
@@ -57,9 +74,9 @@ public class VisitorProfile
     public string? InternationalMobile { get; set; }
 
     /// <summary>The relative path of the encrypted ID-image file on disk,
-    /// under the configured <c>Storage:VisitorIdBase</c>. Null when no
+    /// under the configured <c>Storage:UserIdDocumentBase</c>. Null when no
     /// image has been uploaded. The bytes are AES-GCM encrypted with the
-    /// per-installation key — see <c>EncryptedVisitorIdStorage</c>.</summary>
+    /// per-installation key — see <c>EncryptedUserIdDocumentStorage</c>.</summary>
     public string? IdImageRelativePath { get; set; }
 
     /// <summary>When the row was created (UTC).</summary>

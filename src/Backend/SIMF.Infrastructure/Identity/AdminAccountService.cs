@@ -220,7 +220,9 @@ internal sealed class AdminAccountService(
             // on approval (D-046a + P4).
             AccountState = AccountState.PendingApproval,
             UserType = userType,
-            ProfileTypeId = profileTypeId,
+            // P8 — ProfileTypeId no longer lives on SimfUser; if the
+            // admin picked one we create a stub UserProfile row below
+            // so the FK has somewhere to land at create time.
             PasswordChangeRequired = false,
             CreatedAt = now,
         };
@@ -248,6 +250,22 @@ internal sealed class AdminAccountService(
                     await userManager.AddToRoleAsync(user, role);
                 }
             }
+        }
+
+        // P8 — if the admin picked a ProfileTypeId we drop a stub
+        // UserProfile row so the FK has somewhere to land. The user fills
+        // the rest of the form later via /account/profile. Admins never
+        // carry a profile so we never stub for them.
+        if (profileTypeId is { } chosenProfileTypeId && userType != UserType.Admin)
+        {
+            dbContext.UserProfiles.Add(new UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                ProfileTypeId = chosenProfileTypeId,
+                CreatedAt = now,
+            });
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
         // 7-day invite (D-042).
@@ -728,9 +746,15 @@ internal sealed class AdminAccountService(
 
         // P7c — the duplicate keeps the source's UserType + role-membership
         // shape: an Admin source duplicates as an Admin (with the same roles);
-        // an Other / Visitor source duplicates as the same UserType. The
-        // source's ProfileTypeId is preserved.
+        // an Other / Visitor source duplicates as the same UserType. P8 — the
+        // source's ProfileTypeId now lives on the source's UserProfile row;
+        // look it up and pass it through.
         var sourceRoles = await userManager.GetRolesAsync(source);
+        var sourceProfileTypeId = await dbContext.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.UserId == source.Id)
+            .Select(p => p.ProfileTypeId)
+            .SingleOrDefaultAsync(cancellationToken);
         var created = source.UserType switch
         {
             UserType.Admin => await CreateAdminAsync(actorUserId,
@@ -746,7 +770,7 @@ internal sealed class AdminAccountService(
                 {
                     Email = request.NewEmail,
                     DisplayName = source.DisplayName,
-                    ProfileTypeId = source.ProfileTypeId ?? Guid.Empty,
+                    ProfileTypeId = sourceProfileTypeId ?? Guid.Empty,
                 },
                 cancellationToken),
             _ => await CreateVisitorAsync(actorUserId,
@@ -754,7 +778,7 @@ internal sealed class AdminAccountService(
                 {
                     Email = request.NewEmail,
                     DisplayName = source.DisplayName,
-                    ProfileTypeId = source.ProfileTypeId,
+                    ProfileTypeId = sourceProfileTypeId,
                 },
                 cancellationToken),
         };

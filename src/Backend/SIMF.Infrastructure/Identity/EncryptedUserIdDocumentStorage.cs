@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/VisitorProfileTests.cs (encrypt-then-decrypt round-trip,
+// Tests: SIMF.Api.Tests/UserProfileTests.cs (encrypt-then-decrypt round-trip,
 //        missing-key startup gate)
 using System.Security.Cryptography;
 using Microsoft.Extensions.Configuration;
@@ -8,7 +8,9 @@ using SIMF.Application.IdentityAccess.Abstractions;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// AES-GCM encrypted-at-rest storage for visitor ID images (decision D-046 b).
+/// AES-GCM encrypted-at-rest storage for the user's ID-document image
+/// (decisions D-046 b, P8 — D-049; renamed from
+/// <c>EncryptedVisitorIdStorage</c>).
 ///
 /// <para>File format on disk (single binary blob):</para>
 /// <code>
@@ -20,13 +22,13 @@ namespace SIMF.Infrastructure.Identity;
 ///   1 = image/jpeg, 2 = image/png, 3 = image/webp
 /// </code>
 ///
-/// <para>Key source: configuration <c>Storage:VisitorIdEncryptionKey</c> —
-/// a base64-encoded 32-byte AES key. The constructor refuses to start
+/// <para>Key source: configuration <c>Storage:UserIdDocumentEncryptionKey</c>
+/// — a base64-encoded 32-byte AES key. The constructor refuses to start
 /// without it, the same startup-gate pattern the JWT signing key uses
 /// (SIMF-FDS-001 Amendment A.2). Rotate by changing the key + re-encrypting
 /// every file (operational task; out of scope here).</para>
 /// </summary>
-internal sealed class EncryptedVisitorIdStorage : IVisitorIdStorage
+internal sealed class EncryptedUserIdDocumentStorage : IUserIdDocumentStorage
 {
     private const int KeyLengthBytes = 32;        // AES-256
     private const int NonceLengthBytes = 12;      // AES-GCM standard
@@ -36,26 +38,26 @@ internal sealed class EncryptedVisitorIdStorage : IVisitorIdStorage
 
     private readonly string _baseDirectory;
     private readonly byte[] _key;
-    private readonly ILogger<EncryptedVisitorIdStorage> _logger;
+    private readonly ILogger<EncryptedUserIdDocumentStorage> _logger;
 
-    public EncryptedVisitorIdStorage(
+    public EncryptedUserIdDocumentStorage(
         IConfiguration configuration,
-        ILogger<EncryptedVisitorIdStorage> logger)
+        ILogger<EncryptedUserIdDocumentStorage> logger)
     {
-        var configuredDirectory = configuration["Storage:VisitorIdBase"];
+        var configuredDirectory = configuration["Storage:UserIdDocumentBase"];
         if (string.IsNullOrWhiteSpace(configuredDirectory))
         {
             throw new InvalidOperationException(
-                "Configuration value 'Storage:VisitorIdBase' is required but was not found.");
+                "Configuration value 'Storage:UserIdDocumentBase' is required but was not found.");
         }
         _baseDirectory = Path.GetFullPath(configuredDirectory);
         Directory.CreateDirectory(_baseDirectory);
 
-        var configuredKey = configuration["Storage:VisitorIdEncryptionKey"];
+        var configuredKey = configuration["Storage:UserIdDocumentEncryptionKey"];
         if (string.IsNullOrWhiteSpace(configuredKey))
         {
             throw new InvalidOperationException(
-                "Configuration value 'Storage:VisitorIdEncryptionKey' is required "
+                "Configuration value 'Storage:UserIdDocumentEncryptionKey' is required "
                 + "but was not found. Provide a base64-encoded 32-byte AES key.");
         }
         try
@@ -65,12 +67,12 @@ internal sealed class EncryptedVisitorIdStorage : IVisitorIdStorage
         catch (FormatException ex)
         {
             throw new InvalidOperationException(
-                "'Storage:VisitorIdEncryptionKey' must be a base64-encoded value.", ex);
+                "'Storage:UserIdDocumentEncryptionKey' must be a base64-encoded value.", ex);
         }
         if (_key.Length != KeyLengthBytes)
         {
             throw new InvalidOperationException(
-                $"'Storage:VisitorIdEncryptionKey' must decode to exactly {KeyLengthBytes} bytes; "
+                $"'Storage:UserIdDocumentEncryptionKey' must decode to exactly {KeyLengthBytes} bytes; "
                 + $"got {_key.Length}.");
         }
 
@@ -108,36 +110,36 @@ internal sealed class EncryptedVisitorIdStorage : IVisitorIdStorage
         File.Move(temp, fullPath, overwrite: true);
 
         _logger.LogInformation(
-            "Encrypted visitor ID-image saved at {Path} ({CipherBytes} bytes, {ContentType})",
+            "Encrypted user ID-document saved at {Path} ({CipherBytes} bytes, {ContentType})",
             relativePath, file.Length, contentType);
         return relativePath;
     }
 
-    public Task<VisitorIdRead?> OpenReadAsync(
+    public Task<UserIdDocumentRead?> OpenReadAsync(
         string relativePath, CancellationToken cancellationToken = default)
     {
         var fullPath = ResolveSafe(relativePath);
         if (fullPath is null || !File.Exists(fullPath))
         {
-            return Task.FromResult<VisitorIdRead?>(null);
+            return Task.FromResult<UserIdDocumentRead?>(null);
         }
 
         var file = File.ReadAllBytes(fullPath);
         if (file.Length < HeaderBytes)
         {
             _logger.LogWarning(
-                "Visitor ID-image file {Path} is shorter than the header — refusing to decrypt.",
+                "User ID-document file {Path} is shorter than the header — refusing to decrypt.",
                 relativePath);
-            return Task.FromResult<VisitorIdRead?>(null);
+            return Task.FromResult<UserIdDocumentRead?>(null);
         }
 
         var contentType = ContentTypeForCode(file[0]);
         if (contentType is null)
         {
             _logger.LogWarning(
-                "Visitor ID-image file {Path} has an unknown content-type code {Code}.",
+                "User ID-document file {Path} has an unknown content-type code {Code}.",
                 relativePath, file[0]);
-            return Task.FromResult<VisitorIdRead?>(null);
+            return Task.FromResult<UserIdDocumentRead?>(null);
         }
 
         var nonce = new byte[NonceLengthBytes];
@@ -156,11 +158,11 @@ internal sealed class EncryptedVisitorIdStorage : IVisitorIdStorage
         catch (CryptographicException ex)
         {
             _logger.LogError(ex,
-                "Decryption of visitor ID-image {Path} failed — tag mismatch or wrong key.",
+                "Decryption of user ID-document {Path} failed — tag mismatch or wrong key.",
                 relativePath);
-            return Task.FromResult<VisitorIdRead?>(null);
+            return Task.FromResult<UserIdDocumentRead?>(null);
         }
-        return Task.FromResult<VisitorIdRead?>(new VisitorIdRead(plaintext, contentType));
+        return Task.FromResult<UserIdDocumentRead?>(new UserIdDocumentRead(plaintext, contentType));
     }
 
     public Task DeleteAsync(string relativePath, CancellationToken cancellationToken = default)
@@ -169,7 +171,7 @@ internal sealed class EncryptedVisitorIdStorage : IVisitorIdStorage
         if (fullPath is not null && File.Exists(fullPath))
         {
             File.Delete(fullPath);
-            _logger.LogInformation("Encrypted visitor ID-image deleted at {Path}", relativePath);
+            _logger.LogInformation("Encrypted user ID-document deleted at {Path}", relativePath);
         }
         return Task.CompletedTask;
     }
@@ -181,7 +183,7 @@ internal sealed class EncryptedVisitorIdStorage : IVisitorIdStorage
         if (!full.StartsWith(_baseDirectory, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning(
-                "Rejected visitor ID-image path {Path} — outside the storage base directory.",
+                "Rejected user ID-document path {Path} — outside the storage base directory.",
                 relativePath);
             return null;
         }

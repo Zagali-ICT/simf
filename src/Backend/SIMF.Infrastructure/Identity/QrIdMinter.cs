@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/VisitorProfileTests.cs (QR minted on admin-create-user;
+// Tests: SIMF.Api.Tests/UserProfileTests.cs (QR minted on admin-create-user;
 //        not minted before Approved).
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

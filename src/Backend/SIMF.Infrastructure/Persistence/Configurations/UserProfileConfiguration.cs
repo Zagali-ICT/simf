@@ -5,13 +5,17 @@ using SIMF.Domain.IdentityAccess;
 namespace SIMF.Infrastructure.Persistence.Configurations;
 
 /// <summary>
-/// EF configuration for the visitor profile row (decision D-046, myComment
-/// #18). Length caps line up with the FluentValidation rules in
-/// <c>UpsertVisitorProfileRequestValidator</c>.
+/// EF configuration for the user-profile row (decisions D-046, P8 —
+/// D-048; renamed from <c>VisitorProfileConfiguration</c>). Length caps
+/// line up with the FluentValidation rules in
+/// <c>UpsertUserProfileRequestValidator</c>. The <c>ProfileTypeId</c> FK
+/// references the <c>ProfileTypes</c> lookup with
+/// <c>OnDelete(Restrict)</c> so a profile-type cannot be deleted while
+/// any user is assigned to it.
 /// </summary>
-internal sealed class VisitorProfileConfiguration : IEntityTypeConfiguration<VisitorProfile>
+internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserProfile>
 {
-    public void Configure(EntityTypeBuilder<VisitorProfile> builder)
+    public void Configure(EntityTypeBuilder<UserProfile> builder)
     {
         builder.HasKey(profile => profile.Id);
 
@@ -20,7 +24,6 @@ internal sealed class VisitorProfileConfiguration : IEntityTypeConfiguration<Vis
         // a sibling row.
         builder.HasIndex(profile => profile.UserId).IsUnique();
 
-        builder.Property(profile => profile.VisitorType).HasMaxLength(32).IsRequired();
         builder.Property(profile => profile.ArabicName).HasMaxLength(256).IsRequired();
         builder.Property(profile => profile.EnglishName).HasMaxLength(256).IsRequired();
         builder.Property(profile => profile.NationalityCode).HasMaxLength(2).IsRequired();
@@ -31,5 +34,12 @@ internal sealed class VisitorProfileConfiguration : IEntityTypeConfiguration<Vis
         builder.Property(profile => profile.SaudiMobile).HasMaxLength(20);
         builder.Property(profile => profile.InternationalMobile).HasMaxLength(24);
         builder.Property(profile => profile.IdImageRelativePath).HasMaxLength(256);
+
+        // P8 — ProfileTypeId moved off SimfUser; lives here now.
+        builder.HasIndex(profile => profile.ProfileTypeId);
+        builder.HasOne(profile => profile.ProfileType)
+            .WithMany()
+            .HasForeignKey(profile => profile.ProfileTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

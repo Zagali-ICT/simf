@@ -100,10 +100,10 @@ public static class DependencyInjection
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<IAdminAccountService, AdminAccountService>();
         services.AddScoped<IQrIdMinter, QrIdMinter>();
-        services.AddScoped<IVisitorProfileService, VisitorProfileService>();
+        services.AddScoped<IUserProfileService, UserProfileService>();
         services.AddSingleton<IUserExcelService, ClosedXmlUserExcelService>();
         services.AddSingleton<IAvatarStorage, FilesystemAvatarStorage>();
-        services.AddSingleton<IVisitorIdStorage, EncryptedVisitorIdStorage>();
+        services.AddSingleton<IUserIdDocumentStorage, EncryptedUserIdDocumentStorage>();
         services.AddSingleton<ILogFileService, LogFileService>();
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<ITotpVerifier, TotpVerifier>();

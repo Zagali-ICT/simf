@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/VisitorProfileTests.cs (round-trip, 404 when missing)
+// Tests: SIMF.Api.Tests/UserProfileTests.cs (round-trip, 404 when missing)
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.IdentityAccess;
@@ -7,21 +7,23 @@ using SIMF.Common;
 namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
-/// <c>GET /api/v1/account/visitor-profile/id-image</c> — streams the
-/// signed-in visitor's ID-image back to the browser (decrypted on the fly
-/// from the AES-GCM file). Returns 404 when no image is set. Auth-only —
-/// only the owning visitor can read it.
+/// <c>GET /api/v1/account/user-profile/id-image</c> — streams the
+/// signed-in user's ID-document image back to the browser (decrypted
+/// on the fly from the AES-GCM file). Returns 404 when no image is
+/// set. Auth-only — only the owning user can read it. Renamed from
+/// <c>/account/visitor-profile/id-image</c> (decisions D-046 b,
+/// P8 — D-049).
 /// </summary>
-public sealed class VisitorIdImageFetchEndpoint(IVisitorProfileService service)
+public sealed class UserIdDocumentFetchEndpoint(IUserProfileService service)
     : EndpointWithoutRequest
 {
     public override void Configure()
     {
-        Get("/account/visitor-profile/id-image");
+        Get("/account/user-profile/id-image");
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
-            "Stream the signed-in visitor's ID image.");
+            "Stream the signed-in user's ID-document image.");
     }
 
     public override async Task HandleAsync(CancellationToken ct)

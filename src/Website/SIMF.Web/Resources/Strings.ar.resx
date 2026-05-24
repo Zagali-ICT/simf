@@ -72,47 +72,43 @@
   <data name="Auth.Footer" xml:space="preserve"><value>الملتقى البحري السعودي الدولي 2026</value></data>
   <data name="Auth.LanguageSwitch" xml:space="preserve"><value>English</value></data>
 
-  <data name="Visitor.Profile.Title" xml:space="preserve"><value>ملفي الشخصي كزائر</value></data>
-  <data name="Visitor.Profile.SignOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
-  <data name="Visitor.Profile.Loading" xml:space="preserve"><value>جارٍ تحميل ملفك الشخصي…</value></data>
-  <data name="Visitor.Profile.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الملف الشخصي. حاول مرة أخرى.</value></data>
-  <data name="Visitor.Profile.QrTitle" xml:space="preserve"><value>رمز QR الخاص بك للملتقى</value></data>
-  <data name="Visitor.Profile.QrSupporting" xml:space="preserve"><value>أبرز هذا الرمز عند مدخل الفعالية. سيقوم فريق RSNF بمسحه لتسجيل دخولك.</value></data>
-  <data name="Visitor.Profile.QrPending" xml:space="preserve"><value>سيظهر رمز QR هنا بعد اعتماد حسابك.</value></data>
-  <data name="Visitor.Profile.Type" xml:space="preserve"><value>سأحضر بصفة</value></data>
-  <data name="Visitor.Profile.Type.Visitor" xml:space="preserve"><value>زائر</value></data>
-  <data name="Visitor.Profile.Type.Exhibitor" xml:space="preserve"><value>عارض</value></data>
-  <data name="Visitor.Profile.Type.Press" xml:space="preserve"><value>صحفي</value></data>
-  <data name="Visitor.Profile.ArabicName" xml:space="preserve"><value>الاسم بالعربية</value></data>
-  <data name="Visitor.Profile.EnglishName" xml:space="preserve"><value>الاسم بالإنجليزية</value></data>
-  <data name="Visitor.Profile.EnglishNameHint" xml:space="preserve"><value>كما هو مكتوب في جواز السفر.</value></data>
-  <data name="Visitor.Profile.Nationality" xml:space="preserve"><value>الجنسية</value></data>
-  <data name="Visitor.Profile.NationalityPlaceholder" xml:space="preserve"><value>اختر الدولة</value></data>
-  <data name="Visitor.Profile.DateOfBirth" xml:space="preserve"><value>تاريخ الميلاد</value></data>
-  <data name="Visitor.Profile.PlaceOfBirth" xml:space="preserve"><value>مكان الميلاد</value></data>
-  <data name="Visitor.Profile.IsSaudi" xml:space="preserve"><value>هل تحمل الجنسية السعودية؟</value></data>
-  <data name="Visitor.Profile.IsSaudi.Yes" xml:space="preserve"><value>نعم</value></data>
-  <data name="Visitor.Profile.IsSaudi.No" xml:space="preserve"><value>لا</value></data>
-  <data name="Visitor.Profile.NationalId" xml:space="preserve"><value>رقم الهوية الوطنية</value></data>
-  <data name="Visitor.Profile.NationalIdHint" xml:space="preserve"><value>10 أرقام تبدأ بالرقم 1.</value></data>
-  <data name="Visitor.Profile.Iqama" xml:space="preserve"><value>رقم الإقامة</value></data>
-  <data name="Visitor.Profile.IqamaHint" xml:space="preserve"><value>10 أرقام تبدأ بالرقم 2 — مطلوب إذا كنت مقيمًا في المملكة.</value></data>
-  <data name="Visitor.Profile.Passport" xml:space="preserve"><value>رقم جواز السفر</value></data>
-  <data name="Visitor.Profile.PassportHint" xml:space="preserve"><value>مطلوب إذا كنت زائرًا من خارج المملكة.</value></data>
-  <data name="Visitor.Profile.SaudiMobile" xml:space="preserve"><value>الجوال السعودي</value></data>
-  <data name="Visitor.Profile.IntlMobile" xml:space="preserve"><value>الجوال الدولي</value></data>
-  <data name="Visitor.Profile.Submit" xml:space="preserve"><value>حفظ ملفي الشخصي</value></data>
-  <data name="Visitor.Profile.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
-  <data name="Visitor.Profile.Saved" xml:space="preserve"><value>تم حفظ ملفك الشخصي.</value></data>
-  <data name="Visitor.Profile.Fallback" xml:space="preserve"><value>تعذّر حفظ الملف الشخصي. راجع البيانات ثم حاول مرة أخرى.</value></data>
+  <data name="Account.Profile.Title" xml:space="preserve"><value>ملفي الشخصي</value></data>
+  <data name="Account.Profile.SignOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
+  <data name="Account.Profile.Loading" xml:space="preserve"><value>جارٍ تحميل ملفك الشخصي…</value></data>
+  <data name="Account.Profile.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الملف الشخصي. حاول مرة أخرى.</value></data>
+  <data name="Account.Profile.QrTitle" xml:space="preserve"><value>رمز QR الخاص بك للملتقى</value></data>
+  <data name="Account.Profile.QrSupporting" xml:space="preserve"><value>أبرز هذا الرمز عند مدخل الفعالية. سيقوم فريق RSNF بمسحه لتسجيل دخولك.</value></data>
+  <data name="Account.Profile.QrPending" xml:space="preserve"><value>سيظهر رمز QR هنا بعد اعتماد حسابك.</value></data>
+  <data name="Account.Profile.ArabicName" xml:space="preserve"><value>الاسم بالعربية</value></data>
+  <data name="Account.Profile.EnglishName" xml:space="preserve"><value>الاسم بالإنجليزية</value></data>
+  <data name="Account.Profile.EnglishNameHint" xml:space="preserve"><value>كما هو مكتوب في جواز السفر.</value></data>
+  <data name="Account.Profile.Nationality" xml:space="preserve"><value>الجنسية</value></data>
+  <data name="Account.Profile.NationalityPlaceholder" xml:space="preserve"><value>اختر الدولة</value></data>
+  <data name="Account.Profile.DateOfBirth" xml:space="preserve"><value>تاريخ الميلاد</value></data>
+  <data name="Account.Profile.PlaceOfBirth" xml:space="preserve"><value>مكان الميلاد</value></data>
+  <data name="Account.Profile.IsSaudi" xml:space="preserve"><value>هل تحمل الجنسية السعودية؟</value></data>
+  <data name="Account.Profile.IsSaudi.Yes" xml:space="preserve"><value>نعم</value></data>
+  <data name="Account.Profile.IsSaudi.No" xml:space="preserve"><value>لا</value></data>
+  <data name="Account.Profile.NationalId" xml:space="preserve"><value>رقم الهوية الوطنية</value></data>
+  <data name="Account.Profile.NationalIdHint" xml:space="preserve"><value>10 أرقام تبدأ بالرقم 1.</value></data>
+  <data name="Account.Profile.Iqama" xml:space="preserve"><value>رقم الإقامة</value></data>
+  <data name="Account.Profile.IqamaHint" xml:space="preserve"><value>10 أرقام تبدأ بالرقم 2 — مطلوب إذا كنت مقيمًا في المملكة.</value></data>
+  <data name="Account.Profile.Passport" xml:space="preserve"><value>رقم جواز السفر</value></data>
+  <data name="Account.Profile.PassportHint" xml:space="preserve"><value>مطلوب إذا كنت زائرًا من خارج المملكة.</value></data>
+  <data name="Account.Profile.SaudiMobile" xml:space="preserve"><value>الجوال السعودي</value></data>
+  <data name="Account.Profile.IntlMobile" xml:space="preserve"><value>الجوال الدولي</value></data>
+  <data name="Account.Profile.Submit" xml:space="preserve"><value>حفظ ملفي الشخصي</value></data>
+  <data name="Account.Profile.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Account.Profile.Saved" xml:space="preserve"><value>تم حفظ ملفك الشخصي.</value></data>
+  <data name="Account.Profile.Fallback" xml:space="preserve"><value>تعذّر حفظ الملف الشخصي. راجع البيانات ثم حاول مرة أخرى.</value></data>
 
-  <data name="Visitor.Profile.IdImageTitle" xml:space="preserve"><value>صورة الهوية</value></data>
-  <data name="Visitor.Profile.IdImageSupporting" xml:space="preserve"><value>ارفع صورة واضحة لهويتك الوطنية أو الإقامة أو جواز السفر.</value></data>
-  <data name="Visitor.Profile.IdImageOnFile" xml:space="preserve"><value>توجد صورة هوية محفوظة. ارفع صورة جديدة لاستبدالها.</value></data>
-  <data name="Visitor.Profile.IdImagePicker" xml:space="preserve"><value>اختر ملفًا</value></data>
-  <data name="Visitor.Profile.IdImageHint" xml:space="preserve"><value>PNG أو JPEG أو WebP — حتى 5 ميغابايت.</value></data>
-  <data name="Visitor.Profile.IdImageUpload" xml:space="preserve"><value>رفع</value></data>
-  <data name="Visitor.Profile.IdImageUploading" xml:space="preserve"><value>جارٍ الرفع</value></data>
-  <data name="Visitor.Profile.IdImageUpdated" xml:space="preserve"><value>تم حفظ صورة الهوية.</value></data>
-  <data name="Visitor.Profile.IdImageFallback" xml:space="preserve"><value>تعذّر رفع صورة الهوية.</value></data>
+  <data name="Account.Profile.IdImageTitle" xml:space="preserve"><value>صورة الهوية</value></data>
+  <data name="Account.Profile.IdImageSupporting" xml:space="preserve"><value>ارفع صورة واضحة لهويتك الوطنية أو الإقامة أو جواز السفر.</value></data>
+  <data name="Account.Profile.IdImageOnFile" xml:space="preserve"><value>توجد صورة هوية محفوظة. ارفع صورة جديدة لاستبدالها.</value></data>
+  <data name="Account.Profile.IdImagePicker" xml:space="preserve"><value>اختر ملفًا</value></data>
+  <data name="Account.Profile.IdImageHint" xml:space="preserve"><value>PNG أو JPEG أو WebP — حتى 5 ميغابايت.</value></data>
+  <data name="Account.Profile.IdImageUpload" xml:space="preserve"><value>رفع</value></data>
+  <data name="Account.Profile.IdImageUploading" xml:space="preserve"><value>جارٍ الرفع</value></data>
+  <data name="Account.Profile.IdImageUpdated" xml:space="preserve"><value>تم حفظ صورة الهوية.</value></data>
+  <data name="Account.Profile.IdImageFallback" xml:space="preserve"><value>تعذّر رفع صورة الهوية.</value></data>
 </root>

@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/VisitorProfileTests.cs (upsert round-trip, ID image
+// Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
 //        round-trip, get-empty-when-not-saved-yet, nationality-unknown)
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +7,7 @@ using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
-using SIMF.Contracts.VisitorProfile;
+using SIMF.Contracts.UserProfile;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
@@ -15,20 +15,21 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// Visitor self-service profile + encrypted ID-image storage (decision
-/// D-046 b). The actor identity is taken from the access token (the
-/// endpoint resolves <c>sub</c>); every call operates on the actor's own
-/// row, so the service does not need an admin-vs-self check.
+/// User self-service profile + encrypted ID-document storage (decisions
+/// D-046 b, P8 — D-049; renamed from <c>VisitorProfileService</c>). The
+/// actor identity is taken from the access token (the endpoint resolves
+/// <c>sub</c>); every call operates on the actor's own row, so the
+/// service does not need an admin-vs-self check.
 /// </summary>
-internal sealed class VisitorProfileService(
+internal sealed class UserProfileService(
     UserManager<SimfUser> userManager,
     SimfIdentityDbContext dbContext,
-    IVisitorIdStorage idStorage,
+    IUserIdDocumentStorage idStorage,
     IAuditLog auditLog,
     TimeProvider timeProvider,
-    ILogger<VisitorProfileService> logger) : IVisitorProfileService
+    ILogger<UserProfileService> logger) : IUserProfileService
 {
-    public async Task<VisitorProfileResponse> GetMineAsync(
+    public async Task<UserProfileResponse> GetMineAsync(
         Guid actorUserId, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(actorUserId.ToString())
@@ -37,25 +38,25 @@ internal sealed class VisitorProfileService(
                 "The acting account was not found.",
                 "لم يتم العثور على الحساب.");
 
-        var profile = await dbContext.VisitorProfiles
+        var profile = await dbContext.UserProfiles
             .AsNoTracking()
             .SingleOrDefaultAsync(p => p.UserId == actorUserId, cancellationToken);
 
         if (profile is null)
         {
-            // Empty response — the visitor has not filled the form yet.
+            // Empty response — the user has not filled the form yet.
             // The QR id is surfaced anyway (it lives on SimfUser, minted
             // on Approved per D-046 a) so the page can show it next to
             // the empty form.
-            return new VisitorProfileResponse { QrId = user.QrId };
+            return new UserProfileResponse { QrId = user.QrId };
         }
 
         return ToResponse(profile, user.QrId);
     }
 
-    public async Task<VisitorProfileResponse> UpsertMineAsync(
+    public async Task<UserProfileResponse> UpsertMineAsync(
         Guid actorUserId,
-        UpsertVisitorProfileRequest request,
+        UpsertUserProfileRequest request,
         CancellationToken cancellationToken = default)
     {
         // Validate the nationality against the curated list — an unmatched
@@ -76,13 +77,15 @@ internal sealed class VisitorProfileService(
                 "لم يتم العثور على الحساب.");
 
         var now = timeProvider.GetUtcNow();
-        var profile = await dbContext.VisitorProfiles
+        var profile = await dbContext.UserProfiles
             .SingleOrDefaultAsync(p => p.UserId == actorUserId, cancellationToken);
 
         var isNew = profile is null;
-        profile ??= new VisitorProfile { UserId = actorUserId, CreatedAt = now };
+        // P8 — the admin may have created a stub row with a ProfileTypeId
+        // already set (e.g. via /admin/others). Preserve it; the user
+        // cannot self-pick a profile type on the upsert.
+        profile ??= new UserProfile { UserId = actorUserId, CreatedAt = now };
 
-        profile.VisitorType = request.VisitorType;
         profile.ArabicName = request.ArabicName;
         profile.EnglishName = request.EnglishName;
         profile.NationalityCode = request.NationalityCode.ToUpperInvariant();
@@ -101,13 +104,13 @@ internal sealed class VisitorProfileService(
 
         if (isNew)
         {
-            dbContext.VisitorProfiles.Add(profile);
+            dbContext.UserProfiles.Add(profile);
         }
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = AuditEvents.VisitorProfileSaved,
+            EventType = AuditEvents.UserProfileSaved,
             Outcome = AuditOutcome.Success,
             SubjectUserId = actorUserId,
             SubjectEmail = user.Email,
@@ -116,7 +119,7 @@ internal sealed class VisitorProfileService(
         }, cancellationToken);
 
         logger.LogInformation(
-            "Visitor profile {Operation} for {UserId}",
+            "User profile {Operation} for {UserId}",
             isNew ? "created" : "updated", actorUserId);
 
         return ToResponse(profile, user.QrId);
@@ -137,18 +140,18 @@ internal sealed class VisitorProfileService(
         // ID image follows the avatar contract (D-039): magic-byte and
         // size already checked at the endpoint, the storage layer
         // encrypts and writes.
-        var profile = await dbContext.VisitorProfiles
+        var profile = await dbContext.UserProfiles
             .SingleOrDefaultAsync(p => p.UserId == actorUserId, cancellationToken);
         if (profile is null)
         {
             // ID image only makes sense alongside a profile row — create
             // a stub so the relative path has somewhere to live.
-            profile = new VisitorProfile
+            profile = new UserProfile
             {
                 UserId = actorUserId,
                 CreatedAt = timeProvider.GetUtcNow(),
             };
-            dbContext.VisitorProfiles.Add(profile);
+            dbContext.UserProfiles.Add(profile);
         }
 
         var relativePath = await idStorage.SaveAsync(
@@ -159,7 +162,7 @@ internal sealed class VisitorProfileService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = AuditEvents.VisitorProfileIdImageUploaded,
+            EventType = AuditEvents.UserProfileIdImageUploaded,
             Outcome = AuditOutcome.Success,
             SubjectUserId = actorUserId,
             SubjectEmail = user.Email,
@@ -168,10 +171,10 @@ internal sealed class VisitorProfileService(
         }, cancellationToken);
     }
 
-    public async Task<VisitorIdImage?> ReadIdImageAsync(
+    public async Task<UserIdDocumentImage?> ReadIdImageAsync(
         Guid actorUserId, CancellationToken cancellationToken = default)
     {
-        var profile = await dbContext.VisitorProfiles
+        var profile = await dbContext.UserProfiles
             .AsNoTracking()
             .SingleOrDefaultAsync(p => p.UserId == actorUserId, cancellationToken);
         if (profile is null || string.IsNullOrEmpty(profile.IdImageRelativePath))
@@ -179,13 +182,13 @@ internal sealed class VisitorProfileService(
             return null;
         }
         var read = await idStorage.OpenReadAsync(profile.IdImageRelativePath, cancellationToken);
-        return read is null ? null : new VisitorIdImage(read.Content, read.ContentType);
+        return read is null ? null : new UserIdDocumentImage(read.Content, read.ContentType);
     }
 
-    private static VisitorProfileResponse ToResponse(VisitorProfile profile, string? qrId) =>
+    private static UserProfileResponse ToResponse(UserProfile profile, string? qrId) =>
         new()
         {
-            VisitorType = profile.VisitorType,
+            ProfileTypeId = profile.ProfileTypeId,
             ArabicName = profile.ArabicName,
             EnglishName = profile.EnglishName,
             NationalityCode = profile.NationalityCode,

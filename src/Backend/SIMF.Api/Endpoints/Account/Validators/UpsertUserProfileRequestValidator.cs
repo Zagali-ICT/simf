@@ -2,19 +2,23 @@ using FastEndpoints;
 using FluentValidation;
 using SIMF.Api.Endpoints.Auth.Validators;
 using SIMF.Common;
-using SIMF.Contracts.VisitorProfile;
+using SIMF.Contracts.UserProfile;
 
 namespace SIMF.Api.Endpoints.Account.Validators;
 
 /// <summary>
-/// Validates the visitor-profile upsert (decision D-046 b, myComment #18).
-/// The phone rules are deliberately permissive — any country code + local
+/// Validates the user-profile upsert (decisions D-046 b, P8 — D-049;
+/// renamed from <c>UpsertVisitorProfileRequestValidator</c>). The
+/// <c>VisitorType</c> string-discriminator rule was dropped in P8 — the
+/// profile-type now flows through the <c>UserProfile.ProfileTypeId</c>
+/// FK assigned by an admin, not a free-text claim by the user. The
+/// phone rules are deliberately permissive — any country code + local
 /// number is accepted ("any phone, not only Saudi, with +xx" — user
-/// guidance during D-046 design). The nationality must match the curated
-/// list (<see cref="Countries"/>); a stranger code is rejected.
+/// guidance during D-046 design). The nationality must match the
+/// curated list (<see cref="Countries"/>); a stranger code is rejected.
 /// </summary>
-public sealed class UpsertVisitorProfileRequestValidator
-    : Validator<UpsertVisitorProfileRequest>
+public sealed class UpsertUserProfileRequestValidator
+    : Validator<UpsertUserProfileRequest>
 {
     // Permissive phone shape: optional "+" + 1-4 digit country code, then
     // an optional separator (space or "-") and 4-15 more digits. Trims
@@ -23,20 +27,8 @@ public sealed class UpsertVisitorProfileRequestValidator
         new(@"^\+?\d{1,4}[-\s]?\d{4,15}$",
             System.Text.RegularExpressions.RegexOptions.Compiled);
 
-    private static readonly string[] AllowedVisitorTypes =
-        { "Visitor", "Exhibitor", "Press" };
-
-    public UpsertVisitorProfileRequestValidator()
+    public UpsertUserProfileRequestValidator()
     {
-        RuleFor(request => request.VisitorType)
-            .NotEmpty().Bilingual(
-                "The visitor type is required.",
-                "نوع الزائر مطلوب.")
-            .Must(value => AllowedVisitorTypes.Contains(value, StringComparer.OrdinalIgnoreCase))
-            .Bilingual(
-                "The visitor type must be one of: Visitor, Exhibitor, Press.",
-                "نوع الزائر يجب أن يكون: زائر، عارض، صحفي.");
-
         RuleFor(request => request.ArabicName)
             .NotEmpty().Bilingual(
                 "The Arabic name is required.",
@@ -54,7 +46,7 @@ public sealed class UpsertVisitorProfileRequestValidator
                 "Nationality is required.",
                 "الجنسية مطلوبة.")
             .Must(code => Countries.IsKnown(code))
-            .WithErrorCode(ErrorCodes.VisitorNationalityUnknown)
+            .WithErrorCode(ErrorCodes.ProfileNationalityUnknown)
             .Bilingual(
                 "Nationality is not in the supported list.",
                 "الجنسية غير موجودة في القائمة المدعومة.");
@@ -66,7 +58,7 @@ public sealed class UpsertVisitorProfileRequestValidator
         // rules per the Saudi numbering plan):
         //   - Saudi national id is exactly 10 digits and starts with 1.
         //   - Iqama (residency permit) is exactly 10 digits and starts with 2.
-        //   - Non-Saudi visitors who don't hold an Iqama carry a passport.
+        //   - Non-Saudi users who don't hold an Iqama carry a passport.
         When(request => request.IsSaudi, () =>
         {
             RuleFor(r => r.NationalId)

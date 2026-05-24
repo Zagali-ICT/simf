@@ -42,9 +42,10 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     public string AvatarStorageDirectory { get; } =
         Path.Combine(Path.GetTempPath(), $"simf-avatars-{Guid.NewGuid():N}");
 
-    /// <summary>Temp dir for encrypted visitor ID-image files (D-046 b).</summary>
-    public string VisitorIdStorageDirectory { get; } =
-        Path.Combine(Path.GetTempPath(), $"simf-visitor-ids-{Guid.NewGuid():N}");
+    /// <summary>Temp dir for encrypted user ID-document files (decisions
+    /// D-046 b, P8 — D-049; renamed from <c>VisitorIdStorageDirectory</c>).</summary>
+    public string UserIdDocumentStorageDirectory { get; } =
+        Path.Combine(Path.GetTempPath(), $"simf-user-id-documents-{Guid.NewGuid():N}");
 
     public SimfApiFactory()
     {
@@ -61,9 +62,11 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("Storage__AvatarBase", AvatarStorageDirectory);
         // A fixed base64-encoded 32-byte AES key for the test environment so
         // the encrypted ID-image round-trip is deterministic across runs.
-        Environment.SetEnvironmentVariable("Storage__VisitorIdBase", VisitorIdStorageDirectory);
+        // P8 renamed the config keys off Storage__VisitorId* to
+        // Storage__UserIdDocument*.
+        Environment.SetEnvironmentVariable("Storage__UserIdDocumentBase", UserIdDocumentStorageDirectory);
         Environment.SetEnvironmentVariable(
-            "Storage__VisitorIdEncryptionKey",
+            "Storage__UserIdDocumentEncryptionKey",
             "VnY3R0V2YnFwT0ZQUE1XdjJxQjJlbzVwUFp4MnNYbWY=");
     }
 

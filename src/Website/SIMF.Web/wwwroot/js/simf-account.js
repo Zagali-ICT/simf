@@ -1,4 +1,4 @@
-// Small fetch helpers the /account/visitor-profile page uses to call the
+// Small fetch helpers the /account/profile page uses to call the
 // Website's proxy endpoints. The browser sends the auth cookie
 // automatically (same origin), so the Blazor circuit never has to handle
 // the access token directly (mirrors the CP's helper from D-037 / D-046 c).

@@ -32,7 +32,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddHubOptions(options =>
     {
-        // The visitor-profile page renders a server-side SVG QR — raise the
+        // The user-profile page renders a server-side SVG QR — raise the
         // SignalR receive cap so the diff fits.
         options.MaximumReceiveMessageSize = 256 * 1024;
     });

@@ -16,19 +16,13 @@ internal sealed class SimfUserConfiguration : IEntityTypeConfiguration<SimfUser>
             .HasConversion<string>()
             .HasMaxLength(32);
 
-        // P7 — UserType + ProfileType (decision D-048).
-        // UserType is stored as a string for readability in SQL diagnostics;
-        // ProfileTypeId is a plain FK column (no nav property — the join is
-        // explicit on the service layer).
+        // P7 — UserType (decision D-048). Stored as a string for
+        // readability in SQL diagnostics. P8 moved ProfileTypeId off
+        // SimfUser onto UserProfile (see UserProfileConfiguration).
         builder.Property(user => user.UserType)
             .HasConversion<string>()
             .HasMaxLength(16);
         builder.HasIndex(user => user.UserType);
-
-        builder.HasOne<ProfileType>()
-            .WithMany()
-            .HasForeignKey(user => user.ProfileTypeId)
-            .OnDelete(DeleteBehavior.Restrict);
 
         // D-046: short opaque event-entry id, minted on Approved.
         builder.Property(user => user.QrId)

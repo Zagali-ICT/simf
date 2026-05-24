@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/VisitorProfileTests.cs (round-trip, magic-byte gate)
+// Tests: SIMF.Api.Tests/UserProfileTests.cs (round-trip, magic-byte gate)
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.Auditing;
@@ -8,24 +8,25 @@ using SIMF.Domain.Auditing;
 
 namespace SIMF.Api.Endpoints.Account;
 
-/// <summary>The body of a visitor ID-image upload.</summary>
-public sealed class VisitorIdImageUploadRequest
+/// <summary>The body of a user ID-document upload.</summary>
+public sealed class UserIdDocumentUploadRequest
 {
     public IFormFile? File { get; set; }
 }
 
 /// <summary>
-/// <c>POST /api/v1/account/visitor-profile/id-image</c> — uploads the
-/// visitor's ID-image attachment (decision D-046 b, myComment #18).
-/// PNG / JPEG / WebP, up to 5 MB, content-type + magic-byte verified
-/// before the bytes touch the storage layer. The storage layer then
-/// encrypts the file with AES-GCM under the per-installation key
-/// (<see cref="SIMF.Infrastructure.Identity.EncryptedVisitorIdStorage"/>).
+/// <c>POST /api/v1/account/user-profile/id-image</c> — uploads the
+/// user's ID-document image attachment (decisions D-046 b, P8 —
+/// D-048; renamed from <c>/account/visitor-profile/id-image</c>). PNG / JPEG /
+/// WebP, up to 5 MB, content-type + magic-byte verified before the
+/// bytes touch the storage layer. The storage layer then encrypts the
+/// file with AES-GCM under the per-installation key (see
+/// <see cref="SIMF.Infrastructure.Identity.EncryptedUserIdDocumentStorage"/>).
 /// </summary>
-public sealed class VisitorIdImageUploadEndpoint(
-    IVisitorProfileService service,
+public sealed class UserIdDocumentUploadEndpoint(
+    IUserProfileService service,
     IAuditLog auditLog)
-    : Endpoint<VisitorIdImageUploadRequest, ApiResult<bool>>
+    : Endpoint<UserIdDocumentUploadRequest, ApiResult<bool>>
 {
     private const long MaxBytes = 5L * 1024 * 1024;
     private static readonly string[] AllowedMimeTypes =
@@ -33,16 +34,16 @@ public sealed class VisitorIdImageUploadEndpoint(
 
     public override void Configure()
     {
-        Post("/account/visitor-profile/id-image");
+        Post("/account/user-profile/id-image");
         Tags("Account");
         AllowFileUploads();
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
-            "Upload the visitor's ID-image attachment.");
+            "Upload the user's ID-document image attachment.");
     }
 
     public override async Task HandleAsync(
-        VisitorIdImageUploadRequest req, CancellationToken ct)
+        UserIdDocumentUploadRequest req, CancellationToken ct)
     {
         if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
         {
@@ -90,7 +91,7 @@ public sealed class VisitorIdImageUploadEndpoint(
     private Task AuditRejectAsync(Guid actorId, string errorCode, CancellationToken ct) =>
         auditLog.WriteAsync(new AuditEntry
         {
-            EventType = AuditEvents.VisitorProfileIdImageRejected,
+            EventType = AuditEvents.UserProfileIdImageRejected,
             Outcome = AuditOutcome.Failure,
             SubjectUserId = actorId,
             ActorUserId = actorId,

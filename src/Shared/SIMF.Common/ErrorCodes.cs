@@ -68,10 +68,16 @@ public static class ErrorCodes
     // P7c — ProfileTypes lookup validation
     public const string AdminProfileTypeInvalid = "ADMIN_PROFILE_TYPE_INVALID";
 
-    // Visitor profile (D-046 b)
+    // User profile — ID document image (D-046 b; P8 kept the wire codes
+    // VISITOR_ID_IMAGE_* unchanged so any consumer already mapping them
+    // does not break; only the C# symbol name still says "Visitor" today
+    // and stays for one release window).
     public const string VisitorIdImageMissing = "VISITOR_ID_IMAGE_MISSING";
     public const string VisitorIdImageTooLarge = "VISITOR_ID_IMAGE_TOO_LARGE";
     public const string VisitorIdImageMimeUnsupported = "VISITOR_ID_IMAGE_MIME_UNSUPPORTED";
     public const string VisitorIdImageNotFound = "VISITOR_ID_IMAGE_NOT_FOUND";
-    public const string VisitorNationalityUnknown = "VISITOR_NATIONALITY_UNKNOWN";
+
+    // User profile — nationality (P8 renamed from VISITOR_NATIONALITY_UNKNOWN
+    // so the wire code matches the new domain vocabulary).
+    public const string ProfileNationalityUnknown = "PROFILE_NATIONALITY_UNKNOWN";
 }

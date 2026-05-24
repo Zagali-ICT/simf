@@ -26,7 +26,7 @@ public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> optio
 
     public DbSet<TotpRecoveryCode> TotpRecoveryCodes => Set<TotpRecoveryCode>();
 
-    public DbSet<VisitorProfile> VisitorProfiles => Set<VisitorProfile>();
+    public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
     public DbSet<ProfileType> ProfileTypes => Set<ProfileType>();
 

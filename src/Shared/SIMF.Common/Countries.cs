@@ -1,16 +1,16 @@
 namespace SIMF.Common;
 
 /// <summary>
-/// ISO 3166-1 alpha-2 country list used by the visitor-profile nationality
-/// picker (decision D-046 b, myComment #18). Carries the code, the English
-/// name and the Arabic name; the visitor's nationality persists as the
-/// 2-letter code in <c>VisitorProfile.NationalityCode</c>.
+/// ISO 3166-1 alpha-2 country list used by the user-profile nationality
+/// picker (decisions D-046 b, P8 — D-049; renamed). Carries the code,
+/// the English name and the Arabic name; the user's nationality
+/// persists as the 2-letter code in <c>UserProfile.NationalityCode</c>.
 ///
 /// <para>This is a curated set of ~60 entries covering Saudi + GCC + the
 /// nationalities most likely to attend SIMF. The full ISO 3166-1 list
 /// (~250 entries) is its own increment when an admin requests an
 /// expansion; until then, an unmatched code is rejected by the validator
-/// and the visitor must pick from this set.</para>
+/// and the user must pick from this set.</para>
 /// </summary>
 public static class Countries
 {
