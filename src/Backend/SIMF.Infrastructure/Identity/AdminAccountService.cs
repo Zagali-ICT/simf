@@ -176,7 +176,10 @@ internal sealed class AdminAccountService(
             Email = email,
             EmailConfirmed = true,
             DisplayName = displayName,
-            AccountState = AccountState.Approved,
+            // P4 — created users land in PendingApproval; the QR id is
+            // minted in ApproveStaffAsync / ApproveVisitorAsync (D-046
+            // QR-on-approval), not here.
+            AccountState = AccountState.PendingApproval,
             PasswordChangeRequired = false,
             CreatedAt = now,
         };
@@ -199,12 +202,8 @@ internal sealed class AdminAccountService(
             await userManager.AddToRoleAsync(user, AdministratorRole);
         }
 
-        // D-046: the account is created directly in the Approved state, so
-        // the QR id is minted now. Persist it via UpdateAsync — the user
-        // is already in the store after CreateAsync. The QR-mint-at-approval
-        // workflow (P4) will move this hook later.
-        await qrIdMinter.MintIfMissingAsync(user, cancellationToken);
-        await userManager.UpdateAsync(user);
+        // P4 — QR id mint moves from create-time to approve-time. See
+        // ApproveStaffAsync / ApproveVisitorAsync below.
 
         // 7-day invite — longer than the 10-min self-service forgot-password
         // code, so the user can act on it without urgency (D-042).
@@ -260,28 +259,32 @@ internal sealed class AdminAccountService(
         var skip = query.Skip < 0 ? 0 : query.Skip;
         var top = query.Top switch { < 1 => 20, > 200 => 200, _ => query.Top };
 
-        // Resolve the Administrator role id once for both the staff/visitor
-        // filter AND the per-row projection.
+        // Resolve the Administrator role id once for the per-row projection
+        // (the 'role' summary still shows Administrator membership only).
         var adminRoleId = await GetAdministratorRoleIdAsync(cancellationToken);
+
+        // P4 — every CP role id (Administrator + Staff/Scientific/Security)
+        // for the staff/visitor split. Staff = "user holds at least one of
+        // these"; visitor = "user holds none of these".
+        var cpRoleIds = await GetCpRoleIdsAsync(cancellationToken);
 
         // Build the query over UserManager.Users so the EF tracker stays out.
         var users = userManager.Users.AsQueryable();
 
-        // P3 — surface split: staff = users with at least one CP role today
-        // (Administrator); visitors = users with no CP role. The list is
-        // narrowed BEFORE any filter/sort/page so the totals are correct.
-        if (adminRoleId is not null)
+        // The list is narrowed BEFORE any filter/sort/page so the totals are
+        // correct.
+        if (cpRoleIds.Count > 0)
         {
             users = staffOnly
                 ? users.Where(u => dbContext.UserRoles.Any(ur =>
-                    ur.UserId == u.Id && ur.RoleId == adminRoleId))
+                    ur.UserId == u.Id && cpRoleIds.Contains(ur.RoleId)))
                 : users.Where(u => !dbContext.UserRoles.Any(ur =>
-                    ur.UserId == u.Id && ur.RoleId == adminRoleId));
+                    ur.UserId == u.Id && cpRoleIds.Contains(ur.RoleId)));
         }
         else if (staffOnly)
         {
-            // No Administrator role exists yet — there are no staff users by
-            // definition, so the staff page returns an empty result.
+            // No CP roles exist yet — there are no staff users by definition,
+            // so the staff page returns an empty result.
             users = users.Where(_ => false);
         }
 
@@ -371,6 +374,161 @@ internal sealed class AdminAccountService(
     {
         var role = await roleManager.FindByNameAsync(AdministratorRole);
         return role?.Id;
+    }
+
+    /// <summary>P4 — every CP role id present in the database. The set is
+    /// (Administrator, Staff, Scientific, Security); missing roles are
+    /// dropped silently so the seeder is the single source of role identity.</summary>
+    private async Task<IReadOnlyList<Guid>> GetCpRoleIdsAsync(CancellationToken cancellationToken)
+    {
+        var ids = new List<Guid>(AppRoles.CpRoles.Count);
+        foreach (var name in AppRoles.CpRoles)
+        {
+            var role = await roleManager.FindByNameAsync(name);
+            if (role is not null) { ids.Add(role.Id); }
+        }
+        return ids;
+    }
+
+    // -- P4 — approval workflow ----------------------------------------------
+
+    public Task ApproveStaffAsync(
+        Guid actorUserId, Guid subjectUserId, CancellationToken cancellationToken = default) =>
+        ApproveAsync(actorUserId, subjectUserId, isStaff: true, cancellationToken);
+
+    public Task ApproveVisitorAsync(
+        Guid actorUserId, Guid subjectUserId, CancellationToken cancellationToken = default) =>
+        ApproveAsync(actorUserId, subjectUserId, isStaff: false, cancellationToken);
+
+    public Task RejectStaffAsync(
+        Guid actorUserId, Guid subjectUserId, AdminRejectRequest request,
+        CancellationToken cancellationToken = default) =>
+        RejectAsync(actorUserId, subjectUserId, request, isStaff: true, cancellationToken);
+
+    public Task RejectVisitorAsync(
+        Guid actorUserId, Guid subjectUserId, AdminRejectRequest request,
+        CancellationToken cancellationToken = default) =>
+        RejectAsync(actorUserId, subjectUserId, request, isStaff: false, cancellationToken);
+
+    private async Task ApproveAsync(
+        Guid actorUserId, Guid subjectUserId, bool isStaff, CancellationToken cancellationToken)
+    {
+        var subject = await LoadPendingSubjectAsync(subjectUserId, cancellationToken);
+        var now = timeProvider.GetUtcNow();
+        subject.AccountState = AccountState.Approved;
+        subject.UpdatedAt = now;
+
+        // QR id mints at approval (D-046, P4) — idempotent.
+        await qrIdMinter.MintIfMissingAsync(subject, cancellationToken);
+        await userManager.UpdateAsync(subject);
+
+        var eventType = isStaff
+            ? AuditEvents.AdminStaffApproved
+            : AuditEvents.AdminVisitorApproved;
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = eventType,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            SubjectUserId = subject.Id,
+            SubjectEmail = subject.Email,
+            Detail = subject.QrId,
+        }, cancellationToken);
+    }
+
+    private async Task RejectAsync(
+        Guid actorUserId, Guid subjectUserId, AdminRejectRequest request,
+        bool isStaff, CancellationToken cancellationToken)
+    {
+        var subject = await LoadPendingSubjectAsync(subjectUserId, cancellationToken);
+        var now = timeProvider.GetUtcNow();
+        subject.AccountState = AccountState.Rejected;
+        subject.UpdatedAt = now;
+        await userManager.UpdateAsync(subject);
+
+        var eventType = isStaff
+            ? AuditEvents.AdminStaffRejected
+            : AuditEvents.AdminVisitorRejected;
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = eventType,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            SubjectUserId = subject.Id,
+            SubjectEmail = subject.Email,
+            Detail = request.Reason,
+        }, cancellationToken);
+    }
+
+    /// <summary>Loads a user that must currently be in PendingApproval —
+    /// any other state throws <see cref="ApiException"/>. Shared by the
+    /// four approve/reject helpers above.</summary>
+    private async Task<SimfUser> LoadPendingSubjectAsync(
+        Guid subjectUserId, CancellationToken cancellationToken)
+    {
+        var subject = await userManager.FindByIdAsync(subjectUserId.ToString())
+            ?? throw new ApiException(ErrorCodes.AdminUserNotFound, 404,
+                "The target account was not found.",
+                "تعذّر العثور على الحساب المستهدف.");
+        if (subject.AccountState != AccountState.PendingApproval)
+        {
+            throw new ApiException(ErrorCodes.AdminUserNotPending, 409,
+                "The target account is not pending approval.",
+                "الحساب المستهدف ليس في انتظار الموافقة.");
+        }
+        return subject;
+    }
+
+    public Task<GridPage<AdminPendingUserSummary>> ListPendingStaffAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        ListPendingAsync(query, staffOnly: true, cancellationToken);
+
+    public Task<GridPage<AdminPendingUserSummary>> ListPendingVisitorsAsync(
+        GridQuery query, CancellationToken cancellationToken = default) =>
+        ListPendingAsync(query, staffOnly: false, cancellationToken);
+
+    /// <summary>P4 — pending-approval list. Same staff/visitor split as
+    /// <see cref="ListAccountsAsync"/>, narrowed to PendingApproval rows.</summary>
+    private async Task<GridPage<AdminPendingUserSummary>> ListPendingAsync(
+        GridQuery query, bool staffOnly, CancellationToken cancellationToken)
+    {
+        var skip = query.Skip < 0 ? 0 : query.Skip;
+        var top = query.Top switch { < 1 => 20, > 200 => 200, _ => query.Top };
+
+        var cpRoleIds = await GetCpRoleIdsAsync(cancellationToken);
+        var users = userManager.Users
+            .Where(u => u.AccountState == AccountState.PendingApproval);
+        if (cpRoleIds.Count > 0)
+        {
+            users = staffOnly
+                ? users.Where(u => dbContext.UserRoles.Any(ur =>
+                    ur.UserId == u.Id && cpRoleIds.Contains(ur.RoleId)))
+                : users.Where(u => !dbContext.UserRoles.Any(ur =>
+                    ur.UserId == u.Id && cpRoleIds.Contains(ur.RoleId)));
+        }
+        else if (staffOnly)
+        {
+            users = users.Where(_ => false);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var term = query.Search.Trim();
+            users = users.Where(u =>
+                (u.Email != null && EF.Functions.Like(u.Email, $"%{term}%"))
+                || EF.Functions.Like(u.DisplayName, $"%{term}%"));
+        }
+
+        var total = await users.CountAsync(cancellationToken);
+        var page = await users
+            .OrderByDescending(u => u.CreatedAt)
+            .Skip(skip).Take(top)
+            .Select(u => new AdminPendingUserSummary(
+                u.Id, u.Email!, u.DisplayName, u.CreatedAt))
+            .ToListAsync(cancellationToken);
+
+        return GridPage<AdminPendingUserSummary>.Of(page, total,
+            new GridQuery { Skip = skip, Top = top });
     }
 
     public async Task<AdminBulkDeleteResponse> BulkDeleteUsersAsync(

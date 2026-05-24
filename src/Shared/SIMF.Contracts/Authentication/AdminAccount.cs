@@ -123,3 +123,36 @@ public sealed record AdminImportUsersResponse(
 
 /// <summary>One failed row in an import (D-044 b).</summary>
 public sealed record AdminImportError(int Row, string Email, string Reason);
+
+/// <summary>
+/// The body of an approval (P4). Carries no payload today — the user id is
+/// in the route, the actor is the bearer token. A class (not a record) so
+/// the FastEndpoints binder accepts the empty JSON body.
+/// </summary>
+public sealed class AdminApproveRequest
+{
+}
+
+/// <summary>
+/// The body of a rejection (P4). The reason is mandatory and audited so a
+/// SOC reviewer can see why an account was refused.
+/// </summary>
+public sealed class AdminRejectRequest
+{
+    /// <summary>
+    /// A free-text reason for the rejection (10–500 chars). Audited and
+    /// shown in the operation-log row. Same shape as
+    /// <see cref="AdminResetTwoFactorRequest.Reason"/>.
+    /// </summary>
+    public string Reason { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// One row in the pending-approval list (P4). A trimmed shape — the
+/// approver only needs to see the identity to decide.
+/// </summary>
+public sealed record AdminPendingUserSummary(
+    Guid Id,
+    string Email,
+    string DisplayName,
+    DateTimeOffset CreatedAt);

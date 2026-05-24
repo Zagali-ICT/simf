@@ -73,7 +73,7 @@ public sealed class SignInService(
 
         await userManager.ResetAccessFailedCountAsync(user);
 
-        var (blockCode, blockMessage, blockMessageArabic) = CheckAccountState(user);
+        var (blockCode, blockMessage, blockMessageArabic) = CheckAccountState(user, request.Audience);
         if (blockCode is not null)
         {
             await AuditAsync(AuditEvents.SignInStateBlocked, AuditOutcome.Failure,
@@ -315,13 +315,15 @@ public sealed class SignInService(
     }
 
     /// <summary>
-    /// The account states that block sign-in. <c>EmailVerified</c>,
-    /// <c>PendingApproval</c> and <c>Approved</c> may sign in — the access a
-    /// not-yet-approved user then has is an authorisation concern (SIMF-RPM-001
-    /// section 10, decision D-010).
+    /// The account states that block sign-in. <c>EmailVerified</c> and
+    /// <c>Approved</c> may always sign in (D-010 — auth and authz are
+    /// separate concerns). P4 added the PendingApproval rule: a pending
+    /// **staff** member cannot sign in to the CP (they can't do anything
+    /// until approved); a pending **visitor** can sign in to Web/App and
+    /// sees a "pending" UI on their profile.
     /// </summary>
     private static (string? Code, string? Message, string? MessageArabic) CheckAccountState(
-        SimfUser user) =>
+        SimfUser user, SignInAudience audience) =>
         user.AccountState switch
         {
             AccountState.Registered => (
@@ -332,6 +334,10 @@ public sealed class SignInService(
                 ErrorCodes.AuthAccountDisabled,
                 "This account is not active.",
                 "هذا الحساب غير نشط."),
+            AccountState.PendingApproval when audience == SignInAudience.Cp => (
+                ErrorCodes.AuthAccountNotApproved,
+                "Your account is pending approval by an administrator.",
+                "حسابك بانتظار موافقة المسؤول."),
             _ => (null, null, null),
         };
 

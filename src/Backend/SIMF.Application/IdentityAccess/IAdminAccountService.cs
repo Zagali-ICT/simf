@@ -96,4 +96,53 @@ public interface IAdminAccountService
         Guid actorUserId,
         byte[] xlsx,
         CancellationToken cancellationToken = default);
+
+    // -- P4 — approval workflow ------------------------------------------------
+
+    /// <summary>
+    /// Approves a pending staff account (P4). Flips <c>AccountState</c> to
+    /// <c>Approved</c>, mints the QR id (D-046) and audits. Administrator-
+    /// only at the endpoint; the service trusts the policy and only checks
+    /// the target's current state.
+    /// </summary>
+    Task ApproveStaffAsync(
+        Guid actorUserId,
+        Guid subjectUserId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Rejects a pending staff account (P4). Sets state to
+    /// <c>Rejected</c>; audits with the actor + subject ids and the reason.
+    /// </summary>
+    Task RejectStaffAsync(
+        Guid actorUserId,
+        Guid subjectUserId,
+        AdminRejectRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Approves a pending visitor (P4). Any CP role may call this — Staff,
+    /// Scientific, Security or Administrator. Flips state and mints the QR.
+    /// </summary>
+    Task ApproveVisitorAsync(
+        Guid actorUserId,
+        Guid subjectUserId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Rejects a pending visitor (P4). Any CP role.</summary>
+    Task RejectVisitorAsync(
+        Guid actorUserId,
+        Guid subjectUserId,
+        AdminRejectRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Returns one page of pending-approval staff (P4).</summary>
+    Task<GridPage<AdminPendingUserSummary>> ListPendingStaffAsync(
+        GridQuery query,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Returns one page of pending-approval visitors (P4).</summary>
+    Task<GridPage<AdminPendingUserSummary>> ListPendingVisitorsAsync(
+        GridQuery query,
+        CancellationToken cancellationToken = default);
 }

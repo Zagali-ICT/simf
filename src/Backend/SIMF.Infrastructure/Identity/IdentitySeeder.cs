@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SIMF.Application.Auditing;
+using SIMF.Common;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
 
@@ -20,7 +21,7 @@ public sealed class IdentitySeeder(
     TimeProvider timeProvider,
     ILogger<IdentitySeeder> logger)
 {
-    private const string AdministratorRole = "Administrator";
+    private const string AdministratorRole = AppRoles.Administrator;
 
     // ASP.NET Core Identity's internal token coordinates for the TOTP
     // authenticator key, so a pre-provisioned secret is recognised by
@@ -39,7 +40,13 @@ public sealed class IdentitySeeder(
             return;
         }
 
-        await EnsureAdministratorRoleAsync();
+        // P4 — seed every CP role (Administrator + the three reviewer roles).
+        // The reviewer roles approve visitors; only Administrator approves
+        // new staff or promotes an account to Administrator.
+        foreach (var role in AppRoles.CpRoles)
+        {
+            await EnsureRoleAsync(role);
+        }
 
         var admin = await userManager.FindByEmailAsync(settings.Email)
             ?? await CreateSuperAdminAsync(settings, cancellationToken);
@@ -54,13 +61,13 @@ public sealed class IdentitySeeder(
         }
     }
 
-    private async Task EnsureAdministratorRoleAsync()
+    private async Task EnsureRoleAsync(string roleName)
     {
-        if (!await roleManager.RoleExistsAsync(AdministratorRole))
+        if (!await roleManager.RoleExistsAsync(roleName))
         {
             await roleManager.CreateAsync(new SimfRole
             {
-                Name = AdministratorRole,
+                Name = roleName,
                 IsBaseline = true,
             });
         }
@@ -93,8 +100,7 @@ public sealed class IdentitySeeder(
 
         if (!string.IsNullOrWhiteSpace(settings.TotpSecret))
         {
-            await userManager.SetAuthenticationTokenAsync(
-                admin, AuthenticatorKeyProvider, AuthenticatorKeyTokenName, settings.TotpSecret);
+            await userManager.SetAuthenticationTokenAsync( admin, AuthenticatorKeyProvider, AuthenticatorKeyTokenName, settings.TotpSecret);
             await userManager.SetTwoFactorEnabledAsync(admin, true);
         }
 

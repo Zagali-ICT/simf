@@ -62,6 +62,9 @@ public static class ErrorCodes
     public const string AdminUserNotFound = "ADMIN_USER_NOT_FOUND";
     public const string AdminImportEmpty = "ADMIN_IMPORT_EMPTY";
 
+    // Admin approval workflow (P4)
+    public const string AdminUserNotPending = "ADMIN_USER_NOT_PENDING";
+
     // Visitor profile (D-046 b)
     public const string VisitorIdImageMissing = "VISITOR_ID_IMAGE_MISSING";
     public const string VisitorIdImageTooLarge = "VISITOR_ID_IMAGE_TOO_LARGE";

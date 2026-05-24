@@ -55,7 +55,9 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
         var created = (await users.FindByEmailAsync(newEmail))!;
         Assert.Equal("Invited User", created.DisplayName);
-        Assert.Equal(AccountState.Approved, created.AccountState);
+        // P4 — created accounts land in PendingApproval; an admin approves
+        // them via /admin/staff/{id}/approve to mint the QR id and unlock CP.
+        Assert.Equal(AccountState.PendingApproval, created.AccountState);
         Assert.False(await users.IsInRoleAsync(created, AdministratorRole));
 
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
@@ -232,7 +234,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Creating_a_user_mints_a_QR_id_because_the_account_is_directly_Approved()
+    public async Task Creating_a_user_does_not_mint_a_QR_id_until_approval_in_P4()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
         var email = $"qr-{Guid.NewGuid():N}@simf.test";
@@ -245,9 +247,11 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
         var created = (await users.FindByEmailAsync(email))!;
-        Assert.False(string.IsNullOrEmpty(created.QrId),
-            "QR id must be minted at admin-create time per D-046.");
-        Assert.Equal(12, created.QrId!.Length);
+        // P4 — QR id minting moved from create-time to approve-time. The
+        // QR-mint-on-approve contract is covered by
+        // AdminApprovalTests.Approve_staff_flips_state_to_Approved_and_mints_QR_id.
+        Assert.True(string.IsNullOrEmpty(created.QrId));
+        Assert.Equal(AccountState.PendingApproval, created.AccountState);
     }
 
     [Fact]
@@ -289,6 +293,12 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
                 ConfirmPassword = "NewPassw0rd!",
             });
         Assert.Equal(HttpStatusCode.OK, reset.StatusCode);
+
+        // P4 — invited staff land in PendingApproval; approve before signing in.
+        var approve = await PostAuthAsync(
+            $"/api/v1/admin/staff/{user.Id}/approve",
+            new { }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, approve.StatusCode);
 
         var sign = await _client.PostAsJsonAsync(
             "/api/v1/auth/sign-in",

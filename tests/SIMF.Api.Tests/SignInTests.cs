@@ -367,6 +367,33 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task SignIn_for_a_pending_staff_returns_403_AUTH_ACCOUNT_NOT_APPROVED()
+    {
+        var (adminEmail, _) = await CreateAdminAsync();
+        // Force PendingApproval — admin tests usually start in Approved.
+        SetAccountState(adminEmail, AccountState.PendingApproval);
+
+        var response = await SignInAsync(adminEmail, Password, SignInAudience.Cp);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.Equal(ErrorCodes.AuthAccountNotApproved, body!.Error!.Code);
+    }
+
+    [Fact]
+    public async Task SignIn_for_a_pending_visitor_on_Web_is_allowed()
+    {
+        // Per D-010 / P4 — a pending visitor can sign in to Web and sees a
+        // "pending" UI on their profile; only the CP surface blocks pending.
+        var email = await RegisterVerifiedVisitorAsync();
+        SetAccountState(email, AccountState.PendingApproval);
+
+        var response = await SignInAsync(email, Password, SignInAudience.Web);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task App_audience_uses_the_same_visitor_rule_as_Web()
     {
         var (adminEmail, _) = await CreateAdminAsync();

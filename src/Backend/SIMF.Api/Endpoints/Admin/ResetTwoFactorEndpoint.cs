@@ -50,8 +50,19 @@ public static class AuthorizationPolicies
     /// <summary>Requires the caller to hold the Administrator role.</summary>
     public const string AdministratorOnly = "AdministratorOnly";
 
+    /// <summary>
+    /// Requires the caller to hold any CP role — Administrator, Staff,
+    /// Scientific or Security (P4). Used by visitor-approval endpoints
+    /// (any team member can approve any visitor).
+    /// </summary>
+    public const string TeamMember = "TeamMember";
+
     /// <summary>Registers the policies with the ASP.NET Core authorization stack.</summary>
-    public static void AddSimfAuthorization(this AuthorizationBuilder builder) =>
+    public static void AddSimfAuthorization(this AuthorizationBuilder builder)
+    {
         builder.AddPolicy(AdministratorOnly, policy =>
-            policy.RequireRole("Administrator"));
+            policy.RequireRole(SIMF.Common.AppRoles.Administrator));
+        builder.AddPolicy(TeamMember, policy =>
+            policy.RequireRole([.. SIMF.Common.AppRoles.CpRoles]));
+    }
 }

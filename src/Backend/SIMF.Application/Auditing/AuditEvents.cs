@@ -79,4 +79,10 @@ public static class AuditEvents
     // Logs (P6 — per-project log files + CP viewer)
     public const string AdminLogViewed = "Admin.LogViewed";
     public const string AdminLogDownloaded = "Admin.LogDownloaded";
+
+    // Approval workflow (P4 — staff approve staff/visitor; team approves visitors)
+    public const string AdminStaffApproved = "Admin.StaffApproved";
+    public const string AdminStaffRejected = "Admin.StaffRejected";
+    public const string AdminVisitorApproved = "Admin.VisitorApproved";
+    public const string AdminVisitorRejected = "Admin.VisitorRejected";
 }

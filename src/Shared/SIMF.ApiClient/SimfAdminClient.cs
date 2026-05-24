@@ -113,6 +113,58 @@ public sealed class SimfAdminClient(HttpClient http)
         }
     }
 
+    // -- P4 — approval workflow ----------------------------------------------
+
+    /// <summary>Approves a pending staff account (P4).</summary>
+    public Task<ApiCallResult<bool>> ApproveStaffAsync(
+        Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"staff/{subjectId}/approve",
+            JsonContent.Create(new { }, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Rejects a pending staff account with a free-text reason (P4).</summary>
+    public Task<ApiCallResult<bool>> RejectStaffAsync(
+        Guid subjectId, AdminRejectRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"staff/{subjectId}/reject",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Approves a pending visitor (P4).</summary>
+    public Task<ApiCallResult<bool>> ApproveVisitorAsync(
+        Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"visitors/{subjectId}/approve",
+            JsonContent.Create(new { }, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Rejects a pending visitor with a free-text reason (P4).</summary>
+    public Task<ApiCallResult<bool>> RejectVisitorAsync(
+        Guid subjectId, AdminRejectRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"visitors/{subjectId}/reject",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>One page of pending-approval staff (P4).</summary>
+    public Task<ApiCallResult<GridPage<AdminPendingUserSummary>>> ListPendingStaffAsync(
+        GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminPendingUserSummary>>(
+            HttpMethod.Post, "staff/pending/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>One page of pending-approval visitors (P4).</summary>
+    public Task<ApiCallResult<GridPage<AdminPendingUserSummary>>> ListPendingVisitorsAsync(
+        GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminPendingUserSummary>>(
+            HttpMethod.Post, "visitors/pending/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
     /// <summary>Lists every project's log files (P6).</summary>
     public Task<ApiCallResult<LogListResponse>> ListLogsAsync(
         string accessToken,
