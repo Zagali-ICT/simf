@@ -32,6 +32,9 @@ public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> optio
 
     public DbSet<Interest> Interests => Set<Interest>();
 
+    public DbSet<SIMF.Domain.Notifications.Notification> Notifications =>
+        Set<SIMF.Domain.Notifications.Notification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

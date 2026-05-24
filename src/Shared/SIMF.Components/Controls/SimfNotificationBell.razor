@@ -1,0 +1,175 @@
+@* SimfNotificationBell — top-bar bell with an unread badge and a
+   dropdown of the latest 5 unread notifications (P12 — D-053). Polls
+   the unread-count endpoint every 60 s; the caller's app provides the
+   API path prefix because the CP and Website expose the same proxy
+   under the same /account/api root. Click on the bell loads the
+   dropdown; "View all" links to /account/notifications. *@
+@namespace SIMF.Components.Controls
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@implements IAsyncDisposable
+
+<div class="simf-bell" data-open="@_open">
+    <button type="button" class="simf-bell__trigger"
+            aria-label="@AriaLabel"
+            @onclick="ToggleAsync">
+        <SimfIcon Name="bell" Class="simf-bell__icon" Size="18" />
+        @if (_unread > 0)
+        {
+            <span class="simf-bell__badge" aria-hidden="true">@_unread</span>
+        }
+    </button>
+    @if (_open)
+    {
+        <div class="simf-bell__dropdown" role="dialog" aria-label="@AriaLabel">
+            <header class="simf-bell__dropdown-head">
+                <strong>@DropdownTitle</strong>
+                @if (_items.Count > 0)
+                {
+                    <button type="button" class="simf-bell__link"
+                            @onclick="MarkAllReadAsync">@MarkAllReadLabel</button>
+                }
+            </header>
+            @if (_items.Count == 0)
+            {
+                <p class="simf-bell__empty">@EmptyLabel</p>
+            }
+            else
+            {
+                <ul class="simf-bell__list">
+                    @foreach (var item in _items)
+                    {
+                        <li class="simf-bell__item simf-bell__item--@item.Severity.ToLowerInvariant()">
+                            <strong>@LabelFor(item)</strong>
+                            <p>@BodyFor(item)</p>
+                            <time>@item.CreatedAt.LocalDateTime.ToShortDateString()</time>
+                        </li>
+                    }
+                </ul>
+            }
+            <footer class="simf-bell__dropdown-foot">
+                <a href="@ViewAllHref">@ViewAllLabel</a>
+            </footer>
+        </div>
+    }
+</div>
+
+@code {
+    private readonly List<NotificationView> _items = new();
+    private int _unread;
+    private bool _open;
+    private System.Threading.Timer? _poll;
+
+    /// <summary>Accessible name for the bell button (e.g. "Notifications").</summary>
+    [Parameter, EditorRequired] public string AriaLabel { get; set; } = "Notifications";
+
+    [Parameter, EditorRequired] public string DropdownTitle { get; set; } = "Notifications";
+    [Parameter, EditorRequired] public string MarkAllReadLabel { get; set; } = "Mark all read";
+    [Parameter, EditorRequired] public string EmptyLabel { get; set; } = "No notifications.";
+    [Parameter, EditorRequired] public string ViewAllLabel { get; set; } = "View all";
+    [Parameter, EditorRequired] public string ViewAllHref { get; set; } = "/account/notifications";
+
+    /// <summary>True when the current culture is Arabic — the bell uses
+    /// the Arabic title/body fields. The caller passes this in so the
+    /// primitive stays culture-agnostic itself.</summary>
+    [Parameter] public bool UseArabic { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshUnreadAsync();
+        _poll = new System.Threading.Timer(_ =>
+            InvokeAsync(async () =>
+            {
+                await RefreshUnreadAsync();
+                StateHasChanged();
+            }), null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
+    }
+
+    private async Task ToggleAsync()
+    {
+        _open = !_open;
+        if (_open)
+        {
+            await LoadLatestAsync();
+        }
+    }
+
+    private async Task RefreshUnreadAsync()
+    {
+        try
+        {
+            var envelope = await JS.InvokeAsync<UnreadCountEnvelope>(
+                "simfAccount.getJson", "/account/api/notifications/unread-count");
+            _unread = envelope?.Data?.UnreadCount ?? 0;
+        }
+        catch { /* best-effort; keep last value */ }
+    }
+
+    private async Task LoadLatestAsync()
+    {
+        try
+        {
+            var envelope = await JS.InvokeAsync<ListEnvelope>(
+                "simfAccount.postJson", "/account/api/notifications/list",
+                new { Top = 5, Skip = 0, Filters = new { unreadOnly = "true" } });
+            _items.Clear();
+            if (envelope?.Data?.Items is { } rows)
+            {
+                _items.AddRange(rows);
+            }
+        }
+        catch { /* leave empty on error */ }
+    }
+
+    private async Task MarkAllReadAsync()
+    {
+        try
+        {
+            await JS.InvokeAsync<object>("simfAccount.postJson",
+                "/account/api/notifications/read-all", null);
+            _unread = 0;
+            _items.Clear();
+        }
+        catch { }
+    }
+
+    private string LabelFor(NotificationView item) =>
+        UseArabic ? item.TitleArabic : item.Title;
+
+    private string BodyFor(NotificationView item) =>
+        UseArabic ? item.BodyArabic : item.Body;
+
+    public ValueTask DisposeAsync()
+    {
+        _poll?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+
+    public sealed class NotificationView
+    {
+        public Guid Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string TitleArabic { get; set; } = string.Empty;
+        public string Body { get; set; } = string.Empty;
+        public string BodyArabic { get; set; } = string.Empty;
+        public string Severity { get; set; } = "Info";
+        public DateTimeOffset CreatedAt { get; set; }
+    }
+
+    private sealed class UnreadCountEnvelope
+    {
+        public UnreadCountData? Data { get; set; }
+    }
+    private sealed class UnreadCountData
+    {
+        public int UnreadCount { get; set; }
+    }
+    private sealed class ListEnvelope
+    {
+        public ListData? Data { get; set; }
+    }
+    private sealed class ListData
+    {
+        public IReadOnlyList<NotificationView>? Items { get; set; }
+    }
+}

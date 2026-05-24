@@ -335,6 +335,49 @@ internal static class AccountEndpoints
             return Results.File(bytes, "text/plain", safeFileName);
         });
 
+        // P12 — D-053: in-app notifications proxy. The CP bell + page
+        // call these via simfAccount.{get,post,delete}Json (cookie auth);
+        // they forward to the API with the access token.
+        group.MapPost("/notifications/list",
+            async (GridQuery body, HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListNotificationsAsync(body, token));
+        });
+
+        group.MapGet("/notifications/unread-count",
+            async (HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetUnreadNotificationCountAsync(token));
+        });
+
+        group.MapPost("/notifications/{id:guid}/read",
+            async (Guid id, HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.MarkNotificationReadAsync(id, token));
+        });
+
+        group.MapPost("/notifications/read-all",
+            async (HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.MarkAllNotificationsReadAsync(token));
+        });
+
+        group.MapDelete("/notifications/{id:guid}",
+            async (Guid id, HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteNotificationAsync(id, token));
+        });
+
         group.MapPost("/change-password",
             async (ChangePasswordRequest body, HttpContext http, SimfAuthClient api) =>
         {

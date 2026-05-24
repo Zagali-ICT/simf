@@ -21,6 +21,15 @@ window.simfAccount = {
         return text.length === 0 ? null : JSON.parse(text);
     },
 
+    async deleteJson(url) {
+        const response = await fetch(url, {
+            method: 'DELETE',
+            credentials: 'same-origin',
+        });
+        const text = await response.text();
+        return text.length === 0 ? null : JSON.parse(text);
+    },
+
     // Force a server-side sign-out via a hidden form POST — Nav.NavigateTo
     // with a forceLoad GET would hit /auth/sign-out (mapped as POST only).
     signOut() {

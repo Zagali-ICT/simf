@@ -373,4 +373,23 @@
   <data name="Auth.Rejected.NoReasonProvided" xml:space="preserve"><value>No reason was recorded for this decision.</value></data>
   <data name="Auth.Rejected.ContactSupport" xml:space="preserve"><value>If you believe this is a mistake, please contact your event coordinator.</value></data>
   <data name="Auth.Rejected.SignOut" xml:space="preserve"><value>Sign out</value></data>
+
+  <data name="Account.Notifications.Title" xml:space="preserve"><value>Notifications</value></data>
+  <data name="Account.Notifications.New" xml:space="preserve"><value>New</value></data>
+  <data name="Account.Notifications.Empty" xml:space="preserve"><value>No notifications.</value></data>
+  <data name="Account.Notifications.ViewAll" xml:space="preserve"><value>View all</value></data>
+  <data name="Account.Notifications.MarkAllRead" xml:space="preserve"><value>Mark all as read</value></data>
+  <data name="Account.Notifications.MarkAllReadDone" xml:space="preserve"><value>All notifications marked as read.</value></data>
+  <data name="Account.Notifications.Column.Title" xml:space="preserve"><value>Title</value></data>
+  <data name="Account.Notifications.Column.Body" xml:space="preserve"><value>Message</value></data>
+  <data name="Account.Notifications.Column.Severity" xml:space="preserve"><value>Type</value></data>
+  <data name="Account.Notifications.Column.CreatedAt" xml:space="preserve"><value>Received</value></data>
+  <data name="Account.Notifications.Column.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Account.Notifications.Action.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Account.Notifications.FilterColumn" xml:space="preserve"><value>Filter column</value></data>
+  <data name="Account.Notifications.FilterPlaceholder" xml:space="preserve"><value>Search</value></data>
+  <data name="Account.Notifications.Prev" xml:space="preserve"><value>Previous</value></data>
+  <data name="Account.Notifications.Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Account.Notifications.Loading" xml:space="preserve"><value>Loading notifications…</value></data>
+  <data name="Account.Notifications.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
 </root>

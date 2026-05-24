@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.Notifications;
 using SIMF.Contracts.UserProfile;
 
 namespace SIMF.ApiClient;
@@ -143,6 +144,47 @@ public sealed class SimfAccountClient(HttpClient http)
         string accessToken, CancellationToken cancellationToken = default) =>
         SendAsync<InterestListResponse>(
             HttpMethod.Get, "account/interests", null,
+            accessToken, cancellationToken);
+
+    // -- P12 — D-053: in-app notifications -----------------------------------
+
+    /// <summary>One page of the signed-in user's notifications.</summary>
+    public Task<ApiCallResult<GridPage<NotificationDto>>> ListNotificationsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<NotificationDto>>(
+            HttpMethod.Post, "account/notifications/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Count of unread notifications for the signed-in user.</summary>
+    public Task<ApiCallResult<UnreadCountResponse>> GetUnreadNotificationCountAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<UnreadCountResponse>(
+            HttpMethod.Get, "account/notifications/unread-count", null,
+            accessToken, cancellationToken);
+
+    /// <summary>Mark one notification as read (idempotent).</summary>
+    public Task<ApiCallResult<bool>> MarkNotificationReadAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"account/notifications/{id}/read", null,
+            accessToken, cancellationToken);
+
+    /// <summary>Mark every unread notification as read.</summary>
+    public Task<ApiCallResult<bool>> MarkAllNotificationsReadAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, "account/notifications/read-all", null,
+            accessToken, cancellationToken);
+
+    /// <summary>Delete one notification (idempotent).</summary>
+    public Task<ApiCallResult<bool>> DeleteNotificationAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"account/notifications/{id}", null,
             accessToken, cancellationToken);
 
     /// <summary>Uploads the user's ID-document image (D-046 b, P8). The

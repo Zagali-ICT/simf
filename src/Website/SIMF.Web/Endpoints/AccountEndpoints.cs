@@ -54,6 +54,47 @@ internal static class AccountEndpoints
             return Forward(await api.GetActiveInterestsAsync(token));
         });
 
+        // P12 — notifications proxy.
+        group.MapPost("/notifications/list",
+            async (GridQuery body, HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListNotificationsAsync(body, token));
+        });
+
+        group.MapGet("/notifications/unread-count",
+            async (HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetUnreadNotificationCountAsync(token));
+        });
+
+        group.MapPost("/notifications/{id:guid}/read",
+            async (Guid id, HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.MarkNotificationReadAsync(id, token));
+        });
+
+        group.MapPost("/notifications/read-all",
+            async (HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.MarkAllNotificationsReadAsync(token));
+        });
+
+        group.MapDelete("/notifications/{id:guid}",
+            async (Guid id, HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteNotificationAsync(id, token));
+        });
+
         // SameSite=Lax cookie + DisableAntiforgery is acceptable for multi-
         // part — a cross-site multipart POST never carries the cookie. The
         // same trade-off is documented on the CP side (D-029).

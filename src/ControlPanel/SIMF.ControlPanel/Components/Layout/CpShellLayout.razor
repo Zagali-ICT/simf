@@ -17,6 +17,14 @@
         <SimfLanguageSwitch Href="@CultureHref" Label='@L["Shell.SwitchLanguage"]' />
         <SimfThemeToggle LightLabel='@L["Shell.ThemeLight"]' DarkLabel='@L["Shell.ThemeDark"]' />
         <AuthorizeView>
+            <SimfNotificationBell
+                AriaLabel='@L["Shell.Notifications"]'
+                DropdownTitle='@L["Shell.Notifications"]'
+                MarkAllReadLabel='@L["Account.Notifications.MarkAllRead"]'
+                EmptyLabel='@L["Account.Notifications.Empty"]'
+                ViewAllLabel='@L["Account.Notifications.ViewAll"]'
+                ViewAllHref="/account/notifications"
+                UseArabic="@(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar")" />
             <a class="simf-user" href="/account/profile" title="@L["Shell.MyProfile"]">
                 @if (!string.IsNullOrEmpty(UserChrome.AvatarUrl))
                 {

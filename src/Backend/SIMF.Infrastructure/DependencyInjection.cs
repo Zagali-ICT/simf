@@ -6,6 +6,8 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.Excel;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.Notifications;
+using SIMF.Infrastructure.Notifications;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Logs;
 using SIMF.Infrastructure.Logs;
@@ -102,6 +104,8 @@ public static class DependencyInjection
         services.AddScoped<IQrIdMinter, QrIdMinter>();
         services.AddScoped<IUserProfileService, UserProfileService>();
         services.AddScoped<IInterestService, InterestService>();
+        services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
+        services.AddScoped<INotificationService, NotificationService>();
         services.AddSingleton<IUserExcelService, ClosedXmlUserExcelService>();
         services.AddSingleton<IAvatarStorage, FilesystemAvatarStorage>();
         services.AddSingleton<IUserIdDocumentStorage, EncryptedUserIdDocumentStorage>();

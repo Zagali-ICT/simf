@@ -1679,3 +1679,88 @@ body.simf-modal-open { overflow: hidden; }
   .simf-tooltip__bubble { transition: none; }
   /* The button spinner and grid spinner are status indicators, kept. */
 }
+
+/* -- Notification bell (P12 — D-053) --------------------------------------- */
+.simf-bell {
+  position: relative;
+  display: inline-flex;
+}
+.simf-bell__trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+}
+.simf-bell__trigger:hover,
+.simf-bell__trigger:focus-visible {
+  background: var(--color-surface-2);
+}
+.simf-bell__badge {
+  position: absolute;
+  inset-block-start: 0.1rem;
+  inset-inline-end: 0.1rem;
+  min-inline-size: 1rem;
+  block-size: 1rem;
+  padding-inline: 0.25rem;
+  background: var(--color-danger);
+  color: var(--color-on-danger, white);
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.simf-bell__dropdown {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-1));
+  inset-inline-end: 0;
+  inline-size: 22rem;
+  max-block-size: 30rem;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
+  z-index: 50;
+}
+.simf-bell__dropdown-head,
+.simf-bell__dropdown-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+.simf-bell__dropdown-foot {
+  border-block-end: 0;
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+.simf-bell__link {
+  border: 0;
+  background: transparent;
+  color: var(--color-accent-blue);
+  cursor: pointer;
+  font-size: var(--font-size-body-small);
+}
+.simf-bell__empty { padding: var(--space-4); color: var(--color-text-muted); }
+.simf-bell__list { list-style: none; margin: 0; padding: 0; }
+.simf-bell__item {
+  padding: var(--space-3);
+  border-block-end: var(--border-width) solid var(--color-border-subtle);
+}
+.simf-bell__item:last-child { border-block-end: 0; }
+.simf-bell__item--success { border-inline-start: 3px solid var(--color-success); }
+.simf-bell__item--warning { border-inline-start: 3px solid var(--color-warning); }
+.simf-bell__item--error { border-inline-start: 3px solid var(--color-danger); }
+.simf-bell__item--info { border-inline-start: 3px solid var(--color-accent-blue); }
+.simf-bell__item time { color: var(--color-text-muted); font-size: var(--font-size-caption); }
