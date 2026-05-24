@@ -6,10 +6,13 @@ using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Notifications;
+using SIMF.Infrastructure.Notifications;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Identity;
@@ -27,6 +30,7 @@ internal sealed class UserProfileService(
     IUserIdDocumentStorage idStorage,
     IAuditLog auditLog,
     TimeProvider timeProvider,
+    INotificationDispatcher notifications,
     ILogger<UserProfileService> logger) : IUserProfileService
 {
     public async Task<UserProfileResponse> GetMineAsync(
@@ -165,7 +169,81 @@ internal sealed class UserProfileService(
             "User profile {Operation} for {UserId}",
             isNew ? "created" : "updated", actorUserId);
 
+        // P13 — D-054: on first profile-submit by an EmailVerified user,
+        // auto-transition to PendingApproval, dispatch the "profile
+        // submitted" notification to the visitor, and notify every admin
+        // that a new visitor is awaiting approval.
+        if (isNew && user.AccountState == AccountState.EmailVerified)
+        {
+            user.AccountState = AccountState.PendingApproval;
+            user.StateChangedAt = now;
+            user.StateChangedByUserId = null;
+            await userManager.UpdateAsync(user);
+
+            await DispatchProfileSubmittedAsync(user, cancellationToken);
+            await DispatchAdminPendingVisitorAsync(user, cancellationToken);
+        }
+
         return ToResponse(profile, user.QrId);
+    }
+
+    private async Task DispatchProfileSubmittedAsync(
+        SimfUser user, CancellationToken cancellationToken)
+    {
+        var tokens = new Dictionary<string, string>
+        {
+            ["DisplayName"] = user.DisplayName,
+        };
+        await notifications.DispatchAsync(new NotificationRequest
+        {
+            UserId = user.Id,
+            Kind = "Account.ProfileSubmitted",
+            Title = "Profile submitted — pending approval",
+            TitleArabic = "تم إرسال الملف الشخصي — بانتظار الموافقة",
+            Body = "Thank you for completing your SIMF profile. An administrator will review your account shortly.",
+            BodyArabic = "شكراً لاستكمال ملفك الشخصي في SIMF. سيقوم المسؤول بمراجعة حسابك قريباً.",
+            Severity = NotificationSeverity.Info,
+            SendEmail = true,
+            PreRenderedEmailHtml = NotificationEmailTemplates.Render(
+                "Account.ProfileSubmitted", "en", tokens),
+        }, cancellationToken);
+    }
+
+    private async Task DispatchAdminPendingVisitorAsync(
+        SimfUser subject, CancellationToken cancellationToken)
+    {
+        // Every Admin gets one in-app notification + email per pending
+        // visitor. No bulk-send today; the admin count is small (event
+        // ops staff).
+        var admins = await dbContext.Users
+            .AsNoTracking()
+            .Where(u => u.UserType == UserType.Admin && u.AccountState == AccountState.Approved)
+            .Select(u => new { u.Id, u.Email, u.DisplayName })
+            .ToListAsync(cancellationToken);
+
+        foreach (var admin in admins)
+        {
+            var tokens = new Dictionary<string, string>
+            {
+                ["DisplayName"] = admin.DisplayName ?? string.Empty,
+                ["SubjectEmail"] = subject.Email ?? string.Empty,
+            };
+            await notifications.DispatchAsync(new NotificationRequest
+            {
+                UserId = admin.Id,
+                Kind = "Admin.PendingVisitor",
+                Title = $"New visitor awaiting approval — {subject.Email}",
+                TitleArabic = $"زائر جديد بانتظار الموافقة — {subject.Email}",
+                Body = $"A new visitor has submitted their profile: {subject.Email}.",
+                BodyArabic = $"قام زائر جديد بإرسال ملفه الشخصي: {subject.Email}.",
+                Severity = NotificationSeverity.Info,
+                RelatedEntityType = "User",
+                RelatedEntityId = subject.Id,
+                SendEmail = true,
+                PreRenderedEmailHtml = NotificationEmailTemplates.Render(
+                    "Admin.PendingVisitor", "en", tokens),
+            }, cancellationToken);
+        }
     }
 
     public async Task UploadIdImageAsync(
