@@ -111,4 +111,8 @@
   <data name="Account.Profile.IdImageUploading" xml:space="preserve"><value>Uploading</value></data>
   <data name="Account.Profile.IdImageUpdated" xml:space="preserve"><value>Your ID image has been saved.</value></data>
   <data name="Account.Profile.IdImageFallback" xml:space="preserve"><value>The ID image could not be uploaded.</value></data>
+
+  <data name="Account.Profile.Interests.Title" xml:space="preserve"><value>Your interests</value></data>
+  <data name="Account.Profile.Interests.Hint" xml:space="preserve"><value>Pick between 1 and 10 — we'll match you with relevant sessions.</value></data>
+  <data name="Account.Profile.Interests.Empty" xml:space="preserve"><value>The interests list has not been published yet. Please check back soon.</value></data>
 </root>

@@ -137,6 +137,14 @@ public sealed class SimfAccountClient(HttpClient http)
             HttpMethod.Get, "account/user-profile/countries", null,
             accessToken, cancellationToken);
 
+    /// <summary>Returns the active interests for the visitor picker
+    /// (P9 — D-050; الاهتمامات).</summary>
+    public Task<ApiCallResult<InterestListResponse>> GetActiveInterestsAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<InterestListResponse>(
+            HttpMethod.Get, "account/interests", null,
+            accessToken, cancellationToken);
+
     /// <summary>Uploads the user's ID-document image (D-046 b, P8). The
     /// bytes are magic-byte gated server-side and encrypted-at-rest with
     /// AES-GCM.</summary>

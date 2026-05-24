@@ -111,4 +111,8 @@
   <data name="Account.Profile.IdImageUploading" xml:space="preserve"><value>جارٍ الرفع</value></data>
   <data name="Account.Profile.IdImageUpdated" xml:space="preserve"><value>تم حفظ صورة الهوية.</value></data>
   <data name="Account.Profile.IdImageFallback" xml:space="preserve"><value>تعذّر رفع صورة الهوية.</value></data>
+
+  <data name="Account.Profile.Interests.Title" xml:space="preserve"><value>اهتماماتك</value></data>
+  <data name="Account.Profile.Interests.Hint" xml:space="preserve"><value>اختر ما بين 1 و 10 اهتمامات لمساعدتنا في اقتراح الجلسات المناسبة لك.</value></data>
+  <data name="Account.Profile.Interests.Empty" xml:space="preserve"><value>قائمة الاهتمامات لم تُنشر بعد. يُرجى المراجعة لاحقًا.</value></data>
 </root>

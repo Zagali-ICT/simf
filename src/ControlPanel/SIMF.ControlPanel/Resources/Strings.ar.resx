@@ -78,6 +78,49 @@
   <data name="Module.AdminLogs" xml:space="preserve"><value>السجلات</value></data>
   <data name="Module.AdminStaffPending" xml:space="preserve"><value>الفريق — بانتظار الموافقة</value></data>
   <data name="Module.AdminVisitorsPending" xml:space="preserve"><value>الزوار — بانتظار الموافقة</value></data>
+  <data name="Module.AdminInterests" xml:space="preserve"><value>الاهتمامات</value></data>
+  <data name="Admin.Interests.Title" xml:space="preserve"><value>الاهتمامات</value></data>
+  <data name="Admin.Interests.New.Title" xml:space="preserve"><value>إضافة اهتمام</value></data>
+  <data name="Admin.Interests.New.Supporting" xml:space="preserve"><value>أنشئ اهتمامًا جديدًا يمكن للزوار اختياره في ملفهم الشخصي.</value></data>
+  <data name="Admin.Interests.New.Submit" xml:space="preserve"><value>إنشاء اهتمام</value></data>
+  <data name="Admin.Interests.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء</value></data>
+  <data name="Admin.Interests.Edit.Title" xml:space="preserve"><value>تعديل اهتمام</value></data>
+  <data name="Admin.Interests.Edit.Loading" xml:space="preserve"><value>جارٍ تحميل الاهتمام…</value></data>
+  <data name="Admin.Interests.Edit.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الاهتمام.</value></data>
+  <data name="Admin.Interests.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.Interests.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Admin.Interests.BackToList" xml:space="preserve"><value>الرجوع إلى القائمة</value></data>
+  <data name="Admin.Interests.Field.Name" xml:space="preserve"><value>الاسم (بالإنجليزية)</value></data>
+  <data name="Admin.Interests.Field.NameHint" xml:space="preserve"><value>حتى 128 حرفًا؛ يجب أن يكون فريدًا.</value></data>
+  <data name="Admin.Interests.Field.NameInvalid" xml:space="preserve"><value>الاسم بالإنجليزية مطلوب (من 1 إلى 128 حرفًا).</value></data>
+  <data name="Admin.Interests.Field.NameArabic" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
+  <data name="Admin.Interests.Field.NameArabicHint" xml:space="preserve"><value>حتى 128 حرفًا.</value></data>
+  <data name="Admin.Interests.Field.NameArabicInvalid" xml:space="preserve"><value>الاسم بالعربية مطلوب (من 1 إلى 128 حرفًا).</value></data>
+  <data name="Admin.Interests.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
+  <data name="Admin.Interests.Field.DisplayOrderHint" xml:space="preserve"><value>مفتاح فرز قائمة الزائر (صفر أو أكثر؛ تصاعديًا).</value></data>
+  <data name="Admin.Interests.Field.DisplayOrderInvalid" xml:space="preserve"><value>يجب أن يكون ترتيب العرض صفرًا أو عددًا صحيحًا موجبًا.</value></data>
+  <data name="Admin.Interests.Field.IsActive" xml:space="preserve"><value>مفعّل — أظهر في قائمة الزائر</value></data>
+  <data name="Admin.Interests.Column.Name" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Admin.Interests.Column.NameArabic" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
+  <data name="Admin.Interests.Column.DisplayOrder" xml:space="preserve"><value>الترتيب</value></data>
+  <data name="Admin.Interests.Column.Active" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Interests.Column.Actions" xml:space="preserve"><value>الإجراءات</value></data>
+  <data name="Admin.Interests.Active.Yes" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="Admin.Interests.Active.No" xml:space="preserve"><value>معطّل</value></data>
+  <data name="Admin.Interests.Action.Add" xml:space="preserve"><value>إضافة اهتمام</value></data>
+  <data name="Admin.Interests.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Interests.Action.Deactivate" xml:space="preserve"><value>إلغاء التفعيل</value></data>
+  <data name="Admin.Interests.FilterColumn" xml:space="preserve"><value>تصفية العمود</value></data>
+  <data name="Admin.Interests.FilterPlaceholder" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Interests.Prev" xml:space="preserve"><value>السابق</value></data>
+  <data name="Admin.Interests.Next" xml:space="preserve"><value>التالي</value></data>
+  <data name="Admin.Interests.Loading" xml:space="preserve"><value>جارٍ تحميل الاهتمامات…</value></data>
+  <data name="Admin.Interests.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الاهتمامات.</value></data>
+  <data name="Admin.Interests.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Interests.Created" xml:space="preserve"><value>تم إنشاء الاهتمام "{0}".</value></data>
+  <data name="Admin.Interests.Updated" xml:space="preserve"><value>تم تحديث الاهتمام "{0}".</value></data>
+  <data name="Admin.Interests.Deactivated" xml:space="preserve"><value>تم تعطيل الاهتمام "{0}".</value></data>
+  <data name="Admin.Interests.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
   <data name="Admin.Pending.Staff.Title" xml:space="preserve"><value>موافقات الفريق المعلّقة</value></data>
   <data name="Admin.Pending.Visitors.Title" xml:space="preserve"><value>موافقات الزوار المعلّقة</value></data>
   <data name="Admin.Pending.Supporting" xml:space="preserve"><value>الموافقة تنشئ شارة QR وتفعّل تسجيل الدخول (لوحة التحكم للفريق، دخول الحدث للزوار). الرفض يسجّل سبباً في سجل التدقيق.</value></data>

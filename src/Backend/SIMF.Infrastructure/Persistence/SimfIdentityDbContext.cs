@@ -30,6 +30,8 @@ public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> optio
 
     public DbSet<ProfileType> ProfileTypes => Set<ProfileType>();
 
+    public DbSet<Interest> Interests => Set<Interest>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

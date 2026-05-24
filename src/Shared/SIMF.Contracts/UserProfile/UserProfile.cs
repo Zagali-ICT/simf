@@ -12,6 +12,11 @@ public sealed class UserProfileResponse
     /// P8 moved this off <c>SimfUser</c>.</summary>
     public Guid? ProfileTypeId { get; set; }
 
+    /// <summary>The picked interest ids (P9 — D-050; الاهتمامات). Empty
+    /// when the user has not filled the form yet; the validator requires
+    /// 1-10 ids on every save.</summary>
+    public IList<Guid> InterestIds { get; set; } = new List<Guid>();
+
     public string ArabicName { get; set; } = string.Empty;
     public string EnglishName { get; set; } = string.Empty;
     public string NationalityCode { get; set; } = string.Empty;
@@ -42,6 +47,11 @@ public sealed class UserProfileResponse
 /// today.</summary>
 public sealed class UpsertUserProfileRequest
 {
+    /// <summary>The picked interest ids (P9 — D-050). Required: 1-10
+    /// active <see cref="Interest"/> ids; the validator rejects empties /
+    /// duplicates / unknown ids / deactivated ids.</summary>
+    public IList<Guid> InterestIds { get; set; } = new List<Guid>();
+
     public string ArabicName { get; set; } = string.Empty;
     public string EnglishName { get; set; } = string.Empty;
     public string NationalityCode { get; set; } = string.Empty;

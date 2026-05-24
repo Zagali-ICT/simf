@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication;
 using SIMF.ApiClient;
 using SIMF.Common;
+using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Logs;
 
@@ -256,6 +257,48 @@ internal static class AccountEndpoints
             return Forward(await api.ImportUsersAsync(
                 stream.ToArray(), file.FileName, token));
         }).DisableAntiforgery();
+
+        // P9 — Interests CRUD proxy (D-050; الاهتمامات).
+        group.MapPost("/admin/interests/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListInterestsAsync(body, token));
+        });
+
+        group.MapGet("/admin/interests/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetInterestAsync(id, token));
+        });
+
+        group.MapPost("/admin/interests",
+            async (AdminCreateInterestRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateInterestAsync(body, token));
+        });
+
+        group.MapPut("/admin/interests/{id:guid}",
+            async (Guid id, AdminUpdateInterestRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateInterestAsync(id, body, token));
+        });
+
+        group.MapDelete("/admin/interests/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateInterestAsync(id, token));
+        });
 
         // P6 — log viewer proxy. The CP page is server-side Blazor, so it
         // talks to these endpoints via fetch (cookie auth) and they forward

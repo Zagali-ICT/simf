@@ -78,6 +78,49 @@
   <data name="Module.AdminLogs" xml:space="preserve"><value>Logs</value></data>
   <data name="Module.AdminStaffPending" xml:space="preserve"><value>Pending staff</value></data>
   <data name="Module.AdminVisitorsPending" xml:space="preserve"><value>Pending visitors</value></data>
+  <data name="Module.AdminInterests" xml:space="preserve"><value>Interests</value></data>
+  <data name="Admin.Interests.Title" xml:space="preserve"><value>Interests</value></data>
+  <data name="Admin.Interests.New.Title" xml:space="preserve"><value>Add interest</value></data>
+  <data name="Admin.Interests.New.Supporting" xml:space="preserve"><value>Create a new interest visitors can pick on their profile.</value></data>
+  <data name="Admin.Interests.New.Submit" xml:space="preserve"><value>Create interest</value></data>
+  <data name="Admin.Interests.New.Submitting" xml:space="preserve"><value>Creating</value></data>
+  <data name="Admin.Interests.Edit.Title" xml:space="preserve"><value>Edit interest</value></data>
+  <data name="Admin.Interests.Edit.Loading" xml:space="preserve"><value>Loading the interest…</value></data>
+  <data name="Admin.Interests.Edit.LoadFailed" xml:space="preserve"><value>The interest could not be loaded.</value></data>
+  <data name="Admin.Interests.Edit.Submit" xml:space="preserve"><value>Save changes</value></data>
+  <data name="Admin.Interests.Edit.Submitting" xml:space="preserve"><value>Saving</value></data>
+  <data name="Admin.Interests.BackToList" xml:space="preserve"><value>Back to list</value></data>
+  <data name="Admin.Interests.Field.Name" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Interests.Field.NameHint" xml:space="preserve"><value>Up to 128 characters; must be unique.</value></data>
+  <data name="Admin.Interests.Field.NameInvalid" xml:space="preserve"><value>The English name is required (1–128 characters).</value></data>
+  <data name="Admin.Interests.Field.NameArabic" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Interests.Field.NameArabicHint" xml:space="preserve"><value>Up to 128 characters.</value></data>
+  <data name="Admin.Interests.Field.NameArabicInvalid" xml:space="preserve"><value>The Arabic name is required (1–128 characters).</value></data>
+  <data name="Admin.Interests.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
+  <data name="Admin.Interests.Field.DisplayOrderHint" xml:space="preserve"><value>Sort key in the visitor picker (zero or more; ascending).</value></data>
+  <data name="Admin.Interests.Field.DisplayOrderInvalid" xml:space="preserve"><value>Display order must be zero or a positive integer.</value></data>
+  <data name="Admin.Interests.Field.IsActive" xml:space="preserve"><value>Active — show in the visitor picker</value></data>
+  <data name="Admin.Interests.Column.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Admin.Interests.Column.NameArabic" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Interests.Column.DisplayOrder" xml:space="preserve"><value>Order</value></data>
+  <data name="Admin.Interests.Column.Active" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.Interests.Column.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Admin.Interests.Active.Yes" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Interests.Active.No" xml:space="preserve"><value>Inactive</value></data>
+  <data name="Admin.Interests.Action.Add" xml:space="preserve"><value>Add interest</value></data>
+  <data name="Admin.Interests.Action.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.Interests.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.Interests.FilterColumn" xml:space="preserve"><value>Filter column</value></data>
+  <data name="Admin.Interests.FilterPlaceholder" xml:space="preserve"><value>Search</value></data>
+  <data name="Admin.Interests.Prev" xml:space="preserve"><value>Previous</value></data>
+  <data name="Admin.Interests.Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Admin.Interests.Loading" xml:space="preserve"><value>Loading interests…</value></data>
+  <data name="Admin.Interests.LoadFailed" xml:space="preserve"><value>The interests could not be loaded.</value></data>
+  <data name="Admin.Interests.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.Interests.Created" xml:space="preserve"><value>Interest "{0}" was created.</value></data>
+  <data name="Admin.Interests.Updated" xml:space="preserve"><value>Interest "{0}" was updated.</value></data>
+  <data name="Admin.Interests.Deactivated" xml:space="preserve"><value>Interest "{0}" was deactivated.</value></data>
+  <data name="Admin.Interests.Fallback" xml:space="preserve"><value>The operation could not be completed.</value></data>
   <data name="Admin.Pending.Staff.Title" xml:space="preserve"><value>Pending staff approvals</value></data>
   <data name="Admin.Pending.Visitors.Title" xml:space="preserve"><value>Pending visitor approvals</value></data>
   <data name="Admin.Pending.Supporting" xml:space="preserve"><value>Approval mints the QR badge and unlocks sign-in (CP for staff, event entry for visitors). Rejection records a reason for audit.</value></data>

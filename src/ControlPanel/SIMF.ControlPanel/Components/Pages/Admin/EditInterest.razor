@@ -1,0 +1,160 @@
+@* Control Panel — admin edits an existing Interest (P9 — D-050).
+   Administrator-only. Loads the row by id, then PUTs the changes. *@
+@page "/admin/interests/{Id:guid}/edit"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>@L["Admin.Interests.Edit.Title"] · SIMF</PageTitle>
+
+<SimfPageHeader Title="@L["Admin.Interests.Edit.Title"]" />
+
+<section class="simf-card simf-page-card">
+    @if (_loadError is not null)
+    {
+        <SimfAlert Variant="error">@_loadError</SimfAlert>
+    }
+    else if (_model is null)
+    {
+        <SimfAlert Variant="info">@L["Admin.Interests.Edit.Loading"]</SimfAlert>
+    }
+    else
+    {
+        @if (_success is not null)
+        {
+            <SimfAlert Variant="success">@_success</SimfAlert>
+        }
+        @if (_error is not null)
+        {
+            <SimfAlert Variant="error">@_error</SimfAlert>
+        }
+
+        <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.Interests.Field.Name"]"
+                               Helper="@L["Admin.Interests.Field.NameHint"]"
+                               @bind-Value="_model.Name" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Interests.Field.NameArabic"]"
+                               Helper="@L["Admin.Interests.Field.NameArabicHint"]"
+                               @bind-Value="_model.NameArabic" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Interests.Field.DisplayOrder"]"
+                               Helper="@L["Admin.Interests.Field.DisplayOrderHint"]"
+                               Type="number"
+                               Value="@_displayOrderInput"
+                               ValueChanged="@(v => _displayOrderInput = v)"
+                               Disabled="_busy" />
+                <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
+                    @L["Admin.Interests.Field.IsActive"]
+                </SimfCheckbox>
+            </div>
+            <div class="simf-form__actions">
+                <SimfButton Loading="_busy" LoadingLabel="@L["Admin.Interests.Edit.Submitting"]">
+                    @L["Admin.Interests.Edit.Submit"]
+                </SimfButton>
+                <SimfButton Type="button" Variant="secondary"
+                            OnClick="@(() => Nav.NavigateTo("/admin/interests"))">
+                    @L["Admin.Interests.BackToList"]
+                </SimfButton>
+            </div>
+        </EditForm>
+    }
+</section>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private Model? _model;
+    private string _displayOrderInput = "0";
+    private EditContext _editContext = default!;
+    private ValidationMessageStore _messages = default!;
+    private bool _busy;
+    private string? _success;
+    private string? _error;
+    private string? _loadError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminInterestSummary>>(
+                "simfAccount.getJson", $"/account/api/admin/interests/{Id}");
+            if (envelope is { Success: true, Data: not null })
+            {
+                _model = new Model
+                {
+                    Name = envelope.Data.Name,
+                    NameArabic = envelope.Data.NameArabic,
+                    IsActive = envelope.Data.IsActive,
+                };
+                _displayOrderInput = envelope.Data.DisplayOrder.ToString();
+                _editContext = new EditContext(_model);
+                _messages = new ValidationMessageStore(_editContext);
+            }
+            else
+            {
+                _loadError = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Interests.Edit.LoadFailed"];
+            }
+        }
+        catch (Exception ex)
+        {
+            _loadError = $"{L["Admin.Interests.Edit.LoadFailed"]} ({ex.Message})";
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy || _model is null) return;
+        _success = null;
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_model.Name) || _model.Name.Length > 128)
+        {
+            _error = L["Admin.Interests.Field.NameInvalid"];
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_model.NameArabic) || _model.NameArabic.Length > 128)
+        {
+            _error = L["Admin.Interests.Field.NameArabicInvalid"];
+            return;
+        }
+        if (!int.TryParse(_displayOrderInput, out var order) || order < 0)
+        {
+            _error = L["Admin.Interests.Field.DisplayOrderInvalid"];
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminInterestSummary>>(
+                "simfAccount.putJson", $"/account/api/admin/interests/{Id}",
+                new AdminUpdateInterestRequest
+                {
+                    Name = _model.Name.Trim(),
+                    NameArabic = _model.NameArabic.Trim(),
+                    DisplayOrder = order,
+                    IsActive = _model.IsActive,
+                });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _success = string.Format(L["Admin.Interests.Updated"], envelope.Data.Name);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Interests.Fallback"];
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private sealed class Model
+    {
+        public string Name { get; set; } = string.Empty;
+        public string NameArabic { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+}

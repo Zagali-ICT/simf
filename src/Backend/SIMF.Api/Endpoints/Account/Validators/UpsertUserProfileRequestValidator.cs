@@ -29,6 +29,21 @@ public sealed class UpsertUserProfileRequestValidator
 
     public UpsertUserProfileRequestValidator()
     {
+        // P9 — interests are required (min 1, max 10). Defence-in-depth
+        // re-checks of "every id active" live on the service.
+        RuleFor(request => request.InterestIds)
+            .NotNull().Bilingual(
+                "At least one interest is required.",
+                "يجب اختيار اهتمام واحد على الأقل.")
+            .Must(ids => ids is not null && ids.Count is >= 1 and <= 10)
+            .Bilingual(
+                "Pick between 1 and 10 interests.",
+                "اختر ما بين 1 و 10 اهتمامات.")
+            .Must(ids => ids is null || ids.Distinct().Count() == ids.Count)
+            .Bilingual(
+                "Each interest may only be picked once.",
+                "لا يمكن اختيار الاهتمام أكثر من مرة.");
+
         RuleFor(request => request.ArabicName)
             .NotEmpty().Bilingual(
                 "The Arabic name is required.",

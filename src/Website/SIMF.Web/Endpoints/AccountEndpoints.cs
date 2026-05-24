@@ -37,7 +37,7 @@ internal static class AccountEndpoints
             return Forward(await api.UpsertUserProfileAsync(body, token));
         });
 
-        group.MapGet("/profile/countries",
+        group.MapGet("/user-profile/countries",
             async (HttpContext http, SimfAccountClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
@@ -45,10 +45,19 @@ internal static class AccountEndpoints
             return Forward(await api.GetProfileCountriesAsync(token));
         });
 
+        // P9 — active interests for the user-profile picker (الاهتمامات).
+        group.MapGet("/interests",
+            async (HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetActiveInterestsAsync(token));
+        });
+
         // SameSite=Lax cookie + DisableAntiforgery is acceptable for multi-
         // part — a cross-site multipart POST never carries the cookie. The
         // same trade-off is documented on the CP side (D-029).
-        group.MapPost("/profile/id-image",
+        group.MapPost("/user-profile/id-image",
             async (HttpContext http, SimfAccountClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
@@ -75,7 +84,7 @@ internal static class AccountEndpoints
         // Streams the user's decrypted ID-document image back same-origin
         // so the <img src> the page renders rides the auth cookie
         // automatically.
-        group.MapGet("/profile/id-image",
+        group.MapGet("/user-profile/id-image",
             async (HttpContext http, SimfAccountClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");

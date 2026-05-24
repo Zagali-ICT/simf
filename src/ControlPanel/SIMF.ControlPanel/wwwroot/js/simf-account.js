@@ -30,6 +30,17 @@ window.simfAccount = {
         return text.length === 0 ? null : JSON.parse(text);
     },
 
+    async putJson(url, body) {
+        const response = await fetch(url, {
+            method: 'PUT',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: body === undefined || body === null ? null : JSON.stringify(body),
+        });
+        const text = await response.text();
+        return text.length === 0 ? null : JSON.parse(text);
+    },
+
     // Force a server-side sign-out via a hidden form POST — Nav.NavigateTo
     // with a forceLoad GET would hit /auth/sign-out (mapped as POST only)
     // and 404, leaving the cookie alive. Called after password change so

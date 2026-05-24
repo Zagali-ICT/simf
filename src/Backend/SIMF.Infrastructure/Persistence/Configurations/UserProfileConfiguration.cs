@@ -41,5 +41,26 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
             .WithMany()
             .HasForeignKey(profile => profile.ProfileTypeId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // P9 — M-to-M with Interests (D-050). Composite-PK join table
+        // UserProfileInterests, both FKs Cascade so deleting either side
+        // cleans up the join row.
+        builder.HasMany(profile => profile.Interests)
+            .WithMany()
+            .UsingEntity<Dictionary<string, object>>(
+                "UserProfileInterests",
+                right => right.HasOne<Interest>()
+                    .WithMany()
+                    .HasForeignKey("InterestId")
+                    .OnDelete(DeleteBehavior.Cascade),
+                left => left.HasOne<UserProfile>()
+                    .WithMany()
+                    .HasForeignKey("UserProfileId")
+                    .OnDelete(DeleteBehavior.Cascade),
+                join =>
+                {
+                    join.HasKey("UserProfileId", "InterestId");
+                    join.HasIndex("InterestId");
+                });
     }
 }

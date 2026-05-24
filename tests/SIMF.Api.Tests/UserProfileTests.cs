@@ -57,7 +57,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         var token = await CreateUserAndSignInAsync();
 
         var first = await PostAuthAsync(Path,
-            ValidSaudiRequest("Ahmad", "أحمد"), token);
+            await ValidSaudiRequestAsync("Ahmad", "أحمد"), token);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
         var firstBody = (await first.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
         Assert.Equal("Ahmad", firstBody.Data!.EnglishName);
@@ -65,7 +65,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal("SA", firstBody.Data.NationalityCode);
 
         var second = await PostAuthAsync(Path,
-            ValidSaudiRequest("Ahmed", "أحمد محمد"), token);
+            await ValidSaudiRequestAsync("Ahmed", "أحمد محمد"), token);
         Assert.Equal(HttpStatusCode.OK, second.StatusCode);
         var secondBody = (await second.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
         Assert.Equal("Ahmed", secondBody.Data!.EnglishName);
@@ -77,7 +77,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateUserAndSignInAsync();
 
-        var request = ValidSaudiRequest();
+        var request = await ValidSaudiRequestAsync();
         request.NationalityCode = "ZZ";   // not in the curated list
 
         var response = await PostAuthAsync(Path, request, token);
@@ -89,7 +89,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateUserAndSignInAsync();
 
-        var request = ValidSaudiRequest();
+        var request = await ValidSaudiRequestAsync();
         request.NationalId = null;
 
         var response = await PostAuthAsync(Path, request, token);
@@ -102,7 +102,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         // Saudi national IDs are 10 digits starting with 1 (P5 hardening).
         var token = await CreateUserAndSignInAsync();
 
-        var request = ValidSaudiRequest();
+        var request = await ValidSaudiRequestAsync();
         request.NationalId = "2234567890";   // 10 digits but starts with 2
 
         var response = await PostAuthAsync(Path, request, token);
@@ -115,7 +115,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         // Iqama numbers are 10 digits starting with 2 (P5 hardening).
         var token = await CreateUserAndSignInAsync();
 
-        var validIqama = ValidSaudiRequest();
+        var validIqama = await ValidSaudiRequestAsync();
         validIqama.IsSaudi = false;
         validIqama.NationalId = null;
         validIqama.NationalityCode = "AE";
@@ -124,7 +124,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         var ok = await PostAuthAsync(Path, validIqama, token);
         Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
 
-        var invalidIqama = ValidSaudiRequest();
+        var invalidIqama = await ValidSaudiRequestAsync();
         invalidIqama.IsSaudi = false;
         invalidIqama.NationalId = null;
         invalidIqama.NationalityCode = "AE";
@@ -139,7 +139,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateUserAndSignInAsync();
 
-        var request = ValidSaudiRequest();
+        var request = await ValidSaudiRequestAsync();
         request.IsSaudi = false;
         request.NationalId = null;
         request.IqamaNumber = null;
@@ -154,7 +154,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     public async Task POST_accepts_a_permissive_international_phone()
     {
         var token = await CreateUserAndSignInAsync();
-        var request = ValidSaudiRequest();
+        var request = await ValidSaudiRequestAsync();
         request.InternationalMobile = "+44-7700900123";  // UK shape
 
         var response = await PostAuthAsync(Path, request, token);
@@ -277,20 +277,168 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             new[] { 0 });  // -1 means not found
     }
 
+    // -- P9 interests ----------------------------------------------------------
+
+    [Fact]
+    public async Task POST_requires_at_least_one_interest()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.InterestIds = new List<Guid>();   // empty — validator rejects
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_rejects_more_than_ten_interests()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        // Eleven random ids — the validator gates before the service.
+        request.InterestIds = Enumerable.Range(0, 11)
+            .Select(_ => Guid.NewGuid())
+            .ToList();
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_rejects_an_unknown_interest_id()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.InterestIds = new List<Guid> { Guid.NewGuid() };   // never seeded
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.InterestInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task POST_rejects_a_deactivated_interest_id()
+    {
+        var token = await CreateUserAndSignInAsync();
+
+        // Seed an interest then deactivate it directly.
+        Guid deactivatedId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var interest = new Interest
+            {
+                Id = Guid.NewGuid(),
+                Name = $"Deactivated {Guid.NewGuid():N}",
+                NameArabic = "اهتمام معطّل",
+                DisplayOrder = 0,
+                IsActive = false,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            db.Interests.Add(interest);
+            await db.SaveChangesAsync();
+            deactivatedId = interest.Id;
+        }
+
+        var request = await ValidSaudiRequestAsync();
+        request.InterestIds = new List<Guid> { deactivatedId };
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.InterestInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task POST_round_trips_picked_interests()
+    {
+        var token = await CreateUserAndSignInAsync();
+
+        // Seed three interests; pick two.
+        Guid one, two, three;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var rows = Enumerable.Range(0, 3)
+                .Select(i => new Interest
+                {
+                    Id = Guid.NewGuid(),
+                    Name = $"Pick {i} {Guid.NewGuid():N}",
+                    NameArabic = $"اختيار {i}",
+                    DisplayOrder = i,
+                    IsActive = true,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                })
+                .ToList();
+            db.Interests.AddRange(rows);
+            await db.SaveChangesAsync();
+            one = rows[0].Id; two = rows[1].Id; three = rows[2].Id;
+        }
+
+        var request = await ValidSaudiRequestAsync();
+        request.InterestIds = new List<Guid> { one, two };
+
+        var first = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        var firstBody = (await first.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
+        Assert.Equal(2, firstBody.Data!.InterestIds.Count);
+        Assert.Contains(one, firstBody.Data.InterestIds);
+        Assert.Contains(two, firstBody.Data.InterestIds);
+
+        // Second upsert — replace { one, two } with { two, three }; the
+        // diff-then-save in the service removes `one` and adds `three`.
+        request.InterestIds = new List<Guid> { two, three };
+        var second = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, second.StatusCode);
+        var secondBody = (await second.Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!;
+        Assert.Equal(2, secondBody.Data!.InterestIds.Count);
+        Assert.DoesNotContain(one, secondBody.Data.InterestIds);
+        Assert.Contains(two, secondBody.Data.InterestIds);
+        Assert.Contains(three, secondBody.Data.InterestIds);
+    }
+
     // -- Helpers ---------------------------------------------------------------
 
-    private static UpsertUserProfileRequest ValidSaudiRequest(
+    private async Task<UpsertUserProfileRequest> ValidSaudiRequestAsync(
         string englishName = "Test User",
-        string arabicName = "مستخدم اختبار") => new()
+        string arabicName = "مستخدم اختبار")
     {
-        ArabicName = arabicName,
-        EnglishName = englishName,
-        NationalityCode = "SA",
-        DateOfBirth = new DateOnly(1990, 1, 1),
-        PlaceOfBirth = "Riyadh",
-        IsSaudi = true,
-        NationalId = "1234567890",
-    };
+        var interestId = await SeedInterestAsync();
+        return new UpsertUserProfileRequest
+        {
+            InterestIds = new List<Guid> { interestId },
+            ArabicName = arabicName,
+            EnglishName = englishName,
+            NationalityCode = "SA",
+            DateOfBirth = new DateOnly(1990, 1, 1),
+            PlaceOfBirth = "Riyadh",
+            IsSaudi = true,
+            NationalId = "1234567890",
+        };
+    }
+
+    /// <summary>Creates one active <see cref="Interest"/> directly via the
+    /// DbContext (the admin endpoint path is exercised in
+    /// <see cref="InterestTests"/>). Returns the id so the test can pin
+    /// it into the upsert request — the P9 validator requires 1-10.</summary>
+    private async Task<Guid> SeedInterestAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var interest = new Interest
+        {
+            Id = Guid.NewGuid(),
+            Name = $"Test Interest {Guid.NewGuid():N}",
+            NameArabic = "اهتمام اختبار",
+            DisplayOrder = 0,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Interests.Add(interest);
+        await db.SaveChangesAsync();
+        return interest.Id;
+    }
 
     private async Task<string> CreateUserAndSignInAsync()
     {

@@ -1,0 +1,140 @@
+@* Control Panel — Interests lookup CRUD (P9 — D-050; الاهتمامات).
+   Administrator-only. SimfDataGrid with per-row Edit + Deactivate
+   actions and a top "Add interest" button. *@
+@page "/admin/interests"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>@L["Admin.Interests.Title"] · SIMF</PageTitle>
+
+<SimfPageHeader Title="@L["Admin.Interests.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="AdminInterestSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      OnAdd="OnAddAsync"
+                      OnEditOne="OnEditAsync"
+                      OnDeleteOne="OnDeactivateAsync"
+                      Caption="@L["Admin.Interests.Title"]"
+                      FilterColumnLabel="@L["Admin.Interests.FilterColumn"]"
+                      PrevLabel="@L["Admin.Interests.Prev"]"
+                      NextLabel="@L["Admin.Interests.Next"]"
+                      LoadingLabel="@L["Admin.Interests.Loading"]"
+                      FilterPlaceholder="@L["Admin.Interests.FilterPlaceholder"]"
+                      ActionsHeader="@L["Admin.Interests.Column.Actions"]"
+                      AddLabel="@L["Admin.Interests.Action.Add"]"
+                      EditLabel="@L["Admin.Interests.Action.Edit"]"
+                      DeleteLabel="@L["Admin.Interests.Action.Deactivate"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminInterestSummary" Key="name"
+                                    Header="@L["Admin.Interests.Column.Name"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Name</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminInterestSummary" Key="nameArabic"
+                                    Header="@L["Admin.Interests.Column.NameArabic"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.NameArabic</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminInterestSummary" Key="displayOrder"
+                                    Header="@L["Admin.Interests.Column.DisplayOrder"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.DisplayOrder</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminInterestSummary" Key="isActive"
+                                    Header="@L["Admin.Interests.Column.Active"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Admin.Interests.Active.Yes"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Admin.Interests.Active.No"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 25 };
+    private GridPage<AdminInterestSummary> _page = new();
+    private bool _loading;
+    private Toast? _toast;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminInterestSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/interests/list", _query);
+            if (envelope is { Success: true, Data: not null })
+            {
+                _page = envelope.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Interests.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnAddAsync() => Nav.NavigateTo("/admin/interests/new");
+
+    private void OnEditAsync(AdminInterestSummary row) =>
+        Nav.NavigateTo($"/admin/interests/{row.Id}/edit");
+
+    private async Task OnDeactivateAsync(AdminInterestSummary row)
+    {
+        _toast = null;
+        var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+            "simfAccount.deleteJson", $"/account/api/admin/interests/{row.Id}");
+        if (envelope is { Success: true })
+        {
+            _toast = new Toast("success",
+                string.Format(L["Admin.Interests.Deactivated"], row.Name));
+            await LoadAsync();
+        }
+        else
+        {
+            _toast = new Toast("error",
+                envelope?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.Interests.Fallback"]);
+        }
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(
+            L["Admin.Interests.Summary"],
+            skip + 1, skip + taken, total);
+}

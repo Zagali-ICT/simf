@@ -38,6 +38,14 @@ public class UserProfile
     /// <summary>Navigation to the assigned <see cref="ProfileType"/>.</summary>
     public ProfileType? ProfileType { get; set; }
 
+    /// <summary>
+    /// The user's picked interests (P9 — D-050; الاهتمامات). M-to-M via the
+    /// auto-generated <c>UserProfileInterests</c> join table. The validator
+    /// requires 1-10 interests on every <c>UpsertUserProfileRequest</c>;
+    /// the service rejects unknown / deactivated ids.
+    /// </summary>
+    public ICollection<Interest> Interests { get; set; } = new List<Interest>();
+
     /// <summary>Full name in Arabic.</summary>
     public string ArabicName { get; set; } = string.Empty;
 

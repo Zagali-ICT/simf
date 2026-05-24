@@ -1,0 +1,122 @@
+@* Control Panel — admin creates a new Interest (P9 — D-050).
+   Administrator-only. Bilingual Name + NameArabic + DisplayOrder. *@
+@page "/admin/interests/new"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>@L["Admin.Interests.New.Title"] · SIMF</PageTitle>
+
+<SimfPageHeader Title="@L["Admin.Interests.New.Title"]" />
+
+<section class="simf-card simf-page-card">
+    <p>@L["Admin.Interests.New.Supporting"]</p>
+
+    @if (_success is not null)
+    {
+        <SimfAlert Variant="success">@_success</SimfAlert>
+    }
+    @if (_error is not null)
+    {
+        <SimfAlert Variant="error">@_error</SimfAlert>
+    }
+
+    <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+        <div class="simf-form__fields">
+            <SimfTextField Label="@L["Admin.Interests.Field.Name"]"
+                           Helper="@L["Admin.Interests.Field.NameHint"]"
+                           @bind-Value="_model.Name" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.Interests.Field.NameArabic"]"
+                           Helper="@L["Admin.Interests.Field.NameArabicHint"]"
+                           @bind-Value="_model.NameArabic" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.Interests.Field.DisplayOrder"]"
+                           Helper="@L["Admin.Interests.Field.DisplayOrderHint"]"
+                           Type="number"
+                           Value="@_displayOrderInput"
+                           ValueChanged="@(v => _displayOrderInput = v)"
+                           Disabled="_busy" />
+        </div>
+        <div class="simf-form__actions">
+            <SimfButton Loading="_busy" LoadingLabel="@L["Admin.Interests.New.Submitting"]">
+                @L["Admin.Interests.New.Submit"]
+            </SimfButton>
+            <SimfButton Type="button" Variant="secondary"
+                        OnClick="@(() => Nav.NavigateTo("/admin/interests"))">
+                @L["Admin.Interests.BackToList"]
+            </SimfButton>
+        </div>
+    </EditForm>
+</section>
+
+@code {
+    private readonly Model _model = new();
+    private string _displayOrderInput = "0";
+    private EditContext _editContext = default!;
+    private ValidationMessageStore _messages = default!;
+    private bool _busy;
+    private string? _success;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        _editContext = new EditContext(_model);
+        _messages = new ValidationMessageStore(_editContext);
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _success = null;
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_model.Name) || _model.Name.Length > 128)
+        {
+            _error = L["Admin.Interests.Field.NameInvalid"];
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_model.NameArabic) || _model.NameArabic.Length > 128)
+        {
+            _error = L["Admin.Interests.Field.NameArabicInvalid"];
+            return;
+        }
+        if (!int.TryParse(_displayOrderInput, out var order) || order < 0)
+        {
+            _error = L["Admin.Interests.Field.DisplayOrderInvalid"];
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminInterestSummary>>(
+                "simfAccount.postJson", "/account/api/admin/interests",
+                new AdminCreateInterestRequest
+                {
+                    Name = _model.Name.Trim(),
+                    NameArabic = _model.NameArabic.Trim(),
+                    DisplayOrder = order,
+                });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _success = string.Format(L["Admin.Interests.Created"], envelope.Data.Name);
+                _model.Name = string.Empty;
+                _model.NameArabic = string.Empty;
+                _displayOrderInput = "0";
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Interests.Fallback"];
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private sealed class Model
+    {
+        public string Name { get; set; } = string.Empty;
+        public string NameArabic { get; set; } = string.Empty;
+    }
+}

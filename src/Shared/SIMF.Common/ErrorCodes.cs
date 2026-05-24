@@ -80,4 +80,9 @@ public static class ErrorCodes
     // User profile — nationality (P8 renamed from VISITOR_NATIONALITY_UNKNOWN
     // so the wire code matches the new domain vocabulary).
     public const string ProfileNationalityUnknown = "PROFILE_NATIONALITY_UNKNOWN";
+
+    // Interests (P9 — D-050; الاهتمامات)
+    public const string InterestInvalid = "INTEREST_INVALID";
+    public const string InterestNotFound = "INTEREST_NOT_FOUND";
+    public const string InterestNameDuplicate = "INTEREST_NAME_DUPLICATE";
 }

@@ -101,6 +101,7 @@ public static class DependencyInjection
         services.AddScoped<IAdminAccountService, AdminAccountService>();
         services.AddScoped<IQrIdMinter, QrIdMinter>();
         services.AddScoped<IUserProfileService, UserProfileService>();
+        services.AddScoped<IInterestService, InterestService>();
         services.AddSingleton<IUserExcelService, ClosedXmlUserExcelService>();
         services.AddSingleton<IAvatarStorage, FilesystemAvatarStorage>();
         services.AddSingleton<IUserIdDocumentStorage, EncryptedUserIdDocumentStorage>();

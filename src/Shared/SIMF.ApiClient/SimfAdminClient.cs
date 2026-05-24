@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using SIMF.Common;
+using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Logs;
 
@@ -219,6 +220,51 @@ public sealed class SimfAdminClient(HttpClient http)
         SendAsync<IReadOnlyList<AdminProfileTypeSummary>>(
             HttpMethod.Get, $"profile-types?userType={Uri.EscapeDataString(userType)}",
             content: null,
+            accessToken, cancellationToken);
+
+    // -- P9 — Interests CRUD (الاهتمامات) -----------------------------------
+
+    /// <summary>One page of interests for the admin grid (P9 — D-050).</summary>
+    public Task<ApiCallResult<GridPage<AdminInterestSummary>>> ListInterestsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminInterestSummary>>(
+            HttpMethod.Post, "interests/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>One interest by id (P9 — D-050).</summary>
+    public Task<ApiCallResult<AdminInterestSummary>> GetInterestAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminInterestSummary>(
+            HttpMethod.Get, $"interests/{id}", content: null,
+            accessToken, cancellationToken);
+
+    /// <summary>Creates an interest (P9 — D-050).</summary>
+    public Task<ApiCallResult<AdminInterestSummary>> CreateInterestAsync(
+        AdminCreateInterestRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminInterestSummary>(
+            HttpMethod.Post, "interests",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Updates an interest (P9 — D-050).</summary>
+    public Task<ApiCallResult<AdminInterestSummary>> UpdateInterestAsync(
+        Guid id, AdminUpdateInterestRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminInterestSummary>(
+            HttpMethod.Put, $"interests/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Soft-deletes (deactivates) an interest (P9 — D-050).</summary>
+    public Task<ApiCallResult<bool>> DeactivateInterestAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"interests/{id}", content: null,
             accessToken, cancellationToken);
 
     /// <summary>Lists every project's log files (P6).</summary>

@@ -126,6 +126,27 @@
                                     Value="@(_model.InternationalMobile ?? string.Empty)"
                                     ValueChanged="@(v => _model.InternationalMobile = string.IsNullOrWhiteSpace(v) ? null : v)"
                                     Disabled="_saving" />
+
+                    @* P9 — Interests (الاهتمامات): 1-10 picked from the
+                       admin-managed lookup. The Save button validates the
+                       count server-side; the helper text tells the user. *@
+                    @if (_interests.Length == 0)
+                    {
+                        <SimfAlert Variant="info">@L["Account.Profile.Interests.Empty"]</SimfAlert>
+                    }
+                    else
+                    {
+                        <SimfCheckList TItem="InterestDto"
+                                       Label="@L["Account.Profile.Interests.Title"]"
+                                       Helper="@L["Account.Profile.Interests.Hint"]"
+                                       Inline="true"
+                                       Items="_interests"
+                                       ValueFor="@(item => item.Id.ToString())"
+                                       LabelFor="@(item => InterestLabel(item))"
+                                       Values="_selectedInterests"
+                                       ValuesChanged="OnInterestsChanged"
+                                       Disabled="_saving" />
+                    }
                 </div>
 
                 <div class="simf-form__actions">
@@ -178,6 +199,10 @@
     private string[] _countryCodes = Array.Empty<string>();
     private Dictionary<string, CountryDto> _countriesByCode = new();
 
+    // P9 — interests picker.
+    private InterestDto[] _interests = Array.Empty<InterestDto>();
+    private List<InterestDto> _selectedInterests = new();
+
     private readonly UpsertUserProfileRequest _model = new();
     private string _nationalIdInput = string.Empty;
     private string _iqamaInput = string.Empty;
@@ -211,21 +236,26 @@
     {
         try
         {
-            // Two parallel fetches — the page can't render without both.
+            // Three parallel fetches — the page can't render without all of them.
             var profileTask = JS.InvokeAsync<ApiResult<UserProfileResponse>>(
                 "simfAccount.getJson", "/account/api/user-profile").AsTask();
             var countriesTask = JS.InvokeAsync<ApiResult<CountryListResponse>>(
                 "simfAccount.getJson", "/account/api/user-profile/countries").AsTask();
-            await Task.WhenAll(profileTask, countriesTask);
+            var interestsTask = JS.InvokeAsync<ApiResult<InterestListResponse>>(
+                "simfAccount.getJson", "/account/api/interests").AsTask();
+            await Task.WhenAll(profileTask, countriesTask, interestsTask);
 
             var profileEnvelope = await profileTask;
             var countriesEnvelope = await countriesTask;
+            var interestsEnvelope = await interestsTask;
 
             if (profileEnvelope is null || !profileEnvelope.Success || profileEnvelope.Data is null
-                || countriesEnvelope is null || !countriesEnvelope.Success || countriesEnvelope.Data is null)
+                || countriesEnvelope is null || !countriesEnvelope.Success || countriesEnvelope.Data is null
+                || interestsEnvelope is null || !interestsEnvelope.Success || interestsEnvelope.Data is null)
             {
                 _loadError = profileEnvelope?.Error?.MessageForCurrentCulture()
                     ?? countriesEnvelope?.Error?.MessageForCurrentCulture()
+                    ?? interestsEnvelope?.Error?.MessageForCurrentCulture()
                     ?? L["Account.Profile.LoadFailed"];
                 StateHasChanged();
                 return;
@@ -234,6 +264,11 @@
             _response = profileEnvelope.Data;
             _countriesByCode = countriesEnvelope.Data.Countries.ToDictionary(c => c.Code);
             _countryCodes = countriesEnvelope.Data.Countries.Select(c => c.Code).ToArray();
+            _interests = interestsEnvelope.Data.Interests.ToArray();
+            _selectedInterests = _interests
+                .Where(interest => _response.InterestIds.Contains(interest.Id))
+                .ToList();
+            _model.InterestIds = _selectedInterests.Select(interest => interest.Id).ToList();
 
             _model.ArabicName = _response.ArabicName;
             _model.EnglishName = _response.EnglishName;
@@ -346,6 +381,19 @@
         if (!_countriesByCode.TryGetValue(code, out var country)) return code;
         var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
         return isArabic ? country.NameAr : country.NameEn;
+    }
+
+    private static string InterestLabel(InterestDto interest)
+    {
+        var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+        return isArabic ? interest.NameArabic : interest.Name;
+    }
+
+    private Task OnInterestsChanged(IReadOnlyList<InterestDto> selected)
+    {
+        _selectedInterests = selected.ToList();
+        _model.InterestIds = _selectedInterests.Select(interest => interest.Id).ToList();
+        return Task.CompletedTask;
     }
 
     private static string BuildQrSvg(string qrId)

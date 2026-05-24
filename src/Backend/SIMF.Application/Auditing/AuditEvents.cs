@@ -76,6 +76,11 @@ public static class AuditEvents
     public const string UserProfileIdImageUploaded = "UserProfile.IdImageUploaded";
     public const string UserProfileIdImageRejected = "UserProfile.IdImageRejected";
 
+    // Interests (P9 — D-050; الاهتمامات)
+    public const string InterestCreated = "Interest.Created";
+    public const string InterestUpdated = "Interest.Updated";
+    public const string InterestDeactivated = "Interest.Deactivated";
+
     // Logs (P6 — per-project log files + CP viewer)
     public const string AdminLogViewed = "Admin.LogViewed";
     public const string AdminLogDownloaded = "Admin.LogDownloaded";

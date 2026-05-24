@@ -40,6 +40,7 @@ internal sealed class UserProfileService(
 
         var profile = await dbContext.UserProfiles
             .AsNoTracking()
+            .Include(p => p.Interests)
             .SingleOrDefaultAsync(p => p.UserId == actorUserId, cancellationToken);
 
         if (profile is null)
@@ -76,8 +77,25 @@ internal sealed class UserProfileService(
                 "The acting account was not found.",
                 "لم يتم العثور على الحساب.");
 
+        // P9 — validate the picked interest ids: every id must exist
+        // and be active. (The validator already enforces 1-10 count.)
+        var requestedIds = request.InterestIds.Distinct().ToList();
+        var foundActiveIds = await dbContext.Interests
+            .AsNoTracking()
+            .Where(interest => requestedIds.Contains(interest.Id) && interest.IsActive)
+            .Select(interest => interest.Id)
+            .ToListAsync(cancellationToken);
+        if (foundActiveIds.Count != requestedIds.Count)
+        {
+            throw new ApiException(
+                ErrorCodes.InterestInvalid, 400,
+                "One or more selected interests are unknown or no longer active.",
+                "بعض الاهتمامات المختارة غير معروفة أو لم تعد مفعّلة.");
+        }
+
         var now = timeProvider.GetUtcNow();
         var profile = await dbContext.UserProfiles
+            .Include(p => p.Interests)
             .SingleOrDefaultAsync(p => p.UserId == actorUserId, cancellationToken);
 
         var isNew = profile is null;
@@ -106,6 +124,31 @@ internal sealed class UserProfileService(
         {
             dbContext.UserProfiles.Add(profile);
         }
+
+        // P9 — diff the interests: remove ones no longer picked, add the
+        // new ones. (Clear-then-re-add would generate DELETE + INSERT
+        // for unchanged rows.)
+        var requestedSet = requestedIds.ToHashSet();
+        var existingIds = profile.Interests.Select(interest => interest.Id).ToHashSet();
+        var toRemove = profile.Interests
+            .Where(interest => !requestedSet.Contains(interest.Id))
+            .ToList();
+        foreach (var stale in toRemove)
+        {
+            profile.Interests.Remove(stale);
+        }
+        var toAddIds = requestedSet.Except(existingIds).ToList();
+        if (toAddIds.Count > 0)
+        {
+            var freshRows = await dbContext.Interests
+                .Where(interest => toAddIds.Contains(interest.Id))
+                .ToListAsync(cancellationToken);
+            foreach (var row in freshRows)
+            {
+                profile.Interests.Add(row);
+            }
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -189,6 +232,7 @@ internal sealed class UserProfileService(
         new()
         {
             ProfileTypeId = profile.ProfileTypeId,
+            InterestIds = profile.Interests.Select(interest => interest.Id).ToList(),
             ArabicName = profile.ArabicName,
             EnglishName = profile.EnglishName,
             NationalityCode = profile.NationalityCode,
