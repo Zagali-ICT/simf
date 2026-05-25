@@ -19,7 +19,7 @@ namespace SIMF.Application.IdentityAccess;
 /// A completed reset or change ends every session for the account, atomically.
 /// </summary>
 public sealed class PasswordService(
-    UserManager<SimfUser> userManager,
+    IUserAccountRepository accounts,
     IAccountCodeRepository accountCodeRepository,
     IRefreshTokenRepository refreshTokenRepository,
     ITransactionRunner transactionRunner,
@@ -37,7 +37,7 @@ public sealed class PasswordService(
         ForgotPasswordRequest request,
         CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByEmailAsync(request.Email);
+        var user = await accounts.FindByEmailAsync(request.Email);
         var now = timeProvider.GetUtcNow();
 
         if (user is not null
@@ -95,7 +95,7 @@ public sealed class PasswordService(
         ResetPasswordRequest request,
         CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByEmailAsync(request.Email);
+        var user = await accounts.FindByEmailAsync(request.Email);
         var now = timeProvider.GetUtcNow();
 
         var code = user is null
@@ -170,7 +170,7 @@ public sealed class PasswordService(
         ChangePasswordRequest request,
         CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(userId.ToString())
+        var user = await accounts.FindByIdAsync(userId, cancellationToken)
             ?? throw new ApiException(ErrorCodes.AuthAccountNotFound, 404,
                 "The account was not found.",
                 "لم يتم العثور على الحساب.");
@@ -178,7 +178,7 @@ public sealed class PasswordService(
         await transactionRunner.ExecuteAsync(
             async token =>
             {
-                var result = await userManager.ChangePasswordAsync(
+                var result = await accounts.ChangePasswordAsync(
                     user, request.CurrentPassword, request.NewPassword);
                 if (!result.Succeeded)
                 {
@@ -229,7 +229,7 @@ public sealed class PasswordService(
     /// </summary>
     private async Task SetPasswordAsync(SimfUser user, string newPassword)
     {
-        var removeResult = await userManager.RemovePasswordAsync(user);
+        var removeResult = await accounts.RemovePasswordAsync(user);
         if (!removeResult.Succeeded)
         {
             throw new ApiException(ErrorCodes.InternalError, 500,
@@ -237,7 +237,7 @@ public sealed class PasswordService(
                 "تعذّر إعادة تعيين كلمة المرور.");
         }
 
-        var addResult = await userManager.AddPasswordAsync(user, newPassword);
+        var addResult = await accounts.AddPasswordAsync(user, newPassword);
         if (!addResult.Succeeded)
         {
             throw PasswordRejected(addResult);
@@ -256,7 +256,7 @@ public sealed class PasswordService(
     {
         user.PasswordChangeRequired = false;
         user.UpdatedAt = now;
-        await userManager.UpdateAsync(user);
+        await accounts.UpdateAsync(user);
         await refreshTokenRepository.RevokeAllForUserAsync(user.Id, now, cancellationToken);
     }
 
