@@ -249,6 +249,7 @@
 
   <data name="Brand.Subtitle" xml:space="preserve"><value>لوحة التحكم</value></data>
   <data name="Brand.Caption" xml:space="preserve"><value>القوات البحرية الملكية السعودية</value></data>
+  <data name="Brand.LogoAlt" xml:space="preserve"><value>سيمف — الملتقى البحري السعودي الدولي</value></data>
 
   <data name="Auth.PageTitle.SignIn" xml:space="preserve"><value>تسجيل الدخول · لوحة تحكم SIMF</value></data>
   <data name="Auth.PageTitle.Totp" xml:space="preserve"><value>التحقق · لوحة تحكم SIMF</value></data>

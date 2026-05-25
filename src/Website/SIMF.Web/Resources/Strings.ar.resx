@@ -15,6 +15,7 @@
 
   <data name="Brand.Subtitle" xml:space="preserve"><value>الملتقى البحري السعودي الدولي 2026</value></data>
   <data name="Brand.Caption" xml:space="preserve"><value>القوات البحرية الملكية السعودية</value></data>
+  <data name="Brand.LogoAlt" xml:space="preserve"><value>سيمف — الملتقى البحري السعودي الدولي</value></data>
 
   <data name="Auth.PageTitle.SignIn" xml:space="preserve"><value>تسجيل الدخول · الملتقى البحري السعودي الدولي</value></data>
   <data name="Auth.PageTitle.Verify" xml:space="preserve"><value>التحقق · الملتقى البحري السعودي الدولي</value></data>

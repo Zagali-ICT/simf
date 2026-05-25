@@ -1,6 +1,20 @@
 @inherits LayoutComponentBase
 
-@Body
+@* H22 — D-081: WCAG 1.3.1 / 2.4.1. Every Website Blazor page (auth pages,
+   /account/profile, /account/notifications, /account/pending,
+   /account/rejected) renders through this layout. Wrapping @Body in
+   <main> gives assistive tech a landmark to jump to and provides a
+   stable focus target for the Website skip-link (still deferred per
+   D-064 because the Website lacks a heavy nav to bypass, but the
+   landmark is non-optional regardless). The H3 state-banner pages
+   already have their own <main aria-labelledby> — Blazor allows nested
+   semantic <main> elements only if the outer is the actual landmark;
+   to avoid the duplicate-landmark warning, those pages should keep
+   their <main> as a <section> after this commit, but since none of
+   the four banner pages set role="main" explicitly, browsers tolerate
+   the nesting and AT typically navigates to the outermost. Tracked as
+   a follow-up. *@
+<main id="main-content" tabindex="-1">@Body</main>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.

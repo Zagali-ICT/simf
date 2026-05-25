@@ -18,11 +18,22 @@
 @implements IAsyncDisposable
 
 <div class="simf-bell" data-open="@_open">
+    @* H22 — D-081: switched from role="dialog" + focus-trap to the
+       disclosure pattern (aria-expanded + aria-controls only). The
+       dropdown is a flat notification list, not a modal dialog —
+       Tab naturally flows forward into the list and then onto the
+       page, which matches what the user expects from a popover.
+       aria-haspopup keeps a hint about the secondary surface
+       (value "true" rather than "dialog" — we no longer claim the
+       popup is a dialog). On close, focus is explicitly restored to
+       the trigger button via _triggerEl.FocusAsync() so a
+       keyboard-only user lands back where they invoked the popup. *@
     <button type="button" class="simf-bell__trigger"
             aria-label="@TriggerAccessibleName()"
-            aria-haspopup="dialog"
+            aria-haspopup="true"
             aria-expanded="@_open.ToString().ToLowerInvariant()"
             aria-controls="@_dropdownId"
+            @ref="_triggerEl"
             @onclick="ToggleAsync"
             @onkeydown="OnTriggerKeyDown">
         <SimfIcon Name="bell" Class="simf-bell__icon" Size="18" />
@@ -39,7 +50,6 @@
         <div class="simf-bell__backdrop" @onclick="Close"></div>
         <div class="simf-bell__dropdown"
              id="@_dropdownId"
-             role="dialog"
              aria-label="@AriaLabel"
              tabindex="-1"
              @ref="_dropdownEl"
@@ -83,7 +93,9 @@
     private int _unread;
     private bool _open;
     private bool _focusOnNextRender;
+    private bool _restoreFocusToTrigger;
     private ElementReference _dropdownEl;
+    private ElementReference _triggerEl;
     private System.Threading.Timer? _poll;
 
     /// <summary>Accessible name for the bell button (e.g. "Notifications").</summary>
@@ -127,6 +139,19 @@
             }
             catch { /* element gone before the render flushed — harmless */ }
         }
+        if (_restoreFocusToTrigger)
+        {
+            // H22 — D-081: on close, return focus to the trigger so a
+            // keyboard-only user is not stranded at the now-closed
+            // popup's position. Same try/catch shape as the open-side
+            // focus.
+            _restoreFocusToTrigger = false;
+            try
+            {
+                await _triggerEl.FocusAsync();
+            }
+            catch { /* trigger gone — harmless */ }
+        }
     }
 
     private string TriggerAccessibleName() =>
@@ -147,6 +172,7 @@
         if (_open)
         {
             _open = false;
+            _restoreFocusToTrigger = true;
         }
     }
 
@@ -155,6 +181,7 @@
         if (_open && string.Equals(args.Key, "Escape", StringComparison.Ordinal))
         {
             _open = false;
+            _restoreFocusToTrigger = true;
         }
     }
 
@@ -163,6 +190,7 @@
         if (string.Equals(args.Key, "Escape", StringComparison.Ordinal))
         {
             _open = false;
+            _restoreFocusToTrigger = true;
         }
     }
 

@@ -248,6 +248,7 @@
 
   <data name="Brand.Subtitle" xml:space="preserve"><value>Control Panel</value></data>
   <data name="Brand.Caption" xml:space="preserve"><value>Royal Saudi Naval Forces</value></data>
+  <data name="Brand.LogoAlt" xml:space="preserve"><value>SIMF — Saudi International Maritime Forum</value></data>
 
   <data name="Auth.PageTitle.SignIn" xml:space="preserve"><value>Sign in · SIMF Control Panel</value></data>
   <data name="Auth.PageTitle.Totp" xml:space="preserve"><value>Verify · SIMF Control Panel</value></data>

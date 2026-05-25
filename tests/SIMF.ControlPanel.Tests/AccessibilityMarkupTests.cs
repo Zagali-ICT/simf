@@ -25,13 +25,19 @@ public sealed class AccessibilityMarkupTests
     // H3 — bell ARIA contract.
     // ----------------------------------------------------------------------
 
+    // H22 — D-081 changed the bell from role="dialog" + aria-haspopup="dialog"
+    // to the disclosure pattern + aria-haspopup="true" and dropped the
+    // role="dialog" entirely (Tab now flows naturally; focus returns to
+    // the trigger on close via _triggerEl.FocusAsync). The contract
+    // tokens were updated accordingly.
     [Theory]
-    [InlineData("aria-haspopup=\"dialog\"")]
+    [InlineData("aria-haspopup=\"true\"")]
     [InlineData("aria-expanded=")]
     [InlineData("aria-controls=")]
     [InlineData("OnTriggerKeyDown")]
     [InlineData("OnDropdownKeyDown")]
     [InlineData("simf-bell__backdrop")]
+    [InlineData("_triggerEl.FocusAsync")]
     public void SimfNotificationBell_renders_required_a11y_attribute(string token)
     {
         var source = ReadSource("src/Shared/SIMF.Components/Controls/SimfNotificationBell.razor");
@@ -39,8 +45,14 @@ public sealed class AccessibilityMarkupTests
     }
 
     // ----------------------------------------------------------------------
-    // H3 — state-banner pages each carry a <main aria-labelledby=…>
-    // pointing at their own <h1>.
+    // H3 — state-banner pages each carry a labelled landmark / region
+    // pointing at their own <h1>. H22 — D-081 demoted the Website pages
+    // from <main> to <section aria-labelledby> because the new Website
+    // MainLayout wraps @Body in <main> (nested <main> would be invalid
+    // HTML). The CP pages keep <main> because the CpShellLayout doesn't
+    // wrap pages in <main> (SimfAppShell does provide one, but at the
+    // shell level — the page-level <main> is allowed because the
+    // CpShellLayout sits between, breaking the nesting).
     // ----------------------------------------------------------------------
 
     [Theory]
@@ -48,17 +60,41 @@ public sealed class AccessibilityMarkupTests
                 "auth-pending-title")]
     [InlineData("src/ControlPanel/SIMF.ControlPanel/Components/Pages/Auth/Rejected.razor",
                 "auth-rejected-title")]
-    [InlineData("src/Website/SIMF.Web/Components/Pages/Account/PendingApproval.razor",
-                "account-pending-title")]
-    [InlineData("src/Website/SIMF.Web/Components/Pages/Account/Rejected.razor",
-                "account-rejected-title")]
-    public void State_banner_page_has_main_landmark_with_matching_aria_labelledby(
+    public void Cp_state_banner_page_has_main_landmark_with_matching_aria_labelledby(
         string relativePath, string anchorId)
     {
         var source = ReadSource(relativePath);
         Assert.Contains($"<main", source);
         Assert.Contains($"aria-labelledby=\"{anchorId}\"", source);
         Assert.Contains($"id=\"{anchorId}\"", source);
+    }
+
+    [Theory]
+    [InlineData("src/Website/SIMF.Web/Components/Pages/Account/PendingApproval.razor",
+                "account-pending-title")]
+    [InlineData("src/Website/SIMF.Web/Components/Pages/Account/Rejected.razor",
+                "account-rejected-title")]
+    public void Website_state_banner_page_uses_section_inside_layout_main(
+        string relativePath, string anchorId)
+    {
+        // H22 — D-081: page uses <section aria-labelledby> because the
+        // layout's <main> is the outer landmark. The section keeps the
+        // labelled-region semantic.
+        var source = ReadSource(relativePath);
+        Assert.Contains("<section", source);
+        Assert.Contains($"aria-labelledby=\"{anchorId}\"", source);
+        Assert.Contains($"id=\"{anchorId}\"", source);
+    }
+
+    [Fact]
+    public void Website_main_layout_wraps_body_in_main_landmark()
+    {
+        // H22 — D-081: the Website's bare MainLayout (was just @Body)
+        // now wraps content in <main id="main-content" tabindex="-1">
+        // so every Website signed-in page gets a landmark.
+        var source = ReadSource("src/Website/SIMF.Web/Components/Layout/MainLayout.razor");
+        Assert.Contains("<main", source);
+        Assert.Contains("id=\"main-content\"", source);
     }
 
     // ----------------------------------------------------------------------
