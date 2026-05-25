@@ -11,9 +11,9 @@
 
 <PageTitle>@L["Auth.Rejected.Title"] · SIMF</PageTitle>
 
-<div class="simf-auth-state">
+<main class="simf-auth-state" aria-labelledby="auth-rejected-title">
     <section class="simf-card simf-page-card">
-        <h1 class="simf-card__title">@L["Auth.Rejected.Title"]</h1>
+        <h1 id="auth-rejected-title" class="simf-card__title">@L["Auth.Rejected.Title"]</h1>
 
         @if (!string.IsNullOrEmpty(_reason))
         {
@@ -33,7 +33,7 @@
             </SimfButton>
         </form>
     </section>
-</div>
+</main>
 
 @code {
     private string? _reason;

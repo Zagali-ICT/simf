@@ -379,6 +379,7 @@
   <data name="Account.Notifications.Empty" xml:space="preserve"><value>No notifications.</value></data>
   <data name="Account.Notifications.ViewAll" xml:space="preserve"><value>View all</value></data>
   <data name="Account.Notifications.MarkAllRead" xml:space="preserve"><value>Mark all as read</value></data>
+  <data name="Account.Notifications.UnreadSuffix" xml:space="preserve"><value>unread</value></data>
   <data name="Account.Notifications.MarkAllReadDone" xml:space="preserve"><value>All notifications marked as read.</value></data>
   <data name="Account.Notifications.Column.Title" xml:space="preserve"><value>Title</value></data>
   <data name="Account.Notifications.Column.Body" xml:space="preserve"><value>Message</value></data>

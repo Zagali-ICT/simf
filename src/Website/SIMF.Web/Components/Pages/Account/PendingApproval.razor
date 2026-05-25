@@ -11,9 +11,9 @@
 
 <PageTitle>@L["Account.Pending.Title"]</PageTitle>
 
-<div class="simf-account-page">
+<main class="simf-account-page" aria-labelledby="account-pending-title">
     <section class="simf-card simf-page-card">
-        <h1 class="simf-card__title">@L["Account.Pending.Title"]</h1>
+        <h1 id="account-pending-title" class="simf-card__title">@L["Account.Pending.Title"]</h1>
         <p class="simf-card__supporting">@L["Account.Pending.Supporting"]</p>
         @if (!string.IsNullOrEmpty(_email))
         {
@@ -26,7 +26,7 @@
             </SimfButton>
         </form>
     </section>
-</div>
+</main>
 
 @code {
     private string? _email;

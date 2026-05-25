@@ -3,7 +3,15 @@
    the unread-count endpoint every 60 s; the caller's app provides the
    API path prefix because the CP and Website expose the same proxy
    under the same /account/api root. Click on the bell loads the
-   dropdown; "View all" links to /account/notifications. *@
+   dropdown; "View all" links to /account/notifications.
+
+   H3 — D-058: accessibility hardening. The trigger advertises its
+   popup (aria-haspopup="dialog", aria-controls, aria-expanded). The
+   accessible name folds the unread count in so a screen-reader user
+   gets the same information the visual badge gives. The dropdown is a
+   focus-managed dialog: it gets focus on open, Esc closes it (from
+   trigger or dropdown), and a transparent backdrop closes on click
+   outside. *@
 @namespace SIMF.Components.Controls
 @inject IJSRuntime JS
 @inject NavigationManager Nav
@@ -11,8 +19,12 @@
 
 <div class="simf-bell" data-open="@_open">
     <button type="button" class="simf-bell__trigger"
-            aria-label="@AriaLabel"
-            @onclick="ToggleAsync">
+            aria-label="@TriggerAccessibleName()"
+            aria-haspopup="dialog"
+            aria-expanded="@_open.ToString().ToLowerInvariant()"
+            aria-controls="@_dropdownId"
+            @onclick="ToggleAsync"
+            @onkeydown="OnTriggerKeyDown">
         <SimfIcon Name="bell" Class="simf-bell__icon" Size="18" />
         @if (_unread > 0)
         {
@@ -21,7 +33,18 @@
     </button>
     @if (_open)
     {
-        <div class="simf-bell__dropdown" role="dialog" aria-label="@AriaLabel">
+        @* Transparent backdrop: a click anywhere outside the dropdown
+           closes it. The dropdown's own click is stopped from reaching
+           the backdrop so inner clicks do not close it. *@
+        <div class="simf-bell__backdrop" @onclick="Close"></div>
+        <div class="simf-bell__dropdown"
+             id="@_dropdownId"
+             role="dialog"
+             aria-label="@AriaLabel"
+             tabindex="-1"
+             @ref="_dropdownEl"
+             @onkeydown="OnDropdownKeyDown"
+             @onclick:stopPropagation="true">
             <header class="simf-bell__dropdown-head">
                 <strong>@DropdownTitle</strong>
                 @if (_items.Count > 0)
@@ -56,12 +79,20 @@
 
 @code {
     private readonly List<NotificationView> _items = new();
+    private readonly string _dropdownId = $"simf-bell-dropdown-{Guid.NewGuid():N}";
     private int _unread;
     private bool _open;
+    private bool _focusOnNextRender;
+    private ElementReference _dropdownEl;
     private System.Threading.Timer? _poll;
 
     /// <summary>Accessible name for the bell button (e.g. "Notifications").</summary>
     [Parameter, EditorRequired] public string AriaLabel { get; set; } = "Notifications";
+
+    /// <summary>Suffix appended to the trigger's accessible name when there are unread
+    /// items — e.g. "unread" / "غير مقروءة". The caller passes the localised string;
+    /// the bell composes "{AriaLabel}, {Count} {UnreadSuffixLabel}".</summary>
+    [Parameter] public string UnreadSuffixLabel { get; set; } = "unread";
 
     [Parameter, EditorRequired] public string DropdownTitle { get; set; } = "Notifications";
     [Parameter, EditorRequired] public string MarkAllReadLabel { get; set; } = "Mark all read";
@@ -85,12 +116,53 @@
             }), null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusOnNextRender)
+        {
+            _focusOnNextRender = false;
+            try
+            {
+                await _dropdownEl.FocusAsync();
+            }
+            catch { /* element gone before the render flushed — harmless */ }
+        }
+    }
+
+    private string TriggerAccessibleName() =>
+        _unread > 0 ? $"{AriaLabel}, {_unread} {UnreadSuffixLabel}" : AriaLabel;
+
     private async Task ToggleAsync()
     {
         _open = !_open;
         if (_open)
         {
+            _focusOnNextRender = true;
             await LoadLatestAsync();
+        }
+    }
+
+    private void Close()
+    {
+        if (_open)
+        {
+            _open = false;
+        }
+    }
+
+    private void OnTriggerKeyDown(KeyboardEventArgs args)
+    {
+        if (_open && string.Equals(args.Key, "Escape", StringComparison.Ordinal))
+        {
+            _open = false;
+        }
+    }
+
+    private void OnDropdownKeyDown(KeyboardEventArgs args)
+    {
+        if (string.Equals(args.Key, "Escape", StringComparison.Ordinal))
+        {
+            _open = false;
         }
     }
 

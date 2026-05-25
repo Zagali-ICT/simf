@@ -11,9 +11,9 @@
 
 <PageTitle>@L["Account.Rejected.Title"]</PageTitle>
 
-<div class="simf-account-page">
+<main class="simf-account-page" aria-labelledby="account-rejected-title">
     <section class="simf-card simf-page-card">
-        <h1 class="simf-card__title">@L["Account.Rejected.Title"]</h1>
+        <h1 id="account-rejected-title" class="simf-card__title">@L["Account.Rejected.Title"]</h1>
 
         @if (!string.IsNullOrEmpty(_reason))
         {
@@ -33,7 +33,7 @@
             </SimfButton>
         </form>
     </section>
-</div>
+</main>
 
 @code {
     private string? _reason;

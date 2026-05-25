@@ -12,9 +12,9 @@
 
 <PageTitle>@L["Auth.Pending.Title"] · SIMF</PageTitle>
 
-<div class="simf-auth-state">
+<main class="simf-auth-state" aria-labelledby="auth-pending-title">
     <section class="simf-card simf-page-card">
-        <h1 class="simf-card__title">@L["Auth.Pending.Title"]</h1>
+        <h1 id="auth-pending-title" class="simf-card__title">@L["Auth.Pending.Title"]</h1>
         <p class="simf-card__supporting">@L["Auth.Pending.Supporting"]</p>
         @if (!string.IsNullOrEmpty(_email))
         {
@@ -27,7 +27,7 @@
             </SimfButton>
         </form>
     </section>
-</div>
+</main>
 
 @code {
     private string? _email;

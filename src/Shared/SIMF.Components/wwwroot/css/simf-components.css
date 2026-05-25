@@ -1720,6 +1720,15 @@ body.simf-modal-open { overflow: hidden; }
   justify-content: center;
   line-height: 1;
 }
+.simf-bell__backdrop {
+  /* H3 — D-058: invisible click-outside catcher. Sits behind the
+     dropdown (lower z-index), covers the rest of the viewport, swallows
+     a click so the dropdown closes without focus going elsewhere. */
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 49;
+}
 .simf-bell__dropdown {
   position: absolute;
   inset-block-start: calc(100% + var(--space-1));
@@ -1732,6 +1741,11 @@ body.simf-modal-open { overflow: hidden; }
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-2);
   z-index: 50;
+}
+.simf-bell__dropdown:focus { outline: 0; }
+.simf-bell__dropdown:focus-visible {
+  outline: 2px solid var(--color-accent-blue);
+  outline-offset: 2px;
 }
 .simf-bell__dropdown-head,
 .simf-bell__dropdown-foot {
