@@ -5,6 +5,11 @@
 @namespace SIMF.Components.Layout
 
 <div class="simf-shell @(_navHidden ? "simf-shell--nav-hidden" : null)">
+    @* H9 — D-064: WCAG 2.4.1 Bypass Blocks. A keyboard user pressing Tab
+       lands on this link first and can skip the ~30-item side navigation
+       in one keystroke. The link is visually hidden by default and
+       slides in only on :focus-visible. *@
+    <a class="simf-skip-link" href="#simf-main">@SkipNavLabel</a>
     <header class="simf-shell__topbar">
         <button type="button" class="simf-shell__nav-toggle"
                 @onclick="ToggleNav" aria-label="@ToggleNavLabel" aria-expanded="@((!_navHidden).ToString().ToLowerInvariant())">
@@ -18,7 +23,7 @@
         <nav class="simf-shell__nav" aria-label="@NavLabel">
             @SideNav
         </nav>
-        <main class="simf-shell__content">
+        <main id="simf-main" class="simf-shell__content" tabindex="-1">
             @ChildContent
         </main>
     </div>
@@ -42,6 +47,11 @@
 
     /// <summary>The accessible label for the navigation region.</summary>
     [Parameter] public string NavLabel { get; set; } = "Main";
+
+    /// <summary>The text of the skip-to-main-content link (H9 — D-064).
+    /// English fallback so callers that don't localise still get a
+    /// working WCAG 2.4.1 affordance.</summary>
+    [Parameter] public string SkipNavLabel { get; set; } = "Skip to main content";
 
     private bool _navHidden;
 

@@ -18,6 +18,7 @@
   <data name="Shell.Account" xml:space="preserve"><value>Account</value></data>
   <data name="Shell.SignOut" xml:space="preserve"><value>Sign out</value></data>
   <data name="Shell.ToggleNav" xml:space="preserve"><value>Toggle navigation</value></data>
+  <data name="Shell.SkipToMain" xml:space="preserve"><value>Skip to main content</value></data>
   <data name="Shell.ThemeLight" xml:space="preserve"><value>Light</value></data>
   <data name="Shell.ThemeDark" xml:space="preserve"><value>Dark</value></data>
   <data name="Shell.SwitchLanguage" xml:space="preserve"><value>العربية</value></data>

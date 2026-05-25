@@ -768,6 +768,33 @@
   font-size: var(--font-size-body);
 }
 
+/* H9 — D-064: skip-to-main-content link. Off-screen by default,
+   slides into the top-left corner on :focus-visible. Keyboard-only
+   users press Tab once after landing on the page and can bypass the
+   ~30-item navigation. */
+.simf-skip-link {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-start: var(--space-2);
+  z-index: 100;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: var(--border-width) solid var(--color-accent-blue);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-weight: 600;
+  transform: translateY(-200%);
+  transition: transform 120ms ease-out;
+}
+.simf-skip-link:focus,
+.simf-skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid var(--color-accent-blue);
+  outline-offset: 2px;
+}
+.simf-shell__content:focus { outline: 0; }
+
 /* -- Top bar -- */
 .simf-shell__topbar {
   flex: 0 0 auto;
