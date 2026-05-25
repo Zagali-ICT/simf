@@ -210,6 +210,30 @@ public sealed class PasswordTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Unauthorized, refresh.StatusCode);
     }
 
+    // ----------------------------------------------------------------------
+    // H8 — D-063: CurrentPassword is now capped at 128 chars. Without the
+    // cap, a megabyte payload reaches userManager.ChangePasswordAsync
+    // which runs PBKDF2 over the whole thing inside a transaction —
+    // a cheap authenticated DoS vector.
+    // ----------------------------------------------------------------------
+
+    [Fact]
+    public async Task Change_password_rejects_a_too_long_current_password_before_hashing()
+    {
+        var tokens = await AuthFlow.SignInVisitorAsync(_client, _factory);
+
+        // 129 chars — one past the cap.
+        var oversized = new string('x', 129);
+        var change = await ChangeAsync(tokens.AccessToken, oversized, NewPassword);
+
+        Assert.Equal(HttpStatusCode.BadRequest, change.StatusCode);
+        var body = await change.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.False(body!.Success);
+        // The validator emits VALIDATION_FAILED; the failure is on
+        // currentPassword (length), not on credentials.
+        Assert.NotNull(body.Error);
+    }
+
     // -- helpers --------------------------------------------------------------
 
     private Task<HttpResponseMessage> ForgotAsync(string email) =>
