@@ -1,10 +1,9 @@
 // Tests: SIMF.Api.Tests/ProfileEndpointsTests.cs
 using System.Security.Claims;
 using FastEndpoints;
-using Microsoft.AspNetCore.Identity;
 using SIMF.Application.Abstractions;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
-using SIMF.Domain.IdentityAccess;
 
 namespace SIMF.Api.Endpoints.Account;
 
@@ -16,7 +15,7 @@ namespace SIMF.Api.Endpoints.Account;
 /// authorisation check.
 /// </summary>
 public sealed class AvatarFetchEndpoint(
-    UserManager<SimfUser> userManager,
+    IUserAccountRepository accounts,
     IAvatarStorage avatarStorage)
     : EndpointWithoutRequest
 {
@@ -44,7 +43,7 @@ public sealed class AvatarFetchEndpoint(
             return;
         }
 
-        var user = await userManager.FindByIdAsync(requestedId.ToString());
+        var user = await accounts.FindByIdAsync(requestedId, ct);
         if (user?.AvatarRelativePath is not { Length: > 0 } path)
         {
             await Send.NotFoundAsync(ct);

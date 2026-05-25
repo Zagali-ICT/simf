@@ -3,6 +3,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Email;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Notifications;
@@ -18,7 +19,7 @@ namespace SIMF.Infrastructure.Notifications;
 /// </summary>
 internal sealed class NotificationDispatcher(
     SimfIdentityDbContext dbContext,
-    UserManager<SimfUser> userManager,
+    IUserAccountRepository accounts,
     IEmailQueue emailQueue,
     TimeProvider timeProvider,
     ILogger<NotificationDispatcher> logger) : INotificationDispatcher
@@ -55,7 +56,7 @@ internal sealed class NotificationDispatcher(
             // P13 will set PreRenderedEmailHtml on every call site. P12
             // ships the dispatcher able to handle the pre-rendered path
             // already so the contract does not change later.
-            var user = await userManager.FindByIdAsync(request.UserId.ToString());
+            var user = await accounts.FindByIdAsync(request.UserId, cancellationToken);
             if (user?.Email is null)
             {
                 logger.LogWarning(

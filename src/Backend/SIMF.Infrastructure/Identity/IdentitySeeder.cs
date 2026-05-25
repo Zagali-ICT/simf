@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SIMF.Application.Auditing;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
@@ -16,7 +17,7 @@ namespace SIMF.Infrastructure.Identity;
 /// (decision D4, SIMF-FDS-001 Amendment A.4 and A.5; SIMF-RPM-001 section 5.1).
 /// </summary>
 public sealed class IdentitySeeder(
-    UserManager<SimfUser> userManager,
+    IUserAccountRepository accounts,
     RoleManager<SimfRole> roleManager,
     SimfIdentityDbContext dbContext,
     IOptions<SuperAdminOptions> options,
@@ -51,16 +52,16 @@ public sealed class IdentitySeeder(
             await EnsureRoleAsync(role);
         }
 
-        var admin = await userManager.FindByEmailAsync(settings.Email)
+        var admin = await accounts.FindByEmailAsync(settings.Email)
             ?? await CreateSuperAdminAsync(settings, cancellationToken);
         if (admin is null)
         {
             return;
         }
 
-        if (!await userManager.IsInRoleAsync(admin, AdministratorRole))
+        if (!await accounts.IsInRoleAsync(admin, AdministratorRole))
         {
-            await userManager.AddToRoleAsync(admin, AdministratorRole);
+            await accounts.AddToRoleAsync(admin, AdministratorRole);
         }
 
         // P7 — every seeded admin must end up with UserType = Admin. This
@@ -69,7 +70,7 @@ public sealed class IdentitySeeder(
         if (admin.UserType != UserType.Admin)
         {
             admin.UserType = UserType.Admin;
-            await userManager.UpdateAsync(admin);
+            await accounts.UpdateAsync(admin);
         }
 
         // P7 — seed the initial ProfileTypes set so the create / pending
@@ -146,7 +147,7 @@ public sealed class IdentitySeeder(
             CreatedAt = now,
         };
 
-        var result = await userManager.CreateAsync(admin, settings.TempPassword);
+        var result = await accounts.CreateAsync(admin, settings.TempPassword);
         if (!result.Succeeded)
         {
             logger.LogError(
@@ -157,8 +158,8 @@ public sealed class IdentitySeeder(
 
         if (!string.IsNullOrWhiteSpace(settings.TotpSecret))
         {
-            await userManager.SetAuthenticationTokenAsync( admin, AuthenticatorKeyProvider, AuthenticatorKeyTokenName, settings.TotpSecret);
-            await userManager.SetTwoFactorEnabledAsync(admin, true);
+            await accounts.SetAuthenticationTokenAsync( admin, AuthenticatorKeyProvider, AuthenticatorKeyTokenName, settings.TotpSecret);
+            await accounts.SetTwoFactorEnabledAsync(admin, true);
         }
 
         await auditLog.WriteAsync(

@@ -1,12 +1,11 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using SIMF.Application.Auditing;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Domain.Auditing;
-using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Identity;
 
 namespace SIMF.Api.Authentication;
@@ -65,10 +64,13 @@ internal static class JwtBearerSetup
             return;
         }
 
-        var userManager = context.HttpContext.RequestServices
-            .GetRequiredService<UserManager<SimfUser>>();
-        var user = userId is not null && Guid.TryParse(userId, out _)
-            ? await userManager.FindByIdAsync(userId)
+        // R3g — D-079: resolve the repository from request services rather
+        // than UserManager directly. Same shape — the bearer events run
+        // outside of a constructor injection scope.
+        var accounts = context.HttpContext.RequestServices
+            .GetRequiredService<IUserAccountRepository>();
+        var user = userId is not null && Guid.TryParse(userId, out var parsedId)
+            ? await accounts.FindByIdAsync(parsedId)
             : null;
 
         if (user is null

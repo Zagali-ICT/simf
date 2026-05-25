@@ -1,9 +1,9 @@
 // Tests: SIMF.Api.Tests/UserProfileTests.cs (QR minted on admin-create-user;
 //        not minted before Approved).
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Identity;
 
@@ -12,8 +12,14 @@ namespace SIMF.Infrastructure.Identity;
 /// 1.2 × 10^18 possible values; collisions are negligible at SIMF scale
 /// (thousands of users), but we still query the DB once to ensure
 /// uniqueness — the column carries a UNIQUE constraint anyway.
+///
+/// <para>R3g — D-079: the uniqueness check is a LINQ-IQueryable read,
+/// not a method on <c>IUserAccountRepository</c>. Using
+/// <c>SimfIdentityDbContext.Users</c> directly is the Infrastructure-
+/// only substitution that doesn't leak <c>IQueryable&lt;SimfUser&gt;</c>
+/// out of the repository contract.</para>
 /// </summary>
-internal sealed class QrIdMinter(UserManager<SimfUser> userManager) : IQrIdMinter
+internal sealed class QrIdMinter(SimfIdentityDbContext dbContext) : IQrIdMinter
 {
     /// <summary>Crockford base32 alphabet — excludes I, L, O, U and 0/1.</summary>
     private const string Alphabet = "23456789ABCDEFGHJKMNPQRSTVWXYZ";
@@ -31,7 +37,7 @@ internal sealed class QrIdMinter(UserManager<SimfUser> userManager) : IQrIdMinte
         for (var attempt = 0; attempt < MaxAttempts; attempt++)
         {
             var candidate = Generate();
-            var clash = await userManager.Users
+            var clash = await dbContext.Users
                 .AsNoTracking()
                 .AnyAsync(u => u.QrId == candidate, cancellationToken);
             if (!clash)

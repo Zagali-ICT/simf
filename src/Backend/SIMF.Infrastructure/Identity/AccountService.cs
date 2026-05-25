@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
@@ -18,7 +19,7 @@ namespace SIMF.Infrastructure.Identity;
 /// (D-039); the user row carries only the relative path.
 /// </summary>
 internal sealed class AccountService(
-    UserManager<SimfUser> userManager,
+    IUserAccountRepository accounts,
     IAvatarStorage avatarStorage,
     IRecoveryCodeService recoveryCodes,
     IAuditLog auditLog,
@@ -38,7 +39,7 @@ internal sealed class AccountService(
         CancellationToken cancellationToken = default)
     {
         var user = await GetUserAsync(userId);
-        var roles = await userManager.GetRolesAsync(user);
+        var roles = await accounts.GetRolesAsync(user);
         var remaining = await recoveryCodes.CountActiveAsync(user.Id, cancellationToken);
 
         return new ProfileResponse(
@@ -111,7 +112,7 @@ internal sealed class AccountService(
             user.Id, content, normalisedContentType, cancellationToken);
         user.AvatarRelativePath = relativePath;
         user.UpdatedAt = DateTimeOffset.UtcNow;
-        await userManager.UpdateAsync(user);
+        await accounts.UpdateAsync(user);
 
         await auditLog.WriteAsync(
             new AuditEntry
@@ -139,7 +140,7 @@ internal sealed class AccountService(
             await avatarStorage.DeleteAsync(user.AvatarRelativePath, cancellationToken);
             user.AvatarRelativePath = null;
             user.UpdatedAt = DateTimeOffset.UtcNow;
-            await userManager.UpdateAsync(user);
+            await accounts.UpdateAsync(user);
         }
 
         await auditLog.WriteAsync(
@@ -159,7 +160,7 @@ internal sealed class AccountService(
 
     private async Task<SimfUser> GetUserAsync(Guid userId)
     {
-        var user = await userManager.FindByIdAsync(userId.ToString());
+        var user = await accounts.FindByIdAsync(userId);
         return user ?? throw new ApiException(
             ErrorCodes.AuthAccountNotFound, 404,
             "The account was not found.",

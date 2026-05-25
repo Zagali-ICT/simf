@@ -5,6 +5,7 @@ using OtpNet;
 using QRCoder;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
@@ -21,7 +22,7 @@ namespace SIMF.Infrastructure.Identity;
 /// the change after verifying a current code.
 /// </summary>
 internal sealed class TotpEnrollmentService(
-    UserManager<SimfUser> userManager,
+    IUserAccountRepository accounts,
     ITotpVerifier totpVerifier,
     IRecoveryCodeService recoveryCodes,
     IAuditLog auditLog,
@@ -55,7 +56,7 @@ internal sealed class TotpEnrollmentService(
 
         // Stash the candidate secret — it becomes active only after a first
         // valid code confirms the user really has the authenticator paired.
-        await userManager.SetAuthenticationTokenAsync(
+        await accounts.SetAuthenticationTokenAsync(
             user, SimfProvider, PendingSecretTokenName, secret);
 
         var otpauthUri = BuildOtpAuthUri(user.Email!, secret);
@@ -82,7 +83,7 @@ internal sealed class TotpEnrollmentService(
     {
         var user = await GetUserAsync(userId);
 
-        var pending = await userManager.GetAuthenticationTokenAsync(
+        var pending = await accounts.GetAuthenticationTokenAsync(
             user, SimfProvider, PendingSecretTokenName);
         if (string.IsNullOrWhiteSpace(pending))
         {
@@ -101,7 +102,7 @@ internal sealed class TotpEnrollmentService(
             // brute-force burst lands the account in lockout after the
             // configured threshold — same posture as sign-in (D-038 follow-up
             // 5-agent review S1-1).
-            await userManager.AccessFailedAsync(user);
+            await accounts.AccessFailedAsync(user);
             await AuditFailure(AuditEvents.TotpEnrolmentFailed, user,
                 ErrorCodes.TotpEnrolmentCodeInvalid, cancellationToken,
                 detail: "code-mismatch");
@@ -110,18 +111,18 @@ internal sealed class TotpEnrollmentService(
                 "The verification code is not correct.",
                 "رمز التحقق غير صحيح.");
         }
-        await userManager.ResetAccessFailedCountAsync(user);
+        await accounts.ResetAccessFailedCountAsync(user);
 
         // Promote the pending secret to active, turn 2FA on, and arm the
         // replay guard so a code re-played in the same time-step is rejected.
-        await userManager.SetAuthenticationTokenAsync(
+        await accounts.SetAuthenticationTokenAsync(
             user, AuthenticatorProvider, ActiveSecretTokenName, pending);
-        await userManager.RemoveAuthenticationTokenAsync(
+        await accounts.RemoveAuthenticationTokenAsync(
             user, SimfProvider, PendingSecretTokenName);
         user.LastUsedTotpTimestep = result.TimeStep;
         user.UpdatedAt = DateTimeOffset.UtcNow;
-        await userManager.UpdateAsync(user);
-        await userManager.SetTwoFactorEnabledAsync(user, true);
+        await accounts.UpdateAsync(user);
+        await accounts.SetTwoFactorEnabledAsync(user, true);
 
         // Mint the user's first batch of recovery codes — shown plaintext
         // exactly once in the response so the user can save them (D-040).
@@ -165,13 +166,13 @@ internal sealed class TotpEnrollmentService(
                 "المصادقة الثنائية غير مفعّلة لهذا الحساب.");
         }
 
-        var active = await userManager.GetAuthenticatorKeyAsync(user);
+        var active = await accounts.GetAuthenticatorKeyAsync(user);
         var result = totpVerifier.Verify(active ?? string.Empty, request.Code);
         if (!result.IsValid)
         {
             // Same brute-force gate as confirm — a wrong disable code counts
             // against the lockout budget so repeated guesses lock the account.
-            await userManager.AccessFailedAsync(user);
+            await accounts.AccessFailedAsync(user);
             await AuditFailure(AuditEvents.TotpDisableFailed, user,
                 ErrorCodes.AuthTotpInvalid, cancellationToken,
                 detail: "code-mismatch");
@@ -180,19 +181,19 @@ internal sealed class TotpEnrollmentService(
                 "The verification code is not correct.",
                 "رمز التحقق غير صحيح.");
         }
-        await userManager.ResetAccessFailedCountAsync(user);
+        await accounts.ResetAccessFailedCountAsync(user);
 
         // Turn 2FA off and remove the active secret — a re-enrolment then
         // starts cleanly from a fresh QR. Wipe the recovery-code batch too
         // (D-040): codes only exist while 2FA is on; leaving them behind would
         // let a leaked code re-enable bypass after the user thought they were
         // safe.
-        await userManager.SetTwoFactorEnabledAsync(user, false);
-        await userManager.RemoveAuthenticationTokenAsync(
+        await accounts.SetTwoFactorEnabledAsync(user, false);
+        await accounts.RemoveAuthenticationTokenAsync(
             user, AuthenticatorProvider, ActiveSecretTokenName);
         user.LastUsedTotpTimestep = null;
         user.UpdatedAt = DateTimeOffset.UtcNow;
-        await userManager.UpdateAsync(user);
+        await accounts.UpdateAsync(user);
         await recoveryCodes.RevokeAllAsync(user.Id, cancellationToken);
 
         await auditLog.WriteAsync(
@@ -211,7 +212,7 @@ internal sealed class TotpEnrollmentService(
 
     private async Task<SimfUser> GetUserAsync(Guid userId)
     {
-        var user = await userManager.FindByIdAsync(userId.ToString());
+        var user = await accounts.FindByIdAsync(userId);
         return user ?? throw new ApiException(
             ErrorCodes.AuthAccountNotFound, 404,
             "The account was not found.",
