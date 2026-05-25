@@ -52,24 +52,18 @@ public sealed class PasswordService(
             if (recentCodes < MaxResetCodesPerWindow)
             {
                 var code = await IssueResetCodeAsync(user, now, cancellationToken);
-                // H10 — D-065: the code row is persisted; if the enqueue
-                // then throws (queue closed during shutdown, etc.), the
-                // user holds a code they will never receive. Audit the
-                // failure distinctly so SOC sees the gap even though the
-                // request itself audited Success.
-                try
-                {
-                    EnqueueResetEmail(user.Email!, code);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex,
-                        "Password-reset email enqueue failed for {Email}", user.Email);
-                    await AuditAsync(AuditEvents.EmailEnqueueFailed, AuditOutcome.Failure,
-                        user.Email!, user.Id, ErrorCodes.InternalError,
-                        detail: $"PasswordReset: {ex.GetType().Name}",
-                        cancellationToken: cancellationToken);
-                }
+                // H10 / H23 — D-065 / D-083: the code row is persisted;
+                // the enqueue is a side-effect on a different scope.
+                // TryEnqueueAsync owns the failure-audit pattern so every
+                // credential-flow email-dispatch site uses the same shape.
+                await emailQueue.TryEnqueueAsync(
+                    BuildResetEmail(user.Email!, code),
+                    purpose: "PasswordReset",
+                    subjectEmail: user.Email!,
+                    subjectUserId: user.Id,
+                    auditLog: auditLog,
+                    logger: logger,
+                    cancellationToken: cancellationToken);
                 await AuditAsync(AuditEvents.ForgotPasswordRequested, AuditOutcome.Success,
                     user.Email!, user.Id, cancellationToken: cancellationToken);
             }
@@ -286,14 +280,20 @@ public sealed class PasswordService(
         return code.Code;
     }
 
-    private void EnqueueResetEmail(string email, string code)
+    /// <summary>
+    /// H23 — D-083: returns the EmailMessage rather than enqueueing
+    /// directly so the caller pairs it with `IEmailQueue.TryEnqueueAsync`
+    /// — one helper, one failure audit pattern across all four call
+    /// sites (password reset, sign-up, resend verification, sign-in OTP).
+    /// </summary>
+    private static EmailMessage BuildResetEmail(string email, string code)
     {
         var minutes = (int)ResetCodeLifetime.TotalMinutes;
         var body =
             $"<p>Your SIMF password reset code is <strong>{code}</strong>.</p>" +
             $"<p>The code expires in {minutes} minutes. If you did not request a " +
             "password reset, you can ignore this email.</p>";
-        emailQueue.Enqueue(new EmailMessage(email, "SIMF password reset", body));
+        return new EmailMessage(email, "SIMF password reset", body);
     }
 
     private static DataValidationException PasswordRejected(UserOperationResult result) =>

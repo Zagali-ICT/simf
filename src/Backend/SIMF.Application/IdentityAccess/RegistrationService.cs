@@ -89,23 +89,17 @@ public sealed class RegistrationService(
             },
             cancellationToken);
 
-        // H10 — D-065: the user row and its code committed inside the
-        // transaction above; the email enqueue is a side-effect on a
-        // different scope (IEmailQueue). A failure here means the user
-        // has an account they cannot verify. Audit the gap.
-        try
-        {
-            EnqueueVerificationEmail(user.Email!, issuedCode!.Code);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex,
-                "Sign-up verification email enqueue failed for {Email}", user.Email);
-            await AuditAsync(AuditEvents.EmailEnqueueFailed, AuditOutcome.Failure,
-                user.Email!, userId: user.Id, errorCode: ErrorCodes.InternalError,
-                detail: $"EmailVerification: {ex.GetType().Name}",
-                cancellationToken: cancellationToken);
-        }
+        // H10 / H23 — D-065 / D-083: TryEnqueueAsync owns the failure-
+        // audit pattern. The user row + code are committed in the TX
+        // above; this dispatch is the side-effect on a different scope.
+        await emailQueue.TryEnqueueAsync(
+            BuildVerificationEmail(user.Email!, issuedCode!.Code),
+            purpose: "EmailVerification",
+            subjectEmail: user.Email!,
+            subjectUserId: user.Id,
+            auditLog: auditLog,
+            logger: logger,
+            cancellationToken: cancellationToken);
         await AuditAsync(
             AuditEvents.SignUpSucceeded, AuditOutcome.Success, user.Email!,
             userId: user.Id, cancellationToken: cancellationToken);
@@ -264,21 +258,16 @@ public sealed class RegistrationService(
         }
 
         var code = await IssueVerificationCodeAsync(user, now, cancellationToken);
-        // H10 — D-065: same shape as sign-up — code in DB, enqueue is a
-        // separate side-effect that can fail.
-        try
-        {
-            EnqueueVerificationEmail(user.Email!, code.Code);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex,
-                "Resend verification email enqueue failed for {Email}", user.Email);
-            await AuditAsync(AuditEvents.EmailEnqueueFailed, AuditOutcome.Failure,
-                user.Email!, userId: user.Id, errorCode: ErrorCodes.InternalError,
-                detail: $"ResendVerification: {ex.GetType().Name}",
-                cancellationToken: cancellationToken);
-        }
+        // H10 / H23 — D-065 / D-083: same shape as sign-up; helper owns
+        // the failure-audit pattern.
+        await emailQueue.TryEnqueueAsync(
+            BuildVerificationEmail(user.Email!, code.Code),
+            purpose: "ResendVerification",
+            subjectEmail: user.Email!,
+            subjectUserId: user.Id,
+            auditLog: auditLog,
+            logger: logger,
+            cancellationToken: cancellationToken);
         await AuditAsync(
             AuditEvents.ResendCodeIssued, AuditOutcome.Success, user.Email!,
             userId: user.Id, cancellationToken: cancellationToken);
@@ -313,13 +302,17 @@ public sealed class RegistrationService(
         return code;
     }
 
-    private void EnqueueVerificationEmail(string email, string code)
+    /// <summary>
+    /// H23 — D-083: builds the verification email; caller pairs with
+    /// `IEmailQueue.TryEnqueueAsync` which owns the failure audit.
+    /// </summary>
+    private static EmailMessage BuildVerificationEmail(string email, string code)
     {
         var minutes = (int)CodeLifetime.TotalMinutes;
         var body =
             $"<p>Your SIMF email verification code is <strong>{code}</strong>.</p>" +
             $"<p>The code expires in {minutes} minutes.</p>";
-        emailQueue.Enqueue(new EmailMessage(email, "SIMF email verification", body));
+        return new EmailMessage(email, "SIMF email verification", body);
     }
 
     private Task AuditAsync(

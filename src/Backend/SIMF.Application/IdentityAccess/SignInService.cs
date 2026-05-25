@@ -174,22 +174,16 @@ public sealed class SignInService(
             return new SignInResponse(true, ticketValue, null);
         }
 
-        // H10 — D-065: the ticket + OTP code are persisted; if the
-        // enqueue throws, the user holds a ticket and a code they will
-        // never receive. Audit the gap distinctly.
-        try
-        {
-            EnqueueSignInOtpEmail(user.Email!, otpCode!);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex,
-                "Sign-in OTP email enqueue failed for {Email}", user.Email);
-            await AuditAsync(AuditEvents.EmailEnqueueFailed, AuditOutcome.Failure,
-                user.Email!, user.Id, ErrorCodes.InternalError,
-                detail: $"SignInOtp: {ex.GetType().Name}",
-                cancellationToken: cancellationToken);
-        }
+        // H10 / H23 — D-065 / D-083: helper owns the failure-audit
+        // pattern shared across all four credential-flow dispatch sites.
+        await emailQueue.TryEnqueueAsync(
+            BuildSignInOtpEmail(user.Email!, otpCode!),
+            purpose: "SignInOtp",
+            subjectEmail: user.Email!,
+            subjectUserId: user.Id,
+            auditLog: auditLog,
+            logger: logger,
+            cancellationToken: cancellationToken);
         return new SignInResponse(true, null, ticketValue);
     }
 
@@ -567,13 +561,17 @@ public sealed class SignInService(
         return code.Code;
     }
 
-    private void EnqueueSignInOtpEmail(string email, string code)
+    /// <summary>
+    /// H23 — D-083: builds the OTP email; caller pairs with
+    /// `IEmailQueue.TryEnqueueAsync`.
+    /// </summary>
+    private static EmailMessage BuildSignInOtpEmail(string email, string code)
     {
         var minutes = (int)OtpLifetime.TotalMinutes;
         var body =
             $"<p>Your SIMF sign-in code is <strong>{code}</strong>.</p>" +
             $"<p>The code expires in {minutes} minutes.</p>";
-        emailQueue.Enqueue(new EmailMessage(email, "SIMF sign-in code", body));
+        return new EmailMessage(email, "SIMF sign-in code", body);
     }
 
     private Task AuditAsync(
