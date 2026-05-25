@@ -53,6 +53,24 @@ public sealed class JwtMiddlewareTests : IClassFixture<SimfApiFactory>
     public Task A_malformed_token_is_rejected() =>
         AssertRejectedAsync("this-is-not-a-valid-jwt");
 
+    // ----------------------------------------------------------------------
+    // H5 — D-060: OnTokenValidated requires the security_stamp claim to be
+    // present and non-empty. A token without it (or carrying an empty one)
+    // bypasses the revocation check today — sign-out, password-change and
+    // 2FA-reset cannot invalidate it. Reject up-front.
+    // ----------------------------------------------------------------------
+
+    [Fact]
+    public Task A_token_without_a_security_stamp_claim_is_rejected() =>
+        AssertRejectedAsync(MakeTokenWithoutStamp(
+            SigningKey, Issuer, Audience, DateTimeOffset.UtcNow.AddMinutes(30)));
+
+    [Fact]
+    public Task A_token_with_an_empty_security_stamp_claim_is_rejected() =>
+        AssertRejectedAsync(MakeTokenWithStamp(
+            SigningKey, Issuer, Audience, DateTimeOffset.UtcNow.AddMinutes(30),
+            stamp: string.Empty));
+
     private async Task AssertRejectedAsync(string token)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/sign-out");
@@ -67,6 +85,33 @@ public sealed class JwtMiddlewareTests : IClassFixture<SimfApiFactory>
         string signingKey,
         string issuer,
         string audience,
+        DateTimeOffset expires) =>
+        MakeTokenWithStamp(signingKey, issuer, audience, expires, stamp: "x");
+
+    private static string MakeTokenWithStamp(
+        string signingKey,
+        string issuer,
+        string audience,
+        DateTimeOffset expires,
+        string stamp)
+    {
+        var credentials = new SigningCredentials(
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey)),
+            SecurityAlgorithms.HmacSha256);
+        var token = new JwtSecurityToken(
+            issuer,
+            audience,
+            claims: [new Claim("sub", Guid.NewGuid().ToString()), new Claim("security_stamp", stamp)],
+            notBefore: expires.UtcDateTime.AddMinutes(-30),
+            expires: expires.UtcDateTime,
+            signingCredentials: credentials);
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private static string MakeTokenWithoutStamp(
+        string signingKey,
+        string issuer,
+        string audience,
         DateTimeOffset expires)
     {
         var credentials = new SigningCredentials(
@@ -75,7 +120,7 @@ public sealed class JwtMiddlewareTests : IClassFixture<SimfApiFactory>
         var token = new JwtSecurityToken(
             issuer,
             audience,
-            claims: [new Claim("sub", Guid.NewGuid().ToString()), new Claim("security_stamp", "x")],
+            claims: [new Claim("sub", Guid.NewGuid().ToString())],
             notBefore: expires.UtcDateTime.AddMinutes(-30),
             expires: expires.UtcDateTime,
             signingCredentials: credentials);

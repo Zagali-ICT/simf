@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -44,11 +45,25 @@ internal static class JwtBearerSetup
     /// <summary>
     /// Rejects an otherwise-valid token whose security stamp no longer matches
     /// the account — so sign-out and password change revoke live access tokens.
+    ///
+    /// H5 — D-060: the stamp claim MUST be present and non-empty in the
+    /// token; the DB stamp MUST be present and non-empty on the user row;
+    /// the comparison runs in constant time. Without these checks, a token
+    /// that lacks the claim (or carries an empty one) would compare empty
+    /// to empty against an un-stamped row and silently pass — the
+    /// revocation control would do nothing for any such token.
     /// </summary>
     private static async Task OnTokenValidatedAsync(TokenValidatedContext context)
     {
         var userId = context.Principal?.FindFirst("sub")?.Value;
         var tokenStamp = context.Principal?.FindFirst("security_stamp")?.Value;
+
+        if (string.IsNullOrEmpty(tokenStamp))
+        {
+            await AuditRejectionAsync(context.HttpContext, "security stamp claim missing or empty");
+            context.Fail("The session is no longer valid.");
+            return;
+        }
 
         var userManager = context.HttpContext.RequestServices
             .GetRequiredService<UserManager<SimfUser>>();
@@ -56,11 +71,23 @@ internal static class JwtBearerSetup
             ? await userManager.FindByIdAsync(userId)
             : null;
 
-        if (user is null || user.SecurityStamp != tokenStamp)
+        if (user is null
+            || string.IsNullOrEmpty(user.SecurityStamp)
+            || !FixedTimeEquals(user.SecurityStamp, tokenStamp))
         {
             await AuditRejectionAsync(context.HttpContext, "security stamp mismatch");
             context.Fail("The session is no longer valid.");
         }
+    }
+
+    /// <summary>Constant-time UTF-8 byte comparison so token stamp
+    /// validation does not leak prefix information through timing.</summary>
+    private static bool FixedTimeEquals(string left, string right)
+    {
+        var leftBytes = Encoding.UTF8.GetBytes(left);
+        var rightBytes = Encoding.UTF8.GetBytes(right);
+        return leftBytes.Length == rightBytes.Length
+            && CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes);
     }
 
     /// <summary>Audits a token rejected by validation — a bad signature, expiry, wrong issuer.</summary>
