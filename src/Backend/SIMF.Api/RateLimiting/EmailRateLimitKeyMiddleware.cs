@@ -50,9 +50,25 @@ public sealed class EmailRateLimitKeyMiddleware
         await _next(context);
     }
 
+    // H19 — D-080: cap the body buffer at 8 KB so an attacker posting a
+    // 30 MB JSON body to /auth/sign-in (the Kestrel default
+    // MaxRequestBodySize) cannot force a 30 MB MemoryStream allocation
+    // per request on the pre-auth path. Real credential bodies are
+    // well under 1 KB. Oversize requests skip the email-key extraction
+    // and fall back to the per-IP "auth" partition.
+    private const int MaxBodyBytes = 8 * 1024;
+
     private static async Task<string?> TryReadEmailAsync(HttpRequest request)
     {
-        request.EnableBuffering();
+        // Pre-buffer Content-Length guard — refuse oversize bodies before
+        // any allocation. A missing Content-Length still buffers, but
+        // EnableBuffering's bufferLimit caps the spill at MaxBodyBytes.
+        if (request.ContentLength is { } declared && declared > MaxBodyBytes)
+        {
+            return null;
+        }
+
+        request.EnableBuffering(bufferThreshold: MaxBodyBytes, bufferLimit: MaxBodyBytes);
         try
         {
             // Read the body into a buffer rather than passing the stream
@@ -81,8 +97,23 @@ public sealed class EmailRateLimitKeyMiddleware
             }
             return null;
         }
-        catch
+        catch (OperationCanceledException)
         {
+            // Client aborted — propagate cancellation rather than masking it.
+            throw;
+        }
+        catch (JsonException)
+        {
+            // Malformed body is the endpoint's problem; the rate limiter
+            // falls through to the per-IP partition. Narrowed from a bare
+            // catch (was Security SEV-2.2).
+            return null;
+        }
+        catch (IOException)
+        {
+            // EnableBuffering can throw IOException when bufferLimit is
+            // exceeded mid-copy. Treat as "no email key" — per-IP still
+            // applies, which is the right backstop for oversize bodies.
             return null;
         }
         finally

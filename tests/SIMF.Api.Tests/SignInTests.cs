@@ -574,6 +574,52 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         database.SaveChanges();
     }
 
+    // ----------------------------------------------------------------------
+    // H19 — D-080: PasswordChangeRequired enforcement extended to every
+    // token-mint path. The pre-H19 H4 gate only checked at the password
+    // step, so a user holding a refresh token could rotate forever after
+    // an admin set the flag.
+    // ----------------------------------------------------------------------
+
+    [Fact]
+    public async Task Refresh_is_blocked_when_PasswordChangeRequired_is_set_after_sign_in()
+    {
+        // Sign in as a 2FA-disabled visitor to mint a refresh token quickly.
+        var email = $"flag-refresh-{Guid.NewGuid():N}@simf.test";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            await users.CreateAsync(
+                new SimfUser
+                {
+                    UserName = email, Email = email, EmailConfirmed = true,
+                    DisplayName = "Refresh Block Test",
+                    AccountState = AccountState.Approved,
+                    UserType = UserType.Visitor,
+                },
+                Password);
+        }
+        var signInResponse = await SignInAsync(email, Password, SignInAudience.Web);
+        Assert.Equal(HttpStatusCode.OK, signInResponse.StatusCode);
+        var signInBody = (await signInResponse.Content
+            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        Assert.NotNull(signInBody.Data!.Tokens);
+        var refreshToken = signInBody.Data.Tokens!.RefreshToken;
+
+        // Now the admin (or seeder, or scheduled operation) flips
+        // PasswordChangeRequired on the user — the H19 contract says the
+        // existing refresh token must STOP working.
+        SetPasswordChangeRequired(email, value: true);
+
+        var refreshResponse = await _client.PostAsJsonAsync(
+            "/api/v1/auth/refresh",
+            new RefreshRequest { RefreshToken = refreshToken });
+
+        Assert.Equal(HttpStatusCode.Forbidden, refreshResponse.StatusCode);
+        var body = await refreshResponse.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.Equal(ErrorCodes.AuthPasswordChangeRequired, body!.Error!.Code);
+    }
+
     private void DisableTwoFactor(string email)
     {
         using var scope = _factory.Services.CreateScope();

@@ -92,6 +92,19 @@ public sealed class SessionService(
                 "هذا الحساب غير نشط.");
         }
 
+        // H19 — D-080: a refresh-token holder cannot mint new access tokens
+        // after an admin sets PasswordChangeRequired. Pre-H19 the only check
+        // was at the password step, so any live refresh token rotated forever.
+        if (user.PasswordChangeRequired)
+        {
+            await AuditAsync(AuditEvents.RefreshTokenRejected, AuditOutcome.Failure,
+                user.Email, user.Id, ErrorCodes.AuthPasswordChangeRequired,
+                "password change required", cancellationToken);
+            throw new ApiException(ErrorCodes.AuthPasswordChangeRequired, 403,
+                "You must change your password before signing in again.",
+                "يجب تغيير كلمة المرور قبل تسجيل الدخول مرة أخرى.");
+        }
+
         // Rotate atomically — the presented token is revoked only if it is still
         // active, and its replacement is added, in one transaction. A conditional
         // revoke affecting no row means a concurrent request already rotated this

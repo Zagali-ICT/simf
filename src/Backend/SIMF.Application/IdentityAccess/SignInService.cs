@@ -73,33 +73,34 @@ public sealed class SignInService(
 
         await accounts.ResetAccessFailedCountAsync(user);
 
-        // H4 — D-059: a SimfUser with PasswordChangeRequired=true holds a
-        // seeded or admin-rotated credential they must change before any
-        // session is minted. The flag is set by the super-admin seeder
-        // (IdentitySeeder) and cleared in PasswordService when the user
-        // completes the reset flow. Until then the right password is the
-        // wrong door — 403 with AUTH_PASSWORD_CHANGE_REQUIRED, and the
-        // client routes to /forgot-password. Runs after credentials are
-        // OK so it doesn't leak account existence, and before audience /
-        // state checks because none of those matter for a password the
-        // user has to retire.
-        if (user.PasswordChangeRequired)
-        {
-            await AuditAsync(AuditEvents.SignInPasswordChangeRequired,
-                AuditOutcome.Failure, user.Email!, user.Id,
-                ErrorCodes.AuthPasswordChangeRequired,
-                cancellationToken: cancellationToken);
-            throw new ApiException(ErrorCodes.AuthPasswordChangeRequired, 403,
-                "You must change your password before signing in. Use the password-reset flow to set a new one.",
-                "يجب تغيير كلمة المرور قبل تسجيل الدخول. استخدم تدفّق إعادة تعيين كلمة المرور لتعيين كلمة جديدة.");
-        }
-
+        // H19 — D-080: account-state block fires BEFORE the password-change
+        // gate (was reversed pre-H19 — Disabled/Registered users with the
+        // flag set were getting an enumeration oracle via the more-specific
+        // PasswordChangeRequired error, when they should hit the
+        // disabled/unverified block instead).
         var (blockCode, blockMessage, blockMessageArabic) = CheckAccountState(user);
         if (blockCode is not null)
         {
             await AuditAsync(AuditEvents.SignInStateBlocked, AuditOutcome.Failure,
                 user.Email!, user.Id, blockCode, cancellationToken: cancellationToken);
             throw new ApiException(blockCode, 403, blockMessage!, blockMessageArabic!);
+        }
+
+        // H4 — D-059 + H19 — D-080: a SimfUser with PasswordChangeRequired=true
+        // holds a seeded or admin-rotated credential they must change before
+        // any session is minted. Now enforced at every token-mint path, not
+        // just the initial password step — see RequirePasswordChangeNotRequired
+        // helper used by VerifyTotpAsync / VerifyRecoveryCodeAsync /
+        // VerifyOtpAsync, and by SessionService.RefreshAsync.
+        RequirePasswordChangeNotRequired(user);
+        if (user.PasswordChangeRequired)
+        {
+            // Defensive — the helper throws; this is unreachable. Audit at
+            // sign-in level so SOC sees the trigger surface.
+            await AuditAsync(AuditEvents.SignInPasswordChangeRequired,
+                AuditOutcome.Failure, user.Email!, user.Id,
+                ErrorCodes.AuthPasswordChangeRequired,
+                cancellationToken: cancellationToken);
         }
 
         var now = timeProvider.GetUtcNow();
@@ -204,6 +205,7 @@ public sealed class SignInService(
                 "جلسة تسجيل الدخول لم تعد صالحة.");
 
         await EnsureNotLockedOutAsync(user, cancellationToken);
+        RequirePasswordChangeNotRequired(user);
 
         var secret = await accounts.GetAuthenticatorKeyAsync(user);
         var totp = totpVerifier.Verify(secret ?? string.Empty, request.Code);
@@ -251,6 +253,7 @@ public sealed class SignInService(
                 "جلسة تسجيل الدخول لم تعد صالحة.");
 
         await EnsureNotLockedOutAsync(user, cancellationToken);
+        RequirePasswordChangeNotRequired(user);
 
         var accepted = await recoveryCodes.VerifyAndConsumeAsync(
             user.Id, request.Code, cancellationToken);
@@ -290,6 +293,7 @@ public sealed class SignInService(
                 "جلسة تسجيل الدخول لم تعد صالحة.");
 
         await EnsureNotLockedOutAsync(user, cancellationToken);
+        RequirePasswordChangeNotRequired(user);
 
         var now = timeProvider.GetUtcNow();
         var code = await accountCodeRepository.GetLatestUnconsumedAsync(
@@ -433,6 +437,24 @@ public sealed class SignInService(
             throw new ApiException(ErrorCodes.AuthAccountLocked, 423,
                 "The account is locked after too many attempts. Try again later.",
                 "تم قفل الحساب بعد محاولات كثيرة. حاول مرة أخرى لاحقًا.");
+        }
+    }
+
+    /// <summary>
+    /// H19 — D-080: blocks every token-mint path (second-factor verify,
+    /// recovery-code verify, OTP verify, refresh) when the user holds
+    /// <c>PasswordChangeRequired=true</c>. Pre-H19 only the initial password
+    /// step checked this — a holder of an existing MFA ticket or refresh
+    /// token rotated forever after an admin set the flag. The fix is to
+    /// enforce at every mint surface so the gate is end-to-end.
+    /// </summary>
+    private static void RequirePasswordChangeNotRequired(SimfUser user)
+    {
+        if (user.PasswordChangeRequired)
+        {
+            throw new ApiException(ErrorCodes.AuthPasswordChangeRequired, 403,
+                "You must change your password before signing in. Use the password-reset flow to set a new one.",
+                "يجب تغيير كلمة المرور قبل تسجيل الدخول. استخدم تدفّق إعادة تعيين كلمة المرور لتعيين كلمة جديدة.");
         }
     }
 
