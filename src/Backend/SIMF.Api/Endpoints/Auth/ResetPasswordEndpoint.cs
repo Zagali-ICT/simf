@@ -18,7 +18,9 @@ public sealed class ResetPasswordEndpoint(IPasswordService passwordService)
         Post("/auth/reset-password");
         AllowAnonymous();
         Tags("Authentication");
-        Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
+        Options(routeBuilder => routeBuilder
+            .RequireRateLimiting("auth")
+            .RequireRateLimiting("auth-email"));
         Summary(summary => summary.Summary = "Set a new password using the emailed reset code.");
     }
 

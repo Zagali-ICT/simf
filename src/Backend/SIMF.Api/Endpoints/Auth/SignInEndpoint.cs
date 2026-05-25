@@ -15,7 +15,9 @@ public sealed class SignInEndpoint(ISignInService signInService)
         Post("/auth/sign-in");
         AllowAnonymous();
         Tags("Authentication");
-        Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
+        Options(routeBuilder => routeBuilder
+            .RequireRateLimiting("auth")
+            .RequireRateLimiting("auth-email"));
         Summary(summary => summary.Summary =
             "Sign in with email and password; returns the second-factor challenge.");
     }

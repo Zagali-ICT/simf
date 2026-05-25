@@ -57,6 +57,11 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("SuperAdmin__TempPassword", "ChangeMe!Test1");
         Environment.SetEnvironmentVariable("SuperAdmin__TotpSecret", "JBSWY3DPEHPK3PXP");
         Environment.SetEnvironmentVariable("RateLimit__PermitLimit", "100000");
+        // H7 — D-062: the new per-email partition (auth-email policy)
+        // would otherwise cap test scenarios that intentionally retry
+        // wrong credentials against one email. Permissive default here;
+        // EmailRateLimitedApiFactory tightens this for the email-cap test.
+        Environment.SetEnvironmentVariable("RateLimit__EmailPermitLimit", "100000");
         Environment.SetEnvironmentVariable(
             "Jwt__SigningKey", "ytlV1+ke14Pw900IRtH8zT4uIKBeaqjcj6aFfiLozS5jKgSs");
         Environment.SetEnvironmentVariable("Storage__AvatarBase", AvatarStorageDirectory);

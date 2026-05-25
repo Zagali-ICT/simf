@@ -19,7 +19,9 @@ public sealed class ForgotPasswordEndpoint(IPasswordService passwordService)
         Post("/auth/forgot-password");
         AllowAnonymous();
         Tags("Authentication");
-        Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
+        Options(routeBuilder => routeBuilder
+            .RequireRateLimiting("auth")
+            .RequireRateLimiting("auth-email"));
         Summary(summary => summary.Summary = "Request a password-reset code by email.");
     }
 

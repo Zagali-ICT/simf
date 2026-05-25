@@ -60,12 +60,44 @@ builder.Services.AddRateLimiter(rateLimiter =>
 {
     rateLimiter.AddPolicy("auth", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
+            // H7 — D-062: still one shared bucket for null-IP traffic
+            // (the original `?? "unknown"` behaviour). The reviewer's
+            // concern was a misrouted-no-IP flood sharing with legitimate
+            // clients; with the per-email partition below, credential
+            // stuffing against a single account is now bounded
+            // independent of the IP key — so tightening "unknown"
+            // further was deferred to avoid breaking environments
+            // (notably ASP.NET TestServer) where no Connection.RemoteIpAddress
+            // is set on any request. Revisit if a separate production
+            // signal shows misrouted traffic abusing this fallback.
             httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = rateLimitOptions.PermitLimit,
                 Window = TimeSpan.FromSeconds(rateLimitOptions.WindowSeconds),
             }));
+
+    // H7 — D-062: per-email partition for the credential-touching paths.
+    // EmailRateLimitKeyMiddleware stashes the normalised email on the
+    // HttpContext when the request is on a known credential path; this
+    // policy keys its window on that. Other endpoints fall through to a
+    // permissive partition (no-op), so chaining the policy on a route
+    // that does not carry an email is harmless.
+    rateLimiter.AddPolicy("auth-email", httpContext =>
+    {
+        var email = httpContext.Items[EmailRateLimitKeyMiddleware.ItemsKey] as string;
+        if (string.IsNullOrEmpty(email))
+        {
+            return RateLimitPartition.GetNoLimiter<string>("no-email");
+        }
+        return RateLimitPartition.GetFixedWindowLimiter(
+            "email:" + email,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = rateLimitOptions.EmailPermitLimit,
+                Window = TimeSpan.FromSeconds(rateLimitOptions.EmailWindowSeconds),
+            });
+    });
 
     rateLimiter.OnRejected = async (context, cancellationToken) =>
     {
@@ -196,6 +228,12 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 
 // Error handling wraps the rest of the pipeline (SIMF-Sprint1 plan section 7).
 app.UseMiddleware<ErrorHandlingMiddleware>();
+
+// H7 — D-062: peek the request body for the email field on credential
+// paths so the "auth-email" rate-limit policy can key its partition on
+// it. Must run BEFORE UseRateLimiter so the key is set when the limiter
+// reads it.
+app.UseMiddleware<EmailRateLimitKeyMiddleware>();
 
 app.UseRateLimiter();
 
