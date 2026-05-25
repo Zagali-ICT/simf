@@ -1,6 +1,6 @@
 # SIMF — Project Instructions
 
-Last updated: 2026-05-20
+Last updated: 2026-05-25
 
 The global rule set at `~/.claude/CLAUDE.md` (§0–§20) applies in full. This file
 adds SIMF-specific pointers only. It does not restate or override the global rules.
@@ -34,5 +34,14 @@ documents. The conflict list is recorded in `SIMF-OLD-DRAFT-CONFLICTS.md`.
 
 ## Status
 
-SIMF V1.0.0 currently holds documentation only — no code yet. The build starts at
-the Login API per the programme plan.
+Sprint 1 — Login API + frontend login + visitor lifecycle + hardening — has shipped on
+`feature/login-api`. Backend (FastEndpoints + EF Core + SQL Server), Control Panel
+(Blazor Server), Website (Blazor SSR + interactive auth islands), and shared component
+library + typed API client are all in. Decisions log: `docs/decisions/DECISIONS_LOG.md`
+runs D-001 through D-072. Sprint completion artefact:
+`docs/SIMF-Sprint1-Login-API-Completion.md`. Outstanding items the sprint accepted /
+deferred (committed secrets rotation, architectural refactor, Website skip-link, full
+bUnit harness, end-to-end lifecycle test, no-IP rate-limit hardening) are listed there.
+
+Next stage per the programme plan is the User Management module increment on top of
+the closed Login API foundation.
