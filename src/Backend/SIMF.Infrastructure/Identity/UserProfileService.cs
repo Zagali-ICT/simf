@@ -3,6 +3,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
@@ -31,6 +32,8 @@ internal sealed class UserProfileService(
     IAuditLog auditLog,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
+    ITransactionRunner transactionRunner,
+    IRefreshTokenRepository refreshTokens,
     ILogger<UserProfileService> logger) : IUserProfileService
 {
     public async Task<UserProfileResponse> GetMineAsync(
@@ -153,7 +156,42 @@ internal sealed class UserProfileService(
             }
         }
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        // H2 — D-057: the profile save, the EmailVerified → PendingApproval
+        // auto-transition (P13 — D-054), and the revoke of every live
+        // refresh token for the user must all commit together. Without
+        // the transaction, a crash between the profile save and the state
+        // flip would leave the user stuck in EmailVerified (the UI never
+        // re-asks for the profile), and a stale refresh token would keep
+        // minting access tokens carrying account_state=EmailVerified —
+        // skipping the Pending banner P11 added until the token's natural
+        // expiry. Notifications stay outside the transaction (in-app
+        // rows + email enqueue are not under this DB scope), so they
+        // dispatch only after the commit succeeds.
+        var transitioned = false;
+        await transactionRunner.ExecuteAsync(async token =>
+        {
+            await dbContext.SaveChangesAsync(token);
+
+            if (isNew && user.AccountState == AccountState.EmailVerified)
+            {
+                user.AccountState = AccountState.PendingApproval;
+                user.StateChangedAt = now;
+                user.StateChangedByUserId = null;
+                var updateResult = await userManager.UpdateAsync(user);
+                if (!updateResult.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        "Auto-transition to PendingApproval failed: " +
+                        string.Join("; ", updateResult.Errors.Select(error => error.Description)));
+                }
+
+                // Stale tokens still encode the old account_state claim;
+                // revoke them so the user has to sign in again and the
+                // next JWT reflects PendingApproval.
+                await refreshTokens.RevokeAllForUserAsync(actorUserId, now, token);
+                transitioned = true;
+            }
+        }, cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -169,17 +207,8 @@ internal sealed class UserProfileService(
             "User profile {Operation} for {UserId}",
             isNew ? "created" : "updated", actorUserId);
 
-        // P13 — D-054: on first profile-submit by an EmailVerified user,
-        // auto-transition to PendingApproval, dispatch the "profile
-        // submitted" notification to the visitor, and notify every admin
-        // that a new visitor is awaiting approval.
-        if (isNew && user.AccountState == AccountState.EmailVerified)
+        if (transitioned)
         {
-            user.AccountState = AccountState.PendingApproval;
-            user.StateChangedAt = now;
-            user.StateChangedByUserId = null;
-            await userManager.UpdateAsync(user);
-
             await DispatchProfileSubmittedAsync(user, cancellationToken);
             await DispatchAdminPendingVisitorAsync(user, cancellationToken);
         }

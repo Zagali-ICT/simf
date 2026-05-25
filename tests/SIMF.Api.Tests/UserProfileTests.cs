@@ -398,6 +398,82 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Contains(three, secondBody.Data.InterestIds);
     }
 
+    // ----------------------------------------------------------------------
+    // H2 — D-057: the auto-transition + refresh-token revoke are now
+    // transactional, so a first-time profile submit either commits all
+    // three writes (profile rows, AccountState change, refresh-token
+    // revocations) or none.
+    // ----------------------------------------------------------------------
+
+    [Fact]
+    public async Task First_profile_save_flips_state_to_PendingApproval_and_revokes_every_refresh_token()
+    {
+        var (token, userId) = await CreateEmailVerifiedVisitorAndSignInAsync();
+
+        // Pre-condition: the sign-in minted at least one live refresh token.
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var live = await db.RefreshTokens
+                .Where(rt => rt.UserId == userId && rt.RevokedAt == null)
+                .CountAsync();
+            Assert.True(live > 0,
+                "Expected the sign-in to mint at least one live refresh token.");
+        }
+
+        var request = await ValidSaudiRequestAsync();
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+
+            // State flipped.
+            var user = await db.Users.SingleAsync(u => u.Id == userId);
+            Assert.Equal(AccountState.PendingApproval, user.AccountState);
+            Assert.NotNull(user.StateChangedAt);
+
+            // Every refresh token for this user is now revoked.
+            var stillLive = await db.RefreshTokens
+                .Where(rt => rt.UserId == userId && rt.RevokedAt == null)
+                .CountAsync();
+            Assert.Equal(0, stillLive);
+        }
+    }
+
+    private async Task<(string Token, Guid UserId)> CreateEmailVerifiedVisitorAndSignInAsync()
+    {
+        var email = $"ev-{Guid.NewGuid():N}@simf.test";
+        Guid userId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                DisplayName = "EmailVerified Visitor",
+                AccountState = AccountState.EmailVerified,
+                UserType = UserType.Visitor,
+            };
+            await users.CreateAsync(user, AuthFlow.Password);
+            userId = user.Id;
+        }
+
+        var sign = await _client.PostAsJsonAsync("/api/v1/auth/sign-in",
+            new SignInRequest
+            {
+                Email = email,
+                Password = AuthFlow.Password,
+                Audience = SignInAudience.Web,
+            });
+        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        Assert.True(body.Success, "EmailVerified user should be able to sign in (D-010).");
+        return (body.Data!.Tokens!.AccessToken, userId);
+    }
+
     // -- Helpers ---------------------------------------------------------------
 
     private async Task<UpsertUserProfileRequest> ValidSaudiRequestAsync(
