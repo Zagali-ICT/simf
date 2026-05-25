@@ -21,7 +21,7 @@ namespace SIMF.Application.IdentityAccess;
 /// written to the operation log.
 /// </summary>
 public sealed class RegistrationService(
-    UserManager<SimfUser> userManager,
+    IUserAccountRepository accounts,
     IAccountCodeRepository accountCodeRepository,
     IEmailQueue emailQueue,
     ITransactionRunner transactionRunner,
@@ -38,7 +38,7 @@ public sealed class RegistrationService(
         SignUpRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (await userManager.FindByEmailAsync(request.Email) is not null)
+        if (await accounts.FindByEmailAsync(request.Email) is not null)
         {
             await AuditAsync(
                 AuditEvents.SignUpDuplicateEmail, AuditOutcome.Failure, request.Email,
@@ -68,7 +68,7 @@ public sealed class RegistrationService(
         await transactionRunner.ExecuteAsync(
             async token =>
             {
-                var createResult = await userManager.CreateAsync(user, request.Password);
+                var createResult = await accounts.CreateAsync(user, request.Password);
                 if (!createResult.Succeeded)
                 {
                     var details = createResult.Errors
@@ -117,7 +117,7 @@ public sealed class RegistrationService(
         VerifyEmailRequest request,
         CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByEmailAsync(request.Email);
+        var user = await accounts.FindByEmailAsync(request.Email);
         if (user is null)
         {
             await AuditAsync(
@@ -205,7 +205,7 @@ public sealed class RegistrationService(
                 user.EmailConfirmed = true;
                 user.AccountState = AccountState.EmailVerified;
                 user.UpdatedAt = now;
-                await userManager.UpdateAsync(user);
+                await accounts.UpdateAsync(user);
             },
             cancellationToken);
 
@@ -220,7 +220,7 @@ public sealed class RegistrationService(
         ResendCodeRequest request,
         CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByEmailAsync(request.Email);
+        var user = await accounts.FindByEmailAsync(request.Email);
         if (user is null)
         {
             await AuditAsync(

@@ -99,6 +99,9 @@ public static class DependencyInjection
                 "Storage:AvatarBase must be configured (filesystem path for user avatars).")
             .ValidateOnStart();
 
+        // R3 — D-076: Application code asks for SimfUser through this
+        // repository abstraction; UserManager stays in Infrastructure.
+        services.AddScoped<IUserAccountRepository, UserAccountRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IAccountCodeRepository, AccountCodeRepository>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
