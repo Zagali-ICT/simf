@@ -62,6 +62,12 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         // wrong credentials against one email. Permissive default here;
         // EmailRateLimitedApiFactory tightens this for the email-cap test.
         Environment.SetEnvironmentVariable("RateLimit__EmailPermitLimit", "100000");
+        // H29 — D-088: the new global limiter (per-IP, applied to every
+        // request) would otherwise trip in long-running test classes
+        // that hit hundreds of endpoints in series. Permissive default
+        // here; dedicated rate-limit-test factories can tighten as
+        // needed in future.
+        Environment.SetEnvironmentVariable("RateLimit__GlobalPermitLimit", "1000000");
         Environment.SetEnvironmentVariable(
             "Jwt__SigningKey", "ytlV1+ke14Pw900IRtH8zT4uIKBeaqjcj6aFfiLozS5jKgSs");
         Environment.SetEnvironmentVariable("Storage__AvatarBase", AvatarStorageDirectory);

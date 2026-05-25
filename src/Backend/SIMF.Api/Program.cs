@@ -64,6 +64,22 @@ var rateLimitOptions =
 
 builder.Services.AddRateLimiter(rateLimiter =>
 {
+    // H29 — D-088: every request gets a per-IP fixed-window cap. Closes
+    // the post-R3 review's Security SEV-2.1 main finding — pre-H29
+    // bearer-protected routes had no per-IP cap, so a malformed-bearer
+    // flood (or any other endpoint hit hard from one IP) could pin a
+    // CPU core. The global cap is permissive (600/min/IP by default —
+    // way above legitimate traffic) and stacks with the per-route
+    // "auth" + "auth-email" caps for credential flows; both must pass.
+    rateLimiter.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
+        httpContext => RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = rateLimitOptions.GlobalPermitLimit,
+                Window = TimeSpan.FromSeconds(rateLimitOptions.GlobalWindowSeconds),
+            }));
+
     rateLimiter.AddPolicy("auth", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
             // H7 — D-062: still one shared bucket for null-IP traffic

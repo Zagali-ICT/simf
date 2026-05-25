@@ -33,4 +33,20 @@ public sealed class RateLimitOptions
 
     /// <summary>The per-email window length, in seconds.</summary>
     public int EmailWindowSeconds { get; set; } = 60;
+
+    /// <summary>
+    /// H29 — D-088: per-IP cap applied to EVERY request (not just the
+    /// "auth" routes). Closes the post-R3 reviewer's Security SEV-2.1
+    /// main finding: the pre-H29 rate limiter only covered <c>/auth/*</c>;
+    /// every bearer-protected route had no per-IP rate cap, so a
+    /// malformed-bearer flood could pin a CPU core with token-validation
+    /// work. The global cap is set high enough that real clients never
+    /// see it (600 / minute / IP = 10 req/s — orders of magnitude above
+    /// normal traffic, well below abuse traffic).
+    /// </summary>
+    public int GlobalPermitLimit { get; set; } = 600;
+
+    /// <summary>The global window length, in seconds.</summary>
+    public int GlobalWindowSeconds { get; set; } = 60;
 }
+

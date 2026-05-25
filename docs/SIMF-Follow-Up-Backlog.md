@@ -160,10 +160,73 @@ tests. A bUnit harness with mocked `IJSRuntime` /
 runtime behaviour (Escape closes the dropdown, focus jumps to `<main>`
 on skip-link, etc.). Scope: a separate test-tooling increment.
 
-### 3.8 `myComment.txt` drain
+### 3.8 `myComment.txt` drain — TRIAGED (H31 — D-089)
 
-(Sprint 1 §3.9.) Still uncommitted; still the owner's working note.
-Move the items to a tracked backlog or close them as done.
+The owner's working note at repo root was triaged item-by-item; the
+file itself is left untouched per the standing "never commit
+`myComment.txt`" rule. Status per line:
+
+**Already done — close in the file when convenient:**
+- L7  "No warnings, clean code" — every Debug + Release build is 0/0.
+- L13 "Add user type admin" — done in P7 (D-048); three-UserType model.
+- L15 "ApiError MessageArabic" — done in D-030.
+- L18-29 "Visitor profile fields (Arabic/English name, nationality, ID,
+  mobile in/out KSA, attachment, QR id)" — done in P8 (D-049,
+  UserProfile rename) + P4 (D-046 b, encrypted ID image) + P3 (QR id).
+- L34 "CP admin add/delete/approve" — done across P7 / P4 / D-044 b
+  (bulk delete, duplicate, import/export) + the H1 / R2 work.
+- L35 "If 2FA not true don't ask OTP/TOTP" — done in D-033.
+- L37 "Avatar to directory not DB" — done in D-039 + R1 (D-074) typed
+  `Storage:AvatarBase`.
+
+**Needs the owner's decision — not code-fixable:**
+- L2  "All enums in a shared project" — Domain enums in Domain is
+  normal DDD; the move is a deliberate departure. Owner confirms.
+- L11 "15-04-2024 is authoritative" vs current controlled docs — the
+  project CLAUDE.md already marks the folder superseded; owner
+  confirms which wins.
+- L14 "Why `AspNet` prefix on role tables?" — that's the Identity
+  default schema; renaming requires a migration and an Identity-store
+  rebind. Owner confirms whether to take the cost.
+
+**Needs access to the IBS reference project — design deliverables:**
+- L3  `[Resource(...)]` per-enum localisation pattern (point at IBS code).
+- L4  IBS log handling — backend + frontend + real-time CP view + download.
+- L6  Full user/role/type management plan from IBS (waits on gate D1).
+- L30 Email config from IBS.
+- L31 Serilog file layout + viewer from IBS.
+
+**Real follow-up commits — promoted to Bucket 3:**
+- L12 "QR-for-Google-Authenticator endpoint" — `TotpEnrollmentService.SetupAsync`
+  already returns the otpauth URI + QR SVG, but no admin / seeder
+  exposure of the super-admin's QR for first-time pairing. **Add a CP
+  /admin/2fa-pairing page** that renders the seeded admin's QR.
+- L16 `SimfDataGrid` full spec — row filter, server-side pagination,
+  right-click menu, fixed action button column, action bar with
+  Select-All / Add / Edit / Delete / Copy / Paste / Duplicate / Import
+  / Export. The current grid covers list + filter + sort + paging;
+  the action-row + clipboard + import bits are not built.
+- L17 Grey theme (dark + light + grey). Tokens layer addition.
+- L32 Email distribution list — Support / IT recipients for
+  failure-alert emails. Hook into the existing `Email.EnqueueFailed`
+  audit (H10 — D-065).
+- L33 "All customer emails saved to in-app notification too." Today
+  P12 dispatches in-app + email on lifecycle events (D-053 / D-054).
+  The expansion is to do the same for the credential-flow code-issue
+  emails (password reset, email-verification, sign-in OTP — currently
+  email-only).
+- L36 The seeded TOTP secret `dbji csx7 c3mj s2qa sjcl rbcl kiqk ovr3`
+  — owner reported "not working". `TotpVerifier` uses `OtpNet` which
+  defaults to UTC + 30-second window. The secret IS the
+  super-admin's; the test infrastructure verifies the same code path
+  works. Worth a short debug session — likely either a clock-skew
+  issue on the owner's authenticator or the secret in `appsettings`
+  was edited and the literal value here is stale.
+
+**Not yet started — Flutter app, separate programme stage:**
+- L8  App sign-up + OTP confirm + profile + interests + await approval.
+- L9  App menu switch by UserType.
+- L10 Admin-added users without confirm (later CP module).
 
 ---
 
