@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
@@ -12,7 +13,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// Admin to Rejected with a mandatory 10–500 char reason (P4; P7c
 /// renamed URL from <c>/admin/staff</c>). Administrator-only.
 /// </summary>
-public sealed class RejectAdminEndpoint(IAdminAccountService adminAccountService)
+public sealed class RejectAdminEndpoint(IAdminUserApprovalService adminAccountService)
     : Endpoint<RejectRouteRequest, ApiResult<bool>>
 {
     public override void Configure()
@@ -42,7 +43,7 @@ public sealed class RejectAdminEndpoint(IAdminAccountService adminAccountService
 /// Other to Rejected with a mandatory 10–500 char reason (P7c — new).
 /// Administrator-only.
 /// </summary>
-public sealed class RejectOtherEndpoint(IAdminAccountService adminAccountService)
+public sealed class RejectOtherEndpoint(IAdminUserApprovalService adminAccountService)
     : Endpoint<RejectRouteRequest, ApiResult<bool>>
 {
     public override void Configure()

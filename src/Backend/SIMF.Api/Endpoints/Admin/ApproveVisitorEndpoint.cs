@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 
 namespace SIMF.Api.Endpoints.Admin;
@@ -10,7 +11,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// <c>POST /api/v1/admin/visitors/{id:guid}/approve</c> — flip a pending
 /// visitor to Approved + mint the QR id (P4). Any CP role may call.
 /// </summary>
-public sealed class ApproveVisitorEndpoint(IAdminAccountService adminAccountService)
+public sealed class ApproveVisitorEndpoint(IAdminUserApprovalService adminAccountService)
     : Endpoint<ApproveRouteRequest, ApiResult<bool>>
 {
     public override void Configure()

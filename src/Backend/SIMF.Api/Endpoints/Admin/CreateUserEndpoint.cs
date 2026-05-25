@@ -3,6 +3,7 @@ using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.RateLimiting;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
@@ -16,7 +17,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// 7-day password-set invitation. Approval is Administrator-only and
 /// mints the QR id (D-046a + P4).
 /// </summary>
-public sealed class CreateAdminEndpoint(IAdminAccountService adminAccountService)
+public sealed class CreateAdminEndpoint(IAdminUserProvisioningService adminAccountService)
     : Endpoint<AdminCreateAdminRequest, ApiResult<AdminCreateUserResponse>>
 {
     public override void Configure()
@@ -47,7 +48,7 @@ public sealed class CreateAdminEndpoint(IAdminAccountService adminAccountService
 /// app, not the CP. The <c>ProfileTypeId</c> picks the Other subtype
 /// from the <c>ProfileTypes</c> lookup.
 /// </summary>
-public sealed class CreateOtherEndpoint(IAdminAccountService adminAccountService)
+public sealed class CreateOtherEndpoint(IAdminUserProvisioningService adminAccountService)
     : Endpoint<AdminCreateOtherRequest, ApiResult<AdminCreateUserResponse>>
 {
     public override void Configure()
@@ -76,7 +77,7 @@ public sealed class CreateOtherEndpoint(IAdminAccountService adminAccountService
 /// <c>POST /api/v1/admin/visitors</c> — Administrator creates a new
 /// <b>Visitor</b> user (P3; P7c added optional <c>ProfileTypeId</c>).
 /// </summary>
-public sealed class CreateVisitorEndpoint(IAdminAccountService adminAccountService)
+public sealed class CreateVisitorEndpoint(IAdminUserProvisioningService adminAccountService)
     : Endpoint<AdminCreateVisitorRequest, ApiResult<AdminCreateUserResponse>>
 {
     public override void Configure()

@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
@@ -11,7 +12,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// <c>POST /api/v1/admin/visitors/{id:guid}/reject</c> — set a pending
 /// visitor to Rejected with a mandatory free-text reason (P4). Any CP role.
 /// </summary>
-public sealed class RejectVisitorEndpoint(IAdminAccountService adminAccountService)
+public sealed class RejectVisitorEndpoint(IAdminUserApprovalService adminAccountService)
     : Endpoint<RejectRouteRequest, ApiResult<bool>>
 {
     public override void Configure()

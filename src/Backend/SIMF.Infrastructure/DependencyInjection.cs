@@ -114,7 +114,17 @@ public static class DependencyInjection
         services.AddScoped<ITotpEnrollmentService, TotpEnrollmentService>();
         services.AddScoped<IRecoveryCodeService, RecoveryCodeService>();
         services.AddScoped<IAccountService, AccountService>();
-        services.AddScoped<IAdminAccountService, AdminAccountService>();
+        // R2 — D-075: AdminAccountService implements the five focused
+        // interfaces split out of the pre-R2 IAdminAccountService
+        // (Architecture SEV-1.2). One scoped instance backs all five
+        // registrations so the surrounding shared state (audit log,
+        // db context, etc.) stays per-request.
+        services.AddScoped<AdminAccountService>();
+        services.AddScoped<IAdminTwoFactorService>(sp => sp.GetRequiredService<AdminAccountService>());
+        services.AddScoped<IAdminUserApprovalService>(sp => sp.GetRequiredService<AdminAccountService>());
+        services.AddScoped<IAdminUserProvisioningService>(sp => sp.GetRequiredService<AdminAccountService>());
+        services.AddScoped<IAdminUserBulkService>(sp => sp.GetRequiredService<AdminAccountService>());
+        services.AddScoped<IAdminProfileTypeQueryService>(sp => sp.GetRequiredService<AdminAccountService>());
         services.AddScoped<IQrIdMinter, QrIdMinter>();
         services.AddScoped<IUserProfileService, UserProfileService>();
         services.AddScoped<IInterestService, InterestService>();

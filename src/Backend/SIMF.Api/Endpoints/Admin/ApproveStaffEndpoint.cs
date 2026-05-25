@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
@@ -12,7 +13,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// Admin to Approved + mint the QR id (P4; P7c renamed URL from
 /// <c>/admin/staff</c>). Administrator-only.
 /// </summary>
-public sealed class ApproveAdminEndpoint(IAdminAccountService adminAccountService)
+public sealed class ApproveAdminEndpoint(IAdminUserApprovalService adminAccountService)
     : Endpoint<ApproveRouteRequest, ApiResult<bool>>
 {
     public override void Configure()
@@ -40,7 +41,7 @@ public sealed class ApproveAdminEndpoint(IAdminAccountService adminAccountServic
 /// <c>POST /api/v1/admin/others/{id:guid}/approve</c> — flip a pending
 /// Other to Approved + mint the QR id (P7c — new). Administrator-only.
 /// </summary>
-public sealed class ApproveOtherEndpoint(IAdminAccountService adminAccountService)
+public sealed class ApproveOtherEndpoint(IAdminUserApprovalService adminAccountService)
     : Endpoint<ApproveRouteRequest, ApiResult<bool>>
 {
     public override void Configure()

@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/AdminApprovalTests.cs
 using FastEndpoints;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
@@ -17,7 +18,7 @@ public sealed class ListProfileTypesRequest
     public string UserType { get; set; } = string.Empty;
 }
 
-public sealed class ListProfileTypesEndpoint(IAdminAccountService adminAccountService)
+public sealed class ListProfileTypesEndpoint(IAdminProfileTypeQueryService adminAccountService)
     : Endpoint<ListProfileTypesRequest, ApiResult<IReadOnlyList<AdminProfileTypeSummary>>>
 {
     public override void Configure()

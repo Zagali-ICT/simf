@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
@@ -13,7 +14,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// skipped per-target so the batch never fails on a single guarded row.
 /// One audit row per subject so the SOC sees every deletion.
 /// </summary>
-public sealed class BulkDeleteUsersEndpoint(IAdminAccountService adminAccountService)
+public sealed class BulkDeleteUsersEndpoint(IAdminUserBulkService adminAccountService)
     : Endpoint<AdminBulkDeleteRequest, ApiResult<AdminBulkDeleteResponse>>
 {
     public override void Configure()

@@ -24,6 +24,13 @@ namespace SIMF.Infrastructure.Identity;
 /// Admin-driven user-management use cases (decisions D-041, D-042). First
 /// slice of the User Management module from <c>myComment</c> #33 — reset
 /// 2FA, create a new CP user, list every account.
+///
+/// <para>R2 — D-075: implements five focused interfaces split out of the
+/// pre-R2 monolithic <c>IAdminAccountService</c> (Architecture SEV-1.2).
+/// The implementation stays in one class for now (§17 minimum-viable
+/// diff — the interface split is the architectural improvement the
+/// callers care about); splitting the implementation into five 150-
+/// 250-line classes is a follow-up.</para>
 /// </summary>
 internal sealed class AdminAccountService(
     UserManager<SimfUser> userManager,
@@ -39,7 +46,12 @@ internal sealed class AdminAccountService(
     SimfIdentityDbContext dbContext,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
-    ILogger<AdminAccountService> logger) : IAdminAccountService
+    ILogger<AdminAccountService> logger)
+    : IAdminTwoFactorService,
+      IAdminUserApprovalService,
+      IAdminUserProvisioningService,
+      IAdminUserBulkService,
+      IAdminProfileTypeQueryService
 {
     private const string AdministratorRole = "Administrator";
     private const string AuthenticatorProvider = "[AspNetUserStore]";

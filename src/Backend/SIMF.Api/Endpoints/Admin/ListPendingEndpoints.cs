@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/AdminApprovalTests.cs
 using FastEndpoints;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
@@ -11,7 +12,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// Admins (P4; P7c renamed URL from <c>/admin/staff/pending/list</c>).
 /// Administrator-only.
 /// </summary>
-public sealed class ListPendingAdminsEndpoint(IAdminAccountService adminAccountService)
+public sealed class ListPendingAdminsEndpoint(IAdminUserProvisioningService adminAccountService)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminPendingUserSummary>>>
 {
     public override void Configure()
@@ -34,7 +35,7 @@ public sealed class ListPendingAdminsEndpoint(IAdminAccountService adminAccountS
 /// <c>POST /api/v1/admin/others/pending/list</c> — one page of pending
 /// Others (P7c — new). Administrator-only.
 /// </summary>
-public sealed class ListPendingOthersEndpoint(IAdminAccountService adminAccountService)
+public sealed class ListPendingOthersEndpoint(IAdminUserProvisioningService adminAccountService)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminPendingUserSummary>>>
 {
     public override void Configure()
@@ -57,7 +58,7 @@ public sealed class ListPendingOthersEndpoint(IAdminAccountService adminAccountS
 /// <c>POST /api/v1/admin/visitors/pending/list</c> — one page of pending
 /// Visitors (P4).
 /// </summary>
-public sealed class ListPendingVisitorsEndpoint(IAdminAccountService adminAccountService)
+public sealed class ListPendingVisitorsEndpoint(IAdminUserProvisioningService adminAccountService)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminPendingUserSummary>>>
 {
     public override void Configure()

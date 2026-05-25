@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
@@ -18,7 +19,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// without these gates a hostile admin could submit a Zip-bomb workbook
 /// and OOM the API.</para>
 /// </summary>
-public sealed class ImportUsersEndpoint(IAdminAccountService adminAccountService)
+public sealed class ImportUsersEndpoint(IAdminUserBulkService adminAccountService)
     : Endpoint<EmptyRequest, ApiResult<AdminImportUsersResponse>>
 {
     /// <summary>Maximum accepted upload size in bytes (5 MB).</summary>

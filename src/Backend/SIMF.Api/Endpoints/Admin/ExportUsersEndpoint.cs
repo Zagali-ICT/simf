@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Admin;
@@ -11,7 +12,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// selected users (or the whole grid result if no ids are given).
 /// Decision D-044 b.
 /// </summary>
-public sealed class ExportUsersEndpoint(IAdminAccountService adminAccountService)
+public sealed class ExportUsersEndpoint(IAdminUserBulkService adminAccountService)
     : Endpoint<AdminExportUsersRequest>
 {
     public override void Configure()

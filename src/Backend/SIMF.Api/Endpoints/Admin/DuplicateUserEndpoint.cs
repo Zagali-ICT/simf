@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
@@ -11,7 +12,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// <c>POST /api/v1/admin/users/duplicate</c> — creates a copy of an existing
 /// user with a new email and a fresh invite (decision D-044 b).
 /// </summary>
-public sealed class DuplicateUserEndpoint(IAdminAccountService adminAccountService)
+public sealed class DuplicateUserEndpoint(IAdminUserProvisioningService adminAccountService)
     : Endpoint<AdminDuplicateUserRequest, ApiResult<AdminCreateUserResponse>>
 {
     public override void Configure()

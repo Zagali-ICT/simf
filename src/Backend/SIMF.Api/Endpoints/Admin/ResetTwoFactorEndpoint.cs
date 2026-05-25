@@ -4,6 +4,7 @@ using FastEndpoints;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using SIMF.Application.IdentityAccess;
+using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
@@ -15,7 +16,7 @@ namespace SIMF.Api.Endpoints.Admin;
 /// target cannot be the actor or another Administrator. Audits both sides
 /// with a mandatory reason.
 /// </summary>
-public sealed class ResetTwoFactorEndpoint(IAdminAccountService adminAccountService)
+public sealed class ResetTwoFactorEndpoint(IAdminTwoFactorService adminAccountService)
     : Endpoint<AdminResetTwoFactorRequest, ApiResult<bool>>
 {
     public override void Configure()
