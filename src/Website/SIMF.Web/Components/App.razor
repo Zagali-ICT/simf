@@ -1,5 +1,11 @@
+@using System.Globalization
+@* H6 — D-061: lang/dir track the current culture so Arabic visitors
+   get lang="ar" + dir="rtl". Mirrors the Control Panel's App.razor
+   pattern (D-028 / D-061). Without this every Arabic Website page is
+   announced with English phonemes by AT and renders LTR. *@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName"
+      dir="@(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? "rtl" : "ltr")">
 
 <head>
     <meta charset="utf-8" />
