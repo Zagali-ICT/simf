@@ -83,7 +83,15 @@ material:
 | D-069 | H14 — `SimfFileUpload` announces picked filename | A11y SEV-1.3 |
 | D-070 | H15 — H1 gate parameterised across every admin endpoint class | Reality F4 |
 | D-071 | H16 — H2 transaction rollback regression-tested | Reality F5 |
-| D-072 | H17 — A11y-markup regression net for H3 / H6 / H9 / H13 | Reality F6 |
+| D-072 | H17 — A11y-markup regression net for H3 / H6 / H H13 | Reality F6 |
+
+H24 — D-084: this doc was originally written at D-072. Subsequent work
+(R1 → R3g + a second 5-agent review + H19 → H23) shipped on the same
+branch under D-074 → D-083. The table above is frozen at Sprint 1
+closure; the additional decisions are summarised in §3.2 and recorded
+in `docs/decisions/DECISIONS_LOG.md`. D-073 was never assigned — the
+H18 commit message described it as "implicitly covered" by this doc,
+recorded here so the gap is intentional rather than a numbering slip.
 
 ---
 
@@ -91,16 +99,21 @@ material:
 
 | Suite | Count |
 |-------|-------|
-| SIMF.Api.Tests | 217 |
-| SIMF.ControlPanel.Tests | 32 |
+| SIMF.Api.Tests | 218 |
+| SIMF.ControlPanel.Tests | 34 |
 | SIMF.ApiClient.Tests | 13 |
 | SIMF.Domain.Tests | 3 |
 | SIMF.Application.Tests | 2 |
-| **Total** | **267 / 267 passing** |
+| **Total** | **270 / 270 passing** |
+
+(The +3 vs the Sprint 1 closure count: H17's split state-banner theory
+contributed +1 CP test; H19 added 1 API test for the refresh-after-flag
+gate; H22 added 1 CP test for the Website MainLayout landmark — see
+the H17 → H23 entries in `docs/decisions/DECISIONS_LOG.md`.)
 
 Build at HEAD: `dotnet build -c Debug SIMF.slnx` — **0 warnings, 0 errors**.
-A Release-config build (per CLAUDE.md §9) should be run as a sign-off
-step before deploy — that is recorded as outstanding (item 3.6).
+`dotnet build -c Release SIMF.slnx` — **0 warnings, 0 errors** (closes
+the §3.6 sign-off item below).
 
 ---
 
@@ -123,25 +136,41 @@ the history holds them, or (c) deploy with new keys via env vars and
 accept that the committed values become a stale local-dev convenience.
 This is operational, not code-fixable in-sprint.
 
-### 3.2 Architectural refactor — DEFER
+### 3.2 Architectural refactor — PARTIALLY CLOSED + DEFER
 
-The post-H1/H2/H3 5-agent architecture review flagged six SEV-1s:
+The post-H1/H2/H3 5-agent architecture review flagged six SEV-1s. Three
+are closed inside this branch, three remain queued.
 
-- Domain depends on ASP.NET Core Identity (framework leak through the
-  pure-model layer).
-- `IAdminAccountService` is a 17-method god service across four
-  concerns.
-- Four bounded contexts share `SimfIdentityDbContext`.
-- Application bypasses repository abstractions for `UserManager` /
-  `RoleManager` directly.
-- `Storage:*` config keys read with raw `IConfiguration[...]` in three
-  places (no typed options class).
-- `*Service` placement inconsistency (half in Application, half in
-  Infrastructure).
+**Closed (D-074 → D-079, D-082):**
 
-These are not in-sprint fixes — each is a planned refactor that touches
-~10+ files. Recorded for a dedicated refactor sprint before
-User Management module build-out lands on top.
+- ✅ Arch SEV-1.5 — Typed `StorageOptions` replaces scattered
+  `IConfiguration["Storage:..."]` reads (R1 — D-074).
+- ✅ Arch SEV-1.2 — `IAdminAccountService` god service split into five
+  focused interfaces (R2 — D-075). Implementation-split into separate
+  classes remains a follow-up.
+- ✅ Arch SEV-1.4 — Application bypasses repository for `UserManager`:
+  `IUserAccountRepository` introduced and every UserManager injection
+  outside the wrapper eliminated (R3a–g — D-076 → D-079). The post-R3
+  review surfaced one residual leak (`IdentityResult` on the contract);
+  closed by H21 (D-082) — `UserOperationResult` is now the SIMF-owned
+  return type.
+
+**Still queued (the three remaining SEV-1s):**
+
+- Arch SEV-1.1 — Domain depends on ASP.NET Core Identity (R5 in the
+  refactor plan; ~1-week sprint).
+- Arch SEV-1.3 — Four bounded contexts share `SimfIdentityDbContext`
+  (R6; ~1-week sprint).
+- Arch SEV-1.6 — `*Service` placement inconsistency (half in
+  Application, half in Infrastructure) — R4, depends on read-side
+  repositories that need to be introduced first; ~3-4 days per the
+  refined estimate in `docs/SIMF-Architecture-Refactor-Plan.md`.
+
+The plan doc enumerates these with size + ordering + risk shape.
+R3 + R4 should land before the User Management module to avoid a
+placement-rewrite of the new code; R5 + R6 can run alongside the next
+module since their contracts stay backwards-compatible through the
+migration.
 
 ### 3.3 Website skip-link — DEFER
 
@@ -166,13 +195,12 @@ in isolation; the cross-hop seam (e.g. an Approved visitor signs in on
 the App audience) is not pinned. Recorded for a dedicated integration
 test increment.
 
-### 3.6 Release build verification — HARDENING
+### 3.6 Release build verification — CLOSED
 
-A Release-config build with the full warnings-as-errors switch (per
-CLAUDE.md §9) should be the sign-off command. Sprint 1's running build
-verification has been Debug-config; the suite has stayed green and
-warning-free at Debug. Before deploy, run
-`dotnet build -c Release SIMF.slnx` and capture the output.
+`dotnet build -c Release SIMF.slnx` was run at HEAD and reports
+**0 warnings, 0 errors**. R1 / R2 / R3a-g / H19 / H22 / H20+H21 / H23
+have each been Release-verified before commit (see their respective
+DECISIONS_LOG entries). H24 — D-084.
 
 ### 3.7 No-IP rate-limit partition tightening — DEFER
 
@@ -209,11 +237,12 @@ owner sees fit.
       D-072 are local and authored as `SIMF Team` /
       `Co-Authored-By: Claude Opus 4.7`.
 - [x] `dotnet build -c Debug SIMF.slnx` — 0 warnings, 0 errors.
-- [x] `dotnet test SIMF.slnx` — 267 / 267 passing.
-- [x] `docs/decisions/DECISIONS_LOG.md` runs D-001 → D-072 with each
-      hardening item carrying a `Why:` reason and a `How to apply:` note.
+- [x] `dotnet build -c Release SIMF.slnx` — 0 warnings, 0 errors (H24).
+- [x] `dotnet test SIMF.slnx` — 270 / 270 passing at HEAD (post-H23).
+- [x] `docs/decisions/DECISIONS_LOG.md` runs D-001 → D-084 (D-073 skipped
+      intentionally — see §1.3 note) with each hardening / refactor item
+      carrying a `Why:` reason and a `How to apply:` note.
 - [x] CLAUDE.md project status line refreshed to reflect Sprint 1 closure.
-- [ ] **Release-config build** (item 3.6).
 - [ ] **Secret rotation decision** (item 3.1).
 - [ ] **End-to-end lifecycle test** (item 3.5).
 - [ ] **Push `feature/login-api` to origin** — waiting on the owner's call;
@@ -227,6 +256,11 @@ Per the programme plan, the next increment is the **User Management
 module** — admin self-service for the `Other` / `Visitor` user types,
 permission-driven navigation filtering (gate D1 / SIMF-CPD-001 OI-3),
 and the User Management UI sat on the closed Login API foundation.
-The six architecture SEV-1s in §3.2 should be addressed BEFORE the
-User Management module's persistence layer grows on top of the
-current `SimfIdentityDbContext` shape.
+
+R1 + R2 + R3 (a–g) + H20 + H21 closed three of the six architecture
+SEV-1s in-branch (see §3.2). The three remaining (Arch SEV-1.1 Domain
+→ Identity leak, Arch SEV-1.3 DbContext split, Arch SEV-1.6 service
+placement) are sized in `docs/SIMF-Architecture-Refactor-Plan.md`.
+R4 should land before the User Management module to avoid a placement
+rewrite of the new code; R5 + R6 can run alongside since their
+contracts stay backwards-compatible through the migration.
