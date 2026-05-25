@@ -205,7 +205,7 @@ public sealed class RegistrationService(
                 user.EmailConfirmed = true;
                 user.AccountState = AccountState.EmailVerified;
                 user.UpdatedAt = now;
-                await accounts.UpdateAsync(user);
+                await accounts.UpdateAsync(user).EnsureSuccessAsync();
             },
             cancellationToken);
 

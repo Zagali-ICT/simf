@@ -114,14 +114,14 @@ internal sealed class AdminAccountService(
 
         // The wipe — mirrors TotpEnrollmentService.DisableAsync but skips the
         // "you must prove a current code" gate, by design.
-        await accounts.SetTwoFactorEnabledAsync(target, false);
+        await accounts.SetTwoFactorEnabledAsync(target, false).EnsureSuccessAsync();
         await accounts.RemoveAuthenticationTokenAsync(
-            target, AuthenticatorProvider, ActiveSecretTokenName);
+            target, AuthenticatorProvider, ActiveSecretTokenName).EnsureSuccessAsync();
         await accounts.RemoveAuthenticationTokenAsync(
-            target, PendingSecretProvider, PendingSecretTokenName);
+            target, PendingSecretProvider, PendingSecretTokenName).EnsureSuccessAsync();
         target.LastUsedTotpTimestep = null;
         target.UpdatedAt = now;
-        await accounts.UpdateAsync(target);
+        await accounts.UpdateAsync(target).EnsureSuccessAsync();
         await recoveryCodes.RevokeAllAsync(target.Id, cancellationToken);
 
         // Kill every other session the target has open.
@@ -281,7 +281,7 @@ internal sealed class AdminAccountService(
             {
                 if (await roleManager.RoleExistsAsync(role))
                 {
-                    await accounts.AddToRoleAsync(user, role);
+                    await accounts.AddToRoleAsync(user, role).EnsureSuccessAsync();
                 }
             }
         }
@@ -516,7 +516,7 @@ internal sealed class AdminAccountService(
 
         // QR id mints at approval (D-046, P4) — idempotent.
         await qrIdMinter.MintIfMissingAsync(subject, cancellationToken);
-        await accounts.UpdateAsync(subject);
+        await accounts.UpdateAsync(subject).EnsureSuccessAsync();
 
         // P10 — revoke every refresh token so the subject's next API
         // call gets a fresh access token with account_state=Approved.
@@ -573,7 +573,7 @@ internal sealed class AdminAccountService(
         subject.RejectionReasonArabic = request.Reason;
         subject.StateChangedAt = now;
         subject.StateChangedByUserId = actorUserId;
-        await accounts.UpdateAsync(subject);
+        await accounts.UpdateAsync(subject).EnsureSuccessAsync();
 
         // P10 — revoke every refresh token so the subject's next API
         // call mints a token with account_state=Rejected (and the P11

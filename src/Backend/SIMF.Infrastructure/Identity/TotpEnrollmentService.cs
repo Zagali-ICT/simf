@@ -57,7 +57,7 @@ internal sealed class TotpEnrollmentService(
         // Stash the candidate secret — it becomes active only after a first
         // valid code confirms the user really has the authenticator paired.
         await accounts.SetAuthenticationTokenAsync(
-            user, SimfProvider, PendingSecretTokenName, secret);
+            user, SimfProvider, PendingSecretTokenName, secret).EnsureSuccessAsync();
 
         var otpauthUri = BuildOtpAuthUri(user.Email!, secret);
         var qrSvg = BuildQrSvg(otpauthUri);
@@ -116,13 +116,13 @@ internal sealed class TotpEnrollmentService(
         // Promote the pending secret to active, turn 2FA on, and arm the
         // replay guard so a code re-played in the same time-step is rejected.
         await accounts.SetAuthenticationTokenAsync(
-            user, AuthenticatorProvider, ActiveSecretTokenName, pending);
+            user, AuthenticatorProvider, ActiveSecretTokenName, pending).EnsureSuccessAsync();
         await accounts.RemoveAuthenticationTokenAsync(
-            user, SimfProvider, PendingSecretTokenName);
+            user, SimfProvider, PendingSecretTokenName).EnsureSuccessAsync();
         user.LastUsedTotpTimestep = result.TimeStep;
         user.UpdatedAt = DateTimeOffset.UtcNow;
-        await accounts.UpdateAsync(user);
-        await accounts.SetTwoFactorEnabledAsync(user, true);
+        await accounts.UpdateAsync(user).EnsureSuccessAsync();
+        await accounts.SetTwoFactorEnabledAsync(user, true).EnsureSuccessAsync();
 
         // Mint the user's first batch of recovery codes — shown plaintext
         // exactly once in the response so the user can save them (D-040).
@@ -188,12 +188,12 @@ internal sealed class TotpEnrollmentService(
         // (D-040): codes only exist while 2FA is on; leaving them behind would
         // let a leaked code re-enable bypass after the user thought they were
         // safe.
-        await accounts.SetTwoFactorEnabledAsync(user, false);
+        await accounts.SetTwoFactorEnabledAsync(user, false).EnsureSuccessAsync();
         await accounts.RemoveAuthenticationTokenAsync(
-            user, AuthenticatorProvider, ActiveSecretTokenName);
+            user, AuthenticatorProvider, ActiveSecretTokenName).EnsureSuccessAsync();
         user.LastUsedTotpTimestep = null;
         user.UpdatedAt = DateTimeOffset.UtcNow;
-        await accounts.UpdateAsync(user);
+        await accounts.UpdateAsync(user).EnsureSuccessAsync();
         await recoveryCodes.RevokeAllAsync(user.Id, cancellationToken);
 
         await auditLog.WriteAsync(

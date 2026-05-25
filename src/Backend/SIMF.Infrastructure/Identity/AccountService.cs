@@ -112,7 +112,7 @@ internal sealed class AccountService(
             user.Id, content, normalisedContentType, cancellationToken);
         user.AvatarRelativePath = relativePath;
         user.UpdatedAt = DateTimeOffset.UtcNow;
-        await accounts.UpdateAsync(user);
+        await accounts.UpdateAsync(user).EnsureSuccessAsync();
 
         await auditLog.WriteAsync(
             new AuditEntry
@@ -140,7 +140,7 @@ internal sealed class AccountService(
             await avatarStorage.DeleteAsync(user.AvatarRelativePath, cancellationToken);
             user.AvatarRelativePath = null;
             user.UpdatedAt = DateTimeOffset.UtcNow;
-            await accounts.UpdateAsync(user);
+            await accounts.UpdateAsync(user).EnsureSuccessAsync();
         }
 
         await auditLog.WriteAsync(

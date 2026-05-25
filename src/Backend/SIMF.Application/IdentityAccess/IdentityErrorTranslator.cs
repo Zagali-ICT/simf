@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity;
+using SIMF.Application.IdentityAccess.Abstractions;
 
 namespace SIMF.Application.IdentityAccess;
 
@@ -8,14 +8,20 @@ namespace SIMF.Application.IdentityAccess;
 /// validator failure raised by Identity (the password policy, the user store).
 /// Unknown Identity codes fall back to the English description — the field
 /// stays non-empty so the contract holds, and an unknown code surfaces clearly.
+///
+/// <para>H21 — D-082: takes <see cref="UserOperationError"/> instead of
+/// <c>Microsoft.AspNetCore.Identity.IdentityError</c> — Application no
+/// longer depends on Identity types. The <c>Code</c> string keeps the
+/// Identity-compatible value (e.g. <c>"PasswordMismatch"</c>) so the
+/// switch arms below are unchanged.</para>
 /// </summary>
 internal static class IdentityErrorTranslator
 {
     /// <summary>
     /// Returns the Arabic version of an Identity error description. The mapping
-    /// is by Identity's stable <see cref="IdentityError.Code"/>.
+    /// is by Identity's stable <c>Code</c> string.
     /// </summary>
-    public static string ToArabic(IdentityError error) =>
+    public static string ToArabic(UserOperationError error) =>
         error.Code switch
         {
             "PasswordTooShort" => "كلمة المرور قصيرة جدًا.",

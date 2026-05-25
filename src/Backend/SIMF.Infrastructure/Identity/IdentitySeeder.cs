@@ -61,7 +61,7 @@ public sealed class IdentitySeeder(
 
         if (!await accounts.IsInRoleAsync(admin, AdministratorRole))
         {
-            await accounts.AddToRoleAsync(admin, AdministratorRole);
+            await accounts.AddToRoleAsync(admin, AdministratorRole).EnsureSuccessAsync();
         }
 
         // P7 — every seeded admin must end up with UserType = Admin. This
@@ -70,7 +70,7 @@ public sealed class IdentitySeeder(
         if (admin.UserType != UserType.Admin)
         {
             admin.UserType = UserType.Admin;
-            await accounts.UpdateAsync(admin);
+            await accounts.UpdateAsync(admin).EnsureSuccessAsync();
         }
 
         // P7 — seed the initial ProfileTypes set so the create / pending
@@ -158,8 +158,8 @@ public sealed class IdentitySeeder(
 
         if (!string.IsNullOrWhiteSpace(settings.TotpSecret))
         {
-            await accounts.SetAuthenticationTokenAsync( admin, AuthenticatorKeyProvider, AuthenticatorKeyTokenName, settings.TotpSecret);
-            await accounts.SetTwoFactorEnabledAsync(admin, true);
+            await accounts.SetAuthenticationTokenAsync( admin, AuthenticatorKeyProvider, AuthenticatorKeyTokenName, settings.TotpSecret).EnsureSuccessAsync();
+            await accounts.SetTwoFactorEnabledAsync(admin, true).EnsureSuccessAsync();
         }
 
         await auditLog.WriteAsync(

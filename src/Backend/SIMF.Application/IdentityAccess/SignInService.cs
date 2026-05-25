@@ -230,7 +230,7 @@ public sealed class SignInService(
         var now = timeProvider.GetUtcNow();
         user.LastUsedTotpTimestep = totp.TimeStep;
         user.UpdatedAt = now;
-        await accounts.UpdateAsync(user);
+        await accounts.UpdateAsync(user).EnsureSuccessAsync();
 
         ticket.ConsumedAt = now;
         await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);

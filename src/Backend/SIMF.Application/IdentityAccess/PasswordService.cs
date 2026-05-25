@@ -256,7 +256,7 @@ public sealed class PasswordService(
     {
         user.PasswordChangeRequired = false;
         user.UpdatedAt = now;
-        await accounts.UpdateAsync(user);
+        await accounts.UpdateAsync(user).EnsureSuccessAsync();
         await refreshTokenRepository.RevokeAllForUserAsync(user.Id, now, cancellationToken);
     }
 
@@ -296,7 +296,7 @@ public sealed class PasswordService(
         emailQueue.Enqueue(new EmailMessage(email, "SIMF password reset", body));
     }
 
-    private static DataValidationException PasswordRejected(IdentityResult result) =>
+    private static DataValidationException PasswordRejected(UserOperationResult result) =>
         new(
             "The new password is not allowed.",
             "كلمة المرور الجديدة غير مسموح بها.",

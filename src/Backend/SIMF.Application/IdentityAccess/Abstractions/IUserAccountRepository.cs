@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Identity;
 using SIMF.Domain.IdentityAccess;
 
 namespace SIMF.Application.IdentityAccess.Abstractions;
@@ -12,16 +11,11 @@ namespace SIMF.Application.IdentityAccess.Abstractions;
 /// asks for <c>SimfUser</c>s through this contract; the Infrastructure
 /// implementation wraps <c>UserManager</c>.
 ///
-/// <para>The methods return <see cref="IdentityResult"/> for now — that
-/// surface is part of the existing contract; replacing it with a
-/// SIMF-owned result type is queued behind R5 (pure-POCO Domain), at
-/// which point both <c>SimfUser</c> and the result shape become
-/// SIMF-owned.</para>
-///
-/// <para>Migration is per-service: R3a migrates <c>RegistrationService</c>;
-/// R3b–R3f migrate <c>PasswordService</c>, <c>SessionService</c>,
-/// <c>UserProfileService</c>, <c>SignInService</c>, and
-/// <c>AdminAccountService</c> respectively.</para>
+/// <para>H21 — D-082: methods that previously returned
+/// <c>Microsoft.AspNetCore.Identity.IdentityResult</c> now return
+/// <see cref="UserOperationResult"/> — a SIMF-owned record. Application
+/// code no longer transitively depends on the Identity types it was
+/// supposed to be decoupled from after R3.</para>
 /// </summary>
 public interface IUserAccountRepository
 {
@@ -34,22 +28,22 @@ public interface IUserAccountRepository
     // -- Lifecycle -----------------------------------------------------------
 
     /// <summary>Creates a user with an initial password (sign-up).</summary>
-    Task<IdentityResult> CreateAsync(SimfUser user, string password, CancellationToken cancellationToken = default);
+    Task<UserOperationResult> CreateAsync(SimfUser user, string password, CancellationToken cancellationToken = default);
 
     /// <summary>Creates a password-less user (admin invite path).</summary>
-    Task<IdentityResult> CreateAsync(SimfUser user, CancellationToken cancellationToken = default);
+    Task<UserOperationResult> CreateAsync(SimfUser user, CancellationToken cancellationToken = default);
 
-    Task<IdentityResult> UpdateAsync(SimfUser user, CancellationToken cancellationToken = default);
+    Task<UserOperationResult> UpdateAsync(SimfUser user, CancellationToken cancellationToken = default);
 
     // -- Credentials ---------------------------------------------------------
 
     Task<bool> CheckPasswordAsync(SimfUser user, string password, CancellationToken cancellationToken = default);
 
-    Task<IdentityResult> AddPasswordAsync(SimfUser user, string password, CancellationToken cancellationToken = default);
+    Task<UserOperationResult> AddPasswordAsync(SimfUser user, string password, CancellationToken cancellationToken = default);
 
-    Task<IdentityResult> RemovePasswordAsync(SimfUser user, CancellationToken cancellationToken = default);
+    Task<UserOperationResult> RemovePasswordAsync(SimfUser user, CancellationToken cancellationToken = default);
 
-    Task<IdentityResult> ChangePasswordAsync(SimfUser user, string currentPassword, string newPassword, CancellationToken cancellationToken = default);
+    Task<UserOperationResult> ChangePasswordAsync(SimfUser user, string currentPassword, string newPassword, CancellationToken cancellationToken = default);
 
     Task UpdateSecurityStampAsync(SimfUser user, CancellationToken cancellationToken = default);
 
@@ -67,19 +61,19 @@ public interface IUserAccountRepository
 
     Task<bool> IsInRoleAsync(SimfUser user, string role, CancellationToken cancellationToken = default);
 
-    Task<IdentityResult> AddToRoleAsync(SimfUser user, string role, CancellationToken cancellationToken = default);
+    Task<UserOperationResult> AddToRoleAsync(SimfUser user, string role, CancellationToken cancellationToken = default);
 
-    Task<IdentityResult> RemoveFromRolesAsync(SimfUser user, IEnumerable<string> roles, CancellationToken cancellationToken = default);
+    Task<UserOperationResult> RemoveFromRolesAsync(SimfUser user, IEnumerable<string> roles, CancellationToken cancellationToken = default);
 
     // -- TOTP / authenticator tokens ----------------------------------------
 
     Task<string?> GetAuthenticatorKeyAsync(SimfUser user, CancellationToken cancellationToken = default);
 
-    Task<IdentityResult> SetAuthenticationTokenAsync(SimfUser user, string loginProvider, string tokenName, string tokenValue, CancellationToken cancellationToken = default);
+    Task<UserOperationResult> SetAuthenticationTokenAsync(SimfUser user, string loginProvider, string tokenName, string tokenValue, CancellationToken cancellationToken = default);
 
     Task<string?> GetAuthenticationTokenAsync(SimfUser user, string loginProvider, string tokenName, CancellationToken cancellationToken = default);
 
-    Task<IdentityResult> RemoveAuthenticationTokenAsync(SimfUser user, string loginProvider, string tokenName, CancellationToken cancellationToken = default);
+    Task<UserOperationResult> RemoveAuthenticationTokenAsync(SimfUser user, string loginProvider, string tokenName, CancellationToken cancellationToken = default);
 
-    Task<IdentityResult> SetTwoFactorEnabledAsync(SimfUser user, bool enabled, CancellationToken cancellationToken = default);
+    Task<UserOperationResult> SetTwoFactorEnabledAsync(SimfUser user, bool enabled, CancellationToken cancellationToken = default);
 }
