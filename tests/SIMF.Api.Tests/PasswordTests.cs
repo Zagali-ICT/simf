@@ -1,10 +1,12 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.Extensions.DependencyInjection;
 using SIMF.Application.Auditing;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -209,6 +211,39 @@ public sealed class PasswordTests : IClassFixture<SimfApiFactory>
             new RefreshRequest { RefreshToken = tokens.RefreshToken });
         Assert.Equal(HttpStatusCode.Unauthorized, refresh.StatusCode);
     }
+
+    // ----------------------------------------------------------------------
+    // H11 — D-066: PasswordChange.Failed audit now separates the
+    // wrong-current-password path from the new-password-policy-rejected
+    // path. Both still surface to the user via existing API errors; the
+    // distinction lives on the audit row's ErrorCode + Detail.
+    // ----------------------------------------------------------------------
+
+    [Fact]
+    public async Task Change_password_with_wrong_current_audits_WrongCurrent_with_AuthInvalidCredentials()
+    {
+        var tokens = await AuthFlow.SignInVisitorAsync(_client, _factory);
+
+        await ChangeAsync(tokens.AccessToken, "Wrong1!Password", NewPassword);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        Assert.Contains(db.OperationLog, entry =>
+            entry.EventType == AuditEvents.PasswordChangeFailed
+            && entry.SubjectEmail == tokens.User.Email
+            && entry.ErrorCode == ErrorCodes.AuthInvalidCredentials
+            && entry.Detail != null
+            && entry.Detail.StartsWith("WrongCurrent:", StringComparison.Ordinal));
+    }
+
+    // NOTE: the PolicyRejected branch of the H11 audit split is
+    // defence-in-depth — per D-005 the validator and Identity enforce
+    // the same baseline today (length 8, one digit, one letter, not
+    // equal to email), so no HTTP path realistically reaches
+    // userManager.ChangePasswordAsync with a policy-violating new
+    // password. The audit shape is in place for the day Identity's
+    // policy is tightened beyond the validator, or for non-HTTP callers
+    // (seeders, admin tools) that bypass FluentValidation.
 
     // ----------------------------------------------------------------------
     // H8 — D-063: CurrentPassword is now capped at 128 chars. Without the

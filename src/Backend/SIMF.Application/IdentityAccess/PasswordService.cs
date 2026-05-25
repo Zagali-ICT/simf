@@ -182,10 +182,26 @@ public sealed class PasswordService(
                     user, request.CurrentPassword, request.NewPassword);
                 if (!result.Succeeded)
                 {
+                    // H11 — D-066: separate the wrong-current-password
+                    // path from the policy-rejected-new-password path so
+                    // SOC can spot brute-force-current attempts vs the
+                    // user typing weak new passwords. Detail carries the
+                    // Identity error codes so the timeline is forensically
+                    // reconstructable from the row alone.
+                    var isMismatch = result.Errors.Any(
+                        error => error.Code == "PasswordMismatch");
+                    var errorCodeSummary = string.Join(
+                        ",", result.Errors.Select(error => error.Code));
                     await AuditAsync(AuditEvents.PasswordChangeFailed, AuditOutcome.Failure,
-                        user.Email!, user.Id, ErrorCodes.AuthInvalidCredentials,
+                        user.Email!, user.Id,
+                        isMismatch
+                            ? ErrorCodes.AuthInvalidCredentials
+                            : ErrorCodes.AuthPasswordPolicy,
+                        detail: isMismatch
+                            ? $"WrongCurrent: {errorCodeSummary}"
+                            : $"PolicyRejected: {errorCodeSummary}",
                         cancellationToken: token);
-                    if (result.Errors.Any(error => error.Code == "PasswordMismatch"))
+                    if (isMismatch)
                     {
                         throw new ApiException(ErrorCodes.AuthInvalidCredentials, 400,
                             "The current password is not correct.",

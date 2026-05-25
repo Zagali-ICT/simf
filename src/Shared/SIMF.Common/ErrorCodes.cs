@@ -19,6 +19,11 @@ public static class ErrorCodes
     public const string AuthCodeInvalid = "AUTH_CODE_INVALID";
     public const string AuthCodeExpired = "AUTH_CODE_EXPIRED";
     public const string AuthInvalidCredentials = "AUTH_INVALID_CREDENTIALS";
+    /// <summary>H11 — D-066: the new password failed an ASP.NET Identity
+    /// policy rule (length, digit, …). Used in the audit log only — the
+    /// response shape still raises <see cref="DataValidationException"/>
+    /// with per-error details on <c>newPassword</c>.</summary>
+    public const string AuthPasswordPolicy = "AUTH_PASSWORD_POLICY";
     public const string AuthEmailNotVerified = "AUTH_EMAIL_NOT_VERIFIED";
     public const string AuthAccountNotApproved = "AUTH_ACCOUNT_NOT_APPROVED";
     public const string AuthAccountDisabled = "AUTH_ACCOUNT_DISABLED";
