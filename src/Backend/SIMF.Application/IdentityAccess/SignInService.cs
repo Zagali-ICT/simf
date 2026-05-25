@@ -73,6 +73,27 @@ public sealed class SignInService(
 
         await userManager.ResetAccessFailedCountAsync(user);
 
+        // H4 — D-059: a SimfUser with PasswordChangeRequired=true holds a
+        // seeded or admin-rotated credential they must change before any
+        // session is minted. The flag is set by the super-admin seeder
+        // (IdentitySeeder) and cleared in PasswordService when the user
+        // completes the reset flow. Until then the right password is the
+        // wrong door — 403 with AUTH_PASSWORD_CHANGE_REQUIRED, and the
+        // client routes to /forgot-password. Runs after credentials are
+        // OK so it doesn't leak account existence, and before audience /
+        // state checks because none of those matter for a password the
+        // user has to retire.
+        if (user.PasswordChangeRequired)
+        {
+            await AuditAsync(AuditEvents.SignInPasswordChangeRequired,
+                AuditOutcome.Failure, user.Email!, user.Id,
+                ErrorCodes.AuthPasswordChangeRequired,
+                cancellationToken: cancellationToken);
+            throw new ApiException(ErrorCodes.AuthPasswordChangeRequired, 403,
+                "You must change your password before signing in. Use the password-reset flow to set a new one.",
+                "يجب تغيير كلمة المرور قبل تسجيل الدخول. استخدم تدفّق إعادة تعيين كلمة المرور لتعيين كلمة جديدة.");
+        }
+
         var (blockCode, blockMessage, blockMessageArabic) = CheckAccountState(user);
         if (blockCode is not null)
         {

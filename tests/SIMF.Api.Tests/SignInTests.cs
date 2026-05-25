@@ -523,6 +523,57 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         Assert.NotNull(visitorBody.Data.OtpToken);
     }
 
+    // ----------------------------------------------------------------------
+    // H4 — D-059: PasswordChangeRequired is now enforced at sign-in. A user
+    // whose row has the flag set (the super-admin out of the seeder, an
+    // admin-rotated credential) cannot mint a session — they must run the
+    // password-reset flow first, which clears the flag.
+    // ----------------------------------------------------------------------
+
+    [Fact]
+    public async Task Sign_in_is_blocked_when_PasswordChangeRequired_even_with_the_right_password()
+    {
+        var (email, _) = await CreateAdminAsync();
+        SetPasswordChangeRequired(email, value: true);
+
+        var response = await SignInAsync(email, Password, SignInAudience.Cp);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.False(body!.Success);
+        Assert.Equal(ErrorCodes.AuthPasswordChangeRequired, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Sign_in_succeeds_once_PasswordChangeRequired_is_cleared()
+    {
+        // A user the seeder marked, but operations subsequently cleared
+        // (e.g. they completed the reset flow). The gate must let them
+        // through — the flag is the only difference from the H4-blocked
+        // case above.
+        var (email, _) = await CreateAdminAsync();
+        // CreateAdminAsync defaults the flag to false; assert that path
+        // still goes through the existing 2FA challenge (sanity for the
+        // gate not regressing the happy path).
+        SetPasswordChangeRequired(email, value: false);
+
+        var response = await SignInAsync(email, Password, SignInAudience.Cp);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        Assert.True(body.Success);
+        Assert.True(body.Data!.MfaRequired);
+    }
+
+    private void SetPasswordChangeRequired(string email, bool value)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = database.Users.Single(candidate => candidate.Email == email);
+        user.PasswordChangeRequired = value;
+        database.SaveChanges();
+    }
+
     private void DisableTwoFactor(string email)
     {
         using var scope = _factory.Services.CreateScope();

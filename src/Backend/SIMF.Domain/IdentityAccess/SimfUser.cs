@@ -34,9 +34,13 @@ public class SimfUser : IdentityUser<Guid>
 
     /// <summary>
     /// True when the account holds a temporary password and must change it
-    /// before any other action (SIMF-FDS-001 Amendment A.5).
+    /// before any other action (SIMF-FDS-001 Amendment A.5; enforced at
+    /// sign-in by H4 — D-059). Default false — only explicitly-seeded
+    /// accounts (the super-admin) or operator-forced credential rotations
+    /// set this to true. A regular sign-up never sets the flag because
+    /// the user's own password is the only one ever set on the row.
     /// </summary>
-    public bool PasswordChangeRequired { get; set; } = true;
+    public bool PasswordChangeRequired { get; set; }
 
     /// <summary>When the account was created (UTC).</summary>
     public DateTimeOffset CreatedAt { get; set; }
