@@ -52,7 +52,24 @@ public sealed class PasswordService(
             if (recentCodes < MaxResetCodesPerWindow)
             {
                 var code = await IssueResetCodeAsync(user, now, cancellationToken);
-                EnqueueResetEmail(user.Email!, code);
+                // H10 — D-065: the code row is persisted; if the enqueue
+                // then throws (queue closed during shutdown, etc.), the
+                // user holds a code they will never receive. Audit the
+                // failure distinctly so SOC sees the gap even though the
+                // request itself audited Success.
+                try
+                {
+                    EnqueueResetEmail(user.Email!, code);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex,
+                        "Password-reset email enqueue failed for {Email}", user.Email);
+                    await AuditAsync(AuditEvents.EmailEnqueueFailed, AuditOutcome.Failure,
+                        user.Email!, user.Id, ErrorCodes.InternalError,
+                        detail: $"PasswordReset: {ex.GetType().Name}",
+                        cancellationToken: cancellationToken);
+                }
                 await AuditAsync(AuditEvents.ForgotPasswordRequested, AuditOutcome.Success,
                     user.Email!, user.Id, cancellationToken: cancellationToken);
             }

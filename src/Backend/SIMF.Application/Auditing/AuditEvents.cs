@@ -48,6 +48,12 @@ public static class AuditEvents
     public const string PasswordChangeFailed = "PasswordChange.Failed";
     public const string SuperAdminSeeded = "Admin.SuperAdminSeeded";
 
+    // H10 — D-065: an email-enqueue failure that lands AFTER the matching
+    // code row is already persisted to the DB. The success audit was
+    // already written; this row tells SOC the user never actually got
+    // the message even though everything else looked clean.
+    public const string EmailEnqueueFailed = "Email.EnqueueFailed";
+
     // TOTP enrolment (myComment #11)
     public const string TotpEnrolmentStarted = "Totp.EnrolmentStarted";
     public const string TotpEnrolmentConfirmed = "Totp.EnrolmentConfirmed";

@@ -89,7 +89,23 @@ public sealed class RegistrationService(
             },
             cancellationToken);
 
-        EnqueueVerificationEmail(user.Email!, issuedCode!.Code);
+        // H10 — D-065: the user row and its code committed inside the
+        // transaction above; the email enqueue is a side-effect on a
+        // different scope (IEmailQueue). A failure here means the user
+        // has an account they cannot verify. Audit the gap.
+        try
+        {
+            EnqueueVerificationEmail(user.Email!, issuedCode!.Code);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "Sign-up verification email enqueue failed for {Email}", user.Email);
+            await AuditAsync(AuditEvents.EmailEnqueueFailed, AuditOutcome.Failure,
+                user.Email!, userId: user.Id, errorCode: ErrorCodes.InternalError,
+                detail: $"EmailVerification: {ex.GetType().Name}",
+                cancellationToken: cancellationToken);
+        }
         await AuditAsync(
             AuditEvents.SignUpSucceeded, AuditOutcome.Success, user.Email!,
             userId: user.Id, cancellationToken: cancellationToken);
@@ -118,7 +134,7 @@ public sealed class RegistrationService(
         {
             await AuditAsync(
                 AuditEvents.EmailVerificationAccountNotRegistered, AuditOutcome.Failure,
-                user.Email!, user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken);
+                user.Email!, user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken: cancellationToken);
             throw new ApiException(
                 ErrorCodes.AuthCodeInvalid,
                 400,
@@ -134,7 +150,7 @@ public sealed class RegistrationService(
         {
             await AuditAsync(
                 AuditEvents.EmailVerificationCodeIncorrect, AuditOutcome.Failure, user.Email!,
-                user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken);
+                user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken: cancellationToken);
             throw new ApiException(
                 ErrorCodes.AuthCodeInvalid,
                 400,
@@ -146,7 +162,7 @@ public sealed class RegistrationService(
         {
             await AuditAsync(
                 AuditEvents.EmailVerificationCodeExpired, AuditOutcome.Failure, user.Email!,
-                user.Id, ErrorCodes.AuthCodeExpired, cancellationToken);
+                user.Id, ErrorCodes.AuthCodeExpired, cancellationToken: cancellationToken);
             throw new ApiException(
                 ErrorCodes.AuthCodeExpired,
                 400,
@@ -158,7 +174,7 @@ public sealed class RegistrationService(
         {
             await AuditAsync(
                 AuditEvents.EmailVerificationAttemptCapReached, AuditOutcome.Failure, user.Email!,
-                user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken);
+                user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken: cancellationToken);
             throw new ApiException(
                 ErrorCodes.AuthCodeInvalid,
                 400,
@@ -172,7 +188,7 @@ public sealed class RegistrationService(
             await accountCodeRepository.UpdateAsync(code, cancellationToken);
             await AuditAsync(
                 AuditEvents.EmailVerificationCodeIncorrect, AuditOutcome.Failure, user.Email!,
-                user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken);
+                user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken: cancellationToken);
             throw new ApiException(
                 ErrorCodes.AuthCodeInvalid,
                 400,
@@ -221,7 +237,7 @@ public sealed class RegistrationService(
         {
             await AuditAsync(
                 AuditEvents.ResendCodeAccountNotRegistered, AuditOutcome.Failure,
-                user.Email!, user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken);
+                user.Email!, user.Id, ErrorCodes.AuthCodeInvalid, cancellationToken: cancellationToken);
             throw new ApiException(
                 ErrorCodes.AuthCodeInvalid,
                 400,
@@ -239,7 +255,7 @@ public sealed class RegistrationService(
         {
             await AuditAsync(
                 AuditEvents.ResendCodeCapReached, AuditOutcome.Failure, user.Email!,
-                user.Id, ErrorCodes.RateLimitExceeded, cancellationToken);
+                user.Id, ErrorCodes.RateLimitExceeded, cancellationToken: cancellationToken);
             throw new ApiException(
                 ErrorCodes.RateLimitExceeded,
                 429,
@@ -248,7 +264,21 @@ public sealed class RegistrationService(
         }
 
         var code = await IssueVerificationCodeAsync(user, now, cancellationToken);
-        EnqueueVerificationEmail(user.Email!, code.Code);
+        // H10 — D-065: same shape as sign-up — code in DB, enqueue is a
+        // separate side-effect that can fail.
+        try
+        {
+            EnqueueVerificationEmail(user.Email!, code.Code);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "Resend verification email enqueue failed for {Email}", user.Email);
+            await AuditAsync(AuditEvents.EmailEnqueueFailed, AuditOutcome.Failure,
+                user.Email!, userId: user.Id, errorCode: ErrorCodes.InternalError,
+                detail: $"ResendVerification: {ex.GetType().Name}",
+                cancellationToken: cancellationToken);
+        }
         await AuditAsync(
             AuditEvents.ResendCodeIssued, AuditOutcome.Success, user.Email!,
             userId: user.Id, cancellationToken: cancellationToken);
@@ -298,6 +328,7 @@ public sealed class RegistrationService(
         string email,
         Guid? userId = null,
         string? errorCode = null,
+        string? detail = null,
         CancellationToken cancellationToken = default) =>
         auditLog.WriteAsync(
             new AuditEntry
@@ -307,6 +338,7 @@ public sealed class RegistrationService(
                 SubjectEmail = email,
                 SubjectUserId = userId,
                 ErrorCode = errorCode,
+                Detail = detail,
             },
             cancellationToken);
 

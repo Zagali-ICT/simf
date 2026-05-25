@@ -173,7 +173,22 @@ public sealed class SignInService(
             return new SignInResponse(true, ticketValue, null);
         }
 
-        EnqueueSignInOtpEmail(user.Email!, otpCode!);
+        // H10 — D-065: the ticket + OTP code are persisted; if the
+        // enqueue throws, the user holds a ticket and a code they will
+        // never receive. Audit the gap distinctly.
+        try
+        {
+            EnqueueSignInOtpEmail(user.Email!, otpCode!);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "Sign-in OTP email enqueue failed for {Email}", user.Email);
+            await AuditAsync(AuditEvents.EmailEnqueueFailed, AuditOutcome.Failure,
+                user.Email!, user.Id, ErrorCodes.InternalError,
+                detail: $"SignInOtp: {ex.GetType().Name}",
+                cancellationToken: cancellationToken);
+        }
         return new SignInResponse(true, null, ticketValue);
     }
 
