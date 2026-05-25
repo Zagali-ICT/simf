@@ -51,6 +51,12 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IRequestContext, HttpRequestContext>();
 
+// H26 — D-086: in-memory cache backs the per-IP bearer-rejection
+// throttle in JwtBearerSetup.AuditRejectionAsync so an attacker
+// flooding bearer-garbage requests cannot drive synchronous DB
+// audit writes per request.
+builder.Services.AddMemoryCache();
+
 // Rate limiting for the authentication endpoints — a fixed window per client IP.
 var rateLimitOptions =
     builder.Configuration.GetSection(RateLimitOptions.SectionName).Get<RateLimitOptions>()

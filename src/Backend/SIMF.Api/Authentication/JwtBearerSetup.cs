@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
@@ -110,8 +112,61 @@ internal static class JwtBearerSetup
             }));
     }
 
-    private static Task AuditRejectionAsync(HttpContext httpContext, string detail) =>
-        httpContext.RequestServices.GetRequiredService<IAuditLog>().WriteAsync(
+    /// <summary>
+    /// H26 — D-086: per-IP cap on bearer-rejection audit DB writes (the
+    /// rest of the world reaches the API past UseRouting — pre-routing,
+    /// the rate limiter is not in scope). An attacker flooding
+    /// <c>Authorization: Bearer &lt;garbage&gt;</c> requests would
+    /// otherwise force one synchronous <c>SaveChangesAsync</c> per
+    /// request on the audit log (the IAuditLog impl writes synchronously
+    /// — see SIMF.Infrastructure.Auditing.AuditLog).
+    ///
+    /// <para>The throttle keeps the structured log line (Serilog) always
+    /// firing so SOC still sees the rejection storm, but drops the DB
+    /// write for the same IP past <see cref="MaxAuditWritesPerWindow"/>
+    /// in a 60-second sliding window. A future commit can add a
+    /// fire-and-forget channel (mirroring the email queue) so the audit
+    /// write itself is non-blocking — for now the rate cap is the
+    /// minimum-viable DoS guard.</para>
+    /// </summary>
+    private const int MaxAuditWritesPerWindow = 10;
+    private static readonly TimeSpan AuditWindow = TimeSpan.FromMinutes(1);
+
+    private static async Task AuditRejectionAsync(HttpContext httpContext, string detail)
+    {
+        var services = httpContext.RequestServices;
+        var logger = services.GetRequiredService<ILogger<JwtBearerOptions>>();
+        var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        // Structured log line always fires — SOC's log forwarder sees
+        // every rejection, regardless of audit-DB throttling.
+        logger.LogWarning(
+            "Bearer rejection from {Ip}: {Detail}", ip, detail);
+
+        var cache = services.GetService<IMemoryCache>();
+        if (cache is not null)
+        {
+            var cacheKey = "simf-bearer-rej:" + ip;
+            var count = cache.GetOrCreate(cacheKey, entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = AuditWindow;
+                return 0;
+            });
+            count++;
+            cache.Set(cacheKey, count, AuditWindow);
+            if (count > MaxAuditWritesPerWindow)
+            {
+                // Storm — log a single "throttled" line on each subsequent
+                // hit so the duration of the storm is visible in the log
+                // file, but skip the DB row.
+                logger.LogWarning(
+                    "Bearer rejection audit suppressed from {Ip} — already wrote {Cap} rows in {Window}s.",
+                    ip, MaxAuditWritesPerWindow, (int)AuditWindow.TotalSeconds);
+                return;
+            }
+        }
+
+        await services.GetRequiredService<IAuditLog>().WriteAsync(
             new AuditEntry
             {
                 EventType = AuditEvents.AccessTokenRejected,
@@ -119,4 +174,5 @@ internal static class JwtBearerSetup
                 ErrorCode = ErrorCodes.AuthInvalidCredentials,
                 Detail = detail,
             });
+    }
 }
