@@ -26,7 +26,7 @@ namespace SIMF.Infrastructure.Identity;
 /// service does not need an admin-vs-self check.
 /// </summary>
 internal sealed class UserProfileService(
-    UserManager<SimfUser> userManager,
+    IUserAccountRepository accounts,
     SimfIdentityDbContext dbContext,
     IUserIdDocumentStorage idStorage,
     IAuditLog auditLog,
@@ -39,7 +39,7 @@ internal sealed class UserProfileService(
     public async Task<UserProfileResponse> GetMineAsync(
         Guid actorUserId, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(actorUserId.ToString())
+        var user = await accounts.FindByIdAsync(actorUserId, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.AuthAccountNotFound, 404,
                 "The acting account was not found.",
@@ -78,7 +78,7 @@ internal sealed class UserProfileService(
                 $"الجنسية '{request.NationalityCode}' غير مدعومة.");
         }
 
-        var user = await userManager.FindByIdAsync(actorUserId.ToString())
+        var user = await accounts.FindByIdAsync(actorUserId, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.AuthAccountNotFound, 404,
                 "The acting account was not found.",
@@ -177,7 +177,7 @@ internal sealed class UserProfileService(
                 user.AccountState = AccountState.PendingApproval;
                 user.StateChangedAt = now;
                 user.StateChangedByUserId = null;
-                var updateResult = await userManager.UpdateAsync(user);
+                var updateResult = await accounts.UpdateAsync(user);
                 if (!updateResult.Succeeded)
                 {
                     throw new InvalidOperationException(
@@ -281,7 +281,7 @@ internal sealed class UserProfileService(
         string contentType,
         CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(actorUserId.ToString())
+        var user = await accounts.FindByIdAsync(actorUserId, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.AuthAccountNotFound, 404,
                 "The acting account was not found.",

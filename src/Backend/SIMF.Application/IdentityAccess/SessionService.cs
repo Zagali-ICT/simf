@@ -16,7 +16,7 @@ namespace SIMF.Application.IdentityAccess;
 /// section 5.3 and Amendment A.6).
 /// </summary>
 public sealed class SessionService(
-    UserManager<SimfUser> userManager,
+    IUserAccountRepository accounts,
     IRefreshTokenRepository refreshTokenRepository,
     ITransactionRunner transactionRunner,
     IJwtTokenService jwtTokenService,
@@ -50,10 +50,10 @@ public sealed class SessionService(
         {
             await refreshTokenRepository.RevokeAllForUserAsync(
                 presented.UserId, now, cancellationToken);
-            var compromised = await userManager.FindByIdAsync(presented.UserId.ToString());
+            var compromised = await accounts.FindByIdAsync(presented.UserId, cancellationToken);
             if (compromised is not null)
             {
-                await userManager.UpdateSecurityStampAsync(compromised);
+                await accounts.UpdateSecurityStampAsync(compromised);
             }
 
             await AuditAsync(AuditEvents.RefreshTokenReused, AuditOutcome.Failure,
@@ -77,7 +77,7 @@ public sealed class SessionService(
                 "انتهت صلاحية رمز التحديث. سجّل الدخول مرة أخرى.");
         }
 
-        var user = await userManager.FindByIdAsync(presented.UserId.ToString())
+        var user = await accounts.FindByIdAsync(presented.UserId, cancellationToken)
             ?? throw new ApiException(ErrorCodes.AuthRefreshTokenInvalid, 401,
                 "The refresh token is not valid.",
                 "رمز التحديث غير صالح.");
@@ -123,7 +123,7 @@ public sealed class SessionService(
             },
             cancellationToken);
 
-        var roles = await userManager.GetRolesAsync(user);
+        var roles = await accounts.GetRolesAsync(user);
         var accessToken = jwtTokenService.CreateAccessToken(user, roles);
 
         await AuditAsync(AuditEvents.RefreshTokenRotated, AuditOutcome.Success,
@@ -139,7 +139,7 @@ public sealed class SessionService(
 
     public async Task SignOutAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(userId.ToString());
+        var user = await accounts.FindByIdAsync(userId, cancellationToken);
         if (user is null)
         {
             // A valid token for an account that no longer exists — worth a trace.
@@ -152,7 +152,7 @@ public sealed class SessionService(
         // it (SIMF-FDS-001 Amendment A.6, decision D-012).
         await refreshTokenRepository.RevokeAllForUserAsync(
             user.Id, timeProvider.GetUtcNow(), cancellationToken);
-        await userManager.UpdateSecurityStampAsync(user);
+        await accounts.UpdateSecurityStampAsync(user);
 
         await AuditAsync(AuditEvents.SignOutSucceeded, AuditOutcome.Success,
             user.Email, user.Id, cancellationToken: cancellationToken);

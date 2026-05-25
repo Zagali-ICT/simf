@@ -33,7 +33,7 @@ namespace SIMF.Infrastructure.Identity;
 /// 250-line classes is a follow-up.</para>
 /// </summary>
 internal sealed class AdminAccountService(
-    UserManager<SimfUser> userManager,
+    IUserAccountRepository accounts,
     RoleManager<SimfRole> roleManager,
     IRefreshTokenRepository refreshTokenRepository,
     IRecoveryCodeService recoveryCodes,
@@ -64,13 +64,13 @@ internal sealed class AdminAccountService(
         AdminResetTwoFactorRequest request,
         CancellationToken cancellationToken = default)
     {
-        var actor = await userManager.FindByIdAsync(actorUserId.ToString())
+        var actor = await accounts.FindByIdAsync(actorUserId, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.AuthAccountNotFound, 404,
                 "The acting account was not found.",
                 "لم يتم العثور على حساب المسؤول.");
 
-        var target = await userManager.FindByEmailAsync(request.Email);
+        var target = await accounts.FindByEmailAsync(request.Email);
         if (target is null)
         {
             await AuditFailure(actorUserId, request.Email, null,
@@ -98,7 +98,7 @@ internal sealed class AdminAccountService(
 
         // Administrator vs Administrator is out of scope — those go through
         // the seeder re-pair path. Stops one admin from neutralising another.
-        if (await userManager.IsInRoleAsync(target, AdministratorRole))
+        if (await accounts.IsInRoleAsync(target, AdministratorRole))
         {
             await AuditFailure(actorUserId, request.Email, target.Id,
                 ErrorCodes.AdminCannotResetAdministrator, cancellationToken);
@@ -114,18 +114,18 @@ internal sealed class AdminAccountService(
 
         // The wipe — mirrors TotpEnrollmentService.DisableAsync but skips the
         // "you must prove a current code" gate, by design.
-        await userManager.SetTwoFactorEnabledAsync(target, false);
-        await userManager.RemoveAuthenticationTokenAsync(
+        await accounts.SetTwoFactorEnabledAsync(target, false);
+        await accounts.RemoveAuthenticationTokenAsync(
             target, AuthenticatorProvider, ActiveSecretTokenName);
-        await userManager.RemoveAuthenticationTokenAsync(
+        await accounts.RemoveAuthenticationTokenAsync(
             target, PendingSecretProvider, PendingSecretTokenName);
         target.LastUsedTotpTimestep = null;
         target.UpdatedAt = now;
-        await userManager.UpdateAsync(target);
+        await accounts.UpdateAsync(target);
         await recoveryCodes.RevokeAllAsync(target.Id, cancellationToken);
 
         // Kill every other session the target has open.
-        await userManager.UpdateSecurityStampAsync(target);
+        await accounts.UpdateSecurityStampAsync(target);
         await refreshTokenRepository.RevokeAllForUserAsync(target.Id, now, cancellationToken);
 
         // P13 — D-054: in-app notification + email (replaces the
@@ -210,7 +210,7 @@ internal sealed class AdminAccountService(
         IList<string> roles,
         CancellationToken cancellationToken)
     {
-        if (await userManager.FindByEmailAsync(email) is not null)
+        if (await accounts.FindByEmailAsync(email) is not null)
         {
             await AuditFailure(
                 AuditEvents.AdminUserCreateFailed, actorUserId, email, null,
@@ -261,7 +261,7 @@ internal sealed class AdminAccountService(
             CreatedAt = now,
         };
         // No password yet — the new user sets it via the invite link.
-        var createResult = await userManager.CreateAsync(user);
+        var createResult = await accounts.CreateAsync(user);
         if (!createResult.Succeeded)
         {
             await AuditFailure(
@@ -281,7 +281,7 @@ internal sealed class AdminAccountService(
             {
                 if (await roleManager.RoleExistsAsync(role))
                 {
-                    await userManager.AddToRoleAsync(user, role);
+                    await accounts.AddToRoleAsync(user, role);
                 }
             }
         }
@@ -364,7 +364,7 @@ internal sealed class AdminAccountService(
 
         // P7c — narrow by UserType. The list is narrowed BEFORE any
         // filter/sort/page so the totals are correct.
-        var users = userManager.Users
+        var users = dbContext.Users
             .Where(u => u.UserType == userType);
 
         // -- Search ---------------------------------------------------------
@@ -516,7 +516,7 @@ internal sealed class AdminAccountService(
 
         // QR id mints at approval (D-046, P4) — idempotent.
         await qrIdMinter.MintIfMissingAsync(subject, cancellationToken);
-        await userManager.UpdateAsync(subject);
+        await accounts.UpdateAsync(subject);
 
         // P10 — revoke every refresh token so the subject's next API
         // call gets a fresh access token with account_state=Approved.
@@ -573,7 +573,7 @@ internal sealed class AdminAccountService(
         subject.RejectionReasonArabic = request.Reason;
         subject.StateChangedAt = now;
         subject.StateChangedByUserId = actorUserId;
-        await userManager.UpdateAsync(subject);
+        await accounts.UpdateAsync(subject);
 
         // P10 — revoke every refresh token so the subject's next API
         // call mints a token with account_state=Rejected (and the P11
@@ -635,7 +635,7 @@ internal sealed class AdminAccountService(
     private async Task<SimfUser> LoadPendingSubjectAsync(
         Guid subjectUserId, UserType expected, CancellationToken cancellationToken)
     {
-        var subject = await userManager.FindByIdAsync(subjectUserId.ToString())
+        var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken)
             ?? throw new ApiException(ErrorCodes.AdminUserNotFound, 404,
                 "The target account was not found.",
                 "تعذّر العثور على الحساب المستهدف.");
@@ -673,7 +673,7 @@ internal sealed class AdminAccountService(
         var skip = query.Skip < 0 ? 0 : query.Skip;
         var top = query.Top switch { < 1 => 20, > 200 => 200, _ => query.Top };
 
-        var users = userManager.Users
+        var users = dbContext.Users
             .Where(u => u.AccountState == AccountState.PendingApproval
                 && u.UserType == userType);
 
@@ -726,7 +726,7 @@ internal sealed class AdminAccountService(
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var target = await userManager.FindByIdAsync(targetId.ToString());
+            var target = await accounts.FindByIdAsync(targetId, cancellationToken);
             if (target is null)
             {
                 // D-045 H1: unknown-id is now audited (an enumeration probe
@@ -745,7 +745,7 @@ internal sealed class AdminAccountService(
                 continue;
             }
             if (target.Id == actorUserId
-                || await userManager.IsInRoleAsync(target, AdministratorRole))
+                || await accounts.IsInRoleAsync(target, AdministratorRole))
             {
                 // Self-delete and Administrator-vs-Administrator are blocked
                 // silently per target — never explode the batch. The skipped
@@ -779,14 +779,14 @@ internal sealed class AdminAccountService(
                 {
                     target.AccountState = AccountState.Disabled;
                     target.UpdatedAt = now;
-                    var updateResult = await userManager.UpdateAsync(target);
+                    var updateResult = await accounts.UpdateAsync(target);
                     if (!updateResult.Succeeded)
                     {
                         failureDetail = string.Join("; ",
                             updateResult.Errors.Select(error => error.Description));
                         return;
                     }
-                    await userManager.UpdateSecurityStampAsync(target);
+                    await accounts.UpdateSecurityStampAsync(target);
                     await refreshTokenRepository.RevokeAllForUserAsync(
                         target.Id, now, innerCt);
                     await auditLog.WriteAsync(new AuditEntry
@@ -840,7 +840,7 @@ internal sealed class AdminAccountService(
         AdminDuplicateUserRequest request,
         CancellationToken cancellationToken = default)
     {
-        var source = await userManager.FindByIdAsync(request.SourceId.ToString())
+        var source = await accounts.FindByIdAsync(request.SourceId, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.AdminUserNotFound, 404,
                 "The source account was not found.",
@@ -851,7 +851,7 @@ internal sealed class AdminAccountService(
         // an Other / Visitor source duplicates as the same UserType. P8 — the
         // source's ProfileTypeId now lives on the source's UserProfile row;
         // look it up and pass it through.
-        var sourceRoles = await userManager.GetRolesAsync(source);
+        var sourceRoles = await accounts.GetRolesAsync(source);
         var sourceProfileTypeId = await dbContext.UserProfiles
             .AsNoTracking()
             .Where(p => p.UserId == source.Id)
@@ -910,7 +910,7 @@ internal sealed class AdminAccountService(
             // query (D-045 H1, kills the per-row IsInRoleAsync N+1).
             var idSet = request.Ids.ToHashSet();
             var adminRoleId = await GetAdministratorRoleIdAsync(cancellationToken);
-            var projected = await userManager.Users
+            var projected = await dbContext.Users
                 .Where(u => idSet.Contains(u.Id))
                 .Select(u => new
                 {

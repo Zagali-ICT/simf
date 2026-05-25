@@ -70,6 +70,12 @@ internal sealed class UserAccountRepository(UserManager<SimfUser> userManager)
     public Task<IdentityResult> SetAuthenticationTokenAsync(SimfUser user, string loginProvider, string tokenName, string tokenValue, CancellationToken cancellationToken = default) =>
         userManager.SetAuthenticationTokenAsync(user, loginProvider, tokenName, tokenValue);
 
+    public Task<string?> GetAuthenticationTokenAsync(SimfUser user, string loginProvider, string tokenName, CancellationToken cancellationToken = default) =>
+        userManager.GetAuthenticationTokenAsync(user, loginProvider, tokenName);
+
+    public Task<IdentityResult> RemoveAuthenticationTokenAsync(SimfUser user, string loginProvider, string tokenName, CancellationToken cancellationToken = default) =>
+        userManager.RemoveAuthenticationTokenAsync(user, loginProvider, tokenName);
+
     public Task<IdentityResult> SetTwoFactorEnabledAsync(SimfUser user, bool enabled, CancellationToken cancellationToken = default) =>
         userManager.SetTwoFactorEnabledAsync(user, enabled);
 }

@@ -20,7 +20,7 @@ namespace SIMF.Application.IdentityAccess;
 /// the second factor passes.
 /// </summary>
 public sealed class SignInService(
-    UserManager<SimfUser> userManager,
+    IUserAccountRepository accounts,
     ISecondFactorTokenRepository secondFactorTokenRepository,
     IRefreshTokenRepository refreshTokenRepository,
     IAccountCodeRepository accountCodeRepository,
@@ -43,9 +43,9 @@ public sealed class SignInService(
         SignInRequest request,
         CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByEmailAsync(request.Email);
+        var user = await accounts.FindByEmailAsync(request.Email);
 
-        if (user is not null && await userManager.IsLockedOutAsync(user))
+        if (user is not null && await accounts.IsLockedOutAsync(user))
         {
             await AuditAsync(AuditEvents.SignInAccountLockedOut, AuditOutcome.Failure,
                 user.Email!, user.Id, ErrorCodes.AuthAccountLocked,
@@ -55,11 +55,11 @@ public sealed class SignInService(
                 "تم قفل الحساب بعد محاولات كثيرة. حاول مرة أخرى لاحقًا.");
         }
 
-        if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
+        if (user is null || !await accounts.CheckPasswordAsync(user, request.Password))
         {
             if (user is not null)
             {
-                await userManager.AccessFailedAsync(user);
+                await accounts.AccessFailedAsync(user);
             }
 
             // One generic response — it never reveals whether the email exists.
@@ -71,7 +71,7 @@ public sealed class SignInService(
                 "البريد الإلكتروني أو كلمة المرور غير صحيحة.");
         }
 
-        await userManager.ResetAccessFailedCountAsync(user);
+        await accounts.ResetAccessFailedCountAsync(user);
 
         // H4 — D-059: a SimfUser with PasswordChangeRequired=true holds a
         // seeded or admin-rotated credential they must change before any
@@ -103,7 +103,7 @@ public sealed class SignInService(
         }
 
         var now = timeProvider.GetUtcNow();
-        var roles = await userManager.GetRolesAsync(user);
+        var roles = await accounts.GetRolesAsync(user);
 
         // Audience gate (P2) — runs *after* credentials and account state are
         // OK so a wrong-surface response can't be used as a credential-
@@ -139,7 +139,7 @@ public sealed class SignInService(
         // (SIMF-FDS-001 §5.6 — read forward to D-040). The original
         // role-only rule (Control Panel → TOTP) is preserved as a fallback
         // for users who have a role but haven't enrolled.
-        var authenticatorKey = await userManager.GetAuthenticatorKeyAsync(user);
+        var authenticatorKey = await accounts.GetAuthenticatorKeyAsync(user);
         var kind = !string.IsNullOrEmpty(authenticatorKey) || roles.Count > 0
             ? SecondFactorKind.Totp
             : SecondFactorKind.EmailOtp;
@@ -198,14 +198,14 @@ public sealed class SignInService(
     {
         var ticket = await GetValidTicketAsync(
             request.MfaToken, SecondFactorKind.Totp, cancellationToken);
-        var user = await userManager.FindByIdAsync(ticket.UserId.ToString())
+        var user = await accounts.FindByIdAsync(ticket.UserId, cancellationToken)
             ?? throw new ApiException(ErrorCodes.AuthMfaTokenInvalid, 400,
                 "The sign-in session is no longer valid.",
                 "جلسة تسجيل الدخول لم تعد صالحة.");
 
         await EnsureNotLockedOutAsync(user, cancellationToken);
 
-        var secret = await userManager.GetAuthenticatorKeyAsync(user);
+        var secret = await accounts.GetAuthenticatorKeyAsync(user);
         var totp = totpVerifier.Verify(secret ?? string.Empty, request.Code);
 
         // Reject a wrong code — and a correct code whose time-step was already
@@ -228,7 +228,7 @@ public sealed class SignInService(
         var now = timeProvider.GetUtcNow();
         user.LastUsedTotpTimestep = totp.TimeStep;
         user.UpdatedAt = now;
-        await userManager.UpdateAsync(user);
+        await accounts.UpdateAsync(user);
 
         ticket.ConsumedAt = now;
         await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
@@ -245,7 +245,7 @@ public sealed class SignInService(
         // brute-force is bounded the same way as a wrong TOTP code.
         var ticket = await GetValidTicketAsync(
             request.MfaToken, SecondFactorKind.Totp, cancellationToken);
-        var user = await userManager.FindByIdAsync(ticket.UserId.ToString())
+        var user = await accounts.FindByIdAsync(ticket.UserId, cancellationToken)
             ?? throw new ApiException(ErrorCodes.AuthMfaTokenInvalid, 400,
                 "The sign-in session is no longer valid.",
                 "جلسة تسجيل الدخول لم تعد صالحة.");
@@ -258,7 +258,7 @@ public sealed class SignInService(
         {
             ticket.AttemptCount++;
             await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
-            await userManager.AccessFailedAsync(user);
+            await accounts.AccessFailedAsync(user);
             await AuditAsync(AuditEvents.TotpRecoveryCodeFailed, AuditOutcome.Failure,
                 user.Email!, user.Id, ErrorCodes.AuthRecoveryCodeInvalid,
                 cancellationToken: cancellationToken);
@@ -268,7 +268,7 @@ public sealed class SignInService(
                 "رمز الاسترداد غير صالح.");
         }
 
-        await userManager.ResetAccessFailedCountAsync(user);
+        await accounts.ResetAccessFailedCountAsync(user);
         var now = timeProvider.GetUtcNow();
         ticket.ConsumedAt = now;
         await secondFactorTokenRepository.UpdateAsync(ticket, cancellationToken);
@@ -284,7 +284,7 @@ public sealed class SignInService(
     {
         var ticket = await GetValidTicketAsync(
             request.OtpToken, SecondFactorKind.EmailOtp, cancellationToken);
-        var user = await userManager.FindByIdAsync(ticket.UserId.ToString())
+        var user = await accounts.FindByIdAsync(ticket.UserId, cancellationToken)
             ?? throw new ApiException(ErrorCodes.AuthOtpTokenInvalid, 400,
                 "The sign-in session is no longer valid.",
                 "جلسة تسجيل الدخول لم تعد صالحة.");
@@ -425,7 +425,7 @@ public sealed class SignInService(
     /// <summary>Blocks the second-factor step if the account locked out after the password step.</summary>
     private async Task EnsureNotLockedOutAsync(SimfUser user, CancellationToken cancellationToken)
     {
-        if (await userManager.IsLockedOutAsync(user))
+        if (await accounts.IsLockedOutAsync(user))
         {
             await AuditAsync(AuditEvents.SignInAccountLockedOut, AuditOutcome.Failure,
                 user.Email!, user.Id, ErrorCodes.AuthAccountLocked,
@@ -475,7 +475,7 @@ public sealed class SignInService(
 
     private async Task<AuthTokens> IssueTokensAsync(SimfUser user, CancellationToken cancellationToken)
     {
-        var roles = await userManager.GetRolesAsync(user);
+        var roles = await accounts.GetRolesAsync(user);
         var accessToken = jwtTokenService.CreateAccessToken(user, roles);
 
         var refreshValue = OpaqueToken.Generate();
