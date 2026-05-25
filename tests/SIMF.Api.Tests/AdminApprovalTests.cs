@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -324,6 +325,54 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         var listResponse = await PostAuthAsync(
             "/api/v1/admin/admins/list", new GridQuery(), pendingToken);
         Assert.Equal(HttpStatusCode.Forbidden, listResponse.StatusCode);
+    }
+
+    // H15 — D-070: parameterise the H1 gate across one URL per endpoint
+    // class under src/Backend/SIMF.Api/Endpoints/Admin/. The
+    // RequireApprovedAccount policy must reject the Pending admin's JWT
+    // BEFORE any model binding / validation runs (authorization runs in
+    // UseAuthorization, ahead of the endpoint), so the body shape on
+    // POST/PUT routes is irrelevant — empty JSON is sufficient.
+
+    [Theory]
+    // POST endpoints — each row covers one admin endpoint *class*.
+    [InlineData("POST", "/api/v1/admin/admins/list")]              // ListUsersEndpoint
+    [InlineData("POST", "/api/v1/admin/admins/pending/list")]      // ListPendingEndpoints
+    [InlineData("POST", "/api/v1/admin/admins")]                   // CreateUserEndpoint
+    [InlineData("POST", "/api/v1/admin/admins/bulk-delete")]       // BulkDeleteUsersEndpoint
+    [InlineData("POST", "/api/v1/admin/admins/duplicate")]         // DuplicateUserEndpoint
+    [InlineData("POST", "/api/v1/admin/admins/export")]            // ExportUsersEndpoint
+    // ImportUsersEndpoint omitted from the parameterised set: the
+    // multipart content-type filter runs ahead of authorization in
+    // FastEndpoints' pipeline, so this URL returns 415 (UnsupportedMediaType)
+    // for a JSON body, masking the 403. The policy is identical to the
+    // others (same attribute, same H1 commit); the import path is covered
+    // by AdminCreateUserTests / ImportUsersEndpoint's own tests.
+    [InlineData("POST", "/api/v1/admin/admins/reset-two-factor")]  // ResetTwoFactorEndpoint
+    [InlineData("POST", "/api/v1/admin/visitors/00000000-0000-0000-0000-000000000001/approve")] // ApproveVisitorEndpoint
+    [InlineData("POST", "/api/v1/admin/visitors/00000000-0000-0000-0000-000000000001/reject")]  // RejectVisitorEndpoint
+    [InlineData("POST", "/api/v1/admin/admins/00000000-0000-0000-0000-000000000001/approve")]   // ApproveStaffEndpoint
+    [InlineData("POST", "/api/v1/admin/admins/00000000-0000-0000-0000-000000000001/reject")]    // RejectStaffEndpoint
+    [InlineData("POST", "/api/v1/admin/interests/list")]           // InterestEndpoints (one of 5)
+    // GET endpoints.
+    [InlineData("GET", "/api/v1/admin/profile-types")]             // ListProfileTypesEndpoint
+    [InlineData("GET", "/api/v1/admin/logs/list")]                 // Logs/LogsEndpoints
+    public async Task Pending_admin_is_blocked_on_every_admin_endpoint_class(string method, string path)
+    {
+        var pendingToken = await CreatePendingAdministratorAndSignInAsync();
+
+        using var request = new HttpRequestMessage(new HttpMethod(method), path);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", pendingToken);
+        if (HttpMethods.IsPost(method) || HttpMethods.IsPut(method))
+        {
+            // The authorization gate fires before validation, so an empty
+            // body is fine — we never reach model binding.
+            request.Content = new StringContent(
+                "{}", System.Text.Encoding.UTF8, "application/json");
+        }
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     private async Task<string> CreatePendingAdministratorAndSignInAsync()
