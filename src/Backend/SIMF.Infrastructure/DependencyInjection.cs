@@ -62,7 +62,13 @@ public static class DependencyInjection
         // so every credential path is covered, including the seeder; the request
         // validators add the remaining rules (a letter, not equal to the email)
         // with field-level messages.
-        services.AddIdentityCore<SimfUser>(options =>
+        //
+        // R5a — D-090: UserManager is generically parameterised on the
+        // Infrastructure-owned IdentitySimfUser persistence shim. Application
+        // services see Domain SimfUser through IUserAccountRepository, which
+        // maps at the boundary; no Application or Endpoint code touches
+        // IdentitySimfUser directly.
+        services.AddIdentityCore<IdentitySimfUser>(options =>
             {
                 options.Password.RequiredLength = 8;
                 options.Password.RequireDigit = true;

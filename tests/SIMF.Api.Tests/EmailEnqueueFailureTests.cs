@@ -9,6 +9,7 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -60,9 +61,9 @@ public sealed class EmailEnqueueFailureTests : IClassFixture<ThrowingEmailQueueA
         var email = $"enq-{Guid.NewGuid():N}@simf.test";
         using (var scope = _factory.Services.CreateScope())
         {
-            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
             await users.CreateAsync(
-                new SimfUser
+                new IdentitySimfUser
                 {
                     UserName = email, Email = email, EmailConfirmed = true,
                     DisplayName = "Enqueue Test", AccountState = AccountState.Approved,

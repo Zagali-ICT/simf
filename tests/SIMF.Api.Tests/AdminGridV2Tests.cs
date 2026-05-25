@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -159,7 +160,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         Assert.Equal(newEmail, body.Data!.Email);
 
         using var scope = _factory.Services.CreateScope();
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
         var copy = await users.FindByEmailAsync(newEmail);
         Assert.Equal("Source Name", copy!.DisplayName);
     }
@@ -292,7 +293,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         Assert.Equal(2, body.Data!.Created);
 
         using var scope = _factory.Services.CreateScope();
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
         Assert.NotNull(await users.FindByEmailAsync(e1));
         Assert.NotNull(await users.FindByEmailAsync(e2));
     }
@@ -390,8 +391,8 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
             {
                 await roles.CreateAsync(new SimfRole { Name = AdministratorRole });
             }
-            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
-            var user = new SimfUser
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
+            var user = new IdentitySimfUser
             {
                 UserName = email,
                 Email = email,

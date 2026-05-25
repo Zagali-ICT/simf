@@ -10,6 +10,7 @@ using SIMF.Application.Auditing;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -260,8 +261,8 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
             {
                 await roles.CreateAsync(new SimfRole { Name = AppRoles.Administrator });
             }
-            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
-            var user = new SimfUser
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
+            var user = new IdentitySimfUser
             {
                 UserName = email, Email = email, EmailConfirmed = true,
                 DisplayName = "Approval Tests Admin",
@@ -385,8 +386,8 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
             {
                 await roles.CreateAsync(new SimfRole { Name = AppRoles.Administrator });
             }
-            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
-            var user = new SimfUser
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
+            var user = new IdentitySimfUser
             {
                 UserName = email, Email = email, EmailConfirmed = true,
                 DisplayName = "Pending Admin (H1)",

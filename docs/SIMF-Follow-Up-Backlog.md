@@ -60,8 +60,12 @@ Three Architecture SEV-1s remain after R1–R3 + H20+H21:
 - **Arch SEV-1.1** — `SimfUser : IdentityUser<Guid>` makes Domain
   depend on `Microsoft.Extensions.Identity.Stores`. The interface
   contract no longer leaks Identity types (H21 / D-082 fixed
-  `UserOperationResult`) but the `SimfUser` POCO still inherits the
-  framework type. **R5** in the refactor plan; ~1 week.
+  `UserOperationResult`) and the EF-tracked entity is now the
+  Infrastructure-owned `IdentitySimfUser` shim (R5a — D-090). The
+  Domain `SimfUser` POCO still inherits the framework type; R5f does
+  the actual split. Remaining R5 slices (R5b–R5g) sized in the refactor
+  plan; total remaining effort ~1 week, slice-by-slice tractable in
+  single commits.
 - **Arch SEV-1.3** — Four bounded contexts (Identity, UserProfile,
   Interests, Notifications) share `SimfIdentityDbContext`. **R6** in
   the refactor plan; ~1 week. Can run in parallel with R5.

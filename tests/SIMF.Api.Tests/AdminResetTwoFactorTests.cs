@@ -8,6 +8,7 @@ using OtpNet;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -49,7 +50,7 @@ public sealed class AdminResetTwoFactorTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         using var scope = _factory.Services.CreateScope();
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
         var target = (await users.FindByIdAsync(targetUserId.ToString()))!;
         Assert.False(await users.GetTwoFactorEnabledAsync(target));
         Assert.Null(await users.GetAuthenticatorKeyAsync(target));
@@ -204,8 +205,8 @@ public sealed class AdminResetTwoFactorTests : IClassFixture<SimfApiFactory>
             await roles.CreateAsync(new SimfRole { Name = AdministratorRole });
         }
 
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
-        var user = new SimfUser
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
+        var user = new IdentitySimfUser
         {
             UserName = email,
             Email = email,

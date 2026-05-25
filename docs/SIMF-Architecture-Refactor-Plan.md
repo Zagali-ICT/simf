@@ -148,37 +148,43 @@ package reference on Identity to support this, which means every
 downstream layer also depends on Identity. The reviewer's call: the
 "pure model" contract is gone at the root.
 
-**Shape.**
-1. Introduce `SimfUser` as a POCO in `SIMF.Domain.IdentityAccess`:
-   - `Id`, `Email`, `NormalizedEmail`, `UserName`, `DisplayName`,
-     `EmailConfirmed`, `TwoFactorEnabled`, `LockoutEnd`, `AccessFailedCount`,
-     `PasswordHash`, `SecurityStamp`, `ConcurrencyStamp`, every other
-     Identity-derived field that the domain actually uses.
-2. Introduce `IdentitySimfUser : IdentityUser<Guid>` as a thin shim in
-   `SIMF.Infrastructure.Identity` that EF maps via the
-   `AspNetUsers` table.
-3. Add an `IdentityUserMapper` (or split into per-direction methods)
-   that converts between the two. Repositories own the mapping; no
-   layer above Infrastructure ever sees `IdentitySimfUser`.
-4. Drop the `Microsoft.Extensions.Identity.Stores` package reference
-   from `SIMF.Domain`.
+**Sliced sequencing.** R5 ships in seven incremental commits so each
+landing point is shippable (272/272 green, 0/0 build at Debug + Release).
+The slicing matches the R3a–R3g cadence — each slice is a single
+tractable PR that leaves the codebase in a consistent state.
 
-**References to touch.** 63 files reference `SimfUser` (verified). Most
-of them only consume Domain-public fields, so the migration is mostly:
-- Domain stays the same name (`SimfUser`) but no longer inherits.
-- Infrastructure's `SimfIdentityDbContext` types its `Users` set as
-  `IdentitySimfUser`.
-- Repositories return the Domain POCO; callers don't notice.
-- Application services that inject `UserManager<SimfUser>` (already
-  migrated to `IUserAccountRepository` by R3) need the repo's
-  generic parameter swapped from `SimfUser` to `IdentitySimfUser`
-  inside Infrastructure only.
+| Slice | Status | What lands |
+|-------|--------|------------|
+| **R5a** | **CLOSED — D-090 (2026-05-26)** | `IdentitySimfUser : IdentityUser<Guid>` introduced as the EF-tracked persistence shim; `SimfIdentityDbContext` re-typed; `AddIdentityCore<IdentitySimfUser>`; FK configurations (AccountCode/RefreshToken/SecondFactorToken/TotpRecoveryCode) re-pointed; `UserAccountRepository` rewritten around the merge-into-tracked pattern with a bidirectional proto-mapper; empty `R5aRebindUserEntityToIdentitySimfUser` migration regenerates the snapshot. Tests + 12 fixtures swapped. Domain `SimfUser` unchanged. |
+| R5b | QUEUED | Extract the inline `ToIdentity` / `ToDomain` / `ApplyDomainMutations` / `SyncBack` methods on `UserAccountRepository` into a dedicated `IdentityUserMapper` class. Pure refactor; no contract change. |
+| R5c | QUEUED | Re-shape `IUserAccountRepository` to return the tracked `IdentitySimfUser` directly on lookup, so the extra `FindByIdAsync` round-trip on writes-without-prior-find disappears. Application sees the Domain projection one layer higher. |
+| R5d | QUEUED | Migrate the four bounded-context consumers (Identity, UserProfile, Interests, Notifications) and Application services to depend only on the Domain `SimfUser` shape — no consumer touches `IdentityUser<Guid>` members directly. |
+| R5e | QUEUED | Migrate API endpoints + Web/CP code paths to the same. |
+| R5f | QUEUED | **The actual split**: `SimfUser` stops inheriting `IdentityUser<Guid>`. Add explicit POCO properties (`Email`, `UserName`, `LockoutEnd`, `TwoFactorEnabled`, `SecurityStamp`, `PasswordChangeRequired`, custom props). Mapper now genuinely required. |
+| R5g | QUEUED | Drop `Microsoft.Extensions.Identity.Stores` from `SIMF.Domain.csproj`. Add an architectural unit test asserting the package is gone from the Domain transitive graph. |
 
-**Risk.** High. The mapping has to be exhaustive — a single Identity
-field that the domain reads but the mapper skips is a silent bug. EF
-migrations have to keep mapping to `AspNetUsers` with no schema change.
+**R5a recap (D-090).** The seam is the type EF tracks. `IdentitySimfUser`
+mirrors `SimfUser` field-for-field; `SimfUserConfiguration` re-binds
+to it; FK configurations re-point so EF doesn't discover the Domain
+`SimfUser` as a duplicate entity. The empty no-op migration proves the
+DDL is unchanged (same `AspNetUsers` table, same columns). The proto-
+mapper inside `UserAccountRepository` is the §17 minimum that keeps
+every caller (Application services, test fixtures) speaking
+`SimfUser`. The merge-into-tracked design (look up the already-tracked
+`IdentitySimfUser`, merge SimfUser mutations into it, hand the tracked
+entity to UserManager) sidesteps both the duplicate-tracking guard and
+the concurrency-stamp snapshot problem that a naive "attach a fresh
+IdentitySimfUser" approach would hit.
 
-**Effort.** Full sprint (1 week). Realistic only after R3 lands.
+**Risk for remaining slices.** Medium-to-high. R5f is the load-bearing
+slice — the mapping has to be exhaustive (a single Identity field the
+domain reads but the mapper skips is a silent bug). EF migrations must
+keep mapping to `AspNetUsers` with no schema change through every slice.
+
+**Effort.** R5a landed in one session. R5b–c each ~1 day. R5d–e together
+~2-3 days (the consumer migration). R5f ~1-2 days. R5g half a day. Full
+R5 sprint total ~1 week of work, but no slice is bigger than a single
+tractable commit so the sprint can be paused between any two slices.
 
 ---
 

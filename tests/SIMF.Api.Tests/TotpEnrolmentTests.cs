@@ -7,6 +7,7 @@ using OtpNet;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -64,7 +65,7 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
         Assert.Equal(10, body.Data.RecoveryCodes.Distinct().Count());
 
         using var scope = _factory.Services.CreateScope();
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
         var user = (await users.FindByEmailAsync(email))!;
         Assert.True(await users.GetTwoFactorEnabledAsync(user));
     }
@@ -125,7 +126,7 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         using var scope = _factory.Services.CreateScope();
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
         var user = (await users.FindByEmailAsync(email))!;
         Assert.False(await users.GetTwoFactorEnabledAsync(user));
     }
