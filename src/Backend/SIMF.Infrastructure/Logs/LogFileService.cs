@@ -1,7 +1,8 @@
 // Tests: SIMF.Api.Tests/LogsEndpointsTests.cs (todo).
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using SIMF.Application.Logs;
 using SIMF.Contracts.Logs;
+using SIMF.Infrastructure.Storage;
 
 namespace SIMF.Infrastructure.Logs;
 
@@ -19,9 +20,12 @@ public sealed class LogFileService : ILogFileService
 
     private readonly string _rootDirectory;
 
-    public LogFileService(IConfiguration configuration)
+    public LogFileService(IOptions<StorageOptions> options)
     {
-        var configured = configuration["Storage:LogDirectory"];
+        // R1 — D-074: typed options replace the raw IConfiguration[…] read.
+        // LogDirectory defaults to "logs" in StorageOptions so the same
+        // fallback applies when the config key is unset.
+        var configured = options.Value.LogDirectory;
         var directory = string.IsNullOrWhiteSpace(configured) ? "logs" : configured;
         _rootDirectory = Path.GetFullPath(directory);
     }

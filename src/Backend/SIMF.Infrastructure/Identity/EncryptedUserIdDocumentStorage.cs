@@ -1,9 +1,10 @@
 // Tests: SIMF.Api.Tests/UserProfileTests.cs (encrypt-then-decrypt round-trip,
 //        missing-key startup gate)
 using System.Security.Cryptography;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Infrastructure.Storage;
 
 namespace SIMF.Infrastructure.Identity;
 
@@ -41,10 +42,14 @@ internal sealed class EncryptedUserIdDocumentStorage : IUserIdDocumentStorage
     private readonly ILogger<EncryptedUserIdDocumentStorage> _logger;
 
     public EncryptedUserIdDocumentStorage(
-        IConfiguration configuration,
+        IOptions<StorageOptions> options,
         ILogger<EncryptedUserIdDocumentStorage> logger)
     {
-        var configuredDirectory = configuration["Storage:UserIdDocumentBase"];
+        // R1 — D-074: typed options replace the raw IConfiguration[…] reads.
+        // The required-key checks stay here (rather than ValidateOnStart) so
+        // the failure modes and messages stay identical to the pre-R1 shape.
+        var settings = options.Value;
+        var configuredDirectory = settings.UserIdDocumentBase;
         if (string.IsNullOrWhiteSpace(configuredDirectory))
         {
             throw new InvalidOperationException(
@@ -53,7 +58,7 @@ internal sealed class EncryptedUserIdDocumentStorage : IUserIdDocumentStorage
         _baseDirectory = Path.GetFullPath(configuredDirectory);
         Directory.CreateDirectory(_baseDirectory);
 
-        var configuredKey = configuration["Storage:UserIdDocumentEncryptionKey"];
+        var configuredKey = settings.UserIdDocumentEncryptionKey;
         if (string.IsNullOrWhiteSpace(configuredKey))
         {
             throw new InvalidOperationException(

@@ -1,7 +1,8 @@
 // Tests: SIMF.Api.Tests/ProfileEndpointsTests.cs (integration), via a temp directory.
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.Abstractions;
+using SIMF.Infrastructure.Storage;
 
 namespace SIMF.Infrastructure.Identity;
 
@@ -20,10 +21,13 @@ internal sealed class FilesystemAvatarStorage : IAvatarStorage
     private readonly ILogger<FilesystemAvatarStorage> _logger;
 
     public FilesystemAvatarStorage(
-        IConfiguration configuration,
+        IOptions<StorageOptions> options,
         ILogger<FilesystemAvatarStorage> logger)
     {
-        var configured = configuration["Storage:AvatarBase"];
+        // R1 — D-074: typed options replace the raw IConfiguration[…] read.
+        // The required-key check stays here (rather than ValidateOnStart) so
+        // the failure mode and message are identical to the pre-R1 shape.
+        var configured = options.Value.AvatarBase;
         if (string.IsNullOrWhiteSpace(configured))
         {
             throw new InvalidOperationException(

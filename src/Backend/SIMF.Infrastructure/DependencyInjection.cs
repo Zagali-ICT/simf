@@ -18,6 +18,7 @@ using SIMF.Infrastructure.Excel;
 using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using SIMF.Infrastructure.Persistence.Repositories;
+using SIMF.Infrastructure.Storage;
 
 namespace SIMF.Infrastructure;
 
@@ -84,6 +85,19 @@ public static class DependencyInjection
             configuration.GetSection(SuperAdminOptions.SectionName));
         services.Configure<JwtOptions>(
             configuration.GetSection(JwtOptions.SectionName));
+        // R1 — D-074: typed Storage settings; replaces four scattered
+        // IConfiguration["Storage:..."] reads across FilesystemAvatarStorage,
+        // EncryptedUserIdDocumentStorage, LogFileService, and Program.cs.
+        // ValidateOnStart fires at host build time, so a missing AvatarBase
+        // surfaces as an OptionsValidationException at boot rather than on
+        // first request — same fail-fast posture as the pre-R1 explicit
+        // Program.cs gate.
+        services.AddOptions<StorageOptions>()
+            .Bind(configuration.GetSection(StorageOptions.SectionName))
+            .Validate(
+                options => !string.IsNullOrWhiteSpace(options.AvatarBase),
+                "Storage:AvatarBase must be configured (filesystem path for user avatars).")
+            .ValidateOnStart();
 
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IAccountCodeRepository, AccountCodeRepository>();
