@@ -1530,6 +1530,16 @@ body.simf-modal-open { overflow: hidden; }
   color: var(--color-text);
   cursor: pointer;
 }
+/* H14 — D-069: status region for the most-recently-picked file. Empty
+   until the parent supplies PickedFilename via JS interop; sized so it
+   does not visually jump the field shell when a name lands. */
+.simf-fileupload__status {
+  margin-block-start: var(--space-1);
+  min-block-size: 1.25em;
+  font-size: var(--font-size-body-small);
+  color: var(--color-text-muted);
+}
+.simf-fileupload__status:empty { visibility: hidden; }
 
 /* -- Tooltip (D-044 c) ------------------------------------------------------ */
 .simf-tooltip {
