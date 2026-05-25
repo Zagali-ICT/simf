@@ -81,9 +81,25 @@ public sealed class PasswordTests : IClassFixture<SimfApiFactory>
         var code = AuthFlow.GetActiveCode(_factory, email, AccountCodePurpose.PasswordReset);
 
         var reset = await ResetAsync(email, code, NewPassword);
-
         Assert.Equal(HttpStatusCode.OK, reset.StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await SignInAsync(email, NewPassword)).StatusCode);
+
+        // H12 — D-067: prove the credential step actually accepted the new
+        // password. RegisterVerifiedVisitorAsync flips TwoFactorEnabled=true,
+        // so a successful sign-in returns 200 with MfaRequired=true and a
+        // non-null OtpToken — the OTP challenge means the password matched.
+        // The old test only asserted status code, which a regression that
+        // somehow still emitted the OTP challenge for a wrong password
+        // would not catch.
+        var newPasswordResponse = await SignInAsync(email, NewPassword);
+        Assert.Equal(HttpStatusCode.OK, newPasswordResponse.StatusCode);
+        var newBody = (await newPasswordResponse.Content
+            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        Assert.True(newBody.Success);
+        Assert.True(newBody.Data!.MfaRequired);
+        Assert.False(string.IsNullOrEmpty(newBody.Data.OtpToken));
+
+        // The old password is now hard-rejected before the MFA branch even
+        // runs (sign-in's bad-credentials path returns 401).
         Assert.Equal(HttpStatusCode.Unauthorized, (await SignInAsync(email, Password)).StatusCode);
     }
 
@@ -180,8 +196,17 @@ public sealed class PasswordTests : IClassFixture<SimfApiFactory>
         var change = await ChangeAsync(tokens.AccessToken, Password, NewPassword);
         Assert.Equal(HttpStatusCode.OK, change.StatusCode);
 
-        // The new password works at sign-in.
-        Assert.Equal(HttpStatusCode.OK, (await SignInAsync(tokens.User.Email, NewPassword)).StatusCode);
+        // H12 — D-067: prove the new password actually authenticates.
+        // SignInVisitorAsync uses a 2FA-enabled visitor, so a successful
+        // password step returns 200 with MfaRequired=true + OtpToken.
+        var signIn = await SignInAsync(tokens.User.Email, NewPassword);
+        Assert.Equal(HttpStatusCode.OK, signIn.StatusCode);
+        var signInBody = (await signIn.Content
+            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        Assert.True(signInBody.Success);
+        Assert.True(signInBody.Data!.MfaRequired);
+        Assert.False(string.IsNullOrEmpty(signInBody.Data.OtpToken));
+
         // The access token used for the change is now stale (the stamp moved).
         var stale = await ChangeAsync(tokens.AccessToken, NewPassword, "Another1!Pwd");
         Assert.Equal(HttpStatusCode.Unauthorized, stale.StatusCode);
