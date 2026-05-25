@@ -208,13 +208,19 @@ else
                     </div>
                 }
             </div>
-            <p class="simf-form__helper">@L["Profile.Avatar.SizeHint"]</p>
+            <p id="avatar-input-hint" class="simf-form__helper">@L["Profile.Avatar.SizeHint"]</p>
             @* `disabled="@_busy"` would render `disabled="False"` on a plain
                HTML input — the browser treats any `disabled` attribute as
                truthy, so the input would be locked even when not busy. The
                `?? null` pattern makes Blazor omit the attribute when idle. *@
+            @* H13 — D-068: visible <label for> ties the file input to its
+               accessible name. The hint <p> above is linked via
+               aria-describedby so screen readers announce the size cap
+               alongside the picker. *@
+            <label for="avatar-input" class="simf-field__label">@L["Profile.Avatar.Picker"]</label>
             <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp"
                    class="simf-file"
+                   aria-describedby="avatar-input-hint"
                    disabled="@(_busy ? "disabled" : null)" />
             <div class="simf-form__actions">
                 <SimfButton Type="button" Loading="_busy" LoadingLabel="@L["Profile.Avatar.Upload"]"

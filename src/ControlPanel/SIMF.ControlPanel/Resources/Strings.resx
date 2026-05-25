@@ -220,6 +220,7 @@
   <data name="Admin.Users.Import.ResultTitle" xml:space="preserve"><value>Import result</value></data>
   <data name="Admin.Users.Import.ResultBody" xml:space="preserve"><value>{0} created, {1} skipped.</value></data>
   <data name="Admin.Users.Import.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Users.Import.Picker" xml:space="preserve"><value>Choose Excel file to import</value></data>
 
   <data name="Admin.CreateUser.Title" xml:space="preserve"><value>Add a new user</value></data>
   <data name="Admin.CreateUser.Supporting" xml:space="preserve"><value>The new user will receive an email invitation with a one-time code to set their password. The invitation is valid for 7 days.</value></data>
@@ -360,6 +361,7 @@
   <data name="Profile.Avatar.Title" xml:space="preserve"><value>My avatar</value></data>
   <data name="Profile.Avatar.None" xml:space="preserve"><value>No avatar set.</value></data>
   <data name="Profile.Avatar.Upload" xml:space="preserve"><value>Upload new image</value></data>
+  <data name="Profile.Avatar.Picker" xml:space="preserve"><value>Choose avatar image file</value></data>
   <data name="Profile.Avatar.Remove" xml:space="preserve"><value>Remove avatar</value></data>
   <data name="Profile.Avatar.Updated" xml:space="preserve"><value>Avatar updated.</value></data>
   <data name="Profile.Avatar.Removed" xml:space="preserve"><value>Avatar removed.</value></data>

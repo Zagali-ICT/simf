@@ -221,6 +221,7 @@
   <data name="Admin.Users.Import.ResultTitle" xml:space="preserve"><value>نتيجة الاستيراد</value></data>
   <data name="Admin.Users.Import.ResultBody" xml:space="preserve"><value>تم إنشاء {0}، تم تخطي {1}.</value></data>
   <data name="Admin.Users.Import.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Users.Import.Picker" xml:space="preserve"><value>اختر ملف Excel للاستيراد</value></data>
 
   <data name="Admin.CreateUser.Title" xml:space="preserve"><value>إضافة مستخدم جديد</value></data>
   <data name="Admin.CreateUser.Supporting" xml:space="preserve"><value>سيتلقى المستخدم الجديد بريدًا إلكترونيًا يحتوي على رمز لمرة واحدة لتعيين كلمة المرور. الدعوة صالحة لمدة 7 أيام.</value></data>
@@ -361,6 +362,7 @@
   <data name="Profile.Avatar.Title" xml:space="preserve"><value>صورتي الشخصية</value></data>
   <data name="Profile.Avatar.None" xml:space="preserve"><value>لا توجد صورة شخصية.</value></data>
   <data name="Profile.Avatar.Upload" xml:space="preserve"><value>رفع صورة جديدة</value></data>
+  <data name="Profile.Avatar.Picker" xml:space="preserve"><value>اختر ملف صورة الحساب</value></data>
   <data name="Profile.Avatar.Remove" xml:space="preserve"><value>إزالة الصورة</value></data>
   <data name="Profile.Avatar.Updated" xml:space="preserve"><value>تم تحديث الصورة الشخصية.</value></data>
   <data name="Profile.Avatar.Removed" xml:space="preserve"><value>تمت إزالة الصورة الشخصية.</value></data>

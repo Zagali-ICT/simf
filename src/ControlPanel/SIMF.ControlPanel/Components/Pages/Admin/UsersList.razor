@@ -117,8 +117,13 @@
     </div>
 }
 
+@* H13 — D-068: this picker is visually hidden (triggered by the
+   Import button via JS), but assistive tech that surfaces hidden inputs
+   still needs an accessible name. aria-label rather than <label for>
+   because there is no visible label to bind. *@
 <input type="file" id="users-import-input" accept=".xlsx"
        class="simf-hidden-input"
+       aria-label="@L["Admin.Users.Import.Picker"]"
        @onchange="OnImportFileSelectedAsync" />
 
 @if (_bulkDeleteOpen)
