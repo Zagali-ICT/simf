@@ -151,3 +151,46 @@
 
   --pattern-opacity: 0.18;
 }
+
+/* ----------------------------------------------------------------------------
+   3c. Functional tokens — GREY theme (D-098).
+   A neutral mid-grey surface set positioned between the light and dark
+   themes — for offices where the bright-white light theme is fatiguing
+   but the navy-derived dark theme reads "after-hours". Surfaces are
+   warm-neutral greys (no chromatic bias); text stays on the navy-text
+   ramp so the wordmark sits comfortably. Only functional tokens change;
+   brand and scale tokens do not.
+   ------------------------------------------------------------------------- */
+[data-theme="grey"] {
+  --color-background: #DCDDDE;
+  --color-surface: #E9EAEB;
+  --color-surface-sunken: #D2D4D6;
+  --color-text: #1F2731;
+  --color-text-muted: #5C6573;
+  --color-text-on-primary: #FFFFFF;
+  --color-border: #B7BABF;
+  --color-field-background: #F1F2F3;
+
+  --color-action: #244A77;
+  --color-action-hover: #1D3D63;
+  --color-action-active: #172F4D;
+  --color-link: #1E5A99;
+  --color-link-hover: #163E6B;
+  --color-wordmark: #244A77;
+
+  --color-success: #2E7D5B;
+  --color-warning: #B57E1E;
+  --color-error: #A32018;
+  --color-success-surface: #C9DACF;
+  --color-warning-surface: #DFD0B4;
+  --color-error-surface: #DBC4C2;
+  --color-info-surface: #C8D5DF;
+
+  --focus-ring: 0 0 0 3px rgba(36, 74, 119, 0.24);
+  --focus-ring-error: 0 0 0 3px rgba(163, 32, 24, 0.22);
+
+  --shadow-card: 0 1px 2px rgba(31, 39, 49, 0.10),
+                 0 4px 14px rgba(31, 39, 49, 0.10);
+
+  --pattern-opacity: 0.14;
+}
