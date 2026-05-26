@@ -4,10 +4,12 @@ using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Notifications;
 
 namespace SIMF.Application.IdentityAccess;
 
@@ -24,6 +26,7 @@ public sealed class SignInService(
     IRefreshTokenRepository refreshTokenRepository,
     IAccountCodeRepository accountCodeRepository,
     IEmailQueue emailQueue,
+    INotificationDispatcher notifications,
     IJwtTokenService jwtTokenService,
     ITotpVerifier totpVerifier,
     IRecoveryCodeService recoveryCodes,
@@ -183,6 +186,19 @@ public sealed class SignInService(
             auditLog: auditLog,
             logger: logger,
             cancellationToken: cancellationToken);
+        // D-099: in-app trail for the credential email — visible inside
+        // the app after the user completes sign-in.
+        await notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = user.Id,
+            Kind = "Credential.SignInOtpSent",
+            Title = "Sign-in code sent",
+            TitleArabic = "تم إرسال رمز تسجيل الدخول",
+            Body = "A sign-in verification code was sent to your email address.",
+            BodyArabic = "تم إرسال رمز التحقق لتسجيل الدخول إلى بريدك الإلكتروني.",
+            Severity = NotificationSeverity.Info,
+            SendEmail = false,
+        }, logger, cancellationToken);
         return new SignInResponse(true, null, ticketValue);
     }
 

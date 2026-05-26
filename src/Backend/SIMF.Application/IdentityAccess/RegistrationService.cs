@@ -5,10 +5,12 @@ using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Notifications;
 
 namespace SIMF.Application.IdentityAccess;
 
@@ -23,6 +25,7 @@ public sealed class RegistrationService(
     IUserAccountRepository accounts,
     IAccountCodeRepository accountCodeRepository,
     IEmailQueue emailQueue,
+    INotificationDispatcher notifications,
     ITransactionRunner transactionRunner,
     IAuditLog auditLog,
     TimeProvider timeProvider,
@@ -99,6 +102,19 @@ public sealed class RegistrationService(
             auditLog: auditLog,
             logger: logger,
             cancellationToken: cancellationToken);
+        // D-099: in-app trail for the credential email — visible after
+        // the user signs in.
+        await notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = user.Id,
+            Kind = "Credential.EmailVerificationSent",
+            Title = "Verification code sent",
+            TitleArabic = "تم إرسال رمز التحقق",
+            Body = "An email-verification code was sent to your address.",
+            BodyArabic = "تم إرسال رمز التحقق من البريد إلى عنوانك.",
+            Severity = NotificationSeverity.Info,
+            SendEmail = false,
+        }, logger, cancellationToken);
         await AuditAsync(
             AuditEvents.SignUpSucceeded, AuditOutcome.Success, user.Email!,
             userId: user.Id, cancellationToken: cancellationToken);
@@ -267,6 +283,18 @@ public sealed class RegistrationService(
             auditLog: auditLog,
             logger: logger,
             cancellationToken: cancellationToken);
+        // D-099: same in-app trail as the initial sign-up dispatch.
+        await notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = user.Id,
+            Kind = "Credential.EmailVerificationResent",
+            Title = "Verification code re-issued",
+            TitleArabic = "تم إعادة إصدار رمز التحقق",
+            Body = "A new email-verification code was sent to your address.",
+            BodyArabic = "تم إرسال رمز تحقق جديد إلى عنوانك.",
+            Severity = NotificationSeverity.Info,
+            SendEmail = false,
+        }, logger, cancellationToken);
         await AuditAsync(
             AuditEvents.ResendCodeIssued, AuditOutcome.Success, user.Email!,
             userId: user.Id, cancellationToken: cancellationToken);

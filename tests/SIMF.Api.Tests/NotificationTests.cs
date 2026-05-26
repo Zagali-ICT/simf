@@ -184,7 +184,18 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
     private async Task<(string Token, Guid UserId)> CreateUserAndSignInAsync()
     {
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
+        // D-099: sign-up now dispatches a "Verification code sent" in-app
+        // notification. Clear that pre-seeded row so the per-test seeders +
+        // count assertions start from a clean slate.
+        await ClearNotificationsAsync(tokens.User.Id);
         return (tokens.AccessToken, tokens.User.Id);
+    }
+
+    private async Task ClearNotificationsAsync(Guid userId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        await db.Notifications.Where(n => n.UserId == userId).ExecuteDeleteAsync();
     }
 
     private async Task<Guid> CreateOtherUserAsync()

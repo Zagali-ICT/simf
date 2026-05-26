@@ -5,10 +5,12 @@ using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Application.Notifications;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Notifications;
 
 namespace SIMF.Application.IdentityAccess;
 
@@ -23,6 +25,7 @@ public sealed class PasswordService(
     IRefreshTokenRepository refreshTokenRepository,
     ITransactionRunner transactionRunner,
     IEmailQueue emailQueue,
+    INotificationDispatcher notifications,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<PasswordService> logger) : IPasswordService
@@ -63,6 +66,19 @@ public sealed class PasswordService(
                     auditLog: auditLog,
                     logger: logger,
                     cancellationToken: cancellationToken);
+                // D-099: in-app trail for the credential email — visible
+                // after the user signs in.
+                await notifications.TryDispatchAsync(new NotificationRequest
+                {
+                    UserId = user.Id,
+                    Kind = "Credential.PasswordResetRequested",
+                    Title = "Password-reset code requested",
+                    TitleArabic = "تم طلب رمز إعادة تعيين كلمة المرور",
+                    Body = "A password-reset code was sent to your email address.",
+                    BodyArabic = "تم إرسال رمز إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.",
+                    Severity = NotificationSeverity.Info,
+                    SendEmail = false,
+                }, logger, cancellationToken);
                 await AuditAsync(AuditEvents.ForgotPasswordRequested, AuditOutcome.Success,
                     user.Email!, user.Id, cancellationToken: cancellationToken);
             }
