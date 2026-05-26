@@ -45,3 +45,25 @@ bUnit harness, end-to-end lifecycle test, no-IP rate-limit hardening) are listed
 
 Next stage per the programme plan is the User Management module increment on top of
 the closed Login API foundation.
+
+## FREEZE — D-110 baseline (2026-05-26)
+
+The following surface is **frozen** as of commit `67e2263` and must NOT be
+changed without explicit owner approval:
+
+- **EF schema** — the `InitialCreate` migrations on both `SimfIdentityDbContext`
+  and `SimfAppDbContext` capture the final schema. No more schema changes;
+  any future column / table / index addition must be argued for as a breaking
+  change.
+- **Enum names + values** — every enum in `src/Shared/SIMF.Common/Enums/`
+  (SignInAudience, AccountState, AccountCodePurpose, SecondFactorKind,
+  UserType, AuditOutcome, RowAuditOperation, NotificationKind,
+  NotificationSeverity) is frozen by name AND by underlying integer value.
+  Renaming a case or reordering numeric values is a breaking change.
+- **Migration history** — only one `InitialCreate` per context. No further
+  migrations land without owner approval.
+
+Frontend additions, new resx strings (more languages), new endpoints,
+non-schema bug fixes, and additive Options-section keys remain in scope
+for normal development. The freeze applies to the persistence and enum
+contract surface only.
