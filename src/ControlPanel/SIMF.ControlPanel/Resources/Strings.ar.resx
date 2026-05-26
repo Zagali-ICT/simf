@@ -58,6 +58,50 @@
   <data name="Module.OperationLog" xml:space="preserve"><value>سجل العمليات</value></data>
   <data name="Module.Settings" xml:space="preserve"><value>الإعدادات</value></data>
   <data name="Module.AdminResetTwoFactor" xml:space="preserve"><value>إعادة تعيين المصادقة الثنائية لمستخدم</value></data>
+  <!-- D-118 — Profile types CRUD nav labels -->
+  <data name="Module.AdminVisitorProfileTypes" xml:space="preserve"><value>أنواع ملفات الزوار</value></data>
+  <data name="Module.AdminOtherProfileTypes" xml:space="preserve"><value>أنواع الملفات الأخرى</value></data>
+
+  <!-- D-118 — Profile types CRUD strings -->
+  <data name="Admin.ProfileTypes.Visitor.Title" xml:space="preserve"><value>أنواع ملفات الزوار</value></data>
+  <data name="Admin.ProfileTypes.Other.Title" xml:space="preserve"><value>أنواع الملفات الأخرى</value></data>
+  <data name="Admin.ProfileTypes.None" xml:space="preserve"><value>لا توجد أنواع ملفات بعد.</value></data>
+  <data name="Admin.ProfileTypes.Column.Name" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Admin.ProfileTypes.Column.NameArabic" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.ProfileTypes.Column.PageColor" xml:space="preserve"><value>لون الصفحة</value></data>
+  <data name="Admin.ProfileTypes.Column.Active" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.ProfileTypes.Column.Actions" xml:space="preserve"><value>الإجراءات</value></data>
+  <data name="Admin.ProfileTypes.Active.Yes" xml:space="preserve"><value>نعم</value></data>
+  <data name="Admin.ProfileTypes.Active.No" xml:space="preserve"><value>لا</value></data>
+  <data name="Admin.ProfileTypes.Add.Title" xml:space="preserve"><value>إضافة نوع ملف</value></data>
+  <data name="Admin.ProfileTypes.Edit.Title" xml:space="preserve"><value>تعديل نوع الملف</value></data>
+  <data name="Admin.ProfileTypes.Edit.TitleFor" xml:space="preserve"><value>تعديل نوع الملف — {0}</value></data>
+  <data name="Admin.ProfileTypes.Details.Title" xml:space="preserve"><value>تفاصيل نوع الملف — {0}</value></data>
+  <data name="Admin.ProfileTypes.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.ProfileTypes.Delete.Title" xml:space="preserve"><value>تعطيل نوع الملف</value></data>
+  <data name="Admin.ProfileTypes.Delete.Confirm" xml:space="preserve"><value>هل تريد تعطيل نوع الملف "{0}"؟ سيحتفظ المستخدمون الحاليون بتعيينهم؛ ولن يظهر النوع في القوائم. يمكن التراجع عبر تعديل السطر وتفعيله من جديد.</value></data>
+  <data name="Admin.ProfileTypes.Delete.Submit" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.ProfileTypes.Delete.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.ProfileTypes.Delete.Success" xml:space="preserve"><value>تم تعطيل "{0}".</value></data>
+  <data name="Admin.ProfileTypes.Delete.InUse" xml:space="preserve"><value>نوع الملف هذا لا يزال مرتبطًا بمستخدم واحد على الأقل ولا يمكن تعطيله.</value></data>
+  <data name="Admin.ProfileTypes.Field.Name" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.ProfileTypes.Field.NameHint" xml:space="preserve"><value>1–128 حرفًا، فريد لكل نوع مستخدم.</value></data>
+  <data name="Admin.ProfileTypes.Field.NameArabic" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.ProfileTypes.Field.NameArabicHint" xml:space="preserve"><value>1–128 حرفًا.</value></data>
+  <data name="Admin.ProfileTypes.Field.PageColor" xml:space="preserve"><value>لون الصفحة</value></data>
+  <data name="Admin.ProfileTypes.Field.PageColorHint" xml:space="preserve"><value>قيمة سداسية مثل #244A77 أو متغير CSS (1–32 حرفًا).</value></data>
+  <data name="Admin.ProfileTypes.Field.IsActive" xml:space="preserve"><value>مرئي في القوائم (نشط)</value></data>
+  <data name="Admin.ProfileTypes.Field.NameInvalid" xml:space="preserve"><value>يجب أن يتراوح الاسم بين 1 و128 حرفًا.</value></data>
+  <data name="Admin.ProfileTypes.Field.NameArabicInvalid" xml:space="preserve"><value>يجب أن يتراوح الاسم العربي بين 1 و128 حرفًا.</value></data>
+  <data name="Admin.ProfileTypes.Field.PageColorInvalid" xml:space="preserve"><value>يجب أن يتراوح لون الصفحة بين 1 و32 حرفًا.</value></data>
+  <data name="Admin.ProfileTypes.Submitting" xml:space="preserve"><value>جاري الحفظ</value></data>
+  <data name="Admin.ProfileTypes.Submit.Create" xml:space="preserve"><value>إنشاء نوع الملف</value></data>
+  <data name="Admin.ProfileTypes.Submit.Update" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.ProfileTypes.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.ProfileTypes.Created" xml:space="preserve"><value>تم إنشاء "{0}".</value></data>
+  <data name="Admin.ProfileTypes.Updated" xml:space="preserve"><value>تم تحديث "{0}".</value></data>
+  <data name="Admin.ProfileTypes.Saved" xml:space="preserve"><value>تم حفظ "{0}".</value></data>
+  <data name="Admin.ProfileTypes.Fallback" xml:space="preserve"><value>تعذّر حفظ التغيير. حاول مرة أخرى.</value></data>
 
   <data name="Admin.ResetTwoFactor.Title" xml:space="preserve"><value>إعادة تعيين المصادقة الثنائية لمستخدم آخر</value></data>
   <data name="Admin.ResetTwoFactor.Supporting" xml:space="preserve"><value>استخدم هذه الخطوة بعد التحقق من هوية المستخدم بقناة خارجية. سيتم محو تطبيق المصادقة ورموز الاسترداد وجميع جلسات المستخدم، وسيُطلب منه إعداد المصادقة الثنائية من جديد عند تسجيل الدخول التالي.</value></data>

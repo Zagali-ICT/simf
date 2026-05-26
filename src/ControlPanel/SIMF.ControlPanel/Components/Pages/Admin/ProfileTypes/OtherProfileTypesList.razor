@@ -1,0 +1,270 @@
+@* Control Panel — Other profile types CRUD (D-118; consumer of D-115).
+   Lookup-table CRUD scoped to UserType=Other. Twin of VisitorProfileTypesList. *@
+@page "/admin/profile-types/other"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.ProfileTypes.Other.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.ProfileTypes.Other.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        <SimfDataGrid TItem="AdminProfileTypeSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(row => row.Id.ToString())"
+                      RowLabel="@(row => row.Name)"
+                      Caption="@L["Admin.ProfileTypes.Other.Title"]"
+                      FilterColumnLabel="@L["Admin.Users.FilterColumn"]"
+                      OnAdd="OnAddAsync"
+                      OnEditOne="OnEditAsync"
+                      OnDetailsOne="OnDetailsAsync"
+                      OnDeleteOne="OnDeleteAsync"
+                      PrevLabel="@L["Admin.Users.Prev"]"
+                      NextLabel="@L["Admin.Users.Next"]"
+                      FirstLabel="@L["Admin.Users.Pager.First"]"
+                      LastLabel="@L["Admin.Users.Pager.Last"]"
+                      PageSizeLabel="@L["Admin.Users.Pager.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Users.Loading"]"
+                      FilterPlaceholder="@L["Admin.Users.FilterPlaceholder"]"
+                      ActionsHeader="@L["Admin.ProfileTypes.Column.Actions"]"
+                      AddLabel="@L["Admin.ProfileTypes.Add.Title"]"
+                      EditLabel="@L["Admin.ProfileTypes.Edit.Title"]"
+                      DetailsLabel="@L["Admin.Users.Action.Details"]"
+                      DeleteLabel="@L["Admin.ProfileTypes.Delete.Title"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminProfileTypeSummary" Key="name"
+                                    Header="@L["Admin.ProfileTypes.Column.Name"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Name</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminProfileTypeSummary" Key="nameArabic"
+                                    Header="@L["Admin.ProfileTypes.Column.NameArabic"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.NameArabic</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminProfileTypeSummary" Key="pageColor"
+                                    Header="@L["Admin.ProfileTypes.Column.PageColor"]">
+                    <CellTemplate>@context.PageColor</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminProfileTypeSummary" Key="isActive"
+                                    Header="@L["Admin.ProfileTypes.Column.Active"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Admin.ProfileTypes.Active.Yes"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Admin.ProfileTypes.Active.No"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.ProfileTypes.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_toast is not null)
+{
+    <div class="simf-toast">
+        <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+    </div>
+}
+
+@if (_addOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.ProfileTypes.Add.Title"]" OnClose="@(() => _addOpen = false)">
+        <ChildContent>
+            <ProfileTypeForm UserType="Other"
+                             OnSuccess="OnSavedAsync"
+                             OnCancel="@(() => _addOpen = false)" />
+        </ChildContent>
+    </SimfModal>
+}
+
+@if (_editTarget is not null)
+{
+    <SimfModal Open="true"
+               Title="@string.Format(L["Admin.ProfileTypes.Edit.TitleFor"], _editTarget.Name)"
+               OnClose="@(() => _editTarget = null)">
+        <ChildContent>
+            <ProfileTypeForm Initial="_editTarget"
+                             OnSuccess="OnSavedAsync"
+                             OnCancel="@(() => _editTarget = null)" />
+        </ChildContent>
+    </SimfModal>
+}
+
+@if (_detailsTarget is not null)
+{
+    <SimfModal Open="true"
+               Title="@string.Format(L["Admin.ProfileTypes.Details.Title"], _detailsTarget.Name)"
+               OnClose="@(() => _detailsTarget = null)">
+        <ChildContent>
+            <dl class="simf-dl">
+                <dt>@L["Admin.ProfileTypes.Field.Name"]</dt>
+                <dd>@_detailsTarget.Name</dd>
+                <dt>@L["Admin.ProfileTypes.Field.NameArabic"]</dt>
+                <dd>@_detailsTarget.NameArabic</dd>
+                <dt>@L["Admin.ProfileTypes.Field.PageColor"]</dt>
+                <dd>@_detailsTarget.PageColor</dd>
+                <dt>@L["Admin.ProfileTypes.Field.IsActive"]</dt>
+                <dd>
+                    @(_detailsTarget.IsActive
+                        ? L["Admin.ProfileTypes.Active.Yes"]
+                        : L["Admin.ProfileTypes.Active.No"])
+                </dd>
+            </dl>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="@(() => _detailsTarget = null)">
+                @L["Admin.ProfileTypes.Details.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@if (_deleteTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.ProfileTypes.Delete.Title"]" OnClose="@(() => _deleteTarget = null)">
+        <ChildContent>
+            <p>@string.Format(L["Admin.ProfileTypes.Delete.Confirm"], _deleteTarget.Name)</p>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary"
+                        OnClick="@(() => _deleteTarget = null)">
+                @L["Admin.ProfileTypes.Delete.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" Variant="primary"
+                        Loading="_busy"
+                        OnClick="ConfirmDeleteAsync">
+                @L["Admin.ProfileTypes.Delete.Submit"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private GridQuery _query = new()
+    {
+        Top = 20,
+        Filters = new Dictionary<string, string> { ["userType"] = "Other" },
+    };
+    private GridPage<AdminProfileTypeSummary>? _page;
+    private bool _loading;
+    private bool _busy;
+
+    private bool _addOpen;
+    private AdminProfileTypeSummary? _editTarget;
+    private AdminProfileTypeSummary? _detailsTarget;
+    private AdminProfileTypeSummary? _deleteTarget;
+    private Toast? _toast;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        next.Filters["userType"] = "Other";
+        _query = next;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminProfileTypeSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/profile-types/list", _query);
+            _page = envelope is { Success: true, Data: not null }
+                ? envelope.Data
+                : GridPage<AdminProfileTypeSummary>.Of(
+                    Array.Empty<AdminProfileTypeSummary>(), 0, _query);
+        }
+        finally { _loading = false; }
+    }
+
+    private Task OnAddAsync()
+    {
+        _addOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private Task OnEditAsync(AdminProfileTypeSummary row)
+    {
+        _editTarget = row;
+        return Task.CompletedTask;
+    }
+
+    private Task OnDetailsAsync(AdminProfileTypeSummary row)
+    {
+        _detailsTarget = row;
+        return Task.CompletedTask;
+    }
+
+    private Task OnDeleteAsync(AdminProfileTypeSummary row)
+    {
+        _deleteTarget = row;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnSavedAsync(AdminProfileTypeSummary saved)
+    {
+        _addOpen = false;
+        _editTarget = null;
+        ShowToast("success", string.Format(L["Admin.ProfileTypes.Saved"], saved.Name));
+        await LoadAsync();
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_deleteTarget is null || _busy) return;
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/profile-types/{_deleteTarget.Id}");
+            if (envelope is { Success: true })
+            {
+                ShowToast("success", string.Format(L["Admin.ProfileTypes.Delete.Success"], _deleteTarget.Name));
+                _deleteTarget = null;
+                await LoadAsync();
+            }
+            else
+            {
+                var localized = envelope?.Error?.MessageForCurrentCulture();
+                ShowToast("error",
+                    !string.IsNullOrWhiteSpace(localized)
+                        ? localized
+                        : L["Admin.ProfileTypes.Delete.InUse"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private string FormatSummary(int from, int to, int total) =>
+        string.Format(L["Admin.Users.Pager.Summary"], from, to, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Admin.Users.Pager.Page"], current, total);
+
+    private void ShowToast(string variant, string message)
+    {
+        _toast = new Toast(variant, message);
+    }
+
+    private sealed record Toast(string Variant, string Message);
+}

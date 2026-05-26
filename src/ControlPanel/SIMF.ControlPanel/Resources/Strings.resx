@@ -58,6 +58,50 @@
   <data name="Module.OperationLog" xml:space="preserve"><value>Operation log</value></data>
   <data name="Module.Settings" xml:space="preserve"><value>Settings</value></data>
   <data name="Module.AdminResetTwoFactor" xml:space="preserve"><value>Reset user 2FA</value></data>
+  <!-- D-118 — Profile types CRUD nav labels -->
+  <data name="Module.AdminVisitorProfileTypes" xml:space="preserve"><value>Visitor profile types</value></data>
+  <data name="Module.AdminOtherProfileTypes" xml:space="preserve"><value>Other profile types</value></data>
+
+  <!-- D-118 — Profile types CRUD strings -->
+  <data name="Admin.ProfileTypes.Visitor.Title" xml:space="preserve"><value>Visitor profile types</value></data>
+  <data name="Admin.ProfileTypes.Other.Title" xml:space="preserve"><value>Other profile types</value></data>
+  <data name="Admin.ProfileTypes.None" xml:space="preserve"><value>No profile types yet.</value></data>
+  <data name="Admin.ProfileTypes.Column.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Admin.ProfileTypes.Column.NameArabic" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.ProfileTypes.Column.PageColor" xml:space="preserve"><value>Page colour</value></data>
+  <data name="Admin.ProfileTypes.Column.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.ProfileTypes.Column.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Admin.ProfileTypes.Active.Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="Admin.ProfileTypes.Active.No" xml:space="preserve"><value>No</value></data>
+  <data name="Admin.ProfileTypes.Add.Title" xml:space="preserve"><value>Add profile type</value></data>
+  <data name="Admin.ProfileTypes.Edit.Title" xml:space="preserve"><value>Edit profile type</value></data>
+  <data name="Admin.ProfileTypes.Edit.TitleFor" xml:space="preserve"><value>Edit profile type — {0}</value></data>
+  <data name="Admin.ProfileTypes.Details.Title" xml:space="preserve"><value>Profile type details — {0}</value></data>
+  <data name="Admin.ProfileTypes.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.ProfileTypes.Delete.Title" xml:space="preserve"><value>Deactivate profile type</value></data>
+  <data name="Admin.ProfileTypes.Delete.Confirm" xml:space="preserve"><value>Deactivate the profile type "{0}"? Existing users keep their assignment; the type stops appearing in pickers. The action is undone by editing the row and re-enabling it.</value></data>
+  <data name="Admin.ProfileTypes.Delete.Submit" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.ProfileTypes.Delete.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.ProfileTypes.Delete.Success" xml:space="preserve"><value>Deactivated "{0}".</value></data>
+  <data name="Admin.ProfileTypes.Delete.InUse" xml:space="preserve"><value>This profile type is still assigned to one or more users and cannot be deactivated.</value></data>
+  <data name="Admin.ProfileTypes.Field.Name" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.ProfileTypes.Field.NameHint" xml:space="preserve"><value>1–128 characters; unique per user type.</value></data>
+  <data name="Admin.ProfileTypes.Field.NameArabic" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.ProfileTypes.Field.NameArabicHint" xml:space="preserve"><value>1–128 characters.</value></data>
+  <data name="Admin.ProfileTypes.Field.PageColor" xml:space="preserve"><value>Page colour</value></data>
+  <data name="Admin.ProfileTypes.Field.PageColorHint" xml:space="preserve"><value>Hex like #244A77 or a CSS variable (1–32 characters).</value></data>
+  <data name="Admin.ProfileTypes.Field.IsActive" xml:space="preserve"><value>Visible in pickers (active)</value></data>
+  <data name="Admin.ProfileTypes.Field.NameInvalid" xml:space="preserve"><value>Name must be 1–128 characters.</value></data>
+  <data name="Admin.ProfileTypes.Field.NameArabicInvalid" xml:space="preserve"><value>Arabic name must be 1–128 characters.</value></data>
+  <data name="Admin.ProfileTypes.Field.PageColorInvalid" xml:space="preserve"><value>Page colour must be 1–32 characters.</value></data>
+  <data name="Admin.ProfileTypes.Submitting" xml:space="preserve"><value>Saving</value></data>
+  <data name="Admin.ProfileTypes.Submit.Create" xml:space="preserve"><value>Create profile type</value></data>
+  <data name="Admin.ProfileTypes.Submit.Update" xml:space="preserve"><value>Save changes</value></data>
+  <data name="Admin.ProfileTypes.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.ProfileTypes.Created" xml:space="preserve"><value>Created "{0}".</value></data>
+  <data name="Admin.ProfileTypes.Updated" xml:space="preserve"><value>Updated "{0}".</value></data>
+  <data name="Admin.ProfileTypes.Saved" xml:space="preserve"><value>Saved "{0}".</value></data>
+  <data name="Admin.ProfileTypes.Fallback" xml:space="preserve"><value>The change could not be saved. Please try again.</value></data>
 
   <data name="Admin.ResetTwoFactor.Title" xml:space="preserve"><value>Reset another user's 2FA</value></data>
   <data name="Admin.ResetTwoFactor.Supporting" xml:space="preserve"><value>Use this only after verifying the user's identity out of band. Wipes the user's authenticator, recovery codes and active sessions, and forces them to set up 2FA again at their next sign-in.</value></data>

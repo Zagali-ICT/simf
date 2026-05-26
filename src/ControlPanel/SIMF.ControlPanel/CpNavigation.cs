@@ -77,6 +77,9 @@ public static class CpNavigation
             new("Module.AdminVisitors", "/admin/visitors"),
             new("Module.AdminVisitorsPending", "/admin/visitors/pending"),
             new("Module.AdminInterests", "/admin/interests"),
+            // D-118 — admin-managed lookup CRUD for ProfileType (per UserType).
+            new("Module.AdminVisitorProfileTypes", "/admin/profile-types/visitor"),
+            new("Module.AdminOtherProfileTypes", "/admin/profile-types/other"),
             new("Module.AdminResetTwoFactor", "/admin/reset-2fa"),
             new("Module.AdminLogs", "/admin/logs"),
             new("Module.Configuration", "/m/configuration"),

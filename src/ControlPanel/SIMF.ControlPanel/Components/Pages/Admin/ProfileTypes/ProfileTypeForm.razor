@@ -1,0 +1,162 @@
+@* Reusable ProfileType form (D-118). Hosted inside the Add modal and the
+   Edit modal on the VisitorProfileTypesList / OtherProfileTypesList pages.
+   UserType is hidden — set by the host page (Visitor or Other) and used
+   only on create. Edit cannot change UserType (the backend rejects it). *@
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_success is not null)
+{
+    <SimfAlert Variant="success">@_success</SimfAlert>
+}
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        <SimfTextField Label="@L["Admin.ProfileTypes.Field.Name"]"
+                       Helper="@L["Admin.ProfileTypes.Field.NameHint"]"
+                       @bind-Value="_model.Name" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.ProfileTypes.Field.NameArabic"]"
+                       Helper="@L["Admin.ProfileTypes.Field.NameArabicHint"]"
+                       @bind-Value="_model.NameArabic" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.ProfileTypes.Field.PageColor"]"
+                       Helper="@L["Admin.ProfileTypes.Field.PageColorHint"]"
+                       @bind-Value="_model.PageColor" Disabled="_busy" />
+        <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
+            @L["Admin.ProfileTypes.Field.IsActive"]
+        </SimfCheckbox>
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy" LoadingLabel="@L["Admin.ProfileTypes.Submitting"]">
+            @SubmitLabel
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy"
+                        OnClick="OnCancel">
+                @L["Admin.ProfileTypes.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private readonly Model _model = new();
+    private EditContext _editContext = default!;
+    private ValidationMessageStore _messages = default!;
+    private bool _busy;
+    private string? _success;
+    private string? _error;
+    private bool _isEdit;
+
+    /// <summary>Optional existing row to pre-populate the form (Edit mode).
+    /// When null, the form is in Create mode and uses <see cref="UserType"/>.</summary>
+    [Parameter] public AdminProfileTypeSummary? Initial { get; set; }
+
+    /// <summary>The UserType for Create mode ("Visitor" or "Other"). Required for Create.
+    /// Ignored in Edit mode (backend rejects UserType changes).</summary>
+    [Parameter] public string UserType { get; set; } = string.Empty;
+
+    /// <summary>Raised after a successful create or update.</summary>
+    [Parameter] public EventCallback<AdminProfileTypeSummary> OnSuccess { get; set; }
+
+    /// <summary>Raised when the user clicks Cancel. If unset, no Cancel button renders.</summary>
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    protected override void OnInitialized()
+    {
+        _isEdit = Initial is not null;
+        if (Initial is not null)
+        {
+            _model.Name = Initial.Name;
+            _model.NameArabic = Initial.NameArabic;
+            _model.PageColor = Initial.PageColor;
+            _model.IsActive = Initial.IsActive;
+        }
+        _editContext = new EditContext(_model);
+        _messages = new ValidationMessageStore(_editContext);
+    }
+
+    private string SubmitLabel =>
+        _isEdit ? L["Admin.ProfileTypes.Submit.Update"] : L["Admin.ProfileTypes.Submit.Create"];
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _success = null;
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_model.Name) || _model.Name.Length > 128)
+        {
+            _error = L["Admin.ProfileTypes.Field.NameInvalid"];
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_model.NameArabic) || _model.NameArabic.Length > 128)
+        {
+            _error = L["Admin.ProfileTypes.Field.NameArabicInvalid"];
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_model.PageColor) || _model.PageColor.Length > 32)
+        {
+            _error = L["Admin.ProfileTypes.Field.PageColorInvalid"];
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminProfileTypeSummary>? envelope;
+            if (_isEdit && Initial is not null)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminProfileTypeSummary>>(
+                    "simfAccount.putJson", $"/account/api/admin/profile-types/{Initial.Id}",
+                    new AdminUpdateProfileTypeRequest
+                    {
+                        Name = _model.Name.Trim(),
+                        NameArabic = _model.NameArabic.Trim(),
+                        PageColor = _model.PageColor.Trim(),
+                        IsActive = _model.IsActive,
+                    });
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminProfileTypeSummary>>(
+                    "simfAccount.postJson", "/account/api/admin/profile-types",
+                    new AdminCreateProfileTypeRequest
+                    {
+                        UserType = UserType,
+                        Name = _model.Name.Trim(),
+                        NameArabic = _model.NameArabic.Trim(),
+                        PageColor = _model.PageColor.Trim(),
+                        IsActive = _model.IsActive,
+                    });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                _success = _isEdit
+                    ? string.Format(L["Admin.ProfileTypes.Updated"], envelope.Data.Name)
+                    : string.Format(L["Admin.ProfileTypes.Created"], envelope.Data.Name);
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.ProfileTypes.Fallback"];
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private sealed class Model
+    {
+        public string Name { get; set; } = string.Empty;
+        public string NameArabic { get; set; } = string.Empty;
+        public string PageColor { get; set; } = "#244A77";
+        public bool IsActive { get; set; } = true;
+    }
+}

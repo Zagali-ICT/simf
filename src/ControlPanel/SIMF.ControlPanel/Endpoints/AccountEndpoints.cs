@@ -279,6 +279,157 @@ internal static class AccountEndpoints
                 stream.ToArray(), file.FileName, token));
         }).DisableAntiforgery();
 
+        // D-118 — D-113 type-scoped bulk proxies for Visitors and Others.
+        // The visitors/others CP list pages (D-114) call these JS endpoints
+        // and they forward to the API's D-113 routes with the access token.
+        group.MapPost("/admin/visitors/bulk-delete",
+            async (AdminBulkDeleteRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.BulkDeleteVisitorsAsync(body, token));
+        });
+
+        group.MapPost("/admin/others/bulk-delete",
+            async (AdminBulkDeleteRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.BulkDeleteOthersAsync(body, token));
+        });
+
+        group.MapPost("/admin/visitors/duplicate",
+            async (AdminDuplicateUserRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DuplicateVisitorAsync(body, token));
+        });
+
+        group.MapPost("/admin/others/duplicate",
+            async (AdminDuplicateUserRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DuplicateOtherAsync(body, token));
+        });
+
+        group.MapPost("/admin/visitors/export",
+            async (AdminExportUsersRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, bytes) = await api.ExportVisitorsAsync(body, token);
+            if (status != 200 || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            return Results.File(bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"simf-visitors-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx");
+        });
+
+        group.MapPost("/admin/others/export",
+            async (AdminExportUsersRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, bytes) = await api.ExportOthersAsync(body, token);
+            if (status != 200 || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            return Results.File(bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"simf-others-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx");
+        });
+
+        group.MapPost("/admin/visitors/import",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.AdminImportEmpty,
+                    Message = "An Excel file is required.",
+                    MessageArabic = "ملف Excel مطلوب.",
+                }));
+            }
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return Forward(await api.ImportVisitorsAsync(
+                stream.ToArray(), file.FileName, token));
+        }).DisableAntiforgery();
+
+        group.MapPost("/admin/others/import",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.AdminImportEmpty,
+                    Message = "An Excel file is required.",
+                    MessageArabic = "ملف Excel مطلوب.",
+                }));
+            }
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return Forward(await api.ImportOthersAsync(
+                stream.ToArray(), file.FileName, token));
+        }).DisableAntiforgery();
+
+        // D-118 — ProfileTypes CRUD proxy (consumer of D-115).
+        group.MapPost("/admin/profile-types/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListAdminProfileTypesAsync(body, token));
+        });
+
+        group.MapGet("/admin/profile-types/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetAdminProfileTypeAsync(id, token));
+        });
+
+        group.MapPost("/admin/profile-types",
+            async (AdminCreateProfileTypeRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateAdminProfileTypeAsync(body, token));
+        });
+
+        group.MapPut("/admin/profile-types/{id:guid}",
+            async (Guid id, AdminUpdateProfileTypeRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateAdminProfileTypeAsync(id, body, token));
+        });
+
+        group.MapDelete("/admin/profile-types/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateAdminProfileTypeAsync(id, token));
+        });
+
         // P9 — Interests CRUD proxy (D-050; الاهتمامات).
         group.MapPost("/admin/interests/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

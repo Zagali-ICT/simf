@@ -138,6 +138,176 @@ public sealed class SimfAdminClient(HttpClient http)
         }
     }
 
+    // -- D-113 — type-scoped bulk operations for Visitors and Others ---------
+
+    /// <summary>Soft-deletes one or many visitor accounts (D-113).</summary>
+    public Task<ApiCallResult<AdminBulkDeleteResponse>> BulkDeleteVisitorsAsync(
+        AdminBulkDeleteRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBulkDeleteResponse>(
+            HttpMethod.Post, "visitors/bulk-delete",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Soft-deletes one or many Other accounts (D-113).</summary>
+    public Task<ApiCallResult<AdminBulkDeleteResponse>> BulkDeleteOthersAsync(
+        AdminBulkDeleteRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBulkDeleteResponse>(
+            HttpMethod.Post, "others/bulk-delete",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Duplicates an existing visitor account (D-113).</summary>
+    public Task<ApiCallResult<AdminCreateUserResponse>> DuplicateVisitorAsync(
+        AdminDuplicateUserRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminCreateUserResponse>(
+            HttpMethod.Post, "visitors/duplicate",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Duplicates an existing Other account (D-113).</summary>
+    public Task<ApiCallResult<AdminCreateUserResponse>> DuplicateOtherAsync(
+        AdminDuplicateUserRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminCreateUserResponse>(
+            HttpMethod.Post, "others/duplicate",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Exports visitor accounts to an XLSX workbook (D-113).</summary>
+    public async Task<(int StatusCode, byte[] Bytes)> ExportVisitorsAsync(
+        AdminExportUsersRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + "visitors/export")
+        {
+            Content = JsonContent.Create(request, options: JsonOptions),
+        };
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return ((int)response.StatusCode, bytes);
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException)
+        {
+            return ((int)HttpStatusCode.ServiceUnavailable, Array.Empty<byte>());
+        }
+    }
+
+    /// <summary>Exports Other accounts to an XLSX workbook (D-113).</summary>
+    public async Task<(int StatusCode, byte[] Bytes)> ExportOthersAsync(
+        AdminExportUsersRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + "others/export")
+        {
+            Content = JsonContent.Create(request, options: JsonOptions),
+        };
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return ((int)response.StatusCode, bytes);
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException)
+        {
+            return ((int)HttpStatusCode.ServiceUnavailable, Array.Empty<byte>());
+        }
+    }
+
+    /// <summary>Bulk-creates visitor accounts from an XLSX workbook upload (D-113).</summary>
+    public async Task<ApiCallResult<AdminImportUsersResponse>> ImportVisitorsAsync(
+        byte[] xlsx,
+        string fileName,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        using var content = new MultipartFormDataContent();
+        var file = new ByteArrayContent(xlsx);
+        file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        content.Add(file, "file", fileName);
+
+        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + "visitors/import")
+        {
+            Content = content,
+        };
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            var body = await response.Content.ReadFromJsonAsync<ApiResult<AdminImportUsersResponse>>(
+                JsonOptions, cancellationToken);
+            return new ApiCallResult<AdminImportUsersResponse>(
+                (int)response.StatusCode,
+                body ?? TransportFailure<AdminImportUsersResponse>(
+                    "The server returned an empty response.",
+                    "أعاد الخادم استجابة فارغة."));
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException or JsonException)
+        {
+            return new ApiCallResult<AdminImportUsersResponse>(
+                (int)HttpStatusCode.ServiceUnavailable,
+                TransportFailure<AdminImportUsersResponse>(
+                    "The SIMF service could not be reached. Please try again.",
+                    "تعذّر الوصول إلى خدمة SIMF. حاول مرة أخرى."));
+        }
+    }
+
+    /// <summary>Bulk-creates Other accounts from an XLSX workbook upload (D-113).</summary>
+    public async Task<ApiCallResult<AdminImportUsersResponse>> ImportOthersAsync(
+        byte[] xlsx,
+        string fileName,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        using var content = new MultipartFormDataContent();
+        var file = new ByteArrayContent(xlsx);
+        file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        content.Add(file, "file", fileName);
+
+        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + "others/import")
+        {
+            Content = content,
+        };
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            var body = await response.Content.ReadFromJsonAsync<ApiResult<AdminImportUsersResponse>>(
+                JsonOptions, cancellationToken);
+            return new ApiCallResult<AdminImportUsersResponse>(
+                (int)response.StatusCode,
+                body ?? TransportFailure<AdminImportUsersResponse>(
+                    "The server returned an empty response.",
+                    "أعاد الخادم استجابة فارغة."));
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException or JsonException)
+        {
+            return new ApiCallResult<AdminImportUsersResponse>(
+                (int)HttpStatusCode.ServiceUnavailable,
+                TransportFailure<AdminImportUsersResponse>(
+                    "The SIMF service could not be reached. Please try again.",
+                    "تعذّر الوصول إلى خدمة SIMF. حاول مرة أخرى."));
+        }
+    }
+
     // -- P4 + P7c — approval workflow (Admin / Other / Visitor) --------------
 
     /// <summary>Approves a pending Admin (P7c — renamed from ApproveStaffAsync).</summary>
@@ -267,6 +437,51 @@ public sealed class SimfAdminClient(HttpClient http)
         CancellationToken cancellationToken = default) =>
         SendAsync<bool>(
             HttpMethod.Delete, $"interests/{id}", content: null,
+            accessToken, cancellationToken);
+
+    // -- D-115 — ProfileTypes CRUD (admin-managed lookup table) --------------
+
+    /// <summary>One page of profile types for the admin grid (D-115).</summary>
+    public Task<ApiCallResult<GridPage<AdminProfileTypeSummary>>> ListAdminProfileTypesAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminProfileTypeSummary>>(
+            HttpMethod.Post, "profile-types/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>One profile type by id (D-115).</summary>
+    public Task<ApiCallResult<AdminProfileTypeSummary>> GetAdminProfileTypeAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminProfileTypeSummary>(
+            HttpMethod.Get, $"profile-types/{id}", content: null,
+            accessToken, cancellationToken);
+
+    /// <summary>Creates a profile type (D-115).</summary>
+    public Task<ApiCallResult<AdminProfileTypeSummary>> CreateAdminProfileTypeAsync(
+        AdminCreateProfileTypeRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminProfileTypeSummary>(
+            HttpMethod.Post, "profile-types",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Updates a profile type (D-115). UserType is immutable post-creation.</summary>
+    public Task<ApiCallResult<AdminProfileTypeSummary>> UpdateAdminProfileTypeAsync(
+        Guid id, AdminUpdateProfileTypeRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminProfileTypeSummary>(
+            HttpMethod.Put, $"profile-types/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Soft-deletes (deactivates) a profile type (D-115). 409 if in use.</summary>
+    public Task<ApiCallResult<bool>> DeactivateAdminProfileTypeAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"profile-types/{id}", content: null,
             accessToken, cancellationToken);
 
     /// <summary>Lists every project's log files (P6).</summary>
