@@ -7,6 +7,8 @@ using SIMF.Common;
 using SIMF.Contracts.Logs;
 using SIMF.Domain.Auditing;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Api.Endpoints.Admin.Logs;
 
 /// <summary>

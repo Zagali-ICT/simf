@@ -7,6 +7,8 @@ using SIMF.Application.IdentityAccess;
 using SIMF.Common.Options;
 using SIMF.Domain.IdentityAccess;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>Issues HMAC-SHA256-signed JWT access tokens (SIMF-API-001 section 12.2).</summary>

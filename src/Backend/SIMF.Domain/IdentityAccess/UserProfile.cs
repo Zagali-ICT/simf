@@ -1,3 +1,5 @@
+using SIMF.Common.Enums;
+
 namespace SIMF.Domain.IdentityAccess;
 
 /// <summary>

@@ -1,4 +1,6 @@
 // Tests: SIMF.ControlPanel.Tests/CpNavigationTests.cs
+using SIMF.Common.Enums;
+
 namespace SIMF.ControlPanel;
 
 /// <summary>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="CredentialEmailVerificationSent" xml:space="preserve"><value>تم إرسال رمز التحقق</value></data>
+  <data name="CredentialEmailVerificationResent" xml:space="preserve"><value>تم إعادة إرسال رمز التحقق</value></data>
+  <data name="CredentialSignInOtpSent" xml:space="preserve"><value>تم إرسال رمز تسجيل الدخول</value></data>
+  <data name="CredentialPasswordResetRequested" xml:space="preserve"><value>طلب رمز إعادة تعيين كلمة المرور</value></data>
+  <data name="AccountProfileSubmitted" xml:space="preserve"><value>تم إرسال الملف الشخصي</value></data>
+  <data name="AdminPendingVisitor" xml:space="preserve"><value>زائر جديد بانتظار الموافقة</value></data>
+  <data name="AccountApproved" xml:space="preserve"><value>تم اعتماد الحساب</value></data>
+  <data name="AccountRejected" xml:space="preserve"><value>تم رفض الحساب</value></data>
+  <data name="AccountTwoFactorReset" xml:space="preserve"><value>إعادة تعيين المصادقة الثنائية</value></data>
+</root>

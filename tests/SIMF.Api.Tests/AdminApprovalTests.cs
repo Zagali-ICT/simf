@@ -13,6 +13,8 @@ using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Api.Tests;
 
 /// <summary>

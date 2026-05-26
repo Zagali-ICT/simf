@@ -16,6 +16,8 @@ using SIMF.Domain.Notifications;
 using SIMF.Infrastructure.Notifications;
 using SIMF.Infrastructure.Persistence;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>

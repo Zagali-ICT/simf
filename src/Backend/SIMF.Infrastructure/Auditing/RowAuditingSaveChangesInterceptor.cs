@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
 using SIMF.Domain.Auditing;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Infrastructure.Auditing;
 
 /// <summary>

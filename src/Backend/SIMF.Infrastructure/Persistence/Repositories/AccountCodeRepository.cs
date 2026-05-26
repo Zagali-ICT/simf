@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Domain.IdentityAccess;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Infrastructure.Persistence.Repositories;
 
 internal sealed class AccountCodeRepository(SimfIdentityDbContext dbContext) : IAccountCodeRepository

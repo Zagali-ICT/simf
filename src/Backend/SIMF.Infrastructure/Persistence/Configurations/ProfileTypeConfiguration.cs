@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.IdentityAccess;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Infrastructure.Persistence.Configurations;
 
 /// <summary>EF mapping for <see cref="ProfileType"/> (P7 — D-048).</summary>

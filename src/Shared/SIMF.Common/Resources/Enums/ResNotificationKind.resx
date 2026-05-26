@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="CredentialEmailVerificationSent" xml:space="preserve"><value>Verification code sent</value></data>
+  <data name="CredentialEmailVerificationResent" xml:space="preserve"><value>Verification code re-sent</value></data>
+  <data name="CredentialSignInOtpSent" xml:space="preserve"><value>Sign-in code sent</value></data>
+  <data name="CredentialPasswordResetRequested" xml:space="preserve"><value>Password-reset code requested</value></data>
+  <data name="AccountProfileSubmitted" xml:space="preserve"><value>Profile submitted</value></data>
+  <data name="AdminPendingVisitor" xml:space="preserve"><value>New pending visitor</value></data>
+  <data name="AccountApproved" xml:space="preserve"><value>Account approved</value></data>
+  <data name="AccountRejected" xml:space="preserve"><value>Account rejected</value></data>
+  <data name="AccountTwoFactorReset" xml:space="preserve"><value>Two-factor authentication reset</value></data>
+</root>

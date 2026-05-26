@@ -10,6 +10,8 @@ using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>

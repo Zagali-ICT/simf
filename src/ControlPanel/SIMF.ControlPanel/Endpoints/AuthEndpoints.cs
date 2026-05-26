@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using SIMF.ApiClient;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.ControlPanel.Endpoints;
 
 /// <summary>

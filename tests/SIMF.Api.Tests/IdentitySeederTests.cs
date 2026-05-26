@@ -6,6 +6,8 @@ using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Api.Tests;
 
 /// <summary>Integration tests for <see cref="IdentitySeeder"/>.</summary>

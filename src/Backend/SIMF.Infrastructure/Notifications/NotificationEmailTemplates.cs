@@ -1,6 +1,8 @@
 using System.Net;
 using SIMF.Domain.Notifications;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Infrastructure.Notifications;
 
 /// <summary>

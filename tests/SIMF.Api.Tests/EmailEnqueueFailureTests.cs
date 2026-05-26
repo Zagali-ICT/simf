@@ -12,6 +12,8 @@ using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Api.Tests;
 
 /// <summary>
@@ -87,7 +89,7 @@ public sealed class EmailEnqueueFailureTests : IClassFixture<ThrowingEmailQueueA
         Assert.Contains(db.OperationLog,
             entry => entry.EventType == AuditEvents.ForgotPasswordRequested
                   && entry.SubjectEmail == email
-                  && entry.Outcome == Domain.Auditing.AuditOutcome.Success);
+                  && entry.Outcome == AuditOutcome.Success);
     }
 
     [Fact]

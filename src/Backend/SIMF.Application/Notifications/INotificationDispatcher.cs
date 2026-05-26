@@ -1,3 +1,4 @@
+using SIMF.Common.Enums;
 using SIMF.Domain.Notifications;
 
 namespace SIMF.Application.Notifications;

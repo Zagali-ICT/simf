@@ -1,3 +1,5 @@
+using SIMF.Common.Enums;
+
 namespace SIMF.ControlPanel.Tests;
 
 /// <summary>Tests for the Control Panel navigation map.</summary>

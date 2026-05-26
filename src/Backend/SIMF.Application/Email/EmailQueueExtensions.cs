@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Domain.Auditing;
 
 namespace SIMF.Application.Email;

@@ -6,6 +6,8 @@ using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Domain.Auditing;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>The body of a user ID-document upload.</summary>

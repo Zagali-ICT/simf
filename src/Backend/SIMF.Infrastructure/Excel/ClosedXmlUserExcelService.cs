@@ -5,6 +5,8 @@ using SIMF.Application.Excel;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Infrastructure.Excel;
 
 /// <summary>

@@ -1,3 +1,4 @@
+using SIMF.Common.Enums;
 using SIMF.Domain.IdentityAccess;
 
 namespace SIMF.Application.IdentityAccess.Abstractions;

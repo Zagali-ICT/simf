@@ -1,3 +1,5 @@
+using SIMF.Common.Enums;
+
 namespace SIMF.Domain.Auditing;
 
 /// <summary>
@@ -55,12 +57,4 @@ public sealed class RowAudit
     /// <summary>Comma-separated list of column names that changed
     /// (UPDATE only); null for INSERT and DELETE.</summary>
     public string? AffectedColumns { get; set; }
-}
-
-/// <summary>The kind of row-level change the audit row records.</summary>
-public enum RowAuditOperation
-{
-    Insert = 0,
-    Update = 1,
-    Delete = 2,
 }

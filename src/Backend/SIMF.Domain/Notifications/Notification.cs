@@ -1,3 +1,5 @@
+using SIMF.Common.Enums;
+
 namespace SIMF.Domain.Notifications;
 
 /// <summary>
@@ -48,13 +50,4 @@ public sealed class Notification
     /// repository materialises an equivalent flag into the DTO.
     /// </summary>
     public bool IsRead => ReadAt is not null;
-}
-
-/// <summary>The visual + audio tier of a notification (P12 — D-053).</summary>
-public enum NotificationSeverity
-{
-    Info = 0,
-    Success = 1,
-    Warning = 2,
-    Error = 3,
 }

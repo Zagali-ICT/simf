@@ -1,3 +1,4 @@
+using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
 

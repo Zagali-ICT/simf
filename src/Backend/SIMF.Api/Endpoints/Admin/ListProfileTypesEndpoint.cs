@@ -6,6 +6,8 @@ using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>

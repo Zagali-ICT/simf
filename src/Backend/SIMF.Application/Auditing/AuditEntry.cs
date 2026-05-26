@@ -1,3 +1,4 @@
+using SIMF.Common.Enums;
 using SIMF.Domain.Auditing;
 
 namespace SIMF.Application.Auditing;

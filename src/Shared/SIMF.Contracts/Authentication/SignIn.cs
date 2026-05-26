@@ -1,22 +1,6 @@
+using SIMF.Common.Enums;
+
 namespace SIMF.Contracts.Authentication;
-
-/// <summary>
-/// The surface a sign-in attempt came from (P2). The API enforces that only
-/// CP-roled users sign in from <see cref="Cp"/> and only visitors sign in
-/// from <see cref="Web"/> / <see cref="App"/>; a mismatch returns 403
-/// <c>AUTH_WRONG_SURFACE_*</c>.
-/// </summary>
-public enum SignInAudience
-{
-    /// <summary>The visitor Website (Blazor SSR). Default — least privileged.</summary>
-    Web = 0,
-
-    /// <summary>The Control Panel (Blazor Server) — staff / admin only.</summary>
-    Cp = 1,
-
-    /// <summary>The Flutter mobile app — visitors only, same rule as Web.</summary>
-    App = 2,
-}
 
 /// <summary>The body of <c>POST /api/v1/auth/sign-in</c> (SIMF-API-001 section 12.4).</summary>
 public sealed class SignInRequest

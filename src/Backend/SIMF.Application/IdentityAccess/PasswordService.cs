@@ -7,6 +7,7 @@ using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;

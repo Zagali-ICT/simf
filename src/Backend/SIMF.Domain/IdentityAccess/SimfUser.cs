@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using SIMF.Common.Enums;
 
 namespace SIMF.Domain.IdentityAccess;
 

@@ -7,6 +7,8 @@ using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
 using Xunit;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Api.Tests;
 
 /// <summary>

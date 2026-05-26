@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Notifications;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Infrastructure.Persistence.Configurations;
 
 /// <summary>

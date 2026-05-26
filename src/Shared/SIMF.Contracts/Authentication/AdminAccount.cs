@@ -1,5 +1,7 @@
 using SIMF.Common;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Contracts.Authentication;
 
 /// <summary>

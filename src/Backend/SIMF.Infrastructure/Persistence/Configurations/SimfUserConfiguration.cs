@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.IdentityAccess;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Infrastructure.Persistence.Configurations;
 
 internal sealed class SimfUserConfiguration : IEntityTypeConfiguration<SimfUser>

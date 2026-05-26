@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Caching.Memory;
 using SIMF.Contracts.Authentication;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.ControlPanel.Tests;
 
 /// <summary>Tests for the one-time sign-in hand-off store. P11 — D-052

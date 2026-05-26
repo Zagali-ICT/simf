@@ -5,6 +5,8 @@ using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Api.Tests;
 
 /// <summary>Shared helpers that drive the full authentication flow in integration tests.</summary>

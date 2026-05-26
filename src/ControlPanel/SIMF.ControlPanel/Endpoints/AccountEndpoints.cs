@@ -6,6 +6,8 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Logs;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.ControlPanel.Endpoints;
 
 /// <summary>

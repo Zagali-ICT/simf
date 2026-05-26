@@ -1,3 +1,5 @@
+using SIMF.Common.Enums;
+
 namespace SIMF.Contracts.Notifications;
 
 /// <summary>One row in a notification list (P12 — D-053). The Arabic

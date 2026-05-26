@@ -1,0 +1,48 @@
+using System.ComponentModel.DataAnnotations;
+using SIMF.Common.Resources.Enums;
+
+namespace SIMF.Common.Enums;
+
+/// <summary>
+/// The stable kind of an in-app notification (P12 — D-053). Persisted
+/// as the enum name string (e.g. <c>"AccountApproved"</c>) via the EF
+/// value converter on <c>NotificationConfiguration</c>.
+/// </summary>
+public enum NotificationKind
+{
+    /// <summary>Dispatched after the initial verification email is queued (D-099).</summary>
+    [Display(Description = nameof(ResNotificationKind.CredentialEmailVerificationSent), ResourceType = typeof(ResNotificationKind))]
+    CredentialEmailVerificationSent = 0,
+
+    /// <summary>Dispatched after a re-issued verification email is queued (D-099).</summary>
+    [Display(Description = nameof(ResNotificationKind.CredentialEmailVerificationResent), ResourceType = typeof(ResNotificationKind))]
+    CredentialEmailVerificationResent = 1,
+
+    /// <summary>Dispatched after the sign-in OTP email is queued (D-099, email-OTP branch only).</summary>
+    [Display(Description = nameof(ResNotificationKind.CredentialSignInOtpSent), ResourceType = typeof(ResNotificationKind))]
+    CredentialSignInOtpSent = 2,
+
+    /// <summary>Dispatched after the password-reset email is queued (D-099).</summary>
+    [Display(Description = nameof(ResNotificationKind.CredentialPasswordResetRequested), ResourceType = typeof(ResNotificationKind))]
+    CredentialPasswordResetRequested = 3,
+
+    /// <summary>Dispatched after the first profile save auto-transitions the user to PendingApproval (H2 — D-057).</summary>
+    [Display(Description = nameof(ResNotificationKind.AccountProfileSubmitted), ResourceType = typeof(ResNotificationKind))]
+    AccountProfileSubmitted = 10,
+
+    /// <summary>Dispatched to every Administrator when a new visitor becomes pending approval (P13 — D-054).</summary>
+    [Display(Description = nameof(ResNotificationKind.AdminPendingVisitor), ResourceType = typeof(ResNotificationKind))]
+    AdminPendingVisitor = 11,
+
+    /// <summary>Dispatched when an account is approved and the QR id is minted (P13 — D-054).</summary>
+    [Display(Description = nameof(ResNotificationKind.AccountApproved), ResourceType = typeof(ResNotificationKind))]
+    AccountApproved = 12,
+
+    /// <summary>Dispatched when an account is rejected (P13 — D-054).</summary>
+    [Display(Description = nameof(ResNotificationKind.AccountRejected), ResourceType = typeof(ResNotificationKind))]
+    AccountRejected = 13,
+
+    /// <summary>Dispatched when an administrator clears the subject's 2FA (P13 — D-054).</summary>
+    [Display(Description = nameof(ResNotificationKind.AccountTwoFactorReset), ResourceType = typeof(ResNotificationKind))]
+    AccountTwoFactorReset = 14,
+}

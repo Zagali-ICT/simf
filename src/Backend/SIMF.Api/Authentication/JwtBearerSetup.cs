@@ -11,6 +11,8 @@ using SIMF.Common.Options;
 using SIMF.Domain.Auditing;
 using SIMF.Infrastructure.Identity;
 
+using SIMF.Common.Enums;
+
 namespace SIMF.Api.Authentication;
 
 /// <summary>
