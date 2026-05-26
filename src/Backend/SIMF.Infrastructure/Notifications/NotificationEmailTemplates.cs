@@ -1,4 +1,5 @@
 using System.Net;
+using SIMF.Domain.Notifications;
 
 namespace SIMF.Infrastructure.Notifications;
 
@@ -6,6 +7,10 @@ namespace SIMF.Infrastructure.Notifications;
 /// Inline bilingual email templates for the P13 — D-054 lifecycle
 /// notifications. Token substitution is the dumbest possible
 /// <c>string.Replace</c>; one template per kind, EN + AR.
+///
+/// <para>D-108: switched from string-keyed lookup to
+/// <see cref="NotificationKind"/>-keyed lookup so a typo in a template
+/// dispatch can't slip past the compiler.</para>
 ///
 /// <para>The templates are intentionally minimal — one paragraph each.
 /// A future re-skin (header logo, footer, brand colours) can swap the
@@ -15,22 +20,20 @@ namespace SIMF.Infrastructure.Notifications;
 internal static class NotificationEmailTemplates
 {
     /// <summary>Renders the HTML body for one notification kind.</summary>
-    /// <param name="kind">Stable kind name (e.g. <c>Account.Approved</c>).</param>
+    /// <param name="kind">The dispatch kind.</param>
     /// <param name="culture">Two-letter culture (<c>en</c> or <c>ar</c>).</param>
     /// <param name="tokens">Substitution tokens (e.g. <c>DisplayName</c>,
     /// <c>QrId</c>, <c>Reason</c>). Every value is HTML-encoded before
     /// substitution.</param>
     public static string Render(
-        string kind, string culture, IReadOnlyDictionary<string, string> tokens)
+        NotificationKind kind, string culture, IReadOnlyDictionary<string, string> tokens)
     {
         var template = LookupTemplate(kind, culture);
         if (string.IsNullOrEmpty(template))
         {
-            // No template registered → render a one-line fallback so the
-            // email still says something useful.
             return tokens.TryGetValue("Body", out var body)
                 ? $"<p>{WebUtility.HtmlEncode(body)}</p>"
-                : $"<p>SIMF notification — {WebUtility.HtmlEncode(kind)}</p>";
+                : $"<p>SIMF notification — {WebUtility.HtmlEncode(kind.ToString())}</p>";
         }
         foreach (var (name, raw) in tokens)
         {
@@ -40,25 +43,19 @@ internal static class NotificationEmailTemplates
         return template;
     }
 
-    private static string LookupTemplate(string kind, string culture) =>
+    private static string LookupTemplate(NotificationKind kind, string culture) =>
         (kind, culture) switch
         {
-            ("Account.ProfileSubmitted", "ar") => ProfileSubmittedAr,
-            ("Account.ProfileSubmitted", _) => ProfileSubmittedEn,
-            ("Account.Approved", "ar") => ApprovedAr,
-            ("Account.Approved", _) => ApprovedEn,
-            ("Account.Rejected", "ar") => RejectedAr,
-            ("Account.Rejected", _) => RejectedEn,
-            ("Account.TwoFactorReset", "ar") => TwoFactorResetAr,
-            ("Account.TwoFactorReset", _) => TwoFactorResetEn,
-            ("Account.PasswordInvited", "ar") => PasswordInvitedAr,
-            ("Account.PasswordInvited", _) => PasswordInvitedEn,
-            ("Account.PasswordChanged", "ar") => PasswordChangedAr,
-            ("Account.PasswordChanged", _) => PasswordChangedEn,
-            ("Account.PasswordReset", "ar") => PasswordResetAr,
-            ("Account.PasswordReset", _) => PasswordResetEn,
-            ("Admin.PendingVisitor", "ar") => AdminPendingVisitorAr,
-            ("Admin.PendingVisitor", _) => AdminPendingVisitorEn,
+            (NotificationKind.AccountProfileSubmitted, "ar") => ProfileSubmittedAr,
+            (NotificationKind.AccountProfileSubmitted, _) => ProfileSubmittedEn,
+            (NotificationKind.AccountApproved, "ar") => ApprovedAr,
+            (NotificationKind.AccountApproved, _) => ApprovedEn,
+            (NotificationKind.AccountRejected, "ar") => RejectedAr,
+            (NotificationKind.AccountRejected, _) => RejectedEn,
+            (NotificationKind.AccountTwoFactorReset, "ar") => TwoFactorResetAr,
+            (NotificationKind.AccountTwoFactorReset, _) => TwoFactorResetEn,
+            (NotificationKind.AdminPendingVisitor, "ar") => AdminPendingVisitorAr,
+            (NotificationKind.AdminPendingVisitor, _) => AdminPendingVisitorEn,
             _ => string.Empty,
         };
 
@@ -90,25 +87,6 @@ internal static class NotificationEmailTemplates
         + "<p>Sign in with your password and set up two-factor "
         + "authentication again from your profile page.</p>";
 
-    private const string PasswordInvitedEn =
-        "<p>Hello {DisplayName},</p>"
-        + "<p>A SIMF account has been created for you. To activate it, "
-        + "open the Control Panel and set your password with the "
-        + "verification code below.</p>"
-        + "<p><strong>Email:</strong> {Email}<br/>"
-        + "<strong>Code:</strong> <strong>{Code}</strong><br/>"
-        + "<strong>Valid for:</strong> {Days} days.</p>";
-
-    private const string PasswordChangedEn =
-        "<p>Hello {DisplayName},</p>"
-        + "<p>Your SIMF password was changed. If you did not do this, "
-        + "contact your security team immediately.</p>";
-
-    private const string PasswordResetEn =
-        "<p>Hello {DisplayName},</p>"
-        + "<p>Your SIMF password was reset successfully. You can sign in "
-        + "with your new password now.</p>";
-
     private const string AdminPendingVisitorEn =
         "<p>Hello {DisplayName},</p>"
         + "<p>A new visitor is awaiting approval: <strong>{SubjectEmail}</strong>. "
@@ -136,22 +114,6 @@ internal static class NotificationEmailTemplates
         + "<p>قام أحد المسؤولين بإعادة تعيين المصادقة الثنائية على حسابك في SIMF.</p>"
         + "<p><strong>السبب:</strong> {Reason}</p>"
         + "<p>سجّل الدخول بكلمة المرور وقم بإعداد المصادقة الثنائية مرة أخرى من صفحة ملفك الشخصي.</p>";
-
-    private const string PasswordInvitedAr =
-        "<p>مرحباً {DisplayName}،</p>"
-        + "<p>تم إنشاء حساب لك في SIMF. لتفعيله، افتح لوحة التحكم وعيّن كلمة المرور باستخدام رمز التحقق أدناه.</p>"
-        + "<p><strong>البريد الإلكتروني:</strong> {Email}<br/>"
-        + "<strong>الرمز:</strong> <strong>{Code}</strong><br/>"
-        + "<strong>صالح لمدة:</strong> {Days} أيام.</p>";
-
-    private const string PasswordChangedAr =
-        "<p>مرحباً {DisplayName}،</p>"
-        + "<p>تم تغيير كلمة المرور الخاصة بك في SIMF. إذا لم تكن أنت من قام بذلك، "
-        + "يُرجى التواصل مع فريق الأمن فوراً.</p>";
-
-    private const string PasswordResetAr =
-        "<p>مرحباً {DisplayName}،</p>"
-        + "<p>تمت إعادة تعيين كلمة المرور الخاصة بك في SIMF بنجاح. يمكنك تسجيل الدخول الآن بكلمة المرور الجديدة.</p>";
 
     private const string AdminPendingVisitorAr =
         "<p>مرحباً {DisplayName}،</p>"

@@ -65,11 +65,11 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
 
         // Visitor's "ProfileSubmitted" notification landed.
         Assert.True(await db.Notifications.AnyAsync(n =>
-            n.UserId == subjectId && n.Kind == "Account.ProfileSubmitted"));
+            n.UserId == subjectId && n.Kind == NotificationKind.AccountProfileSubmitted));
 
         // Admin's "PendingVisitor" notification landed.
         Assert.True(await db.Notifications.AnyAsync(n =>
-            n.UserId == adminId && n.Kind == "Admin.PendingVisitor"));
+            n.UserId == adminId && n.Kind == NotificationKind.AdminPendingVisitor));
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var notification = await db.Notifications
             .SingleAsync(n => n.UserId == subjectId
-                && n.Kind == "Account.Approved");
+                && n.Kind == NotificationKind.AccountApproved);
         Assert.Equal(NotificationSeverity.Success, notification.Severity);
     }
 
@@ -109,7 +109,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var notification = await db.Notifications
             .SingleAsync(n => n.UserId == subjectId
-                && n.Kind == "Account.Rejected");
+                && n.Kind == NotificationKind.AccountRejected);
         Assert.Equal(NotificationSeverity.Error, notification.Severity);
         Assert.Contains("Not permitted", notification.Body);
     }

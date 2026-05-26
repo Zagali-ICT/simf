@@ -15,11 +15,11 @@ public sealed class Notification
     public Guid UserId { get; set; }
 
     /// <summary>
-    /// Stable event-kind name (e.g. <c>"Account.Approved"</c>,
-    /// <c>"Admin.PendingVisitor"</c>) used by the UI for icons + by SOC
-    /// for filtering. Defined alongside <c>AuditEvents</c>.
+    /// Stable event-kind used by the UI for icons + by SOC for
+    /// filtering. D-108: persisted as the enum name string via the
+    /// EF value converter on <c>NotificationConfiguration</c>.
     /// </summary>
-    public string Kind { get; set; } = string.Empty;
+    public NotificationKind Kind { get; set; }
 
     public string Title { get; set; } = string.Empty;
     public string TitleArabic { get; set; } = string.Empty;
@@ -41,6 +41,13 @@ public sealed class Notification
 
     /// <summary>Optional foreign-key into the related entity.</summary>
     public Guid? RelatedEntityId { get; set; }
+
+    /// <summary>
+    /// D-108: derived read flag — true once <see cref="ReadAt"/> is set.
+    /// Ignored by EF so it doesn't sneak into a SELECT projection; the
+    /// repository materialises an equivalent flag into the DTO.
+    /// </summary>
+    public bool IsRead => ReadAt is not null;
 }
 
 /// <summary>The visual + audio tier of a notification (P12 — D-053).</summary>

@@ -138,7 +138,7 @@ internal sealed class AdminAccountService(
         await notifications.DispatchAsync(new NotificationRequest
         {
             UserId = target.Id,
-            Kind = "Account.TwoFactorReset",
+            Kind = NotificationKind.AccountTwoFactorReset,
             Title = "Two-factor authentication was reset",
             TitleArabic = "تمت إعادة تعيين المصادقة الثنائية",
             Body = $"An administrator reset 2FA on your account. Reason: {request.Reason}",
@@ -146,7 +146,7 @@ internal sealed class AdminAccountService(
             Severity = NotificationSeverity.Warning,
             SendEmail = true,
             PreRenderedEmailHtml = NotificationEmailTemplates.Render(
-                "Account.TwoFactorReset", "en", resetTokens),
+                NotificationKind.AccountTwoFactorReset, "en", resetTokens),
         }, cancellationToken);
 
         await auditLog.WriteAsync(
@@ -549,7 +549,7 @@ internal sealed class AdminAccountService(
         await notifications.DispatchAsync(new NotificationRequest
         {
             UserId = subject.Id,
-            Kind = "Account.Approved",
+            Kind = NotificationKind.AccountApproved,
             Title = "Your SIMF account is approved",
             TitleArabic = "تم اعتماد حسابك في SIMF",
             Body = $"Your event QR id is {profile.QrId}. Sign in to view it on your profile.",
@@ -557,7 +557,7 @@ internal sealed class AdminAccountService(
             Severity = NotificationSeverity.Success,
             SendEmail = true,
             PreRenderedEmailHtml = NotificationEmailTemplates.Render(
-                "Account.Approved", "en", approvedTokens),
+                NotificationKind.AccountApproved, "en", approvedTokens),
         }, cancellationToken);
     }
 
@@ -609,7 +609,7 @@ internal sealed class AdminAccountService(
         await notifications.DispatchAsync(new NotificationRequest
         {
             UserId = subject.Id,
-            Kind = "Account.Rejected",
+            Kind = NotificationKind.AccountRejected,
             Title = "Your SIMF account was not approved",
             TitleArabic = "لم يتم اعتماد حسابك في SIMF",
             Body = $"Reason: {request.Reason}",
@@ -617,7 +617,7 @@ internal sealed class AdminAccountService(
             Severity = NotificationSeverity.Error,
             SendEmail = true,
             PreRenderedEmailHtml = NotificationEmailTemplates.Render(
-                "Account.Rejected", "en", rejectedTokens),
+                NotificationKind.AccountRejected, "en", rejectedTokens),
         }, cancellationToken);
     }
 

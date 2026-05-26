@@ -16,9 +16,16 @@ internal sealed class NotificationConfiguration : IEntityTypeConfiguration<Notif
     {
         builder.HasKey(notification => notification.Id);
 
+        // D-108: NotificationKind enum persisted as its name string.
+        // Existing rows are converted by the data migration in the
+        // matching EF migration (UPDATE FROM the old dot-form values).
         builder.Property(notification => notification.Kind)
+            .HasConversion<string>()
             .HasMaxLength(64)
             .IsRequired();
+
+        // D-108: IsRead is a derived computed accessor — keep it off the table.
+        builder.Ignore(notification => notification.IsRead);
         builder.Property(notification => notification.Title)
             .HasMaxLength(256)
             .IsRequired();

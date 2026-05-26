@@ -23,7 +23,7 @@ public interface INotificationDispatcher
 public sealed class NotificationRequest
 {
     public required Guid UserId { get; init; }
-    public required string Kind { get; init; }
+    public required NotificationKind Kind { get; init; }
     public required string Title { get; init; }
     public required string TitleArabic { get; init; }
     public required string Body { get; init; }

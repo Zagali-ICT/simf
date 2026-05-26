@@ -35,13 +35,14 @@ internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
             .Take(top)
             .Select(row => new NotificationDto(
                 row.Id,
-                row.Kind,
+                row.Kind.ToString(),
                 row.Title,
                 row.TitleArabic,
                 row.Body,
                 row.BodyArabic,
                 row.Severity.ToString(),
                 row.ReadAt,
+                row.ReadAt != null,
                 row.CreatedAt,
                 row.RelatedEntityType,
                 row.RelatedEntityId))

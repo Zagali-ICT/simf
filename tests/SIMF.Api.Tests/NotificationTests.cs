@@ -132,7 +132,7 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
             await dispatcher.DispatchAsync(new NotificationRequest
             {
                 UserId = userId,
-                Kind = "Test.Manual",
+                Kind = NotificationKind.AccountApproved,
                 Title = "Hello",
                 TitleArabic = "مرحباً",
                 Body = "Body en",
@@ -166,7 +166,7 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
         {
             Id = Guid.NewGuid(),
             UserId = userId,
-            Kind = "Test.Seed",
+            Kind = NotificationKind.AccountProfileSubmitted,
             Title = title,
             TitleArabic = title,
             Body = "body",

@@ -245,7 +245,7 @@ internal sealed class UserProfileService(
         await notifications.DispatchAsync(new NotificationRequest
         {
             UserId = user.Id,
-            Kind = "Account.ProfileSubmitted",
+            Kind = NotificationKind.AccountProfileSubmitted,
             Title = "Profile submitted — pending approval",
             TitleArabic = "تم إرسال الملف الشخصي — بانتظار الموافقة",
             Body = "Thank you for completing your SIMF profile. An administrator will review your account shortly.",
@@ -253,7 +253,7 @@ internal sealed class UserProfileService(
             Severity = NotificationSeverity.Info,
             SendEmail = true,
             PreRenderedEmailHtml = NotificationEmailTemplates.Render(
-                "Account.ProfileSubmitted", "en", tokens),
+                NotificationKind.AccountProfileSubmitted, "en", tokens),
         }, cancellationToken);
     }
 
@@ -279,7 +279,7 @@ internal sealed class UserProfileService(
             await notifications.DispatchAsync(new NotificationRequest
             {
                 UserId = admin.Id,
-                Kind = "Admin.PendingVisitor",
+                Kind = NotificationKind.AdminPendingVisitor,
                 Title = $"New visitor awaiting approval — {subject.Email}",
                 TitleArabic = $"زائر جديد بانتظار الموافقة — {subject.Email}",
                 Body = $"A new visitor has submitted their profile: {subject.Email}.",
@@ -289,7 +289,7 @@ internal sealed class UserProfileService(
                 RelatedEntityId = subject.Id,
                 SendEmail = true,
                 PreRenderedEmailHtml = NotificationEmailTemplates.Render(
-                    "Admin.PendingVisitor", "en", tokens),
+                    NotificationKind.AdminPendingVisitor, "en", tokens),
             }, cancellationToken);
         }
     }
