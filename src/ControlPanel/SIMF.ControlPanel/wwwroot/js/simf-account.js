@@ -69,6 +69,52 @@ window.simfAccount = {
         return text.length === 0 ? null : JSON.parse(text);
     },
 
+    // Reads the first file from a file input as a base64 data URL.
+    // Returns { ok: true, dataUrl, fileName, mimeType } on success, or
+    // { ok: false, reason } if no file is selected or read fails.
+    // Used by the avatar cropper flow (D-118 follow-up): pick → read →
+    // open SimfImageCropperModal with the data URL.
+    async readFileAsDataUrl(inputId) {
+        const input = document.getElementById(inputId);
+        if (!input || !input.files || input.files.length === 0) {
+            return { ok: false, reason: 'no-file' };
+        }
+        const file = input.files[0];
+        try {
+            const dataUrl = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(file);
+            });
+            return { ok: true, dataUrl, fileName: file.name, mimeType: file.type };
+        } catch {
+            return { ok: false, reason: 'read-failed' };
+        }
+    },
+
+    // POSTs a base64 data URL as a multipart upload to the given endpoint.
+    // The data URL is decoded to bytes client-side and wrapped in a FormData
+    // file part named "file", matching the existing avatar / import upload
+    // contract. Used by the avatar cropper flow after the user confirms a crop.
+    async uploadDataUrl(url, dataUrl, fileName) {
+        try {
+            const response0 = await fetch(dataUrl);
+            const blob = await response0.blob();
+            const form = new FormData();
+            form.append('file', blob, fileName || 'avatar.png');
+            const response = await fetch(url, {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: form,
+            });
+            const text = await response.text();
+            return text.length === 0 ? null : JSON.parse(text);
+        } catch (e) {
+            return { success: false, error: { code: 'AVATAR_UPLOAD_FAILED', message: 'The upload failed.', messageArabic: 'فشل الرفع.' } };
+        }
+    },
+
     // Triggers a click on a hidden file input (used by the SimfDataGrid
     // Import button to open the OS file picker, decision D-044 b).
     triggerFileInput(inputId) {
@@ -76,6 +122,16 @@ window.simfAccount = {
         if (input) {
             input.value = '';     // ensure the same file fires the change event again
             input.click();
+        }
+    },
+
+    // Resets the value on a file input WITHOUT opening the picker again
+    // (D-119 — used by the avatar cropper flow after a successful upload
+    // so picking the same file fires the change event next time).
+    clearFileInput(inputId) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.value = '';
         }
     },
 

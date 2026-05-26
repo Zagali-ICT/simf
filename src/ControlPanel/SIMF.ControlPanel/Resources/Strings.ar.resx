@@ -463,6 +463,10 @@
   <data name="Profile.Avatar.Updated" xml:space="preserve"><value>تم تحديث الصورة الشخصية.</value></data>
   <data name="Profile.Avatar.Removed" xml:space="preserve"><value>تمت إزالة الصورة الشخصية.</value></data>
   <data name="Profile.Avatar.SizeHint" xml:space="preserve"><value>PNG أو JPEG أو WebP، حتى 2 ميغابايت.</value></data>
+  <!-- D-119 — cropper consumer copy. -->
+  <data name="Profile.Avatar.Crop.Title" xml:space="preserve"><value>قص الصورة الرمزية</value></data>
+  <data name="Profile.Avatar.PickFailed" xml:space="preserve"><value>تعذّر قراءة الملف. اختر صورة أخرى من فضلك.</value></data>
+  <data name="Profile.Avatar.UploadFailed" xml:space="preserve"><value>فشل رفع الصورة الرمزية. حاول مرة أخرى.</value></data>
 
   <data name="Auth.Pending.Title" xml:space="preserve"><value>حسابك بانتظار الموافقة</value></data>
   <data name="Auth.Pending.Supporting" xml:space="preserve"><value>يجب أن يوافق المسؤول على حسابك قبل الوصول إلى لوحة التحكم. ستصلك رسالة بريد إلكتروني فور اتخاذ القرار.</value></data>

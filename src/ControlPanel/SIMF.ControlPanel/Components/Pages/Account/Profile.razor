@@ -210,22 +210,17 @@ else
                 }
             </div>
             <p id="avatar-input-hint" class="simf-form__helper">@L["Profile.Avatar.SizeHint"]</p>
-            @* `disabled="@_busy"` would render `disabled="False"` on a plain
-               HTML input — the browser treats any `disabled` attribute as
-               truthy, so the input would be locked even when not busy. The
-               `?? null` pattern makes Blazor omit the attribute when idle. *@
-            @* H13 — D-068: visible <label for> ties the file input to its
-               accessible name. The hint <p> above is linked via
-               aria-describedby so screen readers announce the size cap
-               alongside the picker. *@
+            @* D-119 — picking a file opens the cropper modal directly.
+               The explicit Upload button is gone; the cropper has its own
+               Save action. Picking a new file resets the input so the same
+               file fires the change event again on re-pick. *@
             <label for="avatar-input" class="simf-field__label">@L["Profile.Avatar.Picker"]</label>
             <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp"
                    class="simf-file"
                    aria-describedby="avatar-input-hint"
-                   disabled="@(_busy ? "disabled" : null)" />
+                   disabled="@(_busy ? "disabled" : null)"
+                   @onchange="OnAvatarFilePickedAsync" />
             <div class="simf-form__actions">
-                <SimfButton Type="button" Loading="_busy" LoadingLabel="@L["Profile.Avatar.Upload"]"
-                            OnClick="UploadAvatarAsync">@L["Profile.Avatar.Upload"]</SimfButton>
                 @if (!string.IsNullOrEmpty(_profile.AvatarUrl))
                 {
                     <SimfButton Type="button" Variant="secondary" OnClick="RemoveAvatarAsync"
@@ -235,6 +230,16 @@ else
         </section>
     </div>
 }
+
+@* D-119 — Avatar cropper modal (first SimfImageCropperModal consumer).
+   Opens when the user picks a file; on confirm the cropped 400×400 PNG
+   is uploaded via the existing /account/api/avatar multipart endpoint
+   (no backend change). On cancel the picked file is discarded. *@
+<SimfImageCropperModal Open="_cropperOpen"
+                       ImageUrl="@_cropperImageUrl"
+                       Title="@L["Profile.Avatar.Crop.Title"]"
+                       OnCropped="OnAvatarCroppedAsync"
+                       OnCancel="OnAvatarCropCancelAsync" />
 
 @code {
     private ProfileResponse? _profile;
@@ -246,6 +251,10 @@ else
     private string? _passwordError;
     private string? _avatarError;
     private string? _avatarOk;
+    // D-119 — cropper flow state.
+    private bool _cropperOpen;
+    private string _cropperImageUrl = string.Empty;
+    private string _cropperFileName = "avatar.png";
     private IReadOnlyList<string>? _recoveryCodes;
     private readonly CodeModel _codeModel = new();
     private readonly CodeModel _disableModel = new();
@@ -420,15 +429,45 @@ else
 
     // -- Avatar ---------------------------------------------------------------
 
-    private async Task UploadAvatarAsync()
+    // D-119 — file pick handler. Reads the file as a base64 data URL and
+    // opens the cropper modal. No upload happens yet; the cropper's
+    // OnCropped is what actually POSTs to the API.
+    private async Task OnAvatarFilePickedAsync()
     {
+        _avatarError = null;
+        _avatarOk = null;
+        try
+        {
+            var read = await JS.InvokeAsync<FileReadResult?>(
+                "simfAccount.readFileAsDataUrl", "avatar-input");
+            if (read is null || !read.Ok || string.IsNullOrEmpty(read.DataUrl))
+            {
+                _avatarError = L["Profile.Avatar.PickFailed"];
+                return;
+            }
+            _cropperImageUrl = read.DataUrl;
+            _cropperFileName = string.IsNullOrEmpty(read.FileName) ? "avatar.png" : read.FileName;
+            _cropperOpen = true;
+        }
+        catch
+        {
+            _avatarError = L["Profile.Avatar.PickFailed"];
+        }
+    }
+
+    // D-119 — cropper confirm handler. Receives the cropped 400×400 PNG as
+    // a base64 data URL and uploads it via the existing avatar endpoint.
+    private async Task OnAvatarCroppedAsync(string croppedDataUrl)
+    {
+        _cropperOpen = false;
         _avatarError = null;
         _avatarOk = null;
         _busy = true;
         try
         {
             var envelope = await JS.InvokeAsync<ApiResult<AvatarResponse>>(
-                "simfAccount.uploadFile", "/account/api/avatar", "avatar-input");
+                "simfAccount.uploadDataUrl", "/account/api/avatar",
+                croppedDataUrl, _cropperFileName);
             if (envelope is { Success: true, Data: not null })
             {
                 await LoadProfileAsync();
@@ -436,11 +475,30 @@ else
             }
             else
             {
-                _avatarError = envelope?.Error?.MessageForCurrentCulture();
+                _avatarError = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Profile.Avatar.UploadFailed"];
             }
         }
-        finally { _busy = false; }
+        finally
+        {
+            _busy = false;
+            _cropperImageUrl = string.Empty;
+            // D-119 — clear the file input so picking the same file fires
+            // the change event again. Uses clearFileInput (no click) — calling
+            // triggerFileInput here would re-open the OS picker.
+            await JS.InvokeVoidAsync("simfAccount.clearFileInput", "avatar-input");
+        }
     }
+
+    private Task OnAvatarCropCancelAsync()
+    {
+        _cropperOpen = false;
+        _cropperImageUrl = string.Empty;
+        return Task.CompletedTask;
+    }
+
+    // D-119 — shape of simfAccount.readFileAsDataUrl's JSON response.
+    private sealed record FileReadResult(bool Ok, string? DataUrl, string? FileName, string? MimeType, string? Reason);
 
     private async Task RemoveAvatarAsync()
     {

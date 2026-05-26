@@ -462,6 +462,10 @@
   <data name="Profile.Avatar.Updated" xml:space="preserve"><value>Avatar updated.</value></data>
   <data name="Profile.Avatar.Removed" xml:space="preserve"><value>Avatar removed.</value></data>
   <data name="Profile.Avatar.SizeHint" xml:space="preserve"><value>PNG, JPEG or WebP, up to 2 MB.</value></data>
+  <!-- D-119 — cropper consumer copy. -->
+  <data name="Profile.Avatar.Crop.Title" xml:space="preserve"><value>Crop your avatar</value></data>
+  <data name="Profile.Avatar.PickFailed" xml:space="preserve"><value>The file could not be read. Please pick another image.</value></data>
+  <data name="Profile.Avatar.UploadFailed" xml:space="preserve"><value>The avatar upload failed. Please try again.</value></data>
 
   <data name="Auth.Pending.Title" xml:space="preserve"><value>Your account is waiting for approval</value></data>
   <data name="Auth.Pending.Supporting" xml:space="preserve"><value>An administrator must approve your account before you can access the Control Panel. You will receive an email when the decision is made.</value></data>
