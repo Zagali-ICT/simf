@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SIMF.Application.Email;
 
 namespace SIMF.Infrastructure.Email;
@@ -8,12 +9,23 @@ namespace SIMF.Infrastructure.Email;
 /// Drains the <see cref="EmailQueue"/> and sends each message. A failed send is
 /// logged and does not stop the worker, so one bad address never blocks the
 /// queue (SIMF-SAD-001 Amendment A.2).
+///
+/// <para>D-097: when <see cref="EmailOptions.FailureAlertRecipients"/> is
+/// configured, every send failure also dispatches a short notification email
+/// to the operations distribution list so Support / IT see SMTP outages in
+/// real time without having to tail the OperationLog. The alert email is
+/// fire-and-forget; a recursive failure (the alert ITSELF fails to send)
+/// is logged but does NOT re-trigger another alert — otherwise a sustained
+/// SMTP outage would amplify the queue.</para>
 /// </summary>
 public sealed class EmailBackgroundService(
     EmailQueue queue,
     IEmailSender sender,
+    IOptions<EmailOptions> options,
     ILogger<EmailBackgroundService> logger) : BackgroundService
 {
+    private static readonly char[] RecipientDelimiters = [',', ';', ' ', '\t', '\r', '\n'];
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await foreach (var message in queue.Reader.ReadAllAsync(stoppingToken))
@@ -29,6 +41,51 @@ public sealed class EmailBackgroundService(
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to send email to {Recipient}", message.To);
+                await NotifyFailureAsync(message, ex, stoppingToken);
+            }
+        }
+    }
+
+    private async Task NotifyFailureAsync(
+        EmailMessage failed, Exception cause, CancellationToken cancellationToken)
+    {
+        var recipientsRaw = options.Value.FailureAlertRecipients;
+        if (string.IsNullOrWhiteSpace(recipientsRaw)) { return; }
+
+        var recipients = recipientsRaw
+            .Split(RecipientDelimiters, StringSplitOptions.RemoveEmptyEntries
+                | StringSplitOptions.TrimEntries)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (recipients.Length == 0) { return; }
+
+        var subject = $"[SIMF] Email send failure to {failed.To}";
+        var body =
+            $"<p>An outbound email failed to send.</p>"
+            + $"<p><strong>Recipient:</strong> {System.Net.WebUtility.HtmlEncode(failed.To)}<br/>"
+            + $"<strong>Subject:</strong> {System.Net.WebUtility.HtmlEncode(failed.Subject)}<br/>"
+            + $"<strong>Exception:</strong> {System.Net.WebUtility.HtmlEncode(cause.GetType().Name)}: "
+            + $"{System.Net.WebUtility.HtmlEncode(cause.Message)}</p>"
+            + "<p>Check the SIMF application logs for the full stack trace and the OperationLog "
+            + "for the matching audit row.</p>";
+
+        foreach (var recipient in recipients)
+        {
+            try
+            {
+                await sender.SendAsync(new EmailMessage(recipient, subject, body), cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception alertEx)
+            {
+                // Do NOT recurse — if the alert path itself fails, log and
+                // move on. Otherwise a sustained SMTP outage would amplify
+                // a single failure into one alert per recipient per retry.
+                logger.LogError(alertEx,
+                    "Email failure-alert to {AlertRecipient} also failed", recipient);
             }
         }
     }
