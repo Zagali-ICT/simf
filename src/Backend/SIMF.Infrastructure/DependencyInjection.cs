@@ -107,7 +107,18 @@ public static class DependencyInjection
 
         // R3 — D-076: Application code asks for SimfUser through this
         // repository abstraction; UserManager stays in Infrastructure.
-        services.AddScoped<IUserAccountRepository, UserAccountRepository>();
+        // R3.5 — D-094: the 22-method aggregate is split into five role-
+        // cohesive sub-interfaces. One scoped UserAccountRepository instance
+        // backs all six registrations (the aggregate + the five
+        // sub-interfaces) so the change-tracker scope and per-request state
+        // stay shared — same pattern R2 (D-075) used for AdminAccountService.
+        services.AddScoped<UserAccountRepository>();
+        services.AddScoped<IUserAccountRepository>(sp => sp.GetRequiredService<UserAccountRepository>());
+        services.AddScoped<IUserAccountStore>(sp => sp.GetRequiredService<UserAccountRepository>());
+        services.AddScoped<IUserCredentialStore>(sp => sp.GetRequiredService<UserAccountRepository>());
+        services.AddScoped<IUserLockoutTracker>(sp => sp.GetRequiredService<UserAccountRepository>());
+        services.AddScoped<IUserRoleStore>(sp => sp.GetRequiredService<UserAccountRepository>());
+        services.AddScoped<IUserTwoFactorStore>(sp => sp.GetRequiredService<UserAccountRepository>());
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IAccountCodeRepository, AccountCodeRepository>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
