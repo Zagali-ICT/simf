@@ -23,9 +23,16 @@ public interface IUserExcelService
 }
 
 /// <summary>A row parsed from an import workbook. The row keeps its source
-/// row number so the per-row error report can point a human at the failure.</summary>
+/// row number so the per-row error report can point a human at the failure.
+///
+/// <para>D-113: <see cref="ProfileTypeId"/> is read from an optional
+/// <c>ProfileTypeId</c> header column when the workbook carries one
+/// (the Other-kind import needs it; the Admin-kind import never
+/// emits it). Null when the column is absent or the cell is empty /
+/// unparseable.</para></summary>
 public sealed record UserImportRow(
     int RowNumber,
     string Email,
     string DisplayName,
-    bool IsAdministrator);
+    bool IsAdministrator,
+    Guid? ProfileTypeId = null);

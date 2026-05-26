@@ -73,6 +73,12 @@ public static class ErrorCodes
     // P7c — ProfileTypes lookup validation
     public const string AdminProfileTypeInvalid = "ADMIN_PROFILE_TYPE_INVALID";
 
+    // D-115 — ProfileTypes CRUD (admin lookup management)
+    public const string ProfileTypeNotFound = "PROFILE_TYPE_NOT_FOUND";
+    public const string ProfileTypeInUse = "PROFILE_TYPE_IN_USE";
+    public const string ProfileTypeInvalidUserType = "PROFILE_TYPE_INVALID_USER_TYPE";
+    public const string ProfileTypeNameTaken = "PROFILE_TYPE_NAME_TAKEN";
+
     // User profile — ID document image (D-046 b; P8 kept the wire codes
     // VISITOR_ID_IMAGE_* unchanged so any consumer already mapping them
     // does not break; only the C# symbol name still says "Visitor" today

@@ -1129,6 +1129,316 @@ internal sealed class AdminAccountService(
         return new AdminImportUsersResponse(created, skipped, errors);
     }
 
+    // -- D-113 — type-scoped bulk operations for /admin/visitors/* and
+    //            /admin/others/*. Each method narrows the existing helper
+    //            by SimfUser.UserType so the Admin grid surface above
+    //            stays bit-for-bit unchanged.
+
+    public async Task<AdminBulkDeleteResponse> BulkDeleteUsersByKindAsync(
+        Guid actorUserId,
+        UserType kind,
+        AdminBulkDeleteRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.GetUtcNow();
+        var deleted = 0;
+        var skipped = 0;
+
+        foreach (var targetId in request.Ids)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var target = await accounts.FindByIdAsync(targetId, cancellationToken);
+            if (target is null || target.UserType != kind)
+            {
+                // Wrong-type or missing — audited as the same "not found"
+                // code so a probing admin cannot tell the two apart.
+                await auditLog.WriteAsync(new AuditEntry
+                {
+                    EventType = AuditEvents.AdminUserDeleteFailed,
+                    Outcome = AuditOutcome.Failure,
+                    SubjectUserId = targetId,
+                    ActorUserId = actorUserId,
+                    ErrorCode = ErrorCodes.AdminUserNotFound,
+                    Detail = request.Reason,
+                }, cancellationToken);
+                skipped++;
+                continue;
+            }
+            if (target.Id == actorUserId
+                || await accounts.IsInRoleAsync(target, AdministratorRole))
+            {
+                // Self-delete and Administrator-vs-Administrator are blocked
+                // silently per target — identical guard to the Admin-grid
+                // path so a stray Administrator-roled Visitor / Other in
+                // the batch still can't be deleted via this surface.
+                await auditLog.WriteAsync(new AuditEntry
+                {
+                    EventType = AuditEvents.AdminUserDeleteFailed,
+                    Outcome = AuditOutcome.Failure,
+                    SubjectEmail = target.Email,
+                    SubjectUserId = target.Id,
+                    ActorUserId = actorUserId,
+                    ErrorCode = target.Id == actorUserId
+                        ? ErrorCodes.AdminCannotResetSelf
+                        : ErrorCodes.AdminCannotResetAdministrator,
+                    Detail = request.Reason,
+                }, cancellationToken);
+                skipped++;
+                continue;
+            }
+
+            var success = false;
+            string? failureDetail = null;
+            try
+            {
+                await transactionRunner.ExecuteAsync(async (innerCt) =>
+                {
+                    target.AccountState = AccountState.Disabled;
+                    target.UpdatedAt = now;
+                    var updateResult = await accounts.UpdateAsync(target);
+                    if (!updateResult.Succeeded)
+                    {
+                        failureDetail = string.Join("; ",
+                            updateResult.Errors.Select(error => error.Description));
+                        return;
+                    }
+                    await accounts.UpdateSecurityStampAsync(target);
+                    await refreshTokenRepository.RevokeAllForUserAsync(
+                        target.Id, now, innerCt);
+                    await auditLog.WriteAsync(new AuditEntry
+                    {
+                        EventType = AuditEvents.AdminUserDeleted,
+                        Outcome = AuditOutcome.Success,
+                        SubjectEmail = target.Email,
+                        SubjectUserId = target.Id,
+                        ActorUserId = actorUserId,
+                        Detail = $"kind={kind}; {request.Reason}",
+                    }, innerCt);
+                    success = true;
+                }, cancellationToken);
+            }
+            catch (Exception exception) when (
+                exception is not OperationCanceledException)
+            {
+                failureDetail = exception.Message;
+            }
+
+            if (success)
+            {
+                deleted++;
+            }
+            else
+            {
+                await auditLog.WriteAsync(new AuditEntry
+                {
+                    EventType = AuditEvents.AdminUserDeleteFailed,
+                    Outcome = AuditOutcome.Failure,
+                    SubjectEmail = target.Email,
+                    SubjectUserId = target.Id,
+                    ActorUserId = actorUserId,
+                    ErrorCode = ErrorCodes.InternalError,
+                    Detail = failureDetail ?? "Delete failed without a recorded reason.",
+                }, cancellationToken);
+                skipped++;
+            }
+        }
+
+        logger.LogInformation(
+            "Admin {ActorId} bulk-deleted {Deleted} {Kind} (skipped {Skipped})",
+            actorUserId, deleted, kind, skipped);
+        return new AdminBulkDeleteResponse(deleted, skipped);
+    }
+
+    public async Task<AdminCreateUserResponse> DuplicateUserByKindAsync(
+        Guid actorUserId,
+        UserType kind,
+        AdminDuplicateUserRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var source = await accounts.FindByIdAsync(request.SourceId, cancellationToken);
+        if (source is null || source.UserType != kind)
+        {
+            // 404 for either branch — never reveal "the id exists but is
+            // the wrong type" to the duplicating admin.
+            throw new ApiException(
+                ErrorCodes.AdminUserNotFound, 404,
+                "The source account was not found.",
+                "لم يتم العثور على الحساب المصدر.");
+        }
+        // Source UserType is already proven == kind, so DuplicateUserAsync's
+        // switch lands on the matching CreateXxxAsync without any extra
+        // guarding. Reuses the canonical implementation.
+        return await DuplicateUserAsync(actorUserId, request, cancellationToken);
+    }
+
+    public async Task<byte[]> ExportUsersByKindAsync(
+        Guid actorUserId,
+        UserType kind,
+        AdminExportUsersRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<AdminUserSummary> rows;
+        if (request.Ids.Count > 0)
+        {
+            // Selected-ids path — narrow by both id AND UserType so a
+            // smuggled wrong-type id never appears in the workbook.
+            var idSet = request.Ids.ToHashSet();
+            var adminRoleId = await GetAdministratorRoleIdAsync(cancellationToken);
+            var projected = await dbContext.Users
+                .Where(u => idSet.Contains(u.Id) && u.UserType == kind)
+                .Select(u => new
+                {
+                    u.Id, u.Email, u.DisplayName, u.AccountState,
+                    u.TwoFactorEnabled, u.CreatedAt,
+                    IsAdmin = adminRoleId != null
+                        && dbContext.UserRoles.Any(ur =>
+                            ur.UserId == u.Id && ur.RoleId == adminRoleId),
+                })
+                .ToListAsync(cancellationToken);
+            rows = projected
+                .Select(p => new AdminUserSummary(
+                    p.Id, p.Email ?? string.Empty, p.DisplayName,
+                    p.AccountState.ToString(), p.TwoFactorEnabled, p.IsAdmin,
+                    p.CreatedAt))
+                .ToList();
+        }
+        else
+        {
+            // Whole-result-set path — bounded export of the matching kind.
+            var source = request.Query ?? new GridQuery();
+            var query = new GridQuery
+            {
+                Skip = 0,
+                Top = 5_000,
+                Search = source.Search,
+                Sort = source.Sort,
+                SortDescending = source.SortDescending,
+                Filters = new Dictionary<string, string>(source.Filters),
+            };
+            var page = await ListAccountsAsync(query, kind, cancellationToken);
+            rows = page.Items;
+        }
+
+        var bytes = excel.Export(rows);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AdminUsersExported,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"kind={kind}; count={rows.Count}",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Admin {ActorId} exported {Count} {Kind} to XLSX",
+            actorUserId, rows.Count, kind);
+        return bytes;
+    }
+
+    public async Task<AdminImportUsersResponse> ImportUsersByKindAsync(
+        Guid actorUserId,
+        UserType kind,
+        byte[] xlsx,
+        CancellationToken cancellationToken = default)
+    {
+        if (xlsx is null || xlsx.Length == 0)
+        {
+            throw new ApiException(
+                ErrorCodes.AdminImportEmpty, 400,
+                "An Excel file is required.",
+                "ملف Excel مطلوب.");
+        }
+
+        var rows = excel.Parse(xlsx);
+        var errors = new List<AdminImportError>();
+        var created = 0;
+        var skipped = 0;
+
+        foreach (var row in rows)
+        {
+            if (string.IsNullOrWhiteSpace(row.Email) || !row.Email.Contains('@'))
+            {
+                errors.Add(new AdminImportError(row.RowNumber, row.Email,
+                    "The email address is missing or invalid."));
+                skipped++;
+                continue;
+            }
+            if (string.IsNullOrWhiteSpace(row.DisplayName))
+            {
+                errors.Add(new AdminImportError(row.RowNumber, row.Email,
+                    "The display name is missing."));
+                skipped++;
+                continue;
+            }
+            // D-113 — Other rows require a parseable ProfileTypeId in the
+            // sheet (matches the AdminCreateOtherRequest validator). Visitor
+            // rows accept a null ProfileTypeId (the tier is optional).
+            if (kind == UserType.Other && row.ProfileTypeId is null)
+            {
+                errors.Add(new AdminImportError(row.RowNumber, row.Email,
+                    "A ProfileTypeId is required for an Other-kind import."));
+                skipped++;
+                continue;
+            }
+
+            try
+            {
+                if (kind == UserType.Visitor)
+                {
+                    await CreateVisitorAsync(actorUserId,
+                        new AdminCreateVisitorRequest
+                        {
+                            Email = row.Email,
+                            DisplayName = row.DisplayName,
+                            ProfileTypeId = row.ProfileTypeId,
+                        },
+                        cancellationToken);
+                }
+                else
+                {
+                    // Other — ProfileTypeId is non-null per the guard above.
+                    await CreateOtherAsync(actorUserId,
+                        new AdminCreateOtherRequest
+                        {
+                            Email = row.Email,
+                            DisplayName = row.DisplayName,
+                            ProfileTypeId = row.ProfileTypeId!.Value,
+                        },
+                        cancellationToken);
+                }
+                created++;
+            }
+            catch (ApiException exception)
+                when (exception.Code == ErrorCodes.AdminEmailAlreadyRegistered)
+            {
+                errors.Add(new AdminImportError(row.RowNumber, row.Email,
+                    "An account with this email already exists."));
+                skipped++;
+            }
+            catch (ApiException exception)
+                when (exception.Code == ErrorCodes.AdminProfileTypeInvalid)
+            {
+                errors.Add(new AdminImportError(row.RowNumber, row.Email,
+                    "The selected profile type is not valid for this user type."));
+                skipped++;
+            }
+        }
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AdminUsersImported,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"kind={kind}; created={created}; skipped={skipped}",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Admin {ActorId} imported {Created} {Kind} from XLSX (skipped {Skipped})",
+            actorUserId, created, kind, skipped);
+        return new AdminImportUsersResponse(created, skipped, errors);
+    }
+
     private Task AuditFailure(
         Guid actorUserId, string email, Guid? targetUserId, string errorCode,
         CancellationToken cancellationToken) =>

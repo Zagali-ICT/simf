@@ -92,6 +92,11 @@ public static class AuditEvents
     public const string InterestUpdated = "Interest.Updated";
     public const string InterestDeactivated = "Interest.Deactivated";
 
+    // ProfileTypes admin CRUD (D-115)
+    public const string ProfileTypeCreated = "ProfileType.Created";
+    public const string ProfileTypeUpdated = "ProfileType.Updated";
+    public const string ProfileTypeDeactivated = "ProfileType.Deactivated";
+
     // Logs (P6 — per-project log files + CP viewer)
     public const string AdminLogViewed = "Admin.LogViewed";
     public const string AdminLogDownloaded = "Admin.LogDownloaded";

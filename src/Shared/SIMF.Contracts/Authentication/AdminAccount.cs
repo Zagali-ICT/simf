@@ -206,3 +206,41 @@ public sealed record AdminProfileTypeSummary(
     string PageColor,
     string UserType,
     bool IsActive);
+
+/// <summary>
+/// D-115 — body of <c>POST /api/v1/admin/profile-types</c>. Creates a
+/// new ProfileType row scoped to a single <see cref="UserType"/>
+/// (Visitor or Other today; Admin is rejected since admins don't carry
+/// a profile type). Per-UserType name uniqueness is enforced
+/// server-side (case-insensitive).
+/// </summary>
+public sealed class AdminCreateProfileTypeRequest
+{
+    /// <summary>"Visitor" or "Other". Any other value returns 400.</summary>
+    public string UserType { get; set; } = string.Empty;
+
+    /// <summary>English display name (1-128 chars; unique per UserType).</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Arabic display name (1-128 chars).</summary>
+    public string NameArabic { get; set; } = string.Empty;
+
+    /// <summary>App badge / picker colour — hex like "#FFD700" or a CSS variable (1-32 chars).</summary>
+    public string PageColor { get; set; } = string.Empty;
+
+    /// <summary>Whether the row is visible in pickers from the moment of creation. Default true.</summary>
+    public bool IsActive { get; set; } = true;
+}
+
+/// <summary>
+/// D-115 — body of <c>PUT /api/v1/admin/profile-types/{id}</c>. Mutates
+/// every field except <c>UserType</c> — a profile type cannot migrate
+/// between Visitor and Other after creation (decisions log).
+/// </summary>
+public sealed class AdminUpdateProfileTypeRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
+    public string PageColor { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+}

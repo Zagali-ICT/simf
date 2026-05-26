@@ -118,6 +118,24 @@ internal sealed class ClosedXmlUserExcelService : IUserExcelService
                     "يجب أن يبدأ رأس المصنف بـ Email ثم DisplayName.");
             }
 
+            // D-113: locate an optional ProfileTypeId column for the
+            // Visitor / Other imports; -1 means the workbook has none
+            // (e.g. the Admin import, which has never carried it).
+            var profileTypeColumn = -1;
+            var headerRow = sheet.Row(1);
+            var lastHeaderColumn = headerRow.LastCellUsed()?.Address.ColumnNumber ?? 0;
+            for (var c = 1; c <= lastHeaderColumn; c++)
+            {
+                if (string.Equals(
+                    sheet.Cell(1, c).GetString().Trim(),
+                    "ProfileTypeId",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    profileTypeColumn = c;
+                    break;
+                }
+            }
+
             var rows = new List<UserImportRow>();
             var lastRow = sheet.LastRowUsed();
             if (lastRow is null) return rows;
@@ -139,9 +157,19 @@ internal sealed class ClosedXmlUserExcelService : IUserExcelService
                 {
                     continue;   // blank row — skip silently
                 }
+                Guid? profileTypeId = null;
+                if (profileTypeColumn > 0)
+                {
+                    var raw = sheet.Cell(r, profileTypeColumn).GetString().Trim();
+                    if (raw.Length > 0 && Guid.TryParse(raw, out var parsed))
+                    {
+                        profileTypeId = parsed;
+                    }
+                }
                 rows.Add(new UserImportRow(
                     r, email, name,
-                    string.Equals(roleCell, "Administrator", StringComparison.OrdinalIgnoreCase)));
+                    string.Equals(roleCell, "Administrator", StringComparison.OrdinalIgnoreCase),
+                    profileTypeId));
             }
             return rows;
         }
