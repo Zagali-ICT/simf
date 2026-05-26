@@ -1406,7 +1406,7 @@ body.simf-modal-open { overflow: hidden; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap; /* D-112 — accommodate added page-label + size-selector children */
+  flex-wrap: wrap; /* D-117 — accommodate added page-label + size-selector children */
   gap: var(--space-3);
   padding-block-start: var(--space-4);
   margin-block-start: var(--space-3);
@@ -1818,7 +1818,7 @@ body.simf-modal-open { overflow: hidden; }
 .simf-bell__item time { color: var(--color-text-muted); font-size: var(--font-size-caption); }
 
 /* ===========================================================================
-   D-112 — SimfBanner
+   D-117 — SimfBanner
    High-emphasis page-top banner; sits beside SimfPageHeader. Tinted surface
    + leading accent rule. Title typography matches SimfPageHeader so the
    visual reads identically while the container reads as a banner.
@@ -1869,7 +1869,7 @@ body.simf-modal-open { overflow: hidden; }
 }
 
 /* ===========================================================================
-   D-112 — Full pager (First / Prev / numbered / Next / Last + page-size)
+   D-117 — Full pager (First / Prev / numbered / Next / Last + page-size)
    Extends the existing .simf-grid__pager block at line 1405.
    ========================================================================= */
 .simf-grid__pager-page {
@@ -1947,7 +1947,7 @@ body.simf-modal-open { overflow: hidden; }
 }
 
 /* ===========================================================================
-   D-112 — Description list used by the Details modal.
+   D-117 — Description list used by the Details modal.
    Lightweight two-column key/value layout; tokens only.
    ========================================================================= */
 .simf-dl {
@@ -1975,7 +1975,7 @@ body.simf-modal-open { overflow: hidden; }
 }
 
 /* ===========================================================================
-   D-112 — Q-E: Logs viewer 2-row layout.
+   D-117 — Q-E: Logs viewer 2-row layout.
    Row 1 = filters (Project / File / Lines + Auto-refresh).
    Row 2 = action buttons (Refresh / Download). Group-aligned.
    ========================================================================= */

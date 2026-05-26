@@ -341,7 +341,7 @@
              @oncontextmenu:preventDefault></div>
     }
 
-    @* D-112 — full pager: First / Prev / numbered pages / Next / Last + page-size selector + "Page X of Y" summary. *@
+    @* D-117 — full pager: First / Prev / numbered pages / Next / Last + page-size selector + "Page X of Y" summary. *@
     <div class="simf-grid__pager">
         <span class="simf-grid__pager-summary">@RenderSummary()</span>
         <div class="simf-grid__pager-page">@RenderPageLabel()</div>
@@ -461,7 +461,7 @@
     /// <summary>Delete one row (per-row button + context menu).</summary>
     [Parameter] public EventCallback<TItem> OnDeleteOne { get; set; }
 
-    /// <summary>Show read-only details for one row (per-row button + context menu). D-112.</summary>
+    /// <summary>Show read-only details for one row (per-row button + context menu). D-117.</summary>
     [Parameter] public EventCallback<TItem> OnDetailsOne { get; set; }
 
     /// <summary>Copy the selected rows (writes to the system clipboard as JSON).</summary>
@@ -505,7 +505,7 @@
     [Parameter] public string ImportLabel { get; set; } = "Import";
     [Parameter] public string ExportLabel { get; set; } = "Export";
 
-    /// <summary>The page-size options shown in the pager. D-112.</summary>
+    /// <summary>The page-size options shown in the pager. D-117.</summary>
     [Parameter] public IReadOnlyList<int> PageSizeOptions { get; set; } = new[] { 10, 20, 50, 100 };
 
     /// <summary>The pager summary template — receives (from, to, total). Defaults
@@ -513,7 +513,7 @@
     [Parameter] public Func<int, int, int, string> SummaryFormatter { get; set; } =
         (from, to, total) => $"{from}-{to} of {total}";
 
-    /// <summary>The pager "Page X of Y" formatter — receives (current, total). D-112.</summary>
+    /// <summary>The pager "Page X of Y" formatter — receives (current, total). D-117.</summary>
     [Parameter] public Func<int, int, string> PageFormatter { get; set; } =
         (current, total) => $"Page {current} of {total}";
 
@@ -737,7 +737,7 @@
         await OnQueryChanged.InvokeAsync(next);
     }
 
-    // -- Full pager (D-112) ----------------------------------------------------
+    // -- Full pager (D-117) ----------------------------------------------------
 
     private int CurrentPage
     {

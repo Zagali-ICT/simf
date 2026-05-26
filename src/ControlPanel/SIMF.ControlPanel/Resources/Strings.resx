@@ -222,7 +222,7 @@
   <data name="Admin.Users.Import.Close" xml:space="preserve"><value>Close</value></data>
   <data name="Admin.Users.Import.Picker" xml:space="preserve"><value>Choose Excel file to import</value></data>
 
-  <!-- D-112 — Add/Edit/Details modals + full pager + Details row action -->
+  <!-- D-117 — Add/Edit/Details modals + full pager + Details row action -->
   <data name="Admin.Users.Action.Details" xml:space="preserve"><value>Details</value></data>
   <data name="Admin.Users.Add.Title" xml:space="preserve"><value>Add user</value></data>
   <data name="Admin.Users.Add.Close" xml:space="preserve"><value>Close</value></data>

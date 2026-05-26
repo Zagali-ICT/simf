@@ -8,7 +8,7 @@
 | **Working branch** | `feature/login-api` (current) |
 | **Baseline commit** | `f17799b` (post D-111) |
 | **Frozen surface respected** | D-110 — schema + enum names + migration history |
-| **Decision-log entry to be added on commit** | **D-112** |
+| **Decision-log entry to be added on commit** | **D-117** |
 
 ---
 
@@ -49,7 +49,7 @@ A controlled out-of-scope note from the owner: a **generic CRUD API** will be sp
 | `dotnet build -c Release` must pass with 0 warnings, 0 errors after edits | Global CLAUDE.md §9 |
 | One commit per finished change; no push | Global CLAUDE.md §17 |
 | Add a `// Tests:` header where backend behaviour changes | Global CLAUDE.md §3 — N/A here (UI-only) |
-| Decision/Assumption log entry required | Global CLAUDE.md §17 — D-112 |
+| Decision/Assumption log entry required | Global CLAUDE.md §17 — D-117 |
 | Per-file Risk tag in plan | Global CLAUDE.md §17 |
 | Before/after `git status --porcelain` shown | Global CLAUDE.md §17 |
 | Run `simplify` skill on changed files before final commit | Global CLAUDE.md §17 |
@@ -133,7 +133,7 @@ The icon set in [SimfIcon.razor](../src/Shared/SIMF.Components/SimfIcon.razor) i
 | 6 | [src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CreateUser.razor](../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/CreateUser.razor) | Replace the inline `<EditForm>` block with `<CreateAdminForm OnSuccess="…" OnCancel="…" />`. URL `/admin/admins/new` stays. | `none` (URL preserved) |
 | 7 | [src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/UsersList.razor](../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/UsersList.razor) | (a) `<SimfPageHeader>` → `<SimfBanner Title="@L[\"Admin.Users.Title\"]" />`. (b) `OnAddAsync` opens modal hosting `<CreateAdminForm>` (no `Nav.NavigateTo`). (c) Wire `OnEditOne` to a stub modal showing `Admin.Users.Edit.NotYet`. (d) Add per-row Details action via `RowActions` slot → read-only modal. (e) Pass new pager-label parameters. | `breaking` (UX change for Add — `/admin/admins/new` fallback preserves deep-link) |
 | 8 | [src/ControlPanel/SIMF.ControlPanel/Resources/Strings.resx](../src/ControlPanel/SIMF.ControlPanel/Resources/Strings.resx) + [Strings.ar.resx](../src/ControlPanel/SIMF.ControlPanel/Resources/Strings.ar.resx) | Add **in both**: `Admin.Users.Action.Details`, `Admin.Users.Add.Title`, `Admin.Users.Edit.Title`, `Admin.Users.Edit.NotYet`, `Admin.Users.Edit.Close`, `Admin.Users.Details.Title`, `Admin.Users.Details.Close`, `Admin.Users.Pager.First`, `Admin.Users.Pager.Last`, `Admin.Users.Pager.PageSize`, `Admin.Users.Pager.Page` (`"Page {0} of {1}"`). | `none` |
-| 9 | [docs/decisions/DECISIONS_LOG.md](decisions/DECISIONS_LOG.md) | New entry **D-112** capturing all five decisions and the Edit-stub deferral. | `none` |
+| 9 | [docs/decisions/DECISIONS_LOG.md](decisions/DECISIONS_LOG.md) | New entry **D-117** capturing all five decisions and the Edit-stub deferral. | `none` |
 | 10 | `docs/dev/SIMF_TABLE_PATTERN.md` *(new)* | One-pager: "The canonical CRUD list page is `UsersList.razor`. Copy its wiring." | `none` |
 
 **Total new files:** 3 (`SimfBanner.razor`, `CreateAdminForm.razor`, `SIMF_TABLE_PATTERN.md`).
@@ -167,9 +167,9 @@ The icon set in [SimfIcon.razor](../src/Shared/SIMF.Components/SimfIcon.razor) i
 10. **Item #7** — update `UsersList.razor` (banner, Add modal, Edit stub, Details modal, pager labels). Build.
 11. **Verification.** Run `dotnet build -c Release` — must pass with 0 warnings, 0 errors. Launch the CP, sign in as Administrator, open `/admin/admins`, and exercise: full pager (First/Prev/numbers/Next/Last + page size), Add modal, Edit stub modal, Details modal, deep-link `/admin/admins/new` still resolves to the form. Capture a fresh screenshot under `docs/screenshots/`.
 12. **Simplify pass.** Run the `simplify` skill on each changed file; address what it surfaces.
-13. **Items #9–#10.** Write decision log entry **D-112** and the pattern doc.
+13. **Items #9–#10.** Write decision log entry **D-117** and the pattern doc.
 14. **Final `git status --porcelain`.** Every changed file must appear in §5; nothing else. If anything unexpected is present, stop and report.
-15. **Commit.** One commit, clear message: `feat: D-112 — canonical CRUD grid (SimfBanner + full pager + correct icons + Add/Edit/Details modals)`. **Do not push.**
+15. **Commit.** One commit, clear message: `feat: D-117 — canonical CRUD grid (SimfBanner + full pager + correct icons + Add/Edit/Details modals)`. **Do not push.**
 
 ---
 
@@ -184,7 +184,7 @@ The icon set in [SimfIcon.razor](../src/Shared/SIMF.Components/SimfIcon.razor) i
 - [ ] Direct navigation to `/admin/admins/new` still resolves to a working create-user page.
 - [ ] `dotnet build -c Release` is **0 warnings, 0 errors**.
 - [ ] Final `git status --porcelain` lists only files in §5.
-- [ ] D-112 added to `docs/decisions/DECISIONS_LOG.md`; pattern doc created.
+- [ ] D-117 added to `docs/decisions/DECISIONS_LOG.md`; pattern doc created.
 
 ---
 
@@ -200,9 +200,9 @@ The icon set in [SimfIcon.razor](../src/Shared/SIMF.Components/SimfIcon.razor) i
 
 ---
 
-## 10. Decision log entry to add (D-112) — draft text
+## 10. Decision log entry to add (D-117) — draft text
 
-> **D-112 — Canonical CRUD grid: SimfBanner + full pager + correct icons + Add/Edit/Details modals**
+> **D-117 — Canonical CRUD grid: SimfBanner + full pager + correct icons + Add/Edit/Details modals**
 >
 > The admin/admins page is promoted to the canonical CRUD list pattern. `SimfDataGrid` stays the single grid for every CRUD page. The toolbar and per-row icon set is corrected (additively — no rename of existing icon names). The pager gains First / numbered / Last + page-size. A new `SimfBanner` primitive is added beside `SimfPageHeader` (both retained; banner is parameterised — no hardcoded label). Add / Edit / Details now open as `SimfModal` overlays on the list page; `/admin/admins/new` is preserved as a deep-link fallback. Edit is wired to a stub modal awaiting the **generic CRUD API** (separate plan).
 
@@ -312,7 +312,7 @@ The icon set in [SimfIcon.razor](../src/Shared/SIMF.Components/SimfIcon.razor) i
 | `SIMF.Api.Tests/AdminProfileTypeTests.cs` *(new)* | CRUD happy-path + 403 for non-admin + uniqueness regression. | `none` |
 | `DECISIONS_LOG.md` | D-115 — Profile-types CRUD endpoints + page. | `none` |
 
-**This item is the biggest in the batch** — likely a sprint on its own. I'd suggest doing it **after** §5 (the D-112 batch) so the canonical grid pattern is in before we copy it three more times.
+**This item is the biggest in the batch** — likely a sprint on its own. I'd suggest doing it **after** §5 (the D-117 batch) so the canonical grid pattern is in before we copy it three more times.
 
 ---
 
@@ -352,11 +352,11 @@ The icon set in [SimfIcon.razor](../src/Shared/SIMF.Components/SimfIcon.razor) i
 ## 11A. Dependencies and recommended ordering
 
 ```
-§5 (D-112)  ──► 11.1 (logs CSS)         ──► 11.2 (visitors/others toolbar)  ──► 11.4 (profile types)
+§5 (D-117)  ──► 11.1 (logs CSS)         ──► 11.2 (visitors/others toolbar)  ──► 11.4 (profile types)
                                           │
                                           └──► 11.3 (approve confirm + profile preview)
 
-§5 (D-112)  ──► 11.5 (Cropper.Blazor)    ──► [Account avatar flow]
+§5 (D-117)  ──► 11.5 (Cropper.Blazor)    ──► [Account avatar flow]
 ```
 
 - §5 must land first — every other item reuses `SimfBanner`, the corrected icons, the full pager, and the modal pattern.

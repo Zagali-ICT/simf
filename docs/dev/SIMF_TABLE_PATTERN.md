@@ -2,7 +2,7 @@
 
 | | |
 |--|--|
-| **Authority** | Decision D-112 (2026-05-26) |
+| **Authority** | Decision D-117 (2026-05-26) |
 | **Gold-standard reference** | [`UsersList.razor`](../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/UsersList.razor) |
 | **Component used** | [`SimfDataGrid`](../../src/Shared/SIMF.Components/Forms/SimfDataGrid.razor) |
 | **Status** | Active |
@@ -20,7 +20,7 @@ A Control Panel where every list page looks and behaves the same is faster to
 learn, faster to test, and faster to ship. SIMF spent enough sessions
 re-deriving toolbar layouts, pager controls, and modal patterns across
 admins / visitors / others / interests that the cost of fragmentation was
-visible. D-112 ends that.
+visible. D-117 ends that.
 
 ## 2. The seven pieces every list page must have
 

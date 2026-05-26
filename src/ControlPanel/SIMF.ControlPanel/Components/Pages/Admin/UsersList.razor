@@ -1,5 +1,5 @@
 @* Control Panel — list every account (decisions D-042, D-044, hardened in
-   D-045 H1, promoted to canonical CRUD pattern in D-112). Administrator
+   D-045 H1, promoted to canonical CRUD pattern in D-117). Administrator
    only. Uses SimfDataGrid with the full myComment #16 spec, the new
    correct icon set, the full pager (First/Prev/numbered/Next/Last +
    page-size), the SimfBanner page-top, and modal-based Add / Edit /
@@ -132,7 +132,7 @@
        aria-label="@L["Admin.Users.Import.Picker"]"
        @onchange="OnImportFileSelectedAsync" />
 
-@* D-112 — Add user modal (replaces navigation to /admin/admins/new). *@
+@* D-117 — Add user modal (replaces navigation to /admin/admins/new). *@
 @if (_addOpen)
 {
     <SimfModal Open="true" Title="@L["Admin.Users.Add.Title"]" OnClose="@(() => _addOpen = false)">
@@ -144,7 +144,7 @@
     </SimfModal>
 }
 
-@* D-112 — Edit stub modal (real Edit ships with the User Management module). *@
+@* D-117 — Edit stub modal (real Edit ships with the User Management module). *@
 @if (_editOpen)
 {
     <SimfModal Open="true" Title="@L["Admin.Users.Edit.Title"]" OnClose="@(() => _editOpen = false)">
@@ -159,7 +159,7 @@
     </SimfModal>
 }
 
-@* D-112 — Details modal (read-only view of the row's data — no extra fetch). *@
+@* D-117 — Details modal (read-only view of the row's data — no extra fetch). *@
 @if (_detailsTarget is not null)
 {
     <SimfModal Open="true"
@@ -276,13 +276,13 @@
     private bool _loading;
     private bool _busy;
 
-    // D-112 — Add modal state (replaces navigation to /admin/admins/new).
+    // D-117 — Add modal state (replaces navigation to /admin/admins/new).
     private bool _addOpen;
 
-    // D-112 — Edit stub modal state (real Edit awaits User Management module).
+    // D-117 — Edit stub modal state (real Edit awaits User Management module).
     private bool _editOpen;
 
-    // D-112 — Details modal state. Read-only view of the row's data.
+    // D-117 — Details modal state. Read-only view of the row's data.
     private AdminUserSummary? _detailsTarget;
 
     // Bulk-delete modal state
@@ -339,7 +339,7 @@
 
     private Task OnEditAsync(AdminUserSummary _)
     {
-        // D-112 — Edit is wired but stubbed; real edit ships with User Management.
+        // D-117 — Edit is wired but stubbed; real edit ships with User Management.
         _editOpen = true;
         return Task.CompletedTask;
     }

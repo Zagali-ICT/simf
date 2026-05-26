@@ -223,7 +223,7 @@
   <data name="Admin.Users.Import.Close" xml:space="preserve"><value>إغلاق</value></data>
   <data name="Admin.Users.Import.Picker" xml:space="preserve"><value>اختر ملف Excel للاستيراد</value></data>
 
-  <!-- D-112 — Add/Edit/Details modals + full pager + Details row action -->
+  <!-- D-117 — Add/Edit/Details modals + full pager + Details row action -->
   <data name="Admin.Users.Action.Details" xml:space="preserve"><value>التفاصيل</value></data>
   <data name="Admin.Users.Add.Title" xml:space="preserve"><value>إضافة مستخدم</value></data>
   <data name="Admin.Users.Add.Close" xml:space="preserve"><value>إغلاق</value></data>
