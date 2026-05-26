@@ -23,10 +23,13 @@ public sealed class SimfAccountClient(HttpClient http)
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    /// <summary>Returns the signed-in user's profile.</summary>
+    /// <summary>Returns the signed-in user's account profile (id, email,
+    /// display name, avatar, 2FA flag, roles). Not to be confused with the
+    /// visitor-onboarding "user-profile" surface (Arabic/English name,
+    /// nationality, ID image, etc.) at <c>account/user-profile</c>.</summary>
     public Task<ApiCallResult<ProfileResponse>> GetProfileAsync(
         string accessToken, CancellationToken cancellationToken = default) =>
-        SendAsync<ProfileResponse>(HttpMethod.Get, "account/user-profile", null, accessToken, cancellationToken);
+        SendAsync<ProfileResponse>(HttpMethod.Get, "account/profile", null, accessToken, cancellationToken);
 
     /// <summary>Begins authenticator-app enrolment — returns the secret, otpauth URI and QR.</summary>
     public Task<ApiCallResult<TotpSetupResponse>> TotpSetupAsync(
@@ -42,6 +45,19 @@ public sealed class SimfAccountClient(HttpClient http)
     public Task<ApiCallResult<TotpSetupResponse>> TotpPairingAsync(
         string accessToken, CancellationToken cancellationToken = default) =>
         SendAsync<TotpSetupResponse>(HttpMethod.Get, "auth/totp/pairing", null, accessToken, cancellationToken);
+
+    /// <summary>
+    /// D-102: verifies a code against the user's active authenticator
+    /// secret without mutating state (no replay-guard, no flag, no audit).
+    /// Used by the <c>/account/totp-pairing</c> page to confirm a scan
+    /// succeeded.
+    /// </summary>
+    public Task<ApiCallResult<TotpPairingVerifyResponse>> TotpPairingVerifyAsync(
+        TotpConfirmRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<TotpPairingVerifyResponse>(
+            HttpMethod.Post, "auth/totp/pairing/verify",
+            JsonContent.Create(request, options: JsonOptions), accessToken, cancellationToken);
 
     /// <summary>Confirms TOTP enrolment with a first valid code.</summary>
     public Task<ApiCallResult<TotpConfirmResponse>> TotpConfirmAsync(

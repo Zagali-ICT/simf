@@ -3,6 +3,7 @@
    my avatar. Every action goes through CP-side proxy endpoints
    (/account/api/…) so the access token never reaches the page. *@
 @page "/account/profile"
+@layout CpShellLayout
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 @inject NavigationManager Nav

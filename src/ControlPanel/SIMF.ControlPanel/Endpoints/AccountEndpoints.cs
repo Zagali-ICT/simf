@@ -49,6 +49,15 @@ internal static class AccountEndpoints
             return Forward(await api.TotpPairingAsync(token));
         });
 
+        // D-102: verifies a code against the active secret without mutating state.
+        group.MapPost("/totp/pairing/verify",
+            async (TotpConfirmRequest body, HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.TotpPairingVerifyAsync(body, token));
+        });
+
         group.MapPost("/totp/confirm",
             async (TotpConfirmRequest body, HttpContext http, SimfAccountClient api) =>
         {

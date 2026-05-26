@@ -8,7 +8,6 @@ using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.IdentityAccess;
-using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -449,8 +448,8 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Guid userId;
         using (var scope = _factory.Services.CreateScope())
         {
-            var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
-            var user = new IdentitySimfUser
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
             {
                 UserName = email,
                 Email = email,
@@ -523,8 +522,8 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Guid userId;
         using (var scope = _factory.Services.CreateScope())
         {
-            var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
-            var user = new IdentitySimfUser
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
             {
                 UserName = email,
                 Email = email,

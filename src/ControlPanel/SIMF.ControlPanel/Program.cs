@@ -30,7 +30,10 @@ builder.Host.UseSerilog((context, configuration) =>
 // render diff on the /account/profile page — raise to 256 KB, which
 // comfortably fits the QR and any future large server-rendered payload.
 builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents()
+    .AddInteractiveServerComponents(options =>
+    {
+        options.DetailedErrors = builder.Environment.IsDevelopment();
+    })
     .AddHubOptions(options =>
     {
         options.MaximumReceiveMessageSize = 256 * 1024;

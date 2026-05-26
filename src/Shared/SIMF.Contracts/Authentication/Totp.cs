@@ -28,6 +28,9 @@ public sealed record TotpConfirmResponse(
     bool TwoFactorEnabled,
     IReadOnlyList<string> RecoveryCodes);
 
+/// <summary>D-102: the body of <c>POST /api/v1/auth/totp/pairing/verify</c>.</summary>
+public sealed record TotpPairingVerifyResponse(bool Valid);
+
 /// <summary>The body of <c>POST /api/v1/auth/totp/disable</c>.</summary>
 public sealed class TotpDisableRequest
 {

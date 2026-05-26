@@ -5,7 +5,7 @@
 namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 {
     /// <inheritdoc />
-    public partial class R5aRebindUserEntityToIdentitySimfUser : Migration
+    public partial class R5Revert : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

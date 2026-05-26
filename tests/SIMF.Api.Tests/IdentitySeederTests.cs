@@ -29,7 +29,7 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
 
         await services.GetRequiredService<IdentitySeeder>().SeedAsync();
 
-        var admin = await services.GetRequiredService<UserManager<IdentitySimfUser>>()
+        var admin = await services.GetRequiredService<UserManager<SimfUser>>()
             .FindByEmailAsync(SuperAdminEmail);
 
         Assert.NotNull(admin);
@@ -42,7 +42,7 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
     public async Task SeedAsync_provisions_the_super_admin_TOTP_secret()
     {
         using var scope = _factory.Services.CreateScope();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
 
         await scope.ServiceProvider.GetRequiredService<IdentitySeeder>().SeedAsync();
 
@@ -74,7 +74,7 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
         await seeder.SeedAsync();
         await seeder.SeedAsync();
 
-        var admin = await scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>()
+        var admin = await scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>()
             .FindByEmailAsync(SuperAdminEmail);
         Assert.NotNull(admin);
     }

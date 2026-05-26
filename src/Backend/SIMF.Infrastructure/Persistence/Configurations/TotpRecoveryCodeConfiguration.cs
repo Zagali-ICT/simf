@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.IdentityAccess;
-using SIMF.Infrastructure.Identity;
 
 namespace SIMF.Infrastructure.Persistence.Configurations;
 
@@ -17,9 +16,7 @@ internal sealed class TotpRecoveryCodeConfiguration : IEntityTypeConfiguration<T
         builder.HasIndex(code => code.UserId);
         builder.HasIndex(code => code.CodeHash);
 
-        // R5a — D-090: FK targets the IdentitySimfUser persistence shim
-        // (see AccountCodeConfiguration for the full rationale).
-        builder.HasOne<IdentitySimfUser>()
+        builder.HasOne<SimfUser>()
             .WithMany()
             .HasForeignKey(code => code.UserId)
             .OnDelete(DeleteBehavior.Cascade);

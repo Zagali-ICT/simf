@@ -3,8 +3,13 @@
    admin (typically the seeded super-admin) whose authenticator device
    was lost or whose initial pairing failed — re-scanning here does NOT
    reset the secret, so existing recovery codes survive and the sign-in
-   flow continues to verify against the same key. *@
+   flow continues to verify against the same key.
+
+   D-102 — the Verify section below confirms the scan worked without
+   mutating state (no replay-guard update), so the user can immediately
+   use the same code (or the next one) to sign in. *@
 @page "/account/totp-pairing"
+@layout CpShellLayout
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 @inject NavigationManager Nav
@@ -40,13 +45,42 @@
         </div>
         <p class="simf-form__helper">@L["TotpPairing.SecretHint"]</p>
         <code class="simf-totp-secret">@_pairing.Secret</code>
+
+        <hr />
+
+        <h2 class="simf-card__title">@L["TotpPairing.VerifyHeading"]</h2>
+        @if (_verifyOk is not null)
+        {
+            <SimfAlert Variant="success">@_verifyOk</SimfAlert>
+        }
+        @if (_verifyError is not null)
+        {
+            <SimfAlert Variant="error">@_verifyError</SimfAlert>
+        }
+        <p>@L["TotpPairing.VerifyInstruction"]</p>
+        <EditForm Model="_codeModel" OnSubmit="VerifyAsync" class="simf-form">
+            <div class="simf-form__fields">
+                <SimfCodeField Label="@L["TotpPairing.CodeLabel"]"
+                               @bind-Value="_codeModel.Code"
+                               Disabled="_verifying" />
+            </div>
+            <div class="simf-form__actions">
+                <SimfButton Loading="_verifying" LoadingLabel="@L["TotpPairing.Verify"]">
+                    @L["TotpPairing.Verify"]
+                </SimfButton>
+            </div>
+        </EditForm>
     }
 </div>
 
 @code {
     private bool _loading = true;
+    private bool _verifying;
     private TotpSetupResponse? _pairing;
     private string? _loadError;
+    private string? _verifyOk;
+    private string? _verifyError;
+    private readonly CodeFormModel _codeModel = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -79,5 +113,45 @@
         {
             _loading = false;
         }
+    }
+
+    private async Task VerifyAsync()
+    {
+        _verifyOk = null;
+        _verifyError = null;
+        _verifying = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<TotpPairingVerifyResponse>>(
+                "simfAccount.postJson", "/account/api/totp/pairing/verify",
+                new TotpConfirmRequest { Code = _codeModel.Code });
+            if (envelope is { Success: true, Data: { Valid: true } })
+            {
+                _verifyOk = L["TotpPairing.VerifySuccess"];
+                _codeModel.Code = string.Empty;
+            }
+            else if (envelope?.Error is not null)
+            {
+                _verifyError = envelope.Error.MessageForCurrentCulture()
+                    ?? L["TotpPairing.VerifyError"];
+            }
+            else
+            {
+                _verifyError = L["TotpPairing.VerifyError"];
+            }
+        }
+        catch
+        {
+            _verifyError = L["TotpPairing.VerifyError"];
+        }
+        finally
+        {
+            _verifying = false;
+        }
+    }
+
+    private sealed class CodeFormModel
+    {
+        public string Code { get; set; } = string.Empty;
     }
 }

@@ -7,7 +7,6 @@ using SIMF.Application.Auditing;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
-using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -589,9 +588,9 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         var email = $"flag-refresh-{Guid.NewGuid():N}@simf.test";
         using (var scope = _factory.Services.CreateScope())
         {
-            var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
             await users.CreateAsync(
-                new IdentitySimfUser
+                new SimfUser
                 {
                     UserName = email, Email = email, EmailConfirmed = true,
                     DisplayName = "Refresh Block Test",
@@ -699,14 +698,14 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         var secret = Base32Encoding.ToString(KeyGeneration.GenerateRandomKey(20));
 
         using var scope = _factory.Services.CreateScope();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentitySimfRole>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
         if (!await roleManager.RoleExistsAsync("Administrator"))
         {
-            await roleManager.CreateAsync(new IdentitySimfRole { Name = "Administrator" });
+            await roleManager.CreateAsync(new SimfRole { Name = "Administrator" });
         }
 
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
-        var user = new IdentitySimfUser
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var user = new SimfUser
         {
             UserName = email,
             Email = email,

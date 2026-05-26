@@ -231,6 +231,25 @@ internal sealed class TotpEnrollmentService(
         return new TotpSetupResponse(activeSecret, otpauthUri, qrSvg);
     }
 
+    public async Task<bool> VerifyPairingAsync(
+        Guid userId,
+        string code,
+        CancellationToken cancellationToken = default)
+    {
+        // D-102: pure verification — no replay-guard mutation, no flag
+        // change, no audit row. The user is confirming a scan, not signing
+        // in; consuming the time-step here would lock them out of the
+        // immediate sign-in attempt.
+        if (string.IsNullOrWhiteSpace(code)) { return false; }
+        var user = await GetUserAsync(userId);
+        var activeSecret = await accounts.GetAuthenticationTokenAsync(
+            user, AuthenticatorProvider, ActiveSecretTokenName, cancellationToken);
+        if (string.IsNullOrWhiteSpace(activeSecret)) { return false; }
+
+        var totp = new Totp(Base32Encoding.ToBytes(activeSecret.Replace(" ", "")));
+        return totp.VerifyTotp(code, out _, new VerificationWindow(previous: 1, future: 1));
+    }
+
     private async Task<SimfUser> GetUserAsync(Guid userId)
     {
         var user = await accounts.FindByIdAsync(userId);

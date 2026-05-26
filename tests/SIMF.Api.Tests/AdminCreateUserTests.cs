@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
-using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -53,7 +52,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         Assert.Equal((int)TimeSpan.FromDays(7).TotalSeconds, body.Data.InviteExpiresInSeconds);
 
         using var scope = _factory.Services.CreateScope();
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
         var created = (await users.FindByEmailAsync(newEmail))!;
         Assert.Equal("Invited User", created.DisplayName);
         // P4 — created accounts land in PendingApproval; an admin approves
@@ -86,7 +85,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
             adminToken);
 
         using var scope = _factory.Services.CreateScope();
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
         var created = (await users.FindByEmailAsync(newEmail))!;
         Assert.True(await users.IsInRoleAsync(created, AdministratorRole));
     }
@@ -253,7 +252,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
             adminToken);
 
         using var scope = _factory.Services.CreateScope();
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
         var created = (await users.FindByEmailAsync(email))!;
         // P4 — QR id minting moved from create-time to approve-time. The
         // QR-mint-on-approve contract is covered by
@@ -329,13 +328,13 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         var email = $"admin-create-{Guid.NewGuid():N}@simf.test";
         using (var scope = _factory.Services.CreateScope())
         {
-            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentitySimfRole>>();
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
             if (!await roles.RoleExistsAsync(AdministratorRole))
             {
-                await roles.CreateAsync(new IdentitySimfRole { Name = AdministratorRole });
+                await roles.CreateAsync(new SimfRole { Name = AdministratorRole });
             }
-            var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
-            var user = new IdentitySimfUser
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
             {
                 UserName = email,
                 Email = email,

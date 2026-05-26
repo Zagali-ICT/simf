@@ -10,7 +10,6 @@ using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Notifications;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Notifications;
-using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -202,8 +201,8 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
     {
         var email = $"other-{Guid.NewGuid():N}@simf.test";
         using var scope = _factory.Services.CreateScope();
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
-        var user = new IdentitySimfUser
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var user = new SimfUser
         {
             UserName = email,
             Email = email,

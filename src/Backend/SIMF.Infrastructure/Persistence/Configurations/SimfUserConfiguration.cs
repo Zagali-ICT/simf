@@ -1,15 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SIMF.Infrastructure.Identity;
+using SIMF.Domain.IdentityAccess;
 
 namespace SIMF.Infrastructure.Persistence.Configurations;
 
-// R5a — D-090: bound to the Infrastructure-owned IdentitySimfUser persistence
-// shim, not the Domain SimfUser. Property names and storage shape are
-// identical, so the AspNetUsers DDL stays unchanged.
-internal sealed class SimfUserConfiguration : IEntityTypeConfiguration<IdentitySimfUser>
+internal sealed class SimfUserConfiguration : IEntityTypeConfiguration<SimfUser>
 {
-    public void Configure(EntityTypeBuilder<IdentitySimfUser> builder)
+    public void Configure(EntityTypeBuilder<SimfUser> builder)
     {
         builder.Property(user => user.DisplayName)
             .HasMaxLength(256)

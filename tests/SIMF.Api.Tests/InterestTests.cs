@@ -9,7 +9,6 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.IdentityAccess;
-using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -211,13 +210,13 @@ public sealed class InterestTests : IClassFixture<SimfApiFactory>
         var email = $"interest-admin-{Guid.NewGuid():N}@simf.test";
         using (var scope = _factory.Services.CreateScope())
         {
-            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentitySimfRole>>();
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
             if (!await roles.RoleExistsAsync(AdministratorRole))
             {
-                await roles.CreateAsync(new IdentitySimfRole { Name = AdministratorRole });
+                await roles.CreateAsync(new SimfRole { Name = AdministratorRole });
             }
-            var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
-            var user = new IdentitySimfUser
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
             {
                 UserName = email,
                 Email = email,

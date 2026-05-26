@@ -4,15 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
 
-  <!--
-    R5g — D-093: Domain has NO third-party dependencies. Pre-R5g this
-    project referenced Microsoft.Extensions.Identity.Stores so SimfUser
-    could inherit IdentityUser<Guid>; R5a + R5f moved the EF-tracked
-    persistence shape into the Infrastructure-owned IdentitySimfUser
-    shim and turned SimfUser into a pure POCO. The dependency is gone.
-    The architectural unit test DomainPurityTests asserts the assembly
-    has no Microsoft.AspNetCore.Identity or Microsoft.EntityFrameworkCore
-    references so a future commit cannot quietly add one back.
-  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="10.0.8" />
+  </ItemGroup>
 
 </Project>

@@ -8,7 +8,6 @@ using SIMF.Contracts.Authentication;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Notifications;
-using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -123,8 +122,8 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
         Guid userId;
         using (var scope = _factory.Services.CreateScope())
         {
-            var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
-            var user = new IdentitySimfUser
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
             {
                 UserName = email,
                 Email = email,
@@ -148,13 +147,13 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
         var email = $"admin-{Guid.NewGuid():N}@simf.test";
         Guid id;
         using var scope = _factory.Services.CreateScope();
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
-        var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentitySimfRole>>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
         if (!await roles.RoleExistsAsync(AdministratorRole))
         {
-            await roles.CreateAsync(new IdentitySimfRole { Name = AdministratorRole });
+            await roles.CreateAsync(new SimfRole { Name = AdministratorRole });
         }
-        var user = new IdentitySimfUser
+        var user = new SimfUser
         {
             UserName = email,
             Email = email,

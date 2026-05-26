@@ -9,7 +9,6 @@ using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.IdentityAccess;
-using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -201,13 +200,13 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
         var adminEmail = $"lifecycle-admin-{Guid.NewGuid():N}@simf.test";
         using (var scope = _factory.Services.CreateScope())
         {
-            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentitySimfRole>>();
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
             if (!await roles.RoleExistsAsync(AppRoles.Administrator))
             {
-                await roles.CreateAsync(new IdentitySimfRole { Name = AppRoles.Administrator });
+                await roles.CreateAsync(new SimfRole { Name = AppRoles.Administrator });
             }
-            var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
-            var user = new IdentitySimfUser
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
             {
                 UserName = adminEmail, Email = adminEmail, EmailConfirmed = true,
                 DisplayName = "Lifecycle Test Admin",

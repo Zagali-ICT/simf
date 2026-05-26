@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.IdentityAccess;
-using SIMF.Infrastructure.Identity;
 
 namespace SIMF.Infrastructure.Persistence.Configurations;
 
@@ -19,11 +18,7 @@ internal sealed class AccountCodeConfiguration : IEntityTypeConfiguration<Accoun
 
         builder.HasIndex(code => new { code.UserId, code.Purpose });
 
-        // R5a — D-090: FK targets the IdentitySimfUser persistence shim
-        // (which now owns the AspNetUsers table) rather than the Domain
-        // SimfUser. Without this, EF discovers SimfUser as a separate
-        // entity and demands a duplicate "SimfUser" table.
-        builder.HasOne<IdentitySimfUser>()
+        builder.HasOne<SimfUser>()
             .WithMany()
             .HasForeignKey(code => code.UserId)
             .OnDelete(DeleteBehavior.Cascade);

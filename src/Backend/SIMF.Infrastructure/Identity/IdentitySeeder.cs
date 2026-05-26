@@ -18,7 +18,7 @@ namespace SIMF.Infrastructure.Identity;
 /// </summary>
 public sealed class IdentitySeeder(
     IUserAccountRepository accounts,
-    RoleManager<IdentitySimfRole> roleManager,
+    RoleManager<SimfRole> roleManager,
     SimfIdentityDbContext dbContext,
     IOptions<SuperAdminOptions> options,
     IAuditLog auditLog,
@@ -73,6 +73,40 @@ public sealed class IdentitySeeder(
             await accounts.UpdateAsync(admin).EnsureSuccessAsync();
         }
 
+        // D-101: idempotently enforce the configured TOTP secret on an
+        // EXISTING admin row. Pre-D-101 the TOTP-setup block was inside
+        // CreateSuperAdminAsync — it only ran on first creation, so an
+        // operator who set SuperAdmin:TotpSecret AFTER the admin row was
+        // created (or who rotated the secret in appsettings) ended up
+        // with a row whose active authenticator key did not match config
+        // and whose TwoFactorEnabled flag was still false. The result was
+        // the owner's "TOTP not working" complaint: sign-in bypassed the
+        // second factor entirely. Compare the active key to config and
+        // re-apply when they differ — the operator's appsettings value
+        // is authoritative.
+        if (!string.IsNullOrWhiteSpace(settings.TotpSecret))
+        {
+            var activeSecret = await accounts.GetAuthenticationTokenAsync(
+                admin, AuthenticatorKeyProvider, AuthenticatorKeyTokenName, cancellationToken);
+            if (!string.Equals(activeSecret, settings.TotpSecret, StringComparison.Ordinal))
+            {
+                await accounts.SetAuthenticationTokenAsync(
+                    admin, AuthenticatorKeyProvider, AuthenticatorKeyTokenName,
+                    settings.TotpSecret, cancellationToken).EnsureSuccessAsync();
+                logger.LogInformation(
+                    "Super-admin TOTP secret re-applied from configuration for {Email}.",
+                    settings.Email);
+            }
+            if (!admin.TwoFactorEnabled)
+            {
+                await accounts.SetTwoFactorEnabledAsync(
+                    admin, true, cancellationToken).EnsureSuccessAsync();
+                logger.LogInformation(
+                    "Super-admin TwoFactorEnabled re-enabled for {Email}.",
+                    settings.Email);
+            }
+        }
+
         // P7 — seed the initial ProfileTypes set so the create / pending
         // pages have non-empty pickers from first boot. The final v1 set
         // is open item OI-6 against SIMF-FDS-002 v2.0 — the owner picks
@@ -91,7 +125,7 @@ public sealed class IdentitySeeder(
     {
         if (!await roleManager.RoleExistsAsync(roleName))
         {
-            await roleManager.CreateAsync(new IdentitySimfRole
+            await roleManager.CreateAsync(new SimfRole
             {
                 Name = roleName,
                 IsBaseline = true,

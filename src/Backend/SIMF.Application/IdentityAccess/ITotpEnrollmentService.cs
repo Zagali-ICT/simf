@@ -52,4 +52,20 @@ public interface ITotpEnrollmentService
     Task<TotpSetupResponse?> GetCurrentPairingAsync(
         Guid userId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// D-102: verifies a code against the user's CURRENT active
+    /// authenticator secret without mutating state — no replay-guard
+    /// update, no flag change, no audit row. Lets the
+    /// <c>/account/totp-pairing</c> page confirm a scan succeeded; the
+    /// same code can immediately be used for sign-in afterwards. Returns
+    /// <c>true</c> when the code is valid for the current time-step (or
+    /// the adjacent ±1 windows). Returns <c>false</c> when the code is
+    /// wrong OR when the account has no active secret (UI should route
+    /// the user to <see cref="SetupAsync"/> in the latter case).
+    /// </summary>
+    Task<bool> VerifyPairingAsync(
+        Guid userId,
+        string code,
+        CancellationToken cancellationToken = default);
 }

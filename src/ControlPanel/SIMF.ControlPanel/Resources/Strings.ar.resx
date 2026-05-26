@@ -357,6 +357,12 @@
   <data name="TotpPairing.GoToProfile" xml:space="preserve"><value>الانتقال إلى الملف الشخصي</value></data>
   <data name="TotpPairing.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
   <data name="TotpPairing.LoadError" xml:space="preserve"><value>تعذّر تحميل رمز QR للإقران.</value></data>
+  <data name="TotpPairing.VerifyHeading" xml:space="preserve"><value>تأكيد المسح</value></data>
+  <data name="TotpPairing.VerifyInstruction" xml:space="preserve"><value>أدخل الرمز المكوّن من ستة أرقام الذي يعرضه تطبيق المصادقة الخاص بك من أجل SIMF لتأكيد نجاح المسح.</value></data>
+  <data name="TotpPairing.CodeLabel" xml:space="preserve"><value>رمز التحقق</value></data>
+  <data name="TotpPairing.Verify" xml:space="preserve"><value>تحقّق</value></data>
+  <data name="TotpPairing.VerifySuccess" xml:space="preserve"><value>تم تأكيد المسح. تطبيق المصادقة الآن مقترن بهذا الحساب.</value></data>
+  <data name="TotpPairing.VerifyError" xml:space="preserve"><value>الرمز غير صحيح. انتظر الرمز التالي وحاول مرة أخرى.</value></data>
 
   <data name="Profile.Password.Title" xml:space="preserve"><value>تغيير كلمة المرور</value></data>
   <data name="Profile.Password.Current" xml:space="preserve"><value>كلمة المرور الحالية</value></data>

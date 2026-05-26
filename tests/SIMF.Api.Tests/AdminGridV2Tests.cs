@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
-using SIMF.Infrastructure.Identity;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -160,7 +159,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         Assert.Equal(newEmail, body.Data!.Email);
 
         using var scope = _factory.Services.CreateScope();
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
         var copy = await users.FindByEmailAsync(newEmail);
         Assert.Equal("Source Name", copy!.DisplayName);
     }
@@ -293,7 +292,7 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         Assert.Equal(2, body.Data!.Created);
 
         using var scope = _factory.Services.CreateScope();
-        var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
         Assert.NotNull(await users.FindByEmailAsync(e1));
         Assert.NotNull(await users.FindByEmailAsync(e2));
     }
@@ -386,13 +385,13 @@ public sealed class AdminGridV2Tests : IClassFixture<SimfApiFactory>
         Guid id;
         using (var scope = _factory.Services.CreateScope())
         {
-            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentitySimfRole>>();
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
             if (!await roles.RoleExistsAsync(AdministratorRole))
             {
-                await roles.CreateAsync(new IdentitySimfRole { Name = AdministratorRole });
+                await roles.CreateAsync(new SimfRole { Name = AdministratorRole });
             }
-            var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
-            var user = new IdentitySimfUser
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
             {
                 UserName = email,
                 Email = email,
