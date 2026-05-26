@@ -5,6 +5,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using SIMF.ApiClient;
+using SIMF.Web;
 
 using SIMF.Common.Enums;
 
@@ -77,13 +78,10 @@ internal static class AuthEndpoints
             // API tokens travel in the (encrypted) cookie's stored tokens
             // so the user-profile page can call the API through the
             // /account/api/ proxy — the access token never reaches the
-            // browser.
+            // browser. D-121 — also persist expires_at so the cookie-validate
+            // refresh hook (SimfCookieRefreshHandler) knows when to rotate.
             var properties = new AuthenticationProperties { IsPersistent = true };
-            properties.StoreTokens(
-            [
-                new AuthenticationToken { Name = "access_token", Value = tokens.AccessToken },
-                new AuthenticationToken { Name = "refresh_token", Value = tokens.RefreshToken },
-            ]);
+            SimfCookieRefreshHandler.StoreTokens(properties, tokens, DateTimeOffset.UtcNow);
 
             await http.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);

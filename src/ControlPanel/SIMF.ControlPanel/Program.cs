@@ -69,6 +69,12 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
             context.Response.Redirect(context.RedirectUri);
             return Task.CompletedTask;
         };
+        // D-121 — rotate the cookie's stored access_token using the
+        // refresh_token before the JWT expires. Without this hook, every
+        // /account/api/* BFF call past the 30-minute mark forwards an
+        // expired JWT and the API returns 401, even though the cookie is
+        // still valid for hours. See SimfCookieRefreshHandler for detail.
+        options.Events.OnValidatePrincipal = SimfCookieRefreshHandler.OnValidatePrincipalAsync;
     });
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();

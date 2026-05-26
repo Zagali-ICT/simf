@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using SIMF.ApiClient;
+using SIMF.ControlPanel;
 
 using SIMF.Common.Enums;
 
@@ -148,12 +149,11 @@ internal static class AuthEndpoints
 
             // The API tokens are kept in the (encrypted) cookie for the module
             // pages that will call the API; the shell itself does not use them.
+            // D-121 — also persist expires_at so the cookie-validate refresh
+            // hook (SimfCookieRefreshHandler) knows when to rotate without
+            // round-tripping the API on every request.
             var properties = new AuthenticationProperties { IsPersistent = true };
-            properties.StoreTokens(
-            [
-                new AuthenticationToken { Name = "access_token", Value = tokens.AccessToken },
-                new AuthenticationToken { Name = "refresh_token", Value = tokens.RefreshToken },
-            ]);
+            SimfCookieRefreshHandler.StoreTokens(properties, tokens, DateTimeOffset.UtcNow);
 
             await http.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme, principal, properties);
