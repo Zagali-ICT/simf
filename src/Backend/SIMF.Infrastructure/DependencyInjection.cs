@@ -124,6 +124,10 @@ public static class DependencyInjection
         services.AddScoped<IPermissionRepository, PermissionRepository>();
         services.AddScoped<ISecondFactorTokenRepository, SecondFactorTokenRepository>();
         services.AddScoped<ITotpRecoveryCodeRepository, TotpRecoveryCodeRepository>();
+        // R4 — D-095: persistence seams for the services that moved from
+        // Infrastructure → Application. The services no longer inject
+        // SimfIdentityDbContext directly.
+        services.AddScoped<INotificationRepository, NotificationRepository>();
 
         services.AddScoped<ITransactionRunner, TransactionRunner>();
         services.AddScoped<IAuditLog, AuditLog>();

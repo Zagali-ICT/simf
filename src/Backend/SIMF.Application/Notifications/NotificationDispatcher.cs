@@ -1,25 +1,26 @@
 // Tests: SIMF.Api.Tests/NotificationTests.cs (round-trips)
 //        SIMF.Api.Tests/NotificationLifecycleTests.cs (P13 — trigger-by-trigger)
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
-using SIMF.Application.Notifications;
-using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Notifications;
-using SIMF.Infrastructure.Persistence;
 
-namespace SIMF.Infrastructure.Notifications;
+namespace SIMF.Application.Notifications;
 
 /// <summary>
 /// Writes the in-app notification row + (when
 /// <see cref="NotificationRequest.SendEmail"/> is true) queues an email
 /// (P12 — D-053). The DB row write always lands; an email failure
 /// never poisons the in-app delivery — they are independent channels.
+///
+/// <para>R4 — D-095: moved from <c>SIMF.Infrastructure.Notifications</c> to
+/// the Application layer. Persistence is delegated to
+/// <see cref="INotificationRepository"/>; this class only owns the
+/// orchestration (build the entity, persist, optionally enqueue an email).</para>
 /// </summary>
 internal sealed class NotificationDispatcher(
-    SimfIdentityDbContext dbContext,
-    IUserAccountRepository accounts,
+    INotificationRepository notifications,
+    IUserAccountStore accounts,
     IEmailQueue emailQueue,
     TimeProvider timeProvider,
     ILogger<NotificationDispatcher> logger) : INotificationDispatcher
@@ -44,8 +45,7 @@ internal sealed class NotificationDispatcher(
             CreatedAt = now,
         };
 
-        dbContext.Notifications.Add(notification);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await notifications.AddAsync(notification, cancellationToken);
 
         logger.LogInformation(
             "Notification {Kind} dispatched for {UserId} (id {Id})",
