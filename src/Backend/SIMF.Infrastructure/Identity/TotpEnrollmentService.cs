@@ -210,6 +210,27 @@ internal sealed class TotpEnrollmentService(
         return new TotpDisableResponse(false);
     }
 
+    public async Task<TotpSetupResponse?> GetCurrentPairingAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        // D-096: re-render the QR for the existing active secret. No rotation,
+        // no token writes, no audit row — this is a read-only convenience for
+        // an admin re-pairing a lost authenticator. The Sign-in path's TOTP
+        // verification still uses the same secret, so a successful re-scan
+        // makes the existing seeded admin work without any DB state change.
+        var user = await GetUserAsync(userId);
+        var activeSecret = await accounts.GetAuthenticationTokenAsync(
+            user, AuthenticatorProvider, ActiveSecretTokenName, cancellationToken);
+        if (string.IsNullOrWhiteSpace(activeSecret))
+        {
+            return null;
+        }
+        var otpauthUri = BuildOtpAuthUri(user.Email!, activeSecret);
+        var qrSvg = BuildQrSvg(otpauthUri);
+        return new TotpSetupResponse(activeSecret, otpauthUri, qrSvg);
+    }
+
     private async Task<SimfUser> GetUserAsync(Guid userId)
     {
         var user = await accounts.FindByIdAsync(userId);

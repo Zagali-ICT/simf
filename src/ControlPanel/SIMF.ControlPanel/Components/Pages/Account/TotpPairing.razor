@@ -1,0 +1,82 @@
+@* D-096 — CP TOTP re-pairing page. Renders the QR + otpauth URI for the
+   caller's CURRENT authenticator secret without rotating it. Used by an
+   admin (typically the seeded super-admin) whose authenticator device
+   was lost or whose initial pairing failed — re-scanning here does NOT
+   reset the secret, so existing recovery codes survive and the sign-in
+   flow continues to verify against the same key. *@
+@page "/account/totp-pairing"
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>@L["TotpPairing.Title"]</PageTitle>
+
+<SimfPageHeader Title="@L["TotpPairing.Title"]" />
+
+<div class="simf-card simf-page-card">
+    @if (_loading)
+    {
+        <p>@L["TotpPairing.Loading"]</p>
+    }
+    else if (_loadError is not null)
+    {
+        <SimfAlert Variant="error">@_loadError</SimfAlert>
+    }
+    else if (_pairing is null)
+    {
+        <SimfAlert Variant="warning">@L["TotpPairing.NoSecret"]</SimfAlert>
+        <div class="simf-form__actions">
+            <SimfButton Type="button" Variant="secondary"
+                        OnClick="@(() => Nav.NavigateTo("/account/profile"))">
+                @L["TotpPairing.GoToProfile"]
+            </SimfButton>
+        </div>
+    }
+    else
+    {
+        <p>@L["TotpPairing.Instruction"]</p>
+        <div class="simf-qr">
+            @((MarkupString)_pairing.QrCodeSvg)
+        </div>
+        <p class="simf-form__helper">@L["TotpPairing.SecretHint"]</p>
+        <code class="simf-totp-secret">@_pairing.Secret</code>
+    }
+</div>
+
+@code {
+    private bool _loading = true;
+    private TotpSetupResponse? _pairing;
+    private string? _loadError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<TotpSetupResponse>>(
+                "simfAccount.getJson", "/account/api/totp/pairing");
+            if (envelope is { Success: true, Data: not null })
+            {
+                _pairing = envelope.Data;
+            }
+            else if (envelope?.Error?.Code == "NotFound" || envelope?.Error is null)
+            {
+                // 404 from the API arrives as a failed envelope with no Data;
+                // treat as "no secret" and route the user to the Profile page.
+                _pairing = null;
+            }
+            else
+            {
+                _loadError = envelope.Error?.MessageForCurrentCulture()
+                    ?? L["TotpPairing.LoadError"];
+            }
+        }
+        catch
+        {
+            _loadError = L["TotpPairing.LoadError"];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

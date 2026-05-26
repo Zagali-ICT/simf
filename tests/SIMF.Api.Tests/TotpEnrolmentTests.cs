@@ -168,6 +168,54 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
         Assert.False(string.IsNullOrWhiteSpace(body.Error.MessageArabic));
     }
 
+    [Fact]
+    public async Task Pairing_returns_404_when_the_account_has_no_active_secret()
+    {
+        // D-096: a fresh visitor has not enrolled in TOTP, so the pairing
+        // endpoint returns 404 — the CP page surfaces this as "use the
+        // Profile page to enrol" rather than as an error.
+        var (token, _, _) = await SignInAsync();
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/auth/totp/pairing");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Pairing_returns_the_same_QR_for_the_enrolled_users_active_secret()
+    {
+        // D-096: an enrolled user can re-fetch the QR for their existing secret
+        // without rotating it; the response carries the SAME secret each call
+        // (the read endpoint is idempotent), unlike POST /auth/totp/setup which
+        // rotates a candidate secret on every call.
+        var (token, _, refreshToken) = await SignInAsync();
+        var setup = await ReadAsync<TotpSetupResponse>(
+            await PostAuthAsync<object>("/api/v1/auth/totp/setup", null, token));
+        var bytes = Base32Encoding.ToBytes(setup.Secret);
+        var code = new Totp(bytes).ComputeTotp(DateTime.UtcNow);
+        var confirm = await PostAuthAsync(
+            "/api/v1/auth/totp/confirm", new TotpConfirmRequest { Code = code }, token);
+        Assert.Equal(HttpStatusCode.OK, confirm.StatusCode);
+
+        // Confirming TOTP rolls the security stamp; the old access token is
+        // now rejected. Rotate to a fresh pair via the refresh endpoint.
+        var refreshed = await ReadAsync<AuthTokens>(await _client.PostAsJsonAsync(
+            "/api/v1/auth/refresh", new RefreshRequest { RefreshToken = refreshToken }));
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/auth/totp/pairing");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", refreshed.AccessToken);
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<TotpSetupResponse>>())!;
+        Assert.True(body.Success);
+        Assert.Equal(setup.Secret, body.Data!.Secret);
+        Assert.StartsWith("otpauth://totp/", body.Data.OtpAuthUri);
+        Assert.Contains("<svg", body.Data.QrCodeSvg);
+    }
+
     private async Task<(string AccessToken, string Email, string RefreshToken)> SignInAsync()
     {
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);

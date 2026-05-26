@@ -350,6 +350,14 @@
   <data name="Profile.TwoFactor.ConfirmEnabled" xml:space="preserve"><value>تم تفعيل المصادقة الثنائية.</value></data>
   <data name="Profile.TwoFactor.ConfirmDisabled" xml:space="preserve"><value>تم تعطيل المصادقة الثنائية.</value></data>
 
+  <data name="TotpPairing.Title" xml:space="preserve"><value>إعادة إقران تطبيق المصادقة</value></data>
+  <data name="TotpPairing.Instruction" xml:space="preserve"><value>امسح رمز QR هذا باستخدام Google Authenticator (أو أي تطبيق متوافق مع TOTP). يبقى السر نفسه — إعادة المسح لا تؤثر على رموز الاسترداد الحالية.</value></data>
+  <data name="TotpPairing.SecretHint" xml:space="preserve"><value>أو أدخل هذا السر يدويًا في التطبيق:</value></data>
+  <data name="TotpPairing.NoSecret" xml:space="preserve"><value>لا يوجد سر مصادقة مرتبط بهذا الحساب بعد. استخدم صفحة الملف الشخصي للتسجيل.</value></data>
+  <data name="TotpPairing.GoToProfile" xml:space="preserve"><value>الانتقال إلى الملف الشخصي</value></data>
+  <data name="TotpPairing.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="TotpPairing.LoadError" xml:space="preserve"><value>تعذّر تحميل رمز QR للإقران.</value></data>
+
   <data name="Profile.Password.Title" xml:space="preserve"><value>تغيير كلمة المرور</value></data>
   <data name="Profile.Password.Current" xml:space="preserve"><value>كلمة المرور الحالية</value></data>
   <data name="Profile.Password.New" xml:space="preserve"><value>كلمة المرور الجديدة</value></data>
