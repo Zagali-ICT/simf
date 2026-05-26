@@ -45,4 +45,21 @@ public enum NotificationKind
     /// <summary>Dispatched when an administrator clears the subject's 2FA (P13 — D-054).</summary>
     [Display(Description = nameof(ResNotificationKind.AccountTwoFactorReset), ResourceType = typeof(ResNotificationKind))]
     AccountTwoFactorReset = 14,
+
+    /// <summary>D-111: dispatched on email-verification success OR when an
+    /// administrator creates the account — the first warm contact the user
+    /// has with SIMF after their identity is proved.</summary>
+    [Display(Description = nameof(ResNotificationKind.AccountWelcome), ResourceType = typeof(ResNotificationKind))]
+    AccountWelcome = 20,
+
+    /// <summary>D-111: dispatched when the user successfully changes their
+    /// own password. Security trail visible to the account holder.</summary>
+    [Display(Description = nameof(ResNotificationKind.AccountPasswordChanged), ResourceType = typeof(ResNotificationKind))]
+    AccountPasswordChanged = 21,
+
+    /// <summary>D-111: dispatched when a forgot-password reset completes
+    /// successfully. Mirrors the bank-style "your password was reset"
+    /// security notice.</summary>
+    [Display(Description = nameof(ResNotificationKind.AccountPasswordResetCompleted), ResourceType = typeof(ResNotificationKind))]
+    AccountPasswordResetCompleted = 22,
 }

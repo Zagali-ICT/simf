@@ -22,6 +22,9 @@ public static class ResNotificationKind
     public static string AccountApproved => Get(nameof(AccountApproved));
     public static string AccountRejected => Get(nameof(AccountRejected));
     public static string AccountTwoFactorReset => Get(nameof(AccountTwoFactorReset));
+    public static string AccountWelcome => Get(nameof(AccountWelcome));
+    public static string AccountPasswordChanged => Get(nameof(AccountPasswordChanged));
+    public static string AccountPasswordResetCompleted => Get(nameof(AccountPasswordResetCompleted));
 
     private static string Get(string key) =>
         ResourceManager.GetString(key, CultureInfo.CurrentUICulture) ?? key;

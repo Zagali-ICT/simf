@@ -116,6 +116,122 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
         Assert.Contains("Not permitted", notification.Body);
     }
 
+    // ----------------------------------------------------------------------
+    // D-111: auth-flow closure notifications.
+    // ----------------------------------------------------------------------
+
+    [Fact]
+    public async Task VerifyEmail_dispatches_AccountWelcome_to_the_user()
+    {
+        var email = $"welcome-{Guid.NewGuid():N}@simf.test";
+
+        await _client.PostAsJsonAsync(
+            "/api/v1/auth/sign-up",
+            new SignUpRequest { Email = email, Password = AuthFlow.Password, ConfirmPassword = AuthFlow.Password });
+        await _client.PostAsJsonAsync(
+            "/api/v1/auth/verify-email",
+            new VerifyEmailRequest
+            {
+                Email = email,
+                Code = AuthFlow.GetActiveCode(_factory, email, AccountCodePurpose.EmailVerification),
+            });
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = await db.Users.SingleAsync(u => u.Email == email);
+        var welcome = await db.Notifications
+            .SingleAsync(n => n.UserId == user.Id && n.Kind == NotificationKind.AccountWelcome);
+        Assert.Equal(NotificationSeverity.Success, welcome.Severity);
+        Assert.Contains("Welcome", welcome.Title);
+    }
+
+    [Fact]
+    public async Task AdminCreate_dispatches_AccountWelcome_to_the_new_user()
+    {
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var subjectEmail = $"created-{Guid.NewGuid():N}@simf.test";
+        var response = await PostAuthAsync(
+            "/api/v1/admin/admins",
+            new AdminCreateAdminRequest
+            {
+                Email = subjectEmail,
+                DisplayName = "New Admin",
+                Roles = new List<string> { AppRoles.Administrator },
+            },
+            adminToken);
+        Assert.True(response.IsSuccessStatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminCreateUserResponse>>())!;
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var welcome = await db.Notifications
+            .SingleAsync(n => n.UserId == body.Data!.UserId
+                && n.Kind == NotificationKind.AccountWelcome);
+        Assert.Equal(NotificationSeverity.Success, welcome.Severity);
+    }
+
+    [Fact]
+    public async Task ChangePassword_dispatches_AccountPasswordChanged_to_the_user()
+    {
+        var tokens = await AuthFlow.SignInVisitorAsync(_client, _factory);
+        const string newPassword = "Newp@ssw0rd!";
+
+        using var changeRequest = new HttpRequestMessage(
+            HttpMethod.Post, "/api/v1/auth/change-password")
+        {
+            Content = JsonContent.Create(new ChangePasswordRequest
+            {
+                CurrentPassword = AuthFlow.Password,
+                NewPassword = newPassword,
+                ConfirmPassword = newPassword,
+            }),
+        };
+        changeRequest.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", tokens.AccessToken);
+        var change = await _client.SendAsync(changeRequest);
+        Assert.True(change.IsSuccessStatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var notification = await db.Notifications
+            .SingleAsync(n => n.UserId == tokens.User.Id
+                && n.Kind == NotificationKind.AccountPasswordChanged);
+        Assert.Equal(NotificationSeverity.Warning, notification.Severity);
+        Assert.Contains("changed", notification.Body);
+    }
+
+    [Fact]
+    public async Task ResetPassword_dispatches_AccountPasswordResetCompleted_to_the_user()
+    {
+        var email = await AuthFlow.RegisterVerifiedVisitorAsync(_client, _factory);
+        await _client.PostAsJsonAsync(
+            "/api/v1/auth/forgot-password",
+            new ForgotPasswordRequest { Email = email });
+        var code = AuthFlow.GetActiveCode(_factory, email, AccountCodePurpose.PasswordReset);
+        const string newPassword = "Resetp@ssw0rd!";
+
+        var reset = await _client.PostAsJsonAsync(
+            "/api/v1/auth/reset-password",
+            new ResetPasswordRequest
+            {
+                Email = email,
+                Code = code,
+                NewPassword = newPassword,
+                ConfirmPassword = newPassword,
+            });
+        Assert.True(reset.IsSuccessStatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = await db.Users.SingleAsync(u => u.Email == email);
+        var notification = await db.Notifications
+            .SingleAsync(n => n.UserId == user.Id
+                && n.Kind == NotificationKind.AccountPasswordResetCompleted);
+        Assert.Equal(NotificationSeverity.Warning, notification.Severity);
+        Assert.Contains("reset", notification.Body);
+    }
+
     // -- helpers ---------------------------------------------------------------
 
     private async Task<(string Token, Guid UserId)> CreateEmailVerifiedVisitorAsync()

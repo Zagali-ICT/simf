@@ -58,8 +58,11 @@ changed without explicit owner approval:
 - **Enum names + values** — every enum in `src/Shared/SIMF.Common/Enums/`
   (SignInAudience, AccountState, AccountCodePurpose, SecondFactorKind,
   UserType, AuditOutcome, RowAuditOperation, NotificationKind,
-  NotificationSeverity) is frozen by name AND by underlying integer value.
-  Renaming a case or reordering numeric values is a breaking change.
+  NotificationSeverity) is frozen against **rename** and **reorder** of
+  existing values. **Additive** new values (appending a new case with a
+  new integer that doesn't conflict) ARE allowed as long as they don't
+  shadow an existing name or value — used in D-111 to extend
+  NotificationKind without breaking the wire contract.
 - **Migration history** — only one `InitialCreate` per context. No further
   migrations land without owner approval.
 

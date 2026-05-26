@@ -58,6 +58,14 @@ internal static class NotificationEmailTemplates
             (NotificationKind.AccountTwoFactorReset, _) => TwoFactorResetEn,
             (NotificationKind.AdminPendingVisitor, "ar") => AdminPendingVisitorAr,
             (NotificationKind.AdminPendingVisitor, _) => AdminPendingVisitorEn,
+            // D-111: auth-flow closure notifications — welcome, password
+            // changed, password reset completed.
+            (NotificationKind.AccountWelcome, "ar") => WelcomeAr,
+            (NotificationKind.AccountWelcome, _) => WelcomeEn,
+            (NotificationKind.AccountPasswordChanged, "ar") => PasswordChangedAr,
+            (NotificationKind.AccountPasswordChanged, _) => PasswordChangedEn,
+            (NotificationKind.AccountPasswordResetCompleted, "ar") => PasswordResetCompletedAr,
+            (NotificationKind.AccountPasswordResetCompleted, _) => PasswordResetCompletedEn,
             _ => string.Empty,
         };
 
@@ -94,6 +102,23 @@ internal static class NotificationEmailTemplates
         + "<p>A new visitor is awaiting approval: <strong>{SubjectEmail}</strong>. "
         + "Open the Control Panel to review their account.</p>";
 
+    // D-111: auth-flow closure templates -------------------------------------
+    private const string WelcomeEn =
+        "<p>Hello {DisplayName},</p>"
+        + "<p>Welcome to SIMF — your account is set up. You can now sign in "
+        + "and complete your profile. We're glad to have you with us.</p>";
+
+    private const string PasswordChangedEn =
+        "<p>Hello {DisplayName},</p>"
+        + "<p>Your SIMF password was changed at <strong>{ChangedAt}</strong>. "
+        + "If you did not do this, contact the SIMF security team immediately.</p>";
+
+    private const string PasswordResetCompletedEn =
+        "<p>Hello {DisplayName},</p>"
+        + "<p>Your SIMF password was reset successfully at "
+        + "<strong>{ResetAt}</strong>. You can now sign in with your new password. "
+        + "If you did not request this, contact the SIMF security team immediately.</p>";
+
     // -- Arabic ----------------------------------------------------------------
     private const string ProfileSubmittedAr =
         "<p>مرحباً {DisplayName}،</p>"
@@ -121,4 +146,22 @@ internal static class NotificationEmailTemplates
         "<p>مرحباً {DisplayName}،</p>"
         + "<p>هناك زائر جديد بانتظار الموافقة: <strong>{SubjectEmail}</strong>. "
         + "افتح لوحة التحكم لمراجعة حسابه.</p>";
+
+    // D-111: auth-flow closure templates (Arabic) ----------------------------
+    private const string WelcomeAr =
+        "<p>مرحباً {DisplayName}،</p>"
+        + "<p>أهلاً بك في SIMF — تم تجهيز حسابك. يمكنك الآن تسجيل الدخول "
+        + "واستكمال ملفك الشخصي. يسعدنا انضمامك إلينا.</p>";
+
+    private const string PasswordChangedAr =
+        "<p>مرحباً {DisplayName}،</p>"
+        + "<p>تم تغيير كلمة المرور الخاصة بك في SIMF بتاريخ "
+        + "<strong>{ChangedAt}</strong>. إذا لم تكن أنت من قام بذلك، "
+        + "تواصل مع فريق الأمن في SIMF فوراً.</p>";
+
+    private const string PasswordResetCompletedAr =
+        "<p>مرحباً {DisplayName}،</p>"
+        + "<p>تمت إعادة تعيين كلمة المرور الخاصة بك في SIMF بنجاح بتاريخ "
+        + "<strong>{ResetAt}</strong>. يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة. "
+        + "إذا لم تكن أنت من طلب ذلك، تواصل مع فريق الأمن في SIMF فوراً.</p>";
 }

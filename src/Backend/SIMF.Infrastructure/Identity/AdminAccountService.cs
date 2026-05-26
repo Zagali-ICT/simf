@@ -329,6 +329,28 @@ internal sealed class AdminAccountService(
             },
             cancellationToken);
 
+        // D-111: in-app welcome row for the new user — visible the first
+        // time they sign in. SendEmail=false because the invite email
+        // (sent just above) already greets them with the code; a second
+        // welcome email would duplicate.
+        var welcomeTokens = new Dictionary<string, string>
+        {
+            ["DisplayName"] = user.DisplayName ?? user.Email ?? string.Empty,
+        };
+        await notifications.DispatchAsync(new NotificationRequest
+        {
+            UserId = user.Id,
+            Kind = NotificationKind.AccountWelcome,
+            Title = "Welcome to SIMF",
+            TitleArabic = "مرحباً بك في SIMF",
+            Body = "Your SIMF account has been created. Check your email to set your password, then sign in.",
+            BodyArabic = "تم إنشاء حسابك في SIMF. تحقق من بريدك لتعيين كلمة المرور، ثم سجّل الدخول.",
+            Severity = NotificationSeverity.Success,
+            SendEmail = false,
+            PreRenderedEmailHtml = NotificationEmailTemplates.Render(
+                NotificationKind.AccountWelcome, "en", welcomeTokens),
+        }, cancellationToken);
+
         logger.LogInformation(
             "Admin {ActorId} created {UserType} {Email}",
             actorUserId, userType, user.Email);

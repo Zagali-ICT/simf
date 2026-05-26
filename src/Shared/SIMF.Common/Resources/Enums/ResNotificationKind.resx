@@ -14,4 +14,7 @@
   <data name="AccountApproved" xml:space="preserve"><value>Account approved</value></data>
   <data name="AccountRejected" xml:space="preserve"><value>Account rejected</value></data>
   <data name="AccountTwoFactorReset" xml:space="preserve"><value>Two-factor authentication reset</value></data>
+  <data name="AccountWelcome" xml:space="preserve"><value>Welcome to SIMF</value></data>
+  <data name="AccountPasswordChanged" xml:space="preserve"><value>Your password was changed</value></data>
+  <data name="AccountPasswordResetCompleted" xml:space="preserve"><value>Your password was reset</value></data>
 </root>

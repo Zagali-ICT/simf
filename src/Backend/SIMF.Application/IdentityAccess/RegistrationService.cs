@@ -222,6 +222,25 @@ public sealed class RegistrationService(
         await AuditAsync(
             AuditEvents.EmailVerificationSucceeded, AuditOutcome.Success, user.Email!,
             userId: user.Id, cancellationToken: cancellationToken);
+
+        // D-111: welcome the user — in-app row visible the next time they
+        // sign in + a separate welcome email. Wrapped in TryDispatchAsync
+        // so a notification failure never re-throws after the email is
+        // already verified. No PreRenderedEmailHtml — the dispatcher
+        // falls back to wrapping Body in <p>, which is enough for a
+        // simple welcome.
+        await notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = user.Id,
+            Kind = NotificationKind.AccountWelcome,
+            Title = "Welcome to SIMF",
+            TitleArabic = "مرحباً بك في SIMF",
+            Body = $"Welcome to SIMF, {user.DisplayName ?? user.Email}. You can now sign in and complete your profile.",
+            BodyArabic = $"أهلاً بك في SIMF، {user.DisplayName ?? user.Email}. يمكنك الآن تسجيل الدخول واستكمال ملفك الشخصي.",
+            Severity = NotificationSeverity.Success,
+            SendEmail = true,
+        }, logger, cancellationToken);
+
         logger.LogInformation("Email verified for {Email}", user.Email);
         return new VerifyEmailResponse(user.Email!, true);
     }

@@ -14,4 +14,7 @@
   <data name="AccountApproved" xml:space="preserve"><value>تم اعتماد الحساب</value></data>
   <data name="AccountRejected" xml:space="preserve"><value>تم رفض الحساب</value></data>
   <data name="AccountTwoFactorReset" xml:space="preserve"><value>إعادة تعيين المصادقة الثنائية</value></data>
+  <data name="AccountWelcome" xml:space="preserve"><value>مرحباً بك في SIMF</value></data>
+  <data name="AccountPasswordChanged" xml:space="preserve"><value>تم تغيير كلمة المرور</value></data>
+  <data name="AccountPasswordResetCompleted" xml:space="preserve"><value>تمت إعادة تعيين كلمة المرور</value></data>
 </root>

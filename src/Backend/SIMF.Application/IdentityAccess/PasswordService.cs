@@ -171,6 +171,26 @@ public sealed class PasswordService(
 
         await AuditAsync(AuditEvents.PasswordResetCompleted, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
+
+        // D-111: security notice — in-app row + email confirming the reset.
+        // Wrapped in TryDispatchAsync so a notification failure never
+        // re-throws after the password is already changed.
+        var resetTime = now.UtcDateTime.ToString("u",
+            System.Globalization.CultureInfo.InvariantCulture);
+        await notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = user.Id,
+            Kind = NotificationKind.AccountPasswordResetCompleted,
+            Title = "Your SIMF password was reset",
+            TitleArabic = "تمت إعادة تعيين كلمة المرور",
+            Body = $"Your SIMF password was reset successfully at {resetTime}. "
+                + "If you did not request this, contact the SIMF security team immediately.",
+            BodyArabic = $"تمت إعادة تعيين كلمة المرور الخاصة بك في SIMF بنجاح بتاريخ {resetTime}. "
+                + "إذا لم تكن أنت من طلب ذلك، تواصل مع فريق الأمن في SIMF فوراً.",
+            Severity = NotificationSeverity.Warning,
+            SendEmail = true,
+        }, logger, cancellationToken);
+
         logger.LogInformation("Password reset for {Email}", user.Email);
         return new ResetPasswordResponse(true);
     }
@@ -228,6 +248,26 @@ public sealed class PasswordService(
 
         await AuditAsync(AuditEvents.PasswordChanged, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
+
+        // D-111: security notice — in-app row + email confirming the change.
+        // Wrapped in TryDispatchAsync so a notification failure never
+        // re-throws after the password is already changed.
+        var changedTime = timeProvider.GetUtcNow().UtcDateTime.ToString("u",
+            System.Globalization.CultureInfo.InvariantCulture);
+        await notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = user.Id,
+            Kind = NotificationKind.AccountPasswordChanged,
+            Title = "Your SIMF password was changed",
+            TitleArabic = "تم تغيير كلمة المرور",
+            Body = $"Your SIMF password was changed at {changedTime}. "
+                + "If you did not do this, contact the SIMF security team immediately.",
+            BodyArabic = $"تم تغيير كلمة المرور الخاصة بك في SIMF بتاريخ {changedTime}. "
+                + "إذا لم تكن أنت من قام بذلك، تواصل مع فريق الأمن في SIMF فوراً.",
+            Severity = NotificationSeverity.Warning,
+            SendEmail = true,
+        }, logger, cancellationToken);
+
         logger.LogInformation("Password changed for {Email}", user.Email);
         return new ChangePasswordResponse(true);
     }
