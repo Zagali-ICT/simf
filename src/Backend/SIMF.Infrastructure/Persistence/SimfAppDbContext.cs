@@ -13,6 +13,9 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     /// <summary>The operation log — the durable audit trail (SIMF-FDS-001 section 9).</summary>
     public DbSet<OperationLogEntry> OperationLog => Set<OperationLogEntry>();
 
+    /// <summary>D-109: row-audit trail for changes against this DbContext.</summary>
+    public DbSet<RowAudit> RowAudits => Set<RowAudit>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

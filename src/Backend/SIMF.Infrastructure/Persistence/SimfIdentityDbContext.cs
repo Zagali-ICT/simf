@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
 
 namespace SIMF.Infrastructure.Persistence;
@@ -34,6 +35,9 @@ public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> optio
 
     public DbSet<SIMF.Domain.Notifications.Notification> Notifications =>
         Set<SIMF.Domain.Notifications.Notification>();
+
+    /// <summary>D-109: row-audit trail for changes against this DbContext.</summary>
+    public DbSet<RowAudit> RowAudits => Set<RowAudit>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

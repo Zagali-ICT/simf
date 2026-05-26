@@ -1,0 +1,39 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SIMF.Domain.Auditing;
+
+namespace SIMF.Infrastructure.Persistence.Configurations.App;
+
+/// <summary>
+/// D-109: row-audit configuration for the <see cref="SimfAppDbContext"/>
+/// — same shape as <see cref="Configurations.RowAuditConfiguration"/>,
+/// in the App namespace so the App context's
+/// <c>ApplyConfigurationsFromAssembly</c> filter picks it up while the
+/// Identity context ignores it.
+/// </summary>
+internal sealed class RowAuditConfigurationApp : IEntityTypeConfiguration<RowAudit>
+{
+    public void Configure(EntityTypeBuilder<RowAudit> builder)
+    {
+        // D-109: schema-scoped so the App-context's audit table sits
+        // separately from the Identity-context's [identity].[RowAudits]
+        // on the same physical database (decision C-1).
+        builder.ToTable("RowAudits", schema: "app");
+        builder.HasKey(audit => audit.Id);
+        builder.Property(audit => audit.Id).ValueGeneratedOnAdd();
+
+        builder.Property(audit => audit.TableName).HasMaxLength(128).IsRequired();
+        builder.Property(audit => audit.EntityType).HasMaxLength(128).IsRequired();
+        builder.Property(audit => audit.Operation).HasConversion<string>().HasMaxLength(16);
+        builder.Property(audit => audit.PrimaryKey).HasMaxLength(256).IsRequired();
+        builder.Property(audit => audit.CorrelationId).HasMaxLength(64);
+        builder.Property(audit => audit.AffectedColumns).HasMaxLength(2000);
+        builder.Property(audit => audit.OldValuesJson);
+        builder.Property(audit => audit.NewValuesJson);
+
+        builder.HasIndex(audit => new { audit.TableName, audit.OccurredAt })
+            .IsDescending(false, true);
+        builder.HasIndex(audit => new { audit.ActorUserId, audit.OccurredAt })
+            .IsDescending(false, true);
+    }
+}

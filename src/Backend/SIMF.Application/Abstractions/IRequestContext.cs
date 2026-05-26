@@ -15,4 +15,13 @@ public interface IRequestContext
 
     /// <summary>The correlation id of the current request; null if none.</summary>
     string? CorrelationId { get; }
+
+    /// <summary>
+    /// D-109: the signed-in user id from the JWT / cookie claim; null when
+    /// no user is bound to the request (seeder, background worker,
+    /// anonymous request). Used by the row-audit interceptor to stamp
+    /// the actor on every captured change without each service having
+    /// to pass the id down.
+    /// </summary>
+    Guid? ActorUserId { get; }
 }

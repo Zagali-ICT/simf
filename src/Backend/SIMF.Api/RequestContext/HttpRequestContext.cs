@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using SIMF.Application.Abstractions;
 
 namespace SIMF.Api.RequestContext;
@@ -16,4 +17,9 @@ internal sealed class HttpRequestContext(IHttpContextAccessor accessor) : IReque
 
     public string? CorrelationId =>
         accessor.HttpContext?.TraceIdentifier;
+
+    public Guid? ActorUserId =>
+        Guid.TryParse(accessor.HttpContext?.User.FindFirstValue("sub"), out var id)
+            ? id
+            : null;
 }

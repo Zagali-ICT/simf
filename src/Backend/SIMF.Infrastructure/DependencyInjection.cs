@@ -40,22 +40,28 @@ public static class DependencyInjection
                 "Connection string 'SimfDb' is not configured.");
         }
 
+        // D-109: scoped SaveChanges interceptor that writes a RowAudit row for
+        // every INSERT/UPDATE/DELETE through either DbContext. Registered as
+        // Scoped so each request gets the right IRequestContext (actor user id +
+        // correlation id) injected.
+        services.AddScoped<RowAuditingSaveChangesInterceptor>();
+
         // Both contexts target one physical database (decision C-1); each keeps
         // its own migration history table. EnableRetryOnFailure covers the
         // transient SQL errors of an Always On failover (SIMF-SAD-001 §9).
-        services.AddDbContext<SimfIdentityDbContext>(options =>
+        services.AddDbContext<SimfIdentityDbContext>((sp, options) =>
             options.UseSqlServer(connectionString, sql =>
             {
                 sql.MigrationsHistoryTable("__EFMigrationsHistory_Identity");
                 sql.EnableRetryOnFailure();
-            }));
+            }).AddInterceptors(sp.GetRequiredService<RowAuditingSaveChangesInterceptor>()));
 
-        services.AddDbContext<SimfAppDbContext>(options =>
+        services.AddDbContext<SimfAppDbContext>((sp, options) =>
             options.UseSqlServer(connectionString, sql =>
             {
                 sql.MigrationsHistoryTable("__EFMigrationsHistory_App");
                 sql.EnableRetryOnFailure();
-            }));
+            }).AddInterceptors(sp.GetRequiredService<RowAuditingSaveChangesInterceptor>()));
 
         // ASP.NET Core Identity — UserManager / RoleManager over the EF stores.
         // Identity enforces the SIMF-API-001 §12.5 baseline (length and a digit)
