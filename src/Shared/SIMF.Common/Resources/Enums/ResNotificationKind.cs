@@ -25,6 +25,7 @@ public static class ResNotificationKind
     public static string AccountWelcome => Get(nameof(AccountWelcome));
     public static string AccountPasswordChanged => Get(nameof(AccountPasswordChanged));
     public static string AccountPasswordResetCompleted => Get(nameof(AccountPasswordResetCompleted));
+    public static string AdminPendingApproval => Get(nameof(AdminPendingApproval));
 
     private static string Get(string key) =>
         ResourceManager.GetString(key, CultureInfo.CurrentUICulture) ?? key;

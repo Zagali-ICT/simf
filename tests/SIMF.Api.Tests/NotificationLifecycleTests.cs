@@ -146,6 +146,43 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task AdminCreate_dispatches_AdminPendingApproval_to_every_other_admin()
+    {
+        // Two admins exist: the actor (who clicks Create) and a peer.
+        // The peer should get AdminPendingApproval; the actor should NOT.
+        var actorToken = await CreateAdministratorAndSignInAsync();
+        var (_, peerAdminId) = await CreateAdminAsync();
+        var actorAdminId = Guid.Parse(new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler()
+            .ReadJwtToken(actorToken).Claims.First(c => c.Type == "sub").Value);
+
+        var subjectEmail = $"pending-{Guid.NewGuid():N}@simf.test";
+        var response = await PostAuthAsync(
+            "/api/v1/admin/admins",
+            new AdminCreateAdminRequest
+            {
+                Email = subjectEmail,
+                DisplayName = "Pending Admin",
+                Roles = new List<string> { AppRoles.Administrator },
+            },
+            actorToken);
+        Assert.True(response.IsSuccessStatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+
+        var peerRow = await db.Notifications.SingleAsync(n =>
+            n.UserId == peerAdminId
+            && n.Kind == NotificationKind.AdminPendingApproval);
+        Assert.Equal(NotificationSeverity.Info, peerRow.Severity);
+        Assert.Contains(subjectEmail, peerRow.Body);
+
+        var actorRows = await db.Notifications.CountAsync(n =>
+            n.UserId == actorAdminId
+            && n.Kind == NotificationKind.AdminPendingApproval);
+        Assert.Equal(0, actorRows);
+    }
+
+    [Fact]
     public async Task AdminCreate_dispatches_AccountWelcome_to_the_new_user()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();

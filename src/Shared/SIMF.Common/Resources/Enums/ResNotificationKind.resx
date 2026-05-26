@@ -17,4 +17,5 @@
   <data name="AccountWelcome" xml:space="preserve"><value>Welcome to SIMF</value></data>
   <data name="AccountPasswordChanged" xml:space="preserve"><value>Your password was changed</value></data>
   <data name="AccountPasswordResetCompleted" xml:space="preserve"><value>Your password was reset</value></data>
+  <data name="AdminPendingApproval" xml:space="preserve"><value>New account awaiting approval</value></data>
 </root>

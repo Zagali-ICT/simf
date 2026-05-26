@@ -66,6 +66,11 @@ internal static class NotificationEmailTemplates
             (NotificationKind.AccountPasswordChanged, _) => PasswordChangedEn,
             (NotificationKind.AccountPasswordResetCompleted, "ar") => PasswordResetCompletedAr,
             (NotificationKind.AccountPasswordResetCompleted, _) => PasswordResetCompletedEn,
+            // D-112: generic admin notification for any pending-approval
+            // account (admin-create path; the visitor self-submit path
+            // keeps its own AdminPendingVisitor template).
+            (NotificationKind.AdminPendingApproval, "ar") => AdminPendingApprovalAr,
+            (NotificationKind.AdminPendingApproval, _) => AdminPendingApprovalEn,
             _ => string.Empty,
         };
 
@@ -119,6 +124,12 @@ internal static class NotificationEmailTemplates
         + "<strong>{ResetAt}</strong>. You can now sign in with your new password. "
         + "If you did not request this, contact the SIMF security team immediately.</p>";
 
+    private const string AdminPendingApprovalEn =
+        "<p>Hello {DisplayName},</p>"
+        + "<p>A new <strong>{SubjectUserType}</strong> account is awaiting "
+        + "approval: <strong>{SubjectEmail}</strong>. Open the Control Panel "
+        + "to review and approve.</p>";
+
     // -- Arabic ----------------------------------------------------------------
     private const string ProfileSubmittedAr =
         "<p>مرحباً {DisplayName}،</p>"
@@ -164,4 +175,10 @@ internal static class NotificationEmailTemplates
         + "<p>تمت إعادة تعيين كلمة المرور الخاصة بك في SIMF بنجاح بتاريخ "
         + "<strong>{ResetAt}</strong>. يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة. "
         + "إذا لم تكن أنت من طلب ذلك، تواصل مع فريق الأمن في SIMF فوراً.</p>";
+
+    private const string AdminPendingApprovalAr =
+        "<p>مرحباً {DisplayName}،</p>"
+        + "<p>هناك حساب <strong>{SubjectUserType}</strong> جديد بانتظار "
+        + "الموافقة: <strong>{SubjectEmail}</strong>. افتح لوحة التحكم "
+        + "للمراجعة والموافقة.</p>";
 }

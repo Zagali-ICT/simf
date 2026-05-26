@@ -62,4 +62,12 @@ public enum NotificationKind
     /// security notice.</summary>
     [Display(Description = nameof(ResNotificationKind.AccountPasswordResetCompleted), ResourceType = typeof(ResNotificationKind))]
     AccountPasswordResetCompleted = 22,
+
+    /// <summary>D-112: dispatched to every Approved Administrator (except
+    /// the actor) when a new account lands in PendingApproval — covers
+    /// both the admin-create path AND any future automated-create path.
+    /// Distinct from <see cref="AdminPendingVisitor"/> which fires
+    /// specifically on visitor self-submit.</summary>
+    [Display(Description = nameof(ResNotificationKind.AdminPendingApproval), ResourceType = typeof(ResNotificationKind))]
+    AdminPendingApproval = 23,
 }

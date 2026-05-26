@@ -351,6 +351,42 @@ internal sealed class AdminAccountService(
                 NotificationKind.AccountWelcome, "en", welcomeTokens),
         }, cancellationToken);
 
+        // D-112: fan-out AdminPendingApproval to every other Approved
+        // Administrator — the actor admin who just clicked Create is
+        // excluded to avoid self-pinging. Same shape as the visitor
+        // self-submit fan-out in UserProfileService.DispatchAdminPendingVisitorAsync.
+        var otherAdmins = await dbContext.Users
+            .AsNoTracking()
+            .Where(u => u.UserType == UserType.Admin
+                && u.AccountState == AccountState.Approved
+                && u.Id != actorUserId)
+            .Select(u => new { u.Id, u.Email, u.DisplayName })
+            .ToListAsync(cancellationToken);
+        foreach (var admin in otherAdmins)
+        {
+            var pendingTokens = new Dictionary<string, string>
+            {
+                ["DisplayName"] = admin.DisplayName ?? string.Empty,
+                ["SubjectEmail"] = user.Email ?? string.Empty,
+                ["SubjectUserType"] = userType.ToString(),
+            };
+            await notifications.DispatchAsync(new NotificationRequest
+            {
+                UserId = admin.Id,
+                Kind = NotificationKind.AdminPendingApproval,
+                Title = $"New {userType} awaiting approval — {user.Email}",
+                TitleArabic = $"حساب {userType} جديد بانتظار الموافقة — {user.Email}",
+                Body = $"A new {userType} account was created and is awaiting approval: {user.Email}.",
+                BodyArabic = $"تم إنشاء حساب {userType} جديد بانتظار الموافقة: {user.Email}.",
+                Severity = NotificationSeverity.Info,
+                RelatedEntityType = "User",
+                RelatedEntityId = user.Id,
+                SendEmail = true,
+                PreRenderedEmailHtml = NotificationEmailTemplates.Render(
+                    NotificationKind.AdminPendingApproval, "en", pendingTokens),
+            }, cancellationToken);
+        }
+
         logger.LogInformation(
             "Admin {ActorId} created {UserType} {Email}",
             actorUserId, userType, user.Email);
