@@ -87,6 +87,37 @@ public class UserProfile
     /// per-installation key — see <c>EncryptedUserIdDocumentStorage</c>.</summary>
     public string? IdImageRelativePath { get; set; }
 
+    /// <summary>
+    /// D-106: short, unique, opaque event-entry identifier (decision D-046,
+    /// moved here from <see cref="SimfUser"/>). Minted by
+    /// <c>IQrIdMinter</c> the moment the owning user's
+    /// <see cref="SimfUser.AccountState"/> transitions to
+    /// <see cref="AccountState.Approved"/>. Encoded in the participant's
+    /// QR code at event entry; staff scan it to check them in. Null until
+    /// the account is approved. Crockford base32 alphabet (no
+    /// 0/O/1/I/L/U), 12 chars (≈ 60 bits of entropy), unique across the
+    /// system.
+    /// </summary>
+    public string? QrId { get; set; }
+
+    /// <summary>
+    /// D-106: the admin's reason for rejecting the account, in English
+    /// (P10 — D-051, moved here from <see cref="SimfUser"/>). Persisted
+    /// when the owning user's <see cref="SimfUser.AccountState"/>
+    /// transitions to <see cref="AccountState.Rejected"/>; cleared on a
+    /// later approval. Up to 500 characters, matching the
+    /// <c>AdminRejectRequest.Reason</c> validator.
+    /// </summary>
+    public string? RejectionReason { get; set; }
+
+    /// <summary>
+    /// D-106: the Arabic version of <see cref="RejectionReason"/> (P10 —
+    /// D-051). When the admin enters only the English reason today, the
+    /// service mirrors it here as a graceful fallback (R1 default); a
+    /// future bilingual admin form may diverge the two.
+    /// </summary>
+    public string? RejectionReasonArabic { get; set; }
+
     /// <summary>When the row was created (UTC).</summary>
     public DateTimeOffset CreatedAt { get; set; }
 

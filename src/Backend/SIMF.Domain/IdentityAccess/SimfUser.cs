@@ -8,12 +8,12 @@ namespace SIMF.Domain.IdentityAccess;
 /// security stamp, lockout fields and two-factor state (SIMF-DAT-001 section 5.1
 /// and Amendment B).
 ///
-/// <para>D-104: the QrId / RejectionReason / RejectionReasonArabic fields
-/// stay on this row for now. A future cleanup may move them to
-/// <see cref="UserProfile"/> — they describe visitor-onboarding state more
-/// than identity — but doing that safely requires deciding what happens for
-/// admin / other-typed users who don't currently have a UserProfile row.
-/// Deferred to a focused session.</para>
+/// <para>D-106: QrId, RejectionReason and RejectionReasonArabic have moved
+/// to <see cref="UserProfile"/> — they describe the visitor / participant's
+/// onboarding state, not the account identity. Admin-typed users do not get
+/// a QR (they don't attend with one) and do not get rejected; the
+/// AdminAccountService approve/reject paths ensure a UserProfile row exists
+/// before minting / writing the rejection text.</para>
 /// </summary>
 public class SimfUser : IdentityUser<Guid>
 {
@@ -69,34 +69,6 @@ public class SimfUser : IdentityUser<Guid>
     /// IBS V10 car-image-upload convention.
     /// </summary>
     public string? AvatarRelativePath { get; set; }
-
-    /// <summary>
-    /// A short, unique, opaque event-entry identifier (decision D-046).
-    /// Minted by <c>IQrIdMinter</c> the moment <see cref="AccountState"/>
-    /// transitions to <see cref="AccountState.Approved"/>. Encoded in the
-    /// visitor's QR code at event entry; staff scan it to check the
-    /// visitor in. Null until the account is approved. Crockford base32
-    /// alphabet (no 0/O/1/I/L/U), 12 chars (≈ 60 bits of entropy), unique
-    /// across the system.
-    /// </summary>
-    public string? QrId { get; set; }
-
-    /// <summary>
-    /// The admin's reason for rejecting the account, in English (P10 —
-    /// D-051). Persisted on the row when <see cref="AccountState"/>
-    /// transitions to <see cref="AccountState.Rejected"/>; cleared when a
-    /// later approval reconsiders the account. Up to 500 characters,
-    /// matching the <c>AdminRejectRequest.Reason</c> validator.
-    /// </summary>
-    public string? RejectionReason { get; set; }
-
-    /// <summary>
-    /// The Arabic version of <see cref="RejectionReason"/> (P10 — D-051).
-    /// When the admin enters only the English reason today, the service
-    /// mirrors it here as a graceful fallback (R1 default); a future
-    /// bilingual admin form may diverge the two.
-    /// </summary>
-    public string? RejectionReasonArabic { get; set; }
 
     /// <summary>
     /// When the <see cref="AccountState"/> last changed (UTC) — P10 —

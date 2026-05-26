@@ -24,23 +24,13 @@ internal sealed class SimfUserConfiguration : IEntityTypeConfiguration<SimfUser>
             .HasMaxLength(16);
         builder.HasIndex(user => user.UserType);
 
-        // D-046: short opaque event-entry id, minted on Approved.
-        builder.Property(user => user.QrId)
-            .HasMaxLength(16);
-        builder.HasIndex(user => user.QrId)
-            .IsUnique()
-            .HasFilter("[QrId] IS NOT NULL");
-
         builder.Property(user => user.AvatarRelativePath)
             .HasMaxLength(256);
 
-        // P10 — D-051: rejection reason (bilingual) + state-change
-        // metadata. The composite index supports "recently rejected" /
-        // "recently approved" admin queries without scanning AspNetUsers.
-        builder.Property(user => user.RejectionReason)
-            .HasMaxLength(500);
-        builder.Property(user => user.RejectionReasonArabic)
-            .HasMaxLength(500);
+        // P10 — D-051: state-change metadata. The composite index supports
+        // "recently rejected" / "recently approved" admin queries without
+        // scanning AspNetUsers. D-106 moved QrId + RejectionReason* to
+        // UserProfile (profile-scope).
         builder.HasIndex(user => new { user.AccountState, user.StateChangedAt });
     }
 }

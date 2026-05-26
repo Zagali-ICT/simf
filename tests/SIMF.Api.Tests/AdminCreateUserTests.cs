@@ -253,12 +253,16 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var created = (await users.FindByEmailAsync(email))!;
-        // P4 — QR id minting moved from create-time to approve-time. The
-        // QR-mint-on-approve contract is covered by
-        // AdminApprovalTests.Approve_staff_flips_state_to_Approved_and_mints_QR_id.
-        Assert.True(string.IsNullOrEmpty(created.QrId));
         Assert.Equal(AccountState.PendingApproval, created.AccountState);
+        // D-106: QR lives on UserProfile now; minting still happens at approve-time
+        // (covered by AdminApprovalTests.Approve_staff_flips_state_to_Approved_and_mints_QR_id).
+        var qr = await db.UserProfiles
+            .Where(p => p.UserId == created.Id)
+            .Select(p => p.QrId)
+            .SingleOrDefaultAsync();
+        Assert.True(string.IsNullOrEmpty(qr));
     }
 
     [Fact]

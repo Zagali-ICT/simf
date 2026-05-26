@@ -13,11 +13,12 @@ namespace SIMF.Infrastructure.Identity;
 /// (thousands of users), but we still query the DB once to ensure
 /// uniqueness — the column carries a UNIQUE constraint anyway.
 ///
-/// <para>R3g — D-079: the uniqueness check is a LINQ-IQueryable read,
-/// not a method on <c>IUserAccountRepository</c>. Using
-/// <c>SimfIdentityDbContext.Users</c> directly is the Infrastructure-
-/// only substitution that doesn't leak <c>IQueryable&lt;SimfUser&gt;</c>
-/// out of the repository contract.</para>
+/// <para>D-106: minted on <see cref="UserProfile.QrId"/> (was
+/// <see cref="SimfUser.QrId"/> pre-D-106). The uniqueness query is a
+/// LINQ-IQueryable read against <c>SimfIdentityDbContext.UserProfiles</c>
+/// — using the DbContext directly here is the Infrastructure-only seam
+/// that avoids leaking <c>IQueryable&lt;UserProfile&gt;</c> out of the
+/// repository contract.</para>
 /// </summary>
 internal sealed class QrIdMinter(SimfIdentityDbContext dbContext) : IQrIdMinter
 {
@@ -27,22 +28,22 @@ internal sealed class QrIdMinter(SimfIdentityDbContext dbContext) : IQrIdMinter
     private const int MaxAttempts = 8;
 
     public async Task<string> MintIfMissingAsync(
-        SimfUser user, CancellationToken cancellationToken = default)
+        UserProfile profile, CancellationToken cancellationToken = default)
     {
-        if (!string.IsNullOrEmpty(user.QrId))
+        if (!string.IsNullOrEmpty(profile.QrId))
         {
-            return user.QrId;
+            return profile.QrId;
         }
 
         for (var attempt = 0; attempt < MaxAttempts; attempt++)
         {
             var candidate = Generate();
-            var clash = await dbContext.Users
+            var clash = await dbContext.UserProfiles
                 .AsNoTracking()
-                .AnyAsync(u => u.QrId == candidate, cancellationToken);
+                .AnyAsync(p => p.QrId == candidate, cancellationToken);
             if (!clash)
             {
-                user.QrId = candidate;
+                profile.QrId = candidate;
                 return candidate;
             }
         }

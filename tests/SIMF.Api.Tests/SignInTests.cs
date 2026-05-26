@@ -753,8 +753,20 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var user = database.Users.Single(candidate => candidate.Email == email);
-        user.RejectionReason = reason;
-        user.RejectionReasonArabic = reasonArabic;
+        // D-106: rejection text lives on UserProfile; create the row if needed.
+        var profile = database.UserProfiles.SingleOrDefault(p => p.UserId == user.Id);
+        if (profile is null)
+        {
+            profile = new SIMF.Domain.IdentityAccess.UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            database.UserProfiles.Add(profile);
+        }
+        profile.RejectionReason = reason;
+        profile.RejectionReasonArabic = reasonArabic;
         user.StateChangedAt = DateTimeOffset.UtcNow;
         database.SaveChanges();
     }

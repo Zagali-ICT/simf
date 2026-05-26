@@ -530,10 +530,21 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
                 EmailConfirmed = true,
                 DisplayName = "Profile Test",
                 AccountState = AccountState.Approved,
-                QrId = $"TEST{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}",
             };
             await users.CreateAsync(user, AuthFlow.Password);
             userId = user.Id;
+            // D-106: QR id lives on UserProfile now. Seed a stub profile row
+            // with a pre-baked QR so the GET-profile tests still surface one
+            // before the visitor fills the form.
+            var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            db.UserProfiles.Add(new SIMF.Domain.IdentityAccess.UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                QrId = $"TEST{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}",
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await db.SaveChangesAsync();
         }
 
         var sign = await _client.PostAsJsonAsync(

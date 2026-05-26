@@ -167,7 +167,12 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var user = db.Users.Single(u => u.Email == email);
-        return (user.AccountState, user.QrId);
+        // D-106: QR lives on UserProfile.
+        var qr = db.UserProfiles
+            .Where(p => p.UserId == user.Id)
+            .Select(p => p.QrId)
+            .SingleOrDefault();
+        return (user.AccountState, qr);
     }
 
     private async Task<Guid> FindUserIdAsync(string email)

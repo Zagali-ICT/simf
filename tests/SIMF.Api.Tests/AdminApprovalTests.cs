@@ -53,7 +53,12 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var subject = await db.Users.SingleAsync(u => u.Email == subjectEmail);
         Assert.Equal(AccountState.PendingApproval, subject.AccountState);
-        Assert.Null(subject.QrId);
+        // D-106: QR lives on UserProfile now — assert there's no profile-side QR.
+        var qr = await db.UserProfiles
+            .Where(p => p.UserId == subject.Id)
+            .Select(p => p.QrId)
+            .SingleOrDefaultAsync();
+        Assert.True(string.IsNullOrEmpty(qr));
     }
 
     [Fact]
@@ -70,7 +75,12 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var subject = await db.Users.SingleAsync(u => u.Id == subjectId);
         Assert.Equal(AccountState.Approved, subject.AccountState);
-        Assert.False(string.IsNullOrEmpty(subject.QrId));
+        // D-106: QR lives on UserProfile.
+        var qr = await db.UserProfiles
+            .Where(p => p.UserId == subjectId)
+            .Select(p => p.QrId)
+            .SingleAsync();
+        Assert.False(string.IsNullOrEmpty(qr));
         Assert.True(AuditEntryExists(subject.Email!, AuditEvents.AdminStaffApproved));
     }
 
@@ -94,9 +104,11 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var subject = await db.Users.SingleAsync(u => u.Id == subjectId);
         Assert.Equal(AccountState.Rejected, subject.AccountState);
-        Assert.Equal(reason, subject.RejectionReason);
+        // D-106: rejection text lives on UserProfile.
+        var profile = await db.UserProfiles.SingleAsync(p => p.UserId == subjectId);
+        Assert.Equal(reason, profile.RejectionReason);
         // EN-only admin input mirrors to the Arabic field (R1 default).
-        Assert.Equal(reason, subject.RejectionReasonArabic);
+        Assert.Equal(reason, profile.RejectionReasonArabic);
         Assert.NotNull(subject.StateChangedAt);
         Assert.NotNull(subject.StateChangedByUserId);
         Assert.True(AuditEntryExists(subject.Email!, AuditEvents.AdminStaffRejected));
@@ -136,8 +148,10 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         var verifyDb = verify.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var reconsidered = await verifyDb.Users.SingleAsync(u => u.Id == subjectId);
         Assert.Equal(AccountState.Approved, reconsidered.AccountState);
-        Assert.Null(reconsidered.RejectionReason);
-        Assert.Null(reconsidered.RejectionReasonArabic);
+        // D-106: rejection text on UserProfile is cleared on re-approval.
+        var profile = await verifyDb.UserProfiles.SingleAsync(p => p.UserId == subjectId);
+        Assert.Null(profile.RejectionReason);
+        Assert.Null(profile.RejectionReasonArabic);
         Assert.NotNull(reconsidered.StateChangedAt);
     }
 
@@ -155,7 +169,12 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var subject = await db.Users.SingleAsync(u => u.Id == subjectId);
         Assert.Equal(AccountState.Approved, subject.AccountState);
-        Assert.False(string.IsNullOrEmpty(subject.QrId));
+        // D-106: QR lives on UserProfile.
+        var qr = await db.UserProfiles
+            .Where(p => p.UserId == subjectId)
+            .Select(p => p.QrId)
+            .SingleAsync();
+        Assert.False(string.IsNullOrEmpty(qr));
         Assert.True(AuditEntryExists(subject.Email!, AuditEvents.AdminVisitorApproved));
     }
 

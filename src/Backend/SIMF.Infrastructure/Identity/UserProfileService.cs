@@ -52,14 +52,15 @@ internal sealed class UserProfileService(
 
         if (profile is null)
         {
-            // Empty response — the user has not filled the form yet.
-            // The QR id is surfaced anyway (it lives on SimfUser, minted
-            // on Approved per D-046 a) so the page can show it next to
-            // the empty form.
-            return new UserProfileResponse { QrId = user.QrId };
+            // Empty response — the user has not filled the form yet. The
+            // QR id lives on the profile now (D-106), so when no profile
+            // row exists yet the QR isn't available either; the page
+            // will render the empty form without a QR until the user
+            // saves the form.
+            return new UserProfileResponse();
         }
 
-        return ToResponse(profile, user.QrId);
+        return ToResponse(profile, profile.QrId);
     }
 
     public async Task<UserProfileResponse> UpsertMineAsync(
@@ -213,7 +214,25 @@ internal sealed class UserProfileService(
             await DispatchAdminPendingVisitorAsync(user, cancellationToken);
         }
 
-        return ToResponse(profile, user.QrId);
+        return ToResponse(profile, profile.QrId);
+    }
+
+    /// <summary>
+    /// D-106: implements <see cref="IUserProfileService.GetRejectionTextAsync"/>.
+    /// Reads the bilingual rejection text directly from UserProfile; the
+    /// SignInService uses this for the AccountStateInfo state-banner.
+    /// </summary>
+    public async Task<RejectionText?> GetRejectionTextAsync(
+        Guid userId, CancellationToken cancellationToken = default)
+    {
+        var row = await dbContext.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.UserId == userId)
+            .Select(p => new { p.RejectionReason, p.RejectionReasonArabic })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (row is null) { return null; }
+        if (row.RejectionReason is null && row.RejectionReasonArabic is null) { return null; }
+        return new RejectionText(row.RejectionReason, row.RejectionReasonArabic);
     }
 
     private async Task DispatchProfileSubmittedAsync(

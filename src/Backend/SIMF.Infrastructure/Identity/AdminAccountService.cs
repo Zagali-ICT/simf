@@ -506,16 +506,21 @@ internal sealed class AdminAccountService(
         var now = timeProvider.GetUtcNow();
         subject.AccountState = AccountState.Approved;
         subject.UpdatedAt = now;
-        // P10 — D-051: state-change metadata + clear any prior rejection
-        // (the reconsider path: a once-rejected user being approved).
         subject.StateChangedAt = now;
         subject.StateChangedByUserId = actorUserId;
-        subject.RejectionReason = null;
-        subject.RejectionReasonArabic = null;
 
-        // QR id mints at approval (D-046, P4) — idempotent.
-        await qrIdMinter.MintIfMissingAsync(subject, cancellationToken);
+        // D-106: QR + rejection text live on UserProfile now. Ensure the
+        // profile row exists (it usually does — the visitor filled in
+        // their form — but an admin-created Visitor / Other might be
+        // approved before any profile data is captured). Clear any
+        // prior rejection text (the reconsider path) and mint the QR.
+        var profile = await EnsureUserProfileAsync(subject.Id, now, cancellationToken);
+        profile.RejectionReason = null;
+        profile.RejectionReasonArabic = null;
+        await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
+
         await accounts.UpdateAsync(subject).EnsureSuccessAsync();
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         // P10 — revoke every refresh token so the subject's next API
         // call gets a fresh access token with account_state=Approved.
@@ -531,7 +536,7 @@ internal sealed class AdminAccountService(
             ActorUserId = actorUserId,
             SubjectUserId = subject.Id,
             SubjectEmail = subject.Email,
-            Detail = subject.QrId,
+            Detail = profile.QrId,
         }, cancellationToken);
 
         // P13 — D-054: notify the approved user (with their QR id) +
@@ -539,7 +544,7 @@ internal sealed class AdminAccountService(
         var approvedTokens = new Dictionary<string, string>
         {
             ["DisplayName"] = subject.DisplayName,
-            ["QrId"] = subject.QrId ?? string.Empty,
+            ["QrId"] = profile.QrId ?? string.Empty,
         };
         await notifications.DispatchAsync(new NotificationRequest
         {
@@ -547,8 +552,8 @@ internal sealed class AdminAccountService(
             Kind = "Account.Approved",
             Title = "Your SIMF account is approved",
             TitleArabic = "تم اعتماد حسابك في SIMF",
-            Body = $"Your event QR id is {subject.QrId}. Sign in to view it on your profile.",
-            BodyArabic = $"رمز QR الخاص بك للفعالية هو {subject.QrId}. سجّل الدخول لعرضه في ملفك الشخصي.",
+            Body = $"Your event QR id is {profile.QrId}. Sign in to view it on your profile.",
+            BodyArabic = $"رمز QR الخاص بك للفعالية هو {profile.QrId}. سجّل الدخول لعرضه في ملفك الشخصي.",
             Severity = NotificationSeverity.Success,
             SendEmail = true,
             PreRenderedEmailHtml = NotificationEmailTemplates.Render(
@@ -565,14 +570,18 @@ internal sealed class AdminAccountService(
         var now = timeProvider.GetUtcNow();
         subject.AccountState = AccountState.Rejected;
         subject.UpdatedAt = now;
-        // P10 — D-051: persist the reason on the user row (was audit-only
-        // before). EN-only admin input mirrors to RejectionReasonArabic
-        // as a graceful fallback (R1 default).
-        subject.RejectionReason = request.Reason;
-        subject.RejectionReasonArabic = request.Reason;
         subject.StateChangedAt = now;
         subject.StateChangedByUserId = actorUserId;
+
+        // D-106: persist the rejection text on UserProfile (was on the
+        // user row pre-D-106). EN-only admin input mirrors to the Arabic
+        // column as a graceful fallback (R1 default).
+        var profile = await EnsureUserProfileAsync(subject.Id, now, cancellationToken);
+        profile.RejectionReason = request.Reason;
+        profile.RejectionReasonArabic = request.Reason;
+
         await accounts.UpdateAsync(subject).EnsureSuccessAsync();
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         // P10 — revoke every refresh token so the subject's next API
         // call mints a token with account_state=Rejected (and the P11
@@ -651,6 +660,34 @@ internal sealed class AdminAccountService(
                 "الحساب المستهدف ليس في انتظار الموافقة.");
         }
         return subject;
+    }
+
+    /// <summary>
+    /// D-106: returns the tracked <see cref="UserProfile"/> for the user,
+    /// creating a stub row if none exists. The approve/reject flows need
+    /// a profile row to write the QR / rejection text onto. Admin-typed
+    /// users normally never reach approve/reject (Admins don't carry a
+    /// profile today), but Visitor / Other accounts created by an admin
+    /// can be approved before the user fills out the profile form —
+    /// those rows get a minimal stub here so the QR has somewhere to
+    /// land. The caller commits via SaveChangesAsync after the rest of
+    /// the unit of work completes.
+    /// </summary>
+    private async Task<UserProfile> EnsureUserProfileAsync(
+        Guid userId, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var profile = await dbContext.UserProfiles
+            .SingleOrDefaultAsync(p => p.UserId == userId, cancellationToken);
+        if (profile is not null) { return profile; }
+
+        profile = new UserProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            CreatedAt = now,
+        };
+        dbContext.UserProfiles.Add(profile);
+        return profile;
     }
 
     public Task<GridPage<AdminPendingUserSummary>> ListPendingAdminsAsync(

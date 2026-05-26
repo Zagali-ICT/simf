@@ -36,7 +36,20 @@ public interface IUserProfileService
     /// when no image is set.</summary>
     Task<UserIdDocumentImage?> ReadIdImageAsync(
         Guid actorUserId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// D-106: focused read for the SignInService state-banner — returns
+    /// the bilingual rejection text for the user (or <c>null</c> when no
+    /// UserProfile row exists or no rejection is on record). The
+    /// rejection text lives on the profile post-D-106; SignInService
+    /// used to read it directly off the user row.
+    /// </summary>
+    Task<RejectionText?> GetRejectionTextAsync(
+        Guid userId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>The decrypted ID-image bytes + the content type for the response.</summary>
 public sealed record UserIdDocumentImage(byte[] Content, string ContentType);
+
+/// <summary>D-106: bilingual rejection text projection (EN + AR).</summary>
+public sealed record RejectionText(string? English, string? Arabic);

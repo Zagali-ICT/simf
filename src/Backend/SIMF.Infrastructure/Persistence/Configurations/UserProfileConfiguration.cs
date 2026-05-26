@@ -35,6 +35,18 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.InternationalMobile).HasMaxLength(24);
         builder.Property(profile => profile.IdImageRelativePath).HasMaxLength(256);
 
+        // D-106: QrId moved off SimfUser to UserProfile. 12-char Crockford
+        // base32, unique across the system (only minted for Approved rows
+        // so most rows are null — filtered unique index).
+        builder.Property(profile => profile.QrId).HasMaxLength(16);
+        builder.HasIndex(profile => profile.QrId)
+            .IsUnique()
+            .HasFilter("[QrId] IS NOT NULL");
+
+        // D-106: bilingual rejection-reason text moved off SimfUser.
+        builder.Property(profile => profile.RejectionReason).HasMaxLength(500);
+        builder.Property(profile => profile.RejectionReasonArabic).HasMaxLength(500);
+
         // P8 — ProfileTypeId moved off SimfUser; lives here now.
         builder.HasIndex(profile => profile.ProfileTypeId);
         builder.HasOne(profile => profile.ProfileType)

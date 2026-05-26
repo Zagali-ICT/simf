@@ -27,6 +27,7 @@ public sealed class SignInService(
     IAccountCodeRepository accountCodeRepository,
     IEmailQueue emailQueue,
     INotificationDispatcher notifications,
+    IUserProfileService userProfiles,
     IJwtTokenService jwtTokenService,
     ITotpVerifier totpVerifier,
     IRecoveryCodeService recoveryCodes,
@@ -125,7 +126,7 @@ public sealed class SignInService(
             // separately so SOC can spot it. The JWT itself also carries
             // the account_state claim, so 2FA-completed sign-ins are
             // covered by the claim alone.
-            var stateInfo = BuildAccountStateInfo(user);
+            var stateInfo = await BuildAccountStateInfoAsync(user, cancellationToken);
             if (stateInfo is not null)
             {
                 await AuditAsync(AuditEvents.SignInAsGuest, AuditOutcome.Success,
@@ -419,21 +420,32 @@ public sealed class SignInService(
     /// the client (the hard-blocked states never reach this helper —
     /// they 403 before sign-in completes).
     /// </summary>
-    private static AccountStateInfo? BuildAccountStateInfo(SimfUser user) =>
-        user.AccountState switch
+    private async Task<AccountStateInfo?> BuildAccountStateInfoAsync(
+        SimfUser user, CancellationToken cancellationToken)
+    {
+        switch (user.AccountState)
         {
-            AccountState.PendingApproval => new AccountStateInfo(
-                State: nameof(AccountState.PendingApproval),
-                RejectionReason: null,
-                RejectionReasonArabic: null,
-                StateChangedAt: user.StateChangedAt),
-            AccountState.Rejected => new AccountStateInfo(
-                State: nameof(AccountState.Rejected),
-                RejectionReason: user.RejectionReason,
-                RejectionReasonArabic: user.RejectionReasonArabic,
-                StateChangedAt: user.StateChangedAt),
-            _ => null,
-        };
+            case AccountState.PendingApproval:
+                return new AccountStateInfo(
+                    State: nameof(AccountState.PendingApproval),
+                    RejectionReason: null,
+                    RejectionReasonArabic: null,
+                    StateChangedAt: user.StateChangedAt);
+            case AccountState.Rejected:
+                // D-106: rejection text lives on UserProfile now. Fetch it
+                // (null when the row or the field is missing — the
+                // state-banner still renders, just without the reason).
+                var rejection = await userProfiles.GetRejectionTextAsync(
+                    user.Id, cancellationToken);
+                return new AccountStateInfo(
+                    State: nameof(AccountState.Rejected),
+                    RejectionReason: rejection?.English,
+                    RejectionReasonArabic: rejection?.Arabic,
+                    StateChangedAt: user.StateChangedAt);
+            default:
+                return null;
+        }
+    }
 
     /// <summary>Blocks the second-factor step if the account locked out after the password step.</summary>
     private async Task EnsureNotLockedOutAsync(SimfUser user, CancellationToken cancellationToken)
