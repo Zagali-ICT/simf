@@ -1,23 +1,18 @@
-@* Control Panel — list Other-typed accounts (P7e — D-055). Sibling of
-   /admin/admins and /admin/visitors per the P7 three-UserType model
-   (Staff / Exhibitor / Sponsor / Media — their actual sub-type lives
-   in UserProfile.ProfileTypeId, set at creation by the admin). *@
+@* Control Panel — list Other-typed accounts (P7e — D-055, promoted to the
+   canonical D-117 CRUD pattern in D-114). Administrator-only. Uses
+   SimfDataGrid with the full toolbar wired against the D-113 backend
+   (/account/api/admin/others/*), SimfBanner page-top, and modal-based
+   Add / Edit / Details flows. /admin/others/new is preserved as a
+   deep-link fallback (Q-D). *@
 @page "/admin/others"
 @layout CpShellLayout
 @attribute [Authorize(Roles = "Administrator")]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
-@inject NavigationManager Nav
 
 <PageTitle>@L["Admin.Others.Title"] · SIMF</PageTitle>
 
-<SimfPageHeader Title="@L["Admin.Others.Title"]">
-    <Actions>
-        <SimfButton Type="button" OnClick="@(() => Nav.NavigateTo("/admin/others/new"))">
-            @L["Admin.Others.CreateNew"]
-        </SimfButton>
-    </Actions>
-</SimfPageHeader>
+<SimfBanner Title="@L["Admin.Others.Title"]" />
 
 <div class="simf-page-wide">
     <div class="simf-surface">
@@ -26,15 +21,42 @@
                       Page="_page"
                       Loading="_loading"
                       OnQueryChanged="OnQueryChangedAsync"
-                      Multiselect="false"
+                      Multiselect="true"
                       RowKey="@(user => user.Id.ToString())"
                       RowLabel="@(user => user.Email)"
                       Caption="@L["Admin.Others.Title"]"
                       FilterColumnLabel="@L["Admin.Users.FilterColumn"]"
+                      OnAdd="OnAddAsync"
+                      OnEditOne="OnEditAsync"
+                      OnDetailsOne="OnDetailsAsync"
+                      OnDeleteSelected="OnBulkDeleteAsync"
+                      OnDeleteOne="OnRowDeleteAsync"
+                      OnDuplicateOne="OnDuplicateAsync"
+                      OnCopySelected="OnCopySelectedAsync"
+                      OnCopyOne="OnCopyOneAsync"
+                      OnPaste="OnPasteAsync"
+                      OnExport="OnExportAsync"
+                      OnImport="OnImportAsync"
                       PrevLabel="@L["Admin.Users.Prev"]"
                       NextLabel="@L["Admin.Users.Next"]"
+                      FirstLabel="@L["Admin.Users.Pager.First"]"
+                      LastLabel="@L["Admin.Users.Pager.Last"]"
+                      PageSizeLabel="@L["Admin.Users.Pager.PageSize"]"
+                      PageFormatter="@FormatPage"
                       LoadingLabel="@L["Admin.Users.Loading"]"
                       FilterPlaceholder="@L["Admin.Users.FilterPlaceholder"]"
+                      ActionsHeader="@L["Admin.Users.Column.Actions"]"
+                      SelectAllLabel="@L["Admin.Users.Action.SelectAll"]"
+                      SelectRowLabel="@L["Admin.Users.Action.SelectRow"]"
+                      AddLabel="@L["Admin.Users.Action.Add"]"
+                      EditLabel="@L["Admin.Users.Action.Edit"]"
+                      DetailsLabel="@L["Admin.Users.Action.Details"]"
+                      DeleteLabel="@L["Admin.Users.Action.Delete"]"
+                      CopyLabel="@L["Admin.Users.Action.Copy"]"
+                      PasteLabel="@L["Admin.Users.Action.Paste"]"
+                      DuplicateLabel="@L["Admin.Users.Action.Duplicate"]"
+                      ImportLabel="@L["Admin.Users.Action.Import"]"
+                      ExportLabel="@L["Admin.Users.Action.Export"]"
                       SummaryFormatter="@FormatSummary">
             <Columns>
                 <SimfDataGridColumn TItem="AdminUserSummary" Key="email"
@@ -60,10 +82,171 @@
     </div>
 </div>
 
+@if (_toast is not null)
+{
+    <div class="simf-toast">
+        <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+    </div>
+}
+
+@* D-114 — hidden file input used by Import. *@
+<input type="file" id="others-import-input" accept=".xlsx"
+       class="simf-hidden-input"
+       aria-label="@L["Admin.Users.Import.Picker"]"
+       @onchange="OnImportFileSelectedAsync" />
+
+@* D-114 — Add other modal (replaces navigation to /admin/others/new). *@
+@if (_addOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.Others.Add.Title"]" OnClose="@(() => _addOpen = false)">
+        <ChildContent>
+            <CreateOtherForm OnSuccess="OnAddSucceededAsync"
+                             OnCancel="@(() => _addOpen = false)"
+                             CancelLabel="@L["Admin.Others.Add.Close"]" />
+        </ChildContent>
+    </SimfModal>
+}
+
+@* D-114 — Edit stub modal (real Edit awaits the generic-CRUD API). *@
+@if (_editOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.Others.Edit.Title"]" OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <p>@L["Admin.Others.Edit.NotYet"]</p>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="@(() => _editOpen = false)">
+                @L["Admin.Others.Edit.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@* D-114 — Details modal (read-only view of the row's data — no extra fetch). *@
+@if (_detailsTarget is not null)
+{
+    <SimfModal Open="true"
+               Title="@string.Format(L["Admin.Others.Details.Title"], _detailsTarget.Email)"
+               OnClose="@(() => _detailsTarget = null)">
+        <ChildContent>
+            <dl class="simf-dl">
+                <dt>@L["Admin.Users.Details.Field.Email"]</dt>
+                <dd>@_detailsTarget.Email</dd>
+                <dt>@L["Admin.Users.Details.Field.DisplayName"]</dt>
+                <dd>@_detailsTarget.DisplayName</dd>
+                <dt>@L["Admin.Users.Details.Field.State"]</dt>
+                <dd>@_detailsTarget.AccountState</dd>
+                <dt>@L["Admin.Users.Details.Field.TwoFactor"]</dt>
+                <dd>
+                    @(_detailsTarget.TwoFactorEnabled
+                        ? L["Admin.Users.TwoFactor.On"]
+                        : L["Admin.Users.TwoFactor.Off"])
+                </dd>
+            </dl>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="@(() => _detailsTarget = null)">
+                @L["Admin.Others.Details.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@if (_bulkDeleteOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.Others.BulkDelete.Title"]" OnClose="@(() => _bulkDeleteOpen = false)">
+        <ChildContent>
+            <p>@string.Format(L["Admin.Others.BulkDelete.Confirm"], _bulkDeleteTargets.Count)</p>
+            <SimfTextarea Label="@L["Admin.Users.BulkDelete.Reason"]"
+                          Helper="@L["Admin.Users.BulkDelete.ReasonHint"]"
+                          Rows="3" MaxLength="500"
+                          Value="@_bulkDeleteReason" ValueChanged="@(v => _bulkDeleteReason = v)" />
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary"
+                        OnClick="@(() => _bulkDeleteOpen = false)">
+                @L["Admin.Users.BulkDelete.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" Variant="primary"
+                        Loading="_busy"
+                        Disabled="@(_bulkDeleteReason.Length is < 10 or > 500)"
+                        OnClick="ConfirmBulkDeleteAsync">
+                @L["Admin.Users.BulkDelete.Submit"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@if (_duplicateOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.Others.Duplicate.Title"]" OnClose="@(() => _duplicateOpen = false)">
+        <ChildContent>
+            <p>@string.Format(L["Admin.Users.Duplicate.Confirm"], _duplicateSource?.Email)</p>
+            <SimfTextField Label="@L["Admin.Users.Duplicate.NewEmail"]"
+                           Helper="@L["Admin.Users.Duplicate.NewEmailHint"]"
+                           Type="email" Icon="mail"
+                           Value="@_duplicateEmail"
+                           ValueChanged="@(v => _duplicateEmail = v)"
+                           ValueExpression="@(() => _duplicateEmail)" />
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary"
+                        OnClick="@(() => _duplicateOpen = false)">
+                @L["Admin.Users.Duplicate.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" Variant="primary"
+                        Loading="_busy"
+                        Disabled="@(!IsLikelyEmail(_duplicateEmail))"
+                        OnClick="ConfirmDuplicateAsync">
+                @L["Admin.Users.Duplicate.Submit"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@if (_importResult is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.Users.Import.ResultTitle"]" OnClose="@(() => _importResult = null)">
+        <ChildContent>
+            <p>@string.Format(L["Admin.Users.Import.ResultBody"], _importResult.Created, _importResult.Skipped)</p>
+            @if (_importResult.Errors.Count > 0)
+            {
+                <ul class="simf-import-errors">
+                    @foreach (var error in _importResult.Errors)
+                    {
+                        <li>@($"Row {error.Row} ({error.Email}): {error.Reason}")</li>
+                    }
+                </ul>
+            }
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="@(() => _importResult = null)">
+                @L["Admin.Users.Import.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
 @code {
     private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminUserSummary>? _page;
     private bool _loading;
+    private bool _busy;
+
+    private bool _addOpen;
+    private bool _editOpen;
+    private AdminUserSummary? _detailsTarget;
+
+    private bool _bulkDeleteOpen;
+    private IReadOnlyList<AdminUserSummary> _bulkDeleteTargets = Array.Empty<AdminUserSummary>();
+    private string _bulkDeleteReason = string.Empty;
+
+    private bool _duplicateOpen;
+    private AdminUserSummary? _duplicateSource;
+    private string _duplicateEmail = string.Empty;
+
+    private AdminImportUsersResponse? _importResult;
+    private Toast? _toast;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -88,6 +271,193 @@
         finally { _loading = false; }
     }
 
+    private Task OnAddAsync()
+    {
+        _addOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnAddSucceededAsync(AdminCreateUserResponse created)
+    {
+        _addOpen = false;
+        ShowToast("success", string.Format(L["Admin.CreateUser.Success"], created.Email));
+        await LoadAsync();
+    }
+
+    private Task OnEditAsync(AdminUserSummary _)
+    {
+        _editOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private Task OnDetailsAsync(AdminUserSummary user)
+    {
+        _detailsTarget = user;
+        return Task.CompletedTask;
+    }
+
+    private Task OnRowDeleteAsync(AdminUserSummary user)
+    {
+        _bulkDeleteTargets = new[] { user };
+        _bulkDeleteReason = string.Empty;
+        _bulkDeleteOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private Task OnBulkDeleteAsync(IReadOnlyList<AdminUserSummary> users)
+    {
+        if (users.Count == 0)
+        {
+            ShowToast("error", L["Admin.Users.NoSelection"]);
+            return Task.CompletedTask;
+        }
+        _bulkDeleteTargets = users;
+        _bulkDeleteReason = string.Empty;
+        _bulkDeleteOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private async Task ConfirmBulkDeleteAsync()
+    {
+        if (_bulkDeleteReason.Length is < 10 or > 500 || _bulkDeleteTargets.Count == 0) return;
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminBulkDeleteResponse>>(
+                "simfAccount.postJson", "/account/api/admin/others/bulk-delete",
+                new AdminBulkDeleteRequest
+                {
+                    Ids = _bulkDeleteTargets.Select(u => u.Id).ToList(),
+                    Reason = _bulkDeleteReason,
+                });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _bulkDeleteOpen = false;
+                ShowToast("success", string.Format(
+                    L["Admin.Users.BulkDelete.Success"],
+                    envelope.Data.Deleted, envelope.Data.Skipped));
+                await LoadAsync();
+            }
+            else
+            {
+                ShowToast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Users.BulkDelete.Fallback"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private Task OnDuplicateAsync(AdminUserSummary user)
+    {
+        _duplicateSource = user;
+        _duplicateEmail = string.Empty;
+        _duplicateOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private async Task ConfirmDuplicateAsync()
+    {
+        if (_duplicateSource is null || !IsLikelyEmail(_duplicateEmail)) return;
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminCreateUserResponse>>(
+                "simfAccount.postJson", "/account/api/admin/others/duplicate",
+                new AdminDuplicateUserRequest
+                {
+                    SourceId = _duplicateSource.Id,
+                    NewEmail = _duplicateEmail,
+                });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _duplicateOpen = false;
+                ShowToast("success", string.Format(
+                    L["Admin.Users.Duplicate.Success"], envelope.Data.Email));
+                await LoadAsync();
+            }
+            else
+            {
+                ShowToast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Users.Duplicate.Fallback"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private Task OnCopySelectedAsync(IReadOnlyList<AdminUserSummary> users)
+    {
+        if (users.Count == 0) return Task.CompletedTask;
+        ShowToast("info", string.Format(L["Admin.Users.Copy.Count"], users.Count));
+        return Task.CompletedTask;
+    }
+
+    private Task OnCopyOneAsync(AdminUserSummary user)
+    {
+        ShowToast("info", string.Format(L["Admin.Users.Copy.One"], user.Email));
+        return Task.CompletedTask;
+    }
+
+    private Task OnPasteAsync(string clipboard)
+    {
+        if (string.IsNullOrWhiteSpace(clipboard))
+        {
+            ShowToast("error", L["Admin.Users.Paste.Empty"]);
+            return Task.CompletedTask;
+        }
+        ShowToast("info", L["Admin.Users.Paste.NotImplemented"]);
+        return Task.CompletedTask;
+    }
+
+    private async Task OnExportAsync(IReadOnlyList<AdminUserSummary> selected)
+    {
+        var ids = selected.Select(u => u.Id).ToList();
+        await JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/others/export",
+            new AdminExportUsersRequest { Ids = ids, Query = ids.Count == 0 ? _query : null });
+    }
+
+    private async Task OnImportAsync() =>
+        await JS.InvokeVoidAsync("simfAccount.triggerFileInput", "others-import-input");
+
+    private async Task OnImportFileSelectedAsync()
+    {
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminImportUsersResponse>>(
+                "simfAccount.uploadFile", "/account/api/admin/others/import", "others-import-input");
+            if (envelope is { Success: true, Data: not null })
+            {
+                _importResult = envelope.Data;
+                await LoadAsync();
+            }
+            else
+            {
+                ShowToast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Users.Import.Fallback"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
     private string FormatSummary(int from, int to, int total) =>
         string.Format(L["Admin.Users.Pager.Summary"], from, to, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Admin.Users.Pager.Page"], current, total);
+
+    private static bool IsLikelyEmail(string value) =>
+        !string.IsNullOrWhiteSpace(value)
+        && value.Contains('@', StringComparison.Ordinal)
+        && value.Length <= 256;
+
+    private void ShowToast(string variant, string message)
+    {
+        _toast = new Toast(variant, message);
+    }
+
+    private sealed record Toast(string Variant, string Message);
 }

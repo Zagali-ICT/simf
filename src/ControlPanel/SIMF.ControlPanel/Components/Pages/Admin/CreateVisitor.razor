@@ -1,12 +1,11 @@
-@* Control Panel — create a new visitor account (P3). A team member adds a
-   visitor with email + display name; an invitation email goes out with the
-   7-day password-set code. Visitors carry no role; the wider Team-only
-   policy and the approval workflow land in P4. *@
+@* Control Panel — create a new visitor account (P3; refactored in D-114 to
+   host the reusable CreateVisitorForm so the visitors list page can show the
+   same form inside an Add modal). The URL /admin/visitors/new stays as a
+   deep-link fallback per Q-D. *@
 @page "/admin/visitors/new"
 @layout CpShellLayout
 @attribute [Authorize(Roles = "Administrator")]
 @inject IStringLocalizer<Strings> L
-@inject IJSRuntime JS
 @inject NavigationManager Nav
 
 <PageTitle>@L["Admin.CreateVisitor.Title"] · SIMF</PageTitle>
@@ -16,108 +15,16 @@
 <section class="simf-card simf-page-card">
     <p>@L["Admin.CreateVisitor.Supporting"]</p>
 
-    @if (_success is not null)
-    {
-        <SimfAlert Variant="success">@_success</SimfAlert>
-    }
-    @if (_error is not null)
-    {
-        <SimfAlert Variant="error">@_error</SimfAlert>
-    }
-
-    <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
-        <div class="simf-form__fields">
-            <SimfTextField Label="@L["Admin.CreateVisitor.Email"]"
-                           @bind-Value="_model.Email"
-                           Type="email" Icon="mail" InputMode="email"
-                           Autocomplete="off" Disabled="_busy" />
-            <SimfTextField Label="@L["Admin.CreateVisitor.DisplayName"]"
-                           @bind-Value="_model.DisplayName"
-                           Autocomplete="off" Disabled="_busy" />
-        </div>
-        <div class="simf-form__actions">
-            <SimfButton Loading="_busy" LoadingLabel="@L["Admin.CreateVisitor.Submitting"]">
-                @L["Admin.CreateVisitor.Submit"]
-            </SimfButton>
-            <SimfButton Type="button" Variant="secondary"
-                        OnClick="@(() => Nav.NavigateTo("/admin/visitors"))">
-                @L["Admin.CreateVisitor.BackToList"]
-            </SimfButton>
-        </div>
-    </EditForm>
+    <CreateVisitorForm OnSuccess="OnCreatedAsync"
+                       OnCancel="OnBackToListAsync" />
 </section>
 
 @code {
-    private readonly Model _model = new();
-    private EditContext _editContext = default!;
-    private ValidationMessageStore _messages = default!;
-    private bool _busy;
-    private string? _success;
-    private string? _error;
+    private Task OnCreatedAsync(AdminCreateUserResponse _) => Task.CompletedTask;
 
-    protected override void OnInitialized()
+    private Task OnBackToListAsync()
     {
-        _editContext = new EditContext(_model);
-        _messages = new ValidationMessageStore(_editContext);
-        _editContext.OnFieldChanged += ClearFieldError;
-    }
-
-    private void ClearFieldError(object? sender, FieldChangedEventArgs e)
-    {
-        _messages.Clear(e.FieldIdentifier);
-        _success = null;
-        _editContext.NotifyValidationStateChanged();
-    }
-
-    private async Task HandleSubmitAsync()
-    {
-        if (_busy) return;
-        _messages.Clear();
-        _success = null;
-        _error = null;
-
-        if (string.IsNullOrWhiteSpace(_model.Email) || !_model.Email.Contains('@', StringComparison.Ordinal))
-        {
-            _messages.Add(_editContext.Field(nameof(Model.Email)),
-                L["Admin.CreateVisitor.EmailInvalid"]);
-        }
-        if (_model.DisplayName.Length is < 2 or > 128)
-        {
-            _messages.Add(_editContext.Field(nameof(Model.DisplayName)),
-                L["Admin.CreateVisitor.DisplayNameRequired"]);
-        }
-
-        _editContext.NotifyValidationStateChanged();
-        if (_editContext.GetValidationMessages().Any()) return;
-
-        _busy = true;
-        try
-        {
-            var envelope = await JS.InvokeAsync<ApiResult<AdminCreateUserResponse>>(
-                "simfAccount.postJson", "/account/api/admin/visitors",
-                new AdminCreateVisitorRequest
-                {
-                    Email = _model.Email,
-                    DisplayName = _model.DisplayName,
-                });
-            if (envelope is { Success: true, Data: not null })
-            {
-                _success = string.Format(L["Admin.CreateVisitor.Success"], envelope.Data.Email);
-                _model.Email = string.Empty;
-                _model.DisplayName = string.Empty;
-            }
-            else
-            {
-                _error = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.CreateVisitor.Fallback"];
-            }
-        }
-        finally { _busy = false; }
-    }
-
-    private sealed class Model
-    {
-        public string Email { get; set; } = string.Empty;
-        public string DisplayName { get; set; } = string.Empty;
+        Nav.NavigateTo("/admin/visitors");
+        return Task.CompletedTask;
     }
 }

@@ -1,0 +1,145 @@
+@* Reusable Create-Other form (D-114). Lifted out of CreateOther.razor so both
+   the standalone /admin/others/new fallback page and the Add-modal on the
+   others list page host the same form. Includes the ProfileType picker
+   sourced from the existing GET /admin/profile-types?userType=Other endpoint. *@
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_success is not null)
+{
+    <SimfAlert Variant="success">@_success</SimfAlert>
+}
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        <SimfTextField Label="@L["Admin.CreateUser.Email"]"
+                       @bind-Value="_model.Email"
+                       Type="email" Icon="mail" InputMode="email"
+                       Autocomplete="off" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.CreateUser.DisplayName"]"
+                       @bind-Value="_model.DisplayName"
+                       Autocomplete="off" Disabled="_busy" />
+        <SimfSelect TValue="Guid"
+                    Label="@L["Admin.Others.ProfileType"]"
+                    Placeholder="@L["Admin.Others.ProfileType.Placeholder"]"
+                    Items="_profileTypeIds"
+                    ValueFor="@(id => id.ToString())"
+                    LabelFor="@(id => LabelFor(id))"
+                    Value="@_model.ProfileTypeId"
+                    ValueChanged="@(id => _model.ProfileTypeId = id)"
+                    Disabled="_busy" />
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy" LoadingLabel="@L["Admin.CreateUser.Submitting"]">
+            @L["Admin.Others.New.Submit"]
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy"
+                        OnClick="OnCancel">
+                @CancelLabel
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private readonly Model _model = new();
+    private EditContext _editContext = default!;
+    private ValidationMessageStore _messages = default!;
+    private bool _busy;
+    private string? _success;
+    private string? _error;
+    private Guid[] _profileTypeIds = Array.Empty<Guid>();
+    private Dictionary<Guid, AdminProfileTypeSummary> _profileTypesById = new();
+
+    /// <summary>Raised after a successful create. Receives the API response.</summary>
+    [Parameter] public EventCallback<AdminCreateUserResponse> OnSuccess { get; set; }
+
+    /// <summary>Raised when the user clicks Cancel. If unset, no Cancel button renders.</summary>
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    /// <summary>The cancel button label. Defaults to the standard back-to-list copy.</summary>
+    [Parameter] public string? CancelLabel { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _editContext = new EditContext(_model);
+        _messages = new ValidationMessageStore(_editContext);
+        CancelLabel ??= L["Admin.CreateUser.BackToList"];
+
+        var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminProfileTypeSummary>>>(
+            "simfAccount.getJson",
+            "/account/api/admin/profile-types?userType=Other");
+        if (envelope is { Success: true, Data: not null })
+        {
+            _profileTypesById = envelope.Data.ToDictionary(p => p.Id);
+            _profileTypeIds = envelope.Data.Select(p => p.Id).ToArray();
+        }
+    }
+
+    private string LabelFor(Guid id)
+    {
+        if (!_profileTypesById.TryGetValue(id, out var p)) return id.ToString();
+        var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+        return isArabic ? p.NameArabic : p.Name;
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _success = null; _error = null;
+
+        if (string.IsNullOrWhiteSpace(_model.Email) || !_model.Email.Contains('@', StringComparison.Ordinal))
+        {
+            _error = L["Admin.CreateUser.EmailInvalid"]; return;
+        }
+        if (_model.DisplayName.Length is < 2 or > 128)
+        {
+            _error = L["Admin.CreateUser.DisplayNameRequired"]; return;
+        }
+        if (_model.ProfileTypeId == Guid.Empty)
+        {
+            _error = L["Admin.Others.New.ProfileTypeRequired"]; return;
+        }
+
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminCreateUserResponse>>(
+                "simfAccount.postJson", "/account/api/admin/others",
+                new AdminCreateOtherRequest
+                {
+                    Email = _model.Email,
+                    DisplayName = _model.DisplayName,
+                    ProfileTypeId = _model.ProfileTypeId,
+                });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _success = string.Format(L["Admin.CreateUser.Success"], envelope.Data.Email);
+                _model.Email = string.Empty;
+                _model.DisplayName = string.Empty;
+                _model.ProfileTypeId = Guid.Empty;
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.CreateUser.Fallback"];
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private sealed class Model
+    {
+        public string Email { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public Guid ProfileTypeId { get; set; }
+    }
+}
