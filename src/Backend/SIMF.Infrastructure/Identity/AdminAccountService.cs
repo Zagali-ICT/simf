@@ -50,8 +50,7 @@ internal sealed class AdminAccountService(
     : IAdminTwoFactorService,
       IAdminUserApprovalService,
       IAdminUserProvisioningService,
-      IAdminUserBulkService,
-      IAdminProfileTypeQueryService
+      IAdminUserBulkService
 {
     private const string AdministratorRole = "Administrator";
     private const string AuthenticatorProvider = "[AspNetUserStore]";
@@ -697,21 +696,9 @@ internal sealed class AdminAccountService(
             new GridQuery { Skip = skip, Top = top });
     }
 
-    public async Task<IReadOnlyList<AdminProfileTypeSummary>> ListProfileTypesAsync(
-        UserType userType, CancellationToken cancellationToken = default)
-    {
-        return await dbContext.ProfileTypes
-            .Where(profileType => profileType.UserType == userType && profileType.IsActive)
-            .OrderBy(profileType => profileType.Name)
-            .Select(profileType => new AdminProfileTypeSummary(
-                profileType.Id,
-                profileType.Name,
-                profileType.NameArabic,
-                profileType.PageColor,
-                profileType.UserType.ToString(),
-                profileType.IsActive))
-            .ToListAsync(cancellationToken);
-    }
+    // D-100: ListProfileTypesAsync extracted to AdminProfileTypeQueryService
+    // (the first slice of the R2 follow-up — the remaining four interfaces
+    // stay co-resident here for now).
 
     public async Task<AdminBulkDeleteResponse> BulkDeleteUsersAsync(
         Guid actorUserId,
