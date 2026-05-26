@@ -90,6 +90,8 @@
   <data name="Admin.ProfileTypes.Field.NameArabicHint" xml:space="preserve"><value>1–128 characters.</value></data>
   <data name="Admin.ProfileTypes.Field.PageColor" xml:space="preserve"><value>Page colour</value></data>
   <data name="Admin.ProfileTypes.Field.PageColorHint" xml:space="preserve"><value>Hex like #244A77 or a CSS variable (1–32 characters).</value></data>
+  <!-- D-120 — colour-swatch aria-label. -->
+  <data name="Admin.ProfileTypes.Field.PageColorPicker" xml:space="preserve"><value>Open colour picker</value></data>
   <data name="Admin.ProfileTypes.Field.IsActive" xml:space="preserve"><value>Visible in pickers (active)</value></data>
   <data name="Admin.ProfileTypes.Field.NameInvalid" xml:space="preserve"><value>Name must be 1–128 characters.</value></data>
   <data name="Admin.ProfileTypes.Field.NameArabicInvalid" xml:space="preserve"><value>Arabic name must be 1–128 characters.</value></data>

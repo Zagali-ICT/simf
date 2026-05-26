@@ -2043,4 +2043,40 @@ body.simf-modal-open { overflow: hidden; }
   max-width: none !important;
 }
 
+/* ===========================================================================
+   D-120 — Text-input + native colour-swatch pair.
+   Used by the ProfileTypes form's PageColor field; designed reusable for any
+   future "value with a colour swatch" surface. Tokens only.
+   ========================================================================= */
+.simf-field__control--with-swatch {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+.simf-field__control--with-swatch .simf-field__input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.simf-field__color-swatch {
+  flex: 0 0 auto;
+  width: 2.5rem;
+  padding: 0;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-field);
+  background: var(--color-field-background);
+  cursor: pointer;
+}
+
+.simf-field__color-swatch:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.simf-field__color-swatch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 

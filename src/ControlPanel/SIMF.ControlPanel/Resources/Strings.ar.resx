@@ -90,6 +90,8 @@
   <data name="Admin.ProfileTypes.Field.NameArabicHint" xml:space="preserve"><value>1–128 حرفًا.</value></data>
   <data name="Admin.ProfileTypes.Field.PageColor" xml:space="preserve"><value>لون الصفحة</value></data>
   <data name="Admin.ProfileTypes.Field.PageColorHint" xml:space="preserve"><value>قيمة سداسية مثل #244A77 أو متغير CSS (1–32 حرفًا).</value></data>
+  <!-- D-120 — colour-swatch aria-label. -->
+  <data name="Admin.ProfileTypes.Field.PageColorPicker" xml:space="preserve"><value>افتح منتقي الألوان</value></data>
   <data name="Admin.ProfileTypes.Field.IsActive" xml:space="preserve"><value>مرئي في القوائم (نشط)</value></data>
   <data name="Admin.ProfileTypes.Field.NameInvalid" xml:space="preserve"><value>يجب أن يتراوح الاسم بين 1 و128 حرفًا.</value></data>
   <data name="Admin.ProfileTypes.Field.NameArabicInvalid" xml:space="preserve"><value>يجب أن يتراوح الاسم العربي بين 1 و128 حرفًا.</value></data>

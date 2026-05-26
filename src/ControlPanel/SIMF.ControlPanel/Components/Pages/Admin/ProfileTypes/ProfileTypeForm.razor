@@ -22,9 +22,25 @@
         <SimfTextField Label="@L["Admin.ProfileTypes.Field.NameArabic"]"
                        Helper="@L["Admin.ProfileTypes.Field.NameArabicHint"]"
                        @bind-Value="_model.NameArabic" Disabled="_busy" />
-        <SimfTextField Label="@L["Admin.ProfileTypes.Field.PageColor"]"
-                       Helper="@L["Admin.ProfileTypes.Field.PageColorHint"]"
-                       @bind-Value="_model.PageColor" Disabled="_busy" />
+        @* D-120 — PageColor pairs a text input (CSS variable / 3-digit hex friendly)
+           with a native colour swatch. The text field stays the source of truth;
+           the swatch only writes #rrggbb back into it. *@
+        <div class="simf-field">
+            <label class="simf-field__label" for="profile-type-page-color">@L["Admin.ProfileTypes.Field.PageColor"]</label>
+            <div class="simf-field__control simf-field__control--with-swatch">
+                <input id="profile-type-page-color" class="simf-field__input" type="text"
+                       value="@_model.PageColor"
+                       @oninput="OnPageColorTextInput"
+                       disabled="@(_busy ? "disabled" : null)"
+                       aria-describedby="profile-type-page-color-hint" />
+                <input class="simf-field__color-swatch" type="color"
+                       value="@PageColorAsHex"
+                       @oninput="OnPageColorSwatchInput"
+                       disabled="@(_busy ? "disabled" : null)"
+                       aria-label="@L["Admin.ProfileTypes.Field.PageColorPicker"]" />
+            </div>
+            <div class="simf-field__helper" id="profile-type-page-color-hint">@L["Admin.ProfileTypes.Field.PageColorHint"]</div>
+        </div>
         <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
             @L["Admin.ProfileTypes.Field.IsActive"]
         </SimfCheckbox>
@@ -83,6 +99,30 @@
 
     private string SubmitLabel =>
         _isEdit ? L["Admin.ProfileTypes.Submit.Update"] : L["Admin.ProfileTypes.Submit.Create"];
+
+    // D-120 — only feed the native colour picker when the model value is a
+    // canonical #rrggbb hex. CSS variables and 3-digit hex shortcuts stay in
+    // the text field as-is; the picker falls back to a brand-neutral default
+    // for display purposes (no write happens until the user picks).
+    private static readonly System.Text.RegularExpressions.Regex HexSixPattern =
+        new("^#[0-9A-Fa-f]{6}$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private string PageColorAsHex =>
+        HexSixPattern.IsMatch(_model.PageColor) ? _model.PageColor : "#244A77";
+
+    private void OnPageColorTextInput(ChangeEventArgs e)
+    {
+        _model.PageColor = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private void OnPageColorSwatchInput(ChangeEventArgs e)
+    {
+        var picked = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(picked))
+        {
+            _model.PageColor = picked;
+        }
+    }
 
     private async Task HandleSubmitAsync()
     {
