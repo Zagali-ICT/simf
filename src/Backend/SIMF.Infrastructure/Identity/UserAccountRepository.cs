@@ -13,14 +13,12 @@ namespace SIMF.Infrastructure.Identity;
 /// framework returns into the SIMF-owned <see cref="UserOperationResult"/>,
 /// so Application code never sees an Identity type.
 ///
-/// <para>R5a — D-090: <see cref="UserManager{T}"/> is now generically
+/// <para>R5a — D-090 / R5b — D-091: <see cref="UserManager{T}"/> is generically
 /// parameterised on <see cref="IdentitySimfUser"/> (the Infrastructure-owned
 /// persistence shim). The public contract still exposes <see cref="SimfUser"/>;
-/// conversion happens at every boundary through the inline proto-mapper
-/// (<see cref="ToIdentity"/> / <see cref="ToDomain"/> / <see cref="SyncBack"/>).
-/// R5b extracts this mapper into a dedicated <c>IdentityUserMapper</c> class;
-/// R5f drops <c>IdentityUser&lt;Guid&gt;</c> from <see cref="SimfUser"/>'s
-/// inheritance chain.</para>
+/// conversion happens at every boundary through
+/// <see cref="IdentityUserMapper"/>. R5f drops <c>IdentityUser&lt;Guid&gt;</c>
+/// from <see cref="SimfUser"/>'s inheritance chain.</para>
 ///
 /// <para>EF tracking discipline (R5a — D-090). Mutating methods route every
 /// operation through <see cref="EnsureTrackedAsync"/>: if the change tracker
@@ -59,14 +57,14 @@ internal sealed class UserAccountRepository(
     {
         cancellationToken.ThrowIfCancellationRequested();
         var identity = await userManager.FindByEmailAsync(email);
-        return identity is null ? null : ToDomain(identity);
+        return identity is null ? null : IdentityUserMapper.ToDomain(identity);
     }
 
     public async Task<SimfUser?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var identity = await userManager.FindByIdAsync(id.ToString());
-        return identity is null ? null : ToDomain(identity);
+        return identity is null ? null : IdentityUserMapper.ToDomain(identity);
     }
 
     public async Task<UserOperationResult> CreateAsync(SimfUser user, string password, CancellationToken cancellationToken = default)
@@ -74,18 +72,18 @@ internal sealed class UserAccountRepository(
         cancellationToken.ThrowIfCancellationRequested();
         // Create has no existing row to track-merge against — pass a fresh
         // IdentitySimfUser and sync back the server-generated fields.
-        var identity = ToIdentity(user);
+        var identity = IdentityUserMapper.ToIdentity(user);
         var result = await userManager.CreateAsync(identity, password);
-        if (result.Succeeded) { SyncBack(identity, user); }
+        if (result.Succeeded) { IdentityUserMapper.SyncBack(identity, user); }
         return Translate(result);
     }
 
     public async Task<UserOperationResult> CreateAsync(SimfUser user, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var identity = ToIdentity(user);
+        var identity = IdentityUserMapper.ToIdentity(user);
         var result = await userManager.CreateAsync(identity);
-        if (result.Succeeded) { SyncBack(identity, user); }
+        if (result.Succeeded) { IdentityUserMapper.SyncBack(identity, user); }
         return Translate(result);
     }
 
@@ -95,7 +93,7 @@ internal sealed class UserAccountRepository(
         var identity = await EnsureTrackedAsync(user);
         if (identity is null) { return MissingUser(); }
         var result = await userManager.UpdateAsync(identity);
-        if (result.Succeeded) { SyncBack(identity, user); }
+        if (result.Succeeded) { IdentityUserMapper.SyncBack(identity, user); }
         return Translate(result);
     }
 
@@ -106,7 +104,7 @@ internal sealed class UserAccountRepository(
         // branch, so a tracked entity is required to avoid the duplicate-tracking
         // guard. `merge: false` keeps stale caller fields from clobbering the
         // tracked row before the rehash UPDATE.
-        var identity = await EnsureTrackedAsync(user, merge: false) ?? ToIdentity(user);
+        var identity = await EnsureTrackedAsync(user, merge: false) ?? IdentityUserMapper.ToIdentity(user);
         return await userManager.CheckPasswordAsync(identity, password);
     }
 
@@ -116,7 +114,7 @@ internal sealed class UserAccountRepository(
         var identity = await EnsureTrackedAsync(user);
         if (identity is null) { return MissingUser(); }
         var result = await userManager.AddPasswordAsync(identity, password);
-        if (result.Succeeded) { SyncBack(identity, user); }
+        if (result.Succeeded) { IdentityUserMapper.SyncBack(identity, user); }
         return Translate(result);
     }
 
@@ -126,7 +124,7 @@ internal sealed class UserAccountRepository(
         var identity = await EnsureTrackedAsync(user);
         if (identity is null) { return MissingUser(); }
         var result = await userManager.RemovePasswordAsync(identity);
-        if (result.Succeeded) { SyncBack(identity, user); }
+        if (result.Succeeded) { IdentityUserMapper.SyncBack(identity, user); }
         return Translate(result);
     }
 
@@ -136,7 +134,7 @@ internal sealed class UserAccountRepository(
         var identity = await EnsureTrackedAsync(user);
         if (identity is null) { return MissingUser(); }
         var result = await userManager.ChangePasswordAsync(identity, currentPassword, newPassword);
-        if (result.Succeeded) { SyncBack(identity, user); }
+        if (result.Succeeded) { IdentityUserMapper.SyncBack(identity, user); }
         return Translate(result);
     }
 
@@ -146,13 +144,13 @@ internal sealed class UserAccountRepository(
         var identity = await EnsureTrackedAsync(user);
         if (identity is null) { return; }
         var result = await userManager.UpdateSecurityStampAsync(identity);
-        if (result.Succeeded) { SyncBack(identity, user); }
+        if (result.Succeeded) { IdentityUserMapper.SyncBack(identity, user); }
     }
 
     public async Task<bool> IsLockedOutAsync(SimfUser user, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var identity = await EnsureTrackedAsync(user, merge: false) ?? ToIdentity(user);
+        var identity = await EnsureTrackedAsync(user, merge: false) ?? IdentityUserMapper.ToIdentity(user);
         return await userManager.IsLockedOutAsync(identity);
     }
 
@@ -162,7 +160,7 @@ internal sealed class UserAccountRepository(
         var identity = await EnsureTrackedAsync(user);
         if (identity is null) { return; }
         var result = await userManager.AccessFailedAsync(identity);
-        if (result.Succeeded) { SyncBack(identity, user); }
+        if (result.Succeeded) { IdentityUserMapper.SyncBack(identity, user); }
     }
 
     public async Task ResetAccessFailedCountAsync(SimfUser user, CancellationToken cancellationToken = default)
@@ -171,20 +169,20 @@ internal sealed class UserAccountRepository(
         var identity = await EnsureTrackedAsync(user);
         if (identity is null) { return; }
         var result = await userManager.ResetAccessFailedCountAsync(identity);
-        if (result.Succeeded) { SyncBack(identity, user); }
+        if (result.Succeeded) { IdentityUserMapper.SyncBack(identity, user); }
     }
 
     public async Task<IList<string>> GetRolesAsync(SimfUser user, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var identity = await EnsureTrackedAsync(user, merge: false) ?? ToIdentity(user);
+        var identity = await EnsureTrackedAsync(user, merge: false) ?? IdentityUserMapper.ToIdentity(user);
         return await userManager.GetRolesAsync(identity);
     }
 
     public async Task<bool> IsInRoleAsync(SimfUser user, string role, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var identity = await EnsureTrackedAsync(user, merge: false) ?? ToIdentity(user);
+        var identity = await EnsureTrackedAsync(user, merge: false) ?? IdentityUserMapper.ToIdentity(user);
         return await userManager.IsInRoleAsync(identity, role);
     }
 
@@ -194,7 +192,7 @@ internal sealed class UserAccountRepository(
         var identity = await EnsureTrackedAsync(user);
         if (identity is null) { return MissingUser(); }
         var result = await userManager.AddToRoleAsync(identity, role);
-        if (result.Succeeded) { SyncBack(identity, user); }
+        if (result.Succeeded) { IdentityUserMapper.SyncBack(identity, user); }
         return Translate(result);
     }
 
@@ -204,14 +202,14 @@ internal sealed class UserAccountRepository(
         var identity = await EnsureTrackedAsync(user);
         if (identity is null) { return MissingUser(); }
         var result = await userManager.RemoveFromRolesAsync(identity, roles);
-        if (result.Succeeded) { SyncBack(identity, user); }
+        if (result.Succeeded) { IdentityUserMapper.SyncBack(identity, user); }
         return Translate(result);
     }
 
     public async Task<string?> GetAuthenticatorKeyAsync(SimfUser user, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var identity = await EnsureTrackedAsync(user, merge: false) ?? ToIdentity(user);
+        var identity = await EnsureTrackedAsync(user, merge: false) ?? IdentityUserMapper.ToIdentity(user);
         return await userManager.GetAuthenticatorKeyAsync(identity);
     }
 
@@ -221,14 +219,14 @@ internal sealed class UserAccountRepository(
         var identity = await EnsureTrackedAsync(user);
         if (identity is null) { return MissingUser(); }
         var result = await userManager.SetAuthenticationTokenAsync(identity, loginProvider, tokenName, tokenValue);
-        if (result.Succeeded) { SyncBack(identity, user); }
+        if (result.Succeeded) { IdentityUserMapper.SyncBack(identity, user); }
         return Translate(result);
     }
 
     public async Task<string?> GetAuthenticationTokenAsync(SimfUser user, string loginProvider, string tokenName, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var identity = await EnsureTrackedAsync(user, merge: false) ?? ToIdentity(user);
+        var identity = await EnsureTrackedAsync(user, merge: false) ?? IdentityUserMapper.ToIdentity(user);
         return await userManager.GetAuthenticationTokenAsync(identity, loginProvider, tokenName);
     }
 
@@ -238,7 +236,7 @@ internal sealed class UserAccountRepository(
         var identity = await EnsureTrackedAsync(user);
         if (identity is null) { return MissingUser(); }
         var result = await userManager.RemoveAuthenticationTokenAsync(identity, loginProvider, tokenName);
-        if (result.Succeeded) { SyncBack(identity, user); }
+        if (result.Succeeded) { IdentityUserMapper.SyncBack(identity, user); }
         return Translate(result);
     }
 
@@ -248,7 +246,7 @@ internal sealed class UserAccountRepository(
         var identity = await EnsureTrackedAsync(user);
         if (identity is null) { return MissingUser(); }
         var result = await userManager.SetTwoFactorEnabledAsync(identity, enabled);
-        if (result.Succeeded) { SyncBack(identity, user); }
+        if (result.Succeeded) { IdentityUserMapper.SyncBack(identity, user); }
         return Translate(result);
     }
 
@@ -291,134 +289,7 @@ internal sealed class UserAccountRepository(
             ?? await userManager.FindByIdAsync(user.Id.ToString());
         if (tracked is null) { return null; }
 
-        if (merge) { ApplyDomainMutations(user, tracked); }
+        if (merge) { IdentityUserMapper.ApplyDomainMutations(user, tracked); }
         return tracked;
-    }
-
-    /// <summary>R5a — D-090: SimfUser → IdentitySimfUser (going INTO Identity).</summary>
-    private static IdentitySimfUser ToIdentity(SimfUser source) => new()
-    {
-        Id = source.Id,
-        UserName = source.UserName,
-        NormalizedUserName = source.NormalizedUserName,
-        Email = source.Email,
-        NormalizedEmail = source.NormalizedEmail,
-        EmailConfirmed = source.EmailConfirmed,
-        PasswordHash = source.PasswordHash,
-        SecurityStamp = source.SecurityStamp,
-        ConcurrencyStamp = source.ConcurrencyStamp,
-        PhoneNumber = source.PhoneNumber,
-        PhoneNumberConfirmed = source.PhoneNumberConfirmed,
-        TwoFactorEnabled = source.TwoFactorEnabled,
-        LockoutEnd = source.LockoutEnd,
-        LockoutEnabled = source.LockoutEnabled,
-        AccessFailedCount = source.AccessFailedCount,
-        DisplayName = source.DisplayName,
-        AccountState = source.AccountState,
-        UserType = source.UserType,
-        PasswordChangeRequired = source.PasswordChangeRequired,
-        CreatedAt = source.CreatedAt,
-        UpdatedAt = source.UpdatedAt,
-        LastUsedTotpTimestep = source.LastUsedTotpTimestep,
-        AvatarRelativePath = source.AvatarRelativePath,
-        QrId = source.QrId,
-        RejectionReason = source.RejectionReason,
-        RejectionReasonArabic = source.RejectionReasonArabic,
-        StateChangedAt = source.StateChangedAt,
-        StateChangedByUserId = source.StateChangedByUserId,
-    };
-
-    /// <summary>R5a — D-090: IdentitySimfUser → SimfUser (coming OUT of Identity).</summary>
-    private static SimfUser ToDomain(IdentitySimfUser source) => new()
-    {
-        Id = source.Id,
-        UserName = source.UserName,
-        NormalizedUserName = source.NormalizedUserName,
-        Email = source.Email,
-        NormalizedEmail = source.NormalizedEmail,
-        EmailConfirmed = source.EmailConfirmed,
-        PasswordHash = source.PasswordHash,
-        SecurityStamp = source.SecurityStamp,
-        ConcurrencyStamp = source.ConcurrencyStamp,
-        PhoneNumber = source.PhoneNumber,
-        PhoneNumberConfirmed = source.PhoneNumberConfirmed,
-        TwoFactorEnabled = source.TwoFactorEnabled,
-        LockoutEnd = source.LockoutEnd,
-        LockoutEnabled = source.LockoutEnabled,
-        AccessFailedCount = source.AccessFailedCount,
-        DisplayName = source.DisplayName,
-        AccountState = source.AccountState,
-        UserType = source.UserType,
-        PasswordChangeRequired = source.PasswordChangeRequired,
-        CreatedAt = source.CreatedAt,
-        UpdatedAt = source.UpdatedAt,
-        LastUsedTotpTimestep = source.LastUsedTotpTimestep,
-        AvatarRelativePath = source.AvatarRelativePath,
-        QrId = source.QrId,
-        RejectionReason = source.RejectionReason,
-        RejectionReasonArabic = source.RejectionReasonArabic,
-        StateChangedAt = source.StateChangedAt,
-        StateChangedByUserId = source.StateChangedByUserId,
-    };
-
-    /// <summary>
-    /// R5a — D-090: copies the caller's in-memory mutations from the SimfUser
-    /// onto the EF-tracked IdentitySimfUser. The IdentityUser base fields
-    /// (ConcurrencyStamp, SecurityStamp, NormalizedXxx, PasswordHash etc.)
-    /// are NOT copied — UserManager owns those and mutates the tracked
-    /// instance directly. The custom SIMF columns (DisplayName,
-    /// AccountState, EmailConfirmed, the lockout pair, the 2FA flag, and
-    /// the per-row lifecycle metadata) ARE copied so the next
-    /// <c>UserManager.UpdateAsync</c> persists what the caller intended.
-    /// </summary>
-    private static void ApplyDomainMutations(SimfUser source, IdentitySimfUser target)
-    {
-        target.UserName = source.UserName;
-        target.Email = source.Email;
-        target.EmailConfirmed = source.EmailConfirmed;
-        target.PhoneNumber = source.PhoneNumber;
-        target.PhoneNumberConfirmed = source.PhoneNumberConfirmed;
-        target.TwoFactorEnabled = source.TwoFactorEnabled;
-        target.LockoutEnd = source.LockoutEnd;
-        target.LockoutEnabled = source.LockoutEnabled;
-        target.AccessFailedCount = source.AccessFailedCount;
-        target.DisplayName = source.DisplayName;
-        target.AccountState = source.AccountState;
-        target.UserType = source.UserType;
-        target.PasswordChangeRequired = source.PasswordChangeRequired;
-        target.CreatedAt = source.CreatedAt;
-        target.UpdatedAt = source.UpdatedAt;
-        target.LastUsedTotpTimestep = source.LastUsedTotpTimestep;
-        target.AvatarRelativePath = source.AvatarRelativePath;
-        target.QrId = source.QrId;
-        target.RejectionReason = source.RejectionReason;
-        target.RejectionReasonArabic = source.RejectionReasonArabic;
-        target.StateChangedAt = source.StateChangedAt;
-        target.StateChangedByUserId = source.StateChangedByUserId;
-    }
-
-    /// <summary>
-    /// R5a — D-090: copies server-side mutations (security stamp, lockout
-    /// state, password hash, access-failed counter, etc.) back from the
-    /// IdentitySimfUser the UserManager touched into the caller's SimfUser
-    /// instance. Preserves the pre-R5a contract where mutating methods
-    /// visibly mutate the passed-in user object.
-    /// </summary>
-    private static void SyncBack(IdentitySimfUser source, SimfUser target)
-    {
-        target.Id = source.Id;
-        target.UserName = source.UserName;
-        target.NormalizedUserName = source.NormalizedUserName;
-        target.NormalizedEmail = source.NormalizedEmail;
-        target.EmailConfirmed = source.EmailConfirmed;
-        target.PasswordHash = source.PasswordHash;
-        target.SecurityStamp = source.SecurityStamp;
-        target.ConcurrencyStamp = source.ConcurrencyStamp;
-        target.PhoneNumber = source.PhoneNumber;
-        target.PhoneNumberConfirmed = source.PhoneNumberConfirmed;
-        target.TwoFactorEnabled = source.TwoFactorEnabled;
-        target.LockoutEnd = source.LockoutEnd;
-        target.LockoutEnabled = source.LockoutEnabled;
-        target.AccessFailedCount = source.AccessFailedCount;
     }
 }
