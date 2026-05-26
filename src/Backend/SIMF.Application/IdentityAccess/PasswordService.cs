@@ -71,7 +71,7 @@ public sealed class PasswordService(
                 await notifications.TryDispatchAsync(new NotificationRequest
                 {
                     UserId = user.Id,
-                    Kind = "Credential.PasswordResetRequested",
+                    Kind = NotificationKinds.CredentialPasswordResetRequested,
                     Title = "Password-reset code requested",
                     TitleArabic = "تم طلب رمز إعادة تعيين كلمة المرور",
                     Body = "A password-reset code was sent to your email address.",

@@ -24,7 +24,7 @@ internal sealed class NotificationService(
             && bool.TryParse(unreadFilter, out var parsed)
             && parsed;
 
-        var (items, total) = await notifications.ListByOwnerAsync(
+        var (items, total) = await notifications.ListForUserAsync(
             actorUserId, skip, top, unreadOnly, cancellationToken);
 
         return GridPage<NotificationDto>.Of(items, total,
@@ -33,22 +33,22 @@ internal sealed class NotificationService(
 
     public Task<int> UnreadCountMineAsync(
         Guid actorUserId, CancellationToken cancellationToken = default) =>
-        notifications.CountUnreadByOwnerAsync(actorUserId, cancellationToken);
+        notifications.CountUnreadForUserAsync(actorUserId, cancellationToken);
 
     public Task MarkReadMineAsync(
         Guid actorUserId, Guid notificationId,
         CancellationToken cancellationToken = default) =>
-        notifications.MarkReadByOwnerAsync(
+        notifications.MarkReadForUserAsync(
             actorUserId, notificationId, timeProvider.GetUtcNow(), cancellationToken);
 
     public Task MarkAllReadMineAsync(
         Guid actorUserId, CancellationToken cancellationToken = default) =>
-        notifications.MarkAllReadByOwnerAsync(
+        notifications.MarkAllReadForUserAsync(
             actorUserId, timeProvider.GetUtcNow(), cancellationToken);
 
     public Task DeleteMineAsync(
         Guid actorUserId, Guid notificationId,
         CancellationToken cancellationToken = default) =>
-        notifications.DeleteByOwnerAsync(
+        notifications.DeleteForUserAsync(
             actorUserId, notificationId, cancellationToken);
 }

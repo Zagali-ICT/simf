@@ -58,15 +58,16 @@
             {
                 _pairing = envelope.Data;
             }
-            else if (envelope?.Error?.Code == "NotFound" || envelope?.Error is null)
+            else if (envelope?.Error is null || envelope.Error.Code == ErrorCodes.NotFound)
             {
-                // 404 from the API arrives as a failed envelope with no Data;
-                // treat as "no secret" and route the user to the Profile page.
+                // 404 from the API arrives as a failed envelope with no Data
+                // and no specific error code; treat as "no secret" and route
+                // the user to the Profile page to enrol.
                 _pairing = null;
             }
             else
             {
-                _loadError = envelope.Error?.MessageForCurrentCulture()
+                _loadError = envelope.Error.MessageForCurrentCulture()
                     ?? L["TotpPairing.LoadError"];
             }
         }

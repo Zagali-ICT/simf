@@ -191,7 +191,7 @@ public sealed class SignInService(
         await notifications.TryDispatchAsync(new NotificationRequest
         {
             UserId = user.Id,
-            Kind = "Credential.SignInOtpSent",
+            Kind = NotificationKinds.CredentialSignInOtpSent,
             Title = "Sign-in code sent",
             TitleArabic = "تم إرسال رمز تسجيل الدخول",
             Body = "A sign-in verification code was sent to your email address.",

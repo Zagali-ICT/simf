@@ -24,7 +24,16 @@ namespace SIMF.Infrastructure.Identity;
 /// <item><see cref="SyncBack"/> — copies server-side mutations
 /// (security stamp, lockout state, password hash, etc.) back onto the
 /// caller's SimfUser so a mutating method visibly mutates the
-/// passed-in instance, preserving the pre-R5 contract.</item>
+/// passed-in instance, preserving the pre-R5 contract. Identity-owned
+/// columns ONLY — the custom SIMF columns (<c>DisplayName</c>,
+/// <c>AccountState</c>, <c>UserType</c>, <c>PasswordChangeRequired</c>,
+/// <c>CreatedAt</c>/<c>UpdatedAt</c>, <c>LastUsedTotpTimestep</c>,
+/// <c>AvatarRelativePath</c>, <c>QrId</c>, <c>RejectionReason</c>/
+/// <c>RejectionReasonArabic</c>, <c>StateChangedAt</c>,
+/// <c>StateChangedByUserId</c>) are caller-owned and must NOT be copied
+/// back, otherwise a future <c>UserManager</c> internal side-effect
+/// (e.g. a normalization pass) could silently overwrite the caller's
+/// in-memory value.</item>
 /// </list></para>
 /// </summary>
 internal static class IdentityUserMapper

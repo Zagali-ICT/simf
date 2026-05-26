@@ -148,10 +148,6 @@ public static class DependencyInjection
         services.AddScoped<IAdminUserApprovalService>(sp => sp.GetRequiredService<AdminAccountService>());
         services.AddScoped<IAdminUserProvisioningService>(sp => sp.GetRequiredService<AdminAccountService>());
         services.AddScoped<IAdminUserBulkService>(sp => sp.GetRequiredService<AdminAccountService>());
-        // D-100: first slice of the R2 follow-up — AdminProfileTypeQueryService
-        // is its own focused implementation; AdminAccountService no longer
-        // implements IAdminProfileTypeQueryService. Remaining 4 interfaces stay
-        // co-resident on AdminAccountService until a focused split sprint.
         services.AddScoped<IAdminProfileTypeQueryService, AdminProfileTypeQueryService>();
         services.AddScoped<IQrIdMinter, QrIdMinter>();
         services.AddScoped<IUserProfileService, UserProfileService>();

@@ -15,13 +15,13 @@ internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<(IReadOnlyList<NotificationDto> Items, int Total)> ListByOwnerAsync(
-        Guid ownerUserId, int skip, int top, bool unreadOnly,
+    public async Task<(IReadOnlyList<NotificationDto> Items, int Total)> ListForUserAsync(
+        Guid userId, int skip, int top, bool unreadOnly,
         CancellationToken cancellationToken = default)
     {
         var rows = dbContext.Notifications
             .AsNoTracking()
-            .Where(row => row.UserId == ownerUserId);
+            .Where(row => row.UserId == userId);
 
         if (unreadOnly)
         {
@@ -50,39 +50,39 @@ internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
         return (page, total);
     }
 
-    public Task<int> CountUnreadByOwnerAsync(
-        Guid ownerUserId, CancellationToken cancellationToken = default) =>
+    public Task<int> CountUnreadForUserAsync(
+        Guid userId, CancellationToken cancellationToken = default) =>
         dbContext.Notifications
             .AsNoTracking()
-            .Where(row => row.UserId == ownerUserId && row.ReadAt == null)
+            .Where(row => row.UserId == userId && row.ReadAt == null)
             .CountAsync(cancellationToken);
 
-    public async Task MarkReadByOwnerAsync(
-        Guid ownerUserId, Guid notificationId, DateTimeOffset readAt,
+    public async Task MarkReadForUserAsync(
+        Guid userId, Guid notificationId, DateTimeOffset readAt,
         CancellationToken cancellationToken = default)
     {
         var row = await dbContext.Notifications
             .SingleOrDefaultAsync(
-                n => n.Id == notificationId && n.UserId == ownerUserId,
+                n => n.Id == notificationId && n.UserId == userId,
                 cancellationToken);
         if (row is null || row.ReadAt is not null) { return; }
         row.ReadAt = readAt;
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task MarkAllReadByOwnerAsync(
-        Guid ownerUserId, DateTimeOffset readAt,
+    public Task MarkAllReadForUserAsync(
+        Guid userId, DateTimeOffset readAt,
         CancellationToken cancellationToken = default) =>
         dbContext.Notifications
-            .Where(row => row.UserId == ownerUserId && row.ReadAt == null)
+            .Where(row => row.UserId == userId && row.ReadAt == null)
             .ExecuteUpdateAsync(
                 setters => setters.SetProperty(row => row.ReadAt, readAt),
                 cancellationToken);
 
-    public Task DeleteByOwnerAsync(
-        Guid ownerUserId, Guid notificationId,
+    public Task DeleteForUserAsync(
+        Guid userId, Guid notificationId,
         CancellationToken cancellationToken = default) =>
         dbContext.Notifications
-            .Where(row => row.Id == notificationId && row.UserId == ownerUserId)
+            .Where(row => row.Id == notificationId && row.UserId == userId)
             .ExecuteDeleteAsync(cancellationToken);
 }

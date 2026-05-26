@@ -107,7 +107,7 @@ public sealed class RegistrationService(
         await notifications.TryDispatchAsync(new NotificationRequest
         {
             UserId = user.Id,
-            Kind = "Credential.EmailVerificationSent",
+            Kind = NotificationKinds.CredentialEmailVerificationSent,
             Title = "Verification code sent",
             TitleArabic = "تم إرسال رمز التحقق",
             Body = "An email-verification code was sent to your address.",
@@ -287,7 +287,7 @@ public sealed class RegistrationService(
         await notifications.TryDispatchAsync(new NotificationRequest
         {
             UserId = user.Id,
-            Kind = "Credential.EmailVerificationResent",
+            Kind = NotificationKinds.CredentialEmailVerificationResent,
             Title = "Verification code re-issued",
             TitleArabic = "تم إعادة إصدار رمز التحقق",
             Body = "A new email-verification code was sent to your address.",

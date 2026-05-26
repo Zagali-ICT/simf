@@ -696,9 +696,6 @@ internal sealed class AdminAccountService(
             new GridQuery { Skip = skip, Top = top });
     }
 
-    // D-100: ListProfileTypesAsync extracted to AdminProfileTypeQueryService
-    // (the first slice of the R2 follow-up — the remaining four interfaces
-    // stay co-resident here for now).
 
     public async Task<AdminBulkDeleteResponse> BulkDeleteUsersAsync(
         Guid actorUserId,
