@@ -34,7 +34,7 @@ namespace SIMF.Infrastructure.Identity;
 /// </summary>
 internal sealed class AdminAccountService(
     IUserAccountRepository accounts,
-    RoleManager<SimfRole> roleManager,
+    RoleManager<IdentitySimfRole> roleManager,
     IRefreshTokenRepository refreshTokenRepository,
     IRecoveryCodeService recoveryCodes,
     IAccountCodeRepository accountCodeRepository,

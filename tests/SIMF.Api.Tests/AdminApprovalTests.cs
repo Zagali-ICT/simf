@@ -256,10 +256,10 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         var email = $"admin-approve-{Guid.NewGuid():N}@simf.test";
         using (var scope = _factory.Services.CreateScope())
         {
-            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentitySimfRole>>();
             if (!await roles.RoleExistsAsync(AppRoles.Administrator))
             {
-                await roles.CreateAsync(new SimfRole { Name = AppRoles.Administrator });
+                await roles.CreateAsync(new IdentitySimfRole { Name = AppRoles.Administrator });
             }
             var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
             var user = new IdentitySimfUser
@@ -381,10 +381,10 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         var email = $"pending-admin-{Guid.NewGuid():N}@simf.test";
         using (var scope = _factory.Services.CreateScope())
         {
-            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentitySimfRole>>();
             if (!await roles.RoleExistsAsync(AppRoles.Administrator))
             {
-                await roles.CreateAsync(new SimfRole { Name = AppRoles.Administrator });
+                await roles.CreateAsync(new IdentitySimfRole { Name = AppRoles.Administrator });
             }
             var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
             var user = new IdentitySimfUser

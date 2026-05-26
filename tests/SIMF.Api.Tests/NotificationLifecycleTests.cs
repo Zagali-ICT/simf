@@ -149,10 +149,10 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
         Guid id;
         using var scope = _factory.Services.CreateScope();
         var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
-        var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
+        var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentitySimfRole>>();
         if (!await roles.RoleExistsAsync(AdministratorRole))
         {
-            await roles.CreateAsync(new SimfRole { Name = AdministratorRole });
+            await roles.CreateAsync(new IdentitySimfRole { Name = AdministratorRole });
         }
         var user = new IdentitySimfUser
         {

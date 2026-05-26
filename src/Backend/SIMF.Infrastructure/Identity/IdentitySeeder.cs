@@ -18,7 +18,7 @@ namespace SIMF.Infrastructure.Identity;
 /// </summary>
 public sealed class IdentitySeeder(
     IUserAccountRepository accounts,
-    RoleManager<SimfRole> roleManager,
+    RoleManager<IdentitySimfRole> roleManager,
     SimfIdentityDbContext dbContext,
     IOptions<SuperAdminOptions> options,
     IAuditLog auditLog,
@@ -91,7 +91,7 @@ public sealed class IdentitySeeder(
     {
         if (!await roleManager.RoleExistsAsync(roleName))
         {
-            await roleManager.CreateAsync(new SimfRole
+            await roleManager.CreateAsync(new IdentitySimfRole
             {
                 Name = roleName,
                 IsBaseline = true,

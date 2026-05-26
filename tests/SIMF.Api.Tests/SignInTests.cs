@@ -699,10 +699,10 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         var secret = Base32Encoding.ToString(KeyGeneration.GenerateRandomKey(20));
 
         using var scope = _factory.Services.CreateScope();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentitySimfRole>>();
         if (!await roleManager.RoleExistsAsync("Administrator"))
         {
-            await roleManager.CreateAsync(new SimfRole { Name = "Administrator" });
+            await roleManager.CreateAsync(new IdentitySimfRole { Name = "Administrator" });
         }
 
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();

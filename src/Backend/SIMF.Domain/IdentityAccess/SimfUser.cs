@@ -1,15 +1,77 @@
-using Microsoft.AspNetCore.Identity;
-
 namespace SIMF.Domain.IdentityAccess;
 
 /// <summary>
-/// A SIMF user account. Extends ASP.NET Core Identity's
-/// <see cref="IdentityUser{TKey}"/>, which provides the email, password hash,
-/// security stamp, lockout fields and two-factor state (SIMF-DAT-001 section 5.1
-/// and Amendment B).
+/// A SIMF user account (SIMF-DAT-001 section 5.1 and Amendment B).
+///
+/// <para>R5f — D-092: a pure Domain POCO. Pre-R5f this class inherited
+/// <c>Microsoft.AspNetCore.Identity.IdentityUser&lt;Guid&gt;</c>; the
+/// inheritance forced every project that referenced Domain to also
+/// reference <c>Microsoft.Extensions.Identity.Stores</c> (Architecture
+/// SEV-1.1). R5a (D-090) carved the EF-tracked persistence shape into
+/// the Infrastructure-owned <see cref="SIMF.Domain.IdentityAccess"/>-
+/// neutral <c>IdentitySimfUser</c> shim and R5b (D-091) extracted the
+/// SimfUser ↔ IdentitySimfUser conversion. R5f now removes the
+/// inheritance: the Identity-derived fields (<see cref="Email"/>,
+/// <see cref="UserName"/>, <see cref="SecurityStamp"/> etc.) are explicit
+/// properties on the POCO and the Infrastructure mapper continues to
+/// shuttle them between Domain and the EF entity.</para>
+///
+/// <para>R5g (D-093) drops the
+/// <c>Microsoft.Extensions.Identity.Stores</c> package reference from
+/// <c>SIMF.Domain.csproj</c> and adds an architectural unit test that
+/// asserts the Domain assembly has no Identity dependency.</para>
 /// </summary>
-public class SimfUser : IdentityUser<Guid>
+public class SimfUser
 {
+    /// <summary>The user's primary key (matches the <c>AspNetUsers.Id</c> column).</summary>
+    public Guid Id { get; set; }
+
+    /// <summary>The login name. Equal to <see cref="Email"/> in practice.</summary>
+    public string? UserName { get; set; }
+
+    /// <summary>Upper-invariant form of <see cref="UserName"/> for case-insensitive lookup.</summary>
+    public string? NormalizedUserName { get; set; }
+
+    /// <summary>The user's email address.</summary>
+    public string? Email { get; set; }
+
+    /// <summary>Upper-invariant form of <see cref="Email"/> for case-insensitive lookup.</summary>
+    public string? NormalizedEmail { get; set; }
+
+    /// <summary>True when the email-verification flow has run successfully.</summary>
+    public bool EmailConfirmed { get; set; }
+
+    /// <summary>The hashed password (PBKDF2 by default; managed by ASP.NET Core Identity).</summary>
+    public string? PasswordHash { get; set; }
+
+    /// <summary>
+    /// Random per-row token rotated on every credential mutation. The bearer
+    /// middleware validates an inbound JWT's <c>security_stamp</c> claim
+    /// against this value; a mismatch revokes the token.
+    /// </summary>
+    public string? SecurityStamp { get; set; }
+
+    /// <summary>Optimistic-concurrency token, rotated by EF on every UPDATE.</summary>
+    public string? ConcurrencyStamp { get; set; }
+
+    /// <summary>The user's phone number (E.164 format expected).</summary>
+    public string? PhoneNumber { get; set; }
+
+    /// <summary>True when the SMS-verification flow has run successfully.</summary>
+    public bool PhoneNumberConfirmed { get; set; }
+
+    /// <summary>True when the user has any second-factor method enrolled (TOTP today).</summary>
+    public bool TwoFactorEnabled { get; set; }
+
+    /// <summary>UTC moment when the account lockout expires; null when the account is not locked out.</summary>
+    public DateTimeOffset? LockoutEnd { get; set; }
+
+    /// <summary>True when account lockout is in effect for this user (default true).</summary>
+    public bool LockoutEnabled { get; set; }
+
+    /// <summary>Count of consecutive failed sign-in attempts since the last successful sign-in.</summary>
+    public int AccessFailedCount { get; set; }
+
     /// <summary>The name shown in the user interface.</summary>
     public string DisplayName { get; set; } = string.Empty;
 
@@ -107,4 +169,3 @@ public class SimfUser : IdentityUser<Guid>
     /// </summary>
     public Guid? StateChangedByUserId { get; set; }
 }
-

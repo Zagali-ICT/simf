@@ -329,10 +329,10 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         var email = $"admin-create-{Guid.NewGuid():N}@simf.test";
         using (var scope = _factory.Services.CreateScope())
         {
-            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentitySimfRole>>();
             if (!await roles.RoleExistsAsync(AdministratorRole))
             {
-                await roles.CreateAsync(new SimfRole { Name = AdministratorRole });
+                await roles.CreateAsync(new IdentitySimfRole { Name = AdministratorRole });
             }
             var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentitySimfUser>>();
             var user = new IdentitySimfUser

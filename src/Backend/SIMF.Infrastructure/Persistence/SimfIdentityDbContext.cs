@@ -20,7 +20,7 @@ namespace SIMF.Infrastructure.Persistence;
 /// out of <see cref="SimfUser"/>'s inheritance chain.</para>
 /// </summary>
 public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> options)
-    : IdentityDbContext<IdentitySimfUser, SimfRole, Guid>(options)
+    : IdentityDbContext<IdentitySimfUser, IdentitySimfRole, Guid>(options)
 {
     public DbSet<Permission> Permissions => Set<Permission>();
 

@@ -82,7 +82,7 @@ public static class DependencyInjection
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
                 options.Lockout.AllowedForNewUsers = true;
             })
-            .AddRoles<SimfRole>()
+            .AddRoles<IdentitySimfRole>()
             .AddEntityFrameworkStores<SimfIdentityDbContext>();
 
         services.Configure<EmailOptions>(
