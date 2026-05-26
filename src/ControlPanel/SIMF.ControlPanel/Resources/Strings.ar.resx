@@ -223,6 +223,31 @@
   <data name="Admin.Users.Import.Close" xml:space="preserve"><value>إغلاق</value></data>
   <data name="Admin.Users.Import.Picker" xml:space="preserve"><value>اختر ملف Excel للاستيراد</value></data>
 
+  <!-- D-112 — Add/Edit/Details modals + full pager + Details row action -->
+  <data name="Admin.Users.Action.Details" xml:space="preserve"><value>التفاصيل</value></data>
+  <data name="Admin.Users.Add.Title" xml:space="preserve"><value>إضافة مستخدم</value></data>
+  <data name="Admin.Users.Add.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Users.Edit.Title" xml:space="preserve"><value>تعديل المستخدم</value></data>
+  <data name="Admin.Users.Edit.NotYet" xml:space="preserve"><value>تعديل المستخدم سيتوفر مع وحدة إدارة المستخدمين. تم تجهيز الشبكة لذلك مسبقًا.</value></data>
+  <data name="Admin.Users.Edit.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Users.Details.Title" xml:space="preserve"><value>تفاصيل المستخدم — {0}</value></data>
+  <data name="Admin.Users.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Users.Details.Field.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Users.Details.Field.DisplayName" xml:space="preserve"><value>الاسم المعروض</value></data>
+  <data name="Admin.Users.Details.Field.State" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Users.Details.Field.Role" xml:space="preserve"><value>الدور</value></data>
+  <data name="Admin.Users.Details.Field.TwoFactor" xml:space="preserve"><value>المصادقة الثنائية</value></data>
+  <data name="Admin.Users.Pager.First" xml:space="preserve"><value>الصفحة الأولى</value></data>
+  <data name="Admin.Users.Pager.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>
+  <data name="Admin.Users.Pager.PageSize" xml:space="preserve"><value>عرض</value></data>
+  <data name="Admin.Users.Pager.Page" xml:space="preserve"><value>الصفحة {0} من {1}</value></data>
+
+  <!-- D-116 — Image cropper -->
+  <data name="Crop.Title" xml:space="preserve"><value>قص الصورة</value></data>
+  <data name="Crop.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Crop.Submit" xml:space="preserve"><value>قص وحفظ</value></data>
+  <data name="Crop.Processing" xml:space="preserve"><value>جاري المعالجة</value></data>
+
   <data name="Admin.CreateUser.Title" xml:space="preserve"><value>إضافة مستخدم جديد</value></data>
   <data name="Admin.CreateUser.Supporting" xml:space="preserve"><value>سيتلقى المستخدم الجديد بريدًا إلكترونيًا يحتوي على رمز لمرة واحدة لتعيين كلمة المرور. الدعوة صالحة لمدة 7 أيام.</value></data>
   <data name="Admin.CreateUser.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>

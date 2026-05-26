@@ -22,8 +22,11 @@
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/simf-components.css"]" />
     <link rel="stylesheet" href="@Assets["SIMF.ControlPanel.styles.css"]" />
+    @* D-116: Cropper.Blazor static assets (image cropping modal). *@
+    <link rel="stylesheet" href="@Assets["_content/Cropper.Blazor/cropper.min.css"]" />
     <script src="@Assets["_content/SIMF.Components/js/simf-theme.js"]"></script>
     <script src="@Assets["js/simf-account.js"]"></script>
+    <script src="@Assets["_content/Cropper.Blazor/cropperJsInterop.min.js"]"></script>
     <ImportMap />
     <HeadOutlet @rendermode="AppRenderMode.InteractiveServerNoPrerender" />
 </head>

@@ -1,19 +1,19 @@
 @* Control Panel — list every account (decisions D-042, D-044, hardened in
-   D-045 H1). Administrator only. Uses SimfDataGrid with the full myComment
-   #16 spec, including Copy + Paste wiring (H1 closes #16 honestly). Edit
-   is omitted on this page until the User Management module ships — the
-   grid is wired for it but no callback is provided here, so the toolbar
-   Edit and per-row Edit buttons stay hidden. *@
+   D-045 H1, promoted to canonical CRUD pattern in D-112). Administrator
+   only. Uses SimfDataGrid with the full myComment #16 spec, the new
+   correct icon set, the full pager (First/Prev/numbered/Next/Last +
+   page-size), the SimfBanner page-top, and modal-based Add / Edit /
+   Details flows. /admin/admins/new still resolves to the create-user
+   page as a deep-link fallback (Q-D). *@
 @page "/admin/admins"
 @layout CpShellLayout
 @attribute [Authorize(Roles = "Administrator")]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
-@inject NavigationManager Nav
 
 <PageTitle>@L["Admin.Users.Title"] · SIMF</PageTitle>
 
-<SimfPageHeader Title="@L["Admin.Users.Title"]" />
+<SimfBanner Title="@L["Admin.Users.Title"]" />
 
 <div class="simf-page-wide">
     <div class="simf-surface">
@@ -28,6 +28,8 @@
                       Caption="@L["Admin.Users.Title"]"
                       FilterColumnLabel="@L["Admin.Users.FilterColumn"]"
                       OnAdd="OnAddAsync"
+                      OnEditOne="OnEditAsync"
+                      OnDetailsOne="OnDetailsAsync"
                       OnDeleteSelected="OnBulkDeleteAsync"
                       OnDeleteOne="OnRowDeleteAsync"
                       OnDuplicateOne="OnDuplicateAsync"
@@ -38,6 +40,10 @@
                       OnImport="OnImportAsync"
                       PrevLabel="@L["Admin.Users.Prev"]"
                       NextLabel="@L["Admin.Users.Next"]"
+                      FirstLabel="@L["Admin.Users.Pager.First"]"
+                      LastLabel="@L["Admin.Users.Pager.Last"]"
+                      PageSizeLabel="@L["Admin.Users.Pager.PageSize"]"
+                      PageFormatter="@FormatPage"
                       LoadingLabel="@L["Admin.Users.Loading"]"
                       FilterPlaceholder="@L["Admin.Users.FilterPlaceholder"]"
                       ActionsHeader="@L["Admin.Users.Column.Actions"]"
@@ -45,6 +51,7 @@
                       SelectRowLabel="@L["Admin.Users.Action.SelectRow"]"
                       AddLabel="@L["Admin.Users.Action.Add"]"
                       EditLabel="@L["Admin.Users.Action.Edit"]"
+                      DetailsLabel="@L["Admin.Users.Action.Details"]"
                       DeleteLabel="@L["Admin.Users.Action.Delete"]"
                       CopyLabel="@L["Admin.Users.Action.Copy"]"
                       PasteLabel="@L["Admin.Users.Action.Paste"]"
@@ -119,12 +126,74 @@
 
 @* H13 — D-068: this picker is visually hidden (triggered by the
    Import button via JS), but assistive tech that surfaces hidden inputs
-   still needs an accessible name. aria-label rather than <label for>
-   because there is no visible label to bind. *@
+   still needs an accessible name. *@
 <input type="file" id="users-import-input" accept=".xlsx"
        class="simf-hidden-input"
        aria-label="@L["Admin.Users.Import.Picker"]"
        @onchange="OnImportFileSelectedAsync" />
+
+@* D-112 — Add user modal (replaces navigation to /admin/admins/new). *@
+@if (_addOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.Users.Add.Title"]" OnClose="@(() => _addOpen = false)">
+        <ChildContent>
+            <CreateAdminForm OnSuccess="OnAddSucceededAsync"
+                             OnCancel="@(() => _addOpen = false)"
+                             CancelLabel="@L["Admin.Users.Add.Close"]" />
+        </ChildContent>
+    </SimfModal>
+}
+
+@* D-112 — Edit stub modal (real Edit ships with the User Management module). *@
+@if (_editOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.Users.Edit.Title"]" OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <p>@L["Admin.Users.Edit.NotYet"]</p>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="@(() => _editOpen = false)">
+                @L["Admin.Users.Edit.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@* D-112 — Details modal (read-only view of the row's data — no extra fetch). *@
+@if (_detailsTarget is not null)
+{
+    <SimfModal Open="true"
+               Title="@string.Format(L["Admin.Users.Details.Title"], _detailsTarget.Email)"
+               OnClose="@(() => _detailsTarget = null)">
+        <ChildContent>
+            <dl class="simf-dl">
+                <dt>@L["Admin.Users.Details.Field.Email"]</dt>
+                <dd>@_detailsTarget.Email</dd>
+                <dt>@L["Admin.Users.Details.Field.DisplayName"]</dt>
+                <dd>@_detailsTarget.DisplayName</dd>
+                <dt>@L["Admin.Users.Details.Field.State"]</dt>
+                <dd>@_detailsTarget.AccountState</dd>
+                <dt>@L["Admin.Users.Details.Field.Role"]</dt>
+                <dd>
+                    @(_detailsTarget.IsAdministrator
+                        ? L["Admin.Users.Role.Administrator"]
+                        : L["Admin.Users.Role.User"])
+                </dd>
+                <dt>@L["Admin.Users.Details.Field.TwoFactor"]</dt>
+                <dd>
+                    @(_detailsTarget.TwoFactorEnabled
+                        ? L["Admin.Users.TwoFactor.On"]
+                        : L["Admin.Users.TwoFactor.Off"])
+                </dd>
+            </dl>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="@(() => _detailsTarget = null)">
+                @L["Admin.Users.Details.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
 
 @if (_bulkDeleteOpen)
 {
@@ -207,6 +276,15 @@
     private bool _loading;
     private bool _busy;
 
+    // D-112 — Add modal state (replaces navigation to /admin/admins/new).
+    private bool _addOpen;
+
+    // D-112 — Edit stub modal state (real Edit awaits User Management module).
+    private bool _editOpen;
+
+    // D-112 — Details modal state. Read-only view of the row's data.
+    private AdminUserSummary? _detailsTarget;
+
     // Bulk-delete modal state
     private bool _bulkDeleteOpen;
     private IReadOnlyList<AdminUserSummary> _bulkDeleteTargets = Array.Empty<AdminUserSummary>();
@@ -248,7 +326,27 @@
 
     private Task OnAddAsync()
     {
-        Nav.NavigateTo("/admin/admins/new");
+        _addOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnAddSucceededAsync(AdminCreateUserResponse created)
+    {
+        _addOpen = false;
+        ShowToast("success", string.Format(L["Admin.CreateUser.Success"], created.Email));
+        await LoadAsync();
+    }
+
+    private Task OnEditAsync(AdminUserSummary _)
+    {
+        // D-112 — Edit is wired but stubbed; real edit ships with User Management.
+        _editOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private Task OnDetailsAsync(AdminUserSummary user)
+    {
+        _detailsTarget = user;
         return Task.CompletedTask;
     }
 
@@ -344,10 +442,6 @@
 
     private Task OnCopySelectedAsync(IReadOnlyList<AdminUserSummary> users)
     {
-        // The grid already wrote the rows to the system clipboard before
-        // firing this callback. Surface the count so the admin knows what
-        // landed there (D-044 b clipboard payload is documented as JSON of
-        // the row identifiers + email; not the full PII set yet).
         if (users.Count == 0) return Task.CompletedTask;
         ShowToast("info", string.Format(L["Admin.Users.Copy.Count"], users.Count));
         return Task.CompletedTask;
@@ -361,10 +455,6 @@
 
     private Task OnPasteAsync(string clipboard)
     {
-        // D-045 H1: paste is wired but does not bulk-create from clipboard
-        // content — the surface is reserved for future "paste to filter"
-        // / "paste to add" flows when the user-edit page lands. For now,
-        // tell the admin the clipboard was read so the action is not silent.
         if (string.IsNullOrWhiteSpace(clipboard))
         {
             ShowToast("error", L["Admin.Users.Paste.Empty"]);
@@ -409,6 +499,9 @@
 
     private string FormatSummary(int from, int to, int total) =>
         string.Format(L["Admin.Users.Pager.Summary"], from, to, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Admin.Users.Pager.Page"], current, total);
 
     private static bool IsLikelyEmail(string value) =>
         !string.IsNullOrWhiteSpace(value)

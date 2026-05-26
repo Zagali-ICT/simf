@@ -56,14 +56,14 @@
                 }
                 @if (OnAdd.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="check" Title="@AddLabel"
+                    <SimfToolbarButton Icon="plus" Title="@AddLabel"
                                        OnClick="OnAdd">
                         @AddLabel
                     </SimfToolbarButton>
                 }
                 @if (OnEditOne.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="user" Title="@EditLabel"
+                    <SimfToolbarButton Icon="edit" Title="@EditLabel"
                                        Disabled="@(SelectedCount != 1)"
                                        OnClick="EditSingleSelectedAsync">
                         @EditLabel
@@ -71,7 +71,7 @@
                 }
                 @if (OnDeleteSelected.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="close" Title="@DeleteLabel"
+                    <SimfToolbarButton Icon="trash" Title="@DeleteLabel"
                                        Danger="true"
                                        Disabled="@(SelectedOnPageCount == 0)"
                                        OnClick="@(() => OnDeleteSelected.InvokeAsync(SelectedItemsOnPage()))">
@@ -80,7 +80,7 @@
                 }
                 @if (OnCopySelected.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="check" Title="@CopyLabel"
+                    <SimfToolbarButton Icon="copy" Title="@CopyLabel"
                                        Disabled="@(SelectedOnPageCount == 0)"
                                        OnClick="OnCopyToClipboardAsync">
                         @CopyLabel
@@ -88,14 +88,14 @@
                 }
                 @if (OnPaste.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="check" Title="@PasteLabel"
+                    <SimfToolbarButton Icon="copy" Title="@PasteLabel"
                                        OnClick="OnPasteFromClipboardAsync">
                         @PasteLabel
                     </SimfToolbarButton>
                 }
                 @if (OnDuplicateOne.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="user" Title="@DuplicateLabel"
+                    <SimfToolbarButton Icon="copy" Title="@DuplicateLabel"
                                        Disabled="@(SelectedCount != 1)"
                                        OnClick="DuplicateSingleSelectedAsync">
                         @DuplicateLabel
@@ -105,14 +105,14 @@
             <div class="simf-grid__toolbar-group">
                 @if (OnImport.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="mail" Title="@ImportLabel"
+                    <SimfToolbarButton Icon="upload" Title="@ImportLabel"
                                        OnClick="OnImport">
                         @ImportLabel
                     </SimfToolbarButton>
                 }
                 @if (OnExport.HasDelegate)
                 {
-                    <SimfToolbarButton Icon="mail" Title="@ExportLabel"
+                    <SimfToolbarButton Icon="download" Title="@ExportLabel"
                                        OnClick="@(() => OnExport.InvokeAsync(SelectedItemsOnPage()))">
                         @ExportLabel
                     </SimfToolbarButton>
@@ -255,19 +255,24 @@
                                     {
                                         @RowActions(row)
                                     }
+                                    @if (OnDetailsOne.HasDelegate)
+                                    {
+                                        <SimfToolbarButton Icon="info" Title="@DetailsLabel"
+                                                           OnClick="@(() => OnDetailsOne.InvokeAsync(row))" />
+                                    }
                                     @if (OnEditOne.HasDelegate)
                                     {
-                                        <SimfToolbarButton Icon="user" Title="@EditLabel"
+                                        <SimfToolbarButton Icon="edit" Title="@EditLabel"
                                                            OnClick="@(() => OnEditOne.InvokeAsync(row))" />
                                     }
                                     @if (OnCopyOne.HasDelegate)
                                     {
-                                        <SimfToolbarButton Icon="check" Title="@CopyLabel"
+                                        <SimfToolbarButton Icon="copy" Title="@CopyLabel"
                                                            OnClick="@(() => OnCopyOne.InvokeAsync(row))" />
                                     }
                                     @if (OnDeleteOne.HasDelegate)
                                     {
-                                        <SimfToolbarButton Icon="close" Title="@DeleteLabel"
+                                        <SimfToolbarButton Icon="trash" Title="@DeleteLabel"
                                                            Danger="true"
                                                            OnClick="@(() => OnDeleteOne.InvokeAsync(row))" />
                                     }
@@ -288,30 +293,37 @@
         @if (_contextMenuOpen && _contextRow is not null)
         {
             <SimfContextMenu Open="true" X="_contextX" Y="_contextY">
+                @if (OnDetailsOne.HasDelegate)
+                {
+                    <SimfContextMenuItem Icon="info"
+                                         OnClick="@(() => ContextActionAsync(OnDetailsOne))">
+                        @DetailsLabel
+                    </SimfContextMenuItem>
+                }
                 @if (OnEditOne.HasDelegate)
                 {
-                    <SimfContextMenuItem Icon="user"
+                    <SimfContextMenuItem Icon="edit"
                                          OnClick="@(() => ContextActionAsync(OnEditOne))">
                         @EditLabel
                     </SimfContextMenuItem>
                 }
                 @if (OnCopyOne.HasDelegate)
                 {
-                    <SimfContextMenuItem Icon="check"
+                    <SimfContextMenuItem Icon="copy"
                                          OnClick="@(() => ContextActionAsync(OnCopyOne))">
                         @CopyLabel
                     </SimfContextMenuItem>
                 }
                 @if (OnDuplicateOne.HasDelegate)
                 {
-                    <SimfContextMenuItem Icon="user"
+                    <SimfContextMenuItem Icon="copy"
                                          OnClick="@(() => ContextActionAsync(OnDuplicateOne))">
                         @DuplicateLabel
                     </SimfContextMenuItem>
                 }
                 @if (OnDeleteOne.HasDelegate)
                 {
-                    <SimfContextMenuItem Icon="close" Danger="true"
+                    <SimfContextMenuItem Icon="trash" Danger="true"
                                          OnClick="@(() => ContextActionAsync(OnDeleteOne))">
                         @DeleteLabel
                     </SimfContextMenuItem>
@@ -329,16 +341,47 @@
              @oncontextmenu:preventDefault></div>
     }
 
+    @* D-112 — full pager: First / Prev / numbered pages / Next / Last + page-size selector + "Page X of Y" summary. *@
     <div class="simf-grid__pager">
         <span class="simf-grid__pager-summary">@RenderSummary()</span>
+        <div class="simf-grid__pager-page">@RenderPageLabel()</div>
         <div class="simf-grid__pager-controls">
-            <SimfButton Type="button" Variant="secondary"
-                        Disabled="@(IsFirstPage || Loading)"
-                        OnClick="GoPrevAsync">@PrevLabel</SimfButton>
-            <SimfButton Type="button" Variant="secondary"
-                        Disabled="@(IsLastPage || Loading)"
-                        OnClick="GoNextAsync">@NextLabel</SimfButton>
+            <SimfToolbarButton Icon="chevron-first" Title="@FirstLabel"
+                               Disabled="@(IsFirstPage || Loading)"
+                               OnClick="GoFirstAsync" />
+            <SimfToolbarButton Icon="chevron-left" Title="@PrevLabel"
+                               Disabled="@(IsFirstPage || Loading)"
+                               OnClick="GoPrevAsync" />
+            <div class="simf-grid__pager-pages">
+                @foreach (var pageNumber in PageNumbersToShow())
+                {
+                    var n = pageNumber;
+                    var isCurrent = n == CurrentPage;
+                    <button type="button"
+                            class="simf-grid__pager-page-btn @(isCurrent ? "simf-grid__pager-page-btn--active" : null)"
+                            disabled="@(isCurrent || Loading)"
+                            aria-current="@(isCurrent ? "page" : null)"
+                            @onclick="@(() => GoToPageAsync(n))">@n</button>
+                }
+            </div>
+            <SimfToolbarButton Icon="chevron-right" Title="@NextLabel"
+                               Disabled="@(IsLastPage || Loading)"
+                               OnClick="GoNextAsync" />
+            <SimfToolbarButton Icon="chevron-last" Title="@LastLabel"
+                               Disabled="@(IsLastPage || Loading)"
+                               OnClick="GoLastAsync" />
         </div>
+        <label class="simf-grid__pager-size">
+            <span class="simf-grid__pager-size-label">@PageSizeLabel</span>
+            <select class="simf-grid__pager-size-select" disabled="@Loading"
+                    value="@(Query?.Top ?? 20)"
+                    @onchange="OnPageSizeChangedAsync">
+                @foreach (var size in PageSizeOptions)
+                {
+                    <option value="@size">@size</option>
+                }
+            </select>
+        </label>
     </div>
 </div>
 
@@ -418,6 +461,9 @@
     /// <summary>Delete one row (per-row button + context menu).</summary>
     [Parameter] public EventCallback<TItem> OnDeleteOne { get; set; }
 
+    /// <summary>Show read-only details for one row (per-row button + context menu). D-112.</summary>
+    [Parameter] public EventCallback<TItem> OnDetailsOne { get; set; }
+
     /// <summary>Copy the selected rows (writes to the system clipboard as JSON).</summary>
     [Parameter] public EventCallback<IReadOnlyList<TItem>> OnCopySelected { get; set; }
 
@@ -444,10 +490,14 @@
     [Parameter] public string LoadingLabel { get; set; } = "Loading";
     [Parameter] public string PrevLabel { get; set; } = "Previous";
     [Parameter] public string NextLabel { get; set; } = "Next";
+    [Parameter] public string FirstLabel { get; set; } = "First";
+    [Parameter] public string LastLabel { get; set; } = "Last";
+    [Parameter] public string PageSizeLabel { get; set; } = "Show";
     [Parameter] public string SelectAllLabel { get; set; } = "Select all";
     [Parameter] public string SelectRowLabel { get; set; } = "Select row";
     [Parameter] public string AddLabel { get; set; } = "Add";
     [Parameter] public string EditLabel { get; set; } = "Edit";
+    [Parameter] public string DetailsLabel { get; set; } = "Details";
     [Parameter] public string DeleteLabel { get; set; } = "Delete";
     [Parameter] public string CopyLabel { get; set; } = "Copy";
     [Parameter] public string PasteLabel { get; set; } = "Paste";
@@ -455,10 +505,17 @@
     [Parameter] public string ImportLabel { get; set; } = "Import";
     [Parameter] public string ExportLabel { get; set; } = "Export";
 
+    /// <summary>The page-size options shown in the pager. D-112.</summary>
+    [Parameter] public IReadOnlyList<int> PageSizeOptions { get; set; } = new[] { 10, 20, 50, 100 };
+
     /// <summary>The pager summary template — receives (from, to, total). Defaults
     /// to "{from}-{to} of {total}".</summary>
     [Parameter] public Func<int, int, int, string> SummaryFormatter { get; set; } =
         (from, to, total) => $"{from}-{to} of {total}";
+
+    /// <summary>The pager "Page X of Y" formatter — receives (current, total). D-112.</summary>
+    [Parameter] public Func<int, int, string> PageFormatter { get; set; } =
+        (current, total) => $"Page {current} of {total}";
 
     // -- Column registration (called by SimfDataGridColumn) --------------------
 
@@ -487,10 +544,12 @@
 
     private bool HasRowEndCell =>
         RowActions is not null
+        || OnDetailsOne.HasDelegate
         || OnEditOne.HasDelegate || OnCopyOne.HasDelegate || OnDeleteOne.HasDelegate;
 
     private bool AnyContextHandlerWired =>
-        OnEditOne.HasDelegate || OnCopyOne.HasDelegate
+        OnDetailsOne.HasDelegate
+        || OnEditOne.HasDelegate || OnCopyOne.HasDelegate
         || OnDeleteOne.HasDelegate || OnDuplicateOne.HasDelegate;
 
     /// <summary>Back-compat alias retained because the Razor markup binds to
@@ -675,6 +734,87 @@
         ClearSelection();
         var next = CopyQuery(Query);
         next.Skip = Query.Skip + Query.Top;
+        await OnQueryChanged.InvokeAsync(next);
+    }
+
+    // -- Full pager (D-112) ----------------------------------------------------
+
+    private int CurrentPage
+    {
+        get
+        {
+            if (Query is null || Query.Top <= 0) return 1;
+            return (Query.Skip / Query.Top) + 1;
+        }
+    }
+
+    private int TotalPages
+    {
+        get
+        {
+            if (Page is null || Query is null || Query.Top <= 0) return 1;
+            if (Page.Total <= 0) return 1;
+            return (int)Math.Ceiling((double)Page.Total / Query.Top);
+        }
+    }
+
+    private string RenderPageLabel() => PageFormatter(CurrentPage, TotalPages);
+
+    /// <summary>The numbered-page buttons to render around the current page —
+    /// up to 5 entries, centred on the current page, clamped to [1..TotalPages].</summary>
+    private IEnumerable<int> PageNumbersToShow()
+    {
+        const int window = 5;
+        var total = TotalPages;
+        if (total <= window)
+        {
+            for (var i = 1; i <= total; i++) yield return i;
+            yield break;
+        }
+        var current = CurrentPage;
+        var start = Math.Max(1, current - window / 2);
+        var end = Math.Min(total, start + window - 1);
+        start = Math.Max(1, end - window + 1);
+        for (var i = start; i <= end; i++) yield return i;
+    }
+
+    private async Task GoFirstAsync()
+    {
+        if (Query is null || IsFirstPage) return;
+        ClearSelection();
+        var next = CopyQuery(Query);
+        next.Skip = 0;
+        await OnQueryChanged.InvokeAsync(next);
+    }
+
+    private async Task GoLastAsync()
+    {
+        if (Query is null || IsLastPage) return;
+        ClearSelection();
+        var next = CopyQuery(Query);
+        next.Skip = Math.Max(0, (TotalPages - 1) * Query.Top);
+        await OnQueryChanged.InvokeAsync(next);
+    }
+
+    private async Task GoToPageAsync(int pageNumber)
+    {
+        if (Query is null || pageNumber < 1 || pageNumber > TotalPages) return;
+        if (pageNumber == CurrentPage) return;
+        ClearSelection();
+        var next = CopyQuery(Query);
+        next.Skip = (pageNumber - 1) * Query.Top;
+        await OnQueryChanged.InvokeAsync(next);
+    }
+
+    private async Task OnPageSizeChangedAsync(ChangeEventArgs args)
+    {
+        if (Query is null) return;
+        if (!int.TryParse(args.Value?.ToString(), out var newSize) || newSize <= 0) return;
+        if (newSize == Query.Top) return;
+        ClearSelection();
+        var next = CopyQuery(Query);
+        next.Top = newSize;
+        next.Skip = 0;
         await OnQueryChanged.InvokeAsync(next);
     }
 

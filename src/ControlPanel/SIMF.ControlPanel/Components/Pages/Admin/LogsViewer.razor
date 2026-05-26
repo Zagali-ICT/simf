@@ -28,7 +28,9 @@
     }
     else
     {
-        <div class="simf-form__fields">
+        @* D-112 — Q-E: two strict rows. Row 1 = filters (Project / File / Lines + Auto-refresh).
+           Row 2 = action buttons (Refresh / Download). Group-aligned. *@
+        <div class="simf-logs__row simf-logs__row--filters">
             <label class="simf-field">
                 <span class="simf-field__label">@L["Admin.Logs.Project"]</span>
                 <select class="simf-field__input" value="@_selectedProject"
@@ -62,17 +64,17 @@
                     <option value="5000">5000</option>
                 </select>
             </label>
-        </div>
-
-        <div class="simf-form__actions">
-            <SimfButton Type="button" OnClick="RefreshAsync" Disabled="_loadingTail">
-                @L["Admin.Logs.Refresh"]
-            </SimfButton>
-            <label class="simf-field simf-field--inline">
+            <label class="simf-field simf-field--inline simf-logs__autorefresh">
                 <input type="checkbox" checked="@_autoRefresh"
                        @onchange="OnAutoRefreshChanged" />
                 <span>@L["Admin.Logs.AutoRefresh"]</span>
             </label>
+        </div>
+
+        <div class="simf-logs__row simf-logs__row--actions">
+            <SimfButton Type="button" OnClick="RefreshAsync" Disabled="_loadingTail">
+                @L["Admin.Logs.Refresh"]
+            </SimfButton>
             <SimfButton Type="button" Variant="secondary" OnClick="DownloadAsync"
                         Disabled="@string.IsNullOrEmpty(_selectedFile)">
                 @L["Admin.Logs.Download"]

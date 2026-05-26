@@ -222,6 +222,31 @@
   <data name="Admin.Users.Import.Close" xml:space="preserve"><value>Close</value></data>
   <data name="Admin.Users.Import.Picker" xml:space="preserve"><value>Choose Excel file to import</value></data>
 
+  <!-- D-112 — Add/Edit/Details modals + full pager + Details row action -->
+  <data name="Admin.Users.Action.Details" xml:space="preserve"><value>Details</value></data>
+  <data name="Admin.Users.Add.Title" xml:space="preserve"><value>Add user</value></data>
+  <data name="Admin.Users.Add.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Users.Edit.Title" xml:space="preserve"><value>Edit user</value></data>
+  <data name="Admin.Users.Edit.NotYet" xml:space="preserve"><value>Editing a user ships with the User Management module. The grid is already wired for it.</value></data>
+  <data name="Admin.Users.Edit.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Users.Details.Title" xml:space="preserve"><value>User details — {0}</value></data>
+  <data name="Admin.Users.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Users.Details.Field.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Admin.Users.Details.Field.DisplayName" xml:space="preserve"><value>Display name</value></data>
+  <data name="Admin.Users.Details.Field.State" xml:space="preserve"><value>State</value></data>
+  <data name="Admin.Users.Details.Field.Role" xml:space="preserve"><value>Role</value></data>
+  <data name="Admin.Users.Details.Field.TwoFactor" xml:space="preserve"><value>Two-factor</value></data>
+  <data name="Admin.Users.Pager.First" xml:space="preserve"><value>First page</value></data>
+  <data name="Admin.Users.Pager.Last" xml:space="preserve"><value>Last page</value></data>
+  <data name="Admin.Users.Pager.PageSize" xml:space="preserve"><value>Show</value></data>
+  <data name="Admin.Users.Pager.Page" xml:space="preserve"><value>Page {0} of {1}</value></data>
+
+  <!-- D-116 — Image cropper -->
+  <data name="Crop.Title" xml:space="preserve"><value>Crop image</value></data>
+  <data name="Crop.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Crop.Submit" xml:space="preserve"><value>Crop and save</value></data>
+  <data name="Crop.Processing" xml:space="preserve"><value>Processing</value></data>
+
   <data name="Admin.CreateUser.Title" xml:space="preserve"><value>Add a new user</value></data>
   <data name="Admin.CreateUser.Supporting" xml:space="preserve"><value>The new user will receive an email invitation with a one-time code to set their password. The invitation is valid for 7 days.</value></data>
   <data name="Admin.CreateUser.Email" xml:space="preserve"><value>Email address</value></data>

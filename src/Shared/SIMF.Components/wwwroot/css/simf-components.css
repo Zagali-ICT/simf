@@ -1406,6 +1406,7 @@ body.simf-modal-open { overflow: hidden; }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap; /* D-112 — accommodate added page-label + size-selector children */
   gap: var(--space-3);
   padding-block-start: var(--space-4);
   margin-block-start: var(--space-3);
@@ -1815,3 +1816,231 @@ body.simf-modal-open { overflow: hidden; }
 .simf-bell__item--error { border-inline-start: 3px solid var(--color-danger); }
 .simf-bell__item--info { border-inline-start: 3px solid var(--color-accent-blue); }
 .simf-bell__item time { color: var(--color-text-muted); font-size: var(--font-size-caption); }
+
+/* ===========================================================================
+   D-112 — SimfBanner
+   High-emphasis page-top banner; sits beside SimfPageHeader. Tinted surface
+   + leading accent rule. Title typography matches SimfPageHeader so the
+   visual reads identically while the container reads as a banner.
+   ========================================================================= */
+.simf-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  margin-block-end: var(--space-6);
+  background: var(--color-surface-sunken);
+  border-inline-start: 4px solid var(--color-action);
+  border-radius: var(--radius-card);
+}
+
+.simf-banner__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.simf-banner__title {
+  margin: 0;
+  font-size: var(--font-size-title);
+  line-height: var(--line-height-title);
+  font-weight: var(--font-weight-heading);
+  color: var(--color-text);
+}
+
+.simf-banner__subtitle {
+  margin: 0;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  color: var(--color-text-muted);
+}
+
+.simf-banner__actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+@media (max-width: 639px) {
+  .simf-banner { flex-direction: column; align-items: stretch; }
+  .simf-banner__actions { justify-content: flex-start; }
+}
+
+/* ===========================================================================
+   D-112 — Full pager (First / Prev / numbered / Next / Last + page-size)
+   Extends the existing .simf-grid__pager block at line 1405.
+   ========================================================================= */
+.simf-grid__pager-page {
+  font-size: var(--font-size-caption);
+  color: var(--color-text-muted);
+}
+
+.simf-grid__pager-pages {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.simf-grid__pager-page-btn {
+  min-width: 2rem;
+  padding-inline: var(--space-2);
+  padding-block: var(--space-1);
+  font: inherit;
+  font-size: var(--font-size-body);
+  color: var(--color-text);
+  background: transparent;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-field);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.simf-grid__pager-page-btn:hover:not(:disabled) {
+  background: var(--color-surface-sunken);
+}
+
+.simf-grid__pager-page-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.simf-grid__pager-page-btn--active {
+  background: var(--color-action);
+  color: var(--color-text-on-primary);
+  border-color: var(--color-action);
+  cursor: default;
+}
+
+.simf-grid__pager-page-btn:disabled:not(.simf-grid__pager-page-btn--active) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.simf-grid__pager-size {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-caption);
+  color: var(--color-text-muted);
+}
+
+.simf-grid__pager-size-select {
+  font: inherit;
+  font-size: var(--font-size-body);
+  color: var(--color-text);
+  background: var(--color-field-background);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-field);
+  padding: var(--space-1) var(--space-2);
+}
+
+.simf-grid__pager-size-select:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (max-width: 639px) {
+  .simf-grid__pager-pages { flex-wrap: wrap; }
+  .simf-grid__pager-size { justify-content: space-between; }
+}
+
+/* ===========================================================================
+   D-112 — Description list used by the Details modal.
+   Lightweight two-column key/value layout; tokens only.
+   ========================================================================= */
+.simf-dl {
+  display: grid;
+  grid-template-columns: minmax(8rem, 30%) 1fr;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+}
+
+.simf-dl dt {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-body);
+}
+
+.simf-dl dd {
+  margin: 0;
+  color: var(--color-text);
+}
+
+@media (max-width: 480px) {
+  .simf-dl { grid-template-columns: 1fr; gap: var(--space-1) 0; }
+  .simf-dl dd { margin-block-end: var(--space-3); }
+}
+
+/* ===========================================================================
+   D-112 — Q-E: Logs viewer 2-row layout.
+   Row 1 = filters (Project / File / Lines + Auto-refresh).
+   Row 2 = action buttons (Refresh / Download). Group-aligned.
+   ========================================================================= */
+.simf-logs__row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin-block-end: var(--space-4);
+}
+
+.simf-logs__row--filters { flex-wrap: wrap; }
+
+.simf-logs__row--filters .simf-field {
+  flex: 1 1 14rem;
+  min-width: 0;
+  margin-block-end: 0;
+}
+
+.simf-logs__autorefresh {
+  flex: 0 0 auto;
+  align-self: center;
+  padding-block-end: var(--space-1);
+}
+
+.simf-logs__row--actions {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+@media (max-width: 639px) {
+  .simf-logs__row { flex-direction: column; align-items: stretch; }
+  .simf-logs__autorefresh { align-self: flex-start; }
+}
+
+/* ===========================================================================
+   D-116 — SimfImageCropperModal
+   Container + canvas styles. Replaces V10's inline <style> + hardcoded
+   #1a1a2e with token-based equivalents (CLAUDE.md §8). Circle-overlay
+   rules target Cropper.js's own classes (.cropper-view-box, .cropper-face).
+   ========================================================================= */
+.simf-cropper {
+  width: 100%;
+  height: 420px;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--color-surface-sunken);
+}
+
+.simf-cropper__element {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  display: block;
+}
+
+/* Cropper.js inserts its own elements with .cropper-* classes inside the
+   wrapper. Round the overlay to suit avatar use; flat for non-square crops.
+   The .simf-cropper--square modifier opts in to the circular preview. */
+.simf-cropper--square .cropper-view-box,
+.simf-cropper--square .cropper-face {
+  border-radius: 50%;
+}
+
+.simf-cropper img {
+  max-width: none !important;
+}
+
+

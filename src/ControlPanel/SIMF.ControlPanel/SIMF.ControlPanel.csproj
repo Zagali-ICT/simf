@@ -18,6 +18,8 @@
     <!-- P6: per-project log files under {Storage:LogDirectory}/SIMF.ControlPanel/ -->
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <!-- D-116: image cropping primitive (avatar upload). Pin matches V10 ERP. -->
+    <PackageReference Include="Cropper.Blazor" Version="1.5.1" />
   </ItemGroup>
 
 </Project>
