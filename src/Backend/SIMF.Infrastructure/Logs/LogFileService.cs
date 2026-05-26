@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Options;
 using SIMF.Application.Logs;
 using SIMF.Contracts.Logs;
-using SIMF.Infrastructure.Storage;
+using SIMF.Common.Options;
 
 namespace SIMF.Infrastructure.Logs;
 

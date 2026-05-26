@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
+using SIMF.Common.Options;
 using SIMF.Domain.Auditing;
 using SIMF.Infrastructure.Identity;
 

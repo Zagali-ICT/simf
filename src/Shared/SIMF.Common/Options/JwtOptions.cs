@@ -1,4 +1,4 @@
-namespace SIMF.Infrastructure.Identity;
+namespace SIMF.Common.Options;
 
 /// <summary>
 /// JWT access-token settings, bound from the <c>Jwt</c> configuration section.

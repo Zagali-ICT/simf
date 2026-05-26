@@ -17,6 +17,7 @@ using SIMF.Api.RequestContext;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Common;
+using SIMF.Common.Options;
 using SIMF.Domain.Auditing;
 using SIMF.Infrastructure;
 using SIMF.Infrastructure.Identity;

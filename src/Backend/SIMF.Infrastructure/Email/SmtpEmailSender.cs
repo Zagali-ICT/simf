@@ -3,6 +3,7 @@ using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
 using SIMF.Application.Email;
+using SIMF.Common.Options;
 
 namespace SIMF.Infrastructure.Email;
 

@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SIMF.Application.IdentityAccess;
+using SIMF.Common.Options;
 using SIMF.Domain.IdentityAccess;
 
 namespace SIMF.Infrastructure.Identity;

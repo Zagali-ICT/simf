@@ -1,4 +1,4 @@
-namespace SIMF.Infrastructure.Storage;
+namespace SIMF.Common.Options;
 
 /// <summary>
 /// Filesystem-storage settings, bound from the <c>Storage</c> configuration

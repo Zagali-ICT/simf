@@ -1,4 +1,4 @@
-namespace SIMF.Infrastructure.Email;
+namespace SIMF.Common.Options;
 
 /// <summary>
 /// SMTP configuration, bound from the <c>Email</c> configuration section. The

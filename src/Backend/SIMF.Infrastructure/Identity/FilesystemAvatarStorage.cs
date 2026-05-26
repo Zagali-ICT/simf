@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SIMF.Application.Abstractions;
-using SIMF.Infrastructure.Storage;
+using SIMF.Common.Options;
 
 namespace SIMF.Infrastructure.Identity;
 

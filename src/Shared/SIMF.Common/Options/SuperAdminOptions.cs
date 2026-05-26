@@ -1,4 +1,4 @@
-namespace SIMF.Infrastructure.Identity;
+namespace SIMF.Common.Options;
 
 /// <summary>
 /// The bootstrap super-administrator, bound from the <c>SuperAdmin</c>

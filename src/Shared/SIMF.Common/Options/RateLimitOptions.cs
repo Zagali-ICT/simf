@@ -1,4 +1,4 @@
-namespace SIMF.Api.RateLimiting;
+namespace SIMF.Common.Options;
 
 /// <summary>
 /// Rate-limit settings for the authentication endpoints, bound from the
@@ -49,4 +49,3 @@ public sealed class RateLimitOptions
     /// <summary>The global window length, in seconds.</summary>
     public int GlobalWindowSeconds { get; set; } = 60;
 }
-
