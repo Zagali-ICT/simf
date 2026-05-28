@@ -656,6 +656,200 @@ authoring.
 - **Postcondition:** profile is saved; QR is the operative access key for
   the venue gate.
 
+### UC-AUTH-PENDING-001 — Pending admin sees holding page
+
+- **Actor:** Self-registered administrator candidate whose account is in `PendingApproval`.
+- **Preconditions:** account exists; password + TOTP are correct.
+- **Main flow:**
+  1. User completes `/login` + `/login/totp`.
+  2. The server detects `AccountState = PendingApproval` and returns
+     `AuthRequiresApproval` instead of token pair.
+  3. Browser redirects to [`/auth/pending`](pages/cp/auth-pending.md).
+  4. The page renders the holding-page copy + a Sign-out button.
+- **Postcondition:** the user has read the holding page; their cookie
+  holds the cookie-auth session but no JWT pair (so `[Authorize]` admin
+  pages bounce back).
+
+### UC-AUTH-REJECTED-001 — Rejected admin sees reason
+
+- **Actor:** Administrator whose account is in `Rejected`.
+- **Preconditions:** account exists; password + TOTP correct;
+  `RejectionReason` populated when the admin was rejected (10–500 chars).
+- **Main flow:**
+  1. User completes /login + /login/totp.
+  2. Server returns `AuthRequiresApproval` with `AccountState = Rejected`.
+  3. Browser redirects to [`/auth/rejected`](pages/cp/auth-rejected.md).
+  4. Page renders the verbatim bilingual `RejectionReason` + the
+     `RejectedAt` timestamp + a Sign-out button.
+- **Postcondition:** the user has seen the rejection reason; they can
+  reach out to the SIMF team out-of-band.
+
+### UC-VIS-WALKIN-NONSAUDI-001 — Walk-in non-Saudi visitor with Passport
+
+- **Actor:** Administrator (registration-desk staff).
+- **Preconditions:** identical to UC-VIS-WALKIN-001.
+- **Main flow:** identical to UC-VIS-WALKIN-001 except at section 3:
+  - desk toggles **Saudi** off → country picker appears + Iqama/Passport
+    sub-picker.
+  - desk picks country (e.g. "United Kingdom") and toggles **Passport**.
+  - desk fills Passport number ≤ 20 chars.
+  - The wizard hides the National-ID + Iqama fields so only one ID
+    payload reaches the server.
+- **Server-side:** `AdminWalkInRegistrationRequestValidator` enforces
+  "non-Saudi-implies-Iqama-OR-Passport".
+- **Postcondition:** visitor created with `NationalityCode = GB` (in this
+  example) + `PassportNumber` set + `NationalId` and `IqamaNumber` null.
+  All other steps + audit + QR mint identical to UC-VIS-WALKIN-001.
+
+### UC-VPN-REJECT-001 — Reject pending visitor with reason
+
+- **Actor:** Administrator.
+- **Preconditions:** target visitor in `PendingApproval`.
+- **Main flow:**
+  1. Admin opens [`/admin/visitors/pending`](pages/cp/admin-visitors-pending.md).
+  2. Clicks the **Reject** button on the target row.
+  3. The reject reason modal opens with a `SimfTextarea` (helper:
+     10–500 chars).
+  4. Admin types a clear bilingual-friendly reason.
+  5. Submit button enables only when the textarea length ∈ [10..500].
+  6. Admin clicks **Reject**.
+  7. Server: `POST /admin/visitors/{id}/reject` with the reason →
+     `AccountState = Rejected`, `RejectionReason` + `RejectionReasonArabic`
+     stored, audit `Admin.UserRejected`.
+  8. Toast: `Rejected {email}`. Row vanishes from the queue.
+- **Exception — Length gate:** typing < 10 or > 500 chars keeps the
+  Submit button disabled (client-side).
+- **Postcondition:** visitor sees the reason on
+  [`/account/rejected`](pages/web/account-rejected.md) on next sign-in.
+
+### UC-INT-CREATE-001 — Add an interest
+
+- **Actor:** Administrator.
+- **Preconditions:** signed in + Approved + Administrator role.
+- **Main flow:**
+  1. Open [`/admin/interests`](pages/cp/admin-interests.md) → click **+ Add**.
+  2. Add modal opens (`InterestForm.razor`, Initial = null).
+  3. Fill Name (English) 1–128 chars; Name (Arabic) 1–128 chars; Display
+     order ≥ 0.
+  4. Click **Create interest**.
+  5. Server validates with `AdminCreateInterestRequestValidator`, persists,
+     audits `Admin.InterestCreated`.
+  6. Modal closes; grid reloads; toast `Admin.Interests.Created` with the
+     new name.
+- **Exception — Duplicate name:** 409 + `ErrorCodes.InterestNameNotUnique`
+  → toast shows bilingual server message; modal stays open.
+- **Exception — Bad input:** server-side FluentValidation → 400 with
+  field-level errors mapped to the bilingual `*.Invalid` resx keys.
+- **Postcondition:** the visitor-facing picker picks up the new interest
+  on next load.
+
+### UC-INT-EDIT-001 — Edit an interest
+
+- **Actor:** Administrator.
+- **Preconditions:** target interest exists.
+- **Main flow:**
+  1. Click the **Edit** icon on the target row.
+  2. Edit modal opens (`InterestForm` Initial = the row), with an extra
+     **Active** checkbox visible.
+  3. Adjust any field.
+  4. Click **Save changes**.
+  5. Server validates with `AdminUpdateInterestRequestValidator`, persists,
+     audits `Admin.InterestUpdated`.
+  6. Modal closes; grid reloads; toast `Admin.Interests.Updated`.
+- **Edge case — Deactivating via Edit:** untick the Active checkbox →
+  same flow as Save; row pill flips to grey "Inactive".
+- **Postcondition:** the row reflects the new values; the visitor picker
+  reflects the new Active state on next load.
+
+### UC-INT-DEACTIVATE-001 — Deactivate an interest
+
+- **Actor:** Administrator.
+- **Preconditions:** target interest exists + is Active.
+- **Main flow:**
+  1. Click the **Deactivate** trash icon on the row.
+  2. Server: `DELETE /account/api/admin/interests/{id}` → calls
+     `entity.Deactivate()` (sets `IsActive = false`), audits
+     `Admin.InterestDeactivated`.
+  3. Toast `Admin.Interests.Deactivated`.
+  4. Row pill flips to grey "Inactive".
+- **Postcondition:** existing visitor-interest links survive (soft-delete);
+  new visitors don't see the deactivated interest in their picker.
+  Reactivate via Edit if needed.
+
+### UC-VPT-CREATE-001 — Add a Visitor profile-type with PageColor
+
+- **Actor:** Administrator.
+- **Preconditions:** signed in.
+- **Main flow:**
+  1. Open [`/admin/profile-types/visitor`](pages/cp/admin-profile-types-visitor.md)
+     → click **+ Add**.
+  2. Add modal opens (`ProfileTypeForm.razor`).
+  3. Fill Name (English) + Name (Arabic) + PageColor + Active.
+  4. PageColor uses the D-120 paired text + `<input type="color">` swatch:
+     text is the source of truth (accepts `#rrggbb`, 3-digit hex,
+     `var(--brand-blue)` CSS variables); the swatch is a visual shortcut
+     that writes `#rrggbb` back.
+  5. Click **Create**.
+  6. Server validates (UserType pinned to Visitor by the route), persists,
+     audits `Admin.ProfileTypeCreated`.
+  7. Modal closes; grid reloads; the new tile appears in
+     `/admin/visitors` walk-in wizard on next load.
+- **Exception — Duplicate name within UserType:** 409 + bilingual message.
+- **Postcondition:** the new profile-type is selectable in the walk-in
+  wizard tile picker.
+
+### UC-LOG-TAIL-001 — Tail a project log
+
+- **Actor:** Administrator.
+- **Preconditions:** at least one project log file exists under
+  `{Storage:LogDirectory}`.
+- **Main flow:**
+  1. Open [`/admin/logs`](pages/cp/admin-logs.md).
+  2. Pick **Project** (e.g. `Api`) → file select populates with the
+     per-day log files (newest first).
+  3. Pick **File** (e.g. `2026-05-28.log`) + **Lines** (e.g. 500).
+  4. Optionally tick **Auto-refresh** (5-second poll).
+  5. The monospaced `<pre>` block renders the tail.
+  6. Auto-refresh fires every 5 s while the tab has focus.
+- **Postcondition:** admin reads the latest log output; tab focus pause
+  prevents wasted polling.
+
+### UC-PRF-AVATAR-001 — Change my avatar (Cropper.Blazor flow)
+
+- **Actor:** Any signed-in user (currently Administrator only — opens up
+  when more roles ship).
+- **Preconditions:** signed in.
+- **Main flow:**
+  1. Open [`/account/profile`](pages/cp/account-profile.md) →
+     click **Change avatar**.
+  2. Pick a PNG / JPEG / WebP ≤ 2 MB.
+  3. `SimfImageCropperModal` opens (D-116 visuals + D-122 DI fix +
+     D-123 cropperjs load order).
+  4. Crop to 256 × 256.
+  5. Click **Crop and save**.
+  6. Server: `POST /account/api/profile/avatar` with the cropped image
+     → stores under user's record, returns the new URL.
+  7. Avatar in the profile page + the top header refresh to show the new
+     image. No console error (cropper.destroy resolves correctly).
+- **Exception — File > 2 MB:** server rejects with bilingual size error.
+- **Exception — Wrong type:** server rejects with bilingual type error.
+- **Postcondition:** the user's avatar is updated everywhere it renders
+  via the cookie/JWT session.
+
+### UC-WEB-NTF-001 — Visitor reads notifications inbox (Web)
+
+- **Actor:** Visitor (Approved).
+- **Preconditions:** signed in.
+- **Main flow:**
+  1. From [`/account/profile`](pages/web/account-profile.md), click the
+     **Notifications** link in the header (added by D-132 to close the
+     orphan-page gap).
+  2. Page renders [`/account/notifications`](pages/web/account-notifications.md)
+     with the visitor's notifications.
+  3. Visitor may dismiss individual rows, or simply read.
+- **Edge case — Empty inbox:** `SimfEmptyState` renders.
+- **Postcondition:** read-state may have changed (visitor saw the inbox).
+
 ## 9. How to author the remaining entries
 
 For each row in §7 that doesn't yet have a detailed entry above:
