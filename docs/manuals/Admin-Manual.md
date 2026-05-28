@@ -53,7 +53,7 @@ is a placeholder marked _(planned)_.
     11. Logs viewer
 12. Account-area surfaces
     1. Profile
-    2. Notifications inbox
+    2. **Notifications inbox** — chapter authored below in §12.2
     3. TOTP pairing (first-time setup)
 13. Security boundaries
 14. Troubleshooting index
@@ -339,15 +339,29 @@ has the same role + state, fresh QR.
 
 ### 10.2 Pending admins — `/admin/admins/pending`
 
-_(chapter pending)_
+> Page reference: [`docs/pages/cp/admin-admins-pending.md`](../pages/cp/admin-admins-pending.md)
+
+Queue of self-registered admin candidates. Per-row **Approve** (one-click,
+no preview today — parity gap with the Visitor/Other equivalents) and
+**Reject** (10–500 char reason). Always cross-check the candidate offline
+before approving since there's no preview modal yet.
 
 ### 10.3 Others — `/admin/others`
 
-_(chapter pending)_
+> Page reference: [`docs/pages/cp/admin-others.md`](../pages/cp/admin-others.md)
+
+Walk-in registration for non-visitor non-admin attendees (sponsor staff,
+exhibitor reps, press, contractors). Same wizard as `/admin/visitors`,
+except: no Interests section, and the profile-type tiles come from
+**Other profile types** (not Visitor). Make sure at least one Other
+profile-type is seeded under §10.9 before run-time.
 
 ### 10.4 Pending others — `/admin/others/pending`
 
-_(chapter pending)_
+> Page reference: [`docs/pages/cp/admin-others-pending.md`](../pages/cp/admin-others-pending.md)
+
+Approval queue for Other-typed self-registrations. Same View / Approve-with-
+review / Reject-with-reason flow as `/admin/visitors/pending` (§10.6).
 
 ### 10.5 Visitors — `/admin/visitors`
 
@@ -428,7 +442,49 @@ Same shape as Admins (§10.1).
 
 ### 10.6 Pending visitors — `/admin/visitors/pending`
 
-_(chapter pending)_
+> Page reference: [`docs/pages/cp/admin-visitors-pending.md`](../pages/cp/admin-visitors-pending.md)
+
+#### What it's for
+
+Queue of self-registered visitors waiting for your approval. Approval mints
+the QR badge and unlocks event entry; rejection records a reason for audit.
+
+#### Approve a visitor (review-before-approve, D-128)
+
+1. **System → Pending visitors**.
+2. Click **View** OR **Approve** on the row. Both open the same modal
+   preloaded with the visitor's full profile (Name EN/AR, nationality,
+   DOB, place of birth, identity type + number, mobile, interests count,
+   ID-document image inline if uploaded).
+3. Read carefully — this is the moment to catch fraud / typos / wrong
+   profile-type.
+4. If everything checks: click **Confirm and Approve**. The modal closes,
+   row vanishes, toast confirms `Approved {email}`. Visitor can now sign
+   in + their QR badge is live.
+5. If something's wrong: click **Cancel** and either Edit (when available)
+   or Reject with a reason.
+
+#### Reject a visitor
+
+1. Click **Reject** on the row.
+2. Type a clear reason (10–500 chars) — the visitor reads this verbatim on
+   `/account/rejected` and the audit log keeps it forever.
+3. Click **Reject**. Toast confirms `Rejected {email}`.
+
+#### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Approve button shows "Visitor not found" | Another admin already approved/rejected | Refresh the list |
+| Reject Submit disabled | Reason < 10 or > 500 chars | Type more / less |
+| View modal shows "no profile filled yet" | Visitor created account but didn't open the profile page | Reach out + ask them to complete `/account/profile` first |
+
+#### What you cannot do here
+
+- **Bulk-approve / bulk-reject** — the toolbar checkboxes render per D-132
+  for consistency, but no bulk endpoint exists yet. One row at a time.
+- **Edit the visitor's profile** — that's a User Management feature, not
+  shipped.
 
 ### 10.7 Interests — `/admin/interests`
 
@@ -527,11 +583,40 @@ being relevant, reorder them so the most popular sit at the top.
 
 ### 10.8 Visitor profile types — `/admin/profile-types/visitor`
 
-_(chapter pending)_
+> Page reference: [`docs/pages/cp/admin-profile-types-visitor.md`](../pages/cp/admin-profile-types-visitor.md)
+
+#### What it's for
+
+Visitor profile types are the **colour-coded tiles** that appear at the top
+of the walk-in registration wizard on `/admin/visitors`. Each row has a
+bilingual name, a PageColor (the tile + badge stripe), and an active flag.
+Add a new type before run-time when a new attendee category is announced
+(e.g. "Press", "VIP", "Speaker").
+
+#### Most common tasks
+
+1. **System → Visitor profile types** → **+ Add**.
+2. Fill: Name (EN), Name (AR), PageColor (paired text + colour-picker swatch
+   — pick from the picker or type `#rrggbb` / `var(--brand-blue)`).
+3. Save. The new tile appears in the walk-in wizard on next page load.
+4. Edit / Deactivate identically to the canonical CRUD pattern (§3.1).
+
+#### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Tile color shows navy in walk-in despite saving "red" | PageColor isn't a valid `#rrggbb` | Use the picker; or paste a 6-digit hex |
+| Delete fails with "Profile type in use" | Visitors are linked to it | Deactivate instead (soft); the existing visitors keep their link, new walk-ins won't see it |
+| "Duplicate name" | Same EN name as an existing type (case-insensitive) | Use a slightly different name |
 
 ### 10.9 Other profile types — `/admin/profile-types/other`
 
-_(chapter pending)_
+> Page reference: [`docs/pages/cp/admin-profile-types-other.md`](../pages/cp/admin-profile-types-other.md)
+
+Identical to §10.8 but for the Other-typed walk-in wizard at `/admin/others`.
+Both pools are completely separate (a "Press" Visitor tile and a "Press" Other
+tile are independent rows; that's intentional so the two walk-in flows can
+diverge over time).
 
 ### 10.10 Reset user 2FA — `/admin/reset-2fa`
 
@@ -540,6 +625,40 @@ _(chapter pending)_
 ### 10.11 Logs viewer — `/admin/logs`
 
 _(chapter pending)_
+
+---
+
+---
+
+## 12. Account-area surfaces
+
+### 12.2 Notifications inbox — `/account/notifications`
+
+> Page reference: [`docs/pages/cp/account-notifications.md`](../pages/cp/account-notifications.md)
+
+#### What it's for
+
+Your personal inbox. The header **🔔 bell** shows the unread count;
+clicking it opens a small menu with the latest few + a **View all** link
+that lands here.
+
+#### Most common tasks
+
+| Want to | Do |
+|---------|----|
+| See every notification | Just open the page |
+| Read the full body of one | Click the ⓘ **Details** icon |
+| Dismiss one | Click the 🗑 **Delete** icon |
+| Dismiss several at once | Select the rows + **Delete** in the toolbar |
+| Mark every unread as read (but keep them) | **Mark all as read** below the grid |
+
+#### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Bell shows N unread but page is empty | Filter or pager hides them | Clear filters; check page 1 |
+| Bulk-delete is slow | No bulk endpoint — fires N delete requests | Select fewer rows at once (≤ 25 = visible page) |
+| Notification body is `??????` for one language | Translation missing on that row | Open Details to see the other-language variant |
 
 ---
 
