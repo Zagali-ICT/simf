@@ -43,6 +43,10 @@
                       DeleteLabel="@L["Admin.ProfileTypes.Delete.Title"]"
                       SummaryFormatter="@FormatSummary">
             <Columns>
+                <SimfDataGridColumn TItem="AdminProfileTypeSummary" Key="userType"
+                                    Header="@L["Admin.ProfileTypes.Column.UserType"]">
+                    <CellTemplate>@ProfileTypeLabels.LocaliseUserType(context.UserType)</CellTemplate>
+                </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminProfileTypeSummary" Key="name"
                                     Header="@L["Admin.ProfileTypes.Column.Name"]"
                                     Sortable="true" Filterable="true">
@@ -116,6 +120,8 @@
                OnClose="@(() => _detailsTarget = null)">
         <ChildContent>
             <dl class="simf-dl">
+                <dt>@L["Admin.ProfileTypes.Field.UserType"]</dt>
+                <dd>@ProfileTypeLabels.LocaliseUserType(_detailsTarget.UserType)</dd>
                 <dt>@L["Admin.ProfileTypes.Field.Name"]</dt>
                 <dd>@_detailsTarget.Name</dd>
                 <dt>@L["Admin.ProfileTypes.Field.NameArabic"]</dt>

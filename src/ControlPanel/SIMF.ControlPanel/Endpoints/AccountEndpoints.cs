@@ -214,6 +214,25 @@ internal static class AccountEndpoints
             return Forward(await api.RejectVisitorAsync(id, body, token));
         });
 
+        // D-124 — scoped pending-profile reads for the CP "preview before approve"
+        // modal. 404-for-mismatch is preserved by Forward() since the API returns
+        // an ApiResult error envelope with status 404.
+        group.MapGet("/admin/visitors/{id:guid}/profile-for-approval",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetPendingVisitorProfileAsync(id, token));
+        });
+
+        group.MapGet("/admin/others/{id:guid}/profile-for-approval",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetPendingOtherProfileAsync(id, token));
+        });
+
         // P7c — ProfileTypes picker, filtered by UserType.
         group.MapGet("/admin/profile-types",
             async (string userType, HttpContext http, SimfAdminClient api) =>

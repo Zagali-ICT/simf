@@ -150,6 +150,7 @@ public static class DependencyInjection
         services.AddScoped<IAdminUserBulkService>(sp => sp.GetRequiredService<AdminAccountService>());
         services.AddScoped<IAdminProfileTypeQueryService, AdminProfileTypeQueryService>();
         services.AddScoped<IAdminProfileTypeCommandService, AdminProfileTypeCommandService>();
+        services.AddScoped<IAdminApprovalReadService, AdminApprovalReadService>();
         services.AddScoped<IQrIdMinter, QrIdMinter>();
         services.AddScoped<IUserProfileService, UserProfileService>();
         services.AddScoped<IInterestService, InterestService>();

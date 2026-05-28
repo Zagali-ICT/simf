@@ -385,6 +385,25 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>D-124 — scoped read of a pending Visitor's full profile.
+    /// Returns 404 (not 403) for unknown / approved / wrong-type ids; the
+    /// CP approve / reject flow renders this body in a preview modal.</summary>
+    public Task<ApiCallResult<PendingProfileResponse>> GetPendingVisitorProfileAsync(
+        Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<PendingProfileResponse>(
+            HttpMethod.Get, $"visitors/{subjectId}/profile-for-approval",
+            content: null,
+            accessToken, cancellationToken);
+
+    /// <summary>D-124 — scoped read of a pending Other's full profile.
+    /// Twin of <see cref="GetPendingVisitorProfileAsync"/>.</summary>
+    public Task<ApiCallResult<PendingProfileResponse>> GetPendingOtherProfileAsync(
+        Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<PendingProfileResponse>(
+            HttpMethod.Get, $"others/{subjectId}/profile-for-approval",
+            content: null,
+            accessToken, cancellationToken);
+
     /// <summary>ProfileTypes filtered by UserType — for the create-page picker (P7c).</summary>
     public Task<ApiCallResult<IReadOnlyList<AdminProfileTypeSummary>>> ListProfileTypesAsync(
         string userType, string accessToken,

@@ -16,6 +16,19 @@
 
 <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
     <div class="simf-form__fields">
+        @* D-125 — display the UserType so the admin sees which account-type
+           this profile-type belongs to. Edit mode is read-only because the
+           backend rejects UserType changes (the field never appears in the
+           PUT body); Create mode shows the UserType the host page passed in
+           so an admin opening "Add" on the Visitor page can confirm. *@
+        <div class="simf-field">
+            <div class="simf-field__label">@L["Admin.ProfileTypes.Field.UserType"]</div>
+            <div class="simf-field__value">@LocalisedUserType</div>
+            @if (_isEdit)
+            {
+                <div class="simf-field__helper">@L["Admin.ProfileTypes.UserType.Hint"]</div>
+            }
+        </div>
         <SimfTextField Label="@L["Admin.ProfileTypes.Field.Name"]"
                        Helper="@L["Admin.ProfileTypes.Field.NameHint"]"
                        @bind-Value="_model.Name" Disabled="_busy" />
@@ -99,6 +112,18 @@
 
     private string SubmitLabel =>
         _isEdit ? L["Admin.ProfileTypes.Submit.Update"] : L["Admin.ProfileTypes.Submit.Create"];
+
+    /// <summary>D-125 — localised "Visitor" / "Other" display string, sourced
+    /// from the existing ResUserType resources so the form, the grid column
+    /// and the Details modal stay consistent.</summary>
+    private string LocalisedUserType
+    {
+        get
+        {
+            var raw = _isEdit ? Initial?.UserType : UserType;
+            return ProfileTypeLabels.LocaliseUserType(raw);
+        }
+    }
 
     // D-120 — only feed the native colour picker when the model value is a
     // canonical #rrggbb hex. CSS variables and 3-digit hex shortcuts stay in

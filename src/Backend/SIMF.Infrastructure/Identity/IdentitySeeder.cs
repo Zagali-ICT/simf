@@ -110,6 +110,20 @@ public sealed class IdentitySeeder(
             }
         }
 
+        // D-124: the original seed names redundantly prefixed the UserType
+        // ("Visitor — General", "Other — Staff") even though UserType is a
+        // separate column on the same row. Rename the rows in place on any
+        // DB that still carries the old names — the CP grid now surfaces
+        // UserType as its own column (D-125) so the prefix is noise. The
+        // rename runs before the EnsureProfileTypeAsync calls below so the
+        // ensure step is a true no-op afterwards.
+        await RenameProfileTypeIfPresentAsync(
+            "Visitor — General", "General", "زائر — عام", "عام",
+            UserType.Visitor, cancellationToken);
+        await RenameProfileTypeIfPresentAsync(
+            "Other — Staff", "Staff", "أخرى — فريق", "فريق",
+            UserType.Other, cancellationToken);
+
         // P7 — seed the initial ProfileTypes set so the create / pending
         // pages have non-empty pickers from first boot. The final v1 set
         // is open item OI-6 against SIMF-FDS-002 v2.0 — the owner picks
@@ -117,10 +131,10 @@ public sealed class IdentitySeeder(
         // / Media / ...); this seed ships one row per UserType so the
         // pickers render.
         await EnsureProfileTypeAsync(
-            "Visitor — General", "زائر — عام", "#3B82F6",
+            "General", "عام", "#3B82F6",
             UserType.Visitor, cancellationToken);
         await EnsureProfileTypeAsync(
-            "Other — Staff", "أخرى — فريق", "#10B981",
+            "Staff", "فريق", "#10B981",
             UserType.Other, cancellationToken);
     }
 
@@ -134,6 +148,50 @@ public sealed class IdentitySeeder(
                 IsBaseline = true,
             });
         }
+    }
+
+    /// <summary>D-124 — idempotent rename. When a row with the old Name
+    /// still exists for the given UserType, swap Name + NameArabic in
+    /// place so the per-UserType uniqueness rule isn't violated by a
+    /// duplicate "General" / "Staff" insert in the follow-up
+    /// <see cref="EnsureProfileTypeAsync"/> call. Safe to re-run.</summary>
+    private async Task RenameProfileTypeIfPresentAsync(
+        string oldName,
+        string newName,
+        string oldNameArabic,
+        string newNameArabic,
+        UserType userType,
+        CancellationToken cancellationToken)
+    {
+        var legacy = await dbContext.ProfileTypes
+            .SingleOrDefaultAsync(profileType =>
+                profileType.UserType == userType && profileType.Name == oldName,
+                cancellationToken);
+        if (legacy is null) { return; }
+
+        // Bail out if the destination name is already taken on a different
+        // row (e.g. the operator created their own "General" manually).
+        // Leaving the legacy row alone is safer than colliding the unique
+        // (UserType, Name) constraint.
+        var collision = await dbContext.ProfileTypes
+            .AnyAsync(profileType =>
+                profileType.UserType == userType
+                && profileType.Id != legacy.Id
+                && profileType.Name == newName,
+                cancellationToken);
+        if (collision) { return; }
+
+        legacy.Name = newName;
+        if (string.Equals(legacy.NameArabic, oldNameArabic, StringComparison.Ordinal))
+        {
+            legacy.NameArabic = newNameArabic;
+        }
+        legacy.UpdatedAt = timeProvider.GetUtcNow();
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation(
+            "D-124: renamed seeded ProfileType '{OldName}' to '{NewName}' for {UserType}.",
+            oldName, newName, userType);
     }
 
     /// <summary>P7 — idempotent ProfileTypes seed (lookup by Name + UserType).</summary>

@@ -70,6 +70,10 @@
   <data name="Admin.ProfileTypes.Column.NameArabic" xml:space="preserve"><value>Name (Arabic)</value></data>
   <data name="Admin.ProfileTypes.Column.PageColor" xml:space="preserve"><value>Page colour</value></data>
   <data name="Admin.ProfileTypes.Column.Active" xml:space="preserve"><value>Active</value></data>
+  <!-- D-125 — UserType column / field on the ProfileTypes CRUD pages. -->
+  <data name="Admin.ProfileTypes.Column.UserType" xml:space="preserve"><value>Account type</value></data>
+  <data name="Admin.ProfileTypes.Field.UserType" xml:space="preserve"><value>Account type</value></data>
+  <data name="Admin.ProfileTypes.UserType.Hint" xml:space="preserve"><value>Cannot be changed after creation.</value></data>
   <data name="Admin.ProfileTypes.Column.Actions" xml:space="preserve"><value>Actions</value></data>
   <data name="Admin.ProfileTypes.Active.Yes" xml:space="preserve"><value>Yes</value></data>
   <data name="Admin.ProfileTypes.Active.No" xml:space="preserve"><value>No</value></data>
@@ -175,6 +179,37 @@
   <data name="Admin.Pending.Column.Created" xml:space="preserve"><value>Created</value></data>
   <data name="Admin.Pending.Action.Approve" xml:space="preserve"><value>Approve</value></data>
   <data name="Admin.Pending.Action.Reject" xml:space="preserve"><value>Reject</value></data>
+  <!-- D-125 — View button + modal on the pending-approval pages. Renders the full
+       profile preview that the scoped read endpoints in D-124 return so the admin
+       can verify the application before clicking Approve. -->
+  <data name="Admin.Pending.Action.View" xml:space="preserve"><value>View</value></data>
+  <data name="Admin.Pending.View.Title" xml:space="preserve"><value>Application details — {0}</value></data>
+  <data name="Admin.Pending.View.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Pending.View.Loading" xml:space="preserve"><value>Loading the profile…</value></data>
+  <data name="Admin.Pending.View.Empty" xml:space="preserve"><value>This account has not filled out the profile form yet.</value></data>
+  <data name="Admin.Pending.View.MissingValue" xml:space="preserve"><value>—</value></data>
+  <data name="Admin.Pending.View.Field.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Admin.Pending.View.Field.DisplayName" xml:space="preserve"><value>Display name</value></data>
+  <data name="Admin.Pending.View.Field.UserType" xml:space="preserve"><value>Account type</value></data>
+  <data name="Admin.Pending.View.Field.ProfileType" xml:space="preserve"><value>Profile type</value></data>
+  <data name="Admin.Pending.View.Field.ArabicName" xml:space="preserve"><value>Full name (Arabic)</value></data>
+  <data name="Admin.Pending.View.Field.EnglishName" xml:space="preserve"><value>Full name (English)</value></data>
+  <data name="Admin.Pending.View.Field.Nationality" xml:space="preserve"><value>Nationality</value></data>
+  <data name="Admin.Pending.View.Field.DateOfBirth" xml:space="preserve"><value>Date of birth</value></data>
+  <data name="Admin.Pending.View.Field.PlaceOfBirth" xml:space="preserve"><value>Place of birth</value></data>
+  <data name="Admin.Pending.View.Field.IdentityType" xml:space="preserve"><value>Identity type</value></data>
+  <data name="Admin.Pending.View.Field.IdentityNumber" xml:space="preserve"><value>Identity number</value></data>
+  <data name="Admin.Pending.View.Field.SaudiMobile" xml:space="preserve"><value>Saudi mobile</value></data>
+  <data name="Admin.Pending.View.Field.InternationalMobile" xml:space="preserve"><value>International mobile</value></data>
+  <data name="Admin.Pending.View.Field.HasIdImage" xml:space="preserve"><value>ID image uploaded</value></data>
+  <data name="Admin.Pending.View.Field.InterestCount" xml:space="preserve"><value>Selected interests</value></data>
+  <data name="Admin.Pending.View.Field.Created" xml:space="preserve"><value>Submitted</value></data>
+  <data name="Admin.Pending.View.IdentityType.National" xml:space="preserve"><value>Saudi national ID</value></data>
+  <data name="Admin.Pending.View.IdentityType.Iqama" xml:space="preserve"><value>Iqama</value></data>
+  <data name="Admin.Pending.View.IdentityType.Passport" xml:space="preserve"><value>Passport</value></data>
+  <data name="Admin.Pending.View.Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="Admin.Pending.View.No" xml:space="preserve"><value>No</value></data>
+  <data name="Admin.Pending.View.Fallback" xml:space="preserve"><value>The profile could not be loaded.</value></data>
   <data name="Admin.Pending.Reject.Title" xml:space="preserve"><value>Reject account</value></data>
   <data name="Admin.Pending.Reject.Confirm" xml:space="preserve"><value>Reject {0}? This sets the account to Rejected and writes an audit row.</value></data>
   <data name="Admin.Pending.Reject.Reason" xml:space="preserve"><value>Reason</value></data>

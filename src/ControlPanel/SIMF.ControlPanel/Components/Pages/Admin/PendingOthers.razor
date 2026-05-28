@@ -2,6 +2,7 @@
    Mirrors PendingAdmins (P4b); each row gets Approve + Reject buttons
    wired to the /admin/others/{id}/{approve,reject} API. *@
 @page "/admin/others/pending"
+@using SIMF.ControlPanel.Components.Pages.Admin.ProfileTypes
 @layout CpShellLayout
 @attribute [Authorize(Roles = "Administrator")]
 @inject IStringLocalizer<Strings> L
@@ -50,6 +51,13 @@
                 </SimfDataGridColumn>
             </Columns>
             <RowActions Context="user">
+                @* D-125 — View opens the D-124 scoped pending-profile read so the
+                   admin can verify the application before clicking Approve. *@
+                <SimfButton Type="button" Variant="secondary"
+                            Disabled="_busy"
+                            OnClick="@(() => OpenViewAsync(user))">
+                    @L["Admin.Pending.Action.View"]
+                </SimfButton>
                 <SimfButton Type="button" Variant="primary"
                             Disabled="_busy"
                             OnClick="@(() => ApproveAsync(user))">
@@ -96,6 +104,79 @@
     </SimfModal>
 }
 
+@if (_viewTarget is not null)
+{
+    <SimfModal Open="true"
+               Title="@string.Format(L["Admin.Pending.View.Title"], _viewTarget.Email)"
+               OnClose="CloseView">
+        <ChildContent>
+            @if (_viewLoading)
+            {
+                <p>@L["Admin.Pending.View.Loading"]</p>
+            }
+            else if (_viewError is not null)
+            {
+                <SimfAlert Variant="error">@_viewError</SimfAlert>
+            }
+            else if (_viewProfile is not null)
+            {
+                <dl class="simf-dl">
+                    <dt>@L["Admin.Pending.View.Field.Email"]</dt>
+                    <dd>@_viewProfile.Email</dd>
+                    <dt>@L["Admin.Pending.View.Field.DisplayName"]</dt>
+                    <dd>@_viewProfile.DisplayName</dd>
+                    <dt>@L["Admin.Pending.View.Field.UserType"]</dt>
+                    <dd>@ProfileTypeLabels.LocaliseUserType(_viewProfile.UserType)</dd>
+                    <dt>@L["Admin.Pending.View.Field.ProfileType"]</dt>
+                    <dd>@(_viewProfile.ProfileTypeName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                    <dt>@L["Admin.Pending.View.Field.Created"]</dt>
+                    <dd>@_viewProfile.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
+                </dl>
+
+                @if (HasProfileForm(_viewProfile))
+                {
+                    <dl class="simf-dl">
+                        <dt>@L["Admin.Pending.View.Field.ArabicName"]</dt>
+                        <dd>@(_viewProfile.ArabicName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.EnglishName"]</dt>
+                        <dd>@(_viewProfile.EnglishName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.Nationality"]</dt>
+                        <dd>@(_viewProfile.NationalityCode ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.DateOfBirth"]</dt>
+                        <dd>@(_viewProfile.DateOfBirth?.ToString("yyyy-MM-dd")
+                                ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.PlaceOfBirth"]</dt>
+                        <dd>@(_viewProfile.PlaceOfBirth ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.IdentityType"]</dt>
+                        <dd>@IdentityTypeLabel(_viewProfile)</dd>
+                        <dt>@L["Admin.Pending.View.Field.IdentityNumber"]</dt>
+                        <dd>@(IdentityNumber(_viewProfile) ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.SaudiMobile"]</dt>
+                        <dd>@(_viewProfile.SaudiMobile ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.InternationalMobile"]</dt>
+                        <dd>@(_viewProfile.InternationalMobile ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.HasIdImage"]</dt>
+                        <dd>@(_viewProfile.HasIdImage
+                                ? L["Admin.Pending.View.Yes"]
+                                : L["Admin.Pending.View.No"])</dd>
+                        <dt>@L["Admin.Pending.View.Field.InterestCount"]</dt>
+                        <dd>@_viewProfile.InterestIds.Count</dd>
+                    </dl>
+                }
+                else
+                {
+                    <SimfAlert Variant="info">@L["Admin.Pending.View.Empty"]</SimfAlert>
+                }
+            }
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="CloseView">
+                @L["Admin.Pending.View.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
 @code {
     private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminPendingUserSummary>? _page;
@@ -105,6 +186,11 @@
     private string _rejectReason = string.Empty;
     private string? _toast;
     private string _toastVariant = "success";
+
+    private AdminPendingUserSummary? _viewTarget;
+    private PendingProfileResponse? _viewProfile;
+    private bool _viewLoading;
+    private string? _viewError;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -189,4 +275,70 @@
 
     private string FormatSummary(int from, int to, int total) =>
         string.Format(L["Admin.Users.Pager.Summary"], from, to, total);
+
+    private async Task OpenViewAsync(AdminPendingUserSummary user)
+    {
+        _viewTarget = user;
+        _viewProfile = null;
+        _viewError = null;
+        _viewLoading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<PendingProfileResponse>>(
+                "simfAccount.getJson",
+                $"/account/api/admin/others/{user.Id}/profile-for-approval");
+            if (envelope is { Success: true, Data: not null })
+            {
+                _viewProfile = envelope.Data;
+            }
+            else
+            {
+                _viewError = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Pending.View.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _viewError = L["Admin.Pending.View.Fallback"];
+        }
+        finally { _viewLoading = false; }
+    }
+
+    private void CloseView()
+    {
+        _viewTarget = null;
+        _viewProfile = null;
+        _viewError = null;
+        _viewLoading = false;
+    }
+
+    private static bool HasProfileForm(PendingProfileResponse profile) =>
+        !string.IsNullOrEmpty(profile.ArabicName)
+        || !string.IsNullOrEmpty(profile.EnglishName)
+        || !string.IsNullOrEmpty(profile.NationalityCode)
+        || profile.DateOfBirth is not null
+        || !string.IsNullOrEmpty(profile.PlaceOfBirth)
+        || !string.IsNullOrEmpty(profile.NationalId)
+        || !string.IsNullOrEmpty(profile.IqamaNumber)
+        || !string.IsNullOrEmpty(profile.PassportNumber)
+        || !string.IsNullOrEmpty(profile.SaudiMobile)
+        || !string.IsNullOrEmpty(profile.InternationalMobile)
+        || profile.HasIdImage
+        || profile.InterestIds.Count > 0;
+
+    private string IdentityTypeLabel(PendingProfileResponse profile)
+    {
+        if (!string.IsNullOrEmpty(profile.NationalId))
+            return L["Admin.Pending.View.IdentityType.National"];
+        if (!string.IsNullOrEmpty(profile.IqamaNumber))
+            return L["Admin.Pending.View.IdentityType.Iqama"];
+        if (!string.IsNullOrEmpty(profile.PassportNumber))
+            return L["Admin.Pending.View.IdentityType.Passport"];
+        return L["Admin.Pending.View.MissingValue"];
+    }
+
+    private static string? IdentityNumber(PendingProfileResponse profile) =>
+        profile.NationalId
+            ?? profile.IqamaNumber
+            ?? profile.PassportNumber;
 }

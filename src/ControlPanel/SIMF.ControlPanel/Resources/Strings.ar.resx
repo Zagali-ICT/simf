@@ -70,6 +70,9 @@
   <data name="Admin.ProfileTypes.Column.NameArabic" xml:space="preserve"><value>الاسم (عربي)</value></data>
   <data name="Admin.ProfileTypes.Column.PageColor" xml:space="preserve"><value>لون الصفحة</value></data>
   <data name="Admin.ProfileTypes.Column.Active" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.ProfileTypes.Column.UserType" xml:space="preserve"><value>نوع الحساب</value></data>
+  <data name="Admin.ProfileTypes.Field.UserType" xml:space="preserve"><value>نوع الحساب</value></data>
+  <data name="Admin.ProfileTypes.UserType.Hint" xml:space="preserve"><value>لا يمكن تغييره بعد الإنشاء.</value></data>
   <data name="Admin.ProfileTypes.Column.Actions" xml:space="preserve"><value>الإجراءات</value></data>
   <data name="Admin.ProfileTypes.Active.Yes" xml:space="preserve"><value>نعم</value></data>
   <data name="Admin.ProfileTypes.Active.No" xml:space="preserve"><value>لا</value></data>
@@ -175,6 +178,34 @@
   <data name="Admin.Pending.Column.Created" xml:space="preserve"><value>تاريخ الإنشاء</value></data>
   <data name="Admin.Pending.Action.Approve" xml:space="preserve"><value>موافقة</value></data>
   <data name="Admin.Pending.Action.Reject" xml:space="preserve"><value>رفض</value></data>
+  <data name="Admin.Pending.Action.View" xml:space="preserve"><value>عرض</value></data>
+  <data name="Admin.Pending.View.Title" xml:space="preserve"><value>تفاصيل الطلب — {0}</value></data>
+  <data name="Admin.Pending.View.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Pending.View.Loading" xml:space="preserve"><value>جاري تحميل الملف…</value></data>
+  <data name="Admin.Pending.View.Empty" xml:space="preserve"><value>لم يستكمل هذا الحساب نموذج الملف الشخصي بعد.</value></data>
+  <data name="Admin.Pending.View.MissingValue" xml:space="preserve"><value>—</value></data>
+  <data name="Admin.Pending.View.Field.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Pending.View.Field.DisplayName" xml:space="preserve"><value>الاسم المعروض</value></data>
+  <data name="Admin.Pending.View.Field.UserType" xml:space="preserve"><value>نوع الحساب</value></data>
+  <data name="Admin.Pending.View.Field.ProfileType" xml:space="preserve"><value>نوع الملف الشخصي</value></data>
+  <data name="Admin.Pending.View.Field.ArabicName" xml:space="preserve"><value>الاسم الكامل (عربي)</value></data>
+  <data name="Admin.Pending.View.Field.EnglishName" xml:space="preserve"><value>الاسم الكامل (إنجليزي)</value></data>
+  <data name="Admin.Pending.View.Field.Nationality" xml:space="preserve"><value>الجنسية</value></data>
+  <data name="Admin.Pending.View.Field.DateOfBirth" xml:space="preserve"><value>تاريخ الميلاد</value></data>
+  <data name="Admin.Pending.View.Field.PlaceOfBirth" xml:space="preserve"><value>مكان الميلاد</value></data>
+  <data name="Admin.Pending.View.Field.IdentityType" xml:space="preserve"><value>نوع الهوية</value></data>
+  <data name="Admin.Pending.View.Field.IdentityNumber" xml:space="preserve"><value>رقم الهوية</value></data>
+  <data name="Admin.Pending.View.Field.SaudiMobile" xml:space="preserve"><value>الجوال السعودي</value></data>
+  <data name="Admin.Pending.View.Field.InternationalMobile" xml:space="preserve"><value>الجوال الدولي</value></data>
+  <data name="Admin.Pending.View.Field.HasIdImage" xml:space="preserve"><value>صورة الهوية مرفوعة</value></data>
+  <data name="Admin.Pending.View.Field.InterestCount" xml:space="preserve"><value>الاهتمامات المختارة</value></data>
+  <data name="Admin.Pending.View.Field.Created" xml:space="preserve"><value>تاريخ التقديم</value></data>
+  <data name="Admin.Pending.View.IdentityType.National" xml:space="preserve"><value>الهوية الوطنية السعودية</value></data>
+  <data name="Admin.Pending.View.IdentityType.Iqama" xml:space="preserve"><value>الإقامة</value></data>
+  <data name="Admin.Pending.View.IdentityType.Passport" xml:space="preserve"><value>جواز السفر</value></data>
+  <data name="Admin.Pending.View.Yes" xml:space="preserve"><value>نعم</value></data>
+  <data name="Admin.Pending.View.No" xml:space="preserve"><value>لا</value></data>
+  <data name="Admin.Pending.View.Fallback" xml:space="preserve"><value>تعذّر تحميل الملف الشخصي.</value></data>
   <data name="Admin.Pending.Reject.Title" xml:space="preserve"><value>رفض الحساب</value></data>
   <data name="Admin.Pending.Reject.Confirm" xml:space="preserve"><value>رفض {0}؟ هذا يضبط الحساب إلى مرفوض ويسجّل صفّاً في التدقيق.</value></data>
   <data name="Admin.Pending.Reject.Reason" xml:space="preserve"><value>السبب</value></data>
