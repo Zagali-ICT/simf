@@ -41,7 +41,8 @@ public static class CpNavigation
         ]),
         new("Nav.Programme",
         [
-            new("Module.Themes", "/m/themes", IsStub: true),
+            // D-134 Sprint B (D-135) — programme themes (SIMF-FDS-004 §5.1).
+            new("Module.Themes", "/admin/themes"),
             new("Module.Sessions", "/m/sessions", IsStub: true),
             new("Module.Halls", "/m/halls", IsStub: true),
             new("Module.Speakers", "/m/speakers", IsStub: true),

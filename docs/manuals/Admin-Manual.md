@@ -33,7 +33,13 @@ is a placeholder marked _(planned)_.
    2. _(planned)_ Attendees
    3. Print badge desk
    4. _(planned)_ Roles & permissions
-5. Programme modules _(planned)_
+5. Programme modules
+   1. **Themes & pillars** (`/admin/themes`) — chapter authored below
+      (D-134 Sprint B / D-135).
+   2. _(planned)_ Halls & seating
+   3. _(planned)_ Speakers
+   4. _(planned)_ Sessions
+   5. _(planned)_ Bookings
 6. Exhibition modules _(planned)_
 7. Engagement modules _(planned)_
 8. Knowledge & AI modules _(planned)_
@@ -338,6 +344,71 @@ now this page is about the role itself.
 - Page reference: [`docs/pages/cp/admin-roles.md`](../pages/cp/admin-roles.md)
 - Authority spec: SIMF-RPM-001 §8 (page-and-action model).
 - Decisions: D-134 plan + Sprint A commit.
+
+---
+
+## 5. Programme modules (D-134 Sprint B / D-135)
+
+### 5.1 Themes & pillars — `/admin/themes`
+
+> Page reference: [`docs/pages/cp/admin-themes.md`](../pages/cp/admin-themes.md)
+
+Programme themes (a.k.a. pillars) are the top-level grouping the agenda
+uses. Sessions belong to a theme; the visitor agenda groups by theme
+heading. Each theme has a stable **Code** (e.g. "DEF", "TECH" — your
+choice), bilingual Name + Description, a sort key, and an accent colour
+that drives the agenda chip.
+
+#### Most common tasks
+
+##### Add a new theme
+
+1. **Programme → Themes & pillars** → **+ Add theme**.
+2. Fill:
+   - **Code** — 2–16 chars, your stable identifier; uppercased on save.
+   - **Name (English)** + **Name (Arabic)** — 1–128 chars each.
+   - **Description (English)** + **Description (Arabic)** — optional.
+   - **Display order** — integer ≥ 0; lower numbers come first.
+   - **Page color** — hex (e.g. `#244A77`) or a CSS variable.
+3. **Create theme**.
+
+##### Edit a theme
+
+Per-row **Edit** icon → adjust → **Save changes**. The Edit modal adds
+an **Active** checkbox; untick to deactivate without using the Delete
+button.
+
+##### Deactivate a theme
+
+Per-row **Deactivate** (trash) icon. Soft-delete only — existing
+sessions linked to the theme keep their link; the theme stops appearing
+in the visitor agenda picker on next load.
+
+#### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| "A theme with code 'X' already exists" | Code is case-insensitive unique | Pick a different code |
+| Save rejected — "Code must be between 2 and 16 characters" | Code too short / long | Adjust |
+| Color shows literal text in the grid | PageColor isn't a valid hex / CSS value | Open Edit and fix |
+
+#### What you cannot do here yet
+
+- Reorder by drag — use the Display order field.
+- Permanently delete — Deactivate is soft-only.
+- Sessions in-use guard — wired when the Sessions module ships in a
+  later Sprint B commit.
+
+#### Cross-references
+
+- Page reference: [`docs/pages/cp/admin-themes.md`](../pages/cp/admin-themes.md)
+- Authority spec: SIMF-FDS-004 §5.1.
+- Decisions: D-134 plan + D-135 freeze-lift + this commit.
+
+### 5.2–5.5 _(planned)_ Halls / Speakers / Sessions / Bookings
+
+These ship in the remaining Sprint B commits per the master plan
+[`SIMF-D134-Module-Build-Plan.md`](../SIMF-D134-Module-Build-Plan.md) §5.
 
 ---
 

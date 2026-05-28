@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SIMF.Domain.Auditing;
+using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence;
 
@@ -15,6 +16,9 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
 
     /// <summary>D-109: row-audit trail for changes against this DbContext.</summary>
     public DbSet<RowAudit> RowAudits => Set<RowAudit>();
+
+    /// <summary>D-134 Sprint B (D-135 freeze-lift) — programme themes / pillars.</summary>
+    public DbSet<Theme> Themes => Set<Theme>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

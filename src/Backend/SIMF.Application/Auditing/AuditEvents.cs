@@ -111,6 +111,11 @@ public static class AuditEvents
     public const string RoleUpdated = "Role.Updated";
     public const string RoleDeleted = "Role.Deleted";
 
+    // Themes (D-134 Sprint B — programme themes, SIMF-FDS-004 §5.1)
+    public const string ThemeCreated = "Theme.Created";
+    public const string ThemeUpdated = "Theme.Updated";
+    public const string ThemeDeactivated = "Theme.Deactivated";
+
     // Approval workflow (P4 — Admin / Visitor; P7c added the Other pair)
     public const string AdminStaffApproved = "Admin.StaffApproved";
     public const string AdminStaffRejected = "Admin.StaffRejected";

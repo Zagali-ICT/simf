@@ -1,0 +1,267 @@
+@* D-134 Sprint B — Themes CRUD. SIMF-FDS-004 §5.1. First module under
+   D-135 freeze-lift — Themes is a brand-new entity + migration. Mirrors
+   the InterestsList canonical pattern (D-132). *@
+@page "/admin/themes"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Themes.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Themes.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="AdminThemeSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.Name)"
+                      Caption="@L["Admin.Themes.Title"]"
+                      FilterColumnLabel="@L["Admin.Themes.FilterColumn"]"
+                      OnAdd="OnAddAsync"
+                      OnEditOne="OnEditAsync"
+                      OnDetailsOne="OnDetailsAsync"
+                      OnDeleteOne="OnDeactivateAsync"
+                      PrevLabel="@L["Admin.Themes.Prev"]"
+                      NextLabel="@L["Admin.Themes.Next"]"
+                      FirstLabel="@L["Admin.Themes.Pager.First"]"
+                      LastLabel="@L["Admin.Themes.Pager.Last"]"
+                      PageSizeLabel="@L["Admin.Themes.Pager.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Themes.Loading"]"
+                      FilterPlaceholder="@L["Admin.Themes.FilterPlaceholder"]"
+                      ActionsHeader="@L["Admin.Themes.Column.Actions"]"
+                      SelectAllLabel="@L["Admin.Themes.Action.SelectAll"]"
+                      SelectRowLabel="@L["Admin.Themes.Action.SelectRow"]"
+                      AddLabel="@L["Admin.Themes.Action.Add"]"
+                      EditLabel="@L["Admin.Themes.Action.Edit"]"
+                      DetailsLabel="@L["Admin.Themes.Action.Details"]"
+                      DeleteLabel="@L["Admin.Themes.Action.Deactivate"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminThemeSummary" Key="code"
+                                    Header="@L["Admin.Themes.Column.Code"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Code</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminThemeSummary" Key="name"
+                                    Header="@L["Admin.Themes.Column.Name"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Name</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminThemeSummary" Key="nameArabic"
+                                    Header="@L["Admin.Themes.Column.NameArabic"]">
+                    <CellTemplate>@context.NameArabic</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminThemeSummary" Key="displayOrder"
+                                    Header="@L["Admin.Themes.Column.DisplayOrder"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.DisplayOrder</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminThemeSummary" Key="pageColor"
+                                    Header="@L["Admin.Themes.Column.PageColor"]">
+                    <CellTemplate>
+                        <span class="simf-walkin__swatch"
+                              style="@($"--simf-walkin-card-color: {context.PageColor}")"
+                              aria-hidden="true"></span>
+                        @context.PageColor
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminThemeSummary" Key="isActive"
+                                    Header="@L["Admin.Themes.Column.Active"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Admin.Themes.Active.Yes"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Admin.Themes.Active.No"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Themes.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_addOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.Themes.Add.Title"]"
+               OnClose="@(() => _addOpen = false)">
+        <ChildContent>
+            <ThemeForm OnSuccess="OnAddSucceededAsync"
+                       OnCancel="@(() => _addOpen = false)" />
+        </ChildContent>
+    </SimfModal>
+}
+
+@if (_editTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.Themes.Edit.Title"]"
+               OnClose="@(() => _editTarget = null)">
+        <ChildContent>
+            <ThemeForm Initial="_editTarget"
+                       OnSuccess="OnEditSucceededAsync"
+                       OnCancel="@(() => _editTarget = null)" />
+        </ChildContent>
+    </SimfModal>
+}
+
+@if (_detailsTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.Themes.Details.Title"]"
+               OnClose="@(() => _detailsTarget = null)">
+        <ChildContent>
+            <dl class="simf-dl">
+                <dt>@L["Admin.Themes.Column.Code"]</dt>
+                <dd>@_detailsTarget.Code</dd>
+                <dt>@L["Admin.Themes.Column.Name"]</dt>
+                <dd>@_detailsTarget.Name</dd>
+                <dt>@L["Admin.Themes.Column.NameArabic"]</dt>
+                <dd>@_detailsTarget.NameArabic</dd>
+                <dt>@L["Admin.Themes.Field.Description"]</dt>
+                <dd>@(_detailsTarget.Description ?? "—")</dd>
+                <dt>@L["Admin.Themes.Field.DescriptionArabic"]</dt>
+                <dd>@(_detailsTarget.DescriptionArabic ?? "—")</dd>
+                <dt>@L["Admin.Themes.Column.DisplayOrder"]</dt>
+                <dd>@_detailsTarget.DisplayOrder</dd>
+                <dt>@L["Admin.Themes.Column.PageColor"]</dt>
+                <dd>@_detailsTarget.PageColor</dd>
+                <dt>@L["Admin.Themes.Column.Active"]</dt>
+                <dd>@(_detailsTarget.IsActive ? L["Admin.Themes.Active.Yes"] : L["Admin.Themes.Active.No"])</dd>
+            </dl>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="@(() => _detailsTarget = null)">
+                @L["Admin.Themes.Details.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminThemeSummary> _page = new();
+    private bool _loading;
+    private Toast? _toast;
+
+    private bool _addOpen;
+    private AdminThemeDetail? _editTarget;
+    private AdminThemeDetail? _detailsTarget;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminThemeSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/themes/list", _query);
+            if (envelope is { Success: true, Data: not null })
+            {
+                _page = envelope.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Themes.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private Task OnAddAsync()
+    {
+        _addOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnAddSucceededAsync(AdminThemeDetail created)
+    {
+        _addOpen = false;
+        _toast = new Toast("success", string.Format(L["Admin.Themes.Created"], created.Name));
+        await LoadAsync();
+    }
+
+    private async Task OnEditAsync(AdminThemeSummary row)
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<AdminThemeDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/themes/{row.Id}");
+        if (envelope is { Success: true, Data: not null })
+        {
+            _editTarget = envelope.Data;
+        }
+        else
+        {
+            _toast = new Toast("error",
+                envelope?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.Themes.LoadFailed"]);
+        }
+    }
+
+    private async Task OnEditSucceededAsync(AdminThemeDetail updated)
+    {
+        _editTarget = null;
+        _toast = new Toast("success", string.Format(L["Admin.Themes.Updated"], updated.Name));
+        await LoadAsync();
+    }
+
+    private async Task OnDetailsAsync(AdminThemeSummary row)
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<AdminThemeDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/themes/{row.Id}");
+        if (envelope is { Success: true, Data: not null })
+        {
+            _detailsTarget = envelope.Data;
+        }
+    }
+
+    private async Task OnDeactivateAsync(AdminThemeSummary row)
+    {
+        _toast = null;
+        var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+            "simfAccount.deleteJson", $"/account/api/admin/themes/{row.Id}");
+        if (envelope is { Success: true })
+        {
+            _toast = new Toast("success",
+                string.Format(L["Admin.Themes.Deactivated"], row.Name));
+            await LoadAsync();
+        }
+        else
+        {
+            _toast = new Toast("error",
+                envelope?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.Themes.Fallback"]);
+        }
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Admin.Themes.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Admin.Themes.Pager.Page"], current, total);
+}

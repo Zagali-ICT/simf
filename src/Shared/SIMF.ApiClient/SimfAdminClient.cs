@@ -660,6 +660,51 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
+    // -- D-134 Sprint B — Themes CRUD (D-135 freeze-lift) --------------------
+
+    /// <summary>One page of themes (D-134 Sprint B).</summary>
+    public Task<ApiCallResult<GridPage<AdminThemeSummary>>> ListThemesAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminThemeSummary>>(
+            HttpMethod.Post, "themes/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>One theme by id (D-134 Sprint B).</summary>
+    public Task<ApiCallResult<AdminThemeDetail>> GetThemeAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminThemeDetail>(
+            HttpMethod.Get, $"themes/{id}", content: null,
+            accessToken, cancellationToken);
+
+    /// <summary>Creates a theme (D-134 Sprint B).</summary>
+    public Task<ApiCallResult<AdminThemeDetail>> CreateThemeAsync(
+        AdminCreateThemeRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminThemeDetail>(
+            HttpMethod.Post, "themes",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Updates a theme (D-134 Sprint B).</summary>
+    public Task<ApiCallResult<AdminThemeDetail>> UpdateThemeAsync(
+        Guid id, AdminUpdateThemeRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminThemeDetail>(
+            HttpMethod.Put, $"themes/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Soft-deletes (deactivates) a theme (D-134 Sprint B).</summary>
+    public Task<ApiCallResult<bool>> DeactivateThemeAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"themes/{id}", content: null,
+            accessToken, cancellationToken);
+
     // -- D-115 — ProfileTypes CRUD (admin-managed lookup table) --------------
 
     /// <summary>One page of profile types for the admin grid (D-115).</summary>

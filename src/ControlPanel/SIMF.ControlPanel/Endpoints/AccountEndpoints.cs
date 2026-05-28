@@ -704,6 +704,48 @@ internal static class AccountEndpoints
             return Forward(await api.ListAttendeesAsync(body, token));
         });
 
+        // D-134 Sprint B — Themes CRUD proxy (D-135 freeze-lift).
+        group.MapPost("/admin/themes/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListThemesAsync(body, token));
+        });
+
+        group.MapGet("/admin/themes/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetThemeAsync(id, token));
+        });
+
+        group.MapPost("/admin/themes",
+            async (AdminCreateThemeRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateThemeAsync(body, token));
+        });
+
+        group.MapPut("/admin/themes/{id:guid}",
+            async (Guid id, AdminUpdateThemeRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateThemeAsync(id, body, token));
+        });
+
+        group.MapDelete("/admin/themes/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateThemeAsync(id, token));
+        });
+
         // P6 — log viewer proxy. The CP page is server-side Blazor, so it
         // talks to these endpoints via fetch (cookie auth) and they forward
         // to the API with the access token.

@@ -319,6 +319,68 @@
   <data name="Admin.Attendees.Filter.Apply" xml:space="preserve"><value>تطبيق التصفية</value></data>
   <data name="Admin.Attendees.Filter.Clear" xml:space="preserve"><value>مسح</value></data>
 
+  <!-- D-134 Sprint B (D-135) — Themes admin CRUD (SIMF-FDS-004 §5.1) -->
+  <data name="Admin.Themes.Title" xml:space="preserve"><value>المحاور والمواضيع</value></data>
+  <data name="Admin.Themes.None" xml:space="preserve"><value>لا توجد محاور بعد.</value></data>
+  <data name="Admin.Themes.LoadFailed" xml:space="preserve"><value>تعذّر تحميل المحاور.</value></data>
+  <data name="Admin.Themes.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
+  <data name="Admin.Themes.Loading" xml:space="preserve"><value>جارٍ تحميل المحاور…</value></data>
+  <data name="Admin.Themes.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Themes.Prev" xml:space="preserve"><value>السابق</value></data>
+  <data name="Admin.Themes.Next" xml:space="preserve"><value>التالي</value></data>
+  <data name="Admin.Themes.Pager.First" xml:space="preserve"><value>الصفحة الأولى</value></data>
+  <data name="Admin.Themes.Pager.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>
+  <data name="Admin.Themes.Pager.PageSize" xml:space="preserve"><value>عرض</value></data>
+  <data name="Admin.Themes.Pager.Page" xml:space="preserve"><value>الصفحة {0} من {1}</value></data>
+  <data name="Admin.Themes.FilterColumn" xml:space="preserve"><value>تصفية العمود</value></data>
+  <data name="Admin.Themes.FilterPlaceholder" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Themes.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Themes.Column.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.Themes.Column.Name" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Admin.Themes.Column.NameArabic" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Themes.Column.DisplayOrder" xml:space="preserve"><value>الترتيب</value></data>
+  <data name="Admin.Themes.Column.PageColor" xml:space="preserve"><value>اللون</value></data>
+  <data name="Admin.Themes.Column.Active" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Themes.Column.Actions" xml:space="preserve"><value>إجراءات</value></data>
+  <data name="Admin.Themes.Active.Yes" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.Themes.Active.No" xml:space="preserve"><value>غير نشط</value></data>
+  <data name="Admin.Themes.Action.Add" xml:space="preserve"><value>إضافة محور</value></data>
+  <data name="Admin.Themes.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Themes.Action.Details" xml:space="preserve"><value>تفاصيل</value></data>
+  <data name="Admin.Themes.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.Themes.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
+  <data name="Admin.Themes.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
+  <data name="Admin.Themes.Field.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.Themes.Field.CodeHint" xml:space="preserve"><value>من 2 إلى 16 حرفاً؛ فريد. معرف ثابت يستخدمه فريق البرنامج (مثل DEF, TECH).</value></data>
+  <data name="Admin.Themes.Field.CodeInvalid" xml:space="preserve"><value>يجب أن يتراوح الرمز بين 2 و 16 حرفاً.</value></data>
+  <data name="Admin.Themes.Field.Name" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.Themes.Field.NameHint" xml:space="preserve"><value>حتى 128 حرفاً.</value></data>
+  <data name="Admin.Themes.Field.NameInvalid" xml:space="preserve"><value>الاسم الإنجليزي مطلوب (من 1 إلى 128 حرفاً).</value></data>
+  <data name="Admin.Themes.Field.NameArabic" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Themes.Field.NameArabicHint" xml:space="preserve"><value>حتى 128 حرفاً.</value></data>
+  <data name="Admin.Themes.Field.NameArabicInvalid" xml:space="preserve"><value>الاسم العربي مطلوب (من 1 إلى 128 حرفاً).</value></data>
+  <data name="Admin.Themes.Field.Description" xml:space="preserve"><value>الوصف (إنجليزي)</value></data>
+  <data name="Admin.Themes.Field.DescriptionHint" xml:space="preserve"><value>اختياري؛ حتى 1024 حرفاً.</value></data>
+  <data name="Admin.Themes.Field.DescriptionArabic" xml:space="preserve"><value>الوصف (عربي)</value></data>
+  <data name="Admin.Themes.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
+  <data name="Admin.Themes.Field.DisplayOrderHint" xml:space="preserve"><value>مفتاح الفرز في جدول الأعمال + محرر الجلسة (صفر أو أكثر؛ تصاعدي).</value></data>
+  <data name="Admin.Themes.Field.DisplayOrderInvalid" xml:space="preserve"><value>يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.</value></data>
+  <data name="Admin.Themes.Field.PageColor" xml:space="preserve"><value>لون الصفحة</value></data>
+  <data name="Admin.Themes.Field.PageColorHint" xml:space="preserve"><value>سداسي (مثل #244A77) أو متغير CSS أو نص حر حتى 32 حرفاً.</value></data>
+  <data name="Admin.Themes.Field.PageColorInvalid" xml:space="preserve"><value>لون الصفحة مطلوب (من 1 إلى 32 حرفاً).</value></data>
+  <data name="Admin.Themes.Field.IsActive" xml:space="preserve"><value>نشط — يظهر في جدول الأعمال ومنتقي محرر الجلسة</value></data>
+  <data name="Admin.Themes.Add.Title" xml:space="preserve"><value>إضافة محور</value></data>
+  <data name="Admin.Themes.Edit.Title" xml:space="preserve"><value>تعديل المحور</value></data>
+  <data name="Admin.Themes.Details.Title" xml:space="preserve"><value>تفاصيل المحور</value></data>
+  <data name="Admin.Themes.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Themes.New.Submit" xml:space="preserve"><value>إنشاء المحور</value></data>
+  <data name="Admin.Themes.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء</value></data>
+  <data name="Admin.Themes.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.Themes.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Admin.Themes.Created" xml:space="preserve"><value>تم إنشاء المحور "{0}".</value></data>
+  <data name="Admin.Themes.Updated" xml:space="preserve"><value>تم تحديث المحور "{0}".</value></data>
+  <data name="Admin.Themes.Deactivated" xml:space="preserve"><value>تم تعطيل المحور "{0}".</value></data>
+
   <data name="Admin.Pending.Staff.Title" xml:space="preserve"><value>موافقات الفريق المعلّقة</value></data>
   <data name="Admin.Pending.Visitors.Title" xml:space="preserve"><value>موافقات الزوار المعلّقة</value></data>
   <data name="Admin.Pending.Supporting" xml:space="preserve"><value>الموافقة تنشئ شارة QR وتفعّل تسجيل الدخول (لوحة التحكم للفريق، دخول الحدث للزوار). الرفض يسجّل سبباً في سجل التدقيق.</value></data>

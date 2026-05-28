@@ -157,6 +157,9 @@ public static class DependencyInjection
         // D-134 Sprint A — read-only attendee roster (join over SimfUser +
         // UserProfile + ProfileType; no schema change).
         services.AddScoped<IAdminAttendeeService, AdminAttendeeService>();
+        // D-134 Sprint B (D-135) — Themes admin CRUD (first new app-side table).
+        services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminThemeService,
+            SIMF.Infrastructure.Programme.AdminThemeService>();
         services.AddScoped<IAdminApprovalReadService, AdminApprovalReadService>();
         services.AddScoped<IQrIdMinter, QrIdMinter>();
         services.AddScoped<IUserProfileService, UserProfileService>();

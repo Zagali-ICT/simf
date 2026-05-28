@@ -32,7 +32,7 @@ Navigation grouped per `CpNavigation.cs` (9 groups). 14 real pages + 22 stubs af
 | `/admin/print-bag` | `Module.PrintBag` | ✅ Real | Administrator | [cp/admin-print-bag.md](cp/admin-print-bag.md) | [e2e/cp-admin-print-bag.md](../tests/e2e/cp-admin-print-bag.md) |
 | `/admin/roles` | `Module.Roles` | ✅ Real (D-134 Sprint A) | Administrator | [cp/admin-roles.md](cp/admin-roles.md) | [e2e/cp-admin-roles.md](../tests/e2e/cp-admin-roles.md) |
 | **Programme** | | | | | |
-| `/m/themes` | `Module.Themes` | 🚧 Stub | Administrator | — | — |
+| `/admin/themes` | `Module.Themes` | ✅ Real (D-134 Sprint B) | Administrator | [cp/admin-themes.md](cp/admin-themes.md) | [e2e/cp-admin-themes.md](../tests/e2e/cp-admin-themes.md) |
 | `/m/sessions` | `Module.Sessions` | 🚧 Stub | Administrator | — | — |
 | `/m/halls` | `Module.Halls` | 🚧 Stub | Administrator | — | — |
 | `/m/speakers` | `Module.Speakers` | 🚧 Stub | Administrator | — | — |

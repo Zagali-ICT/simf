@@ -104,4 +104,10 @@ public static class ErrorCodes
     public const string RoleNameDuplicate = "ROLE_NAME_DUPLICATE";
     public const string RoleIsBaseline = "ROLE_IS_BASELINE";
     public const string RoleInUse = "ROLE_IN_USE";
+
+    // Themes (D-134 Sprint B — programme themes / pillars, SIMF-FDS-004 §5.1).
+    public const string ThemeInvalid = "THEME_INVALID";
+    public const string ThemeNotFound = "THEME_NOT_FOUND";
+    public const string ThemeCodeDuplicate = "THEME_CODE_DUPLICATE";
+    public const string ThemeInUse = "THEME_IN_USE";
 }
