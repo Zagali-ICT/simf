@@ -381,6 +381,65 @@
   <data name="Admin.Themes.Updated" xml:space="preserve"><value>تم تحديث المحور "{0}".</value></data>
   <data name="Admin.Themes.Deactivated" xml:space="preserve"><value>تم تعطيل المحور "{0}".</value></data>
 
+  <!-- D-134 Sprint B (D-135) — Halls admin CRUD (SIMF-FDS-004 §5.2) -->
+  <data name="Admin.Halls.Title" xml:space="preserve"><value>القاعات والمقاعد</value></data>
+  <data name="Admin.Halls.None" xml:space="preserve"><value>لا توجد قاعات بعد.</value></data>
+  <data name="Admin.Halls.LoadFailed" xml:space="preserve"><value>تعذّر تحميل القاعات.</value></data>
+  <data name="Admin.Halls.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
+  <data name="Admin.Halls.Loading" xml:space="preserve"><value>جارٍ تحميل القاعات…</value></data>
+  <data name="Admin.Halls.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Halls.Prev" xml:space="preserve"><value>السابق</value></data>
+  <data name="Admin.Halls.Next" xml:space="preserve"><value>التالي</value></data>
+  <data name="Admin.Halls.Pager.First" xml:space="preserve"><value>الصفحة الأولى</value></data>
+  <data name="Admin.Halls.Pager.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>
+  <data name="Admin.Halls.Pager.PageSize" xml:space="preserve"><value>عرض</value></data>
+  <data name="Admin.Halls.Pager.Page" xml:space="preserve"><value>الصفحة {0} من {1}</value></data>
+  <data name="Admin.Halls.FilterPlaceholder" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Halls.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Halls.Column.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.Halls.Column.Name" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Admin.Halls.Column.NameArabic" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Halls.Column.Capacity" xml:space="preserve"><value>السعة</value></data>
+  <data name="Admin.Halls.Column.Floor" xml:space="preserve"><value>الطابق</value></data>
+  <data name="Admin.Halls.Column.Active" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Halls.Column.Actions" xml:space="preserve"><value>إجراءات</value></data>
+  <data name="Admin.Halls.Active.Yes" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.Halls.Active.No" xml:space="preserve"><value>غير نشط</value></data>
+  <data name="Admin.Halls.Action.Add" xml:space="preserve"><value>إضافة قاعة</value></data>
+  <data name="Admin.Halls.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Halls.Action.Details" xml:space="preserve"><value>تفاصيل</value></data>
+  <data name="Admin.Halls.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.Halls.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
+  <data name="Admin.Halls.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
+  <data name="Admin.Halls.Field.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.Halls.Field.CodeHint" xml:space="preserve"><value>من 2 إلى 16 حرفاً؛ فريد. معرف ثابت يستخدمه فريق الموقع (مثل H1, A201).</value></data>
+  <data name="Admin.Halls.Field.CodeInvalid" xml:space="preserve"><value>يجب أن يتراوح الرمز بين 2 و 16 حرفاً.</value></data>
+  <data name="Admin.Halls.Field.Name" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.Halls.Field.NameHint" xml:space="preserve"><value>حتى 128 حرفاً.</value></data>
+  <data name="Admin.Halls.Field.NameInvalid" xml:space="preserve"><value>الاسم الإنجليزي مطلوب (من 1 إلى 128 حرفاً).</value></data>
+  <data name="Admin.Halls.Field.NameArabic" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Halls.Field.NameArabicHint" xml:space="preserve"><value>حتى 128 حرفاً.</value></data>
+  <data name="Admin.Halls.Field.NameArabicInvalid" xml:space="preserve"><value>الاسم العربي مطلوب (من 1 إلى 128 حرفاً).</value></data>
+  <data name="Admin.Halls.Field.Capacity" xml:space="preserve"><value>السعة</value></data>
+  <data name="Admin.Halls.Field.CapacityHint" xml:space="preserve"><value>السعة (جلوس + وقوف؛ صفر أو أكثر). تحكم السعة القصوى لحجوزات الجلسات.</value></data>
+  <data name="Admin.Halls.Field.CapacityInvalid" xml:space="preserve"><value>يجب أن تكون السعة صفراً أو عدداً صحيحاً موجباً.</value></data>
+  <data name="Admin.Halls.Field.Floor" xml:space="preserve"><value>الطابق</value></data>
+  <data name="Admin.Halls.Field.FloorHint" xml:space="preserve"><value>اختياري. حتى 32 حرفاً (مثل "الأرضي" أو "الطابق 2").</value></data>
+  <data name="Admin.Halls.Field.EquipmentNotes" xml:space="preserve"><value>ملاحظات المعدات وإمكانية الوصول</value></data>
+  <data name="Admin.Halls.Field.EquipmentNotesHint" xml:space="preserve"><value>اختياري. حتى 1024 حرفاً.</value></data>
+  <data name="Admin.Halls.Field.IsActive" xml:space="preserve"><value>نشط — متاح لتعيين الجلسات</value></data>
+  <data name="Admin.Halls.Add.Title" xml:space="preserve"><value>إضافة قاعة</value></data>
+  <data name="Admin.Halls.Edit.Title" xml:space="preserve"><value>تعديل القاعة</value></data>
+  <data name="Admin.Halls.Details.Title" xml:space="preserve"><value>تفاصيل القاعة</value></data>
+  <data name="Admin.Halls.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Halls.New.Submit" xml:space="preserve"><value>إنشاء القاعة</value></data>
+  <data name="Admin.Halls.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء</value></data>
+  <data name="Admin.Halls.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.Halls.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Admin.Halls.Created" xml:space="preserve"><value>تم إنشاء القاعة "{0}".</value></data>
+  <data name="Admin.Halls.Updated" xml:space="preserve"><value>تم تحديث القاعة "{0}".</value></data>
+  <data name="Admin.Halls.Deactivated" xml:space="preserve"><value>تم تعطيل القاعة "{0}".</value></data>
+
   <data name="Admin.Pending.Staff.Title" xml:space="preserve"><value>موافقات الفريق المعلّقة</value></data>
   <data name="Admin.Pending.Visitors.Title" xml:space="preserve"><value>موافقات الزوار المعلّقة</value></data>
   <data name="Admin.Pending.Supporting" xml:space="preserve"><value>الموافقة تنشئ شارة QR وتفعّل تسجيل الدخول (لوحة التحكم للفريق، دخول الحدث للزوار). الرفض يسجّل سبباً في سجل التدقيق.</value></data>

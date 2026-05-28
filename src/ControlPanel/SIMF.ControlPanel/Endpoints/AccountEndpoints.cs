@@ -746,6 +746,48 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateThemeAsync(id, token));
         });
 
+        // D-134 Sprint B — Halls CRUD proxy (D-135 freeze-lift).
+        group.MapPost("/admin/halls/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListHallsAsync(body, token));
+        });
+
+        group.MapGet("/admin/halls/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetHallAsync(id, token));
+        });
+
+        group.MapPost("/admin/halls",
+            async (AdminCreateHallRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateHallAsync(body, token));
+        });
+
+        group.MapPut("/admin/halls/{id:guid}",
+            async (Guid id, AdminUpdateHallRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateHallAsync(id, body, token));
+        });
+
+        group.MapDelete("/admin/halls/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateHallAsync(id, token));
+        });
+
         // P6 — log viewer proxy. The CP page is server-side Blazor, so it
         // talks to these endpoints via fetch (cookie auth) and they forward
         // to the API with the access token.

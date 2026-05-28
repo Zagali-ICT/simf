@@ -20,6 +20,9 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     /// <summary>D-134 Sprint B (D-135 freeze-lift) — programme themes / pillars.</summary>
     public DbSet<Theme> Themes => Set<Theme>();
 
+    /// <summary>D-134 Sprint B (D-135) — venue halls.</summary>
+    public DbSet<Hall> Halls => Set<Hall>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

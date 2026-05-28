@@ -405,7 +405,45 @@ in the visitor agenda picker on next load.
 - Authority spec: SIMF-FDS-004 §5.1.
 - Decisions: D-134 plan + D-135 freeze-lift + this commit.
 
-### 5.2–5.5 _(planned)_ Halls / Speakers / Sessions / Bookings
+### 5.2 Halls & seating — `/admin/halls` (D-134 Sprint B / D-135)
+
+> Page reference: [`docs/pages/cp/admin-halls.md`](../pages/cp/admin-halls.md)
+
+Halls (rooms) host sessions. Define each hall once — code, bilingual
+name, capacity, optional floor + equipment notes — and the Sessions
+module's hall picker reads from this list.
+
+#### Most common tasks
+
+##### Add a hall
+
+1. **Programme → Halls & seating** → **+ Add hall**.
+2. **Code** (2–16 chars; venue team's identifier; uppercased on save).
+3. **Name (English)** + **Name (Arabic)**.
+4. **Capacity** — seating + standing total. Drives the Sessions booking
+   cap. `0` is allowed for placeholder halls.
+5. **Floor** (optional, e.g. "Ground", "Level 2").
+6. **Equipment + accessibility notes** (optional, ≤ 1024 chars).
+7. **Create hall**.
+
+##### Edit / Deactivate
+
+Standard per-row Edit (with Active checkbox) and Deactivate (soft-delete).
+
+#### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| "A hall with code 'X' already exists" | Codes are unique (case-insensitive) | Pick a different code |
+| Capacity rejected | Negative number | Use 0 or positive |
+| Won't deactivate | (Future) hall referenced by an active session | Reassign or cancel the session first |
+
+#### What you cannot do here yet
+
+- Floor-plan view — see Venue map module (later in Sprint C).
+- Sessions in-use guard — wired when Sessions ships in this sprint.
+
+### 5.3–5.5 _(planned)_ Speakers / Sessions / Bookings
 
 These ship in the remaining Sprint B commits per the master plan
 [`SIMF-D134-Module-Build-Plan.md`](../SIMF-D134-Module-Build-Plan.md) §5.

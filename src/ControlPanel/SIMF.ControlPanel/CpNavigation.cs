@@ -44,7 +44,8 @@ public static class CpNavigation
             // D-134 Sprint B (D-135) — programme themes (SIMF-FDS-004 §5.1).
             new("Module.Themes", "/admin/themes"),
             new("Module.Sessions", "/m/sessions", IsStub: true),
-            new("Module.Halls", "/m/halls", IsStub: true),
+            // D-134 Sprint B (D-135) — venue halls (SIMF-FDS-004 §5.2).
+            new("Module.Halls", "/admin/halls"),
             new("Module.Speakers", "/m/speakers", IsStub: true),
             new("Module.Bookings", "/m/bookings", IsStub: true),
         ]),

@@ -34,7 +34,7 @@ Navigation grouped per `CpNavigation.cs` (9 groups). 14 real pages + 22 stubs af
 | **Programme** | | | | | |
 | `/admin/themes` | `Module.Themes` | ✅ Real (D-134 Sprint B) | Administrator | [cp/admin-themes.md](cp/admin-themes.md) | [e2e/cp-admin-themes.md](../tests/e2e/cp-admin-themes.md) |
 | `/m/sessions` | `Module.Sessions` | 🚧 Stub | Administrator | — | — |
-| `/m/halls` | `Module.Halls` | 🚧 Stub | Administrator | — | — |
+| `/admin/halls` | `Module.Halls` | ✅ Real (D-134 Sprint B) | Administrator | [cp/admin-halls.md](cp/admin-halls.md) | [e2e/cp-admin-halls.md](../tests/e2e/cp-admin-halls.md) |
 | `/m/speakers` | `Module.Speakers` | 🚧 Stub | Administrator | — | — |
 | `/m/bookings` | `Module.Bookings` | 🚧 Stub | Administrator | — | — |
 | **Exhibition** | | | | | |

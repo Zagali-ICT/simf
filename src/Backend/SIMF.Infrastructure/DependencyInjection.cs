@@ -160,6 +160,9 @@ public static class DependencyInjection
         // D-134 Sprint B (D-135) — Themes admin CRUD (first new app-side table).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminThemeService,
             SIMF.Infrastructure.Programme.AdminThemeService>();
+        // D-134 Sprint B (D-135) — Halls admin CRUD.
+        services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminHallService,
+            SIMF.Infrastructure.Programme.AdminHallService>();
         services.AddScoped<IAdminApprovalReadService, AdminApprovalReadService>();
         services.AddScoped<IQrIdMinter, QrIdMinter>();
         services.AddScoped<IUserProfileService, UserProfileService>();

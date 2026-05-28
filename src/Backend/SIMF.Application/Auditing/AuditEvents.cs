@@ -116,6 +116,11 @@ public static class AuditEvents
     public const string ThemeUpdated = "Theme.Updated";
     public const string ThemeDeactivated = "Theme.Deactivated";
 
+    // Halls (D-134 Sprint B — venue halls, SIMF-FDS-004 §5.2)
+    public const string HallCreated = "Hall.Created";
+    public const string HallUpdated = "Hall.Updated";
+    public const string HallDeactivated = "Hall.Deactivated";
+
     // Approval workflow (P4 — Admin / Visitor; P7c added the Other pair)
     public const string AdminStaffApproved = "Admin.StaffApproved";
     public const string AdminStaffRejected = "Admin.StaffRejected";

@@ -705,6 +705,46 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"themes/{id}", content: null,
             accessToken, cancellationToken);
 
+    // -- D-134 Sprint B — Halls CRUD ----------------------------------------
+
+    public Task<ApiCallResult<GridPage<AdminHallSummary>>> ListHallsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminHallSummary>>(
+            HttpMethod.Post, "halls/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminHallDetail>> GetHallAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminHallDetail>(
+            HttpMethod.Get, $"halls/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminHallDetail>> CreateHallAsync(
+        AdminCreateHallRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminHallDetail>(
+            HttpMethod.Post, "halls",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminHallDetail>> UpdateHallAsync(
+        Guid id, AdminUpdateHallRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminHallDetail>(
+            HttpMethod.Put, $"halls/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeactivateHallAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"halls/{id}", content: null,
+            accessToken, cancellationToken);
+
     // -- D-115 — ProfileTypes CRUD (admin-managed lookup table) --------------
 
     /// <summary>One page of profile types for the admin grid (D-115).</summary>

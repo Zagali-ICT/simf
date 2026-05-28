@@ -1,0 +1,162 @@
+@* D-134 Sprint B — reusable Hall Add/Edit form. Mirrors ThemeForm. *@
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        <SimfTextField Label="@L["Admin.Halls.Field.Code"]"
+                       Helper="@L["Admin.Halls.Field.CodeHint"]"
+                       MaxLength="16"
+                       @bind-Value="_model.Code" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Halls.Field.Name"]"
+                       Helper="@L["Admin.Halls.Field.NameHint"]"
+                       MaxLength="128"
+                       @bind-Value="_model.Name" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Halls.Field.NameArabic"]"
+                       Helper="@L["Admin.Halls.Field.NameArabicHint"]"
+                       MaxLength="128"
+                       @bind-Value="_model.NameArabic" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Halls.Field.Capacity"]"
+                       Helper="@L["Admin.Halls.Field.CapacityHint"]"
+                       Type="number"
+                       Value="@_capacityInput"
+                       ValueChanged="@(v => _capacityInput = v)"
+                       ValueExpression="@(() => _capacityInput)"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Halls.Field.Floor"]"
+                       Helper="@L["Admin.Halls.Field.FloorHint"]"
+                       MaxLength="32"
+                       @bind-Value="_model.Floor" Disabled="_busy" />
+        <SimfTextarea Label="@L["Admin.Halls.Field.EquipmentNotes"]"
+                      Helper="@L["Admin.Halls.Field.EquipmentNotesHint"]"
+                      Rows="3" MaxLength="1024"
+                      Value="@_model.EquipmentNotes"
+                      ValueChanged="@(v => _model.EquipmentNotes = v)" />
+        @if (Initial is not null)
+        {
+            <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
+                @L["Admin.Halls.Field.IsActive"]
+            </SimfCheckbox>
+        }
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy"
+                    LoadingLabel="@(Initial is null ? L["Admin.Halls.New.Submitting"] : L["Admin.Halls.Edit.Submitting"])">
+            @(Initial is null ? L["Admin.Halls.New.Submit"] : L["Admin.Halls.Edit.Submit"])
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy" OnClick="OnCancel">
+                @L["Admin.Halls.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private readonly Model _model = new();
+    private string _capacityInput = "0";
+    private EditContext _editContext = default!;
+    private bool _busy;
+    private string? _error;
+
+    [Parameter] public AdminHallDetail? Initial { get; set; }
+    [Parameter] public EventCallback<AdminHallDetail> OnSuccess { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Initial is not null)
+        {
+            _model.Code = Initial.Code;
+            _model.Name = Initial.Name;
+            _model.NameArabic = Initial.NameArabic;
+            _model.Floor = Initial.Floor ?? string.Empty;
+            _model.EquipmentNotes = Initial.EquipmentNotes ?? string.Empty;
+            _model.IsActive = Initial.IsActive;
+            _capacityInput = Initial.Capacity.ToString();
+        }
+        _editContext = new EditContext(_model);
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_model.Code) || _model.Code.Length is < 2 or > 16)
+        { _error = L["Admin.Halls.Field.CodeInvalid"]; return; }
+        if (string.IsNullOrWhiteSpace(_model.Name) || _model.Name.Length > 128)
+        { _error = L["Admin.Halls.Field.NameInvalid"]; return; }
+        if (string.IsNullOrWhiteSpace(_model.NameArabic) || _model.NameArabic.Length > 128)
+        { _error = L["Admin.Halls.Field.NameArabicInvalid"]; return; }
+        if (!int.TryParse(_capacityInput, out var capacity) || capacity < 0)
+        { _error = L["Admin.Halls.Field.CapacityInvalid"]; return; }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminHallDetail>? envelope;
+            if (Initial is null)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminHallDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/halls",
+                    new AdminCreateHallRequest
+                    {
+                        Code = _model.Code.Trim().ToUpperInvariant(),
+                        Name = _model.Name.Trim(),
+                        NameArabic = _model.NameArabic.Trim(),
+                        Capacity = capacity,
+                        Floor = string.IsNullOrWhiteSpace(_model.Floor) ? null : _model.Floor.Trim(),
+                        EquipmentNotes = string.IsNullOrWhiteSpace(_model.EquipmentNotes) ? null : _model.EquipmentNotes.Trim(),
+                    });
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminHallDetail>>(
+                    "simfAccount.putJson", $"/account/api/admin/halls/{Initial.Id}",
+                    new AdminUpdateHallRequest
+                    {
+                        Code = _model.Code.Trim().ToUpperInvariant(),
+                        Name = _model.Name.Trim(),
+                        NameArabic = _model.NameArabic.Trim(),
+                        Capacity = capacity,
+                        Floor = string.IsNullOrWhiteSpace(_model.Floor) ? null : _model.Floor.Trim(),
+                        EquipmentNotes = string.IsNullOrWhiteSpace(_model.EquipmentNotes) ? null : _model.EquipmentNotes.Trim(),
+                        IsActive = _model.IsActive,
+                    });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Halls.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.Halls.Fallback"];
+        }
+        finally { _busy = false; }
+    }
+
+    private sealed class Model
+    {
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string NameArabic { get; set; } = string.Empty;
+        public string Floor { get; set; } = string.Empty;
+        public string EquipmentNotes { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+}

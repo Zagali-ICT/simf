@@ -110,4 +110,10 @@ public static class ErrorCodes
     public const string ThemeNotFound = "THEME_NOT_FOUND";
     public const string ThemeCodeDuplicate = "THEME_CODE_DUPLICATE";
     public const string ThemeInUse = "THEME_IN_USE";
+
+    // Halls (D-134 Sprint B — venue halls, SIMF-FDS-004 §5.2).
+    public const string HallInvalid = "HALL_INVALID";
+    public const string HallNotFound = "HALL_NOT_FOUND";
+    public const string HallCodeDuplicate = "HALL_CODE_DUPLICATE";
+    public const string HallInUse = "HALL_IN_USE";
 }
