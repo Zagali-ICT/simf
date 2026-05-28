@@ -1,3 +1,4 @@
+using Cropper.Blazor.Extensions;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Serilog;
 using SIMF.ApiClient;
@@ -36,7 +37,11 @@ builder.Services.AddRazorComponents()
     })
     .AddHubOptions(options =>
     {
-        options.MaximumReceiveMessageSize = 256 * 1024;
+        // D-122 — raised from 256 KB (QR SVG render diff) to 10 MB to match
+        // V10 ERP's cropper image-transfer limit. The D-116 cropper consumes
+        // base64 data URLs of the source image (up to the 2 MB avatar policy)
+        // through JS interop, which travels over the same SignalR transport.
+        options.MaximumReceiveMessageSize = 10 * 1024 * 1024;
     });
 
 // Localisation — English and Arabic; resources live under Resources/.
@@ -78,6 +83,12 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
+
+// D-122 — Cropper.Blazor DI registration (was missing in D-116). Without
+// this call, CropperComponent crashes at runtime with "no registered
+// service of type 'ICropperJsInterop'" the moment SimfImageCropperModal
+// tries to render. Mirrors V10 ERP's Program.cs line 60.
+builder.Services.AddCropper();
 
 // The one-time sign-in hand-off between the verification page and the cookie.
 builder.Services.AddMemoryCache();
