@@ -55,18 +55,14 @@
         }
     </fieldset>
 
-    @* -- Section 2: Identity ------------------------------------------- *@
+    @* -- Section 2: Identity -------------------------------------------
+       Field order matches the conversation at the desk: badge name first
+       (it's the most visible part of the printed badge), then DOB on
+       the same row; full English/Arabic names below for the record;
+       place-of-birth on its own full-width row because it is free-form. *@
     <fieldset class="simf-walkin__section" disabled="@(_busy ? "disabled" : null)">
         <legend>@L["Admin.WalkIn.Section.Identity"]</legend>
         <div class="simf-walkin__grid">
-            <SimfTextField Label="@L["Admin.WalkIn.Field.EnglishName"]"
-                           Helper="@L["Admin.WalkIn.Field.EnglishName.Hint"]"
-                           MaxLength="128"
-                           @bind-Value="_model.EnglishName" />
-            <SimfTextField Label="@L["Admin.WalkIn.Field.ArabicName"]"
-                           Helper="@L["Admin.WalkIn.Field.ArabicName.Hint"]"
-                           MaxLength="128"
-                           @bind-Value="_model.ArabicName" />
             <SimfTextField Label="@L["Admin.WalkIn.Field.DisplayName"]"
                            Helper="@L["Admin.WalkIn.Field.DisplayName.Hint"]"
                            MaxLength="128"
@@ -81,6 +77,16 @@
                            @onchange="OnDateOfBirthChanged" />
                 </div>
             </div>
+            <SimfTextField Label="@L["Admin.WalkIn.Field.EnglishName"]"
+                           Helper="@L["Admin.WalkIn.Field.EnglishName.Hint"]"
+                           MaxLength="128"
+                           @bind-Value="_model.EnglishName" />
+            <SimfTextField Label="@L["Admin.WalkIn.Field.ArabicName"]"
+                           Helper="@L["Admin.WalkIn.Field.ArabicName.Hint"]"
+                           MaxLength="128"
+                           @bind-Value="_model.ArabicName" />
+        </div>
+        <div class="simf-walkin__grid simf-walkin__grid--single">
             <SimfTextField Label="@L["Admin.WalkIn.Field.PlaceOfBirth"]"
                            MaxLength="128"
                            @bind-Value="_model.PlaceOfBirth" />

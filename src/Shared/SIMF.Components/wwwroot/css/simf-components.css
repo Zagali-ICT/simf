@@ -2082,25 +2082,50 @@ body.simf-modal-open { overflow: hidden; }
 /* D-127 — on-site walk-in registration form. Long-form layout grouped
    by <fieldset>; profile-type tiles + Saudi/non-Saudi toggle + interests
    chips. Designed for tablet use at the registration desk. */
-.simf-walkin { gap: var(--space-6); display: flex; flex-direction: column; }
+.simf-walkin {
+  /* Counter drives the numbered "1. / 2. / 3." prefix on each fieldset
+     legend so the desk operator can follow the form top-to-bottom. */
+  counter-reset: simf-walkin-section;
+  gap: var(--space-6);
+  display: flex;
+  flex-direction: column;
+}
 .simf-walkin__section {
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6) var(--space-5) var(--space-5);
   margin: 0;
   background-color: var(--color-surface);
+  counter-increment: simf-walkin-section;
 }
 .simf-walkin__section legend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   padding: 0 var(--space-2);
   font-weight: 600;
   color: var(--color-primary);
-  font-size: 1rem;
+  font-size: 1.05rem;
+}
+.simf-walkin__section legend::before {
+  content: counter(simf-walkin-section);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 24px;
+  block-size: 24px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
 }
 .simf-walkin__section[disabled] { opacity: 0.55; pointer-events: none; }
 .simf-walkin__hint {
   color: var(--color-text-muted);
   font-size: 0.875rem;
-  margin: 0 0 var(--space-3) 0;
+  margin: 0 0 var(--space-4) 0;
 }
 .simf-walkin__grid {
   display: grid;
@@ -2108,6 +2133,7 @@ body.simf-modal-open { overflow: hidden; }
   gap: var(--space-4);
   margin-block-start: var(--space-3);
 }
+.simf-walkin__grid--single { grid-template-columns: 1fr; }
 @media (max-width: 720px) {
   .simf-walkin__grid { grid-template-columns: 1fr; }
 }
@@ -2115,35 +2141,38 @@ body.simf-modal-open { overflow: hidden; }
 /* Profile-type tiles — clickable cards with a brand-coloured stripe. */
 .simf-walkin__cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-4);
 }
 .simf-walkin__card {
   display: flex; align-items: center; gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-4) var(--space-4);
+  min-block-size: 64px;
   background-color: var(--color-background);
   border: 2px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
   text-align: start;
-  transition: border-color 120ms ease, transform 120ms ease;
+  transition: border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
   --simf-walkin-card-color: var(--color-primary);
 }
 .simf-walkin__card:hover {
-  border-color: var(--color-secondary);
+  border-color: var(--simf-walkin-card-color);
   transform: translateY(-1px);
+  box-shadow: 0 4px 10px -6px color-mix(in srgb, var(--simf-walkin-card-color) 60%, transparent);
 }
 .simf-walkin__card.is-selected {
   border-color: var(--simf-walkin-card-color);
-  background-color: color-mix(in srgb, var(--simf-walkin-card-color) 8%, var(--color-background));
+  background-color: color-mix(in srgb, var(--simf-walkin-card-color) 10%, var(--color-background));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--simf-walkin-card-color) 25%, transparent);
 }
 .simf-walkin__swatch {
-  inline-size: 22px; block-size: 22px; border-radius: 50%;
+  inline-size: 28px; block-size: 28px; border-radius: 50%;
   background-color: var(--simf-walkin-card-color);
   flex: 0 0 auto;
   box-shadow: 0 0 0 1px var(--color-border) inset;
 }
-.simf-walkin__card-name { font-weight: 500; color: var(--color-text); }
+.simf-walkin__card-name { font-weight: 600; color: var(--color-text); font-size: 0.95rem; }
 
 /* Saudi / non-Saudi binary toggle. */
 .simf-walkin__toggle {
@@ -2151,7 +2180,7 @@ body.simf-modal-open { overflow: hidden; }
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   overflow: hidden;
-  margin-block-end: var(--space-4);
+  margin-block: var(--space-2) var(--space-4);
 }
 .simf-walkin__toggle-btn {
   background: var(--color-background);
@@ -2187,9 +2216,15 @@ body.simf-modal-open { overflow: hidden; }
 }
 
 .simf-walkin__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: flex-end;
   border-top: 1px solid var(--color-border);
-  padding-block-start: var(--space-4);
+  padding-block-start: var(--space-5);
+  margin-block-start: var(--space-2);
 }
+.simf-walkin__actions .simf-button { min-inline-size: 140px; }
 
 /* QR badge rendered in the post-submit success modal. */
 .simf-walkin-badge {
