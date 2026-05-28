@@ -14,6 +14,7 @@
                    Value="@Value" ValueChanged="@ValueChanged" ValueExpression="@ValueExpression"
                    type="@Type" inputmode="@InputMode" autocomplete="@Autocomplete"
                    placeholder="@Placeholder" disabled="@Disabled"
+                   maxlength="@(MaxLength?.ToString())"
                    aria-invalid="@(HasError ? "true" : null)"
                    aria-describedby="@DescribedBy" />
     </div>
@@ -48,6 +49,11 @@
 
     /// <summary>The HTML <c>inputmode</c> hint.</summary>
     [Parameter] public string? InputMode { get; set; }
+
+    /// <summary>The maxlength attribute — the browser stops the user typing
+    /// once they hit this many characters. Defence-in-depth alongside the
+    /// server-side FluentValidation rule.</summary>
+    [Parameter] public int? MaxLength { get; set; }
 
     private string? DescribedBy =>
         HasError ? ErrorElementId

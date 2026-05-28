@@ -356,6 +356,76 @@ internal sealed class UserProfileService(
         return read is null ? null : new UserIdDocumentImage(read.Content, read.ContentType);
     }
 
+    public async Task UploadIdImageForSubjectAsync(
+        Guid actorUserId,
+        Guid subjectUserId,
+        UserType expectedKind,
+        byte[] content,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.AdminUserNotFound, 404,
+                "The target account was not found.",
+                "تعذّر العثور على الحساب المستهدف.");
+        if (subject.UserType != expectedKind)
+        {
+            // Same 404-on-mismatch policy as D-124 — no cross-kind enumeration.
+            throw new ApiException(
+                ErrorCodes.AdminUserNotFound, 404,
+                "The target account was not found.",
+                "تعذّر العثور على الحساب المستهدف.");
+        }
+
+        var profile = await dbContext.UserProfiles
+            .SingleOrDefaultAsync(p => p.UserId == subjectUserId, cancellationToken);
+        if (profile is null)
+        {
+            profile = new UserProfile
+            {
+                UserId = subjectUserId,
+                CreatedAt = timeProvider.GetUtcNow(),
+            };
+            dbContext.UserProfiles.Add(profile);
+        }
+
+        var relativePath = await idStorage.SaveAsync(
+            subjectUserId, content, contentType, cancellationToken);
+        profile.IdImageRelativePath = relativePath;
+        profile.UpdatedAt = timeProvider.GetUtcNow();
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.UserProfileIdImageUploaded,
+            Outcome = AuditOutcome.Success,
+            SubjectUserId = subjectUserId,
+            SubjectEmail = subject.Email,
+            ActorUserId = actorUserId,
+            Detail = $"admin-upload; {content.Length} bytes; {contentType}",
+        }, cancellationToken);
+    }
+
+    public async Task<UserIdDocumentImage?> ReadIdImageForSubjectAsync(
+        Guid subjectUserId,
+        UserType expectedKind,
+        CancellationToken cancellationToken = default)
+    {
+        var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken);
+        if (subject is null || subject.UserType != expectedKind) { return null; }
+
+        var profile = await dbContext.UserProfiles
+            .AsNoTracking()
+            .SingleOrDefaultAsync(p => p.UserId == subjectUserId, cancellationToken);
+        if (profile is null || string.IsNullOrEmpty(profile.IdImageRelativePath))
+        {
+            return null;
+        }
+        var read = await idStorage.OpenReadAsync(profile.IdImageRelativePath, cancellationToken);
+        return read is null ? null : new UserIdDocumentImage(read.Content, read.ContentType);
+    }
+
     private static UserProfileResponse ToResponse(UserProfile profile, string? qrId) =>
         new()
         {

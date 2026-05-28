@@ -162,6 +162,14 @@
                         <dt>@L["Admin.Pending.View.Field.InterestCount"]</dt>
                         <dd>@_viewProfile.InterestIds.Count</dd>
                     </dl>
+                    @if (_viewProfile.HasIdImage)
+                    {
+                        <div class="simf-walkin__id-image">
+                            <h4>@L["Admin.Pending.View.Field.IdImage"]</h4>
+                            <img src="@($"/account/api/admin/others/{_viewProfile.Id}/id-document?v={DateTime.UtcNow.Ticks}")"
+                                 alt="@L["Admin.Pending.View.Field.IdImage"]" />
+                        </div>
+                    }
                 }
                 else
                 {

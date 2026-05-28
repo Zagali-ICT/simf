@@ -229,10 +229,22 @@
   <data name="Admin.WalkIn.Field.Nationality" xml:space="preserve"><value>الجنسية</value></data>
   <data name="Admin.WalkIn.Field.Nationality.Placeholder" xml:space="preserve"><value>اختر الدولة</value></data>
   <data name="Admin.WalkIn.Field.NationalId" xml:space="preserve"><value>الهوية الوطنية السعودية</value></data>
-  <data name="Admin.WalkIn.Field.NationalId.Hint" xml:space="preserve"><value>10 أرقام.</value></data>
   <data name="Admin.WalkIn.Field.IqamaNumber" xml:space="preserve"><value>رقم الإقامة</value></data>
   <data name="Admin.WalkIn.Field.PassportNumber" xml:space="preserve"><value>رقم جواز السفر</value></data>
   <data name="Admin.WalkIn.Field.OneOf.Hint" xml:space="preserve"><value>الإقامة أو الجواز — يكفي أحدهما.</value></data>
+  <data name="Admin.WalkIn.Field.NationalId.Hint" xml:space="preserve"><value>10 أرقام تبدأ بالرقم 1.</value></data>
+  <data name="Admin.WalkIn.Field.Iqama.Hint" xml:space="preserve"><value>10 أرقام تبدأ بالرقم 2.</value></data>
+  <data name="Admin.WalkIn.Field.Passport.Hint" xml:space="preserve"><value>حتى 20 حرفًا.</value></data>
+  <data name="Admin.WalkIn.Field.NonSaudiIdKind" xml:space="preserve"><value>نوع وثيقة الهوية</value></data>
+  <data name="Admin.WalkIn.NonSaudiIdKind.Iqama" xml:space="preserve"><value>إقامة</value></data>
+  <data name="Admin.WalkIn.NonSaudiIdKind.Passport" xml:space="preserve"><value>جواز سفر</value></data>
+  <data name="Admin.WalkIn.Error.IqamaInvalid" xml:space="preserve"><value>رقم الإقامة مكوّن من 10 أرقام يبدأ بالرقم 2.</value></data>
+  <data name="Admin.WalkIn.Error.PassportRequired" xml:space="preserve"><value>رقم جواز السفر مطلوب (حتى 20 حرفًا).</value></data>
+  <data name="Admin.WalkIn.Section.IdDocument" xml:space="preserve"><value>وثيقة الهوية</value></data>
+  <data name="Admin.WalkIn.Section.IdDocument.Hint" xml:space="preserve"><value>صورة اختيارية للهوية الوطنية أو الإقامة أو جواز السفر. PNG / JPEG / WebP حتى 5 ميغابايت. تُخزَّن مشفّرة.</value></data>
+  <data name="Admin.WalkIn.Field.IdDocument.Selected" xml:space="preserve"><value>تم اختيار: {0}</value></data>
+  <data name="Admin.Pending.View.Field.QrId" xml:space="preserve"><value>رمز QR</value></data>
+  <data name="Admin.Pending.View.Field.IdImage" xml:space="preserve"><value>وثيقة الهوية</value></data>
   <data name="Admin.WalkIn.Field.SaudiMobile" xml:space="preserve"><value>الجوال السعودي</value></data>
   <data name="Admin.WalkIn.Field.SaudiMobile.Hint" xml:space="preserve"><value>مثال: +966500000000</value></data>
   <data name="Admin.WalkIn.Field.InternationalMobile" xml:space="preserve"><value>الجوال الدولي</value></data>
@@ -247,7 +259,7 @@
   <data name="Admin.WalkIn.Error.ArabicNameRequired" xml:space="preserve"><value>الاسم بالعربية مطلوب (2-128 حرفاً).</value></data>
   <data name="Admin.WalkIn.Error.DisplayNameRequired" xml:space="preserve"><value>اسم الشارة مطلوب.</value></data>
   <data name="Admin.WalkIn.Error.NationalityRequired" xml:space="preserve"><value>اختر الجنسية.</value></data>
-  <data name="Admin.WalkIn.Error.NationalIdRequired" xml:space="preserve"><value>الهوية الوطنية السعودية (10 أرقام) مطلوبة.</value></data>
+  <data name="Admin.WalkIn.Error.NationalIdRequired" xml:space="preserve"><value>الهوية الوطنية السعودية مكوّنة من 10 أرقام وتبدأ بالرقم 1.</value></data>
   <data name="Admin.WalkIn.Error.IqamaOrPassportRequired" xml:space="preserve"><value>أدخل رقم الإقامة أو جواز السفر.</value></data>
   <data name="Admin.WalkIn.Error.MobileRequired" xml:space="preserve"><value>رقم الجوال مطلوب.</value></data>
   <data name="Admin.WalkIn.Error.Fallback" xml:space="preserve"><value>تعذّر حفظ التسجيل. حاول مرة أخرى.</value></data>

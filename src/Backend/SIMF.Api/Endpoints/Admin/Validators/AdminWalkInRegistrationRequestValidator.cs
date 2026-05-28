@@ -76,18 +76,34 @@ public sealed class AdminWalkInRegistrationRequestValidator
                 .NotEmpty().Bilingual(
                     "Saudi national ID is required for Saudi nationals.",
                     "الهوية الوطنية مطلوبة للمواطنين السعوديين.")
-                .Length(10).Bilingual(
-                    "The Saudi national ID is 10 digits.",
-                    "الهوية الوطنية السعودية مكوّنة من 10 أرقام.");
+                .Matches("^1[0-9]{9}$").Bilingual(
+                    "The Saudi national ID is 10 digits and starts with 1.",
+                    "الهوية الوطنية السعودية مكوّنة من 10 أرقام وتبدأ بالرقم 1.");
         }).Otherwise(() =>
         {
-            // Non-Saudi: either Iqama OR Passport must be supplied.
+            // Non-Saudi: either Iqama OR Passport must be supplied. When the
+            // operator picks Iqama, it must match the residency pattern
+            // (10 digits starting with 2).
             RuleFor(request => request)
                 .Must(r => !string.IsNullOrWhiteSpace(r.IqamaNumber)
                     || !string.IsNullOrWhiteSpace(r.PassportNumber))
                 .Bilingual(
                     "An Iqama or passport number is required.",
                     "رقم الإقامة أو جواز السفر مطلوب.");
+            When(request => !string.IsNullOrWhiteSpace(request.IqamaNumber), () =>
+            {
+                RuleFor(request => request.IqamaNumber!)
+                    .Matches("^2[0-9]{9}$").Bilingual(
+                        "The Iqama number is 10 digits and starts with 2.",
+                        "رقم الإقامة مكوّن من 10 أرقام ويبدأ بالرقم 2.");
+            });
+            When(request => !string.IsNullOrWhiteSpace(request.PassportNumber), () =>
+            {
+                RuleFor(request => request.PassportNumber!)
+                    .MaximumLength(20).Bilingual(
+                        "Passport number must be at most 20 characters.",
+                        "يجب ألا يتجاوز رقم جواز السفر 20 حرفًا.");
+            });
         });
 
         // At least one phone — Saudi or international — so the desk can

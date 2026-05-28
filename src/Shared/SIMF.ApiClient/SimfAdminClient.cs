@@ -446,6 +446,77 @@ public sealed class SimfAdminClient(HttpClient http)
             content: null,
             accessToken, cancellationToken);
 
+    // -- D-129 — admin ID-document upload + read -----------------------------
+
+    /// <summary>D-129 — admin-side upload of a visitor's ID-document image.</summary>
+    public Task<ApiCallResult<bool>> UploadVisitorIdDocumentAsync(
+        Guid subjectId, byte[] content, string contentType, string fileName,
+        string accessToken, CancellationToken cancellationToken = default) =>
+        UploadIdDocumentAsync(
+            $"visitors/{subjectId}/id-document",
+            content, contentType, fileName, accessToken, cancellationToken);
+
+    /// <summary>D-129 — admin-side upload of an Other account's ID-document image.</summary>
+    public Task<ApiCallResult<bool>> UploadOtherIdDocumentAsync(
+        Guid subjectId, byte[] content, string contentType, string fileName,
+        string accessToken, CancellationToken cancellationToken = default) =>
+        UploadIdDocumentAsync(
+            $"others/{subjectId}/id-document",
+            content, contentType, fileName, accessToken, cancellationToken);
+
+    private Task<ApiCallResult<bool>> UploadIdDocumentAsync(
+        string path, byte[] content, string contentType, string fileName,
+        string accessToken, CancellationToken cancellationToken)
+    {
+        var multipart = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(content);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        multipart.Add(fileContent, "file", fileName);
+        return SendAsync<bool>(
+            HttpMethod.Post, path, multipart, accessToken, cancellationToken);
+    }
+
+    /// <summary>D-129 — admin-side streamed read of a visitor's ID-document image.</summary>
+    public Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchVisitorIdDocumentAsync(
+        Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
+        FetchIdDocumentAsync($"visitors/{subjectId}/id-document", accessToken, cancellationToken);
+
+    /// <summary>D-129 — admin-side streamed read of an Other account's ID-document image.</summary>
+    public Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchOtherIdDocumentAsync(
+        Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
+        FetchIdDocumentAsync($"others/{subjectId}/id-document", accessToken, cancellationToken);
+
+    private async Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchIdDocumentAsync(
+        string path, string accessToken, CancellationToken cancellationToken)
+    {
+        using var message = new HttpRequestMessage(
+            HttpMethod.Get, $"{BasePath}{path}");
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return ((int)response.StatusCode, null, []);
+            }
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return (
+                (int)response.StatusCode,
+                response.Content.Headers.ContentType?.MediaType,
+                bytes);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException)
+        {
+            return ((int)HttpStatusCode.ServiceUnavailable, null, []);
+        }
+    }
+
     /// <summary>ProfileTypes filtered by UserType — for the create-page picker (P7c).</summary>
     public Task<ApiCallResult<IReadOnlyList<AdminProfileTypeSummary>>> ListProfileTypesAsync(
         string userType, string accessToken,

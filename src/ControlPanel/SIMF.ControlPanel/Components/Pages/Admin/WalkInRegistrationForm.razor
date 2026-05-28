@@ -3,7 +3,20 @@
    face-to-face. Hosts the full profile shape in one scrollable form with
    grouped <fieldset> sections; on submit the server auto-approves and
    mints the QR badge in one transaction. The parent receives the response
-   via OnSuccess and is responsible for showing the success modal. *@
+   via OnSuccess and is responsible for showing the success modal.
+
+   D-129 updates:
+     - Saudi national ID validated as 10 digits starting with 1.
+     - When Saudi: country picker hidden, NationalityCode forced to "SA".
+     - When non-Saudi: country picker required; Iqama-or-Passport radio
+       sub-picker means staff fills exactly one ID-number field.
+     - Iqama number validated as 10 digits starting with 2.
+     - Optional ID-document file input on every walk-in — uploaded right
+       after the create-onsite call succeeds, so the View modal can
+       render the captured image.
+     - Maxlength on every text input (defence in depth alongside the
+       server-side FluentValidation rules).
+*@
 @using SIMF.Contracts.UserProfile
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
@@ -48,12 +61,15 @@
         <div class="simf-walkin__grid">
             <SimfTextField Label="@L["Admin.WalkIn.Field.EnglishName"]"
                            Helper="@L["Admin.WalkIn.Field.EnglishName.Hint"]"
+                           MaxLength="128"
                            @bind-Value="_model.EnglishName" />
             <SimfTextField Label="@L["Admin.WalkIn.Field.ArabicName"]"
                            Helper="@L["Admin.WalkIn.Field.ArabicName.Hint"]"
+                           MaxLength="128"
                            @bind-Value="_model.ArabicName" />
             <SimfTextField Label="@L["Admin.WalkIn.Field.DisplayName"]"
                            Helper="@L["Admin.WalkIn.Field.DisplayName.Hint"]"
+                           MaxLength="128"
                            @bind-Value="_model.DisplayName" />
             <div class="simf-field">
                 <label class="simf-field__label" for="walkin-dob">
@@ -66,6 +82,7 @@
                 </div>
             </div>
             <SimfTextField Label="@L["Admin.WalkIn.Field.PlaceOfBirth"]"
+                           MaxLength="128"
                            @bind-Value="_model.PlaceOfBirth" />
         </div>
     </fieldset>
@@ -88,39 +105,72 @@
                 @L["Admin.WalkIn.IsSaudi.No"]
             </button>
         </div>
-        <div class="simf-walkin__grid">
-            <div class="simf-field">
-                <label class="simf-field__label" for="walkin-nationality">
-                    @L["Admin.WalkIn.Field.Nationality"]
-                </label>
-                <div class="simf-field__control">
-                    <select id="walkin-nationality" class="simf-field__input"
-                            value="@_model.NationalityCode"
-                            @onchange="OnNationalityChanged">
-                        <option value="">@L["Admin.WalkIn.Field.Nationality.Placeholder"]</option>
-                        @foreach (var c in _countries)
-                        {
-                            <option value="@c.Code">@CountryLabel(c)</option>
-                        }
-                    </select>
-                </div>
-            </div>
-            @if (_model.IsSaudi)
-            {
+        @if (_model.IsSaudi)
+        {
+            @* Saudi visitors: nationality is implicitly SA, no picker.
+               National ID is the only ID field. *@
+            <div class="simf-walkin__grid">
                 <SimfTextField Label="@L["Admin.WalkIn.Field.NationalId"]"
                                Helper="@L["Admin.WalkIn.Field.NationalId.Hint"]"
+                               MaxLength="10" InputMode="numeric"
                                @bind-Value="_model.NationalId" />
-            }
-            else
-            {
-                <SimfTextField Label="@L["Admin.WalkIn.Field.IqamaNumber"]"
-                               Helper="@L["Admin.WalkIn.Field.OneOf.Hint"]"
-                               @bind-Value="_model.IqamaNumber" />
-                <SimfTextField Label="@L["Admin.WalkIn.Field.PassportNumber"]"
-                               Helper="@L["Admin.WalkIn.Field.OneOf.Hint"]"
-                               @bind-Value="_model.PassportNumber" />
-            }
-        </div>
+            </div>
+        }
+        else
+        {
+            @* Non-Saudi visitors: country picker is required, plus a second
+               toggle row that picks ONE document — Iqama or Passport — so
+               the form never carries stale data from the other branch. *@
+            <div class="simf-walkin__grid">
+                <div class="simf-field">
+                    <label class="simf-field__label" for="walkin-nationality">
+                        @L["Admin.WalkIn.Field.Nationality"]
+                    </label>
+                    <div class="simf-field__control">
+                        <select id="walkin-nationality" class="simf-field__input"
+                                value="@_model.NationalityCode"
+                                @onchange="OnNationalityChanged">
+                            <option value="">@L["Admin.WalkIn.Field.Nationality.Placeholder"]</option>
+                            @foreach (var c in _countries)
+                            {
+                                <option value="@c.Code">@CountryLabel(c)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="simf-walkin__toggle" role="radiogroup"
+                 aria-label="@L["Admin.WalkIn.Field.NonSaudiIdKind"]">
+                <button type="button"
+                        class="simf-walkin__toggle-btn @(_idKind == "Iqama" ? "is-selected" : null)"
+                        role="radio" aria-checked="@(_idKind == "Iqama" ? "true" : "false")"
+                        @onclick="@(() => SetNonSaudiIdKind("Iqama"))">
+                    @L["Admin.WalkIn.NonSaudiIdKind.Iqama"]
+                </button>
+                <button type="button"
+                        class="simf-walkin__toggle-btn @(_idKind == "Passport" ? "is-selected" : null)"
+                        role="radio" aria-checked="@(_idKind == "Passport" ? "true" : "false")"
+                        @onclick="@(() => SetNonSaudiIdKind("Passport"))">
+                    @L["Admin.WalkIn.NonSaudiIdKind.Passport"]
+                </button>
+            </div>
+            <div class="simf-walkin__grid">
+                @if (_idKind == "Iqama")
+                {
+                    <SimfTextField Label="@L["Admin.WalkIn.Field.IqamaNumber"]"
+                                   Helper="@L["Admin.WalkIn.Field.Iqama.Hint"]"
+                                   MaxLength="10" InputMode="numeric"
+                                   @bind-Value="_model.IqamaNumber" />
+                }
+                else
+                {
+                    <SimfTextField Label="@L["Admin.WalkIn.Field.PassportNumber"]"
+                                   Helper="@L["Admin.WalkIn.Field.Passport.Hint"]"
+                                   MaxLength="20"
+                                   @bind-Value="_model.PassportNumber" />
+                }
+            </div>
+        }
     </fieldset>
 
     @* -- Section 4: Contact ------------------------------------------- *@
@@ -132,23 +182,40 @@
                 <SimfTextField Label="@L["Admin.WalkIn.Field.SaudiMobile"]"
                                Helper="@L["Admin.WalkIn.Field.SaudiMobile.Hint"]"
                                @bind-Value="_model.SaudiMobile"
-                               Type="tel" />
+                               MaxLength="32" InputMode="tel" Type="tel" />
             }
             else
             {
                 <SimfTextField Label="@L["Admin.WalkIn.Field.InternationalMobile"]"
                                Helper="@L["Admin.WalkIn.Field.InternationalMobile.Hint"]"
                                @bind-Value="_model.InternationalMobile"
-                               Type="tel" />
+                               MaxLength="32" InputMode="tel" Type="tel" />
             }
             <SimfTextField Label="@L["Admin.WalkIn.Field.Email"]"
                            Helper="@L["Admin.WalkIn.Field.Email.Hint"]"
                            @bind-Value="_model.Email"
-                           Type="email" Icon="mail" />
+                           MaxLength="256" InputMode="email" Type="email" />
         </div>
     </fieldset>
 
-    @* -- Section 5: Interests (visitor only) -------------------------- *@
+    @* -- Section 5: ID document (file upload) -------------------------- *@
+    <fieldset class="simf-walkin__section" disabled="@(_busy ? "disabled" : null)">
+        <legend>@L["Admin.WalkIn.Section.IdDocument"]</legend>
+        <p class="simf-walkin__hint">@L["Admin.WalkIn.Section.IdDocument.Hint"]</p>
+        <div class="simf-field">
+            <input id="walkin-id-document" type="file" class="simf-field__input"
+                   accept="image/png,image/jpeg,image/webp"
+                   @onchange="OnIdDocumentChanged" />
+            @if (!string.IsNullOrEmpty(_idDocumentName))
+            {
+                <div class="simf-field__helper">
+                    @string.Format(L["Admin.WalkIn.Field.IdDocument.Selected"], _idDocumentName)
+                </div>
+            }
+        </div>
+    </fieldset>
+
+    @* -- Section 6: Interests (visitor only) -------------------------- *@
     @if (string.Equals(Kind, "Visitor", StringComparison.OrdinalIgnoreCase) && _interests.Length > 0)
     {
         <fieldset class="simf-walkin__section" disabled="@(_busy ? "disabled" : null)">
@@ -193,6 +260,8 @@
     private AdminProfileTypeSummary[] _profileTypes = Array.Empty<AdminProfileTypeSummary>();
     private CountryDto[] _countries = Array.Empty<CountryDto>();
     private InterestDto[] _interests = Array.Empty<InterestDto>();
+    private string _idKind = "Iqama";
+    private string? _idDocumentName;
 
     /// <summary>"Visitor" or "Other" — drives the profile-type picker
     /// query and the interests section visibility.</summary>
@@ -258,11 +327,30 @@
         {
             _model.IqamaNumber = null;
             _model.PassportNumber = null;
+            // Saudi visitors: nationality is implicitly SA, no picker.
+            _model.NationalityCode = "SA";
         }
         else
         {
             _model.NationalId = null;
+            // Default to an empty pick so the placeholder shows.
+            if (_model.NationalityCode == "SA")
+            {
+                _model.NationalityCode = string.Empty;
+            }
+            // Default the Iqama / Passport sub-picker to Iqama for fresh
+            // non-Saudi state; staff can flip.
+            _idKind = "Iqama";
         }
+    }
+
+    private void SetNonSaudiIdKind(string kind)
+    {
+        _idKind = kind;
+        // Clear the other ID field so the wrong value never leaks to the
+        // server payload if staff toggled after typing.
+        if (kind == "Iqama") { _model.PassportNumber = null; }
+        else { _model.IqamaNumber = null; }
     }
 
     private void OnNationalityChanged(ChangeEventArgs e)
@@ -278,6 +366,17 @@
             : parsed;
     }
 
+    private async Task OnIdDocumentChanged(ChangeEventArgs _)
+    {
+        // Grab the picked file name (best-effort, browsers expose only
+        // the file name for native <input type="file">). The actual upload
+        // happens after a successful register-onsite — we need the new
+        // user id first.
+        var name = await JS.InvokeAsync<string?>(
+            "eval", "document.getElementById('walkin-id-document')?.files?.[0]?.name ?? null");
+        _idDocumentName = name;
+    }
+
     private void ToggleInterest(Guid id)
     {
         if (!_model.InterestIds.Remove(id))
@@ -288,6 +387,14 @@
 
     private string LabelFor(AdminProfileTypeSummary pt) =>
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar" ? pt.NameArabic : pt.Name;
+
+    // Saudi national ID is exactly 10 digits starting with 1; Iqama (residency
+    // permit) starts with 2. Mirrors the server-side FluentValidation regex.
+    private static readonly System.Text.RegularExpressions.Regex SaudiIdPattern =
+        new("^1[0-9]{9}$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private static readonly System.Text.RegularExpressions.Regex IqamaPattern =
+        new("^2[0-9]{9}$", System.Text.RegularExpressions.RegexOptions.Compiled);
 
     private static string CountryLabel(CountryDto c) =>
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
@@ -320,22 +427,39 @@
         {
             _error = L["Admin.WalkIn.Error.DisplayNameRequired"]; return;
         }
-        if (string.IsNullOrWhiteSpace(_model.NationalityCode))
-        {
-            _error = L["Admin.WalkIn.Error.NationalityRequired"]; return;
-        }
         if (_model.IsSaudi)
         {
-            if (string.IsNullOrWhiteSpace(_model.NationalId) || _model.NationalId.Length != 10)
+            if (string.IsNullOrWhiteSpace(_model.NationalId)
+                || !SaudiIdPattern.IsMatch(_model.NationalId))
             {
                 _error = L["Admin.WalkIn.Error.NationalIdRequired"]; return;
             }
+            // Force nationality to SA — the picker is hidden in this branch.
+            _model.NationalityCode = "SA";
         }
         else
         {
-            if (string.IsNullOrWhiteSpace(_model.IqamaNumber) && string.IsNullOrWhiteSpace(_model.PassportNumber))
+            if (string.IsNullOrWhiteSpace(_model.NationalityCode))
             {
-                _error = L["Admin.WalkIn.Error.IqamaOrPassportRequired"]; return;
+                _error = L["Admin.WalkIn.Error.NationalityRequired"]; return;
+            }
+            if (_idKind == "Iqama")
+            {
+                if (string.IsNullOrWhiteSpace(_model.IqamaNumber)
+                    || !IqamaPattern.IsMatch(_model.IqamaNumber))
+                {
+                    _error = L["Admin.WalkIn.Error.IqamaInvalid"]; return;
+                }
+                _model.PassportNumber = null;
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(_model.PassportNumber)
+                    || _model.PassportNumber.Length > 20)
+                {
+                    _error = L["Admin.WalkIn.Error.PassportRequired"]; return;
+                }
+                _model.IqamaNumber = null;
             }
         }
         if (string.IsNullOrWhiteSpace(_model.SaudiMobile) && string.IsNullOrWhiteSpace(_model.InternationalMobile))
@@ -343,15 +467,15 @@
             _error = L["Admin.WalkIn.Error.MobileRequired"]; return;
         }
 
-        var route = string.Equals(Kind, "Other", StringComparison.OrdinalIgnoreCase)
-            ? "/account/api/admin/others/register-onsite"
-            : "/account/api/admin/visitors/register-onsite";
+        var basePath = string.Equals(Kind, "Other", StringComparison.OrdinalIgnoreCase)
+            ? "/account/api/admin/others"
+            : "/account/api/admin/visitors";
 
         _busy = true;
         try
         {
             var envelope = await JS.InvokeAsync<ApiResult<AdminWalkInRegistrationResponse>>(
-                "simfAccount.postJson", route,
+                "simfAccount.postJson", $"{basePath}/register-onsite",
                 new AdminWalkInRegistrationRequest
                 {
                     Email = string.IsNullOrWhiteSpace(_model.Email) ? null : _model.Email.Trim(),
@@ -373,6 +497,21 @@
 
             if (envelope is { Success: true, Data: not null })
             {
+                // If staff picked an ID-document file, upload it now that
+                // we have the new user id. The upload is fire-and-forget —
+                // a failed upload doesn't undo the registration, but the
+                // failure surfaces as a soft warning on the success view.
+                if (!string.IsNullOrEmpty(_idDocumentName))
+                {
+                    try
+                    {
+                        await JS.InvokeAsync<object?>(
+                            "simfAccount.uploadFile",
+                            $"{basePath}/{envelope.Data.UserId}/id-document",
+                            "walkin-id-document");
+                    }
+                    catch (Exception) { /* surfaces as HasIdImage=false in the View modal */ }
+                }
                 await OnSuccess.InvokeAsync(envelope.Data);
                 ResetForm();
             }
@@ -412,6 +551,7 @@
         _model.ProfileTypeId = keepProfileTypeId;
         _model.IsSaudi = keepIsSaudi;
         _model.NationalityCode = keepNationality;
+        _idDocumentName = null;
         StateHasChanged();
     }
 

@@ -121,30 +121,75 @@
     </SimfModal>
 }
 
-@* D-114 — Details modal (read-only view of the row's data — no extra fetch). *@
+@* D-129 — Details modal: loads the full profile via the D-126 admin read +
+   renders the ID document image inline (encrypted at rest, streamed
+   decrypted from the same admin endpoint). *@
 @if (_detailsTarget is not null)
 {
     <SimfModal Open="true"
                Title="@string.Format(L["Admin.Visitors.Details.Title"], _detailsTarget.Email)"
-               OnClose="@(() => _detailsTarget = null)">
+               OnClose="CloseDetails">
         <ChildContent>
-            <dl class="simf-dl">
-                <dt>@L["Admin.Users.Details.Field.Email"]</dt>
-                <dd>@_detailsTarget.Email</dd>
-                <dt>@L["Admin.Users.Details.Field.DisplayName"]</dt>
-                <dd>@_detailsTarget.DisplayName</dd>
-                <dt>@L["Admin.Users.Details.Field.State"]</dt>
-                <dd>@_detailsTarget.AccountState</dd>
-                <dt>@L["Admin.Users.Details.Field.TwoFactor"]</dt>
-                <dd>
-                    @(_detailsTarget.TwoFactorEnabled
-                        ? L["Admin.Users.TwoFactor.On"]
-                        : L["Admin.Users.TwoFactor.Off"])
-                </dd>
-            </dl>
+            @if (_detailsLoading)
+            {
+                <p>@L["Admin.Pending.View.Loading"]</p>
+            }
+            else if (_detailsError is not null)
+            {
+                <SimfAlert Variant="error">@_detailsError</SimfAlert>
+            }
+            else if (_detailsProfile is not null)
+            {
+                <dl class="simf-dl">
+                    <dt>@L["Admin.Pending.View.Field.Email"]</dt>
+                    <dd>@_detailsProfile.Email</dd>
+                    <dt>@L["Admin.Pending.View.Field.DisplayName"]</dt>
+                    <dd>@_detailsProfile.DisplayName</dd>
+                    <dt>@L["Admin.Pending.View.Field.UserType"]</dt>
+                    <dd>@_detailsProfile.UserType</dd>
+                    <dt>@L["Admin.Users.Details.Field.State"]</dt>
+                    <dd>@_detailsProfile.AccountState</dd>
+                    <dt>@L["Admin.Pending.View.Field.ProfileType"]</dt>
+                    <dd>@(_detailsProfile.ProfileTypeName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                    <dt>@L["Admin.Pending.View.Field.Created"]</dt>
+                    <dd>@_detailsProfile.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
+                </dl>
+                <dl class="simf-dl">
+                    <dt>@L["Admin.Pending.View.Field.ArabicName"]</dt>
+                    <dd>@(_detailsProfile.ArabicName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                    <dt>@L["Admin.Pending.View.Field.EnglishName"]</dt>
+                    <dd>@(_detailsProfile.EnglishName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                    <dt>@L["Admin.Pending.View.Field.Nationality"]</dt>
+                    <dd>@(_detailsProfile.NationalityCode ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                    <dt>@L["Admin.Pending.View.Field.DateOfBirth"]</dt>
+                    <dd>@(_detailsProfile.DateOfBirth?.ToString("yyyy-MM-dd") ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                    <dt>@L["Admin.Pending.View.Field.PlaceOfBirth"]</dt>
+                    <dd>@(_detailsProfile.PlaceOfBirth ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                    <dt>@L["Admin.Pending.View.Field.IdentityType"]</dt>
+                    <dd>@IdentityTypeLabel(_detailsProfile)</dd>
+                    <dt>@L["Admin.Pending.View.Field.IdentityNumber"]</dt>
+                    <dd>@(IdentityNumber(_detailsProfile) ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                    <dt>@L["Admin.Pending.View.Field.SaudiMobile"]</dt>
+                    <dd>@(_detailsProfile.SaudiMobile ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                    <dt>@L["Admin.Pending.View.Field.InternationalMobile"]</dt>
+                    <dd>@(_detailsProfile.InternationalMobile ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                    <dt>@L["Admin.Pending.View.Field.InterestCount"]</dt>
+                    <dd>@_detailsProfile.InterestIds.Count</dd>
+                    <dt>@L["Admin.Pending.View.Field.QrId"]</dt>
+                    <dd>@(_detailsProfile.QrId ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                </dl>
+                @if (_detailsProfile.HasIdImage)
+                {
+                    <div class="simf-walkin__id-image">
+                        <h4>@L["Admin.Pending.View.Field.IdImage"]</h4>
+                        <img src="@($"/account/api/admin/visitors/{_detailsProfile.Id}/id-document?v={DateTime.UtcNow.Ticks}")"
+                             alt="@L["Admin.Pending.View.Field.IdImage"]" />
+                    </div>
+                }
+            }
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="@(() => _detailsTarget = null)">
+            <SimfButton Type="button" OnClick="CloseDetails">
                 @L["Admin.Visitors.Details.Close"]
             </SimfButton>
         </Footer>
@@ -235,6 +280,9 @@
     private bool _addOpen;
     private bool _editOpen;
     private AdminUserSummary? _detailsTarget;
+    private AdminUserProfileView? _detailsProfile;
+    private bool _detailsLoading;
+    private string? _detailsError;
 
     private bool _bulkDeleteOpen;
     private IReadOnlyList<AdminUserSummary> _bulkDeleteTargets = Array.Empty<AdminUserSummary>();
@@ -289,11 +337,57 @@
         return Task.CompletedTask;
     }
 
-    private Task OnDetailsAsync(AdminUserSummary user)
+    private async Task OnDetailsAsync(AdminUserSummary user)
     {
         _detailsTarget = user;
-        return Task.CompletedTask;
+        _detailsProfile = null;
+        _detailsError = null;
+        _detailsLoading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminUserProfileView>>(
+                "simfAccount.getJson",
+                $"/account/api/admin/visitors/{user.Id}/profile");
+            if (envelope is { Success: true, Data: not null })
+            {
+                _detailsProfile = envelope.Data;
+            }
+            else
+            {
+                _detailsError = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Pending.View.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _detailsError = L["Admin.Pending.View.Fallback"];
+        }
+        finally { _detailsLoading = false; }
     }
+
+    private void CloseDetails()
+    {
+        _detailsTarget = null;
+        _detailsProfile = null;
+        _detailsError = null;
+        _detailsLoading = false;
+    }
+
+    private string IdentityTypeLabel(AdminUserProfileView profile)
+    {
+        if (!string.IsNullOrEmpty(profile.NationalId))
+            return L["Admin.Pending.View.IdentityType.National"];
+        if (!string.IsNullOrEmpty(profile.IqamaNumber))
+            return L["Admin.Pending.View.IdentityType.Iqama"];
+        if (!string.IsNullOrEmpty(profile.PassportNumber))
+            return L["Admin.Pending.View.IdentityType.Passport"];
+        return L["Admin.Pending.View.MissingValue"];
+    }
+
+    private static string? IdentityNumber(AdminUserProfileView profile) =>
+        profile.NationalId
+            ?? profile.IqamaNumber
+            ?? profile.PassportNumber;
 
     private Task OnRowDeleteAsync(AdminUserSummary user)
     {

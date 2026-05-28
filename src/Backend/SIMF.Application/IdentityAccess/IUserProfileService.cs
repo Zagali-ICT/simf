@@ -37,6 +37,27 @@ public interface IUserProfileService
     Task<UserIdDocumentImage?> ReadIdImageAsync(
         Guid actorUserId, CancellationToken cancellationToken = default);
 
+    /// <summary>D-129: admin-side upload of an ID-image for a subject other
+    /// than the actor. Used by the walk-in registration desk to capture
+    /// the visitor's national ID / passport scan on behalf of them. The
+    /// caller is responsible for the role/policy check at the endpoint;
+    /// this method only enforces UserType match (Visitor / Other) so an
+    /// Admin row can never accidentally receive an ID image.</summary>
+    Task UploadIdImageForSubjectAsync(
+        Guid actorUserId,
+        Guid subjectUserId,
+        SIMF.Common.Enums.UserType expectedKind,
+        byte[] content,
+        string contentType,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>D-129: admin-side read of a subject's ID-image. Same
+    /// UserType-match guard as the upload variant.</summary>
+    Task<UserIdDocumentImage?> ReadIdImageForSubjectAsync(
+        Guid subjectUserId,
+        SIMF.Common.Enums.UserType expectedKind,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// D-106: focused read for the SignInService state-banner — returns
     /// the bilingual rejection text for the user (or <c>null</c> when no

@@ -285,6 +285,88 @@ internal static class AccountEndpoints
             return Forward(await api.GetActiveInterestsAsync(token));
         });
 
+        // D-129 — admin upload of the subject's ID-document image (multipart).
+        // The CP page hosts a hidden <input type="file">; simfAccount.uploadFile
+        // sends it here. Same SameSite=Lax CSRF stance as /avatar (D-029).
+        group.MapPost("/admin/visitors/{id:guid}/id-document",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.VisitorIdImageMissing,
+                    Message = "An ID image is required.",
+                    MessageArabic = "صورة الهوية مطلوبة.",
+                }));
+            }
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return Forward(await api.UploadVisitorIdDocumentAsync(
+                id, stream.ToArray(), file.ContentType, file.FileName, token));
+        }).DisableAntiforgery();
+
+        group.MapPost("/admin/others/{id:guid}/id-document",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.VisitorIdImageMissing,
+                    Message = "An ID image is required.",
+                    MessageArabic = "صورة الهوية مطلوبة.",
+                }));
+            }
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return Forward(await api.UploadOtherIdDocumentAsync(
+                id, stream.ToArray(), file.ContentType, file.FileName, token));
+        }).DisableAntiforgery();
+
+        // D-129 — admin stream-read of the subject's ID-document image. The
+        // Details / View modals render this via <img src="..."> so the
+        // browser refreshes it whenever the modal opens.
+        group.MapGet("/admin/visitors/{id:guid}/id-document",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, contentType, bytes) =
+                await api.FetchVisitorIdDocumentAsync(id, token);
+            if (status != 200 || contentType is null || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            http.Response.Headers.CacheControl = "private, max-age=60";
+            return Results.File(bytes, contentType);
+        });
+
+        group.MapGet("/admin/others/{id:guid}/id-document",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, contentType, bytes) =
+                await api.FetchOtherIdDocumentAsync(id, token);
+            if (status != 200 || contentType is null || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            http.Response.Headers.CacheControl = "private, max-age=60";
+            return Results.File(bytes, contentType);
+        });
+
         // P7c — ProfileTypes picker, filtered by UserType.
         group.MapGet("/admin/profile-types",
             async (string userType, HttpContext http, SimfAdminClient api) =>
