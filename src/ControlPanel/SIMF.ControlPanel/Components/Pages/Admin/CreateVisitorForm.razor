@@ -31,26 +31,41 @@
     /// <summary>The cancel button label (kept for the legacy host page).</summary>
     [Parameter] public string? CancelLabel { get; set; }
 
-    private async Task OnRegistrationSuccessAsync(AdminWalkInRegistrationResponse response)
+    private void OnRegistrationSuccessAsync(AdminWalkInRegistrationResponse response)
     {
+        // D-127 — show the success modal BEFORE bubbling to the host so
+        // the host doesn't close the Add modal (which would unmount this
+        // component along with the success modal). The bubble fires when
+        // the desk clicks Done / Register another below.
         _lastResponse = response;
-        // Bubble a list-friendly summary up to the host grid so it can
-        // reload and toast — the host pages still expect AdminCreateUserResponse.
-        await OnSuccess.InvokeAsync(new AdminCreateUserResponse(
-            response.UserId,
-            response.Email,
-            0));
     }
 
-    private void OnSuccessModalClose() => _lastResponse = null;
+    private async Task OnSuccessModalClose()
+    {
+        var response = _lastResponse;
+        _lastResponse = null;
+        if (response is not null)
+        {
+            await OnSuccess.InvokeAsync(new AdminCreateUserResponse(
+                response.UserId, response.Email, 0));
+        }
+    }
 
     private async Task OnPrintAsync() =>
         await JS.InvokeVoidAsync("window.print");
 
-    private void OnRegisterAnother()
+    private async Task OnRegisterAnother()
     {
+        // Bubble the previous success first so the parent grid refreshes,
+        // then reset the wizard via a fresh @key so the desk can register
+        // the next walk-in without closing the Add modal.
+        var previous = _lastResponse;
         _lastResponse = null;
-        // Reset by recreating the form via @key — keeps the wizard simple.
+        if (previous is not null)
+        {
+            await OnSuccess.InvokeAsync(new AdminCreateUserResponse(
+                previous.UserId, previous.Email, 0));
+        }
         _formKey = Guid.NewGuid();
         StateHasChanged();
     }

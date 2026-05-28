@@ -24,23 +24,34 @@
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public string? CancelLabel { get; set; }
 
-    private async Task OnRegistrationSuccessAsync(AdminWalkInRegistrationResponse response)
+    private void OnRegistrationSuccessAsync(AdminWalkInRegistrationResponse response)
     {
         _lastResponse = response;
-        await OnSuccess.InvokeAsync(new AdminCreateUserResponse(
-            response.UserId,
-            response.Email,
-            0));
     }
 
-    private void OnSuccessModalClose() => _lastResponse = null;
+    private async Task OnSuccessModalClose()
+    {
+        var response = _lastResponse;
+        _lastResponse = null;
+        if (response is not null)
+        {
+            await OnSuccess.InvokeAsync(new AdminCreateUserResponse(
+                response.UserId, response.Email, 0));
+        }
+    }
 
     private async Task OnPrintAsync() =>
         await JS.InvokeVoidAsync("window.print");
 
-    private void OnRegisterAnother()
+    private async Task OnRegisterAnother()
     {
+        var previous = _lastResponse;
         _lastResponse = null;
+        if (previous is not null)
+        {
+            await OnSuccess.InvokeAsync(new AdminCreateUserResponse(
+                previous.UserId, previous.Email, 0));
+        }
         _formKey = Guid.NewGuid();
         StateHasChanged();
     }

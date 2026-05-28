@@ -276,6 +276,15 @@ internal static class AccountEndpoints
             return Forward(await api.GetProfileCountriesAsync(token));
         });
 
+        // D-127 — active interests picker for the visitor walk-in form.
+        group.MapGet("/interests",
+            async (HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetActiveInterestsAsync(token));
+        });
+
         // P7c — ProfileTypes picker, filtered by UserType.
         group.MapGet("/admin/profile-types",
             async (string userType, HttpContext http, SimfAdminClient api) =>
