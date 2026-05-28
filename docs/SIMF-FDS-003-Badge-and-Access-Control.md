@@ -135,12 +135,127 @@ the one `HallAttendance` row rather than creating two.
   that attendee has a `HallAttendance` enter record for the session (decision
   D5). This feature produces that record; the Engagement feature reads it.
 
+### 5.6 Gate Module — venue access gate engine
+
+The Gate Module operationalises §5.2 (venue entry verification) into a
+first-class entity. A `Gate` is a configured point of access — venue main
+entrance, hall door, VIP lounge door, anything that needs a controlled
+scan check. Each gate has a `DirectionMode` (`In` / `Out` / `Both`), an
+optional allow-list of `ProfileType`s, and a set of assigned operators.
+
+#### 5.6.1 Constraint engine — 13 ordered steps
+
+Every `POST /api/v1/gates/{gateId}/scans` runs through the engine. The
+order is load-bearing: each step short-circuits to a recorded denial with
+the named `DenialReasonCode`. Steps 9.5 and 11.5 are **reserved hooks** —
+they are no-ops in this increment and become enforcement points when the
+time-window and booking-required features ship.
+
+| Step | Check | Denial code on failure |
+|------|-------|------------------------|
+| 1 | Caller is authenticated | (HTTP 401 — not recorded) |
+| 2 | Caller has `Gates.Operate` and is an active assignee of this gate | `GATE_OPERATOR_NOT_ASSIGNED` (HTTP 403 — not recorded) |
+| 3 | `IQrResolver` resolves the QR to a `UserProfile` | `QR_UNKNOWN` (recorded) |
+| 4 | Idempotency-key check — replay returns prior outcome; conflict → 409 | `IDEMPOTENCY_KEY_CONFLICT` (HTTP 409 — not recorded) |
+| 5 | Gate is `IsActive = true` | `GATE_INACTIVE_AT_SCAN` (recorded; pre-engine 503 also possible) |
+| 6 | Holder account state is `Approved` | `HOLDER_NOT_APPROVED` (recorded) |
+| 7 | Holder account state is not `Disabled` | `HOLDER_DISABLED` (recorded) |
+| 8 | Holder account state is not `Locked` | `HOLDER_LOCKED` (recorded) |
+| 9 | Holder's `ProfileType` is `IsActive = true` | `PROFILE_TYPE_INACTIVE` (recorded) |
+| 9.5 | **Reserved** — time-window check (plan §11.2) | `OUTSIDE_TIME_WINDOW` (recorded; never fires in this increment) |
+| 10 | Resolve direction. `DirectionMode = In` → `CheckIn`. `DirectionMode = Out` → `CheckOut`. `DirectionMode = Both` → **infer** from the visitor's last allowed scan **at this gate**: cold start = `CheckIn`; otherwise the opposite of the last allowed direction at this gate. (No denial; this is the inference step.) | — |
+| 11 | If the gate has a non-empty `GateProfileTypeAllow` list filtered by active `ProfileType`, the holder's `ProfileTypeId` must be in the list. Empty allow-list = pass (general gate). Filtered-empty (allow-list referenced only inactive profile types) = deny **all** per the safe-default rule. | `PROFILE_TYPE_NOT_ALLOWED` (recorded) |
+| 11.5 | **Reserved** — booking-required check (plan §11.3) | `BOOKING_REQUIRED_MISSING` (recorded; never fires in this increment) |
+| 12 | Look up the prior allowed scan within the **5-second duplicate window** keyed `(GateId, UserProfileId)` (without `Direction`, so a `Both`-mode race between two devices reading the same QR at the same instant produces one row). If found, return the prior outcome (replay path) — record nothing new. | — (duplicate absorption; no new row) |
+| 13 | Persist the `GateScan` row with `Outcome = Allowed`, the resolved `Direction`, the server clock `ScannedAtUtc`, and (when the client supplied them) `ClientScannedAtUtc` + `IdempotencyKey`. On a denial path, persist with `Outcome = Denied` + the named `DenialReasonCode`. **Audit:** every denial also emits one `OperationLog` row (`EventType = GateScanDenied`) so SOC can surface denials without scanning the `GateScan` firehose. Successful scans are recorded only in `GateScan` to keep operation-log volume sane. | — |
+
+The engine is implemented as an ordered pipeline. The two reserved hooks
+(9.5, 11.5) are present as no-op delegates in this increment so the
+future increments plug in without renumbering or branching the engine.
+
+#### 5.6.2 VIP / Normal rejection
+
+Each gate has its own `GateProfileTypeAllow` list. The Control Panel
+management page presents this as a chip-picker over active `ProfileType`s.
+
+| Configuration | Effect on step 11 |
+|---------------|-------------------|
+| **Empty list** (default for new gates) | All profile types allowed — general entrance gate, pass |
+| `{ VVIP, VIP }` | Only VVIP and VIP visitors pass; everyone else → `PROFILE_TYPE_NOT_ALLOWED` |
+| `{ VIP }` where VIP is later deactivated by an admin | Filtered list becomes empty → the engine **denies all scans** on this gate (safe-default rule L-15: better to deny visibly than silently flip a VIP gate to "everyone") |
+
+On a `PROFILE_TYPE_NOT_ALLOWED` denial, the operator console shows:
+
+- a red denial card;
+- the visitor's actual profile-type chip rendered with the
+  `ProfileType.PageColor` (so the operator can see what the visitor
+  presented);
+- the gate's allowed types in the page header (so the operator can
+  verbally redirect: "please use Gate B — VIP only on this door");
+- a bilingual message — EN "This gate is for VIP / VVIP guests." / AR
+  "هذه البوابة لضيوف VIP / VVIP فقط.".
+
+#### 5.6.3 Multiple-in / multiple-out behaviour
+
+| Mode | Behaviour on a second scan in the same direction |
+|------|---------------------------------------------------|
+| `Both` | Impossible by construction — the engine infers direction (step 10) |
+| `In` | Every scan is a `CheckIn`; multiple check-ins are legitimate (visitor left through another gate, came back). Each is its own row. |
+| `Out` | Symmetric — every scan is a `CheckOut` |
+
+The 5-second duplicate window (step 12) absorbs operator double-tap and
+barcode-reader double-fire. Beyond 5 s, a fast follow-up is recorded as a
+legitimate event.
+
+#### 5.6.4 "Currently inside" derivation
+
+The "currently inside" view is computed on demand from the **most recent
+allowed scan across all gates** for each visitor — not per-gate:
+
+- Most recent allowed scan is `CheckIn` → visitor is inside.
+- Most recent allowed scan is `CheckOut`, or no scan exists → visitor is outside.
+
+The filtered index `(UserProfileId, ScannedAtUtc DESC) WHERE Outcome =
+Allowed AND UserProfileId IS NOT NULL` (SIMF-DAT-001 §5.3.2) makes this a
+single-row seek per visitor even at expected event-end volumes (low
+millions of scans). If reporting load proves the index insufficient, a
+materialised `VisitorPresence` table is the documented fallback (plan
+OI-5).
+
+#### 5.6.5 Idempotency contract
+
+Every `POST /scans` may carry an `Idempotency-Key` UUIDv4 on the header
+or in the body (header wins). The store `ScanIdempotency(Key, GateId,
+RequestHash, ResponseHash, StoredAt)` keeps records 24 hours. Replay
+returns the original response with `X-Idempotent-Replay: true`. Same
+key with a different `(qr, gateId)` → **409
+IDEMPOTENCY_KEY_CONFLICT**. Requests without a key are accepted (the
+5-second duplicate window still protects against double-fire), but the
+offline drain path expects keys and the device-side flow generates one
+per scan.
+
+#### 5.6.6 Failure-rate circuit
+
+`GateScan` denials are tracked in a rolling 60-second window per gate.
+At ≥ 10 denials in 60 s the circuit **opens** for 5 minutes — further
+scans on that gate are rejected with **429
+GATE_FAILURE_CIRCUIT_OPEN** + `X-Gate-Failure-Circuit: open`. The
+circuit emits one `OperationLog` row on open and one on close, so SOC
+can correlate the short outage with the underlying denial pattern. The
+circuit guards against a misconfigured allow-list generating thousands
+of audit-log denial rows in a panic loop.
+
 ## 6. Data
 
 The feature uses these entities from SIMF-DAT-001 section 5.3: `Badge`,
-`VenueEntry`, `HallAttendance`, `SavedContact`. It reads `User`, `Hall` and
-`Session`. `HallAttendance` is constrained so an attendee has one open
-attendance row per session at a time (SIMF-DAT-001 section 8).
+`VenueEntry`, `HallAttendance`, `SavedContact`, `Gate`,
+`GateProfileTypeAllow`, `GateAssignment`, `GateScan`, `ScanIdempotency`. It
+reads `User`, `UserProfile`, `ProfileType`, `Hall` and `Session`.
+`HallAttendance` is constrained so an attendee has one open attendance row per
+session at a time (SIMF-DAT-001 section 8). `GateScan` is append-only with an
+INSTEAD-OF UPDATE/DELETE trigger refusing mutation, and opts out of the
+`RowAudit` interceptor because it is itself an append-only audit log
+(D-148 rationale).
 
 Each hall needs a stored **geofence** — a centre and radius, or a polygon. This
 is an addition to the `Hall` entity and is recorded as open item OI-2 against
