@@ -152,6 +152,8 @@ public static class DependencyInjection
         services.AddScoped<IAdminProfileTypeCommandService, AdminProfileTypeCommandService>();
         // D-134 Sprint A — admin CRUD over SimfRole (existing schema, no migration).
         services.AddScoped<IAdminRoleService, AdminRoleService>();
+        // D-134 Sprint A — read-only viewer over the OperationLog table.
+        services.AddScoped<IAdminOperationLogService, AdminOperationLogService>();
         services.AddScoped<IAdminApprovalReadService, AdminApprovalReadService>();
         services.AddScoped<IQrIdMinter, QrIdMinter>();
         services.AddScoped<IUserProfileService, UserProfileService>();

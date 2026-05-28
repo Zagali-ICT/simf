@@ -67,7 +67,7 @@ Navigation grouped per `CpNavigation.cs` (9 groups). 14 real pages + 22 stubs af
 | `/admin/reset-2fa` | `Module.AdminResetTwoFactor` | ✅ Real | Administrator | [cp/admin-reset-2fa.md](cp/admin-reset-2fa.md) | [e2e/cp-admin-reset-2fa.md](../tests/e2e/cp-admin-reset-2fa.md) |
 | `/admin/logs` | `Module.AdminLogs` | ✅ Real | Administrator | [cp/admin-logs.md](cp/admin-logs.md) | [e2e/cp-admin-logs.md](../tests/e2e/cp-admin-logs.md) |
 | `/m/configuration` | `Module.Configuration` | 🚧 Stub | Administrator | — | — |
-| `/m/operation-log` | `Module.OperationLog` | 🚧 Stub | Administrator | — | — |
+| `/admin/operation-log` | `Module.OperationLog` | ✅ Real (D-134 Sprint A) | Administrator | [cp/admin-operation-log.md](cp/admin-operation-log.md) | [e2e/cp-admin-operation-log.md](../tests/e2e/cp-admin-operation-log.md) |
 | `/m/settings` | `Module.Settings` | 🚧 Stub | Administrator | — | — |
 
 ### CP auth + account pages (not in main nav)

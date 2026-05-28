@@ -697,6 +697,33 @@ When a user loses both their authenticator and all 10 recovery codes:
 
 You cannot self-reset here — use **My profile → Reset my 2FA** instead.
 
+### 10.12 Operation log viewer — `/admin/operation-log` (D-134 Sprint A)
+
+> Page reference: [`docs/pages/cp/admin-operation-log.md`](../pages/cp/admin-operation-log.md)
+
+The **business + security audit trail**. Browse + filter every event
+the system has audited: sign-ins (success + failure), password resets,
+registrations, approvals, 2FA resets, walk-ins, role changes, etc.
+Distinct from §10.11 — that page tails the raw Serilog files for
+debugging; this page is the structured durable audit table.
+
+#### Most common tasks
+
+- **Find someone's last activity:** type their email into "Subject
+  email contains" → Apply filters → newest row first.
+- **See every failure today:** Outcome = Failure → Apply → Details on
+  the latest row shows CorrelationId + ErrorCode + the Detail blob.
+- **Trace a single request across services:** open Details on one row,
+  copy the CorrelationId, paste it into the technical Logs viewer
+  (§10.11) — every Serilog line with the same id is the same request.
+
+#### What you cannot do here
+
+- Edit or delete an audit entry — the table is append-only by design.
+- Export to XLSX — coming in a follow-up.
+- Filter by date range from the page — coming in a follow-up; the API
+  already accepts `from`+`to` filters.
+
 ### 10.11 Logs viewer — `/admin/logs`
 
 > Page reference: [`docs/pages/cp/admin-logs.md`](../pages/cp/admin-logs.md)

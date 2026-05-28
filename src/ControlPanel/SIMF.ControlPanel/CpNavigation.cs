@@ -91,7 +91,9 @@ public static class CpNavigation
             new("Module.AdminResetTwoFactor", "/admin/reset-2fa"),
             new("Module.AdminLogs", "/admin/logs"),
             new("Module.Configuration", "/m/configuration", IsStub: true),
-            new("Module.OperationLog", "/m/operation-log", IsStub: true),
+            // D-134 Sprint A — Operation log viewer over the existing
+            // OperationLogEntry table (no migration).
+            new("Module.OperationLog", "/admin/operation-log"),
             new("Module.Settings", "/m/settings", IsStub: true),
         ]),
     ];

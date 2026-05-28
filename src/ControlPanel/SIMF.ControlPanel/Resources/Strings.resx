@@ -235,6 +235,49 @@
   <data name="Admin.Roles.Created" xml:space="preserve"><value>Role "{0}" was created.</value></data>
   <data name="Admin.Roles.Updated" xml:space="preserve"><value>Role "{0}" was updated.</value></data>
   <data name="Admin.Roles.Deleted" xml:space="preserve"><value>Role "{0}" was deleted.</value></data>
+
+  <!-- D-134 Sprint A — Operation log viewer (read-only over OperationLogEntry) -->
+  <data name="Admin.OperationLog.Title" xml:space="preserve"><value>Operation log</value></data>
+  <data name="Admin.OperationLog.None" xml:space="preserve"><value>No audit entries match the current filters.</value></data>
+  <data name="Admin.OperationLog.LoadFailed" xml:space="preserve"><value>The audit entries could not be loaded.</value></data>
+  <data name="Admin.OperationLog.Loading" xml:space="preserve"><value>Loading audit entries…</value></data>
+  <data name="Admin.OperationLog.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.OperationLog.Prev" xml:space="preserve"><value>Previous</value></data>
+  <data name="Admin.OperationLog.Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Admin.OperationLog.Pager.First" xml:space="preserve"><value>First page</value></data>
+  <data name="Admin.OperationLog.Pager.Last" xml:space="preserve"><value>Last page</value></data>
+  <data name="Admin.OperationLog.Pager.PageSize" xml:space="preserve"><value>Show</value></data>
+  <data name="Admin.OperationLog.Pager.Page" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="Admin.OperationLog.Column.Timestamp" xml:space="preserve"><value>When (local)</value></data>
+  <data name="Admin.OperationLog.Column.EventType" xml:space="preserve"><value>Event</value></data>
+  <data name="Admin.OperationLog.Column.Outcome" xml:space="preserve"><value>Outcome</value></data>
+  <data name="Admin.OperationLog.Column.SubjectEmail" xml:space="preserve"><value>Subject email</value></data>
+  <data name="Admin.OperationLog.Column.SourceIp" xml:space="preserve"><value>Source IP</value></data>
+  <data name="Admin.OperationLog.Column.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Admin.OperationLog.Outcome.Success" xml:space="preserve"><value>Success</value></data>
+  <data name="Admin.OperationLog.Outcome.Failure" xml:space="preserve"><value>Failure</value></data>
+  <data name="Admin.OperationLog.Action.Details" xml:space="preserve"><value>Details</value></data>
+  <data name="Admin.OperationLog.Action.SelectAll" xml:space="preserve"><value>Select all</value></data>
+  <data name="Admin.OperationLog.Action.SelectRow" xml:space="preserve"><value>Select row</value></data>
+  <data name="Admin.OperationLog.Filter.EventType" xml:space="preserve"><value>Event type contains</value></data>
+  <data name="Admin.OperationLog.Filter.EventTypePlaceholder" xml:space="preserve"><value>e.g. SignIn, PasswordReset, Role.Created</value></data>
+  <data name="Admin.OperationLog.Filter.SubjectEmail" xml:space="preserve"><value>Subject email contains</value></data>
+  <data name="Admin.OperationLog.Filter.Outcome" xml:space="preserve"><value>Outcome</value></data>
+  <data name="Admin.OperationLog.Filter.OutcomeAny" xml:space="preserve"><value>Any</value></data>
+  <data name="Admin.OperationLog.Filter.OutcomeSuccess" xml:space="preserve"><value>Success</value></data>
+  <data name="Admin.OperationLog.Filter.OutcomeFailure" xml:space="preserve"><value>Failure</value></data>
+  <data name="Admin.OperationLog.Filter.Apply" xml:space="preserve"><value>Apply filters</value></data>
+  <data name="Admin.OperationLog.Filter.Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="Admin.OperationLog.Details.Title" xml:space="preserve"><value>Audit entry</value></data>
+  <data name="Admin.OperationLog.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.OperationLog.Details.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.OperationLog.Details.Field.SubjectUserId" xml:space="preserve"><value>Subject user id</value></data>
+  <data name="Admin.OperationLog.Details.Field.ActorUserId" xml:space="preserve"><value>Actor user id</value></data>
+  <data name="Admin.OperationLog.Details.Field.UserAgent" xml:space="preserve"><value>User agent</value></data>
+  <data name="Admin.OperationLog.Details.Field.CorrelationId" xml:space="preserve"><value>Correlation id</value></data>
+  <data name="Admin.OperationLog.Details.Field.ErrorCode" xml:space="preserve"><value>Error code</value></data>
+  <data name="Admin.OperationLog.Details.Field.Detail" xml:space="preserve"><value>Detail</value></data>
+
   <data name="Admin.Pending.Staff.Title" xml:space="preserve"><value>Pending staff approvals</value></data>
   <data name="Admin.Pending.Visitors.Title" xml:space="preserve"><value>Pending visitor approvals</value></data>
   <data name="Admin.Pending.Supporting" xml:space="preserve"><value>Approval mints the QR badge and unlocks sign-in (CP for staff, event entry for visitors). Rejection records a reason for audit.</value></data>

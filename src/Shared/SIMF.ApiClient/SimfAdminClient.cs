@@ -626,6 +626,27 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"roles/{id}", content: null,
             accessToken, cancellationToken);
 
+    // -- D-134 Sprint A — Operation log read-only viewer ---------------------
+
+    /// <summary>One page of OperationLog entries (D-134 Sprint A). Filters
+    /// via <c>GridQuery.Filters</c>: eventType, outcome, actorUserId,
+    /// subjectEmail, from, to.</summary>
+    public Task<ApiCallResult<GridPage<AdminOperationLogSummary>>> ListOperationLogAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminOperationLogSummary>>(
+            HttpMethod.Post, "operation-log/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>One full OperationLog entry by id (D-134 Sprint A).</summary>
+    public Task<ApiCallResult<AdminOperationLogDetail>> GetOperationLogAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminOperationLogDetail>(
+            HttpMethod.Get, $"operation-log/{id}", content: null,
+            accessToken, cancellationToken);
+
     // -- D-115 — ProfileTypes CRUD (admin-managed lookup table) --------------
 
     /// <summary>One page of profile types for the admin grid (D-115).</summary>

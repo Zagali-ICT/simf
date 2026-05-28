@@ -234,6 +234,49 @@
   <data name="Admin.Roles.Created" xml:space="preserve"><value>تم إنشاء الدور "{0}".</value></data>
   <data name="Admin.Roles.Updated" xml:space="preserve"><value>تم تحديث الدور "{0}".</value></data>
   <data name="Admin.Roles.Deleted" xml:space="preserve"><value>تم حذف الدور "{0}".</value></data>
+
+  <!-- D-134 Sprint A — Operation log viewer (read-only over OperationLogEntry) -->
+  <data name="Admin.OperationLog.Title" xml:space="preserve"><value>سجل العمليات</value></data>
+  <data name="Admin.OperationLog.None" xml:space="preserve"><value>لا توجد سجلات تطابق عوامل التصفية الحالية.</value></data>
+  <data name="Admin.OperationLog.LoadFailed" xml:space="preserve"><value>تعذّر تحميل سجلات التدقيق.</value></data>
+  <data name="Admin.OperationLog.Loading" xml:space="preserve"><value>جارٍ تحميل سجلات التدقيق…</value></data>
+  <data name="Admin.OperationLog.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.OperationLog.Prev" xml:space="preserve"><value>السابق</value></data>
+  <data name="Admin.OperationLog.Next" xml:space="preserve"><value>التالي</value></data>
+  <data name="Admin.OperationLog.Pager.First" xml:space="preserve"><value>الصفحة الأولى</value></data>
+  <data name="Admin.OperationLog.Pager.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>
+  <data name="Admin.OperationLog.Pager.PageSize" xml:space="preserve"><value>عرض</value></data>
+  <data name="Admin.OperationLog.Pager.Page" xml:space="preserve"><value>الصفحة {0} من {1}</value></data>
+  <data name="Admin.OperationLog.Column.Timestamp" xml:space="preserve"><value>الوقت (محلي)</value></data>
+  <data name="Admin.OperationLog.Column.EventType" xml:space="preserve"><value>الحدث</value></data>
+  <data name="Admin.OperationLog.Column.Outcome" xml:space="preserve"><value>النتيجة</value></data>
+  <data name="Admin.OperationLog.Column.SubjectEmail" xml:space="preserve"><value>بريد الموضوع</value></data>
+  <data name="Admin.OperationLog.Column.SourceIp" xml:space="preserve"><value>عنوان IP المصدر</value></data>
+  <data name="Admin.OperationLog.Column.Actions" xml:space="preserve"><value>إجراءات</value></data>
+  <data name="Admin.OperationLog.Outcome.Success" xml:space="preserve"><value>نجاح</value></data>
+  <data name="Admin.OperationLog.Outcome.Failure" xml:space="preserve"><value>فشل</value></data>
+  <data name="Admin.OperationLog.Action.Details" xml:space="preserve"><value>تفاصيل</value></data>
+  <data name="Admin.OperationLog.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
+  <data name="Admin.OperationLog.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
+  <data name="Admin.OperationLog.Filter.EventType" xml:space="preserve"><value>نوع الحدث يحتوي</value></data>
+  <data name="Admin.OperationLog.Filter.EventTypePlaceholder" xml:space="preserve"><value>مثال: SignIn, PasswordReset, Role.Created</value></data>
+  <data name="Admin.OperationLog.Filter.SubjectEmail" xml:space="preserve"><value>بريد الموضوع يحتوي</value></data>
+  <data name="Admin.OperationLog.Filter.Outcome" xml:space="preserve"><value>النتيجة</value></data>
+  <data name="Admin.OperationLog.Filter.OutcomeAny" xml:space="preserve"><value>الكل</value></data>
+  <data name="Admin.OperationLog.Filter.OutcomeSuccess" xml:space="preserve"><value>نجاح</value></data>
+  <data name="Admin.OperationLog.Filter.OutcomeFailure" xml:space="preserve"><value>فشل</value></data>
+  <data name="Admin.OperationLog.Filter.Apply" xml:space="preserve"><value>تطبيق التصفية</value></data>
+  <data name="Admin.OperationLog.Filter.Clear" xml:space="preserve"><value>مسح</value></data>
+  <data name="Admin.OperationLog.Details.Title" xml:space="preserve"><value>سجل التدقيق</value></data>
+  <data name="Admin.OperationLog.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.OperationLog.Details.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.OperationLog.Details.Field.SubjectUserId" xml:space="preserve"><value>معرف المستخدم الموضوع</value></data>
+  <data name="Admin.OperationLog.Details.Field.ActorUserId" xml:space="preserve"><value>معرف المستخدم الفاعل</value></data>
+  <data name="Admin.OperationLog.Details.Field.UserAgent" xml:space="preserve"><value>وكيل المستخدم</value></data>
+  <data name="Admin.OperationLog.Details.Field.CorrelationId" xml:space="preserve"><value>معرف الارتباط</value></data>
+  <data name="Admin.OperationLog.Details.Field.ErrorCode" xml:space="preserve"><value>رمز الخطأ</value></data>
+  <data name="Admin.OperationLog.Details.Field.Detail" xml:space="preserve"><value>التفاصيل</value></data>
+
   <data name="Admin.Pending.Staff.Title" xml:space="preserve"><value>موافقات الفريق المعلّقة</value></data>
   <data name="Admin.Pending.Visitors.Title" xml:space="preserve"><value>موافقات الزوار المعلّقة</value></data>
   <data name="Admin.Pending.Supporting" xml:space="preserve"><value>الموافقة تنشئ شارة QR وتفعّل تسجيل الدخول (لوحة التحكم للفريق، دخول الحدث للزوار). الرفض يسجّل سبباً في سجل التدقيق.</value></data>
