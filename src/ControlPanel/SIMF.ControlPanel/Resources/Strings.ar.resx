@@ -277,6 +277,48 @@
   <data name="Admin.OperationLog.Details.Field.ErrorCode" xml:space="preserve"><value>رمز الخطأ</value></data>
   <data name="Admin.OperationLog.Details.Field.Detail" xml:space="preserve"><value>التفاصيل</value></data>
 
+  <!-- D-134 Sprint A — Attendees roster -->
+  <data name="Admin.Attendees.Title" xml:space="preserve"><value>الحضور</value></data>
+  <data name="Admin.Attendees.None" xml:space="preserve"><value>لا يوجد حضور يطابق عوامل التصفية الحالية.</value></data>
+  <data name="Admin.Attendees.LoadFailed" xml:space="preserve"><value>تعذّر تحميل قائمة الحضور.</value></data>
+  <data name="Admin.Attendees.Loading" xml:space="preserve"><value>جارٍ تحميل الحضور…</value></data>
+  <data name="Admin.Attendees.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Attendees.Prev" xml:space="preserve"><value>السابق</value></data>
+  <data name="Admin.Attendees.Next" xml:space="preserve"><value>التالي</value></data>
+  <data name="Admin.Attendees.Pager.First" xml:space="preserve"><value>الصفحة الأولى</value></data>
+  <data name="Admin.Attendees.Pager.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>
+  <data name="Admin.Attendees.Pager.PageSize" xml:space="preserve"><value>عرض</value></data>
+  <data name="Admin.Attendees.Pager.Page" xml:space="preserve"><value>الصفحة {0} من {1}</value></data>
+  <data name="Admin.Attendees.FilterPlaceholder" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Attendees.Column.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Attendees.Column.DisplayName" xml:space="preserve"><value>الاسم الظاهر</value></data>
+  <data name="Admin.Attendees.Column.UserType" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.Attendees.Column.ProfileType" xml:space="preserve"><value>نوع الملف الشخصي</value></data>
+  <data name="Admin.Attendees.Column.AccountState" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Attendees.Column.QrId" xml:space="preserve"><value>معرف QR</value></data>
+  <data name="Admin.Attendees.Column.CreatedAt" xml:space="preserve"><value>تاريخ التسجيل</value></data>
+  <data name="Admin.Attendees.Column.Actions" xml:space="preserve"><value>إجراءات</value></data>
+  <data name="Admin.Attendees.UserType.Visitor" xml:space="preserve"><value>زائر</value></data>
+  <data name="Admin.Attendees.UserType.Other" xml:space="preserve"><value>أخرى</value></data>
+  <data name="Admin.Attendees.AccountState.Approved" xml:space="preserve"><value>مُعتمد</value></data>
+  <data name="Admin.Attendees.AccountState.Pending" xml:space="preserve"><value>معلّق</value></data>
+  <data name="Admin.Attendees.AccountState.Rejected" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.Attendees.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
+  <data name="Admin.Attendees.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
+  <data name="Admin.Attendees.Filter.UserType" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.Attendees.Filter.UserTypeAll" xml:space="preserve"><value>الكل</value></data>
+  <data name="Admin.Attendees.Filter.UserTypeVisitor" xml:space="preserve"><value>الزوار فقط</value></data>
+  <data name="Admin.Attendees.Filter.UserTypeOther" xml:space="preserve"><value>أخرى فقط</value></data>
+  <data name="Admin.Attendees.Filter.AccountState" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Attendees.Filter.AccountStateAll" xml:space="preserve"><value>الكل</value></data>
+  <data name="Admin.Attendees.Filter.AccountStateApproved" xml:space="preserve"><value>مُعتمد</value></data>
+  <data name="Admin.Attendees.Filter.AccountStatePending" xml:space="preserve"><value>معلّق</value></data>
+  <data name="Admin.Attendees.Filter.AccountStateRejected" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.Attendees.Filter.Search" xml:space="preserve"><value>البريد أو الاسم الظاهر يحتوي</value></data>
+  <data name="Admin.Attendees.Filter.SearchPlaceholder" xml:space="preserve"><value>مثال: أحمد أو ‎@example.com</value></data>
+  <data name="Admin.Attendees.Filter.Apply" xml:space="preserve"><value>تطبيق التصفية</value></data>
+  <data name="Admin.Attendees.Filter.Clear" xml:space="preserve"><value>مسح</value></data>
+
   <data name="Admin.Pending.Staff.Title" xml:space="preserve"><value>موافقات الفريق المعلّقة</value></data>
   <data name="Admin.Pending.Visitors.Title" xml:space="preserve"><value>موافقات الزوار المعلّقة</value></data>
   <data name="Admin.Pending.Supporting" xml:space="preserve"><value>الموافقة تنشئ شارة QR وتفعّل تسجيل الدخول (لوحة التحكم للفريق، دخول الحدث للزوار). الرفض يسجّل سبباً في سجل التدقيق.</value></data>

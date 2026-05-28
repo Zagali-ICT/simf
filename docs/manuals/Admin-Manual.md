@@ -199,9 +199,28 @@ Interests, Profile types, etc.). Once you know it, you know all of them:
 
 _(stub — see [`PAGE-INDEX.md`](../pages/PAGE-INDEX.md))_
 
-### 4.2 _(planned)_ Attendees — `/m/attendees`
+### 4.2 Attendees — `/admin/attendees` (D-134 Sprint A)
 
-_(stub)_
+> Page reference: [`docs/pages/cp/admin-attendees.md`](../pages/cp/admin-attendees.md)
+
+Combined **read-only roster** of every event attendee — Visitors and
+Others in one place. Admins are excluded. This is the fastest answer to
+"is X registered?" and the eyes-on view for counting heads.
+
+#### Most common tasks
+
+- **Is this person registered?** — type their email or display name into
+  the search field → Apply.
+- **How many Approved Visitors do we have?** — Kind=Visitors only +
+  State=Approved → Apply → the pager total is your count.
+- **Find profiles with no profile-type set yet** — search by email, the
+  ProfileType column shows "—" for incomplete registrations.
+
+#### What you cannot do here
+
+- Edit a row — go to `/admin/visitors` or `/admin/others`.
+- Approve / Reject — those happen on the matching Pending pages.
+- Export to XLSX — coming in a follow-up.
 
 ### 4.3 Print badge desk — `/admin/print-bag`
 

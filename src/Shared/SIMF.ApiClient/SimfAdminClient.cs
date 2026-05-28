@@ -647,6 +647,19 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Get, $"operation-log/{id}", content: null,
             accessToken, cancellationToken);
 
+    // -- D-134 Sprint A — Attendees roster (read-only) -----------------------
+
+    /// <summary>One page of the attendee roster (D-134 Sprint A). Filters
+    /// via <c>GridQuery.Filters</c>: userType (Visitor|Other|All),
+    /// profileTypeId, accountState.</summary>
+    public Task<ApiCallResult<GridPage<AdminAttendeeSummary>>> ListAttendeesAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminAttendeeSummary>>(
+            HttpMethod.Post, "attendees/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
     // -- D-115 — ProfileTypes CRUD (admin-managed lookup table) --------------
 
     /// <summary>One page of profile types for the admin grid (D-115).</summary>

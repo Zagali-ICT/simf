@@ -278,6 +278,48 @@
   <data name="Admin.OperationLog.Details.Field.ErrorCode" xml:space="preserve"><value>Error code</value></data>
   <data name="Admin.OperationLog.Details.Field.Detail" xml:space="preserve"><value>Detail</value></data>
 
+  <!-- D-134 Sprint A — Attendees roster (read-only over UserProfile + SimfUser + ProfileType) -->
+  <data name="Admin.Attendees.Title" xml:space="preserve"><value>Attendees</value></data>
+  <data name="Admin.Attendees.None" xml:space="preserve"><value>No attendees match the current filters.</value></data>
+  <data name="Admin.Attendees.LoadFailed" xml:space="preserve"><value>The attendees could not be loaded.</value></data>
+  <data name="Admin.Attendees.Loading" xml:space="preserve"><value>Loading attendees…</value></data>
+  <data name="Admin.Attendees.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.Attendees.Prev" xml:space="preserve"><value>Previous</value></data>
+  <data name="Admin.Attendees.Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Admin.Attendees.Pager.First" xml:space="preserve"><value>First page</value></data>
+  <data name="Admin.Attendees.Pager.Last" xml:space="preserve"><value>Last page</value></data>
+  <data name="Admin.Attendees.Pager.PageSize" xml:space="preserve"><value>Show</value></data>
+  <data name="Admin.Attendees.Pager.Page" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="Admin.Attendees.FilterPlaceholder" xml:space="preserve"><value>Search</value></data>
+  <data name="Admin.Attendees.Column.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Admin.Attendees.Column.DisplayName" xml:space="preserve"><value>Display name</value></data>
+  <data name="Admin.Attendees.Column.UserType" xml:space="preserve"><value>Kind</value></data>
+  <data name="Admin.Attendees.Column.ProfileType" xml:space="preserve"><value>Profile type</value></data>
+  <data name="Admin.Attendees.Column.AccountState" xml:space="preserve"><value>State</value></data>
+  <data name="Admin.Attendees.Column.QrId" xml:space="preserve"><value>QR id</value></data>
+  <data name="Admin.Attendees.Column.CreatedAt" xml:space="preserve"><value>Registered</value></data>
+  <data name="Admin.Attendees.Column.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Admin.Attendees.UserType.Visitor" xml:space="preserve"><value>Visitor</value></data>
+  <data name="Admin.Attendees.UserType.Other" xml:space="preserve"><value>Other</value></data>
+  <data name="Admin.Attendees.AccountState.Approved" xml:space="preserve"><value>Approved</value></data>
+  <data name="Admin.Attendees.AccountState.Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="Admin.Attendees.AccountState.Rejected" xml:space="preserve"><value>Rejected</value></data>
+  <data name="Admin.Attendees.Action.SelectAll" xml:space="preserve"><value>Select all</value></data>
+  <data name="Admin.Attendees.Action.SelectRow" xml:space="preserve"><value>Select row</value></data>
+  <data name="Admin.Attendees.Filter.UserType" xml:space="preserve"><value>Kind</value></data>
+  <data name="Admin.Attendees.Filter.UserTypeAll" xml:space="preserve"><value>All</value></data>
+  <data name="Admin.Attendees.Filter.UserTypeVisitor" xml:space="preserve"><value>Visitors only</value></data>
+  <data name="Admin.Attendees.Filter.UserTypeOther" xml:space="preserve"><value>Others only</value></data>
+  <data name="Admin.Attendees.Filter.AccountState" xml:space="preserve"><value>State</value></data>
+  <data name="Admin.Attendees.Filter.AccountStateAll" xml:space="preserve"><value>Any</value></data>
+  <data name="Admin.Attendees.Filter.AccountStateApproved" xml:space="preserve"><value>Approved</value></data>
+  <data name="Admin.Attendees.Filter.AccountStatePending" xml:space="preserve"><value>Pending</value></data>
+  <data name="Admin.Attendees.Filter.AccountStateRejected" xml:space="preserve"><value>Rejected</value></data>
+  <data name="Admin.Attendees.Filter.Search" xml:space="preserve"><value>Email or display name contains</value></data>
+  <data name="Admin.Attendees.Filter.SearchPlaceholder" xml:space="preserve"><value>e.g. ahmed or @example.com</value></data>
+  <data name="Admin.Attendees.Filter.Apply" xml:space="preserve"><value>Apply filters</value></data>
+  <data name="Admin.Attendees.Filter.Clear" xml:space="preserve"><value>Clear</value></data>
+
   <data name="Admin.Pending.Staff.Title" xml:space="preserve"><value>Pending staff approvals</value></data>
   <data name="Admin.Pending.Visitors.Title" xml:space="preserve"><value>Pending visitor approvals</value></data>
   <data name="Admin.Pending.Supporting" xml:space="preserve"><value>Approval mints the QR badge and unlocks sign-in (CP for staff, event entry for visitors). Rejection records a reason for audit.</value></data>

@@ -28,7 +28,7 @@ Navigation grouped per `CpNavigation.cs` (9 groups). 14 real pages + 22 stubs af
 | `/` | `Module.Dashboard` | ✅ Real | Any signed-in CP user | [cp/dashboard.md](cp/dashboard.md) | [e2e/cp-dashboard.md](../tests/e2e/cp-dashboard.md) |
 | **People** | | | | | |
 | `/m/registration-requests` | `Module.RegistrationRequests` | 🚧 Stub | Administrator | — | — |
-| `/m/attendees` | `Module.Attendees` | 🚧 Stub | Administrator | — | — |
+| `/admin/attendees` | `Module.Attendees` | ✅ Real (D-134 Sprint A) | Administrator | [cp/admin-attendees.md](cp/admin-attendees.md) | [e2e/cp-admin-attendees.md](../tests/e2e/cp-admin-attendees.md) |
 | `/admin/print-bag` | `Module.PrintBag` | ✅ Real | Administrator | [cp/admin-print-bag.md](cp/admin-print-bag.md) | [e2e/cp-admin-print-bag.md](../tests/e2e/cp-admin-print-bag.md) |
 | `/admin/roles` | `Module.Roles` | ✅ Real (D-134 Sprint A) | Administrator | [cp/admin-roles.md](cp/admin-roles.md) | [e2e/cp-admin-roles.md](../tests/e2e/cp-admin-roles.md) |
 | **Programme** | | | | | |

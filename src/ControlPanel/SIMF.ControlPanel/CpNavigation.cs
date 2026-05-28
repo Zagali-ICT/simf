@@ -30,7 +30,9 @@ public static class CpNavigation
         new("Nav.People",
         [
             new("Module.RegistrationRequests", "/m/registration-requests", IsStub: true),
-            new("Module.Attendees", "/m/attendees", IsStub: true),
+            // D-134 Sprint A — combined attendee roster over Visitors +
+            // Others (read-only join on existing tables; no migration).
+            new("Module.Attendees", "/admin/attendees"),
             // D-130 — print-bag station: lookup by QR id + reprint badge.
             new("Module.PrintBag", "/admin/print-bag"),
             // D-134 Sprint A — Roles module shipped against the existing

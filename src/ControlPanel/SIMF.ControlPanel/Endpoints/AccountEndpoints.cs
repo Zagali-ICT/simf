@@ -694,6 +694,16 @@ internal static class AccountEndpoints
             return Forward(await api.GetOperationLogAsync(id, token));
         });
 
+        // D-134 Sprint A — Attendees roster proxy (read-only join over
+        // SimfUser + UserProfile + ProfileType; no schema change).
+        group.MapPost("/admin/attendees/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListAttendeesAsync(body, token));
+        });
+
         // P6 — log viewer proxy. The CP page is server-side Blazor, so it
         // talks to these endpoints via fetch (cookie auth) and they forward
         // to the API with the access token.

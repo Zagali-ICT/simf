@@ -154,6 +154,9 @@ public static class DependencyInjection
         services.AddScoped<IAdminRoleService, AdminRoleService>();
         // D-134 Sprint A — read-only viewer over the OperationLog table.
         services.AddScoped<IAdminOperationLogService, AdminOperationLogService>();
+        // D-134 Sprint A — read-only attendee roster (join over SimfUser +
+        // UserProfile + ProfileType; no schema change).
+        services.AddScoped<IAdminAttendeeService, AdminAttendeeService>();
         services.AddScoped<IAdminApprovalReadService, AdminApprovalReadService>();
         services.AddScoped<IQrIdMinter, QrIdMinter>();
         services.AddScoped<IUserProfileService, UserProfileService>();
