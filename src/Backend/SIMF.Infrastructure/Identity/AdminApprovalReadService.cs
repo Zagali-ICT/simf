@@ -40,6 +40,45 @@ internal sealed class AdminApprovalReadService(SimfIdentityDbContext dbContext)
         Guid subjectUserId, CancellationToken cancellationToken = default) =>
         GetFullProfileAsync(subjectUserId, UserType.Other, cancellationToken);
 
+    public async Task<AdminWalkInRegistrationResponse?> LookupByQrIdAsync(
+        string qrId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(qrId)) { return null; }
+        var normalised = qrId.Trim().ToUpperInvariant();
+
+        var row = await dbContext.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.QrId == normalised)
+            .Select(p => new
+            {
+                p.UserId,
+                p.QrId,
+                ProfileTypeName = p.ProfileType != null ? p.ProfileType.Name : null,
+                ProfileTypeNameArabic = p.ProfileType != null ? p.ProfileType.NameArabic : null,
+                ProfileTypeColor = p.ProfileType != null ? p.ProfileType.PageColor : null,
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (row is null) { return null; }
+
+        // Pair the profile row with the owner so we can return the
+        // badge-name + email the printable view renders.
+        var user = await dbContext.Users
+            .AsNoTracking()
+            .Where(u => u.Id == row.UserId)
+            .Select(u => new { u.Email, u.DisplayName })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (user is null) { return null; }
+
+        return new AdminWalkInRegistrationResponse(
+            row.UserId,
+            user.Email ?? string.Empty,
+            user.DisplayName,
+            row.QrId ?? string.Empty,
+            row.ProfileTypeName ?? string.Empty,
+            row.ProfileTypeNameArabic ?? string.Empty,
+            row.ProfileTypeColor ?? "#244A77");
+    }
+
     /// <summary>D-126 — any-state full profile read scoped to a UserType.
     /// Drops the AccountState guard the D-124 GetAsync helper enforces; keeps
     /// the type-match guard so cross-kind enumeration still 404s.</summary>

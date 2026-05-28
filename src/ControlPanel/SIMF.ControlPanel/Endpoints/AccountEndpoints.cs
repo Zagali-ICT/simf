@@ -285,6 +285,15 @@ internal static class AccountEndpoints
             return Forward(await api.GetActiveInterestsAsync(token));
         });
 
+        // D-130 — print-bag station: QR-id lookup.
+        group.MapGet("/admin/qr-lookup/{qrId}",
+            async (string qrId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.LookupByQrIdAsync(qrId, token));
+        });
+
         // D-129 — admin upload of the subject's ID-document image (multipart).
         // The CP page hosts a hidden <input type="file">; simfAccount.uploadFile
         // sends it here. Same SameSite=Lax CSRF stance as /avatar (D-029).

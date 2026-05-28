@@ -28,6 +28,8 @@ public static class CpNavigation
         [
             new("Module.RegistrationRequests", "/m/registration-requests"),
             new("Module.Attendees", "/m/attendees"),
+            // D-130 — print-bag station: lookup by QR id + reprint badge.
+            new("Module.PrintBag", "/admin/print-bag"),
             new("Module.Roles", "/m/roles"),
         ]),
         new("Nav.Programme",

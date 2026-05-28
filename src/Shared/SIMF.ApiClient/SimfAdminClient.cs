@@ -446,6 +446,15 @@ public sealed class SimfAdminClient(HttpClient http)
             content: null,
             accessToken, cancellationToken);
 
+    /// <summary>D-130 — print-bag station: resolve a QR id to the
+    /// walk-in badge response so the page can render and reprint.</summary>
+    public Task<ApiCallResult<AdminWalkInRegistrationResponse>> LookupByQrIdAsync(
+        string qrId, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminWalkInRegistrationResponse>(
+            HttpMethod.Get, $"qr-lookup/{Uri.EscapeDataString(qrId)}",
+            content: null,
+            accessToken, cancellationToken);
+
     // -- D-129 — admin ID-document upload + read -----------------------------
 
     /// <summary>D-129 — admin-side upload of a visitor's ID-document image.</summary>

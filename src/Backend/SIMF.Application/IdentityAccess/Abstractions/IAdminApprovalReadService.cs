@@ -56,4 +56,14 @@ public interface IAdminApprovalReadService
     Task<AdminUserProfileView?> GetOtherProfileAsync(
         Guid subjectUserId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>D-130 — resolves a QR id (Crockford-base32, 12 chars) to a
+    /// walk-in-shaped response — name, profile-type label + colour, the
+    /// QR id itself — so the print-bag station can render and re-print
+    /// the badge without re-typing the visitor's details. Returns null
+    /// when the QR id is unknown. Match is case-insensitive (Crockford
+    /// is uppercase by convention but tolerant of lowercase input).</summary>
+    Task<AdminWalkInRegistrationResponse?> LookupByQrIdAsync(
+        string qrId,
+        CancellationToken cancellationToken = default);
 }

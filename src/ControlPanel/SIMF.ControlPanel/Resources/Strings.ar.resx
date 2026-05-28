@@ -245,6 +245,17 @@
   <data name="Admin.WalkIn.Field.IdDocument.Selected" xml:space="preserve"><value>تم اختيار: {0}</value></data>
   <data name="Admin.Pending.View.Field.QrId" xml:space="preserve"><value>رمز QR</value></data>
   <data name="Admin.Pending.View.Field.IdImage" xml:space="preserve"><value>وثيقة الهوية</value></data>
+
+  <data name="Module.PrintBag" xml:space="preserve"><value>طباعة الشارة</value></data>
+  <data name="Admin.PrintBag.Title" xml:space="preserve"><value>طباعة الشارة</value></data>
+  <data name="Admin.PrintBag.Supporting" xml:space="preserve"><value>امسح أو أدخل رمز QR المكوّن من 12 حرفًا لإعادة طباعة شارة الزائر أو الموظف.</value></data>
+  <data name="Admin.PrintBag.Field.QrId" xml:space="preserve"><value>رمز QR</value></data>
+  <data name="Admin.PrintBag.Field.QrId.Hint" xml:space="preserve"><value>12 حرفًا بصيغة Crockford-base32 (مثال: V4DF5B8P46YM). غير حساس لحالة الأحرف.</value></data>
+  <data name="Admin.PrintBag.Search" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.PrintBag.Searching" xml:space="preserve"><value>جاري البحث…</value></data>
+  <data name="Admin.PrintBag.Reset" xml:space="preserve"><value>امسح آخر</value></data>
+  <data name="Admin.PrintBag.Error.Required" xml:space="preserve"><value>أدخل أو امسح رمز QR.</value></data>
+  <data name="Admin.PrintBag.Error.NotFound" xml:space="preserve"><value>لم يتم العثور على شارة بهذا الرمز.</value></data>
   <data name="Admin.WalkIn.Field.SaudiMobile" xml:space="preserve"><value>الجوال السعودي</value></data>
   <data name="Admin.WalkIn.Field.SaudiMobile.Hint" xml:space="preserve"><value>مثال: +966500000000</value></data>
   <data name="Admin.WalkIn.Field.InternationalMobile" xml:space="preserve"><value>الجوال الدولي</value></data>

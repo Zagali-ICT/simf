@@ -250,6 +250,18 @@
   <data name="Admin.WalkIn.Field.IdDocument.Selected" xml:space="preserve"><value>Selected: {0}</value></data>
   <data name="Admin.Pending.View.Field.QrId" xml:space="preserve"><value>QR id</value></data>
   <data name="Admin.Pending.View.Field.IdImage" xml:space="preserve"><value>ID document</value></data>
+
+  <!-- D-130 — Print-bag station. -->
+  <data name="Module.PrintBag" xml:space="preserve"><value>Print badge</value></data>
+  <data name="Admin.PrintBag.Title" xml:space="preserve"><value>Print badge</value></data>
+  <data name="Admin.PrintBag.Supporting" xml:space="preserve"><value>Scan or enter a 12-character QR id to reprint a visitor's or staff member's badge.</value></data>
+  <data name="Admin.PrintBag.Field.QrId" xml:space="preserve"><value>QR id</value></data>
+  <data name="Admin.PrintBag.Field.QrId.Hint" xml:space="preserve"><value>12 Crockford-base32 characters (e.g. V4DF5B8P46YM). Case-insensitive.</value></data>
+  <data name="Admin.PrintBag.Search" xml:space="preserve"><value>Look up</value></data>
+  <data name="Admin.PrintBag.Searching" xml:space="preserve"><value>Looking up…</value></data>
+  <data name="Admin.PrintBag.Reset" xml:space="preserve"><value>Scan another</value></data>
+  <data name="Admin.PrintBag.Error.Required" xml:space="preserve"><value>Enter or scan a QR id.</value></data>
+  <data name="Admin.PrintBag.Error.NotFound" xml:space="preserve"><value>No badge was found for this QR id.</value></data>
   <data name="Admin.WalkIn.Field.SaudiMobile" xml:space="preserve"><value>Saudi mobile</value></data>
   <data name="Admin.WalkIn.Field.SaudiMobile.Hint" xml:space="preserve"><value>e.g. +966500000000</value></data>
   <data name="Admin.WalkIn.Field.InternationalMobile" xml:space="preserve"><value>International mobile</value></data>
