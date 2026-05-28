@@ -330,4 +330,349 @@ follow the same template at the per-feature stage.
 
 ---
 
+# Part II — Page-level use cases (D-133 slice 8)
+
+> **Authored:** D-133 slice 8 (2026-05-28). Adds use-case specs derived
+> from the per-page reference docs under `docs/pages/{cp,web,mobile}/`.
+> Each UC names the page that implements it + the E2E catalogue id that
+> proves it works. Follows the same actor / preconditions / main flow /
+> alternate / exception / postcondition shape as Part I §5.
+
+## 7. Page-level catalogue (cross-reference)
+
+| UC ID | Title | Implementing page(s) | E2E scenario(s) |
+|-------|-------|----------------------|-----------------|
+| UC-AUTH-SIGNIN-001 | Administrator signs in | [`cp/login.md`](pages/cp/login.md) + [`cp/login-totp.md`](pages/cp/login-totp.md) | E2E-AUTH-001 |
+| UC-AUTH-RECOVERY-001 | Administrator signs in via recovery code | [`cp/login-totp.md`](pages/cp/login-totp.md) + [`cp/login-recovery.md`](pages/cp/login-recovery.md) | E2E-AUTH-005 |
+| UC-AUTH-PENDING-001 | Pending admin sees holding page | [`cp/login.md`](pages/cp/login.md) + [`cp/auth-pending.md`](pages/cp/auth-pending.md) | E2E-AUTH-006 |
+| UC-AUTH-REJECTED-001 | Rejected admin sees reason | [`cp/login.md`](pages/cp/login.md) + [`cp/auth-rejected.md`](pages/cp/auth-rejected.md) | E2E-AUTH-007 |
+| UC-AUTH-FORGOT-001 | Forgot + reset password | [`cp/forgot-password.md`](pages/cp/forgot-password.md) + (Website reset) | E2E-AUTH-008 |
+| UC-USR-CREATE-001 | Administrator invites another administrator | [`cp/admin-admins.md`](pages/cp/admin-admins.md) | E2E-USR-001 |
+| UC-USR-BULK-DELETE-001 | Bulk-delete administrators with reason | [`cp/admin-admins.md`](pages/cp/admin-admins.md) | E2E-USR-002 |
+| UC-VIS-WALKIN-001 | Register a walk-in visitor on-site | [`cp/admin-visitors.md`](pages/cp/admin-visitors.md) | E2E-VIS-001 |
+| UC-VIS-WALKIN-NONSAUDI-001 | Walk-in non-Saudi visitor with Passport | [`cp/admin-visitors.md`](pages/cp/admin-visitors.md) | E2E-VIS-002 |
+| UC-VPN-APPROVE-001 | Approve-with-review pending visitor | [`cp/admin-visitors-pending.md`](pages/cp/admin-visitors-pending.md) | E2E-VPN-001 |
+| UC-VPN-REJECT-001 | Reject pending visitor with reason | [`cp/admin-visitors-pending.md`](pages/cp/admin-visitors-pending.md) | E2E-VPN-002 |
+| UC-INT-CREATE-001 | Add an interest | [`cp/admin-interests.md`](pages/cp/admin-interests.md) | E2E-INT-001 (Add step) |
+| UC-INT-EDIT-001 | Edit an interest | [`cp/admin-interests.md`](pages/cp/admin-interests.md) | E2E-INT-001 (Edit step) |
+| UC-INT-DEACTIVATE-001 | Deactivate an interest | [`cp/admin-interests.md`](pages/cp/admin-interests.md) | E2E-INT-001 (Deactivate step) |
+| UC-VPT-CREATE-001 | Add a visitor profile-type with PageColor | [`cp/admin-profile-types-visitor.md`](pages/cp/admin-profile-types-visitor.md) | E2E-VPT-001 |
+| UC-PRT-REPRINT-001 | Reprint a visitor's badge by QR id | [`cp/admin-print-bag.md`](pages/cp/admin-print-bag.md) | E2E-PRT-001 |
+| UC-2FA-RESET-001 | Administrator resets a user's 2FA | [`cp/admin-reset-2fa.md`](pages/cp/admin-reset-2fa.md) | E2E-2FA-001 |
+| UC-LOG-TAIL-001 | Tail a project log in the browser | [`cp/admin-logs.md`](pages/cp/admin-logs.md) | E2E-LOG-002 |
+| UC-NTF-DISMISS-001 | Dismiss + bulk-dismiss notifications | [`cp/account-notifications.md`](pages/cp/account-notifications.md) | E2E-NTF-004 |
+| UC-PRF-AVATAR-001 | Change my avatar (Cropper.Blazor flow) | [`cp/account-profile.md`](pages/cp/account-profile.md) | E2E-PRF-002 |
+| UC-WEB-PRF-FILL-001 | Visitor fills profile, gets QR | [`web/account-profile.md`](pages/web/account-profile.md) | E2E-WEB-PRF-001 |
+| UC-WEB-NTF-001 | Visitor reads notifications inbox | [`web/account-notifications.md`](pages/web/account-notifications.md) | E2E-WEB-NTF-001 |
+
+## 8. Detailed use cases (slice 8 priority subset)
+
+The 10 highest-priority entries below are fully specified now. The
+remaining entries in §7 keep the same shape — fill from the per-page
+doc's §1 Purpose + §5 Data flow + §6 Validation + §7 Edge cases when
+authoring.
+
+### UC-AUTH-SIGNIN-001 — Administrator signs in
+
+- **Actor:** Administrator (paired authenticator).
+- **Preconditions:**
+  - Account exists, AccountState = `Approved`, role includes `Administrator`.
+  - User knows email + password + has the paired authenticator app.
+- **Main flow:**
+  1. User opens [`/login`](pages/cp/login.md).
+  2. Enters email + password → **Sign in**.
+  3. Server validates credentials, checks lockout, issues a
+     `SecondFactorToken` ticket (5-min TTL), and redirects to
+     [`/login/totp`](pages/cp/login-totp.md).
+  4. User opens authenticator, reads the current 6-digit code, submits.
+  5. Server validates TOTP (30-s window + 1-step tolerance), issues JWT
+     access (30-min) + refresh (14-day) token pair.
+  6. CP host persists the pair into the cookie via
+     `SimfCookieRefreshHandler.StoreTokens` (D-121) along with `expires_at`.
+  7. Browser is redirected to `/` (Dashboard).
+- **Alternate flow A — Pending account:** at step 5, if AccountState is
+  `PendingApproval`, server returns `AuthRequiresApproval`; redirect to
+  [`/auth/pending`](pages/cp/auth-pending.md). See UC-AUTH-PENDING-001.
+- **Alternate flow B — Rejected account:** at step 5, redirect to
+  [`/auth/rejected`](pages/cp/auth-rejected.md). See UC-AUTH-REJECTED-001.
+- **Exception — Wrong password:** at step 3, 401 with bilingual error.
+  After 5 failures in 5 min: lockout (15 min). Audit `Auth.SignInFailed`.
+- **Exception — Wrong TOTP:** at step 5, 401 with `Account.SignIn.Totp.Invalid`.
+  User may retry within the ticket's 5-min TTL.
+- **Postcondition:** the user holds an `Administrator`-roled session in
+  a cookie that holds a fresh access + refresh pair. The cookie's
+  `OnValidatePrincipal` hook (D-121) keeps the access token fresh on
+  every request.
+
+### UC-AUTH-RECOVERY-001 — Sign in via recovery code
+
+- **Actor:** Administrator without authenticator access.
+- **Preconditions:** account Approved + has unused recovery codes.
+- **Main flow:**
+  1. After password step, user lands on `/login/totp`.
+  2. Clicks **Use a recovery code instead** → routes to
+     [`/login/recovery`](pages/cp/login-recovery.md).
+  3. Pastes one of the 10 single-use codes.
+  4. Server validates + **consumes** the code; mints token pair.
+  5. Browser routes to `/`.
+- **Exception — Used code:** server returns 401 + bilingual error.
+- **Exception — No codes remaining:** user must contact another admin to
+  reset 2FA via [`/admin/reset-2fa`](pages/cp/admin-reset-2fa.md)
+  (UC-2FA-RESET-001).
+- **Postcondition:** signed in; the consumed code is permanently
+  unusable. User should re-pair TOTP via
+  [`/account/profile`](pages/cp/account-profile.md) → Reset my 2FA to
+  generate fresh codes.
+
+### UC-AUTH-FORGOT-001 — Forgot + reset password
+
+- **Actor:** Anyone with a SIMF account email.
+- **Preconditions:** none (page is anonymous).
+- **Main flow:**
+  1. User opens [`/forgot-password`](pages/cp/forgot-password.md).
+  2. Enters email → **Send code**.
+  3. Server always returns success (anti-enumeration). If the email
+     exists, server issues a 6-digit `PasswordReset` code (15-min TTL,
+     rate-limited 3/min/email/IP) and emails it.
+  4. User retrieves the code from email → opens
+     [`/reset-password`](pages/web/reset-password.md) (Web) OR equivalent
+     CP page.
+  5. Enters code + new password meeting complexity (12+ chars + digit +
+     upper + lower + special).
+  6. Server validates, replaces password atomically via
+     `RemovePasswordAsync` + `AddPasswordAsync` (D-014), clears the
+     forced-change flag, **revokes every session for the account**
+     (D-019), audits `Auth.PasswordReset`.
+  7. User redirects to `/login` → signs in with new password (TOTP still
+     required).
+- **Alternate flow — Code expired:** at step 5, server rejects with
+  bilingual `Auth.ResetCode.Expired`. User starts again from step 1.
+- **Exception — Weak new password:** server returns 400 with the
+  composite bilingual complexity message.
+- **Postcondition:** password updated; all prior sessions for the
+  account ended; the user holds a fresh session if they signed in at step 7.
+
+### UC-USR-CREATE-001 — Invite a new administrator
+
+- **Actor:** Administrator (the inviter).
+- **Preconditions:** inviter is `Approved` and holds `Administrator` role.
+- **Main flow:**
+  1. Inviter opens [`/admin/admins`](pages/cp/admin-admins.md) and clicks
+     **+ Add**.
+  2. The Add modal hosts [`CreateAdminForm`](pages/cp/admin-admins.md#4-ui-affordances).
+  3. Inviter fills Email, Display name, Password (12+ chars complexity),
+     TOTP-on-first-login (on).
+  4. Clicks **Create administrator**.
+  5. Server validates with `AdminCreateUserRequestValidator`, creates
+     `SimfUser` (state = `Approved` because admin-invited), assigns
+     `Administrator` role, mints first-login TOTP-pairing ticket,
+     audits `Admin.UserCreated`.
+  6. Modal closes; grid reloads; toast `Admin.CreateAdmin.Success`.
+  7. Inviter shares the credentials out-of-band; invitee will land on
+     [`/account/totp-pairing`](pages/cp/account-totp-pairing.md) on first
+     sign-in.
+- **Alternate flow — Email exists:** at step 5, server returns 409 +
+  `EmailAlreadyExists`. Toast shows the bilingual message; modal stays open.
+- **Exception — Self-invite by mistake:** the inviter cannot use their
+  own email (same as Email exists path).
+- **Postcondition:** new `Administrator` account exists, ready for first
+  sign-in; an audit row records who invited whom.
+
+### UC-USR-BULK-DELETE-001 — Bulk-delete administrators with reason
+
+- **Actor:** Administrator (deleter).
+- **Preconditions:** deleter is `Approved` and holds `Administrator` role;
+  has at least one row selected.
+- **Main flow:**
+  1. Deleter selects N rows via checkboxes on
+     [`/admin/admins`](pages/cp/admin-admins.md).
+  2. Clicks toolbar **Delete** → bulk-delete modal opens.
+  3. Types a 10–500 character reason.
+  4. Clicks **Delete**.
+  5. Server iterates the selected ids inside a transaction; for each,
+     soft-deletes via `entity.Deactivate()`, audits with the reason.
+  6. Self-id in the batch is **silently skipped** + audited
+     `Admin.UserSelfDeleteSkipped`.
+  7. Toast surfaces `{Deleted}, {Skipped}` counts; grid reloads.
+- **Exception — Reason too short / long:** the Submit button is disabled
+  client-side; server-side also rejects with bilingual
+  `Admin.Bulk.Reason.Invalid`.
+- **Exception — Unknown id in the batch:** silently skipped (same as
+  self-delete path; no leak).
+- **Postcondition:** matching `SimfUser` rows are soft-deleted; the
+  deleter's own row, if present, is unchanged.
+
+### UC-VIS-WALKIN-001 — Walk-in visitor registration (Saudi)
+
+- **Actor:** Administrator (registration-desk staff).
+- **Preconditions:** desk is signed in; at least one Visitor profile-type
+  is seeded under [`/admin/profile-types/visitor`](pages/cp/admin-profile-types-visitor.md).
+- **Main flow:**
+  1. Desk opens [`/admin/visitors`](pages/cp/admin-visitors.md), clicks
+     **+ Add**.
+  2. Wizard opens at section 1 (Badge type). Desk picks a colour-coded
+     profile-type tile.
+  3. Section 2 (Identity): types Name on badge + DOB → English name +
+     Arabic name → Place of birth.
+  4. Section 3: Saudi toggle on → 10-digit national ID starting with 1.
+  5. Section 4: Saudi mobile (+9665XXXXXXXX). Optional email.
+  6. Section 5 (optional): ID document upload (≤ 5 MB PNG/JPEG/WebP).
+  7. Section 6: up to 10 interest chips.
+  8. Clicks **Register**.
+  9. Server (`AdminAccountService.RegisterOnSiteAsync`) opens transaction:
+     creates `SimfUser` (AccountState = `Approved`), creates
+     `UserProfile`, links interests, mints QR via `IQrIdMinter`, audits
+     `Admin.WalkInRegistered`. Commits.
+  10. If ID document was attached, posts to
+      `/admin/visitors/{id}/id-document` (best-effort; failure surfaces
+      as `HasIdImage = false` in Details).
+  11. `WalkInSuccessModal` renders with the printed badge: profile-type
+      colour stripe + Name + QR SVG + QR id. Desk clicks **Print badge**.
+- **Alternate flow — Non-Saudi:** at section 3 toggle off → country
+  picker + Iqama (10 digits starting with 2) OR Passport (≤ 20 chars).
+  See UC-VIS-WALKIN-NONSAUDI-001.
+- **Alternate flow — Email blank:** server synthesises
+  `walkin-{guid}@simf.local` so Identity has something to anchor.
+- **Exception — Cross-kind profile-type id:** server returns 400
+  `AdminProfileTypeInvalid`.
+- **Exception — Duplicate email (when provided):** server returns 409
+  `EmailAlreadyExists`; the wizard stays open.
+- **Postcondition:** visitor has an `Approved` account + an active QR
+  badge + (optional) encrypted ID image. Desk has a printable badge in
+  hand. Audit row records the desk operator + the new visitor.
+
+### UC-VPN-APPROVE-001 — Approve-with-review pending visitor (D-128)
+
+- **Actor:** Administrator.
+- **Preconditions:** target visitor is in `PendingApproval`.
+- **Main flow:**
+  1. Admin opens [`/admin/visitors/pending`](pages/cp/admin-visitors-pending.md).
+  2. Clicks **View** OR **Approve** on the target row. Both open the
+     same modal preloaded via
+     `GET /admin/visitors/{id}/profile-for-approval` (D-124).
+  3. Modal shows the full profile: identity + nationality + ID +
+     mobile + interests + ID-document image inline if `HasIdImage`.
+  4. Admin reads carefully — this is the friction point that prevents
+     "approved without looking" (D-128).
+  5. Clicks **Confirm and Approve**.
+  6. Modal closes; server calls `POST /admin/visitors/{id}/approve` →
+     `AccountState = Approved` + QR minted + audit `Admin.UserApproved`.
+  7. Toast `Approved {email}`; grid reloads (row vanishes).
+- **Alternate flow — Cancel after review:** at step 5, click **Cancel**.
+  No state change; modal closes. Admin can proceed to Reject.
+- **Exception — Stale row:** between list-load and Confirm, the row was
+  already approved/rejected by another admin → server returns 404
+  `NotFound`. Toast surfaces the bilingual fallback. Grid reloads.
+- **Postcondition:** target's `AccountState = Approved`, QR badge live,
+  the audit log records who approved + when + the snapshot the admin saw.
+
+### UC-PRT-REPRINT-001 — Reprint a visitor's badge by QR id
+
+- **Actor:** Administrator (print-desk operator).
+- **Preconditions:** operator signed in; visitor's QR id known (scanned
+  or hand-typed).
+- **Main flow:**
+  1. Operator opens [`/admin/print-bag`](pages/cp/admin-print-bag.md).
+  2. Scans or types the 12-character QR id.
+  3. Clicks **Search**.
+  4. Server (`AdminApprovalReadService.LookupByQrIdAsync` — D-130)
+     trims + uppercases the id, matches against `UserProfile.QrId`,
+     returns the `AdminWalkInRegistrationResponse`.
+  5. Page renders the badge (same markup as the walk-in success modal):
+     colour stripe + Name + QR SVG (QRCoder, navy `#0B2545`) + QR id.
+  6. Operator clicks **Print** → `window.print()` with the `@media print`
+     CSS isolating `.simf-walkin-badge`.
+  7. Operator clicks **Reset** → form clears + refocuses for the next scan.
+- **Exception — Unknown QR id:** server returns 404 `NotFound` → toast
+  `Admin.PrintBag.Error.NotFound`. No enumeration leak (same response
+  shape as any mismatch).
+- **Exception — Empty input:** client-side error `Admin.PrintBag.Error.Required`.
+- **Postcondition:** a fresh badge has been printed. **No audit row** for
+  the lookup itself today (D-130 caveat — D-109 interceptor fires only
+  on writes; lookup is read).
+
+### UC-2FA-RESET-001 — Administrator resets a user's 2FA
+
+- **Actor:** Administrator (resetter).
+- **Preconditions:** resetter Approved + Administrator; target user exists.
+- **Main flow:**
+  1. Resetter opens [`/admin/reset-2fa`](pages/cp/admin-reset-2fa.md).
+  2. Types target email substring → picks the match.
+  3. Clicks **Reset 2FA** → confirmation modal.
+  4. Confirms.
+  5. Server wipes target's authenticator + recovery codes + active
+     sessions (D-041), emails target out-of-band, audits
+     `Admin.UserTwoFactorReset`.
+  6. Toast confirms.
+- **Exception — Self-reset:** server rejects (self-reset must use
+  `/account/profile → Reset my 2FA`).
+- **Exception — No match:** "No user matches" toast; no API call fires.
+- **Postcondition:** target's 2FA state is empty; their next sign-in
+  routes through [`/account/totp-pairing`](pages/cp/account-totp-pairing.md)
+  to pair fresh.
+
+### UC-NTF-DISMISS-001 — Dismiss + bulk-dismiss notifications
+
+- **Actor:** Any signed-in user.
+- **Preconditions:** none beyond auth.
+- **Main flow (per-row):**
+  1. User opens [`/account/notifications`](pages/cp/account-notifications.md).
+  2. Clicks the 🗑 icon on a row.
+  3. Server `DELETE /account/api/notifications/{id}` returns 200; grid
+     reloads.
+- **Main flow (bulk):**
+  1. User ticks N row checkboxes.
+  2. Clicks toolbar **Delete**.
+  3. Component loops the per-row delete N times (no bulk endpoint).
+  4. Toast `Account.Notifications.BulkDismissed` with the count;
+     grid reloads.
+- **Alternate flow — Mark all read:** user clicks the standalone
+  **Mark all as read** button below the grid → server
+  `POST /account/api/notifications/read-all` flips every unread to read
+  without dismissing. Bell count drops to 0.
+- **Postcondition:** dismissed notifications are deleted; unread state
+  is updated; bell unread count reflects the new state.
+
+### UC-WEB-PRF-FILL-001 — Visitor fills profile, gets QR
+
+- **Actor:** Visitor (Approved).
+- **Preconditions:** visitor has an `Approved` account; lands on the
+  Website after sign-in.
+- **Main flow:**
+  1. Visitor opens [`/account/profile`](pages/web/account-profile.md).
+  2. **QR card** is visible at the top with their QR id + SVG.
+  3. Fills Identity (Name EN/AR, DisplayName, DOB, place of birth) →
+     Nationality + ID (Saudi or Iqama/Passport) → Contact (mobile, email)
+     → Interests (up to 10 chips) → ID document upload (optional, ≤ 5 MB).
+  4. Clicks **Save** → server validates → row updated → toast
+     `Account.Profile.Saved`.
+  5. (Optional) Clicks **Notifications** in the header → routes to
+     [`/account/notifications`](pages/web/account-notifications.md).
+- **Alternate flow — Pending account:** QR card is hidden; profile form
+  is editable so the visitor can fill ahead of approval; on approval
+  the QR appears next time they load the page (D-046a).
+- **Exception — Bad Saudi ID format:** server validation surfaces
+  bilingual error.
+- **Postcondition:** profile is saved; QR is the operative access key for
+  the venue gate.
+
+## 9. How to author the remaining entries
+
+For each row in §7 that doesn't yet have a detailed entry above:
+
+1. Open the implementing page doc (`docs/pages/{cp,web}/{slug}.md`).
+2. Read §1 (Purpose), §5 (Data flow), §6 (Validation + error handling),
+   and §7 (Edge cases + known limitations).
+3. Author a §8 entry in this file following the actor / preconditions /
+   main flow / alternate / exception / postcondition shape above.
+4. Cross-link to the E2E catalogue entry in `docs/tests/e2e/`.
+5. Cross-link from the page doc's §10 use-cases section back here.
+
+The shape stays uniform so a reviewer can scan use cases by ID without
+re-reading every page doc.
+
+---
+
+_Last reviewed:_ 2026-05-28 by Claude (D-133 slice 8).
+
 End of document.
