@@ -97,6 +97,10 @@ public static class AuditEvents
     public const string ProfileTypeUpdated = "ProfileType.Updated";
     public const string ProfileTypeDeactivated = "ProfileType.Deactivated";
 
+    // D-127 — on-site walk-in registration desk
+    public const string AdminWalkInRegistered = "Admin.WalkInRegistered";
+    public const string AdminWalkInRegisterFailed = "Admin.WalkInRegisterFailed";
+
     // Logs (P6 — per-project log files + CP viewer)
     public const string AdminLogViewed = "Admin.LogViewed";
     public const string AdminLogDownloaded = "Admin.LogDownloaded";

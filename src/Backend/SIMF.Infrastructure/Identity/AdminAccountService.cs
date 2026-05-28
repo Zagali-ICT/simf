@@ -197,6 +197,175 @@ internal sealed class AdminAccountService(
             UserType.Visitor, profileTypeId: request.ProfileTypeId,
             roles: Array.Empty<string>(), cancellationToken);
 
+    // ---------------------------------------------------------------------
+    // D-127 — on-site walk-in registration. The CP /admin/visitors and
+    // /admin/others pages are registration desks at the event; staff
+    // verify the person in-hand and the user is auto-approved (no pending
+    // queue, no invite email). One transaction creates the user + the
+    // profile + the interests + mints the QR; the response carries the QR
+    // so the desk can immediately show or print the badge.
+    // ---------------------------------------------------------------------
+
+    public async Task<AdminWalkInRegistrationResponse> RegisterOnSiteAsync(
+        Guid actorUserId,
+        UserType kind,
+        AdminWalkInRegistrationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (kind != UserType.Visitor && kind != UserType.Other)
+        {
+            throw new ApiException(
+                ErrorCodes.AdminProfileTypeInvalid, 400,
+                "Walk-in registration is only available for Visitor or Other.",
+                "التسجيل الفوري متاح فقط للزائر أو لنوع أخرى.");
+        }
+
+        // Resolve the profile type up-front so we can fail fast + return
+        // the colour / name on the success response.
+        var profileType = await dbContext.ProfileTypes
+            .AsNoTracking()
+            .SingleOrDefaultAsync(p => p.Id == request.ProfileTypeId, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.AdminProfileTypeInvalid, 400,
+                "The selected profile type is not valid.",
+                "نوع الملف الشخصي المحدّد غير صالح.");
+        if (!profileType.IsActive || profileType.UserType != kind)
+        {
+            throw new ApiException(
+                ErrorCodes.AdminProfileTypeInvalid, 400,
+                "The selected profile type does not apply to this user kind.",
+                "نوع الملف الشخصي المحدّد لا ينطبق على هذا النوع من المستخدمين.");
+        }
+
+        // Email is optional for walk-ins; synthesize a placeholder so
+        // ASP.NET Identity still has something to anchor the row to.
+        // The pattern stays the same as the unique-key contract — Identity
+        // needs a unique Email + UserName.
+        var providedEmail = (request.Email ?? string.Empty).Trim();
+        var hasRealEmail = providedEmail.Length > 0;
+        var email = hasRealEmail
+            ? providedEmail
+            : $"walkin-{Guid.NewGuid():N}@simf.local";
+
+        if (hasRealEmail && await accounts.FindByEmailAsync(email) is not null)
+        {
+            await AuditFailure(
+                AuditEvents.AdminWalkInRegisterFailed, actorUserId, email, null,
+                ErrorCodes.AdminEmailAlreadyRegistered, cancellationToken);
+            throw new ApiException(
+                ErrorCodes.AdminEmailAlreadyRegistered, 409,
+                "An account with this email already exists.",
+                "يوجد حساب مسجّل بهذا البريد الإلكتروني بالفعل.");
+        }
+
+        // Validate the interest ids the desk picked. Same active-only
+        // policy the visitor self-service flow uses.
+        var requestedInterests = request.InterestIds.Distinct().ToList();
+        var resolvedInterests = requestedInterests.Count == 0
+            ? new List<Interest>()
+            : await dbContext.Interests
+                .Where(i => requestedInterests.Contains(i.Id) && i.IsActive)
+                .ToListAsync(cancellationToken);
+        if (resolvedInterests.Count != requestedInterests.Count)
+        {
+            throw new ApiException(
+                ErrorCodes.InterestInvalid, 400,
+                "One or more selected interests are unknown or no longer active.",
+                "بعض الاهتمامات المختارة غير معروفة أو لم تعد مفعّلة.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var user = new SimfUser
+        {
+            UserName = email,
+            Email = email,
+            EmailConfirmed = true,
+            DisplayName = string.IsNullOrWhiteSpace(request.DisplayName)
+                ? (string.IsNullOrEmpty(request.EnglishName) ? "Walk-in" : request.EnglishName)
+                : request.DisplayName,
+            // Auto-approve — staff has verified the person face-to-face.
+            AccountState = AccountState.Approved,
+            UserType = kind,
+            PasswordChangeRequired = false,
+            CreatedAt = now,
+            StateChangedAt = now,
+            StateChangedByUserId = actorUserId,
+        };
+
+        var createResult = await accounts.CreateAsync(user);
+        if (!createResult.Succeeded)
+        {
+            await AuditFailure(
+                AuditEvents.AdminWalkInRegisterFailed, actorUserId, email, null,
+                ErrorCodes.InternalError, cancellationToken,
+                detail: string.Join("; ", createResult.Errors.Select(e => e.Description)));
+            throw new ApiException(
+                ErrorCodes.InternalError, 500,
+                "The account could not be created.",
+                "تعذّر إنشاء الحساب.");
+        }
+
+        // Build the profile row with every captured field.
+        var profile = new UserProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            ProfileTypeId = profileType.Id,
+            ArabicName = (request.ArabicName ?? string.Empty).Trim(),
+            EnglishName = (request.EnglishName ?? string.Empty).Trim(),
+            NationalityCode = (request.NationalityCode ?? string.Empty).Trim().ToUpperInvariant(),
+            DateOfBirth = request.DateOfBirth,
+            PlaceOfBirth = (request.PlaceOfBirth ?? string.Empty).Trim(),
+            IsSaudi = request.IsSaudi,
+            NationalId = request.IsSaudi ? request.NationalId : null,
+            IqamaNumber = request.IsSaudi ? null : request.IqamaNumber,
+            PassportNumber = request.IsSaudi ? null : request.PassportNumber,
+            SaudiMobile = NormaliseOptional(request.SaudiMobile),
+            InternationalMobile = NormaliseOptional(request.InternationalMobile),
+            CreatedAt = now,
+        };
+        // Visitor kind owns interests; Other kind ignores them per the prompt.
+        if (kind == UserType.Visitor)
+        {
+            foreach (var interest in resolvedInterests)
+            {
+                profile.Interests.Add(interest);
+            }
+        }
+        dbContext.UserProfiles.Add(profile);
+
+        // Mint the QR badge synchronously — the response carries it so
+        // the desk can render the badge before the visitor walks away.
+        await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AdminWalkInRegistered,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            SubjectUserId = user.Id,
+            SubjectEmail = email,
+            Detail = $"kind={kind}; profileType={profileType.Name}; hasEmail={hasRealEmail}",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Admin {ActorId} walk-in registered {Kind} {Email} (QR {QrId})",
+            actorUserId, kind, email, profile.QrId);
+
+        return new AdminWalkInRegistrationResponse(
+            user.Id,
+            email,
+            user.DisplayName,
+            profile.QrId ?? string.Empty,
+            profileType.Name,
+            profileType.NameArabic,
+            profileType.PageColor);
+    }
+
+    private static string? NormaliseOptional(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
     /// <summary>
     /// Shared back-end of every create call (P7c — D-048). Routes a
     /// <see cref="UserType"/> + optional <c>ProfileTypeId</c> + optional

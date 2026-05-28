@@ -210,6 +210,65 @@
   <data name="Admin.Pending.View.Yes" xml:space="preserve"><value>Yes</value></data>
   <data name="Admin.Pending.View.No" xml:space="preserve"><value>No</value></data>
   <data name="Admin.Pending.View.Fallback" xml:space="preserve"><value>The profile could not be loaded.</value></data>
+
+  <!-- D-127 — On-site walk-in registration form (Visitor + Other). -->
+  <data name="Admin.WalkIn.Section.ProfileType" xml:space="preserve"><value>Badge type</value></data>
+  <data name="Admin.WalkIn.Section.ProfileType.Hint" xml:space="preserve"><value>Pick the category that matches the person at the desk. The colour appears on their badge.</value></data>
+  <data name="Admin.WalkIn.ProfileType.NoneSeeded" xml:space="preserve"><value>No active profile types are defined yet. Configure them under Lookups → Profile types first.</value></data>
+  <data name="Admin.WalkIn.Section.Identity" xml:space="preserve"><value>Identity</value></data>
+  <data name="Admin.WalkIn.Section.Nationality" xml:space="preserve"><value>Nationality and ID</value></data>
+  <data name="Admin.WalkIn.Section.Contact" xml:space="preserve"><value>Contact</value></data>
+  <data name="Admin.WalkIn.Section.Interests" xml:space="preserve"><value>Interests</value></data>
+  <data name="Admin.WalkIn.Section.Interests.Hint" xml:space="preserve"><value>Up to 10 topics the visitor wants to follow at the event. Optional.</value></data>
+  <data name="Admin.WalkIn.Field.EnglishName" xml:space="preserve"><value>Full name (English)</value></data>
+  <data name="Admin.WalkIn.Field.EnglishName.Hint" xml:space="preserve"><value>Exactly as printed on the passport / ID.</value></data>
+  <data name="Admin.WalkIn.Field.ArabicName" xml:space="preserve"><value>Full name (Arabic)</value></data>
+  <data name="Admin.WalkIn.Field.ArabicName.Hint" xml:space="preserve"><value>الاسم الكامل بالعربية.</value></data>
+  <data name="Admin.WalkIn.Field.DisplayName" xml:space="preserve"><value>Name on badge</value></data>
+  <data name="Admin.WalkIn.Field.DisplayName.Hint" xml:space="preserve"><value>Shown on the printed badge — usually first name + family name.</value></data>
+  <data name="Admin.WalkIn.Field.DateOfBirth" xml:space="preserve"><value>Date of birth</value></data>
+  <data name="Admin.WalkIn.Field.PlaceOfBirth" xml:space="preserve"><value>Place of birth</value></data>
+  <data name="Admin.WalkIn.Field.IsSaudi" xml:space="preserve"><value>Saudi national?</value></data>
+  <data name="Admin.WalkIn.IsSaudi.Yes" xml:space="preserve"><value>Saudi</value></data>
+  <data name="Admin.WalkIn.IsSaudi.No" xml:space="preserve"><value>Non-Saudi</value></data>
+  <data name="Admin.WalkIn.Field.Nationality" xml:space="preserve"><value>Nationality</value></data>
+  <data name="Admin.WalkIn.Field.Nationality.Placeholder" xml:space="preserve"><value>Select country</value></data>
+  <data name="Admin.WalkIn.Field.NationalId" xml:space="preserve"><value>Saudi national ID</value></data>
+  <data name="Admin.WalkIn.Field.NationalId.Hint" xml:space="preserve"><value>10 digits.</value></data>
+  <data name="Admin.WalkIn.Field.IqamaNumber" xml:space="preserve"><value>Iqama number</value></data>
+  <data name="Admin.WalkIn.Field.PassportNumber" xml:space="preserve"><value>Passport number</value></data>
+  <data name="Admin.WalkIn.Field.OneOf.Hint" xml:space="preserve"><value>Iqama OR passport — supply at least one.</value></data>
+  <data name="Admin.WalkIn.Field.SaudiMobile" xml:space="preserve"><value>Saudi mobile</value></data>
+  <data name="Admin.WalkIn.Field.SaudiMobile.Hint" xml:space="preserve"><value>e.g. +966500000000</value></data>
+  <data name="Admin.WalkIn.Field.InternationalMobile" xml:space="preserve"><value>International mobile</value></data>
+  <data name="Admin.WalkIn.Field.InternationalMobile.Hint" xml:space="preserve"><value>e.g. +44-2071234567</value></data>
+  <data name="Admin.WalkIn.Field.Email" xml:space="preserve"><value>Email (optional)</value></data>
+  <data name="Admin.WalkIn.Field.Email.Hint" xml:space="preserve"><value>Leave blank if the visitor has no email — the QR badge is the access key.</value></data>
+  <data name="Admin.WalkIn.Submit" xml:space="preserve"><value>Register</value></data>
+  <data name="Admin.WalkIn.Submitting" xml:space="preserve"><value>Registering…</value></data>
+  <data name="Admin.WalkIn.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.WalkIn.Error.ProfileTypeRequired" xml:space="preserve"><value>Pick a badge type before registering.</value></data>
+  <data name="Admin.WalkIn.Error.EnglishNameRequired" xml:space="preserve"><value>English name is required (2-128 characters).</value></data>
+  <data name="Admin.WalkIn.Error.ArabicNameRequired" xml:space="preserve"><value>Arabic name is required (2-128 characters).</value></data>
+  <data name="Admin.WalkIn.Error.DisplayNameRequired" xml:space="preserve"><value>Badge name is required.</value></data>
+  <data name="Admin.WalkIn.Error.NationalityRequired" xml:space="preserve"><value>Pick a nationality.</value></data>
+  <data name="Admin.WalkIn.Error.NationalIdRequired" xml:space="preserve"><value>Saudi national ID (10 digits) is required.</value></data>
+  <data name="Admin.WalkIn.Error.IqamaOrPassportRequired" xml:space="preserve"><value>Supply an Iqama or passport number.</value></data>
+  <data name="Admin.WalkIn.Error.MobileRequired" xml:space="preserve"><value>A mobile number is required.</value></data>
+  <data name="Admin.WalkIn.Error.Fallback" xml:space="preserve"><value>The registration could not be saved. Please try again.</value></data>
+
+  <data name="Admin.WalkIn.Success.Title" xml:space="preserve"><value>Registered — badge ready</value></data>
+  <data name="Admin.WalkIn.Success.Body" xml:space="preserve"><value>The account is approved. Hand over or print the QR badge — the visitor scans it at the gate.</value></data>
+  <data name="Admin.WalkIn.Success.NoEmail" xml:space="preserve"><value>No email — QR is the access key</value></data>
+  <data name="Admin.WalkIn.Success.Close" xml:space="preserve"><value>Done</value></data>
+  <data name="Admin.WalkIn.Success.Print" xml:space="preserve"><value>Print badge</value></data>
+  <data name="Admin.WalkIn.Success.Another" xml:space="preserve"><value>Register another</value></data>
+
+  <!-- D-128 — Approve-with-review modal on the Pending pages. -->
+  <data name="Admin.Pending.ApproveReview.Title" xml:space="preserve"><value>Review and approve — {0}</value></data>
+  <data name="Admin.Pending.ApproveReview.Confirm" xml:space="preserve"><value>Confirm approval</value></data>
+  <data name="Admin.Pending.ApproveReview.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Pending.ApproveReview.Body" xml:space="preserve"><value>Review the registration data below. Approving will mint the QR badge and allow the account to sign in.</value></data>
   <data name="Admin.Pending.Reject.Title" xml:space="preserve"><value>Reject account</value></data>
   <data name="Admin.Pending.Reject.Confirm" xml:space="preserve"><value>Reject {0}? This sets the account to Rejected and writes an audit row.</value></data>
   <data name="Admin.Pending.Reject.Reason" xml:space="preserve"><value>Reason</value></data>

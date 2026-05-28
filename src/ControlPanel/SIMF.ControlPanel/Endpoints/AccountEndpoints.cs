@@ -233,6 +233,49 @@ internal static class AccountEndpoints
             return Forward(await api.GetPendingOtherProfileAsync(id, token));
         });
 
+        // D-127 — on-site walk-in registration desk passthroughs.
+        group.MapPost("/admin/visitors/register-onsite",
+            async (AdminWalkInRegistrationRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RegisterVisitorOnSiteAsync(body, token));
+        });
+
+        group.MapPost("/admin/others/register-onsite",
+            async (AdminWalkInRegistrationRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RegisterOtherOnSiteAsync(body, token));
+        });
+
+        // D-126 — broadened admin profile-read passthroughs (Q-G reversed).
+        group.MapGet("/admin/visitors/{id:guid}/profile",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetVisitorProfileAsync(id, token));
+        });
+
+        group.MapGet("/admin/others/{id:guid}/profile",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetOtherProfileAsync(id, token));
+        });
+
+        // D-127 — countries picker for the walk-in form's nationality dropdown.
+        group.MapGet("/admin/walk-in/countries",
+            async (HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetProfileCountriesAsync(token));
+        });
+
         // P7c — ProfileTypes picker, filtered by UserType.
         group.MapGet("/admin/profile-types",
             async (string userType, HttpContext http, SimfAdminClient api) =>

@@ -2079,4 +2079,173 @@ body.simf-modal-open { overflow: hidden; }
   cursor: not-allowed;
 }
 
+/* D-127 — on-site walk-in registration form. Long-form layout grouped
+   by <fieldset>; profile-type tiles + Saudi/non-Saudi toggle + interests
+   chips. Designed for tablet use at the registration desk. */
+.simf-walkin { gap: var(--space-6); display: flex; flex-direction: column; }
+.simf-walkin__section {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  margin: 0;
+  background-color: var(--color-surface);
+}
+.simf-walkin__section legend {
+  padding: 0 var(--space-2);
+  font-weight: 600;
+  color: var(--color-primary);
+  font-size: 1rem;
+}
+.simf-walkin__section[disabled] { opacity: 0.55; pointer-events: none; }
+.simf-walkin__hint {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  margin: 0 0 var(--space-3) 0;
+}
+.simf-walkin__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-block-start: var(--space-3);
+}
+@media (max-width: 720px) {
+  .simf-walkin__grid { grid-template-columns: 1fr; }
+}
+
+/* Profile-type tiles — clickable cards with a brand-coloured stripe. */
+.simf-walkin__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-3);
+}
+.simf-walkin__card {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-background);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: start;
+  transition: border-color 120ms ease, transform 120ms ease;
+  --simf-walkin-card-color: var(--color-primary);
+}
+.simf-walkin__card:hover {
+  border-color: var(--color-secondary);
+  transform: translateY(-1px);
+}
+.simf-walkin__card.is-selected {
+  border-color: var(--simf-walkin-card-color);
+  background-color: color-mix(in srgb, var(--simf-walkin-card-color) 8%, var(--color-background));
+}
+.simf-walkin__swatch {
+  inline-size: 22px; block-size: 22px; border-radius: 50%;
+  background-color: var(--simf-walkin-card-color);
+  flex: 0 0 auto;
+  box-shadow: 0 0 0 1px var(--color-border) inset;
+}
+.simf-walkin__card-name { font-weight: 500; color: var(--color-text); }
+
+/* Saudi / non-Saudi binary toggle. */
+.simf-walkin__toggle {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-block-end: var(--space-4);
+}
+.simf-walkin__toggle-btn {
+  background: var(--color-background);
+  color: var(--color-text);
+  padding: var(--space-2) var(--space-5);
+  border: 0;
+  cursor: pointer;
+  font-weight: 500;
+}
+.simf-walkin__toggle-btn.is-selected {
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary, #fff);
+}
+
+/* Interest chips — multi-select pill toggles. */
+.simf-walkin__chips {
+  display: flex; flex-wrap: wrap; gap: var(--space-2);
+}
+.simf-walkin__chip {
+  background: var(--color-background);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.simf-walkin__chip:hover { border-color: var(--color-secondary); }
+.simf-walkin__chip.is-selected {
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary, #fff);
+  border-color: var(--color-primary);
+}
+
+.simf-walkin__actions {
+  border-top: 1px solid var(--color-border);
+  padding-block-start: var(--space-4);
+}
+
+/* QR badge rendered in the post-submit success modal. */
+.simf-walkin-badge {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  border: 2px solid var(--simf-badge-color, var(--color-primary));
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-block-end: var(--space-4);
+  background: var(--color-background);
+  --simf-badge-color: var(--color-primary);
+}
+.simf-walkin-badge__header {
+  inline-size: 100%;
+  background-color: var(--simf-badge-color);
+  color: #fff;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  margin-block-end: var(--space-3);
+}
+.simf-walkin-badge__type {
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+}
+.simf-walkin-badge__name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.simf-walkin-badge__email {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  margin-block-end: var(--space-3);
+}
+.simf-walkin-badge__qr {
+  margin: var(--space-3) 0;
+}
+.simf-walkin-badge__qr svg {
+  inline-size: 220px; block-size: 220px;
+}
+.simf-walkin-badge__qrid {
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.15em;
+  font-size: 1rem;
+  color: var(--color-primary);
+}
+
+@media print {
+  body * { visibility: hidden !important; }
+  .simf-walkin-badge, .simf-walkin-badge * { visibility: visible !important; }
+  .simf-walkin-badge {
+    position: absolute; inset-inline-start: 0; inset-block-start: 0;
+    inline-size: 100%; border: 0; padding: 0;
+  }
+}
+
 

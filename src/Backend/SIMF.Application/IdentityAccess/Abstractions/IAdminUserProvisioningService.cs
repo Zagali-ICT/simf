@@ -77,4 +77,29 @@ public interface IAdminUserProvisioningService
         Guid actorUserId,
         AdminDuplicateUserRequest request,
         CancellationToken cancellationToken = default);
+
+    // -- D-127 — walk-in / desk registration --------------------------------
+
+    /// <summary>
+    /// On-site walk-in registration for a Visitor or Other (drives the
+    /// `kind` parameter). Single transaction:
+    /// <list type="bullet">
+    ///   <item>Creates the SimfUser with <c>AccountState = Approved</c>
+    ///     (no pending queue — staff already verified the person in
+    ///     hand).</item>
+    ///   <item>Creates the UserProfile with every form field, links the
+    ///     picked Interests, sets the ProfileTypeId, mints the QR id.</item>
+    ///   <item>Audits the registration (<c>Admin.WalkInRegistered</c>).</item>
+    /// </list>
+    /// Email is optional; when missing the implementation synthesizes
+    /// <c>walkin-{guid}@simf.local</c> so ASP.NET Core Identity stays
+    /// valid. Phone (Saudi or International, depending on
+    /// <see cref="AdminWalkInRegistrationRequest.IsSaudi"/>) is the
+    /// soft uniqueness key.
+    /// </summary>
+    Task<AdminWalkInRegistrationResponse> RegisterOnSiteAsync(
+        Guid actorUserId,
+        SIMF.Common.Enums.UserType kind,
+        AdminWalkInRegistrationRequest request,
+        CancellationToken cancellationToken = default);
 }

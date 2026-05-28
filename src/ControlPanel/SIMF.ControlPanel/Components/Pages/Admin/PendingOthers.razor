@@ -51,16 +51,14 @@
                 </SimfDataGridColumn>
             </Columns>
             <RowActions Context="user">
-                @* D-125 — View opens the D-124 scoped pending-profile read so the
-                   admin can verify the application before clicking Approve. *@
                 <SimfButton Type="button" Variant="secondary"
                             Disabled="_busy"
-                            OnClick="@(() => OpenViewAsync(user))">
+                            OnClick="@(() => OpenViewAsync(user, approveMode: false))">
                     @L["Admin.Pending.Action.View"]
                 </SimfButton>
                 <SimfButton Type="button" Variant="primary"
                             Disabled="_busy"
-                            OnClick="@(() => ApproveAsync(user))">
+                            OnClick="@(() => OpenViewAsync(user, approveMode: true))">
                     @L["Admin.Pending.Action.Approve"]
                 </SimfButton>
                 <SimfButton Type="button" Variant="secondary"
@@ -107,7 +105,9 @@
 @if (_viewTarget is not null)
 {
     <SimfModal Open="true"
-               Title="@string.Format(L["Admin.Pending.View.Title"], _viewTarget.Email)"
+               Title="@(_approveMode
+                   ? string.Format(L["Admin.Pending.ApproveReview.Title"], _viewTarget.Email)
+                   : string.Format(L["Admin.Pending.View.Title"], _viewTarget.Email))"
                OnClose="CloseView">
         <ChildContent>
             @if (_viewLoading)
@@ -170,9 +170,24 @@
             }
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="CloseView">
-                @L["Admin.Pending.View.Close"]
-            </SimfButton>
+            @if (_approveMode)
+            {
+                <SimfButton Type="button" Variant="secondary" OnClick="CloseView">
+                    @L["Admin.Pending.ApproveReview.Cancel"]
+                </SimfButton>
+                <SimfButton Type="button" Variant="primary"
+                            Loading="_busy"
+                            Disabled="@(_viewLoading || _viewProfile is null)"
+                            OnClick="ConfirmApproveFromReviewAsync">
+                    @L["Admin.Pending.ApproveReview.Confirm"]
+                </SimfButton>
+            }
+            else
+            {
+                <SimfButton Type="button" OnClick="CloseView">
+                    @L["Admin.Pending.View.Close"]
+                </SimfButton>
+            }
         </Footer>
     </SimfModal>
 }
@@ -191,6 +206,7 @@
     private PendingProfileResponse? _viewProfile;
     private bool _viewLoading;
     private string? _viewError;
+    private bool _approveMode;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -276,12 +292,13 @@
     private string FormatSummary(int from, int to, int total) =>
         string.Format(L["Admin.Users.Pager.Summary"], from, to, total);
 
-    private async Task OpenViewAsync(AdminPendingUserSummary user)
+    private async Task OpenViewAsync(AdminPendingUserSummary user, bool approveMode = false)
     {
         _viewTarget = user;
         _viewProfile = null;
         _viewError = null;
         _viewLoading = true;
+        _approveMode = approveMode;
         try
         {
             var envelope = await JS.InvokeAsync<ApiResult<PendingProfileResponse>>(
@@ -304,12 +321,21 @@
         finally { _viewLoading = false; }
     }
 
+    private async Task ConfirmApproveFromReviewAsync()
+    {
+        if (_viewTarget is null) return;
+        var target = _viewTarget;
+        CloseView();
+        await ApproveAsync(target);
+    }
+
     private void CloseView()
     {
         _viewTarget = null;
         _viewProfile = null;
         _viewError = null;
         _viewLoading = false;
+        _approveMode = false;
     }
 
     private static bool HasProfileForm(PendingProfileResponse profile) =>

@@ -244,3 +244,112 @@ public sealed class AdminUpdateProfileTypeRequest
     public string PageColor { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
 }
+
+/// <summary>
+/// D-127 — body of <c>POST /api/v1/admin/{visitors,others}/register-onsite</c>.
+/// Walk-in / desk registration shape — staff at the registration desk fills
+/// the full profile face-to-face and the user is auto-approved + a QR id
+/// is minted in the same transaction. Email is optional (walk-ins frequently
+/// don't have one; the QR badge is the access token); when missing the API
+/// synthesizes <c>walkin-{guid}@simf.local</c> so Identity stays valid.
+/// </summary>
+public sealed class AdminWalkInRegistrationRequest
+{
+    /// <summary>Optional email; when blank the API synthesizes a placeholder.</summary>
+    public string? Email { get; set; }
+
+    /// <summary>The on-badge display name (2-128 chars).</summary>
+    public string DisplayName { get; set; } = string.Empty;
+
+    /// <summary>Full name in Arabic (matches the registration form).</summary>
+    public string ArabicName { get; set; } = string.Empty;
+
+    /// <summary>Full name in English — exactly as on the passport / ID.</summary>
+    public string EnglishName { get; set; } = string.Empty;
+
+    /// <summary>Visitor tier / Other subtype — drives the badge colour.</summary>
+    public Guid ProfileTypeId { get; set; }
+
+    /// <summary>ISO 3166-1 alpha-2 nationality code.</summary>
+    public string NationalityCode { get; set; } = string.Empty;
+
+    /// <summary>Optional date of birth.</summary>
+    public DateOnly? DateOfBirth { get; set; }
+
+    /// <summary>Optional place of birth (≤128 chars).</summary>
+    public string? PlaceOfBirth { get; set; }
+
+    /// <summary>True when the visitor holds Saudi nationality — drives which
+    /// ID number is required.</summary>
+    public bool IsSaudi { get; set; }
+
+    /// <summary>Saudi national id (10 digits) — required when <see cref="IsSaudi"/>.</summary>
+    public string? NationalId { get; set; }
+
+    /// <summary>Iqama number (10 digits) — required for non-Saudi residents.</summary>
+    public string? IqamaNumber { get; set; }
+
+    /// <summary>Passport number — required for non-Saudi visitors.</summary>
+    public string? PassportNumber { get; set; }
+
+    /// <summary>+966-prefixed Saudi mobile.</summary>
+    public string? SaudiMobile { get; set; }
+
+    /// <summary>International mobile (<c>+CC-local</c>).</summary>
+    public string? InternationalMobile { get; set; }
+
+    /// <summary>Picked interest ids (visitor-only; ignored for Other kind).</summary>
+    public IList<Guid> InterestIds { get; set; } = new List<Guid>();
+}
+
+/// <summary>
+/// D-127 — response from the walk-in endpoint. Carries the data the
+/// post-submit success modal needs to render the badge: the QR id (already
+/// minted because the user is auto-approved), the chosen profile-type
+/// name + colour, and the user id so a follow-up ID-document upload can
+/// reach the right row.
+/// </summary>
+public sealed record AdminWalkInRegistrationResponse(
+    Guid UserId,
+    string Email,
+    string DisplayName,
+    string QrId,
+    string ProfileTypeName,
+    string ProfileTypeNameArabic,
+    string ProfileTypeColor);
+
+/// <summary>
+/// D-127 / D-126 — body returned by the broadened admin profile-read endpoints
+/// (<c>GET /api/v1/admin/{visitors,others}/{id}/profile</c>). Q-G reversed:
+/// any admin can read any visitor's or Other's profile, regardless of state.
+/// Every read fires a row-audit row via the D-109 SaveChanges interceptor
+/// on the underlying touch.
+/// </summary>
+public sealed record AdminUserProfileView(
+    Guid Id,
+    string Email,
+    string DisplayName,
+    string UserType,
+    string AccountState,
+    Guid? ProfileTypeId,
+    string? ProfileTypeName,
+    string? ProfileTypeNameArabic,
+    string? ProfileTypeColor,
+    string? QrId,
+    string? ArabicName,
+    string? EnglishName,
+    string? NationalityCode,
+    DateOnly? DateOfBirth,
+    string? PlaceOfBirth,
+    bool IsSaudi,
+    string? NationalId,
+    string? IqamaNumber,
+    string? PassportNumber,
+    string? SaudiMobile,
+    string? InternationalMobile,
+    bool HasIdImage,
+    IReadOnlyList<Guid> InterestIds,
+    string? RejectionReason,
+    string? RejectionReasonArabic,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? UpdatedAt);

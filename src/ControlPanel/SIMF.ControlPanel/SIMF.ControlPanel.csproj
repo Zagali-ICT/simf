@@ -20,6 +20,8 @@
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <!-- D-116: image cropping primitive (avatar upload). Pin matches V10 ERP. -->
     <PackageReference Include="Cropper.Blazor" Version="1.5.1" />
+    <!-- D-127: server-side SVG QR for the walk-in registration success badge. -->
+    <PackageReference Include="QRCoder" Version="1.6.0" />
   </ItemGroup>
 
 </Project>

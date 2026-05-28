@@ -1,8 +1,9 @@
-// Tests: SIMF.Api.Tests/PendingProfileReadTests.cs
+// Tests: SIMF.Api.Tests/PendingProfileReadTests.cs, AdminProfileReadTests.cs
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
+using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
 
@@ -30,6 +31,94 @@ internal sealed class AdminApprovalReadService(SimfIdentityDbContext dbContext)
     public Task<PendingProfileResponse?> GetPendingOtherProfileAsync(
         Guid subjectUserId, CancellationToken cancellationToken = default) =>
         GetAsync(subjectUserId, UserType.Other, cancellationToken);
+
+    public Task<AdminUserProfileView?> GetVisitorProfileAsync(
+        Guid subjectUserId, CancellationToken cancellationToken = default) =>
+        GetFullProfileAsync(subjectUserId, UserType.Visitor, cancellationToken);
+
+    public Task<AdminUserProfileView?> GetOtherProfileAsync(
+        Guid subjectUserId, CancellationToken cancellationToken = default) =>
+        GetFullProfileAsync(subjectUserId, UserType.Other, cancellationToken);
+
+    /// <summary>D-126 — any-state full profile read scoped to a UserType.
+    /// Drops the AccountState guard the D-124 GetAsync helper enforces; keeps
+    /// the type-match guard so cross-kind enumeration still 404s.</summary>
+    private async Task<AdminUserProfileView?> GetFullProfileAsync(
+        Guid subjectUserId,
+        UserType expectedKind,
+        CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users
+            .AsNoTracking()
+            .Where(u => u.Id == subjectUserId && u.UserType == expectedKind)
+            .Select(u => new
+            {
+                u.Id,
+                u.Email,
+                u.DisplayName,
+                u.UserType,
+                u.AccountState,
+                u.CreatedAt,
+                u.UpdatedAt,
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (user is null) { return null; }
+
+        var profile = await dbContext.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.UserId == subjectUserId)
+            .Select(p => new
+            {
+                p.ProfileTypeId,
+                ProfileType = p.ProfileType,
+                p.QrId,
+                p.ArabicName,
+                p.EnglishName,
+                p.NationalityCode,
+                p.DateOfBirth,
+                p.PlaceOfBirth,
+                p.IsSaudi,
+                p.NationalId,
+                p.IqamaNumber,
+                p.PassportNumber,
+                p.SaudiMobile,
+                p.InternationalMobile,
+                HasIdImage = p.IdImageRelativePath != null,
+                InterestIds = p.Interests.Select(interest => interest.Id).ToList(),
+                p.RejectionReason,
+                p.RejectionReasonArabic,
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        return new AdminUserProfileView(
+            user.Id,
+            user.Email ?? string.Empty,
+            user.DisplayName,
+            user.UserType.ToString(),
+            user.AccountState.ToString(),
+            profile?.ProfileTypeId,
+            profile?.ProfileType?.Name,
+            profile?.ProfileType?.NameArabic,
+            profile?.ProfileType?.PageColor,
+            profile?.QrId,
+            string.IsNullOrEmpty(profile?.ArabicName) ? null : profile.ArabicName,
+            string.IsNullOrEmpty(profile?.EnglishName) ? null : profile.EnglishName,
+            string.IsNullOrEmpty(profile?.NationalityCode) ? null : profile.NationalityCode,
+            profile?.DateOfBirth,
+            string.IsNullOrEmpty(profile?.PlaceOfBirth) ? null : profile.PlaceOfBirth,
+            profile?.IsSaudi ?? false,
+            profile?.NationalId,
+            profile?.IqamaNumber,
+            profile?.PassportNumber,
+            profile?.SaudiMobile,
+            profile?.InternationalMobile,
+            profile?.HasIdImage ?? false,
+            profile?.InterestIds ?? new List<Guid>(),
+            profile?.RejectionReason,
+            profile?.RejectionReasonArabic,
+            user.CreatedAt,
+            user.UpdatedAt);
+    }
 
     private async Task<PendingProfileResponse?> GetAsync(
         Guid subjectUserId,

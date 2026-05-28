@@ -1,4 +1,5 @@
 using SIMF.Contracts.Admin;
+using SIMF.Contracts.Authentication;
 
 namespace SIMF.Application.IdentityAccess.Abstractions;
 
@@ -30,6 +31,29 @@ public interface IAdminApprovalReadService
     /// <summary>Pending-Other profile preview — same shape, restricted to
     /// <see cref="SIMF.Common.Enums.UserType.Other"/>.</summary>
     Task<PendingProfileResponse?> GetPendingOtherProfileAsync(
+        Guid subjectUserId,
+        CancellationToken cancellationToken = default);
+
+    // -- D-126 — Q-G reversal: admin can read any visitor or Other profile -----
+    //
+    // The walk-in registration desk (D-127) needs to display the full
+    // registration for accounts in ANY state (Approved walk-ins, Rejected
+    // accounts being investigated, …) — not just PendingApproval. Q-G
+    // (locked 2026-05-26) blocked a general profile-read; this reversal
+    // adds two scoped reads (per kind) that work for any state. The same
+    // type-match guard from D-124 is preserved (a Visitor id on the /others
+    // route still 404s) so admins can't enumerate cross-kind ids. Every
+    // call writes a row-audit entry automatically via the D-109 SaveChanges
+    // interceptor when the underlying SimfUser row materialises.
+
+    /// <summary>D-126 — any-state visitor profile read. Returns null when
+    /// the id is missing or the target is not a Visitor.</summary>
+    Task<AdminUserProfileView?> GetVisitorProfileAsync(
+        Guid subjectUserId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>D-126 — any-state Other profile read.</summary>
+    Task<AdminUserProfileView?> GetOtherProfileAsync(
         Guid subjectUserId,
         CancellationToken cancellationToken = default);
 }

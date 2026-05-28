@@ -206,6 +206,63 @@
   <data name="Admin.Pending.View.Yes" xml:space="preserve"><value>نعم</value></data>
   <data name="Admin.Pending.View.No" xml:space="preserve"><value>لا</value></data>
   <data name="Admin.Pending.View.Fallback" xml:space="preserve"><value>تعذّر تحميل الملف الشخصي.</value></data>
+
+  <data name="Admin.WalkIn.Section.ProfileType" xml:space="preserve"><value>نوع الشارة</value></data>
+  <data name="Admin.WalkIn.Section.ProfileType.Hint" xml:space="preserve"><value>اختر الفئة المناسبة للشخص عند المكتب. يظهر اللون على الشارة.</value></data>
+  <data name="Admin.WalkIn.ProfileType.NoneSeeded" xml:space="preserve"><value>لا توجد أنواع ملفات شخصية مفعّلة. أنشئها من إعدادات الأنواع أولاً.</value></data>
+  <data name="Admin.WalkIn.Section.Identity" xml:space="preserve"><value>الهوية</value></data>
+  <data name="Admin.WalkIn.Section.Nationality" xml:space="preserve"><value>الجنسية والهوية</value></data>
+  <data name="Admin.WalkIn.Section.Contact" xml:space="preserve"><value>التواصل</value></data>
+  <data name="Admin.WalkIn.Section.Interests" xml:space="preserve"><value>الاهتمامات</value></data>
+  <data name="Admin.WalkIn.Section.Interests.Hint" xml:space="preserve"><value>حتى 10 مواضيع يودّ الزائر متابعتها في الفعالية. اختياري.</value></data>
+  <data name="Admin.WalkIn.Field.EnglishName" xml:space="preserve"><value>الاسم الكامل (إنجليزي)</value></data>
+  <data name="Admin.WalkIn.Field.EnglishName.Hint" xml:space="preserve"><value>كما هو مطبوع في جواز السفر / الهوية.</value></data>
+  <data name="Admin.WalkIn.Field.ArabicName" xml:space="preserve"><value>الاسم الكامل (عربي)</value></data>
+  <data name="Admin.WalkIn.Field.ArabicName.Hint" xml:space="preserve"><value>الاسم الكامل بالعربية.</value></data>
+  <data name="Admin.WalkIn.Field.DisplayName" xml:space="preserve"><value>الاسم على الشارة</value></data>
+  <data name="Admin.WalkIn.Field.DisplayName.Hint" xml:space="preserve"><value>يظهر على الشارة المطبوعة — عادةً الاسم الأول مع اسم العائلة.</value></data>
+  <data name="Admin.WalkIn.Field.DateOfBirth" xml:space="preserve"><value>تاريخ الميلاد</value></data>
+  <data name="Admin.WalkIn.Field.PlaceOfBirth" xml:space="preserve"><value>مكان الميلاد</value></data>
+  <data name="Admin.WalkIn.Field.IsSaudi" xml:space="preserve"><value>هل هو سعودي؟</value></data>
+  <data name="Admin.WalkIn.IsSaudi.Yes" xml:space="preserve"><value>سعودي</value></data>
+  <data name="Admin.WalkIn.IsSaudi.No" xml:space="preserve"><value>غير سعودي</value></data>
+  <data name="Admin.WalkIn.Field.Nationality" xml:space="preserve"><value>الجنسية</value></data>
+  <data name="Admin.WalkIn.Field.Nationality.Placeholder" xml:space="preserve"><value>اختر الدولة</value></data>
+  <data name="Admin.WalkIn.Field.NationalId" xml:space="preserve"><value>الهوية الوطنية السعودية</value></data>
+  <data name="Admin.WalkIn.Field.NationalId.Hint" xml:space="preserve"><value>10 أرقام.</value></data>
+  <data name="Admin.WalkIn.Field.IqamaNumber" xml:space="preserve"><value>رقم الإقامة</value></data>
+  <data name="Admin.WalkIn.Field.PassportNumber" xml:space="preserve"><value>رقم جواز السفر</value></data>
+  <data name="Admin.WalkIn.Field.OneOf.Hint" xml:space="preserve"><value>الإقامة أو الجواز — يكفي أحدهما.</value></data>
+  <data name="Admin.WalkIn.Field.SaudiMobile" xml:space="preserve"><value>الجوال السعودي</value></data>
+  <data name="Admin.WalkIn.Field.SaudiMobile.Hint" xml:space="preserve"><value>مثال: +966500000000</value></data>
+  <data name="Admin.WalkIn.Field.InternationalMobile" xml:space="preserve"><value>الجوال الدولي</value></data>
+  <data name="Admin.WalkIn.Field.InternationalMobile.Hint" xml:space="preserve"><value>مثال: +44-2071234567</value></data>
+  <data name="Admin.WalkIn.Field.Email" xml:space="preserve"><value>البريد الإلكتروني (اختياري)</value></data>
+  <data name="Admin.WalkIn.Field.Email.Hint" xml:space="preserve"><value>اتركه فارغاً إن لم يكن لدى الزائر بريد — رمز QR هو مفتاح الدخول.</value></data>
+  <data name="Admin.WalkIn.Submit" xml:space="preserve"><value>تسجيل</value></data>
+  <data name="Admin.WalkIn.Submitting" xml:space="preserve"><value>جاري التسجيل…</value></data>
+  <data name="Admin.WalkIn.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.WalkIn.Error.ProfileTypeRequired" xml:space="preserve"><value>اختر نوع الشارة قبل التسجيل.</value></data>
+  <data name="Admin.WalkIn.Error.EnglishNameRequired" xml:space="preserve"><value>الاسم بالإنجليزية مطلوب (2-128 حرفاً).</value></data>
+  <data name="Admin.WalkIn.Error.ArabicNameRequired" xml:space="preserve"><value>الاسم بالعربية مطلوب (2-128 حرفاً).</value></data>
+  <data name="Admin.WalkIn.Error.DisplayNameRequired" xml:space="preserve"><value>اسم الشارة مطلوب.</value></data>
+  <data name="Admin.WalkIn.Error.NationalityRequired" xml:space="preserve"><value>اختر الجنسية.</value></data>
+  <data name="Admin.WalkIn.Error.NationalIdRequired" xml:space="preserve"><value>الهوية الوطنية السعودية (10 أرقام) مطلوبة.</value></data>
+  <data name="Admin.WalkIn.Error.IqamaOrPassportRequired" xml:space="preserve"><value>أدخل رقم الإقامة أو جواز السفر.</value></data>
+  <data name="Admin.WalkIn.Error.MobileRequired" xml:space="preserve"><value>رقم الجوال مطلوب.</value></data>
+  <data name="Admin.WalkIn.Error.Fallback" xml:space="preserve"><value>تعذّر حفظ التسجيل. حاول مرة أخرى.</value></data>
+
+  <data name="Admin.WalkIn.Success.Title" xml:space="preserve"><value>تم التسجيل — الشارة جاهزة</value></data>
+  <data name="Admin.WalkIn.Success.Body" xml:space="preserve"><value>تم اعتماد الحساب. سلّم أو اطبع شارة QR — يمسحها الزائر عند البوابة.</value></data>
+  <data name="Admin.WalkIn.Success.NoEmail" xml:space="preserve"><value>بدون بريد — QR هو مفتاح الدخول</value></data>
+  <data name="Admin.WalkIn.Success.Close" xml:space="preserve"><value>تم</value></data>
+  <data name="Admin.WalkIn.Success.Print" xml:space="preserve"><value>طباعة الشارة</value></data>
+  <data name="Admin.WalkIn.Success.Another" xml:space="preserve"><value>تسجيل آخر</value></data>
+
+  <data name="Admin.Pending.ApproveReview.Title" xml:space="preserve"><value>مراجعة واعتماد — {0}</value></data>
+  <data name="Admin.Pending.ApproveReview.Confirm" xml:space="preserve"><value>تأكيد الاعتماد</value></data>
+  <data name="Admin.Pending.ApproveReview.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Pending.ApproveReview.Body" xml:space="preserve"><value>راجع بيانات التسجيل أدناه. الاعتماد ينشئ شارة QR ويفعّل تسجيل الدخول.</value></data>
   <data name="Admin.Pending.Reject.Title" xml:space="preserve"><value>رفض الحساب</value></data>
   <data name="Admin.Pending.Reject.Confirm" xml:space="preserve"><value>رفض {0}؟ هذا يضبط الحساب إلى مرفوض ويسجّل صفّاً في التدقيق.</value></data>
   <data name="Admin.Pending.Reject.Reason" xml:space="preserve"><value>السبب</value></data>

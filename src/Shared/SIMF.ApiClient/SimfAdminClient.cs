@@ -404,6 +404,48 @@ public sealed class SimfAdminClient(HttpClient http)
             content: null,
             accessToken, cancellationToken);
 
+    // -- D-127 — walk-in registration desk -----------------------------------
+
+    /// <summary>D-127 — on-site walk-in visitor registration. Auto-approves
+    /// and returns the minted QR id for the badge handover.</summary>
+    public Task<ApiCallResult<AdminWalkInRegistrationResponse>> RegisterVisitorOnSiteAsync(
+        AdminWalkInRegistrationRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminWalkInRegistrationResponse>(
+            HttpMethod.Post, "visitors/register-onsite",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>D-127 — on-site walk-in Other registration.</summary>
+    public Task<ApiCallResult<AdminWalkInRegistrationResponse>> RegisterOtherOnSiteAsync(
+        AdminWalkInRegistrationRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminWalkInRegistrationResponse>(
+            HttpMethod.Post, "others/register-onsite",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    // -- D-126 — broadened admin profile read (Q-G reversed) -----------------
+
+    /// <summary>D-126 — full visitor profile, any state. 404 for unknown
+    /// id or wrong UserType.</summary>
+    public Task<ApiCallResult<AdminUserProfileView>> GetVisitorProfileAsync(
+        Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminUserProfileView>(
+            HttpMethod.Get, $"visitors/{subjectId}/profile",
+            content: null,
+            accessToken, cancellationToken);
+
+    /// <summary>D-126 — full Other profile, any state.</summary>
+    public Task<ApiCallResult<AdminUserProfileView>> GetOtherProfileAsync(
+        Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminUserProfileView>(
+            HttpMethod.Get, $"others/{subjectId}/profile",
+            content: null,
+            accessToken, cancellationToken);
+
     /// <summary>ProfileTypes filtered by UserType — for the create-page picker (P7c).</summary>
     public Task<ApiCallResult<IReadOnlyList<AdminProfileTypeSummary>>> ListProfileTypesAsync(
         string userType, string accessToken,
