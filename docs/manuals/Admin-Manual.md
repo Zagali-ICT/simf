@@ -620,17 +620,53 @@ diverge over time).
 
 ### 10.10 Reset user 2FA — `/admin/reset-2fa`
 
-_(chapter pending)_
+> Page reference: [`docs/pages/cp/admin-reset-2fa.md`](../pages/cp/admin-reset-2fa.md)
+
+When a user loses both their authenticator and all 10 recovery codes:
+
+1. **System → Reset user 2FA**.
+2. Type the user's email substring → pick the match → click **Reset 2FA**.
+3. Confirm in the modal.
+4. The server wipes their authenticator + recovery codes + active sessions
+   and emails them out-of-band. They re-pair on next sign-in.
+
+You cannot self-reset here — use **My profile → Reset my 2FA** instead.
 
 ### 10.11 Logs viewer — `/admin/logs`
 
-_(chapter pending)_
+> Page reference: [`docs/pages/cp/admin-logs.md`](../pages/cp/admin-logs.md)
+
+Read-only tail of every project's log files. Pick **Project** (Api,
+ControlPanel, Website) → **File** (per day) → **Lines** (50/100/500/1000)
+→ optionally tick **Auto-refresh** (5 s poll). The body shows the tail in
+a monospaced `<pre>` block. **Download** streams the full file to disk.
+
+Use this when:
+
+- An admin reports an error → find the matching timestamp in the Api log.
+- Investigating a sign-in failure → look for `401` / `Authentication is required`
+  in the corresponding project log.
+- A walk-in registration failed mysteriously → check Api log for
+  `AdminWalkInRegistrationRequestValidator` errors.
 
 ---
 
 ---
 
 ## 12. Account-area surfaces
+
+### 12.1 My profile — `/account/profile`
+
+> Page reference: [`docs/pages/cp/account-profile.md`](../pages/cp/account-profile.md)
+
+Reach via the **You** link in the top header.
+
+| Card | What you can do |
+|------|-----------------|
+| Identity | Read your email (locked) + edit your display name |
+| Avatar | Upload + crop a new avatar (PNG/JPEG/WebP, ≤ 2 MB) |
+| Security | Reset your own 2FA (re-pair flow) + regenerate your 10 recovery codes |
+| Sessions | See every active session + revoke any of them |
 
 ### 12.2 Notifications inbox — `/account/notifications`
 
@@ -659,6 +695,14 @@ that lands here.
 | Bell shows N unread but page is empty | Filter or pager hides them | Clear filters; check page 1 |
 | Bulk-delete is slow | No bulk endpoint — fires N delete requests | Select fewer rows at once (≤ 25 = visible page) |
 | Notification body is `??????` for one language | Translation missing on that row | Open Details to see the other-language variant |
+
+### 12.3 TOTP pairing — `/account/totp-pairing`
+
+> Page reference: [`docs/pages/cp/account-totp-pairing.md`](../pages/cp/account-totp-pairing.md)
+
+You only land here at first sign-in OR after Reset-my-2FA. Walkthrough is
+in §2.2 above — scan QR / manual-entry secret / 6-digit verify / save the
+10 recovery codes.
 
 ---
 
