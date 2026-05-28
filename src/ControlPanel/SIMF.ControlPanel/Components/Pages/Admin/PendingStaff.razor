@@ -11,7 +11,7 @@
 
 <PageTitle>@L["Admin.Pending.Staff.Title"] · SIMF</PageTitle>
 
-<SimfPageHeader Title="@L["Admin.Pending.Staff.Title"]" />
+<SimfBanner Title="@L["Admin.Pending.Staff.Title"]" />
 
 <div class="simf-page-wide">
     <div class="simf-surface">
@@ -27,12 +27,18 @@
                       Page="_page"
                       Loading="_loading"
                       OnQueryChanged="OnQueryChangedAsync"
-                      Multiselect="false"
+                      Multiselect="true"
                       RowKey="@(u => u.Id.ToString())"
                       RowLabel="@(u => u.Email)"
                       Caption="@L["Admin.Pending.Staff.Title"]"
+                      SelectAllLabel="@L["Admin.Pending.Action.SelectAll"]"
+                      SelectRowLabel="@L["Admin.Pending.Action.SelectRow"]"
                       PrevLabel="@L["Admin.Users.Prev"]"
                       NextLabel="@L["Admin.Users.Next"]"
+                      FirstLabel="@L["Admin.Pending.Pager.First"]"
+                      LastLabel="@L["Admin.Pending.Pager.Last"]"
+                      PageSizeLabel="@L["Admin.Pending.Pager.PageSize"]"
+                      PageFormatter="@FormatPage"
                       LoadingLabel="@L["Admin.Users.Loading"]"
                       FilterPlaceholder="@L["Admin.Users.FilterPlaceholder"]"
                       SummaryFormatter="@FormatSummary">
@@ -191,4 +197,7 @@
 
     private string FormatSummary(int from, int to, int total) =>
         string.Format(L["Admin.Users.Pager.Summary"], from, to, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Admin.Pending.Pager.Page"], current, total);
 }

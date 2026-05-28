@@ -11,8 +11,11 @@ namespace SIMF.ControlPanel;
 /// </summary>
 public static class CpNavigation
 {
-    /// <summary>One navigation item — a module link.</summary>
-    public sealed record NavItem(string LabelKey, string Href);
+    /// <summary>One navigation item — a module link. <c>IsStub</c> marks
+    /// entries that currently resolve to <c>ModulePlaceholder</c>; the shell
+    /// renders a "Soon" badge so operators know which menu items are real
+    /// (D-132).</summary>
+    public sealed record NavItem(string LabelKey, string Href, bool IsStub = false);
 
     /// <summary>One navigation group — a heading and its items.</summary>
     public sealed record NavGroup(string LabelKey, IReadOnlyList<NavItem> Items);
@@ -26,47 +29,48 @@ public static class CpNavigation
         ]),
         new("Nav.People",
         [
-            new("Module.RegistrationRequests", "/m/registration-requests"),
-            new("Module.Attendees", "/m/attendees"),
+            new("Module.RegistrationRequests", "/m/registration-requests", IsStub: true),
+            new("Module.Attendees", "/m/attendees", IsStub: true),
             // D-130 — print-bag station: lookup by QR id + reprint badge.
             new("Module.PrintBag", "/admin/print-bag"),
-            new("Module.Roles", "/m/roles"),
+            new("Module.Roles", "/m/roles", IsStub: true),
         ]),
         new("Nav.Programme",
         [
-            new("Module.Themes", "/m/themes"),
-            new("Module.Sessions", "/m/sessions"),
-            new("Module.Halls", "/m/halls"),
-            new("Module.Speakers", "/m/speakers"),
-            new("Module.Bookings", "/m/bookings"),
+            new("Module.Themes", "/m/themes", IsStub: true),
+            new("Module.Sessions", "/m/sessions", IsStub: true),
+            new("Module.Halls", "/m/halls", IsStub: true),
+            new("Module.Speakers", "/m/speakers", IsStub: true),
+            new("Module.Bookings", "/m/bookings", IsStub: true),
         ]),
         new("Nav.Exhibition",
         [
-            new("Module.Exhibitors", "/m/exhibitors"),
-            new("Module.Booths", "/m/booths"),
-            new("Module.Sponsors", "/m/sponsors"),
-            new("Module.VenueMap", "/m/venue-map"),
+            new("Module.Exhibitors", "/m/exhibitors", IsStub: true),
+            new("Module.Booths", "/m/booths", IsStub: true),
+            new("Module.Sponsors", "/m/sponsors", IsStub: true),
+            new("Module.VenueMap", "/m/venue-map", IsStub: true),
         ]),
         new("Nav.Engagement",
         [
-            new("Module.LiveSessions", "/m/live-sessions"),
-            new("Module.Moderation", "/m/moderation"),
+            new("Module.LiveSessions", "/m/live-sessions", IsStub: true),
+            new("Module.Moderation", "/m/moderation", IsStub: true),
         ]),
         new("Nav.Knowledge",
         [
-            new("Module.Faq", "/m/faq"),
-            new("Module.AiSettings", "/m/ai-settings"),
+            new("Module.Faq", "/m/faq", IsStub: true),
+            new("Module.AiSettings", "/m/ai-settings", IsStub: true),
         ]),
         new("Nav.Content",
         [
-            new("Module.Media", "/m/media"),
-            new("Module.News", "/m/news"),
-            new("Module.PreviousEditions", "/m/previous-editions"),
+            new("Module.Media", "/m/media", IsStub: true),
+            new("Module.News", "/m/news", IsStub: true),
+            new("Module.PreviousEditions", "/m/previous-editions", IsStub: true),
         ]),
-        new("Nav.Communications",
-        [
-            new("Module.Notifications", "/m/notifications"),
-        ]),
+        // D-132 — the broadcast-Notifications module (admin → audience)
+        // is not built yet; the existing operator notification inbox lives
+        // at /account/notifications (via the bell). Removed the duplicate
+        // "Notifications" nav stub that was misleading operators into
+        // the placeholder instead of the real inbox.
         new("Nav.System",
         [
             // P7e — D-055: three pairs of pages, one per UserType
@@ -84,9 +88,9 @@ public static class CpNavigation
             new("Module.AdminOtherProfileTypes", "/admin/profile-types/other"),
             new("Module.AdminResetTwoFactor", "/admin/reset-2fa"),
             new("Module.AdminLogs", "/admin/logs"),
-            new("Module.Configuration", "/m/configuration"),
-            new("Module.OperationLog", "/m/operation-log"),
-            new("Module.Settings", "/m/settings"),
+            new("Module.Configuration", "/m/configuration", IsStub: true),
+            new("Module.OperationLog", "/m/operation-log", IsStub: true),
+            new("Module.Settings", "/m/settings", IsStub: true),
         ]),
     ];
 

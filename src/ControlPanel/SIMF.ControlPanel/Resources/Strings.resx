@@ -61,6 +61,8 @@
   <!-- D-118 — Profile types CRUD nav labels -->
   <data name="Module.AdminVisitorProfileTypes" xml:space="preserve"><value>Visitor profile types</value></data>
   <data name="Module.AdminOtherProfileTypes" xml:space="preserve"><value>Other profile types</value></data>
+  <!-- D-132 — generic nav "Soon" tag rendered next to stub modules -->
+  <data name="Nav.Soon" xml:space="preserve"><value>Soon</value></data>
 
   <!-- D-118 — Profile types CRUD strings -->
   <data name="Admin.ProfileTypes.Visitor.Title" xml:space="preserve"><value>Visitor profile types</value></data>
@@ -172,6 +174,20 @@
   <data name="Admin.Interests.Updated" xml:space="preserve"><value>Interest "{0}" was updated.</value></data>
   <data name="Admin.Interests.Deactivated" xml:space="preserve"><value>Interest "{0}" was deactivated.</value></data>
   <data name="Admin.Interests.Fallback" xml:space="preserve"><value>The operation could not be completed.</value></data>
+  <data name="Admin.Interests.None" xml:space="preserve"><value>No interests yet.</value></data>
+  <data name="Admin.Interests.Add.Title" xml:space="preserve"><value>Add interest</value></data>
+  <data name="Admin.Interests.Add.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Interests.Add.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Interests.Edit.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Interests.Details.Title" xml:space="preserve"><value>Interest details</value></data>
+  <data name="Admin.Interests.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Interests.Action.Details" xml:space="preserve"><value>Details</value></data>
+  <data name="Admin.Interests.Action.SelectAll" xml:space="preserve"><value>Select all</value></data>
+  <data name="Admin.Interests.Action.SelectRow" xml:space="preserve"><value>Select row</value></data>
+  <data name="Admin.Interests.Pager.First" xml:space="preserve"><value>First page</value></data>
+  <data name="Admin.Interests.Pager.Last" xml:space="preserve"><value>Last page</value></data>
+  <data name="Admin.Interests.Pager.PageSize" xml:space="preserve"><value>Show</value></data>
+  <data name="Admin.Interests.Pager.Page" xml:space="preserve"><value>Page {0} of {1}</value></data>
   <data name="Admin.Pending.Staff.Title" xml:space="preserve"><value>Pending staff approvals</value></data>
   <data name="Admin.Pending.Visitors.Title" xml:space="preserve"><value>Pending visitor approvals</value></data>
   <data name="Admin.Pending.Supporting" xml:space="preserve"><value>Approval mints the QR badge and unlocks sign-in (CP for staff, event entry for visitors). Rejection records a reason for audit.</value></data>
@@ -301,6 +317,12 @@
   <data name="Admin.Pending.Reject.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.Pending.Approved.Toast" xml:space="preserve"><value>Approved {0}.</value></data>
   <data name="Admin.Pending.Rejected.Toast" xml:space="preserve"><value>Rejected {0}.</value></data>
+  <data name="Admin.Pending.Pager.First" xml:space="preserve"><value>First page</value></data>
+  <data name="Admin.Pending.Pager.Last" xml:space="preserve"><value>Last page</value></data>
+  <data name="Admin.Pending.Pager.PageSize" xml:space="preserve"><value>Show</value></data>
+  <data name="Admin.Pending.Pager.Page" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="Admin.Pending.Action.SelectAll" xml:space="preserve"><value>Select all</value></data>
+  <data name="Admin.Pending.Action.SelectRow" xml:space="preserve"><value>Select row</value></data>
   <data name="Admin.Logs.Title" xml:space="preserve"><value>System logs</value></data>
   <data name="Admin.Logs.Supporting" xml:space="preserve"><value>Per-project log files. The view auto-refreshes; pick a project and a day, then tail or download.</value></data>
   <data name="Admin.Logs.Project" xml:space="preserve"><value>Project</value></data>
@@ -313,7 +335,7 @@
   <data name="Admin.Logs.Loading" xml:space="preserve"><value>Loading…</value></data>
   <data name="Admin.Logs.Size" xml:space="preserve"><value>Size</value></data>
   <data name="Admin.Logs.LastModified" xml:space="preserve"><value>Last modified</value></data>
-  <data name="Admin.Users.Title" xml:space="preserve"><value>Users</value></data>
+  <data name="Admin.Users.Title" xml:space="preserve"><value>Admins</value></data>
   <data name="Admin.Users.None" xml:space="preserve"><value>No accounts yet.</value></data>
   <data name="Admin.Users.CreateNew" xml:space="preserve"><value>Add user</value></data>
   <data name="Admin.Users.Column.Email" xml:space="preserve"><value>Email</value></data>
@@ -616,6 +638,21 @@
   <data name="Account.Notifications.Next" xml:space="preserve"><value>Next</value></data>
   <data name="Account.Notifications.Loading" xml:space="preserve"><value>Loading notifications…</value></data>
   <data name="Account.Notifications.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Account.Notifications.None" xml:space="preserve"><value>No notifications.</value></data>
+  <data name="Account.Notifications.Action.Details" xml:space="preserve"><value>Details</value></data>
+  <data name="Account.Notifications.Action.SelectAll" xml:space="preserve"><value>Select all</value></data>
+  <data name="Account.Notifications.Action.SelectRow" xml:space="preserve"><value>Select row</value></data>
+  <data name="Account.Notifications.Details.Title" xml:space="preserve"><value>Notification details</value></data>
+  <data name="Account.Notifications.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Account.Notifications.Details.Field.Title" xml:space="preserve"><value>Title</value></data>
+  <data name="Account.Notifications.Details.Field.Body" xml:space="preserve"><value>Message</value></data>
+  <data name="Account.Notifications.Details.Field.Severity" xml:space="preserve"><value>Type</value></data>
+  <data name="Account.Notifications.Details.Field.CreatedAt" xml:space="preserve"><value>Received</value></data>
+  <data name="Account.Notifications.Pager.First" xml:space="preserve"><value>First page</value></data>
+  <data name="Account.Notifications.Pager.Last" xml:space="preserve"><value>Last page</value></data>
+  <data name="Account.Notifications.Pager.PageSize" xml:space="preserve"><value>Show</value></data>
+  <data name="Account.Notifications.Pager.Page" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="Account.Notifications.BulkDismissed" xml:space="preserve"><value>Dismissed {0} notifications.</value></data>
 
   <data name="Module.AdminAdmins" xml:space="preserve"><value>Admins</value></data>
   <data name="Module.AdminAdminsPending" xml:space="preserve"><value>Pending admins</value></data>

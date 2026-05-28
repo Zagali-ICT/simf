@@ -19,8 +19,15 @@
 <div class="simf-account-page">
     <header class="simf-account-page__head">
         <h1 class="simf-account-page__title">@L["Account.Profile.Title"]</h1>
-        <SimfButton Type="button" Variant="secondary"
-                    OnClick="SignOutAsync">@L["Account.Profile.SignOut"]</SimfButton>
+        @* D-132 — surface a link to the notifications inbox so the page
+           is reachable from the main post-login surface (it was orphan
+           — reachable only by typing the URL). *@
+        <div class="simf-account-page__actions">
+            <a class="simf-button simf-button--secondary"
+               href="/account/notifications">@L["Account.Notifications.Title"]</a>
+            <SimfButton Type="button" Variant="secondary"
+                        OnClick="SignOutAsync">@L["Account.Profile.SignOut"]</SimfButton>
+        </div>
     </header>
 
     @if (_loadError is not null)

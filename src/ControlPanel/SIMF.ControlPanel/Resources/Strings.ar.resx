@@ -61,6 +61,8 @@
   <!-- D-118 — Profile types CRUD nav labels -->
   <data name="Module.AdminVisitorProfileTypes" xml:space="preserve"><value>أنواع ملفات الزوار</value></data>
   <data name="Module.AdminOtherProfileTypes" xml:space="preserve"><value>أنواع الملفات الأخرى</value></data>
+  <!-- D-132 — generic nav "Soon" tag rendered next to stub modules -->
+  <data name="Nav.Soon" xml:space="preserve"><value>قريبًا</value></data>
 
   <!-- D-118 — Profile types CRUD strings -->
   <data name="Admin.ProfileTypes.Visitor.Title" xml:space="preserve"><value>أنواع ملفات الزوار</value></data>
@@ -171,6 +173,20 @@
   <data name="Admin.Interests.Updated" xml:space="preserve"><value>تم تحديث الاهتمام "{0}".</value></data>
   <data name="Admin.Interests.Deactivated" xml:space="preserve"><value>تم تعطيل الاهتمام "{0}".</value></data>
   <data name="Admin.Interests.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
+  <data name="Admin.Interests.None" xml:space="preserve"><value>لا توجد اهتمامات بعد.</value></data>
+  <data name="Admin.Interests.Add.Title" xml:space="preserve"><value>إضافة اهتمام</value></data>
+  <data name="Admin.Interests.Add.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Interests.Add.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Interests.Edit.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Interests.Details.Title" xml:space="preserve"><value>تفاصيل الاهتمام</value></data>
+  <data name="Admin.Interests.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Interests.Action.Details" xml:space="preserve"><value>تفاصيل</value></data>
+  <data name="Admin.Interests.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
+  <data name="Admin.Interests.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
+  <data name="Admin.Interests.Pager.First" xml:space="preserve"><value>الصفحة الأولى</value></data>
+  <data name="Admin.Interests.Pager.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>
+  <data name="Admin.Interests.Pager.PageSize" xml:space="preserve"><value>عرض</value></data>
+  <data name="Admin.Interests.Pager.Page" xml:space="preserve"><value>الصفحة {0} من {1}</value></data>
   <data name="Admin.Pending.Staff.Title" xml:space="preserve"><value>موافقات الفريق المعلّقة</value></data>
   <data name="Admin.Pending.Visitors.Title" xml:space="preserve"><value>موافقات الزوار المعلّقة</value></data>
   <data name="Admin.Pending.Supporting" xml:space="preserve"><value>الموافقة تنشئ شارة QR وتفعّل تسجيل الدخول (لوحة التحكم للفريق، دخول الحدث للزوار). الرفض يسجّل سبباً في سجل التدقيق.</value></data>
@@ -294,6 +310,12 @@
   <data name="Admin.Pending.Reject.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.Pending.Approved.Toast" xml:space="preserve"><value>تمّت الموافقة على {0}.</value></data>
   <data name="Admin.Pending.Rejected.Toast" xml:space="preserve"><value>تمّ رفض {0}.</value></data>
+  <data name="Admin.Pending.Pager.First" xml:space="preserve"><value>الصفحة الأولى</value></data>
+  <data name="Admin.Pending.Pager.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>
+  <data name="Admin.Pending.Pager.PageSize" xml:space="preserve"><value>عرض</value></data>
+  <data name="Admin.Pending.Pager.Page" xml:space="preserve"><value>الصفحة {0} من {1}</value></data>
+  <data name="Admin.Pending.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
+  <data name="Admin.Pending.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
   <data name="Admin.Logs.Title" xml:space="preserve"><value>سجلات النظام</value></data>
   <data name="Admin.Logs.Supporting" xml:space="preserve"><value>ملفات السجل لكل مشروع. تتحدّث الصفحة تلقائياً؛ اختر مشروعاً ويوماً ثم تابع أو نزّل.</value></data>
   <data name="Admin.Logs.Project" xml:space="preserve"><value>المشروع</value></data>
@@ -306,7 +328,7 @@
   <data name="Admin.Logs.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
   <data name="Admin.Logs.Size" xml:space="preserve"><value>الحجم</value></data>
   <data name="Admin.Logs.LastModified" xml:space="preserve"><value>آخر تعديل</value></data>
-  <data name="Admin.Users.Title" xml:space="preserve"><value>المستخدمون</value></data>
+  <data name="Admin.Users.Title" xml:space="preserve"><value>المسؤولون</value></data>
   <data name="Admin.Users.None" xml:space="preserve"><value>لا توجد حسابات بعد.</value></data>
   <data name="Admin.Users.CreateNew" xml:space="preserve"><value>إضافة مستخدم</value></data>
   <data name="Admin.Users.Column.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
@@ -610,6 +632,21 @@
   <data name="Account.Notifications.Next" xml:space="preserve"><value>التالي</value></data>
   <data name="Account.Notifications.Loading" xml:space="preserve"><value>جارٍ تحميل الإشعارات…</value></data>
   <data name="Account.Notifications.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Account.Notifications.None" xml:space="preserve"><value>لا توجد إشعارات.</value></data>
+  <data name="Account.Notifications.Action.Details" xml:space="preserve"><value>تفاصيل</value></data>
+  <data name="Account.Notifications.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
+  <data name="Account.Notifications.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
+  <data name="Account.Notifications.Details.Title" xml:space="preserve"><value>تفاصيل الإشعار</value></data>
+  <data name="Account.Notifications.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Account.Notifications.Details.Field.Title" xml:space="preserve"><value>العنوان</value></data>
+  <data name="Account.Notifications.Details.Field.Body" xml:space="preserve"><value>الرسالة</value></data>
+  <data name="Account.Notifications.Details.Field.Severity" xml:space="preserve"><value>النوع</value></data>
+  <data name="Account.Notifications.Details.Field.CreatedAt" xml:space="preserve"><value>وقت الاستلام</value></data>
+  <data name="Account.Notifications.Pager.First" xml:space="preserve"><value>الصفحة الأولى</value></data>
+  <data name="Account.Notifications.Pager.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>
+  <data name="Account.Notifications.Pager.PageSize" xml:space="preserve"><value>عرض</value></data>
+  <data name="Account.Notifications.Pager.Page" xml:space="preserve"><value>الصفحة {0} من {1}</value></data>
+  <data name="Account.Notifications.BulkDismissed" xml:space="preserve"><value>تم تجاهل {0} إشعارات.</value></data>
 
   <data name="Module.AdminAdmins" xml:space="preserve"><value>المسؤولون</value></data>
   <data name="Module.AdminAdminsPending" xml:space="preserve"><value>المسؤولون — بانتظار الموافقة</value></data>

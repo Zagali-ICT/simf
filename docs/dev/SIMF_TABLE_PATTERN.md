@@ -2,10 +2,16 @@
 
 | | |
 |--|--|
-| **Authority** | Decision D-117 (2026-05-26) |
+| **Authority** | Decision D-117 (2026-05-26), extended by D-132 (2026-05-28) |
 | **Gold-standard reference** | [`UsersList.razor`](../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/UsersList.razor) |
 | **Component used** | [`SimfDataGrid`](../../src/Shared/SIMF.Components/Forms/SimfDataGrid.razor) |
 | **Status** | Active |
+
+> **D-132 update (2026-05-28):** `Multiselect="true"` + `RowKey` + `RowLabel` are
+> **mandatory** on every list page that uses `SimfDataGrid` — including approval
+> queues. The Select-all toolbar button and per-row checkboxes are part of the
+> canonical shell, not an opt-in. The same rule applies to `SimfBanner` (no more
+> `SimfPageHeader` on any admin / account-area list page).
 
 This is the single canonical pattern for every Control Panel CRUD list page.
 **Copy `UsersList.razor` and adapt — do not invent a new shape.** If the canonical

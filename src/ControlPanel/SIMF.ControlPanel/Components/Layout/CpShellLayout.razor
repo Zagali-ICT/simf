@@ -50,7 +50,9 @@
             <SimfNavGroup Label='@L[group.LabelKey]'>
                 @foreach (var item in group.Items)
                 {
-                    <SimfNavItem Href="@item.Href" Label='@L[item.LabelKey]' />
+                    <SimfNavItem Href="@item.Href"
+                                 Label='@L[item.LabelKey]'
+                                 BadgeLabel='@(item.IsStub ? L["Nav.Soon"].Value : null)' />
                 }
             </SimfNavGroup>
         }
