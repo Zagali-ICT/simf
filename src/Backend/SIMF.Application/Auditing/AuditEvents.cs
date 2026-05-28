@@ -105,6 +105,12 @@ public static class AuditEvents
     public const string AdminLogViewed = "Admin.LogViewed";
     public const string AdminLogDownloaded = "Admin.LogDownloaded";
 
+    // Roles (D-134 Sprint A — admin CRUD over existing SimfRole +
+    // RolePermission + Permission entities; pure P2 — no schema change)
+    public const string RoleCreated = "Role.Created";
+    public const string RoleUpdated = "Role.Updated";
+    public const string RoleDeleted = "Role.Deleted";
+
     // Approval workflow (P4 — Admin / Visitor; P7c added the Other pair)
     public const string AdminStaffApproved = "Admin.StaffApproved";
     public const string AdminStaffRejected = "Admin.StaffRejected";

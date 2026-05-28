@@ -187,6 +187,53 @@
   <data name="Admin.Interests.Pager.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>
   <data name="Admin.Interests.Pager.PageSize" xml:space="preserve"><value>عرض</value></data>
   <data name="Admin.Interests.Pager.Page" xml:space="preserve"><value>الصفحة {0} من {1}</value></data>
+
+  <!-- D-134 Sprint A — Roles CRUD strings -->
+  <data name="Admin.Roles.Title" xml:space="preserve"><value>الأدوار والصلاحيات</value></data>
+  <data name="Admin.Roles.None" xml:space="preserve"><value>لا توجد أدوار بعد.</value></data>
+  <data name="Admin.Roles.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الأدوار.</value></data>
+  <data name="Admin.Roles.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
+  <data name="Admin.Roles.Column.Name" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Admin.Roles.Column.Baseline" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.Roles.Column.UserCount" xml:space="preserve"><value>المستخدمون</value></data>
+  <data name="Admin.Roles.Column.PermissionCount" xml:space="preserve"><value>الصلاحيات</value></data>
+  <data name="Admin.Roles.Column.Actions" xml:space="preserve"><value>إجراءات</value></data>
+  <data name="Admin.Roles.Baseline.Yes" xml:space="preserve"><value>مدمج</value></data>
+  <data name="Admin.Roles.Baseline.No" xml:space="preserve"><value>مخصص</value></data>
+  <data name="Admin.Roles.Field.Name" xml:space="preserve"><value>اسم الدور</value></data>
+  <data name="Admin.Roles.Field.NameHint" xml:space="preserve"><value>من 1 إلى 64 حرفاً؛ يجب أن يكون فريداً.</value></data>
+  <data name="Admin.Roles.Field.NameInvalid" xml:space="preserve"><value>يجب أن يتراوح طول اسم الدور بين 1 و 64 حرفاً.</value></data>
+  <data name="Admin.Roles.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Roles.FilterColumn" xml:space="preserve"><value>تصفية العمود</value></data>
+  <data name="Admin.Roles.FilterPlaceholder" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Roles.Loading" xml:space="preserve"><value>جارٍ تحميل الأدوار…</value></data>
+  <data name="Admin.Roles.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Roles.Prev" xml:space="preserve"><value>السابق</value></data>
+  <data name="Admin.Roles.Next" xml:space="preserve"><value>التالي</value></data>
+  <data name="Admin.Roles.Pager.First" xml:space="preserve"><value>الصفحة الأولى</value></data>
+  <data name="Admin.Roles.Pager.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>
+  <data name="Admin.Roles.Pager.PageSize" xml:space="preserve"><value>عرض</value></data>
+  <data name="Admin.Roles.Pager.Page" xml:space="preserve"><value>الصفحة {0} من {1}</value></data>
+  <data name="Admin.Roles.Action.Add" xml:space="preserve"><value>إضافة دور</value></data>
+  <data name="Admin.Roles.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Roles.Action.Details" xml:space="preserve"><value>تفاصيل</value></data>
+  <data name="Admin.Roles.Action.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Roles.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
+  <data name="Admin.Roles.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
+  <data name="Admin.Roles.Add.Title" xml:space="preserve"><value>إضافة دور</value></data>
+  <data name="Admin.Roles.Edit.Title" xml:space="preserve"><value>تعديل الدور</value></data>
+  <data name="Admin.Roles.Edit.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Roles.Edit.BaselineNotice" xml:space="preserve"><value>هذا دور مدمج ولا يمكن إعادة تسميته.</value></data>
+  <data name="Admin.Roles.Details.Title" xml:space="preserve"><value>تفاصيل الدور</value></data>
+  <data name="Admin.Roles.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Roles.Details.PermissionEditorDeferred" xml:space="preserve"><value>محرر منح الصلاحيات وتعيين الدور للمستخدمين سيُشحن في تحديث لاحق.</value></data>
+  <data name="Admin.Roles.New.Submit" xml:space="preserve"><value>إنشاء الدور</value></data>
+  <data name="Admin.Roles.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء</value></data>
+  <data name="Admin.Roles.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.Roles.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Admin.Roles.Created" xml:space="preserve"><value>تم إنشاء الدور "{0}".</value></data>
+  <data name="Admin.Roles.Updated" xml:space="preserve"><value>تم تحديث الدور "{0}".</value></data>
+  <data name="Admin.Roles.Deleted" xml:space="preserve"><value>تم حذف الدور "{0}".</value></data>
   <data name="Admin.Pending.Staff.Title" xml:space="preserve"><value>موافقات الفريق المعلّقة</value></data>
   <data name="Admin.Pending.Visitors.Title" xml:space="preserve"><value>موافقات الزوار المعلّقة</value></data>
   <data name="Admin.Pending.Supporting" xml:space="preserve"><value>الموافقة تنشئ شارة QR وتفعّل تسجيل الدخول (لوحة التحكم للفريق، دخول الحدث للزوار). الرفض يسجّل سبباً في سجل التدقيق.</value></data>

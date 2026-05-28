@@ -580,6 +580,52 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"interests/{id}", content: null,
             accessToken, cancellationToken);
 
+    // -- D-134 Sprint A — Roles admin CRUD (existing schema, no migration) --
+
+    /// <summary>One page of roles for the admin grid (D-134 Sprint A).</summary>
+    public Task<ApiCallResult<GridPage<AdminRoleSummary>>> ListRolesAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminRoleSummary>>(
+            HttpMethod.Post, "roles/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>One role by id (D-134 Sprint A).</summary>
+    public Task<ApiCallResult<AdminRoleSummary>> GetRoleAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRoleSummary>(
+            HttpMethod.Get, $"roles/{id}", content: null,
+            accessToken, cancellationToken);
+
+    /// <summary>Creates a custom role (D-134 Sprint A).</summary>
+    public Task<ApiCallResult<AdminRoleSummary>> CreateRoleAsync(
+        AdminCreateRoleRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRoleSummary>(
+            HttpMethod.Post, "roles",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Renames a custom role (D-134 Sprint A).</summary>
+    public Task<ApiCallResult<AdminRoleSummary>> UpdateRoleAsync(
+        Guid id, AdminUpdateRoleRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRoleSummary>(
+            HttpMethod.Put, $"roles/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Deletes a custom role (D-134 Sprint A). Refused for
+    /// baseline roles or roles still held by any user.</summary>
+    public Task<ApiCallResult<bool>> DeleteRoleAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"roles/{id}", content: null,
+            accessToken, cancellationToken);
+
     // -- D-115 — ProfileTypes CRUD (admin-managed lookup table) --------------
 
     /// <summary>One page of profile types for the admin grid (D-115).</summary>

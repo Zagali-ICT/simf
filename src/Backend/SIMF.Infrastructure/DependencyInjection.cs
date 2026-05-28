@@ -150,6 +150,8 @@ public static class DependencyInjection
         services.AddScoped<IAdminUserBulkService>(sp => sp.GetRequiredService<AdminAccountService>());
         services.AddScoped<IAdminProfileTypeQueryService, AdminProfileTypeQueryService>();
         services.AddScoped<IAdminProfileTypeCommandService, AdminProfileTypeCommandService>();
+        // D-134 Sprint A — admin CRUD over SimfRole (existing schema, no migration).
+        services.AddScoped<IAdminRoleService, AdminRoleService>();
         services.AddScoped<IAdminApprovalReadService, AdminApprovalReadService>();
         services.AddScoped<IQrIdMinter, QrIdMinter>();
         services.AddScoped<IUserProfileService, UserProfileService>();

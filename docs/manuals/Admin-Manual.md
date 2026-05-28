@@ -251,9 +251,74 @@ click Print.
 - Walk-in registration (where the QR is minted): [`docs/pages/cp/admin-visitors.md`](../pages/cp/admin-visitors.md)
 - Decision: D-130.
 
-### 4.4 _(planned)_ Roles & permissions — `/m/roles`
+### 4.4 Roles & permissions — `/admin/roles` (D-134 Sprint A)
 
-_(stub)_
+> Page reference: [`docs/pages/cp/admin-roles.md`](../pages/cp/admin-roles.md)
+
+#### What it's for
+
+Roles are how SIMF expresses **who-can-do-what**. The system ships a small
+set of **built-in (baseline) roles** that always exist — most importantly
+`Administrator`. You use this page to **add your own custom roles** (e.g.
+`Scientific Committee`, `Press`, `Security`), **rename** them, and
+**delete** ones you no longer need.
+
+#### Most common tasks
+
+##### Create a custom role
+
+1. **People → Roles & permissions** → **+ Add role**.
+2. Type a name (1–64 characters; must be unique across all roles).
+3. Click **Create role**.
+4. The grid shows your new row with the **Custom** pill, 0 users, 0
+   permissions.
+
+##### Rename a custom role
+
+1. Click the **Edit** icon on a custom row.
+2. Change the name → **Save changes**.
+3. Baseline rows can't be renamed — the Edit modal shows a notice
+   instead of the form.
+
+##### Delete a custom role
+
+1. Click the **Delete** (trash) icon on a custom row.
+2. The server refuses if any user still holds the role (you'll see the
+   exact user count in the bilingual error toast). Unassign those users
+   first (UI for that ships in a follow-up).
+3. Baseline roles are protected — Delete on those returns the bilingual
+   "Baseline roles cannot be deleted" toast.
+
+##### See the users + permissions in a role
+
+Click the **Details** icon — the modal shows Name, Type (Built-in /
+Custom), Users count, Permissions count. The per-permission grant
+editor and the assign-to-user surface ship in a follow-up commit; for
+now this page is about the role itself.
+
+#### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Toast: "A role named '…' already exists" | Duplicate name | Pick a different name; role names are case-insensitive unique |
+| Toast: "The role cannot be deleted while N user(s) hold it" | Role still assigned | Unassign users from the role (UI in follow-up) or rename rather than delete |
+| Toast: "Baseline roles cannot be renamed/deleted" | Acting on a built-in role | Built-in roles are protected by design; choose a custom row instead |
+| Modal saves but the row doesn't update | Auto-reload race | Refresh the page; if it persists, check the API log |
+
+#### What you cannot do here yet
+
+- **Edit per-permission grants** (which pages + actions a role can do).
+  Coming in a follow-up.
+- **Assign / unassign users to a role.** Coming in a follow-up — until
+  then, the User Management module assigns the `Administrator` role at
+  invite time only.
+- **Bulk delete** — one role at a time.
+
+#### Cross-references
+
+- Page reference: [`docs/pages/cp/admin-roles.md`](../pages/cp/admin-roles.md)
+- Authority spec: SIMF-RPM-001 §8 (page-and-action model).
+- Decisions: D-134 plan + Sprint A commit.
 
 ---
 

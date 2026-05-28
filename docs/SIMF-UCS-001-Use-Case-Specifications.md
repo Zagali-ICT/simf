@@ -850,6 +850,61 @@ authoring.
 - **Edge case — Empty inbox:** `SimfEmptyState` renders.
 - **Postcondition:** read-state may have changed (visitor saw the inbox).
 
+### UC-ROL-CREATE-001 — Create a custom role (D-134 Sprint A)
+
+- **Actor:** Administrator.
+- **Preconditions:** signed in + Approved + `Administrator` role.
+- **Main flow:**
+  1. Open [`/admin/roles`](pages/cp/admin-roles.md) → click **+ Add role**.
+  2. Add modal opens (`RoleForm` Initial=null) with one Role-name field.
+  3. Fill Name (1–64 chars) → click **Create role**.
+  4. Server (`AdminRoleService.CreateAsync`) trims, length-checks,
+     uniqueness-checks via `RoleManager.RoleExistsAsync`, creates with
+     `IsBaseline = false`, audits `Role.Created`.
+  5. Modal closes; grid reloads; success toast.
+- **Exception — Duplicate name:** 409 `RoleNameDuplicate` (bilingual);
+  modal stays open.
+- **Exception — Bad length:** 400 `RoleInvalid` (bilingual).
+- **Postcondition:** new `SimfRole` row with `IsBaseline = false`,
+  zero users, zero permissions. Ready for the follow-up permission
+  editor to grant rights and the follow-up user editor to assign users.
+
+### UC-ROL-RENAME-001 — Rename a custom role
+
+- **Actor:** Administrator.
+- **Preconditions:** target custom role exists; `IsBaseline = false`.
+- **Main flow:**
+  1. Click Edit on the row.
+  2. Edit modal opens prefilled.
+  3. Change the name → **Save changes**.
+  4. Server: rejects if `IsBaseline = true` (409 `RoleIsBaseline`);
+     re-checks uniqueness; calls `RoleManager.SetRoleNameAsync` +
+     `UpdateAsync`; audits `Role.Updated`.
+  5. Modal closes; grid reloads; toast.
+- **Alternate flow — Baseline target:** Edit modal renders a SimfAlert
+  notice + Close button instead of the form. Server still guards in
+  case a hand-crafted PUT arrives.
+- **Postcondition:** row name updated everywhere (the `NormalizedName`
+  + concurrency stamp are handled by Identity).
+
+### UC-ROL-DELETE-001 — Delete a custom role
+
+- **Actor:** Administrator.
+- **Preconditions:** target row is custom (`IsBaseline = false`) AND no
+  user currently holds it.
+- **Main flow:**
+  1. Click the Delete (trash) icon.
+  2. Server: rejects baseline (409 `RoleIsBaseline`); counts holders;
+     rejects if > 0 (409 `RoleInUse` with the count interpolated);
+     cascade-deletes any `RolePermission` rows; calls
+     `RoleManager.DeleteAsync`; audits `Role.Deleted`.
+  3. Row vanishes; toast.
+- **Exception — Baseline:** 409 `RoleIsBaseline`.
+- **Exception — In use:** 409 `RoleInUse` with the bilingual holder
+  count.
+- **Postcondition:** `SimfRole` row + its `RolePermission` grants
+  removed; no user references the role.
+
 ## 9. How to author the remaining entries
 
 For each row in §7 that doesn't yet have a detailed entry above:

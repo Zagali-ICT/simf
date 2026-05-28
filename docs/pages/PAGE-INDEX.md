@@ -30,7 +30,7 @@ Navigation grouped per `CpNavigation.cs` (9 groups). 14 real pages + 22 stubs af
 | `/m/registration-requests` | `Module.RegistrationRequests` | 🚧 Stub | Administrator | — | — |
 | `/m/attendees` | `Module.Attendees` | 🚧 Stub | Administrator | — | — |
 | `/admin/print-bag` | `Module.PrintBag` | ✅ Real | Administrator | [cp/admin-print-bag.md](cp/admin-print-bag.md) | [e2e/cp-admin-print-bag.md](../tests/e2e/cp-admin-print-bag.md) |
-| `/m/roles` | `Module.Roles` | 🚧 Stub | Administrator | — | — |
+| `/admin/roles` | `Module.Roles` | ✅ Real (D-134 Sprint A) | Administrator | [cp/admin-roles.md](cp/admin-roles.md) | [e2e/cp-admin-roles.md](../tests/e2e/cp-admin-roles.md) |
 | **Programme** | | | | | |
 | `/m/themes` | `Module.Themes` | 🚧 Stub | Administrator | — | — |
 | `/m/sessions` | `Module.Sessions` | 🚧 Stub | Administrator | — | — |

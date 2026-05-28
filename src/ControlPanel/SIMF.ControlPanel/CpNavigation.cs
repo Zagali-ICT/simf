@@ -33,7 +33,9 @@ public static class CpNavigation
             new("Module.Attendees", "/m/attendees", IsStub: true),
             // D-130 — print-bag station: lookup by QR id + reprint badge.
             new("Module.PrintBag", "/admin/print-bag"),
-            new("Module.Roles", "/m/roles", IsStub: true),
+            // D-134 Sprint A — Roles module shipped against the existing
+            // SimfRole + Permission + RolePermission entities (no migration).
+            new("Module.Roles", "/admin/roles"),
         ]),
         new("Nav.Programme",
         [

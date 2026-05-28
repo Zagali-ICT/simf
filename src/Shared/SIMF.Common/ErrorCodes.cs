@@ -96,4 +96,12 @@ public static class ErrorCodes
     public const string InterestInvalid = "INTEREST_INVALID";
     public const string InterestNotFound = "INTEREST_NOT_FOUND";
     public const string InterestNameDuplicate = "INTEREST_NAME_DUPLICATE";
+
+    // Roles (D-134 Sprint A — admin CRUD over existing SimfRole +
+    // RolePermission + Permission entities — no schema change).
+    public const string RoleInvalid = "ROLE_INVALID";
+    public const string RoleNotFound = "ROLE_NOT_FOUND";
+    public const string RoleNameDuplicate = "ROLE_NAME_DUPLICATE";
+    public const string RoleIsBaseline = "ROLE_IS_BASELINE";
+    public const string RoleInUse = "ROLE_IN_USE";
 }

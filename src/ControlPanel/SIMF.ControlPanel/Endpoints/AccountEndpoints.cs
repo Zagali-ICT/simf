@@ -634,6 +634,48 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateInterestAsync(id, token));
         });
 
+        // D-134 Sprint A — Roles CRUD proxy (existing schema, no migration).
+        group.MapPost("/admin/roles/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListRolesAsync(body, token));
+        });
+
+        group.MapGet("/admin/roles/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetRoleAsync(id, token));
+        });
+
+        group.MapPost("/admin/roles",
+            async (AdminCreateRoleRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateRoleAsync(body, token));
+        });
+
+        group.MapPut("/admin/roles/{id:guid}",
+            async (Guid id, AdminUpdateRoleRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateRoleAsync(id, body, token));
+        });
+
+        group.MapDelete("/admin/roles/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteRoleAsync(id, token));
+        });
+
         // P6 — log viewer proxy. The CP page is server-side Blazor, so it
         // talks to these endpoints via fetch (cookie auth) and they forward
         // to the API with the access token.
