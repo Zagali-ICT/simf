@@ -205,7 +205,51 @@ _(stub)_
 
 ### 4.3 Print badge desk — `/admin/print-bag`
 
-_(chapter pending — D-133 expansion. Page reference: [`docs/pages/cp/admin-print-bag.md`](../pages/cp/admin-print-bag.md))_
+> Page reference: [`docs/pages/cp/admin-print-bag.md`](../pages/cp/admin-print-bag.md)
+
+#### What it's for
+
+The print desk reprints visitor badges by **QR id**. Visitors who lost or
+damaged their badge come here; you look them up by QR id (scan or type),
+the page renders the same colour-coded badge they had originally, and you
+click Print.
+
+#### Most common tasks
+
+##### Reprint a badge
+
+1. **People → Print badge** in the left nav (or paste `/admin/print-bag`).
+2. Plug in your USB barcode scanner OR be ready to type the 12-character
+   QR id.
+3. Place the QR (or type it) into the **QR id** input.
+4. Click **Search** (or press Enter).
+5. The badge renders with the visitor's profile-type colour, name, QR SVG,
+   and QR id.
+6. Click **Print**. The browser print dialog opens with only the badge
+   visible (the page header, nav, and toolbar are hidden by the print CSS).
+7. Click **Reset** to clear the form for the next visitor.
+
+#### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| "Visitor not found" | QR id typo OR visitor was deleted | Re-scan; if the QR is damaged, look the visitor up by email on `/admin/visitors` and read their QR id from the Details modal |
+| Print dialog shows the whole page instead of just the badge | Browser blocked the print stylesheet | Use Chrome or Edge; check **Print preview → More settings → Background graphics** is on |
+| QR id input doesn't accept input | Browser autocomplete grabbed focus | Click directly in the input; the input has `autocomplete="off"` but some scanners send a leading tab |
+
+#### What you cannot do here
+
+- **Bulk-reprint** — one visitor at a time.
+- **Edit the visitor while you're here** — go to `/admin/visitors` → find
+  → Edit (when User Management ships).
+- **Re-issue a different QR id** — the QR is minted at registration and is
+  permanent. If a QR is compromised, the visitor must be re-registered.
+
+#### Cross-references
+
+- Page reference: [`docs/pages/cp/admin-print-bag.md`](../pages/cp/admin-print-bag.md)
+- Walk-in registration (where the QR is minted): [`docs/pages/cp/admin-visitors.md`](../pages/cp/admin-visitors.md)
+- Decision: D-130.
 
 ### 4.4 _(planned)_ Roles & permissions — `/m/roles`
 
@@ -217,7 +261,81 @@ _(stub)_
 
 ### 10.1 Admins — `/admin/admins`
 
-_(chapter pending — D-133 expansion. Page reference: [`docs/pages/cp/admin-admins.md`](../pages/cp/admin-admins.md))_
+> Page reference: [`docs/pages/cp/admin-admins.md`](../pages/cp/admin-admins.md)
+
+#### What it's for
+
+Lists every account with the `Administrator` role. This is where you onboard
+a new admin colleague, view someone's details, deactivate a departing admin,
+or pull the admin roster into Excel.
+
+#### Most common tasks
+
+##### Invite a new administrator
+
+1. **System → Admins** → **+ Add**.
+2. Fill the modal: Email, Display name, Password (min 12 chars + 1 digit +
+   1 upper + 1 lower + 1 special), TOTP-on-first-login (leave on).
+3. Click **Create administrator**. The new row appears Approved.
+4. Send the new admin their email + password out-of-band; they'll go through
+   first-time TOTP pairing on first sign-in (§2.2).
+
+##### View an admin's details
+
+Click the **ⓘ Details** icon on the row → read-only modal with email,
+display name, state, role.
+
+##### Deactivate a departing admin
+
+1. Either: select the row + **Delete** in the toolbar (bulk-delete modal
+   asks for a 10–500 character reason)
+2. Or: click the **🗑 Delete** icon on the row (same reason modal).
+3. Type the reason (this is preserved in the audit log).
+4. Click **Delete**. The row vanishes. Self-delete is silently skipped — you
+   cannot delete your own account.
+
+##### Bulk-delete several admins
+
+Tick the rows you want → **Delete** in the toolbar → reason → Submit.
+The toast tells you how many were deleted vs skipped (self-delete or
+unknown id).
+
+##### Duplicate an admin
+
+Useful when you're standing up a sister account (e.g. shared service account).
+Per-row **Duplicate** icon → enter the new email → Submit. The new account
+has the same role + state, fresh QR.
+
+##### Import / Export
+
+- **Export** — select rows + Export, OR export the entire current query
+  (no selection) → XLSX downloads.
+- **Import** — Import → XLSX upload (≤ 5 MB) → review the result modal
+  showing created / skipped / errors per row.
+
+#### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Edit button does nothing useful | Edit is a stub awaiting the User Management module | Use Delete + re-Add as a workaround |
+| Bulk-delete reports "Deleted N, skipped 1" | Your own row was in the batch | Expected — self-delete is silently skipped |
+| Import shows 50 errors | XLSX header row missing or wrong column names | Open the Export sample as the template, re-fill, re-upload |
+| Toast: "Email already exists" | Trying to invite a duplicate | Find the existing admin first; if Deactivated, ask a developer (no re-activate exists yet) |
+
+#### What you cannot do here
+
+- **Edit existing admin fields** (Edit modal is a stub — awaits the User
+  Management module).
+- **Reset their 2FA** — go to `/admin/reset-2fa` (per-target reset).
+- **Change their role** — admins are role-pinned at creation; you'd have to
+  delete + recreate.
+
+#### Cross-references
+
+- Page reference: [`docs/pages/cp/admin-admins.md`](../pages/cp/admin-admins.md)
+- Pattern: [`SIMF_TABLE_PATTERN.md`](../dev/SIMF_TABLE_PATTERN.md)
+- API: `/admin/admins/*` endpoint group in [`SIMF-API-001`](../SIMF-API-001-API-Specification.md)
+- Sibling: §10.2 Pending admins (approval queue for self-registered admins).
 
 ### 10.2 Pending admins — `/admin/admins/pending`
 
@@ -233,7 +351,80 @@ _(chapter pending)_
 
 ### 10.5 Visitors — `/admin/visitors`
 
-_(chapter pending)_
+> Page reference: [`docs/pages/cp/admin-visitors.md`](../pages/cp/admin-visitors.md)
+
+#### What it's for
+
+The **event-day workhorse**. On the day of the forum, exhibition staff at the
+registration desk use this page to register walk-in visitors face-to-face.
+Off-day, admins use it to audit the visitor roster, view full profiles (with
+ID-document image), export the attendee list, and reach the reprint desk.
+
+#### Most common tasks
+
+##### Register a walk-in visitor (event day)
+
+1. **System → Visitors** → **+ Add**.
+2. The walk-in wizard opens with **6 numbered sections** (D-131):
+   1. **Badge type** — click the colour-coded tile for the visitor's
+      category (General, VIP, Press, etc. — managed under
+      **Visitor profile types**).
+   2. **Identity** — Name on badge first, then Date of birth, then full
+      English + Arabic names, then Place of birth. (Order tuned for desk
+      conversation flow.)
+   3. **Nationality and ID** — toggle Saudi / Non-Saudi.
+      - Saudi → 10-digit national ID starting with 1.
+      - Non-Saudi → pick country, then toggle Iqama (10 digits starting
+        with 2) or Passport (≤ 20 chars).
+   4. **Contact** — Saudi mobile (`+9665XXXXXXXX`) or international mobile,
+      optional email. Email is OK to leave blank — the QR badge is the
+      access key.
+   5. **ID document** — optional photo of national ID / Iqama / passport
+      (PNG/JPEG/WebP, ≤ 5 MB). Stored encrypted at rest (D-129).
+   6. **Interests** — pick up to 10 topics the visitor cares about (drives
+      the visitor's profile picker).
+3. Click **Register**.
+4. The success modal pops with the freshly minted badge: profile-type colour
+   stripe, name, QR code, QR id. Click **Print badge** to send to the
+   printer; click **Register another** to clear and continue.
+
+##### View a visitor's full profile + ID image
+
+Click the **ⓘ Details** icon on the row → modal shows every field including
+the inline ID document image (decrypted on demand). Close when done.
+
+##### Reprint a lost badge
+
+Go to **People → Print badge** (`/admin/print-bag`) — see §4.3.
+
+##### Bulk-delete + Duplicate + Import + Export
+
+Same shape as Admins (§10.1).
+
+#### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| "Invalid national ID" toast | Saudi ID doesn't start with 1 OR isn't 10 digits | Re-check from the physical ID; the regex is strict |
+| "Invalid Iqama number" toast | Iqama doesn't start with 2 OR isn't 10 digits | Same |
+| Walk-in succeeds but ID image not on Details | Upload failed silently (network blip) | Re-open Details after 5s; if still missing, the registration is still good — image upload is best-effort |
+| Walk-in form shows wrong language | Browser language toggle | Use the `العربية` link in the header to flip |
+| Visitor not found on Print badge desk | Maybe registered under wrong Kind (Other instead of Visitor) | Check `/admin/others` |
+
+#### What you cannot do here
+
+- **Edit a visitor's identity after walk-in** (Edit is a stub awaiting the
+  User Management module).
+- **Mass-register from XLSX while populating profile fields** — the import
+  XLSX covers email + display name + profile-type, not the full profile.
+  Use the walk-in form for profile-complete registrations.
+
+#### Cross-references
+
+- Page reference: [`docs/pages/cp/admin-visitors.md`](../pages/cp/admin-visitors.md)
+- Print desk: §4.3 + [`admin-print-bag.md`](../pages/cp/admin-print-bag.md)
+- Walk-in wizard component: `WalkInRegistrationForm.razor`
+- Decisions: D-114, D-127, D-128, D-129, D-130, D-131.
 
 ### 10.6 Pending visitors — `/admin/visitors/pending`
 
