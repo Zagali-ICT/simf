@@ -24,8 +24,7 @@
                        @bind-Value="_model.NameArabic" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Speakers.Field.Rank"]"
                        MaxLength="64"
-                       Value="@_model.Rank"
-                       ValueChanged="@(v => _model.Rank = v)" Disabled="_busy" />
+                       @bind-Value="_model.Rank" Disabled="_busy" />
 
         <SimfSelect TValue="string"
                     Label="@L["Admin.Speakers.Field.Country"]"
@@ -82,16 +81,13 @@
 
         <SimfTextField Label="@L["Admin.Speakers.Field.FacebookUrl"]"
                        MaxLength="256"
-                       Value="@_model.FacebookUrl"
-                       ValueChanged="@(v => _model.FacebookUrl = v)" Disabled="_busy" />
+                       @bind-Value="_model.FacebookUrl" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Speakers.Field.LinkedInUrl"]"
                        MaxLength="256"
-                       Value="@_model.LinkedInUrl"
-                       ValueChanged="@(v => _model.LinkedInUrl = v)" Disabled="_busy" />
+                       @bind-Value="_model.LinkedInUrl" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Speakers.Field.XUrl"]"
                        MaxLength="256"
-                       Value="@_model.XUrl"
-                       ValueChanged="@(v => _model.XUrl = v)" Disabled="_busy" />
+                       @bind-Value="_model.XUrl" Disabled="_busy" />
 
         <SimfTextField Label="@L["Admin.Speakers.Field.DisplayOrder"]"
                        Type="number"

@@ -12,23 +12,11 @@
 
 <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
     <div class="simf-form__fields">
-        @if (Initial is null)
-        {
-            <SimfTextField Label="@L["Admin.Countries.Field.Id"]"
-                           Helper="@L["Admin.Countries.Field.IdHint"]"
-                           Type="number"
-                           Value="@_idInput"
-                           ValueChanged="@(v => _idInput = v)"
-                           ValueExpression="@(() => _idInput)"
-                           Disabled="_busy" />
-        }
-        else
-        {
-            <SimfTextField Label="@L["Admin.Countries.Field.Id"]"
-                           Helper="@L["Admin.Countries.Field.IdReadOnly"]"
-                           Value="@Initial.Id.ToString()"
-                           Disabled="true" />
-        }
+        <SimfTextField Label="@L["Admin.Countries.Field.Id"]"
+                       Helper="@(Initial is null ? L["Admin.Countries.Field.IdHint"] : L["Admin.Countries.Field.IdReadOnly"])"
+                       Type="number"
+                       @bind-Value="_idInput"
+                       Disabled="@(_busy || Initial is not null)" />
 
         <SimfTextField Label="@L["Admin.Countries.Field.Code"]"
                        Helper="@L["Admin.Countries.Field.CodeHint"]"
@@ -43,8 +31,7 @@
         <SimfTextField Label="@L["Admin.Countries.Field.PhonePrefix"]"
                        Helper="@L["Admin.Countries.Field.PhonePrefixHint"]"
                        MaxLength="8"
-                       Value="@_model.PhonePrefix"
-                       ValueChanged="@(v => _model.PhonePrefix = v)" Disabled="_busy" />
+                       @bind-Value="_model.PhonePrefix" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Countries.Field.DisplayOrder"]"
                        Helper="@L["Admin.Countries.Field.DisplayOrderHint"]"
                        Type="number"
@@ -97,6 +84,7 @@
             _model.PhonePrefix = Initial.PhonePrefix ?? string.Empty;
             _model.IsActive = Initial.IsActive;
             _displayOrderInput = Initial.DisplayOrder.ToString();
+            _idInput = Initial.Id.ToString();
         }
         _editContext = new EditContext(_model);
     }
