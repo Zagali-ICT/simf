@@ -219,6 +219,14 @@ public static class DependencyInjection
             SIMF.Infrastructure.Cms.AdminCmsService>();
         services.AddScoped<SIMF.Application.Cms.Abstractions.IPublicCmsService,
             SIMF.Infrastructure.Cms.PublicCmsService>();
+        // D-174 (gap doc G11, Mockup pages 21 + 27) — Delegations admin
+        // CRUD + public list + MeetingRequest service.
+        services.AddScoped<SIMF.Application.Delegations.Abstractions.IAdminDelegationService,
+            SIMF.Infrastructure.Delegations.AdminDelegationService>();
+        services.AddScoped<SIMF.Application.Delegations.Abstractions.IPublicDelegationService,
+            SIMF.Infrastructure.Delegations.PublicDelegationService>();
+        services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IMeetingRequestService,
+            SIMF.Infrastructure.MeetingRequests.MeetingRequestService>();
         // D-148 — Gate Module: admin CRUD + operator surface + QR resolver +
         // gate-config cache + idempotency store + failure-rate circuit
         // (SIMF-API-GATES-001, SIMF-FDS-003 §5.6).

@@ -148,6 +148,14 @@ public static class ErrorCodes
     // to the self-assert toggle as input source).
     public const string NotAtVenue = "NOT_AT_VENUE";
 
+    // Delegations + MeetingRequests (D-174, gap doc G11 — Mockup pages 21 + 27).
+    public const string DelegationInvalid = "DELEGATION_INVALID";
+    public const string DelegationNotFound = "DELEGATION_NOT_FOUND";
+    public const string MeetingRequestInvalid = "MEETING_REQUEST_INVALID";
+    public const string MeetingRequestNotFound = "MEETING_REQUEST_NOT_FOUND";
+    public const string MeetingRequestSessionNotFound = "MEETING_REQUEST_SESSION_NOT_FOUND";
+    public const string MeetingRequestStatusInvalid = "MEETING_REQUEST_STATUS_INVALID";
+
     // CMS: ContentBlock + Banner (D-173, gap doc G8 — PDF §1, §2.1).
     public const string ContentBlockInvalid = "CONTENT_BLOCK_INVALID";
     public const string ContentBlockNotFound = "CONTENT_BLOCK_NOT_FOUND";
