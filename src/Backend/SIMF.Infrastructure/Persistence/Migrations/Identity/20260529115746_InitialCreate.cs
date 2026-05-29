@@ -390,7 +390,7 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                     ProfileTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ArabicName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     EnglishName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
-                    NationalityCode = table.Column<string>(type: "nvarchar(2)", maxLength: 2, nullable: false),
+                    NationalityId = table.Column<int>(type: "int", nullable: false),
                     DateOfBirth = table.Column<DateOnly>(type: "date", nullable: true),
                     PlaceOfBirth = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     IsSaudi = table.Column<bool>(type: "bit", nullable: false),
@@ -589,6 +589,11 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                 name: "IX_UserProfileInterests_InterestId",
                 table: "UserProfileInterests",
                 column: "InterestId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserProfiles_NationalityId",
+                table: "UserProfiles",
+                column: "NationalityId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserProfiles_ProfileTypeId",

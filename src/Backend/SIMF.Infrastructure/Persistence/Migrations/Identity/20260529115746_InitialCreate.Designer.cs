@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 {
     [DbContext(typeof(SimfIdentityDbContext))]
-    [Migration("20260526125702_InitialCreate")]
+    [Migration("20260529115746_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -642,10 +642,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<string>("NationalityCode")
-                        .IsRequired()
-                        .HasMaxLength(2)
-                        .HasColumnType("nvarchar(2)");
+                    b.Property<int>("NationalityId")
+                        .HasColumnType("int");
 
                     b.Property<string>("PassportNumber")
                         .HasMaxLength(32)
@@ -682,6 +680,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.Identity
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("NationalityId");
 
                     b.HasIndex("ProfileTypeId");
 

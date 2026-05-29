@@ -332,7 +332,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             ProfileTypeId = profileTypeId,
             ArabicName = "زائر اختبار",
             EnglishName = "Test Visitor",
-            NationalityCode = "SA",
+            NationalityId = 682, // ISO 3166-1 numeric — SA
             PlaceOfBirth = "Riyadh",
             CreatedAt = DateTimeOffset.UtcNow,
         });

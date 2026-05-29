@@ -30,6 +30,7 @@ namespace SIMF.Infrastructure.Identity;
 internal sealed class UserProfileService(
     IUserAccountRepository accounts,
     SimfIdentityDbContext dbContext,
+    SimfAppDbContext appDbContext,
     IUserIdDocumentStorage idStorage,
     IAuditLog auditLog,
     TimeProvider timeProvider,
@@ -62,7 +63,8 @@ internal sealed class UserProfileService(
             return new UserProfileResponse();
         }
 
-        return ToResponse(profile, profile.QrId);
+        var nationalityCode = await ResolveCodeAsync(profile.NationalityId, cancellationToken);
+        return ToResponse(profile, profile.QrId, nationalityCode);
     }
 
     public async Task<UserProfileResponse> UpsertMineAsync(
@@ -70,16 +72,14 @@ internal sealed class UserProfileService(
         UpsertUserProfileRequest request,
         CancellationToken cancellationToken = default)
     {
-        // Validate the nationality against the curated list — an unmatched
-        // code is rejected here even though the validator already checks.
-        // (Defence in depth — a future caller that bypasses the validator
-        // still cannot persist garbage.)
-        if (!Countries.IsKnown(request.NationalityCode))
-        {
-            throw new DataValidationException(
+        // D-151 — resolve the wire-side code to the Country PK. The
+        // validator already checked shape; here we enforce the existence
+        // rule against the live Country table (in SimfAppDbContext).
+        var nationalityId = await ResolveIdAsync(request.NationalityCode, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.ProfileNationalityUnknown, 400,
                 $"Nationality code '{request.NationalityCode}' is not supported.",
                 $"الجنسية '{request.NationalityCode}' غير مدعومة.");
-        }
 
         var user = await accounts.FindByIdAsync(actorUserId, cancellationToken)
             ?? throw new ApiException(
@@ -116,7 +116,7 @@ internal sealed class UserProfileService(
 
         profile.ArabicName = request.ArabicName;
         profile.EnglishName = request.EnglishName;
-        profile.NationalityCode = request.NationalityCode.ToUpperInvariant();
+        profile.NationalityId = nationalityId;
         profile.DateOfBirth = request.DateOfBirth;
         profile.PlaceOfBirth = request.PlaceOfBirth;
         profile.IsSaudi = request.IsSaudi;
@@ -216,7 +216,7 @@ internal sealed class UserProfileService(
             await DispatchAdminPendingVisitorAsync(user, cancellationToken);
         }
 
-        return ToResponse(profile, profile.QrId);
+        return ToResponse(profile, profile.QrId, request.NationalityCode.ToUpperInvariant());
     }
 
     /// <summary>
@@ -426,14 +426,15 @@ internal sealed class UserProfileService(
         return read is null ? null : new UserIdDocumentImage(read.Content, read.ContentType);
     }
 
-    private static UserProfileResponse ToResponse(UserProfile profile, string? qrId) =>
+    private static UserProfileResponse ToResponse(
+        UserProfile profile, string? qrId, string nationalityCode) =>
         new()
         {
             ProfileTypeId = profile.ProfileTypeId,
             InterestIds = profile.Interests.Select(interest => interest.Id).ToList(),
             ArabicName = profile.ArabicName,
             EnglishName = profile.EnglishName,
-            NationalityCode = profile.NationalityCode,
+            NationalityCode = nationalityCode,
             DateOfBirth = profile.DateOfBirth,
             PlaceOfBirth = profile.PlaceOfBirth,
             IsSaudi = profile.IsSaudi,
@@ -448,4 +449,29 @@ internal sealed class UserProfileService(
 
     private static string? NormaliseOptional(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    // D-151 — Country lookup helpers. Code ↔ Id translation lives here
+    // because the Country table is in SimfAppDbContext while the user
+    // profile is in SimfIdentityDbContext; EF cannot join across
+    // contexts, so we do two cheap single-row index lookups instead.
+    private async Task<int?> ResolveIdAsync(string code, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(code)) { return null; }
+        var upper = code.Trim().ToUpperInvariant();
+        return await appDbContext.Countries
+            .AsNoTracking()
+            .Where(country => country.Code == upper && country.IsActive)
+            .Select(country => (int?)country.Id)
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    private async Task<string> ResolveCodeAsync(int id, CancellationToken cancellationToken)
+    {
+        if (id == 0) { return string.Empty; }
+        return await appDbContext.Countries
+            .AsNoTracking()
+            .Where(country => country.Id == id)
+            .Select(country => country.Code)
+            .SingleOrDefaultAsync(cancellationToken) ?? string.Empty;
+    }
 }

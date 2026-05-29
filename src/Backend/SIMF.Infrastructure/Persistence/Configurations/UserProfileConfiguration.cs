@@ -26,7 +26,12 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
 
         builder.Property(profile => profile.ArabicName).HasMaxLength(256).IsRequired();
         builder.Property(profile => profile.EnglishName).HasMaxLength(256).IsRequired();
-        builder.Property(profile => profile.NationalityCode).HasMaxLength(2).IsRequired();
+        // D-151 — logical FK to SIMF.Domain.Common.Country.Id; no DB
+        // constraint because Country lives in SimfAppDbContext.
+        // Indexed so the rare "every profile of nationality X" admin
+        // query stays cheap as the visitor list grows.
+        builder.Property(profile => profile.NationalityId).IsRequired();
+        builder.HasIndex(profile => profile.NationalityId);
         builder.Property(profile => profile.PlaceOfBirth).HasMaxLength(128);
         builder.Property(profile => profile.NationalId).HasMaxLength(20);
         builder.Property(profile => profile.IqamaNumber).HasMaxLength(20);

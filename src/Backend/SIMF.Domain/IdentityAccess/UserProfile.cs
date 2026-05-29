@@ -54,8 +54,13 @@ public class UserProfile
     /// <summary>Full name in English exactly as printed in the passport.</summary>
     public string EnglishName { get; set; } = string.Empty;
 
-    /// <summary>ISO 3166-1 alpha-2 nationality code (e.g. "SA", "AE", "US").</summary>
-    public string NationalityCode { get; set; } = string.Empty;
+    /// <summary>D-151 — ISO 3166-1 numeric country id, logical FK to
+    /// <c>SIMF.Domain.Common.Country.Id</c>. The Country row lives in
+    /// <c>SimfAppDbContext</c>, this row in <c>SimfIdentityDbContext</c>;
+    /// the FK is enforced in application code at write time, not by a DB
+    /// constraint (the two contexts share one physical database but each
+    /// owns its own migration history).</summary>
+    public int NationalityId { get; set; }
 
     /// <summary>Date of birth (date only).</summary>
     public DateOnly? DateOfBirth { get; set; }

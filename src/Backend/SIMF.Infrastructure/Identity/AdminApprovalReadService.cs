@@ -21,7 +21,9 @@ namespace SIMF.Infrastructure.Identity;
 /// so the call is cheap; admins typically open this modal once per
 /// pending row.</para>
 /// </summary>
-internal sealed class AdminApprovalReadService(SimfIdentityDbContext dbContext)
+internal sealed class AdminApprovalReadService(
+    SimfIdentityDbContext dbContext,
+    SimfAppDbContext appDbContext)
     : IAdminApprovalReadService
 {
     public Task<PendingProfileResponse?> GetPendingVisitorProfileAsync(
@@ -113,7 +115,7 @@ internal sealed class AdminApprovalReadService(SimfIdentityDbContext dbContext)
                 p.QrId,
                 p.ArabicName,
                 p.EnglishName,
-                p.NationalityCode,
+                p.NationalityId,
                 p.DateOfBirth,
                 p.PlaceOfBirth,
                 p.IsSaudi,
@@ -129,6 +131,12 @@ internal sealed class AdminApprovalReadService(SimfIdentityDbContext dbContext)
             })
             .SingleOrDefaultAsync(cancellationToken);
 
+        // D-151 — translate the logical FK Id back to the ISO code the
+        // wire contract exposes. Cross-context, so a separate query.
+        var nationalityCode = profile is null
+            ? null
+            : await ResolveCodeAsync(profile.NationalityId, cancellationToken);
+
         return new AdminUserProfileView(
             user.Id,
             user.Email ?? string.Empty,
@@ -142,7 +150,7 @@ internal sealed class AdminApprovalReadService(SimfIdentityDbContext dbContext)
             profile?.QrId,
             string.IsNullOrEmpty(profile?.ArabicName) ? null : profile.ArabicName,
             string.IsNullOrEmpty(profile?.EnglishName) ? null : profile.EnglishName,
-            string.IsNullOrEmpty(profile?.NationalityCode) ? null : profile.NationalityCode,
+            string.IsNullOrEmpty(nationalityCode) ? null : nationalityCode,
             profile?.DateOfBirth,
             string.IsNullOrEmpty(profile?.PlaceOfBirth) ? null : profile.PlaceOfBirth,
             profile?.IsSaudi ?? false,
@@ -197,7 +205,7 @@ internal sealed class AdminApprovalReadService(SimfIdentityDbContext dbContext)
                 ProfileType = p.ProfileType,
                 p.ArabicName,
                 p.EnglishName,
-                p.NationalityCode,
+                p.NationalityId,
                 p.DateOfBirth,
                 p.PlaceOfBirth,
                 p.IsSaudi,
@@ -211,6 +219,11 @@ internal sealed class AdminApprovalReadService(SimfIdentityDbContext dbContext)
             })
             .SingleOrDefaultAsync(cancellationToken);
 
+        // D-151 — translate the logical FK Id back to the wire-side code.
+        var nationalityCode = profile is null
+            ? null
+            : await ResolveCodeAsync(profile.NationalityId, cancellationToken);
+
         return new PendingProfileResponse(
             user.Id,
             user.Email ?? string.Empty,
@@ -221,7 +234,7 @@ internal sealed class AdminApprovalReadService(SimfIdentityDbContext dbContext)
             profile?.ProfileType?.NameArabic,
             string.IsNullOrEmpty(profile?.ArabicName) ? null : profile.ArabicName,
             string.IsNullOrEmpty(profile?.EnglishName) ? null : profile.EnglishName,
-            string.IsNullOrEmpty(profile?.NationalityCode) ? null : profile.NationalityCode,
+            string.IsNullOrEmpty(nationalityCode) ? null : nationalityCode,
             profile?.DateOfBirth,
             string.IsNullOrEmpty(profile?.PlaceOfBirth) ? null : profile.PlaceOfBirth,
             profile?.IsSaudi ?? false,
@@ -233,5 +246,18 @@ internal sealed class AdminApprovalReadService(SimfIdentityDbContext dbContext)
             profile?.HasIdImage ?? false,
             profile?.InterestIds ?? new List<Guid>(),
             user.CreatedAt);
+    }
+
+    // D-151 — Country lookup helper. Cross-context (Country lives in
+    // SimfAppDbContext, the profile in SimfIdentityDbContext) so this
+    // is a separate cheap single-row index query.
+    private async Task<string> ResolveCodeAsync(int id, CancellationToken cancellationToken)
+    {
+        if (id == 0) { return string.Empty; }
+        return await appDbContext.Countries
+            .AsNoTracking()
+            .Where(country => country.Id == id)
+            .Select(country => country.Code)
+            .SingleOrDefaultAsync(cancellationToken) ?? string.Empty;
     }
 }

@@ -46,6 +46,7 @@ internal sealed class AdminAccountService(
     IQrIdMinter qrIdMinter,
     ITransactionRunner transactionRunner,
     SimfIdentityDbContext dbContext,
+    SimfAppDbContext appDbContext,
     TimeProvider timeProvider,
     INotificationDispatcher notifications,
     ILogger<AdminAccountService> logger)
@@ -274,6 +275,23 @@ internal sealed class AdminAccountService(
                 "بعض الاهتمامات المختارة غير معروفة أو لم تعد مفعّلة.");
         }
 
+        // D-151 — resolve the wire-side ISO code to the Country PK.
+        // Rejected here (400) before any Identity row is created so we
+        // never leak a dangling SimfUser for a stranger nationality.
+        var nationalityCode = (request.NationalityCode ?? string.Empty).Trim().ToUpperInvariant();
+        var nationalityId = await appDbContext.Countries
+            .AsNoTracking()
+            .Where(country => country.Code == nationalityCode && country.IsActive)
+            .Select(country => (int?)country.Id)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (nationalityId is null)
+        {
+            throw new ApiException(
+                ErrorCodes.ProfileNationalityUnknown, 400,
+                $"Nationality code '{nationalityCode}' is not supported.",
+                $"الجنسية '{nationalityCode}' غير مدعومة.");
+        }
+
         var now = timeProvider.GetUtcNow();
         var user = new SimfUser
         {
@@ -313,7 +331,7 @@ internal sealed class AdminAccountService(
             ProfileTypeId = profileType.Id,
             ArabicName = (request.ArabicName ?? string.Empty).Trim(),
             EnglishName = (request.EnglishName ?? string.Empty).Trim(),
-            NationalityCode = (request.NationalityCode ?? string.Empty).Trim().ToUpperInvariant(),
+            NationalityId = nationalityId.Value,
             DateOfBirth = request.DateOfBirth,
             PlaceOfBirth = (request.PlaceOfBirth ?? string.Empty).Trim(),
             IsSaudi = request.IsSaudi,

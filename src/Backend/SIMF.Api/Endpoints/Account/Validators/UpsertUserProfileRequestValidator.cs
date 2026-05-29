@@ -1,7 +1,6 @@
 using FastEndpoints;
 using FluentValidation;
 using SIMF.Api.Endpoints.Auth.Validators;
-using SIMF.Common;
 using SIMF.Contracts.UserProfile;
 
 namespace SIMF.Api.Endpoints.Account.Validators;
@@ -14,8 +13,13 @@ namespace SIMF.Api.Endpoints.Account.Validators;
 /// FK assigned by an admin, not a free-text claim by the user. The
 /// phone rules are deliberately permissive — any country code + local
 /// number is accepted ("any phone, not only Saudi, with +xx" — user
-/// guidance during D-046 design). The nationality must match the
-/// curated list (<see cref="Countries"/>); a stranger code is rejected.
+/// guidance during D-046 design).
+///
+/// <para>D-151 — the nationality code shape is checked here; the
+/// existence check (must resolve to a row in the <c>Country</c> table)
+/// runs in <c>UserProfileService</c> against
+/// <c>SimfAppDbContext.Countries</c>, since FluentValidation is sync
+/// and the country table now lives in a different DbContext.</para>
 /// </summary>
 public sealed class UpsertUserProfileRequestValidator
     : Validator<UpsertUserProfileRequest>
@@ -60,11 +64,9 @@ public sealed class UpsertUserProfileRequestValidator
             .NotEmpty().Bilingual(
                 "Nationality is required.",
                 "الجنسية مطلوبة.")
-            .Must(code => Countries.IsKnown(code))
-            .WithErrorCode(ErrorCodes.ProfileNationalityUnknown)
-            .Bilingual(
-                "Nationality is not in the supported list.",
-                "الجنسية غير موجودة في القائمة المدعومة.");
+            .Length(2, 2).Bilingual(
+                "Nationality code must be 2 characters (ISO 3166-1 alpha-2).",
+                "يجب أن يتكوّن رمز الجنسية من حرفين (ISO 3166-1).");
 
         RuleFor(request => request.PlaceOfBirth)
             .MaximumLength(128);
