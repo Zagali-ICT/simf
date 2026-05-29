@@ -785,6 +785,46 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"countries/{id}", content: null,
             accessToken, cancellationToken);
 
+    // -- D-153 — Speaker admin CRUD -----------------------------------------
+
+    public Task<ApiCallResult<GridPage<AdminSpeakerSummary>>> ListSpeakersAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminSpeakerSummary>>(
+            HttpMethod.Post, "speakers/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSpeakerDetail>> GetSpeakerAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSpeakerDetail>(
+            HttpMethod.Get, $"speakers/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSpeakerDetail>> CreateSpeakerAsync(
+        AdminCreateSpeakerRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSpeakerDetail>(
+            HttpMethod.Post, "speakers",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSpeakerDetail>> UpdateSpeakerAsync(
+        Guid id, AdminUpdateSpeakerRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSpeakerDetail>(
+            HttpMethod.Put, $"speakers/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeactivateSpeakerAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"speakers/{id}", content: null,
+            accessToken, cancellationToken);
+
     // -- D-148 — Gate Module admin CRUD + reports ---------------------------
 
     public Task<ApiCallResult<GridPage<AdminGateSummary>>> ListGatesAsync(

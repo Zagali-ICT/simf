@@ -166,6 +166,10 @@ public static class DependencyInjection
         // D-151 — Country admin lookup CRUD (under the lifted freeze).
         services.AddScoped<SIMF.Application.Common.Abstractions.IAdminCountryService,
             SIMF.Infrastructure.Common.AdminCountryService>();
+        // D-153 — Speaker admin CRUD (enhanced shape: CountryId FK +
+        // UserProfileId logical FK + bilingual rich text + consent + social).
+        services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSpeakerService,
+            SIMF.Infrastructure.Programme.AdminSpeakerService>();
         // D-148 — Gate Module: admin CRUD + operator surface + QR resolver +
         // gate-config cache + idempotency store + failure-rate circuit
         // (SIMF-API-GATES-001, SIMF-FDS-003 §5.6).
