@@ -78,6 +78,17 @@
                         @DeleteLabel
                     </SimfToolbarButton>
                 }
+                @* D-164 (gap doc G2) — bulk approve. Label is parent-supplied
+                   (`ApproveSelectedLabel`) so the same grid can host both the
+                   pending-visitor and pending-other lists with localised copy. *@
+                @if (OnApproveSelected.HasDelegate)
+                {
+                    <SimfToolbarButton Icon="check" Title="@ApproveSelectedLabel"
+                                       Disabled="@(SelectedOnPageCount == 0)"
+                                       OnClick="@(() => OnApproveSelected.InvokeAsync(SelectedItemsOnPage()))">
+                        @ApproveSelectedLabel
+                    </SimfToolbarButton>
+                }
                 @if (OnCopySelected.HasDelegate)
                 {
                     <SimfToolbarButton Icon="copy" Title="@CopyLabel"
@@ -458,6 +469,13 @@
     /// <summary>Delete the selected rows in bulk.</summary>
     [Parameter] public EventCallback<IReadOnlyList<TItem>> OnDeleteSelected { get; set; }
 
+    /// <summary>D-164 (gap doc G2) — approve the selected rows in bulk
+    /// ("Select All" affordance for the security team's pending-visitor
+    /// list). When the parent supplies this handler, an "Approve selected"
+    /// toolbar button appears alongside Delete, enabled only when ≥ 1
+    /// row on the current page is selected.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<TItem>> OnApproveSelected { get; set; }
+
     /// <summary>Delete one row (per-row button + context menu).</summary>
     [Parameter] public EventCallback<TItem> OnDeleteOne { get; set; }
 
@@ -499,6 +517,8 @@
     [Parameter] public string EditLabel { get; set; } = "Edit";
     [Parameter] public string DetailsLabel { get; set; } = "Details";
     [Parameter] public string DeleteLabel { get; set; } = "Delete";
+    /// <summary>D-164 — label for the bulk-approve toolbar button.</summary>
+    [Parameter] public string ApproveSelectedLabel { get; set; } = "Approve selected";
     [Parameter] public string CopyLabel { get; set; } = "Copy";
     [Parameter] public string PasteLabel { get; set; } = "Paste";
     [Parameter] public string DuplicateLabel { get; set; } = "Duplicate";

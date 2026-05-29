@@ -361,6 +361,26 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>D-164 (gap doc G2) — bulk-approve a batch of pending visitors.
+    /// Up to 500 ids per request; per-subject failures are reported in
+    /// <see cref="AdminBulkApprovalResponse.Failures"/>.</summary>
+    public Task<ApiCallResult<AdminBulkApprovalResponse>> BulkApproveVisitorsAsync(
+        AdminBulkApprovalRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBulkApprovalResponse>(
+            HttpMethod.Post, "visitors/bulk-approve",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>D-164 — bulk-approve a batch of pending Other-tier users.</summary>
+    public Task<ApiCallResult<AdminBulkApprovalResponse>> BulkApproveOthersAsync(
+        AdminBulkApprovalRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBulkApprovalResponse>(
+            HttpMethod.Post, "others/bulk-approve",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     /// <summary>One page of pending-approval Admins (P7c — renamed from ListPendingStaffAsync).</summary>
     public Task<ApiCallResult<GridPage<AdminPendingUserSummary>>> ListPendingAdminsAsync(
         GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>

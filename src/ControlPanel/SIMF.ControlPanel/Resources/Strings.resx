@@ -803,6 +803,9 @@
   <data name="Admin.Pending.Reject.Submit" xml:space="preserve"><value>Reject</value></data>
   <data name="Admin.Pending.Reject.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.Pending.Approved.Toast" xml:space="preserve"><value>Approved {0}.</value></data>
+  <!-- D-164 (gap doc G2) — bulk approve labels. -->
+  <data name="Admin.Pending.Action.BulkApprove" xml:space="preserve"><value>Approve selected</value></data>
+  <data name="Admin.Pending.BulkApproved.Toast" xml:space="preserve"><value>Approved {0} user(s). Skipped {1}.</value></data>
   <data name="Admin.Pending.Rejected.Toast" xml:space="preserve"><value>Rejected {0}.</value></data>
   <data name="Admin.Pending.Pager.First" xml:space="preserve"><value>First page</value></data>
   <data name="Admin.Pending.Pager.Last" xml:space="preserve"><value>Last page</value></data>

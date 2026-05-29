@@ -28,6 +28,8 @@
                       Loading="_loading"
                       OnQueryChanged="OnQueryChangedAsync"
                       Multiselect="true"
+                      OnApproveSelected="OnBulkApproveAsync"
+                      ApproveSelectedLabel="@L["Admin.Pending.Action.BulkApprove"]"
                       RowKey="@(u => u.Id.ToString())"
                       RowLabel="@(u => u.Email)"
                       Caption="@L["Admin.Pending.Others.Title"]"
@@ -243,6 +245,35 @@
                     Array.Empty<AdminPendingUserSummary>(), 0, _query);
         }
         finally { _loading = false; }
+    }
+
+    private async Task OnBulkApproveAsync(IReadOnlyList<AdminPendingUserSummary> selected)
+    {
+        if (_busy || selected.Count == 0) return;
+        _busy = true;
+        try
+        {
+            var ids = selected.Select(u => u.Id).ToList();
+            var envelope = await JS.InvokeAsync<ApiResult<AdminBulkApprovalResponse>>(
+                "simfAccount.postJson", "/account/api/admin/others/bulk-approve",
+                new AdminBulkApprovalRequest { Ids = ids });
+            if (envelope is { Success: true, Data: not null })
+            {
+                var result = envelope.Data;
+                _toast = string.Format(
+                    L["Admin.Pending.BulkApproved.Toast"],
+                    result.Approved, result.Skipped);
+                _toastVariant = result.Skipped == 0 ? "success" : "warning";
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Users.Fallback"];
+                _toastVariant = "error";
+            }
+        }
+        finally { _busy = false; }
     }
 
     private async Task ApproveAsync(AdminPendingUserSummary user)

@@ -129,6 +129,38 @@ public sealed class AdminBulkDeleteRequest
 /// <summary>Result of a bulk-delete (D-044 b).</summary>
 public sealed record AdminBulkDeleteResponse(int Deleted, int Skipped);
 
+/// <summary>D-164 (PDF §2.7.1, gap doc G2) — body of
+/// <c>POST /api/v1/admin/visitors/bulk-approve</c> and
+/// <c>POST /api/v1/admin/others/bulk-approve</c>. The security team's
+/// "Select All" affordance: approve every selected pending user in one
+/// request. Per-subject failures are reported in
+/// <see cref="AdminBulkApprovalResponse"/> and do not block the rest.</summary>
+public sealed class AdminBulkApprovalRequest
+{
+    /// <summary>The user ids to approve. Empty arrays are rejected with
+    /// HTTP 400. The endpoint clamps to a max of 500 ids per request so
+    /// the batch fits inside one SQL transaction window.</summary>
+    public IList<Guid> Ids { get; set; } = new List<Guid>();
+}
+
+/// <summary>D-164 — outcome of a bulk approve. Per-subject failures
+/// carry the user id, the email at the time of the attempt, and a
+/// typed reason code so the CP can render an inline error list next to
+/// the grid rows that did not flip.</summary>
+public sealed record AdminBulkApprovalResponse(
+    int Approved,
+    int Skipped,
+    IReadOnlyList<AdminBulkApprovalFailure> Failures);
+
+/// <summary>D-164 — one failed-subject row in
+/// <see cref="AdminBulkApprovalResponse.Failures"/>.</summary>
+public sealed record AdminBulkApprovalFailure(
+    Guid UserId,
+    string? Email,
+    string ReasonCode,
+    string Message,
+    string MessageArabic);
+
 /// <summary>The body of <c>POST /api/v1/admin/users/duplicate</c> (D-044 b).
 /// Creates a new user as a copy of the source — same display-name pattern,
 /// same Administrator-role membership, no password, fresh invite email.</summary>

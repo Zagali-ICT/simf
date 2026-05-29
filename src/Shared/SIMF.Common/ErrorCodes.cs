@@ -69,6 +69,8 @@ public static class ErrorCodes
 
     // Admin approval workflow (P4)
     public const string AdminUserNotPending = "ADMIN_USER_NOT_PENDING";
+    // D-164 (gap doc G2) — bulk-action invalid (empty array, etc.).
+    public const string AdminBulkActionInvalid = "ADMIN_BULK_ACTION_INVALID";
 
     // P7c — ProfileTypes lookup validation
     public const string AdminProfileTypeInvalid = "ADMIN_PROFILE_TYPE_INVALID";

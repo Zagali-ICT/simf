@@ -793,6 +793,9 @@
   <data name="Admin.Pending.Reject.Submit" xml:space="preserve"><value>رفض</value></data>
   <data name="Admin.Pending.Reject.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.Pending.Approved.Toast" xml:space="preserve"><value>تمّت الموافقة على {0}.</value></data>
+  <!-- D-164 -->
+  <data name="Admin.Pending.Action.BulkApprove" xml:space="preserve"><value>اعتماد المحدد</value></data>
+  <data name="Admin.Pending.BulkApproved.Toast" xml:space="preserve"><value>تم اعتماد {0} مستخدم/ين. تم تخطي {1}.</value></data>
   <data name="Admin.Pending.Rejected.Toast" xml:space="preserve"><value>تمّ رفض {0}.</value></data>
   <data name="Admin.Pending.Pager.First" xml:space="preserve"><value>الصفحة الأولى</value></data>
   <data name="Admin.Pending.Pager.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>

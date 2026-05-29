@@ -745,6 +745,60 @@ internal sealed class AdminAccountService(
         CancellationToken cancellationToken = default) =>
         RejectAsync(actorUserId, subjectUserId, request, UserType.Visitor, cancellationToken);
 
+    public Task<AdminBulkApprovalResponse> BulkApproveVisitorsAsync(
+        Guid actorUserId, AdminBulkApprovalRequest request,
+        CancellationToken cancellationToken = default) =>
+        BulkApproveAsync(actorUserId, request, UserType.Visitor, cancellationToken);
+
+    public Task<AdminBulkApprovalResponse> BulkApproveOthersAsync(
+        Guid actorUserId, AdminBulkApprovalRequest request,
+        CancellationToken cancellationToken = default) =>
+        BulkApproveAsync(actorUserId, request, UserType.Other, cancellationToken);
+
+    private async Task<AdminBulkApprovalResponse> BulkApproveAsync(
+        Guid actorUserId, AdminBulkApprovalRequest request, UserType expected,
+        CancellationToken cancellationToken)
+    {
+        // D-164 — distinct ids; cap at 500 per request so the batch fits
+        // inside one reasonable transaction window without dragging the
+        // hot path. The endpoint rejects empty arrays at the validator.
+        var ids = request.Ids.Distinct().Take(500).ToList();
+        var approved = 0;
+        var failures = new List<AdminBulkApprovalFailure>();
+        foreach (var subjectId in ids)
+        {
+            try
+            {
+                await ApproveAsync(actorUserId, subjectId, expected, cancellationToken);
+                approved++;
+            }
+            catch (ApiException ex)
+            {
+                // Each subject's failure is bilingual + typed so the CP
+                // can render the inline error list next to each row.
+                var email = await accounts
+                    .FindByIdAsync(subjectId, cancellationToken);
+                failures.Add(new AdminBulkApprovalFailure(
+                    subjectId,
+                    email?.Email,
+                    ex.Code,
+                    ex.Message,
+                    ex.MessageArabic));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "Bulk-approve subject {SubjectId} failed for actor {ActorId}",
+                    subjectId, actorUserId);
+                failures.Add(new AdminBulkApprovalFailure(
+                    subjectId, null, ErrorCodes.InternalError,
+                    "An unexpected error prevented this approval.",
+                    "حدث خطأ غير متوقع أثناء اعتماد هذا المستخدم."));
+            }
+        }
+        return new AdminBulkApprovalResponse(approved, failures.Count, failures);
+    }
+
     private async Task ApproveAsync(
         Guid actorUserId, Guid subjectUserId, UserType expected,
         CancellationToken cancellationToken)

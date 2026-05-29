@@ -20,6 +20,7 @@
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. |
 | 1.1 | 2026-05-20 | Engineering & Architecture Team | Made the §10 date and digit formatting explicit (dates display as dd-MM-yyyy, digits are always Latin); added a §12 cross-reference to the Smif* shared component library. |
 | 1.2 | 2026-05-29 | Engineering & Architecture Team | D-161 — added §8.1 documenting the `mobile_app_role` JWT claim, the role enum (None / Visitor / Staff / Moderator), the per-`UserType` resolution rules, and the role-based route guard pattern. |
+| 1.3 | 2026-05-29 | Engineering & Architecture Team | D-164 — added §8.1.1 disambiguating `MobileAppRole.Moderator` (mobile-app content authority, JWT claim) from the session-question moderator (per-session permission, lands in gap-plan phase G3). |
 
 ---
 
@@ -208,6 +209,29 @@ display-side discriminator, not an authority).
 
 The wire contract for the claim is documented in SIMF-API-001 §12.2. The
 backend behaviour is captured in the SIMF Decisions Log entry D-161.
+
+#### 8.1.1 Two distinct "Moderator" concepts (D-164)
+
+The stakeholder requirements PDF (D-162 §2.7.2) names a role called
+**المحاور** — the **session-question moderator**: a person assigned to a
+specific live session who curates Q&A — viewing audience questions,
+hiding or reordering them, and pushing approved ones to the speakers.
+
+This **is not the same** as the `MobileAppRole.Moderator` claim
+documented above:
+
+| Concept | Authority | Scope | Source |
+|---|---|---|---|
+| `mobile_app_role = Moderator` (D-161) | Mobile-app content + user moderation | App-global | JWT claim, resolved from `ProfileType.MobileAppRole` |
+| Session moderator (D-164 / D-162 §2.7.2) | Q&A curation during a live session | Per-`Session.Id` | Per-session permission grant (`SessionModerate`) — landing in gap-plan phase G3 |
+
+A user can hold either authority, both, or neither. The Flutter app must
+not infer one from the other: an admin granting `SessionModerate` to a
+specific user for one specific session does not change that user's
+`mobile_app_role` claim, and vice versa. The two surfaces are gated
+independently — `mobile_app_role` for app-level navigation, the
+per-session permission for the Q&A management screen of one specific
+session.
 
 ## 9. Networking and the API layer
 
