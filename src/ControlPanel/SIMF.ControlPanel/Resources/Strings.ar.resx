@@ -383,6 +383,77 @@
   <data name="Admin.Themes.Updated" xml:space="preserve"><value>تم تحديث المحور "{0}".</value></data>
   <data name="Admin.Themes.Deactivated" xml:space="preserve"><value>تم تعطيل المحور "{0}".</value></data>
 
+  <!-- D-153 — Speakers admin CRUD (SIMF-DAT-001 §5.4) -->
+  <data name="Admin.Speakers.Title" xml:space="preserve"><value>المتحدّثون</value></data>
+  <data name="Admin.Speakers.None" xml:space="preserve"><value>لا يوجد متحدّثون بعد.</value></data>
+  <data name="Admin.Speakers.LoadFailed" xml:space="preserve"><value>تعذّر تحميل المتحدّثين.</value></data>
+  <data name="Admin.Speakers.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
+  <data name="Admin.Speakers.Loading" xml:space="preserve"><value>جارٍ تحميل المتحدّثين…</value></data>
+  <data name="Admin.Speakers.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Speakers.Prev" xml:space="preserve"><value>السابق</value></data>
+  <data name="Admin.Speakers.Next" xml:space="preserve"><value>التالي</value></data>
+  <data name="Admin.Speakers.Pager.First" xml:space="preserve"><value>الصفحة الأولى</value></data>
+  <data name="Admin.Speakers.Pager.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>
+  <data name="Admin.Speakers.Pager.PageSize" xml:space="preserve"><value>عرض</value></data>
+  <data name="Admin.Speakers.Pager.Page" xml:space="preserve"><value>صفحة {0} من {1}</value></data>
+  <data name="Admin.Speakers.FilterColumn" xml:space="preserve"><value>تصفية العمود</value></data>
+  <data name="Admin.Speakers.FilterPlaceholder" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Speakers.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Speakers.Column.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.Speakers.Column.Name" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Admin.Speakers.Column.NameArabic" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
+  <data name="Admin.Speakers.Column.Rank" xml:space="preserve"><value>الرتبة</value></data>
+  <data name="Admin.Speakers.Column.Country" xml:space="preserve"><value>البلد</value></data>
+  <data name="Admin.Speakers.Column.DisplayOrder" xml:space="preserve"><value>الترتيب</value></data>
+  <data name="Admin.Speakers.Column.Active" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Speakers.Column.Actions" xml:space="preserve"><value>الإجراءات</value></data>
+  <data name="Admin.Speakers.Active.Yes" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="Admin.Speakers.Active.No" xml:space="preserve"><value>معطّل</value></data>
+  <data name="Admin.Speakers.Action.Add" xml:space="preserve"><value>إضافة متحدّث</value></data>
+  <data name="Admin.Speakers.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Speakers.Action.Details" xml:space="preserve"><value>التفاصيل</value></data>
+  <data name="Admin.Speakers.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.Speakers.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
+  <data name="Admin.Speakers.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
+  <data name="Admin.Speakers.Field.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.Speakers.Field.CodeHint" xml:space="preserve"><value>من 2 إلى 16 حرفاً؛ فريد. معرّف ثابت يحدّده فريق البرنامج (مثال: SPK-001).</value></data>
+  <data name="Admin.Speakers.Field.CodeInvalid" xml:space="preserve"><value>يجب أن يتراوح طول الرمز بين 2 و 16 حرفاً.</value></data>
+  <data name="Admin.Speakers.Field.Name" xml:space="preserve"><value>الاسم (بالإنجليزية)</value></data>
+  <data name="Admin.Speakers.Field.NameInvalid" xml:space="preserve"><value>الاسم بالإنجليزية مطلوب (1–128 حرفاً).</value></data>
+  <data name="Admin.Speakers.Field.NameArabic" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
+  <data name="Admin.Speakers.Field.NameArabicInvalid" xml:space="preserve"><value>الاسم بالعربية مطلوب (1–128 حرفاً).</value></data>
+  <data name="Admin.Speakers.Field.Rank" xml:space="preserve"><value>الرتبة / اللقب</value></data>
+  <data name="Admin.Speakers.Field.Country" xml:space="preserve"><value>البلد</value></data>
+  <data name="Admin.Speakers.Field.CountryPlaceholder" xml:space="preserve"><value>— بدون بلد —</value></data>
+  <data name="Admin.Speakers.Field.CountryInvalid" xml:space="preserve"><value>يجب اختيار بلد صالح من القائمة.</value></data>
+  <data name="Admin.Speakers.Field.Bio" xml:space="preserve"><value>السيرة الذاتية (بالإنجليزية)</value></data>
+  <data name="Admin.Speakers.Field.BioArabic" xml:space="preserve"><value>السيرة الذاتية (بالعربية)</value></data>
+  <data name="Admin.Speakers.Field.Qualifications" xml:space="preserve"><value>المؤهلات (بالإنجليزية)</value></data>
+  <data name="Admin.Speakers.Field.QualificationsArabic" xml:space="preserve"><value>المؤهلات (بالعربية)</value></data>
+  <data name="Admin.Speakers.Field.TrainingExperience" xml:space="preserve"><value>التدريب والخبرة (بالإنجليزية)</value></data>
+  <data name="Admin.Speakers.Field.TrainingExperienceArabic" xml:space="preserve"><value>التدريب والخبرة (بالعربية)</value></data>
+  <data name="Admin.Speakers.Field.Awards" xml:space="preserve"><value>الجوائز (بالإنجليزية)</value></data>
+  <data name="Admin.Speakers.Field.AwardsArabic" xml:space="preserve"><value>الجوائز (بالعربية)</value></data>
+  <data name="Admin.Speakers.Field.AllowsMeetingRequests" xml:space="preserve"><value>السماح بطلب مقابلة</value></data>
+  <data name="Admin.Speakers.Field.AllowsDataSharing" xml:space="preserve"><value>السماح بمشاركة البيانات</value></data>
+  <data name="Admin.Speakers.Field.FacebookUrl" xml:space="preserve"><value>رابط فيسبوك</value></data>
+  <data name="Admin.Speakers.Field.LinkedInUrl" xml:space="preserve"><value>رابط لينكدإن</value></data>
+  <data name="Admin.Speakers.Field.XUrl" xml:space="preserve"><value>رابط X</value></data>
+  <data name="Admin.Speakers.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
+  <data name="Admin.Speakers.Field.DisplayOrderInvalid" xml:space="preserve"><value>يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.</value></data>
+  <data name="Admin.Speakers.Field.IsActive" xml:space="preserve"><value>مفعّل — عرضه في القائمة العامة للمتحدّثين</value></data>
+  <data name="Admin.Speakers.Add.Title" xml:space="preserve"><value>إضافة متحدّث</value></data>
+  <data name="Admin.Speakers.Edit.Title" xml:space="preserve"><value>تعديل المتحدّث</value></data>
+  <data name="Admin.Speakers.Details.Title" xml:space="preserve"><value>تفاصيل المتحدّث</value></data>
+  <data name="Admin.Speakers.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Speakers.New.Submit" xml:space="preserve"><value>إنشاء المتحدّث</value></data>
+  <data name="Admin.Speakers.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء</value></data>
+  <data name="Admin.Speakers.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.Speakers.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Admin.Speakers.Created" xml:space="preserve"><value>تم إنشاء المتحدّث "{0}".</value></data>
+  <data name="Admin.Speakers.Updated" xml:space="preserve"><value>تم تحديث المتحدّث "{0}".</value></data>
+  <data name="Admin.Speakers.Deactivated" xml:space="preserve"><value>تم تعطيل المتحدّث "{0}".</value></data>
+
   <!-- D-134 Sprint B (D-135) — Halls admin CRUD (SIMF-FDS-004 §5.2) -->
   <data name="Admin.Halls.Title" xml:space="preserve"><value>القاعات والمقاعد</value></data>
   <data name="Admin.Halls.None" xml:space="preserve"><value>لا توجد قاعات بعد.</value></data>

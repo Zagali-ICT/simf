@@ -46,7 +46,8 @@ public static class CpNavigation
             new("Module.Sessions", "/m/sessions", IsStub: true),
             // D-134 Sprint B (D-135) — venue halls (SIMF-FDS-004 §5.2).
             new("Module.Halls", "/admin/halls"),
-            new("Module.Speakers", "/m/speakers", IsStub: true),
+            // D-153 — programme speakers (SIMF-DAT-001 §5.4).
+            new("Module.Speakers", "/admin/speakers"),
             new("Module.Bookings", "/m/bookings", IsStub: true),
         ]),
         new("Nav.Exhibition",

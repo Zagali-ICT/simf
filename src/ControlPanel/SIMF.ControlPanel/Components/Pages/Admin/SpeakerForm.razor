@@ -1,0 +1,337 @@
+@* D-153 — reusable Speaker Add/Edit form, hosted in the modal opened
+   from SpeakersList. Mirrors the ThemeForm extraction pattern. Country
+   picker is populated from /admin/countries/list (active rows only) on
+   first render. *@
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        <SimfTextField Label="@L["Admin.Speakers.Field.Code"]"
+                       Helper="@L["Admin.Speakers.Field.CodeHint"]"
+                       MaxLength="16"
+                       @bind-Value="_model.Code" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Speakers.Field.Name"]"
+                       MaxLength="128"
+                       @bind-Value="_model.Name" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Speakers.Field.NameArabic"]"
+                       MaxLength="128"
+                       @bind-Value="_model.NameArabic" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Speakers.Field.Rank"]"
+                       MaxLength="64"
+                       Value="@_model.Rank"
+                       ValueChanged="@(v => _model.Rank = v)" Disabled="_busy" />
+
+        <SimfSelect TValue="string"
+                    Label="@L["Admin.Speakers.Field.Country"]"
+                    Placeholder="@L["Admin.Speakers.Field.CountryPlaceholder"]"
+                    Items="_countryIds"
+                    ValueFor="@(id => id)"
+                    LabelFor="@(id => CountryLabel(id))"
+                    Value="@_countryIdInput"
+                    ValueChanged="@(v => _countryIdInput = v ?? string.Empty)"
+                    Disabled="_busy" />
+
+        <SimfTextarea Label="@L["Admin.Speakers.Field.Bio"]"
+                      Rows="3" MaxLength="2048"
+                      Value="@_model.Bio"
+                      ValueChanged="@(v => _model.Bio = v)" />
+        <SimfTextarea Label="@L["Admin.Speakers.Field.BioArabic"]"
+                      Rows="3" MaxLength="2048"
+                      Value="@_model.BioArabic"
+                      ValueChanged="@(v => _model.BioArabic = v)" />
+
+        <SimfTextarea Label="@L["Admin.Speakers.Field.Qualifications"]"
+                      Rows="3" MaxLength="1024"
+                      Value="@_model.Qualifications"
+                      ValueChanged="@(v => _model.Qualifications = v)" />
+        <SimfTextarea Label="@L["Admin.Speakers.Field.QualificationsArabic"]"
+                      Rows="3" MaxLength="1024"
+                      Value="@_model.QualificationsArabic"
+                      ValueChanged="@(v => _model.QualificationsArabic = v)" />
+
+        <SimfTextarea Label="@L["Admin.Speakers.Field.TrainingExperience"]"
+                      Rows="3" MaxLength="1024"
+                      Value="@_model.TrainingExperience"
+                      ValueChanged="@(v => _model.TrainingExperience = v)" />
+        <SimfTextarea Label="@L["Admin.Speakers.Field.TrainingExperienceArabic"]"
+                      Rows="3" MaxLength="1024"
+                      Value="@_model.TrainingExperienceArabic"
+                      ValueChanged="@(v => _model.TrainingExperienceArabic = v)" />
+
+        <SimfTextarea Label="@L["Admin.Speakers.Field.Awards"]"
+                      Rows="3" MaxLength="1024"
+                      Value="@_model.Awards"
+                      ValueChanged="@(v => _model.Awards = v)" />
+        <SimfTextarea Label="@L["Admin.Speakers.Field.AwardsArabic"]"
+                      Rows="3" MaxLength="1024"
+                      Value="@_model.AwardsArabic"
+                      ValueChanged="@(v => _model.AwardsArabic = v)" />
+
+        <SimfCheckbox @bind-Value="_model.AllowsMeetingRequests" Disabled="_busy">
+            @L["Admin.Speakers.Field.AllowsMeetingRequests"]
+        </SimfCheckbox>
+        <SimfCheckbox @bind-Value="_model.AllowsDataSharing" Disabled="_busy">
+            @L["Admin.Speakers.Field.AllowsDataSharing"]
+        </SimfCheckbox>
+
+        <SimfTextField Label="@L["Admin.Speakers.Field.FacebookUrl"]"
+                       MaxLength="256"
+                       Value="@_model.FacebookUrl"
+                       ValueChanged="@(v => _model.FacebookUrl = v)" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Speakers.Field.LinkedInUrl"]"
+                       MaxLength="256"
+                       Value="@_model.LinkedInUrl"
+                       ValueChanged="@(v => _model.LinkedInUrl = v)" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Speakers.Field.XUrl"]"
+                       MaxLength="256"
+                       Value="@_model.XUrl"
+                       ValueChanged="@(v => _model.XUrl = v)" Disabled="_busy" />
+
+        <SimfTextField Label="@L["Admin.Speakers.Field.DisplayOrder"]"
+                       Type="number"
+                       Value="@_displayOrderInput"
+                       ValueChanged="@(v => _displayOrderInput = v)"
+                       ValueExpression="@(() => _displayOrderInput)"
+                       Disabled="_busy" />
+
+        @if (Initial is not null)
+        {
+            <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
+                @L["Admin.Speakers.Field.IsActive"]
+            </SimfCheckbox>
+        }
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy"
+                    LoadingLabel="@(Initial is null ? L["Admin.Speakers.New.Submitting"] : L["Admin.Speakers.Edit.Submitting"])">
+            @(Initial is null ? L["Admin.Speakers.New.Submit"] : L["Admin.Speakers.Edit.Submit"])
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy" OnClick="OnCancel">
+                @L["Admin.Speakers.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private readonly Model _model = new();
+    private string _displayOrderInput = "0";
+    private string _countryIdInput = string.Empty;
+    private EditContext _editContext = default!;
+    private bool _busy;
+    private string? _error;
+
+    // Country picker state — populated lazily on first render.
+    private string[] _countryIds = Array.Empty<string>();
+    private Dictionary<string, AdminCountrySummary> _countriesById = new();
+
+    [Parameter] public AdminSpeakerDetail? Initial { get; set; }
+    [Parameter] public EventCallback<AdminSpeakerDetail> OnSuccess { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Initial is not null)
+        {
+            _model.Code = Initial.Code;
+            _model.Name = Initial.Name;
+            _model.NameArabic = Initial.NameArabic;
+            _model.Rank = Initial.Rank ?? string.Empty;
+            _countryIdInput = Initial.CountryId?.ToString() ?? string.Empty;
+            _model.Bio = Initial.Bio ?? string.Empty;
+            _model.BioArabic = Initial.BioArabic ?? string.Empty;
+            _model.Qualifications = Initial.Qualifications ?? string.Empty;
+            _model.QualificationsArabic = Initial.QualificationsArabic ?? string.Empty;
+            _model.TrainingExperience = Initial.TrainingExperience ?? string.Empty;
+            _model.TrainingExperienceArabic = Initial.TrainingExperienceArabic ?? string.Empty;
+            _model.Awards = Initial.Awards ?? string.Empty;
+            _model.AwardsArabic = Initial.AwardsArabic ?? string.Empty;
+            _model.AllowsMeetingRequests = Initial.AllowsMeetingRequests;
+            _model.AllowsDataSharing = Initial.AllowsDataSharing;
+            _model.FacebookUrl = Initial.FacebookUrl ?? string.Empty;
+            _model.LinkedInUrl = Initial.LinkedInUrl ?? string.Empty;
+            _model.XUrl = Initial.XUrl ?? string.Empty;
+            _model.IsActive = Initial.IsActive;
+            _displayOrderInput = Initial.DisplayOrder.ToString();
+        }
+        _editContext = new EditContext(_model);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminCountrySummary>>>(
+                "simfAccount.postJson", "/account/api/admin/countries/list",
+                new GridQuery { Top = 500, Filters = new Dictionary<string, string> { ["isActive"] = "true" } });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _countriesById = envelope.Data.Items.ToDictionary(c => c.Id.ToString(), c => c);
+                _countryIds = envelope.Data.Items
+                    .OrderBy(c => c.DisplayOrder)
+                    .ThenBy(c => c.NameEn)
+                    .Select(c => c.Id.ToString())
+                    .ToArray();
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // Picker stays empty; admin can still submit with no country.
+        }
+    }
+
+    private string CountryLabel(string id)
+    {
+        if (!_countriesById.TryGetValue(id, out var country)) return id;
+        var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+        return isArabic
+            ? $"{country.NameAr} ({country.Code})"
+            : $"{country.NameEn} ({country.Code})";
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_model.Code) || _model.Code.Length is < 2 or > 16)
+        {
+            _error = L["Admin.Speakers.Field.CodeInvalid"]; return;
+        }
+        if (string.IsNullOrWhiteSpace(_model.Name) || _model.Name.Length > 128)
+        {
+            _error = L["Admin.Speakers.Field.NameInvalid"]; return;
+        }
+        if (string.IsNullOrWhiteSpace(_model.NameArabic) || _model.NameArabic.Length > 128)
+        {
+            _error = L["Admin.Speakers.Field.NameArabicInvalid"]; return;
+        }
+        if (!int.TryParse(_displayOrderInput, out var order) || order < 0)
+        {
+            _error = L["Admin.Speakers.Field.DisplayOrderInvalid"]; return;
+        }
+
+        int? countryId = null;
+        if (!string.IsNullOrWhiteSpace(_countryIdInput))
+        {
+            if (!int.TryParse(_countryIdInput, out var parsed) || parsed <= 0)
+            {
+                _error = L["Admin.Speakers.Field.CountryInvalid"]; return;
+            }
+            countryId = parsed;
+        }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminSpeakerDetail>? envelope;
+            if (Initial is null)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminSpeakerDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/speakers",
+                    new AdminCreateSpeakerRequest
+                    {
+                        Code = _model.Code.Trim().ToUpperInvariant(),
+                        Name = _model.Name.Trim(),
+                        NameArabic = _model.NameArabic.Trim(),
+                        Rank = NullIfBlank(_model.Rank),
+                        CountryId = countryId,
+                        Bio = NullIfBlank(_model.Bio),
+                        BioArabic = NullIfBlank(_model.BioArabic),
+                        Qualifications = NullIfBlank(_model.Qualifications),
+                        QualificationsArabic = NullIfBlank(_model.QualificationsArabic),
+                        TrainingExperience = NullIfBlank(_model.TrainingExperience),
+                        TrainingExperienceArabic = NullIfBlank(_model.TrainingExperienceArabic),
+                        Awards = NullIfBlank(_model.Awards),
+                        AwardsArabic = NullIfBlank(_model.AwardsArabic),
+                        AllowsMeetingRequests = _model.AllowsMeetingRequests,
+                        AllowsDataSharing = _model.AllowsDataSharing,
+                        FacebookUrl = NullIfBlank(_model.FacebookUrl),
+                        LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
+                        XUrl = NullIfBlank(_model.XUrl),
+                        DisplayOrder = order,
+                    });
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminSpeakerDetail>>(
+                    "simfAccount.putJson", $"/account/api/admin/speakers/{Initial.Id}",
+                    new AdminUpdateSpeakerRequest
+                    {
+                        Code = _model.Code.Trim().ToUpperInvariant(),
+                        Name = _model.Name.Trim(),
+                        NameArabic = _model.NameArabic.Trim(),
+                        Rank = NullIfBlank(_model.Rank),
+                        CountryId = countryId,
+                        UserProfileId = Initial.UserProfileId, // preserved (not editable in this form yet)
+                        Bio = NullIfBlank(_model.Bio),
+                        BioArabic = NullIfBlank(_model.BioArabic),
+                        Qualifications = NullIfBlank(_model.Qualifications),
+                        QualificationsArabic = NullIfBlank(_model.QualificationsArabic),
+                        TrainingExperience = NullIfBlank(_model.TrainingExperience),
+                        TrainingExperienceArabic = NullIfBlank(_model.TrainingExperienceArabic),
+                        Awards = NullIfBlank(_model.Awards),
+                        AwardsArabic = NullIfBlank(_model.AwardsArabic),
+                        AllowsMeetingRequests = _model.AllowsMeetingRequests,
+                        AllowsDataSharing = _model.AllowsDataSharing,
+                        FacebookUrl = NullIfBlank(_model.FacebookUrl),
+                        LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
+                        XUrl = NullIfBlank(_model.XUrl),
+                        DisplayOrder = order,
+                        IsActive = _model.IsActive,
+                    });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Speakers.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.Speakers.Fallback"];
+        }
+        finally { _busy = false; }
+    }
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private sealed class Model
+    {
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string NameArabic { get; set; } = string.Empty;
+        public string Rank { get; set; } = string.Empty;
+        public string Bio { get; set; } = string.Empty;
+        public string BioArabic { get; set; } = string.Empty;
+        public string Qualifications { get; set; } = string.Empty;
+        public string QualificationsArabic { get; set; } = string.Empty;
+        public string TrainingExperience { get; set; } = string.Empty;
+        public string TrainingExperienceArabic { get; set; } = string.Empty;
+        public string Awards { get; set; } = string.Empty;
+        public string AwardsArabic { get; set; } = string.Empty;
+        public bool AllowsMeetingRequests { get; set; }
+        public bool AllowsDataSharing { get; set; }
+        public string FacebookUrl { get; set; } = string.Empty;
+        public string LinkedInUrl { get; set; } = string.Empty;
+        public string XUrl { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+}

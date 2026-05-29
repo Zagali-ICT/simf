@@ -1,0 +1,299 @@
+@* D-153 — Speakers CRUD. SIMF-DAT-001 §5.4. Mirrors ThemesList /
+   HallsList canonical pattern. *@
+@page "/admin/speakers"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Speakers.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Speakers.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="AdminSpeakerSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.Name)"
+                      Caption="@L["Admin.Speakers.Title"]"
+                      FilterColumnLabel="@L["Admin.Speakers.FilterColumn"]"
+                      OnAdd="OnAddAsync"
+                      OnEditOne="OnEditAsync"
+                      OnDetailsOne="OnDetailsAsync"
+                      OnDeleteOne="OnDeactivateAsync"
+                      PrevLabel="@L["Admin.Speakers.Prev"]"
+                      NextLabel="@L["Admin.Speakers.Next"]"
+                      FirstLabel="@L["Admin.Speakers.Pager.First"]"
+                      LastLabel="@L["Admin.Speakers.Pager.Last"]"
+                      PageSizeLabel="@L["Admin.Speakers.Pager.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Speakers.Loading"]"
+                      FilterPlaceholder="@L["Admin.Speakers.FilterPlaceholder"]"
+                      ActionsHeader="@L["Admin.Speakers.Column.Actions"]"
+                      SelectAllLabel="@L["Admin.Speakers.Action.SelectAll"]"
+                      SelectRowLabel="@L["Admin.Speakers.Action.SelectRow"]"
+                      AddLabel="@L["Admin.Speakers.Action.Add"]"
+                      EditLabel="@L["Admin.Speakers.Action.Edit"]"
+                      DetailsLabel="@L["Admin.Speakers.Action.Details"]"
+                      DeleteLabel="@L["Admin.Speakers.Action.Deactivate"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminSpeakerSummary" Key="code"
+                                    Header="@L["Admin.Speakers.Column.Code"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Code</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSpeakerSummary" Key="name"
+                                    Header="@L["Admin.Speakers.Column.Name"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Name</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSpeakerSummary" Key="nameArabic"
+                                    Header="@L["Admin.Speakers.Column.NameArabic"]">
+                    <CellTemplate>@context.NameArabic</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSpeakerSummary" Key="rank"
+                                    Header="@L["Admin.Speakers.Column.Rank"]">
+                    <CellTemplate>@(context.Rank ?? "—")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSpeakerSummary" Key="country"
+                                    Header="@L["Admin.Speakers.Column.Country"]">
+                    <CellTemplate>@(CountryLabel(context) ?? "—")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSpeakerSummary" Key="displayOrder"
+                                    Header="@L["Admin.Speakers.Column.DisplayOrder"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.DisplayOrder</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSpeakerSummary" Key="isActive"
+                                    Header="@L["Admin.Speakers.Column.Active"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Admin.Speakers.Active.Yes"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Admin.Speakers.Active.No"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Speakers.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_addOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.Speakers.Add.Title"]"
+               OnClose="@(() => _addOpen = false)">
+        <ChildContent>
+            <SpeakerForm OnSuccess="OnAddSucceededAsync"
+                         OnCancel="@(() => _addOpen = false)" />
+        </ChildContent>
+    </SimfModal>
+}
+
+@if (_editTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.Speakers.Edit.Title"]"
+               OnClose="@(() => _editTarget = null)">
+        <ChildContent>
+            <SpeakerForm Initial="_editTarget"
+                         OnSuccess="OnEditSucceededAsync"
+                         OnCancel="@(() => _editTarget = null)" />
+        </ChildContent>
+    </SimfModal>
+}
+
+@if (_detailsTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.Speakers.Details.Title"]"
+               OnClose="@(() => _detailsTarget = null)">
+        <ChildContent>
+            <dl class="simf-dl">
+                <dt>@L["Admin.Speakers.Column.Code"]</dt>
+                <dd>@_detailsTarget.Code</dd>
+                <dt>@L["Admin.Speakers.Column.Name"]</dt>
+                <dd>@_detailsTarget.Name</dd>
+                <dt>@L["Admin.Speakers.Column.NameArabic"]</dt>
+                <dd>@_detailsTarget.NameArabic</dd>
+                <dt>@L["Admin.Speakers.Column.Rank"]</dt>
+                <dd>@(_detailsTarget.Rank ?? "—")</dd>
+                <dt>@L["Admin.Speakers.Column.Country"]</dt>
+                <dd>@(CountryLabelDetail(_detailsTarget) ?? "—")</dd>
+                <dt>@L["Admin.Speakers.Field.Bio"]</dt>
+                <dd>@(_detailsTarget.Bio ?? "—")</dd>
+                <dt>@L["Admin.Speakers.Field.BioArabic"]</dt>
+                <dd>@(_detailsTarget.BioArabic ?? "—")</dd>
+                <dt>@L["Admin.Speakers.Field.Qualifications"]</dt>
+                <dd>@(_detailsTarget.Qualifications ?? "—")</dd>
+                <dt>@L["Admin.Speakers.Field.QualificationsArabic"]</dt>
+                <dd>@(_detailsTarget.QualificationsArabic ?? "—")</dd>
+                <dt>@L["Admin.Speakers.Field.TrainingExperience"]</dt>
+                <dd>@(_detailsTarget.TrainingExperience ?? "—")</dd>
+                <dt>@L["Admin.Speakers.Field.TrainingExperienceArabic"]</dt>
+                <dd>@(_detailsTarget.TrainingExperienceArabic ?? "—")</dd>
+                <dt>@L["Admin.Speakers.Field.Awards"]</dt>
+                <dd>@(_detailsTarget.Awards ?? "—")</dd>
+                <dt>@L["Admin.Speakers.Field.AwardsArabic"]</dt>
+                <dd>@(_detailsTarget.AwardsArabic ?? "—")</dd>
+                <dt>@L["Admin.Speakers.Field.AllowsMeetingRequests"]</dt>
+                <dd>@(_detailsTarget.AllowsMeetingRequests ? L["Admin.Speakers.Active.Yes"] : L["Admin.Speakers.Active.No"])</dd>
+                <dt>@L["Admin.Speakers.Field.AllowsDataSharing"]</dt>
+                <dd>@(_detailsTarget.AllowsDataSharing ? L["Admin.Speakers.Active.Yes"] : L["Admin.Speakers.Active.No"])</dd>
+                <dt>@L["Admin.Speakers.Field.FacebookUrl"]</dt>
+                <dd>@(_detailsTarget.FacebookUrl ?? "—")</dd>
+                <dt>@L["Admin.Speakers.Field.LinkedInUrl"]</dt>
+                <dd>@(_detailsTarget.LinkedInUrl ?? "—")</dd>
+                <dt>@L["Admin.Speakers.Field.XUrl"]</dt>
+                <dd>@(_detailsTarget.XUrl ?? "—")</dd>
+                <dt>@L["Admin.Speakers.Column.DisplayOrder"]</dt>
+                <dd>@_detailsTarget.DisplayOrder</dd>
+                <dt>@L["Admin.Speakers.Column.Active"]</dt>
+                <dd>@(_detailsTarget.IsActive ? L["Admin.Speakers.Active.Yes"] : L["Admin.Speakers.Active.No"])</dd>
+            </dl>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="@(() => _detailsTarget = null)">
+                @L["Admin.Speakers.Details.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminSpeakerSummary> _page = new();
+    private bool _loading;
+    private Toast? _toast;
+
+    private bool _addOpen;
+    private AdminSpeakerDetail? _editTarget;
+    private AdminSpeakerDetail? _detailsTarget;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminSpeakerSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/speakers/list", _query);
+            if (envelope is { Success: true, Data: not null })
+            {
+                _page = envelope.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Speakers.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private Task OnAddAsync()
+    {
+        _addOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnAddSucceededAsync(AdminSpeakerDetail created)
+    {
+        _addOpen = false;
+        _toast = new Toast("success", string.Format(L["Admin.Speakers.Created"], created.Name));
+        await LoadAsync();
+    }
+
+    private async Task OnEditAsync(AdminSpeakerSummary row)
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<AdminSpeakerDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/speakers/{row.Id}");
+        if (envelope is { Success: true, Data: not null })
+        {
+            _editTarget = envelope.Data;
+        }
+        else
+        {
+            _toast = new Toast("error",
+                envelope?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.Speakers.LoadFailed"]);
+        }
+    }
+
+    private async Task OnEditSucceededAsync(AdminSpeakerDetail updated)
+    {
+        _editTarget = null;
+        _toast = new Toast("success", string.Format(L["Admin.Speakers.Updated"], updated.Name));
+        await LoadAsync();
+    }
+
+    private async Task OnDetailsAsync(AdminSpeakerSummary row)
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<AdminSpeakerDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/speakers/{row.Id}");
+        if (envelope is { Success: true, Data: not null })
+        {
+            _detailsTarget = envelope.Data;
+        }
+    }
+
+    private async Task OnDeactivateAsync(AdminSpeakerSummary row)
+    {
+        _toast = null;
+        var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+            "simfAccount.deleteJson", $"/account/api/admin/speakers/{row.Id}");
+        if (envelope is { Success: true })
+        {
+            _toast = new Toast("success",
+                string.Format(L["Admin.Speakers.Deactivated"], row.Name));
+            await LoadAsync();
+        }
+        else
+        {
+            _toast = new Toast("error",
+                envelope?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.Speakers.Fallback"]);
+        }
+    }
+
+    private static string? CountryLabel(AdminSpeakerSummary row) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? row.CountryNameAr ?? row.CountryNameEn
+            : row.CountryNameEn ?? row.CountryNameAr;
+
+    private static string? CountryLabelDetail(AdminSpeakerDetail row) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? row.CountryNameAr ?? row.CountryNameEn
+            : row.CountryNameEn ?? row.CountryNameAr;
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Admin.Speakers.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Admin.Speakers.Pager.Page"], current, total);
+}
