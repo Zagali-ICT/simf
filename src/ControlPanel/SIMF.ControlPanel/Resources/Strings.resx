@@ -1243,4 +1243,24 @@
   <data name="Admin.Sessions.Created" xml:space="preserve"><value>Session "{0}" was created.</value></data>
   <data name="Admin.Sessions.Updated" xml:space="preserve"><value>Session "{0}" was updated.</value></data>
   <data name="Admin.Sessions.Deactivated" xml:space="preserve"><value>Session "{0}" was deactivated.</value></data>
+  <data name="Module.OperationsToggles" xml:space="preserve"><value>Operations toggles</value></data>
+  <data name="Admin.Operations.Title" xml:space="preserve"><value>Operations toggles</value></data>
+  <data name="Admin.Operations.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.Operations.LoadFailed" xml:space="preserve"><value>The operations toggles could not be loaded.</value></data>
+  <data name="Admin.Operations.SaveFailed" xml:space="preserve"><value>The change could not be saved.</value></data>
+  <data name="Admin.Operations.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.Operations.Saving" xml:space="preserve"><value>Saving</value></data>
+  <data name="Admin.Operations.RegistrationGate.Heading" xml:space="preserve"><value>Registration gate</value></data>
+  <data name="Admin.Operations.RegistrationGate.Desc" xml:space="preserve"><value>Open or close public sign-up. When closed, the sign-up endpoint returns a typed 403 and no account row is created.</value></data>
+  <data name="Admin.Operations.RegistrationGate.IsOpen" xml:space="preserve"><value>Registration is open</value></data>
+  <data name="Admin.Operations.RegistrationGate.AutoCloseUtc" xml:space="preserve"><value>Auto-close (UTC)</value></data>
+  <data name="Admin.Operations.RegistrationGate.AutoCloseHint" xml:space="preserve"><value>Optional. The background worker flips the gate to closed the first minute after this moment. Leave blank for no scheduled close.</value></data>
+  <data name="Admin.Operations.RegistrationGate.AutoCloseInvalid" xml:space="preserve"><value>Auto-close must be a valid UTC datetime.</value></data>
+  <data name="Admin.Operations.RegistrationGate.LastChangedAt" xml:space="preserve"><value>Last changed</value></data>
+  <data name="Admin.Operations.RegistrationGate.Saved" xml:space="preserve"><value>Registration gate updated.</value></data>
+  <data name="Admin.Operations.Archive.Heading" xml:space="preserve"><value>Archive visibility</value></data>
+  <data name="Admin.Operations.Archive.Desc" xml:space="preserve"><value>Controls whether the past-events archive appears on the public Website and Flutter app. The public GET /archive/visibility endpoint reads this value with no authentication.</value></data>
+  <data name="Admin.Operations.Archive.IsVisible" xml:space="preserve"><value>Archive is visible to the public</value></data>
+  <data name="Admin.Operations.Archive.LastChangedAt" xml:space="preserve"><value>Last changed</value></data>
+  <data name="Admin.Operations.Archive.Saved" xml:space="preserve"><value>Archive visibility updated.</value></data>
 </root>

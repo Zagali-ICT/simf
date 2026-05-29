@@ -6,6 +6,7 @@ using SIMF.Application.Auditing;
 using SIMF.Application.Email;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
+using SIMF.Application.Operations.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
@@ -29,6 +30,7 @@ public sealed class RegistrationService(
     INotificationDispatcher notifications,
     ITransactionRunner transactionRunner,
     IAuditLog auditLog,
+    IOperationsToggleService operationsToggles,
     TimeProvider timeProvider,
     ILogger<RegistrationService> logger) : IRegistrationService
 {
@@ -41,6 +43,23 @@ public sealed class RegistrationService(
         SignUpRequest request,
         CancellationToken cancellationToken = default)
     {
+        // D-166 (gap doc G4, PDF §2.3) — honour the registration gate
+        // before touching the Identity DB. Closed gate → 403 with the
+        // typed REGISTRATION_CLOSED code; the user is not created, no
+        // email is sent.
+        if (!await operationsToggles.IsRegistrationOpenAsync(cancellationToken))
+        {
+            await AuditAsync(
+                AuditEvents.SignUpRejectedRegistrationClosed, AuditOutcome.Failure,
+                request.Email, errorCode: ErrorCodes.RegistrationClosed,
+                cancellationToken: cancellationToken);
+            throw new ApiException(
+                ErrorCodes.RegistrationClosed,
+                403,
+                "Registration is currently closed. Please try again later.",
+                "التسجيل مغلق حالياً. يرجى المحاولة لاحقاً.");
+        }
+
         if (await accounts.FindByEmailAsync(request.Email) is not null)
         {
             await AuditAsync(

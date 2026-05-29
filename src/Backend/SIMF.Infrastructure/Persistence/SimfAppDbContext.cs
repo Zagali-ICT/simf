@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SIMF.Domain.AccessControl;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.Common;
+using SIMF.Domain.Operations;
 using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence;
@@ -32,6 +33,12 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     public DbSet<Session> Sessions => Set<Session>();
     public DbSet<SessionSpeaker> SessionSpeakers => Set<SessionSpeaker>();
     public DbSet<SessionTheme> SessionThemes => Set<SessionTheme>();
+
+    /// <summary>D-166 (gap doc G4, PDF §2.3) — registration open/close gate.</summary>
+    public DbSet<RegistrationGate> RegistrationGate => Set<RegistrationGate>();
+
+    /// <summary>D-166 (gap doc G4, PDF §2.4) — archive visibility switch.</summary>
+    public DbSet<ArchiveVisibility> ArchiveVisibility => Set<ArchiveVisibility>();
 
     /// <summary>D-151 — country lookup (ISO 3166-1 numeric Id; admin-managed
     /// CRUD; seeded with ~56 priority countries on first migration).</summary>

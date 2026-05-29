@@ -106,6 +106,9 @@ public static class CpNavigation
             // D-134 Sprint A — Operation log viewer over the existing
             // OperationLogEntry table (no migration).
             new("Module.OperationLog", "/admin/operation-log"),
+            // D-166 (gap doc G4) — registration gate + archive visibility
+            // singleton toggles (PDF §2.3, §2.4).
+            new("Module.OperationsToggles", "/admin/operations"),
             new("Module.Settings", "/m/settings", IsStub: true),
         ]),
     ];

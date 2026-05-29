@@ -885,6 +885,36 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"sessions/{id}", content: null,
             accessToken, cancellationToken);
 
+    // -- D-166 (gap doc G4) — registration gate + archive visibility -------
+
+    public Task<ApiCallResult<RegistrationGateState>> GetRegistrationGateAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<RegistrationGateState>(
+            HttpMethod.Get, "registration-gate", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<RegistrationGateState>> UpdateRegistrationGateAsync(
+        UpdateRegistrationGateRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<RegistrationGateState>(
+            HttpMethod.Put, "registration-gate",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ArchiveVisibilityState>> GetArchiveVisibilityAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<ArchiveVisibilityState>(
+            HttpMethod.Get, "archive/visibility", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<ArchiveVisibilityState>> UpdateArchiveVisibilityAsync(
+        UpdateArchiveVisibilityRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<ArchiveVisibilityState>(
+            HttpMethod.Put, "archive/visibility",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     // -- D-148 — Gate Module admin CRUD + reports ---------------------------
 
     public Task<ApiCallResult<GridPage<AdminGateSummary>>> ListGatesAsync(

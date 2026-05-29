@@ -918,6 +918,36 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateSessionAsync(id, token));
         });
 
+        // D-166 (gap doc G4) — registration gate + archive visibility BFF passthroughs.
+        group.MapGet("/admin/registration-gate",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetRegistrationGateAsync(token));
+        });
+        group.MapPut("/admin/registration-gate",
+            async (UpdateRegistrationGateRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateRegistrationGateAsync(body, token));
+        });
+        group.MapGet("/admin/archive/visibility",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetArchiveVisibilityAsync(token));
+        });
+        group.MapPut("/admin/archive/visibility",
+            async (UpdateArchiveVisibilityRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateArchiveVisibilityAsync(body, token));
+        });
+
         // D-148 — Gate Module BFF passthroughs (admin + operator).
         group.MapPost("/admin/gates/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

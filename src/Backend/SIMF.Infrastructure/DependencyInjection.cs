@@ -186,6 +186,11 @@ public static class DependencyInjection
         // to a Hall + M-to-M Speakers + M-to-M Themes (PDF §2.9).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSessionService,
             SIMF.Infrastructure.Programme.AdminSessionService>();
+        // D-166 (gap doc G4) — registration gate + archive visibility
+        // singletons + the auto-close background worker (PDF §2.3, §2.4).
+        services.AddScoped<SIMF.Application.Operations.Abstractions.IOperationsToggleService,
+            SIMF.Infrastructure.Operations.OperationsToggleService>();
+        services.AddHostedService<SIMF.Infrastructure.Operations.RegistrationGateAutoCloseWorker>();
         // D-148 — Gate Module: admin CRUD + operator surface + QR resolver +
         // gate-config cache + idempotency store + failure-rate circuit
         // (SIMF-API-GATES-001, SIMF-FDS-003 §5.6).

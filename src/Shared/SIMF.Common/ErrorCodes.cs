@@ -132,6 +132,10 @@ public static class ErrorCodes
     public const string SpeakerCodeDuplicate = "SPEAKER_CODE_DUPLICATE";
     public const string SpeakerInUse = "SPEAKER_IN_USE";
 
+    // Operations toggles (D-166, gap doc G4 — registration gate +
+    // archive visibility singletons).
+    public const string RegistrationClosed = "REGISTRATION_CLOSED";
+
     // Sessions (D-165, gap doc G3 — programme sessions tied to a Hall +
     // M-to-M Speakers + M-to-M Themes).
     public const string SessionInvalid = "SESSION_INVALID";

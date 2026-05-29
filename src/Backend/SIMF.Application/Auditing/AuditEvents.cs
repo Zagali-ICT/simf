@@ -136,6 +136,13 @@ public static class AuditEvents
     public const string SessionUpdated = "Session.Updated";
     public const string SessionDeactivated = "Session.Deactivated";
 
+    // Operations toggles (D-166, gap doc G4 — registration gate +
+    // archive visibility singletons)
+    public const string RegistrationGateUpdated = "RegistrationGate.Updated";
+    public const string RegistrationGateAutoClosed = "RegistrationGate.AutoClosed";
+    public const string ArchiveVisibilityUpdated = "ArchiveVisibility.Updated";
+    public const string SignUpRejectedRegistrationClosed = "SignUp.RejectedRegistrationClosed";
+
     // Gates (D-148 — Gate Module, SIMF-FDS-003 §5.6, SIMF-API-GATES-001)
     public const string GateCreated = "Gate.Created";
     public const string GateUpdated = "Gate.Updated";
