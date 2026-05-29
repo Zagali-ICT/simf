@@ -231,6 +231,30 @@ public static class DependencyInjection
         // reservations (visitor self-pick + random + admin row blocks).
         services.AddScoped<SIMF.Application.SeatReservations.Abstractions.ISeatReservationService,
             SIMF.Infrastructure.SeatReservations.SeatReservationService>();
+        // D-176 (gap doc G12) — centralised AI module: prompt
+        // catalogue + invocation log + Echo (offline) + OpenAI HTTP.
+        // HttpClient registered as a singleton (no AddHttpClient since
+        // the Infrastructure csproj does not reference
+        // Microsoft.Extensions.Http; adding a package needs owner
+        // approval per CLAUDE.md §1.7. The Echo provider is the only
+        // path tests exercise, so the singleton-per-process HTTP
+        // client is fine for the current scope).
+        services.Configure<SIMF.Infrastructure.Ai.AiOptions>(
+            configuration.GetSection(SIMF.Infrastructure.Ai.AiOptions.SectionName));
+        services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider,
+            SIMF.Infrastructure.Ai.EchoAiProvider>();
+        services.AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromSeconds(30) });
+        services.AddSingleton<SIMF.Infrastructure.Ai.OpenAiProvider>();
+        services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider>(sp =>
+            sp.GetRequiredService<SIMF.Infrastructure.Ai.OpenAiProvider>());
+        services.AddSingleton<IReadOnlyDictionary<SIMF.Common.Enums.AiProvider,
+                SIMF.Application.Ai.Abstractions.IAiProvider>>(sp =>
+            sp.GetServices<SIMF.Application.Ai.Abstractions.IAiProvider>()
+                .ToDictionary(p => p.Tag));
+        services.AddScoped<SIMF.Application.Ai.Abstractions.IAiService,
+            SIMF.Infrastructure.Ai.AiService>();
+        services.AddScoped<SIMF.Application.Ai.Abstractions.IAdminAiPromptService,
+            SIMF.Infrastructure.Ai.AdminAiPromptService>();
         // D-148 — Gate Module: admin CRUD + operator surface + QR resolver +
         // gate-config cache + idempotency store + failure-rate circuit
         // (SIMF-API-GATES-001, SIMF-FDS-003 §5.6).

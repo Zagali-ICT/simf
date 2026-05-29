@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SIMF.Domain.AccessControl;
+using SIMF.Domain.Ai;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.Cms;
 using SIMF.Domain.Common;
@@ -108,6 +109,14 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     /// seat reservations (visitor self-pick + random + admin row
     /// blocks). Released rows stay for audit.</summary>
     public DbSet<SeatReservation> SeatReservations => Set<SeatReservation>();
+
+    /// <summary>D-176 (gap doc G12) — centralised AI prompt catalogue.
+    /// Editable from the CP at runtime; one row per logical key.</summary>
+    public DbSet<AiPrompt> AiPrompts => Set<AiPrompt>();
+
+    /// <summary>D-176 (gap doc G12) — append-only telemetry log of
+    /// every AI invocation (success or failure).</summary>
+    public DbSet<AiInvocation> AiInvocations => Set<AiInvocation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

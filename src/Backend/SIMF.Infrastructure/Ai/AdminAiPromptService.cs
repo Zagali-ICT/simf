@@ -1,0 +1,340 @@
+// Tests: SIMF.Api.Tests/AiAdminTests.cs
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using SIMF.Application.Ai.Abstractions;
+using SIMF.Application.Auditing;
+using SIMF.Common;
+using SIMF.Common.Enums;
+using SIMF.Contracts.Ai;
+using SIMF.Domain.Ai;
+using SIMF.Infrastructure.Persistence;
+
+namespace SIMF.Infrastructure.Ai;
+
+/// <summary>D-176 (gap doc G12) — admin CRUD over <see cref="AiPrompt"/>
+/// + read-only invocations log. Writes bump <see cref="AiPrompt.Version"/>
+/// and audit; deactivate is soft (<see cref="AiPrompt.IsActive"/> = false).</summary>
+internal sealed class AdminAiPromptService(
+    SimfAppDbContext appDbContext,
+    IAiService aiService,
+    IAuditLog auditLog,
+    TimeProvider timeProvider,
+    ILogger<AdminAiPromptService> logger) : IAdminAiPromptService
+{
+    public async Task<GridPage<AdminAiPromptSummary>> ListAsync(
+        GridQuery query, CancellationToken cancellationToken = default)
+    {
+        var skip = Math.Max(0, query.Skip);
+        var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
+
+        var rows = appDbContext.AiPrompts.AsNoTracking().AsQueryable();
+        if (query.Filters.TryGetValue("feature", out var featureRaw)
+            && Enum.TryParse<AiFeature>(featureRaw, ignoreCase: true, out var feature))
+        {
+            rows = rows.Where(p => p.Feature == feature);
+        }
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var s = query.Search;
+            rows = rows.Where(p => p.Key.Contains(s)
+                || p.DisplayName.Contains(s) || p.DisplayNameArabic.Contains(s));
+        }
+        rows = rows.OrderBy(p => p.Feature).ThenBy(p => p.Key);
+
+        var total = await rows.CountAsync(cancellationToken);
+        var items = await rows.Skip(skip).Take(top)
+            .Select(p => new AdminAiPromptSummary(
+                p.Id, p.Key, p.Feature, p.DisplayName, p.DisplayNameArabic,
+                p.Provider, p.Model, p.Temperature, p.MaxOutputTokens,
+                p.IsActive, p.Version, p.CreatedAt, p.UpdatedAt))
+            .ToListAsync(cancellationToken);
+        return GridPage<AdminAiPromptSummary>.Of(items, total,
+            new GridQuery { Skip = skip, Top = top });
+    }
+
+    public async Task<AdminAiPromptDetail?> GetAsync(
+        Guid id, CancellationToken cancellationToken = default)
+    {
+        return await appDbContext.AiPrompts.AsNoTracking()
+            .Where(p => p.Id == id)
+            .Select(p => new AdminAiPromptDetail(
+                p.Id, p.Key, p.Feature, p.DisplayName, p.DisplayNameArabic,
+                p.Description, p.DescriptionArabic, p.Provider, p.Model,
+                p.SystemPrompt, p.UserPromptTemplate,
+                p.Temperature, p.MaxOutputTokens,
+                p.IsActive, p.Version, p.CreatedAt, p.UpdatedAt))
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<AdminAiPromptDetail> CreateAsync(
+        Guid actorUserId, CreateAiPromptRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var validated = ValidateCreate(request);
+        var existing = await appDbContext.AiPrompts.AsNoTracking()
+            .AnyAsync(p => p.Key == validated.Key, cancellationToken);
+        if (existing)
+        {
+            throw new ApiException(
+                ErrorCodes.AiPromptKeyDuplicate, 409,
+                $"AI prompt key '{validated.Key}' is already in use.",
+                $"مفتاح المحفّز '{validated.Key}' مستخدم بالفعل.");
+        }
+
+        var prompt = new AiPrompt
+        {
+            Id = Guid.NewGuid(),
+            Key = validated.Key,
+            Feature = validated.Feature,
+            DisplayName = validated.DisplayName,
+            DisplayNameArabic = validated.DisplayNameArabic,
+            Description = validated.Description,
+            DescriptionArabic = validated.DescriptionArabic,
+            Provider = validated.Provider,
+            Model = validated.Model,
+            SystemPrompt = validated.SystemPrompt,
+            UserPromptTemplate = validated.UserPromptTemplate,
+            Temperature = validated.Temperature,
+            MaxOutputTokens = validated.MaxOutputTokens,
+            IsActive = true,
+            Version = 1,
+            CreatedAt = timeProvider.GetUtcNow(),
+            UpdatedByUserId = actorUserId,
+        };
+        appDbContext.AiPrompts.Add(prompt);
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AiPromptCreated,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"promptId={prompt.Id}; key={prompt.Key}; feature={prompt.Feature}",
+        }, cancellationToken);
+        logger.LogInformation(
+            "AI prompt {Key} created by {Actor}", prompt.Key, actorUserId);
+        return ToDetail(prompt);
+    }
+
+    public async Task<AdminAiPromptDetail> UpdateAsync(
+        Guid actorUserId, Guid id, UpdateAiPromptRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var validated = ValidateUpdate(request);
+        var prompt = await appDbContext.AiPrompts
+            .SingleOrDefaultAsync(p => p.Id == id, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.AiPromptNotFound, 404,
+                "AI prompt not found.",
+                "لم يتم العثور على محفّز الذكاء الاصطناعي.");
+
+        prompt.Feature = validated.Feature;
+        prompt.DisplayName = validated.DisplayName;
+        prompt.DisplayNameArabic = validated.DisplayNameArabic;
+        prompt.Description = validated.Description;
+        prompt.DescriptionArabic = validated.DescriptionArabic;
+        prompt.Provider = validated.Provider;
+        prompt.Model = validated.Model;
+        prompt.SystemPrompt = validated.SystemPrompt;
+        prompt.UserPromptTemplate = validated.UserPromptTemplate;
+        prompt.Temperature = validated.Temperature;
+        prompt.MaxOutputTokens = validated.MaxOutputTokens;
+        prompt.IsActive = request.IsActive;
+        prompt.Version++;
+        prompt.UpdatedAt = timeProvider.GetUtcNow();
+        prompt.UpdatedByUserId = actorUserId;
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AiPromptUpdated,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"promptId={prompt.Id}; key={prompt.Key}; version={prompt.Version}",
+        }, cancellationToken);
+        return ToDetail(prompt);
+    }
+
+    public async Task DeactivateAsync(
+        Guid actorUserId, Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var prompt = await appDbContext.AiPrompts
+            .SingleOrDefaultAsync(p => p.Id == id, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.AiPromptNotFound, 404,
+                "AI prompt not found.",
+                "لم يتم العثور على محفّز الذكاء الاصطناعي.");
+        if (!prompt.IsActive) return;
+        prompt.IsActive = false;
+        prompt.UpdatedAt = timeProvider.GetUtcNow();
+        prompt.UpdatedByUserId = actorUserId;
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AiPromptDeactivated,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"promptId={prompt.Id}; key={prompt.Key}",
+        }, cancellationToken);
+    }
+
+    public async Task<AiCallResult> TestAsync(
+        Guid actorUserId, Guid id, TestAiPromptRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var prompt = await appDbContext.AiPrompts.AsNoTracking()
+            .SingleOrDefaultAsync(p => p.Id == id, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.AiPromptNotFound, 404,
+                "AI prompt not found.",
+                "لم يتم العثور على محفّز الذكاء الاصطناعي.");
+        return await aiService.InvokeAsync(
+            prompt.Key, request.Inputs ?? new(),
+            new AiCallerContext(actorUserId, "Admin"),
+            cancellationToken);
+    }
+
+    public async Task<GridPage<AdminAiInvocationRow>> ListInvocationsAsync(
+        GridQuery query, CancellationToken cancellationToken = default)
+    {
+        var skip = Math.Max(0, query.Skip);
+        var top = Math.Clamp(query.Top is > 0 ? query.Top : 50, 1, 500);
+
+        var rows = appDbContext.AiInvocations.AsNoTracking().AsQueryable();
+        if (query.Filters.TryGetValue("feature", out var fr)
+            && Enum.TryParse<AiFeature>(fr, ignoreCase: true, out var feature))
+        {
+            rows = rows.Where(i => i.Feature == feature);
+        }
+        if (query.Filters.TryGetValue("promptKey", out var pk)
+            && !string.IsNullOrWhiteSpace(pk))
+        {
+            rows = rows.Where(i => i.PromptKey == pk);
+        }
+        if (query.Filters.TryGetValue("errorOnly", out var eo)
+            && string.Equals(eo, "true", StringComparison.OrdinalIgnoreCase))
+        {
+            rows = rows.Where(i => i.ErrorCode != null);
+        }
+        rows = rows.OrderByDescending(i => i.CreatedAt);
+
+        var total = await rows.CountAsync(cancellationToken);
+        var items = await rows.Skip(skip).Take(top)
+            .Select(i => new AdminAiInvocationRow(
+                i.Id, i.PromptKey, i.Feature, i.Provider, i.Model,
+                i.CallerKind, i.CallerUserId,
+                i.TokensInput, i.TokensOutput, i.LatencyMs,
+                i.ErrorCode, i.CreatedAt))
+            .ToListAsync(cancellationToken);
+        return GridPage<AdminAiInvocationRow>.Of(items, total,
+            new GridQuery { Skip = skip, Top = top });
+    }
+
+    // -- Validation helpers --
+
+    private sealed record ValidatedCreate(
+        string Key, AiFeature Feature, string DisplayName, string DisplayNameArabic,
+        string? Description, string? DescriptionArabic,
+        AiProvider Provider, string Model,
+        string SystemPrompt, string UserPromptTemplate,
+        double Temperature, int MaxOutputTokens);
+
+    private static ValidatedCreate ValidateCreate(CreateAiPromptRequest r)
+    {
+        var key = (r.Key ?? string.Empty).Trim().ToLowerInvariant();
+        if (key.Length is < 2 or > 64 || !IsKebab(key))
+        {
+            throw new ApiException(
+                ErrorCodes.AiPromptInvalid, 400,
+                "Key must be 2–64 chars, kebab-case (a-z, 0-9, -).",
+                "يجب أن يكون المفتاح بين 2 و 64 محرفاً، بصيغة kebab.");
+        }
+        return new ValidatedCreate(
+            key, r.Feature,
+            ValidateText(r.DisplayName, 1, 128, "DisplayName"),
+            ValidateText(r.DisplayNameArabic, 1, 128, "DisplayNameArabic"),
+            string.IsNullOrWhiteSpace(r.Description) ? null
+                : ValidateText(r.Description, 1, 512, "Description"),
+            string.IsNullOrWhiteSpace(r.DescriptionArabic) ? null
+                : ValidateText(r.DescriptionArabic, 1, 512, "DescriptionArabic"),
+            r.Provider,
+            ValidateText(r.Model, 1, 64, "Model"),
+            ValidateText(r.SystemPrompt, 1, 8000, "SystemPrompt"),
+            ValidateText(r.UserPromptTemplate, 1, 8000, "UserPromptTemplate"),
+            ClampTemperature(r.Temperature),
+            ClampMaxTokens(r.MaxOutputTokens));
+    }
+
+    private static ValidatedCreate ValidateUpdate(UpdateAiPromptRequest r)
+    {
+        return new ValidatedCreate(
+            string.Empty, r.Feature,
+            ValidateText(r.DisplayName, 1, 128, "DisplayName"),
+            ValidateText(r.DisplayNameArabic, 1, 128, "DisplayNameArabic"),
+            string.IsNullOrWhiteSpace(r.Description) ? null
+                : ValidateText(r.Description, 1, 512, "Description"),
+            string.IsNullOrWhiteSpace(r.DescriptionArabic) ? null
+                : ValidateText(r.DescriptionArabic, 1, 512, "DescriptionArabic"),
+            r.Provider,
+            ValidateText(r.Model, 1, 64, "Model"),
+            ValidateText(r.SystemPrompt, 1, 8000, "SystemPrompt"),
+            ValidateText(r.UserPromptTemplate, 1, 8000, "UserPromptTemplate"),
+            ClampTemperature(r.Temperature),
+            ClampMaxTokens(r.MaxOutputTokens));
+    }
+
+    private static string ValidateText(string? value, int min, int max, string field)
+    {
+        var trimmed = (value ?? string.Empty).Trim();
+        if (trimmed.Length < min || trimmed.Length > max)
+        {
+            throw new ApiException(
+                ErrorCodes.AiPromptInvalid, 400,
+                $"{field} must be between {min} and {max} characters.",
+                $"يجب أن يتراوح طول {field} بين {min} و {max} محرفاً.");
+        }
+        return trimmed;
+    }
+
+    private static double ClampTemperature(double value)
+    {
+        if (double.IsNaN(value) || value < 0 || value > 2)
+        {
+            throw new ApiException(
+                ErrorCodes.AiPromptInvalid, 400,
+                "Temperature must be between 0 and 2.",
+                "يجب أن تكون درجة الحرارة بين 0 و 2.");
+        }
+        return value;
+    }
+
+    private static int ClampMaxTokens(int value)
+    {
+        if (value is < 1 or > 8000)
+        {
+            throw new ApiException(
+                ErrorCodes.AiPromptInvalid, 400,
+                "MaxOutputTokens must be between 1 and 8000.",
+                "يجب أن يتراوح الحدّ الأقصى للمخرجات بين 1 و 8000.");
+        }
+        return value;
+    }
+
+    private static bool IsKebab(string s)
+    {
+        foreach (var c in s)
+        {
+            if (!(c is (>= 'a' and <= 'z') or (>= '0' and <= '9') or '-'))
+                return false;
+        }
+        return s[0] != '-' && s[^1] != '-';
+    }
+
+    private static AdminAiPromptDetail ToDetail(AiPrompt p) => new(
+        p.Id, p.Key, p.Feature, p.DisplayName, p.DisplayNameArabic,
+        p.Description, p.DescriptionArabic, p.Provider, p.Model,
+        p.SystemPrompt, p.UserPromptTemplate, p.Temperature, p.MaxOutputTokens,
+        p.IsActive, p.Version, p.CreatedAt, p.UpdatedAt);
+}

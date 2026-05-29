@@ -175,6 +175,13 @@ public static class AuditEvents
     public const string SeatRowAdminReserved = "SeatReservation.RowAdminReserved";
     public const string SeatRowAdminReleased = "SeatReservation.RowAdminReleased";
 
+    // Centralised AI module (D-176, gap doc G12)
+    public const string AiPromptCreated = "AiPrompt.Created";
+    public const string AiPromptUpdated = "AiPrompt.Updated";
+    public const string AiPromptDeactivated = "AiPrompt.Deactivated";
+    public const string AiInvocationSucceeded = "AiInvocation.Succeeded";
+    public const string AiInvocationFailed = "AiInvocation.Failed";
+
     // Invitations + VIP notify (D-168, gap doc G5 — public-relations
     // module, PDF §2.7.3)
     public const string InvitationCreated = "Invitation.Created";

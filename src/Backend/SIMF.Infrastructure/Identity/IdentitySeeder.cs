@@ -198,6 +198,10 @@ public sealed class IdentitySeeder(
         // السيبراني" screen reads. Idempotent: only writes the row when
         // missing, matches the existing EnsureProfileTypeAsync pattern.
         await EnsureCybersecurityPolicyContentAsync(admin.Id, cancellationToken);
+
+        // D-176 (gap doc G12) — seed the default AI prompt catalogue.
+        // One prompt per feature; admin can edit at runtime via the CP.
+        await EnsureDefaultAiPromptsAsync(admin.Id, cancellationToken);
     }
 
     private async Task EnsureRoleAsync(string roleName)
@@ -465,5 +469,79 @@ public sealed class IdentitySeeder(
         logger.LogInformation(
             "D-174: cybersecurity policy content blocks ensured (seeded {NewCount} of {Total}).",
             seed.Length - existingKeys.Count, seed.Length);
+    }
+
+    /// <summary>D-176 (gap doc G12) — idempotently seeds the default
+    /// AI prompts. One prompt per feature, all on
+    /// <see cref="AiProvider.Echo"/> so dev + tests run offline. An
+    /// admin can switch any prompt's <c>Provider</c> + edit the
+    /// templates from the CP without a redeploy.</summary>
+    private async Task EnsureDefaultAiPromptsAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        var seed = new (string Key, AiFeature Feature, string En, string Ar,
+            string SystemPrompt, string UserTemplate)[]
+        {
+            ("question-filter", AiFeature.QuestionFilter,
+                "Audience Question Safety Filter", "مصفّاة أمان أسئلة الجمهور",
+                "You are a moderation assistant for a public maritime forum. Given an audience question, decide whether it is appropriate for a live Q&A: reject hate speech, personal attacks, off-topic content, advertising, or spam. Reply in JSON: {\"allowed\": bool, \"reason\": string}.",
+                "Question: {text}"),
+            ("faq-answer", AiFeature.Faq,
+                "Event FAQ Assistant", "مساعد الأسئلة الشائعة للفعّالية",
+                "You are the SIMF (Saudi International Maritime Forum) FAQ assistant. Answer concisely (1–3 sentences). Use Arabic if the question is in Arabic, English otherwise. If you do not know, say so and recommend asking the help desk.",
+                "Question: {question}"),
+            ("assistance", AiFeature.Assistance,
+                "Visitor Concierge", "خدمة الزوّار",
+                "You are a friendly concierge for SIMF visitors. Help with directions, agenda, speakers, and general guidance. Be brief, polite, and culturally aware. Reply in the same language as the visitor.",
+                "{message}"),
+            ("translate", AiFeature.Translate,
+                "Text Translator", "مترجم النصوص",
+                "Translate the text from {sourceLang} to {targetLang}. Reply with only the translation — no commentary, no quotes.",
+                "{text}"),
+            ("live-translation", AiFeature.LiveTranslation,
+                "Live Speech Translator", "المترجم الحيّ للكلام",
+                "Translate this in-progress transcript chunk from {sourceLang} to {targetLang}. Reply with only the translated chunk — keep punctuation light because chunks are concatenated client-side.",
+                "{text}"),
+            ("live-sign-language", AiFeature.LiveSignLanguage,
+                "Live Sign-Language Gloss", "ترجمة الإشارة الحيّة",
+                "Convert this in-progress transcript chunk into a glossed sign-language sequence suitable for a downstream avatar renderer. Keep glosses uppercase and space-separated.",
+                "{text}"),
+        };
+
+        var existing = await appDbContext.AiPrompts.AsNoTracking()
+            .Select(p => p.Key).ToListAsync(cancellationToken);
+        var existingSet = new HashSet<string>(existing, StringComparer.OrdinalIgnoreCase);
+        var now = timeProvider.GetUtcNow();
+        var toSeed = 0;
+        foreach (var (key, feature, en, ar, system, user) in seed)
+        {
+            if (existingSet.Contains(key)) continue;
+            appDbContext.AiPrompts.Add(new SIMF.Domain.Ai.AiPrompt
+            {
+                Id = Guid.NewGuid(),
+                Key = key,
+                Feature = feature,
+                DisplayName = en,
+                DisplayNameArabic = ar,
+                Provider = AiProvider.Echo,
+                Model = "echo",
+                SystemPrompt = system,
+                UserPromptTemplate = user,
+                Temperature = 0.2,
+                MaxOutputTokens = 512,
+                IsActive = true,
+                Version = 1,
+                CreatedAt = now,
+                UpdatedByUserId = actorUserId,
+            });
+            toSeed++;
+        }
+        if (toSeed > 0)
+        {
+            await appDbContext.SaveChangesAsync(cancellationToken);
+        }
+        logger.LogInformation(
+            "D-176: default AI prompts ensured (seeded {NewCount} of {Total}).",
+            toSeed, seed.Length);
     }
 }

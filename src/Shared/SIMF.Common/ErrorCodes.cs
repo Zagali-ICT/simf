@@ -166,6 +166,15 @@ public static class ErrorCodes
     public const string SeatCapacityExceeded = "SEAT_CAPACITY_EXCEEDED";
     public const string SeatSessionFull = "SEAT_SESSION_FULL";
 
+    // Centralised AI module (D-176, gap doc G12).
+    public const string AiPromptInvalid = "AI_PROMPT_INVALID";
+    public const string AiPromptNotFound = "AI_PROMPT_NOT_FOUND";
+    public const string AiPromptKeyDuplicate = "AI_PROMPT_KEY_DUPLICATE";
+    public const string AiProviderNotConfigured = "AI_PROVIDER_NOT_CONFIGURED";
+    public const string AiProviderFailed = "AI_PROVIDER_FAILED";
+    public const string AiInputInvalid = "AI_INPUT_INVALID";
+    public const string AiFeatureDisabled = "AI_FEATURE_DISABLED";
+
     // CMS: ContentBlock + Banner (D-173, gap doc G8 — PDF §1, §2.1).
     public const string ContentBlockInvalid = "CONTENT_BLOCK_INVALID";
     public const string ContentBlockNotFound = "CONTENT_BLOCK_NOT_FOUND";
