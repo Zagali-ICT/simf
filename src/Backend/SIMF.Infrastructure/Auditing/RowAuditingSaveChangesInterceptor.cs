@@ -46,6 +46,13 @@ internal sealed class RowAuditingSaveChangesInterceptor(
         "AccountCode",
         "SecondFactorToken",
         "TotpRecoveryCode",
+        // D-148 — GateScan is itself an append-only audit log (it carries
+        // ScannedByUserId + CorrelationId + IpAddress + UserAgent already).
+        // Auditing the audit log doubles the write volume for zero gain.
+        "GateScan",
+        // D-148 — ScanIdempotency is a short-lived replay store, not domain
+        // data. Auditing it would add a RowAudit row per scan.
+        "ScanIdempotency",
     };
 
     private static readonly HashSet<string> RedactedColumnNames = new(StringComparer.OrdinalIgnoreCase)

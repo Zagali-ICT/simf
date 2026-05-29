@@ -55,6 +55,23 @@ public sealed class IdentitySeeder(
             await EnsureRoleAsync(role);
         }
 
+        // D-148 — Gate Module permissions seeded idempotently. Granted to
+        // GateOperator (its raison d'être) and to Administrator (admins
+        // can also operate a gate from the CP console for testing).
+        await EnsurePermissionAsync(Permissions.GatesManage,
+            page: "Gates", action: "Manage", displayName: "Manage gates",
+            grantToRoles: new[] { AppRoles.Administrator },
+            cancellationToken);
+        await EnsurePermissionAsync(Permissions.GatesOperate,
+            page: "Gates", action: "Operate", displayName: "Operate a gate",
+            grantToRoles: new[] { AppRoles.Administrator, AppRoles.GateOperator },
+            cancellationToken);
+        await EnsurePermissionAsync(Permissions.GatesViewOwnReports,
+            page: "Gates", action: "ViewOwnReports",
+            displayName: "View own gate reports",
+            grantToRoles: new[] { AppRoles.Administrator, AppRoles.GateOperator },
+            cancellationToken);
+
         var admin = await accounts.FindByEmailAsync(settings.Email)
             ?? await CreateSuperAdminAsync(settings, cancellationToken);
         if (admin is null)
@@ -147,6 +164,48 @@ public sealed class IdentitySeeder(
                 Name = roleName,
                 IsBaseline = true,
             });
+        }
+    }
+
+    /// <summary>D-148 — idempotent insert of a Permission row + grants to
+    /// the named baseline roles. Safe to re-run on every startup.</summary>
+    private async Task EnsurePermissionAsync(
+        string code, string page, string action, string displayName,
+        IReadOnlyList<string> grantToRoles,
+        CancellationToken cancellationToken)
+    {
+        var permission = await dbContext.Permissions
+            .SingleOrDefaultAsync(p => p.Code == code, cancellationToken);
+        if (permission is null)
+        {
+            permission = new Permission
+            {
+                Id = Guid.NewGuid(),
+                Code = code,
+                Page = page,
+                Action = action,
+                DisplayName = displayName,
+            };
+            dbContext.Permissions.Add(permission);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        foreach (var roleName in grantToRoles)
+        {
+            var role = await roleManager.FindByNameAsync(roleName);
+            if (role is null) { continue; }
+            var grantExists = await dbContext.RolePermissions
+                .AnyAsync(rp => rp.RoleId == role.Id && rp.PermissionId == permission.Id,
+                    cancellationToken);
+            if (!grantExists)
+            {
+                dbContext.RolePermissions.Add(new RolePermission
+                {
+                    RoleId = role.Id,
+                    PermissionId = permission.Id,
+                });
+                await dbContext.SaveChangesAsync(cancellationToken);
+            }
         }
     }
 

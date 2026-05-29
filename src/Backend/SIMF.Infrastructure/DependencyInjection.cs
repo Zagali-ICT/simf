@@ -163,6 +163,22 @@ public static class DependencyInjection
         // D-134 Sprint B (D-135) — Halls admin CRUD.
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminHallService,
             SIMF.Infrastructure.Programme.AdminHallService>();
+        // D-148 — Gate Module: admin CRUD + operator surface + QR resolver +
+        // gate-config cache + idempotency store + failure-rate circuit
+        // (SIMF-API-GATES-001, SIMF-FDS-003 §5.6).
+        services.AddScoped<SIMF.Application.AccessControl.Abstractions.IQrResolver,
+            SIMF.Infrastructure.AccessControl.QrResolver>();
+        services.AddScoped<SIMF.Application.AccessControl.Abstractions.IAdminGateService,
+            SIMF.Infrastructure.AccessControl.AdminGateService>();
+        services.AddScoped<SIMF.Application.AccessControl.Abstractions.IGateOperatorService,
+            SIMF.Infrastructure.AccessControl.GateOperatorService>();
+        services.AddScoped<SIMF.Application.AccessControl.Abstractions.IGateConfigCache,
+            SIMF.Infrastructure.AccessControl.GateConfigCache>();
+        services.AddScoped<SIMF.Application.AccessControl.Abstractions.IScanIdempotencyStore,
+            SIMF.Infrastructure.AccessControl.ScanIdempotencyStore>();
+        // The failure-rate circuit is singleton (in-memory state per process).
+        services.AddSingleton<SIMF.Application.AccessControl.Abstractions.IGateFailureCircuit,
+            SIMF.Infrastructure.AccessControl.GateFailureCircuit>();
         services.AddScoped<IAdminApprovalReadService, AdminApprovalReadService>();
         services.AddScoped<IQrIdMinter, QrIdMinter>();
         services.AddScoped<IUserProfileService, UserProfileService>();

@@ -19,7 +19,23 @@ public static class AppRoles
 {
     public const string Administrator = "Administrator";
 
-    /// <summary>Every CP-side RBAC role. Today: just Administrator.</summary>
+    /// <summary>D-148 — operator role for the Gate Module. Holders carry
+    /// the <see cref="Permissions.GatesOperate"/> and
+    /// <see cref="Permissions.GatesViewOwnReports"/> permissions. Operators
+    /// authenticate against the CP surface (they use the operator console).</summary>
+    public const string GateOperator = "GateOperator";
+
+    /// <summary>Every CP-side RBAC role. Today: Administrator + GateOperator.</summary>
     public static readonly IReadOnlyList<string> CpRoles =
-        [Administrator];
+        [Administrator, GateOperator];
+}
+
+/// <summary>D-148 — Gate Module permission names. Per the
+/// SIMF-RPM-001 model, an Administrator holds every permission; a
+/// <see cref="AppRoles.GateOperator"/> holds only the gate permissions.</summary>
+public static class Permissions
+{
+    public const string GatesManage = "Gates.Manage";
+    public const string GatesOperate = "Gates.Operate";
+    public const string GatesViewOwnReports = "Gates.ViewOwnReports";
 }

@@ -121,6 +121,16 @@ public static class AuditEvents
     public const string HallUpdated = "Hall.Updated";
     public const string HallDeactivated = "Hall.Deactivated";
 
+    // Gates (D-148 — Gate Module, SIMF-FDS-003 §5.6, SIMF-API-GATES-001)
+    public const string GateCreated = "Gate.Created";
+    public const string GateUpdated = "Gate.Updated";
+    public const string GateDeactivated = "Gate.Deactivated";
+    public const string GateAssignmentAdded = "Gate.AssignmentAdded";
+    public const string GateAssignmentRevoked = "Gate.AssignmentRevoked";
+    public const string GateScanDenied = "Gate.ScanDenied";
+    public const string GateFailureCircuitOpened = "Gate.FailureCircuitOpened";
+    public const string GateFailureCircuitClosed = "Gate.FailureCircuitClosed";
+
     // Approval workflow (P4 — Admin / Visitor; P7c added the Other pair)
     public const string AdminStaffApproved = "Admin.StaffApproved";
     public const string AdminStaffRejected = "Admin.StaffRejected";

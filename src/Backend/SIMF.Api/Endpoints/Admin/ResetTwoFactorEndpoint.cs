@@ -71,6 +71,17 @@ public static class AuthorizationPolicies
     /// </summary>
     public const string RequireApprovedAccount = "RequireApprovedAccount";
 
+    /// <summary>D-148 — admin-only management of gates / assignments /
+    /// allow-lists / reports (SIMF-API-GATES-001 §4).</summary>
+    public const string GatesManage = "GatesManage";
+
+    /// <summary>D-148 — operator-only scan submission and own-assignments
+    /// listing (SIMF-API-GATES-001 §4). Administrator inherits.</summary>
+    public const string GatesOperate = "GatesOperate";
+
+    /// <summary>D-148 — operator's own-daily-report endpoint.</summary>
+    public const string GatesViewOwnReports = "GatesViewOwnReports";
+
     /// <summary>Registers the policies with the ASP.NET Core authorization stack.</summary>
     public static void AddSimfAuthorization(this AuthorizationBuilder builder)
     {
@@ -83,5 +94,17 @@ public static class AuthorizationPolicies
         // for any endpoint that opts in.
         builder.AddPolicy(RequireApprovedAccount, policy =>
             policy.RequireClaim("account_state", "Approved"));
+
+        // D-148 — Administrator bypasses the gate permission checks
+        // (an admin can also operate a gate from the CP console for
+        // testing); GateOperator holds the operator permissions only.
+        builder.AddPolicy(GatesManage, policy =>
+            policy.RequireRole(SIMF.Common.AppRoles.Administrator));
+        builder.AddPolicy(GatesOperate, policy =>
+            policy.RequireRole(SIMF.Common.AppRoles.Administrator,
+                               SIMF.Common.AppRoles.GateOperator));
+        builder.AddPolicy(GatesViewOwnReports, policy =>
+            policy.RequireRole(SIMF.Common.AppRoles.Administrator,
+                               SIMF.Common.AppRoles.GateOperator));
     }
 }

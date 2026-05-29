@@ -116,4 +116,15 @@ public static class ErrorCodes
     public const string HallNotFound = "HALL_NOT_FOUND";
     public const string HallCodeDuplicate = "HALL_CODE_DUPLICATE";
     public const string HallInUse = "HALL_IN_USE";
+
+    // Gates (D-148 — Gate Module, SIMF-FDS-003 §5.6, SIMF-API-GATES-001).
+    public const string GateInvalid = "GATE_INVALID";
+    public const string GateNotFound = "GATE_NOT_FOUND";
+    public const string GateCodeDuplicate = "GATE_CODE_DUPLICATE";
+    public const string GateInactive = "GATE_INACTIVE";
+    public const string GateOperatorNotAssigned = "GATE_OPERATOR_NOT_ASSIGNED";
+    public const string GateAssignmentInvalid = "GATE_ASSIGNMENT_INVALID";
+    public const string GateProfileTypeInvalid = "GATE_PROFILE_TYPE_INVALID";
+    public const string IdempotencyKeyConflict = "IDEMPOTENCY_KEY_CONFLICT";
+    public const string GateFailureCircuitOpen = "GATE_FAILURE_CIRCUIT_OPEN";
 }
