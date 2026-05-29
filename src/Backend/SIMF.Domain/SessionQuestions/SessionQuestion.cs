@@ -1,3 +1,4 @@
+using SIMF.Common.Enums;
 using SIMF.Domain.Programme;
 
 namespace SIMF.Domain.SessionQuestions;
@@ -35,6 +36,12 @@ public sealed class SessionQuestion
 
     /// <summary>The question text (≤1000 chars; trimmed).</summary>
     public string QuestionText { get; set; } = string.Empty;
+
+    /// <summary>D-174 (gap doc G11, Mockup page 26) — the addressee
+    /// chosen by the audience member from the live-stream pills
+    /// (Speaker vs Host). Defaults to <see cref="SessionQuestionRecipient.Speaker"/>
+    /// for rows created before the column existed.</summary>
+    public SessionQuestionRecipient Recipient { get; set; } = SessionQuestionRecipient.Speaker;
 
     /// <summary>Display order in the moderator's queue (0 = top).
     /// Updated by the moderator via the reorder endpoint; new

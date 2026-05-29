@@ -19,6 +19,10 @@ public sealed class SubmitSessionQuestionRoute
     /// <summary>D-171 (gap doc G7) — the venue self-assert flag. Must be
     /// true for the submission to be accepted.</summary>
     public bool IsAtVenue { get; set; }
+
+    /// <summary>D-174 (gap doc G11, Mockup page 26) — Speaker or Host.</summary>
+    public SIMF.Common.Enums.SessionQuestionRecipient Recipient { get; set; }
+        = SIMF.Common.Enums.SessionQuestionRecipient.Speaker;
 }
 
 public sealed class SubmitSessionQuestionEndpoint(ISessionQuestionService service)
@@ -45,6 +49,7 @@ public sealed class SubmitSessionQuestionEndpoint(ISessionQuestionService servic
             {
                 QuestionText = req.QuestionText,
                 IsAtVenue = req.IsAtVenue,
+                Recipient = req.Recipient,
             },
             ct);
         await Send.OkAsync(ApiResult<SessionQuestionSubmitted>.Ok(result), ct);

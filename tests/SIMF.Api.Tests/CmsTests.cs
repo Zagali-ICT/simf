@@ -225,6 +225,35 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Cybersecurity_policy_blocks_are_seeded_by_IdentitySeeder()
+    {
+        // D-174 (gap doc G11, Mockup page 39) — the Flutter mobile app
+        // reads these well-known keys; their presence is a wire
+        // contract enforced by the seeder.
+        var keys = new[]
+        {
+            "cyber.title",
+            "cyber.intro",
+            "cyber.pillar.01.title",
+            "cyber.pillar.01.body",
+            "cyber.pillar.02.title",
+            "cyber.pillar.03.title",
+            "cyber.pillar.04.title",
+            "cyber.pillar.05.title",
+            "cyber.reference",
+        };
+        foreach (var key in keys)
+        {
+            var response = await _client.GetAsync($"/api/v1/content/{key}");
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var body = (await response.Content
+                .ReadFromJsonAsync<ApiResult<PublicContentBlock>>())!.Data!;
+            Assert.False(string.IsNullOrEmpty(body.ContentEn), $"EN content missing for {key}");
+            Assert.False(string.IsNullOrEmpty(body.ContentAr), $"AR content missing for {key}");
+        }
+    }
+
+    [Fact]
     public async Task Delete_content_block_makes_subsequent_public_read_404()
     {
         var admin = await CreateAdministratorAndSignInAsync();

@@ -108,6 +108,13 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         var services = scope.ServiceProvider;
         services.GetRequiredService<SimfIdentityDbContext>().Database.Migrate();
         services.GetRequiredService<SimfAppDbContext>().Database.Migrate();
+        // D-174 — the production Program skips the seeder under the
+        // "Testing" environment so xunit doesn't pay the cost on every
+        // class. Phase G11 / page 39 ships seed content blocks that
+        // tests verify, so the test fixture has to invoke the seeder
+        // explicitly. Idempotent.
+        services.GetRequiredService<SIMF.Infrastructure.Identity.IdentitySeeder>()
+            .SeedAsync().GetAwaiter().GetResult();
     }
 
     protected override void Dispose(bool disposing)

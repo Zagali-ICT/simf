@@ -167,6 +167,33 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Submit_with_Host_recipient_round_trips_in_moderator_queue()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var (session, _) = await SeedLiveSessionAsync();
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var submit = await PostAuthAsync(
+            $"/api/v1/sessions/{session.Id}/questions",
+            new SubmitSessionQuestionRequest
+            {
+                QuestionText = "For the host",
+                IsAtVenue = true,
+                Recipient = SessionQuestionRecipient.Host,
+            },
+            visitor.AccessToken);
+        Assert.Equal(HttpStatusCode.OK, submit.StatusCode);
+
+        var queue = await GetAuthAsync(
+            $"/api/v1/sessions/{session.Id}/questions/moderate", admin);
+        var rows = (await queue.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>>())!.Data!;
+        Assert.Contains(rows, r =>
+            r.QuestionText == "For the host"
+            && r.Recipient == SessionQuestionRecipient.Host);
+    }
+
+    [Fact]
     public async Task Submit_without_at_venue_flag_is_403_NOT_AT_VENUE()
     {
         var admin = await CreateAdministratorAndSignInAsync();

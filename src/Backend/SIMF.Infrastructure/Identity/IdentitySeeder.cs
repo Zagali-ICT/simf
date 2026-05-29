@@ -192,6 +192,12 @@ public sealed class IdentitySeeder(
         await EnsureProfileTypeAsync(
             "Sponsor", "راعي", "#8B5CF6", // purple
             UserType.Other, MobileAppRole.None, cancellationToken);
+
+        // D-174 (gap doc G11, Mockup page 39) — seed the cybersecurity
+        // policy content blocks the Flutter "سياسات وضوابط الأمن
+        // السيبراني" screen reads. Idempotent: only writes the row when
+        // missing, matches the existing EnsureProfileTypeAsync pattern.
+        await EnsureCybersecurityPolicyContentAsync(admin.Id, cancellationToken);
     }
 
     private async Task EnsureRoleAsync(string roleName)
@@ -373,5 +379,91 @@ public sealed class IdentitySeeder(
 
         logger.LogInformation("Super-admin account seeded: {Email}", settings.Email);
         return admin;
+    }
+
+    /// <summary>D-174 (gap doc G11, Mockup page 39) — seed the
+    /// cybersecurity-policy content blocks the Flutter mobile app reads
+    /// at <c>/api/v1/content/cyber.*</c>. Idempotent: each block is
+    /// inserted only when its key is absent (the same shape
+    /// EnsureProfileTypeAsync uses). The text is the page-39 mockup
+    /// verbatim (Arabic) + a paired English translation so the existing
+    /// bilingual ContentBlock contract is respected.</summary>
+    private async Task EnsureCybersecurityPolicyContentAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        // (Key, EN, AR) — matches the page-39 layout:
+        //  cyber.title              — the page heading
+        //  cyber.intro              — the leading paragraph mentioning NCA
+        //  cyber.pillar.01.title    — pillar headings
+        //  cyber.pillar.01.body     — pillar bodies
+        //  cyber.reference          — the references footer
+        var seed = new[]
+        {
+            ("cyber.title",
+             "Cybersecurity policies and controls",
+             "سياسات وضوابط الأمن السيبراني"),
+            ("cyber.intro",
+             "The SIMF mobile application complies with the cybersecurity policies and controls issued by the National Cybersecurity Authority (NCA), based on the Essential Cybersecurity Controls (ECC – 1:2018) and the Critical Systems Cybersecurity Controls (CSCC – 1:2019).",
+             "يلتزم تطبيق الملتقى البحري السعودي الدولي بسياسات وضوابط الأمن السيبراني الصادرة عن الهيئة الوطنية للأمن السيبراني (NCA)، استناداً إلى الضوابط الأساسية للأمن السيبراني (ECC – 1:2018) وضوابط الأمن السيبراني للأنظمة الحساسة (CSCC – 1:2019)."),
+            ("cyber.pillar.01.title",
+             "Personal data protection and privacy",
+             "حماية البيانات الشخصية والخصوصية"),
+            ("cyber.pillar.01.body",
+             "Data is collected for specified purposes only and retained under approved policies.",
+             "جمع البيانات لأغراض محددة فقط، وحفظها وفق الأنظمة المعتمدة"),
+            ("cyber.pillar.02.title",
+             "Encryption and communications protection",
+             "التشفير وحماية الاتصالات"),
+            ("cyber.pillar.02.body",
+             "Data is encrypted in transit and at rest using approved standards.",
+             "تشفير البيانات أثناء النقل والتخزين باستخدام معايير معتمدة"),
+            ("cyber.pillar.03.title",
+             "Access and authentication controls",
+             "ضوابط الوصول والمصادقة"),
+            ("cyber.pillar.03.body",
+             "Multi-factor authentication and least-privilege are enforced.",
+             "المصادقة متعددة العوامل ومبدأ أقل صلاحية لازمة"),
+            ("cyber.pillar.04.title",
+             "Security review and testing",
+             "مراجعة واختبار الأمن"),
+            ("cyber.pillar.04.body",
+             "Penetration tests and vulnerability assessments before launch and on every update.",
+             "اختبارات اختراق وتقييم ثغرات قبل الإطلاق وعند كل تحديث"),
+            ("cyber.pillar.05.title",
+             "Incident reporting and response",
+             "الإبلاغ عن الحوادث والاستجابة"),
+            ("cyber.pillar.05.body",
+             "A documented reporting channel with a defined response time for handling incidents.",
+             "قناة موثقة للإبلاغ وزمن استجابة محدد لمعالجة الحوادث"),
+            ("cyber.reference",
+             "References: National Cybersecurity Authority · ECC – 1:2018 · CSCC – 1:2019 · OWASP ASVS",
+             "مرجعية: الهيئة الوطنية للأمن السيبراني · ECC – 1:2018 · CSCC – 1:2019 · OWASP ASVS"),
+        };
+
+        var now = timeProvider.GetUtcNow();
+        var existingKeys = await appDbContext.ContentBlocks
+            .Where(b => seed.Select(s => s.Item1).Contains(b.Key))
+            .Select(b => b.Key)
+            .ToListAsync(cancellationToken);
+
+        foreach (var (key, en, ar) in seed)
+        {
+            if (existingKeys.Contains(key)) { continue; }
+            appDbContext.ContentBlocks.Add(new SIMF.Domain.Cms.ContentBlock
+            {
+                Id = Guid.NewGuid(),
+                Key = key,
+                ContentEn = en,
+                ContentAr = ar,
+                IsActive = true,
+                LastUpdatedByUserId = actorUserId,
+                CreatedAt = now,
+                LastUpdatedAt = now,
+            });
+        }
+        await appDbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "D-174: cybersecurity policy content blocks ensured (seeded {NewCount} of {Total}).",
+            seed.Length - existingKeys.Count, seed.Length);
     }
 }

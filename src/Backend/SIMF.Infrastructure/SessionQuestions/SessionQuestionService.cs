@@ -109,6 +109,7 @@ internal sealed class SessionQuestionService(
             SessionId = sessionId,
             SubmittedByUserId = submittedByUserId,
             QuestionText = text,
+            Recipient = request.Recipient,
             Order = 0,
             IsHidden = false,
             IsPushed = false,

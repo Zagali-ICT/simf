@@ -1,3 +1,5 @@
+using SIMF.Common.Enums;
+
 namespace SIMF.Contracts.Sessions;
 
 /// <summary>D-169 (gap doc G6, PDF §2.7.2) — public audience-submission
@@ -16,6 +18,12 @@ public sealed class SubmitSessionQuestionRequest
     /// or a maintained venue-WiFi list. Must be <c>true</c> for the
     /// submission to be accepted.</summary>
     public bool IsAtVenue { get; set; }
+
+    /// <summary>D-174 (gap doc G11, Mockup page 26) — addressee chosen
+    /// from the live-stream pills. Defaults to
+    /// <see cref="SessionQuestionRecipient.Speaker"/> for clients on
+    /// the pre-D-174 wire shape.</summary>
+    public SessionQuestionRecipient Recipient { get; set; } = SessionQuestionRecipient.Speaker;
 }
 
 /// <summary>D-169 — public-facing response after submission. The
@@ -37,6 +45,7 @@ public sealed record SessionQuestionModeratorRow(
     string SubmittedByDisplayName,
     string? SubmittedByEmail,
     string QuestionText,
+    SessionQuestionRecipient Recipient,
     int Order,
     bool IsHidden,
     bool IsPushed,
