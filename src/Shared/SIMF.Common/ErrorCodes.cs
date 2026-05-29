@@ -144,6 +144,10 @@ public static class ErrorCodes
     public const string SessionModeratorNotAssigned = "SESSION_MODERATOR_NOT_ASSIGNED";
     public const string SessionModeratorAlreadyAssigned = "SESSION_MODERATOR_ALREADY_ASSIGNED";
 
+    // Venue self-assert (D-171, gap doc G7 — PDF §2.10; G-OI-2 resolved
+    // to the self-assert toggle as input source).
+    public const string NotAtVenue = "NOT_AT_VENUE";
+
     // Invitations + VIP notify (D-168, gap doc G5 — public-relations
     // module, PDF §2.7.3).
     public const string InvitationInvalid = "INVITATION_INVALID";

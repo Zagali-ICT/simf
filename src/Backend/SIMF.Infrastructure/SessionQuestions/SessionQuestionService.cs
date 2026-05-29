@@ -48,6 +48,27 @@ internal sealed class SessionQuestionService(
                 "يجب أن يتراوح طول نص السؤال بين 1 و 1000 حرف.");
         }
 
+        // D-171 (gap doc G7, PDF §2.10) — venue self-assert toggle. Owner-
+        // default resolution of G-OI-2: the lightest input source that
+        // does not require GPS permissions or a maintained venue-WiFi list.
+        // Hardening to lat/lon polygon or SSID can be added later as a
+        // strictly more restrictive layer on top of this gate.
+        if (!request.IsAtVenue)
+        {
+            await auditLog.WriteAsync(new AuditEntry
+            {
+                EventType = AuditEvents.SessionQuestionRejectedNotAtVenue,
+                Outcome = AuditOutcome.Failure,
+                ActorUserId = submittedByUserId,
+                ErrorCode = ErrorCodes.NotAtVenue,
+                Detail = $"sessionId={sessionId}",
+            }, cancellationToken);
+            throw new ApiException(
+                ErrorCodes.NotAtVenue, 403,
+                "You must be at the venue to ask a question.",
+                "يجب أن تكون في مكان الفعالية لطرح سؤال.");
+        }
+
         var session = await appDbContext.Sessions
             .AsNoTracking()
             .Where(s => s.Id == sessionId)

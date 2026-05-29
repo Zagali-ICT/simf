@@ -41,7 +41,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
 
         var response = await PostAuthAsync(
             $"/api/v1/sessions/{session.Id}/questions",
-            new SubmitSessionQuestionRequest { QuestionText = "What about CPS resilience?" },
+            new SubmitSessionQuestionRequest { QuestionText = "What about CPS resilience?", IsAtVenue = true },
             visitor.AccessToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = (await response.Content
@@ -59,7 +59,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
 
         var response = await PostAuthAsync(
             $"/api/v1/sessions/{session.Id}/questions",
-            new SubmitSessionQuestionRequest { QuestionText = "Too early" },
+            new SubmitSessionQuestionRequest { QuestionText = "Too early", IsAtVenue = true },
             visitor.AccessToken);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -75,7 +75,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
 
         var response = await PostAuthAsync(
             $"/api/v1/sessions/{session.Id}/questions",
-            new SubmitSessionQuestionRequest { QuestionText = "   " },
+            new SubmitSessionQuestionRequest { QuestionText = "   ", IsAtVenue = true },
             visitor.AccessToken);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -90,7 +90,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
         await PostAuthAsync(
             $"/api/v1/sessions/{session.Id}/questions",
-            new SubmitSessionQuestionRequest { QuestionText = "Q1" },
+            new SubmitSessionQuestionRequest { QuestionText = "Q1", IsAtVenue = true },
             visitor.AccessToken);
 
         var response = await GetAuthAsync(
@@ -110,7 +110,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
         var submit = await PostAuthAsync(
             $"/api/v1/sessions/{session.Id}/questions",
-            new SubmitSessionQuestionRequest { QuestionText = "Q1" },
+            new SubmitSessionQuestionRequest { QuestionText = "Q1", IsAtVenue = true },
             visitor.AccessToken);
         var qid = (await submit.Content
             .ReadFromJsonAsync<ApiResult<SessionQuestionSubmitted>>())!.Data!.Id;
@@ -144,7 +144,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
         var submit = await PostAuthAsync(
             $"/api/v1/sessions/{session.Id}/questions",
-            new SubmitSessionQuestionRequest { QuestionText = "Q1" },
+            new SubmitSessionQuestionRequest { QuestionText = "Q1", IsAtVenue = true },
             visitor.AccessToken);
         var qid = (await submit.Content
             .ReadFromJsonAsync<ApiResult<SessionQuestionSubmitted>>())!.Data!.Id;
@@ -164,6 +164,22 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
         var row2 = (await pushAgain.Content
             .ReadFromJsonAsync<ApiResult<SessionQuestionModeratorRow>>())!.Data!;
         Assert.Equal(row.PushedAt, row2.PushedAt);
+    }
+
+    [Fact]
+    public async Task Submit_without_at_venue_flag_is_403_NOT_AT_VENUE()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var (session, _) = await SeedLiveSessionAsync();
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var response = await PostAuthAsync(
+            $"/api/v1/sessions/{session.Id}/questions",
+            new SubmitSessionQuestionRequest { QuestionText = "Remote troll", IsAtVenue = false },
+            visitor.AccessToken);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.NotAtVenue, body.Error!.Code);
     }
 
     [Fact]

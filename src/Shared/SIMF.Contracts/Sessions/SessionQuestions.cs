@@ -8,6 +8,14 @@ public sealed class SubmitSessionQuestionRequest
 {
     /// <summary>The question text. Trimmed; 1–1000 chars.</summary>
     public string QuestionText { get; set; } = string.Empty;
+
+    /// <summary>D-171 (gap doc G7, PDF §2.10) — the audience-self-asserts
+    /// "I am at the venue" toggle. Owner-default resolution of G-OI-2
+    /// (lat/lon vs WiFi SSID vs self-toggle) — the toggle was chosen as
+    /// the simplest input source that does not require GPS permissions
+    /// or a maintained venue-WiFi list. Must be <c>true</c> for the
+    /// submission to be accepted.</summary>
+    public bool IsAtVenue { get; set; }
 }
 
 /// <summary>D-169 — public-facing response after submission. The

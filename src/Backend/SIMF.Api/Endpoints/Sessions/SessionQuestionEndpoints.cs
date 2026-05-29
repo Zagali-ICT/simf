@@ -15,6 +15,10 @@ public sealed class SubmitSessionQuestionRoute
 {
     public Guid SessionId { get; set; }
     public string QuestionText { get; set; } = string.Empty;
+
+    /// <summary>D-171 (gap doc G7) — the venue self-assert flag. Must be
+    /// true for the submission to be accepted.</summary>
+    public bool IsAtVenue { get; set; }
 }
 
 public sealed class SubmitSessionQuestionEndpoint(ISessionQuestionService service)
@@ -37,7 +41,11 @@ public sealed class SubmitSessionQuestionEndpoint(ISessionQuestionService servic
         }
         var result = await service.SubmitAsync(
             req.SessionId, userId,
-            new SubmitSessionQuestionRequest { QuestionText = req.QuestionText },
+            new SubmitSessionQuestionRequest
+            {
+                QuestionText = req.QuestionText,
+                IsAtVenue = req.IsAtVenue,
+            },
             ct);
         await Send.OkAsync(ApiResult<SessionQuestionSubmitted>.Ok(result), ct);
     }

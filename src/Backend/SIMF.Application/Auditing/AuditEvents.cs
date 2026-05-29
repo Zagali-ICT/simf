@@ -145,6 +145,9 @@ public static class AuditEvents
     public const string SessionModeratorAssigned = "SessionModerator.Assigned";
     public const string SessionModeratorRevoked = "SessionModerator.Revoked";
 
+    // Venue self-assert (D-171, gap doc G7 — PDF §2.10)
+    public const string SessionQuestionRejectedNotAtVenue = "SessionQuestion.RejectedNotAtVenue";
+
     // Invitations + VIP notify (D-168, gap doc G5 — public-relations
     // module, PDF §2.7.3)
     public const string InvitationCreated = "Invitation.Created";
