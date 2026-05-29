@@ -94,6 +94,10 @@ public static class CpNavigation
             new("Module.AdminOtherProfileTypes", "/admin/profile-types/other"),
             new("Module.AdminResetTwoFactor", "/admin/reset-2fa"),
             new("Module.AdminLogs", "/admin/logs"),
+            // D-148 — Gate Module: master CRUD + role-adaptive operator console
+            // (SIMF-FDS-003 §5.6 / SIMF-API-GATES-001).
+            new("Module.Gates", "/admin/gates"),
+            new("Module.GatesOperator", "/admin/gates/operator"),
             new("Module.Configuration", "/m/configuration", IsStub: true),
             // D-134 Sprint A — Operation log viewer over the existing
             // OperationLogEntry table (no migration).

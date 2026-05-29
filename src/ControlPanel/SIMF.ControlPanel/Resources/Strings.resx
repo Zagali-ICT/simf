@@ -40,6 +40,8 @@
   <data name="Module.Themes" xml:space="preserve"><value>Themes &amp; pillars</value></data>
   <data name="Module.Sessions" xml:space="preserve"><value>Sessions</value></data>
   <data name="Module.Halls" xml:space="preserve"><value>Halls &amp; seating</value></data>
+  <data name="Module.Gates" xml:space="preserve"><value>Gates</value></data>
+  <data name="Module.GatesOperator" xml:space="preserve"><value>Gate operator</value></data>
   <data name="Module.Speakers" xml:space="preserve"><value>Speakers</value></data>
   <data name="Module.Bookings" xml:space="preserve"><value>Bookings</value></data>
   <data name="Module.Exhibitors" xml:space="preserve"><value>Exhibitors</value></data>

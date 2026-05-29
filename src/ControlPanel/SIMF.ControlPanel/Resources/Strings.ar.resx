@@ -40,6 +40,8 @@
   <data name="Module.Themes" xml:space="preserve"><value>المحاور والركائز</value></data>
   <data name="Module.Sessions" xml:space="preserve"><value>الجلسات</value></data>
   <data name="Module.Halls" xml:space="preserve"><value>القاعات والمقاعد</value></data>
+  <data name="Module.Gates" xml:space="preserve"><value>البوابات</value></data>
+  <data name="Module.GatesOperator" xml:space="preserve"><value>مشغل البوابة</value></data>
   <data name="Module.Speakers" xml:space="preserve"><value>المتحدثون</value></data>
   <data name="Module.Bookings" xml:space="preserve"><value>الحجوزات</value></data>
   <data name="Module.Exhibitors" xml:space="preserve"><value>العارضون</value></data>

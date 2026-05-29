@@ -116,25 +116,23 @@
     private GateScanResponse? _last;
     private OperatorDailyReport? _report;
 
-    protected override async Task OnInitializedAsync()
+    // The simfAccount JS module is only available once the interactive Blazor
+    // connection is up — running these calls in OnInitializedAsync would throw
+    // on the SSR prerender pass and surface Blazor's unhandled-error banner.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender) { return; }
+
         var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<OperatorGateAssignment>>>(
             "simfAccount.getJson", "/account/api/gates/my-assignments");
         if (envelope is { Success: true, Data: not null })
         {
             _assignments = envelope.Data;
-            var single = _assignments.SingleOrDefault(a => a.IsActive);
-            if (single is not null)
-            {
-                _selectedGateId = single.GateId;
-            }
-            else
-            {
-                _selectedGateId = _assignments.FirstOrDefault(a => a.IsActive)?.GateId
-                    ?? Guid.Empty;
-            }
+            _selectedGateId = _assignments.FirstOrDefault(a => a.IsActive)?.GateId
+                ?? Guid.Empty;
         }
         await LoadReportAsync();
+        StateHasChanged();
     }
 
     private async Task LoadReportAsync()
