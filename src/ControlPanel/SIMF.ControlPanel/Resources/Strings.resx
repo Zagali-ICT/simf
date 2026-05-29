@@ -1346,4 +1346,54 @@
   <data name="Admin.SessionModeration.Col.Actions" xml:space="preserve"><value>Actions</value></data>
   <data name="Admin.SessionModeration.State.Hidden" xml:space="preserve"><value>Hidden</value></data>
   <data name="Admin.SessionModeration.State.Queued" xml:space="preserve"><value>Queued</value></data>
+  <data name="Module.ContentBlocks" xml:space="preserve"><value>Content blocks</value></data>
+  <data name="Module.Banners" xml:space="preserve"><value>Banners</value></data>
+  <data name="Admin.ContentBlocks.Title" xml:space="preserve"><value>Content blocks</value></data>
+  <data name="Admin.ContentBlocks.Loading" xml:space="preserve"><value>Loading content blocks…</value></data>
+  <data name="Admin.ContentBlocks.LoadFailed" xml:space="preserve"><value>The content blocks could not be loaded.</value></data>
+  <data name="Admin.ContentBlocks.None" xml:space="preserve"><value>No content blocks yet.</value></data>
+  <data name="Admin.ContentBlocks.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.ContentBlocks.New" xml:space="preserve"><value>New block</value></data>
+  <data name="Admin.ContentBlocks.Edit.Title" xml:space="preserve"><value>Edit content block</value></data>
+  <data name="Admin.ContentBlocks.Field.Key" xml:space="preserve"><value>Key (e.g. home.welcome.title)</value></data>
+  <data name="Admin.ContentBlocks.Field.ContentEn" xml:space="preserve"><value>Content (English)</value></data>
+  <data name="Admin.ContentBlocks.Field.ContentAr" xml:space="preserve"><value>Content (Arabic)</value></data>
+  <data name="Admin.ContentBlocks.Field.IsActive" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.ContentBlocks.Submit" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.ContentBlocks.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.ContentBlocks.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.ContentBlocks.Saved" xml:space="preserve"><value>Content block saved.</value></data>
+  <data name="Admin.ContentBlocks.Deleted" xml:space="preserve"><value>Content block deleted.</value></data>
+  <data name="Admin.ContentBlocks.Col.Key" xml:space="preserve"><value>Key</value></data>
+  <data name="Admin.ContentBlocks.Col.ContentEn" xml:space="preserve"><value>English</value></data>
+  <data name="Admin.ContentBlocks.Col.LastUpdatedAt" xml:space="preserve"><value>Last updated</value></data>
+  <data name="Admin.ContentBlocks.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Banners.Title" xml:space="preserve"><value>Banners</value></data>
+  <data name="Admin.Banners.Loading" xml:space="preserve"><value>Loading banners…</value></data>
+  <data name="Admin.Banners.LoadFailed" xml:space="preserve"><value>The banners could not be loaded.</value></data>
+  <data name="Admin.Banners.None" xml:space="preserve"><value>No banners yet.</value></data>
+  <data name="Admin.Banners.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.Banners.New" xml:space="preserve"><value>New banner</value></data>
+  <data name="Admin.Banners.Edit.Title" xml:space="preserve"><value>Edit banner</value></data>
+  <data name="Admin.Banners.Add.Title" xml:space="preserve"><value>New banner</value></data>
+  <data name="Admin.Banners.Field.TitleEn" xml:space="preserve"><value>Title (English)</value></data>
+  <data name="Admin.Banners.Field.TitleAr" xml:space="preserve"><value>Title (Arabic)</value></data>
+  <data name="Admin.Banners.Field.BodyEn" xml:space="preserve"><value>Body (English)</value></data>
+  <data name="Admin.Banners.Field.BodyAr" xml:space="preserve"><value>Body (Arabic)</value></data>
+  <data name="Admin.Banners.Field.ImageUrl" xml:space="preserve"><value>Image URL</value></data>
+  <data name="Admin.Banners.Field.LinkUrl" xml:space="preserve"><value>Click-through URL</value></data>
+  <data name="Admin.Banners.Field.StartUtc" xml:space="preserve"><value>Start (UTC)</value></data>
+  <data name="Admin.Banners.Field.EndUtc" xml:space="preserve"><value>End (UTC)</value></data>
+  <data name="Admin.Banners.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
+  <data name="Admin.Banners.Field.IsActive" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Banners.Submit" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.Banners.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Banners.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.Banners.Saved" xml:space="preserve"><value>Banner saved.</value></data>
+  <data name="Admin.Banners.Deleted" xml:space="preserve"><value>Banner deleted.</value></data>
+  <data name="Admin.Banners.Col.Title" xml:space="preserve"><value>Title</value></data>
+  <data name="Admin.Banners.Col.StartUtc" xml:space="preserve"><value>Start</value></data>
+  <data name="Admin.Banners.Col.EndUtc" xml:space="preserve"><value>End</value></data>
+  <data name="Admin.Banners.Col.DisplayOrder" xml:space="preserve"><value>Order</value></data>
+  <data name="Admin.Banners.Col.Active" xml:space="preserve"><value>Active</value></data>
 </root>

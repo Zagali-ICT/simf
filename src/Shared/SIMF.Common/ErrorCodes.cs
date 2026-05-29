@@ -148,6 +148,14 @@ public static class ErrorCodes
     // to the self-assert toggle as input source).
     public const string NotAtVenue = "NOT_AT_VENUE";
 
+    // CMS: ContentBlock + Banner (D-173, gap doc G8 — PDF §1, §2.1).
+    public const string ContentBlockInvalid = "CONTENT_BLOCK_INVALID";
+    public const string ContentBlockNotFound = "CONTENT_BLOCK_NOT_FOUND";
+    public const string ContentBlockKeyDuplicate = "CONTENT_BLOCK_KEY_DUPLICATE";
+    public const string BannerInvalid = "BANNER_INVALID";
+    public const string BannerNotFound = "BANNER_NOT_FOUND";
+    public const string BannerInvalidTimeWindow = "BANNER_INVALID_TIME_WINDOW";
+
     // Device keys / biometric sign-in (D-172, gap doc G10 — PDF §2.5).
     public const string DeviceKeyInvalid = "DEVICE_KEY_INVALID";
     public const string DeviceKeyNotFound = "DEVICE_KEY_NOT_FOUND";

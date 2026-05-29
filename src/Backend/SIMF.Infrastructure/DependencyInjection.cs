@@ -212,6 +212,13 @@ public static class DependencyInjection
         // ECDSA P-256 device key (PDF §2.5).
         services.AddScoped<SIMF.Application.IdentityAccess.Abstractions.IDeviceKeyService,
             SIMF.Infrastructure.IdentityAccess.DeviceKeyService>();
+        // D-173 (gap doc G8) — Dynamic content CMS: admin CRUD over
+        // ContentBlock + Banner (PDF §1, §2.1), plus the public read
+        // surface for the Flutter app + Website.
+        services.AddScoped<SIMF.Application.Cms.Abstractions.IAdminCmsService,
+            SIMF.Infrastructure.Cms.AdminCmsService>();
+        services.AddScoped<SIMF.Application.Cms.Abstractions.IPublicCmsService,
+            SIMF.Infrastructure.Cms.PublicCmsService>();
         // D-148 — Gate Module: admin CRUD + operator surface + QR resolver +
         // gate-config cache + idempotency store + failure-rate circuit
         // (SIMF-API-GATES-001, SIMF-FDS-003 §5.6).

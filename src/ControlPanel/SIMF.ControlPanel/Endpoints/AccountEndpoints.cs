@@ -999,6 +999,71 @@ internal static class AccountEndpoints
             return Forward(await api.NotifyVipsAsync(body, token));
         });
 
+        // D-173 (gap doc G8) — Dynamic content CMS BFF passthroughs.
+        group.MapPost("/admin/content-blocks/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListContentBlocksAsync(body, token));
+        });
+        group.MapGet("/admin/content-blocks/{key}",
+            async (string key, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetContentBlockAsync(key, token));
+        });
+        group.MapPut("/admin/content-blocks",
+            async (UpsertContentBlockRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpsertContentBlockAsync(body, token));
+        });
+        group.MapDelete("/admin/content-blocks/{key}",
+            async (string key, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteContentBlockAsync(key, token));
+        });
+        group.MapPost("/admin/banners/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListBannersAsync(body, token));
+        });
+        group.MapGet("/admin/banners/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetBannerAsync(id, token));
+        });
+        group.MapPost("/admin/banners",
+            async (CreateBannerRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateBannerAsync(body, token));
+        });
+        group.MapPut("/admin/banners/{id:guid}",
+            async (Guid id, UpdateBannerRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateBannerAsync(id, body, token));
+        });
+        group.MapDelete("/admin/banners/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteBannerAsync(id, token));
+        });
+
         // D-169 (gap doc G6) — session-question moderation BFF passthroughs.
         group.MapPost("/admin/session-moderators/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

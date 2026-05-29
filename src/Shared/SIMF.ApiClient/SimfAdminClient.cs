@@ -971,6 +971,76 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    // -- D-173 (gap doc G8) — Dynamic content CMS ---------------------------
+
+    public Task<ApiCallResult<GridPage<AdminContentBlockSummary>>> ListContentBlocksAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminContentBlockSummary>>(
+            HttpMethod.Post, "content-blocks/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminContentBlockSummary>> GetContentBlockAsync(
+        string key, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminContentBlockSummary>(
+            HttpMethod.Get, $"content-blocks/{Uri.EscapeDataString(key)}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminContentBlockSummary>> UpsertContentBlockAsync(
+        UpsertContentBlockRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminContentBlockSummary>(
+            HttpMethod.Put, "content-blocks",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeleteContentBlockAsync(
+        string key, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"content-blocks/{Uri.EscapeDataString(key)}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<AdminBannerSummary>>> ListBannersAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminBannerSummary>>(
+            HttpMethod.Post, "banners/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminBannerDetail>> GetBannerAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBannerDetail>(
+            HttpMethod.Get, $"banners/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminBannerDetail>> CreateBannerAsync(
+        CreateBannerRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBannerDetail>(
+            HttpMethod.Post, "banners",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminBannerDetail>> UpdateBannerAsync(
+        Guid id, UpdateBannerRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBannerDetail>(
+            HttpMethod.Put, $"banners/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeleteBannerAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"banners/{id}", content: null,
+            accessToken, cancellationToken);
+
     // -- D-169 (gap doc G6) — session-question moderation -------------------
 
     public Task<ApiCallResult<GridPage<AdminSessionModeratorRow>>> ListSessionModeratorsAsync(

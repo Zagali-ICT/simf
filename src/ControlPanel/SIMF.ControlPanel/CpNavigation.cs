@@ -70,6 +70,9 @@ public static class CpNavigation
         ]),
         new("Nav.Content",
         [
+            // D-173 (gap doc G8) — Dynamic content CMS (PDF §1, §2.1).
+            new("Module.ContentBlocks", "/admin/content-blocks"),
+            new("Module.Banners", "/admin/banners"),
             new("Module.Media", "/m/media", IsStub: true),
             new("Module.News", "/m/news", IsStub: true),
             new("Module.PreviousEditions", "/m/previous-editions", IsStub: true),

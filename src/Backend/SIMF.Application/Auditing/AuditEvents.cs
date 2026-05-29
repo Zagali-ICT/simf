@@ -154,6 +154,13 @@ public static class AuditEvents
     public const string SignInWithDeviceKey = "SignIn.WithDeviceKey";
     public const string SignInWithDeviceKeyFailed = "SignIn.WithDeviceKeyFailed";
 
+    // CMS: ContentBlock + Banner (D-173, gap doc G8 — PDF §1, §2.1)
+    public const string ContentBlockUpserted = "ContentBlock.Upserted";
+    public const string ContentBlockDeactivated = "ContentBlock.Deactivated";
+    public const string BannerCreated = "Banner.Created";
+    public const string BannerUpdated = "Banner.Updated";
+    public const string BannerDeactivated = "Banner.Deactivated";
+
     // Invitations + VIP notify (D-168, gap doc G5 — public-relations
     // module, PDF §2.7.3)
     public const string InvitationCreated = "Invitation.Created";

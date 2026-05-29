@@ -1338,4 +1338,54 @@
   <data name="Admin.SessionModeration.Col.Actions" xml:space="preserve"><value>الإجراءات</value></data>
   <data name="Admin.SessionModeration.State.Hidden" xml:space="preserve"><value>مخفي</value></data>
   <data name="Admin.SessionModeration.State.Queued" xml:space="preserve"><value>في الانتظار</value></data>
+  <data name="Module.ContentBlocks" xml:space="preserve"><value>كتل المحتوى</value></data>
+  <data name="Module.Banners" xml:space="preserve"><value>اللافتات</value></data>
+  <data name="Admin.ContentBlocks.Title" xml:space="preserve"><value>كتل المحتوى</value></data>
+  <data name="Admin.ContentBlocks.Loading" xml:space="preserve"><value>جارٍ تحميل كتل المحتوى…</value></data>
+  <data name="Admin.ContentBlocks.LoadFailed" xml:space="preserve"><value>تعذّر تحميل كتل المحتوى.</value></data>
+  <data name="Admin.ContentBlocks.None" xml:space="preserve"><value>لا توجد كتل بعد.</value></data>
+  <data name="Admin.ContentBlocks.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.ContentBlocks.New" xml:space="preserve"><value>كتلة جديدة</value></data>
+  <data name="Admin.ContentBlocks.Edit.Title" xml:space="preserve"><value>تعديل كتلة المحتوى</value></data>
+  <data name="Admin.ContentBlocks.Field.Key" xml:space="preserve"><value>المفتاح (مثلاً home.welcome.title)</value></data>
+  <data name="Admin.ContentBlocks.Field.ContentEn" xml:space="preserve"><value>المحتوى (الإنجليزية)</value></data>
+  <data name="Admin.ContentBlocks.Field.ContentAr" xml:space="preserve"><value>المحتوى (العربية)</value></data>
+  <data name="Admin.ContentBlocks.Field.IsActive" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="Admin.ContentBlocks.Submit" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.ContentBlocks.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.ContentBlocks.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.ContentBlocks.Saved" xml:space="preserve"><value>تم حفظ الكتلة.</value></data>
+  <data name="Admin.ContentBlocks.Deleted" xml:space="preserve"><value>تم حذف الكتلة.</value></data>
+  <data name="Admin.ContentBlocks.Col.Key" xml:space="preserve"><value>المفتاح</value></data>
+  <data name="Admin.ContentBlocks.Col.ContentEn" xml:space="preserve"><value>الإنجليزية</value></data>
+  <data name="Admin.ContentBlocks.Col.LastUpdatedAt" xml:space="preserve"><value>آخر تحديث</value></data>
+  <data name="Admin.ContentBlocks.Col.Active" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="Admin.Banners.Title" xml:space="preserve"><value>اللافتات</value></data>
+  <data name="Admin.Banners.Loading" xml:space="preserve"><value>جارٍ تحميل اللافتات…</value></data>
+  <data name="Admin.Banners.LoadFailed" xml:space="preserve"><value>تعذّر تحميل اللافتات.</value></data>
+  <data name="Admin.Banners.None" xml:space="preserve"><value>لا توجد لافتات بعد.</value></data>
+  <data name="Admin.Banners.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Banners.New" xml:space="preserve"><value>لافتة جديدة</value></data>
+  <data name="Admin.Banners.Edit.Title" xml:space="preserve"><value>تعديل اللافتة</value></data>
+  <data name="Admin.Banners.Add.Title" xml:space="preserve"><value>لافتة جديدة</value></data>
+  <data name="Admin.Banners.Field.TitleEn" xml:space="preserve"><value>العنوان (الإنجليزية)</value></data>
+  <data name="Admin.Banners.Field.TitleAr" xml:space="preserve"><value>العنوان (العربية)</value></data>
+  <data name="Admin.Banners.Field.BodyEn" xml:space="preserve"><value>النص (الإنجليزية)</value></data>
+  <data name="Admin.Banners.Field.BodyAr" xml:space="preserve"><value>النص (العربية)</value></data>
+  <data name="Admin.Banners.Field.ImageUrl" xml:space="preserve"><value>رابط الصورة</value></data>
+  <data name="Admin.Banners.Field.LinkUrl" xml:space="preserve"><value>رابط النقر</value></data>
+  <data name="Admin.Banners.Field.StartUtc" xml:space="preserve"><value>البداية (UTC)</value></data>
+  <data name="Admin.Banners.Field.EndUtc" xml:space="preserve"><value>النهاية (UTC)</value></data>
+  <data name="Admin.Banners.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
+  <data name="Admin.Banners.Field.IsActive" xml:space="preserve"><value>مفعّلة</value></data>
+  <data name="Admin.Banners.Submit" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.Banners.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Banners.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Banners.Saved" xml:space="preserve"><value>تم حفظ اللافتة.</value></data>
+  <data name="Admin.Banners.Deleted" xml:space="preserve"><value>تم حذف اللافتة.</value></data>
+  <data name="Admin.Banners.Col.Title" xml:space="preserve"><value>العنوان</value></data>
+  <data name="Admin.Banners.Col.StartUtc" xml:space="preserve"><value>البداية</value></data>
+  <data name="Admin.Banners.Col.EndUtc" xml:space="preserve"><value>النهاية</value></data>
+  <data name="Admin.Banners.Col.DisplayOrder" xml:space="preserve"><value>الترتيب</value></data>
+  <data name="Admin.Banners.Col.Active" xml:space="preserve"><value>مفعّلة</value></data>
 </root>

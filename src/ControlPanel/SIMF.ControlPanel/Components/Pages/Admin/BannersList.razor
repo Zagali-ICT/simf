@@ -1,0 +1,321 @@
+@* D-173 (gap doc G8, PDF §1) — Dynamic CMS: time-windowed banners /
+   announcements. Admin CRUD; public read filters by current window. *@
+@page "/admin/banners"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Banners.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Banners.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form__actions">
+            <SimfButton Type="button" OnClick="OnAdd">
+                @L["Admin.Banners.New"]
+            </SimfButton>
+        </div>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.Banners.Loading"]</p>
+        }
+        else if (_page.Items.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.Banners.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.Banners.Col.Title"]</th>
+                        <th>@L["Admin.Banners.Col.StartUtc"]</th>
+                        <th>@L["Admin.Banners.Col.EndUtc"]</th>
+                        <th>@L["Admin.Banners.Col.DisplayOrder"]</th>
+                        <th>@L["Admin.Banners.Col.Active"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _page.Items)
+                    {
+                        <tr>
+                            <td>@TitleLabel(row)</td>
+                            <td>@row.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@row.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@row.DisplayOrder</td>
+                            <td>@(row.IsActive ? "✓" : "—")</td>
+                            <td>
+                                <SimfButton Type="button" OnClick="@(() => OnEditAsync(row))">
+                                    @L["Admin.Banners.Edit.Title"]
+                                </SimfButton>
+                                <SimfButton Type="button" OnClick="@(() => OnDeleteAsync(row))">
+                                    @L["Admin.Banners.Delete"]
+                                </SimfButton>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="simf-table__summary">
+                @(string.Format(L["Admin.Banners.Summary"],
+                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
+            </p>
+        }
+    </div>
+</div>
+
+@if (_editOpen)
+{
+    <SimfModal Open="true" Title="@(_isEdit ? L["Admin.Banners.Edit.Title"] : L["Admin.Banners.Add.Title"])"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.Banners.Field.TitleEn"]"
+                               Value="@_titleEn"
+                               ValueChanged="@(v => _titleEn = v)"
+                               ValueExpression="@(() => _titleEn)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Banners.Field.TitleAr"]"
+                               Value="@_titleAr"
+                               ValueChanged="@(v => _titleAr = v)"
+                               ValueExpression="@(() => _titleAr)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Banners.Field.BodyEn"]"
+                               Value="@_bodyEn"
+                               ValueChanged="@(v => _bodyEn = v)"
+                               ValueExpression="@(() => _bodyEn)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Banners.Field.BodyAr"]"
+                               Value="@_bodyAr"
+                               ValueChanged="@(v => _bodyAr = v)"
+                               ValueExpression="@(() => _bodyAr)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Banners.Field.ImageUrl"]"
+                               Value="@_imageUrl"
+                               ValueChanged="@(v => _imageUrl = v)"
+                               ValueExpression="@(() => _imageUrl)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Banners.Field.LinkUrl"]"
+                               Value="@_linkUrl"
+                               ValueChanged="@(v => _linkUrl = v)"
+                               ValueExpression="@(() => _linkUrl)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Banners.Field.StartUtc"]"
+                               Type="datetime-local"
+                               Value="@_startUtc"
+                               ValueChanged="@(v => _startUtc = v)"
+                               ValueExpression="@(() => _startUtc)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Banners.Field.EndUtc"]"
+                               Type="datetime-local"
+                               Value="@_endUtc"
+                               ValueChanged="@(v => _endUtc = v)"
+                               ValueExpression="@(() => _endUtc)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Banners.Field.DisplayOrder"]"
+                               Type="number"
+                               Value="@_displayOrder.ToString()"
+                               ValueChanged="@(v => int.TryParse(v, out _displayOrder))"
+                               ValueExpression="@(() => _displayOrder.ToString())"
+                               Disabled="_busy" />
+                @if (_isEdit)
+                {
+                    <SimfCheckbox @bind-Value="_isActive" Disabled="_busy">
+                        @L["Admin.Banners.Field.IsActive"]
+                    </SimfCheckbox>
+                }
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="@(() => _editOpen = false)">
+                @L["Admin.Banners.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SubmitAsync" Loading="_busy">
+                @L["Admin.Banners.Submit"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 25 };
+    private GridPage<AdminBannerSummary> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private bool _editOpen;
+    private bool _isEdit;
+    private Guid _editId;
+    private string _titleEn = string.Empty;
+    private string _titleAr = string.Empty;
+    private string _bodyEn = string.Empty;
+    private string _bodyAr = string.Empty;
+    private string _imageUrl = string.Empty;
+    private string _linkUrl = string.Empty;
+    private string _startUtc = string.Empty;
+    private string _endUtc = string.Empty;
+    private int _displayOrder;
+    private bool _isActive = true;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminBannerSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/banners/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Banners.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnAdd()
+    {
+        _editOpen = true;
+        _isEdit = false;
+        _editId = Guid.Empty;
+        _titleEn = _titleAr = _bodyEn = _bodyAr = string.Empty;
+        _imageUrl = _linkUrl = string.Empty;
+        var now = DateTime.UtcNow;
+        _startUtc = now.ToString("yyyy-MM-ddTHH:mm");
+        _endUtc = now.AddDays(1).ToString("yyyy-MM-ddTHH:mm");
+        _displayOrder = 0;
+        _isActive = true;
+    }
+
+    private async Task OnEditAsync(AdminBannerSummary row)
+    {
+        var env = await JS.InvokeAsync<ApiResult<AdminBannerDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/banners/{row.Id}");
+        if (env is not { Success: true, Data: not null }) return;
+        var detail = env.Data;
+        _editOpen = true;
+        _isEdit = true;
+        _editId = detail.Id;
+        _titleEn = detail.TitleEn;
+        _titleAr = detail.TitleAr;
+        _bodyEn = detail.BodyEn;
+        _bodyAr = detail.BodyAr;
+        _imageUrl = detail.ImageUrl ?? string.Empty;
+        _linkUrl = detail.LinkUrl ?? string.Empty;
+        _startUtc = detail.StartUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm");
+        _endUtc = detail.EndUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm");
+        _displayOrder = detail.DisplayOrder;
+        _isActive = detail.IsActive;
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (_busy) return;
+        if (!DateTime.TryParse(_startUtc, out var startParsed)
+            || !DateTime.TryParse(_endUtc, out var endParsed))
+        {
+            _toast = new Toast("error", L["Admin.Banners.LoadFailed"]);
+            return;
+        }
+        var startUtc = new DateTimeOffset(DateTime.SpecifyKind(startParsed, DateTimeKind.Utc));
+        var endUtc = new DateTimeOffset(DateTime.SpecifyKind(endParsed, DateTimeKind.Utc));
+
+        _busy = true;
+        _toast = null;
+        try
+        {
+            object body;
+            string url;
+            string method;
+            if (_isEdit)
+            {
+                body = new UpdateBannerRequest
+                {
+                    TitleEn = _titleEn, TitleAr = _titleAr,
+                    BodyEn = _bodyEn, BodyAr = _bodyAr,
+                    ImageUrl = string.IsNullOrWhiteSpace(_imageUrl) ? null : _imageUrl,
+                    LinkUrl = string.IsNullOrWhiteSpace(_linkUrl) ? null : _linkUrl,
+                    StartUtc = startUtc, EndUtc = endUtc,
+                    DisplayOrder = _displayOrder, IsActive = _isActive,
+                };
+                url = $"/account/api/admin/banners/{_editId}";
+                method = "simfAccount.putJson";
+            }
+            else
+            {
+                body = new CreateBannerRequest
+                {
+                    TitleEn = _titleEn, TitleAr = _titleAr,
+                    BodyEn = _bodyEn, BodyAr = _bodyAr,
+                    ImageUrl = string.IsNullOrWhiteSpace(_imageUrl) ? null : _imageUrl,
+                    LinkUrl = string.IsNullOrWhiteSpace(_linkUrl) ? null : _linkUrl,
+                    StartUtc = startUtc, EndUtc = endUtc,
+                    DisplayOrder = _displayOrder,
+                };
+                url = "/account/api/admin/banners";
+                method = "simfAccount.postJson";
+            }
+            var env = await JS.InvokeAsync<ApiResult<AdminBannerDetail>>(method, url, body);
+            if (env is { Success: true })
+            {
+                _editOpen = false;
+                _toast = new Toast("success", L["Admin.Banners.Saved"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Banners.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteAsync(AdminBannerSummary row)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/banners/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.Banners.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Banners.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private static string TitleLabel(AdminBannerSummary row) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? row.TitleAr
+            : row.TitleEn;
+}

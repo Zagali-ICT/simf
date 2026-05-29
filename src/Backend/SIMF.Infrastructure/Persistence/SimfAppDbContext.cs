@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SIMF.Domain.AccessControl;
 using SIMF.Domain.Auditing;
+using SIMF.Domain.Cms;
 using SIMF.Domain.Common;
 using SIMF.Domain.Operations;
 using SIMF.Domain.Profiles;
@@ -81,6 +82,14 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
 
     /// <summary>D-169 (gap doc G6) — per-session moderator grants.</summary>
     public DbSet<SessionModerator> SessionModerators => Set<SessionModerator>();
+
+    /// <summary>D-173 (gap doc G8, PDF §1) — editable public content
+    /// blocks (welcome message, page copy, labels).</summary>
+    public DbSet<ContentBlock> ContentBlocks => Set<ContentBlock>();
+
+    /// <summary>D-173 (gap doc G8, PDF §1) — time-windowed banners /
+    /// announcements.</summary>
+    public DbSet<Banner> Banners => Set<Banner>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,0 +1,228 @@
+@* D-173 (gap doc G8, PDF §1, §2.1) — Dynamic CMS: editable content
+   blocks (welcome message, page copy, labels). Admin upserts by Key. *@
+@page "/admin/content-blocks"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.ContentBlocks.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.ContentBlocks.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form__actions">
+            <SimfButton Type="button" OnClick="OnAdd">
+                @L["Admin.ContentBlocks.New"]
+            </SimfButton>
+        </div>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.ContentBlocks.Loading"]</p>
+        }
+        else if (_page.Items.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.ContentBlocks.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.ContentBlocks.Col.Key"]</th>
+                        <th>@L["Admin.ContentBlocks.Col.ContentEn"]</th>
+                        <th>@L["Admin.ContentBlocks.Col.LastUpdatedAt"]</th>
+                        <th>@L["Admin.ContentBlocks.Col.Active"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _page.Items)
+                    {
+                        <tr>
+                            <td>@row.Key</td>
+                            <td>@TruncatePreview(row.ContentEn)</td>
+                            <td>@row.LastUpdatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</td>
+                            <td>@(row.IsActive ? "✓" : "—")</td>
+                            <td>
+                                <SimfButton Type="button" OnClick="@(() => OnEdit(row))">
+                                    @L["Admin.ContentBlocks.Edit.Title"]
+                                </SimfButton>
+                                <SimfButton Type="button" OnClick="@(() => OnDelete(row))">
+                                    @L["Admin.ContentBlocks.Delete"]
+                                </SimfButton>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="simf-table__summary">
+                @(string.Format(L["Admin.ContentBlocks.Summary"],
+                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
+            </p>
+        }
+    </div>
+</div>
+
+@if (_editOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.ContentBlocks.Edit.Title"]"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.ContentBlocks.Field.Key"]"
+                               Value="@_editKey"
+                               ValueChanged="@(v => _editKey = v)"
+                               ValueExpression="@(() => _editKey)"
+                               Disabled="_busy || _isEdit" />
+                <SimfTextField Label="@L["Admin.ContentBlocks.Field.ContentEn"]"
+                               Value="@_editContentEn"
+                               ValueChanged="@(v => _editContentEn = v)"
+                               ValueExpression="@(() => _editContentEn)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.ContentBlocks.Field.ContentAr"]"
+                               Value="@_editContentAr"
+                               ValueChanged="@(v => _editContentAr = v)"
+                               ValueExpression="@(() => _editContentAr)"
+                               Disabled="_busy" />
+                <SimfCheckbox @bind-Value="_editIsActive" Disabled="_busy">
+                    @L["Admin.ContentBlocks.Field.IsActive"]
+                </SimfCheckbox>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="@(() => _editOpen = false)">
+                @L["Admin.ContentBlocks.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SubmitAsync" Loading="_busy">
+                @L["Admin.ContentBlocks.Submit"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 25 };
+    private GridPage<AdminContentBlockSummary> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private bool _editOpen;
+    private bool _isEdit;
+    private string _editKey = string.Empty;
+    private string _editContentEn = string.Empty;
+    private string _editContentAr = string.Empty;
+    private bool _editIsActive = true;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminContentBlockSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/content-blocks/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.ContentBlocks.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnAdd()
+    {
+        _editOpen = true;
+        _isEdit = false;
+        _editKey = string.Empty;
+        _editContentEn = string.Empty;
+        _editContentAr = string.Empty;
+        _editIsActive = true;
+    }
+
+    private void OnEdit(AdminContentBlockSummary row)
+    {
+        _editOpen = true;
+        _isEdit = true;
+        _editKey = row.Key;
+        _editContentEn = row.ContentEn;
+        _editContentAr = row.ContentAr;
+        _editIsActive = row.IsActive;
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminContentBlockSummary>>(
+                "simfAccount.putJson", "/account/api/admin/content-blocks",
+                new UpsertContentBlockRequest
+                {
+                    Key = _editKey,
+                    ContentEn = _editContentEn,
+                    ContentAr = _editContentAr,
+                    IsActive = _editIsActive,
+                });
+            if (env is { Success: true })
+            {
+                _editOpen = false;
+                _toast = new Toast("success", L["Admin.ContentBlocks.Saved"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.ContentBlocks.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDelete(AdminContentBlockSummary row)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/content-blocks/{Uri.EscapeDataString(row.Key)}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.ContentBlocks.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.ContentBlocks.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private static string TruncatePreview(string s) =>
+        s.Length > 80 ? s.Substring(0, 80) + "…" : s;
+}
