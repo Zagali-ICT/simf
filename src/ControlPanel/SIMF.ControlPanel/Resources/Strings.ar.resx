@@ -440,6 +440,90 @@
   <data name="Admin.Halls.Updated" xml:space="preserve"><value>تم تحديث القاعة "{0}".</value></data>
   <data name="Admin.Halls.Deactivated" xml:space="preserve"><value>تم تعطيل القاعة "{0}".</value></data>
 
+  <!-- D-148 — Gate Module -->
+  <data name="Admin.Gates.Title" xml:space="preserve"><value>البوابات</value></data>
+  <data name="Admin.Gates.None" xml:space="preserve"><value>لا توجد بوابات بعد.</value></data>
+  <data name="Admin.Gates.LoadFailed" xml:space="preserve"><value>تعذّر تحميل البوابات.</value></data>
+  <data name="Admin.Gates.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
+  <data name="Admin.Gates.Loading" xml:space="preserve"><value>جارٍ تحميل البوابات…</value></data>
+  <data name="Admin.Gates.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Gates.Prev" xml:space="preserve"><value>السابق</value></data>
+  <data name="Admin.Gates.Next" xml:space="preserve"><value>التالي</value></data>
+  <data name="Admin.Gates.Pager.First" xml:space="preserve"><value>الصفحة الأولى</value></data>
+  <data name="Admin.Gates.Pager.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>
+  <data name="Admin.Gates.Pager.PageSize" xml:space="preserve"><value>عرض</value></data>
+  <data name="Admin.Gates.Pager.Page" xml:space="preserve"><value>الصفحة {0} من {1}</value></data>
+  <data name="Admin.Gates.FilterPlaceholder" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Gates.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Gates.Column.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.Gates.Column.Name" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Admin.Gates.Column.NameArabic" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Gates.Column.DirectionMode" xml:space="preserve"><value>الاتجاه</value></data>
+  <data name="Admin.Gates.Column.AllowCount" xml:space="preserve"><value>الأنواع المسموحة</value></data>
+  <data name="Admin.Gates.Column.OperatorCount" xml:space="preserve"><value>المشغلون</value></data>
+  <data name="Admin.Gates.Column.Active" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Gates.Column.Actions" xml:space="preserve"><value>الإجراءات</value></data>
+  <data name="Admin.Gates.AllowAll" xml:space="preserve"><value>الكل</value></data>
+  <data name="Admin.Gates.Active.Yes" xml:space="preserve"><value>نشطة</value></data>
+  <data name="Admin.Gates.Active.No" xml:space="preserve"><value>غير نشطة</value></data>
+  <data name="Admin.Gates.Action.Add" xml:space="preserve"><value>إضافة بوابة</value></data>
+  <data name="Admin.Gates.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Gates.Action.Details" xml:space="preserve"><value>التفاصيل</value></data>
+  <data name="Admin.Gates.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.Gates.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
+  <data name="Admin.Gates.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
+  <data name="Admin.Gates.Field.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.Gates.Field.CodeHint" xml:space="preserve"><value>2–16 حرفاً؛ فريد. معرّف فريق الفعالية (مثل G-MAIN-1).</value></data>
+  <data name="Admin.Gates.Field.CodeInvalid" xml:space="preserve"><value>يجب أن يتراوح الرمز بين 2 و 16 حرفاً.</value></data>
+  <data name="Admin.Gates.Field.Name" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.Gates.Field.NameHint" xml:space="preserve"><value>حتى 128 حرفاً.</value></data>
+  <data name="Admin.Gates.Field.NameInvalid" xml:space="preserve"><value>الاسم الإنجليزي مطلوب (1–128 حرفاً).</value></data>
+  <data name="Admin.Gates.Field.NameArabic" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Gates.Field.NameArabicHint" xml:space="preserve"><value>حتى 128 حرفاً.</value></data>
+  <data name="Admin.Gates.Field.NameArabicInvalid" xml:space="preserve"><value>الاسم العربي مطلوب (1–128 حرفاً).</value></data>
+  <data name="Admin.Gates.Field.Description" xml:space="preserve"><value>الوصف (إنجليزي)</value></data>
+  <data name="Admin.Gates.Field.DescriptionHint" xml:space="preserve"><value>اختياري. حتى 1024 حرفاً.</value></data>
+  <data name="Admin.Gates.Field.DescriptionArabic" xml:space="preserve"><value>الوصف (عربي)</value></data>
+  <data name="Admin.Gates.Field.DescriptionArabicHint" xml:space="preserve"><value>اختياري. حتى 1024 حرفاً.</value></data>
+  <data name="Admin.Gates.Field.DirectionMode" xml:space="preserve"><value>سياسة الاتجاه</value></data>
+  <data name="Admin.Gates.Field.DirectionModeHint" xml:space="preserve"><value>الدخول/الخروج يثبتان الاتجاه؛ "كلاهما" يستنتج الاتجاه من آخر مسح مسموح للزائر في هذه البوابة.</value></data>
+  <data name="Admin.Gates.Field.AllowedProfileTypes" xml:space="preserve"><value>أنواع الملفات المسموح بها</value></data>
+  <data name="Admin.Gates.Field.AllowedProfileTypesHint" xml:space="preserve"><value>فارغة = جميع الأنواع مسموحة (بوابة عامة). اختر واحدة أو أكثر لتقييد البوابة.</value></data>
+  <data name="Admin.Gates.Field.AssignedOperators" xml:space="preserve"><value>المشغلون المعيّنون</value></data>
+  <data name="Admin.Gates.Field.AssignedOperatorsHint" xml:space="preserve"><value>المشغلون الذين يمكنهم المسح في هذه البوابة. اضغط Ctrl/Cmd لتحديد متعدد.</value></data>
+  <data name="Admin.Gates.Field.IsActive" xml:space="preserve"><value>نشطة — متاحة للمسح</value></data>
+  <data name="Admin.Gates.DirectionMode.In" xml:space="preserve"><value>دخول فقط</value></data>
+  <data name="Admin.Gates.DirectionMode.Out" xml:space="preserve"><value>خروج فقط</value></data>
+  <data name="Admin.Gates.DirectionMode.Both" xml:space="preserve"><value>كلاهما (اتجاه مستنتج)</value></data>
+  <data name="Admin.Gates.Add.Title" xml:space="preserve"><value>إضافة بوابة</value></data>
+  <data name="Admin.Gates.Edit.Title" xml:space="preserve"><value>تعديل بوابة</value></data>
+  <data name="Admin.Gates.Details.Title" xml:space="preserve"><value>تفاصيل البوابة</value></data>
+  <data name="Admin.Gates.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Gates.New.Submit" xml:space="preserve"><value>إنشاء بوابة</value></data>
+  <data name="Admin.Gates.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء</value></data>
+  <data name="Admin.Gates.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.Gates.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Admin.Gates.Created" xml:space="preserve"><value>تم إنشاء البوابة "{0}".</value></data>
+  <data name="Admin.Gates.Updated" xml:space="preserve"><value>تم تحديث البوابة "{0}".</value></data>
+  <data name="Admin.Gates.Deactivated" xml:space="preserve"><value>تم تعطيل البوابة "{0}".</value></data>
+  <data name="Admin.Gates.Operator.Title" xml:space="preserve"><value>مشغل البوابة</value></data>
+  <data name="Admin.Gates.Operator.NoAssignments" xml:space="preserve"><value>لا توجد بوابات معيّنة لك حالياً. يرجى التواصل مع المسؤول.</value></data>
+  <data name="Admin.Gates.Operator.PickGate" xml:space="preserve"><value>البوابة</value></data>
+  <data name="Admin.Gates.Operator.QrLabel" xml:space="preserve"><value>رمز QR</value></data>
+  <data name="Admin.Gates.Operator.QrHint" xml:space="preserve"><value>امسح أو أدخل الرمز المكوّن من 12 حرفاً.</value></data>
+  <data name="Admin.Gates.Operator.ScanButton" xml:space="preserve"><value>مسح</value></data>
+  <data name="Admin.Gates.Operator.Scanning" xml:space="preserve"><value>جارٍ المسح…</value></data>
+  <data name="Admin.Gates.Operator.Allowed" xml:space="preserve"><value>مسموح</value></data>
+  <data name="Admin.Gates.Operator.Denied" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.Gates.Operator.MyReportTitle" xml:space="preserve"><value>يومي حتى الآن</value></data>
+  <data name="Admin.Gates.Operator.MyReportLoading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.Gates.Operator.MyReportSummary" xml:space="preserve"><value>{0} مسموح · {1} مرفوض</value></data>
+  <data name="Admin.Gates.Operator.Report.At" xml:space="preserve"><value>الوقت</value></data>
+  <data name="Admin.Gates.Operator.Report.Outcome" xml:space="preserve"><value>النتيجة</value></data>
+  <data name="Admin.Gates.Operator.Report.Direction" xml:space="preserve"><value>الاتجاه</value></data>
+  <data name="Admin.Gates.Operator.Report.Visitor" xml:space="preserve"><value>الزائر</value></data>
+  <data name="Admin.Gates.Operator.Report.Reason" xml:space="preserve"><value>السبب</value></data>
+
   <data name="Admin.Pending.Staff.Title" xml:space="preserve"><value>موافقات الفريق المعلّقة</value></data>
   <data name="Admin.Pending.Visitors.Title" xml:space="preserve"><value>موافقات الزوار المعلّقة</value></data>
   <data name="Admin.Pending.Supporting" xml:space="preserve"><value>الموافقة تنشئ شارة QR وتفعّل تسجيل الدخول (لوحة التحكم للفريق، دخول الحدث للزوار). الرفض يسجّل سبباً في سجل التدقيق.</value></data>

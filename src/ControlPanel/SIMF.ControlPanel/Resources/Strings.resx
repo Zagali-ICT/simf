@@ -441,6 +441,91 @@
   <data name="Admin.Halls.Updated" xml:space="preserve"><value>Hall "{0}" was updated.</value></data>
   <data name="Admin.Halls.Deactivated" xml:space="preserve"><value>Hall "{0}" was deactivated.</value></data>
 
+  <!-- D-148 — Gate Module (SIMF-FDS-003 §5.6 / SIMF-API-GATES-001) -->
+  <data name="Admin.Gates.Title" xml:space="preserve"><value>Gates</value></data>
+  <data name="Admin.Gates.None" xml:space="preserve"><value>No gates yet.</value></data>
+  <data name="Admin.Gates.LoadFailed" xml:space="preserve"><value>The gates could not be loaded.</value></data>
+  <data name="Admin.Gates.Fallback" xml:space="preserve"><value>The operation could not be completed.</value></data>
+  <data name="Admin.Gates.Loading" xml:space="preserve"><value>Loading gates…</value></data>
+  <data name="Admin.Gates.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.Gates.Prev" xml:space="preserve"><value>Previous</value></data>
+  <data name="Admin.Gates.Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Admin.Gates.Pager.First" xml:space="preserve"><value>First page</value></data>
+  <data name="Admin.Gates.Pager.Last" xml:space="preserve"><value>Last page</value></data>
+  <data name="Admin.Gates.Pager.PageSize" xml:space="preserve"><value>Show</value></data>
+  <data name="Admin.Gates.Pager.Page" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="Admin.Gates.FilterPlaceholder" xml:space="preserve"><value>Search</value></data>
+  <data name="Admin.Gates.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Gates.Column.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Admin.Gates.Column.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Admin.Gates.Column.NameArabic" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Gates.Column.DirectionMode" xml:space="preserve"><value>Direction</value></data>
+  <data name="Admin.Gates.Column.AllowCount" xml:space="preserve"><value>Allowed types</value></data>
+  <data name="Admin.Gates.Column.OperatorCount" xml:space="preserve"><value>Operators</value></data>
+  <data name="Admin.Gates.Column.Active" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.Gates.Column.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Admin.Gates.AllowAll" xml:space="preserve"><value>All</value></data>
+  <data name="Admin.Gates.Active.Yes" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Gates.Active.No" xml:space="preserve"><value>Inactive</value></data>
+  <data name="Admin.Gates.Action.Add" xml:space="preserve"><value>Add gate</value></data>
+  <data name="Admin.Gates.Action.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.Gates.Action.Details" xml:space="preserve"><value>Details</value></data>
+  <data name="Admin.Gates.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.Gates.Action.SelectAll" xml:space="preserve"><value>Select all</value></data>
+  <data name="Admin.Gates.Action.SelectRow" xml:space="preserve"><value>Select row</value></data>
+  <data name="Admin.Gates.Field.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Admin.Gates.Field.CodeHint" xml:space="preserve"><value>2–16 characters; unique. Venue team's stable identifier (e.g. G-MAIN-1, VIP-1).</value></data>
+  <data name="Admin.Gates.Field.CodeInvalid" xml:space="preserve"><value>Code must be between 2 and 16 characters.</value></data>
+  <data name="Admin.Gates.Field.Name" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Gates.Field.NameHint" xml:space="preserve"><value>Up to 128 characters.</value></data>
+  <data name="Admin.Gates.Field.NameInvalid" xml:space="preserve"><value>English name is required (1–128 characters).</value></data>
+  <data name="Admin.Gates.Field.NameArabic" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Gates.Field.NameArabicHint" xml:space="preserve"><value>Up to 128 characters.</value></data>
+  <data name="Admin.Gates.Field.NameArabicInvalid" xml:space="preserve"><value>Arabic name is required (1–128 characters).</value></data>
+  <data name="Admin.Gates.Field.Description" xml:space="preserve"><value>Description (English)</value></data>
+  <data name="Admin.Gates.Field.DescriptionHint" xml:space="preserve"><value>Optional. Up to 1024 characters.</value></data>
+  <data name="Admin.Gates.Field.DescriptionArabic" xml:space="preserve"><value>Description (Arabic)</value></data>
+  <data name="Admin.Gates.Field.DescriptionArabicHint" xml:space="preserve"><value>Optional. Up to 1024 characters.</value></data>
+  <data name="Admin.Gates.Field.DirectionMode" xml:space="preserve"><value>Direction policy</value></data>
+  <data name="Admin.Gates.Field.DirectionModeHint" xml:space="preserve"><value>In / Out fixes the direction; Both infers direction from the visitor's last allowed scan at this gate.</value></data>
+  <data name="Admin.Gates.Field.AllowedProfileTypes" xml:space="preserve"><value>Allowed profile types</value></data>
+  <data name="Admin.Gates.Field.AllowedProfileTypesHint" xml:space="preserve"><value>Empty = all profile types allowed (general gate). Pick one or more to restrict the gate.</value></data>
+  <data name="Admin.Gates.Field.AssignedOperators" xml:space="preserve"><value>Assigned operators</value></data>
+  <data name="Admin.Gates.Field.AssignedOperatorsHint" xml:space="preserve"><value>Operators who can scan at this gate. Hold Ctrl/Cmd to multi-select.</value></data>
+  <data name="Admin.Gates.Field.IsActive" xml:space="preserve"><value>Active — available for scanning</value></data>
+  <data name="Admin.Gates.DirectionMode.In" xml:space="preserve"><value>In (check-in only)</value></data>
+  <data name="Admin.Gates.DirectionMode.Out" xml:space="preserve"><value>Out (check-out only)</value></data>
+  <data name="Admin.Gates.DirectionMode.Both" xml:space="preserve"><value>Both (inferred direction)</value></data>
+  <data name="Admin.Gates.Add.Title" xml:space="preserve"><value>Add gate</value></data>
+  <data name="Admin.Gates.Edit.Title" xml:space="preserve"><value>Edit gate</value></data>
+  <data name="Admin.Gates.Details.Title" xml:space="preserve"><value>Gate details</value></data>
+  <data name="Admin.Gates.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Gates.New.Submit" xml:space="preserve"><value>Create gate</value></data>
+  <data name="Admin.Gates.New.Submitting" xml:space="preserve"><value>Creating</value></data>
+  <data name="Admin.Gates.Edit.Submit" xml:space="preserve"><value>Save changes</value></data>
+  <data name="Admin.Gates.Edit.Submitting" xml:space="preserve"><value>Saving</value></data>
+  <data name="Admin.Gates.Created" xml:space="preserve"><value>Gate "{0}" was created.</value></data>
+  <data name="Admin.Gates.Updated" xml:space="preserve"><value>Gate "{0}" was updated.</value></data>
+  <data name="Admin.Gates.Deactivated" xml:space="preserve"><value>Gate "{0}" was deactivated.</value></data>
+  <!-- Operator console -->
+  <data name="Admin.Gates.Operator.Title" xml:space="preserve"><value>Gate operator</value></data>
+  <data name="Admin.Gates.Operator.NoAssignments" xml:space="preserve"><value>You have no active gate assignments. Please contact an administrator.</value></data>
+  <data name="Admin.Gates.Operator.PickGate" xml:space="preserve"><value>Gate</value></data>
+  <data name="Admin.Gates.Operator.QrLabel" xml:space="preserve"><value>QR id</value></data>
+  <data name="Admin.Gates.Operator.QrHint" xml:space="preserve"><value>Scan or type the 12-character QR id.</value></data>
+  <data name="Admin.Gates.Operator.ScanButton" xml:space="preserve"><value>Scan</value></data>
+  <data name="Admin.Gates.Operator.Scanning" xml:space="preserve"><value>Scanning…</value></data>
+  <data name="Admin.Gates.Operator.Allowed" xml:space="preserve"><value>Allowed</value></data>
+  <data name="Admin.Gates.Operator.Denied" xml:space="preserve"><value>Denied</value></data>
+  <data name="Admin.Gates.Operator.MyReportTitle" xml:space="preserve"><value>My day so far</value></data>
+  <data name="Admin.Gates.Operator.MyReportLoading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.Gates.Operator.MyReportSummary" xml:space="preserve"><value>{0} allowed · {1} denied</value></data>
+  <data name="Admin.Gates.Operator.Report.At" xml:space="preserve"><value>At</value></data>
+  <data name="Admin.Gates.Operator.Report.Outcome" xml:space="preserve"><value>Outcome</value></data>
+  <data name="Admin.Gates.Operator.Report.Direction" xml:space="preserve"><value>Direction</value></data>
+  <data name="Admin.Gates.Operator.Report.Visitor" xml:space="preserve"><value>Visitor</value></data>
+  <data name="Admin.Gates.Operator.Report.Reason" xml:space="preserve"><value>Reason</value></data>
+
   <data name="Admin.Pending.Staff.Title" xml:space="preserve"><value>Pending staff approvals</value></data>
   <data name="Admin.Pending.Visitors.Title" xml:space="preserve"><value>Pending visitor approvals</value></data>
   <data name="Admin.Pending.Supporting" xml:space="preserve"><value>Approval mints the QR badge and unlocks sign-in (CP for staff, event entry for visitors). Rejection records a reason for audit.</value></data>
