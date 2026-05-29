@@ -1420,6 +1420,7 @@
   <data name="Admin.AiPrompts.Edit.Title" xml:space="preserve"><value>تعديل المحفّز</value></data>
   <data name="Admin.AiPrompts.Test.Title" xml:space="preserve"><value>اختبار المحفّز</value></data>
   <data name="Admin.AiPrompts.Test.Action" xml:space="preserve"><value>تشغيل الاختبار</value></data>
+  <data name="Admin.AiPrompts.Test.InputsLabel" xml:space="preserve"><value>المدخلات (سطر لكلٍّ: key=value)</value></data>
   <data name="Admin.AiPrompts.Test.Output" xml:space="preserve"><value>المخرجات</value></data>
   <data name="Admin.AiPrompts.Test.Latency" xml:space="preserve"><value>زمن الاستجابة</value></data>
   <data name="Admin.AiPrompts.Test.Tokens" xml:space="preserve"><value>الرموز</value></data>

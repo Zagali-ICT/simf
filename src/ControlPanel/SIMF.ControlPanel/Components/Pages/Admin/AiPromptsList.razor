@@ -167,7 +167,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="@(() => _editOpen = false)">
+            <SimfButton Type="button" Disabled="_busy" OnClick="@(() => _editOpen = false)">
                 @L["Admin.AiPrompts.Cancel"]
             </SimfButton>
             <SimfButton Type="button" OnClick="SubmitAsync" Loading="_busy">
@@ -180,12 +180,12 @@
 @if (_testOpen)
 {
     <SimfModal Open="true" Title="@L["Admin.AiPrompts.Test.Title"]"
-               OnClose="@(() => _testOpen = false)">
+               OnClose="OnTestModalClose">
         <ChildContent>
             <div class="simf-form__fields">
                 <p><code>@_testTargetKey</code></p>
                 <label class="simf-field">
-                    <span class="simf-field__label">Inputs (one per line: key=value)</span>
+                    <span class="simf-field__label">@L["Admin.AiPrompts.Test.InputsLabel"]</span>
                     <textarea class="simf-field__input" rows="5"
                               value="@_testInputsRaw"
                               @onchange="OnTestInputsChanged"
@@ -195,7 +195,7 @@
                 {
                     <dl class="simf-dl">
                         <dt>@L["Admin.AiPrompts.Test.Output"]</dt>
-                        <dd><pre style="white-space: pre-wrap;">@_testResult.OutputText</pre></dd>
+                        <dd><pre class="simf-pre--wrap">@_testResult.OutputText</pre></dd>
                         <dt>@L["Admin.AiPrompts.Test.Latency"]</dt>
                         <dd>@(_testResult.LatencyMs)ms</dd>
                         <dt>@L["Admin.AiPrompts.Test.Tokens"]</dt>
@@ -205,7 +205,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="@(() => _testOpen = false)">
+            <SimfButton Type="button" Disabled="_busy" OnClick="OnTestModalClose">
                 @L["Admin.AiPrompts.Cancel"]
             </SimfButton>
             <SimfButton Type="button" OnClick="RunTestAsync" Loading="_busy">
@@ -411,6 +411,15 @@
         _testOpen = true;
         _testTargetId = row.Id;
         _testTargetKey = row.Key;
+        _testInputsRaw = string.Empty;
+        _testResult = null;
+    }
+
+    private void OnTestModalClose()
+    {
+        _testOpen = false;
+        _testTargetId = Guid.Empty;
+        _testTargetKey = string.Empty;
         _testInputsRaw = string.Empty;
         _testResult = null;
     }

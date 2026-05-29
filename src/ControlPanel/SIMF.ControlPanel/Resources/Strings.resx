@@ -1428,6 +1428,7 @@
   <data name="Admin.AiPrompts.Edit.Title" xml:space="preserve"><value>Edit AI prompt</value></data>
   <data name="Admin.AiPrompts.Test.Title" xml:space="preserve"><value>Test prompt</value></data>
   <data name="Admin.AiPrompts.Test.Action" xml:space="preserve"><value>Run test</value></data>
+  <data name="Admin.AiPrompts.Test.InputsLabel" xml:space="preserve"><value>Inputs (one per line: key=value)</value></data>
   <data name="Admin.AiPrompts.Test.Output" xml:space="preserve"><value>Output</value></data>
   <data name="Admin.AiPrompts.Test.Latency" xml:space="preserve"><value>Latency</value></data>
   <data name="Admin.AiPrompts.Test.Tokens" xml:space="preserve"><value>Tokens</value></data>

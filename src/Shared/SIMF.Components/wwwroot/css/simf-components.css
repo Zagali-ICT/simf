@@ -1994,6 +1994,14 @@ body.simf-modal-open { overflow: hidden; }
   .simf-dl dd { margin-block-end: var(--space-3); }
 }
 
+/* D-178 — pre-formatted multi-line text that wraps on overflow.
+   Used by AI prompt dry-run output and similar read-only blocks. */
+.simf-pre--wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
 /* ===========================================================================
    D-117 — Q-E: Logs viewer 2-row layout.
    Row 1 = filters (Project / File / Lines + Auto-refresh).
