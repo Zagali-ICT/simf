@@ -120,6 +120,13 @@ public sealed class AdminWalkInRegistrationRequestValidator
                 "Place of birth must be at most 128 characters.",
                 "يجب ألا يتجاوز مكان الميلاد 128 حرفًا.");
 
+        // D-163 (PDF §2.6) — optional job title, max 128 chars.
+        RuleFor(request => request.JobTitle)
+            .MaximumLength(128).When(r => !string.IsNullOrEmpty(r.JobTitle))
+            .Bilingual(
+                "Job title must be at most 128 characters.",
+                "يجب ألا يتجاوز المسمى الوظيفي 128 حرفًا.");
+
         RuleFor(request => request.InterestIds.Count)
             .LessThanOrEqualTo(10).Bilingual(
                 "You can pick up to 10 interests.",

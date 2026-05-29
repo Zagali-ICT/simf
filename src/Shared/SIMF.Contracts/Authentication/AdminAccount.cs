@@ -280,6 +280,9 @@ public sealed class AdminWalkInRegistrationRequest
     /// <summary>Full name in English — exactly as on the passport / ID.</summary>
     public string EnglishName { get; set; } = string.Empty;
 
+    /// <summary>D-163 (PDF §2.6) — optional job title.</summary>
+    public string? JobTitle { get; set; }
+
     /// <summary>Visitor tier / Other subtype — drives the badge colour.</summary>
     public Guid ProfileTypeId { get; set; }
 
@@ -351,6 +354,7 @@ public sealed record AdminUserProfileView(
     string? QrId,
     string? ArabicName,
     string? EnglishName,
+    string? JobTitle,
     string? NationalityCode,
     DateOnly? DateOfBirth,
     string? PlaceOfBirth,

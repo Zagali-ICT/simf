@@ -727,10 +727,10 @@ The decisions that fed this amendment.
 | ID | Item | Affects |
 |---|---|---|
 | OI-5 | Approve and ship **P7** — `UserType` enum + `ProfileTypes` lookup; rework P3/P4/P2 off it. | A.2, A.3, A.9 |
-| OI-6 | Decide the **dynamic ProfileTypes seed set** for v1: which Visitor subtypes (VVIP, VIP, Gold, …) and which Other subtypes (Staff, Exhibitor, Sponsor, Media, …) ship at first deployment. Each row needs a `PageColor`. | A.9 |
+| OI-6 | Decide the **dynamic ProfileTypes seed set** for v1: which Visitor subtypes (VVIP, VIP, Gold, …) and which Other subtypes (Staff, Exhibitor, Sponsor, Media, …) ship at first deployment. Each row needs a `PageColor`. **Partially closed by D-163 (PDF §2.5):** Other-tier seed now ships `Staff`, `Media (إعلامي #F59E0B)`, and `Sponsor (راعي #8B5CF6)`. Visitor-tier seed remains owner-pick. | A.9 |
 | OI-7 | Replace the curated 60-entry country list (`SIMF.Common.Countries`) with the full ISO 3166-1 set when an unmatched code is requested by a visitor. | A.5 |
 | OI-8 | Bring SIMF-API-001 to Amendment B in lock-step with this amendment — the new admin endpoints (A.2, A.3, A.7), the visitor-profile endpoints (A.5), the avatar streamer (A.8). | SIMF-API-001 §12 |
-| OI-9 | Decide whether bulk-approve / bulk-reject is needed on the pending pages (today: per-row only). | A.3.3 |
+| OI-9 | Decide whether bulk-approve / bulk-reject is needed on the pending pages (today: per-row only). **Mandated by D-162 (PDF §2.7.1)** — the security team requires a "Select all" affordance for bulk approvals. Scheduled in phase G2 of `SIMF-Requirements-PDF-Gap.md`. | A.3.3 |
 
 ---
 

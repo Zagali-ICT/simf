@@ -714,6 +714,9 @@
   <data name="Admin.WalkIn.Section.Interests.Hint" xml:space="preserve"><value>حتى 10 مواضيع يودّ الزائر متابعتها في الفعالية. اختياري.</value></data>
   <data name="Admin.WalkIn.Field.EnglishName" xml:space="preserve"><value>الاسم الكامل (إنجليزي)</value></data>
   <data name="Admin.WalkIn.Field.EnglishName.Hint" xml:space="preserve"><value>كما هو مطبوع في جواز السفر / الهوية.</value></data>
+  <!-- D-163 -->
+  <data name="Admin.WalkIn.Field.JobTitle" xml:space="preserve"><value>المسمى الوظيفي (اختياري)</value></data>
+  <data name="Admin.WalkIn.Field.JobTitle.Hint" xml:space="preserve"><value>مثل "ربان" أو "مدير العمليات". حتى 128 حرفًا.</value></data>
   <data name="Admin.WalkIn.Field.ArabicName" xml:space="preserve"><value>الاسم الكامل (عربي)</value></data>
   <data name="Admin.WalkIn.Field.ArabicName.Hint" xml:space="preserve"><value>الاسم الكامل بالعربية.</value></data>
   <data name="Admin.WalkIn.Field.DisplayName" xml:space="preserve"><value>الاسم على الشارة</value></data>

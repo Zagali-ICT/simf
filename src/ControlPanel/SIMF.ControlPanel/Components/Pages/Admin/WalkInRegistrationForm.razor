@@ -85,6 +85,13 @@
                            Helper="@L["Admin.WalkIn.Field.ArabicName.Hint"]"
                            MaxLength="128"
                            @bind-Value="_model.ArabicName" />
+            @* D-163 (PDF §2.6) — optional job title for the badge. *@
+            <SimfTextField Label="@L["Admin.WalkIn.Field.JobTitle"]"
+                           Helper="@L["Admin.WalkIn.Field.JobTitle.Hint"]"
+                           MaxLength="128"
+                           Value="@(_model.JobTitle ?? string.Empty)"
+                           ValueChanged="@(v => _model.JobTitle = string.IsNullOrWhiteSpace(v) ? null : v)"
+                           ValueExpression="@(() => _model.JobTitle)" />
         </div>
         <div class="simf-walkin__grid simf-walkin__grid--single">
             <SimfTextField Label="@L["Admin.WalkIn.Field.PlaceOfBirth"]"
@@ -488,6 +495,7 @@
                     DisplayName = _model.DisplayName.Trim(),
                     ArabicName = _model.ArabicName.Trim(),
                     EnglishName = _model.EnglishName.Trim(),
+                    JobTitle = string.IsNullOrWhiteSpace(_model.JobTitle) ? null : _model.JobTitle.Trim(),
                     ProfileTypeId = _model.ProfileTypeId,
                     NationalityCode = _model.NationalityCode.Trim().ToUpperInvariant(),
                     DateOfBirth = _model.DateOfBirth,
@@ -567,6 +575,7 @@
         public string DisplayName { get; set; } = string.Empty;
         public string ArabicName { get; set; } = string.Empty;
         public string EnglishName { get; set; } = string.Empty;
+        public string? JobTitle { get; set; }
         public Guid ProfileTypeId { get; set; }
         public string NationalityCode { get; set; } = "SA";
         public DateOnly? DateOfBirth { get; set; }

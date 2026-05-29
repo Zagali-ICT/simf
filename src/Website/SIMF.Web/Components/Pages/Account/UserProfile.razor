@@ -78,6 +78,15 @@
                                    Helper="@L["Account.Profile.EnglishNameHint"]"
                                    Disabled="_saving" />
 
+                    @* D-163 (PDF §2.6) — optional job title. *@
+                    <SimfTextField Label="@L["Account.Profile.JobTitle"]"
+                                   Helper="@L["Account.Profile.JobTitleHint"]"
+                                   MaxLength="128"
+                                   Value="@(_model.JobTitle ?? string.Empty)"
+                                   ValueChanged="@(v => _model.JobTitle = string.IsNullOrWhiteSpace(v) ? null : v)"
+                                   ValueExpression="@(() => _model.JobTitle)"
+                                   Disabled="_saving" />
+
                     <SimfSelect TValue="string"
                                 Label="@L["Account.Profile.Nationality"]"
                                 Placeholder="@L["Account.Profile.NationalityPlaceholder"]"
@@ -299,6 +308,7 @@
 
             _model.ArabicName = _response.ArabicName;
             _model.EnglishName = _response.EnglishName;
+            _model.JobTitle = _response.JobTitle;
             _model.NationalityCode = _response.NationalityCode;
             _model.DateOfBirth = _response.DateOfBirth;
             _model.PlaceOfBirth = _response.PlaceOfBirth;

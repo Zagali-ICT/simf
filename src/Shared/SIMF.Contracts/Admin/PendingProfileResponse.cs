@@ -23,6 +23,7 @@ public sealed record PendingProfileResponse(
     string? ProfileTypeNameArabic,
     string? ArabicName,
     string? EnglishName,
+    string? JobTitle,
     string? NationalityCode,
     DateOnly? DateOfBirth,
     string? PlaceOfBirth,

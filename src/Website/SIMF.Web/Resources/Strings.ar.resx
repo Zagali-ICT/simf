@@ -83,6 +83,9 @@
   <data name="Account.Profile.ArabicName" xml:space="preserve"><value>الاسم بالعربية</value></data>
   <data name="Account.Profile.EnglishName" xml:space="preserve"><value>الاسم بالإنجليزية</value></data>
   <data name="Account.Profile.EnglishNameHint" xml:space="preserve"><value>كما هو مكتوب في جواز السفر.</value></data>
+  <!-- D-163 -->
+  <data name="Account.Profile.JobTitle" xml:space="preserve"><value>المسمى الوظيفي (اختياري)</value></data>
+  <data name="Account.Profile.JobTitleHint" xml:space="preserve"><value>مثل "ربان" أو "مدير العمليات". حتى 128 حرفًا.</value></data>
   <data name="Account.Profile.Nationality" xml:space="preserve"><value>الجنسية</value></data>
   <data name="Account.Profile.NationalityPlaceholder" xml:space="preserve"><value>اختر الدولة</value></data>
   <data name="Account.Profile.DateOfBirth" xml:space="preserve"><value>تاريخ الميلاد</value></data>

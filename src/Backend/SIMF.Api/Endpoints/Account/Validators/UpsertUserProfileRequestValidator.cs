@@ -71,6 +71,13 @@ public sealed class UpsertUserProfileRequestValidator
         RuleFor(request => request.PlaceOfBirth)
             .MaximumLength(128);
 
+        // D-163 (PDF §2.6) — optional job title, max 128 chars.
+        RuleFor(request => request.JobTitle)
+            .MaximumLength(128).When(r => !string.IsNullOrEmpty(r.JobTitle))
+            .Bilingual(
+                "Job title must be at most 128 characters.",
+                "يجب ألا يتجاوز المسمى الوظيفي 128 حرفًا.");
+
         // Conditional ID fields (P5 hardening — strict national-id prefix
         // rules per the Saudi numbering plan):
         //   - Saudi national id is exactly 10 digits and starts with 1.

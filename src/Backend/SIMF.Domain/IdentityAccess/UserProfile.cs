@@ -54,13 +54,18 @@ public class UserProfile
     /// <summary>Full name in English exactly as printed in the passport.</summary>
     public string EnglishName { get; set; } = string.Empty;
 
+    /// <summary>D-163 (PDF §2.6) — optional job title / professional role
+    /// displayed alongside the user's name (e.g. "Captain", "Director of
+    /// Operations"). Free text, up to 128 chars; null when not supplied.</summary>
+    public string? JobTitle { get; set; }
+
     /// <summary>D-151 — ISO 3166-1 numeric country id, logical FK to
     /// <c>SIMF.Domain.Common.Country.Id</c>. The Country row lives in
     /// <c>SimfAppDbContext</c>, this row in <c>SimfIdentityDbContext</c>;
     /// the FK is enforced in application code at write time, not by a DB
     /// constraint (the two contexts share one physical database but each
     /// owns its own migration history).</summary>
-    public int NationalityId { get; set; }
+    public int NationalityId { get; set; }//countryId FK
 
     /// <summary>Date of birth (date only).</summary>
     public DateOnly? DateOfBirth { get; set; }
@@ -131,3 +136,13 @@ public class UserProfile
     /// <summary>When the row was last updated (UTC); null on first save.</summary>
     public DateTimeOffset? UpdatedAt { get; set; }
 }
+/*
+ * 
+ * Now for Other:
+ * Incase of staf, that is under compny SmartTime - opertor
+ * Exibtor each one must be under thier Compnay.
+ * Responser User Mustbe under response
+ * Vistor also must be under thier Company/Indvdual/ALL UNDER SIMF-GUEST.
+ * SO THAT MEAN MUST HAVE MAIN/COPMPANY/REPOSNER as perent for vistor or other.
+ * 
+ */

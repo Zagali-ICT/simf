@@ -331,6 +331,7 @@ internal sealed class AdminAccountService(
             ProfileTypeId = profileType.Id,
             ArabicName = (request.ArabicName ?? string.Empty).Trim(),
             EnglishName = (request.EnglishName ?? string.Empty).Trim(),
+            JobTitle = NormaliseOptional(request.JobTitle),
             NationalityId = nationalityId.Value,
             DateOfBirth = request.DateOfBirth,
             PlaceOfBirth = (request.PlaceOfBirth ?? string.Empty).Trim(),

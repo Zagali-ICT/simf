@@ -159,6 +159,18 @@ public sealed class IdentitySeeder(
         await EnsureProfileTypeAsync(
             "Staff", "فريق", "#10B981",
             UserType.Other, MobileAppRole.Staff, cancellationToken);
+        // D-163 (PDF §2.5) — Other-tier seed expanded to ship Media and
+        // Sponsor as canonical operational types. Both default to
+        // MobileAppRole.None — they are display categories, not
+        // operational authority (a sponsor's representative is not
+        // automatically a gate operator). Distinct PageColors so the
+        // badges are visually unmistakable.
+        await EnsureProfileTypeAsync(
+            "Media", "إعلامي", "#F59E0B", // amber
+            UserType.Other, MobileAppRole.None, cancellationToken);
+        await EnsureProfileTypeAsync(
+            "Sponsor", "راعي", "#8B5CF6", // purple
+            UserType.Other, MobileAppRole.None, cancellationToken);
     }
 
     private async Task EnsureRoleAsync(string roleName)

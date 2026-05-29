@@ -26,6 +26,8 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
 
         builder.Property(profile => profile.ArabicName).HasMaxLength(256).IsRequired();
         builder.Property(profile => profile.EnglishName).HasMaxLength(256).IsRequired();
+        // D-163 — PDF §2.6 optional job title.
+        builder.Property(profile => profile.JobTitle).HasMaxLength(128);
         // D-151 — logical FK to SIMF.Domain.Common.Country.Id; no DB
         // constraint because Country lives in SimfAppDbContext.
         // Indexed so the rare "every profile of nationality X" admin

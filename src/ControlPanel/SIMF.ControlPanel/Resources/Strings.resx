@@ -722,6 +722,9 @@
   <data name="Admin.WalkIn.Section.Interests.Hint" xml:space="preserve"><value>Up to 10 topics the visitor wants to follow at the event. Optional.</value></data>
   <data name="Admin.WalkIn.Field.EnglishName" xml:space="preserve"><value>Full name (English)</value></data>
   <data name="Admin.WalkIn.Field.EnglishName.Hint" xml:space="preserve"><value>Exactly as printed on the passport / ID.</value></data>
+  <!-- D-163 (PDF §2.6) — optional job title for the badge. -->
+  <data name="Admin.WalkIn.Field.JobTitle" xml:space="preserve"><value>Job title (optional)</value></data>
+  <data name="Admin.WalkIn.Field.JobTitle.Hint" xml:space="preserve"><value>For example, "Captain" or "Director of Operations". Up to 128 characters.</value></data>
   <data name="Admin.WalkIn.Field.ArabicName" xml:space="preserve"><value>Full name (Arabic)</value></data>
   <data name="Admin.WalkIn.Field.ArabicName.Hint" xml:space="preserve"><value>الاسم الكامل بالعربية.</value></data>
   <data name="Admin.WalkIn.Field.DisplayName" xml:space="preserve"><value>Name on badge</value></data>

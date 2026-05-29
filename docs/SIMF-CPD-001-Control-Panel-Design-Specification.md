@@ -99,8 +99,8 @@ item under it, is shown only to users whose role permits it.
 | Registration requests | The approval queue: the Security team reviews registrations and approves or rejects, with bulk select |
 | Attendees | The approved users, their type and profile |
 | Roles & permissions | Manage roles and permissions; baseline roles plus new roles an Admin adds (decision D1) |
-| Themes & pillars | The five forum pillars and their sub-topics |
-| Sessions | Create and manage sessions; live or non-live; assign speakers and a hall |
+| Themes & pillars | The five forum **pillars** and their sub-topics. A pillar is a programmatic discriminator that colour-codes content and groups sessions into editorial buckets. **Not the same as a Session** — see the next row. (D-163) |
+| Sessions | Create and manage **sessions** — a Session is the scheduled run-of-show talk (a specific time window in a specific Hall, with one or more Speakers, optionally tagged with one or more Themes). The PDF requirement (§2.9) renames the legacy "Agenda" label on the public-facing surfaces to "Sessions"; the CP label was already "Sessions". (D-163) |
 | Halls & seating | Create halls, set seating capacity, manage the seat grid |
 | Speakers | Speaker profiles — bio, photo, country flag, linked sessions |
 | Bookings | Session seat bookings; every booking is approved here before it is confirmed (decision D4) |

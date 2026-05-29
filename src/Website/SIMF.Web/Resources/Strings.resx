@@ -83,6 +83,9 @@
   <data name="Account.Profile.ArabicName" xml:space="preserve"><value>Name in Arabic</value></data>
   <data name="Account.Profile.EnglishName" xml:space="preserve"><value>Name in English</value></data>
   <data name="Account.Profile.EnglishNameHint" xml:space="preserve"><value>Exactly as printed on your passport.</value></data>
+  <!-- D-163 (PDF §2.6) — optional job title. -->
+  <data name="Account.Profile.JobTitle" xml:space="preserve"><value>Job title (optional)</value></data>
+  <data name="Account.Profile.JobTitleHint" xml:space="preserve"><value>For example, "Captain" or "Director of Operations". Up to 128 characters.</value></data>
   <data name="Account.Profile.Nationality" xml:space="preserve"><value>Nationality</value></data>
   <data name="Account.Profile.NationalityPlaceholder" xml:space="preserve"><value>Pick a country</value></data>
   <data name="Account.Profile.DateOfBirth" xml:space="preserve"><value>Date of birth</value></data>
