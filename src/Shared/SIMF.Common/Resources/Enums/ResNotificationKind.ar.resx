@@ -18,4 +18,6 @@
   <data name="AccountPasswordChanged" xml:space="preserve"><value>تم تغيير كلمة المرور</value></data>
   <data name="AccountPasswordResetCompleted" xml:space="preserve"><value>تمت إعادة تعيين كلمة المرور</value></data>
   <data name="AdminPendingApproval" xml:space="preserve"><value>حساب جديد بانتظار الموافقة</value></data>
+  <data name="InvitationReceived" xml:space="preserve"><value>تلقّيت دعوة</value></data>
+  <data name="VipBroadcast" xml:space="preserve"><value>رسالة من العلاقات العامة لـ SIMF</value></data>
 </root>

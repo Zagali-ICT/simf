@@ -26,6 +26,8 @@ public static class ResNotificationKind
     public static string AccountPasswordChanged => Get(nameof(AccountPasswordChanged));
     public static string AccountPasswordResetCompleted => Get(nameof(AccountPasswordResetCompleted));
     public static string AdminPendingApproval => Get(nameof(AdminPendingApproval));
+    public static string InvitationReceived => Get(nameof(InvitationReceived));
+    public static string VipBroadcast => Get(nameof(VipBroadcast));
 
     private static string Get(string key) =>
         ResourceManager.GetString(key, CultureInfo.CurrentUICulture) ?? key;

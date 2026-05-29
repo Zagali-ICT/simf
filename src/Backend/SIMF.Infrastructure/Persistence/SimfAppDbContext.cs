@@ -5,6 +5,7 @@ using SIMF.Domain.Common;
 using SIMF.Domain.Operations;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
+using SIMF.Domain.PublicRelations;
 
 namespace SIMF.Infrastructure.Persistence;
 
@@ -70,6 +71,9 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
 
     /// <summary>D-167 — admin-managed lookup of visitor interests.</summary>
     public DbSet<Interest> Interests => Set<Interest>();
+
+    /// <summary>D-168 (gap doc G5, PDF §2.7.3) — public-relations invitations.</summary>
+    public DbSet<Invitation> Invitations => Set<Invitation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

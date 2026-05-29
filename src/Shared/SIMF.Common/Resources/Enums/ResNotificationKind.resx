@@ -18,4 +18,6 @@
   <data name="AccountPasswordChanged" xml:space="preserve"><value>Your password was changed</value></data>
   <data name="AccountPasswordResetCompleted" xml:space="preserve"><value>Your password was reset</value></data>
   <data name="AdminPendingApproval" xml:space="preserve"><value>New account awaiting approval</value></data>
+  <data name="InvitationReceived" xml:space="preserve"><value>You received an invitation</value></data>
+  <data name="VipBroadcast" xml:space="preserve"><value>Message from SIMF Public Relations</value></data>
 </root>

@@ -948,6 +948,57 @@ internal static class AccountEndpoints
             return Forward(await api.UpdateArchiveVisibilityAsync(body, token));
         });
 
+        // D-168 (gap doc G5) — public-relations BFF passthroughs.
+        group.MapPost("/admin/invitations/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListInvitationsAsync(body, token));
+        });
+        group.MapGet("/admin/invitations/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetInvitationAsync(id, token));
+        });
+        group.MapPost("/admin/invitations",
+            async (AdminCreateInvitationRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateInvitationAsync(body, token));
+        });
+        group.MapPut("/admin/invitations/{id:guid}",
+            async (Guid id, AdminUpdateInvitationRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateInvitationAsync(id, body, token));
+        });
+        group.MapDelete("/admin/invitations/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateInvitationAsync(id, token));
+        });
+        group.MapPost("/admin/vips/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListVipsAsync(body, token));
+        });
+        group.MapPost("/admin/vips/notify",
+            async (AdminNotifyVipsRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.NotifyVipsAsync(body, token));
+        });
+
         // D-148 — Gate Module BFF passthroughs (admin + operator).
         group.MapPost("/admin/gates/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

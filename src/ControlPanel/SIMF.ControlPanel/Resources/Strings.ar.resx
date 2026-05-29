@@ -1255,4 +1255,53 @@
   <data name="Admin.Operations.Archive.IsVisible" xml:space="preserve"><value>الأرشيف ظاهر للعموم</value></data>
   <data name="Admin.Operations.Archive.LastChangedAt" xml:space="preserve"><value>آخر تغيير</value></data>
   <data name="Admin.Operations.Archive.Saved" xml:space="preserve"><value>تم تحديث إظهار الأرشيف.</value></data>
+  <data name="Module.Invitations" xml:space="preserve"><value>الدعوات</value></data>
+  <data name="Module.Vips" xml:space="preserve"><value>كبار الضيوف</value></data>
+  <data name="Admin.Invitations.Title" xml:space="preserve"><value>الدعوات</value></data>
+  <data name="Admin.Invitations.Loading" xml:space="preserve"><value>جارٍ تحميل الدعوات…</value></data>
+  <data name="Admin.Invitations.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الدعوات.</value></data>
+  <data name="Admin.Invitations.None" xml:space="preserve"><value>لا توجد دعوات بعد.</value></data>
+  <data name="Admin.Invitations.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Invitations.Prev" xml:space="preserve"><value>السابق</value></data>
+  <data name="Admin.Invitations.Next" xml:space="preserve"><value>التالي</value></data>
+  <data name="Admin.Invitations.New" xml:space="preserve"><value>دعوة جديدة</value></data>
+  <data name="Admin.Invitations.Add.Title" xml:space="preserve"><value>إرسال دعوة</value></data>
+  <data name="Admin.Invitations.Edit.Title" xml:space="preserve"><value>تعديل الدعوة</value></data>
+  <data name="Admin.Invitations.Field.Recipient" xml:space="preserve"><value>المستلم (معرّف الملف)</value></data>
+  <data name="Admin.Invitations.Field.State" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Invitations.Field.Notes" xml:space="preserve"><value>الملاحظات</value></data>
+  <data name="Admin.Invitations.Submit.Create" xml:space="preserve"><value>إرسال</value></data>
+  <data name="Admin.Invitations.Submit.Update" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.Invitations.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Invitations.Deactivate" xml:space="preserve"><value>إلغاء الدعوة</value></data>
+  <data name="Admin.Invitations.DeactivateConfirm" xml:space="preserve"><value>هل تريد إلغاء هذه الدعوة؟</value></data>
+  <data name="Admin.Invitations.Created" xml:space="preserve"><value>تم إرسال الدعوة.</value></data>
+  <data name="Admin.Invitations.Updated" xml:space="preserve"><value>تم تحديث الدعوة.</value></data>
+  <data name="Admin.Invitations.Deactivated" xml:space="preserve"><value>تم إلغاء الدعوة.</value></data>
+  <data name="Admin.Invitations.Col.Recipient" xml:space="preserve"><value>المستلم</value></data>
+  <data name="Admin.Invitations.Col.ProfileType" xml:space="preserve"><value>نوع الملف</value></data>
+  <data name="Admin.Invitations.Col.State" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Invitations.Col.CreatedAt" xml:space="preserve"><value>تاريخ الإرسال</value></data>
+  <data name="Admin.Invitations.Col.SentBy" xml:space="preserve"><value>المُرسِل</value></data>
+  <data name="Admin.Vips.Title" xml:space="preserve"><value>كبار الضيوف</value></data>
+  <data name="Admin.Vips.Loading" xml:space="preserve"><value>جارٍ تحميل القائمة…</value></data>
+  <data name="Admin.Vips.LoadFailed" xml:space="preserve"><value>تعذّر تحميل قائمة كبار الضيوف.</value></data>
+  <data name="Admin.Vips.None" xml:space="preserve"><value>لا توجد نتائج مطابقة.</value></data>
+  <data name="Admin.Vips.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Vips.Prev" xml:space="preserve"><value>السابق</value></data>
+  <data name="Admin.Vips.Next" xml:space="preserve"><value>التالي</value></data>
+  <data name="Admin.Vips.NotifySelected" xml:space="preserve"><value>إشعار المحدّدين ({0})</value></data>
+  <data name="Admin.Vips.Col.Name" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Admin.Vips.Col.JobTitle" xml:space="preserve"><value>المسمّى الوظيفي</value></data>
+  <data name="Admin.Vips.Col.ProfileType" xml:space="preserve"><value>نوع الملف</value></data>
+  <data name="Admin.Vips.Col.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Vips.Notify.Title" xml:space="preserve"><value>إشعار كبار الضيوف</value></data>
+  <data name="Admin.Vips.Notify.TitleField" xml:space="preserve"><value>العنوان (الإنجليزية)</value></data>
+  <data name="Admin.Vips.Notify.TitleArabicField" xml:space="preserve"><value>العنوان (العربية)</value></data>
+  <data name="Admin.Vips.Notify.BodyField" xml:space="preserve"><value>النص (الإنجليزية)</value></data>
+  <data name="Admin.Vips.Notify.BodyArabicField" xml:space="preserve"><value>النص (العربية)</value></data>
+  <data name="Admin.Vips.Notify.Submit" xml:space="preserve"><value>إرسال</value></data>
+  <data name="Admin.Vips.Notify.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Vips.Notify.Sent" xml:space="preserve"><value>تم الإرسال إلى {0} ضيفاً ({1} بريداً إلكترونياً).</value></data>
+  <data name="Admin.Vips.Notify.Failed" xml:space="preserve"><value>تعذّر إرسال الرسالة.</value></data>
 </root>

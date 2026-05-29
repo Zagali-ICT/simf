@@ -136,6 +136,15 @@ public static class ErrorCodes
     // archive visibility singletons).
     public const string RegistrationClosed = "REGISTRATION_CLOSED";
 
+    // Invitations + VIP notify (D-168, gap doc G5 — public-relations
+    // module, PDF §2.7.3).
+    public const string InvitationInvalid = "INVITATION_INVALID";
+    public const string InvitationNotFound = "INVITATION_NOT_FOUND";
+    public const string InvitationTargetNotFound = "INVITATION_TARGET_NOT_FOUND";
+    public const string InvitationStateInvalid = "INVITATION_STATE_INVALID";
+    public const string VipNotifyEmpty = "VIP_NOTIFY_EMPTY";
+    public const string VipNotifyTooLarge = "VIP_NOTIFY_TOO_LARGE";
+
     // Sessions (D-165, gap doc G3 — programme sessions tied to a Hall +
     // M-to-M Speakers + M-to-M Themes).
     public const string SessionInvalid = "SESSION_INVALID";

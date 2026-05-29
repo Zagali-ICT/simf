@@ -915,6 +915,62 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    // -- D-168 (gap doc G5) — public-relations: invitations + VIPs ----------
+
+    public Task<ApiCallResult<GridPage<AdminInvitationSummary>>> ListInvitationsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminInvitationSummary>>(
+            HttpMethod.Post, "invitations/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminInvitationDetail>> GetInvitationAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminInvitationDetail>(
+            HttpMethod.Get, $"invitations/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminInvitationDetail>> CreateInvitationAsync(
+        AdminCreateInvitationRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminInvitationDetail>(
+            HttpMethod.Post, "invitations",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminInvitationDetail>> UpdateInvitationAsync(
+        Guid id, AdminUpdateInvitationRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminInvitationDetail>(
+            HttpMethod.Put, $"invitations/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeactivateInvitationAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"invitations/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<AdminVipSummary>>> ListVipsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminVipSummary>>(
+            HttpMethod.Post, "vips/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminNotifyVipsResult>> NotifyVipsAsync(
+        AdminNotifyVipsRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminNotifyVipsResult>(
+            HttpMethod.Post, "vips/notify",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     // -- D-148 — Gate Module admin CRUD + reports ---------------------------
 
     public Task<ApiCallResult<GridPage<AdminGateSummary>>> ListGatesAsync(

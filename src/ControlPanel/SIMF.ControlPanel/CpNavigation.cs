@@ -109,6 +109,12 @@ public static class CpNavigation
             // D-166 (gap doc G4) — registration gate + archive visibility
             // singleton toggles (PDF §2.3, §2.4).
             new("Module.OperationsToggles", "/admin/operations"),
+            // D-168 (gap doc G5) — public-relations desk: invitation CRUD +
+            // VIP list + bulk-notify (PDF §2.7.3). Open item G-OI-4 was
+            // resolved auto-mode to share the System group instead of a
+            // separate PR layout.
+            new("Module.Invitations", "/admin/invitations"),
+            new("Module.Vips", "/admin/vips"),
             new("Module.Settings", "/m/settings", IsStub: true),
         ]),
     ];

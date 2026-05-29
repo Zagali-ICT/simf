@@ -74,6 +74,25 @@ public sealed class IdentitySeeder(
             grantToRoles: new[] { AppRoles.Administrator, AppRoles.GateOperator },
             cancellationToken);
 
+        // D-168 (gap doc G5) — public-relations permission triad. Granted
+        // to PublicRelations (its raison d'être) and to Administrator
+        // (admins can also operate the invitation desk).
+        await EnsurePermissionAsync(Permissions.InvitationsManage,
+            page: "Invitations", action: "Manage",
+            displayName: "Manage invitations",
+            grantToRoles: new[] { AppRoles.Administrator, AppRoles.PublicRelations },
+            cancellationToken);
+        await EnsurePermissionAsync(Permissions.VipsView,
+            page: "Vips", action: "View",
+            displayName: "View the VIP list",
+            grantToRoles: new[] { AppRoles.Administrator, AppRoles.PublicRelations },
+            cancellationToken);
+        await EnsurePermissionAsync(Permissions.VipsNotify,
+            page: "Vips", action: "Notify",
+            displayName: "Notify VIPs",
+            grantToRoles: new[] { AppRoles.Administrator, AppRoles.PublicRelations },
+            cancellationToken);
+
         var admin = await accounts.FindByEmailAsync(settings.Email)
             ?? await CreateSuperAdminAsync(settings, cancellationToken);
         if (admin is null)

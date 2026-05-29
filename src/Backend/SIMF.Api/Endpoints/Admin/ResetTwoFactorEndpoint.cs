@@ -82,6 +82,13 @@ public static class AuthorizationPolicies
     /// <summary>D-148 — operator's own-daily-report endpoint.</summary>
     public const string GatesViewOwnReports = "GatesViewOwnReports";
 
+    /// <summary>D-168 (gap doc G5) — Administrator or
+    /// <see cref="SIMF.Common.AppRoles.PublicRelations"/>. Used by every
+    /// invitation CRUD endpoint and the VIP list + notify endpoints.
+    /// PublicRelations cannot reach any other admin surface; the policy
+    /// keeps the two roles distinct.</summary>
+    public const string PublicRelationsAccess = "PublicRelationsAccess";
+
     /// <summary>Registers the policies with the ASP.NET Core authorization stack.</summary>
     public static void AddSimfAuthorization(this AuthorizationBuilder builder)
     {
@@ -106,5 +113,12 @@ public static class AuthorizationPolicies
         builder.AddPolicy(GatesViewOwnReports, policy =>
             policy.RequireRole(SIMF.Common.AppRoles.Administrator,
                                SIMF.Common.AppRoles.GateOperator));
+
+        // D-168 (gap doc G5) — PublicRelations role gate. Administrator
+        // inherits so an admin can also operate the invitation desk from
+        // the CP console.
+        builder.AddPolicy(PublicRelationsAccess, policy =>
+            policy.RequireRole(SIMF.Common.AppRoles.Administrator,
+                               SIMF.Common.AppRoles.PublicRelations));
     }
 }

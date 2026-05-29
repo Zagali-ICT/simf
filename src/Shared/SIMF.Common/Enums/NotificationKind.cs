@@ -70,4 +70,17 @@ public enum NotificationKind
     /// specifically on visitor self-submit.</summary>
     [Display(Description = nameof(ResNotificationKind.AdminPendingApproval), ResourceType = typeof(ResNotificationKind))]
     AdminPendingApproval = 23,
+
+    /// <summary>D-168 (gap doc G5): dispatched to a recipient when the PR
+    /// team creates an invitation row for them. In-app row only by
+    /// default — the PR rep can opt-in to a follow-up email via the
+    /// "Notify VIPs" desk.</summary>
+    [Display(Description = nameof(ResNotificationKind.InvitationReceived), ResourceType = typeof(ResNotificationKind))]
+    InvitationReceived = 30,
+
+    /// <summary>D-168 (gap doc G5): dispatched to one or more VIPs by the
+    /// PR team via the "Notify VIPs" desk. Body is the rep's free-text
+    /// message; sent as an in-app row + a queued email.</summary>
+    [Display(Description = nameof(ResNotificationKind.VipBroadcast), ResourceType = typeof(ResNotificationKind))]
+    VipBroadcast = 31,
 }

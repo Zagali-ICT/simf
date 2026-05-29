@@ -1,0 +1,220 @@
+@* D-168 (gap doc G5, PDF §2.7.3) — VIP list + bulk-notify modal. The
+   VIP list is the subset of UserProfiles whose ProfileType.Name is in
+   {VVIP, VIP, Gold}; the notify modal collects a bilingual message and
+   fans it out via the API. *@
+@page "/admin/vips"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator,PublicRelations")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Vips.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Vips.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form__actions">
+            <SimfButton Type="button" OnClick="OnNotifySelected"
+                        Disabled="@(_selected.Count == 0)">
+                @(string.Format(L["Admin.Vips.NotifySelected"], _selected.Count))
+            </SimfButton>
+        </div>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.Vips.Loading"]</p>
+        }
+        else if (_page.Items.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.Vips.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>@L["Admin.Vips.Col.Name"]</th>
+                        <th>@L["Admin.Vips.Col.JobTitle"]</th>
+                        <th>@L["Admin.Vips.Col.ProfileType"]</th>
+                        <th>@L["Admin.Vips.Col.Email"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _page.Items)
+                    {
+                        <tr>
+                            <td>
+                                <input type="checkbox"
+                                       checked="@_selected.Contains(row.UserProfileId)"
+                                       @onchange="@(e => ToggleSelected(row.UserProfileId, e))" />
+                            </td>
+                            <td>@RecipientLabel(row)</td>
+                            <td>@(row.JobTitle ?? "—")</td>
+                            <td>@TypeLabel(row)</td>
+                            <td>@(row.Email ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="simf-table__summary">
+                @(string.Format(L["Admin.Vips.Summary"],
+                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
+            </p>
+        }
+    </div>
+</div>
+
+@if (_notifyOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.Vips.Notify.Title"]"
+               OnClose="@(() => _notifyOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.Vips.Notify.TitleField"]"
+                               Value="@_msgTitle"
+                               ValueChanged="@(v => _msgTitle = v)"
+                               ValueExpression="@(() => _msgTitle)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Vips.Notify.TitleArabicField"]"
+                               Value="@_msgTitleArabic"
+                               ValueChanged="@(v => _msgTitleArabic = v)"
+                               ValueExpression="@(() => _msgTitleArabic)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Vips.Notify.BodyField"]"
+                               Value="@_msgBody"
+                               ValueChanged="@(v => _msgBody = v)"
+                               ValueExpression="@(() => _msgBody)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Vips.Notify.BodyArabicField"]"
+                               Value="@_msgBodyArabic"
+                               ValueChanged="@(v => _msgBodyArabic = v)"
+                               ValueExpression="@(() => _msgBodyArabic)"
+                               Disabled="_busy" />
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="@(() => _notifyOpen = false)">
+                @L["Admin.Vips.Notify.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SubmitNotifyAsync"
+                        Loading="_busy">
+                @L["Admin.Vips.Notify.Submit"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 50 };
+    private GridPage<AdminVipSummary> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private readonly HashSet<Guid> _selected = new();
+
+    private bool _notifyOpen;
+    private string _msgTitle = string.Empty;
+    private string _msgTitleArabic = string.Empty;
+    private string _msgBody = string.Empty;
+    private string _msgBodyArabic = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminVipSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/vips/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Vips.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void ToggleSelected(Guid id, ChangeEventArgs e)
+    {
+        if (e.Value is true)
+        {
+            _selected.Add(id);
+        }
+        else
+        {
+            _selected.Remove(id);
+        }
+    }
+
+    private void OnNotifySelected()
+    {
+        if (_selected.Count == 0) return;
+        _notifyOpen = true;
+        _msgTitle = string.Empty;
+        _msgTitleArabic = string.Empty;
+        _msgBody = string.Empty;
+        _msgBodyArabic = string.Empty;
+    }
+
+    private async Task SubmitNotifyAsync()
+    {
+        if (_busy || _selected.Count == 0) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminNotifyVipsResult>>(
+                "simfAccount.postJson", "/account/api/admin/vips/notify",
+                new AdminNotifyVipsRequest
+                {
+                    UserProfileIds = _selected.ToList(),
+                    Title = _msgTitle,
+                    TitleArabic = _msgTitleArabic,
+                    Body = _msgBody,
+                    BodyArabic = _msgBodyArabic,
+                });
+            if (env is { Success: true, Data: not null })
+            {
+                _notifyOpen = false;
+                _toast = new Toast("success",
+                    string.Format(L["Admin.Vips.Notify.Sent"],
+                        env.Data.Dispatched, env.Data.EmailsEnqueued));
+                _selected.Clear();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Vips.Notify.Failed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private static string RecipientLabel(AdminVipSummary row) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? row.ArabicName
+            : row.EnglishName;
+
+    private static string TypeLabel(AdminVipSummary row) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? row.ProfileTypeNameArabic
+            : row.ProfileTypeName;
+}

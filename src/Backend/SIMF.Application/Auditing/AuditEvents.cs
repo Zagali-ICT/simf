@@ -136,6 +136,14 @@ public static class AuditEvents
     public const string SessionUpdated = "Session.Updated";
     public const string SessionDeactivated = "Session.Deactivated";
 
+    // Invitations + VIP notify (D-168, gap doc G5 — public-relations
+    // module, PDF §2.7.3)
+    public const string InvitationCreated = "Invitation.Created";
+    public const string InvitationUpdated = "Invitation.Updated";
+    public const string InvitationStateChanged = "Invitation.StateChanged";
+    public const string InvitationDeactivated = "Invitation.Deactivated";
+    public const string VipNotificationSent = "Vip.NotificationSent";
+
     // Operations toggles (D-166, gap doc G4 — registration gate +
     // archive visibility singletons)
     public const string RegistrationGateUpdated = "RegistrationGate.Updated";

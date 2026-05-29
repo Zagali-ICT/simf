@@ -191,6 +191,10 @@ public static class DependencyInjection
         services.AddScoped<SIMF.Application.Operations.Abstractions.IOperationsToggleService,
             SIMF.Infrastructure.Operations.OperationsToggleService>();
         services.AddHostedService<SIMF.Infrastructure.Operations.RegistrationGateAutoCloseWorker>();
+        // D-168 (gap doc G5) — public-relations team: invitation CRUD +
+        // VIP list + bulk-notify dispatcher (PDF §2.7.3).
+        services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminInvitationService,
+            SIMF.Infrastructure.PublicRelations.AdminInvitationService>();
         // D-148 — Gate Module: admin CRUD + operator surface + QR resolver +
         // gate-config cache + idempotency store + failure-rate circuit
         // (SIMF-API-GATES-001, SIMF-FDS-003 §5.6).
