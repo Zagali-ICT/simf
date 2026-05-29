@@ -788,6 +788,87 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateHallAsync(id, token));
         });
 
+        // D-148 — Gate Module BFF passthroughs (admin + operator).
+        group.MapPost("/admin/gates/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListGatesAsync(body, token));
+        });
+        group.MapGet("/admin/gates/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetGateAsync(id, token));
+        });
+        group.MapPost("/admin/gates",
+            async (AdminCreateGateRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateGateAsync(body, token));
+        });
+        group.MapPut("/admin/gates/{id:guid}",
+            async (Guid id, AdminUpdateGateRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateGateAsync(id, body, token));
+        });
+        group.MapDelete("/admin/gates/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateGateAsync(id, token));
+        });
+        group.MapGet("/admin/gates/{id:guid}/assignments",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListGateAssignmentsAsync(id, token));
+        });
+        group.MapPost("/admin/gates/reports/scans",
+            async (AdminGateScanReportFilter body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListGateScansAsync(body, token));
+        });
+        group.MapGet("/admin/gates/reports/currently-inside",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListCurrentlyInsideAsync(token));
+        });
+        group.MapGet("/gates/my-assignments",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListMyGateAssignmentsAsync(token));
+        });
+        group.MapPost("/gates/{gateId:guid}/scans",
+            async (Guid gateId, SIMF.Contracts.Gates.GateScanRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.PostScanAsync(gateId, body, token));
+        });
+        group.MapGet("/gates/my-reports/today",
+            async (Guid? gateId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetMyDailyReportAsync(gateId, token));
+        });
+
         // P6 — log viewer proxy. The CP page is server-side Blazor, so it
         // talks to these endpoints via fetch (cookie auth) and they forward
         // to the API with the access token.

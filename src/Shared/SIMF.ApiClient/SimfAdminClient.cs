@@ -745,6 +745,93 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"halls/{id}", content: null,
             accessToken, cancellationToken);
 
+    // -- D-148 — Gate Module admin CRUD + reports ---------------------------
+
+    public Task<ApiCallResult<GridPage<AdminGateSummary>>> ListGatesAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminGateSummary>>(
+            HttpMethod.Post, "gates/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminGateDetail>> GetGateAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminGateDetail>(
+            HttpMethod.Get, $"gates/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminGateDetail>> CreateGateAsync(
+        AdminCreateGateRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminGateDetail>(
+            HttpMethod.Post, "gates",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminGateDetail>> UpdateGateAsync(
+        Guid id, AdminUpdateGateRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminGateDetail>(
+            HttpMethod.Put, $"gates/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeactivateGateAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"gates/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<IReadOnlyList<AdminGateAssignmentRow>>> ListGateAssignmentsAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<AdminGateAssignmentRow>>(
+            HttpMethod.Get, $"gates/{id}/assignments", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<IReadOnlyList<AdminGateScanRow>>> ListGateScansAsync(
+        AdminGateScanReportFilter filter, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<AdminGateScanRow>>(
+            HttpMethod.Post, "gates/reports/scans",
+            JsonContent.Create(filter, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<IReadOnlyList<AdminCurrentlyInsideRow>>> ListCurrentlyInsideAsync(
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<AdminCurrentlyInsideRow>>(
+            HttpMethod.Get, "gates/reports/currently-inside", content: null,
+            accessToken, cancellationToken);
+
+    // -- D-148 — Gate Module operator surface --------------------------------
+
+    public Task<ApiCallResult<IReadOnlyList<SIMF.Contracts.Gates.OperatorGateAssignment>>>
+        ListMyGateAssignmentsAsync(string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendOperatorAsync<IReadOnlyList<SIMF.Contracts.Gates.OperatorGateAssignment>>(
+            HttpMethod.Get, "my-assignments", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SIMF.Contracts.Gates.GateScanResponse>>
+        PostScanAsync(Guid gateId, SIMF.Contracts.Gates.GateScanRequest request,
+            string accessToken, CancellationToken cancellationToken = default) =>
+        SendOperatorAsync<SIMF.Contracts.Gates.GateScanResponse>(
+            HttpMethod.Post, $"{gateId}/scans",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SIMF.Contracts.Gates.OperatorDailyReport>>
+        GetMyDailyReportAsync(Guid? gateId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendOperatorAsync<SIMF.Contracts.Gates.OperatorDailyReport>(
+            HttpMethod.Get,
+            gateId is { } id ? $"my-reports/today?gateId={id}" : "my-reports/today",
+            content: null, accessToken, cancellationToken);
+
     // -- D-115 — ProfileTypes CRUD (admin-managed lookup table) --------------
 
     /// <summary>One page of profile types for the admin grid (D-115).</summary>
@@ -882,11 +969,24 @@ public sealed class SimfAdminClient(HttpClient http)
         }
     }
 
-    private async Task<ApiCallResult<T>> SendAsync<T>(
+    /// <summary>D-148 — operator-surface helper. Routes through the
+    /// <c>/api/v1/gates/</c> prefix rather than <c>/api/v1/admin/</c>.</summary>
+    private Task<ApiCallResult<T>> SendOperatorAsync<T>(
         HttpMethod method, string path, HttpContent? content,
+        string accessToken, CancellationToken cancellationToken) =>
+        SendWithBaseAsync<T>("api/v1/gates/", method, path, content,
+            accessToken, cancellationToken);
+
+    private Task<ApiCallResult<T>> SendAsync<T>(
+        HttpMethod method, string path, HttpContent? content,
+        string accessToken, CancellationToken cancellationToken) =>
+        SendWithBaseAsync<T>(BasePath, method, path, content, accessToken, cancellationToken);
+
+    private async Task<ApiCallResult<T>> SendWithBaseAsync<T>(
+        string basePath, HttpMethod method, string path, HttpContent? content,
         string accessToken, CancellationToken cancellationToken)
     {
-        using var message = new HttpRequestMessage(method, BasePath + path) { Content = content };
+        using var message = new HttpRequestMessage(method, basePath + path) { Content = content };
         message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         try

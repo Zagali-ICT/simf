@@ -1,0 +1,249 @@
+@* D-148 — reusable Gate Add/Edit form. SIMF-FDS-003 §5.6. Mirrors HallForm
+   and extends with DirectionMode + allow-list + operator-assignments. *@
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        <SimfTextField Label="@L["Admin.Gates.Field.Code"]"
+                       Helper="@L["Admin.Gates.Field.CodeHint"]"
+                       MaxLength="16"
+                       @bind-Value="_model.Code" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Gates.Field.Name"]"
+                       Helper="@L["Admin.Gates.Field.NameHint"]"
+                       MaxLength="128"
+                       @bind-Value="_model.Name" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Gates.Field.NameArabic"]"
+                       Helper="@L["Admin.Gates.Field.NameArabicHint"]"
+                       MaxLength="128"
+                       @bind-Value="_model.NameArabic" Disabled="_busy" />
+
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.Gates.Field.DirectionMode"]</span>
+            <select class="simf-select" @bind="_model.DirectionMode" disabled="@_busy">
+                <option value="@DirectionMode.In">@L["Admin.Gates.DirectionMode.In"]</option>
+                <option value="@DirectionMode.Out">@L["Admin.Gates.DirectionMode.Out"]</option>
+                <option value="@DirectionMode.Both">@L["Admin.Gates.DirectionMode.Both"]</option>
+            </select>
+            <span class="simf-field__helper">@L["Admin.Gates.Field.DirectionModeHint"]</span>
+        </label>
+
+        <SimfTextarea Label="@L["Admin.Gates.Field.Description"]"
+                      Helper="@L["Admin.Gates.Field.DescriptionHint"]"
+                      Rows="2" MaxLength="1024"
+                      Value="@_model.Description"
+                      ValueChanged="@(v => _model.Description = v)" />
+        <SimfTextarea Label="@L["Admin.Gates.Field.DescriptionArabic"]"
+                      Helper="@L["Admin.Gates.Field.DescriptionArabicHint"]"
+                      Rows="2" MaxLength="1024"
+                      Value="@_model.DescriptionArabic"
+                      ValueChanged="@(v => _model.DescriptionArabic = v)" />
+
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.Gates.Field.AllowedProfileTypes"]</span>
+            <select class="simf-select" multiple size="6"
+                    @onchange="OnAllowedChanged" disabled="@_busy">
+                @foreach (var pt in _profileTypes)
+                {
+                    <option value="@pt.Id"
+                            selected="@_model.AllowedProfileTypeIds.Contains(pt.Id)">
+                        @pt.Name
+                    </option>
+                }
+            </select>
+            <span class="simf-field__helper">@L["Admin.Gates.Field.AllowedProfileTypesHint"]</span>
+        </label>
+
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.Gates.Field.AssignedOperators"]</span>
+            <select class="simf-select" multiple size="6"
+                    @onchange="OnOperatorsChanged" disabled="@_busy">
+                @foreach (var op in _operators)
+                {
+                    <option value="@op.Id"
+                            selected="@_model.AssignedOperatorUserIds.Contains(op.Id)">
+                        @op.Email — @op.DisplayName
+                    </option>
+                }
+            </select>
+            <span class="simf-field__helper">@L["Admin.Gates.Field.AssignedOperatorsHint"]</span>
+        </label>
+
+        @if (Initial is not null)
+        {
+            <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
+                @L["Admin.Gates.Field.IsActive"]
+            </SimfCheckbox>
+        }
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy"
+                    LoadingLabel="@(Initial is null ? L["Admin.Gates.New.Submitting"] : L["Admin.Gates.Edit.Submitting"])">
+            @(Initial is null ? L["Admin.Gates.New.Submit"] : L["Admin.Gates.Edit.Submit"])
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy" OnClick="OnCancel">
+                @L["Admin.Gates.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private readonly Model _model = new();
+    private EditContext _editContext = default!;
+    private bool _busy;
+    private string? _error;
+
+    private IReadOnlyList<ProfileTypeOption> _profileTypes = Array.Empty<ProfileTypeOption>();
+    private IReadOnlyList<OperatorOption> _operators = Array.Empty<OperatorOption>();
+
+    [Parameter] public AdminGateDetail? Initial { get; set; }
+    [Parameter] public EventCallback<AdminGateDetail> OnSuccess { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Initial is not null)
+        {
+            _model.Code = Initial.Code;
+            _model.Name = Initial.Name;
+            _model.NameArabic = Initial.NameArabic;
+            _model.Description = Initial.Description ?? string.Empty;
+            _model.DescriptionArabic = Initial.DescriptionArabic ?? string.Empty;
+            _model.DirectionMode = Initial.DirectionMode;
+            _model.IsActive = Initial.IsActive;
+            _model.AllowedProfileTypeIds = new HashSet<Guid>(Initial.AllowedProfileTypeIds);
+            _model.AssignedOperatorUserIds = new HashSet<Guid>(Initial.AssignedOperatorUserIds);
+        }
+        _editContext = new EditContext(_model);
+
+        // Load active profile types + active admins as candidate operators.
+        var ptEnvelope = await JS.InvokeAsync<ApiResult<GridPage<AdminProfileTypeSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/profile-types/list",
+            new GridQuery { Top = 200, Filters = new Dictionary<string, string> { ["isActive"] = "true" } });
+        if (ptEnvelope is { Success: true, Data.Items: { } items })
+        {
+            _profileTypes = items.Select(i => new ProfileTypeOption(i.Id, i.Name)).ToList();
+        }
+
+        var opsEnvelope = await JS.InvokeAsync<ApiResult<GridPage<AdminUserSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/admins/list",
+            new GridQuery { Top = 200 });
+        if (opsEnvelope is { Success: true, Data.Items: { } admins })
+        {
+            _operators = admins
+                .Select(a => new OperatorOption(a.Id, a.Email, a.DisplayName ?? string.Empty))
+                .ToList();
+        }
+    }
+
+    private void OnAllowedChanged(ChangeEventArgs e)
+    {
+        if (e.Value is string[] values)
+        {
+            _model.AllowedProfileTypeIds = values
+                .Select(v => Guid.TryParse(v, out var g) ? g : (Guid?)null)
+                .Where(g => g.HasValue).Select(g => g!.Value).ToHashSet();
+        }
+    }
+
+    private void OnOperatorsChanged(ChangeEventArgs e)
+    {
+        if (e.Value is string[] values)
+        {
+            _model.AssignedOperatorUserIds = values
+                .Select(v => Guid.TryParse(v, out var g) ? g : (Guid?)null)
+                .Where(g => g.HasValue).Select(g => g!.Value).ToHashSet();
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_model.Code) || _model.Code.Length is < 2 or > 16)
+        { _error = L["Admin.Gates.Field.CodeInvalid"]; return; }
+        if (string.IsNullOrWhiteSpace(_model.Name) || _model.Name.Length > 128)
+        { _error = L["Admin.Gates.Field.NameInvalid"]; return; }
+        if (string.IsNullOrWhiteSpace(_model.NameArabic) || _model.NameArabic.Length > 128)
+        { _error = L["Admin.Gates.Field.NameArabicInvalid"]; return; }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminGateDetail>? envelope;
+            if (Initial is null)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminGateDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/gates",
+                    new AdminCreateGateRequest
+                    {
+                        Code = _model.Code.Trim().ToUpperInvariant(),
+                        Name = _model.Name.Trim(),
+                        NameArabic = _model.NameArabic.Trim(),
+                        Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description.Trim(),
+                        DescriptionArabic = string.IsNullOrWhiteSpace(_model.DescriptionArabic) ? null : _model.DescriptionArabic.Trim(),
+                        DirectionMode = _model.DirectionMode,
+                        AllowedProfileTypeIds = _model.AllowedProfileTypeIds.ToList(),
+                        AssignedOperatorUserIds = _model.AssignedOperatorUserIds.ToList(),
+                    });
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminGateDetail>>(
+                    "simfAccount.putJson", $"/account/api/admin/gates/{Initial.Id}",
+                    new AdminUpdateGateRequest
+                    {
+                        Code = _model.Code.Trim().ToUpperInvariant(),
+                        Name = _model.Name.Trim(),
+                        NameArabic = _model.NameArabic.Trim(),
+                        Description = string.IsNullOrWhiteSpace(_model.Description) ? null : _model.Description.Trim(),
+                        DescriptionArabic = string.IsNullOrWhiteSpace(_model.DescriptionArabic) ? null : _model.DescriptionArabic.Trim(),
+                        DirectionMode = _model.DirectionMode,
+                        IsActive = _model.IsActive,
+                        AllowedProfileTypeIds = _model.AllowedProfileTypeIds.ToList(),
+                        AssignedOperatorUserIds = _model.AssignedOperatorUserIds.ToList(),
+                    });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture() ?? L["Admin.Gates.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.Gates.Fallback"];
+        }
+        finally { _busy = false; }
+    }
+
+    private sealed class Model
+    {
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string NameArabic { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string DescriptionArabic { get; set; } = string.Empty;
+        public DirectionMode DirectionMode { get; set; } = DirectionMode.Both;
+        public bool IsActive { get; set; } = true;
+        public HashSet<Guid> AllowedProfileTypeIds { get; set; } = new();
+        public HashSet<Guid> AssignedOperatorUserIds { get; set; } = new();
+    }
+
+    private sealed record ProfileTypeOption(Guid Id, string Name);
+    private sealed record OperatorOption(Guid Id, string Email, string DisplayName);
+}
