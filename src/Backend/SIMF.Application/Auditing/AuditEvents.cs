@@ -148,6 +148,12 @@ public static class AuditEvents
     // Venue self-assert (D-171, gap doc G7 — PDF §2.10)
     public const string SessionQuestionRejectedNotAtVenue = "SessionQuestion.RejectedNotAtVenue";
 
+    // Device keys / biometric sign-in (D-172, gap doc G10 — PDF §2.5)
+    public const string DeviceKeyRegistered = "DeviceKey.Registered";
+    public const string DeviceKeyRevoked = "DeviceKey.Revoked";
+    public const string SignInWithDeviceKey = "SignIn.WithDeviceKey";
+    public const string SignInWithDeviceKeyFailed = "SignIn.WithDeviceKeyFailed";
+
     // Invitations + VIP notify (D-168, gap doc G5 — public-relations
     // module, PDF §2.7.3)
     public const string InvitationCreated = "Invitation.Created";

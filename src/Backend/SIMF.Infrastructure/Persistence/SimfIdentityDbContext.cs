@@ -27,6 +27,10 @@ public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> optio
 
     public DbSet<TotpRecoveryCode> TotpRecoveryCodes => Set<TotpRecoveryCode>();
 
+    /// <summary>D-172 (gap doc G10, PDF §2.5) — biometric (Face ID)
+    /// sign-in device keys.</summary>
+    public DbSet<DeviceKey> DeviceKeys => Set<DeviceKey>();
+
     // D-167: UserProfile, ProfileType, Interest moved to SimfAppDbContext.
 
     public DbSet<SIMF.Domain.Notifications.Notification> Notifications =>

@@ -208,6 +208,10 @@ public static class DependencyInjection
         // ranker (PDF §2.8). Read-only service over UserProfile.Interests.
         services.AddScoped<SIMF.Application.Recommendations.Abstractions.IRecommendationService,
             SIMF.Infrastructure.Recommendations.RecommendationService>();
+        // D-172 (gap doc G10) — Face ID / Touch ID biometric sign-in via
+        // ECDSA P-256 device key (PDF §2.5).
+        services.AddScoped<SIMF.Application.IdentityAccess.Abstractions.IDeviceKeyService,
+            SIMF.Infrastructure.IdentityAccess.DeviceKeyService>();
         // D-148 — Gate Module: admin CRUD + operator surface + QR resolver +
         // gate-config cache + idempotency store + failure-rate circuit
         // (SIMF-API-GATES-001, SIMF-FDS-003 §5.6).

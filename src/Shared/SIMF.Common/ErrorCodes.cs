@@ -148,6 +148,15 @@ public static class ErrorCodes
     // to the self-assert toggle as input source).
     public const string NotAtVenue = "NOT_AT_VENUE";
 
+    // Device keys / biometric sign-in (D-172, gap doc G10 — PDF §2.5).
+    public const string DeviceKeyInvalid = "DEVICE_KEY_INVALID";
+    public const string DeviceKeyNotFound = "DEVICE_KEY_NOT_FOUND";
+    public const string DeviceKeyAlgorithmUnsupported = "DEVICE_KEY_ALGORITHM_UNSUPPORTED";
+    public const string DeviceKeyRevoked = "DEVICE_KEY_REVOKED";
+    public const string DeviceKeyChallengeInvalid = "DEVICE_KEY_CHALLENGE_INVALID";
+    public const string DeviceKeySignatureInvalid = "DEVICE_KEY_SIGNATURE_INVALID";
+    public const string DeviceKeyOwnerUnavailable = "DEVICE_KEY_OWNER_UNAVAILABLE";
+
     // Invitations + VIP notify (D-168, gap doc G5 — public-relations
     // module, PDF §2.7.3).
     public const string InvitationInvalid = "INVITATION_INVALID";
