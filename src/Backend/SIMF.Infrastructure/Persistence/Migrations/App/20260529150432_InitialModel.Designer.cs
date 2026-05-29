@@ -12,8 +12,8 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260529112023_AddCountries")]
-    partial class AddCountries
+    [Migration("20260529150432_InitialModel")]
+    partial class InitialModel
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1093,7 +1093,17 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("AllowsDataSharing")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AllowsMeetingRequests")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Awards")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<string>("AwardsArabic")
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
 
@@ -1110,9 +1120,8 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
 
-                    b.Property<string>("CountryCode")
-                        .HasMaxLength(2)
-                        .HasColumnType("nvarchar(2)");
+                    b.Property<int?>("CountryId")
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
@@ -1120,8 +1129,16 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
 
+                    b.Property<string>("FacebookUrl")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
+
+                    b.Property<string>("LinkedInUrl")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1141,6 +1158,10 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
 
+                    b.Property<string>("QualificationsArabic")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
                     b.Property<string>("Rank")
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
@@ -1149,13 +1170,28 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
 
+                    b.Property<string>("TrainingExperienceArabic")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UserProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("XUrl")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Code")
                         .IsUnique();
+
+                    b.HasIndex("CountryId");
+
+                    b.HasIndex("UserProfileId");
 
                     b.HasIndex("IsActive", "DisplayOrder");
 

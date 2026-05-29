@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SIMF.Infrastructure.Persistence.Migrations.Identity
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialModel : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

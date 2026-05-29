@@ -33,11 +33,24 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("SimfDb");
-        if (string.IsNullOrWhiteSpace(connectionString))
+        // D-157 — two physically separate databases: SimfIdentityDb holds
+        // auth + user-profile + identity-side audit; SimfAppDb holds the
+        // event-data tables (Programme, Gates, Countries, Halls, …). Each
+        // context owns its own migration history table inside its own
+        // database. Cross-context references stay logical (no DB-level FK
+        // across DBs in SQL Server); action logs in App carry snapshot
+        // user-identity columns instead of a JOIN-back link.
+        var identityConnection = configuration.GetConnectionString("SimfIdentityDb");
+        if (string.IsNullOrWhiteSpace(identityConnection))
         {
             throw new InvalidOperationException(
-                "Connection string 'SimfDb' is not configured.");
+                "Connection string 'SimfIdentityDb' is not configured.");
+        }
+        var appConnection = configuration.GetConnectionString("SimfAppDb");
+        if (string.IsNullOrWhiteSpace(appConnection))
+        {
+            throw new InvalidOperationException(
+                "Connection string 'SimfAppDb' is not configured.");
         }
 
         // D-109: scoped SaveChanges interceptor that writes a RowAudit row for
@@ -46,18 +59,17 @@ public static class DependencyInjection
         // correlation id) injected.
         services.AddScoped<RowAuditingSaveChangesInterceptor>();
 
-        // Both contexts target one physical database (decision C-1); each keeps
-        // its own migration history table. EnableRetryOnFailure covers the
-        // transient SQL errors of an Always On failover (SIMF-SAD-001 §9).
+        // EnableRetryOnFailure covers the transient SQL errors of an Always On
+        // failover (SIMF-SAD-001 §9).
         services.AddDbContext<SimfIdentityDbContext>((sp, options) =>
-            options.UseSqlServer(connectionString, sql =>
+            options.UseSqlServer(identityConnection, sql =>
             {
                 sql.MigrationsHistoryTable("__EFMigrationsHistory_Identity");
                 sql.EnableRetryOnFailure();
             }).AddInterceptors(sp.GetRequiredService<RowAuditingSaveChangesInterceptor>()));
 
         services.AddDbContext<SimfAppDbContext>((sp, options) =>
-            options.UseSqlServer(connectionString, sql =>
+            options.UseSqlServer(appConnection, sql =>
             {
                 sql.MigrationsHistoryTable("__EFMigrationsHistory_App");
                 sql.EnableRetryOnFailure();

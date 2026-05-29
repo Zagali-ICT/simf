@@ -26,7 +26,9 @@ namespace SIMF.Api.Tests;
 /// </remarks>
 public class SimfApiFactory : WebApplicationFactory<Program>
 {
-    private readonly string _databaseName = $"SIMF_Test_{Guid.NewGuid():N}";
+    // D-157 — two physically separate test databases (one per context).
+    private readonly string _identityDatabaseName = $"SIMF_Test_Identity_{Guid.NewGuid():N}";
+    private readonly string _appDatabaseName = $"SIMF_Test_App_{Guid.NewGuid():N}";
 
     public FakeEmailSender Email { get; } = new();
 
@@ -50,8 +52,12 @@ public class SimfApiFactory : WebApplicationFactory<Program>
     public SimfApiFactory()
     {
         Environment.SetEnvironmentVariable(
-            "ConnectionStrings__SimfDb",
-            $"Server=(localdb)\\MSSQLLocalDB;Database={_databaseName};" +
+            "ConnectionStrings__SimfIdentityDb",
+            $"Server=(localdb)\\MSSQLLocalDB;Database={_identityDatabaseName};" +
+            "Trusted_Connection=True;TrustServerCertificate=True");
+        Environment.SetEnvironmentVariable(
+            "ConnectionStrings__SimfAppDb",
+            $"Server=(localdb)\\MSSQLLocalDB;Database={_appDatabaseName};" +
             "Trusted_Connection=True;TrustServerCertificate=True");
         Environment.SetEnvironmentVariable("SuperAdmin__Email", "superadmin@simf.test");
         Environment.SetEnvironmentVariable("SuperAdmin__TempPassword", "ChangeMe!Test1");
@@ -113,11 +119,13 @@ public class SimfApiFactory : WebApplicationFactory<Program>
                 using var scope = Services.CreateScope();
                 scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>()
                     .Database.EnsureDeleted();
+                scope.ServiceProvider.GetRequiredService<SimfAppDbContext>()
+                    .Database.EnsureDeleted();
             }
             catch (Exception)
             {
-                // Best-effort cleanup of the throwaway test database; a failure
-                // here must not fail the test run.
+                // Best-effort cleanup of the throwaway test databases; a
+                // failure here must not fail the test run.
             }
 
             try
