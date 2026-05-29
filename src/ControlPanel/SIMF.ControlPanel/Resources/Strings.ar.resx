@@ -133,6 +133,7 @@
   <data name="Module.AdminStaffPending" xml:space="preserve"><value>الفريق — بانتظار الموافقة</value></data>
   <data name="Module.AdminVisitorsPending" xml:space="preserve"><value>الزوار — بانتظار الموافقة</value></data>
   <data name="Module.AdminInterests" xml:space="preserve"><value>الاهتمامات</value></data>
+  <data name="Module.AdminCountries" xml:space="preserve"><value>البلدان</value></data>
   <data name="Admin.Interests.Title" xml:space="preserve"><value>الاهتمامات</value></data>
   <data name="Admin.Interests.New.Title" xml:space="preserve"><value>إضافة اهتمام</value></data>
   <data name="Admin.Interests.New.Supporting" xml:space="preserve"><value>أنشئ اهتمامًا جديدًا يمكن للزوار اختياره في ملفهم الشخصي.</value></data>
@@ -453,6 +454,67 @@
   <data name="Admin.Speakers.Created" xml:space="preserve"><value>تم إنشاء المتحدّث "{0}".</value></data>
   <data name="Admin.Speakers.Updated" xml:space="preserve"><value>تم تحديث المتحدّث "{0}".</value></data>
   <data name="Admin.Speakers.Deactivated" xml:space="preserve"><value>تم تعطيل المتحدّث "{0}".</value></data>
+
+  <!-- D-155 — Countries admin CRUD (D-151 reference data) -->
+  <data name="Admin.Countries.Title" xml:space="preserve"><value>البلدان</value></data>
+  <data name="Admin.Countries.None" xml:space="preserve"><value>لا توجد بلدان بعد.</value></data>
+  <data name="Admin.Countries.LoadFailed" xml:space="preserve"><value>تعذّر تحميل البلدان.</value></data>
+  <data name="Admin.Countries.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
+  <data name="Admin.Countries.Loading" xml:space="preserve"><value>جارٍ تحميل البلدان…</value></data>
+  <data name="Admin.Countries.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Countries.Prev" xml:space="preserve"><value>السابق</value></data>
+  <data name="Admin.Countries.Next" xml:space="preserve"><value>التالي</value></data>
+  <data name="Admin.Countries.Pager.First" xml:space="preserve"><value>الصفحة الأولى</value></data>
+  <data name="Admin.Countries.Pager.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>
+  <data name="Admin.Countries.Pager.PageSize" xml:space="preserve"><value>عرض</value></data>
+  <data name="Admin.Countries.Pager.Page" xml:space="preserve"><value>صفحة {0} من {1}</value></data>
+  <data name="Admin.Countries.FilterColumn" xml:space="preserve"><value>تصفية العمود</value></data>
+  <data name="Admin.Countries.FilterPlaceholder" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Countries.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Countries.Column.Id" xml:space="preserve"><value>المعرّف ISO</value></data>
+  <data name="Admin.Countries.Column.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.Countries.Column.NameEn" xml:space="preserve"><value>الاسم (بالإنجليزية)</value></data>
+  <data name="Admin.Countries.Column.NameAr" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
+  <data name="Admin.Countries.Column.PhonePrefix" xml:space="preserve"><value>رمز الاتصال</value></data>
+  <data name="Admin.Countries.Column.DisplayOrder" xml:space="preserve"><value>الترتيب</value></data>
+  <data name="Admin.Countries.Column.Active" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Countries.Column.Actions" xml:space="preserve"><value>الإجراءات</value></data>
+  <data name="Admin.Countries.Active.Yes" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="Admin.Countries.Active.No" xml:space="preserve"><value>معطّل</value></data>
+  <data name="Admin.Countries.Action.Add" xml:space="preserve"><value>إضافة بلد</value></data>
+  <data name="Admin.Countries.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Countries.Action.Details" xml:space="preserve"><value>التفاصيل</value></data>
+  <data name="Admin.Countries.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.Countries.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
+  <data name="Admin.Countries.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
+  <data name="Admin.Countries.Field.Id" xml:space="preserve"><value>المعرّف الرقمي ISO 3166-1</value></data>
+  <data name="Admin.Countries.Field.IdHint" xml:space="preserve"><value>يُحدَّد يدوياً (مثال: 682 = السعودية، 784 = الإمارات). لا يمكن تغييره بعد الحفظ.</value></data>
+  <data name="Admin.Countries.Field.IdReadOnly" xml:space="preserve"><value>المعرّف الرقمي ثابت للصف الحالي.</value></data>
+  <data name="Admin.Countries.Field.IdInvalid" xml:space="preserve"><value>يجب أن يكون المعرّف عدداً صحيحاً موجباً (1–999 — ISO 3166-1).</value></data>
+  <data name="Admin.Countries.Field.Code" xml:space="preserve"><value>الرمز ISO alpha-2</value></data>
+  <data name="Admin.Countries.Field.CodeHint" xml:space="preserve"><value>حرفان بالضبط (مثال: SA، AE، EG). فريد عبر كل البلدان.</value></data>
+  <data name="Admin.Countries.Field.CodeInvalid" xml:space="preserve"><value>يجب أن يتكوّن الرمز من حرفين بالضبط.</value></data>
+  <data name="Admin.Countries.Field.NameEn" xml:space="preserve"><value>الاسم (بالإنجليزية)</value></data>
+  <data name="Admin.Countries.Field.NameEnInvalid" xml:space="preserve"><value>الاسم بالإنجليزية مطلوب (1–128 حرفاً).</value></data>
+  <data name="Admin.Countries.Field.NameAr" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
+  <data name="Admin.Countries.Field.NameArInvalid" xml:space="preserve"><value>الاسم بالعربية مطلوب (1–128 حرفاً).</value></data>
+  <data name="Admin.Countries.Field.PhonePrefix" xml:space="preserve"><value>رمز الاتصال</value></data>
+  <data name="Admin.Countries.Field.PhonePrefixHint" xml:space="preserve"><value>اختياري — صيغة E.164 مع علامة "+" في البداية (مثال: +966، +971).</value></data>
+  <data name="Admin.Countries.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
+  <data name="Admin.Countries.Field.DisplayOrderHint" xml:space="preserve"><value>مفتاح الترتيب في قائمة الجنسيات (صفر أو أكبر؛ تصاعدياً).</value></data>
+  <data name="Admin.Countries.Field.DisplayOrderInvalid" xml:space="preserve"><value>يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.</value></data>
+  <data name="Admin.Countries.Field.IsActive" xml:space="preserve"><value>مفعّل — عرضه في قائمة الجنسيات</value></data>
+  <data name="Admin.Countries.Add.Title" xml:space="preserve"><value>إضافة بلد</value></data>
+  <data name="Admin.Countries.Edit.Title" xml:space="preserve"><value>تعديل البلد</value></data>
+  <data name="Admin.Countries.Details.Title" xml:space="preserve"><value>تفاصيل البلد</value></data>
+  <data name="Admin.Countries.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Countries.New.Submit" xml:space="preserve"><value>إنشاء البلد</value></data>
+  <data name="Admin.Countries.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء</value></data>
+  <data name="Admin.Countries.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.Countries.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Admin.Countries.Created" xml:space="preserve"><value>تم إنشاء البلد "{0}".</value></data>
+  <data name="Admin.Countries.Updated" xml:space="preserve"><value>تم تحديث البلد "{0}".</value></data>
+  <data name="Admin.Countries.Deactivated" xml:space="preserve"><value>تم تعطيل البلد "{0}".</value></data>
 
   <!-- D-134 Sprint B (D-135) — Halls admin CRUD (SIMF-FDS-004 §5.2) -->
   <data name="Admin.Halls.Title" xml:space="preserve"><value>القاعات والمقاعد</value></data>

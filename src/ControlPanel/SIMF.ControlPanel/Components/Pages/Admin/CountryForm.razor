@@ -1,0 +1,196 @@
+@* D-155 — reusable Country Add/Edit form. Hosted in the modal opened
+   from CountriesList. The Id field is the ISO 3166-1 numeric code,
+   manually assigned (e.g. 682 = SA, 784 = AE) — required on Create,
+   shown read-only on Edit. *@
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        @if (Initial is null)
+        {
+            <SimfTextField Label="@L["Admin.Countries.Field.Id"]"
+                           Helper="@L["Admin.Countries.Field.IdHint"]"
+                           Type="number"
+                           Value="@_idInput"
+                           ValueChanged="@(v => _idInput = v)"
+                           ValueExpression="@(() => _idInput)"
+                           Disabled="_busy" />
+        }
+        else
+        {
+            <SimfTextField Label="@L["Admin.Countries.Field.Id"]"
+                           Helper="@L["Admin.Countries.Field.IdReadOnly"]"
+                           Value="@Initial.Id.ToString()"
+                           Disabled="true" />
+        }
+
+        <SimfTextField Label="@L["Admin.Countries.Field.Code"]"
+                       Helper="@L["Admin.Countries.Field.CodeHint"]"
+                       MaxLength="2"
+                       @bind-Value="_model.Code" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Countries.Field.NameEn"]"
+                       MaxLength="128"
+                       @bind-Value="_model.NameEn" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Countries.Field.NameAr"]"
+                       MaxLength="128"
+                       @bind-Value="_model.NameAr" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Countries.Field.PhonePrefix"]"
+                       Helper="@L["Admin.Countries.Field.PhonePrefixHint"]"
+                       MaxLength="8"
+                       Value="@_model.PhonePrefix"
+                       ValueChanged="@(v => _model.PhonePrefix = v)" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Countries.Field.DisplayOrder"]"
+                       Helper="@L["Admin.Countries.Field.DisplayOrderHint"]"
+                       Type="number"
+                       Value="@_displayOrderInput"
+                       ValueChanged="@(v => _displayOrderInput = v)"
+                       ValueExpression="@(() => _displayOrderInput)"
+                       Disabled="_busy" />
+
+        @if (Initial is not null)
+        {
+            <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
+                @L["Admin.Countries.Field.IsActive"]
+            </SimfCheckbox>
+        }
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy"
+                    LoadingLabel="@(Initial is null ? L["Admin.Countries.New.Submitting"] : L["Admin.Countries.Edit.Submitting"])">
+            @(Initial is null ? L["Admin.Countries.New.Submit"] : L["Admin.Countries.Edit.Submit"])
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy" OnClick="OnCancel">
+                @L["Admin.Countries.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private readonly Model _model = new();
+    private string _idInput = string.Empty;
+    private string _displayOrderInput = "0";
+    private EditContext _editContext = default!;
+    private bool _busy;
+    private string? _error;
+
+    [Parameter] public AdminCountryDetail? Initial { get; set; }
+    [Parameter] public EventCallback<AdminCountryDetail> OnSuccess { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Initial is not null)
+        {
+            _model.Code = Initial.Code;
+            _model.NameEn = Initial.NameEn;
+            _model.NameAr = Initial.NameAr;
+            _model.PhonePrefix = Initial.PhonePrefix ?? string.Empty;
+            _model.IsActive = Initial.IsActive;
+            _displayOrderInput = Initial.DisplayOrder.ToString();
+        }
+        _editContext = new EditContext(_model);
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _error = null;
+
+        int countryId = Initial?.Id ?? 0;
+        if (Initial is null)
+        {
+            // Create mode — admin types the ISO 3166-1 numeric.
+            if (!int.TryParse(_idInput, out countryId) || countryId is <= 0 or > 999)
+            {
+                _error = L["Admin.Countries.Field.IdInvalid"]; return;
+            }
+        }
+        if (string.IsNullOrWhiteSpace(_model.Code) || _model.Code.Trim().Length != 2)
+        {
+            _error = L["Admin.Countries.Field.CodeInvalid"]; return;
+        }
+        if (string.IsNullOrWhiteSpace(_model.NameEn) || _model.NameEn.Length > 128)
+        {
+            _error = L["Admin.Countries.Field.NameEnInvalid"]; return;
+        }
+        if (string.IsNullOrWhiteSpace(_model.NameAr) || _model.NameAr.Length > 128)
+        {
+            _error = L["Admin.Countries.Field.NameArInvalid"]; return;
+        }
+        if (!int.TryParse(_displayOrderInput, out var order) || order < 0)
+        {
+            _error = L["Admin.Countries.Field.DisplayOrderInvalid"]; return;
+        }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminCountryDetail>? envelope;
+            if (Initial is null)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminCountryDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/countries",
+                    new AdminCreateCountryRequest
+                    {
+                        Id = countryId,
+                        Code = _model.Code.Trim().ToUpperInvariant(),
+                        NameEn = _model.NameEn.Trim(),
+                        NameAr = _model.NameAr.Trim(),
+                        PhonePrefix = NullIfBlank(_model.PhonePrefix),
+                        DisplayOrder = order,
+                    });
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminCountryDetail>>(
+                    "simfAccount.putJson", $"/account/api/admin/countries/{Initial.Id}",
+                    new AdminUpdateCountryRequest
+                    {
+                        Code = _model.Code.Trim().ToUpperInvariant(),
+                        NameEn = _model.NameEn.Trim(),
+                        NameAr = _model.NameAr.Trim(),
+                        PhonePrefix = NullIfBlank(_model.PhonePrefix),
+                        DisplayOrder = order,
+                        IsActive = _model.IsActive,
+                    });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Countries.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.Countries.Fallback"];
+        }
+        finally { _busy = false; }
+    }
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private sealed class Model
+    {
+        public string Code { get; set; } = string.Empty;
+        public string NameEn { get; set; } = string.Empty;
+        public string NameAr { get; set; } = string.Empty;
+        public string PhonePrefix { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+}
