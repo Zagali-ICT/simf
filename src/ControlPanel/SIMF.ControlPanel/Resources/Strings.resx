@@ -1312,4 +1312,38 @@
   <data name="Admin.Vips.Notify.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.Vips.Notify.Sent" xml:space="preserve"><value>Sent to {0} VIPs ({1} emails enqueued).</value></data>
   <data name="Admin.Vips.Notify.Failed" xml:space="preserve"><value>The broadcast could not be sent.</value></data>
+  <data name="Module.SessionModerators" xml:space="preserve"><value>Session moderators</value></data>
+  <data name="Admin.SessionModerators.Title" xml:space="preserve"><value>Session moderators</value></data>
+  <data name="Admin.SessionModerators.Loading" xml:space="preserve"><value>Loading moderators…</value></data>
+  <data name="Admin.SessionModerators.LoadFailed" xml:space="preserve"><value>The session moderators could not be loaded.</value></data>
+  <data name="Admin.SessionModerators.None" xml:space="preserve"><value>No moderators assigned yet.</value></data>
+  <data name="Admin.SessionModerators.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.SessionModerators.New" xml:space="preserve"><value>Assign moderator</value></data>
+  <data name="Admin.SessionModerators.Add.Title" xml:space="preserve"><value>Assign session moderator</value></data>
+  <data name="Admin.SessionModerators.Field.SessionId" xml:space="preserve"><value>Session id</value></data>
+  <data name="Admin.SessionModerators.Field.UserId" xml:space="preserve"><value>Moderator user id</value></data>
+  <data name="Admin.SessionModerators.Submit" xml:space="preserve"><value>Assign</value></data>
+  <data name="Admin.SessionModerators.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.SessionModerators.Revoke" xml:space="preserve"><value>Revoke</value></data>
+  <data name="Admin.SessionModerators.Revoked" xml:space="preserve"><value>Moderator grant revoked.</value></data>
+  <data name="Admin.SessionModerators.Assigned" xml:space="preserve"><value>Moderator assigned.</value></data>
+  <data name="Admin.SessionModerators.Col.Session" xml:space="preserve"><value>Session</value></data>
+  <data name="Admin.SessionModerators.Col.Moderator" xml:space="preserve"><value>Moderator</value></data>
+  <data name="Admin.SessionModerators.Col.AssignedAt" xml:space="preserve"><value>Assigned</value></data>
+  <data name="Admin.SessionModerators.Col.AssignedBy" xml:space="preserve"><value>Assigned by</value></data>
+  <data name="Admin.SessionModeration.Title" xml:space="preserve"><value>Session Q&amp;A moderation</value></data>
+  <data name="Admin.SessionModeration.Loading" xml:space="preserve"><value>Loading queue…</value></data>
+  <data name="Admin.SessionModeration.None" xml:space="preserve"><value>No questions yet.</value></data>
+  <data name="Admin.SessionModeration.Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Admin.SessionModeration.Hide" xml:space="preserve"><value>Hide</value></data>
+  <data name="Admin.SessionModeration.Unhide" xml:space="preserve"><value>Show</value></data>
+  <data name="Admin.SessionModeration.Push" xml:space="preserve"><value>Push to speaker</value></data>
+  <data name="Admin.SessionModeration.Pushed" xml:space="preserve"><value>Pushed</value></data>
+  <data name="Admin.SessionModeration.Col.Order" xml:space="preserve"><value>#</value></data>
+  <data name="Admin.SessionModeration.Col.Submitter" xml:space="preserve"><value>Submitter</value></data>
+  <data name="Admin.SessionModeration.Col.Question" xml:space="preserve"><value>Question</value></data>
+  <data name="Admin.SessionModeration.Col.State" xml:space="preserve"><value>State</value></data>
+  <data name="Admin.SessionModeration.Col.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Admin.SessionModeration.State.Hidden" xml:space="preserve"><value>Hidden</value></data>
+  <data name="Admin.SessionModeration.State.Queued" xml:space="preserve"><value>Queued</value></data>
 </root>

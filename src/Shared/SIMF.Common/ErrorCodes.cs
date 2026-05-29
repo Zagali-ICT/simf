@@ -136,6 +136,14 @@ public static class ErrorCodes
     // archive visibility singletons).
     public const string RegistrationClosed = "REGISTRATION_CLOSED";
 
+    // Session questions + moderator grants (D-169, gap doc G6 —
+    // PDF §2.7.2, distinct from MobileAppRole.Moderator).
+    public const string SessionQuestionInvalid = "SESSION_QUESTION_INVALID";
+    public const string SessionQuestionNotFound = "SESSION_QUESTION_NOT_FOUND";
+    public const string SessionNotLiveForQuestions = "SESSION_NOT_LIVE_FOR_QUESTIONS";
+    public const string SessionModeratorNotAssigned = "SESSION_MODERATOR_NOT_ASSIGNED";
+    public const string SessionModeratorAlreadyAssigned = "SESSION_MODERATOR_ALREADY_ASSIGNED";
+
     // Invitations + VIP notify (D-168, gap doc G5 — public-relations
     // module, PDF §2.7.3).
     public const string InvitationInvalid = "INVITATION_INVALID";

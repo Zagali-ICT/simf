@@ -115,6 +115,11 @@ public static class CpNavigation
             // separate PR layout.
             new("Module.Invitations", "/admin/invitations"),
             new("Module.Vips", "/admin/vips"),
+            // D-169 (gap doc G6) — per-session moderator grants admin CRUD
+            // (PDF §2.7.2). The session moderator's own live-queue desk
+            // is /sessions/{id}/moderate — accessed from the Sessions
+            // grid, not the nav.
+            new("Module.SessionModerators", "/admin/session-moderators"),
             new("Module.Settings", "/m/settings", IsStub: true),
         ]),
     ];

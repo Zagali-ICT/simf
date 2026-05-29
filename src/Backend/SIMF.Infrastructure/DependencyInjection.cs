@@ -195,6 +195,15 @@ public static class DependencyInjection
         // VIP list + bulk-notify dispatcher (PDF §2.7.3).
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminInvitationService,
             SIMF.Infrastructure.PublicRelations.AdminInvitationService>();
+        // D-169 (gap doc G6) — session-question moderation: public submit
+        // + per-session moderator queue + admin assignment of moderators
+        // (PDF §2.7.2, distinct from MobileAppRole.Moderator).
+        services.AddScoped<SIMF.Application.SessionQuestions.Abstractions.ISessionQuestionService,
+            SIMF.Infrastructure.SessionQuestions.SessionQuestionService>();
+        services.AddScoped<SIMF.Application.SessionQuestions.Abstractions.ISessionModerationService,
+            SIMF.Infrastructure.SessionQuestions.SessionModerationService>();
+        services.AddScoped<SIMF.Application.SessionQuestions.Abstractions.IAdminSessionModeratorService,
+            SIMF.Infrastructure.SessionQuestions.AdminSessionModeratorService>();
         // D-148 — Gate Module: admin CRUD + operator surface + QR resolver +
         // gate-config cache + idempotency store + failure-rate circuit
         // (SIMF-API-GATES-001, SIMF-FDS-003 §5.6).

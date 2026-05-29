@@ -6,6 +6,7 @@ using SIMF.Domain.Operations;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 using SIMF.Domain.PublicRelations;
+using SIMF.Domain.SessionQuestions;
 
 namespace SIMF.Infrastructure.Persistence;
 
@@ -74,6 +75,12 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
 
     /// <summary>D-168 (gap doc G5, PDF §2.7.3) — public-relations invitations.</summary>
     public DbSet<Invitation> Invitations => Set<Invitation>();
+
+    /// <summary>D-169 (gap doc G6, PDF §2.7.2) — audience-submitted session questions.</summary>
+    public DbSet<SessionQuestion> SessionQuestions => Set<SessionQuestion>();
+
+    /// <summary>D-169 (gap doc G6) — per-session moderator grants.</summary>
+    public DbSet<SessionModerator> SessionModerators => Set<SessionModerator>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

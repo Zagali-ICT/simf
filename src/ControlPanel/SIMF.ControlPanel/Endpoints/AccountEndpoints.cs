@@ -999,6 +999,62 @@ internal static class AccountEndpoints
             return Forward(await api.NotifyVipsAsync(body, token));
         });
 
+        // D-169 (gap doc G6) — session-question moderation BFF passthroughs.
+        group.MapPost("/admin/session-moderators/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListSessionModeratorsAsync(body, token));
+        });
+        group.MapPost("/admin/session-moderators",
+            async (AssignSessionModeratorRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.AssignSessionModeratorAsync(body, token));
+        });
+        group.MapDelete("/admin/session-moderators/{sessionId:guid}/{userId:guid}",
+            async (Guid sessionId, Guid userId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RevokeSessionModeratorAsync(sessionId, userId, token));
+        });
+        group.MapGet("/sessions/{sessionId:guid}/questions/moderate",
+            async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListModeratorQueueAsync(sessionId, token));
+        });
+        group.MapPut("/sessions/{sessionId:guid}/questions/{questionId:guid}/hide",
+            async (Guid sessionId, Guid questionId,
+                SIMF.Contracts.Sessions.SetQuestionHiddenRequest body,
+                HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.HideQuestionAsync(sessionId, questionId, body.IsHidden, token));
+        });
+        group.MapPut("/sessions/{sessionId:guid}/questions/{questionId:guid}/push",
+            async (Guid sessionId, Guid questionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.PushQuestionAsync(sessionId, questionId, token));
+        });
+        group.MapPut("/sessions/{sessionId:guid}/questions/reorder",
+            async (Guid sessionId,
+                SIMF.Contracts.Sessions.ReorderQuestionsRequest body,
+                HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ReorderQuestionsAsync(
+                sessionId, body.OrderedQuestionIds.ToList(), token));
+        });
+
         // D-148 — Gate Module BFF passthroughs (admin + operator).
         group.MapPost("/admin/gates/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

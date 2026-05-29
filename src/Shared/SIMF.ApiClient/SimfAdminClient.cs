@@ -971,6 +971,62 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    // -- D-169 (gap doc G6) — session-question moderation -------------------
+
+    public Task<ApiCallResult<GridPage<AdminSessionModeratorRow>>> ListSessionModeratorsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminSessionModeratorRow>>(
+            HttpMethod.Post, "session-moderators/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSessionModeratorRow>> AssignSessionModeratorAsync(
+        AssignSessionModeratorRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionModeratorRow>(
+            HttpMethod.Post, "session-moderators",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> RevokeSessionModeratorAsync(
+        Guid sessionId, Guid userId, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"session-moderators/{sessionId}/{userId}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<IReadOnlyList<SIMF.Contracts.Sessions.SessionQuestionModeratorRow>>>
+        ListModeratorQueueAsync(Guid sessionId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendSessionsAsync<IReadOnlyList<SIMF.Contracts.Sessions.SessionQuestionModeratorRow>>(
+            HttpMethod.Get, $"{sessionId}/questions/moderate", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SIMF.Contracts.Sessions.SessionQuestionModeratorRow>>
+        HideQuestionAsync(Guid sessionId, Guid questionId, bool isHidden,
+            string accessToken, CancellationToken cancellationToken = default) =>
+        SendSessionsAsync<SIMF.Contracts.Sessions.SessionQuestionModeratorRow>(
+            HttpMethod.Put, $"{sessionId}/questions/{questionId}/hide",
+            JsonContent.Create(new { isHidden }, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SIMF.Contracts.Sessions.SessionQuestionModeratorRow>>
+        PushQuestionAsync(Guid sessionId, Guid questionId,
+            string accessToken, CancellationToken cancellationToken = default) =>
+        SendSessionsAsync<SIMF.Contracts.Sessions.SessionQuestionModeratorRow>(
+            HttpMethod.Put, $"{sessionId}/questions/{questionId}/push",
+            JsonContent.Create(new { }, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> ReorderQuestionsAsync(
+        Guid sessionId, IReadOnlyList<Guid> orderedIds, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendSessionsAsync<bool>(
+            HttpMethod.Put, $"{sessionId}/questions/reorder",
+            JsonContent.Create(new { orderedQuestionIds = orderedIds }, options: JsonOptions),
+            accessToken, cancellationToken);
+
     // -- D-148 — Gate Module admin CRUD + reports ---------------------------
 
     public Task<ApiCallResult<GridPage<AdminGateSummary>>> ListGatesAsync(
@@ -1201,6 +1257,14 @@ public sealed class SimfAdminClient(HttpClient http)
         HttpMethod method, string path, HttpContent? content,
         string accessToken, CancellationToken cancellationToken) =>
         SendWithBaseAsync<T>("api/v1/gates/", method, path, content,
+            accessToken, cancellationToken);
+
+    /// <summary>D-169 (gap doc G6) — sessions/questions helper. Routes
+    /// through the <c>/api/v1/sessions/</c> prefix.</summary>
+    private Task<ApiCallResult<T>> SendSessionsAsync<T>(
+        HttpMethod method, string path, HttpContent? content,
+        string accessToken, CancellationToken cancellationToken) =>
+        SendWithBaseAsync<T>("api/v1/sessions/", method, path, content,
             accessToken, cancellationToken);
 
     private Task<ApiCallResult<T>> SendAsync<T>(

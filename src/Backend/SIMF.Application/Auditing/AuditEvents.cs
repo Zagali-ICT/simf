@@ -136,6 +136,15 @@ public static class AuditEvents
     public const string SessionUpdated = "Session.Updated";
     public const string SessionDeactivated = "Session.Deactivated";
 
+    // Session questions + moderator grants (D-169, gap doc G6 — PDF §2.7.2)
+    public const string SessionQuestionSubmitted = "SessionQuestion.Submitted";
+    public const string SessionQuestionHidden = "SessionQuestion.Hidden";
+    public const string SessionQuestionUnhidden = "SessionQuestion.Unhidden";
+    public const string SessionQuestionPushed = "SessionQuestion.Pushed";
+    public const string SessionQuestionReordered = "SessionQuestion.Reordered";
+    public const string SessionModeratorAssigned = "SessionModerator.Assigned";
+    public const string SessionModeratorRevoked = "SessionModerator.Revoked";
+
     // Invitations + VIP notify (D-168, gap doc G5 — public-relations
     // module, PDF §2.7.3)
     public const string InvitationCreated = "Invitation.Created";
