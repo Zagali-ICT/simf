@@ -1,7 +1,8 @@
-// Tests: SIMF.Api.Tests/Gates/GateScanTests.cs + OperatorReportTests.cs
+// Tests: SIMF.Api.Tests/GateScanTests.cs
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
+using SIMF.Application.AccessControl;
 using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Gates;
@@ -59,8 +60,8 @@ public sealed class PostScanEndpoint(IGateOperatorService service)
             return;
         }
 
-        var headerKey = HttpContext.Request.Headers.TryGetValue("Idempotency-Key", out var hk)
-            ? hk.ToString() : null;
+        var headerKey = HttpContext.Request.Headers.TryGetValue(
+            GateProtocol.IdempotencyKeyHeader, out var hk) ? hk.ToString() : null;
         var acceptLang = HttpContext.Request.Headers.AcceptLanguage.ToString();
 
         var context = new GateScanContext
@@ -103,7 +104,8 @@ public sealed class PostScanEndpoint(IGateOperatorService service)
                     "An idempotency key was reused with a different payload.",
                     "تم إعادة استخدام مفتاح idempotency بحمولة مختلفة.");
             case GateScanResultKind.CircuitOpen:
-                HttpContext.Response.Headers["X-Gate-Failure-Circuit"] = "open";
+                HttpContext.Response.Headers[GateProtocol.FailureCircuitHeader] =
+                    GateProtocol.FailureCircuitOpenValue;
                 throw new ApiException(ErrorCodes.GateFailureCircuitOpen, 429,
                     "This gate is temporarily refusing scans due to a failure-rate threshold.",
                     "هذه البوابة ترفض المسح مؤقتاً بسبب تجاوز عتبة معدل الفشل.");
@@ -111,7 +113,7 @@ public sealed class PostScanEndpoint(IGateOperatorService service)
 
         if (result.IsIdempotentReplay)
         {
-            HttpContext.Response.Headers["X-Idempotent-Replay"] = "true";
+            HttpContext.Response.Headers[GateProtocol.IdempotentReplayHeader] = "true";
         }
         await Send.OkAsync(ApiResult<GateScanResponse>.Ok(result.Response), ct);
     }
