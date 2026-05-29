@@ -19,6 +19,7 @@
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. |
 | 1.1 | 2026-05-20 | Engineering & Architecture Team | Made the §10 date and digit formatting explicit (dates display as dd-MM-yyyy, digits are always Latin); added a §12 cross-reference to the Smif* shared component library. |
+| 1.2 | 2026-05-29 | Engineering & Architecture Team | D-161 — added §8.1 documenting the `mobile_app_role` JWT claim, the role enum (None / Visitor / Staff / Moderator), the per-`UserType` resolution rules, and the role-based route guard pattern. |
 
 ---
 
@@ -168,6 +169,45 @@ are open to guests; the screens that need an account redirect an
 unauthenticated user to sign-in. The guest-versus-authenticated screen split
 follows SIMF-CON-001 and is confirmed against the roles specification
 (SIMF-RPM-001).
+
+### 8.1 The mobile-app role (D-161)
+
+Beyond the guest-vs-authenticated split, four in-app roles drive which screens
+are reachable:
+
+| App role  | Source                                                                                    |
+|-----------|-------------------------------------------------------------------------------------------|
+| Guest     | The user is not signed in (no JWT). Maps to the absence of `mobile_app_role`.             |
+| Visitor   | The user signed in with `UserType=Visitor`. Always `mobile_app_role=Visitor`.             |
+| Staff     | The user signed in with `UserType=Other` and the assigned `ProfileType.MobileAppRole=Staff`.      |
+| Moderator | The user signed in with `UserType=Other` and the assigned `ProfileType.MobileAppRole=Moderator`.  |
+
+`UserType=Admin` users never reach the mobile app surface — they hit the
+Control Panel; their access tokens carry `mobile_app_role=None` so a misrouted
+admin token cannot unlock Staff / Moderator screens.
+
+The role lives on a single JWT claim, `mobile_app_role`, minted at sign-in and
+at every refresh:
+
+```text
+mobile_app_role: "None" | "Visitor" | "Staff" | "Moderator"
+```
+
+The app reads the claim once on sign-in, stores it next to the access token
+in secure storage (§9.4), and uses it to gate route entries in `app/router.dart`.
+The mapping for `UserType=Other` profile types is **admin-curated runtime
+data**, not a hardcoded list: an admin can promote a new Other-tier profile
+type to Staff or Moderator by editing the row from the Control Panel; the
+mapping takes effect on the next sign-in / refresh. The seed ships only
+`Staff (Other) → Staff`; every other operational mapping is event-curated.
+
+The Flutter app must not infer authority from `UserType` alone: a user whose
+`UserType=Other` carries `mobile_app_role=None` is treated as a Visitor for
+navigation purposes (their `ProfileType` is "Exhibitor" or "Speaker" — a
+display-side discriminator, not an authority).
+
+The wire contract for the claim is documented in SIMF-API-001 §12.2. The
+backend behaviour is captured in the SIMF Decisions Log entry D-161.
 
 ## 9. Networking and the API layer
 

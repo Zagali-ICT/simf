@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-29 | SIMF Engineering Team | First issue. Build-ready contract for the Gate Management and Scan API increment. |
+| 1.1 | 2026-05-29 | SIMF Engineering Team | D-160 — added §7.4 `POST /gates/{gateId}/visitors/list`: cursor-paged staff-app view of scans at a single gate, backed by the D-158 snapshot columns. |
 
 ---
 
@@ -439,6 +440,97 @@ omitted):
   "meta": null
 }
 ```
+
+### 7.4 List visitors at a gate (D-160)
+
+```
+POST /api/v1/gates/{gateId}/visitors/list
+```
+
+Permission: `Gates.ViewOwnReports`. Cursor-paged list of scans recorded at
+a single gate, designed for the staff app's "who's at this gate now" view
+and polled every ~10 seconds with the previous response's `nextCursor`.
+
+Request body — every field is optional except `pageSize` (which defaults
+to 50 when zero/negative):
+
+```json
+{
+  "cursor": null,
+  "pageSize": 50,
+  "direction": null,
+  "outcome": "Allowed",
+  "sinceUtc": null,
+  "untilUtc": null
+}
+```
+
+| Field      | Type                          | Notes                                                                                        |
+|------------|-------------------------------|----------------------------------------------------------------------------------------------|
+| cursor     | opaque string \| null         | `nextCursor` from the previous response. `null` = first page. Malformed → treated as `null`. |
+| pageSize   | int                           | Server clamps to `1..200`. Default 50 when omitted / non-positive.                           |
+| direction  | `CheckIn`\|`CheckOut`\|`null` | `null` = any direction.                                                                      |
+| outcome    | `Allowed`\|`Denied`\|`null`   | **Default `Allowed`** when omitted — the "currently inside" use case.                        |
+| sinceUtc   | ISO-8601 \| null              | Inclusive lower bound on `scannedAtUtc`.                                                     |
+| untilUtc   | ISO-8601 \| null              | Exclusive upper bound on `scannedAtUtc`.                                                     |
+
+Response body:
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "scanId": 482719,
+        "scannedAtUtc": "2026-05-29T14:03:00Z",
+        "direction": "CheckIn",
+        "outcome": "Allowed",
+        "userProfileId": "abc-...",
+        "qrIdAtScan": "ABCD1234EFGH",
+        "displayName": "Ahmad Salem",
+        "profileTypeName": "VVIP",
+        "denialReasonCode": null
+      }
+    ],
+    "nextCursor": "eyJsYXN0SWQiOjQ4MjcxOX0=",
+    "asOfUtc": "2026-05-29T14:05:00Z"
+  },
+  "error": null,
+  "meta": null
+}
+```
+
+`displayName` and `profileTypeName` are **frozen snapshots** captured at
+scan time (the `GateScan.ScannedDisplayName` and `ScannedProfileTypeName`
+columns introduced by D-158). The endpoint never JOINs across to the
+Identity DB. The columns therefore preserve the visitor's identity *as it
+was at the moment of the scan*, even if the linked `UserProfile` in
+`SIMF_Identity` has since been renamed or deleted.
+
+**Pagination contract.** The cursor is an opaque base64 string the server
+mints. The client must not parse it; future increments may extend the
+encoding. Pagination is forward-only and stable under concurrent inserts
+(the cursor encodes `lastSeenScanId`, and the bigint identity PK is
+monotonic). When `nextCursor` is `null` the caller has reached the end of
+the current view; a subsequent poll with the previously-returned cursor
+fetches only items inserted since.
+
+**PII excluded by design.** The list shape carries no email, no
+national-id, no passport number, no phone, and no avatar — operational
+glance does not need them, and dragging them through every poll inflates
+the response without a UX win. A per-scan detail endpoint (out of scope
+in this revision) can return the richer envelope when an operator taps a
+row.
+
+**Authorisation outcomes.**
+
+| Caller state                                | Outcome                                      |
+|---------------------------------------------|----------------------------------------------|
+| Operator is assigned to the gate            | `200 OK` with the page                       |
+| Operator is **not** assigned to the gate    | `403 GATE_OPERATOR_NOT_ASSIGNED`             |
+| Gate id does not exist                      | `404 GATE_NOT_FOUND`                         |
+| Cursor is malformed                         | `200 OK` with the first page (cursor reset)  |
 
 ## 8. Error catalogue
 

@@ -20,6 +20,7 @@
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. The registration and approval feature, build-ready. |
 | 2.0 | 2026-05-24 | Engineering & Architecture Team | **Amendment A — Implementation update.** Documents what was built between 2026-05-22 and 2026-05-24: admin-create-user flow with a 7-day invite code (D-042); the admin user-management page split — staff and visitors live on separate pages, no mixing (P3); the visitor / staff approval workflow with `PendingApproval → Approved/Rejected (with a 10–500 char reason)` (P4a + P4b); the **QR id minted on approval** instead of on create (D-046a + P4a); the visitor-profile feature — service, the curated 60-country ISO 3166-1 list, the encrypted-at-rest ID image (AES-GCM, content-type byte prefix, in-file nonce + tag) (D-046b); the Website cookie + `/account/visitor-profile` page (D-046c); the strict Saudi national-id starts-with-1 and Iqama starts-with-2 validator rules (P5); the bulk-admin features — bulk-delete, duplicate, Excel import / export (D-044b); and the avatar storage migration from DB bytes to the filesystem (D-039). Records the open P7 rework that will introduce the `UserType` model and the `ProfileTypes` lookup. |
+| 2.1 | 2026-05-29 | Engineering & Architecture Team | **Amendment B — Mobile-app role mapping on ProfileType (D-161).** Adds the per-`ProfileType.MobileAppRole` admin-curated column and the resolved `mobile_app_role` JWT claim. Closes the half of OI-6 about which Other-tier subtypes map to which in-app authority. |
 
 ---
 
@@ -730,6 +731,43 @@ The decisions that fed this amendment.
 | OI-7 | Replace the curated 60-entry country list (`SIMF.Common.Countries`) with the full ISO 3166-1 set when an unmatched code is requested by a visitor. | A.5 |
 | OI-8 | Bring SIMF-API-001 to Amendment B in lock-step with this amendment — the new admin endpoints (A.2, A.3, A.7), the visitor-profile endpoints (A.5), the avatar streamer (A.8). | SIMF-API-001 §12 |
 | OI-9 | Decide whether bulk-approve / bulk-reject is needed on the pending pages (today: per-row only). | A.3.3 |
+
+---
+
+## Amendment B — Mobile-app role mapping on ProfileType (D-161, 2026-05-29)
+
+The mobile-app authority a signed-in user carries is admin-curated data, not a
+hardcoded list. `ProfileType` gains a non-nullable `MobileAppRole` column
+(default `None`) which is the source of truth for the per-`ProfileType`
+mapping; the resolved value travels on every JWT as the `mobile_app_role`
+claim.
+
+**Resolution rules at JWT issue time:**
+
+| `SimfUser.UserType` | `mobile_app_role` claim                                                         |
+|---------------------|---------------------------------------------------------------------------------|
+| `Visitor`           | `Visitor` (resolved from `UserType`; ignores `ProfileType.MobileAppRole`)       |
+| `Admin`             | `None` (admins do not use the mobile app)                                       |
+| `Other`             | The assigned `ProfileType.MobileAppRole`, or `None` when no profile type is set |
+
+**Allowed values on `ProfileType.MobileAppRole`:** `None`, `Staff`, `Moderator`.
+The wire layer rejects `Visitor` with a 400 — that value is computed from
+`UserType` and may never be written per-`ProfileType` row.
+
+**Seed.** The Identity seeder ships `Staff (Other) → MobileAppRole.Staff`.
+Every other operational mapping (Volunteer → Staff, Programme Coordinator →
+Moderator, Operations Lead → Moderator, Exhibitor / Sponsor / Speaker → None,
+…) is admin-curated at runtime from the Control Panel. This closes the OI-6
+half about "which Other types are Moderator vs Staff" — the answer is "the
+admin decides per row, the seed names only the canonical Staff row."
+
+**Admin CRUD.** `AdminCreateProfileTypeRequest`,
+`AdminUpdateProfileTypeRequest`, and `AdminProfileTypeSummary` carry the field
+on the wire. The CP picker / form UI is a follow-up; today admins can curate
+the value via the API.
+
+**Mobile consumption** is documented in SIMF-MAA-001 §8.1; the JWT claim is
+also reflected in SIMF-API-001 §12.2.
 
 ---
 
