@@ -73,6 +73,8 @@
   <data name="Admin.ProfileTypes.Column.Name" xml:space="preserve"><value>Name</value></data>
   <data name="Admin.ProfileTypes.Column.NameArabic" xml:space="preserve"><value>Name (Arabic)</value></data>
   <data name="Admin.ProfileTypes.Column.PageColor" xml:space="preserve"><value>Page colour</value></data>
+  <!-- D-161 — mobile-app role column shown on the Other list. -->
+  <data name="Admin.ProfileTypes.Column.MobileAppRole" xml:space="preserve"><value>Mobile-app role</value></data>
   <data name="Admin.ProfileTypes.Column.Active" xml:space="preserve"><value>Active</value></data>
   <!-- D-125 — UserType column / field on the ProfileTypes CRUD pages. -->
   <data name="Admin.ProfileTypes.Column.UserType" xml:space="preserve"><value>Account type</value></data>
@@ -100,6 +102,15 @@
   <data name="Admin.ProfileTypes.Field.PageColorHint" xml:space="preserve"><value>Hex like #244A77 or a CSS variable (1–32 characters).</value></data>
   <!-- D-120 — colour-swatch aria-label. -->
   <data name="Admin.ProfileTypes.Field.PageColorPicker" xml:space="preserve"><value>Open colour picker</value></data>
+  <!-- D-161 — mobile-app role picker. Only renders on the Other form;
+       Visitor profile types always resolve to the Visitor role at JWT
+       issue time regardless of this column. -->
+  <data name="Admin.ProfileTypes.Field.MobileAppRole" xml:space="preserve"><value>Mobile-app role</value></data>
+  <data name="Admin.ProfileTypes.Field.MobileAppRoleHint" xml:space="preserve"><value>Authority any user assigned to this type carries into the mobile app. None = no operational authority (treated as a Visitor); Staff = gate operations + look-ups; Moderator = Staff + content/user moderation.</value></data>
+  <data name="Admin.ProfileTypes.MobileAppRole.None" xml:space="preserve"><value>None — no operational authority</value></data>
+  <data name="Admin.ProfileTypes.MobileAppRole.Visitor" xml:space="preserve"><value>Visitor</value></data>
+  <data name="Admin.ProfileTypes.MobileAppRole.Staff" xml:space="preserve"><value>Staff — gate operations</value></data>
+  <data name="Admin.ProfileTypes.MobileAppRole.Moderator" xml:space="preserve"><value>Moderator — content &amp; user authority</value></data>
   <data name="Admin.ProfileTypes.Field.IsActive" xml:space="preserve"><value>Visible in pickers (active)</value></data>
   <data name="Admin.ProfileTypes.Field.NameInvalid" xml:space="preserve"><value>Name must be 1–128 characters.</value></data>
   <data name="Admin.ProfileTypes.Field.NameArabicInvalid" xml:space="preserve"><value>Arabic name must be 1–128 characters.</value></data>

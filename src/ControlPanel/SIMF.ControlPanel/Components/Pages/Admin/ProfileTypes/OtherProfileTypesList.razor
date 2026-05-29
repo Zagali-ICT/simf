@@ -59,6 +59,12 @@
                                     Header="@L["Admin.ProfileTypes.Column.PageColor"]">
                     <CellTemplate>@context.PageColor</CellTemplate>
                 </SimfDataGridColumn>
+                @* D-161 — mobile-app role; "Other" types only (Visitor types
+                   always resolve to Visitor at JWT issue time regardless). *@
+                <SimfDataGridColumn TItem="AdminProfileTypeSummary" Key="mobileAppRole"
+                                    Header="@L["Admin.ProfileTypes.Column.MobileAppRole"]">
+                    <CellTemplate>@L[$"Admin.ProfileTypes.MobileAppRole.{context.MobileAppRole}"]</CellTemplate>
+                </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminProfileTypeSummary" Key="isActive"
                                     Header="@L["Admin.ProfileTypes.Column.Active"]">
                     <CellTemplate>
@@ -126,6 +132,8 @@
                 <dd>@_detailsTarget.NameArabic</dd>
                 <dt>@L["Admin.ProfileTypes.Field.PageColor"]</dt>
                 <dd>@_detailsTarget.PageColor</dd>
+                <dt>@L["Admin.ProfileTypes.Field.MobileAppRole"]</dt>
+                <dd>@L[$"Admin.ProfileTypes.MobileAppRole.{_detailsTarget.MobileAppRole}"]</dd>
                 <dt>@L["Admin.ProfileTypes.Field.IsActive"]</dt>
                 <dd>
                     @(_detailsTarget.IsActive

@@ -54,6 +54,22 @@
             </div>
             <div class="simf-field__helper" id="profile-type-page-color-hint">@L["Admin.ProfileTypes.Field.PageColorHint"]</div>
         </div>
+        @* D-161 — MobileAppRole picker. Only renders for UserType=Other:
+           Visitor profile-types resolve to MobileAppRole.Visitor at JWT
+           issue time regardless of this column, so the field is
+           irrelevant on the Visitor list. *@
+        @if (ShowMobileAppRolePicker)
+        {
+            <SimfSelect TValue="string"
+                        Label="@L["Admin.ProfileTypes.Field.MobileAppRole"]"
+                        Helper="@L["Admin.ProfileTypes.Field.MobileAppRoleHint"]"
+                        Items="@MobileAppRoleOptions"
+                        ValueFor="@(role => role)"
+                        LabelFor="@(role => L[$"Admin.ProfileTypes.MobileAppRole.{role}"])"
+                        Value="@_model.MobileAppRole"
+                        ValueChanged="@(v => _model.MobileAppRole = string.IsNullOrEmpty(v) ? "None" : v)"
+                        Disabled="_busy" />
+        }
         <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
             @L["Admin.ProfileTypes.Field.IsActive"]
         </SimfCheckbox>
@@ -96,6 +112,16 @@
     /// <summary>Raised when the user clicks Cancel. If unset, no Cancel button renders.</summary>
     [Parameter] public EventCallback OnCancel { get; set; }
 
+    // D-161 — picker options. "Visitor" is omitted because the backend
+    // rejects it (the Visitor app role is computed from UserType, not
+    // assignable per ProfileType row).
+    private static readonly string[] MobileAppRoleOptions =
+        new[] { "None", "Staff", "Moderator" };
+
+    private bool ShowMobileAppRolePicker =>
+        string.Equals(_isEdit ? Initial?.UserType : UserType, "Other",
+            StringComparison.OrdinalIgnoreCase);
+
     protected override void OnInitialized()
     {
         _isEdit = Initial is not null;
@@ -104,6 +130,8 @@
             _model.Name = Initial.Name;
             _model.NameArabic = Initial.NameArabic;
             _model.PageColor = Initial.PageColor;
+            _model.MobileAppRole = string.IsNullOrEmpty(Initial.MobileAppRole)
+                ? "None" : Initial.MobileAppRole;
             _model.IsActive = Initial.IsActive;
         }
         _editContext = new EditContext(_model);
@@ -175,6 +203,11 @@
         try
         {
             ApiResult<AdminProfileTypeSummary>? envelope;
+            // D-161 — only send MobileAppRole when the picker was shown
+            // (UserType=Other). Sending it for Visitor rows would be
+            // wire noise: the backend defaults to None anyway, and the
+            // claim is resolved from UserType regardless.
+            var mobileAppRolePayload = ShowMobileAppRolePicker ? _model.MobileAppRole : null;
             if (_isEdit && Initial is not null)
             {
                 envelope = await JS.InvokeAsync<ApiResult<AdminProfileTypeSummary>>(
@@ -184,6 +217,7 @@
                         Name = _model.Name.Trim(),
                         NameArabic = _model.NameArabic.Trim(),
                         PageColor = _model.PageColor.Trim(),
+                        MobileAppRole = mobileAppRolePayload,
                         IsActive = _model.IsActive,
                     });
             }
@@ -197,6 +231,7 @@
                         Name = _model.Name.Trim(),
                         NameArabic = _model.NameArabic.Trim(),
                         PageColor = _model.PageColor.Trim(),
+                        MobileAppRole = mobileAppRolePayload,
                         IsActive = _model.IsActive,
                     });
             }
@@ -222,6 +257,9 @@
         public string Name { get; set; } = string.Empty;
         public string NameArabic { get; set; } = string.Empty;
         public string PageColor { get; set; } = "#244A77";
+        // D-161 — defaults to "None" (the safe baseline); admin opts in
+        // by picking Staff or Moderator.
+        public string MobileAppRole { get; set; } = "None";
         public bool IsActive { get; set; } = true;
     }
 }

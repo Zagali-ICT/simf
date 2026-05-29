@@ -73,6 +73,8 @@
   <data name="Admin.ProfileTypes.Column.Name" xml:space="preserve"><value>الاسم</value></data>
   <data name="Admin.ProfileTypes.Column.NameArabic" xml:space="preserve"><value>الاسم (عربي)</value></data>
   <data name="Admin.ProfileTypes.Column.PageColor" xml:space="preserve"><value>لون الصفحة</value></data>
+  <!-- D-161 -->
+  <data name="Admin.ProfileTypes.Column.MobileAppRole" xml:space="preserve"><value>دور تطبيق الجوّال</value></data>
   <data name="Admin.ProfileTypes.Column.Active" xml:space="preserve"><value>نشط</value></data>
   <data name="Admin.ProfileTypes.Column.UserType" xml:space="preserve"><value>نوع الحساب</value></data>
   <data name="Admin.ProfileTypes.Field.UserType" xml:space="preserve"><value>نوع الحساب</value></data>
@@ -99,6 +101,13 @@
   <data name="Admin.ProfileTypes.Field.PageColorHint" xml:space="preserve"><value>قيمة سداسية مثل #244A77 أو متغير CSS (1–32 حرفًا).</value></data>
   <!-- D-120 — colour-swatch aria-label. -->
   <data name="Admin.ProfileTypes.Field.PageColorPicker" xml:space="preserve"><value>افتح منتقي الألوان</value></data>
+  <!-- D-161 — يظهر فقط في نموذج "أخرى"؛ أنواع الزائر تُحلّ دائماً إلى دور الزائر عند إصدار JWT بصرف النظر عن هذا العمود. -->
+  <data name="Admin.ProfileTypes.Field.MobileAppRole" xml:space="preserve"><value>دور تطبيق الجوّال</value></data>
+  <data name="Admin.ProfileTypes.Field.MobileAppRoleHint" xml:space="preserve"><value>الصلاحية التي يحملها أي مستخدم مُسنَد إلى هذا النوع داخل تطبيق الجوّال. لا شيء = لا صلاحية تشغيلية (يُعامَل كزائر)؛ موظف = تشغيل البوابات والاستعلامات؛ مشرف = صلاحيات الموظف بالإضافة إلى الإشراف على المحتوى والمستخدمين.</value></data>
+  <data name="Admin.ProfileTypes.MobileAppRole.None" xml:space="preserve"><value>لا شيء — بدون صلاحية تشغيلية</value></data>
+  <data name="Admin.ProfileTypes.MobileAppRole.Visitor" xml:space="preserve"><value>زائر</value></data>
+  <data name="Admin.ProfileTypes.MobileAppRole.Staff" xml:space="preserve"><value>موظف — تشغيل البوابات</value></data>
+  <data name="Admin.ProfileTypes.MobileAppRole.Moderator" xml:space="preserve"><value>مشرف — صلاحية المحتوى والمستخدمين</value></data>
   <data name="Admin.ProfileTypes.Field.IsActive" xml:space="preserve"><value>مرئي في القوائم (نشط)</value></data>
   <data name="Admin.ProfileTypes.Field.NameInvalid" xml:space="preserve"><value>يجب أن يتراوح الاسم بين 1 و128 حرفًا.</value></data>
   <data name="Admin.ProfileTypes.Field.NameArabicInvalid" xml:space="preserve"><value>يجب أن يتراوح الاسم العربي بين 1 و128 حرفًا.</value></data>
