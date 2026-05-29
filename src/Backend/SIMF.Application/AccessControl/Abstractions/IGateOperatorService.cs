@@ -15,6 +15,27 @@ public interface IGateOperatorService
     Task<OperatorDailyReport> GetMyDailyReportAsync(
         Guid operatorUserId, Guid? gateId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>D-160 — cursor-paged list of scans at a single gate, for
+    /// the staff app's "who's at this gate" view (SIMF-API-GATES-001 §7.4).
+    /// Returns null when the operator is not assigned to the gate
+    /// (handled as 403 at the endpoint).</summary>
+    Task<GateVisitorsListResult> ListGateVisitorsAsync(
+        Guid operatorUserId, Guid gateId, GateVisitorsListRequest request,
+        CancellationToken cancellationToken = default);
+}
+
+/// <summary>D-160 — result envelope for
+/// <see cref="IGateOperatorService.ListGateVisitorsAsync"/>.</summary>
+public sealed record GateVisitorsListResult(
+    GateVisitorsListResultKind Kind,
+    GateVisitorsListResponse? Response);
+
+public enum GateVisitorsListResultKind
+{
+    Ok = 0,
+    GateNotFound = 1,
+    NotAssigned = 2,
 }
 
 /// <summary>D-148 — the per-request envelope the engine consumes. Carries

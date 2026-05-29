@@ -64,3 +64,62 @@ public sealed record OperatorDailyReport(
     IReadOnlyList<OperatorScanRow> Rows);
 
 public sealed record OperatorDailyReportTotals(int Allowed, int Denied);
+
+/// <summary>D-160 — `POST /api/v1/gates/{gateId}/visitors/list` body
+/// (SIMF-API-GATES-001 §7.4). Cursor-paged view of scans recorded at
+/// a single gate. The staff app polls with the previous response's
+/// <see cref="GateVisitorsListResponse.NextCursor"/> to fetch new
+/// arrivals since the last poll; first call sends a null cursor.</summary>
+public sealed class GateVisitorsListRequest
+{
+    /// <summary>Opaque cursor returned by the previous response. Null
+    /// on the first call; null returned in <c>NextCursor</c> means there
+    /// are no more rows.</summary>
+    public string? Cursor { get; set; }
+
+    /// <summary>Client-requested page size. The server clamps this to
+    /// 1..200 to bound memory; defaults to 50 when zero/negative.</summary>
+    public int PageSize { get; set; }
+
+    /// <summary>Optional filter — null means "any direction".</summary>
+    public ScanDirection? Direction { get; set; }
+
+    /// <summary>Optional filter. Defaults to <see cref="ScanOutcome.Allowed"/>
+    /// when null so the typical "who's currently inside" use case stays
+    /// the default. Pass <c>Denied</c> or roll your own client-side
+    /// merge for "all".</summary>
+    public ScanOutcome? Outcome { get; set; }
+
+    /// <summary>Optional ISO-8601 UTC lower bound (inclusive).</summary>
+    public DateTimeOffset? SinceUtc { get; set; }
+
+    /// <summary>Optional ISO-8601 UTC upper bound (exclusive).</summary>
+    public DateTimeOffset? UntilUtc { get; set; }
+}
+
+/// <summary>D-160 — one item in <see cref="GateVisitorsListResponse"/>.
+/// Snapshot fields (<see cref="DisplayName"/>, <see cref="ProfileTypeName"/>)
+/// come from the D-158 frozen columns on <c>GateScan</c>; no cross-DB
+/// JOIN to Identity is needed. PII (email / national-id / phone) is
+/// intentionally NOT in this list view — fetch it from the per-scan
+/// detail endpoint when an operator taps a row.</summary>
+public sealed record GateVisitorListItem(
+    long ScanId,
+    DateTimeOffset ScannedAtUtc,
+    ScanDirection Direction,
+    ScanOutcome Outcome,
+    Guid? UserProfileId,
+    string QrIdAtScan,
+    string? DisplayName,
+    string? ProfileTypeName,
+    DenialReasonCode? DenialReasonCode);
+
+/// <summary>D-160 — response body for
+/// `POST /api/v1/gates/{gateId}/visitors/list`. The cursor is opaque
+/// to the client. <see cref="AsOfUtc"/> is the server clock at query
+/// time — staff apps use it to detect clock skew and to display "last
+/// refreshed N seconds ago" without inferring from item timestamps.</summary>
+public sealed record GateVisitorsListResponse(
+    IReadOnlyList<GateVisitorListItem> Items,
+    string? NextCursor,
+    DateTimeOffset AsOfUtc);

@@ -119,6 +119,64 @@ public sealed class PostScanEndpoint(IGateOperatorService service)
     }
 }
 
+// D-160 — `POST /gates/{gateId}/visitors/list` request. GateId binds
+// from the route; the rest matches the SIMF.Contracts.Gates contract.
+public sealed class PostGateVisitorsListRequest
+{
+    public Guid GateId { get; set; }
+    public string? Cursor { get; set; }
+    public int PageSize { get; set; }
+    public SIMF.Common.Enums.ScanDirection? Direction { get; set; }
+    public SIMF.Common.Enums.ScanOutcome? Outcome { get; set; }
+    public DateTimeOffset? SinceUtc { get; set; }
+    public DateTimeOffset? UntilUtc { get; set; }
+}
+
+public sealed class PostGateVisitorsListEndpoint(IGateOperatorService service)
+    : Endpoint<PostGateVisitorsListRequest, ApiResult<GateVisitorsListResponse>>
+{
+    public override void Configure()
+    {
+        Post("/gates/{gateId:guid}/visitors/list");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount),
+                 nameof(AuthorizationPolicies.GatesViewOwnReports));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Gates");
+    }
+    public override async Task HandleAsync(
+        PostGateVisitorsListRequest req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var operatorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        var serviceRequest = new GateVisitorsListRequest
+        {
+            Cursor = req.Cursor,
+            PageSize = req.PageSize,
+            Direction = req.Direction,
+            Outcome = req.Outcome,
+            SinceUtc = req.SinceUtc,
+            UntilUtc = req.UntilUtc,
+        };
+        var result = await service.ListGateVisitorsAsync(
+            operatorId, req.GateId, serviceRequest, ct);
+        switch (result.Kind)
+        {
+            case GateVisitorsListResultKind.GateNotFound:
+                throw new ApiException(ErrorCodes.GateNotFound, 404,
+                    "The gate was not found.",
+                    "لم يتم العثور على البوابة.");
+            case GateVisitorsListResultKind.NotAssigned:
+                throw new ApiException(ErrorCodes.GateOperatorNotAssigned, 403,
+                    "You are not assigned to this gate.",
+                    "أنت غير معيّن لهذه البوابة.");
+        }
+        await Send.OkAsync(ApiResult<GateVisitorsListResponse>.Ok(result.Response!), ct);
+    }
+}
+
 public sealed class MyDailyReportRequest { public Guid? GateId { get; set; } }
 
 public sealed class MyDailyReportEndpoint(IGateOperatorService service)

@@ -206,6 +206,99 @@ internal sealed class GateOperatorService(
             denialBuckets, rowDtos);
     }
 
+    public async Task<GateVisitorsListResult> ListGateVisitorsAsync(
+        Guid operatorUserId, Guid gateId, GateVisitorsListRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        // Authority — same pattern as RecordScanAsync: gate must exist and
+        // the operator must be assigned to it.
+        var snapshot = await configCache.GetAsync(gateId, cancellationToken);
+        if (snapshot is null)
+        {
+            return new GateVisitorsListResult(GateVisitorsListResultKind.GateNotFound, null);
+        }
+        if (!snapshot.AssignedOperatorUserIds.Contains(operatorUserId))
+        {
+            return new GateVisitorsListResult(GateVisitorsListResultKind.NotAssigned, null);
+        }
+
+        var pageSize = Math.Clamp(request.PageSize > 0 ? request.PageSize : 50, 1, 200);
+        var afterId = DecodeCursor(request.Cursor);
+        // Default the outcome to Allowed when not specified — that's the
+        // "who's currently inside" use case the staff app actually wants.
+        var outcome = request.Outcome ?? ScanOutcome.Allowed;
+
+        var query = appDbContext.GateScans.AsNoTracking()
+            .Where(s => s.GateId == gateId);
+        if (afterId is { } cursorAfter)
+        {
+            query = query.Where(s => s.Id > cursorAfter);
+        }
+        query = query.Where(s => s.Outcome == outcome);
+        if (request.Direction is { } dir)
+        {
+            query = query.Where(s => s.Direction == dir);
+        }
+        if (request.SinceUtc is { } since)
+        {
+            query = query.Where(s => s.ScannedAtUtc >= since);
+        }
+        if (request.UntilUtc is { } until)
+        {
+            query = query.Where(s => s.ScannedAtUtc < until);
+        }
+
+        var items = await query
+            .OrderBy(s => s.Id)
+            .Take(pageSize)
+            .Select(s => new GateVisitorListItem(
+                s.Id, s.ScannedAtUtc, s.Direction, s.Outcome,
+                s.UserProfileId, s.QrIdAtScan,
+                // D-158 snapshot columns — no cross-DB JOIN.
+                s.ScannedDisplayName, s.ScannedProfileTypeName,
+                s.DenialReasonCode))
+            .ToListAsync(cancellationToken);
+
+        var nextCursor = items.Count == pageSize
+            ? EncodeCursor(items[^1].ScanId)
+            : null;
+
+        return new GateVisitorsListResult(
+            GateVisitorsListResultKind.Ok,
+            new GateVisitorsListResponse(items, nextCursor, timeProvider.GetUtcNow()));
+    }
+
+    // D-160 — opaque cursor encoding for the gate-visitors list. Single
+    // long-valued cursor (lastSeenScanId); base64 over a tiny JSON blob
+    // so the wire format can grow without breaking older clients.
+    private static string EncodeCursor(long lastSeenScanId)
+    {
+        var json = JsonSerializer.Serialize(new { lastId = lastSeenScanId });
+        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
+    }
+
+    private static long? DecodeCursor(string? cursor)
+    {
+        if (string.IsNullOrWhiteSpace(cursor)) { return null; }
+        try
+        {
+            var bytes = Convert.FromBase64String(cursor);
+            var doc = JsonDocument.Parse(bytes);
+            if (doc.RootElement.TryGetProperty("lastId", out var prop)
+                && prop.TryGetInt64(out var id))
+            {
+                return id;
+            }
+        }
+        catch
+        {
+            // A malformed cursor is treated as "no cursor" — the staff app
+            // will see the first page again rather than a 400, which is
+            // friendlier under the operator-poll loop.
+        }
+        return null;
+    }
+
     // ---- internals ----
 
     private GateScanResult Routing(GateScanResultKind kind, string code) =>
