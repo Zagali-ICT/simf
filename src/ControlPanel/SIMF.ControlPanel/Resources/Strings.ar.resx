@@ -1162,4 +1162,77 @@
   <data name="Admin.Others.Duplicate.Title" xml:space="preserve"><value>نسخ مستخدم آخر</value></data>
 
   <data name="Admin.Pending.Others.Title" xml:space="preserve"><value>موافقات المستخدمين الآخرين المعلّقة</value></data>
+  <data name="Admin.Sessions.Title" xml:space="preserve"><value>الجلسات</value></data>
+  <data name="Admin.Sessions.None" xml:space="preserve"><value>لا توجد جلسات بعد.</value></data>
+  <data name="Admin.Sessions.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الجلسات.</value></data>
+  <data name="Admin.Sessions.Fallback" xml:space="preserve"><value>تعذّر إكمال العملية.</value></data>
+  <data name="Admin.Sessions.Loading" xml:space="preserve"><value>جارٍ تحميل الجلسات…</value></data>
+  <data name="Admin.Sessions.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Sessions.Prev" xml:space="preserve"><value>السابق</value></data>
+  <data name="Admin.Sessions.Next" xml:space="preserve"><value>التالي</value></data>
+  <data name="Admin.Sessions.Pager.First" xml:space="preserve"><value>الصفحة الأولى</value></data>
+  <data name="Admin.Sessions.Pager.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>
+  <data name="Admin.Sessions.Pager.PageSize" xml:space="preserve"><value>عرض</value></data>
+  <data name="Admin.Sessions.Pager.Page" xml:space="preserve"><value>الصفحة {0} من {1}</value></data>
+  <data name="Admin.Sessions.FilterColumn" xml:space="preserve"><value>عمود التصفية</value></data>
+  <data name="Admin.Sessions.FilterPlaceholder" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Sessions.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Sessions.Column.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.Sessions.Column.Title" xml:space="preserve"><value>العنوان</value></data>
+  <data name="Admin.Sessions.Column.TitleArabic" xml:space="preserve"><value>العنوان (العربية)</value></data>
+  <data name="Admin.Sessions.Column.Hall" xml:space="preserve"><value>القاعة</value></data>
+  <data name="Admin.Sessions.Column.StartUtc" xml:space="preserve"><value>البدء (UTC)</value></data>
+  <data name="Admin.Sessions.Column.EndUtc" xml:space="preserve"><value>الانتهاء (UTC)</value></data>
+  <data name="Admin.Sessions.Column.Capacity" xml:space="preserve"><value>السعة</value></data>
+  <data name="Admin.Sessions.Column.Active" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Sessions.Column.Actions" xml:space="preserve"><value>الإجراءات</value></data>
+  <data name="Admin.Sessions.Active.Yes" xml:space="preserve"><value>مفعّلة</value></data>
+  <data name="Admin.Sessions.Active.No" xml:space="preserve"><value>غير مفعّلة</value></data>
+  <data name="Admin.Sessions.Action.Add" xml:space="preserve"><value>إضافة جلسة</value></data>
+  <data name="Admin.Sessions.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Sessions.Action.Details" xml:space="preserve"><value>تفاصيل</value></data>
+  <data name="Admin.Sessions.Action.Deactivate" xml:space="preserve"><value>إلغاء التفعيل</value></data>
+  <data name="Admin.Sessions.Action.SelectAll" xml:space="preserve"><value>اختيار الكل</value></data>
+  <data name="Admin.Sessions.Action.SelectRow" xml:space="preserve"><value>اختيار الصف</value></data>
+  <data name="Admin.Sessions.Action.Up" xml:space="preserve"><value>أعلى</value></data>
+  <data name="Admin.Sessions.Action.Down" xml:space="preserve"><value>أسفل</value></data>
+  <data name="Admin.Sessions.Action.Remove" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Sessions.Field.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.Sessions.Field.CodeHint" xml:space="preserve"><value>من 2 إلى 16 حرفاً؛ فريد. يُستخدم في رابط الجلسة العامة (مثل SES-001).</value></data>
+  <data name="Admin.Sessions.Field.CodeInvalid" xml:space="preserve"><value>يجب أن يتراوح طول الرمز بين 2 و16 حرفاً.</value></data>
+  <data name="Admin.Sessions.Field.Title" xml:space="preserve"><value>العنوان (الإنجليزية)</value></data>
+  <data name="Admin.Sessions.Field.TitleInvalid" xml:space="preserve"><value>العنوان الإنجليزي مطلوب (1–256 حرفاً).</value></data>
+  <data name="Admin.Sessions.Field.TitleArabic" xml:space="preserve"><value>العنوان (العربية)</value></data>
+  <data name="Admin.Sessions.Field.TitleArabicInvalid" xml:space="preserve"><value>العنوان العربي مطلوب (1–256 حرفاً).</value></data>
+  <data name="Admin.Sessions.Field.Description" xml:space="preserve"><value>الوصف (الإنجليزية)</value></data>
+  <data name="Admin.Sessions.Field.DescriptionArabic" xml:space="preserve"><value>الوصف (العربية)</value></data>
+  <data name="Admin.Sessions.Field.Hall" xml:space="preserve"><value>القاعة</value></data>
+  <data name="Admin.Sessions.Field.HallPlaceholder" xml:space="preserve"><value>— اختر القاعة —</value></data>
+  <data name="Admin.Sessions.Field.HallRequired" xml:space="preserve"><value>القاعة مطلوبة.</value></data>
+  <data name="Admin.Sessions.Field.StartUtc" xml:space="preserve"><value>البدء (UTC)</value></data>
+  <data name="Admin.Sessions.Field.EndUtc" xml:space="preserve"><value>الانتهاء (UTC)</value></data>
+  <data name="Admin.Sessions.Field.TimeInvalid" xml:space="preserve"><value>يجب أن تكون أوقات البدء والانتهاء بصيغة UTC صحيحة.</value></data>
+  <data name="Admin.Sessions.Field.TimeWindowInvalid" xml:space="preserve"><value>يجب أن يكون وقت الانتهاء بعد وقت البدء.</value></data>
+  <data name="Admin.Sessions.Field.CapacityOverride" xml:space="preserve"><value>السعة المخصصة</value></data>
+  <data name="Admin.Sessions.Field.CapacityHint" xml:space="preserve"><value>اتركه فارغاً لاستخدام سعة القاعة الافتراضية. عيِّن قيمة فقط إذا أُعيد ضبط القاعة لهذه الجلسة.</value></data>
+  <data name="Admin.Sessions.Field.CapacityInvalid" xml:space="preserve"><value>يجب أن تكون السعة صفراً أو عدداً موجباً.</value></data>
+  <data name="Admin.Sessions.Field.CapacityInherits" xml:space="preserve"><value>تُورَّث من القاعة</value></data>
+  <data name="Admin.Sessions.Field.EffectiveCapacity" xml:space="preserve"><value>السعة الفعلية</value></data>
+  <data name="Admin.Sessions.Field.AddSpeaker" xml:space="preserve"><value>إضافة متحدّث</value></data>
+  <data name="Admin.Sessions.Field.AddSpeakerPlaceholder" xml:space="preserve"><value>— اختر متحدّثاً لإضافته —</value></data>
+  <data name="Admin.Sessions.Field.Speakers" xml:space="preserve"><value>المتحدّثون</value></data>
+  <data name="Admin.Sessions.Field.AddTheme" xml:space="preserve"><value>إضافة محور</value></data>
+  <data name="Admin.Sessions.Field.AddThemePlaceholder" xml:space="preserve"><value>— اختر محوراً لإضافته —</value></data>
+  <data name="Admin.Sessions.Field.IsActive" xml:space="preserve"><value>مفعّلة — تظهر في جدول الأعمال العام</value></data>
+  <data name="Admin.Sessions.Add.Title" xml:space="preserve"><value>إضافة جلسة</value></data>
+  <data name="Admin.Sessions.Edit.Title" xml:space="preserve"><value>تعديل الجلسة</value></data>
+  <data name="Admin.Sessions.Details.Title" xml:space="preserve"><value>تفاصيل الجلسة</value></data>
+  <data name="Admin.Sessions.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Sessions.New.Submit" xml:space="preserve"><value>إنشاء الجلسة</value></data>
+  <data name="Admin.Sessions.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء</value></data>
+  <data name="Admin.Sessions.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.Sessions.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Admin.Sessions.Created" xml:space="preserve"><value>تم إنشاء الجلسة "{0}".</value></data>
+  <data name="Admin.Sessions.Updated" xml:space="preserve"><value>تم تحديث الجلسة "{0}".</value></data>
+  <data name="Admin.Sessions.Deactivated" xml:space="preserve"><value>تم إلغاء تفعيل الجلسة "{0}".</value></data>
 </root>

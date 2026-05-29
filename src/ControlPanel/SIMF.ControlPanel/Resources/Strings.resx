@@ -1170,4 +1170,77 @@
   <data name="Admin.Others.BulkDelete.Confirm" xml:space="preserve"><value>This will disable {0} Other account(s). Sessions are revoked and the users are notified by email.</value></data>
   <data name="Admin.Others.Duplicate.Title" xml:space="preserve"><value>Duplicate Other user</value></data>
   <data name="Admin.Pending.Others.Title" xml:space="preserve"><value>Pending Other approvals</value></data>
+  <data name="Admin.Sessions.Title" xml:space="preserve"><value>Sessions</value></data>
+  <data name="Admin.Sessions.None" xml:space="preserve"><value>No sessions yet.</value></data>
+  <data name="Admin.Sessions.LoadFailed" xml:space="preserve"><value>The sessions could not be loaded.</value></data>
+  <data name="Admin.Sessions.Fallback" xml:space="preserve"><value>The operation could not be completed.</value></data>
+  <data name="Admin.Sessions.Loading" xml:space="preserve"><value>Loading sessions…</value></data>
+  <data name="Admin.Sessions.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.Sessions.Prev" xml:space="preserve"><value>Previous</value></data>
+  <data name="Admin.Sessions.Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Admin.Sessions.Pager.First" xml:space="preserve"><value>First page</value></data>
+  <data name="Admin.Sessions.Pager.Last" xml:space="preserve"><value>Last page</value></data>
+  <data name="Admin.Sessions.Pager.PageSize" xml:space="preserve"><value>Show</value></data>
+  <data name="Admin.Sessions.Pager.Page" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="Admin.Sessions.FilterColumn" xml:space="preserve"><value>Filter column</value></data>
+  <data name="Admin.Sessions.FilterPlaceholder" xml:space="preserve"><value>Search</value></data>
+  <data name="Admin.Sessions.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Sessions.Column.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Admin.Sessions.Column.Title" xml:space="preserve"><value>Title</value></data>
+  <data name="Admin.Sessions.Column.TitleArabic" xml:space="preserve"><value>Title (Arabic)</value></data>
+  <data name="Admin.Sessions.Column.Hall" xml:space="preserve"><value>Hall</value></data>
+  <data name="Admin.Sessions.Column.StartUtc" xml:space="preserve"><value>Start (UTC)</value></data>
+  <data name="Admin.Sessions.Column.EndUtc" xml:space="preserve"><value>End (UTC)</value></data>
+  <data name="Admin.Sessions.Column.Capacity" xml:space="preserve"><value>Capacity</value></data>
+  <data name="Admin.Sessions.Column.Active" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.Sessions.Column.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Admin.Sessions.Active.Yes" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Sessions.Active.No" xml:space="preserve"><value>Inactive</value></data>
+  <data name="Admin.Sessions.Action.Add" xml:space="preserve"><value>Add session</value></data>
+  <data name="Admin.Sessions.Action.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.Sessions.Action.Details" xml:space="preserve"><value>Details</value></data>
+  <data name="Admin.Sessions.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.Sessions.Action.SelectAll" xml:space="preserve"><value>Select all</value></data>
+  <data name="Admin.Sessions.Action.SelectRow" xml:space="preserve"><value>Select row</value></data>
+  <data name="Admin.Sessions.Action.Up" xml:space="preserve"><value>Up</value></data>
+  <data name="Admin.Sessions.Action.Down" xml:space="preserve"><value>Down</value></data>
+  <data name="Admin.Sessions.Action.Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Admin.Sessions.Field.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Admin.Sessions.Field.CodeHint" xml:space="preserve"><value>2–16 characters; unique. Used in the public session URL (e.g. SES-001).</value></data>
+  <data name="Admin.Sessions.Field.CodeInvalid" xml:space="preserve"><value>Code must be between 2 and 16 characters.</value></data>
+  <data name="Admin.Sessions.Field.Title" xml:space="preserve"><value>Title (English)</value></data>
+  <data name="Admin.Sessions.Field.TitleInvalid" xml:space="preserve"><value>English title is required (1–256 characters).</value></data>
+  <data name="Admin.Sessions.Field.TitleArabic" xml:space="preserve"><value>Title (Arabic)</value></data>
+  <data name="Admin.Sessions.Field.TitleArabicInvalid" xml:space="preserve"><value>Arabic title is required (1–256 characters).</value></data>
+  <data name="Admin.Sessions.Field.Description" xml:space="preserve"><value>Description (English)</value></data>
+  <data name="Admin.Sessions.Field.DescriptionArabic" xml:space="preserve"><value>Description (Arabic)</value></data>
+  <data name="Admin.Sessions.Field.Hall" xml:space="preserve"><value>Hall</value></data>
+  <data name="Admin.Sessions.Field.HallPlaceholder" xml:space="preserve"><value>— Select a hall —</value></data>
+  <data name="Admin.Sessions.Field.HallRequired" xml:space="preserve"><value>Hall is required.</value></data>
+  <data name="Admin.Sessions.Field.StartUtc" xml:space="preserve"><value>Start (UTC)</value></data>
+  <data name="Admin.Sessions.Field.EndUtc" xml:space="preserve"><value>End (UTC)</value></data>
+  <data name="Admin.Sessions.Field.TimeInvalid" xml:space="preserve"><value>Both start and end times must be valid UTC datetimes.</value></data>
+  <data name="Admin.Sessions.Field.TimeWindowInvalid" xml:space="preserve"><value>End time must be after start time.</value></data>
+  <data name="Admin.Sessions.Field.CapacityOverride" xml:space="preserve"><value>Capacity override</value></data>
+  <data name="Admin.Sessions.Field.CapacityHint" xml:space="preserve"><value>Leave blank to inherit the hall's seat count. Set a value only if the room is reconfigured for this session.</value></data>
+  <data name="Admin.Sessions.Field.CapacityInvalid" xml:space="preserve"><value>Capacity must be zero or a positive integer.</value></data>
+  <data name="Admin.Sessions.Field.CapacityInherits" xml:space="preserve"><value>Inherits from hall</value></data>
+  <data name="Admin.Sessions.Field.EffectiveCapacity" xml:space="preserve"><value>Effective capacity</value></data>
+  <data name="Admin.Sessions.Field.AddSpeaker" xml:space="preserve"><value>Add speaker</value></data>
+  <data name="Admin.Sessions.Field.AddSpeakerPlaceholder" xml:space="preserve"><value>— Pick a speaker to add —</value></data>
+  <data name="Admin.Sessions.Field.Speakers" xml:space="preserve"><value>Speakers</value></data>
+  <data name="Admin.Sessions.Field.AddTheme" xml:space="preserve"><value>Add theme</value></data>
+  <data name="Admin.Sessions.Field.AddThemePlaceholder" xml:space="preserve"><value>— Pick a theme to add —</value></data>
+  <data name="Admin.Sessions.Field.IsActive" xml:space="preserve"><value>Active — show in the public agenda</value></data>
+  <data name="Admin.Sessions.Add.Title" xml:space="preserve"><value>Add session</value></data>
+  <data name="Admin.Sessions.Edit.Title" xml:space="preserve"><value>Edit session</value></data>
+  <data name="Admin.Sessions.Details.Title" xml:space="preserve"><value>Session details</value></data>
+  <data name="Admin.Sessions.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Sessions.New.Submit" xml:space="preserve"><value>Create session</value></data>
+  <data name="Admin.Sessions.New.Submitting" xml:space="preserve"><value>Creating</value></data>
+  <data name="Admin.Sessions.Edit.Submit" xml:space="preserve"><value>Save changes</value></data>
+  <data name="Admin.Sessions.Edit.Submitting" xml:space="preserve"><value>Saving</value></data>
+  <data name="Admin.Sessions.Created" xml:space="preserve"><value>Session "{0}" was created.</value></data>
+  <data name="Admin.Sessions.Updated" xml:space="preserve"><value>Session "{0}" was updated.</value></data>
+  <data name="Admin.Sessions.Deactivated" xml:space="preserve"><value>Session "{0}" was deactivated.</value></data>
 </root>

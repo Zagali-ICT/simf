@@ -131,6 +131,11 @@ public static class AuditEvents
     public const string SpeakerUpdated = "Speaker.Updated";
     public const string SpeakerDeactivated = "Speaker.Deactivated";
 
+    // Sessions (D-165, gap doc G3 — programme sessions)
+    public const string SessionCreated = "Session.Created";
+    public const string SessionUpdated = "Session.Updated";
+    public const string SessionDeactivated = "Session.Deactivated";
+
     // Gates (D-148 — Gate Module, SIMF-FDS-003 §5.6, SIMF-API-GATES-001)
     public const string GateCreated = "Gate.Created";
     public const string GateUpdated = "Gate.Updated";

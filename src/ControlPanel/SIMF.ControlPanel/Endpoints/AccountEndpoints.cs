@@ -880,6 +880,44 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateSpeakerAsync(id, token));
         });
 
+        // D-165 (gap doc G3) — Session admin BFF passthroughs.
+        group.MapPost("/admin/sessions/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListSessionsAsync(body, token));
+        });
+        group.MapGet("/admin/sessions/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetSessionAsync(id, token));
+        });
+        group.MapPost("/admin/sessions",
+            async (AdminCreateSessionRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateSessionAsync(body, token));
+        });
+        group.MapPut("/admin/sessions/{id:guid}",
+            async (Guid id, AdminUpdateSessionRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateSessionAsync(id, body, token));
+        });
+        group.MapDelete("/admin/sessions/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateSessionAsync(id, token));
+        });
+
         // D-148 — Gate Module BFF passthroughs (admin + operator).
         group.MapPost("/admin/gates/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

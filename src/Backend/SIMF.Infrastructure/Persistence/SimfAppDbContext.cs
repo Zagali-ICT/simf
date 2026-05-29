@@ -28,6 +28,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     /// <summary>D-151 (D-135) — programme speakers.</summary>
     public DbSet<Speaker> Speakers => Set<Speaker>();
 
+    /// <summary>D-165 (gap doc G3, PDF §2.9) — scheduled run-of-show talks.</summary>
+    public DbSet<Session> Sessions => Set<Session>();
+    public DbSet<SessionSpeaker> SessionSpeakers => Set<SessionSpeaker>();
+    public DbSet<SessionTheme> SessionThemes => Set<SessionTheme>();
+
     /// <summary>D-151 — country lookup (ISO 3166-1 numeric Id; admin-managed
     /// CRUD; seeded with ~56 priority countries on first migration).</summary>
     public DbSet<Country> Countries => Set<Country>();

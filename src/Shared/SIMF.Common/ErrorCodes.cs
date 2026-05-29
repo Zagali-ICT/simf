@@ -132,6 +132,16 @@ public static class ErrorCodes
     public const string SpeakerCodeDuplicate = "SPEAKER_CODE_DUPLICATE";
     public const string SpeakerInUse = "SPEAKER_IN_USE";
 
+    // Sessions (D-165, gap doc G3 — programme sessions tied to a Hall +
+    // M-to-M Speakers + M-to-M Themes).
+    public const string SessionInvalid = "SESSION_INVALID";
+    public const string SessionNotFound = "SESSION_NOT_FOUND";
+    public const string SessionCodeDuplicate = "SESSION_CODE_DUPLICATE";
+    public const string SessionInvalidTimeWindow = "SESSION_INVALID_TIME_WINDOW";
+    public const string SessionHallNotFound = "SESSION_HALL_NOT_FOUND";
+    public const string SessionSpeakerNotFound = "SESSION_SPEAKER_NOT_FOUND";
+    public const string SessionThemeNotFound = "SESSION_THEME_NOT_FOUND";
+
     // Gates (D-148 — Gate Module, SIMF-FDS-003 §5.6, SIMF-API-GATES-001).
     public const string GateInvalid = "GATE_INVALID";
     public const string GateNotFound = "GATE_NOT_FOUND";
