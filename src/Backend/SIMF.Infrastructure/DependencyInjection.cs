@@ -204,6 +204,10 @@ public static class DependencyInjection
             SIMF.Infrastructure.SessionQuestions.SessionModerationService>();
         services.AddScoped<SIMF.Application.SessionQuestions.Abstractions.IAdminSessionModeratorService,
             SIMF.Infrastructure.SessionQuestions.AdminSessionModeratorService>();
+        // D-170 (gap doc G9) — "Meet People Like You" interest-intersection
+        // ranker (PDF §2.8). Read-only service over UserProfile.Interests.
+        services.AddScoped<SIMF.Application.Recommendations.Abstractions.IRecommendationService,
+            SIMF.Infrastructure.Recommendations.RecommendationService>();
         // D-148 — Gate Module: admin CRUD + operator surface + QR resolver +
         // gate-config cache + idempotency store + failure-rate circuit
         // (SIMF-API-GATES-001, SIMF-FDS-003 §5.6).
