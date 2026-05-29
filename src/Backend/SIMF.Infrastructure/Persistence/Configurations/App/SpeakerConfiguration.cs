@@ -1,16 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Common;
+using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-153 / D-157 — Speaker entity configuration.
+/// <summary>D-153 / D-157 / D-167 — Speaker entity configuration.
 /// <c>CountryId</c> is a real DB-enforced FK to <c>Country.Id</c>
 /// (same DbContext, same physical database — App DB).
-/// <c>UserProfileId</c> remains a cross-DB logical FK because
-/// <c>UserProfile</c> lives in <c>SIMF_Identity</c> (no cross-database
-/// FK constraint syntax in SQL Server).</summary>
+/// <c>UserProfileId</c> became a real DB FK after D-167 moved
+/// <c>UserProfile</c> onto <c>SimfAppDbContext</c>.</summary>
 internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
 {
     public void Configure(EntityTypeBuilder<Speaker> builder)
@@ -48,9 +48,15 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
             .WithMany()
             .HasForeignKey(speaker => speaker.CountryId)
             .OnDelete(DeleteBehavior.Restrict);
-        // UserProfileId stays a loose index — UserProfile lives in the
-        // Identity DB so a DB-level FK is not possible (D-157).
-        builder.HasIndex(speaker => speaker.UserProfileId);
+        // D-167: real FK to UserProfile (now same-DB). Restrict because
+        // a speaker keyed to a deactivated user profile should still
+        // surface in the public speakers list — admins remove the
+        // linkage by clearing the UserProfileId on the speaker, not by
+        // hard-deleting the profile.
+        builder.HasOne<UserProfile>()
+            .WithMany()
+            .HasForeignKey(speaker => speaker.UserProfileId)
+            .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(speaker => new { speaker.IsActive, speaker.DisplayOrder });
     }
 }

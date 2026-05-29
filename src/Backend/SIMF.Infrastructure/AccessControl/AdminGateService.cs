@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/Gates/AdminGatesTests.cs
+﻿// Tests: SIMF.Api.Tests/Gates/AdminGatesTests.cs
 using System.Globalization;
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
@@ -285,19 +285,34 @@ internal sealed class AdminGateService(
                 (scan, gate) => new { scan, gateCode = gate.Code })
             .ToListAsync(cancellationToken);
 
+        // D-167: UserProfile + SimfUser live in different DbContexts, so
+        // resolving the display name is two round-trips — profile rows
+        // first (App), then matching user rows (Identity), merge by id.
         var profileIds = raw
             .Where(r => r.scan.UserProfileId != null)
             .Select(r => r.scan.UserProfileId!.Value)
             .Distinct()
             .ToList();
-        var displayNames = profileIds.Count == 0
-            ? new Dictionary<Guid, string>()
-            : await (
-                from profile in identityDbContext.UserProfiles.AsNoTracking()
-                join user in identityDbContext.Users.AsNoTracking() on profile.UserId equals user.Id
-                where profileIds.Contains(profile.Id)
-                select new { profile.Id, Name = user.DisplayName ?? string.Empty })
-              .ToDictionaryAsync(x => x.Id, x => x.Name, cancellationToken);
+        Dictionary<Guid, string> displayNames;
+        if (profileIds.Count == 0)
+        {
+            displayNames = new Dictionary<Guid, string>();
+        }
+        else
+        {
+            var profileUsers = await appDbContext.UserProfiles.AsNoTracking()
+                .Where(profile => profileIds.Contains(profile.Id))
+                .Select(profile => new { profile.Id, profile.UserId })
+                .ToListAsync(cancellationToken);
+            var userIds = profileUsers.Select(pu => pu.UserId).Distinct().ToList();
+            var userNamesByUserId = await identityDbContext.Users.AsNoTracking()
+                .Where(user => userIds.Contains(user.Id))
+                .Select(user => new { user.Id, user.DisplayName })
+                .ToDictionaryAsync(user => user.Id, user => user.DisplayName ?? string.Empty, cancellationToken);
+            displayNames = profileUsers.ToDictionary(
+                pu => pu.Id,
+                pu => userNamesByUserId.TryGetValue(pu.UserId, out var name) ? name : string.Empty);
+        }
 
         return raw.Select(r => new AdminGateScanRow(
                 r.scan.Id, r.scan.GateId, r.gateCode,
@@ -334,20 +349,36 @@ internal sealed class AdminGateService(
             .Select(g => new { g.Id, g.Code })
             .ToDictionaryAsync(x => x.Id, x => x.Code, cancellationToken);
 
+        // D-167: split cross-context join into App-then-Identity round-trips.
         var profileIds = latest.Select(x => x.UserProfileId).Distinct().ToList();
-        var profiles = await (
-                from profile in identityDbContext.UserProfiles.AsNoTracking()
-                join user in identityDbContext.Users.AsNoTracking() on profile.UserId equals user.Id
-                where profileIds.Contains(profile.Id)
-                select new
-                {
-                    profile.Id,
-                    DisplayName = user.DisplayName ?? string.Empty,
-                    profile.ArabicName,
-                    profile.ProfileTypeId,
-                    ProfileType = profile.ProfileType,
-                })
-            .ToDictionaryAsync(x => x.Id, cancellationToken);
+        var profileRows = await appDbContext.UserProfiles.AsNoTracking()
+            .Include(profile => profile.ProfileType)
+            .Where(profile => profileIds.Contains(profile.Id))
+            .Select(profile => new
+            {
+                profile.Id,
+                profile.UserId,
+                profile.ArabicName,
+                profile.ProfileTypeId,
+                ProfileType = profile.ProfileType,
+            })
+            .ToListAsync(cancellationToken);
+        var inProfileUserIds = profileRows.Select(pr => pr.UserId).Distinct().ToList();
+        var profileUserDisplayNames = await identityDbContext.Users.AsNoTracking()
+            .Where(user => inProfileUserIds.Contains(user.Id))
+            .Select(user => new { user.Id, user.DisplayName })
+            .ToDictionaryAsync(user => user.Id, user => user.DisplayName ?? string.Empty, cancellationToken);
+        var profiles = profileRows.ToDictionary(
+            row => row.Id,
+            row => new
+            {
+                row.Id,
+                DisplayName = profileUserDisplayNames.TryGetValue(row.UserId, out var name)
+                    ? name : string.Empty,
+                row.ArabicName,
+                row.ProfileTypeId,
+                ProfileType = row.ProfileType,
+            });
 
         return latest
             .Where(x => profiles.ContainsKey(x.UserProfileId))
@@ -414,7 +445,7 @@ internal sealed class AdminGateService(
     {
         if (ids.Count == 0) { return; }
         var distinct = ids.Distinct().ToList();
-        var known = await identityDbContext.ProfileTypes.AsNoTracking()
+        var known = await appDbContext.ProfileTypes.AsNoTracking()
             .Where(p => distinct.Contains(p.Id))
             .Select(p => p.Id)
             .ToListAsync(cancellationToken);

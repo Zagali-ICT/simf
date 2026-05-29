@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
@@ -11,6 +11,7 @@ using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -142,6 +143,7 @@ public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshToke
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var interest = new Interest
             {
                 Id = Guid.NewGuid(),
@@ -151,8 +153,9 @@ public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshToke
                 IsActive = true,
                 CreatedAt = DateTimeOffset.UtcNow,
             };
-            db.Interests.Add(interest);
+            appDb.Interests.Add(interest);
             await db.SaveChangesAsync();
+            await appDb.SaveChangesAsync();
             interestId = interest.Id;
         }
 
@@ -186,6 +189,7 @@ public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshToke
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
             // AccountState stayed at EmailVerified — the flip rolled back.
             var user = await db.Users.SingleAsync(u => u.Id == userId);
@@ -193,7 +197,7 @@ public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshToke
             Assert.Null(user.StateChangedAt);
 
             // No UserProfile row was persisted — the save rolled back too.
-            var profile = await db.UserProfiles
+            var profile = await appDb.UserProfiles
                 .SingleOrDefaultAsync(p => p.UserId == userId);
             Assert.Null(profile);
         }

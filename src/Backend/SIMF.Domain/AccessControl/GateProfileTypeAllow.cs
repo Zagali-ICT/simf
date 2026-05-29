@@ -1,3 +1,5 @@
+using SIMF.Domain.IdentityAccess;
+
 namespace SIMF.Domain.AccessControl;
 
 /// <summary>
@@ -13,5 +15,5 @@ public class GateProfileTypeAllow
 
     /// <summary>The permitted ProfileType. Logical FK — validated by the
     /// service, not by a DB constraint.</summary>
-    public Guid ProfileTypeId { get; set; }
+    public Guid ProfileTypeId { get; set; }//This is FK   Add public ProfileType? ProfileType { get; set; }
 }

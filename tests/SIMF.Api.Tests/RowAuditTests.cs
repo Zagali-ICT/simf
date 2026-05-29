@@ -1,7 +1,8 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -31,8 +32,9 @@ public sealed class RowAuditTests : IClassFixture<SimfApiFactory>
         var interestId = Guid.NewGuid();
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
-        db.Interests.Add(new Interest
+        appDb.Interests.Add(new Interest
         {
             Id = interestId,
             Name = $"Audit Insert {Guid.NewGuid():N}",
@@ -42,8 +44,10 @@ public sealed class RowAuditTests : IClassFixture<SimfApiFactory>
             CreatedAt = DateTimeOffset.UtcNow,
         });
         await db.SaveChangesAsync();
+        await appDb.SaveChangesAsync();
 
-        var audit = await db.RowAudits
+        // D-167: Interest moved to the App DB so its row-audit lives there too.
+        var audit = await appDb.RowAudits
             .AsNoTracking()
             .Where(row => row.EntityType == nameof(Interest) && row.PrimaryKey == interestId.ToString())
             .SingleAsync();
@@ -61,6 +65,7 @@ public sealed class RowAuditTests : IClassFixture<SimfApiFactory>
         var interestId = Guid.NewGuid();
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
         var interest = new Interest
         {
@@ -71,13 +76,16 @@ public sealed class RowAuditTests : IClassFixture<SimfApiFactory>
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
-        db.Interests.Add(interest);
+        appDb.Interests.Add(interest);
         await db.SaveChangesAsync();
+        await appDb.SaveChangesAsync();
 
         interest.IsActive = false;
         await db.SaveChangesAsync();
+        await appDb.SaveChangesAsync();
 
-        var audit = await db.RowAudits
+        // D-167: Interest moved to the App DB so its row-audit lives there too.
+        var audit = await appDb.RowAudits
             .AsNoTracking()
             .Where(row => row.EntityType == nameof(Interest)
                 && row.PrimaryKey == interestId.ToString()
@@ -96,8 +104,9 @@ public sealed class RowAuditTests : IClassFixture<SimfApiFactory>
         var interestId = Guid.NewGuid();
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
-        db.Interests.Add(new Interest
+        appDb.Interests.Add(new Interest
         {
             Id = interestId,
             Name = $"Recursion Guard {Guid.NewGuid():N}",
@@ -107,8 +116,11 @@ public sealed class RowAuditTests : IClassFixture<SimfApiFactory>
             CreatedAt = DateTimeOffset.UtcNow,
         });
         await db.SaveChangesAsync();
+        await appDb.SaveChangesAsync();
 
-        var selfReferentialRows = await db.RowAudits
+        // D-167: Interest writes its row-audit to the App DB now; the
+        // self-referential guard test should look there.
+        var selfReferentialRows = await appDb.RowAudits
             .AsNoTracking()
             .CountAsync(row => row.EntityType == nameof(RowAudit));
 

@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/Gates/GateConfigCacheTests.cs
+﻿// Tests: SIMF.Api.Tests/Gates/GateConfigCacheTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using SIMF.Application.AccessControl.Abstractions;
@@ -12,8 +12,7 @@ namespace SIMF.Infrastructure.AccessControl;
 /// schedule so a stale read can never persist beyond the TTL.</summary>
 internal sealed class GateConfigCache(
     IMemoryCache memoryCache,
-    SimfAppDbContext appDbContext,
-    SimfIdentityDbContext identityDbContext) : IGateConfigCache
+    SimfAppDbContext appDbContext) : IGateConfigCache
 {
     private static readonly TimeSpan Ttl = TimeSpan.FromMinutes(5);
     private const string KeyPrefix = "gate-config:";
@@ -49,7 +48,7 @@ internal sealed class GateConfigCache(
         }
         else
         {
-            var activeIds = await identityDbContext.ProfileTypes.AsNoTracking()
+            var activeIds = await appDbContext.ProfileTypes.AsNoTracking()
                 .Where(p => p.IsActive && gate.AllowRaw.Contains(p.Id))
                 .Select(p => p.Id)
                 .ToListAsync(cancellationToken);

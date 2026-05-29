@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 
-namespace SIMF.Infrastructure.Persistence.Configurations;
+namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>
 /// EF configuration for the user-profile row (decisions D-046, P8 —
-/// D-048; renamed from <c>VisitorProfileConfiguration</c>). Length caps
+/// D-048; D-167 moved this onto <c>SimfAppDbContext</c>). Length caps
 /// line up with the FluentValidation rules in
 /// <c>UpsertUserProfileRequestValidator</c>. The <c>ProfileTypeId</c> FK
 /// references the <c>ProfileTypes</c> lookup with
@@ -17,10 +17,12 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
 {
     public void Configure(EntityTypeBuilder<UserProfile> builder)
     {
+        builder.ToTable("UserProfiles");
         builder.HasKey(profile => profile.Id);
 
-        // One profile per user — the column carries the unique constraint
-        // so a second upsert by the same user updates instead of creating
+        // D-167: UserId is a logical FK to SimfUser.Id (Identity DB) —
+        // enforced at the service layer, not by SQL. Unique so the
+        // second upsert by the same user updates instead of inserting
         // a sibling row.
         builder.HasIndex(profile => profile.UserId).IsUnique();
 
@@ -28,10 +30,14 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.EnglishName).HasMaxLength(256).IsRequired();
         // D-163 — PDF §2.6 optional job title.
         builder.Property(profile => profile.JobTitle).HasMaxLength(128);
-        // D-151 — logical FK to SIMF.Domain.Common.Country.Id; no DB
-        // constraint because Country lives in SimfAppDbContext.
-        // Indexed so the rare "every profile of nationality X" admin
-        // query stays cheap as the visitor list grows.
+        // D-151 / D-167: NationalityId is validated at the service layer
+        // (UserProfileService.ResolveIdAsync rejects unknown ids). We do
+        // NOT add a real DB FK here even though Country now lives in the
+        // same DB, because the existing data model allows 0 = "no
+        // nationality chosen" on profile stubs (admin-create-user, walk-in
+        // pre-fill, test seed fixtures) — a real FK would break that
+        // pre-existing behaviour. Indexed so admin filtering by
+        // nationality stays cheap.
         builder.Property(profile => profile.NationalityId).IsRequired();
         builder.HasIndex(profile => profile.NationalityId);
         builder.Property(profile => profile.PlaceOfBirth).HasMaxLength(128);
@@ -42,19 +48,20 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.InternationalMobile).HasMaxLength(24);
         builder.Property(profile => profile.IdImageRelativePath).HasMaxLength(256);
 
-        // D-106: QrId moved off SimfUser to UserProfile. 12-char Crockford
-        // base32, unique across the system (only minted for Approved rows
-        // so most rows are null — filtered unique index).
+        // D-106: QrId on UserProfile. 12-char Crockford base32, unique
+        // (only minted for Approved rows so most rows are null —
+        // filtered unique index).
         builder.Property(profile => profile.QrId).HasMaxLength(16);
         builder.HasIndex(profile => profile.QrId)
             .IsUnique()
             .HasFilter("[QrId] IS NOT NULL");
 
-        // D-106: bilingual rejection-reason text moved off SimfUser.
+        // D-106: bilingual rejection-reason text.
         builder.Property(profile => profile.RejectionReason).HasMaxLength(500);
         builder.Property(profile => profile.RejectionReasonArabic).HasMaxLength(500);
 
-        // P8 — ProfileTypeId moved off SimfUser; lives here now.
+        // P8 — ProfileType lookup; Restrict so a profile-type cannot
+        // be deleted while any user is assigned to it.
         builder.HasIndex(profile => profile.ProfileTypeId);
         builder.HasOne(profile => profile.ProfileType)
             .WithMany()

@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
+﻿// Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
 //        round-trip, get-empty-when-not-saved-yet, nationality-unknown)
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +12,7 @@ using SIMF.Common;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Domain.Notifications;
 using SIMF.Infrastructure.Notifications;
 using SIMF.Infrastructure.Persistence;
@@ -48,7 +49,7 @@ internal sealed class UserProfileService(
                 "The acting account was not found.",
                 "لم يتم العثور على الحساب.");
 
-        var profile = await dbContext.UserProfiles
+        var profile = await appDbContext.UserProfiles
             .AsNoTracking()
             .Include(p => p.Interests)
             .SingleOrDefaultAsync(p => p.UserId == actorUserId, cancellationToken);
@@ -90,7 +91,7 @@ internal sealed class UserProfileService(
         // P9 — validate the picked interest ids: every id must exist
         // and be active. (The validator already enforces 1-10 count.)
         var requestedIds = request.InterestIds.Distinct().ToList();
-        var foundActiveIds = await dbContext.Interests
+        var foundActiveIds = await appDbContext.Interests
             .AsNoTracking()
             .Where(interest => requestedIds.Contains(interest.Id) && interest.IsActive)
             .Select(interest => interest.Id)
@@ -104,7 +105,7 @@ internal sealed class UserProfileService(
         }
 
         var now = timeProvider.GetUtcNow();
-        var profile = await dbContext.UserProfiles
+        var profile = await appDbContext.UserProfiles
             .Include(p => p.Interests)
             .SingleOrDefaultAsync(p => p.UserId == actorUserId, cancellationToken);
 
@@ -133,7 +134,7 @@ internal sealed class UserProfileService(
 
         if (isNew)
         {
-            dbContext.UserProfiles.Add(profile);
+            appDbContext.UserProfiles.Add(profile);
         }
 
         // P9 — diff the interests: remove ones no longer picked, add the
@@ -151,7 +152,7 @@ internal sealed class UserProfileService(
         var toAddIds = requestedSet.Except(existingIds).ToList();
         if (toAddIds.Count > 0)
         {
-            var freshRows = await dbContext.Interests
+            var freshRows = await appDbContext.Interests
                 .Where(interest => toAddIds.Contains(interest.Id))
                 .ToListAsync(cancellationToken);
             foreach (var row in freshRows)
@@ -174,6 +175,14 @@ internal sealed class UserProfileService(
         var transitioned = false;
         await transactionRunner.ExecuteAsync(async token =>
         {
+            // D-167: the TransactionRunner only wraps the Identity DB
+            // transaction; the App DB save is a separate physical
+            // commit. Order: Identity first (state flip + token revoke);
+            // App second (profile row + interests). If Identity throws,
+            // the App save never runs and the row is dropped — matches
+            // the historical "all or nothing" guarantee. If App throws
+            // after Identity commits, the user retries the save and
+            // we converge.
             await dbContext.SaveChangesAsync(token);
 
             if (isNew && user.AccountState == AccountState.EmailVerified)
@@ -196,6 +205,14 @@ internal sealed class UserProfileService(
                 transitioned = true;
             }
         }, cancellationToken);
+
+        // D-167: App-DB commit happens AFTER the Identity transaction
+        // succeeds, so an Identity-side rollback drops the profile
+        // changes too (the test in UserProfileRollbackTests asserts
+        // this). The window where Identity commits and App fails is
+        // covered by user retry — the next upsert reattempts the App
+        // save against an idempotent (UserId-unique) row.
+        await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -228,7 +245,7 @@ internal sealed class UserProfileService(
     public async Task<RejectionText?> GetRejectionTextAsync(
         Guid userId, CancellationToken cancellationToken = default)
     {
-        var row = await dbContext.UserProfiles
+        var row = await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(p => p.UserId == userId)
             .Select(p => new { p.RejectionReason, p.RejectionReasonArabic })
@@ -258,7 +275,7 @@ internal sealed class UserProfileService(
             case UserType.Admin:
                 return MobileAppRole.None;
             case UserType.Other:
-                return await dbContext.UserProfiles
+                return await appDbContext.UserProfiles
                     .AsNoTracking()
                     .Where(p => p.UserId == userId)
                     .Where(p => p.ProfileType != null)
@@ -343,7 +360,7 @@ internal sealed class UserProfileService(
         // ID image follows the avatar contract (D-039): magic-byte and
         // size already checked at the endpoint, the storage layer
         // encrypts and writes.
-        var profile = await dbContext.UserProfiles
+        var profile = await appDbContext.UserProfiles
             .SingleOrDefaultAsync(p => p.UserId == actorUserId, cancellationToken);
         if (profile is null)
         {
@@ -354,14 +371,15 @@ internal sealed class UserProfileService(
                 UserId = actorUserId,
                 CreatedAt = timeProvider.GetUtcNow(),
             };
-            dbContext.UserProfiles.Add(profile);
+            appDbContext.UserProfiles.Add(profile);
         }
 
         var relativePath = await idStorage.SaveAsync(
             actorUserId, content, contentType, cancellationToken);
         profile.IdImageRelativePath = relativePath;
         profile.UpdatedAt = timeProvider.GetUtcNow();
-        await dbContext.SaveChangesAsync(cancellationToken);
+        // D-167: UserProfile is on the App DB now.
+        await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -377,7 +395,7 @@ internal sealed class UserProfileService(
     public async Task<UserIdDocumentImage?> ReadIdImageAsync(
         Guid actorUserId, CancellationToken cancellationToken = default)
     {
-        var profile = await dbContext.UserProfiles
+        var profile = await appDbContext.UserProfiles
             .AsNoTracking()
             .SingleOrDefaultAsync(p => p.UserId == actorUserId, cancellationToken);
         if (profile is null || string.IsNullOrEmpty(profile.IdImageRelativePath))
@@ -410,7 +428,7 @@ internal sealed class UserProfileService(
                 "تعذّر العثور على الحساب المستهدف.");
         }
 
-        var profile = await dbContext.UserProfiles
+        var profile = await appDbContext.UserProfiles
             .SingleOrDefaultAsync(p => p.UserId == subjectUserId, cancellationToken);
         if (profile is null)
         {
@@ -419,14 +437,15 @@ internal sealed class UserProfileService(
                 UserId = subjectUserId,
                 CreatedAt = timeProvider.GetUtcNow(),
             };
-            dbContext.UserProfiles.Add(profile);
+            appDbContext.UserProfiles.Add(profile);
         }
 
         var relativePath = await idStorage.SaveAsync(
             subjectUserId, content, contentType, cancellationToken);
         profile.IdImageRelativePath = relativePath;
         profile.UpdatedAt = timeProvider.GetUtcNow();
-        await dbContext.SaveChangesAsync(cancellationToken);
+        // D-167: UserProfile is on the App DB now.
+        await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -447,7 +466,7 @@ internal sealed class UserProfileService(
         var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken);
         if (subject is null || subject.UserType != expectedKind) { return null; }
 
-        var profile = await dbContext.UserProfiles
+        var profile = await appDbContext.UserProfiles
             .AsNoTracking()
             .SingleOrDefaultAsync(p => p.UserId == subjectUserId, cancellationToken);
         if (profile is null || string.IsNullOrEmpty(profile.IdImageRelativePath))

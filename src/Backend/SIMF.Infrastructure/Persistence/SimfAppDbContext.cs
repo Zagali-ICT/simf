@@ -3,6 +3,7 @@ using SIMF.Domain.AccessControl;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.Common;
 using SIMF.Domain.Operations;
+using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence;
@@ -58,6 +59,17 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
 
     /// <summary>D-148 — 24h idempotency replay store.</summary>
     public DbSet<ScanIdempotency> ScanIdempotencies => Set<ScanIdempotency>();
+
+    /// <summary>D-167 — visitor / other-user profile (was on Identity DB
+    /// until D-167; UserId is now a logical FK to <c>SimfUser.Id</c>).</summary>
+    public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
+
+    /// <summary>D-167 — admin-managed lookup of profile subtypes
+    /// (Visitor tiers + Other partner kinds).</summary>
+    public DbSet<ProfileType> ProfileTypes => Set<ProfileType>();
+
+    /// <summary>D-167 — admin-managed lookup of visitor interests.</summary>
+    public DbSet<Interest> Interests => Set<Interest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

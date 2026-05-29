@@ -1,12 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.AccessControl;
+using SIMF.Domain.Profiles;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>D-148 — composite key (GateId, ProfileTypeId). ProfileTypeId is a
-/// logical FK only — referential integrity enforced by the service layer
-/// (DAT-001 §5.3.1).</summary>
+/// <summary>D-148 / D-167 — composite key (GateId, ProfileTypeId).
+/// After D-167 moved <c>ProfileType</c> onto <c>SimfAppDbContext</c>,
+/// the <c>ProfileTypeId</c> FK is real (same-DB) with Restrict.</summary>
 internal sealed class GateProfileTypeAllowConfiguration
     : IEntityTypeConfiguration<GateProfileTypeAllow>
 {
@@ -14,5 +15,9 @@ internal sealed class GateProfileTypeAllowConfiguration
     {
         builder.ToTable("GateProfileTypeAllow");
         builder.HasKey(allow => new { allow.GateId, allow.ProfileTypeId });
+        builder.HasOne<ProfileType>()
+            .WithMany()
+            .HasForeignKey(allow => allow.ProfileTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

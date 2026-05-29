@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/InterestTests.cs
+﻿// Tests: SIMF.Api.Tests/InterestTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -8,6 +8,7 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 
 using SIMF.Common.Enums;
@@ -21,7 +22,7 @@ namespace SIMF.Infrastructure.Identity;
 /// composite filter index <c>(IsActive, DisplayOrder)</c>.
 /// </summary>
 internal sealed class InterestService(
-    SimfIdentityDbContext dbContext,
+    SimfAppDbContext dbContext,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<InterestService> logger) : IInterestService

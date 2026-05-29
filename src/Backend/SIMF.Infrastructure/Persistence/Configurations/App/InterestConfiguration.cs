@@ -1,19 +1,21 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 
-namespace SIMF.Infrastructure.Persistence.Configurations;
+namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>
 /// EF configuration for the <see cref="Interest"/> lookup (P9 — D-050).
-/// Length caps line up with the <c>AdminCreateInterestRequestValidator</c>
-/// rules. A composite filter index on <c>(IsActive, DisplayOrder)</c>
-/// matches the visitor-picker query shape.
+/// D-167 moved this onto <c>SimfAppDbContext</c>. Length caps line up
+/// with the <c>AdminCreateInterestRequestValidator</c> rules. A composite
+/// filter index on <c>(IsActive, DisplayOrder)</c> matches the
+/// visitor-picker query shape.
 /// </summary>
 internal sealed class InterestConfiguration : IEntityTypeConfiguration<Interest>
 {
     public void Configure(EntityTypeBuilder<Interest> builder)
     {
+        builder.ToTable("Interests");
         builder.HasKey(interest => interest.Id);
 
         builder.Property(interest => interest.Name)

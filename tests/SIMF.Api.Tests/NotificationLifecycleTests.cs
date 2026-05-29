@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +7,7 @@ using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Domain.Notifications;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
@@ -60,6 +61,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
         // State auto-transitioned.
         var subject = await db.Users.SingleAsync(u => u.Id == subjectId);
@@ -86,6 +88,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var notification = await db.Notifications
             .SingleAsync(n => n.UserId == subjectId
                 && n.Kind == NotificationKind.AccountApproved);
@@ -109,6 +112,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var notification = await db.Notifications
             .SingleAsync(n => n.UserId == subjectId
                 && n.Kind == NotificationKind.AccountRejected);
@@ -138,6 +142,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var user = await db.Users.SingleAsync(u => u.Email == email);
         var welcome = await db.Notifications
             .SingleAsync(n => n.UserId == user.Id && n.Kind == NotificationKind.AccountWelcome);
@@ -169,6 +174,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
         var peerRow = await db.Notifications.SingleAsync(n =>
             n.UserId == peerAdminId
@@ -202,6 +208,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var welcome = await db.Notifications
             .SingleAsync(n => n.UserId == body.Data!.UserId
                 && n.Kind == NotificationKind.AccountWelcome);
@@ -231,6 +238,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var notification = await db.Notifications
             .SingleAsync(n => n.UserId == tokens.User.Id
                 && n.Kind == NotificationKind.AccountPasswordChanged);
@@ -261,6 +269,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var user = await db.Users.SingleAsync(u => u.Email == email);
         var notification = await db.Notifications
             .SingleAsync(n => n.UserId == user.Id
@@ -359,6 +368,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var interest = new Interest
         {
             Id = Guid.NewGuid(),
@@ -368,8 +378,9 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
-        db.Interests.Add(interest);
+        appDb.Interests.Add(interest);
         await db.SaveChangesAsync();
+        await appDb.SaveChangesAsync();
         return interest.Id;
     }
 

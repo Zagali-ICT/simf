@@ -6,10 +6,14 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.AccessControl;
 
 /// <summary>Implements <see cref="IQrResolver"/> against
-/// <c>UserProfile</c> + <c>SimfUser</c> + <c>ProfileType</c>. Single projected
-/// query, no tracking.</summary>
+/// <c>UserProfile</c> + <c>SimfUser</c> + <c>ProfileType</c>. After D-167
+/// moved UserProfile + ProfileType onto SimfAppDbContext, this is two
+/// round-trips: App-DB lookup by QR id, then Identity-DB lookup by user
+/// id. Both queries are PK / unique-index hits so total latency stays at
+/// sub-millisecond.</summary>
 internal sealed class QrResolver(
     SimfIdentityDbContext identityDbContext,
+    SimfAppDbContext appDbContext,
     TimeProvider timeProvider) : IQrResolver
 {
     public async Task<QrResolution?> ResolveAsync(
@@ -19,27 +23,48 @@ internal sealed class QrResolver(
         var normalised = QrId.Normalise(qrId);
         var now = timeProvider.GetUtcNow();
 
-        return await identityDbContext.UserProfiles
+        var profileRow = await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(profile => profile.QrId == normalised)
-            .Join(
-                identityDbContext.Users.AsNoTracking(),
-                profile => profile.UserId,
-                user => user.Id,
-                (profile, user) => new { profile, user })
-            .Select(row => new QrResolution(
-                row.profile.Id,
-                row.user.Id,
-                row.user.AccountState,
-                row.user.LockoutEnd != null && row.user.LockoutEnd > now,
-                row.profile.ProfileTypeId,
-                row.profile.ProfileType != null && row.profile.ProfileType.IsActive,
-                row.profile.ProfileType != null ? row.profile.ProfileType.Name : null,
-                row.profile.ProfileType != null ? row.profile.ProfileType.NameArabic : null,
-                row.profile.ProfileType != null ? row.profile.ProfileType.PageColor : null,
-                row.user.DisplayName ?? string.Empty,
-                row.profile.ArabicName))
+            .Select(profile => new
+            {
+                profile.Id,
+                profile.UserId,
+                profile.ProfileTypeId,
+                profileTypeActive = profile.ProfileType != null && profile.ProfileType.IsActive,
+                profileTypeName = profile.ProfileType != null ? profile.ProfileType.Name : null,
+                profileTypeNameAr = profile.ProfileType != null ? profile.ProfileType.NameArabic : null,
+                profileTypePageColor = profile.ProfileType != null ? profile.ProfileType.PageColor : null,
+                profile.ArabicName,
+            })
             .SingleOrDefaultAsync(cancellationToken);
+        if (profileRow is null) { return null; }
+
+        var userRow = await identityDbContext.Users
+            .AsNoTracking()
+            .Where(user => user.Id == profileRow.UserId)
+            .Select(user => new
+            {
+                user.Id,
+                user.AccountState,
+                user.LockoutEnd,
+                user.DisplayName,
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (userRow is null) { return null; }
+
+        return new QrResolution(
+            profileRow.Id,
+            userRow.Id,
+            userRow.AccountState,
+            userRow.LockoutEnd != null && userRow.LockoutEnd > now,
+            profileRow.ProfileTypeId,
+            profileRow.profileTypeActive,
+            profileRow.profileTypeName,
+            profileRow.profileTypeNameAr,
+            profileRow.profileTypePageColor,
+            userRow.DisplayName ?? string.Empty,
+            profileRow.ArabicName);
     }
 }
 

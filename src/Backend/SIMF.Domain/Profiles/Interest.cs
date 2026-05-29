@@ -1,4 +1,4 @@
-namespace SIMF.Domain.IdentityAccess;
+namespace SIMF.Domain.Profiles;
 
 /// <summary>
 /// A user-pickable interest / discipline / focus area (P9 — D-050;

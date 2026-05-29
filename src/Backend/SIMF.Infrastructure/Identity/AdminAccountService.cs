@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs,
+﻿// Tests: SIMF.Api.Tests/AdminResetTwoFactorTests.cs,
 //        SIMF.Api.Tests/AdminCreateUserTests.cs
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +16,7 @@ using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 
 using SIMF.Common.Enums;
@@ -223,7 +224,7 @@ internal sealed class AdminAccountService(
 
         // Resolve the profile type up-front so we can fail fast + return
         // the colour / name on the success response.
-        var profileType = await dbContext.ProfileTypes
+        var profileType = await appDbContext.ProfileTypes
             .AsNoTracking()
             .SingleOrDefaultAsync(p => p.Id == request.ProfileTypeId, cancellationToken)
             ?? throw new ApiException(
@@ -264,7 +265,7 @@ internal sealed class AdminAccountService(
         var requestedInterests = request.InterestIds.Distinct().ToList();
         var resolvedInterests = requestedInterests.Count == 0
             ? new List<Interest>()
-            : await dbContext.Interests
+            : await appDbContext.Interests
                 .Where(i => requestedInterests.Contains(i.Id) && i.IsActive)
                 .ToListAsync(cancellationToken);
         if (resolvedInterests.Count != requestedInterests.Count)
@@ -351,11 +352,13 @@ internal sealed class AdminAccountService(
                 profile.Interests.Add(interest);
             }
         }
-        dbContext.UserProfiles.Add(profile);
+        appDbContext.UserProfiles.Add(profile);
 
         // Mint the QR badge synchronously — the response carries it so
         // the desk can render the badge before the visitor walks away.
         await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
+        // D-167: UserProfile lives on App DB now; save both contexts.
+        await appDbContext.SaveChangesAsync(cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -414,7 +417,7 @@ internal sealed class AdminAccountService(
         // the row + the FK land atomically.
         if (profileTypeId is { } id)
         {
-            var profileType = await dbContext.ProfileTypes
+            var profileType = await appDbContext.ProfileTypes
                 .SingleOrDefaultAsync(p => p.Id == id, cancellationToken);
             if (profileType is null || !profileType.IsActive)
             {
@@ -481,14 +484,15 @@ internal sealed class AdminAccountService(
         // carry a profile so we never stub for them.
         if (profileTypeId is { } chosenProfileTypeId && userType != UserType.Admin)
         {
-            dbContext.UserProfiles.Add(new UserProfile
+            appDbContext.UserProfiles.Add(new UserProfile
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
                 ProfileTypeId = chosenProfileTypeId,
                 CreatedAt = now,
             });
-            await dbContext.SaveChangesAsync(cancellationToken);
+            // D-167: profile-stub lands on the App DB.
+            await appDbContext.SaveChangesAsync(cancellationToken);
         }
 
         // 7-day invite (D-042).
@@ -822,6 +826,9 @@ internal sealed class AdminAccountService(
         await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
 
         await accounts.UpdateAsync(subject).EnsureSuccessAsync();
+        // D-167: UserProfile lives on App DB; save it separately from
+        // the Identity-side user-state flip.
+        await appDbContext.SaveChangesAsync(cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         // P10 — revoke every refresh token so the subject's next API
@@ -883,6 +890,8 @@ internal sealed class AdminAccountService(
         profile.RejectionReasonArabic = request.Reason;
 
         await accounts.UpdateAsync(subject).EnsureSuccessAsync();
+        // D-167: UserProfile lives on App DB.
+        await appDbContext.SaveChangesAsync(cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         // P10 — revoke every refresh token so the subject's next API
@@ -978,7 +987,7 @@ internal sealed class AdminAccountService(
     private async Task<UserProfile> EnsureUserProfileAsync(
         Guid userId, DateTimeOffset now, CancellationToken cancellationToken)
     {
-        var profile = await dbContext.UserProfiles
+        var profile = await appDbContext.UserProfiles
             .SingleOrDefaultAsync(p => p.UserId == userId, cancellationToken);
         if (profile is not null) { return profile; }
 
@@ -988,7 +997,7 @@ internal sealed class AdminAccountService(
             UserId = userId,
             CreatedAt = now,
         };
-        dbContext.UserProfiles.Add(profile);
+        appDbContext.UserProfiles.Add(profile);
         return profile;
     }
 
@@ -1175,7 +1184,7 @@ internal sealed class AdminAccountService(
         // source's ProfileTypeId now lives on the source's UserProfile row;
         // look it up and pass it through.
         var sourceRoles = await accounts.GetRolesAsync(source);
-        var sourceProfileTypeId = await dbContext.UserProfiles
+        var sourceProfileTypeId = await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(p => p.UserId == source.Id)
             .Select(p => p.ProfileTypeId)

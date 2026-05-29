@@ -1,4 +1,4 @@
-// Tests cover the 13-step constraint engine in GateOperatorService:
+﻿// Tests cover the 13-step constraint engine in GateOperatorService:
 // step 2 (operator not assigned → 403); step 3 (QR_UNKNOWN); step 6
 // (HOLDER_NOT_APPROVED); step 11 (PROFILE_TYPE_NOT_ALLOWED + L-15 empty-
 // filtered-list denies all); step 12 (5-second duplicate absorption + Both-
@@ -16,6 +16,7 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Gates;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -323,8 +324,8 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
         };
         await users.CreateAsync(user, AuthFlow.Password);
 
-        var identityDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
-        identityDb.UserProfiles.Add(new SIMF.Domain.IdentityAccess.UserProfile
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        appDb.UserProfiles.Add(new SIMF.Domain.Profiles.UserProfile
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
@@ -336,16 +337,16 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             PlaceOfBirth = "Riyadh",
             CreatedAt = DateTimeOffset.UtcNow,
         });
-        await identityDb.SaveChangesAsync();
+        await appDb.SaveChangesAsync();
         return qrId;
     }
 
     private async Task<Guid> CreateProfileTypeAsync(string name, UserType userType)
     {
         using var scope = _factory.Services.CreateScope();
-        var identityDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var id = Guid.NewGuid();
-        identityDb.ProfileTypes.Add(new SIMF.Domain.IdentityAccess.ProfileType
+        appDb.ProfileTypes.Add(new SIMF.Domain.Profiles.ProfileType
         {
             Id = id,
             Name = name,
@@ -355,7 +356,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         });
-        await identityDb.SaveChangesAsync();
+        await appDb.SaveChangesAsync();
         return id;
     }
 

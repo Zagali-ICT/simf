@@ -1,4 +1,4 @@
-// D-164 (gap doc G2) — POST /api/v1/admin/visitors/bulk-approve and
+﻿// D-164 (gap doc G2) — POST /api/v1/admin/visitors/bulk-approve and
 // POST /api/v1/admin/others/bulk-approve. The "Select All" affordance
 // the security team needs (PDF §2.7.1).
 using System.Net;
@@ -11,6 +11,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -54,6 +55,7 @@ public sealed class AdminBulkApprovalTests : IClassFixture<SimfApiFactory>
         // Verify each subject is now Approved in the DB.
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         foreach (var id in ids)
         {
             var user = await db.Users.AsNoTracking().SingleAsync(u => u.Id == id);
@@ -123,7 +125,8 @@ public sealed class AdminBulkApprovalTests : IClassFixture<SimfApiFactory>
         await users.CreateAsync(user, AuthFlow.Password);
 
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
-        db.UserProfiles.Add(new UserProfile
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        appDb.UserProfiles.Add(new UserProfile
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
@@ -133,6 +136,7 @@ public sealed class AdminBulkApprovalTests : IClassFixture<SimfApiFactory>
             CreatedAt = DateTimeOffset.UtcNow,
         });
         await db.SaveChangesAsync();
+        await appDb.SaveChangesAsync();
         return user.Id;
     }
 

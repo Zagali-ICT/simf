@@ -1,4 +1,4 @@
-// D-161 — ProfileType.MobileAppRole + JWT mobile_app_role claim.
+﻿// D-161 — ProfileType.MobileAppRole + JWT mobile_app_role claim.
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -9,6 +9,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 

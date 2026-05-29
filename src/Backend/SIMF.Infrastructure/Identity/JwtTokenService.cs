@@ -1,4 +1,4 @@
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using SIMF.Application.IdentityAccess;
 using SIMF.Common.Options;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 
 using SIMF.Common.Enums;
 

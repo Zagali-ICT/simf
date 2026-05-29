@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -63,6 +64,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         Assert.False(await users.IsInRoleAsync(created, AdministratorRole));
 
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var code = await db.AccountCodes.SingleAsync(
             c => c.UserId == created.Id
                 && c.Purpose == AccountCodePurpose.PasswordReset
@@ -256,11 +258,12 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var created = (await users.FindByEmailAsync(email))!;
         Assert.Equal(AccountState.PendingApproval, created.AccountState);
         // D-106: QR lives on UserProfile now; minting still happens at approve-time
         // (covered by AdminApprovalTests.Approve_staff_flips_state_to_Approved_and_mints_QR_id).
-        var qr = await db.UserProfiles
+        var qr = await appDb.UserProfiles
             .Where(p => p.UserId == created.Id)
             .Select(p => p.QrId)
             .SingleOrDefaultAsync();
@@ -287,6 +290,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var user = await db.Users.SingleAsync(u => u.Email == newEmail);
         var inviteCode = await db.AccountCodes
             .Where(c => c.UserId == user.Id

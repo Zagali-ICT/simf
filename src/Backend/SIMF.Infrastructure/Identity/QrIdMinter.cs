@@ -1,8 +1,8 @@
-// Tests: SIMF.Api.Tests/UserProfileTests.cs (QR minted on admin-create-user;
+﻿// Tests: SIMF.Api.Tests/UserProfileTests.cs (QR minted on admin-create-user;
 //        not minted before Approved).
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess;
-using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Identity;
@@ -13,14 +13,12 @@ namespace SIMF.Infrastructure.Identity;
 /// (thousands of users), but we still query the DB once to ensure
 /// uniqueness — the column carries a UNIQUE constraint anyway.
 ///
-/// <para>D-106: minted on <see cref="UserProfile.QrId"/> (was
-/// <see cref="SimfUser.QrId"/> pre-D-106). The uniqueness query is a
-/// LINQ-IQueryable read against <c>SimfIdentityDbContext.UserProfiles</c>
-/// — using the DbContext directly here is the Infrastructure-only seam
-/// that avoids leaking <c>IQueryable&lt;UserProfile&gt;</c> out of the
-/// repository contract.</para>
+/// <para>D-106 / D-167: minted on <see cref="UserProfile.QrId"/>; the
+/// uniqueness query is a LINQ-IQueryable read against
+/// <c>SimfAppDbContext.UserProfiles</c> after D-167 moved the entity to
+/// the App DB.</para>
 /// </summary>
-internal sealed class QrIdMinter(SimfIdentityDbContext dbContext) : IQrIdMinter
+internal sealed class QrIdMinter(SimfAppDbContext dbContext) : IQrIdMinter
 {
     /// <summary>Crockford base32 alphabet — excludes I, L, O, U and 0/1.</summary>
     private const string Alphabet = "23456789ABCDEFGHJKMNPQRSTVWXYZ";

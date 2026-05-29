@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -8,6 +8,7 @@ using SIMF.Common;
 using SIMF.Common.Options;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 
 using SIMF.Common.Enums;
@@ -23,6 +24,7 @@ public sealed class IdentitySeeder(
     IUserAccountRepository accounts,
     RoleManager<SimfRole> roleManager,
     SimfIdentityDbContext dbContext,
+    SimfAppDbContext appDbContext,
     IOptions<SuperAdminOptions> options,
     IAuditLog auditLog,
     TimeProvider timeProvider,
@@ -240,7 +242,7 @@ public sealed class IdentitySeeder(
         UserType userType,
         CancellationToken cancellationToken)
     {
-        var legacy = await dbContext.ProfileTypes
+        var legacy = await appDbContext.ProfileTypes
             .SingleOrDefaultAsync(profileType =>
                 profileType.UserType == userType && profileType.Name == oldName,
                 cancellationToken);
@@ -250,7 +252,7 @@ public sealed class IdentitySeeder(
         // row (e.g. the operator created their own "General" manually).
         // Leaving the legacy row alone is safer than colliding the unique
         // (UserType, Name) constraint.
-        var collision = await dbContext.ProfileTypes
+        var collision = await appDbContext.ProfileTypes
             .AnyAsync(profileType =>
                 profileType.UserType == userType
                 && profileType.Id != legacy.Id
@@ -264,7 +266,8 @@ public sealed class IdentitySeeder(
             legacy.NameArabic = newNameArabic;
         }
         legacy.UpdatedAt = timeProvider.GetUtcNow();
-        await dbContext.SaveChangesAsync(cancellationToken);
+        // D-167: ProfileType lives on App DB.
+        await appDbContext.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation(
             "D-124: renamed seeded ProfileType '{OldName}' to '{NewName}' for {UserType}.",
@@ -282,13 +285,13 @@ public sealed class IdentitySeeder(
         MobileAppRole mobileAppRole,
         CancellationToken cancellationToken)
     {
-        var exists = await dbContext.ProfileTypes
+        var exists = await appDbContext.ProfileTypes
             .AnyAsync(profileType =>
                 profileType.UserType == userType && profileType.Name == name,
                 cancellationToken);
         if (exists) { return; }
 
-        dbContext.ProfileTypes.Add(new ProfileType
+        appDbContext.ProfileTypes.Add(new ProfileType
         {
             Id = Guid.NewGuid(),
             Name = name,
@@ -299,7 +302,8 @@ public sealed class IdentitySeeder(
             IsActive = true,
             CreatedAt = timeProvider.GetUtcNow(),
         });
-        await dbContext.SaveChangesAsync(cancellationToken);
+        // D-167: ProfileType lives on App DB.
+        await appDbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<SimfUser?> CreateSuperAdminAsync(

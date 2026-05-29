@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AdminApprovalTests.cs (this file).
+﻿// Tests: SIMF.Api.Tests/AdminApprovalTests.cs (this file).
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -10,6 +10,7 @@ using SIMF.Application.Auditing;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -53,10 +54,11 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var subject = await db.Users.SingleAsync(u => u.Email == subjectEmail);
         Assert.Equal(AccountState.PendingApproval, subject.AccountState);
         // D-106: QR lives on UserProfile now — assert there's no profile-side QR.
-        var qr = await db.UserProfiles
+        var qr = await appDb.UserProfiles
             .Where(p => p.UserId == subject.Id)
             .Select(p => p.QrId)
             .SingleOrDefaultAsync();
@@ -75,10 +77,11 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var subject = await db.Users.SingleAsync(u => u.Id == subjectId);
         Assert.Equal(AccountState.Approved, subject.AccountState);
         // D-106: QR lives on UserProfile.
-        var qr = await db.UserProfiles
+        var qr = await appDb.UserProfiles
             .Where(p => p.UserId == subjectId)
             .Select(p => p.QrId)
             .SingleAsync();
@@ -104,10 +107,11 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var subject = await db.Users.SingleAsync(u => u.Id == subjectId);
         Assert.Equal(AccountState.Rejected, subject.AccountState);
         // D-106: rejection text lives on UserProfile.
-        var profile = await db.UserProfiles.SingleAsync(p => p.UserId == subjectId);
+        var profile = await appDb.UserProfiles.SingleAsync(p => p.UserId == subjectId);
         Assert.Equal(reason, profile.RejectionReason);
         // EN-only admin input mirrors to the Arabic field (R1 default).
         Assert.Equal(reason, profile.RejectionReasonArabic);
@@ -137,6 +141,7 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var subject = await db.Users.SingleAsync(u => u.Id == subjectId);
             subject.AccountState = AccountState.PendingApproval;
             await db.SaveChangesAsync();
@@ -148,10 +153,11 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var verify = _factory.Services.CreateScope();
         var verifyDb = verify.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var verifyAppDb = verify.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var reconsidered = await verifyDb.Users.SingleAsync(u => u.Id == subjectId);
         Assert.Equal(AccountState.Approved, reconsidered.AccountState);
-        // D-106: rejection text on UserProfile is cleared on re-approval.
-        var profile = await verifyDb.UserProfiles.SingleAsync(p => p.UserId == subjectId);
+        // D-106 / D-167: rejection text on UserProfile (App DB) is cleared on re-approval.
+        var profile = await verifyAppDb.UserProfiles.SingleAsync(p => p.UserId == subjectId);
         Assert.Null(profile.RejectionReason);
         Assert.Null(profile.RejectionReasonArabic);
         Assert.NotNull(reconsidered.StateChangedAt);
@@ -169,10 +175,11 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var subject = await db.Users.SingleAsync(u => u.Id == subjectId);
         Assert.Equal(AccountState.Approved, subject.AccountState);
         // D-106: QR lives on UserProfile.
-        var qr = await db.UserProfiles
+        var qr = await appDb.UserProfiles
             .Where(p => p.UserId == subjectId)
             .Select(p => p.QrId)
             .SingleAsync();
@@ -254,6 +261,7 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         return (await db.Users.SingleAsync(u => u.Email == email)).Id;
     }
 
@@ -268,6 +276,7 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         return (await db.Users.SingleAsync(u => u.Email == email)).Id;
     }
 

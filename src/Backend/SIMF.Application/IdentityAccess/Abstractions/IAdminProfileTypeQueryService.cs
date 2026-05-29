@@ -1,6 +1,7 @@
-using SIMF.Common.Enums;
+﻿using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 
 namespace SIMF.Application.IdentityAccess.Abstractions;
 

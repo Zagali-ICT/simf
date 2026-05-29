@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -10,6 +10,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Domain.Notifications;
 
 namespace SIMF.Application.IdentityAccess;

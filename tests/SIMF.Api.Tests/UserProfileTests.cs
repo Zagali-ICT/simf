@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -8,6 +8,7 @@ using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -329,6 +330,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var interest = new Interest
             {
                 Id = Guid.NewGuid(),
@@ -338,8 +340,9 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
                 IsActive = false,
                 CreatedAt = DateTimeOffset.UtcNow,
             };
-            db.Interests.Add(interest);
+            appDb.Interests.Add(interest);
             await db.SaveChangesAsync();
+            await appDb.SaveChangesAsync();
             deactivatedId = interest.Id;
         }
 
@@ -362,6 +365,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var rows = Enumerable.Range(0, 3)
                 .Select(i => new Interest
                 {
@@ -373,8 +377,9 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
                     CreatedAt = DateTimeOffset.UtcNow,
                 })
                 .ToList();
-            db.Interests.AddRange(rows);
+            appDb.Interests.AddRange(rows);
             await db.SaveChangesAsync();
+            await appDb.SaveChangesAsync();
             one = rows[0].Id; two = rows[1].Id; three = rows[2].Id;
         }
 
@@ -416,6 +421,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var live = await db.RefreshTokens
                 .Where(rt => rt.UserId == userId && rt.RevokedAt == null)
                 .CountAsync();
@@ -430,6 +436,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
             // State flipped.
             var user = await db.Users.SingleAsync(u => u.Id == userId);
@@ -504,6 +511,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var interest = new Interest
         {
             Id = Guid.NewGuid(),
@@ -513,8 +521,9 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
-        db.Interests.Add(interest);
+        appDb.Interests.Add(interest);
         await db.SaveChangesAsync();
+        await appDb.SaveChangesAsync();
         return interest.Id;
     }
 
@@ -539,7 +548,8 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             // with a pre-baked QR so the GET-profile tests still surface one
             // before the visitor fills the form.
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
-            db.UserProfiles.Add(new SIMF.Domain.IdentityAccess.UserProfile
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            appDb.UserProfiles.Add(new SIMF.Domain.Profiles.UserProfile
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
@@ -547,6 +557,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
                 CreatedAt = DateTimeOffset.UtcNow,
             });
             await db.SaveChangesAsync();
+            await appDb.SaveChangesAsync();
         }
 
         var sign = await _client.PostAsJsonAsync(

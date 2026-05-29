@@ -1,10 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SIMF.Domain.IdentityAccess;
-
 using SIMF.Common.Enums;
+using SIMF.Domain.Profiles;
 
-namespace SIMF.Infrastructure.Persistence.Configurations;
+namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>EF mapping for <see cref="ProfileType"/> (P7 — D-048).</summary>
 internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<ProfileType>

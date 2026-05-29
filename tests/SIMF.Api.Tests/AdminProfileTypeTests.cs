@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
@@ -8,6 +8,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -194,7 +195,8 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
             visitorId = v.Id;
 
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
-            db.UserProfiles.Add(new UserProfile
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            appDb.UserProfiles.Add(new UserProfile
             {
                 Id = Guid.NewGuid(),
                 UserId = visitorId,
@@ -202,6 +204,7 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
                 CreatedAt = DateTimeOffset.UtcNow,
             });
             await db.SaveChangesAsync();
+            await appDb.SaveChangesAsync();
         }
 
         var response = await DeleteAuthAsync(

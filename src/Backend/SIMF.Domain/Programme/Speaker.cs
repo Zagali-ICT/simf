@@ -26,10 +26,11 @@ public class Speaker
     /// "speakers by country" admin query stays cheap.</summary>
     public int? CountryId { get; set; }
 
-    /// <summary>D-153 — when the speaker also holds a SIMF account, the
-    /// owning <c>UserProfile.Id</c> (logical FK across DbContexts).
-    /// Null for external speakers. Cross-context, so EF only enforces
-    /// existence in application code at write time.</summary>
+    /// <summary>D-153 / D-167 — when the speaker also holds a SIMF
+    /// account, the owning <c>UserProfile.Id</c>. After D-167 moved
+    /// <c>UserProfile</c> onto <c>SimfAppDbContext</c>, this is a real
+    /// same-DB FK with <c>OnDelete.Restrict</c>. Null for external
+    /// speakers who do not have a SIMF account.</summary>
     public Guid? UserProfileId { get; set; }
 
     public string? Bio { get; set; }

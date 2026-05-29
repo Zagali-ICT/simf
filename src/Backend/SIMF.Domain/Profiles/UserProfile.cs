@@ -1,6 +1,6 @@
 using SIMF.Common.Enums;
 
-namespace SIMF.Domain.IdentityAccess;
+namespace SIMF.Domain.Profiles;
 
 /// <summary>
 /// A user's profile — the per-account information captured at registration
@@ -25,7 +25,10 @@ public class UserProfile
     /// row can be re-created if the user is recovered.</summary>
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    /// <summary>The owning user.</summary>
+    /// <summary>The owning user (logical FK to <c>SimfUser.Id</c> on the
+    /// Identity DB — D-167 moved this entity to the App DB so the FK is
+    /// enforced at write time by the service layer, not by a DB
+    /// constraint).</summary>
     public Guid UserId { get; set; }
 
     /// <summary>
@@ -59,13 +62,10 @@ public class UserProfile
     /// Operations"). Free text, up to 128 chars; null when not supplied.</summary>
     public string? JobTitle { get; set; }
 
-    /// <summary>D-151 — ISO 3166-1 numeric country id, logical FK to
-    /// <c>SIMF.Domain.Common.Country.Id</c>. The Country row lives in
-    /// <c>SimfAppDbContext</c>, this row in <c>SimfIdentityDbContext</c>;
-    /// the FK is enforced in application code at write time, not by a DB
-    /// constraint (the two contexts share one physical database but each
-    /// owns its own migration history).</summary>
-    public int NationalityId { get; set; }//countryId FK
+    /// <summary>D-151 — ISO 3166-1 numeric country id; real FK to
+    /// <c>SIMF.Domain.Common.Country.Id</c> after D-167 moved this entity
+    /// onto <c>SimfAppDbContext</c> (Country also lives there).</summary>
+    public int NationalityId { get; set; }
 
     /// <summary>Date of birth (date only).</summary>
     public DateOnly? DateOfBirth { get; set; }

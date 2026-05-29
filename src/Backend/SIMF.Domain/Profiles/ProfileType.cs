@@ -1,6 +1,6 @@
 using SIMF.Common.Enums;
 
-namespace SIMF.Domain.IdentityAccess;
+namespace SIMF.Domain.Profiles;
 
 /// <summary>
 /// A dynamic subtype assigned to a <see cref="SimfUser"/> (P7 — decision

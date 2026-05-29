@@ -1,4 +1,4 @@
-// D-160 — POST /api/v1/gates/{gateId}/visitors/list — cursor-paged
+﻿// D-160 — POST /api/v1/gates/{gateId}/visitors/list — cursor-paged
 // view of scans at a single gate, backed by the D-158 snapshot columns.
 using System.Net;
 using System.Net.Http.Headers;
@@ -11,6 +11,7 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Gates;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -234,8 +235,8 @@ public sealed class GateVisitorsListTests : IClassFixture<SimfApiFactory>
         };
         await users.CreateAsync(user, AuthFlow.Password);
 
-        var identityDb = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
-        identityDb.UserProfiles.Add(new UserProfile
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        appDb.UserProfiles.Add(new UserProfile
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
@@ -246,7 +247,7 @@ public sealed class GateVisitorsListTests : IClassFixture<SimfApiFactory>
             PlaceOfBirth = "Riyadh",
             CreatedAt = DateTimeOffset.UtcNow,
         });
-        await identityDb.SaveChangesAsync();
+        await appDb.SaveChangesAsync();
         return qrId;
     }
 

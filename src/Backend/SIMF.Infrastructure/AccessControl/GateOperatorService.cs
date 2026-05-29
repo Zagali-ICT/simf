@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/GateScanTests.cs
+﻿// Tests: SIMF.Api.Tests/GateScanTests.cs
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -173,18 +173,12 @@ internal sealed class GateOperatorService(
             })
             .ToListAsync(cancellationToken);
 
+        // D-167: split cross-context join into App-then-Identity round-trips.
         var profileIds = rows
             .Where(r => r.UserProfileId != null)
             .Select(r => r.UserProfileId!.Value)
             .Distinct().ToList();
-        var displayNames = profileIds.Count == 0
-            ? new Dictionary<Guid, string>()
-            : await (
-                from profile in identityDbContext.UserProfiles.AsNoTracking()
-                join user in identityDbContext.Users.AsNoTracking() on profile.UserId equals user.Id
-                where profileIds.Contains(profile.Id)
-                select new { profile.Id, Name = user.DisplayName ?? string.Empty })
-              .ToDictionaryAsync(x => x.Id, x => x.Name, cancellationToken);
+        var displayNames = await ResolveProfileDisplayNamesAsync(profileIds, cancellationToken);
 
         var allowed = rows.Count(r => r.Outcome == ScanOutcome.Allowed);
         var denied = rows.Count - allowed;
@@ -488,19 +482,36 @@ internal sealed class GateOperatorService(
             .SingleOrDefaultAsync(s => s.Id == prior.ScanId.Value, cancellationToken);
         if (scan is null) { return EmptyResponse(prior.StoredAt); }
 
+        // D-167: split cross-context join into App-then-Identity round-trips.
         GateScanUserProfile? profile = null;
         if (scan.UserProfileId is { } pid)
         {
-            profile = await (
-                from row in identityDbContext.UserProfiles.AsNoTracking()
-                join user in identityDbContext.Users.AsNoTracking() on row.UserId equals user.Id
-                where row.Id == pid
-                select new GateScanUserProfile(
-                    row.Id, user.DisplayName ?? string.Empty, row.ArabicName,
-                    row.ProfileTypeId,
-                    row.ProfileType != null ? row.ProfileType.Name : null,
-                    row.ProfileType != null ? row.ProfileType.PageColor : null))
+            var row = await appDbContext.UserProfiles.AsNoTracking()
+                .Include(p => p.ProfileType)
+                .Where(p => p.Id == pid)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.UserId,
+                    p.ArabicName,
+                    p.ProfileTypeId,
+                    ProfileTypeName = p.ProfileType != null ? p.ProfileType.Name : null,
+                    ProfileTypePageColor = p.ProfileType != null ? p.ProfileType.PageColor : null,
+                })
                 .SingleOrDefaultAsync(cancellationToken);
+            if (row is not null)
+            {
+                var displayName = await identityDbContext.Users.AsNoTracking()
+                    .Where(user => user.Id == row.UserId)
+                    .Select(user => user.DisplayName)
+                    .SingleOrDefaultAsync(cancellationToken)
+                    ?? string.Empty;
+                profile = new GateScanUserProfile(
+                    row.Id, displayName, row.ArabicName,
+                    row.ProfileTypeId,
+                    row.ProfileTypeName,
+                    row.ProfileTypePageColor);
+            }
         }
 
         string? message = scan.DenialReasonCode is { } reason
@@ -515,6 +526,28 @@ internal sealed class GateOperatorService(
         var (en, ar) = DenialMessages(reason);
         return string.Equals(acceptLanguage, ArabicLanguageCode, StringComparison.OrdinalIgnoreCase)
             ? ar : en;
+    }
+
+    /// <summary>D-167: resolves UserProfile.Id → display name (taken from
+    /// SimfUser.DisplayName on the Identity DB) via App-then-Identity
+    /// round-trips since the two entities now live in different
+    /// DbContexts.</summary>
+    private async Task<Dictionary<Guid, string>> ResolveProfileDisplayNamesAsync(
+        IReadOnlyList<Guid> profileIds, CancellationToken cancellationToken)
+    {
+        if (profileIds.Count == 0) { return new Dictionary<Guid, string>(); }
+        var profileUsers = await appDbContext.UserProfiles.AsNoTracking()
+            .Where(profile => profileIds.Contains(profile.Id))
+            .Select(profile => new { profile.Id, profile.UserId })
+            .ToListAsync(cancellationToken);
+        var userIds = profileUsers.Select(pu => pu.UserId).Distinct().ToList();
+        var userDisplayNames = await identityDbContext.Users.AsNoTracking()
+            .Where(user => userIds.Contains(user.Id))
+            .Select(user => new { user.Id, user.DisplayName })
+            .ToDictionaryAsync(user => user.Id, user => user.DisplayName ?? string.Empty, cancellationToken);
+        return profileUsers.ToDictionary(
+            pu => pu.Id,
+            pu => userDisplayNames.TryGetValue(pu.UserId, out var name) ? name : string.Empty);
     }
 
     private static (string en, string ar) DenialMessages(DenialReasonCode reason) =>

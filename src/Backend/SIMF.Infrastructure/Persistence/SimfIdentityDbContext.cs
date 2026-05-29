@@ -27,11 +27,7 @@ public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> optio
 
     public DbSet<TotpRecoveryCode> TotpRecoveryCodes => Set<TotpRecoveryCode>();
 
-    public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
-
-    public DbSet<ProfileType> ProfileTypes => Set<ProfileType>();
-
-    public DbSet<Interest> Interests => Set<Interest>();
+    // D-167: UserProfile, ProfileType, Interest moved to SimfAppDbContext.
 
     public DbSet<SIMF.Domain.Notifications.Notification> Notifications =>
         Set<SIMF.Domain.Notifications.Notification>();

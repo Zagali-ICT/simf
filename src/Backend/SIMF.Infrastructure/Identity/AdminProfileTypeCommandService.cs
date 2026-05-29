@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AdminProfileTypeTests.cs
+﻿// Tests: SIMF.Api.Tests/AdminProfileTypeTests.cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -8,6 +8,7 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Identity;
@@ -19,7 +20,7 @@ namespace SIMF.Infrastructure.Identity;
 /// uniqueness rule.
 /// </summary>
 internal sealed class AdminProfileTypeCommandService(
-    SimfIdentityDbContext dbContext,
+    SimfAppDbContext dbContext,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<AdminProfileTypeCommandService> logger) : IAdminProfileTypeCommandService

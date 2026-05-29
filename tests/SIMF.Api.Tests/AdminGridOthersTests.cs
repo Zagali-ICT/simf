@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using ClosedXML.Excel;
@@ -9,6 +9,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -61,6 +62,7 @@ public sealed class AdminGridOthersTests : IClassFixture<SimfApiFactory>
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var otherRow = await db.Users.SingleAsync(u => u.Id == other);
         var visitorRow = await db.Users.SingleAsync(u => u.Id == visitor);
         Assert.Equal(AccountState.Disabled, otherRow.AccountState);
@@ -199,9 +201,10 @@ public sealed class AdminGridOthersTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         // The IdentitySeeder lands "Other — Staff" on first boot
         // (see EnsureProfileTypeAsync).
-        var seeded = await db.ProfileTypes
+        var seeded = await appDb.ProfileTypes
             .FirstOrDefaultAsync(p => p.UserType == UserType.Other && p.IsActive);
         if (seeded is not null) return seeded.Id;
         // Defensive fallback for environments where the seeder did not run.
@@ -215,8 +218,9 @@ public sealed class AdminGridOthersTests : IClassFixture<SimfApiFactory>
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
-        db.ProfileTypes.Add(fresh);
+        appDb.ProfileTypes.Add(fresh);
         await db.SaveChangesAsync();
+        await appDb.SaveChangesAsync();
         return fresh.Id;
     }
 

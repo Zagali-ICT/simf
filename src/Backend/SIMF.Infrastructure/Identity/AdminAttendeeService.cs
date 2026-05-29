@@ -9,12 +9,18 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>
-/// D-134 Sprint A — read-only attendee roster. Joins
-/// <c>SimfUser</c> + <c>UserProfile</c> + <c>ProfileType</c>; admins are
-/// excluded by default (they're not event attendees). **AsNoTracking,
-/// no schema change.**
+/// D-134 Sprint A / D-167 — read-only attendee roster. After D-167 moved
+/// <c>UserProfile</c> + <c>ProfileType</c> onto <c>SimfAppDbContext</c>,
+/// the user + profile + profile-type join can no longer be a single SQL
+/// query (the two DbContexts hit different physical databases). Pattern:
+/// page the SimfUser rows (Identity DB), then load the matching
+/// UserProfile + ProfileType rows (App DB) keyed by user id, then merge
+/// in memory. Total = the Identity count; the App round-trip only fetches
+/// the visible page's worth of rows.
 /// </summary>
-internal sealed class AdminAttendeeService(SimfIdentityDbContext dbContext)
+internal sealed class AdminAttendeeService(
+    SimfIdentityDbContext dbContext,
+    SimfAppDbContext appDbContext)
     : IAdminAttendeeService
 {
     public async Task<GridPage<AdminAttendeeSummary>> ListAsync(
@@ -23,34 +29,18 @@ internal sealed class AdminAttendeeService(SimfIdentityDbContext dbContext)
         var skip = Math.Max(0, query.Skip);
         var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
 
-        // Join via a left-join from SimfUser → UserProfile → ProfileType.
-        // Admins are excluded — they're not event attendees. The left-join
-        // means a Visitor / Other who hasn't filled their profile yet still
-        // appears in the roster (with null profile-type cells), which is
-        // the intended behaviour for the desk operator.
-        var rows =
-            from user in dbContext.Users.AsNoTracking()
-            where user.UserType != UserType.Admin
-            join profile in dbContext.UserProfiles.AsNoTracking()
-                on user.Id equals profile.UserId into profileJoin
-            from profile in profileJoin.DefaultIfEmpty()
-            join profileType in dbContext.ProfileTypes.AsNoTracking()
-                on profile != null ? profile.ProfileTypeId : (Guid?)null
-                equals profileType.Id into profileTypeJoin
-            from profileType in profileTypeJoin.DefaultIfEmpty()
-            select new
-            {
-                user,
-                profile,
-                profileType,
-            };
+        // 1) Identity-side page: SimfUser filtered + sorted, admins
+        // excluded. profileTypeId-as-filter requires a cross-DB lookup;
+        // we defer it to step 3 and apply in-memory.
+        var users = dbContext.Users.AsNoTracking()
+            .Where(user => user.UserType != UserType.Admin);
 
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var term = query.Search.Trim();
-            rows = rows.Where(row =>
-                EF.Functions.Like(row.user.Email!, $"%{term}%")
-                || EF.Functions.Like(row.user.DisplayName, $"%{term}%"));
+            users = users.Where(user =>
+                EF.Functions.Like(user.Email!, $"%{term}%")
+                || EF.Functions.Like(user.DisplayName, $"%{term}%"));
         }
         if (query.Filters.TryGetValue("userType", out var userTypeFilter)
             && !string.IsNullOrWhiteSpace(userTypeFilter)
@@ -58,49 +48,112 @@ internal sealed class AdminAttendeeService(SimfIdentityDbContext dbContext)
             && Enum.TryParse<UserType>(userTypeFilter, ignoreCase: true, out var userTypeValue)
             && userTypeValue != UserType.Admin)
         {
-            rows = rows.Where(row => row.user.UserType == userTypeValue);
-        }
-        if (query.Filters.TryGetValue("profileTypeId", out var profileTypeFilter)
-            && Guid.TryParse(profileTypeFilter, out var profileTypeId))
-        {
-            rows = rows.Where(row => row.profile != null
-                && row.profile.ProfileTypeId == profileTypeId);
+            users = users.Where(user => user.UserType == userTypeValue);
         }
         if (query.Filters.TryGetValue("accountState", out var stateFilter)
             && !string.IsNullOrWhiteSpace(stateFilter)
             && Enum.TryParse<AccountState>(stateFilter, ignoreCase: true, out var state))
         {
-            rows = rows.Where(row => row.user.AccountState == state);
+            users = users.Where(user => user.AccountState == state);
         }
 
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
+        users = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("email", true) => rows.OrderByDescending(row => row.user.Email),
-            ("email", false) => rows.OrderBy(row => row.user.Email),
-            ("displayname", true) => rows.OrderByDescending(row => row.user.DisplayName),
-            ("displayname", false) => rows.OrderBy(row => row.user.DisplayName),
-            ("usertype", true) => rows.OrderByDescending(row => row.user.UserType),
-            ("usertype", false) => rows.OrderBy(row => row.user.UserType),
-            ("createdat", false) => rows.OrderBy(row => row.user.CreatedAt),
-            _ => rows.OrderByDescending(row => row.user.CreatedAt),
+            ("email", true) => users.OrderByDescending(user => user.Email),
+            ("email", false) => users.OrderBy(user => user.Email),
+            ("displayname", true) => users.OrderByDescending(user => user.DisplayName),
+            ("displayname", false) => users.OrderBy(user => user.DisplayName),
+            ("usertype", true) => users.OrderByDescending(user => user.UserType),
+            ("usertype", false) => users.OrderBy(user => user.UserType),
+            ("createdat", false) => users.OrderBy(user => user.CreatedAt),
+            _ => users.OrderByDescending(user => user.CreatedAt),
         };
 
-        var total = await rows.CountAsync(cancellationToken);
-        var page = await rows
+        // If the caller filters by profile type, we have to evaluate
+        // it across the two contexts: fetch matching UserProfile.UserId
+        // values from App DB first and restrict the Identity query.
+        if (query.Filters.TryGetValue("profileTypeId", out var profileTypeFilter)
+            && Guid.TryParse(profileTypeFilter, out var profileTypeId))
+        {
+            var matchingUserIds = await appDbContext.UserProfiles
+                .AsNoTracking()
+                .Where(profile => profile.ProfileTypeId == profileTypeId)
+                .Select(profile => profile.UserId)
+                .ToListAsync(cancellationToken);
+            users = users.Where(user => matchingUserIds.Contains(user.Id));
+        }
+
+        var total = await users.CountAsync(cancellationToken);
+        var pageUsers = await users
             .Skip(skip)
             .Take(top)
-            .Select(row => new AdminAttendeeSummary(
-                row.user.Id,
-                row.user.Email ?? string.Empty,
-                row.user.DisplayName,
-                row.user.UserType.ToString(),
-                row.profile != null ? row.profile.ProfileTypeId : null,
-                row.profileType != null ? row.profileType.Name : null,
-                row.profileType != null ? row.profileType.NameArabic : null,
-                row.user.AccountState.ToString(),
-                row.profile != null ? row.profile.QrId : null,
-                row.user.CreatedAt))
+            .Select(user => new
+            {
+                user.Id,
+                user.Email,
+                user.DisplayName,
+                user.UserType,
+                user.AccountState,
+                user.CreatedAt,
+            })
             .ToListAsync(cancellationToken);
+
+        // 2) App-side load for the visible page: UserProfile + ProfileType
+        // keyed by user id.
+        var userIds = pageUsers.Select(u => u.Id).ToList();
+        var profilesByUserId = await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(profile => userIds.Contains(profile.UserId))
+            .Select(profile => new
+            {
+                profile.UserId,
+                profile.ProfileTypeId,
+                profile.QrId,
+            })
+            .ToDictionaryAsync(profile => profile.UserId, cancellationToken);
+
+        var profileTypeIds = profilesByUserId.Values
+            .Where(profile => profile.ProfileTypeId.HasValue)
+            .Select(profile => profile.ProfileTypeId!.Value)
+            .Distinct()
+            .ToList();
+        var profileTypesById = await appDbContext.ProfileTypes
+            .AsNoTracking()
+            .Where(profileType => profileTypeIds.Contains(profileType.Id))
+            .Select(profileType => new
+            {
+                profileType.Id,
+                profileType.Name,
+                profileType.NameArabic,
+            })
+            .ToDictionaryAsync(profileType => profileType.Id, cancellationToken);
+
+        // 3) Merge in memory.
+        var page = pageUsers.Select(user =>
+        {
+            profilesByUserId.TryGetValue(user.Id, out var profile);
+            string? profileTypeName = null;
+            string? profileTypeNameAr = null;
+            Guid? profileTypeIdValue = null;
+            if (profile?.ProfileTypeId is { } ptId
+                && profileTypesById.TryGetValue(ptId, out var profileType))
+            {
+                profileTypeName = profileType.Name;
+                profileTypeNameAr = profileType.NameArabic;
+                profileTypeIdValue = ptId;
+            }
+            return new AdminAttendeeSummary(
+                user.Id,
+                user.Email ?? string.Empty,
+                user.DisplayName,
+                user.UserType.ToString(),
+                profileTypeIdValue,
+                profileTypeName,
+                profileTypeNameAr,
+                user.AccountState.ToString(),
+                profile?.QrId,
+                user.CreatedAt);
+        }).ToList();
 
         return GridPage<AdminAttendeeSummary>.Of(page, total,
             new GridQuery { Skip = skip, Top = top });

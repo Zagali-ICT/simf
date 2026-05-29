@@ -1,4 +1,4 @@
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -9,6 +9,7 @@ using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -161,6 +162,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         return db.Users.Single(u => u.Email == email).AccountState;
     }
 
@@ -168,9 +170,10 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var user = db.Users.Single(u => u.Email == email);
         // D-106: QR lives on UserProfile.
-        var qr = db.UserProfiles
+        var qr = appDb.UserProfiles
             .Where(p => p.UserId == user.Id)
             .Select(p => p.QrId)
             .SingleOrDefault();
@@ -181,6 +184,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         return (await db.Users.SingleAsync(u => u.Email == email)).Id;
     }
 
@@ -188,6 +192,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var interest = new Interest
         {
             Id = Guid.NewGuid(),
@@ -197,8 +202,9 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
-        db.Interests.Add(interest);
+        appDb.Interests.Add(interest);
         await db.SaveChangesAsync();
+        await appDb.SaveChangesAsync();
         return interest.Id;
     }
 

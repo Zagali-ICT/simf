@@ -1,10 +1,11 @@
-// Tests: SIMF.Api.Tests/PendingProfileReadTests.cs, AdminProfileReadTests.cs
+﻿// Tests: SIMF.Api.Tests/PendingProfileReadTests.cs, AdminProfileReadTests.cs
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Identity;
@@ -48,7 +49,7 @@ internal sealed class AdminApprovalReadService(
         if (string.IsNullOrWhiteSpace(qrId)) { return null; }
         var normalised = qrId.Trim().ToUpperInvariant();
 
-        var row = await dbContext.UserProfiles
+        var row = await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(p => p.QrId == normalised)
             .Select(p => new
@@ -105,7 +106,7 @@ internal sealed class AdminApprovalReadService(
             .SingleOrDefaultAsync(cancellationToken);
         if (user is null) { return null; }
 
-        var profile = await dbContext.UserProfiles
+        var profile = await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(p => p.UserId == subjectUserId)
             .Select(p => new
@@ -198,7 +199,7 @@ internal sealed class AdminApprovalReadService(
         // (the form is self-service). When no profile row exists we
         // still return the response with nulls + an empty Interests
         // list so the modal can render "not filled yet".
-        var profile = await dbContext.UserProfiles
+        var profile = await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(p => p.UserId == subjectUserId)
             .Select(p => new

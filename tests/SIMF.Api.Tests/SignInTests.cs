@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,6 +7,7 @@ using SIMF.Application.Auditing;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
 
@@ -754,23 +755,25 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDatabase = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var user = database.Users.Single(candidate => candidate.Email == email);
-        // D-106: rejection text lives on UserProfile; create the row if needed.
-        var profile = database.UserProfiles.SingleOrDefault(p => p.UserId == user.Id);
+        // D-106 / D-167: rejection text lives on UserProfile (App DB).
+        var profile = appDatabase.UserProfiles.SingleOrDefault(p => p.UserId == user.Id);
         if (profile is null)
         {
-            profile = new SIMF.Domain.IdentityAccess.UserProfile
+            profile = new SIMF.Domain.Profiles.UserProfile
             {
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
                 CreatedAt = DateTimeOffset.UtcNow,
             };
-            database.UserProfiles.Add(profile);
+            appDatabase.UserProfiles.Add(profile);
         }
         profile.RejectionReason = reason;
         profile.RejectionReasonArabic = reasonArabic;
         user.StateChangedAt = DateTimeOffset.UtcNow;
         database.SaveChanges();
+        appDatabase.SaveChanges();
     }
 
     private bool AuditEntryExists(string email, string eventType)

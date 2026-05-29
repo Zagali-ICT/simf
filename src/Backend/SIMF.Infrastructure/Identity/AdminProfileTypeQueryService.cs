@@ -1,7 +1,8 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
 using SIMF.Infrastructure.Persistence;
 
 using SIMF.Common.Enums;
@@ -25,7 +26,7 @@ namespace SIMF.Infrastructure.Identity;
 /// direct <c>AddScoped&lt;Interface, Impl&gt;</c>.</para>
 /// </summary>
 internal sealed class AdminProfileTypeQueryService(
-    SimfIdentityDbContext dbContext)
+    SimfAppDbContext dbContext)
     : IAdminProfileTypeQueryService
 {
     public async Task<IReadOnlyList<AdminProfileTypeSummary>> ListProfileTypesAsync(
