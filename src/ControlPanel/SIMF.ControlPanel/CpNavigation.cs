@@ -66,7 +66,10 @@ public static class CpNavigation
         new("Nav.Knowledge",
         [
             new("Module.Faq", "/m/faq", IsStub: true),
-            new("Module.AiSettings", "/m/ai-settings", IsStub: true),
+            // D-176 (gap doc G12) — centralised AI module: prompt
+            // catalogue + invocations log. Real pages, no longer stubs.
+            new("Module.AiPrompts", "/admin/ai/prompts"),
+            new("Module.AiInvocations", "/admin/ai/invocations"),
         ]),
         new("Nav.Content",
         [

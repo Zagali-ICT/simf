@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
+using SIMF.Contracts.Ai;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Logs;
 
@@ -1374,6 +1375,62 @@ public sealed class SimfAdminClient(HttpClient http)
                     "تعذّر الوصول إلى خدمة SIMF. حاول مرة أخرى."));
         }
     }
+
+    // -- D-176 (gap doc G12) — centralised AI module -----------------------
+
+    public Task<ApiCallResult<GridPage<AdminAiPromptSummary>>> ListAiPromptsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminAiPromptSummary>>(
+            HttpMethod.Post, "ai/prompts/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminAiPromptDetail>> GetAiPromptAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminAiPromptDetail>(
+            HttpMethod.Get, $"ai/prompts/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminAiPromptDetail>> CreateAiPromptAsync(
+        CreateAiPromptRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminAiPromptDetail>(
+            HttpMethod.Post, "ai/prompts",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminAiPromptDetail>> UpdateAiPromptAsync(
+        Guid id, UpdateAiPromptRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminAiPromptDetail>(
+            HttpMethod.Put, $"ai/prompts/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeactivateAiPromptAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"ai/prompts/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AiCallResult>> TestAiPromptAsync(
+        Guid id, TestAiPromptRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AiCallResult>(
+            HttpMethod.Post, $"ai/prompts/{id}/test",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<AdminAiInvocationRow>>> ListAiInvocationsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminAiInvocationRow>>(
+            HttpMethod.Post, "ai/invocations/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
 
     private static ApiResult<T> TransportFailure<T>(string message, string messageArabic) =>
         ApiResult<T>.Fail(new ApiError

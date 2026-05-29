@@ -52,6 +52,8 @@
   <data name="Module.Moderation" xml:space="preserve"><value>Moderation queue</value></data>
   <data name="Module.Faq" xml:space="preserve"><value>FAQ groups &amp; entries</value></data>
   <data name="Module.AiSettings" xml:space="preserve"><value>AI settings</value></data>
+  <data name="Module.AiPrompts" xml:space="preserve"><value>AI prompts</value></data>
+  <data name="Module.AiInvocations" xml:space="preserve"><value>AI invocations</value></data>
   <data name="Module.Media" xml:space="preserve"><value>Media Center</value></data>
   <data name="Module.News" xml:space="preserve"><value>News</value></data>
   <data name="Module.PreviousEditions" xml:space="preserve"><value>Previous editions</value></data>
@@ -1396,4 +1398,59 @@
   <data name="Admin.Banners.Col.EndUtc" xml:space="preserve"><value>End</value></data>
   <data name="Admin.Banners.Col.DisplayOrder" xml:space="preserve"><value>Order</value></data>
   <data name="Admin.Banners.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <!-- D-176 (gap doc G12) — AI module CP -->
+  <data name="Admin.AiPrompts.Title" xml:space="preserve"><value>AI prompts</value></data>
+  <data name="Admin.AiPrompts.New" xml:space="preserve"><value>New prompt</value></data>
+  <data name="Admin.AiPrompts.None" xml:space="preserve"><value>No AI prompts yet.</value></data>
+  <data name="Admin.AiPrompts.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.AiPrompts.LoadFailed" xml:space="preserve"><value>Could not load AI prompts.</value></data>
+  <data name="Admin.AiPrompts.Col.Key" xml:space="preserve"><value>Key</value></data>
+  <data name="Admin.AiPrompts.Col.Feature" xml:space="preserve"><value>Feature</value></data>
+  <data name="Admin.AiPrompts.Col.DisplayName" xml:space="preserve"><value>Name</value></data>
+  <data name="Admin.AiPrompts.Col.Provider" xml:space="preserve"><value>Provider</value></data>
+  <data name="Admin.AiPrompts.Col.Model" xml:space="preserve"><value>Model</value></data>
+  <data name="Admin.AiPrompts.Col.Version" xml:space="preserve"><value>Version</value></data>
+  <data name="Admin.AiPrompts.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.AiPrompts.Field.Key" xml:space="preserve"><value>Key (kebab-case slug, immutable)</value></data>
+  <data name="Admin.AiPrompts.Field.Feature" xml:space="preserve"><value>Feature</value></data>
+  <data name="Admin.AiPrompts.Field.DisplayName" xml:space="preserve"><value>Display name (English)</value></data>
+  <data name="Admin.AiPrompts.Field.DisplayNameArabic" xml:space="preserve"><value>Display name (Arabic)</value></data>
+  <data name="Admin.AiPrompts.Field.Description" xml:space="preserve"><value>Description (English)</value></data>
+  <data name="Admin.AiPrompts.Field.DescriptionArabic" xml:space="preserve"><value>Description (Arabic)</value></data>
+  <data name="Admin.AiPrompts.Field.Provider" xml:space="preserve"><value>Provider</value></data>
+  <data name="Admin.AiPrompts.Field.Model" xml:space="preserve"><value>Model</value></data>
+  <data name="Admin.AiPrompts.Field.SystemPrompt" xml:space="preserve"><value>System prompt</value></data>
+  <data name="Admin.AiPrompts.Field.UserPromptTemplate" xml:space="preserve"><value>User prompt template ({placeholder} substitutions)</value></data>
+  <data name="Admin.AiPrompts.Field.Temperature" xml:space="preserve"><value>Temperature (0.0–2.0)</value></data>
+  <data name="Admin.AiPrompts.Field.MaxOutputTokens" xml:space="preserve"><value>Max output tokens (1–8000)</value></data>
+  <data name="Admin.AiPrompts.Field.IsActive" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.AiPrompts.Add.Title" xml:space="preserve"><value>Create AI prompt</value></data>
+  <data name="Admin.AiPrompts.Edit.Title" xml:space="preserve"><value>Edit AI prompt</value></data>
+  <data name="Admin.AiPrompts.Test.Title" xml:space="preserve"><value>Test prompt</value></data>
+  <data name="Admin.AiPrompts.Test.Action" xml:space="preserve"><value>Run test</value></data>
+  <data name="Admin.AiPrompts.Test.Output" xml:space="preserve"><value>Output</value></data>
+  <data name="Admin.AiPrompts.Test.Latency" xml:space="preserve"><value>Latency</value></data>
+  <data name="Admin.AiPrompts.Test.Tokens" xml:space="preserve"><value>Tokens</value></data>
+  <data name="Admin.AiPrompts.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.AiPrompts.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.AiPrompts.Delete" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.AiPrompts.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.AiPrompts.Test" xml:space="preserve"><value>Test</value></data>
+  <data name="Admin.AiPrompts.Saved" xml:space="preserve"><value>Prompt saved.</value></data>
+  <data name="Admin.AiPrompts.Deleted" xml:space="preserve"><value>Prompt deactivated.</value></data>
+  <data name="Admin.AiPrompts.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.AiInvocations.Title" xml:space="preserve"><value>AI invocations</value></data>
+  <data name="Admin.AiInvocations.None" xml:space="preserve"><value>No invocations recorded yet.</value></data>
+  <data name="Admin.AiInvocations.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.AiInvocations.LoadFailed" xml:space="preserve"><value>Could not load invocations.</value></data>
+  <data name="Admin.AiInvocations.Col.Time" xml:space="preserve"><value>Time</value></data>
+  <data name="Admin.AiInvocations.Col.PromptKey" xml:space="preserve"><value>Prompt key</value></data>
+  <data name="Admin.AiInvocations.Col.Feature" xml:space="preserve"><value>Feature</value></data>
+  <data name="Admin.AiInvocations.Col.Provider" xml:space="preserve"><value>Provider</value></data>
+  <data name="Admin.AiInvocations.Col.Caller" xml:space="preserve"><value>Caller</value></data>
+  <data name="Admin.AiInvocations.Col.Latency" xml:space="preserve"><value>Latency</value></data>
+  <data name="Admin.AiInvocations.Col.Tokens" xml:space="preserve"><value>Tokens (in/out)</value></data>
+  <data name="Admin.AiInvocations.Col.Error" xml:space="preserve"><value>Error</value></data>
+  <data name="Admin.AiInvocations.Filter.ErrorsOnly" xml:space="preserve"><value>Errors only</value></data>
+  <data name="Admin.AiInvocations.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
 </root>

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using SIMF.ApiClient;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
+using SIMF.Contracts.Ai;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Logs;
 
@@ -1350,6 +1351,65 @@ internal static class AccountEndpoints
             // cache-buster, so a fresh upload always replaces the cached one.
             http.Response.Headers.CacheControl = "private, max-age=300";
             return Results.File(bytes, contentType);
+        });
+
+        // D-176 (gap doc G12) — AI module admin CRUD + invocations log.
+        group.MapPost("/admin/ai/prompts/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListAiPromptsAsync(body, token));
+        });
+
+        group.MapGet("/admin/ai/prompts/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetAiPromptAsync(id, token));
+        });
+
+        group.MapPost("/admin/ai/prompts",
+            async (CreateAiPromptRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateAiPromptAsync(body, token));
+        });
+
+        group.MapPut("/admin/ai/prompts/{id:guid}",
+            async (Guid id, UpdateAiPromptRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateAiPromptAsync(id, body, token));
+        });
+
+        group.MapDelete("/admin/ai/prompts/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateAiPromptAsync(id, token));
+        });
+
+        group.MapPost("/admin/ai/prompts/{id:guid}/test",
+            async (Guid id, TestAiPromptRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.TestAiPromptAsync(id, body, token));
+        });
+
+        group.MapPost("/admin/ai/invocations/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListAiInvocationsAsync(body, token));
         });
     }
 

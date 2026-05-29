@@ -1,0 +1,123 @@
+@* D-176 (gap doc G12) — append-only AI invocations log. Read-only.
+   Filterable by errors-only so SOC + product can spot regressions. *@
+@page "/admin/ai/invocations"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.AiInvocations.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.AiInvocations.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form__actions">
+            <SimfCheckbox Value="_errorsOnly" ValueChanged="OnErrorsOnlyChangedAsync">
+                @L["Admin.AiInvocations.Filter.ErrorsOnly"]
+            </SimfCheckbox>
+        </div>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.AiInvocations.Loading"]</p>
+        }
+        else if (_page.Items.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.AiInvocations.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.AiInvocations.Col.Time"]</th>
+                        <th>@L["Admin.AiInvocations.Col.PromptKey"]</th>
+                        <th>@L["Admin.AiInvocations.Col.Feature"]</th>
+                        <th>@L["Admin.AiInvocations.Col.Provider"]</th>
+                        <th>@L["Admin.AiInvocations.Col.Caller"]</th>
+                        <th>@L["Admin.AiInvocations.Col.Latency"]</th>
+                        <th>@L["Admin.AiInvocations.Col.Tokens"]</th>
+                        <th>@L["Admin.AiInvocations.Col.Error"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _page.Items)
+                    {
+                        <tr>
+                            <td>@row.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</td>
+                            <td><code>@row.PromptKey</code></td>
+                            <td>@row.Feature</td>
+                            <td>@row.Provider</td>
+                            <td>@row.CallerKind</td>
+                            <td>@(row.LatencyMs)ms</td>
+                            <td>@(row.TokensInput?.ToString() ?? "—") / @(row.TokensOutput?.ToString() ?? "—")</td>
+                            <td>
+                                @if (row.ErrorCode is not null)
+                                {
+                                    <SimfPill Variant="off">@row.ErrorCode</SimfPill>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="simf-table__summary">
+                @(string.Format(L["Admin.AiInvocations.Summary"],
+                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
+            </p>
+        }
+    </div>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 50 };
+    private GridPage<AdminAiInvocationRow> _page = new();
+    private bool _loading;
+    private bool _errorsOnly;
+    private Toast? _toast;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnErrorsOnlyChangedAsync(bool value)
+    {
+        _errorsOnly = value;
+        _query = new GridQuery
+        {
+            Top = _query.Top,
+            Filters = _errorsOnly
+                ? new Dictionary<string, string> { ["errorOnly"] = "true" }
+                : new Dictionary<string, string>(),
+        };
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminAiInvocationRow>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/ai/invocations/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.AiInvocations.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+}
