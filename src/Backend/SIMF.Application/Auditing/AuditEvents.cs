@@ -168,6 +168,13 @@ public static class AuditEvents
     public const string MeetingRequestSubmitted = "MeetingRequest.Submitted";
     public const string MeetingRequestResponded = "MeetingRequest.Responded";
 
+    // Seat reservations (D-175, gap doc G11 — Mockup page 7)
+    public const string HallSeatLayoutUpdated = "HallSeatLayout.Updated";
+    public const string SeatReservationCreated = "SeatReservation.Created";
+    public const string SeatReservationReleased = "SeatReservation.Released";
+    public const string SeatRowAdminReserved = "SeatReservation.RowAdminReserved";
+    public const string SeatRowAdminReleased = "SeatReservation.RowAdminReleased";
+
     // Invitations + VIP notify (D-168, gap doc G5 — public-relations
     // module, PDF §2.7.3)
     public const string InvitationCreated = "Invitation.Created";

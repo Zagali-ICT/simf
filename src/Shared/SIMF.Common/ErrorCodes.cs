@@ -156,6 +156,16 @@ public static class ErrorCodes
     public const string MeetingRequestSessionNotFound = "MEETING_REQUEST_SESSION_NOT_FOUND";
     public const string MeetingRequestStatusInvalid = "MEETING_REQUEST_STATUS_INVALID";
 
+    // Seat reservations (D-175, gap doc G11 — Mockup page 7).
+    public const string SeatLayoutInvalid = "SEAT_LAYOUT_INVALID";
+    public const string SeatLayoutMissing = "SEAT_LAYOUT_MISSING";
+    public const string SeatOutOfBounds = "SEAT_OUT_OF_BOUNDS";
+    public const string SeatAlreadyReserved = "SEAT_ALREADY_RESERVED";
+    public const string SeatAlreadyOwnedBySession = "SEAT_ALREADY_OWNED_BY_SESSION";
+    public const string SeatReservationNotFound = "SEAT_RESERVATION_NOT_FOUND";
+    public const string SeatCapacityExceeded = "SEAT_CAPACITY_EXCEEDED";
+    public const string SeatSessionFull = "SEAT_SESSION_FULL";
+
     // CMS: ContentBlock + Banner (D-173, gap doc G8 — PDF §1, §2.1).
     public const string ContentBlockInvalid = "CONTENT_BLOCK_INVALID";
     public const string ContentBlockNotFound = "CONTENT_BLOCK_NOT_FOUND";

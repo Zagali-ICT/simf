@@ -227,6 +227,10 @@ public static class DependencyInjection
             SIMF.Infrastructure.Delegations.PublicDelegationService>();
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IMeetingRequestService,
             SIMF.Infrastructure.MeetingRequests.MeetingRequestService>();
+        // D-175 (gap doc G11, Mockup page 7) — per-session seat
+        // reservations (visitor self-pick + random + admin row blocks).
+        services.AddScoped<SIMF.Application.SeatReservations.Abstractions.ISeatReservationService,
+            SIMF.Infrastructure.SeatReservations.SeatReservationService>();
         // D-148 — Gate Module: admin CRUD + operator surface + QR resolver +
         // gate-config cache + idempotency store + failure-rate circuit
         // (SIMF-API-GATES-001, SIMF-FDS-003 §5.6).

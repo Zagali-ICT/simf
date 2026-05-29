@@ -9,6 +9,7 @@ using SIMF.Domain.Operations;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 using SIMF.Domain.PublicRelations;
+using SIMF.Domain.SeatReservations;
 using SIMF.Domain.SessionQuestions;
 
 namespace SIMF.Infrastructure.Persistence;
@@ -98,6 +99,15 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
 
     /// <summary>D-174 (gap doc G11, Mockup page 27) — audience meeting requests.</summary>
     public DbSet<MeetingRequest> MeetingRequests => Set<MeetingRequest>();
+
+    /// <summary>D-175 (gap doc G11, Mockup page 7) — per-hall seat
+    /// grid layout (rows + seats-per-row). Optional 1:1 with Hall.</summary>
+    public DbSet<HallSeatLayout> HallSeatLayouts => Set<HallSeatLayout>();
+
+    /// <summary>D-175 (gap doc G11, Mockup page 7) — per-session
+    /// seat reservations (visitor self-pick + random + admin row
+    /// blocks). Released rows stay for audit.</summary>
+    public DbSet<SeatReservation> SeatReservations => Set<SeatReservation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
