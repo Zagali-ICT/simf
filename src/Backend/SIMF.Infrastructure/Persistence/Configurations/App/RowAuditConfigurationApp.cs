@@ -28,6 +28,9 @@ internal sealed class RowAuditConfigurationApp : IEntityTypeConfiguration<RowAud
         builder.Property(audit => audit.PrimaryKey).HasMaxLength(256).IsRequired();
         builder.Property(audit => audit.CorrelationId).HasMaxLength(64);
         builder.Property(audit => audit.AffectedColumns).HasMaxLength(2000);
+        // D-157 — actor-name snapshot, same purpose as the identity-side
+        // RowAuditConfiguration.
+        builder.Property(audit => audit.ActorDisplayName).HasMaxLength(128);
         builder.Property(audit => audit.OldValuesJson);
         builder.Property(audit => audit.NewValuesJson);
 

@@ -20,8 +20,20 @@ public class GateScan
 
     /// <summary>The resolved <c>UserProfile.Id</c>. Null when the QR
     /// resolved to nothing (DenialReasonCode = QR_UNKNOWN). Logical FK to
-    /// <c>UserProfile</c> (cross-context — DAT-001 §5.3.1).</summary>
+    /// <c>UserProfile</c> (cross-DB — D-157).</summary>
     public Guid? UserProfileId { get; set; }
+
+    /// <summary>D-157 — snapshot of the scanned visitor's display name
+    /// at the moment of the scan. Lets the scan log render "Ahmad Salem"
+    /// even after the linked Identity-DB row is deleted, renamed, or
+    /// otherwise diverges. Null when <see cref="UserProfileId"/> is null
+    /// (QR didn't resolve).</summary>
+    public string? ScannedDisplayName { get; set; }
+
+    /// <summary>D-157 — snapshot of the scanned visitor's profile-type
+    /// name (e.g. "VVIP", "Staff") at the moment of the scan. Same
+    /// rationale as <see cref="ScannedDisplayName"/>.</summary>
+    public string? ScannedProfileTypeName { get; set; }
 
     /// <summary>The 12-character QR exactly as scanned. Preserved verbatim
     /// even after QR rotation so the scan stays forensically traceable.</summary>

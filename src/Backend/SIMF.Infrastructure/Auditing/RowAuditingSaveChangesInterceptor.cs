@@ -105,6 +105,9 @@ internal sealed class RowAuditingSaveChangesInterceptor(
     {
         var now = timeProvider.GetUtcNow();
         var actorUserId = requestContext.ActorUserId;
+        // D-157 — snapshot the actor's display name from the JWT claim
+        // so each RowAudit row stands alone without a cross-DB JOIN.
+        var actorDisplayName = requestContext.ActorDisplayName;
         var correlationId = requestContext.CorrelationId;
 
         // Snapshot the entries — we'll be adding new RowAudit entries below,
@@ -121,7 +124,7 @@ internal sealed class RowAuditingSaveChangesInterceptor(
         {
             try
             {
-                auditRows.Add(BuildAuditRow(entry, now, actorUserId, correlationId));
+                auditRows.Add(BuildAuditRow(entry, now, actorUserId, actorDisplayName, correlationId));
             }
             catch (Exception ex)
             {
@@ -141,7 +144,8 @@ internal sealed class RowAuditingSaveChangesInterceptor(
     }
 
     private static RowAudit BuildAuditRow(
-        EntityEntry entry, DateTimeOffset now, Guid? actorUserId, string? correlationId)
+        EntityEntry entry, DateTimeOffset now, Guid? actorUserId,
+        string? actorDisplayName, string? correlationId)
     {
         var operation = entry.State switch
         {
@@ -186,6 +190,11 @@ internal sealed class RowAuditingSaveChangesInterceptor(
             Operation = operation,
             PrimaryKey = primaryKey,
             ActorUserId = actorUserId,
+            // D-157 — clip to the column cap (128) — display names from a
+            // claim are well-bounded but defence in depth.
+            ActorDisplayName = actorDisplayName is null || actorDisplayName.Length <= 128
+                ? actorDisplayName
+                : actorDisplayName[..128],
             CorrelationId = correlationId is null || correlationId.Length <= 64
                 ? correlationId
                 : correlationId[..64],

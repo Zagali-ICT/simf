@@ -24,4 +24,11 @@ public interface IRequestContext
     /// to pass the id down.
     /// </summary>
     Guid? ActorUserId { get; }
+
+    /// <summary>D-157: the signed-in actor's display name, read from
+    /// the JWT's <c>display_name</c> claim. Null when no user is bound
+    /// to the request. The row-audit interceptor and the audit log use
+    /// this to snapshot the actor name into each log row so cross-DB
+    /// JOINs aren't needed for forensic review.</summary>
+    string? ActorDisplayName { get; }
 }

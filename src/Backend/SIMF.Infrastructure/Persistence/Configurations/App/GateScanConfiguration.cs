@@ -19,6 +19,10 @@ internal sealed class GateScanConfiguration : IEntityTypeConfiguration<GateScan>
         builder.Property(scan => scan.Id).ValueGeneratedOnAdd();
 
         builder.Property(scan => scan.QrIdAtScan).HasMaxLength(32).IsRequired();
+        // D-157 — snapshot fields capture the visitor's identity at the
+        // moment of the scan so the audit row survives cross-DB drift.
+        builder.Property(scan => scan.ScannedDisplayName).HasMaxLength(128);
+        builder.Property(scan => scan.ScannedProfileTypeName).HasMaxLength(128);
         builder.Property(scan => scan.Direction).HasConversion<int>();
         builder.Property(scan => scan.Outcome).HasConversion<int>();
         builder.Property(scan => scan.DenialReasonCode).HasConversion<int?>();

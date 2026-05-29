@@ -26,12 +26,24 @@ public class OperationLogEntry
     /// <summary>The user the event concerns; null if not applicable.</summary>
     public Guid? SubjectUserId { get; set; }
 
+    /// <summary>D-157 — snapshot of the subject's display name at the
+    /// time of the event. Lets a SOC reviewer read "Ahmad Salem" without
+    /// joining back to a cross-DB Identity row that may have been
+    /// renamed or deleted since. Null when the event has no subject.</summary>
+    public string? SubjectDisplayName { get; set; }
+
     /// <summary>
     /// The user who performed the action, when distinct from the subject —
     /// e.g. an admin resetting another user's 2FA (D-041). Null in the usual
     /// case where the actor is the subject.
     /// </summary>
     public Guid? ActorUserId { get; set; }
+
+    /// <summary>D-157 — snapshot of the actor's display name at the time
+    /// of the event. Same rationale as <see cref="SubjectDisplayName"/>.
+    /// Null when the actor and subject are the same (the subject's
+    /// display name covers both) or when the event has no actor.</summary>
+    public string? ActorDisplayName { get; set; }
 
     /// <summary>The client IP the request came from.</summary>
     public string? SourceIp { get; set; }

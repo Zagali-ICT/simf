@@ -255,7 +255,9 @@ internal sealed class GateOperatorService(
         var now = timeProvider.GetUtcNow();
         var scan = BuildScan(context, qr, ScanOutcome.Allowed,
             denialReason: null, userProfileId: resolution.UserProfileId,
-            direction: direction, now: now, idempotencyKey: idempotencyKey);
+            direction: direction, now: now, idempotencyKey: idempotencyKey,
+            scannedDisplayName: resolution.DisplayName,
+            scannedProfileTypeName: resolution.ProfileTypeName);
         appDbContext.GateScans.Add(scan);
 
         var response = new GateScanResponse(
@@ -310,7 +312,9 @@ internal sealed class GateOperatorService(
         var now = timeProvider.GetUtcNow();
         var scan = BuildScan(context, qrIdAtScan, ScanOutcome.Denied,
             denialReason: reason, userProfileId: denialCtx.UserProfileId,
-            direction: direction, now: now, idempotencyKey: idempotencyKey);
+            direction: direction, now: now, idempotencyKey: idempotencyKey,
+            scannedDisplayName: denialCtx.DisplayName,
+            scannedProfileTypeName: denialCtx.ProfileTypeName);
         appDbContext.GateScans.Add(scan);
 
         var message = MessageFor(reason, context.AcceptLanguage);
@@ -357,11 +361,17 @@ internal sealed class GateOperatorService(
     private static GateScan BuildScan(
         GateScanContext context, string qrIdAtScan, ScanOutcome outcome,
         DenialReasonCode? denialReason, Guid? userProfileId, ScanDirection direction,
-        DateTimeOffset now, string? idempotencyKey) =>
+        DateTimeOffset now, string? idempotencyKey,
+        string? scannedDisplayName, string? scannedProfileTypeName) =>
         new()
         {
             GateId = context.GateId,
             UserProfileId = userProfileId,
+            // D-157 — snapshot the visitor identity at scan time so the
+            // log row survives even if the linked Identity-DB row is
+            // later deleted or renamed.
+            ScannedDisplayName = scannedDisplayName,
+            ScannedProfileTypeName = scannedProfileTypeName,
             QrIdAtScan = qrIdAtScan,
             Direction = direction,
             Outcome = outcome,

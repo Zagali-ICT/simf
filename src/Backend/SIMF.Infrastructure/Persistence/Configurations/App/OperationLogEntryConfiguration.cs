@@ -14,6 +14,10 @@ internal sealed class OperationLogEntryConfiguration : IEntityTypeConfiguration<
         builder.Property(entry => entry.EventType).HasMaxLength(80).IsRequired();
         builder.Property(entry => entry.Outcome).HasConversion<string>().HasMaxLength(16);
         builder.Property(entry => entry.SubjectEmail).HasMaxLength(256);
+        // D-157 — display-name snapshots so SOC reviews don't need a
+        // cross-DB JOIN to Identity (which lives in a different physical DB).
+        builder.Property(entry => entry.SubjectDisplayName).HasMaxLength(128);
+        builder.Property(entry => entry.ActorDisplayName).HasMaxLength(128);
         builder.Property(entry => entry.SourceIp).HasMaxLength(64);
         builder.Property(entry => entry.UserAgent).HasMaxLength(512);
         builder.Property(entry => entry.CorrelationId).HasMaxLength(64);

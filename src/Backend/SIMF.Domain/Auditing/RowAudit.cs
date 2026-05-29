@@ -45,6 +45,12 @@ public sealed class RowAudit
     /// from a background worker / seeder (no request context).</summary>
     public Guid? ActorUserId { get; set; }
 
+    /// <summary>D-157 — snapshot of the actor's display name at the time
+    /// of the change. Lets a forensic reviewer read "Ahmad Salem" without
+    /// joining back to a cross-DB Identity row that may have been
+    /// renamed or deleted since. Null when the change had no actor.</summary>
+    public string? ActorDisplayName { get; set; }
+
     /// <summary>The request correlation id, when available.</summary>
     public string? CorrelationId { get; set; }
 

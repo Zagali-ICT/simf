@@ -22,4 +22,7 @@ internal sealed class HttpRequestContext(IHttpContextAccessor accessor) : IReque
         Guid.TryParse(accessor.HttpContext?.User.FindFirstValue("sub"), out var id)
             ? id
             : null;
+
+    public string? ActorDisplayName =>
+        accessor.HttpContext?.User.FindFirstValue("display_name");
 }
