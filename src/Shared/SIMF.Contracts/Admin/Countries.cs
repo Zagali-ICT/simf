@@ -1,0 +1,45 @@
+namespace SIMF.Contracts.Admin;
+
+/// <summary>One row in the admin Countries grid (D-151).</summary>
+public sealed record AdminCountrySummary(
+    int Id,
+    string Code,
+    string NameEn,
+    string NameAr,
+    string? PhonePrefix,
+    int DisplayOrder,
+    bool IsActive,
+    DateTimeOffset CreatedAt);
+
+/// <summary>Full country detail (Details + Edit modals).</summary>
+public sealed record AdminCountryDetail(
+    int Id,
+    string Code,
+    string NameEn,
+    string NameAr,
+    string? PhonePrefix,
+    int DisplayOrder,
+    bool IsActive,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? UpdatedAt);
+
+public sealed class AdminCreateCountryRequest
+{
+    /// <summary>ISO 3166-1 numeric — manually assigned (e.g. 682 = SA).</summary>
+    public int Id { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string NameEn { get; set; } = string.Empty;
+    public string NameAr { get; set; } = string.Empty;
+    public string? PhonePrefix { get; set; }
+    public int DisplayOrder { get; set; }
+}
+
+public sealed class AdminUpdateCountryRequest
+{
+    public string Code { get; set; } = string.Empty;
+    public string NameEn { get; set; } = string.Empty;
+    public string NameAr { get; set; } = string.Empty;
+    public string? PhonePrefix { get; set; }
+    public int DisplayOrder { get; set; }
+    public bool IsActive { get; set; } = true;
+}

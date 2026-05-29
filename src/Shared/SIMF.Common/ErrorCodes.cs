@@ -117,6 +117,19 @@ public static class ErrorCodes
     public const string HallCodeDuplicate = "HALL_CODE_DUPLICATE";
     public const string HallInUse = "HALL_IN_USE";
 
+    // Countries (D-151 — admin-managed country lookup).
+    public const string CountryInvalid = "COUNTRY_INVALID";
+    public const string CountryNotFound = "COUNTRY_NOT_FOUND";
+    public const string CountryCodeDuplicate = "COUNTRY_CODE_DUPLICATE";
+    public const string CountryIdDuplicate = "COUNTRY_ID_DUPLICATE";
+    public const string CountryInUse = "COUNTRY_IN_USE";
+
+    // Speakers (D-151 — programme speakers, SIMF-DAT-001 §5.4).
+    public const string SpeakerInvalid = "SPEAKER_INVALID";
+    public const string SpeakerNotFound = "SPEAKER_NOT_FOUND";
+    public const string SpeakerCodeDuplicate = "SPEAKER_CODE_DUPLICATE";
+    public const string SpeakerInUse = "SPEAKER_IN_USE";
+
     // Gates (D-148 — Gate Module, SIMF-FDS-003 §5.6, SIMF-API-GATES-001).
     public const string GateInvalid = "GATE_INVALID";
     public const string GateNotFound = "GATE_NOT_FOUND";

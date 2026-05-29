@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SIMF.Domain.AccessControl;
 using SIMF.Domain.Auditing;
+using SIMF.Domain.Common;
 using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence;
@@ -23,6 +24,13 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
 
     /// <summary>D-134 Sprint B (D-135) — venue halls.</summary>
     public DbSet<Hall> Halls => Set<Hall>();
+
+    /// <summary>D-151 (D-135) — programme speakers.</summary>
+    public DbSet<Speaker> Speakers => Set<Speaker>();
+
+    /// <summary>D-151 — country lookup (ISO 3166-1 numeric Id; admin-managed
+    /// CRUD; seeded with ~56 priority countries on first migration).</summary>
+    public DbSet<Country> Countries => Set<Country>();
 
     /// <summary>D-148 (D-135) — venue access gates.</summary>
     public DbSet<Gate> Gates => Set<Gate>();

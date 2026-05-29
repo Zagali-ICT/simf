@@ -121,6 +121,16 @@ public static class AuditEvents
     public const string HallUpdated = "Hall.Updated";
     public const string HallDeactivated = "Hall.Deactivated";
 
+    // Countries (D-151 — admin-managed country lookup)
+    public const string CountryCreated = "Country.Created";
+    public const string CountryUpdated = "Country.Updated";
+    public const string CountryDeactivated = "Country.Deactivated";
+
+    // Speakers (D-151 — programme speakers, SIMF-DAT-001 §5.4)
+    public const string SpeakerCreated = "Speaker.Created";
+    public const string SpeakerUpdated = "Speaker.Updated";
+    public const string SpeakerDeactivated = "Speaker.Deactivated";
+
     // Gates (D-148 — Gate Module, SIMF-FDS-003 §5.6, SIMF-API-GATES-001)
     public const string GateCreated = "Gate.Created";
     public const string GateUpdated = "Gate.Updated";

@@ -163,6 +163,9 @@ public static class DependencyInjection
         // D-134 Sprint B (D-135) — Halls admin CRUD.
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminHallService,
             SIMF.Infrastructure.Programme.AdminHallService>();
+        // D-151 — Country admin lookup CRUD (under the lifted freeze).
+        services.AddScoped<SIMF.Application.Common.Abstractions.IAdminCountryService,
+            SIMF.Infrastructure.Common.AdminCountryService>();
         // D-148 — Gate Module: admin CRUD + operator surface + QR resolver +
         // gate-config cache + idempotency store + failure-rate circuit
         // (SIMF-API-GATES-001, SIMF-FDS-003 §5.6).

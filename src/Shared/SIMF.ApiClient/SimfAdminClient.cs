@@ -745,6 +745,46 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"halls/{id}", content: null,
             accessToken, cancellationToken);
 
+    // -- D-151 — Country admin lookup CRUD ----------------------------------
+
+    public Task<ApiCallResult<GridPage<AdminCountrySummary>>> ListCountriesAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminCountrySummary>>(
+            HttpMethod.Post, "countries/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminCountryDetail>> GetCountryAsync(
+        int id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminCountryDetail>(
+            HttpMethod.Get, $"countries/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminCountryDetail>> CreateCountryAsync(
+        AdminCreateCountryRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminCountryDetail>(
+            HttpMethod.Post, "countries",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminCountryDetail>> UpdateCountryAsync(
+        int id, AdminUpdateCountryRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminCountryDetail>(
+            HttpMethod.Put, $"countries/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeactivateCountryAsync(
+        int id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"countries/{id}", content: null,
+            accessToken, cancellationToken);
+
     // -- D-148 — Gate Module admin CRUD + reports ---------------------------
 
     public Task<ApiCallResult<GridPage<AdminGateSummary>>> ListGatesAsync(

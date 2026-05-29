@@ -788,6 +788,44 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateHallAsync(id, token));
         });
 
+        // D-151 — Country admin lookup BFF passthroughs.
+        group.MapPost("/admin/countries/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListCountriesAsync(body, token));
+        });
+        group.MapGet("/admin/countries/{id:int}",
+            async (int id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetCountryAsync(id, token));
+        });
+        group.MapPost("/admin/countries",
+            async (AdminCreateCountryRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateCountryAsync(body, token));
+        });
+        group.MapPut("/admin/countries/{id:int}",
+            async (int id, AdminUpdateCountryRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateCountryAsync(id, body, token));
+        });
+        group.MapDelete("/admin/countries/{id:int}",
+            async (int id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateCountryAsync(id, token));
+        });
+
         // D-148 — Gate Module BFF passthroughs (admin + operator).
         group.MapPost("/admin/gates/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
