@@ -1,0 +1,32 @@
+name: simf_app
+description: SIMF Maritime Forum — the Flutter mobile application for Android and iOS. Routes the 41 mockup screens, applies localisation and theme, and hosts the auth and data packages. See SIMF-MAA-001 v1.2.
+version: 0.1.0+1
+publish_to: none
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  go_router: ^14.6.0
+  intl: ^0.19.0
+
+  simf_data_pkg:
+    path: packages/simf_data_pkg
+  simf_auth_pkg:
+    path: packages/simf_auth_pkg
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
+  generate: false

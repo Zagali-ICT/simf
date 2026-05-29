@@ -1,0 +1,67 @@
+import 'package:flutter/widgets.dart';
+
+/// Hand-rolled localisation lookup for the WS3 skeleton.
+///
+/// SIMF-MAA-001 §10 specifies `intl` + ARB files as the long-term path;
+/// the .arb files in `l10n/` are the source of truth for translations.
+/// To avoid coupling the skeleton's compile to the `flutter gen-l10n` step,
+/// the strings the skeleton actually needs are mirrored here. When the
+/// project moves to generated localisation, the call sites
+/// (`AppL10n.of(context).xxx`) stay; only the implementation switches.
+///
+/// **Phase 3 will not add per-screen strings here**: the `mkp_*` screens
+/// reference Mockup.html's Arabic copy directly, so they don't add to the
+/// translation surface that needs to survive the designer swap.
+class AppL10n {
+  const AppL10n(this.locale);
+
+  final Locale locale;
+
+  static AppL10n of(BuildContext context) {
+    return Localizations.of<AppL10n>(context, AppL10n) ??
+        const AppL10n(Locale('ar'));
+  }
+
+  static const supportedLocales = <Locale>[Locale('ar'), Locale('en')];
+  static const localizationsDelegates = <LocalizationsDelegate<Object>>[
+    _AppL10nDelegate(),
+  ];
+
+  bool get isArabic => locale.languageCode == 'ar';
+
+  String _t(String ar, String en) => isArabic ? ar : en;
+
+  String get appName => _t('الملتقى البحري', 'SIMF');
+  String get comingSoonTitle => _t('قريباً', 'Coming soon');
+  String get comingSoonBody => _t(
+        'هذه الشاشة قيد التطوير. سيتم استبدالها بنسخة UI/UX النهائية لاحقاً.',
+        'This screen is under construction. It will be replaced by the final UI/UX shortly.',
+      );
+  String get backLabel => _t('رجوع', 'Back');
+  String get continueLabel => _t('متابعة', 'Continue');
+  String get cancelLabel => _t('إلغاء', 'Cancel');
+  String get retryLabel => _t('إعادة المحاولة', 'Retry');
+  String get loadingLabel => _t('جارٍ التحميل…', 'Loading…');
+  String get errorTitle => _t('حدث خطأ', 'Something went wrong');
+  String get networkErrorBody => _t(
+        'تعذر الاتصال بالخادم. تحقق من الاتصال بالإنترنت وحاول مرة أخرى.',
+        'Could not reach the server. Check your internet connection and try again.',
+      );
+}
+
+class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
+  const _AppL10nDelegate();
+
+  @override
+  bool isSupported(Locale locale) =>
+      locale.languageCode == 'ar' || locale.languageCode == 'en';
+
+  @override
+  Future<AppL10n> load(Locale locale) async => AppL10n(locale);
+
+  @override
+  bool shouldReload(_AppL10nDelegate old) => false;
+
+  @override
+  Type get type => AppL10n;
+}

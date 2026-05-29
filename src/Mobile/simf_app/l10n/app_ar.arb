@@ -1,0 +1,14 @@
+{
+  "@@locale": "ar",
+  "@@x-comment": "Arabic — primary language (SIMF-MAA-001 §10). Strings live in lib/app/localization/app_l10n.dart while the WS3 skeleton runs without gen-l10n; this ARB file is the long-term source of truth.",
+  "appName": "الملتقى البحري",
+  "comingSoonTitle": "قريباً",
+  "comingSoonBody": "هذه الشاشة قيد التطوير. سيتم استبدالها بنسخة UI/UX النهائية لاحقاً.",
+  "backLabel": "رجوع",
+  "continueLabel": "متابعة",
+  "cancelLabel": "إلغاء",
+  "retryLabel": "إعادة المحاولة",
+  "loadingLabel": "جارٍ التحميل…",
+  "errorTitle": "حدث خطأ",
+  "networkErrorBody": "تعذر الاتصال بالخادم. تحقق من الاتصال بالإنترنت وحاول مرة أخرى."
+}
