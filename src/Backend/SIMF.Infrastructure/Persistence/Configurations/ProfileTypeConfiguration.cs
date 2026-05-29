@@ -33,6 +33,16 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<Profil
             .HasConversion<string>()
             .HasMaxLength(16);
 
+        // D-161 — MobileAppRole persisted as the stringly enum value
+        // (None / Visitor / Staff / Moderator) so a DBA reading the
+        // table can interpret the column without an out-of-band
+        // mapping table. Default None keeps backfill safe.
+        builder.Property(profileType => profileType.MobileAppRole)
+            .HasConversion<string>()
+            .HasMaxLength(16)
+            .HasDefaultValue(MobileAppRole.None)
+            .IsRequired();
+
         // The picker filters by (UserType, IsActive) — keep one
         // composite index so the dropdown is one lookup.
         builder.HasIndex(profileType => new { profileType.UserType, profileType.IsActive });

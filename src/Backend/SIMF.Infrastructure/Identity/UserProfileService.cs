@@ -237,6 +237,37 @@ internal sealed class UserProfileService(
         return new RejectionText(row.RejectionReason, row.RejectionReasonArabic);
     }
 
+    /// <summary>D-161 — implements <see cref="IUserProfileService.ResolveMobileAppRoleAsync"/>.
+    /// Visitor short-circuits to <see cref="MobileAppRole.Visitor"/>; Admin
+    /// short-circuits to <see cref="MobileAppRole.None"/>; Other looks up
+    /// the assigned profile-type's role with one cheap JOIN.</summary>
+    public async Task<MobileAppRole> ResolveMobileAppRoleAsync(
+        Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await dbContext.Users
+            .AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => new { u.UserType })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (user is null) { return MobileAppRole.None; }
+        switch (user.UserType)
+        {
+            case UserType.Visitor:
+                return MobileAppRole.Visitor;
+            case UserType.Admin:
+                return MobileAppRole.None;
+            case UserType.Other:
+                return await dbContext.UserProfiles
+                    .AsNoTracking()
+                    .Where(p => p.UserId == userId)
+                    .Where(p => p.ProfileType != null)
+                    .Select(p => p.ProfileType!.MobileAppRole)
+                    .FirstOrDefaultAsync(cancellationToken);
+            default:
+                return MobileAppRole.None;
+        }
+    }
+
     private async Task DispatchProfileSubmittedAsync(
         SimfUser user, CancellationToken cancellationToken)
     {

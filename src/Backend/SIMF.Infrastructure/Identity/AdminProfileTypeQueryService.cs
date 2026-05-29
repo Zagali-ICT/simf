@@ -40,6 +40,7 @@ internal sealed class AdminProfileTypeQueryService(
                 profileType.NameArabic,
                 profileType.PageColor,
                 profileType.UserType.ToString(),
+                profileType.MobileAppRole.ToString(),
                 profileType.IsActive))
             .ToListAsync(cancellationToken);
     }

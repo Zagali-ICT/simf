@@ -100,6 +100,8 @@ public sealed class UpdateAdminProfileTypeRouteRequest
     public string Name { get; set; } = string.Empty;
     public string NameArabic { get; set; } = string.Empty;
     public string PageColor { get; set; } = string.Empty;
+    /// <summary>D-161 — mobile-app authority assigned to this type.</summary>
+    public string? MobileAppRole { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
@@ -130,6 +132,7 @@ public sealed class UpdateAdminProfileTypeEndpoint(IAdminProfileTypeCommandServi
                 Name = req.Name,
                 NameArabic = req.NameArabic,
                 PageColor = req.PageColor,
+                MobileAppRole = req.MobileAppRole,
                 IsActive = req.IsActive,
             }, ct);
         await Send.OkAsync(ApiResult<AdminProfileTypeSummary>.Ok(summary), ct);

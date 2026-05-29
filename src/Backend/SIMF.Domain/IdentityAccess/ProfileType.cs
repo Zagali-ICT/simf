@@ -41,6 +41,15 @@ public sealed class ProfileType
     /// <summary>Which <see cref="UserType"/> this profile type applies to.</summary>
     public UserType UserType { get; set; }
 
+    /// <summary>D-161 — the mobile-app authority any user assigned to this
+    /// profile type carries into the Flutter app (SIMF-FDS-002 §8.5).
+    /// <see cref="MobileAppRole.None"/> for Visitor-tier profile types and
+    /// for Other-tier types with no operational authority (Exhibitor,
+    /// Sponsor, Speaker, Press, …). Admin-curated at runtime — adding a
+    /// new operational profile type is a row insert + an admin checkbox,
+    /// not a code change.</summary>
+    public MobileAppRole MobileAppRole { get; set; } = MobileAppRole.None;
+
     /// <summary>Soft-delete flag — false hides the row from pickers.</summary>
     public bool IsActive { get; set; } = true;
 

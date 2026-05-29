@@ -81,6 +81,7 @@ internal sealed class AdminProfileTypeCommandService(
                 profileType.NameArabic,
                 profileType.PageColor,
                 profileType.UserType.ToString(),
+                profileType.MobileAppRole.ToString(),
                 profileType.IsActive))
             .ToListAsync(cancellationToken);
 
@@ -132,6 +133,8 @@ internal sealed class AdminProfileTypeCommandService(
                 $"يوجد نوع ملف شخصي بالاسم '{name}' لـ {userType} بالفعل.");
         }
 
+        var mobileAppRole = ParseMobileAppRole(request.MobileAppRole);
+
         var now = timeProvider.GetUtcNow();
         var profileType = new ProfileType
         {
@@ -140,6 +143,7 @@ internal sealed class AdminProfileTypeCommandService(
             NameArabic = nameArabic,
             PageColor = pageColor,
             UserType = userType,
+            MobileAppRole = mobileAppRole,
             IsActive = request.IsActive,
             CreatedAt = now,
         };
@@ -197,6 +201,7 @@ internal sealed class AdminProfileTypeCommandService(
         profileType.Name = name;
         profileType.NameArabic = (request.NameArabic ?? string.Empty).Trim();
         profileType.PageColor = (request.PageColor ?? string.Empty).Trim();
+        profileType.MobileAppRole = ParseMobileAppRole(request.MobileAppRole);
         profileType.IsActive = request.IsActive;
         profileType.UpdatedAt = timeProvider.GetUtcNow();
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -262,5 +267,34 @@ internal sealed class AdminProfileTypeCommandService(
             profileType.NameArabic,
             profileType.PageColor,
             profileType.UserType.ToString(),
+            profileType.MobileAppRole.ToString(),
             profileType.IsActive);
+
+    /// <summary>D-161 — parses the wire-side stringly mobile-app-role,
+    /// rejecting unknown values with a typed 400. Null / empty defaults
+    /// to <see cref="MobileAppRole.None"/>. <see cref="MobileAppRole.Visitor"/>
+    /// is rejected because the Visitor mapping is resolved from
+    /// <c>UserType</c> at JWT issue time, never from a ProfileType row.</summary>
+    private static MobileAppRole ParseMobileAppRole(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return MobileAppRole.None;
+        }
+        if (!Enum.TryParse<MobileAppRole>(raw, ignoreCase: true, out var parsed))
+        {
+            throw new ApiException(
+                ErrorCodes.ProfileTypeInvalidUserType, 400,
+                $"'{raw}' is not a valid mobile-app role.",
+                $"قيمة '{raw}' ليست دوراً صالحاً في تطبيق الجوّال.");
+        }
+        if (parsed == MobileAppRole.Visitor)
+        {
+            throw new ApiException(
+                ErrorCodes.ProfileTypeInvalidUserType, 400,
+                "MobileAppRole.Visitor is resolved from UserType, not from a profile type row.",
+                "يُحدَّد دور الزائر من نوع المستخدم، لا من نوع الملف الشخصي.");
+        }
+        return parsed;
+    }
 }

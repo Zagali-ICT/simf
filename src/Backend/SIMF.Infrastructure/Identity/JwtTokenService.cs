@@ -15,7 +15,8 @@ namespace SIMF.Infrastructure.Identity;
 internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider timeProvider)
     : IJwtTokenService
 {
-    public AccessToken CreateAccessToken(SimfUser user, IEnumerable<string> roles)
+    public AccessToken CreateAccessToken(
+        SimfUser user, IEnumerable<string> roles, MobileAppRole mobileAppRole)
     {
         var settings = options.Value;
         var now = timeProvider.GetUtcNow();
@@ -37,6 +38,9 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
             // user_type alone.
             new("account_state", user.AccountState.ToString()),
             new("user_type", user.UserType.ToString()),
+            // D-161 — the resolved mobile-app role the Flutter app uses to
+            // route screens / show or hide gate-operator surfaces.
+            new("mobile_app_role", mobileAppRole.ToString()),
         };
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 

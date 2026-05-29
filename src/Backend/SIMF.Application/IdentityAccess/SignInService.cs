@@ -520,7 +520,8 @@ public sealed class SignInService(
     private async Task<AuthTokens> IssueTokensAsync(SimfUser user, CancellationToken cancellationToken)
     {
         var roles = await accounts.GetRolesAsync(user);
-        var accessToken = jwtTokenService.CreateAccessToken(user, roles);
+        var mobileAppRole = await userProfiles.ResolveMobileAppRoleAsync(user.Id, cancellationToken);
+        var accessToken = jwtTokenService.CreateAccessToken(user, roles, mobileAppRole);
 
         var refreshValue = OpaqueToken.Generate();
         var now = timeProvider.GetUtcNow();

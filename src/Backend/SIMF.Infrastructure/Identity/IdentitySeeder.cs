@@ -149,10 +149,16 @@ public sealed class IdentitySeeder(
         // pickers render.
         await EnsureProfileTypeAsync(
             "General", "عام", "#3B82F6",
-            UserType.Visitor, cancellationToken);
+            UserType.Visitor, MobileAppRole.None, cancellationToken);
+        // D-161 — Staff is the canonical operational Other-tier profile
+        // type; the default mobile-app role is Staff (can perform gate
+        // operations, look up attendees, print badges). Admins seed the
+        // remaining operational types (Volunteer → Staff,
+        // Programme Coordinator / Operations Lead → Moderator,
+        // Exhibitor / Sponsor / Speaker → None) via the CP runtime.
         await EnsureProfileTypeAsync(
             "Staff", "فريق", "#10B981",
-            UserType.Other, cancellationToken);
+            UserType.Other, MobileAppRole.Staff, cancellationToken);
     }
 
     private async Task EnsureRoleAsync(string roleName)
@@ -253,12 +259,15 @@ public sealed class IdentitySeeder(
             oldName, newName, userType);
     }
 
-    /// <summary>P7 — idempotent ProfileTypes seed (lookup by Name + UserType).</summary>
+    /// <summary>P7 — idempotent ProfileTypes seed (lookup by Name + UserType).
+    /// D-161 added the <paramref name="mobileAppRole"/> parameter so seed
+    /// rows can ship with the right mobile-app authority out of the box.</summary>
     private async Task EnsureProfileTypeAsync(
         string name,
         string nameArabic,
         string pageColor,
         UserType userType,
+        MobileAppRole mobileAppRole,
         CancellationToken cancellationToken)
     {
         var exists = await dbContext.ProfileTypes
@@ -274,6 +283,7 @@ public sealed class IdentitySeeder(
             NameArabic = nameArabic,
             PageColor = pageColor,
             UserType = userType,
+            MobileAppRole = mobileAppRole,
             IsActive = true,
             CreatedAt = timeProvider.GetUtcNow(),
         });

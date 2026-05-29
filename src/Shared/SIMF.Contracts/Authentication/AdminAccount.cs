@@ -205,6 +205,10 @@ public sealed record AdminProfileTypeSummary(
     string NameArabic,
     string PageColor,
     string UserType,
+    // D-161 — the mobile-app authority any user assigned to this type
+    // carries into the Flutter app. Serialised as the enum name
+    // ("None" / "Staff" / "Moderator").
+    string MobileAppRole,
     bool IsActive);
 
 /// <summary>
@@ -228,6 +232,13 @@ public sealed class AdminCreateProfileTypeRequest
     /// <summary>App badge / picker colour — hex like "#FFD700" or a CSS variable (1-32 chars).</summary>
     public string PageColor { get; set; } = string.Empty;
 
+    /// <summary>D-161 — the mobile-app authority any user assigned to this
+    /// type carries into the Flutter app. Stringly-typed for forward
+    /// compatibility ("None" / "Staff" / "Moderator"). Defaults to "None"
+    /// when omitted. <c>UserType=Visitor</c> always resolves to the
+    /// Visitor role at JWT issue time regardless of this value.</summary>
+    public string? MobileAppRole { get; set; }
+
     /// <summary>Whether the row is visible in pickers from the moment of creation. Default true.</summary>
     public bool IsActive { get; set; } = true;
 }
@@ -242,6 +253,8 @@ public sealed class AdminUpdateProfileTypeRequest
     public string Name { get; set; } = string.Empty;
     public string NameArabic { get; set; } = string.Empty;
     public string PageColor { get; set; } = string.Empty;
+    /// <summary>D-161 — see <see cref="AdminCreateProfileTypeRequest.MobileAppRole"/>.</summary>
+    public string? MobileAppRole { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
