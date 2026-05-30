@@ -13,11 +13,9 @@ using SIMF.Common.Enums;
 namespace SIMF.Infrastructure.Identity;
 
 /// <summary>Issues HMAC-SHA256-signed JWT access tokens (SIMF-API-001 section 12.2).</summary>
-internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider timeProvider)
-    : IJwtTokenService
+internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider timeProvider)    : IJwtTokenService
 {
-    public AccessToken CreateAccessToken(
-        SimfUser user, IEnumerable<string> roles, MobileAppRole mobileAppRole)
+    public AccessToken CreateAccessToken(SimfUser user, IEnumerable<string> roles, MobileAppRole mobileAppRole)
     {
         var settings = options.Value;
         var now = timeProvider.GetUtcNow();

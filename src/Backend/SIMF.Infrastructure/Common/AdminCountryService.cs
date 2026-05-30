@@ -21,8 +21,7 @@ internal sealed class AdminCountryService(
     TimeProvider timeProvider,
     ILogger<AdminCountryService> logger) : IAdminCountryService
 {
-    public async Task<GridPage<AdminCountrySummary>> ListAllAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
+    public async Task<GridPage<AdminCountrySummary>> ListAllAsync(GridQuery query, CancellationToken cancellationToken = default)
     {
         var skip = Math.Max(0, query.Skip);
         var top = Math.Clamp(query.Top is > 0 ? query.Top : 50, 1, 500);
@@ -37,8 +36,8 @@ internal sealed class AdminCountryService(
                 || EF.Functions.Like(country.NameEn, $"%{term}%")
                 || EF.Functions.Like(country.NameAr, $"%{term}%"));
         }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
+
+        if (query.Filters.TryGetValue("isActive", out var activeFilter) && bool.TryParse(activeFilter, out var isActive))
         {
             rows = rows.Where(country => country.IsActive == isActive);
         }
@@ -68,31 +67,27 @@ internal sealed class AdminCountryService(
             new GridQuery { Skip = skip, Top = top });
     }
 
-    public async Task<AdminCountryDetail?> GetAsync(
-        int id, CancellationToken cancellationToken = default) =>
+    public async Task<AdminCountryDetail?> GetAsync(int id, CancellationToken cancellationToken = default) =>
         await appDbContext.Countries.AsNoTracking()
             .Where(country => country.Id == id)
             .Select(country => ToDetail(country))
             .SingleOrDefaultAsync(cancellationToken);
 
-    public async Task<AdminCountryDetail> CreateAsync(
-        Guid actorUserId, AdminCreateCountryRequest request,
-        CancellationToken cancellationToken = default)
+    public async Task<AdminCountryDetail> CreateAsync(Guid actorUserId, AdminCreateCountryRequest request, CancellationToken cancellationToken = default)
     {
         var (id, code, nameEn, nameAr, phonePrefix, displayOrder) = Validate(
             request.Id, request.Code, request.NameEn, request.NameAr,
             request.PhonePrefix, request.DisplayOrder);
 
-        var idClash = await appDbContext.Countries.AsNoTracking()
-            .AnyAsync(c => c.Id == id, cancellationToken);
+        var idClash = await appDbContext.Countries.AsNoTracking().AnyAsync(c => c.Id == id, cancellationToken);
         if (idClash)
         {
             throw new ApiException(ErrorCodes.CountryIdDuplicate, 409,
                 $"A country with id {id} already exists.",
                 $"يوجد بلد بالمعرّف {id} بالفعل.");
         }
-        var codeClash = await appDbContext.Countries.AsNoTracking()
-            .AnyAsync(c => c.Code == code, cancellationToken);
+
+        var codeClash = await appDbContext.Countries.AsNoTracking().AnyAsync(c => c.Code == code, cancellationToken);
         if (codeClash)
         {
             throw new ApiException(ErrorCodes.CountryCodeDuplicate, 409,
@@ -112,6 +107,7 @@ internal sealed class AdminCountryService(
             IsActive = true,
             CreatedAt = now,
         };
+
         appDbContext.Countries.Add(country);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
@@ -130,9 +126,7 @@ internal sealed class AdminCountryService(
         return ToDetail(country);
     }
 
-    public async Task<AdminCountryDetail> UpdateAsync(
-        Guid actorUserId, int id, AdminUpdateCountryRequest request,
-        CancellationToken cancellationToken = default)
+    public async Task<AdminCountryDetail> UpdateAsync(Guid actorUserId, int id, AdminUpdateCountryRequest request, CancellationToken cancellationToken = default)
     {
         var country = await appDbContext.Countries
             .SingleOrDefaultAsync(c => c.Id == id, cancellationToken)
@@ -140,14 +134,11 @@ internal sealed class AdminCountryService(
                 "The country was not found.",
                 "لم يتم العثور على البلد.");
 
-        var (_, code, nameEn, nameAr, phonePrefix, displayOrder) = Validate(
-            id, request.Code, request.NameEn, request.NameAr,
-            request.PhonePrefix, request.DisplayOrder);
+        var (_, code, nameEn, nameAr, phonePrefix, displayOrder) = Validate(id, request.Code, request.NameEn, request.NameAr, request.PhonePrefix, request.DisplayOrder);
 
         if (!string.Equals(country.Code, code, StringComparison.OrdinalIgnoreCase))
         {
-            var clash = await appDbContext.Countries.AsNoTracking()
-                .AnyAsync(c => c.Id != id && c.Code == code, cancellationToken);
+            var clash = await appDbContext.Countries.AsNoTracking().AnyAsync(c => c.Id != id && c.Code == code, cancellationToken);
             if (clash)
             {
                 throw new ApiException(ErrorCodes.CountryCodeDuplicate, 409,
@@ -163,6 +154,7 @@ internal sealed class AdminCountryService(
         country.DisplayOrder = displayOrder;
         country.IsActive = request.IsActive;
         country.UpdatedAt = timeProvider.GetUtcNow();
+
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -176,9 +168,7 @@ internal sealed class AdminCountryService(
         return ToDetail(country);
     }
 
-    public async Task DeactivateAsync(
-        Guid actorUserId, int id,
-        CancellationToken cancellationToken = default)
+    public async Task DeactivateAsync(Guid actorUserId, int id, CancellationToken cancellationToken = default)
     {
         var country = await appDbContext.Countries
             .SingleOrDefaultAsync(c => c.Id == id, cancellationToken)
@@ -201,10 +191,7 @@ internal sealed class AdminCountryService(
         }, cancellationToken);
     }
 
-    private static (int id, string code, string nameEn, string nameAr,
-        string? phonePrefix, int displayOrder)
-        Validate(int idRaw, string codeRaw, string nameEnRaw, string nameArRaw,
-            string? phonePrefixRaw, int displayOrderRaw)
+    private static (int id, string code, string nameEn, string nameAr, string? phonePrefix, int displayOrder) Validate(int idRaw, string codeRaw, string nameEnRaw, string nameArRaw, string? phonePrefixRaw, int displayOrderRaw)
     {
         if (idRaw <= 0)
         {
