@@ -44,11 +44,22 @@ public sealed class UserProfileResponse
 /// <summary>The body posted to <c>POST /api/v1/account/profile</c>
 /// (D-046 b, P8). An upsert — first call creates the row, every later
 /// call updates it. The validator enforces the field-shape rules.
-/// <see cref="ProfileTypeId"/> is not on the request shape — the
-/// profile-type is admin-assigned only; the user cannot self-pick it
-/// today.</summary>
+/// <para>D-190 (D-186 follow-up): <see cref="ProfileTypeId"/> is the
+/// user's self-pick from the public
+/// <c>GET /api/v1/account/profile-types</c> endpoint. Optional — if
+/// the user submits without picking, the admin assigns one later via
+/// the admin endpoints. The validator rejects unknown ids, inactive
+/// rows, and Admin-scope rows. The service preserves any admin-
+/// pre-assigned ProfileTypeId (admin pre-pick wins over user
+/// self-pick).</para></summary>
 public sealed class UpsertUserProfileRequest
 {
+    /// <summary>D-190 — the user's self-picked
+    /// <see cref="UserProfileResponse.ProfileTypeId"/>. Optional;
+    /// admin pre-pick wins on conflict (see
+    /// <c>UserProfileService.UpsertMineAsync</c>).</summary>
+    public Guid? ProfileTypeId { get; set; }
+
     /// <summary>The picked interest ids (P9 — D-050). Required: 1-10
     /// active <see cref="Interest"/> ids; the validator rejects empties /
     /// duplicates / unknown ids / deactivated ids.</summary>

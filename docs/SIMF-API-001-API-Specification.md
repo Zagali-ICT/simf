@@ -761,4 +761,79 @@ trail it needs to reconstruct who-did-what-to-whom.
 
 ---
 
+## Amendment C — Mobile sign-up ProfileType picker (D-190, 2026-05-30)
+
+D-186 collapsed `UserType` to (Visitor, Admin) and moved the
+audience-vs-partner distinction onto `ProfileType.IsVisitor`. D-190
+unblocks the mobile sign-up Screen 2 ProfileType dropdown.
+
+### C.1 New endpoint — public profile-type picker
+
+`GET /api/v1/account/profile-types`
+
+Authentication: **required** (standard bearer). **Not** admin-only;
+**not** approval-gated — the caller is mid-registration (account state
+typically `EmailVerified` or `PendingApproval`) so a `RequireApprovedAccount`
+floor would lock them out of the picker. Rate-limited via the
+`auth` bucket.
+
+Query parameters (optional):
+
+| Name | Type | Effect |
+|------|------|--------|
+| `isVisitor` | bool? | `true` → audience profile types only; `false` → partner profile types only; omitted → all active rows |
+
+Response (`ApiResult<ProfileTypePickerListResponse>`):
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      { "id": "uuid", "name": "VIP", "nameArabic": "كبار", "pageColor": "#FFD700", "isVisitor": true },
+      { "id": "uuid", "name": "Sponsor", "nameArabic": "راعي", "pageColor": "#8B5CF6", "isVisitor": false }
+    ]
+  }
+}
+```
+
+The DTO deliberately omits `MobileAppRole` — that's admin-curated
+authority that flows on the JWT `mobile_app_role` claim only. The
+picker never returns it.
+
+Filter floor: every returned row has `IsActive = true` AND
+`UserType = Visitor`. Admin-scope profile types (if any) are never
+surfaced — a self-registering user cannot pick into the admin pool.
+Rows are ordered by `Name` ascending.
+
+### C.2 Amended request shape — `UpsertUserProfileRequest`
+
+`POST /api/v1/account/user-profile` now accepts an optional
+`profileTypeId` field carrying the user's self-pick from the picker
+endpoint above. Existing callers that omit it see no behavioural
+change.
+
+Validation:
+
+- When non-null, must resolve to an active `ProfileType` with
+  `UserType = Visitor`. Unknown id / inactive row / Admin-scope row
+  → 400 `AdminProfileTypeInvalid`.
+- Empty Guid is rejected at the shape-level validator.
+
+Precedence rule (admin wins): when the existing `UserProfile.ProfileTypeId`
+is already set (because an admin pre-assigned it via
+`/admin/visitors` or `/admin/others`), the user's self-pick on the
+upsert is **silently ignored**. The admin's assignment survives. The
+user-pick path fills the column only when the admin has not chosen
+yet. Admin overrides anywhere require a separate admin endpoint.
+
+`UserProfileResponse` already carried `profileTypeId`; D-190 makes
+the field meaningful from the user-write side.
+
+Audit Detail on `UserProfile.Saved` now carries the resolved
+`profileTypeId` (or the literal `none`) so the CP pending-profile
+review surface shows what the user picked.
+
+---
+
 End of document.

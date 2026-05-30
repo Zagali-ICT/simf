@@ -33,6 +33,16 @@ public sealed class UpsertUserProfileRequestValidator
 
     public UpsertUserProfileRequestValidator()
     {
+        // D-190 — ProfileTypeId is optional. Only shape-check here
+        // (non-empty Guid when supplied); the existence /
+        // IsActive / Visitor-scope check runs in the service against
+        // the App DB (cross-context, FluentValidation is sync).
+        RuleFor(request => request.ProfileTypeId)
+            .Must(id => id is null || id != Guid.Empty)
+            .Bilingual(
+                "Profile type id is not a valid identifier.",
+                "معرّف نوع الملف الشخصي غير صالح.");
+
         // P9 — interests are required (min 1, max 10). Defence-in-depth
         // re-checks of "every id active" live on the service.
         RuleFor(request => request.InterestIds)

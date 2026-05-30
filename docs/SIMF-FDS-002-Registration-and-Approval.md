@@ -771,4 +771,37 @@ also reflected in SIMF-API-001 §12.2.
 
 ---
 
+## Amendment C — User-proposes-ProfileType, admin-can-override (D-190, 2026-05-30)
+
+The pre-D-186 policy was "the user cannot self-pick a `ProfileType`; the admin
+assigns one on approval." D-186 collapsed `UserType` to (Visitor, Admin) and
+moved the audience-vs-partner split onto `ProfileType.IsVisitor`. D-190
+amends the registration policy to **let the user propose** a `ProfileType` on
+the mobile sign-up Screen 2, with the admin retaining the final say.
+
+**New public endpoint.** `GET /api/v1/account/profile-types` returns the active
+ProfileType list (filterable by `isVisitor`) so the mobile sign-up dropdown
+can render the options. Authenticated, **not** approval-gated (the caller is
+mid-registration). See SIMF-API-001 Amendment C.1 for the wire shape.
+
+**Amended upsert.** `POST /api/v1/account/user-profile` now accepts an optional
+`profileTypeId` field. When supplied, the validator enforces it resolves to an
+active `UserType=Visitor` row; Admin-scope rows are never valid for self-pick.
+
+**Precedence rule — admin wins.** When the existing
+`UserProfile.ProfileTypeId` is already set (because an admin pre-assigned it
+via `/admin/visitors` or `/admin/others`), the user's self-pick on the upsert
+is **silently ignored** — the admin's assignment survives. The user-pick path
+fills the column only when the admin has not chosen yet. The CP pending-
+profile review surface shows the user's pick (via the enriched
+`UserProfile.Saved` audit Detail) so the admin can confirm or override before
+approval.
+
+**Approval routing unchanged.** The audience-vs-partner approval queue split
+the CP renders (D-186 `ApprovalScope` notion) keeps reading
+`ProfileType.IsVisitor`; D-190 only changes who can populate the column, not
+how the queues read it.
+
+---
+
 End of document.

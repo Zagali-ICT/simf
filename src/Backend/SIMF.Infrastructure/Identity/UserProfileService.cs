@@ -88,6 +88,42 @@ internal sealed class UserProfileService(
                 "The acting account was not found.",
                 "لم يتم العثور على الحساب.");
 
+        // D-190 — when the user self-picked a ProfileType on the
+        // sign-up screen, validate it exists, is active, AND belongs
+        // to the Visitor scope (UserType=Visitor). Admin-scope rows
+        // are never valid for a self-registering user. The
+        // admin-wins precedence check happens below (after the
+        // existing profile row is loaded).
+        if (request.ProfileTypeId is { } pickedProfileTypeId)
+        {
+            var pickedProfileType = await appDbContext.ProfileTypes
+                .AsNoTracking()
+                .Where(p => p.Id == pickedProfileTypeId)
+                .Select(p => new { p.IsActive, p.UserType })
+                .SingleOrDefaultAsync(cancellationToken);
+            if (pickedProfileType is null)
+            {
+                throw new ApiException(
+                    ErrorCodes.AdminProfileTypeInvalid, 400,
+                    "The selected profile type is not valid.",
+                    "نوع الملف الشخصي المحدّد غير صالح.");
+            }
+            if (!pickedProfileType.IsActive)
+            {
+                throw new ApiException(
+                    ErrorCodes.AdminProfileTypeInvalid, 400,
+                    "The selected profile type is no longer active.",
+                    "نوع الملف الشخصي المحدّد لم يعد مفعّلاً.");
+            }
+            if (pickedProfileType.UserType != UserType.Visitor)
+            {
+                throw new ApiException(
+                    ErrorCodes.AdminProfileTypeInvalid, 400,
+                    "The selected profile type cannot be self-picked.",
+                    "لا يمكن اختيار نوع الملف الشخصي هذا ذاتيًا.");
+            }
+        }
+
         // P9 — validate the picked interest ids: every id must exist
         // and be active. (The validator already enforces 1-10 count.)
         var requestedIds = request.InterestIds.Distinct().ToList();
@@ -111,9 +147,24 @@ internal sealed class UserProfileService(
 
         var isNew = profile is null;
         // P8 — the admin may have created a stub row with a ProfileTypeId
-        // already set (e.g. via /admin/others). Preserve it; the user
-        // cannot self-pick a profile type on the upsert.
+        // already set (e.g. via /admin/others). Preserve it.
         profile ??= new UserProfile { UserId = actorUserId, CreatedAt = now };
+
+        // D-190 — admin-wins precedence for ProfileTypeId.
+        //   • Admin pre-assigned (existing profile.ProfileTypeId != null):
+        //       keep the admin's pick; the user's self-pick is silently
+        //       ignored on this surface. The admin override path lives
+        //       on the admin endpoints.
+        //   • No admin pick yet AND user supplied a ProfileTypeId:
+        //       write the user's self-pick onto the row. This is the
+        //       mobile sign-up Screen 2 path.
+        //   • Request omits ProfileTypeId AND no admin pick yet:
+        //       leave null; admin assigns later via the admin pending-
+        //       approval review flow.
+        if (profile.ProfileTypeId is null && request.ProfileTypeId is { } userPick)
+        {
+            profile.ProfileTypeId = userPick;
+        }
 
         profile.ArabicName = request.ArabicName;
         profile.EnglishName = request.EnglishName;
@@ -214,6 +265,12 @@ internal sealed class UserProfileService(
         // save against an idempotent (UserId-unique) row.
         await appDbContext.SaveChangesAsync(cancellationToken);
 
+        // D-190 — the audit Detail now carries the ProfileTypeId so
+        // the CP pending-profile review surface shows the user's
+        // self-pick (or "none" when the user submitted without
+        // picking and the admin has not yet assigned one).
+        var operation = isNew ? "created" : "updated";
+        var profileTypeIdForAudit = profile.ProfileTypeId?.ToString() ?? "none";
         await auditLog.WriteAsync(new AuditEntry
         {
             EventType = AuditEvents.UserProfileSaved,
@@ -221,7 +278,7 @@ internal sealed class UserProfileService(
             SubjectUserId = actorUserId,
             SubjectEmail = user.Email,
             ActorUserId = actorUserId,
-            Detail = isNew ? "created" : "updated",
+            Detail = $"{operation}; profileTypeId={profileTypeIdForAudit}",
         }, cancellationToken);
 
         logger.LogInformation(

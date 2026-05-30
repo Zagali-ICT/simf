@@ -483,6 +483,115 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         return (body.Data!.Tokens!.AccessToken, userId);
     }
 
+    // -- D-190 — ProfileTypeId on UpsertUserProfileRequest --------------------
+
+    [Fact]
+    public async Task Upsert_with_ProfileTypeId_round_trips_to_GET()
+    {
+        // D-190: the user self-picks a ProfileType from the public
+        // picker on Screen 2; the upsert persists it; GET reflects
+        // it back so the mobile can render the selected row.
+        var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var profileTypeId = await SeedProfileTypeAsync(isVisitor: true);
+
+        var request = await ValidSaudiRequestAsync();
+        request.ProfileTypeId = profileTypeId;
+        var save = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, save.StatusCode);
+        var saved = (await save.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        Assert.Equal(profileTypeId, saved.ProfileTypeId);
+
+        var get = await GetAuthAsync(Path, token);
+        var fetched = (await get.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        Assert.Equal(profileTypeId, fetched.ProfileTypeId);
+    }
+
+    [Fact]
+    public async Task Upsert_with_unknown_ProfileTypeId_returns_400()
+    {
+        var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.ProfileTypeId = Guid.NewGuid();   // never seeded
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AdminProfileTypeInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Upsert_with_inactive_ProfileTypeId_returns_400()
+    {
+        var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var dormantId = await SeedProfileTypeAsync(isVisitor: true, isActive: false);
+
+        var request = await ValidSaudiRequestAsync();
+        request.ProfileTypeId = dormantId;
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AdminProfileTypeInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Admin_preassigned_ProfileTypeId_wins_over_user_self_pick()
+    {
+        // D-190: when the admin pre-assigned a ProfileType (e.g.
+        // via /admin/others), the user's self-pick on the upsert is
+        // silently ignored. The admin's row stays.
+        var (token, userId) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var adminAssigned = await SeedProfileTypeAsync(isVisitor: false);
+        var userPickedDifferent = await SeedProfileTypeAsync(isVisitor: true);
+
+        // Seed a stub UserProfile with the admin's pre-assigned ProfileTypeId.
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            appDb.UserProfiles.Add(new UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                ProfileTypeId = adminAssigned,
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await appDb.SaveChangesAsync();
+        }
+
+        var request = await ValidSaudiRequestAsync();
+        request.ProfileTypeId = userPickedDifferent;
+        var save = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, save.StatusCode);
+        var saved = (await save.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        // Admin's pre-assigned value survives.
+        Assert.Equal(adminAssigned, saved.ProfileTypeId);
+        Assert.NotEqual(userPickedDifferent, saved.ProfileTypeId);
+    }
+
+    private async Task<Guid> SeedProfileTypeAsync(
+        bool isVisitor, bool isActive = true)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = new ProfileType
+        {
+            Id = Guid.NewGuid(),
+            Name = $"UpsertTier-{Guid.NewGuid():N}",
+            NameArabic = "اختبار",
+            PageColor = "#1F2937",
+            UserType = UserType.Visitor,
+            IsVisitor = isVisitor,
+            IsActive = isActive,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        appDb.ProfileTypes.Add(row);
+        await appDb.SaveChangesAsync();
+        return row.Id;
+    }
+
     // -- Helpers ---------------------------------------------------------------
 
     private async Task<UpsertUserProfileRequest> ValidSaudiRequestAsync(
