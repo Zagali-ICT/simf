@@ -6,6 +6,7 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.Ai;
 using SIMF.Contracts.Archive;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.Companies;
 using SIMF.Contracts.Exhibition;
 using SIMF.Contracts.Logs;
 using SIMF.Contracts.Media;
@@ -1804,6 +1805,67 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.DeactivateSessionCommentAsync(
                 sessionId, commentId, token));
+        });
+
+        // D-202 Track-2 — Statistics dashboard BFF passthrough.
+        group.MapGet("/admin/statistics",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetStatisticsAsync(token));
+        });
+
+        // D-202 Track-2 — Company admin CRUD + account-provisioning BFF passthroughs.
+        group.MapPost("/admin/companies/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListCompaniesAsync(body, token));
+        });
+        group.MapGet("/admin/companies/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetCompanyAsync(id, token));
+        });
+        group.MapPost("/admin/companies",
+            async (CreateCompanyRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateCompanyAsync(body, token));
+        });
+        group.MapPut("/admin/companies/{id:guid}",
+            async (Guid id, UpdateCompanyRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateCompanyAsync(id, body, token));
+        });
+        group.MapDelete("/admin/companies/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateCompanyAsync(id, token));
+        });
+        group.MapGet("/admin/companies/{id:guid}/accounts",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListCompanyAccountsAsync(id, token));
+        });
+        group.MapPost("/admin/companies/{id:guid}/accounts",
+            async (Guid id, ProvisionCompanyAccountRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ProvisionCompanyAccountAsync(id, body, token));
         });
     }
 

@@ -27,6 +27,8 @@ public static class CpNavigation
         new("Nav.Overview",
         [
             new("Module.Dashboard", "/"),
+            // D-202 Track-2 — read-only live-counts statistics dashboard.
+            new("Module.Statistics", "/admin/statistics"),
         ]),
         new("Nav.People",
         [
@@ -62,6 +64,8 @@ public static class CpNavigation
         new("Nav.Exhibition",
         [
             new("Module.Exhibitors", "/m/exhibitors", IsStub: true),
+            // D-202 Track-2 — exhibitor / sponsor company CRUD + account provisioning.
+            new("Module.Companies", "/admin/companies"),
             // D-199 — Exhibition booths admin CRUD (Mockup page 22).
             new("Module.Booths", "/admin/booths"),
             // D-199 — sponsors admin CRUD (Mockup page 23).

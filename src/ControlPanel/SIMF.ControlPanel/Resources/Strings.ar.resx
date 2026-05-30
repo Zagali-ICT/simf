@@ -34,6 +34,7 @@
   <data name="Nav.System" xml:space="preserve"><value>النظام</value></data>
 
   <data name="Module.Dashboard" xml:space="preserve"><value>لوحة المعلومات</value></data>
+  <data name="Module.Statistics" xml:space="preserve"><value>الإحصائيات</value></data>
   <data name="Module.RegistrationRequests" xml:space="preserve"><value>طلبات التسجيل</value></data>
   <data name="Module.Attendees" xml:space="preserve"><value>الحضور</value></data>
   <data name="Module.Roles" xml:space="preserve"><value>الأدوار والصلاحيات</value></data>
@@ -50,6 +51,7 @@
   <data name="Module.Bookings" xml:space="preserve"><value>الحجوزات</value></data>
   <data name="Module.Exhibitors" xml:space="preserve"><value>العارضون</value></data>
   <data name="Module.Booths" xml:space="preserve"><value>الأجنحة</value></data>
+  <data name="Module.Companies" xml:space="preserve"><value>الشركات</value></data>
   <data name="Module.Sponsors" xml:space="preserve"><value>الرعاة</value></data>
   <data name="Module.VenueMap" xml:space="preserve"><value>خريطة الموقع</value></data>
   <data name="Module.LiveSessions" xml:space="preserve"><value>الجلسات المباشرة</value></data>
@@ -1806,4 +1808,75 @@
   <data name="Admin.Comments.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
   <data name="Admin.Comments.LoadFailed" xml:space="preserve"><value>تعذر تحميل التعليقات. حاول مرة أخرى.</value></data>
   <data name="Admin.Comments.SessionsLoadFailed" xml:space="preserve"><value>تعذر تحميل الجلسات. حاول مرة أخرى.</value></data>
+
+  <!-- D-202 Track-2 — Statistics dashboard (read-only). -->
+  <data name="Admin.Statistics.Title" xml:space="preserve"><value>الإحصائيات</value></data>
+  <data name="Admin.Statistics.Loading" xml:space="preserve"><value>جارٍ تحميل الإحصائيات…</value></data>
+  <data name="Admin.Statistics.None" xml:space="preserve"><value>لا توجد إحصائيات متاحة بعد.</value></data>
+  <data name="Admin.Statistics.LoadFailed" xml:space="preserve"><value>تعذر تحميل الإحصائيات. حاول مرة أخرى.</value></data>
+  <data name="Admin.Statistics.Stat.TotalAttendees" xml:space="preserve"><value>إجمالي الحضور</value></data>
+  <data name="Admin.Statistics.Stat.ApprovedAttendees" xml:space="preserve"><value>الحضور المعتمدون</value></data>
+  <data name="Admin.Statistics.Stat.PendingApprovals" xml:space="preserve"><value>الموافقات المعلقة</value></data>
+  <data name="Admin.Statistics.Stat.Sessions" xml:space="preserve"><value>الجلسات</value></data>
+  <data name="Admin.Statistics.Stat.Speakers" xml:space="preserve"><value>المتحدثون</value></data>
+  <data name="Admin.Statistics.Stat.Booths" xml:space="preserve"><value>الأجنحة</value></data>
+  <data name="Admin.Statistics.Stat.Sponsors" xml:space="preserve"><value>الرعاة</value></data>
+  <data name="Admin.Statistics.Stat.NewsArticles" xml:space="preserve"><value>الأخبار</value></data>
+  <data name="Admin.Statistics.Stat.MediaItems" xml:space="preserve"><value>عناصر الوسائط</value></data>
+  <data name="Admin.Statistics.Stat.Delegations" xml:space="preserve"><value>الوفود</value></data>
+  <data name="Admin.Statistics.Stat.CommentsApproved" xml:space="preserve"><value>التعليقات المعتمدة</value></data>
+  <data name="Admin.Statistics.Stat.CommentsPending" xml:space="preserve"><value>التعليقات المعلقة</value></data>
+  <data name="Admin.Statistics.Stat.RatingsCount" xml:space="preserve"><value>إجمالي التقييمات</value></data>
+  <data name="Admin.Statistics.Stat.AverageRating" xml:space="preserve"><value>متوسط التقييم</value></data>
+
+  <!-- D-202 Track-2 — Companies admin CRUD + account provisioning. -->
+  <data name="Admin.Companies.Title" xml:space="preserve"><value>الشركات</value></data>
+  <data name="Admin.Companies.New" xml:space="preserve"><value>إضافة شركة</value></data>
+  <data name="Admin.Companies.Loading" xml:space="preserve"><value>جارٍ تحميل الشركات…</value></data>
+  <data name="Admin.Companies.None" xml:space="preserve"><value>لا توجد شركات بعد.</value></data>
+  <data name="Admin.Companies.Col.NameEn" xml:space="preserve"><value>الاسم (بالإنجليزية)</value></data>
+  <data name="Admin.Companies.Col.NameAr" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
+  <data name="Admin.Companies.Col.Type" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.Companies.Col.AccountCount" xml:space="preserve"><value>الحسابات</value></data>
+  <data name="Admin.Companies.Col.Active" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.Companies.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Companies.Accounts" xml:space="preserve"><value>الحسابات</value></data>
+  <data name="Admin.Companies.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Companies.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Companies.Type.Exhibitor" xml:space="preserve"><value>عارض</value></data>
+  <data name="Admin.Companies.Type.Sponsor" xml:space="preserve"><value>راعٍ</value></data>
+  <data name="Admin.Companies.Add.Title" xml:space="preserve"><value>إضافة شركة</value></data>
+  <data name="Admin.Companies.Edit.Title" xml:space="preserve"><value>تعديل شركة</value></data>
+  <data name="Admin.Companies.Field.NameEn" xml:space="preserve"><value>الاسم (بالإنجليزية)</value></data>
+  <data name="Admin.Companies.Field.NameAr" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
+  <data name="Admin.Companies.Field.Type" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.Companies.Field.ContactEmail" xml:space="preserve"><value>البريد الإلكتروني للتواصل</value></data>
+  <data name="Admin.Companies.Field.ContactPhone" xml:space="preserve"><value>هاتف التواصل</value></data>
+  <data name="Admin.Companies.Field.Website" xml:space="preserve"><value>الموقع الإلكتروني</value></data>
+  <data name="Admin.Companies.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.Companies.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Companies.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.Companies.Saved" xml:space="preserve"><value>تم حفظ الشركة.</value></data>
+  <data name="Admin.Companies.Deleted" xml:space="preserve"><value>تم حذف الشركة.</value></data>
+  <data name="Admin.Companies.NameRequired" xml:space="preserve"><value>الاسم بالإنجليزية والعربية كلاهما مطلوب.</value></data>
+  <data name="Admin.Companies.Delete.Confirm" xml:space="preserve"><value>هل تريد حذف هذه الشركة؟ ستُزال من قائمة العارضين / الرعاة العامة فورًا.</value></data>
+  <data name="Admin.Companies.LoadFailed" xml:space="preserve"><value>تعذر تحميل الشركات. حاول مرة أخرى.</value></data>
+  <data name="Admin.Companies.Accounts.Title" xml:space="preserve"><value>الحسابات — {0}</value></data>
+  <data name="Admin.Companies.Accounts.Hint" xml:space="preserve"><value>الحساب المُنشأ هو تسجيل دخول للتطبيق قيد الموافقة مرتبط بهذه الشركة.</value></data>
+  <data name="Admin.Companies.Accounts.Loading" xml:space="preserve"><value>جارٍ تحميل الحسابات…</value></data>
+  <data name="Admin.Companies.Accounts.None" xml:space="preserve"><value>لم يتم إنشاء أي حسابات بعد.</value></data>
+  <data name="Admin.Companies.Accounts.Col.ContactName" xml:space="preserve"><value>اسم جهة الاتصال</value></data>
+  <data name="Admin.Companies.Accounts.Col.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Companies.Accounts.Col.RoleLabel" xml:space="preserve"><value>الدور</value></data>
+  <data name="Admin.Companies.Accounts.Col.Active" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.Companies.Accounts.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Companies.Accounts.LoadFailed" xml:space="preserve"><value>تعذر تحميل حسابات الشركة. حاول مرة أخرى.</value></data>
+  <data name="Admin.Companies.Provision.Heading" xml:space="preserve"><value>إنشاء حساب</value></data>
+  <data name="Admin.Companies.Provision.ContactName" xml:space="preserve"><value>اسم جهة الاتصال</value></data>
+  <data name="Admin.Companies.Provision.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Companies.Provision.RoleLabel" xml:space="preserve"><value>مسمى الدور</value></data>
+  <data name="Admin.Companies.Provision.Submit" xml:space="preserve"><value>إنشاء الحساب</value></data>
+  <data name="Admin.Companies.Provision.Done" xml:space="preserve"><value>تم إنشاء الحساب. وهو قيد الموافقة.</value></data>
+  <data name="Admin.Companies.Provision.Required" xml:space="preserve"><value>اسم جهة الاتصال والبريد الإلكتروني كلاهما مطلوب.</value></data>
+  <data name="Admin.Companies.Provision.Failed" xml:space="preserve"><value>تعذر إنشاء الحساب. حاول مرة أخرى.</value></data>
 </root>

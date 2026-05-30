@@ -7,12 +7,14 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.Ai;
 using SIMF.Contracts.Archive;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.Companies;
 using SIMF.Contracts.Exhibition;
 using SIMF.Contracts.Feedback;
 using SIMF.Contracts.Logs;
 using SIMF.Contracts.Media;
 using SIMF.Contracts.PublicRelations;
 using SIMF.Contracts.Sessions;
+using SIMF.Contracts.Statistics;
 
 using SIMF.Common.Enums;
 
@@ -1834,6 +1836,70 @@ public sealed class SimfAdminClient(HttpClient http)
         SendAsync<bool>(
             HttpMethod.Delete, $"sessions/{sessionId}/comments/{commentId}",
             content: null, accessToken, cancellationToken);
+
+    // -- D-202 Track-2 — Statistics dashboard (SIMF.Contracts.Statistics) ----
+
+    public Task<ApiCallResult<StatisticsDashboard>> GetStatisticsAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<StatisticsDashboard>(
+            HttpMethod.Get, "statistics", content: null,
+            accessToken, cancellationToken);
+
+    // -- D-202 Track-2 — Company admin CRUD + account provisioning ----------
+    // (SIMF.Contracts.Companies)
+
+    public Task<ApiCallResult<GridPage<AdminCompanySummary>>> ListCompaniesAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminCompanySummary>>(
+            HttpMethod.Post, "companies/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminCompanyDetail>> GetCompanyAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminCompanyDetail>(
+            HttpMethod.Get, $"companies/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminCompanyDetail>> CreateCompanyAsync(
+        CreateCompanyRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminCompanyDetail>(
+            HttpMethod.Post, "companies",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminCompanyDetail>> UpdateCompanyAsync(
+        Guid id, UpdateCompanyRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminCompanyDetail>(
+            HttpMethod.Put, $"companies/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeactivateCompanyAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"companies/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<IReadOnlyList<CompanyAccountSummary>>> ListCompanyAccountsAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<CompanyAccountSummary>>(
+            HttpMethod.Get, $"companies/{id}/accounts", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<CompanyAccountSummary>> ProvisionCompanyAccountAsync(
+        Guid id, ProvisionCompanyAccountRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<CompanyAccountSummary>(
+            HttpMethod.Post, $"companies/{id}/accounts",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
 
     private static ApiResult<T> TransportFailure<T>(string message, string messageArabic) =>
         ApiResult<T>.Fail(new ApiError

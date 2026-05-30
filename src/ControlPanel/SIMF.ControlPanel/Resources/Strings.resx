@@ -34,6 +34,7 @@
   <data name="Nav.System" xml:space="preserve"><value>System</value></data>
 
   <data name="Module.Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="Module.Statistics" xml:space="preserve"><value>Statistics</value></data>
   <data name="Module.RegistrationRequests" xml:space="preserve"><value>Registration requests</value></data>
   <data name="Module.Attendees" xml:space="preserve"><value>Attendees</value></data>
   <data name="Module.Roles" xml:space="preserve"><value>Roles &amp; permissions</value></data>
@@ -50,6 +51,7 @@
   <data name="Module.Bookings" xml:space="preserve"><value>Bookings</value></data>
   <data name="Module.Exhibitors" xml:space="preserve"><value>Exhibitors</value></data>
   <data name="Module.Booths" xml:space="preserve"><value>Booths</value></data>
+  <data name="Module.Companies" xml:space="preserve"><value>Companies</value></data>
   <data name="Module.Sponsors" xml:space="preserve"><value>Sponsors</value></data>
   <data name="Module.VenueMap" xml:space="preserve"><value>Venue map</value></data>
   <data name="Module.LiveSessions" xml:space="preserve"><value>Live sessions</value></data>
@@ -1814,4 +1816,75 @@
   <data name="Admin.Comments.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
   <data name="Admin.Comments.LoadFailed" xml:space="preserve"><value>Could not load comments. Please try again.</value></data>
   <data name="Admin.Comments.SessionsLoadFailed" xml:space="preserve"><value>Could not load sessions. Please try again.</value></data>
+
+  <!-- D-202 Track-2 — Statistics dashboard (read-only). -->
+  <data name="Admin.Statistics.Title" xml:space="preserve"><value>Statistics</value></data>
+  <data name="Admin.Statistics.Loading" xml:space="preserve"><value>Loading statistics…</value></data>
+  <data name="Admin.Statistics.None" xml:space="preserve"><value>No statistics are available yet.</value></data>
+  <data name="Admin.Statistics.LoadFailed" xml:space="preserve"><value>Could not load statistics. Please try again.</value></data>
+  <data name="Admin.Statistics.Stat.TotalAttendees" xml:space="preserve"><value>Total attendees</value></data>
+  <data name="Admin.Statistics.Stat.ApprovedAttendees" xml:space="preserve"><value>Approved attendees</value></data>
+  <data name="Admin.Statistics.Stat.PendingApprovals" xml:space="preserve"><value>Pending approvals</value></data>
+  <data name="Admin.Statistics.Stat.Sessions" xml:space="preserve"><value>Sessions</value></data>
+  <data name="Admin.Statistics.Stat.Speakers" xml:space="preserve"><value>Speakers</value></data>
+  <data name="Admin.Statistics.Stat.Booths" xml:space="preserve"><value>Booths</value></data>
+  <data name="Admin.Statistics.Stat.Sponsors" xml:space="preserve"><value>Sponsors</value></data>
+  <data name="Admin.Statistics.Stat.NewsArticles" xml:space="preserve"><value>News articles</value></data>
+  <data name="Admin.Statistics.Stat.MediaItems" xml:space="preserve"><value>Media items</value></data>
+  <data name="Admin.Statistics.Stat.Delegations" xml:space="preserve"><value>Delegations</value></data>
+  <data name="Admin.Statistics.Stat.CommentsApproved" xml:space="preserve"><value>Comments approved</value></data>
+  <data name="Admin.Statistics.Stat.CommentsPending" xml:space="preserve"><value>Comments pending</value></data>
+  <data name="Admin.Statistics.Stat.RatingsCount" xml:space="preserve"><value>Total ratings</value></data>
+  <data name="Admin.Statistics.Stat.AverageRating" xml:space="preserve"><value>Average rating</value></data>
+
+  <!-- D-202 Track-2 — Companies admin CRUD + account provisioning. -->
+  <data name="Admin.Companies.Title" xml:space="preserve"><value>Companies</value></data>
+  <data name="Admin.Companies.New" xml:space="preserve"><value>Add company</value></data>
+  <data name="Admin.Companies.Loading" xml:space="preserve"><value>Loading companies…</value></data>
+  <data name="Admin.Companies.None" xml:space="preserve"><value>No companies yet.</value></data>
+  <data name="Admin.Companies.Col.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Companies.Col.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Companies.Col.Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Admin.Companies.Col.AccountCount" xml:space="preserve"><value>Accounts</value></data>
+  <data name="Admin.Companies.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Companies.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.Companies.Accounts" xml:space="preserve"><value>Accounts</value></data>
+  <data name="Admin.Companies.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.Companies.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.Companies.Type.Exhibitor" xml:space="preserve"><value>Exhibitor</value></data>
+  <data name="Admin.Companies.Type.Sponsor" xml:space="preserve"><value>Sponsor</value></data>
+  <data name="Admin.Companies.Add.Title" xml:space="preserve"><value>Add company</value></data>
+  <data name="Admin.Companies.Edit.Title" xml:space="preserve"><value>Edit company</value></data>
+  <data name="Admin.Companies.Field.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Companies.Field.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Companies.Field.Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Admin.Companies.Field.ContactEmail" xml:space="preserve"><value>Contact email</value></data>
+  <data name="Admin.Companies.Field.ContactPhone" xml:space="preserve"><value>Contact phone</value></data>
+  <data name="Admin.Companies.Field.Website" xml:space="preserve"><value>Website</value></data>
+  <data name="Admin.Companies.Field.IsActive" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Companies.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Companies.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.Companies.Saved" xml:space="preserve"><value>Company saved.</value></data>
+  <data name="Admin.Companies.Deleted" xml:space="preserve"><value>Company deleted.</value></data>
+  <data name="Admin.Companies.NameRequired" xml:space="preserve"><value>Both the English and Arabic names are required.</value></data>
+  <data name="Admin.Companies.Delete.Confirm" xml:space="preserve"><value>Delete this company? It will be removed from the public exhibitor / sponsor list immediately.</value></data>
+  <data name="Admin.Companies.LoadFailed" xml:space="preserve"><value>Could not load companies. Please try again.</value></data>
+  <data name="Admin.Companies.Accounts.Title" xml:space="preserve"><value>Accounts — {0}</value></data>
+  <data name="Admin.Companies.Accounts.Hint" xml:space="preserve"><value>A provisioned account is a pending-approval app login tagged to this company.</value></data>
+  <data name="Admin.Companies.Accounts.Loading" xml:space="preserve"><value>Loading accounts…</value></data>
+  <data name="Admin.Companies.Accounts.None" xml:space="preserve"><value>No accounts provisioned yet.</value></data>
+  <data name="Admin.Companies.Accounts.Col.ContactName" xml:space="preserve"><value>Contact name</value></data>
+  <data name="Admin.Companies.Accounts.Col.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Admin.Companies.Accounts.Col.RoleLabel" xml:space="preserve"><value>Role</value></data>
+  <data name="Admin.Companies.Accounts.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Companies.Accounts.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Companies.Accounts.LoadFailed" xml:space="preserve"><value>Could not load the company's accounts. Please try again.</value></data>
+  <data name="Admin.Companies.Provision.Heading" xml:space="preserve"><value>Provision an account</value></data>
+  <data name="Admin.Companies.Provision.ContactName" xml:space="preserve"><value>Contact name</value></data>
+  <data name="Admin.Companies.Provision.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Admin.Companies.Provision.RoleLabel" xml:space="preserve"><value>Role label</value></data>
+  <data name="Admin.Companies.Provision.Submit" xml:space="preserve"><value>Provision account</value></data>
+  <data name="Admin.Companies.Provision.Done" xml:space="preserve"><value>Account provisioned. It is pending approval.</value></data>
+  <data name="Admin.Companies.Provision.Required" xml:space="preserve"><value>The contact name and email are both required.</value></data>
+  <data name="Admin.Companies.Provision.Failed" xml:space="preserve"><value>Could not provision the account. Please try again.</value></data>
 </root>
