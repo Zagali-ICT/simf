@@ -1,0 +1,164 @@
+// D-199 (Mockup page 30) — anonymous public media gallery: active only,
+// paged, by album, plus the out-of-row image stream.
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
+using SIMF.Common;
+using SIMF.Common.Enums;
+using SIMF.Contracts.Authentication;
+using SIMF.Contracts.Media;
+using SIMF.Domain.IdentityAccess;
+using Xunit;
+
+namespace SIMF.Api.Tests;
+
+public sealed class PublicMediaTests : IClassFixture<SimfApiFactory>
+{
+    private const string AdministratorRole = "Administrator";
+
+    private readonly SimfApiFactory _factory;
+    private readonly HttpClient _client;
+
+    public PublicMediaTests(SimfApiFactory factory)
+    {
+        _factory = factory;
+        _factory.EnsureDatabaseCreated();
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task Public_list_is_anonymous_active_only_ordered_by_displayorder()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var album = $"PubAlbum-{Guid.NewGuid():N}";
+
+        await PostAuthAsync("/api/v1/admin/media",
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "second", AlbumEn = album, DisplayOrder = 20 }, token);
+        await PostAuthAsync("/api/v1/admin/media",
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "first", AlbumEn = album, DisplayOrder = 10 }, token);
+        var inactive = await PostAuthAsync("/api/v1/admin/media",
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "hidden", AlbumEn = album, DisplayOrder = 1 }, token);
+        var inactiveId = (await inactive.Content
+            .ReadFromJsonAsync<ApiResult<AdminMediaDetail>>())!.Data!.Id;
+        var del = await DeleteAuthAsync($"/api/v1/admin/media/{inactiveId}", token);
+        Assert.Equal(HttpStatusCode.OK, del.StatusCode);
+
+        // Anonymous read (no Authorization header).
+        var resp = await _client.GetAsync($"/api/v1/media?album={album}&top=100");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var page = (await resp.Content
+            .ReadFromJsonAsync<ApiResult<PublicMediaPage>>())!;
+        Assert.True(page.Success);
+
+        Assert.Equal(2, page.Data!.Items.Count);
+        Assert.DoesNotContain(page.Data.Items, i => i.Id == inactiveId);
+        Assert.Equal("first", page.Data.Items[0].TitleEn);
+        Assert.Equal("second", page.Data.Items[1].TitleEn);
+    }
+
+    [Fact]
+    public async Task Album_filter_narrows_results()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var albumA = $"A-{Guid.NewGuid():N}";
+        var albumB = $"B-{Guid.NewGuid():N}";
+
+        await PostAuthAsync("/api/v1/admin/media",
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "in-a", AlbumEn = albumA, DisplayOrder = 1 }, token);
+        await PostAuthAsync("/api/v1/admin/media",
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "in-b", AlbumEn = albumB, DisplayOrder = 1 }, token);
+
+        var resp = await _client.GetAsync($"/api/v1/media?album={albumA}&top=100");
+        var page = (await resp.Content
+            .ReadFromJsonAsync<ApiResult<PublicMediaPage>>())!.Data!;
+        Assert.All(page.Items, i => Assert.Equal(albumA, i.AlbumEn));
+        Assert.Contains(page.Items, i => i.TitleEn == "in-a");
+        Assert.DoesNotContain(page.Items, i => i.TitleEn == "in-b");
+    }
+
+    [Fact]
+    public async Task Image_url_is_null_when_no_bytes_and_stream_is_404()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var album = $"NoBytes-{Guid.NewGuid():N}";
+        var create = await PostAuthAsync("/api/v1/admin/media",
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "no-bytes", AlbumEn = album, DisplayOrder = 1 }, token);
+        var id = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminMediaDetail>>())!.Data!.Id;
+
+        var resp = await _client.GetAsync($"/api/v1/media?album={album}&top=100");
+        var page = (await resp.Content
+            .ReadFromJsonAsync<ApiResult<PublicMediaPage>>())!.Data!;
+        var item = Assert.Single(page.Items, i => i.Id == id);
+        Assert.Null(item.ImageUrl);
+
+        var img = await _client.GetAsync($"/api/v1/media/{id}/image");
+        Assert.Equal(HttpStatusCode.NotFound, img.StatusCode);
+    }
+
+    [Fact]
+    public async Task Image_stream_404_for_unknown_id()
+    {
+        var resp = await _client.GetAsync($"/api/v1/media/{Guid.NewGuid()}/image");
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    // -- Helpers --------------------------------------------------------------
+
+    private async Task<string> CreateAdministratorAndSignInAsync()
+    {
+        var email = $"media-pub-admin-{Guid.NewGuid():N}@simf.test";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
+            if (!await roles.RoleExistsAsync(AdministratorRole))
+            {
+                await roles.CreateAsync(new SimfRole { Name = AdministratorRole });
+            }
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                DisplayName = "Media Pub Admin",
+                AccountState = AccountState.Approved,
+                UserType = UserType.Admin,
+            };
+            await users.CreateAsync(user, AuthFlow.Password);
+            await users.AddToRoleAsync(user, AdministratorRole);
+        }
+
+        var sign = await _client.PostAsJsonAsync(
+            "/api/v1/auth/sign-in",
+            new SignInRequest
+            {
+                Email = email,
+                Password = AuthFlow.Password,
+                Audience = SignInAudience.Cp,
+            });
+        var body = (await sign.Content
+            .ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        return body.Data!.Tokens!.AccessToken;
+    }
+
+    private Task<HttpResponseMessage> PostAuthAsync<TBody>(
+        string url, TBody body, string token) where TBody : class
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = JsonContent.Create(body),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> DeleteAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+}

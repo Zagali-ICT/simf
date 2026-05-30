@@ -231,6 +231,46 @@ public static class DependencyInjection
         // reservations (visitor self-pick + random + admin row blocks).
         services.AddScoped<SIMF.Application.SeatReservations.Abstractions.ISeatReservationService,
             SIMF.Infrastructure.SeatReservations.SeatReservationService>();
+        // D-199 — event modules (freeze lift): programme/speaker public reads,
+        // news, media + media-partners, booths, sponsors, archive, comments, ratings.
+        services.AddScoped<SIMF.Application.Programme.Abstractions.IPublicSpeakerService,
+            SIMF.Infrastructure.Programme.PublicSpeakerService>();
+        services.AddScoped<SIMF.Application.Programme.Abstractions.IProgrammeSessionService,
+            SIMF.Infrastructure.Programme.ProgrammeSessionService>();
+        services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IPublicNewsService,
+            SIMF.Infrastructure.PublicRelations.PublicNewsService>();
+        services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminNewsService,
+            SIMF.Infrastructure.PublicRelations.AdminNewsService>();
+        services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IPublicMediaPartnerService,
+            SIMF.Infrastructure.PublicRelations.PublicMediaPartnerService>();
+        services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminMediaPartnerService,
+            SIMF.Infrastructure.PublicRelations.AdminMediaPartnerService>();
+        services.AddScoped<SIMF.Application.Media.Abstractions.IPublicMediaService,
+            SIMF.Infrastructure.Media.PublicMediaService>();
+        services.AddScoped<SIMF.Application.Media.Abstractions.IAdminMediaService,
+            SIMF.Infrastructure.Media.AdminMediaService>();
+        services.AddSingleton<SIMF.Application.Abstractions.IMediaImageStorage,
+            SIMF.Infrastructure.Media.FilesystemMediaImageStorage>();
+        services.AddScoped<SIMF.Application.Exhibition.Abstractions.IPublicBoothService,
+            SIMF.Infrastructure.Exhibition.PublicBoothService>();
+        services.AddScoped<SIMF.Application.Exhibition.Abstractions.IAdminBoothService,
+            SIMF.Infrastructure.Exhibition.AdminBoothService>();
+        services.AddScoped<SIMF.Application.Sponsors.Abstractions.IPublicSponsorService,
+            SIMF.Infrastructure.Sponsors.PublicSponsorService>();
+        services.AddScoped<SIMF.Application.Sponsors.Abstractions.IAdminSponsorService,
+            SIMF.Infrastructure.Sponsors.AdminSponsorService>();
+        services.AddScoped<SIMF.Application.Archive.Abstractions.IPublicArchiveService,
+            SIMF.Infrastructure.Archive.PublicArchiveService>();
+        services.AddScoped<SIMF.Application.Archive.Abstractions.IAdminArchiveService,
+            SIMF.Infrastructure.Archive.AdminArchiveService>();
+        services.AddScoped<SIMF.Application.SessionComments.Abstractions.ISessionCommentService,
+            SIMF.Infrastructure.SessionComments.SessionCommentService>();
+        services.AddScoped<SIMF.Application.SessionComments.Abstractions.IAdminSessionCommentService,
+            SIMF.Infrastructure.SessionComments.AdminSessionCommentService>();
+        services.AddScoped<SIMF.Application.SessionComments.Abstractions.ICommentAiFilter,
+            SIMF.Infrastructure.SessionComments.StubCommentAiFilter>();
+        services.AddScoped<SIMF.Application.Feedback.Abstractions.IRatingService,
+            SIMF.Infrastructure.Feedback.RatingService>();
         // D-176 (gap doc G12) — centralised AI module: prompt
         // catalogue + invocation log + Echo (offline) + OpenAI HTTP.
         // HttpClient registered as a singleton (no AddHttpClient since

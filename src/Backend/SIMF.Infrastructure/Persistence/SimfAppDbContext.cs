@@ -1,17 +1,23 @@
 using Microsoft.EntityFrameworkCore;
 using SIMF.Domain.AccessControl;
 using SIMF.Domain.Ai;
+using SIMF.Domain.Archive;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.Cms;
 using SIMF.Domain.Common;
 using SIMF.Domain.Delegations;
+using SIMF.Domain.Exhibition;
+using SIMF.Domain.Feedback;
+using SIMF.Domain.Media;
 using SIMF.Domain.MeetingRequests;
 using SIMF.Domain.Operations;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 using SIMF.Domain.PublicRelations;
 using SIMF.Domain.SeatReservations;
+using SIMF.Domain.SessionComments;
 using SIMF.Domain.SessionQuestions;
+using SIMF.Domain.Sponsors;
 
 namespace SIMF.Infrastructure.Persistence;
 
@@ -122,6 +128,17 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     /// <summary>D-176 (gap doc G12) — append-only telemetry log of
     /// every AI invocation (success or failure).</summary>
     public DbSet<AiInvocation> AiInvocations => Set<AiInvocation>();
+
+    // D-199 — event modules (freeze lift): media coverage, exhibition,
+    // sponsors, archive editions, audience comments, ratings.
+    public DbSet<News> News => Set<News>();
+    public DbSet<MediaItem> MediaItems => Set<MediaItem>();
+    public DbSet<MediaPartner> MediaPartners => Set<MediaPartner>();
+    public DbSet<Booth> Booths => Set<Booth>();
+    public DbSet<Sponsor> Sponsors => Set<Sponsor>();
+    public DbSet<ArchiveEdition> ArchiveEditions => Set<ArchiveEdition>();
+    public DbSet<SessionComment> SessionComments => Set<SessionComment>();
+    public DbSet<Rating> Ratings => Set<Rating>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

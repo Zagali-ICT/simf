@@ -132,6 +132,19 @@ public static class ErrorCodes
     public const string SpeakerCodeDuplicate = "SPEAKER_CODE_DUPLICATE";
     public const string SpeakerInUse = "SPEAKER_IN_USE";
 
+    // Sponsors (D-199 — event sponsors, Mockup page 23).
+    public const string SponsorInvalid = "SPONSOR_INVALID";
+    public const string SponsorNotFound = "SPONSOR_NOT_FOUND";
+    public const string SponsorDuplicate = "SPONSOR_DUPLICATE";
+
+    // Media partners (D-199 — Mockup page 31 media partners).
+    public const string MediaPartnerNameDuplicate = "MEDIA_PARTNER_NAME_DUPLICATE";
+
+    // Booths (D-199 — Exhibition module, Mockup page 22 + 2D venue map).
+    public const string BoothInvalid = "BOOTH_INVALID";
+    public const string BoothNotFound = "BOOTH_NOT_FOUND";
+    public const string BoothCodeDuplicate = "BOOTH_CODE_DUPLICATE";
+
     // Operations toggles (D-166, gap doc G4 — registration gate +
     // archive visibility singletons).
     public const string RegistrationClosed = "REGISTRATION_CLOSED";
@@ -143,6 +156,12 @@ public static class ErrorCodes
     public const string SessionNotLiveForQuestions = "SESSION_NOT_LIVE_FOR_QUESTIONS";
     public const string SessionModeratorNotAssigned = "SESSION_MODERATOR_NOT_ASSIGNED";
     public const string SessionModeratorAlreadyAssigned = "SESSION_MODERATOR_ALREADY_ASSIGNED";
+
+    // Audience comments (D-199, Mockup page 28 — تعليقات الجمهور;
+    // distinct from SessionQuestion — public feed + admin moderation).
+    public const string SessionCommentInvalid = "SESSION_COMMENT_INVALID";
+    public const string SessionCommentNotFound = "SESSION_COMMENT_NOT_FOUND";
+    public const string SessionNotOpenForComments = "SESSION_NOT_OPEN_FOR_COMMENTS";
 
     // Venue self-assert (D-171, gap doc G7 — PDF §2.10; G-OI-2 resolved
     // to the self-assert toggle as input source).

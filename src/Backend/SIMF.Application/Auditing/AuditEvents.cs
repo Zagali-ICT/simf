@@ -139,6 +139,16 @@ public static class AuditEvents
     public const string SpeakerUpdated = "Speaker.Updated";
     public const string SpeakerDeactivated = "Speaker.Deactivated";
 
+    // Booths (D-199 — Exhibition module, Mockup page 22 + 2D venue map).
+    public const string BoothCreated = "Booth.Created";
+    public const string BoothUpdated = "Booth.Updated";
+    public const string BoothDeactivated = "Booth.Deactivated";
+
+    // Sponsors (D-199 — event sponsors, Mockup page 23)
+    public const string SponsorCreated = "Sponsor.Created";
+    public const string SponsorUpdated = "Sponsor.Updated";
+    public const string SponsorDeactivated = "Sponsor.Deactivated";
+
     // Sessions (D-165, gap doc G3 — programme sessions)
     public const string SessionCreated = "Session.Created";
     public const string SessionUpdated = "Session.Updated";
@@ -155,6 +165,14 @@ public static class AuditEvents
 
     // Venue self-assert (D-171, gap doc G7 — PDF §2.10)
     public const string SessionQuestionRejectedNotAtVenue = "SessionQuestion.RejectedNotAtVenue";
+
+    // Audience comments (D-199, Mockup page 28 — public submit + AI-filter
+    // landing state + admin moderation; distinct from SessionQuestion)
+    public const string SessionCommentSubmitted = "SessionComment.Submitted";
+    public const string SessionCommentApproved = "SessionComment.Approved";
+    public const string SessionCommentHidden = "SessionComment.Hidden";
+    public const string SessionCommentRepended = "SessionComment.Repended";
+    public const string SessionCommentDeactivated = "SessionComment.Deactivated";
 
     // Device keys / biometric sign-in (D-172, gap doc G10 — PDF §2.5)
     public const string DeviceKeyRegistered = "DeviceKey.Registered";

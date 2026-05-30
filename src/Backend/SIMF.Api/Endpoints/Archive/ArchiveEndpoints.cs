@@ -1,0 +1,151 @@
+// Tests: SIMF.Api.Tests/ArchiveTests.cs, SIMF.Api.Tests/AdminArchiveTests.cs
+using System.Security.Claims;
+using FastEndpoints;
+using SIMF.Api.Endpoints.Admin;
+using SIMF.Application.Archive.Abstractions;
+using SIMF.Common;
+using SIMF.Contracts.Archive;
+
+namespace SIMF.Api.Endpoints.Archive;
+
+/// <summary>D-199 (Mockup screen 24) — public anonymous list of active
+/// archive editions. Returns an empty list when the archive-visibility
+/// operations toggle (D-166) is off; the gate lives in the service.</summary>
+public sealed class ListPublicArchiveEndpoint(IPublicArchiveService service)
+    : EndpointWithoutRequest<ApiResult<PublicArchive>>
+{
+    public override void Configure()
+    {
+        Get("/archive");
+        AllowAnonymous();
+        Tags("Public");
+    }
+
+    public override async Task HandleAsync(CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<PublicArchive>.Ok(
+            await service.ListAsync(ct)), ct);
+}
+
+// -- Admin archive edition CRUD --
+
+public sealed class ListAdminArchiveEndpoint(IAdminArchiveService service)
+    : Endpoint<GridQuery, ApiResult<GridPage<AdminArchiveEditionSummary>>>
+{
+    public override void Configure()
+    {
+        Post("/admin/archive/list");
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(GridQuery req, CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<GridPage<AdminArchiveEditionSummary>>.Ok(
+            await service.ListAllAsync(req, ct)), ct);
+}
+
+public sealed class GetArchiveEditionRoute { public Guid Id { get; set; } }
+
+public sealed class GetArchiveEditionEndpoint(IAdminArchiveService service)
+    : Endpoint<GetArchiveEditionRoute, ApiResult<AdminArchiveEditionDetail>>
+{
+    public override void Configure()
+    {
+        Get("/admin/archive/{id:guid}");
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(
+        GetArchiveEditionRoute req, CancellationToken ct)
+    {
+        var detail = await service.GetAsync(req.Id, ct)
+            ?? throw new ApiException("archive_edition_not_found", 404,
+                "The archive edition was not found.",
+                "لم يتم العثور على نسخة الأرشيف.");
+        await Send.OkAsync(ApiResult<AdminArchiveEditionDetail>.Ok(detail), ct);
+    }
+}
+
+public sealed class CreateArchiveEditionEndpoint(IAdminArchiveService service)
+    : Endpoint<CreateArchiveEditionRequest, ApiResult<AdminArchiveEditionDetail>>
+{
+    public override void Configure()
+    {
+        Post("/admin/archive");
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(
+        CreateArchiveEditionRequest req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<AdminArchiveEditionDetail>.Ok(
+            await service.CreateAsync(actorId, req, ct)), ct);
+    }
+}
+
+public sealed record UpdateArchiveEditionRoute : UpdateArchiveEditionRequest
+{
+    public Guid Id { get; set; }
+}
+
+public sealed class UpdateArchiveEditionEndpoint(IAdminArchiveService service)
+    : Endpoint<UpdateArchiveEditionRoute, ApiResult<AdminArchiveEditionDetail>>
+{
+    public override void Configure()
+    {
+        Put("/admin/archive/{id:guid}");
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(
+        UpdateArchiveEditionRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<AdminArchiveEditionDetail>.Ok(
+            await service.UpdateAsync(actorId, req.Id, req, ct)), ct);
+    }
+}
+
+public sealed class DeleteArchiveEditionRoute { public Guid Id { get; set; } }
+
+public sealed class DeleteArchiveEditionEndpoint(IAdminArchiveService service)
+    : Endpoint<DeleteArchiveEditionRoute, ApiResult<bool>>
+{
+    public override void Configure()
+    {
+        Delete("/admin/archive/{id:guid}");
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(
+        DeleteArchiveEditionRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await service.DeactivateAsync(actorId, req.Id, ct);
+        await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
+    }
+}
