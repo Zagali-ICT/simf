@@ -326,12 +326,28 @@ internal sealed class UserProfileService(
         var user = await dbContext.Users
             .AsNoTracking()
             .Where(u => u.Id == userId)
-            .Select(u => new { u.UserType })
+            .Select(u => new { u.UserType, u.AccountState })
             .SingleOrDefaultAsync(cancellationToken);
         if (user is null) { return MobileAppRole.None; }
         if (user.UserType == UserType.Admin)
         {
             return MobileAppRole.None;
+        }
+
+        // D-194 — a partner ProfileType only confers Staff / Moderator
+        // authority once an admin has APPROVED the account. A self-
+        // registering user who self-picks a partner profile type stays
+        // PendingApproval (see UpsertMineAsync), so they resolve to the
+        // default Visitor role until an admin reviews and approves them
+        // (the admin sees the proposed ProfileType at approval time and
+        // can change it). This closes the self-service escalation: the
+        // mobile sign-up API alone can never mint more than Visitor.
+        // AccountState.Approved is reached only via an admin action
+        // (approve / admin-create / on-site register) or the seeder —
+        // never a self-service path.
+        if (user.AccountState != AccountState.Approved)
+        {
+            return MobileAppRole.Visitor;
         }
 
         // Visitor scope — partner profile types carry an operational

@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using SIMF.Application.IdentityAccess;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
@@ -154,7 +155,93 @@ public sealed class MobileAppRoleTests : IClassFixture<SimfApiFactory>
         Assert.Equal("None", claim);
     }
 
+    // D-194 — a self-registering user who self-picks a partner (Staff/
+    // Moderator) profile type stays PendingApproval, so the resolver must
+    // hold them at Visitor until an admin approves. This is the regression
+    // guard for the mobile sign-up privilege-escalation finding.
+    [Fact]
+    public async Task PendingApproval_with_partner_Staff_profile_resolves_to_Visitor()
+    {
+        var userId = await SeedVisitorWithPartnerProfileAsync(
+            MobileAppRole.Staff, AccountState.PendingApproval);
+
+        using var scope = _factory.Services.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<IUserProfileService>();
+        var resolved = await service.ResolveMobileAppRoleAsync(userId);
+
+        Assert.Equal(MobileAppRole.Visitor, resolved);
+    }
+
+    // D-194 — once an admin has approved the account (the blessing of the
+    // proposed profile type), the partner role applies. Proves the gate
+    // does not over-correct and break legitimately admin-approved staff.
+    [Fact]
+    public async Task Approved_with_partner_Staff_profile_resolves_to_Staff()
+    {
+        var userId = await SeedVisitorWithPartnerProfileAsync(
+            MobileAppRole.Staff, AccountState.Approved);
+
+        using var scope = _factory.Services.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<IUserProfileService>();
+        var resolved = await service.ResolveMobileAppRoleAsync(userId);
+
+        Assert.Equal(MobileAppRole.Staff, resolved);
+    }
+
     // -- Helpers --------------------------------------------------------------
+
+    // Seeds a Visitor user with a partner (IsVisitor=false) profile type
+    // carrying the given MobileAppRole, at the given account state. Mirrors
+    // the SeedVisitorProfileAsync pattern in AdminInvitationsTests.
+    private async Task<Guid> SeedVisitorWithPartnerProfileAsync(
+        MobileAppRole role, AccountState state)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+
+        var profileType = new ProfileType
+        {
+            Id = Guid.NewGuid(),
+            Name = $"Partner {Guid.NewGuid():N}",
+            NameArabic = "شريك",
+            PageColor = "#244A77",
+            UserType = UserType.Visitor,
+            IsVisitor = false,
+            MobileAppRole = role,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        appDb.ProfileTypes.Add(profileType);
+        await appDb.SaveChangesAsync();
+
+        var email = $"mar-partner-{Guid.NewGuid():N}@simf.test";
+        var user = new SimfUser
+        {
+            UserName = email,
+            Email = email,
+            EmailConfirmed = true,
+            DisplayName = "Partner User",
+            AccountState = state,
+            UserType = UserType.Visitor,
+        };
+        await users.CreateAsync(user, AuthFlow.Password);
+
+        appDb.UserProfiles.Add(new UserProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            ProfileTypeId = profileType.Id,
+            EnglishName = "Partner User",
+            ArabicName = "مستخدم شريك",
+            PlaceOfBirth = "Riyadh",
+            NationalityId = 0,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await appDb.SaveChangesAsync();
+
+        return user.Id;
+    }
 
     private static string? ReadClaim(string token, string claimType)
     {

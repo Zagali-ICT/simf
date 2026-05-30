@@ -122,7 +122,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         validIqama.IsSaudi = false;
         validIqama.NationalId = null;
         validIqama.NationalityCode = "AE";
-        validIqama.IqamaNumber = "2345678901";
+        validIqama.IqamaNumber = "2101798276";   // D-197 — Luhn-valid Iqama
 
         var ok = await PostAuthAsync(Path, validIqama, token);
         Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
@@ -151,6 +151,86 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
 
         var response = await PostAuthAsync(Path, request, token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_rejects_a_Saudi_national_id_with_an_invalid_checksum()
+    {
+        // D-197: prefix + length pass, but the Luhn check digit fails.
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.NationalId = "1234567890";   // starts with 1, 10 digits, NOT Luhn-valid
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_rejects_an_Iqama_with_an_invalid_checksum()
+    {
+        // D-197: prefix + length pass, but the Luhn check digit fails.
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.IsSaudi = false;
+        request.NationalId = null;
+        request.NationalityCode = "AE";
+        request.IqamaNumber = "2345678901";   // starts with 2, 10 digits, NOT Luhn-valid
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_requires_a_date_of_birth()
+    {
+        // D-197: date of birth is mandatory.
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.DateOfBirth = null;
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_rejects_a_registrant_under_18()
+    {
+        // D-197: the registrant must be at least 18 years old.
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        // One day short of 18.
+        request.DateOfBirth =
+            DateOnly.FromDateTime(DateTime.UtcNow).AddYears(-18).AddDays(1);
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_accepts_a_registrant_exactly_18()
+    {
+        // D-197: exactly 18 today is eligible (boundary).
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.DateOfBirth = DateOnly.FromDateTime(DateTime.UtcNow).AddYears(-18);
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_accepts_a_valid_passport_for_a_non_Saudi()
+    {
+        // D-197: passport is a 6-9 alphanumeric format sanity check.
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.IsSaudi = false;
+        request.NationalId = null;
+        request.NationalityCode = "AE";
+        request.PassportNumber = "AB123456";   // 8 alphanumeric
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
@@ -608,7 +688,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             DateOfBirth = new DateOnly(1990, 1, 1),
             PlaceOfBirth = "Riyadh",
             IsSaudi = true,
-            NationalId = "1234567890",
+            NationalId = "1101798278",   // D-197 — Luhn-valid Saudi national id
         };
     }
 

@@ -202,6 +202,15 @@ type to Staff or Moderator by editing the row from the Control Panel; the
 mapping takes effect on the next sign-in / refresh. The seed ships only
 `Staff (Other) → Staff`; every other operational mapping is event-curated.
 
+**D-196 — approval gate.** A partner profile type confers its `Staff` /
+`Moderator` `mobile_app_role` only once the account's `AccountState` is
+`Approved`. A self-registering user who self-picks a partner profile type
+stays `PendingApproval`, so they resolve to `Visitor` until an admin
+reviews and approves them — at which point the admin has seen (and may
+have changed) the proposed profile type. This makes the admin approval,
+not the user's self-pick, the point at which operational authority is
+granted; the mobile sign-up API alone can never mint more than `Visitor`.
+
 The Flutter app must not infer authority from `UserType` alone: a user whose
 `UserType=Other` carries `mobile_app_role=None` is treated as a Visitor for
 navigation purposes (their `ProfileType` is "Exhibitor" or "Speaker" — a
