@@ -304,6 +304,33 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task SignIn_for_a_verified_visitor_without_a_profile_surfaces_EmailVerified()
+    {
+        // D-198 — a verified user who hasn't completed their profile gets
+        // AccountStateInfo.State = EmailVerified so the client routes them to
+        // the profile form. 2FA is off by default, so the direct-issue path
+        // (where the info is surfaced) runs; the account_state JWT claim
+        // carries the same signal on the email-OTP path.
+        var email = NewEmail();
+        await SignUpAsync(email);
+        await _client.PostAsJsonAsync(
+            "/api/v1/auth/verify-email",
+            new VerifyEmailRequest
+            {
+                Email = email,
+                Code = GetActiveCode(email, AccountCodePurpose.EmailVerification),
+            });
+
+        var response = await SignInAsync(email, Password);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        Assert.False(body.Data!.MfaRequired);
+        Assert.NotNull(body.Data.AccountState);
+        Assert.Equal(nameof(AccountState.EmailVerified), body.Data.AccountState!.State);
+    }
+
+    [Fact]
     public async Task SignIn_returns_tokens_directly_when_TwoFactorEnabled_is_false_for_a_cp_user()
     {
         var (email, _) = await CreateAdminAsync();

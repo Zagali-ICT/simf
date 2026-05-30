@@ -64,16 +64,52 @@ public sealed class RegistrationEndpointsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task SignUp_returns_409_for_a_duplicate_email()
+    public async Task SignUp_on_an_unverified_account_restarts_with_a_fresh_code_and_the_new_password()
     {
         var email = NewEmail();
         await SignUpAsync(email);
+        var firstCode = GetActiveCode(email);
 
-        var response = await SignUpAsync(email);
+        // D-198 — re-sign-up of an unverified account is a fresh start, not a
+        // 409: the old code is invalidated, a new one issued, and the newly
+        // typed password adopted.
+        var restart = await SignUpAsync(email, password: "Newpass1!");
+        Assert.Equal(HttpStatusCode.Created, restart.StatusCode);
 
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<ApiResult<object>>();
-        Assert.Equal(ErrorCodes.AuthEmailAlreadyRegistered, body!.Error!.Code);
+        // The old verification code no longer works; the freshly issued one does.
+        var oldCode = await VerifyEmailAsync(email, firstCode);
+        Assert.Equal(HttpStatusCode.BadRequest, oldCode.StatusCode);
+        var verify = await VerifyEmailAsync(email, GetActiveCode(email));
+        Assert.Equal(HttpStatusCode.OK, verify.StatusCode);
+
+        // The newly typed password is now the account password (2FA off by
+        // default → the password step is the whole sign-in); the old one is gone.
+        var signInNew = await SignInAsync(email, "Newpass1!");
+        Assert.Equal(HttpStatusCode.OK, signInNew.StatusCode);
+        var signInOld = await SignInAsync(email, ValidPassword);
+        Assert.Equal(HttpStatusCode.Unauthorized, signInOld.StatusCode);
+    }
+
+    [Fact]
+    public async Task SignUp_on_a_verified_account_returns_201_without_revealing_or_touching_it()
+    {
+        var email = NewEmail();
+        await SignUpAsync(email);
+        await VerifyEmailAsync(email, GetActiveCode(email));
+        Assert.Equal(AccountState.EmailVerified, GetAccountState(email));
+
+        // D-198 — re-sign-up against the verified account returns the same
+        // generic 201 (no 409), the account state is untouched, and NO new
+        // verification code is minted.
+        var response = await SignUpAsync(email, password: "Newpass1!");
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(AccountState.EmailVerified, GetAccountState(email));
+        Assert.Equal(0, ActiveVerificationCodeCount(email));
+
+        // The original password still works — the stranger's password was ignored.
+        var signInOld = await SignInAsync(email, ValidPassword);
+        Assert.Equal(HttpStatusCode.OK, signInOld.StatusCode);
     }
 
     [Fact]
@@ -276,5 +312,21 @@ public sealed class RegistrationEndpointsTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         return database.Users.Single(candidate => candidate.Email == email).AccountState;
+    }
+
+    private Task<HttpResponseMessage> SignInAsync(string email, string password) =>
+        _client.PostAsJsonAsync(
+            "/api/v1/auth/sign-in",
+            new SignInRequest { Email = email, Password = password });
+
+    private int ActiveVerificationCodeCount(string email)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = database.Users.Single(candidate => candidate.Email == email);
+        return database.AccountCodes.Count(code =>
+            code.UserId == user.Id
+            && code.Purpose == AccountCodePurpose.EmailVerification
+            && code.ConsumedAt == null);
     }
 }

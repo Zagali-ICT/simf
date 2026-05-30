@@ -291,6 +291,10 @@ header) except sign-out and the TOTP step, as noted.
 Starts account creation. Creates an account in a pending, email-unverified
 state and sends a six-digit verification code to the email.
 
+Sign-up is **enumeration-resistant** (D-198): it never reveals whether an email
+is already registered. The response shape is identical in all three cases below,
+so a duplicate email returns the same 201 a new one does.
+
 Request:
 
 ```json
@@ -303,9 +307,21 @@ Request:
 
 Rules:
 
-- `email` is required, is a valid email address, and is not already registered.
+- `email` is required and is a valid email address.
 - `password` is required and meets the password policy in section 12.5.
 - `confirmPassword` is required and equals `password`.
+
+Behaviour for an existing email (D-198):
+
+- **No account exists** — a new pending account is created and a code emailed.
+- **Account exists but is still email-unverified** — registration restarts: the
+  newly supplied password replaces the old one, the previous code is invalidated,
+  and a fresh code is emailed. The user continues as if signing up for the first
+  time.
+- **Account exists and is already verified** — the account is left untouched (the
+  supplied password is ignored and no verification code is issued); a security
+  heads-up email is sent to the account owner pointing them to sign-in /
+  password-reset.
 
 Success — 201:
 
@@ -318,7 +334,9 @@ Success — 201:
 }
 ```
 
-Failure: `VALIDATION_FAILED` (400); `AUTH_EMAIL_ALREADY_REGISTERED` (409).
+Failure: `VALIDATION_FAILED` (400); `RATE_LIMIT_EXCEEDED` (429) when the
+per-account verification-code cap is reached on a restart. A duplicate email is
+**not** an error — see the behaviour list above.
 
 #### POST /auth/verify-email
 

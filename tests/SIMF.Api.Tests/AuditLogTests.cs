@@ -51,14 +51,36 @@ public sealed class AuditLogTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task A_duplicate_sign_up_writes_a_failure_entry_with_the_error_code()
+    public async Task A_restart_of_an_unverified_sign_up_writes_a_restart_audit_entry()
     {
         var email = NewEmail();
         await SignUpAsync(email);
 
+        // Second sign-up of the still-unverified account is a restart, not a
+        // duplicate rejection (D-198).
         await SignUpAsync(email);
 
-        var entry = FindAuditEntry(email, AuditEvents.SignUpDuplicateEmail);
+        var entry = FindAuditEntry(email, AuditEvents.SignUpRestartedUnverified);
+        Assert.NotNull(entry);
+        Assert.Equal(AuditOutcome.Success, entry!.Outcome);
+        Assert.NotNull(entry.SubjectUserId);
+    }
+
+    [Fact]
+    public async Task A_sign_up_against_a_verified_account_writes_a_deflect_audit_entry()
+    {
+        var email = NewEmail();
+        await SignUpAsync(email);
+        await _client.PostAsJsonAsync(
+            "/api/v1/auth/verify-email",
+            new VerifyEmailRequest { Email = email, Code = GetActiveVerificationCode(email) });
+
+        // Sign-up against the now-verified account is deflected (D-198): the
+        // owner is notified and the attempt is audited with the duplicate-
+        // email code, but no 409 is returned to the caller.
+        await SignUpAsync(email);
+
+        var entry = FindAuditEntry(email, AuditEvents.SignUpExistingAccountDeflected);
         Assert.NotNull(entry);
         Assert.Equal(AuditOutcome.Failure, entry!.Outcome);
         Assert.Equal(ErrorCodes.AuthEmailAlreadyRegistered, entry.ErrorCode);
@@ -106,5 +128,19 @@ public sealed class AuditLogTests : IClassFixture<SimfApiFactory>
         var database = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         return database.OperationLog
             .FirstOrDefault(entry => entry.SubjectEmail == email && entry.EventType == eventType);
+    }
+
+    private string GetActiveVerificationCode(string email)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = database.Users.Single(candidate => candidate.Email == email);
+        return database.AccountCodes
+            .Where(code => code.UserId == user.Id
+                && code.Purpose == AccountCodePurpose.EmailVerification
+                && code.ConsumedAt == null)
+            .OrderByDescending(code => code.CreatedAt)
+            .First()
+            .Code;
     }
 }

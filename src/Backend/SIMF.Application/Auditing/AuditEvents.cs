@@ -8,6 +8,13 @@ public static class AuditEvents
 {
     public const string SignUpSucceeded = "SignUp.Succeeded";
     public const string SignUpDuplicateEmail = "SignUp.DuplicateEmail";
+    // D-198 — re-sign-up of an unverified account: password replaced + a
+    // fresh verification code issued (enumeration-resistant sign-up).
+    public const string SignUpRestartedUnverified = "SignUp.RestartedUnverified";
+    // D-198 — sign-up attempt against an existing *verified* account: the
+    // owner is emailed a heads-up; the account itself is never touched and
+    // the API returns the same generic response a new sign-up would.
+    public const string SignUpExistingAccountDeflected = "SignUp.ExistingAccountDeflected";
     public const string EmailVerificationSucceeded = "EmailVerification.Succeeded";
     public const string EmailVerificationCodeIncorrect = "EmailVerification.CodeIncorrect";
     public const string EmailVerificationAttemptCapReached = "EmailVerification.AttemptCapReached";
@@ -28,9 +35,10 @@ public static class AuditEvents
     public const string SignInSecondFactorFailed = "SignIn.SecondFactorFailed";
     public const string SignInSecondFactorRejected = "SignIn.SecondFactorRejected";
     public const string SignInSucceeded = "SignIn.Succeeded";
-    // P10 — D-051: a non-approved user signed in (PendingApproval or
-    // Rejected). They got tokens + AccountStateInfo; routed to the
-    // state-banner page by the front-end. SOC needs to spot these.
+    // P10 — D-051 (extended D-198): a non-approved user signed in
+    // (EmailVerified, PendingApproval or Rejected). They got tokens +
+    // AccountStateInfo; routed to the profile-form / state-banner page by
+    // the front-end. SOC needs to spot these.
     public const string SignInAsGuest = "SignIn.AsGuest";
     public const string RefreshTokenIssued = "RefreshToken.Issued";
     public const string RefreshTokenRotated = "RefreshToken.Rotated";

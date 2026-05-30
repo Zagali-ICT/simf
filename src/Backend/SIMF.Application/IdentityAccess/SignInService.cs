@@ -1,4 +1,6 @@
-﻿using System.Security.Cryptography;
+﻿// Tests: SIMF.Api.Tests/SignInTests.cs (email-verified sign-in surfaces
+//        AccountStateInfo state=EmailVerified; second-factor + state gates)
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -417,16 +419,32 @@ public sealed class SignInService(
 
     /// <summary>
     /// Builds the <see cref="AccountStateInfo"/> surfaced on a
-    /// non-Approved sign-in response (P10 — D-051). Null when the user
-    /// is Approved or in any other state that doesn't need to inform
-    /// the client (the hard-blocked states never reach this helper —
-    /// they 403 before sign-in completes).
+    /// non-Approved sign-in response (P10 — D-051; D-198 added the
+    /// EmailVerified case). Null when the user is Approved or in any
+    /// other state that doesn't need to inform the client (the
+    /// hard-blocked states never reach this helper — they 403 before
+    /// sign-in completes).
     /// </summary>
     private async Task<AccountStateInfo?> BuildAccountStateInfoAsync(
         SimfUser user, CancellationToken cancellationToken)
     {
         switch (user.AccountState)
         {
+            case AccountState.EmailVerified:
+                // D-198 — a verified user who has not yet submitted their
+                // profile (EmailVerified only advances to PendingApproval on
+                // the first profile save — UserProfileService.UpsertMineAsync).
+                // Surfacing the state lets the client route them straight to
+                // the profile form, the same way PendingApproval / Rejected
+                // route to the state-banner page. The account_state JWT claim
+                // also carries this on every token, so the signal still
+                // reaches the client on the email-OTP path where this
+                // response helper is not invoked.
+                return new AccountStateInfo(
+                    State: nameof(AccountState.EmailVerified),
+                    RejectionReason: null,
+                    RejectionReasonArabic: null,
+                    StateChangedAt: user.StateChangedAt);
             case AccountState.PendingApproval:
                 return new AccountStateInfo(
                     State: nameof(AccountState.PendingApproval),

@@ -1,4 +1,6 @@
-﻿using System.Security.Cryptography;
+﻿// Tests: SIMF.Api.Tests/RegistrationEndpointsTests.cs (sign-up: new account,
+//        unverified restart, existing-verified deflect; verify-email; resend-code)
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
@@ -61,19 +63,23 @@ public sealed class RegistrationService(
                 "التسجيل مغلق حالياً. يرجى المحاولة لاحقاً.");
         }
 
-        if (await accounts.FindByEmailAsync(request.Email) is not null)
+        var now = timeProvider.GetUtcNow();
+        var existing = await accounts.FindByEmailAsync(request.Email);
+
+        // D-198 — enumeration-resistant sign-up. A brand-new email, a
+        // restart of an unverified account, and an attempt against an
+        // already-verified account all return the SAME SignUpResponse
+        // shape, so sign-up never reveals whether an email is registered
+        // and an honest user who forgot an unfinished sign-up just
+        // continues instead of hitting a dead "you already have an
+        // account" wall.
+        if (existing is not null)
         {
-            await AuditAsync(
-                AuditEvents.SignUpDuplicateEmail, AuditOutcome.Failure, request.Email,
-                errorCode: ErrorCodes.AuthEmailAlreadyRegistered, cancellationToken: cancellationToken);
-            throw new ApiException(
-                ErrorCodes.AuthEmailAlreadyRegistered,
-                409,
-                "An account with this email address already exists.",
-                "يوجد حساب مسجّل بهذا البريد الإلكتروني بالفعل.");
+            return existing.AccountState == AccountState.Registered
+                ? await RestartUnverifiedAccountAsync(existing, request.Password, now, cancellationToken)
+                : await DeflectExistingVerifiedAccountAsync(existing, cancellationToken);
         }
 
-        var now = timeProvider.GetUtcNow();
         var user = new SimfUser
         {
             UserName = request.Email,
@@ -94,48 +100,14 @@ public sealed class RegistrationService(
                 var createResult = await accounts.CreateAsync(user, request.Password);
                 if (!createResult.Succeeded)
                 {
-                    var details = createResult.Errors
-                        .Select(error => new ApiErrorDetail
-                        {
-                            Field = "password",
-                            Message = error.Description,
-                            MessageArabic = IdentityErrorTranslator.ToArabic(error),
-                        })
-                        .ToList();
-                    throw new DataValidationException(
-                        "The account could not be created.",
-                        "تعذّر إنشاء الحساب.",
-                        details);
+                    throw ToAccountCreationException(createResult);
                 }
 
                 issuedCode = await IssueVerificationCodeAsync(user, now, token);
             },
             cancellationToken);
 
-        // H10 / H23 — D-065 / D-083: TryEnqueueAsync owns the failure-
-        // audit pattern. The user row + code are committed in the TX
-        // above; this dispatch is the side-effect on a different scope.
-        await emailQueue.TryEnqueueAsync(
-            BuildVerificationEmail(user.Email!, issuedCode!.Code),
-            purpose: "EmailVerification",
-            subjectEmail: user.Email!,
-            subjectUserId: user.Id,
-            auditLog: auditLog,
-            logger: logger,
-            cancellationToken: cancellationToken);
-        // D-099: in-app trail for the credential email — visible after
-        // the user signs in.
-        await notifications.TryDispatchAsync(new NotificationRequest
-        {
-            UserId = user.Id,
-            Kind = NotificationKind.CredentialEmailVerificationSent,
-            Title = "Verification code sent",
-            TitleArabic = "تم إرسال رمز التحقق",
-            Body = "An email-verification code was sent to your address.",
-            BodyArabic = "تم إرسال رمز التحقق من البريد إلى عنوانك.",
-            Severity = NotificationSeverity.Info,
-            SendEmail = false,
-        }, logger, cancellationToken);
+        await EnqueueVerificationCodeAsync(user, issuedCode!.Code, cancellationToken);
         await AuditAsync(
             AuditEvents.SignUpSucceeded, AuditOutcome.Success, user.Email!,
             userId: user.Id, cancellationToken: cancellationToken);
@@ -298,19 +270,7 @@ public sealed class RegistrationService(
 
         // Cap how often a code may be re-issued for one account, independent of
         // the per-IP rate limiter (resend abuse is keyed on the email).
-        var recentCodes = await accountCodeRepository.CountCreatedSinceAsync(
-            user.Id, AccountCodePurpose.EmailVerification, now - ResendWindow, cancellationToken);
-        if (recentCodes >= MaxCodesPerWindow)
-        {
-            await AuditAsync(
-                AuditEvents.ResendCodeCapReached, AuditOutcome.Failure, user.Email!,
-                user.Id, ErrorCodes.RateLimitExceeded, cancellationToken: cancellationToken);
-            throw new ApiException(
-                ErrorCodes.RateLimitExceeded,
-                429,
-                "Too many verification codes have been requested. Try again later.",
-                "تم طلب رموز تحقق كثيرة. حاول مرة أخرى لاحقًا.");
-        }
+        await EnsureVerificationCodeCapNotReachedAsync(user, now, cancellationToken);
 
         var code = await IssueVerificationCodeAsync(user, now, cancellationToken);
         // H10 / H23 — D-065 / D-083: same shape as sign-up; helper owns
@@ -340,6 +300,157 @@ public sealed class RegistrationService(
             userId: user.Id, cancellationToken: cancellationToken);
         logger.LogInformation("Verification code re-issued for {Email}", user.Email);
         return new ResendCodeResponse(user.Email!, (int)CodeLifetime.TotalSeconds);
+    }
+
+    /// <summary>
+    /// Enforces the per-account verification-code cap shared by the resend and
+    /// unverified-restart paths: at most <see cref="MaxCodesPerWindow"/>
+    /// EmailVerification codes per <see cref="ResendWindow"/>. Audits and
+    /// throws 429 when the cap is reached. The new-account path is
+    /// intentionally uncapped — the account did not exist a moment earlier.
+    /// </summary>
+    private async Task EnsureVerificationCodeCapNotReachedAsync(
+        SimfUser user, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var recentCodes = await accountCodeRepository.CountCreatedSinceAsync(
+            user.Id, AccountCodePurpose.EmailVerification, now - ResendWindow, cancellationToken);
+        if (recentCodes >= MaxCodesPerWindow)
+        {
+            await AuditAsync(
+                AuditEvents.ResendCodeCapReached, AuditOutcome.Failure, user.Email!,
+                user.Id, ErrorCodes.RateLimitExceeded, cancellationToken: cancellationToken);
+            throw new ApiException(
+                ErrorCodes.RateLimitExceeded,
+                429,
+                "Too many verification codes have been requested. Try again later.",
+                "تم طلب رموز تحقق كثيرة. حاول مرة أخرى لاحقًا.");
+        }
+    }
+
+    private async Task<SignUpResponse> RestartUnverifiedAccountAsync(
+        SimfUser user,
+        string newPassword,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        // D-198 — the account was never verified, so no one owns it yet:
+        // treat re-sign-up as "start over". The newly-typed password wins
+        // and a fresh verification code is issued. The per-account code cap
+        // (shared with resend) still applies so this path can't be abused to
+        // mint unlimited codes.
+        await EnsureVerificationCodeCapNotReachedAsync(user, now, cancellationToken);
+
+        AccountCode? issuedCode = null;
+        await transactionRunner.ExecuteAsync(
+            async token =>
+            {
+                // Replace the password without knowing the old one
+                // (ChangePassword needs the current password): remove then
+                // add. A weak new password fails AddPassword and rolls the
+                // whole transaction back.
+                await accounts.RemovePasswordAsync(user, token).EnsureSuccessAsync();
+                var addResult = await accounts.AddPasswordAsync(user, newPassword, token);
+                if (!addResult.Succeeded)
+                {
+                    throw ToAccountCreationException(addResult);
+                }
+
+                // Roll the security stamp so any access token minted against
+                // the previous credential is invalidated (H5 — D-060).
+                await accounts.UpdateSecurityStampAsync(user, token);
+                user.UpdatedAt = now;
+                await accounts.UpdateAsync(user).EnsureSuccessAsync();
+
+                issuedCode = await IssueVerificationCodeAsync(user, now, token);
+            },
+            cancellationToken);
+
+        await EnqueueVerificationCodeAsync(user, issuedCode!.Code, cancellationToken);
+        await AuditAsync(
+            AuditEvents.SignUpRestartedUnverified, AuditOutcome.Success, user.Email!,
+            userId: user.Id, cancellationToken: cancellationToken);
+        logger.LogInformation("Sign-up restarted for unverified account {Email}", user.Email);
+        return new SignUpResponse(user.Email!, (int)CodeLifetime.TotalSeconds);
+    }
+
+    private async Task<SignUpResponse> DeflectExistingVerifiedAccountAsync(
+        SimfUser user,
+        CancellationToken cancellationToken)
+    {
+        // D-198 — the email belongs to a real (already-verified) account.
+        // We must not reveal that, and must not let a stranger's password or
+        // a verification code touch the account. Email the OWNER a heads-up
+        // and return the same generic response a fresh sign-up would.
+        await emailQueue.TryEnqueueAsync(
+            BuildAccountExistsEmail(user.Email!),
+            purpose: "SignUpExistingAccount",
+            subjectEmail: user.Email!,
+            subjectUserId: user.Id,
+            auditLog: auditLog,
+            logger: logger,
+            cancellationToken: cancellationToken);
+        await AuditAsync(
+            AuditEvents.SignUpExistingAccountDeflected, AuditOutcome.Failure, user.Email!,
+            userId: user.Id, errorCode: ErrorCodes.AuthEmailAlreadyRegistered,
+            cancellationToken: cancellationToken);
+        logger.LogInformation(
+            "Sign-up against existing verified account {Email} — owner notified", user.Email);
+        return new SignUpResponse(user.Email!, (int)CodeLifetime.TotalSeconds);
+    }
+
+    /// <summary>
+    /// Sends the verification code by email and drops the in-app "code
+    /// sent" trail. Shared by the new-account and unverified-restart paths
+    /// (D-198). H10 / H23 — D-065 / D-083: TryEnqueueAsync owns the
+    /// failure-audit pattern; D-099: the in-app row is visible after the
+    /// user signs in.
+    /// </summary>
+    private async Task EnqueueVerificationCodeAsync(
+        SimfUser user,
+        string code,
+        CancellationToken cancellationToken)
+    {
+        await emailQueue.TryEnqueueAsync(
+            BuildVerificationEmail(user.Email!, code),
+            purpose: "EmailVerification",
+            subjectEmail: user.Email!,
+            subjectUserId: user.Id,
+            auditLog: auditLog,
+            logger: logger,
+            cancellationToken: cancellationToken);
+        await notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = user.Id,
+            Kind = NotificationKind.CredentialEmailVerificationSent,
+            Title = "Verification code sent",
+            TitleArabic = "تم إرسال رمز التحقق",
+            Body = "An email-verification code was sent to your address.",
+            BodyArabic = "تم إرسال رمز التحقق من البريد إلى عنوانك.",
+            Severity = NotificationSeverity.Info,
+            SendEmail = false,
+        }, logger, cancellationToken);
+    }
+
+    /// <summary>
+    /// Maps a failed account-creation / add-password result to the
+    /// bilingual <see cref="DataValidationException"/> the sign-up surfaces
+    /// shape their 400 from. Shared by the new-account and restart paths
+    /// (D-198).
+    /// </summary>
+    private static DataValidationException ToAccountCreationException(UserOperationResult result)
+    {
+        var details = result.Errors
+            .Select(error => new ApiErrorDetail
+            {
+                Field = "password",
+                Message = error.Description,
+                MessageArabic = IdentityErrorTranslator.ToArabic(error),
+            })
+            .ToList();
+        return new DataValidationException(
+            "The account could not be created.",
+            "تعذّر إنشاء الحساب.",
+            details);
     }
 
     private async Task<AccountCode> IssueVerificationCodeAsync(
@@ -380,6 +491,23 @@ public sealed class RegistrationService(
             $"<p>Your SIMF email verification code is <strong>{code}</strong>.</p>" +
             $"<p>The code expires in {minutes} minutes.</p>";
         return new EmailMessage(email, "SIMF email verification", body);
+    }
+
+    /// <summary>
+    /// D-198 — the heads-up sent to the OWNER of an existing verified
+    /// account when someone attempts to sign up again with their email. It
+    /// deliberately confirms no account detail; it only points a legitimate
+    /// owner at sign-in / password-reset.
+    /// </summary>
+    private static EmailMessage BuildAccountExistsEmail(string email)
+    {
+        var body =
+            "<p>Someone tried to create a SIMF account with this email address, " +
+            "but an account already exists.</p>" +
+            "<p>If this was you, please sign in instead — or use the " +
+            "&quot;forgot password&quot; option if you don't remember your password.</p>" +
+            "<p>If this wasn't you, you can safely ignore this email.</p>";
+        return new EmailMessage(email, "SIMF account already exists", body);
     }
 
     private Task AuditAsync(
