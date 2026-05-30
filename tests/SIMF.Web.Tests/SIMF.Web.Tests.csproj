@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- The shared framework — for IMemoryCache (SignInTicketStore), the
+       cookie-auth types (SimfCookieRefreshHandler) and the Blazor
+       component model (bUnit page tests). -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <!-- D-194 — bUnit harness for the Website Razor pages, mirroring the
+         D-191 SIMF.ControlPanel.Tests setup. -->
+    <PackageReference Include="bunit" Version="1.40.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Website\SIMF.Web\SIMF.Web.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,10 +1,21 @@
-// Tests: SIMF.Web.Tests/SimfCookieRefreshHandlerTests.cs (todo).
+// Tests: SIMF.Web.Tests/SimfCookieRefreshHandlerTests.cs (D-194).
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using SIMF.ApiClient;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
+
+// D-194 — expose SIMF.Web's internal surface to the test project so
+// SimfCookieRefreshHandlerTests can exercise NeedsRefresh directly (it
+// is the load-bearing decision the D-121 handler exists for). Note:
+// InternalsVisibleTo is assembly-wide — it also makes the other
+// internal types (AuthEndpoints / AccountEndpoints / CultureEndpoint /
+// AuthLog / AppRenderMode) visible to the test assembly; it does NOT
+// expose private members. Test-enablement only; no runtime behaviour
+// change, and the test assembly is non-packable so nothing ships.
+[assembly: InternalsVisibleTo("SIMF.Web.Tests")]
 
 namespace SIMF.Web;
 
@@ -117,7 +128,7 @@ public static class SimfCookieRefreshHandler
         ]);
     }
 
-    private static bool NeedsRefresh(string? expiresAtRaw)
+    internal static bool NeedsRefresh(string? expiresAtRaw)
     {
         // Without a stored expiry (e.g. a cookie minted before D-121 lands)
         // the safest move is to refresh immediately — the alternative is
