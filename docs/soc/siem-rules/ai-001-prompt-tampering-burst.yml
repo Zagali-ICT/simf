@@ -1,0 +1,43 @@
+title: AI prompt tampering burst
+id: ai-001-prompt-tampering-burst
+status: experimental
+description: >
+  Detects an actor updating multiple AI prompts with semantically-changing
+  edits in a short window. Source: D-178 + D-179 threat-detection review.
+  An admin (or a stolen-credential session) replacing high-traffic prompt
+  text with prompt-injection / data-exfil instructions across multiple
+  prompts in minutes is exactly this pattern.
+references:
+  - https://attack.mitre.org/techniques/T1565/001/
+  - SIMF DECISIONS_LOG.md D-178, D-179
+tags:
+  - attack.impact
+  - attack.t1565.001
+author: SIMF security review
+date: 2026-05-30
+logsource:
+  product: simf
+  service: audit
+detection:
+  selection:
+    EventType: 'AiPrompt.Updated'
+    Outcome: 'Success'
+  contentChanged:
+    Detail|json:
+      contentChanged: true
+  condition: selection and contentChanged | count() by ActorUserId > 2
+  timeframe: 10m
+falsepositives:
+  - Legitimate prompt-iteration session by an authorised content editor.
+    Allowlist via maintenance-window tag or a curator-role assertion.
+level: high
+fields:
+  - ActorUserId
+  - Detail.promptId
+  - Detail.key
+  - Detail.contentHashOld
+  - Detail.contentHashNew
+notes: |
+  Skip cross-HMAC-version compares: only fire when both hashes start
+  with the same `v1:` / `v2:` prefix. Once a key rotation lands,
+  pin the rule's `validFrom` to the cutover timestamp.

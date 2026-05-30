@@ -58,13 +58,7 @@
                     {
                         <tr>
                             <td>@row.SessionCode — @row.SessionTitle</td>
-                            <td>
-                                <div>@row.RequesterName</div>
-                                @if (!string.IsNullOrEmpty(row.RequesterEmail))
-                                {
-                                    <div class="simf-table__sub">@row.RequesterEmail</div>
-                                }
-                            </td>
+                            <td>@row.RequesterName</td>
                             <td>@row.Subject</td>
                             <td>
                                 @switch (row.Status)
@@ -116,7 +110,13 @@
                     <dt>@L["Admin.MeetingRequests.Col.Session"]</dt>
                     <dd>@_respondTarget.SessionCode — @_respondTarget.SessionTitle</dd>
                     <dt>@L["Admin.MeetingRequests.Col.Requester"]</dt>
-                    <dd>@_respondTarget.RequesterName</dd>
+                    <dd>
+                        <div>@_respondTarget.RequesterName</div>
+                        @if (!string.IsNullOrEmpty(_respondTarget.RequesterEmail))
+                        {
+                            <div class="simf-table__sub">@_respondTarget.RequesterEmail</div>
+                        }
+                    </dd>
                     <dt>@L["Admin.MeetingRequests.Col.Subject"]</dt>
                     <dd>@_respondTarget.Subject</dd>
                 </dl>

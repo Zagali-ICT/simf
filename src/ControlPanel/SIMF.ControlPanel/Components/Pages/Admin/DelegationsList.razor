@@ -102,10 +102,16 @@
                                Disabled="_busy" />
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.Delegations.Field.CountryId"]</span>
-                    <input class="simf-field__input" type="number" min="1" max="999"
-                           value="@(_form.CountryId?.ToString() ?? string.Empty)"
-                           @onchange="OnCountryIdChanged"
-                           disabled="@_busy" />
+                    <select class="simf-field__input"
+                            value="@(_form.CountryId?.ToString() ?? string.Empty)"
+                            @onchange="OnCountryIdChanged"
+                            disabled="@_busy">
+                        <option value="">@L["Admin.Delegations.Field.CountryNone"]</option>
+                        @foreach (var country in _countries)
+                        {
+                            <option value="@country.Id">@country.NameEn — @country.NameAr</option>
+                        }
+                    </select>
                 </label>
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.Delegations.Field.MemberCount"]</span>
@@ -169,13 +175,44 @@
     private bool _loading;
     private bool _busy;
     private Toast? _toast;
+    // D-184 — countries cached at mount so the form's country dropdown
+    // doesn't round-trip on every Add/Edit modal open.
+    private List<AdminCountrySummary> _countries = new();
 
     private bool _editOpen;
     private bool _isEdit;
     private Guid _editingId;
     private FormModel _form = new();
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCountriesAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadCountriesAsync()
+    {
+        // D-184 — eager-load active countries so the Add / Edit modal's
+        // dropdown is ready on first open. The list is bounded (low
+        // hundreds at most) so a single Top=500 round-trip is fine.
+        // D-184 (review-pass): surface load failures via the toast so
+        // an admin opening Add/Edit with an empty dropdown knows why
+        // — the previous silent fallthrough hid network/auth issues.
+        var env = await JS.InvokeAsync<ApiResult<GridPage<AdminCountrySummary>>>(
+            "simfAccount.postJson", "/account/api/admin/countries/list",
+            new GridQuery { Top = 500 });
+        if (env is { Success: true, Data: not null })
+        {
+            _countries = env.Data.Items.Where(c => c.IsActive)
+                .OrderBy(c => c.DisplayOrder).ThenBy(c => c.NameEn).ToList();
+        }
+        else
+        {
+            _toast = new Toast("error",
+                env?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.Delegations.CountriesLoadFailed"]);
+        }
+    }
 
     private async Task LoadAsync()
     {

@@ -1,0 +1,35 @@
+title: AI input redaction-trigger spike (secrets pasted into AI)
+id: ai-005-redaction-trigger-rate
+status: experimental
+description: >
+  Detects users pasting secrets into AI inputs at volume. The D-181
+  redactor masks `[REDACTED_KEY]` / `[REDACTED_JWT]` / `[REDACTED_PAN]`
+  / `[REDACTED_PEM]` / `[REDACTED_NID]` / `[REDACTED_PHONE]` /
+  `[REDACTED_IBAN]` at write time; the presence of these markers in
+  `AiInvocation.InputJson` is the detective signal.
+references:
+  - SIMF DECISIONS_LOG.md D-179, D-181
+tags:
+  - attack.collection
+  - attack.t1213
+author: SIMF security review
+date: 2026-05-30
+logsource:
+  product: simf
+  service: ai-invocation
+detection:
+  selection:
+    InputJson|contains|any:
+      - '[REDACTED_KEY]'
+      - '[REDACTED_JWT]'
+      - '[REDACTED_PAN]'
+      - '[REDACTED_PEM]'
+  condition: selection | count() by CallerUserId > 4
+  timeframe: 1h
+falsepositives:
+  - Security-team test runs against the AI infra; allowlist by role
+level: medium
+fields:
+  - CallerUserId
+  - CallerKind
+  - PromptKey

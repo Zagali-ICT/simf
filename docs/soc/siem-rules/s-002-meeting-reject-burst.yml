@@ -1,0 +1,34 @@
+title: Meeting-request reject burst
+id: s-002-meeting-reject-burst
+status: experimental
+description: >
+  Detects an admin rapidly rejecting many meeting requests via the
+  D-183 Respond modal. UI surfacing changes the realistic-action-
+  per-minute ceiling — script-style API abuse became modal-driven
+  human abuse. Source: D-183 threat-detection review.
+references:
+  - SIMF DECISIONS_LOG.md D-183
+tags:
+  - attack.impact
+  - attack.t1531
+author: SIMF security review
+date: 2026-05-30
+logsource:
+  product: simf
+  service: audit
+detection:
+  selection:
+    EventType: 'MeetingRequest.Responded'
+    Outcome: 'Success'
+  rejected:
+    Detail|json:
+      status: 'Rejected'
+  condition: selection and rejected | count() by ActorUserId > 9
+  timeframe: 5m
+falsepositives:
+  - Legitimate post-event cleanup denying old pending requests;
+    allowlist via maintenance-window tag.
+level: medium
+fields:
+  - ActorUserId
+  - Detail.meetingRequestId

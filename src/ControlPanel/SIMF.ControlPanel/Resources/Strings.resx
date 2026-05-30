@@ -1494,6 +1494,7 @@
   <data name="Admin.Delegations.None" xml:space="preserve"><value>No delegations yet.</value></data>
   <data name="Admin.Delegations.Loading" xml:space="preserve"><value>Loading…</value></data>
   <data name="Admin.Delegations.LoadFailed" xml:space="preserve"><value>Could not load delegations.</value></data>
+  <data name="Admin.Delegations.CountriesLoadFailed" xml:space="preserve"><value>Could not load countries list for the form. The country dropdown will be empty until reload.</value></data>
   <data name="Admin.Delegations.Saved" xml:space="preserve"><value>Delegation saved.</value></data>
   <data name="Admin.Delegations.Deleted" xml:space="preserve"><value>Delegation deactivated.</value></data>
   <data name="Admin.Delegations.Delete.Confirm" xml:space="preserve"><value>Deactivate this delegation? It will disappear from the public list immediately.</value></data>
@@ -1513,7 +1514,8 @@
   <data name="Admin.Delegations.Col.Active" xml:space="preserve"><value>Active</value></data>
   <data name="Admin.Delegations.Field.Name" xml:space="preserve"><value>Name (English)</value></data>
   <data name="Admin.Delegations.Field.NameArabic" xml:space="preserve"><value>Name (Arabic)</value></data>
-  <data name="Admin.Delegations.Field.CountryId" xml:space="preserve"><value>Country ID (ISO 3166-1 numeric; leave blank for none)</value></data>
+  <data name="Admin.Delegations.Field.CountryId" xml:space="preserve"><value>Country</value></data>
+  <data name="Admin.Delegations.Field.CountryNone" xml:space="preserve"><value>(none)</value></data>
   <data name="Admin.Delegations.Field.MemberCount" xml:space="preserve"><value>Member count</value></data>
   <data name="Admin.Delegations.Field.IsPriority" xml:space="preserve"><value>Priority (sorted first in the public list)</value></data>
   <data name="Admin.Delegations.Field.IsInternational" xml:space="preserve"><value>International</value></data>

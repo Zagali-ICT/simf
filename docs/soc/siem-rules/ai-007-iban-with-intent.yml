@@ -1,0 +1,32 @@
+title: AI IBAN paste with intent verbs (fraud-vector)
+id: ai-007-iban-with-intent
+status: experimental
+description: >
+  Detects a visitor pasting an IBAN into the AI assistant together
+  with money-movement verbs (transfer / send / pay / wire / deposit
+  in EN or AR). Probable social-engineering / fraud setup.
+references:
+  - SIMF DECISIONS_LOG.md D-181
+tags:
+  - attack.impact
+  - attack.t1657
+author: SIMF security review
+date: 2026-05-30
+logsource:
+  product: simf
+  service: ai-invocation
+detection:
+  hasIban:
+    InputJson|contains: '[REDACTED_IBAN]'
+  hasIntent:
+    InputJson|re: '(?i)\b(transfer|send|pay|wire|deposit|تحويل|ارسل|سدد)\b'
+  condition: hasIban and hasIntent
+falsepositives:
+  - Legitimate account-help question by a confused user. Treat as a
+    coaching opportunity, not necessarily an attack.
+level: high
+fields:
+  - CallerUserId
+  - CallerKind
+  - PromptKey
+  - Feature

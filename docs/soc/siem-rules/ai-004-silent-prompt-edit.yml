@@ -1,0 +1,34 @@
+title: AI silent prompt edit (metadata-only change on sensitive prompt)
+id: ai-004-silent-prompt-edit
+status: experimental
+description: >
+  Detects an `AiPrompt.Updated` event where contentChanged is false
+  (metadata-only: temperature, model, isActive, displayName). Useful to
+  spot model-swap or temperature creep on high-traffic prompts without
+  the user-facing prompt text changing.
+references:
+  - SIMF DECISIONS_LOG.md D-179
+tags:
+  - attack.defense-evasion
+author: SIMF security review
+date: 2026-05-30
+logsource:
+  product: simf
+  service: audit
+detection:
+  selection:
+    EventType: 'AiPrompt.Updated'
+    Outcome: 'Success'
+  metadataOnly:
+    Detail|json:
+      contentChanged: false
+  condition: selection and metadataOnly
+falsepositives:
+  - Routine model-version bumps; allowlist by `Detail.key` for
+    documented seasonal model refreshes.
+level: medium
+fields:
+  - ActorUserId
+  - Detail.promptId
+  - Detail.key
+  - Detail.version

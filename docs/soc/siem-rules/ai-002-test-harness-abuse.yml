@@ -1,0 +1,37 @@
+title: AI test-harness token abuse
+id: ai-002-test-harness-abuse
+status: experimental
+description: >
+  Detects an admin running the AI prompt dry-run / Test endpoint at
+  volume sufficient to bill the OpenAI key dry. Combination of per-admin
+  rate-limit (D-179) is the preventive control; this rule is the
+  detective backstop.
+references:
+  - https://attack.mitre.org/techniques/T1496/
+  - SIMF DECISIONS_LOG.md D-178, D-179
+tags:
+  - attack.impact
+  - attack.t1496
+author: SIMF security review
+date: 2026-05-30
+logsource:
+  product: simf
+  service: audit
+detection:
+  selection:
+    EventType: 'AiInvocation.Succeeded'
+  adminCaller:
+    Detail|json:
+      callerKind: 'Admin'
+  condition: selection and adminCaller
+  aggregate: sum(Detail.tokensInput + Detail.tokensOutput) by ActorUserId
+  timeframe: 1h
+  threshold: 50000
+falsepositives:
+  - Legitimate large-prompt evaluation by a content engineer
+level: high
+fields:
+  - ActorUserId
+  - Detail.promptKey
+  - Detail.tokensInput
+  - Detail.tokensOutput

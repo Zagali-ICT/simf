@@ -284,6 +284,18 @@
   padding-block: var(--space-6);
 }
 
+/* D-184 — secondary text under a primary cell value (e.g. requester
+   email shown smaller and muted under the requester name in the
+   meeting-requests respond modal). Code-reviewer flagged the class
+   as referenced-but-undefined; this rule provides the visual
+   hierarchy the page intended. */
+.simf-table__sub {
+  display: block;
+  margin-block-start: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-caption);
+}
+
 /* -- SimfPill — inline status chip (D-043) ---------------------------------- */
 .simf-pill {
   display: inline-block;

@@ -1,0 +1,32 @@
+title: AI prompt-key probing / enumeration
+id: ai-006-key-probing
+status: experimental
+description: >
+  Detects an actor calling AI feature endpoints with distinct unknown
+  `promptKey` values, producing repeated `AI_PROMPT_NOT_FOUND` (404)
+  failures. Indicates enumeration of the prompt catalogue.
+references:
+  - SIMF DECISIONS_LOG.md D-179
+tags:
+  - attack.discovery
+  - attack.t1592
+author: SIMF security review
+date: 2026-05-30
+logsource:
+  product: simf
+  service: audit
+detection:
+  selection:
+    EventType: 'AiInvocation.Failed'
+  errorCode:
+    Detail|json:
+      errorCode: 'AI_PROMPT_NOT_FOUND'
+  condition: selection and errorCode | count_distinct(Detail.promptKey) by ActorUserId > 5
+  timeframe: 10m
+falsepositives:
+  - Buggy client deployment guessing key names; correlate with user
+    agent + recent deploys.
+level: medium
+fields:
+  - ActorUserId
+  - Detail.promptKey

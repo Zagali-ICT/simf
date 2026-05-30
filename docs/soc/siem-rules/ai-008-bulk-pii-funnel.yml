@@ -1,0 +1,35 @@
+title: AI bulk PII funnel via single caller
+id: ai-008-bulk-pii-funnel
+status: experimental
+description: >
+  Detects one caller producing multiple distinct redaction classes
+  in a short window — pattern of an insider funnelling PII into the
+  AI assistant for downstream exfiltration.
+references:
+  - SIMF DECISIONS_LOG.md D-181
+tags:
+  - attack.collection
+  - attack.t1213
+author: SIMF security review
+date: 2026-05-30
+logsource:
+  product: simf
+  service: ai-invocation
+detection:
+  selection:
+    InputJson|contains|any:
+      - '[REDACTED_NID]'
+      - '[REDACTED_PHONE]'
+      - '[REDACTED_IBAN]'
+      - '[REDACTED_EMAIL]'
+      - '[REDACTED_PAN]'
+  condition: selection | count_distinct(redactionTokens) by CallerUserId > 2
+  timeframe: 15m
+falsepositives:
+  - Visitor-help interaction legitimately covering multiple personal
+    fields; require corroborating signals (after-hours, unusual IP).
+level: high
+fields:
+  - CallerUserId
+  - CallerKind
+  - PromptKey
