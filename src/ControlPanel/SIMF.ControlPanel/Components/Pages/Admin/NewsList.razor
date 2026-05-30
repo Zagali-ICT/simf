@@ -1,0 +1,431 @@
+@* D-199 (CP UI for the D-199 News module, Mockup screen 29 authoring) —
+   admin CRUD over the public News feed. The public feed is sorted by
+   PublishedAt / DisplayOrder; admins control the title, body, category,
+   image, publish date and order here. The admin grid shows every row
+   regardless of IsActive / publish window so editors can manage drafts
+   and reactivate soft-deleted items. *@
+@page "/admin/news"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@using SIMF.Contracts.PublicRelations
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.News.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.News.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form__actions">
+            <SimfButton Type="button" OnClick="OnAdd">
+                @L["Admin.News.New"]
+            </SimfButton>
+        </div>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.News.Loading"]</p>
+        }
+        else if (_page.Items.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.News.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.News.Col.TitleEn"]</th>
+                        <th>@L["Admin.News.Col.TitleAr"]</th>
+                        <th>@L["Admin.News.Col.CategoryEn"]</th>
+                        <th>@L["Admin.News.Col.CategoryAr"]</th>
+                        <th>@L["Admin.News.Col.PublishedAt"]</th>
+                        <th>@L["Admin.News.Col.DisplayOrder"]</th>
+                        <th>@L["Admin.News.Col.Active"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _page.Items)
+                    {
+                        <tr>
+                            <td>@row.TitleEn</td>
+                            <td>@row.TitleAr</td>
+                            <td>@row.CategoryEn</td>
+                            <td>@row.CategoryAr</td>
+                            <td>@row.PublishedAt.ToString("yyyy-MM-dd")</td>
+                            <td>@row.DisplayOrder</td>
+                            <td>@(row.IsActive ? "✓" : "—")</td>
+                            <td>
+                                <SimfButton Type="button" Disabled="_busy"
+                                            OnClick="@(() => OnEditAsync(row))">
+                                    @L["Admin.News.Edit"]
+                                </SimfButton>
+                                <SimfButton Type="button" Disabled="_busy"
+                                            OnClick="@(() => OnDeleteAsync(row))">
+                                    @L["Admin.News.Delete"]
+                                </SimfButton>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="simf-table__summary">
+                @(string.Format(L["Admin.News.Summary"],
+                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
+            </p>
+        }
+    </div>
+</div>
+
+@if (_editOpen)
+{
+    <SimfModal Open="true"
+               Title="@(_isEdit ? L["Admin.News.Edit.Title"] : L["Admin.News.Add.Title"])"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.News.Field.TitleEn"]"
+                               Value="@_form.TitleEn"
+                               ValueChanged="@(v => _form.TitleEn = v)"
+                               ValueExpression="@(() => _form.TitleEn)"
+                               MaxLength="200"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.News.Field.TitleAr"]"
+                               Value="@_form.TitleAr"
+                               ValueChanged="@(v => _form.TitleAr = v)"
+                               ValueExpression="@(() => _form.TitleAr)"
+                               MaxLength="200"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.News.Field.CategoryEn"]"
+                               Value="@_form.CategoryEn"
+                               ValueChanged="@(v => _form.CategoryEn = v)"
+                               ValueExpression="@(() => _form.CategoryEn)"
+                               MaxLength="100"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.News.Field.CategoryAr"]"
+                               Value="@_form.CategoryAr"
+                               ValueChanged="@(v => _form.CategoryAr = v)"
+                               ValueExpression="@(() => _form.CategoryAr)"
+                               MaxLength="100"
+                               Disabled="_busy" />
+                <SimfTextarea Label="@L["Admin.News.Field.ExcerptEn"]"
+                              Value="@_form.ExcerptEn"
+                              ValueChanged="@(v => _form.ExcerptEn = v)"
+                              Rows="2"
+                              MaxLength="500"
+                              Disabled="_busy" />
+                <SimfTextarea Label="@L["Admin.News.Field.ExcerptAr"]"
+                              Value="@_form.ExcerptAr"
+                              ValueChanged="@(v => _form.ExcerptAr = v)"
+                              Rows="2"
+                              MaxLength="500"
+                              Disabled="_busy" />
+                <SimfTextarea Label="@L["Admin.News.Field.BodyEn"]"
+                              Value="@_form.BodyEn"
+                              ValueChanged="@(v => _form.BodyEn = v)"
+                              Rows="6"
+                              MaxLength="8000"
+                              Disabled="_busy" />
+                <SimfTextarea Label="@L["Admin.News.Field.BodyAr"]"
+                              Value="@_form.BodyAr"
+                              ValueChanged="@(v => _form.BodyAr = v)"
+                              Rows="6"
+                              MaxLength="8000"
+                              Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.News.Field.ImageRelativePath"]"
+                               Value="@_form.ImageRelativePath"
+                               ValueChanged="@(v => _form.ImageRelativePath = v)"
+                               ValueExpression="@(() => _form.ImageRelativePath)"
+                               MaxLength="512"
+                               Disabled="_busy" />
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.News.Field.PublishedAt"]</span>
+                    <input class="simf-field__input" type="date"
+                           value="@_publishedAtText"
+                           @onchange="OnPublishedAtChanged"
+                           disabled="@_busy" />
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.News.Field.DisplayOrder"]</span>
+                    <input class="simf-field__input" type="number" min="0" max="99999"
+                           value="@_form.DisplayOrder"
+                           @onchange="OnDisplayOrderChanged"
+                           disabled="@_busy" />
+                </label>
+                @if (_isEdit)
+                {
+                    <SimfCheckbox Value="_form.IsActive"
+                                  ValueChanged="@(v => _form.IsActive = v)"
+                                  Disabled="_busy">
+                        @L["Admin.News.Field.IsActive"]
+                    </SimfCheckbox>
+                }
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Disabled="_busy" OnClick="@(() => _editOpen = false)">
+                @L["Admin.News.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+                @L["Admin.News.Save"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private sealed class FormModel
+    {
+        public string TitleEn { get; set; } = string.Empty;
+        public string TitleAr { get; set; } = string.Empty;
+        public string ExcerptEn { get; set; } = string.Empty;
+        public string ExcerptAr { get; set; } = string.Empty;
+        public string BodyEn { get; set; } = string.Empty;
+        public string BodyAr { get; set; } = string.Empty;
+        public string CategoryEn { get; set; } = string.Empty;
+        public string CategoryAr { get; set; } = string.Empty;
+        public string ImageRelativePath { get; set; } = string.Empty;
+        public DateTimeOffset PublishedAt { get; set; } = DateTimeOffset.UtcNow;
+        public int DisplayOrder { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+
+    private GridQuery _query = new() { Top = 50 };
+    private GridPage<AdminNewsSummary> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private bool _editOpen;
+    private bool _isEdit;
+    private Guid _editingId;
+    private FormModel _form = new();
+
+    // The <input type="date"> value mirror — kept as the yyyy-MM-dd text the
+    // browser exchanges so the field round-trips cleanly against the
+    // DateTimeOffset on the form model.
+    private string _publishedAtText = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminNewsSummary>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/news/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.News.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnAdd()
+    {
+        _editOpen = true;
+        _isEdit = false;
+        _editingId = Guid.Empty;
+        _form = new FormModel();
+        _publishedAtText = _form.PublishedAt.ToString("yyyy-MM-dd");
+        _toast = null;
+    }
+
+    private async Task OnEditAsync(AdminNewsSummary row)
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            // The grid summary omits the body / excerpt / image, so load the
+            // full detail before opening the edit modal (mirrors the
+            // InvitationsList detail fetch).
+            var env = await JS.InvokeAsync<ApiResult<AdminNewsDetail>>(
+                "simfAccount.getJson",
+                $"/account/api/admin/news/{row.Id}");
+            if (env is { Success: true, Data: not null })
+            {
+                var d = env.Data;
+                _editingId = d.Id;
+                _form = new FormModel
+                {
+                    TitleEn = d.TitleEn,
+                    TitleAr = d.TitleAr,
+                    ExcerptEn = d.ExcerptEn ?? string.Empty,
+                    ExcerptAr = d.ExcerptAr ?? string.Empty,
+                    BodyEn = d.BodyEn,
+                    BodyAr = d.BodyAr,
+                    CategoryEn = d.CategoryEn,
+                    CategoryAr = d.CategoryAr,
+                    ImageRelativePath = d.ImageRelativePath ?? string.Empty,
+                    PublishedAt = d.PublishedAt,
+                    DisplayOrder = d.DisplayOrder,
+                    IsActive = d.IsActive,
+                };
+                _publishedAtText = d.PublishedAt.ToString("yyyy-MM-dd");
+                _isEdit = true;
+                _editOpen = true;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.News.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+
+        // Required-field client guards (the server validator is authoritative;
+        // these stop a no-op round-trip and give an immediate message).
+        if (string.IsNullOrWhiteSpace(_form.TitleEn)
+            || string.IsNullOrWhiteSpace(_form.TitleAr)
+            || string.IsNullOrWhiteSpace(_form.BodyEn)
+            || string.IsNullOrWhiteSpace(_form.BodyAr)
+            || string.IsNullOrWhiteSpace(_form.CategoryEn)
+            || string.IsNullOrWhiteSpace(_form.CategoryAr))
+        {
+            _toast = new Toast("error", L["Admin.News.RequiredFields"]);
+            return;
+        }
+
+        _busy = true;
+        _toast = null;
+        try
+        {
+            ApiResult<AdminNewsDetail>? env;
+            if (_isEdit)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminNewsDetail>>(
+                    "simfAccount.putJson",
+                    $"/account/api/admin/news/{_editingId}",
+                    new UpdateNewsRequest
+                    {
+                        TitleEn = _form.TitleEn,
+                        TitleAr = _form.TitleAr,
+                        ExcerptEn = NullIfBlank(_form.ExcerptEn),
+                        ExcerptAr = NullIfBlank(_form.ExcerptAr),
+                        BodyEn = _form.BodyEn,
+                        BodyAr = _form.BodyAr,
+                        CategoryEn = _form.CategoryEn,
+                        CategoryAr = _form.CategoryAr,
+                        ImageRelativePath = NullIfBlank(_form.ImageRelativePath),
+                        PublishedAt = _form.PublishedAt,
+                        DisplayOrder = _form.DisplayOrder,
+                        IsActive = _form.IsActive,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminNewsDetail>>(
+                    "simfAccount.postJson",
+                    "/account/api/admin/news",
+                    new CreateNewsRequest
+                    {
+                        TitleEn = _form.TitleEn,
+                        TitleAr = _form.TitleAr,
+                        ExcerptEn = NullIfBlank(_form.ExcerptEn),
+                        ExcerptAr = NullIfBlank(_form.ExcerptAr),
+                        BodyEn = _form.BodyEn,
+                        BodyAr = _form.BodyAr,
+                        CategoryEn = _form.CategoryEn,
+                        CategoryAr = _form.CategoryAr,
+                        ImageRelativePath = NullIfBlank(_form.ImageRelativePath),
+                        PublishedAt = _form.PublishedAt,
+                        DisplayOrder = _form.DisplayOrder,
+                    });
+            }
+            if (env is { Success: true })
+            {
+                _editOpen = false;
+                _toast = new Toast("success", L["Admin.News.Saved"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.News.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteAsync(AdminNewsSummary row)
+    {
+        if (_busy) return;
+        // Confirm destructive actions: a stray click soft-deletes the article
+        // and pulls it from the public feed immediately, with no undo button
+        // (recovery is a manual reactivate via Edit).
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", L["Admin.News.Delete.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/news/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.News.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.News.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnPublishedAtChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(raw)
+            || !DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                out var parsed))
+        {
+            return;
+        }
+        _form.PublishedAt = parsed;
+        _publishedAtText = parsed.ToString("yyyy-MM-dd");
+    }
+
+    private void OnDisplayOrderChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _form.DisplayOrder = n;
+    }
+
+    private static string? NullIfBlank(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value;
+}

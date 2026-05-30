@@ -1552,4 +1552,266 @@
   <data name="Admin.MeetingRequests.Respond.Done" xml:space="preserve"><value>Response sent.</value></data>
   <data name="Admin.MeetingRequests.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.MeetingRequests.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+
+  <!-- D-199 — new nav labels (Module.Media/News/Sponsors/Booths/Moderation/PreviousEditions already exist). -->
+  <data name="Module.MediaPartners" xml:space="preserve"><value>Media Partners</value></data>
+  <data name="Module.Ratings" xml:space="preserve"><value>Ratings</value></data>
+
+  <!-- D-199 — News admin CRUD. -->
+  <data name="Admin.News.Title" xml:space="preserve"><value>News</value></data>
+  <data name="Admin.News.New" xml:space="preserve"><value>Add news article</value></data>
+  <data name="Admin.News.Loading" xml:space="preserve"><value>Loading news…</value></data>
+  <data name="Admin.News.None" xml:space="preserve"><value>No news articles yet.</value></data>
+  <data name="Admin.News.Col.TitleEn" xml:space="preserve"><value>Title (EN)</value></data>
+  <data name="Admin.News.Col.TitleAr" xml:space="preserve"><value>Title (AR)</value></data>
+  <data name="Admin.News.Col.CategoryEn" xml:space="preserve"><value>Category (EN)</value></data>
+  <data name="Admin.News.Col.CategoryAr" xml:space="preserve"><value>Category (AR)</value></data>
+  <data name="Admin.News.Col.PublishedAt" xml:space="preserve"><value>Published</value></data>
+  <data name="Admin.News.Col.DisplayOrder" xml:space="preserve"><value>Order</value></data>
+  <data name="Admin.News.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.News.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.News.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.News.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.News.Add.Title" xml:space="preserve"><value>Add news article</value></data>
+  <data name="Admin.News.Edit.Title" xml:space="preserve"><value>Edit news article</value></data>
+  <data name="Admin.News.Field.TitleEn" xml:space="preserve"><value>Title (English)</value></data>
+  <data name="Admin.News.Field.TitleAr" xml:space="preserve"><value>Title (Arabic)</value></data>
+  <data name="Admin.News.Field.CategoryEn" xml:space="preserve"><value>Category (English)</value></data>
+  <data name="Admin.News.Field.CategoryAr" xml:space="preserve"><value>Category (Arabic)</value></data>
+  <data name="Admin.News.Field.ExcerptEn" xml:space="preserve"><value>Excerpt (English)</value></data>
+  <data name="Admin.News.Field.ExcerptAr" xml:space="preserve"><value>Excerpt (Arabic)</value></data>
+  <data name="Admin.News.Field.BodyEn" xml:space="preserve"><value>Body (English)</value></data>
+  <data name="Admin.News.Field.BodyAr" xml:space="preserve"><value>Body (Arabic)</value></data>
+  <data name="Admin.News.Field.ImageRelativePath" xml:space="preserve"><value>Image path</value></data>
+  <data name="Admin.News.Field.PublishedAt" xml:space="preserve"><value>Publish date</value></data>
+  <data name="Admin.News.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
+  <data name="Admin.News.Field.IsActive" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.News.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.News.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.News.Saved" xml:space="preserve"><value>News article saved.</value></data>
+  <data name="Admin.News.Deleted" xml:space="preserve"><value>News article deleted.</value></data>
+  <data name="Admin.News.Delete.Confirm" xml:space="preserve"><value>Delete this news article? It will be removed from the public feed immediately.</value></data>
+  <data name="Admin.News.RequiredFields" xml:space="preserve"><value>Please fill in the required fields: title, body and category (English and Arabic).</value></data>
+  <data name="Admin.News.LoadFailed" xml:space="preserve"><value>Could not complete the request. Please try again.</value></data>
+
+  <!-- D-199 — Media gallery admin CRUD. -->
+  <data name="Admin.Media.Title" xml:space="preserve"><value>Media Center</value></data>
+  <data name="Admin.Media.New" xml:space="preserve"><value>Add media item</value></data>
+  <data name="Admin.Media.Loading" xml:space="preserve"><value>Loading media…</value></data>
+  <data name="Admin.Media.None" xml:space="preserve"><value>No media items yet</value></data>
+  <data name="Admin.Media.Col.Kind" xml:space="preserve"><value>Type</value></data>
+  <data name="Admin.Media.Col.TitleEn" xml:space="preserve"><value>Title (English)</value></data>
+  <data name="Admin.Media.Col.TitleAr" xml:space="preserve"><value>Title (Arabic)</value></data>
+  <data name="Admin.Media.Col.AlbumEn" xml:space="preserve"><value>Album (English)</value></data>
+  <data name="Admin.Media.Col.AlbumAr" xml:space="preserve"><value>Album (Arabic)</value></data>
+  <data name="Admin.Media.Col.HasImage" xml:space="preserve"><value>Image</value></data>
+  <data name="Admin.Media.Col.DisplayOrder" xml:space="preserve"><value>Order</value></data>
+  <data name="Admin.Media.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Media.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.Media.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.Media.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.Media.Add.Title" xml:space="preserve"><value>Add media item</value></data>
+  <data name="Admin.Media.Edit.Title" xml:space="preserve"><value>Edit media item</value></data>
+  <data name="Admin.Media.Field.Kind" xml:space="preserve"><value>Type</value></data>
+  <data name="Admin.Media.Kind.Image" xml:space="preserve"><value>Image</value></data>
+  <data name="Admin.Media.Kind.Video" xml:space="preserve"><value>Video</value></data>
+  <data name="Admin.Media.Field.TitleEn" xml:space="preserve"><value>Title (English)</value></data>
+  <data name="Admin.Media.Field.TitleAr" xml:space="preserve"><value>Title (Arabic)</value></data>
+  <data name="Admin.Media.Field.AlbumEn" xml:space="preserve"><value>Album (English)</value></data>
+  <data name="Admin.Media.Field.AlbumAr" xml:space="preserve"><value>Album (Arabic)</value></data>
+  <data name="Admin.Media.Field.VideoUrl" xml:space="preserve"><value>Video URL</value></data>
+  <data name="Admin.Media.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
+  <data name="Admin.Media.Field.IsActive" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Media.Field.Image" xml:space="preserve"><value>Image file</value></data>
+  <data name="Admin.Media.Image.Present" xml:space="preserve"><value>An image is attached to this item.</value></data>
+  <data name="Admin.Media.Image.None" xml:space="preserve"><value>No image attached yet.</value></data>
+  <data name="Admin.Media.Image.Upload" xml:space="preserve"><value>Upload image</value></data>
+  <data name="Admin.Media.Image.Uploaded" xml:space="preserve"><value>Image uploaded.</value></data>
+  <data name="Admin.Media.Image.UploadFailed" xml:space="preserve"><value>The image could not be uploaded.</value></data>
+  <data name="Admin.Media.Image.SaveFirst" xml:space="preserve"><value>Save the item first, then attach its image from the Edit screen.</value></data>
+  <data name="Admin.Media.SavedUploadNext" xml:space="preserve"><value>Saved. You can now attach the image below.</value></data>
+  <data name="Admin.Media.VideoUrlRequired" xml:space="preserve"><value>A video item requires a playback URL.</value></data>
+  <data name="Admin.Media.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Media.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.Media.Saved" xml:space="preserve"><value>Media item saved.</value></data>
+  <data name="Admin.Media.Deleted" xml:space="preserve"><value>Media item deleted.</value></data>
+  <data name="Admin.Media.Delete.Confirm" xml:space="preserve"><value>Delete this media item? It will be removed from the public gallery.</value></data>
+  <data name="Admin.Media.LoadFailed" xml:space="preserve"><value>The media list could not be loaded.</value></data>
+
+  <!-- D-199 — Media-partners admin CRUD. -->
+  <data name="Admin.MediaPartners.Title" xml:space="preserve"><value>Media Partners</value></data>
+  <data name="Admin.MediaPartners.New" xml:space="preserve"><value>Add media partner</value></data>
+  <data name="Admin.MediaPartners.Loading" xml:space="preserve"><value>Loading media partners…</value></data>
+  <data name="Admin.MediaPartners.None" xml:space="preserve"><value>No media partners yet.</value></data>
+  <data name="Admin.MediaPartners.Col.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.MediaPartners.Col.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.MediaPartners.Col.Logo" xml:space="preserve"><value>Logo path</value></data>
+  <data name="Admin.MediaPartners.Col.Url" xml:space="preserve"><value>Link</value></data>
+  <data name="Admin.MediaPartners.Col.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
+  <data name="Admin.MediaPartners.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.MediaPartners.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.MediaPartners.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.MediaPartners.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.MediaPartners.Add.Title" xml:space="preserve"><value>Add media partner</value></data>
+  <data name="Admin.MediaPartners.Edit.Title" xml:space="preserve"><value>Edit media partner</value></data>
+  <data name="Admin.MediaPartners.Field.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.MediaPartners.Field.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.MediaPartners.Field.Logo" xml:space="preserve"><value>Logo path</value></data>
+  <data name="Admin.MediaPartners.Field.Url" xml:space="preserve"><value>Link</value></data>
+  <data name="Admin.MediaPartners.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
+  <data name="Admin.MediaPartners.Field.IsActive" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.MediaPartners.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.MediaPartners.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.MediaPartners.Saved" xml:space="preserve"><value>Media partner saved.</value></data>
+  <data name="Admin.MediaPartners.Deleted" xml:space="preserve"><value>Media partner deleted.</value></data>
+  <data name="Admin.MediaPartners.NameRequired" xml:space="preserve"><value>Both the English and Arabic names are required.</value></data>
+  <data name="Admin.MediaPartners.Delete.Confirm" xml:space="preserve"><value>Delete this media partner? It will be removed from the public list immediately.</value></data>
+  <data name="Admin.MediaPartners.LoadFailed" xml:space="preserve"><value>Could not load media partners. Please try again.</value></data>
+
+  <!-- D-199 — Sponsors admin CRUD. -->
+  <data name="Admin.Sponsors.Title" xml:space="preserve"><value>Sponsors</value></data>
+  <data name="Admin.Sponsors.New" xml:space="preserve"><value>Add sponsor</value></data>
+  <data name="Admin.Sponsors.Loading" xml:space="preserve"><value>Loading sponsors…</value></data>
+  <data name="Admin.Sponsors.None" xml:space="preserve"><value>No sponsors yet.</value></data>
+  <data name="Admin.Sponsors.Col.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Sponsors.Col.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Sponsors.Col.Tier" xml:space="preserve"><value>Tier</value></data>
+  <data name="Admin.Sponsors.Col.Logo" xml:space="preserve"><value>Logo path</value></data>
+  <data name="Admin.Sponsors.Col.Url" xml:space="preserve"><value>Link</value></data>
+  <data name="Admin.Sponsors.Col.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
+  <data name="Admin.Sponsors.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Sponsors.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.Sponsors.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.Sponsors.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.Sponsors.Add.Title" xml:space="preserve"><value>Add sponsor</value></data>
+  <data name="Admin.Sponsors.Edit.Title" xml:space="preserve"><value>Edit sponsor</value></data>
+  <data name="Admin.Sponsors.Field.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Sponsors.Field.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Sponsors.Field.Tier" xml:space="preserve"><value>Tier</value></data>
+  <data name="Admin.Sponsors.Field.Url" xml:space="preserve"><value>Link</value></data>
+  <data name="Admin.Sponsors.Field.Logo" xml:space="preserve"><value>Logo path</value></data>
+  <data name="Admin.Sponsors.Field.DisplayOrder" xml:space="preserve"><value>Display order</value></data>
+  <data name="Admin.Sponsors.Field.IsActive" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Sponsors.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Sponsors.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.Sponsors.Saved" xml:space="preserve"><value>Sponsor saved.</value></data>
+  <data name="Admin.Sponsors.Deleted" xml:space="preserve"><value>Sponsor deleted.</value></data>
+  <data name="Admin.Sponsors.NameRequired" xml:space="preserve"><value>Both the English and Arabic names are required.</value></data>
+  <data name="Admin.Sponsors.Delete.Confirm" xml:space="preserve"><value>Delete this sponsor? It will be removed from the public list immediately.</value></data>
+  <data name="Admin.Sponsors.LoadFailed" xml:space="preserve"><value>Could not load sponsors. Please try again.</value></data>
+
+  <!-- D-199 — Booths admin CRUD. -->
+  <data name="Admin.Booths.Title" xml:space="preserve"><value>Exhibition Booths</value></data>
+  <data name="Admin.Booths.New" xml:space="preserve"><value>Add booth</value></data>
+  <data name="Admin.Booths.Loading" xml:space="preserve"><value>Loading booths…</value></data>
+  <data name="Admin.Booths.None" xml:space="preserve"><value>No booths yet</value></data>
+  <data name="Admin.Booths.Col.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Admin.Booths.Col.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Booths.Col.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Booths.Col.ExhibitorEn" xml:space="preserve"><value>Exhibitor</value></data>
+  <data name="Admin.Booths.Col.SectorEn" xml:space="preserve"><value>Sector</value></data>
+  <data name="Admin.Booths.Col.Hall" xml:space="preserve"><value>Hall</value></data>
+  <data name="Admin.Booths.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Booths.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.Booths.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.Booths.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.Booths.Add.Title" xml:space="preserve"><value>Add booth</value></data>
+  <data name="Admin.Booths.Edit.Title" xml:space="preserve"><value>Edit booth</value></data>
+  <data name="Admin.Booths.Field.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Admin.Booths.Field.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Booths.Field.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Booths.Field.ExhibitorEn" xml:space="preserve"><value>Exhibitor name (English)</value></data>
+  <data name="Admin.Booths.Field.ExhibitorAr" xml:space="preserve"><value>Exhibitor name (Arabic)</value></data>
+  <data name="Admin.Booths.Field.SectorEn" xml:space="preserve"><value>Sector (English)</value></data>
+  <data name="Admin.Booths.Field.SectorAr" xml:space="preserve"><value>Sector (Arabic)</value></data>
+  <data name="Admin.Booths.Field.DescriptionEn" xml:space="preserve"><value>Description (English)</value></data>
+  <data name="Admin.Booths.Field.DescriptionAr" xml:space="preserve"><value>Description (Arabic)</value></data>
+  <data name="Admin.Booths.Field.HallId" xml:space="preserve"><value>Hall</value></data>
+  <data name="Admin.Booths.Field.HallNone" xml:space="preserve"><value>— No hall —</value></data>
+  <data name="Admin.Booths.Field.MapX" xml:space="preserve"><value>Map X position</value></data>
+  <data name="Admin.Booths.Field.MapY" xml:space="preserve"><value>Map Y position</value></data>
+  <data name="Admin.Booths.Field.IsActive" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Booths.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Booths.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.Booths.Saved" xml:space="preserve"><value>Booth saved.</value></data>
+  <data name="Admin.Booths.Deleted" xml:space="preserve"><value>Booth deleted.</value></data>
+  <data name="Admin.Booths.Required" xml:space="preserve"><value>Code and both names (English and Arabic) are required.</value></data>
+  <data name="Admin.Booths.Delete.Confirm" xml:space="preserve"><value>Delete this booth? It will be removed from the public exhibition list and the venue map immediately.</value></data>
+  <data name="Admin.Booths.LoadFailed" xml:space="preserve"><value>Could not complete the request. Please try again.</value></data>
+  <data name="Admin.Booths.HallsLoadFailed" xml:space="preserve"><value>Could not load the halls list.</value></data>
+
+  <!-- D-199 — Archive editions admin CRUD. -->
+  <data name="Admin.Archive.Title" xml:space="preserve"><value>Previous Editions</value></data>
+  <data name="Admin.Archive.New" xml:space="preserve"><value>Add edition</value></data>
+  <data name="Admin.Archive.Loading" xml:space="preserve"><value>Loading editions…</value></data>
+  <data name="Admin.Archive.None" xml:space="preserve"><value>No archive editions yet.</value></data>
+  <data name="Admin.Archive.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.Archive.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.Archive.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Archive.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.Archive.Saved" xml:space="preserve"><value>Edition saved.</value></data>
+  <data name="Admin.Archive.Deleted" xml:space="preserve"><value>Edition deleted.</value></data>
+  <data name="Admin.Archive.LoadFailed" xml:space="preserve"><value>Could not load archive editions. Please try again.</value></data>
+  <data name="Admin.Archive.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.Archive.Add.Title" xml:space="preserve"><value>Add edition</value></data>
+  <data name="Admin.Archive.Edit.Title" xml:space="preserve"><value>Edit edition</value></data>
+  <data name="Admin.Archive.Delete.Confirm" xml:space="preserve"><value>Delete this edition? It will be removed from the public archive immediately.</value></data>
+  <data name="Admin.Archive.Validation.TitleRequired" xml:space="preserve"><value>The English and Arabic titles are both required.</value></data>
+  <data name="Admin.Archive.Col.Year" xml:space="preserve"><value>Year</value></data>
+  <data name="Admin.Archive.Col.TitleEn" xml:space="preserve"><value>Title (English)</value></data>
+  <data name="Admin.Archive.Col.TitleAr" xml:space="preserve"><value>Title (Arabic)</value></data>
+  <data name="Admin.Archive.Col.Attendees" xml:space="preserve"><value>Attendees</value></data>
+  <data name="Admin.Archive.Col.Sessions" xml:space="preserve"><value>Sessions</value></data>
+  <data name="Admin.Archive.Col.Speakers" xml:space="preserve"><value>Speakers</value></data>
+  <data name="Admin.Archive.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Archive.Field.Year" xml:space="preserve"><value>Year</value></data>
+  <data name="Admin.Archive.Field.TitleEn" xml:space="preserve"><value>Title (English)</value></data>
+  <data name="Admin.Archive.Field.TitleAr" xml:space="preserve"><value>Title (Arabic)</value></data>
+  <data name="Admin.Archive.Field.SummaryEn" xml:space="preserve"><value>Summary (English)</value></data>
+  <data name="Admin.Archive.Field.SummaryAr" xml:space="preserve"><value>Summary (Arabic)</value></data>
+  <data name="Admin.Archive.Field.Attendees" xml:space="preserve"><value>Attendees</value></data>
+  <data name="Admin.Archive.Field.Sessions" xml:space="preserve"><value>Sessions</value></data>
+  <data name="Admin.Archive.Field.Speakers" xml:space="preserve"><value>Speakers</value></data>
+  <data name="Admin.Archive.Field.CoverImageRelativePath" xml:space="preserve"><value>Cover image path</value></data>
+  <data name="Admin.Archive.Field.IsActive" xml:space="preserve"><value>Active (visible in public archive)</value></data>
+
+  <!-- D-199 — Ratings admin read-only view. -->
+  <data name="Admin.Ratings.Title" xml:space="preserve"><value>Ratings</value></data>
+  <data name="Admin.Ratings.Loading" xml:space="preserve"><value>Loading ratings…</value></data>
+  <data name="Admin.Ratings.None" xml:space="preserve"><value>No ratings yet.</value></data>
+  <data name="Admin.Ratings.LoadFailed" xml:space="preserve"><value>Could not load ratings. Please try again.</value></data>
+  <data name="Admin.Ratings.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.Ratings.Stat.Average" xml:space="preserve"><value>Average rating</value></data>
+  <data name="Admin.Ratings.Stat.Count" xml:space="preserve"><value>Total ratings</value></data>
+  <data name="Admin.Ratings.Col.Stars" xml:space="preserve"><value>Stars</value></data>
+  <data name="Admin.Ratings.Col.Comment" xml:space="preserve"><value>Comment</value></data>
+  <data name="Admin.Ratings.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Ratings.Col.CreatedAt" xml:space="preserve"><value>Submitted at</value></data>
+
+  <!-- D-199 — Audience-comments moderation. -->
+  <data name="Admin.Comments.Title" xml:space="preserve"><value>Audience comments</value></data>
+  <data name="Admin.Comments.Hint" xml:space="preserve"><value>Select a session to moderate its audience comments.</value></data>
+  <data name="Admin.Comments.Pick" xml:space="preserve"><value>Session</value></data>
+  <data name="Admin.Comments.PickNone" xml:space="preserve"><value>— Select a session —</value></data>
+  <data name="Admin.Comments.NoSessions" xml:space="preserve"><value>No sessions available.</value></data>
+  <data name="Admin.Comments.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.Comments.None" xml:space="preserve"><value>No comments for this session.</value></data>
+  <data name="Admin.Comments.Col.Author" xml:space="preserve"><value>Author</value></data>
+  <data name="Admin.Comments.Col.Body" xml:space="preserve"><value>Comment</value></data>
+  <data name="Admin.Comments.Col.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.Comments.Col.AiVerdict" xml:space="preserve"><value>AI verdict</value></data>
+  <data name="Admin.Comments.Col.Created" xml:space="preserve"><value>Submitted</value></data>
+  <data name="Admin.Comments.Col.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Admin.Comments.Approve" xml:space="preserve"><value>Approve</value></data>
+  <data name="Admin.Comments.Hide" xml:space="preserve"><value>Hide</value></data>
+  <data name="Admin.Comments.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.Comments.Delete.Confirm" xml:space="preserve"><value>Delete this comment? It will be removed from the public feed immediately.</value></data>
+  <data name="Admin.Comments.Status.Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="Admin.Comments.Status.Approved" xml:space="preserve"><value>Approved</value></data>
+  <data name="Admin.Comments.Status.Hidden" xml:space="preserve"><value>Hidden</value></data>
+  <data name="Admin.Comments.StatusSaved" xml:space="preserve"><value>Comment status updated.</value></data>
+  <data name="Admin.Comments.Deleted" xml:space="preserve"><value>Comment deleted.</value></data>
+  <data name="Admin.Comments.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.Comments.LoadFailed" xml:space="preserve"><value>Could not load comments. Please try again.</value></data>
+  <data name="Admin.Comments.SessionsLoadFailed" xml:space="preserve"><value>Could not load sessions. Please try again.</value></data>
 </root>

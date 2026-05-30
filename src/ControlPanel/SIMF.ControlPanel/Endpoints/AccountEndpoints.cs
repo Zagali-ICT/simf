@@ -4,8 +4,12 @@ using SIMF.ApiClient;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Ai;
+using SIMF.Contracts.Archive;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.Exhibition;
 using SIMF.Contracts.Logs;
+using SIMF.Contracts.Media;
+using SIMF.Contracts.PublicRelations;
 using SIMF.Contracts.Sessions;
 
 using SIMF.Common.Enums;
@@ -1531,6 +1535,275 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.RespondToAdminMeetingRequestAsync(
                 id, body, token));
+        });
+
+        // D-199 — News admin CRUD BFF passthroughs.
+        group.MapPost("/admin/news/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListNewsAsync(body, token));
+        });
+        group.MapGet("/admin/news/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetNewsAsync(id, token));
+        });
+        group.MapPost("/admin/news",
+            async (CreateNewsRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateNewsAsync(body, token));
+        });
+        group.MapPut("/admin/news/{id:guid}",
+            async (Guid id, UpdateNewsRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateNewsAsync(id, body, token));
+        });
+        group.MapDelete("/admin/news/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteNewsAsync(id, token));
+        });
+
+        // D-199 — Media gallery admin CRUD + image upload BFF passthroughs.
+        group.MapPost("/admin/media/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListMediaAsync(body, token));
+        });
+        group.MapGet("/admin/media/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetMediaAsync(id, token));
+        });
+        group.MapPost("/admin/media",
+            async (AdminCreateMediaRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateMediaAsync(body, token));
+        });
+        group.MapPut("/admin/media/{id:guid}",
+            async (Guid id, AdminUpdateMediaRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateMediaAsync(id, body, token));
+        });
+        group.MapDelete("/admin/media/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteMediaAsync(id, token));
+        });
+
+        // D-199 — Media image upload (multipart; same SameSite=Lax CSRF stance
+        // as /admin/visitors/{id}/id-document, D-029).
+        group.MapPost("/admin/media/{id:guid}/image",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.ValidationFailed,
+                    Message = "An image file is required.",
+                    MessageArabic = "ملف الصورة مطلوب.",
+                }));
+            }
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return Forward(await api.UploadMediaImageAsync(
+                id, stream.ToArray(), file.ContentType, file.FileName, token));
+        }).DisableAntiforgery();
+
+        // D-199 — Media-partner admin CRUD BFF passthroughs.
+        group.MapPost("/admin/media-partners/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListMediaPartnersAsync(body, token));
+        });
+        group.MapPost("/admin/media-partners",
+            async (AdminCreateMediaPartnerRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateMediaPartnerAsync(body, token));
+        });
+        group.MapPut("/admin/media-partners/{id:guid}",
+            async (Guid id, AdminUpdateMediaPartnerRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateMediaPartnerAsync(id, body, token));
+        });
+        group.MapDelete("/admin/media-partners/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateMediaPartnerAsync(id, token));
+        });
+
+        // D-199 — Sponsor admin CRUD BFF passthroughs.
+        group.MapPost("/admin/sponsors/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListSponsorsAsync(body, token));
+        });
+        group.MapPost("/admin/sponsors",
+            async (AdminCreateSponsorRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateSponsorAsync(body, token));
+        });
+        group.MapPut("/admin/sponsors/{id:guid}",
+            async (Guid id, AdminUpdateSponsorRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateSponsorAsync(id, body, token));
+        });
+        group.MapDelete("/admin/sponsors/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateSponsorAsync(id, token));
+        });
+
+        // D-199 — Booth admin CRUD BFF passthroughs.
+        group.MapPost("/admin/booths/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListBoothsAsync(body, token));
+        });
+        group.MapGet("/admin/booths/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetBoothAsync(id, token));
+        });
+        group.MapPost("/admin/booths",
+            async (AdminCreateBoothRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateBoothAsync(body, token));
+        });
+        group.MapPut("/admin/booths/{id:guid}",
+            async (Guid id, AdminUpdateBoothRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateBoothAsync(id, body, token));
+        });
+        group.MapDelete("/admin/booths/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateBoothAsync(id, token));
+        });
+
+        // D-199 — Archive edition admin CRUD BFF passthroughs.
+        group.MapPost("/admin/archive/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListArchiveEditionsAsync(body, token));
+        });
+        group.MapGet("/admin/archive/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetArchiveEditionAsync(id, token));
+        });
+        group.MapPost("/admin/archive",
+            async (CreateArchiveEditionRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateArchiveEditionAsync(body, token));
+        });
+        group.MapPut("/admin/archive/{id:guid}",
+            async (Guid id, UpdateArchiveEditionRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateArchiveEditionAsync(id, body, token));
+        });
+        group.MapDelete("/admin/archive/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteArchiveEditionAsync(id, token));
+        });
+
+        // D-199 — Ratings admin read BFF passthrough.
+        group.MapPost("/admin/feedback/ratings",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListRatingsAsync(body, token));
+        });
+
+        // D-199 — Session-comment moderation BFF passthroughs.
+        group.MapPost("/admin/sessions/{sessionId:guid}/comments/list",
+            async (Guid sessionId, AdminListSessionCommentsRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListSessionCommentsAsync(sessionId, body, token));
+        });
+        group.MapPut("/admin/sessions/{sessionId:guid}/comments/{commentId:guid}/status",
+            async (Guid sessionId, Guid commentId, SetSessionCommentStatusRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.SetSessionCommentStatusAsync(
+                sessionId, commentId, body, token));
+        });
+        group.MapDelete("/admin/sessions/{sessionId:guid}/comments/{commentId:guid}",
+            async (Guid sessionId, Guid commentId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateSessionCommentAsync(
+                sessionId, commentId, token));
         });
     }
 

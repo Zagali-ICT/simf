@@ -62,14 +62,19 @@ public static class CpNavigation
         new("Nav.Exhibition",
         [
             new("Module.Exhibitors", "/m/exhibitors", IsStub: true),
-            new("Module.Booths", "/m/booths", IsStub: true),
-            new("Module.Sponsors", "/m/sponsors", IsStub: true),
+            // D-199 — Exhibition booths admin CRUD (Mockup page 22).
+            new("Module.Booths", "/admin/booths"),
+            // D-199 — sponsors admin CRUD (Mockup page 23).
+            new("Module.Sponsors", "/admin/sponsors"),
             new("Module.VenueMap", "/m/venue-map", IsStub: true),
         ]),
         new("Nav.Engagement",
         [
             new("Module.LiveSessions", "/m/live-sessions", IsStub: true),
-            new("Module.Moderation", "/m/moderation", IsStub: true),
+            // D-199 — audience-comments moderation desk (Mockup page 28).
+            new("Module.Moderation", "/admin/comments-moderation"),
+            // D-199 — forum ratings read-only view (Mockup screen 40).
+            new("Module.Ratings", "/admin/ratings"),
         ]),
         new("Nav.Knowledge",
         [
@@ -84,9 +89,14 @@ public static class CpNavigation
             // D-173 (gap doc G8) — Dynamic content CMS (PDF §1, §2.1).
             new("Module.ContentBlocks", "/admin/content-blocks"),
             new("Module.Banners", "/admin/banners"),
-            new("Module.Media", "/m/media", IsStub: true),
-            new("Module.News", "/m/news", IsStub: true),
-            new("Module.PreviousEditions", "/m/previous-editions", IsStub: true),
+            // D-199 — Media gallery admin CRUD (Mockup page 30).
+            new("Module.Media", "/admin/media"),
+            // D-199 — News admin CRUD (Mockup screen 29).
+            new("Module.News", "/admin/news"),
+            // D-199 — media partners admin CRUD (Mockup page 31).
+            new("Module.MediaPartners", "/admin/media-partners"),
+            // D-199 — past-editions / archive admin CRUD (Mockup screen 24).
+            new("Module.PreviousEditions", "/admin/archive"),
         ]),
         // D-132 — the broadcast-Notifications module (admin → audience)
         // is not built yet; the existing operator notification inbox lives

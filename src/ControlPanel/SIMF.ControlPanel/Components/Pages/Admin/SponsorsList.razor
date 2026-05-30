@@ -1,0 +1,343 @@
+@* D-199 (CP UI for D-199 sponsors, Mockup page 23) — admin CRUD over the
+   public sponsors list. The public screen groups logos by tier (Platinum
+   first, then Gold, Silver, Bronze) then orders by DisplayOrder asc, NameAr
+   asc within a tier — admins control tier, name (En/Ar), logo path, link,
+   display order and the active flag here. *@
+@page "/admin/sponsors"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Sponsors.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Sponsors.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form__actions">
+            <SimfButton Type="button" OnClick="OnAdd">
+                @L["Admin.Sponsors.New"]
+            </SimfButton>
+        </div>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.Sponsors.Loading"]</p>
+        }
+        else if (_page.Items.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.Sponsors.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.Sponsors.Col.NameEn"]</th>
+                        <th>@L["Admin.Sponsors.Col.NameAr"]</th>
+                        <th>@L["Admin.Sponsors.Col.Tier"]</th>
+                        <th>@L["Admin.Sponsors.Col.Logo"]</th>
+                        <th>@L["Admin.Sponsors.Col.Url"]</th>
+                        <th>@L["Admin.Sponsors.Col.DisplayOrder"]</th>
+                        <th>@L["Admin.Sponsors.Col.Active"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _page.Items)
+                    {
+                        <tr>
+                            <td>@row.NameEn</td>
+                            <td>@row.NameAr</td>
+                            <td>@row.TierName</td>
+                            <td>@(string.IsNullOrWhiteSpace(row.LogoRelativePath) ? "—" : row.LogoRelativePath)</td>
+                            <td>@(string.IsNullOrWhiteSpace(row.Url) ? "—" : row.Url)</td>
+                            <td>@row.DisplayOrder</td>
+                            <td>@(row.IsActive ? "✓" : "—")</td>
+                            <td>
+                                <SimfButton Type="button" Disabled="_busy"
+                                            OnClick="@(() => OnEdit(row))">
+                                    @L["Admin.Sponsors.Edit"]
+                                </SimfButton>
+                                <SimfButton Type="button" Disabled="_busy"
+                                            OnClick="@(() => OnDeleteAsync(row))">
+                                    @L["Admin.Sponsors.Delete"]
+                                </SimfButton>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="simf-table__summary">
+                @(string.Format(L["Admin.Sponsors.Summary"],
+                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
+            </p>
+        }
+    </div>
+</div>
+
+@if (_editOpen)
+{
+    <SimfModal Open="true"
+               Title="@(_isEdit ? L["Admin.Sponsors.Edit.Title"] : L["Admin.Sponsors.Add.Title"])"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.Sponsors.Field.NameEn"]"
+                               Value="@_form.NameEn"
+                               ValueChanged="@(v => _form.NameEn = v)"
+                               ValueExpression="@(() => _form.NameEn)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Sponsors.Field.NameAr"]"
+                               Value="@_form.NameAr"
+                               ValueChanged="@(v => _form.NameAr = v)"
+                               ValueExpression="@(() => _form.NameAr)"
+                               Disabled="_busy" />
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Sponsors.Field.Tier"]</span>
+                    <select class="simf-field__input"
+                            value="@_form.Tier.ToString()"
+                            @onchange="OnTierChanged"
+                            disabled="@_busy">
+                        @foreach (var tier in _tiers)
+                        {
+                            <option value="@tier.Value">@tier.Name</option>
+                        }
+                    </select>
+                </label>
+                <SimfTextField Label="@L["Admin.Sponsors.Field.Url"]"
+                               Value="@_form.Url"
+                               ValueChanged="@(v => _form.Url = v)"
+                               ValueExpression="@(() => _form.Url)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Sponsors.Field.Logo"]"
+                               Value="@_form.LogoRelativePath"
+                               ValueChanged="@(v => _form.LogoRelativePath = v)"
+                               ValueExpression="@(() => _form.LogoRelativePath)"
+                               Disabled="_busy" />
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Sponsors.Field.DisplayOrder"]</span>
+                    <input class="simf-field__input" type="number" min="0" max="99999"
+                           value="@_form.DisplayOrder"
+                           @onchange="OnDisplayOrderChanged"
+                           disabled="@_busy" />
+                </label>
+                <SimfCheckbox Value="_form.IsActive"
+                              ValueChanged="@(v => _form.IsActive = v)"
+                              Disabled="_busy">
+                    @L["Admin.Sponsors.Field.IsActive"]
+                </SimfCheckbox>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Disabled="_busy" OnClick="@(() => _editOpen = false)">
+                @L["Admin.Sponsors.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+                @L["Admin.Sponsors.Save"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    // SponsorTier lives in SIMF.Domain (not referenced by the CP project), so
+    // mirror its frozen value/name pairs here for the form dropdown. The grid
+    // renders TierName straight from the contract row, so this list is only the
+    // create/edit picker. Keep aligned with SIMF.Domain.Sponsors.SponsorTier.
+    private sealed record TierOption(int Value, string Name);
+
+    private static readonly IReadOnlyList<TierOption> _tiers =
+    [
+        new(10, "Platinum"),
+        new(20, "Gold"),
+        new(30, "Silver"),
+        new(40, "Bronze"),
+    ];
+
+    private sealed class FormModel
+    {
+        public string NameEn { get; set; } = string.Empty;
+        public string NameAr { get; set; } = string.Empty;
+        public int Tier { get; set; } = 10;
+        public string LogoRelativePath { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;
+        public int DisplayOrder { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+
+    private GridQuery _query = new() { Top = 50 };
+    private GridPage<AdminSponsorSummary> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private bool _editOpen;
+    private bool _isEdit;
+    private Guid _editingId;
+    private FormModel _form = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminSponsorSummary>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/sponsors/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Sponsors.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnAdd()
+    {
+        _editOpen = true;
+        _isEdit = false;
+        _editingId = Guid.Empty;
+        _form = new FormModel();
+        _toast = null;
+    }
+
+    private void OnEdit(AdminSponsorSummary row)
+    {
+        _editOpen = true;
+        _isEdit = true;
+        _editingId = row.Id;
+        _form = new FormModel
+        {
+            NameEn = row.NameEn,
+            NameAr = row.NameAr,
+            Tier = row.Tier,
+            LogoRelativePath = row.LogoRelativePath ?? string.Empty,
+            Url = row.Url ?? string.Empty,
+            DisplayOrder = row.DisplayOrder,
+            IsActive = row.IsActive,
+        };
+        _toast = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+        if (string.IsNullOrWhiteSpace(_form.NameEn) || string.IsNullOrWhiteSpace(_form.NameAr))
+        {
+            _toast = new Toast("error", L["Admin.Sponsors.NameRequired"]);
+            return;
+        }
+        _busy = true;
+        _toast = null;
+        try
+        {
+            ApiResult<AdminSponsorDetail>? env;
+            if (_isEdit)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminSponsorDetail>>(
+                    "simfAccount.putJson",
+                    $"/account/api/admin/sponsors/{_editingId}",
+                    new AdminUpdateSponsorRequest
+                    {
+                        NameEn = _form.NameEn,
+                        NameAr = _form.NameAr,
+                        Tier = _form.Tier,
+                        LogoRelativePath = string.IsNullOrWhiteSpace(_form.LogoRelativePath)
+                            ? null : _form.LogoRelativePath,
+                        Url = string.IsNullOrWhiteSpace(_form.Url) ? null : _form.Url,
+                        DisplayOrder = _form.DisplayOrder,
+                        IsActive = _form.IsActive,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminSponsorDetail>>(
+                    "simfAccount.postJson",
+                    "/account/api/admin/sponsors",
+                    new AdminCreateSponsorRequest
+                    {
+                        NameEn = _form.NameEn,
+                        NameAr = _form.NameAr,
+                        Tier = _form.Tier,
+                        LogoRelativePath = string.IsNullOrWhiteSpace(_form.LogoRelativePath)
+                            ? null : _form.LogoRelativePath,
+                        Url = string.IsNullOrWhiteSpace(_form.Url) ? null : _form.Url,
+                        DisplayOrder = _form.DisplayOrder,
+                    });
+            }
+            if (env is { Success: true })
+            {
+                _editOpen = false;
+                _toast = new Toast("success", L["Admin.Sponsors.Saved"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Sponsors.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteAsync(AdminSponsorSummary row)
+    {
+        if (_busy) return;
+        // Confirm destructive actions: deactivating drops the sponsor from the
+        // public sponsors screen immediately, and recovery requires the admin
+        // to reactivate by hand (no undo button today).
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", L["Admin.Sponsors.Delete.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/sponsors/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.Sponsors.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Sponsors.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnTierChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _form.Tier = n;
+    }
+
+    private void OnDisplayOrderChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _form.DisplayOrder = n;
+    }
+}

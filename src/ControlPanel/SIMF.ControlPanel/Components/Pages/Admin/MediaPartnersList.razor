@@ -1,0 +1,304 @@
+@* D-199 (CP UI for D-199 media partners, Mockup page 31 — "شركاء النجاح") —
+   admin CRUD over the public list of media partners. The public list is
+   ordered by DisplayOrder asc, NameAr asc — admins control name (En/Ar),
+   logo path, link, display order and the active flag here. *@
+@page "/admin/media-partners"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@using SIMF.Contracts.PublicRelations
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.MediaPartners.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.MediaPartners.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form__actions">
+            <SimfButton Type="button" OnClick="OnAdd">
+                @L["Admin.MediaPartners.New"]
+            </SimfButton>
+        </div>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.MediaPartners.Loading"]</p>
+        }
+        else if (_page.Items.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.MediaPartners.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.MediaPartners.Col.NameEn"]</th>
+                        <th>@L["Admin.MediaPartners.Col.NameAr"]</th>
+                        <th>@L["Admin.MediaPartners.Col.Logo"]</th>
+                        <th>@L["Admin.MediaPartners.Col.Url"]</th>
+                        <th>@L["Admin.MediaPartners.Col.DisplayOrder"]</th>
+                        <th>@L["Admin.MediaPartners.Col.Active"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _page.Items)
+                    {
+                        <tr>
+                            <td>@row.NameEn</td>
+                            <td>@row.NameAr</td>
+                            <td>@(string.IsNullOrWhiteSpace(row.LogoRelativePath) ? "—" : row.LogoRelativePath)</td>
+                            <td>@(string.IsNullOrWhiteSpace(row.Url) ? "—" : row.Url)</td>
+                            <td>@row.DisplayOrder</td>
+                            <td>@(row.IsActive ? "✓" : "—")</td>
+                            <td>
+                                <SimfButton Type="button" Disabled="_busy"
+                                            OnClick="@(() => OnEdit(row))">
+                                    @L["Admin.MediaPartners.Edit"]
+                                </SimfButton>
+                                <SimfButton Type="button" Disabled="_busy"
+                                            OnClick="@(() => OnDeleteAsync(row))">
+                                    @L["Admin.MediaPartners.Delete"]
+                                </SimfButton>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="simf-table__summary">
+                @(string.Format(L["Admin.MediaPartners.Summary"],
+                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
+            </p>
+        }
+    </div>
+</div>
+
+@if (_editOpen)
+{
+    <SimfModal Open="true"
+               Title="@(_isEdit ? L["Admin.MediaPartners.Edit.Title"] : L["Admin.MediaPartners.Add.Title"])"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.MediaPartners.Field.NameEn"]"
+                               Value="@_form.NameEn"
+                               ValueChanged="@(v => _form.NameEn = v)"
+                               ValueExpression="@(() => _form.NameEn)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.MediaPartners.Field.NameAr"]"
+                               Value="@_form.NameAr"
+                               ValueChanged="@(v => _form.NameAr = v)"
+                               ValueExpression="@(() => _form.NameAr)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.MediaPartners.Field.Logo"]"
+                               Value="@_form.LogoRelativePath"
+                               ValueChanged="@(v => _form.LogoRelativePath = v)"
+                               ValueExpression="@(() => _form.LogoRelativePath)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.MediaPartners.Field.Url"]"
+                               Value="@_form.Url"
+                               ValueChanged="@(v => _form.Url = v)"
+                               ValueExpression="@(() => _form.Url)"
+                               Disabled="_busy" />
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.MediaPartners.Field.DisplayOrder"]</span>
+                    <input class="simf-field__input" type="number" min="0" max="99999"
+                           value="@_form.DisplayOrder"
+                           @onchange="OnDisplayOrderChanged"
+                           disabled="@_busy" />
+                </label>
+                <SimfCheckbox Value="_form.IsActive"
+                              ValueChanged="@(v => _form.IsActive = v)"
+                              Disabled="_busy">
+                    @L["Admin.MediaPartners.Field.IsActive"]
+                </SimfCheckbox>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Disabled="_busy" OnClick="@(() => _editOpen = false)">
+                @L["Admin.MediaPartners.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+                @L["Admin.MediaPartners.Save"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private sealed class FormModel
+    {
+        public string NameEn { get; set; } = string.Empty;
+        public string NameAr { get; set; } = string.Empty;
+        public string LogoRelativePath { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;
+        public int DisplayOrder { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+
+    private GridQuery _query = new() { Top = 50 };
+    private GridPage<AdminMediaPartnerSummary> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private bool _editOpen;
+    private bool _isEdit;
+    private Guid _editingId;
+    private FormModel _form = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminMediaPartnerSummary>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/media-partners/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.MediaPartners.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnAdd()
+    {
+        _editOpen = true;
+        _isEdit = false;
+        _editingId = Guid.Empty;
+        _form = new FormModel();
+        _toast = null;
+    }
+
+    private void OnEdit(AdminMediaPartnerSummary row)
+    {
+        _editOpen = true;
+        _isEdit = true;
+        _editingId = row.Id;
+        _form = new FormModel
+        {
+            NameEn = row.NameEn,
+            NameAr = row.NameAr,
+            LogoRelativePath = row.LogoRelativePath ?? string.Empty,
+            Url = row.Url ?? string.Empty,
+            DisplayOrder = row.DisplayOrder,
+            IsActive = row.IsActive,
+        };
+        _toast = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+        if (string.IsNullOrWhiteSpace(_form.NameEn) || string.IsNullOrWhiteSpace(_form.NameAr))
+        {
+            _toast = new Toast("error", L["Admin.MediaPartners.NameRequired"]);
+            return;
+        }
+        _busy = true;
+        _toast = null;
+        try
+        {
+            ApiResult<AdminMediaPartnerDetail>? env;
+            if (_isEdit)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminMediaPartnerDetail>>(
+                    "simfAccount.putJson",
+                    $"/account/api/admin/media-partners/{_editingId}",
+                    new AdminUpdateMediaPartnerRequest
+                    {
+                        NameEn = _form.NameEn,
+                        NameAr = _form.NameAr,
+                        LogoRelativePath = string.IsNullOrWhiteSpace(_form.LogoRelativePath)
+                            ? null : _form.LogoRelativePath,
+                        Url = string.IsNullOrWhiteSpace(_form.Url) ? null : _form.Url,
+                        DisplayOrder = _form.DisplayOrder,
+                        IsActive = _form.IsActive,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminMediaPartnerDetail>>(
+                    "simfAccount.postJson",
+                    "/account/api/admin/media-partners",
+                    new AdminCreateMediaPartnerRequest(
+                        _form.NameEn,
+                        _form.NameAr,
+                        string.IsNullOrWhiteSpace(_form.LogoRelativePath)
+                            ? null : _form.LogoRelativePath,
+                        string.IsNullOrWhiteSpace(_form.Url) ? null : _form.Url,
+                        _form.DisplayOrder));
+            }
+            if (env is { Success: true })
+            {
+                _editOpen = false;
+                _toast = new Toast("success", L["Admin.MediaPartners.Saved"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.MediaPartners.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteAsync(AdminMediaPartnerSummary row)
+    {
+        if (_busy) return;
+        // Confirm destructive actions: deactivating drops the partner from the
+        // public media grid immediately, and recovery requires the admin to
+        // reactivate by hand (no undo button today).
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", L["Admin.MediaPartners.Delete.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/media-partners/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.MediaPartners.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.MediaPartners.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnDisplayOrderChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _form.DisplayOrder = n;
+    }
+}

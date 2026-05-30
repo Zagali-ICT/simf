@@ -5,8 +5,13 @@ using System.Text.Json;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Ai;
+using SIMF.Contracts.Archive;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.Exhibition;
+using SIMF.Contracts.Feedback;
 using SIMF.Contracts.Logs;
+using SIMF.Contracts.Media;
+using SIMF.Contracts.PublicRelations;
 using SIMF.Contracts.Sessions;
 
 using SIMF.Common.Enums;
@@ -1551,6 +1556,285 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    // -- D-199 — News admin CRUD (SIMF.Contracts.PublicRelations) -----------
+
+    public Task<ApiCallResult<GridPage<AdminNewsSummary>>> ListNewsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminNewsSummary>>(
+            HttpMethod.Post, "news/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminNewsDetail>> GetNewsAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminNewsDetail>(
+            HttpMethod.Get, $"news/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminNewsDetail>> CreateNewsAsync(
+        CreateNewsRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminNewsDetail>(
+            HttpMethod.Post, "news",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminNewsDetail>> UpdateNewsAsync(
+        Guid id, UpdateNewsRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminNewsDetail>(
+            HttpMethod.Put, $"news/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeleteNewsAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"news/{id}", content: null,
+            accessToken, cancellationToken);
+
+    // -- D-199 — Media gallery admin CRUD (SIMF.Contracts.Media) ------------
+
+    public Task<ApiCallResult<GridPage<AdminMediaSummary>>> ListMediaAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminMediaSummary>>(
+            HttpMethod.Post, "media/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminMediaDetail>> GetMediaAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminMediaDetail>(
+            HttpMethod.Get, $"media/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminMediaDetail>> CreateMediaAsync(
+        AdminCreateMediaRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminMediaDetail>(
+            HttpMethod.Post, "media",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminMediaDetail>> UpdateMediaAsync(
+        Guid id, AdminUpdateMediaRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminMediaDetail>(
+            HttpMethod.Put, $"media/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeleteMediaAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"media/{id}", content: null,
+            accessToken, cancellationToken);
+
+    /// <summary>D-199 — multipart upload of a media item's primary image
+    /// (models <see cref="UploadVisitorIdDocumentAsync"/>).</summary>
+    public Task<ApiCallResult<AdminMediaDetail>> UploadMediaImageAsync(
+        Guid id, byte[] content, string contentType, string fileName,
+        string accessToken, CancellationToken cancellationToken = default)
+    {
+        var multipart = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(content);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        multipart.Add(fileContent, "file", fileName);
+        return SendAsync<AdminMediaDetail>(
+            HttpMethod.Post, $"media/{id}/image", multipart,
+            accessToken, cancellationToken);
+    }
+
+    // -- D-199 — Media-partner admin CRUD (SIMF.Contracts.PublicRelations) --
+
+    public Task<ApiCallResult<GridPage<AdminMediaPartnerSummary>>> ListMediaPartnersAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminMediaPartnerSummary>>(
+            HttpMethod.Post, "media-partners/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminMediaPartnerDetail>> CreateMediaPartnerAsync(
+        AdminCreateMediaPartnerRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminMediaPartnerDetail>(
+            HttpMethod.Post, "media-partners",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminMediaPartnerDetail>> UpdateMediaPartnerAsync(
+        Guid id, AdminUpdateMediaPartnerRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminMediaPartnerDetail>(
+            HttpMethod.Put, $"media-partners/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeactivateMediaPartnerAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"media-partners/{id}", content: null,
+            accessToken, cancellationToken);
+
+    // -- D-199 — Sponsor admin CRUD (SIMF.Contracts.Admin) ------------------
+
+    public Task<ApiCallResult<GridPage<AdminSponsorSummary>>> ListSponsorsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminSponsorSummary>>(
+            HttpMethod.Post, "sponsors/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSponsorDetail>> CreateSponsorAsync(
+        AdminCreateSponsorRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSponsorDetail>(
+            HttpMethod.Post, "sponsors",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSponsorDetail>> UpdateSponsorAsync(
+        Guid id, AdminUpdateSponsorRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSponsorDetail>(
+            HttpMethod.Put, $"sponsors/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeactivateSponsorAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"sponsors/{id}", content: null,
+            accessToken, cancellationToken);
+
+    // -- D-199 — Booth admin CRUD (SIMF.Contracts.Exhibition) ---------------
+
+    public Task<ApiCallResult<GridPage<AdminBoothSummary>>> ListBoothsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminBoothSummary>>(
+            HttpMethod.Post, "booths/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminBoothDetail>> GetBoothAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBoothDetail>(
+            HttpMethod.Get, $"booths/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminBoothDetail>> CreateBoothAsync(
+        AdminCreateBoothRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBoothDetail>(
+            HttpMethod.Post, "booths",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminBoothDetail>> UpdateBoothAsync(
+        Guid id, AdminUpdateBoothRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBoothDetail>(
+            HttpMethod.Put, $"booths/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeactivateBoothAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"booths/{id}", content: null,
+            accessToken, cancellationToken);
+
+    // -- D-199 — Archive edition admin CRUD (SIMF.Contracts.Archive) --------
+
+    public Task<ApiCallResult<GridPage<AdminArchiveEditionSummary>>> ListArchiveEditionsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminArchiveEditionSummary>>(
+            HttpMethod.Post, "archive/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminArchiveEditionDetail>> GetArchiveEditionAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminArchiveEditionDetail>(
+            HttpMethod.Get, $"archive/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminArchiveEditionDetail>> CreateArchiveEditionAsync(
+        CreateArchiveEditionRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminArchiveEditionDetail>(
+            HttpMethod.Post, "archive",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminArchiveEditionDetail>> UpdateArchiveEditionAsync(
+        Guid id, UpdateArchiveEditionRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminArchiveEditionDetail>(
+            HttpMethod.Put, $"archive/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeleteArchiveEditionAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"archive/{id}", content: null,
+            accessToken, cancellationToken);
+
+    // -- D-199 — Ratings admin read (SIMF.Contracts.Feedback) ---------------
+
+    public Task<ApiCallResult<AdminRatingsPage>> ListRatingsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRatingsPage>(
+            HttpMethod.Post, "feedback/ratings",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    // -- D-199 — Session-comment moderation (SIMF.Contracts.Sessions) -------
+
+    /// <summary>D-199 — one page of a session's audience comments for the
+    /// moderation desk. The backend route composes the paging fields itself
+    /// (GridQuery is sealed), so the body carries the same field names.</summary>
+    public Task<ApiCallResult<GridPage<SessionCommentModerationRow>>> ListSessionCommentsAsync(
+        Guid sessionId, AdminListSessionCommentsRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<SessionCommentModerationRow>>(
+            HttpMethod.Post, $"sessions/{sessionId}/comments/list",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SessionCommentModerationRow>> SetSessionCommentStatusAsync(
+        Guid sessionId, Guid commentId, SetSessionCommentStatusRequest request,
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<SessionCommentModerationRow>(
+            HttpMethod.Put, $"sessions/{sessionId}/comments/{commentId}/status",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeactivateSessionCommentAsync(
+        Guid sessionId, Guid commentId, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"sessions/{sessionId}/comments/{commentId}",
+            content: null, accessToken, cancellationToken);
+
     private static ApiResult<T> TransportFailure<T>(string message, string messageArabic) =>
         ApiResult<T>.Fail(new ApiError
         {
@@ -1558,4 +1842,19 @@ public sealed class SimfAdminClient(HttpClient http)
             Message = message,
             MessageArabic = messageArabic,
         });
+}
+
+/// <summary>D-199 — body shape for the admin session-comments moderation
+/// list. The backend's <c>ListSessionCommentsModerationRoute</c> composes
+/// these field names itself (Skip / Top / Search / Sort / SortDescending +
+/// the optional Status filter); this mirrors them so the BFF forwards a
+/// single typed body. The session id travels in the route.</summary>
+public sealed class AdminListSessionCommentsRequest
+{
+    public SessionCommentStatus? Status { get; set; }
+    public int Skip { get; set; }
+    public int Top { get; set; } = 25;
+    public string? Search { get; set; }
+    public string? Sort { get; set; }
+    public bool SortDescending { get; set; } = true;
 }

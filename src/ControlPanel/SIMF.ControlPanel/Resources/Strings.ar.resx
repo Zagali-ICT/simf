@@ -1544,4 +1544,266 @@
   <data name="Admin.MeetingRequests.Respond.Done" xml:space="preserve"><value>تم إرسال الردّ.</value></data>
   <data name="Admin.MeetingRequests.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.MeetingRequests.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+
+  <!-- D-199 — new nav labels (Module.Media/News/Sponsors/Booths/Moderation/PreviousEditions already exist). -->
+  <data name="Module.MediaPartners" xml:space="preserve"><value>شركاء النجاح</value></data>
+  <data name="Module.Ratings" xml:space="preserve"><value>التقييمات</value></data>
+
+  <!-- D-199 — News admin CRUD. -->
+  <data name="Admin.News.Title" xml:space="preserve"><value>الأخبار</value></data>
+  <data name="Admin.News.New" xml:space="preserve"><value>إضافة خبر</value></data>
+  <data name="Admin.News.Loading" xml:space="preserve"><value>جارٍ تحميل الأخبار…</value></data>
+  <data name="Admin.News.None" xml:space="preserve"><value>لا توجد أخبار بعد.</value></data>
+  <data name="Admin.News.Col.TitleEn" xml:space="preserve"><value>العنوان (إنجليزي)</value></data>
+  <data name="Admin.News.Col.TitleAr" xml:space="preserve"><value>العنوان (عربي)</value></data>
+  <data name="Admin.News.Col.CategoryEn" xml:space="preserve"><value>التصنيف (إنجليزي)</value></data>
+  <data name="Admin.News.Col.CategoryAr" xml:space="preserve"><value>التصنيف (عربي)</value></data>
+  <data name="Admin.News.Col.PublishedAt" xml:space="preserve"><value>تاريخ النشر</value></data>
+  <data name="Admin.News.Col.DisplayOrder" xml:space="preserve"><value>الترتيب</value></data>
+  <data name="Admin.News.Col.Active" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.News.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.News.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.News.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.News.Add.Title" xml:space="preserve"><value>إضافة خبر</value></data>
+  <data name="Admin.News.Edit.Title" xml:space="preserve"><value>تعديل الخبر</value></data>
+  <data name="Admin.News.Field.TitleEn" xml:space="preserve"><value>العنوان (الإنجليزية)</value></data>
+  <data name="Admin.News.Field.TitleAr" xml:space="preserve"><value>العنوان (العربية)</value></data>
+  <data name="Admin.News.Field.CategoryEn" xml:space="preserve"><value>التصنيف (الإنجليزية)</value></data>
+  <data name="Admin.News.Field.CategoryAr" xml:space="preserve"><value>التصنيف (العربية)</value></data>
+  <data name="Admin.News.Field.ExcerptEn" xml:space="preserve"><value>المقتطف (الإنجليزية)</value></data>
+  <data name="Admin.News.Field.ExcerptAr" xml:space="preserve"><value>المقتطف (العربية)</value></data>
+  <data name="Admin.News.Field.BodyEn" xml:space="preserve"><value>المحتوى (الإنجليزية)</value></data>
+  <data name="Admin.News.Field.BodyAr" xml:space="preserve"><value>المحتوى (العربية)</value></data>
+  <data name="Admin.News.Field.ImageRelativePath" xml:space="preserve"><value>مسار الصورة</value></data>
+  <data name="Admin.News.Field.PublishedAt" xml:space="preserve"><value>تاريخ النشر</value></data>
+  <data name="Admin.News.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
+  <data name="Admin.News.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.News.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.News.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.News.Saved" xml:space="preserve"><value>تم حفظ الخبر.</value></data>
+  <data name="Admin.News.Deleted" xml:space="preserve"><value>تم حذف الخبر.</value></data>
+  <data name="Admin.News.Delete.Confirm" xml:space="preserve"><value>هل تريد حذف هذا الخبر؟ ستتم إزالته من الواجهة العامة فورًا.</value></data>
+  <data name="Admin.News.RequiredFields" xml:space="preserve"><value>يرجى تعبئة الحقول المطلوبة: العنوان والمحتوى والتصنيف (بالإنجليزية والعربية).</value></data>
+  <data name="Admin.News.LoadFailed" xml:space="preserve"><value>تعذّر إكمال الطلب. يرجى المحاولة مرة أخرى.</value></data>
+
+  <!-- D-199 — Media gallery admin CRUD. -->
+  <data name="Admin.Media.Title" xml:space="preserve"><value>مركز الوسائط</value></data>
+  <data name="Admin.Media.New" xml:space="preserve"><value>إضافة عنصر وسائط</value></data>
+  <data name="Admin.Media.Loading" xml:space="preserve"><value>جارٍ تحميل الوسائط…</value></data>
+  <data name="Admin.Media.None" xml:space="preserve"><value>لا توجد عناصر وسائط بعد</value></data>
+  <data name="Admin.Media.Col.Kind" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.Media.Col.TitleEn" xml:space="preserve"><value>العنوان (إنجليزي)</value></data>
+  <data name="Admin.Media.Col.TitleAr" xml:space="preserve"><value>العنوان (عربي)</value></data>
+  <data name="Admin.Media.Col.AlbumEn" xml:space="preserve"><value>الألبوم (إنجليزي)</value></data>
+  <data name="Admin.Media.Col.AlbumAr" xml:space="preserve"><value>الألبوم (عربي)</value></data>
+  <data name="Admin.Media.Col.HasImage" xml:space="preserve"><value>صورة</value></data>
+  <data name="Admin.Media.Col.DisplayOrder" xml:space="preserve"><value>الترتيب</value></data>
+  <data name="Admin.Media.Col.Active" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.Media.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Media.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Media.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Media.Add.Title" xml:space="preserve"><value>إضافة عنصر وسائط</value></data>
+  <data name="Admin.Media.Edit.Title" xml:space="preserve"><value>تعديل عنصر وسائط</value></data>
+  <data name="Admin.Media.Field.Kind" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.Media.Kind.Image" xml:space="preserve"><value>صورة</value></data>
+  <data name="Admin.Media.Kind.Video" xml:space="preserve"><value>فيديو</value></data>
+  <data name="Admin.Media.Field.TitleEn" xml:space="preserve"><value>العنوان (إنجليزي)</value></data>
+  <data name="Admin.Media.Field.TitleAr" xml:space="preserve"><value>العنوان (عربي)</value></data>
+  <data name="Admin.Media.Field.AlbumEn" xml:space="preserve"><value>الألبوم (إنجليزي)</value></data>
+  <data name="Admin.Media.Field.AlbumAr" xml:space="preserve"><value>الألبوم (عربي)</value></data>
+  <data name="Admin.Media.Field.VideoUrl" xml:space="preserve"><value>رابط الفيديو</value></data>
+  <data name="Admin.Media.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
+  <data name="Admin.Media.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.Media.Field.Image" xml:space="preserve"><value>ملف الصورة</value></data>
+  <data name="Admin.Media.Image.Present" xml:space="preserve"><value>توجد صورة مرفقة بهذا العنصر.</value></data>
+  <data name="Admin.Media.Image.None" xml:space="preserve"><value>لا توجد صورة مرفقة بعد.</value></data>
+  <data name="Admin.Media.Image.Upload" xml:space="preserve"><value>رفع الصورة</value></data>
+  <data name="Admin.Media.Image.Uploaded" xml:space="preserve"><value>تم رفع الصورة.</value></data>
+  <data name="Admin.Media.Image.UploadFailed" xml:space="preserve"><value>تعذّر رفع الصورة.</value></data>
+  <data name="Admin.Media.Image.SaveFirst" xml:space="preserve"><value>احفظ العنصر أولاً، ثم أرفق صورته من شاشة التعديل.</value></data>
+  <data name="Admin.Media.SavedUploadNext" xml:space="preserve"><value>تم الحفظ. يمكنك الآن إرفاق الصورة أدناه.</value></data>
+  <data name="Admin.Media.VideoUrlRequired" xml:space="preserve"><value>يتطلب عنصر الفيديو رابط تشغيل.</value></data>
+  <data name="Admin.Media.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Media.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.Media.Saved" xml:space="preserve"><value>تم حفظ عنصر الوسائط.</value></data>
+  <data name="Admin.Media.Deleted" xml:space="preserve"><value>تم حذف عنصر الوسائط.</value></data>
+  <data name="Admin.Media.Delete.Confirm" xml:space="preserve"><value>هل تريد حذف عنصر الوسائط هذا؟ ستتم إزالته من المعرض العام.</value></data>
+  <data name="Admin.Media.LoadFailed" xml:space="preserve"><value>تعذّر تحميل قائمة الوسائط.</value></data>
+
+  <!-- D-199 — Media-partners admin CRUD. -->
+  <data name="Admin.MediaPartners.Title" xml:space="preserve"><value>شركاء النجاح</value></data>
+  <data name="Admin.MediaPartners.New" xml:space="preserve"><value>إضافة شريك إعلامي</value></data>
+  <data name="Admin.MediaPartners.Loading" xml:space="preserve"><value>جارٍ تحميل الشركاء الإعلاميين…</value></data>
+  <data name="Admin.MediaPartners.None" xml:space="preserve"><value>لا يوجد شركاء إعلاميون بعد.</value></data>
+  <data name="Admin.MediaPartners.Col.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.MediaPartners.Col.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.MediaPartners.Col.Logo" xml:space="preserve"><value>مسار الشعار</value></data>
+  <data name="Admin.MediaPartners.Col.Url" xml:space="preserve"><value>الرابط</value></data>
+  <data name="Admin.MediaPartners.Col.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
+  <data name="Admin.MediaPartners.Col.Active" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.MediaPartners.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.MediaPartners.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.MediaPartners.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.MediaPartners.Add.Title" xml:space="preserve"><value>إضافة شريك إعلامي</value></data>
+  <data name="Admin.MediaPartners.Edit.Title" xml:space="preserve"><value>تعديل الشريك الإعلامي</value></data>
+  <data name="Admin.MediaPartners.Field.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.MediaPartners.Field.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.MediaPartners.Field.Logo" xml:space="preserve"><value>مسار الشعار</value></data>
+  <data name="Admin.MediaPartners.Field.Url" xml:space="preserve"><value>الرابط</value></data>
+  <data name="Admin.MediaPartners.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
+  <data name="Admin.MediaPartners.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.MediaPartners.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.MediaPartners.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.MediaPartners.Saved" xml:space="preserve"><value>تم حفظ الشريك الإعلامي.</value></data>
+  <data name="Admin.MediaPartners.Deleted" xml:space="preserve"><value>تم حذف الشريك الإعلامي.</value></data>
+  <data name="Admin.MediaPartners.NameRequired" xml:space="preserve"><value>الاسم بالإنجليزية والعربية مطلوبان.</value></data>
+  <data name="Admin.MediaPartners.Delete.Confirm" xml:space="preserve"><value>هل تريد حذف هذا الشريك الإعلامي؟ سيُزال من القائمة العامة فورًا.</value></data>
+  <data name="Admin.MediaPartners.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الشركاء الإعلاميين. يُرجى المحاولة مرة أخرى.</value></data>
+
+  <!-- D-199 — Sponsors admin CRUD. -->
+  <data name="Admin.Sponsors.Title" xml:space="preserve"><value>الرعاة</value></data>
+  <data name="Admin.Sponsors.New" xml:space="preserve"><value>إضافة راعٍ</value></data>
+  <data name="Admin.Sponsors.Loading" xml:space="preserve"><value>جارٍ تحميل الرعاة…</value></data>
+  <data name="Admin.Sponsors.None" xml:space="preserve"><value>لا يوجد رعاة بعد.</value></data>
+  <data name="Admin.Sponsors.Col.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.Sponsors.Col.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Sponsors.Col.Tier" xml:space="preserve"><value>الفئة</value></data>
+  <data name="Admin.Sponsors.Col.Logo" xml:space="preserve"><value>مسار الشعار</value></data>
+  <data name="Admin.Sponsors.Col.Url" xml:space="preserve"><value>الرابط</value></data>
+  <data name="Admin.Sponsors.Col.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
+  <data name="Admin.Sponsors.Col.Active" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.Sponsors.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Sponsors.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Sponsors.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Sponsors.Add.Title" xml:space="preserve"><value>إضافة راعٍ</value></data>
+  <data name="Admin.Sponsors.Edit.Title" xml:space="preserve"><value>تعديل الراعي</value></data>
+  <data name="Admin.Sponsors.Field.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.Sponsors.Field.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Sponsors.Field.Tier" xml:space="preserve"><value>الفئة</value></data>
+  <data name="Admin.Sponsors.Field.Url" xml:space="preserve"><value>الرابط</value></data>
+  <data name="Admin.Sponsors.Field.Logo" xml:space="preserve"><value>مسار الشعار</value></data>
+  <data name="Admin.Sponsors.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
+  <data name="Admin.Sponsors.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.Sponsors.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Sponsors.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.Sponsors.Saved" xml:space="preserve"><value>تم حفظ الراعي.</value></data>
+  <data name="Admin.Sponsors.Deleted" xml:space="preserve"><value>تم حذف الراعي.</value></data>
+  <data name="Admin.Sponsors.NameRequired" xml:space="preserve"><value>الاسم بالإنجليزية والعربية مطلوبان.</value></data>
+  <data name="Admin.Sponsors.Delete.Confirm" xml:space="preserve"><value>هل تريد حذف هذا الراعي؟ سيُزال من القائمة العامة فورًا.</value></data>
+  <data name="Admin.Sponsors.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الرعاة. يُرجى المحاولة مرة أخرى.</value></data>
+
+  <!-- D-199 — Booths admin CRUD. -->
+  <data name="Admin.Booths.Title" xml:space="preserve"><value>أجنحة المعرض</value></data>
+  <data name="Admin.Booths.New" xml:space="preserve"><value>إضافة جناح</value></data>
+  <data name="Admin.Booths.Loading" xml:space="preserve"><value>جارٍ تحميل الأجنحة…</value></data>
+  <data name="Admin.Booths.None" xml:space="preserve"><value>لا توجد أجنحة بعد</value></data>
+  <data name="Admin.Booths.Col.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.Booths.Col.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.Booths.Col.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Booths.Col.ExhibitorEn" xml:space="preserve"><value>العارض</value></data>
+  <data name="Admin.Booths.Col.SectorEn" xml:space="preserve"><value>القطاع</value></data>
+  <data name="Admin.Booths.Col.Hall" xml:space="preserve"><value>القاعة</value></data>
+  <data name="Admin.Booths.Col.Active" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.Booths.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Booths.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Booths.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Booths.Add.Title" xml:space="preserve"><value>إضافة جناح</value></data>
+  <data name="Admin.Booths.Edit.Title" xml:space="preserve"><value>تعديل الجناح</value></data>
+  <data name="Admin.Booths.Field.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.Booths.Field.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.Booths.Field.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Booths.Field.ExhibitorEn" xml:space="preserve"><value>اسم العارض (إنجليزي)</value></data>
+  <data name="Admin.Booths.Field.ExhibitorAr" xml:space="preserve"><value>اسم العارض (عربي)</value></data>
+  <data name="Admin.Booths.Field.SectorEn" xml:space="preserve"><value>القطاع (إنجليزي)</value></data>
+  <data name="Admin.Booths.Field.SectorAr" xml:space="preserve"><value>القطاع (عربي)</value></data>
+  <data name="Admin.Booths.Field.DescriptionEn" xml:space="preserve"><value>الوصف (إنجليزي)</value></data>
+  <data name="Admin.Booths.Field.DescriptionAr" xml:space="preserve"><value>الوصف (عربي)</value></data>
+  <data name="Admin.Booths.Field.HallId" xml:space="preserve"><value>القاعة</value></data>
+  <data name="Admin.Booths.Field.HallNone" xml:space="preserve"><value>— بدون قاعة —</value></data>
+  <data name="Admin.Booths.Field.MapX" xml:space="preserve"><value>موضع الخريطة س</value></data>
+  <data name="Admin.Booths.Field.MapY" xml:space="preserve"><value>موضع الخريطة ص</value></data>
+  <data name="Admin.Booths.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.Booths.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Booths.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.Booths.Saved" xml:space="preserve"><value>تم حفظ الجناح.</value></data>
+  <data name="Admin.Booths.Deleted" xml:space="preserve"><value>تم حذف الجناح.</value></data>
+  <data name="Admin.Booths.Required" xml:space="preserve"><value>الرمز والاسمان (الإنجليزي والعربي) مطلوبة.</value></data>
+  <data name="Admin.Booths.Delete.Confirm" xml:space="preserve"><value>حذف هذا الجناح؟ سيُزال من قائمة المعرض العامة وخريطة الموقع فورًا.</value></data>
+  <data name="Admin.Booths.LoadFailed" xml:space="preserve"><value>تعذّر إكمال الطلب. يُرجى المحاولة مرة أخرى.</value></data>
+  <data name="Admin.Booths.HallsLoadFailed" xml:space="preserve"><value>تعذّر تحميل قائمة القاعات.</value></data>
+
+  <!-- D-199 — Archive editions admin CRUD. -->
+  <data name="Admin.Archive.Title" xml:space="preserve"><value>النسخ السابقة</value></data>
+  <data name="Admin.Archive.New" xml:space="preserve"><value>إضافة نسخة</value></data>
+  <data name="Admin.Archive.Loading" xml:space="preserve"><value>جارٍ تحميل النسخ…</value></data>
+  <data name="Admin.Archive.None" xml:space="preserve"><value>لا توجد نسخ مؤرشفة بعد.</value></data>
+  <data name="Admin.Archive.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Archive.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Archive.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Archive.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.Archive.Saved" xml:space="preserve"><value>تم حفظ النسخة.</value></data>
+  <data name="Admin.Archive.Deleted" xml:space="preserve"><value>تم حذف النسخة.</value></data>
+  <data name="Admin.Archive.LoadFailed" xml:space="preserve"><value>تعذّر تحميل النسخ المؤرشفة. يرجى المحاولة مرة أخرى.</value></data>
+  <data name="Admin.Archive.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Archive.Add.Title" xml:space="preserve"><value>إضافة نسخة</value></data>
+  <data name="Admin.Archive.Edit.Title" xml:space="preserve"><value>تعديل النسخة</value></data>
+  <data name="Admin.Archive.Delete.Confirm" xml:space="preserve"><value>هل تريد حذف هذه النسخة؟ ستتم إزالتها من الأرشيف العام فورًا.</value></data>
+  <data name="Admin.Archive.Validation.TitleRequired" xml:space="preserve"><value>العنوان بالإنجليزية والعربية مطلوبان.</value></data>
+  <data name="Admin.Archive.Col.Year" xml:space="preserve"><value>السنة</value></data>
+  <data name="Admin.Archive.Col.TitleEn" xml:space="preserve"><value>العنوان (إنجليزي)</value></data>
+  <data name="Admin.Archive.Col.TitleAr" xml:space="preserve"><value>العنوان (عربي)</value></data>
+  <data name="Admin.Archive.Col.Attendees" xml:space="preserve"><value>الحضور</value></data>
+  <data name="Admin.Archive.Col.Sessions" xml:space="preserve"><value>الجلسات</value></data>
+  <data name="Admin.Archive.Col.Speakers" xml:space="preserve"><value>المتحدثون</value></data>
+  <data name="Admin.Archive.Col.Active" xml:space="preserve"><value>مُفعّل</value></data>
+  <data name="Admin.Archive.Field.Year" xml:space="preserve"><value>السنة</value></data>
+  <data name="Admin.Archive.Field.TitleEn" xml:space="preserve"><value>العنوان (إنجليزي)</value></data>
+  <data name="Admin.Archive.Field.TitleAr" xml:space="preserve"><value>العنوان (عربي)</value></data>
+  <data name="Admin.Archive.Field.SummaryEn" xml:space="preserve"><value>الملخص (إنجليزي)</value></data>
+  <data name="Admin.Archive.Field.SummaryAr" xml:space="preserve"><value>الملخص (عربي)</value></data>
+  <data name="Admin.Archive.Field.Attendees" xml:space="preserve"><value>الحضور</value></data>
+  <data name="Admin.Archive.Field.Sessions" xml:space="preserve"><value>الجلسات</value></data>
+  <data name="Admin.Archive.Field.Speakers" xml:space="preserve"><value>المتحدثون</value></data>
+  <data name="Admin.Archive.Field.CoverImageRelativePath" xml:space="preserve"><value>مسار صورة الغلاف</value></data>
+  <data name="Admin.Archive.Field.IsActive" xml:space="preserve"><value>مُفعّل (ظاهر في الأرشيف العام)</value></data>
+
+  <!-- D-199 — Ratings admin read-only view. -->
+  <data name="Admin.Ratings.Title" xml:space="preserve"><value>التقييمات</value></data>
+  <data name="Admin.Ratings.Loading" xml:space="preserve"><value>جارٍ تحميل التقييمات…</value></data>
+  <data name="Admin.Ratings.None" xml:space="preserve"><value>لا توجد تقييمات بعد.</value></data>
+  <data name="Admin.Ratings.LoadFailed" xml:space="preserve"><value>تعذّر تحميل التقييمات. يرجى المحاولة مرة أخرى.</value></data>
+  <data name="Admin.Ratings.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Ratings.Stat.Average" xml:space="preserve"><value>متوسط التقييم</value></data>
+  <data name="Admin.Ratings.Stat.Count" xml:space="preserve"><value>إجمالي التقييمات</value></data>
+  <data name="Admin.Ratings.Col.Stars" xml:space="preserve"><value>النجوم</value></data>
+  <data name="Admin.Ratings.Col.Comment" xml:space="preserve"><value>التعليق</value></data>
+  <data name="Admin.Ratings.Col.Active" xml:space="preserve"><value>مُفعّل</value></data>
+  <data name="Admin.Ratings.Col.CreatedAt" xml:space="preserve"><value>تاريخ الإرسال</value></data>
+
+  <!-- D-199 — Audience-comments moderation. -->
+  <data name="Admin.Comments.Title" xml:space="preserve"><value>تعليقات الجمهور</value></data>
+  <data name="Admin.Comments.Hint" xml:space="preserve"><value>اختر جلسة لإدارة تعليقات الجمهور الخاصة بها.</value></data>
+  <data name="Admin.Comments.Pick" xml:space="preserve"><value>الجلسة</value></data>
+  <data name="Admin.Comments.PickNone" xml:space="preserve"><value>— اختر جلسة —</value></data>
+  <data name="Admin.Comments.NoSessions" xml:space="preserve"><value>لا توجد جلسات متاحة.</value></data>
+  <data name="Admin.Comments.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.Comments.None" xml:space="preserve"><value>لا توجد تعليقات لهذه الجلسة.</value></data>
+  <data name="Admin.Comments.Col.Author" xml:space="preserve"><value>الكاتب</value></data>
+  <data name="Admin.Comments.Col.Body" xml:space="preserve"><value>التعليق</value></data>
+  <data name="Admin.Comments.Col.Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Comments.Col.AiVerdict" xml:space="preserve"><value>تقييم الذكاء الاصطناعي</value></data>
+  <data name="Admin.Comments.Col.Created" xml:space="preserve"><value>تاريخ الإرسال</value></data>
+  <data name="Admin.Comments.Col.Actions" xml:space="preserve"><value>الإجراءات</value></data>
+  <data name="Admin.Comments.Approve" xml:space="preserve"><value>اعتماد</value></data>
+  <data name="Admin.Comments.Hide" xml:space="preserve"><value>إخفاء</value></data>
+  <data name="Admin.Comments.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Comments.Delete.Confirm" xml:space="preserve"><value>هل تريد حذف هذا التعليق؟ سيُزال من العرض العام فورًا.</value></data>
+  <data name="Admin.Comments.Status.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
+  <data name="Admin.Comments.Status.Approved" xml:space="preserve"><value>معتمد</value></data>
+  <data name="Admin.Comments.Status.Hidden" xml:space="preserve"><value>مخفي</value></data>
+  <data name="Admin.Comments.StatusSaved" xml:space="preserve"><value>تم تحديث حالة التعليق.</value></data>
+  <data name="Admin.Comments.Deleted" xml:space="preserve"><value>تم حذف التعليق.</value></data>
+  <data name="Admin.Comments.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Comments.LoadFailed" xml:space="preserve"><value>تعذر تحميل التعليقات. حاول مرة أخرى.</value></data>
+  <data name="Admin.Comments.SessionsLoadFailed" xml:space="preserve"><value>تعذر تحميل الجلسات. حاول مرة أخرى.</value></data>
 </root>

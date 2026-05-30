@@ -1,0 +1,377 @@
+@* D-199 (Mockup screen 24) — admin CRUD over the public Archive / Past
+   Editions list. Each edition carries a year, bilingual title + summary,
+   the headline attendees/sessions/speakers counts, an optional cover-image
+   relative path, and the active flag that gates public visibility. *@
+@page "/admin/archive"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@using SIMF.Contracts.Archive
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Archive.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Archive.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form__actions">
+            <SimfButton Type="button" OnClick="OnAdd">
+                @L["Admin.Archive.New"]
+            </SimfButton>
+        </div>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.Archive.Loading"]</p>
+        }
+        else if (_page.Items.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.Archive.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.Archive.Col.Year"]</th>
+                        <th>@L["Admin.Archive.Col.TitleEn"]</th>
+                        <th>@L["Admin.Archive.Col.TitleAr"]</th>
+                        <th>@L["Admin.Archive.Col.Attendees"]</th>
+                        <th>@L["Admin.Archive.Col.Sessions"]</th>
+                        <th>@L["Admin.Archive.Col.Speakers"]</th>
+                        <th>@L["Admin.Archive.Col.Active"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _page.Items)
+                    {
+                        <tr>
+                            <td>@row.Year</td>
+                            <td>@row.TitleEn</td>
+                            <td>@row.TitleAr</td>
+                            <td>@row.Attendees</td>
+                            <td>@row.Sessions</td>
+                            <td>@row.Speakers</td>
+                            <td>@(row.IsActive ? "✓" : "—")</td>
+                            <td>
+                                <SimfButton Type="button" Disabled="_busy"
+                                            OnClick="@(() => OnEdit(row))">
+                                    @L["Admin.Archive.Edit"]
+                                </SimfButton>
+                                <SimfButton Type="button" Disabled="_busy"
+                                            OnClick="@(() => OnDeleteAsync(row))">
+                                    @L["Admin.Archive.Delete"]
+                                </SimfButton>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="simf-table__summary">
+                @(string.Format(L["Admin.Archive.Summary"],
+                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
+            </p>
+        }
+    </div>
+</div>
+
+@if (_editOpen)
+{
+    <SimfModal Open="true"
+               Title="@(_isEdit ? L["Admin.Archive.Edit.Title"] : L["Admin.Archive.Add.Title"])"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Archive.Field.Year"]</span>
+                    <input class="simf-field__input" type="number" min="1900" max="2200"
+                           value="@_form.Year"
+                           @onchange="OnYearChanged"
+                           disabled="@_busy" />
+                </label>
+                <SimfTextField Label="@L["Admin.Archive.Field.TitleEn"]"
+                               Value="@_form.TitleEn"
+                               ValueChanged="@(v => _form.TitleEn = v)"
+                               ValueExpression="@(() => _form.TitleEn)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Archive.Field.TitleAr"]"
+                               Value="@_form.TitleAr"
+                               ValueChanged="@(v => _form.TitleAr = v)"
+                               ValueExpression="@(() => _form.TitleAr)"
+                               Disabled="_busy" />
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Archive.Field.SummaryEn"]</span>
+                    <textarea class="simf-field__input" rows="4"
+                              value="@_form.SummaryEn"
+                              @onchange="OnSummaryEnChanged"
+                              disabled="@_busy"></textarea>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Archive.Field.SummaryAr"]</span>
+                    <textarea class="simf-field__input" rows="4"
+                              value="@_form.SummaryAr"
+                              @onchange="OnSummaryArChanged"
+                              disabled="@_busy"></textarea>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Archive.Field.Attendees"]</span>
+                    <input class="simf-field__input" type="number" min="0" max="1000000"
+                           value="@_form.Attendees"
+                           @onchange="OnAttendeesChanged"
+                           disabled="@_busy" />
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Archive.Field.Sessions"]</span>
+                    <input class="simf-field__input" type="number" min="0" max="1000000"
+                           value="@_form.Sessions"
+                           @onchange="OnSessionsChanged"
+                           disabled="@_busy" />
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Archive.Field.Speakers"]</span>
+                    <input class="simf-field__input" type="number" min="0" max="1000000"
+                           value="@_form.Speakers"
+                           @onchange="OnSpeakersChanged"
+                           disabled="@_busy" />
+                </label>
+                <SimfTextField Label="@L["Admin.Archive.Field.CoverImageRelativePath"]"
+                               Value="@_form.CoverImageRelativePath"
+                               ValueChanged="@(v => _form.CoverImageRelativePath = v)"
+                               ValueExpression="@(() => _form.CoverImageRelativePath)"
+                               Disabled="_busy" />
+                <SimfCheckbox Value="_form.IsActive"
+                              ValueChanged="@(v => _form.IsActive = v)"
+                              Disabled="_busy">
+                    @L["Admin.Archive.Field.IsActive"]
+                </SimfCheckbox>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Disabled="_busy" OnClick="@(() => _editOpen = false)">
+                @L["Admin.Archive.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+                @L["Admin.Archive.Save"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private sealed class FormModel
+    {
+        public int Year { get; set; }
+        public string TitleEn { get; set; } = string.Empty;
+        public string TitleAr { get; set; } = string.Empty;
+        public string? SummaryEn { get; set; }
+        public string? SummaryAr { get; set; }
+        public int Attendees { get; set; }
+        public int Sessions { get; set; }
+        public int Speakers { get; set; }
+        public string? CoverImageRelativePath { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+
+    private GridQuery _query = new() { Top = 50 };
+    private GridPage<AdminArchiveEditionSummary> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private bool _editOpen;
+    private bool _isEdit;
+    private Guid _editingId;
+    private FormModel _form = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminArchiveEditionSummary>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/archive/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Archive.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnAdd()
+    {
+        _editOpen = true;
+        _isEdit = false;
+        _editingId = Guid.Empty;
+        _form = new FormModel { Year = DateTime.UtcNow.Year };
+        _toast = null;
+    }
+
+    private void OnEdit(AdminArchiveEditionSummary row)
+    {
+        _editOpen = true;
+        _isEdit = true;
+        _editingId = row.Id;
+        _form = new FormModel
+        {
+            Year = row.Year,
+            TitleEn = row.TitleEn,
+            TitleAr = row.TitleAr,
+            SummaryEn = row.SummaryEn,
+            SummaryAr = row.SummaryAr,
+            Attendees = row.Attendees,
+            Sessions = row.Sessions,
+            Speakers = row.Speakers,
+            CoverImageRelativePath = row.CoverImageRelativePath,
+            IsActive = row.IsActive,
+        };
+        _toast = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+        if (string.IsNullOrWhiteSpace(_form.TitleEn)
+            || string.IsNullOrWhiteSpace(_form.TitleAr))
+        {
+            _toast = new Toast("error", L["Admin.Archive.Validation.TitleRequired"]);
+            return;
+        }
+        _busy = true;
+        _toast = null;
+        try
+        {
+            ApiResult<AdminArchiveEditionDetail>? env;
+            if (_isEdit)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminArchiveEditionDetail>>(
+                    "simfAccount.putJson",
+                    $"/account/api/admin/archive/{_editingId}",
+                    new UpdateArchiveEditionRequest
+                    {
+                        Year = _form.Year,
+                        TitleEn = _form.TitleEn,
+                        TitleAr = _form.TitleAr,
+                        SummaryEn = _form.SummaryEn,
+                        SummaryAr = _form.SummaryAr,
+                        Attendees = _form.Attendees,
+                        Sessions = _form.Sessions,
+                        Speakers = _form.Speakers,
+                        CoverImageRelativePath = _form.CoverImageRelativePath,
+                        IsActive = _form.IsActive,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminArchiveEditionDetail>>(
+                    "simfAccount.postJson",
+                    "/account/api/admin/archive",
+                    new CreateArchiveEditionRequest
+                    {
+                        Year = _form.Year,
+                        TitleEn = _form.TitleEn,
+                        TitleAr = _form.TitleAr,
+                        SummaryEn = _form.SummaryEn,
+                        SummaryAr = _form.SummaryAr,
+                        Attendees = _form.Attendees,
+                        Sessions = _form.Sessions,
+                        Speakers = _form.Speakers,
+                        CoverImageRelativePath = _form.CoverImageRelativePath,
+                    });
+            }
+            if (env is { Success: true })
+            {
+                _editOpen = false;
+                _toast = new Toast("success", L["Admin.Archive.Saved"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Archive.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteAsync(AdminArchiveEditionSummary row)
+    {
+        if (_busy) return;
+        // Mirror DelegationsList: confirm destructive actions. Deactivating an
+        // edition pulls it from the public archive immediately and there is no
+        // undo button — the admin has to reactivate it by hand.
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", L["Admin.Archive.Delete.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/archive/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.Archive.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Archive.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnYearChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _form.Year = n;
+    }
+
+    private void OnAttendeesChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _form.Attendees = n;
+    }
+
+    private void OnSessionsChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _form.Sessions = n;
+    }
+
+    private void OnSpeakersChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _form.Speakers = n;
+    }
+
+    private void OnSummaryEnChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        _form.SummaryEn = string.IsNullOrWhiteSpace(raw) ? null : raw;
+    }
+
+    private void OnSummaryArChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        _form.SummaryAr = string.IsNullOrWhiteSpace(raw) ? null : raw;
+    }
+}

@@ -1,0 +1,470 @@
+@* D-199 (CP UI for the Exhibition booths, Mockup page 22) — admin CRUD
+   over the public exhibition booth list + 2D venue map. Each booth carries
+   a bilingual name / exhibitor / sector / description, an optional hall, and
+   an optional MapX/MapY position used by the public 2D venue map. *@
+@page "/admin/booths"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@using SIMF.Contracts.Exhibition
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Booths.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Booths.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form__actions">
+            <SimfButton Type="button" OnClick="OnAdd">
+                @L["Admin.Booths.New"]
+            </SimfButton>
+        </div>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.Booths.Loading"]</p>
+        }
+        else if (_page.Items.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.Booths.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.Booths.Col.Code"]</th>
+                        <th>@L["Admin.Booths.Col.NameEn"]</th>
+                        <th>@L["Admin.Booths.Col.NameAr"]</th>
+                        <th>@L["Admin.Booths.Col.ExhibitorEn"]</th>
+                        <th>@L["Admin.Booths.Col.SectorEn"]</th>
+                        <th>@L["Admin.Booths.Col.Hall"]</th>
+                        <th>@L["Admin.Booths.Col.Active"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _page.Items)
+                    {
+                        <tr>
+                            <td>@row.Code</td>
+                            <td>@row.NameEn</td>
+                            <td>@row.NameAr</td>
+                            <td>@(row.ExhibitorNameEn ?? "—")</td>
+                            <td>@(row.SectorEn ?? "—")</td>
+                            <td>@HallName(row.HallId)</td>
+                            <td>@(row.IsActive ? "✓" : "—")</td>
+                            <td>
+                                <SimfButton Type="button" Disabled="_busy"
+                                            OnClick="@(() => OnEdit(row))">
+                                    @L["Admin.Booths.Edit"]
+                                </SimfButton>
+                                <SimfButton Type="button" Disabled="_busy"
+                                            OnClick="@(() => OnDeleteAsync(row))">
+                                    @L["Admin.Booths.Delete"]
+                                </SimfButton>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="simf-table__summary">
+                @(string.Format(L["Admin.Booths.Summary"],
+                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
+            </p>
+        }
+    </div>
+</div>
+
+@if (_editOpen)
+{
+    <SimfModal Open="true"
+               Title="@(_isEdit ? L["Admin.Booths.Edit.Title"] : L["Admin.Booths.Add.Title"])"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.Booths.Field.Code"]"
+                               Value="@_form.Code"
+                               ValueChanged="@(v => _form.Code = v)"
+                               ValueExpression="@(() => _form.Code)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Booths.Field.NameEn"]"
+                               Value="@_form.NameEn"
+                               ValueChanged="@(v => _form.NameEn = v)"
+                               ValueExpression="@(() => _form.NameEn)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Booths.Field.NameAr"]"
+                               Value="@_form.NameAr"
+                               ValueChanged="@(v => _form.NameAr = v)"
+                               ValueExpression="@(() => _form.NameAr)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Booths.Field.ExhibitorEn"]"
+                               Value="@_form.ExhibitorNameEn"
+                               ValueChanged="@(v => _form.ExhibitorNameEn = v)"
+                               ValueExpression="@(() => _form.ExhibitorNameEn)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Booths.Field.ExhibitorAr"]"
+                               Value="@_form.ExhibitorNameAr"
+                               ValueChanged="@(v => _form.ExhibitorNameAr = v)"
+                               ValueExpression="@(() => _form.ExhibitorNameAr)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Booths.Field.SectorEn"]"
+                               Value="@_form.SectorEn"
+                               ValueChanged="@(v => _form.SectorEn = v)"
+                               ValueExpression="@(() => _form.SectorEn)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Booths.Field.SectorAr"]"
+                               Value="@_form.SectorAr"
+                               ValueChanged="@(v => _form.SectorAr = v)"
+                               ValueExpression="@(() => _form.SectorAr)"
+                               Disabled="_busy" />
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Booths.Field.DescriptionEn"]</span>
+                    <textarea class="simf-field__input" rows="3"
+                              value="@_form.DescriptionEn"
+                              @onchange="OnDescriptionEnChanged"
+                              disabled="@_busy"></textarea>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Booths.Field.DescriptionAr"]</span>
+                    <textarea class="simf-field__input" rows="3"
+                              value="@_form.DescriptionAr"
+                              @onchange="OnDescriptionArChanged"
+                              disabled="@_busy"></textarea>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Booths.Field.HallId"]</span>
+                    <select class="simf-field__input"
+                            value="@(_form.HallId?.ToString() ?? string.Empty)"
+                            @onchange="OnHallIdChanged"
+                            disabled="@_busy">
+                        <option value="">@L["Admin.Booths.Field.HallNone"]</option>
+                        @foreach (var hall in _halls)
+                        {
+                            <option value="@hall.Id">@hall.Name — @hall.NameArabic</option>
+                        }
+                    </select>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Booths.Field.MapX"]</span>
+                    <input class="simf-field__input" type="number" step="any"
+                           value="@_form.MapX"
+                           @onchange="OnMapXChanged"
+                           disabled="@_busy" />
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Booths.Field.MapY"]</span>
+                    <input class="simf-field__input" type="number" step="any"
+                           value="@_form.MapY"
+                           @onchange="OnMapYChanged"
+                           disabled="@_busy" />
+                </label>
+                <SimfCheckbox Value="_form.IsActive"
+                              ValueChanged="@(v => _form.IsActive = v)"
+                              Disabled="_busy">
+                    @L["Admin.Booths.Field.IsActive"]
+                </SimfCheckbox>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Disabled="_busy" OnClick="@(() => _editOpen = false)">
+                @L["Admin.Booths.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+                @L["Admin.Booths.Save"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private sealed class FormModel
+    {
+        public string Code { get; set; } = string.Empty;
+        public string NameEn { get; set; } = string.Empty;
+        public string NameAr { get; set; } = string.Empty;
+        public string ExhibitorNameEn { get; set; } = string.Empty;
+        public string ExhibitorNameAr { get; set; } = string.Empty;
+        public string SectorEn { get; set; } = string.Empty;
+        public string SectorAr { get; set; } = string.Empty;
+        public string DescriptionEn { get; set; } = string.Empty;
+        public string DescriptionAr { get; set; } = string.Empty;
+        public Guid? HallId { get; set; }
+        public double? MapX { get; set; }
+        public double? MapY { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+
+    private GridQuery _query = new() { Top = 50 };
+    private GridPage<AdminBoothSummary> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+    // D-199 — halls cached at mount so the form's hall dropdown doesn't
+    // round-trip on every Add/Edit modal open. The same list also resolves
+    // the Hall column in the grid (HallName).
+    private List<AdminHallSummary> _halls = new();
+
+    private bool _editOpen;
+    private bool _isEdit;
+    private Guid _editingId;
+    private FormModel _form = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadHallsAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadHallsAsync()
+    {
+        // D-199 — eager-load active halls so the Add / Edit modal's dropdown
+        // is ready on first open and the grid's Hall column can resolve a
+        // name. The list is bounded so a single Top=500 round-trip is fine.
+        var env = await JS.InvokeAsync<ApiResult<GridPage<AdminHallSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/halls/list",
+            new GridQuery { Top = 500 });
+        if (env is { Success: true, Data: not null })
+        {
+            _halls = env.Data.Items.Where(h => h.IsActive)
+                .OrderBy(h => h.Name).ToList();
+        }
+        else
+        {
+            _toast = new Toast("error",
+                env?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.Booths.HallsLoadFailed"]);
+        }
+    }
+
+    private string HallName(Guid? hallId)
+    {
+        if (hallId is null) return "—";
+        var hall = _halls.FirstOrDefault(h => h.Id == hallId.Value);
+        return hall is null ? "—" : hall.Name;
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminBoothSummary>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/booths/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Booths.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnAdd()
+    {
+        _editOpen = true;
+        _isEdit = false;
+        _editingId = Guid.Empty;
+        _form = new FormModel();
+        _toast = null;
+    }
+
+    private async Task OnEdit(AdminBoothSummary row)
+    {
+        // The grid summary omits the bilingual exhibitor/sector/description
+        // and map position, so fetch the full detail before populating the
+        // form (mirrors the GET /admin/booths/{id} contract).
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminBoothDetail>>(
+                "simfAccount.getJson",
+                $"/account/api/admin/booths/{row.Id}");
+            if (env is { Success: true, Data: not null })
+            {
+                var d = env.Data;
+                _editingId = d.Id;
+                _form = new FormModel
+                {
+                    Code = d.Code,
+                    NameEn = d.NameEn,
+                    NameAr = d.NameAr,
+                    ExhibitorNameEn = d.ExhibitorNameEn ?? string.Empty,
+                    ExhibitorNameAr = d.ExhibitorNameAr ?? string.Empty,
+                    SectorEn = d.SectorEn ?? string.Empty,
+                    SectorAr = d.SectorAr ?? string.Empty,
+                    DescriptionEn = d.DescriptionEn ?? string.Empty,
+                    DescriptionAr = d.DescriptionAr ?? string.Empty,
+                    HallId = d.HallId,
+                    MapX = d.MapX,
+                    MapY = d.MapY,
+                    IsActive = d.IsActive,
+                };
+                _isEdit = true;
+                _editOpen = true;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Booths.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+        // Required text guards (server-side FluentValidation is the source of
+        // truth; this stops an obviously-empty submit round-trip).
+        if (string.IsNullOrWhiteSpace(_form.Code)
+            || string.IsNullOrWhiteSpace(_form.NameEn)
+            || string.IsNullOrWhiteSpace(_form.NameAr))
+        {
+            _toast = new Toast("error", L["Admin.Booths.Required"]);
+            return;
+        }
+        _busy = true;
+        _toast = null;
+        try
+        {
+            ApiResult<AdminBoothDetail>? env;
+            if (_isEdit)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminBoothDetail>>(
+                    "simfAccount.putJson",
+                    $"/account/api/admin/booths/{_editingId}",
+                    new AdminUpdateBoothRequest
+                    {
+                        Code = _form.Code,
+                        NameEn = _form.NameEn,
+                        NameAr = _form.NameAr,
+                        ExhibitorNameEn = Trimmed(_form.ExhibitorNameEn),
+                        ExhibitorNameAr = Trimmed(_form.ExhibitorNameAr),
+                        SectorEn = Trimmed(_form.SectorEn),
+                        SectorAr = Trimmed(_form.SectorAr),
+                        DescriptionEn = Trimmed(_form.DescriptionEn),
+                        DescriptionAr = Trimmed(_form.DescriptionAr),
+                        HallId = _form.HallId,
+                        MapX = _form.MapX,
+                        MapY = _form.MapY,
+                        IsActive = _form.IsActive,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminBoothDetail>>(
+                    "simfAccount.postJson",
+                    "/account/api/admin/booths",
+                    new AdminCreateBoothRequest
+                    {
+                        Code = _form.Code,
+                        NameEn = _form.NameEn,
+                        NameAr = _form.NameAr,
+                        ExhibitorNameEn = Trimmed(_form.ExhibitorNameEn),
+                        ExhibitorNameAr = Trimmed(_form.ExhibitorNameAr),
+                        SectorEn = Trimmed(_form.SectorEn),
+                        SectorAr = Trimmed(_form.SectorAr),
+                        DescriptionEn = Trimmed(_form.DescriptionEn),
+                        DescriptionAr = Trimmed(_form.DescriptionAr),
+                        HallId = _form.HallId,
+                        MapX = _form.MapX,
+                        MapY = _form.MapY,
+                    });
+            }
+            if (env is { Success: true })
+            {
+                _editOpen = false;
+                _toast = new Toast("success", L["Admin.Booths.Saved"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Booths.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteAsync(AdminBoothSummary row)
+    {
+        if (_busy) return;
+        // Confirm destructive actions: a stray click pulls the booth from the
+        // public exhibition list + 2D map immediately, with no undo today.
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", L["Admin.Booths.Delete.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/booths/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.Booths.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Booths.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    // Optional bilingual / description fields are nullable on the wire — send
+    // null rather than an empty string when the admin leaves them blank.
+    private static string? Trimmed(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private void OnDescriptionEnChanged(ChangeEventArgs e) =>
+        _form.DescriptionEn = e.Value?.ToString() ?? string.Empty;
+
+    private void OnDescriptionArChanged(ChangeEventArgs e) =>
+        _form.DescriptionAr = e.Value?.ToString() ?? string.Empty;
+
+    private void OnHallIdChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        _form.HallId = string.IsNullOrWhiteSpace(raw) ? null
+            : (Guid.TryParse(raw, out var g) ? g : (Guid?)null);
+    }
+
+    private void OnMapXChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        _form.MapX = string.IsNullOrWhiteSpace(raw) ? null
+            : (double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var n)
+                ? n : (double?)null);
+    }
+
+    private void OnMapYChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        _form.MapY = string.IsNullOrWhiteSpace(raw) ? null
+            : (double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var n)
+                ? n : (double?)null);
+    }
+}

@@ -1,0 +1,269 @@
+@* D-199 (Mockup page 28 — "Audience comments" / تعليقات الجمهور) — admin
+   moderation desk over a session's audience comments. The admin picks a
+   live session, then sees every comment (Pending / Approved / Hidden) with
+   the AI filter verdict, and can Approve, Hide, or Delete (soft-delete)
+   each row. Session-scoped, mirroring the existing SessionModerationDesk
+   pattern but over comments rather than live Q&A questions. *@
+@page "/admin/comments-moderation"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Comments.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Comments.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+        <p class="simf-hint">@L["Admin.Comments.Hint"]</p>
+
+        @if (_sessions.Count == 0 && !_loading)
+        {
+            <SimfEmptyState Title="@L["Admin.Comments.NoSessions"]" />
+        }
+        else
+        {
+            <label class="simf-field">
+                <span class="simf-field__label">@L["Admin.Comments.Pick"]</span>
+                <select class="simf-field__input"
+                        value="@(_selectedSessionId?.ToString() ?? string.Empty)"
+                        @onchange="OnSessionChangedAsync" disabled="@_loading">
+                    <option value="">@L["Admin.Comments.PickNone"]</option>
+                    @foreach (var session in _sessions)
+                    {
+                        <option value="@session.Id">@session.Code — @session.Title</option>
+                    }
+                </select>
+            </label>
+        }
+
+        @if (_loading)
+        {
+            <p>@L["Admin.Comments.Loading"]</p>
+        }
+        else if (_selectedSessionId is not null)
+        {
+            @if (_page.Items.Count == 0)
+            {
+                <SimfEmptyState Title="@L["Admin.Comments.None"]" />
+            }
+            else
+            {
+                <table class="simf-table">
+                    <thead>
+                        <tr>
+                            <th>@L["Admin.Comments.Col.Author"]</th>
+                            <th>@L["Admin.Comments.Col.Body"]</th>
+                            <th>@L["Admin.Comments.Col.Status"]</th>
+                            <th>@L["Admin.Comments.Col.AiVerdict"]</th>
+                            <th>@L["Admin.Comments.Col.Created"]</th>
+                            <th>@L["Admin.Comments.Col.Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _page.Items)
+                        {
+                            <tr>
+                                <td>
+                                    @row.AuthorDisplayName
+                                    <small>(@(row.AuthorEmail ?? "—"))</small>
+                                </td>
+                                <td>@row.Body</td>
+                                <td>@StatusLabel(row.Status)</td>
+                                <td>@(row.AiFilterVerdict ?? "—")</td>
+                                <td>@row.CreatedAt.ToLocalTime().ToString("g")</td>
+                                <td>
+                                    @if (row.Status != SessionCommentStatus.Approved)
+                                    {
+                                        <SimfButton Type="button" Disabled="_busy"
+                                                    OnClick="@(() => SetStatusAsync(row, SessionCommentStatus.Approved))">
+                                            @L["Admin.Comments.Approve"]
+                                        </SimfButton>
+                                    }
+                                    @if (row.Status != SessionCommentStatus.Hidden)
+                                    {
+                                        <SimfButton Type="button" Disabled="_busy"
+                                                    OnClick="@(() => SetStatusAsync(row, SessionCommentStatus.Hidden))">
+                                            @L["Admin.Comments.Hide"]
+                                        </SimfButton>
+                                    }
+                                    <SimfButton Type="button" Disabled="_busy"
+                                                OnClick="@(() => OnDeleteAsync(row))">
+                                        @L["Admin.Comments.Delete"]
+                                    </SimfButton>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <p class="simf-table__summary">
+                    @(string.Format(L["Admin.Comments.Summary"],
+                        _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
+                </p>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private List<AdminSessionSummary> _sessions = new();
+    private Guid? _selectedSessionId;
+    private GridPage<SessionCommentModerationRow> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    protected override async Task OnInitializedAsync() => await LoadSessionsAsync();
+
+    private async Task LoadSessionsAsync()
+    {
+        // The session picker is populated from the already-existing admin
+        // sessions BFF passthrough. The list is bounded (one event's
+        // worth of sessions) so a single Top=200 round-trip is fine.
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminSessionSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/sessions/list",
+                new GridQuery { Top = 200 });
+            if (env is { Success: true, Data: not null })
+            {
+                _sessions = env.Data.Items.Where(s => s.IsActive)
+                    .OrderBy(s => s.Code).ToList();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Comments.SessionsLoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task OnSessionChangedAsync(ChangeEventArgs e)
+    {
+        // Clear any stale toast so a message from session A does not
+        // follow the admin to session B.
+        _toast = null;
+        if (Guid.TryParse(e.Value?.ToString(), out var id))
+        {
+            _selectedSessionId = id;
+            await LoadCommentsAsync();
+        }
+        else
+        {
+            _selectedSessionId = null;
+            _page = new GridPage<SessionCommentModerationRow>();
+        }
+    }
+
+    private async Task LoadCommentsAsync()
+    {
+        if (_selectedSessionId is null) return;
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<SessionCommentModerationRow>>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/sessions/{_selectedSessionId}/comments/list",
+                new ListSessionCommentsBody { Top = 200 });
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Comments.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task SetStatusAsync(SessionCommentModerationRow row, SessionCommentStatus status)
+    {
+        if (_busy || _selectedSessionId is null) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<SessionCommentModerationRow>>(
+                "simfAccount.putJson",
+                $"/account/api/admin/sessions/{_selectedSessionId}/comments/{row.Id}/status",
+                new SetSessionCommentStatusRequest { Status = status });
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.Comments.StatusSaved"]);
+                await LoadCommentsAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Comments.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteAsync(SessionCommentModerationRow row)
+    {
+        if (_busy || _selectedSessionId is null) return;
+        // Confirm destructive actions — a soft-delete pulls the comment
+        // from the moderation desk and the public feed immediately, and
+        // there is no undo button today.
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", L["Admin.Comments.Delete.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/sessions/{_selectedSessionId}/comments/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.Comments.Deleted"]);
+                await LoadCommentsAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Comments.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private string StatusLabel(SessionCommentStatus status) => status switch
+    {
+        SessionCommentStatus.Pending => L["Admin.Comments.Status.Pending"],
+        SessionCommentStatus.Approved => L["Admin.Comments.Status.Approved"],
+        SessionCommentStatus.Hidden => L["Admin.Comments.Status.Hidden"],
+        _ => status.ToString(),
+    };
+
+    // The comments-list route carries the paging fields in the body
+    // (the backend route composes Skip/Top/Search/Sort itself rather
+    // than binding GridQuery, which is sealed). This mirrors those names.
+    private sealed class ListSessionCommentsBody
+    {
+        public SessionCommentStatus? Status { get; set; }
+        public int Skip { get; set; }
+        public int Top { get; set; } = 25;
+        public string? Search { get; set; }
+        public string? Sort { get; set; }
+        public bool SortDescending { get; set; } = true;
+    }
+}
