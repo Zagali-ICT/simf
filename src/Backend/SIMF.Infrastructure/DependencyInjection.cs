@@ -271,6 +271,12 @@ public static class DependencyInjection
             SIMF.Infrastructure.SessionComments.StubCommentAiFilter>();
         services.AddScoped<SIMF.Application.Feedback.Abstractions.IRatingService,
             SIMF.Infrastructure.Feedback.RatingService>();
+        // D-202 — Track-2: Statistics dashboard (read-only aggregate) +
+        // Company/exhibitor-sponsor provisioning.
+        services.AddScoped<SIMF.Application.Statistics.Abstractions.IStatisticsService,
+            SIMF.Infrastructure.Statistics.StatisticsService>();
+        services.AddScoped<SIMF.Application.Companies.Abstractions.IAdminCompanyService,
+            SIMF.Infrastructure.Companies.AdminCompanyService>();
         // D-176 (gap doc G12) — centralised AI module: prompt
         // catalogue + invocation log + Echo (offline) + OpenAI HTTP.
         // HttpClient registered as a singleton (no AddHttpClient since

@@ -240,4 +240,10 @@ public static class ErrorCodes
     public const string GateProfileTypeInvalid = "GATE_PROFILE_TYPE_INVALID";
     public const string IdempotencyKeyConflict = "IDEMPOTENCY_KEY_CONFLICT";
     public const string GateFailureCircuitOpen = "GATE_FAILURE_CIRCUIT_OPEN";
+
+    // Companies + exhibitor/sponsor account provisioning (D-202 — D-199 #3).
+    public const string CompanyInvalid = "COMPANY_INVALID";
+    public const string CompanyNotFound = "COMPANY_NOT_FOUND";
+    public const string CompanyInactive = "COMPANY_INACTIVE";
+    public const string CompanyAccountInvalid = "COMPANY_ACCOUNT_INVALID";
 }

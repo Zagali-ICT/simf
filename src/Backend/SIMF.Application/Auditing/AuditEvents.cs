@@ -265,4 +265,10 @@ public static class AuditEvents
     // cannot tell scope-mismatch from missing-id; this audit row is
     // the only SOC visibility into the probe pattern.
     public const string AdminApprovalScopeMismatch = "Admin.ApprovalScopeMismatch";
+
+    // Companies + exhibitor/sponsor account provisioning (D-202 — D-199 #3).
+    public const string CompanyCreated = "Company.Created";
+    public const string CompanyUpdated = "Company.Updated";
+    public const string CompanyDeactivated = "Company.Deactivated";
+    public const string CompanyAccountProvisioned = "Company.AccountProvisioned";
 }

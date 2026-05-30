@@ -5,6 +5,7 @@ using SIMF.Domain.Archive;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.Cms;
 using SIMF.Domain.Common;
+using SIMF.Domain.Companies;
 using SIMF.Domain.Delegations;
 using SIMF.Domain.Exhibition;
 using SIMF.Domain.Feedback;
@@ -139,6 +140,12 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     public DbSet<ArchiveEdition> ArchiveEditions => Set<ArchiveEdition>();
     public DbSet<SessionComment> SessionComments => Set<SessionComment>();
     public DbSet<Rating> Ratings => Set<Rating>();
+
+    // D-202 — exhibitor/sponsor companies + the accounts provisioned under
+    // them (additive tables; account link is a logical Guid FK to SimfUser
+    // on the Identity DB — no cross-DB navigation).
+    public DbSet<Company> Companies => Set<Company>();
+    public DbSet<CompanyMembership> CompanyMemberships => Set<CompanyMembership>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
