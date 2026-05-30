@@ -6,6 +6,7 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.Ai;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Logs;
+using SIMF.Contracts.Sessions;
 
 using SIMF.Common.Enums;
 
@@ -1410,6 +1411,54 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.ListAiInvocationsAsync(body, token));
+        });
+
+        // D-182 (CP UI for D-175 seat reservations).
+        group.MapGet("/admin/halls/{hallId:guid}/seat-layout",
+            async (Guid hallId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetHallSeatLayoutAsync(hallId, token));
+        });
+
+        group.MapPut("/admin/halls/{hallId:guid}/seat-layout",
+            async (Guid hallId, SetHallSeatLayoutRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.SetHallSeatLayoutAsync(hallId, body, token));
+        });
+
+        group.MapPost("/admin/sessions/{sessionId:guid}/seats/list",
+            async (Guid sessionId, GridQuery body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListSessionSeatReservationsAsync(
+                sessionId, body, token));
+        });
+
+        group.MapPost("/admin/sessions/{sessionId:guid}/seats/reserve-row",
+            async (Guid sessionId, AdminReserveRowRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.AdminReserveSessionRowAsync(
+                sessionId, body, token));
+        });
+
+        group.MapDelete("/admin/sessions/{sessionId:guid}/seats/{reservationId:guid}",
+            async (Guid sessionId, Guid reservationId,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.AdminReleaseSessionSeatAsync(
+                sessionId, reservationId, token));
         });
     }
 

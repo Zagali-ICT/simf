@@ -7,6 +7,7 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.Ai;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Logs;
+using SIMF.Contracts.Sessions;
 
 using SIMF.Common.Enums;
 
@@ -1431,6 +1432,46 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Post, "ai/invocations/list",
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
+
+    // -- D-182 (CP UI for D-175 seat reservations) -------------------------
+
+    public Task<ApiCallResult<HallSeatLayoutSnapshot>> GetHallSeatLayoutAsync(
+        Guid hallId, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<HallSeatLayoutSnapshot>(
+            HttpMethod.Get, $"halls/{hallId}/seat-layout", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<HallSeatLayoutSnapshot>> SetHallSeatLayoutAsync(
+        Guid hallId, SetHallSeatLayoutRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<HallSeatLayoutSnapshot>(
+            HttpMethod.Put, $"halls/{hallId}/seat-layout",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<SessionSeatCell>>> ListSessionSeatReservationsAsync(
+        Guid sessionId, GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<SessionSeatCell>>(
+            HttpMethod.Post, $"sessions/{sessionId}/seats/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> AdminReserveSessionRowAsync(
+        Guid sessionId, AdminReserveRowRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"sessions/{sessionId}/seats/reserve-row",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> AdminReleaseSessionSeatAsync(
+        Guid sessionId, Guid reservationId, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"sessions/{sessionId}/seats/{reservationId}",
+            content: null, accessToken, cancellationToken);
 
     private static ApiResult<T> TransportFailure<T>(string message, string messageArabic) =>
         ApiResult<T>.Fail(new ApiError

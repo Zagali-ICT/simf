@@ -40,6 +40,8 @@
   <data name="Module.Themes" xml:space="preserve"><value>المحاور والركائز</value></data>
   <data name="Module.Sessions" xml:space="preserve"><value>الجلسات</value></data>
   <data name="Module.Halls" xml:space="preserve"><value>القاعات والمقاعد</value></data>
+  <data name="Module.HallSeatLayouts" xml:space="preserve"><value>مخططات مقاعد القاعات</value></data>
+  <data name="Module.SessionSeatPlans" xml:space="preserve"><value>مخطط مقاعد الجلسات</value></data>
   <data name="Module.Gates" xml:space="preserve"><value>البوابات</value></data>
   <data name="Module.GatesOperator" xml:space="preserve"><value>مشغل البوابة</value></data>
   <data name="Module.Speakers" xml:space="preserve"><value>المتحدثون</value></data>
@@ -1446,4 +1448,34 @@
   <data name="Admin.AiInvocations.Col.Error" xml:space="preserve"><value>الخطأ</value></data>
   <data name="Admin.AiInvocations.Filter.ErrorsOnly" xml:space="preserve"><value>الأخطاء فقط</value></data>
   <data name="Admin.AiInvocations.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <!-- D-182 (CP UI for D-175 seat reservations) -->
+  <data name="Admin.HallSeatLayouts.Title" xml:space="preserve"><value>مخططات مقاعد القاعات</value></data>
+  <data name="Admin.HallSeatLayouts.Pick" xml:space="preserve"><value>اختر قاعة</value></data>
+  <data name="Admin.HallSeatLayouts.None" xml:space="preserve"><value>لا توجد قاعات متاحة.</value></data>
+  <data name="Admin.HallSeatLayouts.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.HallSeatLayouts.LoadFailed" xml:space="preserve"><value>تعذّر تحميل مخططات مقاعد القاعات.</value></data>
+  <data name="Admin.HallSeatLayouts.Hint" xml:space="preserve"><value>المخطط يحدّد منتقي المقاعد الذي يراه الزائر. عدد الصفوف × المقاعد لكل صف يجب ألا يتجاوز سعة القاعة.</value></data>
+  <data name="Admin.HallSeatLayouts.Field.RowLabels" xml:space="preserve"><value>رموز الصفوف (مفصولة بفواصل، من 1 إلى 26 إدخالاً، مثال: A,B,C,VIP)</value></data>
+  <data name="Admin.HallSeatLayouts.Field.SeatsPerRow" xml:space="preserve"><value>عدد المقاعد في كل صف (1–80)</value></data>
+  <data name="Admin.HallSeatLayouts.HallCapacity" xml:space="preserve"><value>سعة القاعة</value></data>
+  <data name="Admin.HallSeatLayouts.LayoutCapacity" xml:space="preserve"><value>سعة المخطط</value></data>
+  <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>حفظ المخطط</value></data>
+  <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>تم حفظ المخطط.</value></data>
+  <data name="Admin.SessionSeatPlans.Title" xml:space="preserve"><value>مخطط مقاعد الجلسات</value></data>
+  <data name="Admin.SessionSeatPlans.Pick" xml:space="preserve"><value>اختر جلسة</value></data>
+  <data name="Admin.SessionSeatPlans.None" xml:space="preserve"><value>لا توجد جلسات متاحة.</value></data>
+  <data name="Admin.SessionSeatPlans.NoReservations" xml:space="preserve"><value>لا توجد حجوزات نشطة لهذه الجلسة.</value></data>
+  <data name="Admin.SessionSeatPlans.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.SessionSeatPlans.LoadFailed" xml:space="preserve"><value>تعذّر تحميل مخطط مقاعد الجلسة.</value></data>
+  <data name="Admin.SessionSeatPlans.Hint" xml:space="preserve"><value>يمكن للمسؤول حجز صف كامل كمحجوز إدارياً (يمنع اختيار الزوار) أو إلغاء حجوزات فردية.</value></data>
+  <data name="Admin.SessionSeatPlans.ReserveRow.Label" xml:space="preserve"><value>الصف المراد حجزه (يجب أن يكون موجوداً في مخطط القاعة)</value></data>
+  <data name="Admin.SessionSeatPlans.ReserveRow.Action" xml:space="preserve"><value>حجز الصف</value></data>
+  <data name="Admin.SessionSeatPlans.ReserveRow.Done" xml:space="preserve"><value>تم حجز الصف.</value></data>
+  <data name="Admin.SessionSeatPlans.Col.Row" xml:space="preserve"><value>الصف</value></data>
+  <data name="Admin.SessionSeatPlans.Col.Seat" xml:space="preserve"><value>المقعد</value></data>
+  <data name="Admin.SessionSeatPlans.Col.Kind" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.SessionSeatPlans.Col.Actions" xml:space="preserve"><value>الإجراءات</value></data>
+  <data name="Admin.SessionSeatPlans.Release" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.SessionSeatPlans.Released" xml:space="preserve"><value>تم إلغاء الحجز.</value></data>
+  <data name="Admin.SessionSeatPlans.Summary" xml:space="preserve"><value>{0} حجز نشط</value></data>
 </root>

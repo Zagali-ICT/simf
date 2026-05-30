@@ -48,6 +48,10 @@ public static class CpNavigation
             new("Module.Sessions", "/admin/sessions"),
             // D-134 Sprint B (D-135) — venue halls (SIMF-FDS-004 §5.2).
             new("Module.Halls", "/admin/halls"),
+            // D-182 (CP UI for D-175 seat reservations) — hall seat
+            // layout editor + per-session seat plan.
+            new("Module.HallSeatLayouts", "/admin/halls/seat-layouts"),
+            new("Module.SessionSeatPlans", "/admin/sessions/seat-plans"),
             // D-153 — programme speakers (SIMF-DAT-001 §5.4).
             new("Module.Speakers", "/admin/speakers"),
             new("Module.Bookings", "/m/bookings", IsStub: true),

@@ -38,6 +38,11 @@ public sealed class CpNavigationTests
     [InlineData("/admin/others/pending", "Module.AdminOthersPending")]
     [InlineData("/admin/visitors", "Module.AdminVisitors")]
     [InlineData("/admin/visitors/pending", "Module.AdminVisitorsPending")]
+    // D-182 (CP UI for D-175 seat reservations) — two new entries under
+    // Nav.Programme. Pinned here so a future nav refactor renaming these
+    // routes (the same shape that bit D-180) trips a real test.
+    [InlineData("/admin/halls/seat-layouts", "Module.HallSeatLayouts")]
+    [InlineData("/admin/sessions/seat-plans", "Module.SessionSeatPlans")]
     public void LabelKeyForHref_resolves_a_known_route(string href, string expectedKey)
     {
         Assert.Equal(expectedKey, CpNavigation.LabelKeyForHref(href));
