@@ -1460,6 +1460,68 @@ internal static class AccountEndpoints
             return Forward(await api.AdminReleaseSessionSeatAsync(
                 sessionId, reservationId, token));
         });
+
+        // D-183 (CP UI for D-174 delegations).
+        group.MapPost("/admin/delegations/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListAdminDelegationsAsync(body, token));
+        });
+
+        group.MapGet("/admin/delegations/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetAdminDelegationAsync(id, token));
+        });
+
+        group.MapPost("/admin/delegations",
+            async (CreateDelegationRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateAdminDelegationAsync(body, token));
+        });
+
+        group.MapPut("/admin/delegations/{id:guid}",
+            async (Guid id, UpdateDelegationRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateAdminDelegationAsync(id, body, token));
+        });
+
+        group.MapDelete("/admin/delegations/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateAdminDelegationAsync(id, token));
+        });
+
+        // D-183 (CP UI for D-174 meeting requests).
+        group.MapPost("/admin/meeting-requests/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListAdminMeetingRequestsAsync(body, token));
+        });
+
+        group.MapPut("/admin/meeting-requests/{id:guid}/respond",
+            async (Guid id, RespondToMeetingRequestRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RespondToAdminMeetingRequestAsync(
+                id, body, token));
+        });
     }
 
     /// <summary>

@@ -42,6 +42,8 @@
   <data name="Module.Halls" xml:space="preserve"><value>القاعات والمقاعد</value></data>
   <data name="Module.HallSeatLayouts" xml:space="preserve"><value>مخططات مقاعد القاعات</value></data>
   <data name="Module.SessionSeatPlans" xml:space="preserve"><value>مخطط مقاعد الجلسات</value></data>
+  <data name="Module.Delegations" xml:space="preserve"><value>الوفود</value></data>
+  <data name="Module.MeetingRequests" xml:space="preserve"><value>طلبات المقابلات</value></data>
   <data name="Module.Gates" xml:space="preserve"><value>البوابات</value></data>
   <data name="Module.GatesOperator" xml:space="preserve"><value>مشغل البوابة</value></data>
   <data name="Module.Speakers" xml:space="preserve"><value>المتحدثون</value></data>
@@ -1478,4 +1480,63 @@
   <data name="Admin.SessionSeatPlans.Release" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.SessionSeatPlans.Released" xml:space="preserve"><value>تم إلغاء الحجز.</value></data>
   <data name="Admin.SessionSeatPlans.Summary" xml:space="preserve"><value>{0} حجز نشط</value></data>
+  <!-- D-183 (CP UI for D-174 delegations) -->
+  <data name="Admin.Delegations.Title" xml:space="preserve"><value>الوفود</value></data>
+  <data name="Admin.Delegations.New" xml:space="preserve"><value>وفد جديد</value></data>
+  <data name="Admin.Delegations.None" xml:space="preserve"><value>لا توجد وفود حتى الآن.</value></data>
+  <data name="Admin.Delegations.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.Delegations.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الوفود.</value></data>
+  <data name="Admin.Delegations.Saved" xml:space="preserve"><value>تم حفظ الوفد.</value></data>
+  <data name="Admin.Delegations.Deleted" xml:space="preserve"><value>تم تعطيل الوفد.</value></data>
+  <data name="Admin.Delegations.Delete.Confirm" xml:space="preserve"><value>هل تريد تعطيل هذا الوفد؟ سيختفي من القائمة العامة فوراً.</value></data>
+  <data name="Admin.Delegations.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Delegations.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.Delegations.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Delegations.Delete" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.Delegations.Add.Title" xml:space="preserve"><value>إنشاء وفد</value></data>
+  <data name="Admin.Delegations.Edit.Title" xml:space="preserve"><value>تعديل الوفد</value></data>
+  <data name="Admin.Delegations.Col.Name" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Admin.Delegations.Col.NameArabic" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Delegations.Col.Country" xml:space="preserve"><value>الدولة</value></data>
+  <data name="Admin.Delegations.Col.MemberCount" xml:space="preserve"><value>عدد الأعضاء</value></data>
+  <data name="Admin.Delegations.Col.Priority" xml:space="preserve"><value>أولوية</value></data>
+  <data name="Admin.Delegations.Col.International" xml:space="preserve"><value>دولي</value></data>
+  <data name="Admin.Delegations.Col.DisplayOrder" xml:space="preserve"><value>الترتيب</value></data>
+  <data name="Admin.Delegations.Col.Active" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="Admin.Delegations.Field.Name" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.Delegations.Field.NameArabic" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Delegations.Field.CountryId" xml:space="preserve"><value>رمز الدولة (ISO 3166-1 رقمي، اتركه فارغاً للا شيء)</value></data>
+  <data name="Admin.Delegations.Field.MemberCount" xml:space="preserve"><value>عدد الأعضاء</value></data>
+  <data name="Admin.Delegations.Field.IsPriority" xml:space="preserve"><value>أولوية (تظهر أولاً في القائمة العامة)</value></data>
+  <data name="Admin.Delegations.Field.IsInternational" xml:space="preserve"><value>دولي</value></data>
+  <data name="Admin.Delegations.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض (الأصغر يظهر أولاً)</value></data>
+  <data name="Admin.Delegations.Field.IsActive" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="Admin.Delegations.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <!-- D-183 (CP UI for D-174 meeting requests) -->
+  <data name="Admin.MeetingRequests.Title" xml:space="preserve"><value>طلبات المقابلات</value></data>
+  <data name="Admin.MeetingRequests.None" xml:space="preserve"><value>لا توجد طلبات مقابلات حتى الآن.</value></data>
+  <data name="Admin.MeetingRequests.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.MeetingRequests.LoadFailed" xml:space="preserve"><value>تعذّر تحميل طلبات المقابلات.</value></data>
+  <data name="Admin.MeetingRequests.Filter.Status" xml:space="preserve"><value>تصفية الحالة</value></data>
+  <data name="Admin.MeetingRequests.Filter.All" xml:space="preserve"><value>الكل</value></data>
+  <data name="Admin.MeetingRequests.Filter.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
+  <data name="Admin.MeetingRequests.Filter.Accepted" xml:space="preserve"><value>مقبول</value></data>
+  <data name="Admin.MeetingRequests.Filter.Rejected" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.MeetingRequests.Col.Session" xml:space="preserve"><value>الجلسة</value></data>
+  <data name="Admin.MeetingRequests.Col.Requester" xml:space="preserve"><value>مقدّم الطلب</value></data>
+  <data name="Admin.MeetingRequests.Col.Subject" xml:space="preserve"><value>الموضوع</value></data>
+  <data name="Admin.MeetingRequests.Col.Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.MeetingRequests.Col.CreatedAt" xml:space="preserve"><value>تاريخ الطلب</value></data>
+  <data name="Admin.MeetingRequests.Col.RespondedAt" xml:space="preserve"><value>تاريخ الردّ</value></data>
+  <data name="Admin.MeetingRequests.Col.Actions" xml:space="preserve"><value>الإجراءات</value></data>
+  <data name="Admin.MeetingRequests.Respond" xml:space="preserve"><value>الردّ</value></data>
+  <data name="Admin.MeetingRequests.Respond.Title" xml:space="preserve"><value>الردّ على طلب المقابلة</value></data>
+  <data name="Admin.MeetingRequests.Respond.Status" xml:space="preserve"><value>القرار</value></data>
+  <data name="Admin.MeetingRequests.Respond.Accept" xml:space="preserve"><value>قبول</value></data>
+  <data name="Admin.MeetingRequests.Respond.Reject" xml:space="preserve"><value>رفض</value></data>
+  <data name="Admin.MeetingRequests.Respond.Note" xml:space="preserve"><value>ملاحظة الردّ (اختيارية، حتى 2000 محرف)</value></data>
+  <data name="Admin.MeetingRequests.Respond.Submit" xml:space="preserve"><value>إرسال الردّ</value></data>
+  <data name="Admin.MeetingRequests.Respond.Done" xml:space="preserve"><value>تم إرسال الردّ.</value></data>
+  <data name="Admin.MeetingRequests.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.MeetingRequests.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
 </root>

@@ -52,6 +52,9 @@ public static class CpNavigation
             // layout editor + per-session seat plan.
             new("Module.HallSeatLayouts", "/admin/halls/seat-layouts"),
             new("Module.SessionSeatPlans", "/admin/sessions/seat-plans"),
+            // D-183 (CP UI for D-174 delegations + meeting requests).
+            new("Module.Delegations", "/admin/delegations"),
+            new("Module.MeetingRequests", "/admin/meeting-requests"),
             // D-153 — programme speakers (SIMF-DAT-001 §5.4).
             new("Module.Speakers", "/admin/speakers"),
             new("Module.Bookings", "/m/bookings", IsStub: true),

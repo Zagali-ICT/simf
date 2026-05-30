@@ -1,0 +1,261 @@
+@* D-183 (CP UI for D-174 meeting requests, Mockup page 27) — admin
+   queue for in-session meeting / interview requests submitted by the
+   audience. Filterable by status. Respond modal accepts / rejects
+   with an optional note. Pending → Pending transitions are rejected
+   server-side (MEETING_REQUEST_STATUS_INVALID). *@
+@page "/admin/meeting-requests"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.MeetingRequests.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.MeetingRequests.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.MeetingRequests.Filter.Status"]</span>
+            <select class="simf-field__input" value="@_statusFilter"
+                    @onchange="OnFilterChangedAsync" disabled="@_loading">
+                <option value="">@L["Admin.MeetingRequests.Filter.All"]</option>
+                <option value="Pending">@L["Admin.MeetingRequests.Filter.Pending"]</option>
+                <option value="Accepted">@L["Admin.MeetingRequests.Filter.Accepted"]</option>
+                <option value="Rejected">@L["Admin.MeetingRequests.Filter.Rejected"]</option>
+            </select>
+        </label>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.MeetingRequests.Loading"]</p>
+        }
+        else if (_page.Items.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.MeetingRequests.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.MeetingRequests.Col.Session"]</th>
+                        <th>@L["Admin.MeetingRequests.Col.Requester"]</th>
+                        <th>@L["Admin.MeetingRequests.Col.Subject"]</th>
+                        <th>@L["Admin.MeetingRequests.Col.Status"]</th>
+                        <th>@L["Admin.MeetingRequests.Col.CreatedAt"]</th>
+                        <th>@L["Admin.MeetingRequests.Col.RespondedAt"]</th>
+                        <th>@L["Admin.MeetingRequests.Col.Actions"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _page.Items)
+                    {
+                        <tr>
+                            <td>@row.SessionCode — @row.SessionTitle</td>
+                            <td>
+                                <div>@row.RequesterName</div>
+                                @if (!string.IsNullOrEmpty(row.RequesterEmail))
+                                {
+                                    <div class="simf-table__sub">@row.RequesterEmail</div>
+                                }
+                            </td>
+                            <td>@row.Subject</td>
+                            <td>
+                                @switch (row.Status)
+                                {
+                                    case MeetingRequestStatus.Pending:
+                                        <SimfPill Variant="warn">@L["Admin.MeetingRequests.Filter.Pending"]</SimfPill>
+                                        break;
+                                    case MeetingRequestStatus.Accepted:
+                                        <SimfPill Variant="on">@L["Admin.MeetingRequests.Filter.Accepted"]</SimfPill>
+                                        break;
+                                    case MeetingRequestStatus.Rejected:
+                                        <SimfPill Variant="off">@L["Admin.MeetingRequests.Filter.Rejected"]</SimfPill>
+                                        break;
+                                }
+                            </td>
+                            <td>@row.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</td>
+                            <td>
+                                @(row.RespondedAt is null ? "—"
+                                    : row.RespondedAt.Value.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'"))
+                            </td>
+                            <td>
+                                @if (row.Status == MeetingRequestStatus.Pending)
+                                {
+                                    <SimfButton Type="button" Disabled="_busy"
+                                                OnClick="@(() => OnRespond(row))">
+                                        @L["Admin.MeetingRequests.Respond"]
+                                    </SimfButton>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="simf-table__summary">
+                @(string.Format(L["Admin.MeetingRequests.Summary"],
+                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
+            </p>
+        }
+    </div>
+</div>
+
+@if (_respondOpen && _respondTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.MeetingRequests.Respond.Title"]"
+               OnClose="@(() => _respondOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <dl class="simf-dl">
+                    <dt>@L["Admin.MeetingRequests.Col.Session"]</dt>
+                    <dd>@_respondTarget.SessionCode — @_respondTarget.SessionTitle</dd>
+                    <dt>@L["Admin.MeetingRequests.Col.Requester"]</dt>
+                    <dd>@_respondTarget.RequesterName</dd>
+                    <dt>@L["Admin.MeetingRequests.Col.Subject"]</dt>
+                    <dd>@_respondTarget.Subject</dd>
+                </dl>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.MeetingRequests.Respond.Status"]</span>
+                    <select class="simf-field__input" value="@((int)_respondStatus)"
+                            @onchange="OnRespondStatusChanged" disabled="@_busy">
+                        <option value="@((int)MeetingRequestStatus.Accepted)">
+                            @L["Admin.MeetingRequests.Respond.Accept"]
+                        </option>
+                        <option value="@((int)MeetingRequestStatus.Rejected)">
+                            @L["Admin.MeetingRequests.Respond.Reject"]
+                        </option>
+                    </select>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.MeetingRequests.Respond.Note"]</span>
+                    <textarea class="simf-field__input" rows="4"
+                              value="@_respondNote"
+                              @onchange="OnRespondNoteChanged"
+                              disabled="@_busy"></textarea>
+                </label>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Disabled="_busy"
+                        OnClick="@(() => _respondOpen = false)">
+                @L["Admin.MeetingRequests.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SendResponseAsync" Loading="_busy">
+                @L["Admin.MeetingRequests.Respond.Submit"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 50 };
+    private GridPage<AdminMeetingRequestRow> _page = new();
+    private string _statusFilter = string.Empty;
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private bool _respondOpen;
+    private AdminMeetingRequestRow? _respondTarget;
+    private MeetingRequestStatus _respondStatus = MeetingRequestStatus.Accepted;
+    private string _respondNote = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnFilterChangedAsync(ChangeEventArgs e)
+    {
+        _statusFilter = (e.Value?.ToString() ?? string.Empty).Trim();
+        _toast = null;
+        // D-183 review-pass: mutate the existing GridQuery so Sort /
+        // SortDescending / Search are preserved for a future pager UI
+        // (code-reviewer flagged the previous full-rebuild as fragile).
+        // Filter change resets paging — Skip = 0 is the explicit intent.
+        _query.Filters = string.IsNullOrEmpty(_statusFilter)
+            ? new Dictionary<string, string>()
+            : new Dictionary<string, string> { ["status"] = _statusFilter };
+        _query.Skip = 0;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminMeetingRequestRow>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/meeting-requests/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.MeetingRequests.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnRespond(AdminMeetingRequestRow row)
+    {
+        _respondTarget = row;
+        _respondStatus = MeetingRequestStatus.Accepted;
+        _respondNote = string.Empty;
+        _respondOpen = true;
+        _toast = null;
+    }
+
+    private void OnRespondStatusChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var v))
+        {
+            _respondStatus = (MeetingRequestStatus)v;
+        }
+    }
+
+    private void OnRespondNoteChanged(ChangeEventArgs e) =>
+        _respondNote = e.Value?.ToString() ?? string.Empty;
+
+    private async Task SendResponseAsync()
+    {
+        if (_respondTarget is null || _busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminMeetingRequestRow>>(
+                "simfAccount.putJson",
+                $"/account/api/admin/meeting-requests/{_respondTarget.Id}/respond",
+                new RespondToMeetingRequestRequest
+                {
+                    Status = _respondStatus,
+                    ResponseNote = string.IsNullOrWhiteSpace(_respondNote)
+                        ? null : _respondNote.Trim(),
+                });
+            if (env is { Success: true })
+            {
+                _respondOpen = false;
+                _toast = new Toast("success", L["Admin.MeetingRequests.Respond.Done"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.MeetingRequests.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+}

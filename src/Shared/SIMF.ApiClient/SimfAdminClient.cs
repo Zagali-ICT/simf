@@ -1473,6 +1473,64 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"sessions/{sessionId}/seats/{reservationId}",
             content: null, accessToken, cancellationToken);
 
+    // -- D-183 (CP UI for D-174 delegations) -------------------------------
+
+    public Task<ApiCallResult<GridPage<AdminDelegationSummary>>> ListAdminDelegationsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminDelegationSummary>>(
+            HttpMethod.Post, "delegations/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminDelegationSummary>> GetAdminDelegationAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminDelegationSummary>(
+            HttpMethod.Get, $"delegations/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminDelegationSummary>> CreateAdminDelegationAsync(
+        CreateDelegationRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminDelegationSummary>(
+            HttpMethod.Post, "delegations",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminDelegationSummary>> UpdateAdminDelegationAsync(
+        Guid id, UpdateDelegationRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminDelegationSummary>(
+            HttpMethod.Put, $"delegations/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeactivateAdminDelegationAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"delegations/{id}", content: null,
+            accessToken, cancellationToken);
+
+    // -- D-183 (CP UI for D-174 meeting requests) ---------------------------
+
+    public Task<ApiCallResult<GridPage<AdminMeetingRequestRow>>> ListAdminMeetingRequestsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminMeetingRequestRow>>(
+            HttpMethod.Post, "meeting-requests/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminMeetingRequestRow>> RespondToAdminMeetingRequestAsync(
+        Guid id, RespondToMeetingRequestRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminMeetingRequestRow>(
+            HttpMethod.Put, $"meeting-requests/{id}/respond",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     private static ApiResult<T> TransportFailure<T>(string message, string messageArabic) =>
         ApiResult<T>.Fail(new ApiError
         {

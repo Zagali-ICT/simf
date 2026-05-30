@@ -87,6 +87,65 @@ public sealed class MeetingRequestsTests : IClassFixture<SimfApiFactory>
         Assert.NotNull(responded.RespondedAt);
     }
 
+    [Theory]
+    [InlineData("Pending", MeetingRequestStatus.Pending)]
+    [InlineData("Accepted", MeetingRequestStatus.Accepted)]
+    [InlineData("Rejected", MeetingRequestStatus.Rejected)]
+    public async Task Admin_list_filters_by_status_key(
+        string filterValue, MeetingRequestStatus expected)
+    {
+        // D-183 (CP UI for D-174 meeting requests) — the
+        // MeetingRequestsList.razor page is the only consumer pinning
+        // `Filters["status"] = "Pending"|"Accepted"|"Rejected"`.
+        // This test pins that wire shape so a backend rename to
+        // `Status` (uppercase) or a switch to enum-int strings breaks
+        // the API tests instead of breaking the CP page silently.
+        var session = await SeedActiveSessionAsync();
+        var visitor = await SignInApprovedVisitorAsync();
+        // Seed three requests in three distinct statuses.
+        var pendingId = (await (await PostAuthAsync(
+            $"/api/v1/sessions/{session.Id}/meeting-requests",
+            new SubmitMeetingRequestRequest
+            {
+                RequesterName = "Pending", Subject = "Stays pending",
+            }, visitor)).Content.ReadFromJsonAsync<ApiResult<MeetingRequestSubmitted>>())!.Data!.Id;
+        var acceptedId = (await (await PostAuthAsync(
+            $"/api/v1/sessions/{session.Id}/meeting-requests",
+            new SubmitMeetingRequestRequest
+            {
+                RequesterName = "Accept", Subject = "Will be accepted",
+            }, visitor)).Content.ReadFromJsonAsync<ApiResult<MeetingRequestSubmitted>>())!.Data!.Id;
+        var rejectedId = (await (await PostAuthAsync(
+            $"/api/v1/sessions/{session.Id}/meeting-requests",
+            new SubmitMeetingRequestRequest
+            {
+                RequesterName = "Reject", Subject = "Will be rejected",
+            }, visitor)).Content.ReadFromJsonAsync<ApiResult<MeetingRequestSubmitted>>())!.Data!.Id;
+
+        var admin = await CreateAdministratorAndSignInAsync();
+        await PutAuthAsync(
+            $"/api/v1/admin/meeting-requests/{acceptedId}/respond",
+            new RespondToMeetingRequestRequest { Status = MeetingRequestStatus.Accepted },
+            admin);
+        await PutAuthAsync(
+            $"/api/v1/admin/meeting-requests/{rejectedId}/respond",
+            new RespondToMeetingRequestRequest { Status = MeetingRequestStatus.Rejected },
+            admin);
+
+        var list = await PostAuthAsync(
+            "/api/v1/admin/meeting-requests/list",
+            new GridQuery
+            {
+                Top = 100,
+                Filters = new Dictionary<string, string> { ["status"] = filterValue },
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminMeetingRequestRow>>>())!.Data!;
+        Assert.NotEmpty(page.Items);
+        Assert.All(page.Items, r => Assert.Equal(expected, r.Status));
+    }
+
     [Fact]
     public async Task Respond_with_Pending_status_returns_400()
     {

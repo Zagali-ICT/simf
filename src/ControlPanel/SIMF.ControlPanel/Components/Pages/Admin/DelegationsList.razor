@@ -1,0 +1,334 @@
+@* D-183 (CP UI for D-174 delegations, Mockup page 21) — admin CRUD
+   over the public list of forum delegations. The public list is
+   sorted IsPriority desc, DisplayOrder asc, NameArabic asc — admins
+   control all three fields here. *@
+@page "/admin/delegations"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Delegations.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Delegations.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form__actions">
+            <SimfButton Type="button" OnClick="OnAdd">
+                @L["Admin.Delegations.New"]
+            </SimfButton>
+        </div>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.Delegations.Loading"]</p>
+        }
+        else if (_page.Items.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.Delegations.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.Delegations.Col.Name"]</th>
+                        <th>@L["Admin.Delegations.Col.NameArabic"]</th>
+                        <th>@L["Admin.Delegations.Col.Country"]</th>
+                        <th>@L["Admin.Delegations.Col.MemberCount"]</th>
+                        <th>@L["Admin.Delegations.Col.Priority"]</th>
+                        <th>@L["Admin.Delegations.Col.International"]</th>
+                        <th>@L["Admin.Delegations.Col.DisplayOrder"]</th>
+                        <th>@L["Admin.Delegations.Col.Active"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _page.Items)
+                    {
+                        <tr>
+                            <td>@row.Name</td>
+                            <td>@row.NameArabic</td>
+                            <td>@(row.CountryName ?? "—")</td>
+                            <td>@row.MemberCount</td>
+                            <td>@(row.IsPriority ? "✓" : "—")</td>
+                            <td>@(row.IsInternational ? "✓" : "—")</td>
+                            <td>@row.DisplayOrder</td>
+                            <td>@(row.IsActive ? "✓" : "—")</td>
+                            <td>
+                                <SimfButton Type="button" Disabled="_busy"
+                                            OnClick="@(() => OnEdit(row))">
+                                    @L["Admin.Delegations.Edit"]
+                                </SimfButton>
+                                <SimfButton Type="button" Disabled="_busy"
+                                            OnClick="@(() => OnDeleteAsync(row))">
+                                    @L["Admin.Delegations.Delete"]
+                                </SimfButton>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="simf-table__summary">
+                @(string.Format(L["Admin.Delegations.Summary"],
+                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
+            </p>
+        }
+    </div>
+</div>
+
+@if (_editOpen)
+{
+    <SimfModal Open="true"
+               Title="@(_isEdit ? L["Admin.Delegations.Edit.Title"] : L["Admin.Delegations.Add.Title"])"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.Delegations.Field.Name"]"
+                               Value="@_form.Name"
+                               ValueChanged="@(v => _form.Name = v)"
+                               ValueExpression="@(() => _form.Name)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Delegations.Field.NameArabic"]"
+                               Value="@_form.NameArabic"
+                               ValueChanged="@(v => _form.NameArabic = v)"
+                               ValueExpression="@(() => _form.NameArabic)"
+                               Disabled="_busy" />
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Delegations.Field.CountryId"]</span>
+                    <input class="simf-field__input" type="number" min="1" max="999"
+                           value="@(_form.CountryId?.ToString() ?? string.Empty)"
+                           @onchange="OnCountryIdChanged"
+                           disabled="@_busy" />
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Delegations.Field.MemberCount"]</span>
+                    <input class="simf-field__input" type="number" min="0" max="100000"
+                           value="@_form.MemberCount"
+                           @onchange="OnMemberCountChanged"
+                           disabled="@_busy" />
+                </label>
+                <SimfCheckbox Value="_form.IsPriority"
+                              ValueChanged="@(v => _form.IsPriority = v)"
+                              Disabled="_busy">
+                    @L["Admin.Delegations.Field.IsPriority"]
+                </SimfCheckbox>
+                <SimfCheckbox Value="_form.IsInternational"
+                              ValueChanged="@(v => _form.IsInternational = v)"
+                              Disabled="_busy">
+                    @L["Admin.Delegations.Field.IsInternational"]
+                </SimfCheckbox>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Delegations.Field.DisplayOrder"]</span>
+                    <input class="simf-field__input" type="number" min="0" max="99999"
+                           value="@_form.DisplayOrder"
+                           @onchange="OnDisplayOrderChanged"
+                           disabled="@_busy" />
+                </label>
+                <SimfCheckbox Value="_form.IsActive"
+                              ValueChanged="@(v => _form.IsActive = v)"
+                              Disabled="_busy">
+                    @L["Admin.Delegations.Field.IsActive"]
+                </SimfCheckbox>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Disabled="_busy" OnClick="@(() => _editOpen = false)">
+                @L["Admin.Delegations.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+                @L["Admin.Delegations.Save"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private sealed class FormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string NameArabic { get; set; } = string.Empty;
+        public int? CountryId { get; set; }
+        public int MemberCount { get; set; }
+        public bool IsPriority { get; set; }
+        public bool IsInternational { get; set; }
+        public int DisplayOrder { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+
+    private GridQuery _query = new() { Top = 50 };
+    private GridPage<AdminDelegationSummary> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private bool _editOpen;
+    private bool _isEdit;
+    private Guid _editingId;
+    private FormModel _form = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminDelegationSummary>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/delegations/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Delegations.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnAdd()
+    {
+        _editOpen = true;
+        _isEdit = false;
+        _editingId = Guid.Empty;
+        _form = new FormModel();
+        _toast = null;
+    }
+
+    private void OnEdit(AdminDelegationSummary row)
+    {
+        _editOpen = true;
+        _isEdit = true;
+        _editingId = row.Id;
+        _form = new FormModel
+        {
+            Name = row.Name,
+            NameArabic = row.NameArabic,
+            CountryId = row.CountryId,
+            MemberCount = row.MemberCount,
+            IsPriority = row.IsPriority,
+            IsInternational = row.IsInternational,
+            DisplayOrder = row.DisplayOrder,
+            IsActive = row.IsActive,
+        };
+        _toast = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            ApiResult<AdminDelegationSummary>? env;
+            if (_isEdit)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminDelegationSummary>>(
+                    "simfAccount.putJson",
+                    $"/account/api/admin/delegations/{_editingId}",
+                    new UpdateDelegationRequest
+                    {
+                        Name = _form.Name,
+                        NameArabic = _form.NameArabic,
+                        CountryId = _form.CountryId,
+                        MemberCount = _form.MemberCount,
+                        IsPriority = _form.IsPriority,
+                        IsInternational = _form.IsInternational,
+                        DisplayOrder = _form.DisplayOrder,
+                        IsActive = _form.IsActive,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminDelegationSummary>>(
+                    "simfAccount.postJson",
+                    "/account/api/admin/delegations",
+                    new CreateDelegationRequest
+                    {
+                        Name = _form.Name,
+                        NameArabic = _form.NameArabic,
+                        CountryId = _form.CountryId,
+                        MemberCount = _form.MemberCount,
+                        IsPriority = _form.IsPriority,
+                        IsInternational = _form.IsInternational,
+                        DisplayOrder = _form.DisplayOrder,
+                    });
+            }
+            if (env is { Success: true })
+            {
+                _editOpen = false;
+                _toast = new Toast("success", L["Admin.Delegations.Saved"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Delegations.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteAsync(AdminDelegationSummary row)
+    {
+        if (_busy) return;
+        // D-183 review-pass: confirm destructive actions. Soft-delete or
+        // not, one stray click on the wrong row removes the delegation
+        // from the public list immediately, and recovery requires the
+        // admin to reactivate by hand (no undo button today).
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", L["Admin.Delegations.Delete.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/delegations/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.Delegations.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Delegations.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnCountryIdChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        _form.CountryId = string.IsNullOrWhiteSpace(raw) ? null
+            : (int.TryParse(raw, out var n) ? n : (int?)null);
+    }
+
+    private void OnMemberCountChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _form.MemberCount = n;
+    }
+
+    private void OnDisplayOrderChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _form.DisplayOrder = n;
+    }
+}
