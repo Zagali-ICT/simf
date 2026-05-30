@@ -1,17 +1,13 @@
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using SIMF.Application.Auditing;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
-using SIMF.Common.Options;
-using SIMF.Domain.Auditing;
-using SIMF.Infrastructure.Identity;
-
 using SIMF.Common.Enums;
+using SIMF.Common.Options;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace SIMF.Api.Authentication;
 
