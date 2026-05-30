@@ -1,0 +1,185 @@
+@* D-199 — read-only Gates operations dashboard. A live overview of who is
+   currently checked-in inside the venue plus the gate roster. Consumes the
+   existing gate BFF passthroughs only (D-148): GET .../gates/reports/currently-inside
+   and POST .../gates/list. No create / edit / delete — operations happen in the
+   operator console (/admin/gates/operator) and gate CRUD (/admin/gates). *@
+@page "/admin/gates/dashboard"
+@layout CpShellLayout
+@attribute [Authorize(Roles = "Administrator")]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.GatesDashboard.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.GatesDashboard.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form__actions">
+            <SimfButton Type="button" Loading="_loading"
+                        LoadingLabel="@L["Admin.GatesDashboard.Refreshing"]"
+                        OnClick="LoadAsync">
+                @L["Admin.GatesDashboard.Refresh"]
+            </SimfButton>
+        </div>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.GatesDashboard.Loading"]</p>
+        }
+        else
+        {
+            <div class="simf-form__actions">
+                <SimfStatCard Title="@L["Admin.GatesDashboard.Stat.Inside"]"
+                              Value="@_inside.Count.ToString(CultureInfo.InvariantCulture)" />
+                <SimfStatCard Title="@L["Admin.GatesDashboard.Stat.Gates"]"
+                              Value="@_gates.Count.ToString(CultureInfo.InvariantCulture)" />
+            </div>
+
+            <h3>@L["Admin.GatesDashboard.Inside.Title"]</h3>
+            @if (_inside.Count == 0)
+            {
+                <SimfEmptyState Title="@L["Admin.GatesDashboard.Inside.None"]" />
+            }
+            else
+            {
+                <table class="simf-table">
+                    <thead>
+                        <tr>
+                            <th>@L["Admin.GatesDashboard.Inside.Col.Name"]</th>
+                            <th>@L["Admin.GatesDashboard.Inside.Col.ProfileType"]</th>
+                            <th>@L["Admin.GatesDashboard.Inside.Col.Gate"]</th>
+                            <th>@L["Admin.GatesDashboard.Inside.Col.EnteredAt"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _inside)
+                        {
+                            <tr>
+                                <td>@NameOf(row)</td>
+                                <td>@(string.IsNullOrWhiteSpace(row.ProfileTypeName) ? "—" : row.ProfileTypeName)</td>
+                                <td>@row.LastCheckInGateCode</td>
+                                <td>@row.LastCheckInAtUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <p class="simf-table__summary">
+                    @(string.Format(L["Admin.GatesDashboard.Inside.Summary"], _inside.Count))
+                </p>
+            }
+
+            <h3>@L["Admin.GatesDashboard.Gates.Title"]</h3>
+            @if (_gates.Count == 0)
+            {
+                <SimfEmptyState Title="@L["Admin.GatesDashboard.Gates.None"]" />
+            }
+            else
+            {
+                <table class="simf-table">
+                    <thead>
+                        <tr>
+                            <th>@L["Admin.GatesDashboard.Gates.Col.Code"]</th>
+                            <th>@L["Admin.GatesDashboard.Gates.Col.Name"]</th>
+                            <th>@L["Admin.GatesDashboard.Gates.Col.Active"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var gate in _gates)
+                        {
+                            <tr>
+                                <td>@gate.Code</td>
+                                <td>@NameOf(gate)</td>
+                                <td>
+                                    @if (gate.IsActive)
+                                    {
+                                        <SimfPill Variant="on">@L["Admin.GatesDashboard.Gates.Active.Yes"]</SimfPill>
+                                    }
+                                    else
+                                    {
+                                        <SimfPill Variant="off">@L["Admin.GatesDashboard.Gates.Active.No"]</SimfPill>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <p class="simf-table__summary">
+                    @(string.Format(L["Admin.GatesDashboard.Gates.Summary"], _gates.Count))
+                </p>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private IReadOnlyList<AdminCurrentlyInsideRow> _inside = Array.Empty<AdminCurrentlyInsideRow>();
+    private IReadOnlyList<AdminGateSummary> _gates = Array.Empty<AdminGateSummary>();
+    private bool _loading;
+    private Toast? _toast;
+
+    // The simfAccount JS module is only available once the interactive Blazor
+    // connection is up — running these calls in OnInitializedAsync would throw
+    // on the SSR prerender pass and surface Blazor's unhandled-error banner
+    // (same idiom as GateOperatorConsole).
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) { return; }
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _toast = null;
+        try
+        {
+            var insideEnv = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminCurrentlyInsideRow>>>(
+                "simfAccount.getJson",
+                "/account/api/admin/gates/reports/currently-inside");
+            if (insideEnv is { Success: true, Data: not null })
+            {
+                _inside = insideEnv.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    insideEnv?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.GatesDashboard.LoadFailed"]);
+            }
+
+            var gatesEnv = await JS.InvokeAsync<ApiResult<GridPage<AdminGateSummary>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/gates/list", new GridQuery { Top = 200 });
+            if (gatesEnv is { Success: true, Data: not null })
+            {
+                _gates = gatesEnv.Data.Items;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    gatesEnv?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.GatesDashboard.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private static string NameOf(AdminCurrentlyInsideRow row) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? (string.IsNullOrWhiteSpace(row.DisplayNameArabic) ? row.DisplayName : row.DisplayNameArabic)
+            : row.DisplayName;
+
+    private static string NameOf(AdminGateSummary gate) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? (string.IsNullOrWhiteSpace(gate.NameArabic) ? gate.Name : gate.NameArabic)
+            : gate.Name;
+}

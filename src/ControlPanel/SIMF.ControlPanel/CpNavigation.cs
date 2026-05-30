@@ -48,6 +48,8 @@ public static class CpNavigation
             new("Module.Themes", "/admin/themes"),
             // D-165 (gap doc G3) — programme sessions (SIMF-FDS-004 §5.3 + PDF §2.9).
             new("Module.Sessions", "/admin/sessions"),
+            // Read-only run-of-show timeline over the existing sessions list.
+            new("Module.ProgrammeTimeline", "/admin/programme/timeline"),
             // D-134 Sprint B (D-135) — venue halls (SIMF-FDS-004 §5.2).
             new("Module.Halls", "/admin/halls"),
             // D-182 (CP UI for D-175 seat reservations) — hall seat
@@ -130,6 +132,8 @@ public static class CpNavigation
             // (SIMF-FDS-003 §5.6 / SIMF-API-GATES-001).
             new("Module.Gates", "/admin/gates"),
             new("Module.GatesOperator", "/admin/gates/operator"),
+            // Read-only gates operations dashboard over existing gate reports.
+            new("Module.GatesDashboard", "/admin/gates/dashboard"),
             new("Module.Configuration", "/m/configuration", IsStub: true),
             // D-134 Sprint A — Operation log viewer over the existing
             // OperationLogEntry table (no migration).

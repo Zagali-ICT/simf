@@ -1887,4 +1887,46 @@
   <data name="Admin.Companies.Provision.Done" xml:space="preserve"><value>Account provisioned. It is pending approval.</value></data>
   <data name="Admin.Companies.Provision.Required" xml:space="preserve"><value>The contact name and email are both required.</value></data>
   <data name="Admin.Companies.Provision.Failed" xml:space="preserve"><value>Could not provision the account. Please try again.</value></data>
+
+  <!-- Gates operations dashboard (read-only live overview). -->
+  <data name="Module.GatesDashboard" xml:space="preserve"><value>Gates dashboard</value></data>
+  <data name="Admin.GatesDashboard.Title" xml:space="preserve"><value>Gates operations dashboard</value></data>
+  <data name="Admin.GatesDashboard.Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Admin.GatesDashboard.Refreshing" xml:space="preserve"><value>Refreshing…</value></data>
+  <data name="Admin.GatesDashboard.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.GatesDashboard.LoadFailed" xml:space="preserve"><value>Could not load the gates dashboard.</value></data>
+  <data name="Admin.GatesDashboard.Stat.Inside" xml:space="preserve"><value>Currently inside</value></data>
+  <data name="Admin.GatesDashboard.Stat.Gates" xml:space="preserve"><value>Gates</value></data>
+  <data name="Admin.GatesDashboard.Inside.Title" xml:space="preserve"><value>Currently inside</value></data>
+  <data name="Admin.GatesDashboard.Inside.None" xml:space="preserve"><value>No one is currently inside the venue.</value></data>
+  <data name="Admin.GatesDashboard.Inside.Col.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Admin.GatesDashboard.Inside.Col.ProfileType" xml:space="preserve"><value>Profile type</value></data>
+  <data name="Admin.GatesDashboard.Inside.Col.Gate" xml:space="preserve"><value>Gate</value></data>
+  <data name="Admin.GatesDashboard.Inside.Col.EnteredAt" xml:space="preserve"><value>Entered at</value></data>
+  <data name="Admin.GatesDashboard.Inside.Summary" xml:space="preserve"><value>{0} currently inside</value></data>
+  <data name="Admin.GatesDashboard.Gates.Title" xml:space="preserve"><value>Gates</value></data>
+  <data name="Admin.GatesDashboard.Gates.None" xml:space="preserve"><value>No gates have been configured.</value></data>
+  <data name="Admin.GatesDashboard.Gates.Col.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Admin.GatesDashboard.Gates.Col.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Admin.GatesDashboard.Gates.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.GatesDashboard.Gates.Active.Yes" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.GatesDashboard.Gates.Active.No" xml:space="preserve"><value>Inactive</value></data>
+  <data name="Admin.GatesDashboard.Gates.Summary" xml:space="preserve"><value>{0} gates</value></data>
+
+  <!-- Programme run-of-show timeline (read-only). -->
+  <data name="Module.ProgrammeTimeline" xml:space="preserve"><value>Run of Show</value></data>
+  <data name="Admin.ProgrammeTimeline.Title" xml:space="preserve"><value>Programme run of show</value></data>
+  <data name="Admin.ProgrammeTimeline.Subtitle" xml:space="preserve"><value>The full agenda on one screen, grouped by day.</value></data>
+  <data name="Admin.ProgrammeTimeline.Loading" xml:space="preserve"><value>Loading the programme…</value></data>
+  <data name="Admin.ProgrammeTimeline.None" xml:space="preserve"><value>No sessions have been scheduled yet.</value></data>
+  <data name="Admin.ProgrammeTimeline.LoadFailed" xml:space="preserve"><value>Could not load the programme. Please try again.</value></data>
+  <data name="Admin.ProgrammeTimeline.Stat.Days" xml:space="preserve"><value>Days</value></data>
+  <data name="Admin.ProgrammeTimeline.Stat.Sessions" xml:space="preserve"><value>Sessions</value></data>
+  <data name="Admin.ProgrammeTimeline.Filter.Day" xml:space="preserve"><value>Day</value></data>
+  <data name="Admin.ProgrammeTimeline.Filter.AllDays" xml:space="preserve"><value>All days</value></data>
+  <data name="Admin.ProgrammeTimeline.Col.Time" xml:space="preserve"><value>Time</value></data>
+  <data name="Admin.ProgrammeTimeline.Col.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Admin.ProgrammeTimeline.Col.Title" xml:space="preserve"><value>Session</value></data>
+  <data name="Admin.ProgrammeTimeline.Col.Hall" xml:space="preserve"><value>Hall</value></data>
+  <data name="Admin.ProgrammeTimeline.Day.Count" xml:space="preserve"><value>{0} session(s) on this day</value></data>
 </root>

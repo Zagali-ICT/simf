@@ -1879,4 +1879,46 @@
   <data name="Admin.Companies.Provision.Done" xml:space="preserve"><value>تم إنشاء الحساب. وهو قيد الموافقة.</value></data>
   <data name="Admin.Companies.Provision.Required" xml:space="preserve"><value>اسم جهة الاتصال والبريد الإلكتروني كلاهما مطلوب.</value></data>
   <data name="Admin.Companies.Provision.Failed" xml:space="preserve"><value>تعذر إنشاء الحساب. حاول مرة أخرى.</value></data>
+
+  <!-- Gates operations dashboard (read-only live overview). -->
+  <data name="Module.GatesDashboard" xml:space="preserve"><value>لوحة البوابات</value></data>
+  <data name="Admin.GatesDashboard.Title" xml:space="preserve"><value>لوحة عمليات البوابات</value></data>
+  <data name="Admin.GatesDashboard.Refresh" xml:space="preserve"><value>تحديث</value></data>
+  <data name="Admin.GatesDashboard.Refreshing" xml:space="preserve"><value>جارٍ التحديث…</value></data>
+  <data name="Admin.GatesDashboard.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.GatesDashboard.LoadFailed" xml:space="preserve"><value>تعذّر تحميل لوحة البوابات.</value></data>
+  <data name="Admin.GatesDashboard.Stat.Inside" xml:space="preserve"><value>داخل المعرض حاليًا</value></data>
+  <data name="Admin.GatesDashboard.Stat.Gates" xml:space="preserve"><value>البوابات</value></data>
+  <data name="Admin.GatesDashboard.Inside.Title" xml:space="preserve"><value>الموجودون بالداخل حاليًا</value></data>
+  <data name="Admin.GatesDashboard.Inside.None" xml:space="preserve"><value>لا يوجد أحد داخل المعرض حاليًا.</value></data>
+  <data name="Admin.GatesDashboard.Inside.Col.Name" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Admin.GatesDashboard.Inside.Col.ProfileType" xml:space="preserve"><value>نوع الملف</value></data>
+  <data name="Admin.GatesDashboard.Inside.Col.Gate" xml:space="preserve"><value>البوابة</value></data>
+  <data name="Admin.GatesDashboard.Inside.Col.EnteredAt" xml:space="preserve"><value>وقت الدخول</value></data>
+  <data name="Admin.GatesDashboard.Inside.Summary" xml:space="preserve"><value>{0} داخل المعرض حاليًا</value></data>
+  <data name="Admin.GatesDashboard.Gates.Title" xml:space="preserve"><value>البوابات</value></data>
+  <data name="Admin.GatesDashboard.Gates.None" xml:space="preserve"><value>لم يتم إعداد أي بوابات.</value></data>
+  <data name="Admin.GatesDashboard.Gates.Col.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.GatesDashboard.Gates.Col.Name" xml:space="preserve"><value>الاسم</value></data>
+  <data name="Admin.GatesDashboard.Gates.Col.Active" xml:space="preserve"><value>نشطة</value></data>
+  <data name="Admin.GatesDashboard.Gates.Active.Yes" xml:space="preserve"><value>نشطة</value></data>
+  <data name="Admin.GatesDashboard.Gates.Active.No" xml:space="preserve"><value>غير نشطة</value></data>
+  <data name="Admin.GatesDashboard.Gates.Summary" xml:space="preserve"><value>{0} بوابة</value></data>
+
+  <!-- Programme run-of-show timeline (read-only). -->
+  <data name="Module.ProgrammeTimeline" xml:space="preserve"><value>جدول الفعاليات</value></data>
+  <data name="Admin.ProgrammeTimeline.Title" xml:space="preserve"><value>جدول سير الفعاليات</value></data>
+  <data name="Admin.ProgrammeTimeline.Subtitle" xml:space="preserve"><value>كامل جدول الأعمال على شاشة واحدة، مجمّعًا حسب اليوم.</value></data>
+  <data name="Admin.ProgrammeTimeline.Loading" xml:space="preserve"><value>جارٍ تحميل البرنامج…</value></data>
+  <data name="Admin.ProgrammeTimeline.None" xml:space="preserve"><value>لم تتم جدولة أي جلسات بعد.</value></data>
+  <data name="Admin.ProgrammeTimeline.LoadFailed" xml:space="preserve"><value>تعذّر تحميل البرنامج. يرجى المحاولة مرة أخرى.</value></data>
+  <data name="Admin.ProgrammeTimeline.Stat.Days" xml:space="preserve"><value>الأيام</value></data>
+  <data name="Admin.ProgrammeTimeline.Stat.Sessions" xml:space="preserve"><value>الجلسات</value></data>
+  <data name="Admin.ProgrammeTimeline.Filter.Day" xml:space="preserve"><value>اليوم</value></data>
+  <data name="Admin.ProgrammeTimeline.Filter.AllDays" xml:space="preserve"><value>كل الأيام</value></data>
+  <data name="Admin.ProgrammeTimeline.Col.Time" xml:space="preserve"><value>الوقت</value></data>
+  <data name="Admin.ProgrammeTimeline.Col.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.ProgrammeTimeline.Col.Title" xml:space="preserve"><value>الجلسة</value></data>
+  <data name="Admin.ProgrammeTimeline.Col.Hall" xml:space="preserve"><value>القاعة</value></data>
+  <data name="Admin.ProgrammeTimeline.Day.Count" xml:space="preserve"><value>{0} جلسة في هذا اليوم</value></data>
 </root>
