@@ -1,0 +1,67 @@
+title: Admin walk-in registration (base)
+id: m-005-base-walkin-registered
+status: experimental
+description: >
+  Base rule — single successful admin walk-in registration. D-186
+  added `profileTypeIsVisitor` to the Detail string so SOC can bucket
+  walk-in events by audience vs partner desk (the `kind` discriminator
+  collapsed to always-Visitor post-D-186).
+references:
+  - SIMF DECISIONS_LOG.md D-186
+tags:
+  - attack.persistence
+author: SIMF security review
+date: 2026-05-30
+logsource:
+  product: simf
+  service: audit
+detection:
+  selection:
+    EventType: 'Admin.WalkInRegistered'
+    Outcome: 'Success'
+  condition: selection
+fields:
+  - ActorUserId
+  - Detail.profileType
+  - Detail.profileTypeIsVisitor
+falsepositives:
+  - Routine event-desk operation. Informational alone.
+level: informational
+---
+title: Walk-in partner-side registration burst
+id: m-005-walkin-partner-burst
+status: experimental
+description: >
+  Detects an actor producing a burst of partner-side walk-in
+  registrations (Sponsor / Exhibitor / Staff / Media). Partner walk-
+  ins are rarer than audience walk-ins (audience attendees arrive in
+  waves; partners are pre-registered in advance), so a burst is
+  anomalous and indicative of either a misconfigured desk app or an
+  insider provisioning partner identities en masse.
+references:
+  - SIMF DECISIONS_LOG.md D-186
+tags:
+  - attack.persistence
+author: SIMF security review
+date: 2026-05-30
+correlation:
+  type: event_count
+  rules:
+    - m-005-base-walkin-registered
+  group-by:
+    - ActorUserId
+  timespan: 15m
+  condition:
+    gte: 5
+falsepositives:
+  - Event-day partner check-in surge during the first 30 minutes of
+    the conference. Allowlist by event-window tag for the conference
+    opening hour.
+level: medium
+notes: |
+  Refinement opportunity: the correlation does not distinguish
+  audience vs partner because Sigma 2.x `correlation` cannot filter
+  on a Detail substring during aggregation. SOC platforms that
+  support a `selection` clause inside `correlation` should pre-filter
+  on `Detail|contains: 'profileTypeIsVisitor=False'` to scope the
+  burst to partner-side events only.

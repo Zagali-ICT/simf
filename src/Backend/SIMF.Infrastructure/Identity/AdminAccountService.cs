@@ -187,22 +187,28 @@ internal sealed class AdminAccountService(
         CancellationToken cancellationToken = default) =>
         // D-186: Other accounts are now Visitor-typed under the hood;
         // the partner-side ProfileType (IsVisitor=false) carries the
-        // queue routing instead. The caller is expected to pass a
-        // ProfileTypeId whose ProfileType.IsVisitor=false — admin walk-in
-        // / create flows enforce this server-side at CreateAccountAsync.
+        // queue routing. expectedIsVisitor:false enforces the ProfileType
+        // belongs to the partner scope so a request with an audience
+        // ProfileTypeId is rejected at CreateAccountAsync.
         CreateAccountAsync(
             actorUserId, request.Email, request.DisplayName,
             UserType.Visitor, profileTypeId: request.ProfileTypeId,
-            roles: Array.Empty<string>(), cancellationToken);
+            roles: Array.Empty<string>(), cancellationToken,
+            expectedIsVisitor: false);
 
     public Task<AdminCreateUserResponse> CreateVisitorAsync(
         Guid actorUserId,
         AdminCreateVisitorRequest request,
         CancellationToken cancellationToken = default) =>
+        // D-186 review-pass: when a ProfileTypeId is supplied, enforce
+        // it is audience-side. The Visitor endpoint accepts null
+        // ProfileTypeId (tier optional at create time) — the guard
+        // only kicks in when a ProfileTypeId is present.
         CreateAccountAsync(
             actorUserId, request.Email, request.DisplayName,
             UserType.Visitor, profileTypeId: request.ProfileTypeId,
-            roles: Array.Empty<string>(), cancellationToken);
+            roles: Array.Empty<string>(), cancellationToken,
+            expectedIsVisitor: true);
 
     // ---------------------------------------------------------------------
     // D-127 — on-site walk-in registration. The CP /admin/visitors and
@@ -217,13 +223,19 @@ internal sealed class AdminAccountService(
         Guid actorUserId,
         UserType kind,
         AdminWalkInRegistrationRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool? expectedIsVisitor = null)
     {
         // D-186: walk-in registration always creates a Visitor-typed
-        // account. The audience-vs-partner split lives entirely on the
-        // chosen ProfileType.IsVisitor — the legacy `kind` argument is
-        // still accepted for endpoint-shape stability but only rejects
-        // Admin walk-ins.
+        // account. The `kind` argument stays on the signature for
+        // backward-compat at the endpoint layer but only rejects Admin
+        // walk-ins. D-186 review-pass HIGH (H-3): `expectedIsVisitor`
+        // re-introduces the audience-vs-partner desk-URL guard the
+        // initial D-186 cut dropped — the Visitors desk endpoint
+        // passes true, the Others desk endpoint passes false, and a
+        // desk that picks the wrong-scope ProfileType is rejected
+        // with AdminProfileTypeInvalid instead of silently routing the
+        // account to the wrong queue.
         if (kind == UserType.Admin)
         {
             throw new ApiException(
@@ -241,15 +253,24 @@ internal sealed class AdminAccountService(
                 ErrorCodes.AdminProfileTypeInvalid, 400,
                 "The selected profile type is not valid.",
                 "نوع الملف الشخصي المحدّد غير صالح.");
-        // D-186: the chosen ProfileType must belong to the Visitor
-        // scope and be active. Audience-vs-partner is the desk's
-        // pick on the CP; the server trusts the chosen ProfileType.
         if (!profileType.IsActive || profileType.UserType != UserType.Visitor)
         {
             throw new ApiException(
                 ErrorCodes.AdminProfileTypeInvalid, 400,
                 "The selected profile type is not active or does not apply.",
                 "نوع الملف الشخصي المحدّد غير نشط أو غير منطبق.");
+        }
+        if (expectedIsVisitor is { } expected
+            && profileType.IsVisitor != expected)
+        {
+            throw new ApiException(
+                ErrorCodes.AdminProfileTypeInvalid, 400,
+                expected
+                    ? "The selected profile type belongs to the partner queue; use the Others walk-in desk."
+                    : "The selected profile type belongs to the audience queue; use the Visitors walk-in desk.",
+                expected
+                    ? "نوع الملف المختار من قائمة الشركاء؛ استخدم نافذة تسجيل الآخرين."
+                    : "نوع الملف المختار من قائمة الجمهور؛ استخدم نافذة تسجيل الزوار.");
         }
 
         // Email is optional for walk-ins; synthesize a placeholder so
@@ -381,7 +402,14 @@ internal sealed class AdminAccountService(
             ActorUserId = actorUserId,
             SubjectUserId = user.Id,
             SubjectEmail = email,
-            Detail = $"kind={kind}; profileType={profileType.Name}; hasEmail={hasRealEmail}",
+            // D-186 review-pass: include profileTypeIsVisitor so SOC
+            // can bucket walk-in bursts by audience vs partner desk
+            // (kind is always Visitor post-D-186 so it no longer
+            // distinguishes; the desk URL is reflected via the new
+            // expectedIsVisitor parameter the endpoint passes in).
+            Detail = $"kind={kind}; profileType={profileType.Name}; "
+                + $"profileTypeIsVisitor={profileType.IsVisitor}; "
+                + $"hasEmail={hasRealEmail}",
         }, cancellationToken);
 
         logger.LogInformation(
@@ -413,7 +441,8 @@ internal sealed class AdminAccountService(
         UserType userType,
         Guid? profileTypeId,
         IList<string> roles,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool? expectedIsVisitor = null)
     {
         if (await accounts.FindByEmailAsync(email) is not null)
         {
@@ -427,7 +456,12 @@ internal sealed class AdminAccountService(
         }
 
         // P7c — validate the ProfileTypeId before creating the user so
-        // the row + the FK land atomically.
+        // the row + the FK land atomically. D-186 review-pass HIGH
+        // (H-2/H-3): also enforce profileType.IsVisitor matches the
+        // caller's expectedIsVisitor flag — without this guard, the
+        // /admin/others/* family would accept an audience ProfileType
+        // (and vice versa) and the resulting account would land on the
+        // wrong CP queue with the wrong audit-event mapping.
         if (profileTypeId is { } id)
         {
             var profileType = await appDbContext.ProfileTypes
@@ -445,6 +479,18 @@ internal sealed class AdminAccountService(
                     ErrorCodes.AdminProfileTypeInvalid, 400,
                     "The selected profile type does not apply to this user type.",
                     "نوع الملف الشخصي المحدّد لا ينطبق على هذا النوع من المستخدمين.");
+            }
+            if (expectedIsVisitor is { } expected
+                && profileType.IsVisitor != expected)
+            {
+                throw new ApiException(
+                    ErrorCodes.AdminProfileTypeInvalid, 400,
+                    expected
+                        ? "The selected profile type is partner-side; use the Others endpoint to assign it."
+                        : "The selected profile type is audience-side; use the Visitors endpoint to assign it.",
+                    expected
+                        ? "نوع الملف المختار من نطاق الشركاء؛ استخدم نقطة نهاية الآخرين لتعيينه."
+                        : "نوع الملف المختار من نطاق الجمهور؛ استخدم نقطة نهاية الزوار لتعيينه.");
             }
         }
 
@@ -830,57 +876,57 @@ internal sealed class AdminAccountService(
         if (profileScope is null) { return null; }
         var requireIsVisitor = profileScope.Value;
 
-        var matchingProfileTypeIds = await appDbContext.ProfileTypes
+        // Partner ProfileTypes are the discriminator. Audience scope is
+        // defined as `visitor MINUS partner`, so any Visitor account
+        // that isn't explicitly linked to a partner-side ProfileType
+        // (no profile row, profile row with null ProfileTypeId, or
+        // profile row with an audience ProfileType) lands on the
+        // Visitors queue. D-186 review-pass HIGH (H-1): the previous
+        // implementation used `visitor MINUS withAnyProfile`, which
+        // dropped self-signup visitors whose `UserProfileService
+        // .UpsertMineAsync` created a profile row with a null
+        // ProfileTypeId — they were invisible to BOTH queues.
+        var partnerProfileTypeIds = await appDbContext.ProfileTypes
             .AsNoTracking()
-            .Where(p => p.IsVisitor == requireIsVisitor
+            .Where(p => p.IsVisitor == false
                         && p.UserType == UserType.Visitor)
             .Select(p => p.Id)
             .ToListAsync(cancellationToken);
 
-        var idsViaProfileType = await appDbContext.UserProfiles
+        var partnerUserIds = await appDbContext.UserProfiles
             .AsNoTracking()
             .Where(p => p.ProfileTypeId != null
-                && matchingProfileTypeIds.Contains(p.ProfileTypeId.Value))
+                && partnerProfileTypeIds.Contains(p.ProfileTypeId.Value))
             .Select(p => p.UserId)
             .ToListAsync(cancellationToken);
 
         if (!requireIsVisitor)
         {
-            // Partner scope = only users explicitly linked to a partner
-            // ProfileType. No-profile users are NOT partners.
-            return new HashSet<Guid>(idsViaProfileType);
+            // Partner scope = exactly the users explicitly linked to a
+            // partner ProfileType.
+            return new HashSet<Guid>(partnerUserIds);
         }
 
-        // Audience scope = users with an audience ProfileType OR no
-        // ProfileType at all. Cross-context: query the two contexts
-        // separately and compute the union in memory (EF can't
-        // translate a `appDbContext.UserProfiles.Any(...)` predicate
-        // against a `dbContext.Users` query).
+        // Audience scope = every Visitor-typed user that is NOT in the
+        // partner set. Cross-context: enumerate Visitor user-ids in
+        // Identity, then subtract the partner set computed against the
+        // App DB.
         var visitorIds = await dbContext.Users
             .AsNoTracking()
             .Where(u => u.UserType == UserType.Visitor)
             .Select(u => u.Id)
             .ToListAsync(cancellationToken);
 
-        var withAnyProfile = await appDbContext.UserProfiles
-            .AsNoTracking()
-            .Where(p => visitorIds.Contains(p.UserId))
-            .Select(p => p.UserId)
-            .ToListAsync(cancellationToken);
-        var withAnyProfileSet = new HashSet<Guid>(withAnyProfile);
-
-        var set = new HashSet<Guid>(idsViaProfileType);
+        var partnerSet = new HashSet<Guid>(partnerUserIds);
+        var audienceSet = new HashSet<Guid>(visitorIds.Count);
         foreach (var id in visitorIds)
         {
-            // Include users that have no profile row yet (audience-side
-            // default). Users with an audience-side profile row are
-            // already in idsViaProfileType.
-            if (!withAnyProfileSet.Contains(id))
+            if (!partnerSet.Contains(id))
             {
-                set.Add(id);
+                audienceSet.Add(id);
             }
         }
-        return set;
+        return audienceSet;
     }
 
     // D-186 — duplicate helper that inspects the source's linked
@@ -968,7 +1014,7 @@ internal sealed class AdminAccountService(
         CancellationToken cancellationToken)
     {
         var subject = await LoadPendingSubjectAsync(
-            subjectUserId, scope, cancellationToken);
+            actorUserId, subjectUserId, scope, cancellationToken);
         var now = timeProvider.GetUtcNow();
         subject.AccountState = AccountState.Approved;
         subject.UpdatedAt = now;
@@ -1035,7 +1081,7 @@ internal sealed class AdminAccountService(
         ApprovalScope scope, CancellationToken cancellationToken)
     {
         var subject = await LoadPendingSubjectAsync(
-            subjectUserId, scope, cancellationToken);
+            actorUserId, subjectUserId, scope, cancellationToken);
         var now = timeProvider.GetUtcNow();
         subject.AccountState = AccountState.Rejected;
         subject.UpdatedAt = now;
@@ -1115,7 +1161,8 @@ internal sealed class AdminAccountService(
     /// "approve an admin via the visitor URL" hole AND the new D-186
     /// "approve a sponsor via the visitors URL" hole.</summary>
     private async Task<SimfUser> LoadPendingSubjectAsync(
-        Guid subjectUserId, ApprovalScope scope, CancellationToken cancellationToken)
+        Guid actorUserId, Guid subjectUserId, ApprovalScope scope,
+        CancellationToken cancellationToken)
     {
         var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken)
             ?? throw new ApiException(ErrorCodes.AdminUserNotFound, 404,
@@ -1129,11 +1176,26 @@ internal sealed class AdminAccountService(
         }
         // D-186: within the Visitor scope, also enforce the
         // audience-vs-partner queue match via the linked ProfileType.
+        // D-186 review-pass (threat-detection H-2): emit a dedicated
+        // audit row on the scope-mismatch branch so SOC rule
+        // m-004-approval-scope-probe can fire on a probe pattern
+        // (the 404 itself is indistinguishable from a missing id).
         var requireProfileScope = ProfileScopeOf(scope);
         if (requireProfileScope is not null
             && !await SubjectMatchesProfileScopeAsync(
                 subject.Id, requireProfileScope.Value, cancellationToken))
         {
+            await auditLog.WriteAsync(new AuditEntry
+            {
+                EventType = AuditEvents.AdminApprovalScopeMismatch,
+                Outcome = AuditOutcome.Failure,
+                ActorUserId = actorUserId,
+                SubjectUserId = subject.Id,
+                SubjectEmail = subject.Email,
+                ErrorCode = ErrorCodes.AdminUserNotFound,
+                Detail = $"expectedScope={scope}; "
+                    + $"expectedIsVisitor={requireProfileScope.Value}",
+            }, cancellationToken);
             throw new ApiException(ErrorCodes.AdminUserNotFound, 404,
                 "The target account is not in the expected approval queue.",
                 "الحساب المستهدف ليس في قائمة الاعتماد المتوقعة.");

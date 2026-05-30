@@ -35,12 +35,15 @@ public sealed class RegisterOtherOnSiteEndpoint(IAdminUserProvisioningService se
             await Send.UnauthorizedAsync(ct);
             return;
         }
-        // D-186: walk-in registrations always create Visitor-typed
-        // accounts; the audience-vs-partner split derives from the
-        // chosen ProfileType.IsVisitor on the request (the desk picks
-        // the partner-side ProfileType from the CP).
+        // D-186 + review-pass: walk-in registrations create
+        // Visitor-typed accounts; the partner desk enforces
+        // expectedIsVisitor=false so a desk that picks an audience
+        // ProfileType is rejected with AdminProfileTypeInvalid (the
+        // resulting account would otherwise route to the audience
+        // queue with the wrong audit-event mapping).
         var response = await service.RegisterOnSiteAsync(
-            actorId, UserType.Visitor, req, ct);
+            actorId, UserType.Visitor, req, ct,
+            expectedIsVisitor: false);
         await Send.OkAsync(ApiResult<AdminWalkInRegistrationResponse>.Ok(response), ct);
     }
 }

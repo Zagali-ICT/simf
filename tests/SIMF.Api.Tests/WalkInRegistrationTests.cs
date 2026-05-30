@@ -107,16 +107,16 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Walk_in_routing_now_trusts_chosen_profile_type_after_D186()
+    public async Task Walk_in_with_partner_profile_type_on_visitors_desk_returns_400()
     {
-        // D-186: the walk-in endpoint pair (/visitors/register-onsite +
-        // /others/register-onsite) used to enforce a strict cross-scope
-        // 400. After the UserType collapse both desks produce Visitor-
-        // typed accounts; the audience/partner queue assignment derives
-        // from the chosen ProfileType.IsVisitor on the request. A desk
-        // submitting a partner-side ProfileType via /visitors/register-
-        // onsite simply creates a Visitor user whose linked partner
-        // ProfileType routes them to the Others approval queue.
+        // D-186 + review-pass: the initial D-186 cut dropped the
+        // cross-scope guard on walk-in. The review-pass restored it
+        // (security H-3 + code-reviewer H-2/H-3): the Visitors desk
+        // passes expectedIsVisitor=true, the Others desk passes false,
+        // and a desk that picks the wrong-scope ProfileType is
+        // rejected with AdminProfileTypeInvalid rather than silently
+        // routing the account to the wrong queue with the wrong
+        // audit-event mapping.
         var adminToken = await CreateAdministratorAndSignInAsync();
         var partnerProfileTypeId = await GetOtherProfileTypeAsync();
 
@@ -124,7 +124,25 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         var response = await PostAuthAsync(
             "/api/v1/admin/visitors/register-onsite", req, adminToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AdminProfileTypeInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Walk_in_with_audience_profile_type_on_others_desk_returns_400()
+    {
+        // D-186 review-pass: mirror of the above for the partner desk.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var audienceProfileTypeId = await GetVisitorProfileTypeAsync();
+
+        var req = BuildRequest(audienceProfileTypeId, $"crossed-{Guid.NewGuid():N}@simf.test");
+        var response = await PostAuthAsync(
+            "/api/v1/admin/others/register-onsite", req, adminToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AdminProfileTypeInvalid, body.Error!.Code);
     }
 
     [Fact]
@@ -179,11 +197,16 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
 
     private async Task<Guid> GetVisitorProfileTypeAsync()
     {
+        // D-186 review-pass: the Visitors desk endpoint now enforces
+        // expectedIsVisitor=true, so this helper MUST return an
+        // audience-side ProfileType (IsVisitor=true).
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var seeded = await appDb.ProfileTypes
-            .FirstOrDefaultAsync(p => p.UserType == UserType.Visitor && p.IsActive);
+            .FirstOrDefaultAsync(p => p.UserType == UserType.Visitor
+                                       && p.IsVisitor == true
+                                       && p.IsActive);
         if (seeded is not null) return seeded.Id;
         var fresh = new ProfileType
         {
@@ -192,6 +215,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             NameArabic = "زائر — اختبار",
             PageColor = "#3B82F6",
             UserType = UserType.Visitor,
+            IsVisitor = true,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

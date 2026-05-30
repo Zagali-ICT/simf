@@ -275,16 +275,221 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task IsVisitor_round_trips_through_Create_Get_List(bool isVisitor)
+    {
+        // D-186 review-pass (test-analyzer Gap 1): the audience-vs-partner
+        // discriminator MUST persist through Create → Get → List. Without
+        // this coverage a model-binding default or a missing EF mapping
+        // would silently break every downstream scope guard.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var name = $"RoundTrip-{isVisitor}-{Guid.NewGuid():N}";
+
+        var created = await PostAuthAsync(
+            "/api/v1/admin/profile-types",
+            new AdminCreateProfileTypeRequest
+            {
+                UserType = "Visitor",
+                IsVisitor = isVisitor,
+                Name = name,
+                NameArabic = "اختبار",
+                PageColor = "#1F2937",
+                IsActive = true,
+            }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, created.StatusCode);
+        var detail = (await created.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.Equal(isVisitor, detail.IsVisitor);
+
+        var get = await GetAuthAsync(
+            $"/api/v1/admin/profile-types/{detail.Id}", adminToken);
+        var fetched = (await get.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.Equal(isVisitor, fetched.IsVisitor);
+
+        var list = await PostAuthAsync(
+            "/api/v1/admin/profile-types/list",
+            new GridQuery
+            {
+                Top = 200,
+                Filters = new Dictionary<string, string>
+                {
+                    ["userType"] = "Visitor",
+                    ["isVisitor"] = isVisitor ? "true" : "false",
+                },
+            }, adminToken);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminProfileTypeSummary>>>())!.Data!;
+        Assert.Contains(page.Items, row => row.Id == detail.Id);
+        // Every returned row must match the requested IsVisitor filter.
+        Assert.All(page.Items, row => Assert.Equal(isVisitor, row.IsVisitor));
+    }
+
+    [Fact]
+    public async Task Update_flipping_IsVisitor_persists_and_audits_the_change()
+    {
+        // D-186 review-pass (threat-detection H-1): an admin flipping
+        // IsVisitor re-routes every linked account between approval
+        // queues — the change MUST be audited with the old/new values
+        // and the linked-account count.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var created = await PostAuthAsync(
+            "/api/v1/admin/profile-types",
+            new AdminCreateProfileTypeRequest
+            {
+                UserType = "Visitor",
+                IsVisitor = true,
+                Name = $"FlipMe {Guid.NewGuid():N}",
+                NameArabic = "قلب",
+                PageColor = "#10B981",
+                IsActive = true,
+            }, adminToken);
+        var before = (await created.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.True(before.IsVisitor);
+
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/profile-types/{before.Id}",
+            new AdminUpdateProfileTypeRequest
+            {
+                Name = before.Name,
+                NameArabic = before.NameArabic,
+                PageColor = before.PageColor,
+                IsActive = true,
+                IsVisitor = false,
+            }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+        var after = (await update.Content
+            .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
+        Assert.False(after.IsVisitor);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var auditRow = await db.OperationLog.AsNoTracking()
+            .Where(e => e.EventType == "ProfileType.Updated"
+                && e.Detail != null
+                && e.Detail.Contains(before.Id.ToString()))
+            .OrderByDescending(e => e.TimestampUtc)
+            .FirstOrDefaultAsync();
+        Assert.NotNull(auditRow);
+        Assert.NotNull(auditRow!.Detail);
+        Assert.Contains("isVisitorChanged=true", auditRow.Detail!);
+        Assert.Contains("isVisitorOld=True", auditRow.Detail);
+        Assert.Contains("isVisitorNew=False", auditRow.Detail);
+        Assert.Contains("linkedAccountCount=", auditRow.Detail);
+    }
+
+    [Fact]
+    public async Task Create_others_rejects_an_audience_profile_type()
+    {
+        // D-186 review-pass (security H-1 + code-reviewer H-2):
+        // POST /admin/others must reject a ProfileTypeId whose
+        // ProfileType.IsVisitor=true. Without this guard the account
+        // lands on the wrong queue with the wrong audit mapping.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var audience = await CreateProfileTypeAsync(
+            adminToken, "Visitor",
+            $"AudienceTier-{Guid.NewGuid():N}", "جمهور", "#FFD700");
+        Assert.True(audience.IsVisitor);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/others",
+            new AdminCreateOtherRequest
+            {
+                Email = $"other-cross-{Guid.NewGuid():N}@simf.test",
+                DisplayName = "Cross Other",
+                ProfileTypeId = audience.Id,
+            }, adminToken);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AdminProfileTypeInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Pending_visitor_with_profile_row_but_null_ProfileTypeId_appears_on_Visitors_queue()
+    {
+        // D-186 review-pass (code-reviewer H-1): the self-signup flow
+        // creates `new UserProfile { UserId, CreatedAt }` with
+        // ProfileTypeId=null. The initial D-186 cut excluded such
+        // users from the audience set (because withAnyProfileSet
+        // contained their id but idsViaProfileType did not). The fix
+        // redefines audience as `visitor MINUS partner-linked` so
+        // null-ProfileTypeId users correctly land on the audience queue.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var subjectId = Guid.NewGuid();
+        var email = $"selfsignup-{subjectId:N}@simf.test";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
+            {
+                Id = subjectId, UserName = email, Email = email, EmailConfirmed = true,
+                DisplayName = "Self Signup",
+                AccountState = AccountState.PendingApproval,
+                UserType = UserType.Visitor,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            await users.CreateAsync(user, AuthFlow.Password);
+
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            appDb.UserProfiles.Add(new UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = subjectId,
+                ProfileTypeId = null,     // <-- the H-1 trigger
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await appDb.SaveChangesAsync();
+        }
+
+        var list = await PostAuthAsync(
+            "/api/v1/admin/visitors/pending/list",
+            new GridQuery { Top = 200 }, adminToken);
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminPendingUserSummary>>>())!.Data!;
+        Assert.Contains(page.Items, row => row.Id == subjectId);
+    }
+
+    [Fact]
+    public async Task Create_visitors_rejects_a_partner_profile_type()
+    {
+        // D-186 review-pass (twin of the test above for the audience
+        // direction).
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var partner = await CreateProfileTypeAsync(
+            adminToken, "Visitor",
+            $"PartnerTier-{Guid.NewGuid():N}", "شريك", "#10B981", isVisitor: false);
+        Assert.False(partner.IsVisitor);
+
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors",
+            new AdminCreateVisitorRequest
+            {
+                Email = $"visitor-cross-{Guid.NewGuid():N}@simf.test",
+                DisplayName = "Cross Visitor",
+                ProfileTypeId = partner.Id,
+            }, adminToken);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AdminProfileTypeInvalid, body.Error!.Code);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private async Task<AdminProfileTypeSummary> CreateProfileTypeAsync(
-        string adminToken, string userType, string name, string nameArabic, string pageColor)
+        string adminToken, string userType, string name, string nameArabic, string pageColor,
+        bool isVisitor = true)
     {
         var response = await PostAuthAsync(
             "/api/v1/admin/profile-types",
             new AdminCreateProfileTypeRequest
             {
                 UserType = userType,
+                IsVisitor = isVisitor,
                 Name = name,
                 NameArabic = nameArabic,
                 PageColor = pageColor,

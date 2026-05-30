@@ -230,4 +230,13 @@ public static class AuditEvents
     public const string AdminOtherRejected = "Admin.OtherRejected";
     public const string AdminVisitorApproved = "Admin.VisitorApproved";
     public const string AdminVisitorRejected = "Admin.VisitorRejected";
+
+    // D-186 review-pass (threat-detection H-2) — fires from
+    // AdminAccountService.LoadPendingSubjectAsync when an actor calls
+    // an approval endpoint with a subject id from the wrong scope
+    // (audience id on /admin/others/* or vice versa). The endpoint
+    // returns 404 (same shape as not-found) so the probing actor
+    // cannot tell scope-mismatch from missing-id; this audit row is
+    // the only SOC visibility into the probe pattern.
+    public const string AdminApprovalScopeMismatch = "Admin.ApprovalScopeMismatch";
 }

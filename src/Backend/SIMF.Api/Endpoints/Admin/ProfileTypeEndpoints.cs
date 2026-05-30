@@ -93,7 +93,8 @@ public sealed class CreateAdminProfileTypeEndpoint(IAdminProfileTypeCommandServi
 }
 
 /// <summary>D-115 — <c>PUT /api/v1/admin/profile-types/{id}</c>. UserType is
-/// NOT updatable post-creation — the route body does not carry it.</summary>
+/// NOT updatable post-creation — the route body does not carry it.
+/// D-186: IsVisitor IS updatable (audience-vs-partner queue routing).</summary>
 public sealed class UpdateAdminProfileTypeRouteRequest
 {
     public Guid Id { get; set; }
@@ -103,6 +104,8 @@ public sealed class UpdateAdminProfileTypeRouteRequest
     /// <summary>D-161 — mobile-app authority assigned to this type.</summary>
     public string? MobileAppRole { get; set; }
     public bool IsActive { get; set; } = true;
+    /// <summary>D-186 — audience (true) or partner / staff (false).</summary>
+    public bool IsVisitor { get; set; } = true;
 }
 
 public sealed class UpdateAdminProfileTypeEndpoint(IAdminProfileTypeCommandService service)
@@ -134,6 +137,7 @@ public sealed class UpdateAdminProfileTypeEndpoint(IAdminProfileTypeCommandServi
                 PageColor = req.PageColor,
                 MobileAppRole = req.MobileAppRole,
                 IsActive = req.IsActive,
+                IsVisitor = req.IsVisitor,
             }, ct);
         await Send.OkAsync(ApiResult<AdminProfileTypeSummary>.Ok(summary), ct);
     }

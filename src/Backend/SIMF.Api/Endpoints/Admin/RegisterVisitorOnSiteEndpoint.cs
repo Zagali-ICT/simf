@@ -36,8 +36,11 @@ public sealed class RegisterVisitorOnSiteEndpoint(IAdminUserProvisioningService 
             await Send.UnauthorizedAsync(ct);
             return;
         }
+        // D-186 review-pass: enforce expectedIsVisitor=true so the
+        // Visitors desk cannot accept a partner-side ProfileType.
         var response = await service.RegisterOnSiteAsync(
-            actorId, UserType.Visitor, req, ct);
+            actorId, UserType.Visitor, req, ct,
+            expectedIsVisitor: true);
         await Send.OkAsync(ApiResult<AdminWalkInRegistrationResponse>.Ok(response), ct);
     }
 }

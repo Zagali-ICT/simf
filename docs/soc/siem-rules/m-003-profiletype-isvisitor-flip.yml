@@ -1,0 +1,51 @@
+title: ProfileType IsVisitor flip (re-routing partner queue)
+id: m-003-profiletype-isvisitor-flip
+status: experimental
+description: >
+  Detects an admin flipping `ProfileType.IsVisitor` (the audience-vs-
+  partner discriminator introduced in D-186). Flipping the flag
+  silently re-routes every account linked to that ProfileType between
+  the CP Visitors and Others approval queues. A partner ProfileType
+  flipped to audience could let a compromised admin push partner
+  accounts into the audience approval queue (with looser controls) en
+  masse — the canonical insider sabotage / queue-laundering pattern.
+
+  D-186 review-pass added the `isVisitorChanged=true` /
+  `isVisitorOld=` / `isVisitorNew=` / `linkedAccountCount=` keys to
+  the `ProfileType.Updated` audit Detail so this rule has a stable
+  selector.
+references:
+  - SIMF DECISIONS_LOG.md D-186
+tags:
+  - attack.persistence
+  - attack.t1098
+  - attack.t1556
+author: SIMF security review
+date: 2026-05-30
+logsource:
+  product: simf
+  service: audit
+detection:
+  selection:
+    EventType: 'ProfileType.Updated'
+    Outcome: 'Success'
+  flipped:
+    Detail|contains: 'isVisitorChanged=true'
+  condition: selection and flipped
+fields:
+  - ActorUserId
+  - Detail.isVisitorOld
+  - Detail.isVisitorNew
+  - Detail.linkedAccountCount
+falsepositives:
+  - One-off admin correction during initial event setup. Should be
+    paired with a ticketed change-management request; on-call team
+    can confirm in-band.
+level: high
+notes: |
+  Promote to CRITICAL when `linkedAccountCount > 5` — a flip on a
+  freshly-created ProfileType (no linked accounts) is operationally
+  benign; a flip on a populated ProfileType silently re-routes the
+  whole bucket. SOC backends that can parse `linkedAccountCount` from
+  the Detail string at ingest time should add an `outputs:` clause
+  setting severity to CRITICAL on count >= 5.

@@ -104,6 +104,10 @@ ingestion field-extracts via `parse_json(Detail)`).
 | M-001 | Meeting-request bulk-view (≥20 distinct meetingRequestIds / 10m) | High | D-185 |
 | M-002 | Meeting-requests bulk-list scrape (count≥100 + empty filters) | High | D-185 |
 | M-002b | Meeting-requests list repeat scrape (≥5 list calls / 10m) | Medium | D-185 |
+| M-003 | ProfileType IsVisitor flip (audience↔partner queue re-route) | High | D-186 |
+| M-004 | Admin approval-scope probe (per-event informational) | Informational | D-186 |
+| M-004b | Admin approval-scope probe burst (≥10 mismatches / 10m) | High | D-186 |
+| M-005 | Walk-in partner-side registration burst (≥5 / 15m) | Medium | D-186 |
 
 ## Deployment
 

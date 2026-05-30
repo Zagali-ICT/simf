@@ -212,6 +212,12 @@ internal sealed class AdminProfileTypeCommandService(
             }
         }
 
+        // D-186 review-pass (threat-detection H-1): capture the prior
+        // IsVisitor BEFORE the mutation so the audit Detail records
+        // any flip. Silent flips would let an insider mass-launder
+        // partner accounts into the audience queue with no SOC trail.
+        var oldIsVisitor = profileType.IsVisitor;
+
         profileType.Name = name;
         profileType.NameArabic = (request.NameArabic ?? string.Empty).Trim();
         profileType.PageColor = (request.PageColor ?? string.Empty).Trim();
@@ -224,12 +230,29 @@ internal sealed class AdminProfileTypeCommandService(
         profileType.UpdatedAt = timeProvider.GetUtcNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        var isVisitorChanged = oldIsVisitor != profileType.IsVisitor;
+        // D-186 review-pass: count linked accounts when the flag
+        // changed so SOC can prioritise the audit row (a flip on a
+        // ProfileType with hundreds of linked accounts is a much
+        // larger blast radius than a flip on a freshly-created one).
+        var linkedAccountCount = isVisitorChanged
+            ? await dbContext.UserProfiles.AsNoTracking()
+                .CountAsync(profile => profile.ProfileTypeId == id, cancellationToken)
+            : 0;
+
         await auditLog.WriteAsync(new AuditEntry
         {
             EventType = AuditEvents.ProfileTypeUpdated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={profileType.Id}; name={profileType.Name}; active={profileType.IsActive}",
+            Detail = isVisitorChanged
+                ? $"id={profileType.Id}; name={profileType.Name}; "
+                    + $"active={profileType.IsActive}; "
+                    + $"isVisitorChanged=true; isVisitorOld={oldIsVisitor}; "
+                    + $"isVisitorNew={profileType.IsVisitor}; "
+                    + $"linkedAccountCount={linkedAccountCount}"
+                : $"id={profileType.Id}; name={profileType.Name}; "
+                    + $"active={profileType.IsActive}; isVisitorChanged=false",
         }, cancellationToken);
 
         return ToSummary(profileType);

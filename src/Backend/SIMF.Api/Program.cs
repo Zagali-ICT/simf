@@ -258,8 +258,18 @@ if (!app.Environment.IsEnvironment("Testing"))
 {
     using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
-    await services.GetRequiredService<SimfIdentityDbContext>().Database.MigrateAsync();
+    // D-186 review-pass (security H-3): run the App migration BEFORE
+    // Identity. The D-186 migration pair folds UserType='Other' into
+    // 'Visitor' on both contexts. If Identity ran first and App
+    // failed mid-deploy, partner accounts (AspNetUsers.UserType
+    // already 'Visitor' but ProfileTypes still 'Other' + no IsVisitor
+    // column yet) would be invisible to both CP queues until the App
+    // migration completed. Running App first keeps the partner-side
+    // ProfileType lookup valid throughout the deploy window — at
+    // worst, in-flight Other users are routed by the existing
+    // 'Other' UserType until Identity catches up.
     await services.GetRequiredService<SimfAppDbContext>().Database.MigrateAsync();
+    await services.GetRequiredService<SimfIdentityDbContext>().Database.MigrateAsync();
     await services.GetRequiredService<IdentitySeeder>().SeedAsync();
 }
 

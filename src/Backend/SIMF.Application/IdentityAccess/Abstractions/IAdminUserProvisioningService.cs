@@ -97,9 +97,16 @@ public interface IAdminUserProvisioningService
     /// <see cref="AdminWalkInRegistrationRequest.IsSaudi"/>) is the
     /// soft uniqueness key.
     /// </summary>
+    /// <summary>D-186 review-pass: <paramref name="expectedIsVisitor"/> is
+    /// the audience-vs-partner desk guard — the Visitors desk endpoint
+    /// passes <c>true</c>, the Others desk endpoint passes <c>false</c>.
+    /// A mismatch rejects with <c>AdminProfileTypeInvalid</c> instead of
+    /// silently routing the account to the wrong queue. Null leaves the
+    /// guard off (legacy callers).</summary>
     Task<AdminWalkInRegistrationResponse> RegisterOnSiteAsync(
         Guid actorUserId,
         SIMF.Common.Enums.UserType kind,
         AdminWalkInRegistrationRequest request,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        bool? expectedIsVisitor = null);
 }

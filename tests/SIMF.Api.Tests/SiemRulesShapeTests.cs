@@ -53,6 +53,10 @@ public sealed class SiemRulesShapeTests
         // D-185 — meeting-request PII audit-event consumers
         "m-001-meeting-request-bulk-view.yml",
         "m-002-meeting-request-list-scrape.yml",
+        // D-186 review-pass — UserType collapse audit-event consumers
+        "m-003-profiletype-isvisitor-flip.yml",
+        "m-004-approval-scope-probe.yml",
+        "m-005-walkin-partner-burst.yml",
     };
 
     [Fact]
