@@ -1,13 +1,11 @@
-title: AI feature-kill via bulk prompt deactivate
-id: ai-003-bulk-deactivate
+title: AI prompt deactivation (base)
+id: ai-003-base-prompt-deactivation
 status: experimental
 description: >
-  Detects a compromised admin silently disabling AI prompts to break
-  the feature without an obvious error spike. Source: D-178 threat
-  scenario (c).
+  Base rule — single successful `AiPrompt.Deactivated` event.
 references:
   - https://attack.mitre.org/techniques/T1562/001/
-  - SIMF DECISIONS_LOG.md D-178
+  - SIMF DECISIONS_LOG.md D-178, D-185
 tags:
   - attack.defense-evasion
   - attack.t1562.001
@@ -20,13 +18,41 @@ detection:
   selection:
     EventType: 'AiPrompt.Deactivated'
     Outcome: 'Success'
-  condition: selection | count() by ActorUserId > 1
-  timeframe: 5m
+  condition: selection
+fields:
+  - ActorUserId
+  - Detail.promptId
+  - Detail.promptKey
+falsepositives:
+  - Legitimate cleanup of a single retired prompt. Informational alone.
+level: informational
+---
+title: AI feature-kill via bulk prompt deactivate
+id: ai-003-bulk-deactivate
+status: experimental
+description: >
+  Detects a compromised admin silently disabling AI prompts to break
+  the feature without an obvious error spike. Threshold tuned 2026-05-30
+  per D-185 security review (>=3 distinct promptIds / 5m).
+references:
+  - https://attack.mitre.org/techniques/T1562/001/
+  - SIMF DECISIONS_LOG.md D-178, D-185
+tags:
+  - attack.defense-evasion
+  - attack.t1562.001
+author: SIMF security review
+date: 2026-05-30
+correlation:
+  type: value_count
+  rules:
+    - ai-003-base-prompt-deactivation
+  group-by:
+    - ActorUserId
+  timespan: 5m
+  field: Detail.promptId
+  condition:
+    gte: 3
 falsepositives:
   - Legitimate sprint cleanup deactivating retired prompts; require
     ticket-ref correlation before paging.
 level: critical
-fields:
-  - ActorUserId
-  - Detail.promptId
-  - Detail.key

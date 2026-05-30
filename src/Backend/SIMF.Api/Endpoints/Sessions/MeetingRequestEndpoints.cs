@@ -56,9 +56,50 @@ public sealed class ListAdminMeetingRequestsEndpoint(IMeetingRequestService serv
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
-    public override async Task HandleAsync(GridQuery req, CancellationToken ct) =>
+    public override async Task HandleAsync(GridQuery req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
         await Send.OkAsync(ApiResult<GridPage<AdminMeetingRequestRow>>.Ok(
-            await service.ListAllAsync(req, ct)), ct);
+            await service.ListAllAsync(actorId, req, ct)), ct);
+    }
+}
+
+// D-185 — admin fetches one record (with requester email) before the
+// respond modal opens. Audited as MeetingRequest.Viewed so SOC can see
+// per-record PII access (vs the list scrape signal AdminMeetingRequestsListed).
+public sealed class GetAdminMeetingRequestRoute
+{
+    public Guid Id { get; set; }
+}
+
+public sealed class GetAdminMeetingRequestEndpoint(IMeetingRequestService service)
+    : Endpoint<GetAdminMeetingRequestRoute, ApiResult<AdminMeetingRequestDetail>>
+{
+    public override void Configure()
+    {
+        Get("/admin/meeting-requests/{id:guid}");
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        // D-185 (security review-pass): rate-limit the per-record
+        // PII drill-down so a compromised admin can't burst-fetch
+        // emails between SIEM AI-010-style bulk-view detections.
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+    public override async Task HandleAsync(GetAdminMeetingRequestRoute req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<AdminMeetingRequestDetail>.Ok(
+            await service.GetAsync(actorId, req.Id, ct)), ct);
+    }
 }
 
 public sealed class RespondToMeetingRequestRoute : RespondToMeetingRequestRequest
@@ -67,7 +108,7 @@ public sealed class RespondToMeetingRequestRoute : RespondToMeetingRequestReques
 }
 
 public sealed class RespondToMeetingRequestEndpoint(IMeetingRequestService service)
-    : Endpoint<RespondToMeetingRequestRoute, ApiResult<AdminMeetingRequestRow>>
+    : Endpoint<RespondToMeetingRequestRoute, ApiResult<AdminMeetingRequestDetail>>
 {
     public override void Configure()
     {
@@ -84,7 +125,7 @@ public sealed class RespondToMeetingRequestEndpoint(IMeetingRequestService servi
             await Send.UnauthorizedAsync(ct);
             return;
         }
-        await Send.OkAsync(ApiResult<AdminMeetingRequestRow>.Ok(
+        await Send.OkAsync(ApiResult<AdminMeetingRequestDetail>.Ok(
             await service.RespondAsync(actorId, req.Id, req, ct)), ct);
     }
 }

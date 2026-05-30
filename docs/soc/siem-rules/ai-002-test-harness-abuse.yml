@@ -1,14 +1,13 @@
-title: AI test-harness token abuse
-id: ai-002-test-harness-abuse
+title: AI admin dry-run invocation (base)
+id: ai-002-base-admin-dry-run
 status: experimental
 description: >
-  Detects an admin running the AI prompt dry-run / Test endpoint at
-  volume sufficient to bill the OpenAI key dry. Combination of per-admin
-  rate-limit (D-179) is the preventive control; this rule is the
-  detective backstop.
+  Base rule — a successful AI invocation where the caller is acting
+  via the admin Test/dry-run endpoint. D-179 carries `Detail.callerKind`
+  on every AiInvocation audit event.
 references:
   - https://attack.mitre.org/techniques/T1496/
-  - SIMF DECISIONS_LOG.md D-178, D-179
+  - SIMF DECISIONS_LOG.md D-178, D-179, D-185
 tags:
   - attack.impact
   - attack.t1496
@@ -20,18 +19,52 @@ logsource:
 detection:
   selection:
     EventType: 'AiInvocation.Succeeded'
-  adminCaller:
-    Detail|json:
-      callerKind: 'Admin'
-  condition: selection and adminCaller
-  aggregate: sum(Detail.tokensInput + Detail.tokensOutput) by ActorUserId
-  timeframe: 1h
-  threshold: 50000
-falsepositives:
-  - Legitimate large-prompt evaluation by a content engineer
-level: high
+    Outcome: 'Success'
+    Detail.callerKind: 'Admin'
+  condition: selection
 fields:
   - ActorUserId
   - Detail.promptKey
   - Detail.tokensInput
   - Detail.tokensOutput
+falsepositives:
+  - Routine admin Test workbench session. Informational alone.
+level: informational
+---
+title: AI test-harness token abuse
+id: ai-002-test-harness-abuse
+status: experimental
+description: >
+  Detects an admin running the AI dry-run endpoint at volume sufficient
+  to bill the OpenAI key dry. Sigma 2.x `event_count` is a stand-in for
+  the real signal (cumulative tokens); the SOC platform's translation
+  step substitutes a `sum(Detail.tokensInput + Detail.tokensOutput)`
+  aggregation. The token-sum form is left as a translation note rather
+  than encoded here because pySigma's `event_count` correlation cannot
+  express arbitrary aggregation expressions.
+references:
+  - https://attack.mitre.org/techniques/T1496/
+  - SIMF DECISIONS_LOG.md D-178, D-179, D-185
+tags:
+  - attack.impact
+  - attack.t1496
+author: SIMF security review
+date: 2026-05-30
+correlation:
+  type: event_count
+  rules:
+    - ai-002-base-admin-dry-run
+  group-by:
+    - ActorUserId
+  timespan: 1h
+  condition:
+    gte: 200
+falsepositives:
+  - Legitimate large-prompt evaluation by a content engineer
+level: high
+notes: |
+  Token-sum variant (SOC-platform-side):
+    Splunk:  stats sum(Detail.tokensInput) + sum(Detail.tokensOutput) as t by ActorUserId | where t > 50000
+    KQL:     summarize t=sum(toint(Detail.tokensInput)) + sum(toint(Detail.tokensOutput)) by ActorUserId | where t > 50000
+  The event-count threshold (>=200/h) is a defensive backstop sized to
+  catch a runaway loop even before the token-sum trips.

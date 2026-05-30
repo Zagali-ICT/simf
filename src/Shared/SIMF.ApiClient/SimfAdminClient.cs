@@ -1523,10 +1523,20 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
-    public Task<ApiCallResult<AdminMeetingRequestRow>> RespondToAdminMeetingRequestAsync(
+    /// <summary>D-185 — single-record detail (includes requester email).
+    /// Used by the CP respond modal so the list-grid response never
+    /// carries email.</summary>
+    public Task<ApiCallResult<AdminMeetingRequestDetail>> GetAdminMeetingRequestAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminMeetingRequestDetail>(
+            HttpMethod.Get, $"meeting-requests/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminMeetingRequestDetail>> RespondToAdminMeetingRequestAsync(
         Guid id, RespondToMeetingRequestRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<AdminMeetingRequestRow>(
+        SendAsync<AdminMeetingRequestDetail>(
             HttpMethod.Put, $"meeting-requests/{id}/respond",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);

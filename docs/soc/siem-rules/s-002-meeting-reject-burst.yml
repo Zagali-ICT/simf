@@ -1,13 +1,11 @@
-title: Meeting-request reject burst
-id: s-002-meeting-reject-burst
+title: Meeting request rejected (base)
+id: s-002-base-meeting-rejected
 status: experimental
 description: >
-  Detects an admin rapidly rejecting many meeting requests via the
-  D-183 Respond modal. UI surfacing changes the realistic-action-
-  per-minute ceiling — script-style API abuse became modal-driven
-  human abuse. Source: D-183 threat-detection review.
+  Base rule — successful meeting-request response with status
+  Rejected. D-183 emits `Detail.status` on `MeetingRequest.Responded`.
 references:
-  - SIMF DECISIONS_LOG.md D-183
+  - SIMF DECISIONS_LOG.md D-183, D-185
 tags:
   - attack.impact
   - attack.t1531
@@ -20,15 +18,40 @@ detection:
   selection:
     EventType: 'MeetingRequest.Responded'
     Outcome: 'Success'
-  rejected:
-    Detail|json:
-      status: 'Rejected'
-  condition: selection and rejected | count() by ActorUserId > 9
-  timeframe: 5m
+    Detail.status: 'Rejected'
+  condition: selection
+fields:
+  - ActorUserId
+  - Detail.meetingRequestId
+falsepositives:
+  - Routine single rejection. Informational alone.
+level: informational
+---
+title: Meeting-request reject burst
+id: s-002-meeting-reject-burst
+status: experimental
+description: >
+  Detects an admin rapidly rejecting many meeting requests via the
+  D-183 Respond modal. UI surfacing changes the realistic-action-
+  per-minute ceiling — script-style API abuse became modal-driven
+  human abuse. Source: D-183 threat-detection review.
+references:
+  - SIMF DECISIONS_LOG.md D-183, D-185
+tags:
+  - attack.impact
+  - attack.t1531
+author: SIMF security review
+date: 2026-05-30
+correlation:
+  type: event_count
+  rules:
+    - s-002-base-meeting-rejected
+  group-by:
+    - ActorUserId
+  timespan: 5m
+  condition:
+    gte: 10
 falsepositives:
   - Legitimate post-event cleanup denying old pending requests;
     allowlist via maintenance-window tag.
 level: medium
-fields:
-  - ActorUserId
-  - Detail.meetingRequestId

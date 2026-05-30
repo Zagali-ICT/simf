@@ -1,12 +1,10 @@
-title: Delegation deactivation burst
-id: s-003-delegation-deactivate-burst
+title: Delegation deactivated (base)
+id: s-003-base-delegation-deactivated
 status: experimental
 description: >
-  Detects an admin rapidly deactivating multiple delegations via
-  the D-183 CP page. Could indicate org-restructure mass action,
-  insider sabotage, or session hijack.
+  Base rule — single successful `Delegation.Deactivated` event.
 references:
-  - SIMF DECISIONS_LOG.md D-183
+  - SIMF DECISIONS_LOG.md D-183, D-185
 tags:
   - attack.impact
   - attack.t1098
@@ -20,12 +18,39 @@ detection:
   selection:
     EventType: 'Delegation.Deactivated'
     Outcome: 'Success'
-  condition: selection | count() by ActorUserId > 4
-  timeframe: 10m
+  condition: selection
+fields:
+  - ActorUserId
+  - Detail.delegationId
+falsepositives:
+  - Routine single-delegation cleanup. Informational alone.
+level: informational
+---
+title: Delegation deactivation burst
+id: s-003-delegation-deactivate-burst
+status: experimental
+description: >
+  Detects an admin rapidly deactivating multiple delegations via
+  the D-183 CP page. Could indicate org-restructure mass action,
+  insider sabotage, or session hijack.
+references:
+  - SIMF DECISIONS_LOG.md D-183, D-185
+tags:
+  - attack.impact
+  - attack.t1098
+  - attack.t1531
+author: SIMF security review
+date: 2026-05-30
+correlation:
+  type: event_count
+  rules:
+    - s-003-base-delegation-deactivated
+  group-by:
+    - ActorUserId
+  timespan: 10m
+  condition:
+    gte: 5
 falsepositives:
   - Legitimate org restructure; require ticket-ref enrichment before
     page-out.
 level: medium
-fields:
-  - ActorUserId
-  - Detail.delegationId

@@ -17,8 +17,30 @@ public sealed record MeetingRequestSubmitted(
     MeetingRequestStatus Status,
     DateTimeOffset CreatedAt);
 
-/// <summary>D-174 — one row in the admin meeting-requests grid.</summary>
+/// <summary>D-174 — one row in the admin meeting-requests grid.
+/// D-185: <c>RequesterEmail</c> moved off this contract onto
+/// <see cref="AdminMeetingRequestDetail"/> so the list endpoint
+/// no longer broadcasts bulk PII to the CP grid. The respond modal
+/// fetches the detail (with email) on click via the new GetById
+/// endpoint.</summary>
 public sealed record AdminMeetingRequestRow(
+    Guid Id,
+    Guid SessionId,
+    string SessionCode,
+    string SessionTitle,
+    Guid RequestedByUserId,
+    string RequesterName,
+    string Subject,
+    MeetingRequestStatus Status,
+    string? ResponseNote,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? RespondedAt);
+
+/// <summary>D-185 — single-record detail for the admin respond modal.
+/// Includes <c>RequesterEmail</c> so the admin can reach out
+/// off-modal. Fetched on demand (one record per click), audit-logged
+/// as <c>MeetingRequest.Viewed</c>.</summary>
+public sealed record AdminMeetingRequestDetail(
     Guid Id,
     Guid SessionId,
     string SessionCode,

@@ -1,12 +1,13 @@
-title: AI bulk PII funnel via single caller
-id: ai-008-bulk-pii-funnel
+title: AI invocation with PII redaction (base)
+id: ai-008-base-pii-redaction
 status: experimental
 description: >
-  Detects one caller producing multiple distinct redaction classes
-  in a short window — pattern of an insider funnelling PII into the
-  AI assistant for downstream exfiltration.
+  Base rule — successful AI invocation whose `Detail.redactionKinds`
+  array contains at least one PII class. PII subset of the canonical
+  redaction kinds (excluding KEY / JWT / PEM which are pure secrets,
+  covered by AI-009): NID, PHONE, IBAN, EMAIL, PAN.
 references:
-  - SIMF DECISIONS_LOG.md D-181
+  - SIMF DECISIONS_LOG.md D-181, D-185
 tags:
   - attack.collection
   - attack.t1213
@@ -14,22 +15,63 @@ author: SIMF security review
 date: 2026-05-30
 logsource:
   product: simf
-  service: ai-invocation
+  service: audit
 detection:
   selection:
-    InputJson|contains|any:
-      - '[REDACTED_NID]'
-      - '[REDACTED_PHONE]'
-      - '[REDACTED_IBAN]'
-      - '[REDACTED_EMAIL]'
-      - '[REDACTED_PAN]'
-  condition: selection | count_distinct(redactionTokens) by CallerUserId > 2
-  timeframe: 15m
+    EventType: 'AiInvocation.Succeeded'
+    Outcome: 'Success'
+  hasPii:
+    Detail.redactionKinds|contains|any:
+      - 'NID'
+      - 'PHONE'
+      - 'IBAN'
+      - 'EMAIL'
+      - 'PAN'
+  condition: selection and hasPii
+fields:
+  - ActorUserId
+  - Detail.callerKind
+  - Detail.promptKey
+  - Detail.redactionKinds
+falsepositives:
+  - Single legitimate visitor-help interaction. Informational alone.
+level: informational
+---
+title: AI bulk PII funnel via single caller
+id: ai-008-bulk-pii-funnel
+status: experimental
+description: >
+  Detects one caller producing multiple PII classes — pattern of an
+  insider funnelling PII into the AI assistant for downstream
+  exfiltration. The base rule emits one event per invocation; the
+  correlation counts distinct PII kinds across that caller's events.
+
+  Note on `value_count` on an array field: in pySigma 2.x the
+  `Detail.redactionKinds` array is flattened by the ingestion
+  step so that each kind contributes one event. SOCs that prefer a
+  raw aggregation can substitute the platform-native form (see notes).
+references:
+  - SIMF DECISIONS_LOG.md D-181, D-185
+tags:
+  - attack.collection
+  - attack.t1213
+author: SIMF security review
+date: 2026-05-30
+correlation:
+  type: value_count
+  rules:
+    - ai-008-base-pii-redaction
+  group-by:
+    - ActorUserId
+  timespan: 15m
+  field: Detail.redactionKinds
+  condition:
+    gte: 3
 falsepositives:
   - Visitor-help interaction legitimately covering multiple personal
     fields; require corroborating signals (after-hours, unusual IP).
 level: high
-fields:
-  - CallerUserId
-  - CallerKind
-  - PromptKey
+notes: |
+  Platform-native equivalents (when array-flatten is unavailable):
+    Splunk:  mvexpand Detail.redactionKinds | stats dc(Detail.redactionKinds) as kinds by ActorUserId | where kinds >= 3
+    KQL:     mv-expand Detail.redactionKinds | summarize kinds=dcount(Detail.redactionKinds) by ActorUserId | where kinds >= 3

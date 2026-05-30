@@ -2,11 +2,18 @@ title: AI IBAN paste with intent verbs (fraud-vector)
 id: ai-007-iban-with-intent
 status: experimental
 description: >
-  Detects a visitor pasting an IBAN into the AI assistant together
+  Detects a caller pasting an IBAN into the AI assistant together
   with money-movement verbs (transfer / send / pay / wire / deposit
-  in EN or AR). Probable social-engineering / fraud setup.
+  in EN or AR). Probable social-engineering / fraud setup. Source:
+  D-181 redactor + D-185 unification.
+
+  Implementation note: the D-181 redactor stores a sanitised
+  `Detail.inputPreview` snippet on `AiInvocation.Succeeded` events
+  (length-capped, with original secrets replaced by `[REDACTED_*]`
+  markers). The regex hits on the preview, not on raw input, so it
+  is safe to ship to the SOC pipeline.
 references:
-  - SIMF DECISIONS_LOG.md D-181
+  - SIMF DECISIONS_LOG.md D-181, D-185
 tags:
   - attack.impact
   - attack.t1657
@@ -14,19 +21,22 @@ author: SIMF security review
 date: 2026-05-30
 logsource:
   product: simf
-  service: ai-invocation
+  service: audit
 detection:
+  selection:
+    EventType: 'AiInvocation.Succeeded'
+    Outcome: 'Success'
   hasIban:
-    InputJson|contains: '[REDACTED_IBAN]'
+    Detail.redactionKinds|contains: 'IBAN'
   hasIntent:
-    InputJson|re: '(?i)\b(transfer|send|pay|wire|deposit|تحويل|ارسل|سدد)\b'
-  condition: hasIban and hasIntent
+    Detail.inputPreview|re: '(?i)\b(transfer|send|pay|wire|deposit|تحويل|ارسل|سدد)\b'
+  condition: selection and hasIban and hasIntent
 falsepositives:
   - Legitimate account-help question by a confused user. Treat as a
     coaching opportunity, not necessarily an attack.
 level: high
 fields:
-  - CallerUserId
-  - CallerKind
-  - PromptKey
-  - Feature
+  - ActorUserId
+  - Detail.callerKind
+  - Detail.promptKey
+  - Detail.feature

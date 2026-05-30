@@ -1504,13 +1504,23 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateAdminDelegationAsync(id, token));
         });
 
-        // D-183 (CP UI for D-174 meeting requests).
+        // D-183 (CP UI for D-174 meeting requests); D-185 added the
+        // single-record GET so the list response no longer carries
+        // requester emails.
         group.MapPost("/admin/meeting-requests/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.ListAdminMeetingRequestsAsync(body, token));
+        });
+
+        group.MapGet("/admin/meeting-requests/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetAdminMeetingRequestAsync(id, token));
         });
 
         group.MapPut("/admin/meeting-requests/{id:guid}/respond",

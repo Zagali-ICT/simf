@@ -1519,6 +1519,7 @@
   <data name="Admin.MeetingRequests.None" xml:space="preserve"><value>لا توجد طلبات مقابلات حتى الآن.</value></data>
   <data name="Admin.MeetingRequests.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
   <data name="Admin.MeetingRequests.LoadFailed" xml:space="preserve"><value>تعذّر تحميل طلبات المقابلات.</value></data>
+  <data name="Admin.MeetingRequests.LoadingDetail" xml:space="preserve"><value>جارٍ تحميل بيانات التواصل…</value></data>
   <data name="Admin.MeetingRequests.Filter.Status" xml:space="preserve"><value>تصفية الحالة</value></data>
   <data name="Admin.MeetingRequests.Filter.All" xml:space="preserve"><value>الكل</value></data>
   <data name="Admin.MeetingRequests.Filter.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>

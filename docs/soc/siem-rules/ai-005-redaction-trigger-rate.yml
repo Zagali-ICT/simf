@@ -1,14 +1,16 @@
-title: AI input redaction-trigger spike (secrets pasted into AI)
-id: ai-005-redaction-trigger-rate
+title: AI input with redacted secret/PII (base)
+id: ai-005-base-redacted-input
 status: experimental
 description: >
-  Detects users pasting secrets into AI inputs at volume. The D-181
-  redactor masks `[REDACTED_KEY]` / `[REDACTED_JWT]` / `[REDACTED_PAN]`
-  / `[REDACTED_PEM]` / `[REDACTED_NID]` / `[REDACTED_PHONE]` /
-  `[REDACTED_IBAN]` at write time; the presence of these markers in
-  `AiInvocation.InputJson` is the detective signal.
+  Base rule — successful AI invocation whose redactor masked one or
+  more secret/PII tokens at write time. The D-181 redactor emits
+  `Detail.redactionKinds` (string array of canonical kinds) and
+  `Detail.redactionCount` (integer) on every `AiInvocation.Succeeded`
+  event. The canonical kind set is: KEY, JWT, PAN, PEM, NID, PHONE,
+  EMAIL, IBAN (8 markers; D-185 reconciled vs the D-184 README which
+  listed only 4 — full set is restored here).
 references:
-  - SIMF DECISIONS_LOG.md D-179, D-181
+  - SIMF DECISIONS_LOG.md D-179, D-181, D-185
 tags:
   - attack.collection
   - attack.t1213
@@ -16,20 +18,48 @@ author: SIMF security review
 date: 2026-05-30
 logsource:
   product: simf
-  service: ai-invocation
+  service: audit
 detection:
   selection:
-    InputJson|contains|any:
-      - '[REDACTED_KEY]'
-      - '[REDACTED_JWT]'
-      - '[REDACTED_PAN]'
-      - '[REDACTED_PEM]'
-  condition: selection | count() by CallerUserId > 4
-  timeframe: 1h
-falsepositives:
-  - Security-team test runs against the AI infra; allowlist by role
-level: medium
+    EventType: 'AiInvocation.Succeeded'
+    Outcome: 'Success'
+  hasRedaction:
+    Detail.redactionCount|gte: 1
+  condition: selection and hasRedaction
 fields:
-  - CallerUserId
-  - CallerKind
-  - PromptKey
+  - ActorUserId
+  - Detail.callerKind
+  - Detail.promptKey
+  - Detail.redactionKinds
+  - Detail.redactionCount
+falsepositives:
+  - Single accidental paste; informational alone.
+level: informational
+---
+title: AI input redaction-trigger spike (secrets pasted into AI)
+id: ai-005-redaction-trigger-rate
+status: experimental
+description: >
+  Detects users pasting secrets into AI inputs at volume — the
+  redactor markers prove the original input contained at least one
+  secret/PII class. D-185 threshold tuned to >=5 events / 1h per
+  caller to keep noise low while still catching scripted abuse.
+references:
+  - SIMF DECISIONS_LOG.md D-179, D-181, D-185
+tags:
+  - attack.collection
+  - attack.t1213
+author: SIMF security review
+date: 2026-05-30
+correlation:
+  type: event_count
+  rules:
+    - ai-005-base-redacted-input
+  group-by:
+    - ActorUserId
+  timespan: 1h
+  condition:
+    gte: 5
+falsepositives:
+  - Security-team test runs against the AI infra; allowlist by role.
+level: medium

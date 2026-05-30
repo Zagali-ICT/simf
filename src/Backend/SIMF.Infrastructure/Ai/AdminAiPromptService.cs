@@ -115,7 +115,7 @@ internal sealed class AdminAiPromptService(
             Detail = AiAuditDetail.ToJson(new
             {
                 promptId = prompt.Id,
-                key = prompt.Key,
+                promptKey = prompt.Key,
                 feature = prompt.Feature.ToString(),
                 provider = prompt.Provider.ToString(),
                 model = prompt.Model,
@@ -174,7 +174,7 @@ internal sealed class AdminAiPromptService(
             Detail = AiAuditDetail.ToJson(new
             {
                 promptId = prompt.Id,
-                key = prompt.Key,
+                promptKey = prompt.Key,
                 version = prompt.Version,
                 contentHashOld = oldHash,
                 contentHashNew = newHash,
@@ -209,7 +209,7 @@ internal sealed class AdminAiPromptService(
             Detail = AiAuditDetail.ToJson(new
             {
                 promptId = prompt.Id,
-                key = prompt.Key,
+                promptKey = prompt.Key,
             }),
         }, cancellationToken);
     }

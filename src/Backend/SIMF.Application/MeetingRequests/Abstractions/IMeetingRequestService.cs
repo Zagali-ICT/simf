@@ -13,9 +13,14 @@ public interface IMeetingRequestService
         CancellationToken cancellationToken = default);
 
     Task<GridPage<AdminMeetingRequestRow>> ListAllAsync(
-        GridQuery query, CancellationToken cancellationToken = default);
+        Guid actorUserId, GridQuery query,
+        CancellationToken cancellationToken = default);
 
-    Task<AdminMeetingRequestRow> RespondAsync(
+    Task<AdminMeetingRequestDetail> GetAsync(
+        Guid actorUserId, Guid id,
+        CancellationToken cancellationToken = default);
+
+    Task<AdminMeetingRequestDetail> RespondAsync(
         Guid actorUserId, Guid id,
         RespondToMeetingRequestRequest request,
         CancellationToken cancellationToken = default);

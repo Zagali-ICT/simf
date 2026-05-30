@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/MeetingRequestsTests.cs
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -21,6 +22,14 @@ internal sealed class MeetingRequestService(
     TimeProvider timeProvider,
     ILogger<MeetingRequestService> logger) : IMeetingRequestService
 {
+    private static readonly JsonSerializerOptions DetailJsonOptions = new()
+    {
+        WriteIndented = false,
+    };
+
+    private static string DetailJson(object value) =>
+        JsonSerializer.Serialize(value, DetailJsonOptions);
+
     public async Task<MeetingRequestSubmitted> SubmitAsync(
         Guid sessionId, Guid requesterUserId,
         SubmitMeetingRequestRequest request,
@@ -73,12 +82,19 @@ internal sealed class MeetingRequestService(
         appDbContext.MeetingRequests.Add(req);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
+        // D-185: structured JSON so SIEM field-extracts instead of
+        // regex-parsing free text; matches the canonical Detail shape
+        // documented in docs/soc/siem-rules/README.md.
         await auditLog.WriteAsync(new AuditEntry
         {
             EventType = AuditEvents.MeetingRequestSubmitted,
             Outcome = AuditOutcome.Success,
             ActorUserId = requesterUserId,
-            Detail = $"meetingRequestId={req.Id}; sessionId={sessionId}",
+            Detail = DetailJson(new
+            {
+                meetingRequestId = req.Id,
+                sessionId,
+            }),
         }, cancellationToken);
 
         logger.LogInformation(
@@ -90,22 +106,27 @@ internal sealed class MeetingRequestService(
     }
 
     public async Task<GridPage<AdminMeetingRequestRow>> ListAllAsync(
-        GridQuery query, CancellationToken cancellationToken = default)
+        Guid actorUserId, GridQuery query,
+        CancellationToken cancellationToken = default)
     {
         var skip = Math.Max(0, query.Skip);
         var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
 
         var rows = appDbContext.MeetingRequests.AsNoTracking().AsQueryable();
+        var statusFilter = string.Empty;
         if (query.Filters.TryGetValue("status", out var statusRaw)
             && Enum.TryParse<MeetingRequestStatus>(statusRaw, ignoreCase: true,
                 out var status))
         {
             rows = rows.Where(r => r.Status == status);
+            statusFilter = status.ToString();
         }
+        var sessionFilter = string.Empty;
         if (query.Filters.TryGetValue("sessionId", out var sidRaw)
             && Guid.TryParse(sidRaw, out var sessionIdFilter))
         {
             rows = rows.Where(r => r.SessionId == sessionIdFilter);
+            sessionFilter = sessionIdFilter.ToString();
         }
         rows = rows.OrderByDescending(r => r.CreatedAt);
 
@@ -122,30 +143,81 @@ internal sealed class MeetingRequestService(
                 })
             .ToListAsync(cancellationToken);
 
-        if (pageRows.Count == 0)
+        // D-185: every list call is auditable. SOC needs the off-hours
+        // bulk-pull signal — see SIEM rule scaffolding doc. Detail
+        // carries count + applied filters so the rule can distinguish
+        // a routine top-25 status-filtered view from a top-200
+        // unfiltered scrape. Filter values are sourced from already-
+        // validated enum + Guid parses above (so no free-text rides
+        // the audit row — explicit allowlist, no dictionary echo).
+        await auditLog.WriteAsync(new AuditEntry
         {
-            return GridPage<AdminMeetingRequestRow>.Of(
-                Array.Empty<AdminMeetingRequestRow>(), total,
-                new GridQuery { Skip = skip, Top = top });
-        }
-
-        var userIds = pageRows.Select(r => r.RequestedByUserId).Distinct().ToList();
-        var emails = await identityDbContext.Users.AsNoTracking()
-            .Where(u => userIds.Contains(u.Id))
-            .Select(u => new { u.Id, u.Email })
-            .ToDictionaryAsync(u => u.Id, u => u.Email, cancellationToken);
+            EventType = AuditEvents.AdminMeetingRequestsListed,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = DetailJson(new
+            {
+                count = pageRows.Count,
+                total,
+                top,
+                skip,
+                statusFilter,
+                sessionFilter,
+            }),
+        }, cancellationToken);
 
         var items = pageRows.Select(r => new AdminMeetingRequestRow(
             r.Id, r.SessionId, r.Code, r.Title,
             r.RequestedByUserId, r.RequesterName,
-            emails.TryGetValue(r.RequestedByUserId, out var email) ? email : null,
             r.Subject, r.Status, r.ResponseNote, r.CreatedAt, r.RespondedAt))
             .ToList();
         return GridPage<AdminMeetingRequestRow>.Of(items, total,
             new GridQuery { Skip = skip, Top = top });
     }
 
-    public async Task<AdminMeetingRequestRow> RespondAsync(
+    public async Task<AdminMeetingRequestDetail> GetAsync(
+        Guid actorUserId, Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        // D-185: single-record fetch carries the requester email so the
+        // admin can reach out off-modal. Audit every read.
+        var req = await appDbContext.MeetingRequests.AsNoTracking()
+            .Where(r => r.Id == id)
+            .SingleOrDefaultAsync(cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.MeetingRequestNotFound, 404,
+                "Meeting request not found.",
+                "لم يتم العثور على طلب المقابلة.");
+
+        var session = await appDbContext.Sessions.AsNoTracking()
+            .Where(s => s.Id == req.SessionId)
+            .Select(s => new { s.Code, s.Title })
+            .SingleAsync(cancellationToken);
+
+        var email = await identityDbContext.Users.AsNoTracking()
+            .Where(u => u.Id == req.RequestedByUserId)
+            .Select(u => u.Email)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AdminMeetingRequestViewed,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = DetailJson(new
+            {
+                meetingRequestId = req.Id,
+            }),
+        }, cancellationToken);
+
+        return new AdminMeetingRequestDetail(
+            req.Id, req.SessionId, session.Code, session.Title,
+            req.RequestedByUserId, req.RequesterName, email,
+            req.Subject, req.Status, req.ResponseNote,
+            req.CreatedAt, req.RespondedAt);
+    }
+
+    public async Task<AdminMeetingRequestDetail> RespondAsync(
         Guid actorUserId, Guid id,
         RespondToMeetingRequestRequest request,
         CancellationToken cancellationToken = default)
@@ -172,12 +244,34 @@ internal sealed class MeetingRequestService(
         req.RespondedByUserId = actorUserId;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
+        // D-185: structured JSON Detail so SIEM rule S-002 can
+        // field-extract `Detail.status` instead of regex-parsing.
         await auditLog.WriteAsync(new AuditEntry
         {
             EventType = AuditEvents.MeetingRequestResponded,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"meetingRequestId={req.Id}; status={req.Status}",
+            Detail = DetailJson(new
+            {
+                meetingRequestId = req.Id,
+                status = req.Status.ToString(),
+            }),
+        }, cancellationToken);
+
+        // D-185 (security review-pass): the respond path returns the
+        // requester email, so SOC must see one Viewed event for every
+        // email disclosure regardless of which endpoint disclosed it.
+        // Without this row, a scripted client skipping the GET would
+        // exfiltrate email + leave no Viewed audit trail.
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AdminMeetingRequestViewed,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = DetailJson(new
+            {
+                meetingRequestId = req.Id,
+            }),
         }, cancellationToken);
 
         var session = await appDbContext.Sessions.AsNoTracking()
@@ -189,7 +283,7 @@ internal sealed class MeetingRequestService(
             .Select(u => u.Email)
             .SingleOrDefaultAsync(cancellationToken);
 
-        return new AdminMeetingRequestRow(
+        return new AdminMeetingRequestDetail(
             req.Id, req.SessionId, session.Code, session.Title,
             req.RequestedByUserId, req.RequesterName, email,
             req.Subject, req.Status, req.ResponseNote,

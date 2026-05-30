@@ -246,4 +246,87 @@ internal static class AiAuditDetail
             return "{}";
         }
     }
+
+    // D-185 — every canonical redaction marker the redactor emits.
+    // Keeps the SIEM rule's canonical set (README "Detail JSON shape")
+    // in sync with what the producer scans for.
+    private static readonly (string Marker, string Kind)[] RedactionMarkers =
+    {
+        ("[REDACTED_KEY]", "KEY"),
+        ("[REDACTED_JWT]", "JWT"),
+        ("[REDACTED_PAN]", "PAN"),
+        ("[REDACTED_PEM]", "PEM"),
+        ("[REDACTED_NID]", "NID"),
+        ("[REDACTED_PHONE]", "PHONE"),
+        ("[REDACTED_EMAIL]", "EMAIL"),
+        ("[REDACTED_IBAN]", "IBAN"),
+    };
+
+    private const int InputPreviewCapChars = 1024;
+
+    /// <summary>D-185 — redaction summary derived from already-redacted
+    /// text. Returned as a tuple alongside <see cref="SerialiseAndRedact"/>
+    /// so SIEM rules AI-005 / AI-007 / AI-008 / AI-009 can field-extract
+    /// <c>redactionKinds</c> (string[]) + <c>redactionCount</c> (int) +
+    /// <c>inputPreview</c> (sanitised, length-capped). The redacted
+    /// values never carry the raw secret, so the preview is safe to ship
+    /// to the SOC pipeline.</summary>
+    public sealed record RedactedInvocationDetail(
+        string InputJson,
+        IReadOnlyList<string> RedactionKinds,
+        int RedactionCount,
+        string InputPreview);
+
+    /// <summary>D-185 — redact + serialise + summarise. SIEM-canonical
+    /// payload for one invocation. Output text MAY be passed via
+    /// <paramref name="extraRedactedText"/> so an LLM completion that
+    /// itself contained secrets contributes to the summary.</summary>
+    public static RedactedInvocationDetail SerialiseAndRedactWithSummary(
+        IReadOnlyDictionary<string, string> inputs,
+        string? extraRedactedText = null)
+    {
+        var json = SerialiseAndRedact(inputs);
+        var corpus = json + (extraRedactedText is null
+            ? string.Empty
+            : "\n" + extraRedactedText);
+
+        var kinds = new List<string>();
+        var count = 0;
+        foreach (var (marker, kind) in RedactionMarkers)
+        {
+            var hits = CountOccurrences(corpus, marker);
+            if (hits > 0)
+            {
+                kinds.Add(kind);
+                count += hits;
+            }
+        }
+
+        // D-185 — preview is the redacted JSON, length-capped. SOC rule
+        // AI-007 regexes against this snippet for intent verbs co-occurring
+        // with the IBAN marker, so it must be the redacted text (no raw
+        // secrets) and short enough to ship to the audit Detail column.
+        var preview = json.Length <= InputPreviewCapChars
+            ? json
+            : json[..InputPreviewCapChars];
+
+        return new RedactedInvocationDetail(json, kinds, count, preview);
+    }
+
+    private static int CountOccurrences(string haystack, string needle)
+    {
+        if (string.IsNullOrEmpty(haystack) || string.IsNullOrEmpty(needle))
+        {
+            return 0;
+        }
+        var count = 0;
+        var index = 0;
+        while ((index = haystack.IndexOf(needle, index,
+                   StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            index += needle.Length;
+        }
+        return count;
+    }
 }

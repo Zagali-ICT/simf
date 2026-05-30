@@ -135,6 +135,13 @@ internal sealed class AiService(
         stopwatch.Stop();
         var latencyMs = (int)stopwatch.ElapsedMilliseconds;
 
+        // D-185 — single-call redact+serialise+summarise so the audit
+        // Detail carries the SIEM-canonical redactionKinds + count +
+        // inputPreview (SIEM rules AI-005/007/008/009 depend on these).
+        var redactedOutput = AiAuditDetail.RedactValue(providerResponse.OutputText);
+        var redacted = AiAuditDetail.SerialiseAndRedactWithSummary(
+            inputs, extraRedactedText: redactedOutput);
+
         var invocation = new AiInvocation
         {
             Id = Guid.NewGuid(),
@@ -148,8 +155,8 @@ internal sealed class AiService(
             // D-179 (review-pass) — also redact OutputText: an LLM that
             // echoes a user-pasted secret (or names a person verbatim
             // from RAG context) would otherwise persist it.
-            InputJson = AiAuditDetail.SerialiseAndRedact(inputs),
-            OutputText = AiAuditDetail.RedactValue(providerResponse.OutputText),
+            InputJson = redacted.InputJson,
+            OutputText = redactedOutput,
             TokensInput = providerResponse.TokensInput,
             TokensOutput = providerResponse.TokensOutput,
             LatencyMs = latencyMs,
@@ -162,7 +169,10 @@ internal sealed class AiService(
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         // D-179 — JSON-shape the audit Detail so SIEM field-extracts
-        // instead of regex-parsing free text.
+        // instead of regex-parsing free text. D-185 — added
+        // redactionKinds/redactionCount/inputPreview so SIEM rules
+        // AI-005/007/008/009 can field-extract instead of joining the
+        // OperationLog row back to the AiInvocation row.
         await auditLog.WriteAsync(new AuditEntry
         {
             EventType = AuditEvents.AiInvocationSucceeded,
@@ -179,6 +189,9 @@ internal sealed class AiService(
                 tokensInput = providerResponse.TokensInput,
                 tokensOutput = providerResponse.TokensOutput,
                 invocationId = invocation.Id,
+                redactionKinds = redacted.RedactionKinds,
+                redactionCount = redacted.RedactionCount,
+                inputPreview = redacted.InputPreview,
             }),
         }, cancellationToken);
 

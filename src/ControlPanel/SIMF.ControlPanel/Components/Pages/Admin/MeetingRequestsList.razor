@@ -83,7 +83,7 @@
                                 @if (row.Status == MeetingRequestStatus.Pending)
                                 {
                                     <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => OnRespond(row))">
+                                                OnClick="@(() => OnRespondAsync(row))">
                                         @L["Admin.MeetingRequests.Respond"]
                                     </SimfButton>
                                 }
@@ -112,7 +112,11 @@
                     <dt>@L["Admin.MeetingRequests.Col.Requester"]</dt>
                     <dd>
                         <div>@_respondTarget.RequesterName</div>
-                        @if (!string.IsNullOrEmpty(_respondTarget.RequesterEmail))
+                        @if (_loadingDetail)
+                        {
+                            <div class="simf-table__sub">@L["Admin.MeetingRequests.LoadingDetail"]</div>
+                        }
+                        else if (!string.IsNullOrEmpty(_respondTarget.RequesterEmail))
                         {
                             <div class="simf-table__sub">@_respondTarget.RequesterEmail</div>
                         }
@@ -164,7 +168,10 @@
     private Toast? _toast;
 
     private bool _respondOpen;
-    private AdminMeetingRequestRow? _respondTarget;
+    // D-185: detail-shaped so the modal can display the requester
+    // email fetched on demand. List rows don't carry email anymore.
+    private AdminMeetingRequestDetail? _respondTarget;
+    private bool _loadingDetail;
     private MeetingRequestStatus _respondStatus = MeetingRequestStatus.Accepted;
     private string _respondNote = string.Empty;
 
@@ -207,13 +214,35 @@
         finally { _loading = false; }
     }
 
-    private void OnRespond(AdminMeetingRequestRow row)
+    private async Task OnRespondAsync(AdminMeetingRequestRow row)
     {
-        _respondTarget = row;
+        // D-185: open the modal with whatever the row already carries
+        // (no email yet), then fetch the detail (with email) in the
+        // background. The Loading state shows in the modal until the
+        // detail arrives. Fetching is a separate audited call so SOC
+        // sees one MeetingRequest.Viewed event per click.
+        _respondTarget = new AdminMeetingRequestDetail(
+            row.Id, row.SessionId, row.SessionCode, row.SessionTitle,
+            row.RequestedByUserId, row.RequesterName, RequesterEmail: null,
+            row.Subject, row.Status, row.ResponseNote,
+            row.CreatedAt, row.RespondedAt);
         _respondStatus = MeetingRequestStatus.Accepted;
         _respondNote = string.Empty;
         _respondOpen = true;
+        _loadingDetail = true;
         _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminMeetingRequestDetail>>(
+                "simfAccount.getJson",
+                $"/account/api/admin/meeting-requests/{row.Id}");
+            if (env is { Success: true, Data: not null } && _respondOpen
+                && _respondTarget?.Id == row.Id)
+            {
+                _respondTarget = env.Data;
+            }
+        }
+        finally { _loadingDetail = false; }
     }
 
     private void OnRespondStatusChanged(ChangeEventArgs e)
@@ -234,7 +263,7 @@
         _toast = null;
         try
         {
-            var env = await JS.InvokeAsync<ApiResult<AdminMeetingRequestRow>>(
+            var env = await JS.InvokeAsync<ApiResult<AdminMeetingRequestDetail>>(
                 "simfAccount.putJson",
                 $"/account/api/admin/meeting-requests/{_respondTarget.Id}/respond",
                 new RespondToMeetingRequestRequest
