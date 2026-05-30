@@ -29,7 +29,8 @@ public interface IAdminApprovalReadService
         CancellationToken cancellationToken = default);
 
     /// <summary>Pending-Other profile preview — same shape, restricted to
-    /// <see cref="SIMF.Common.Enums.UserType.Other"/>.</summary>
+    /// the partner-side approval queue (D-186: Visitor users whose
+    /// linked ProfileType.IsVisitor is false).</summary>
     Task<PendingProfileResponse?> GetPendingOtherProfileAsync(
         Guid subjectUserId,
         CancellationToken cancellationToken = default);

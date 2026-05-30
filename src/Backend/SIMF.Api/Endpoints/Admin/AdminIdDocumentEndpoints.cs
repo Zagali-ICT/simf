@@ -112,7 +112,11 @@ public sealed class UploadOtherIdDocumentEndpoint(IUserProfileService service)
     : AdminIdDocumentUploadEndpointBase(service)
 {
     public override Guid SubjectId => Route<Guid>("id");
-    public override UserType ExpectedKind => UserType.Other;
+    // D-186: Other accounts are Visitor-typed under the hood; the
+    // partner-vs-audience distinction lives on the linked ProfileType.
+    // The ID-document path's UserType-match guard prevents uploading
+    // to an Admin row, which is what matters here.
+    public override UserType ExpectedKind => UserType.Visitor;
 
     public override void Configure()
     {
@@ -170,7 +174,11 @@ public sealed class FetchOtherIdDocumentEndpoint(IUserProfileService service)
     : AdminIdDocumentFetchEndpointBase(service)
 {
     public override Guid SubjectId => Route<Guid>("id");
-    public override UserType ExpectedKind => UserType.Other;
+    // D-186: Other accounts are Visitor-typed under the hood; the
+    // partner-vs-audience distinction lives on the linked ProfileType.
+    // The ID-document path's UserType-match guard prevents uploading
+    // to an Admin row, which is what matters here.
+    public override UserType ExpectedKind => UserType.Visitor;
 
     public override void Configure()
     {

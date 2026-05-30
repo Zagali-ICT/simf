@@ -38,7 +38,9 @@ public sealed class MobileAppRoleTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/profile-types",
             new AdminCreateProfileTypeRequest
             {
-                UserType = "Other",
+                // D-186: partner-side profile types are UserType=Visitor with IsVisitor=false.
+                UserType = "Visitor",
+                IsVisitor = false,
                 Name = name,
                 NameArabic = "منسّق برنامج",
                 PageColor = "#244A77",
@@ -65,7 +67,9 @@ public sealed class MobileAppRoleTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/profile-types",
             new AdminCreateProfileTypeRequest
             {
-                UserType = "Other",
+                // D-186: partner-side profile types are UserType=Visitor with IsVisitor=false.
+                UserType = "Visitor",
+                IsVisitor = false,
                 Name = name,
                 NameArabic = "عارض",
                 PageColor = "#A78BFA",
@@ -85,7 +89,9 @@ public sealed class MobileAppRoleTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/profile-types",
             new AdminCreateProfileTypeRequest
             {
-                UserType = "Other",
+                // D-186: partner-side profile types are UserType=Visitor with IsVisitor=false.
+                UserType = "Visitor",
+                IsVisitor = false,
                 Name = $"Invalid {Guid.NewGuid():N}",
                 NameArabic = "غير صالح",
                 PageColor = "#FF0000",
@@ -103,7 +109,9 @@ public sealed class MobileAppRoleTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/profile-types",
             new AdminCreateProfileTypeRequest
             {
-                UserType = "Other",
+                // D-186: partner-side profile types are UserType=Visitor with IsVisitor=false.
+                UserType = "Visitor",
+                IsVisitor = false,
                 Name = $"Volunteer {Guid.NewGuid():N}",
                 NameArabic = "متطوّع",
                 PageColor = "#22D3EE",

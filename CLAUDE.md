@@ -70,3 +70,15 @@ Frontend additions, new resx strings (more languages), new endpoints,
 non-schema bug fixes, and additive Options-section keys remain in scope
 for normal development. The freeze applies to the persistence and enum
 contract surface only.
+
+### D-186 partial lift (2026-05-30)
+
+Owner authorised one targeted lift of the D-110 freeze: the structural
+collapse of `UserType` from `(Visitor, Other, Admin)` to `(Visitor, Admin)`
+and the addition of `ProfileType.IsVisitor`. This required removing
+`UserType.Other` (value `1`) and landing two new migrations on top of
+the InitialCreate baseline (`App/D186_AddProfileTypeIsVisitor` +
+`Identity/D186_FoldOtherUsersIntoVisitor`). Admin stayed at integer
+value `2`; the `1` slot is reserved. See `docs/decisions/DECISIONS_LOG.md`
+D-186 for the full rationale. No other freeze items are lifted; future
+schema or enum changes still require explicit owner approval.

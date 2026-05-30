@@ -66,8 +66,11 @@ public sealed class AdminCreateOtherRequest
     public string DisplayName { get; set; } = string.Empty;
 
     /// <summary>
-    /// The <c>ProfileTypes</c> row id that identifies the subtype. Must
-    /// reference an active row with <c>UserType = Other</c>.
+    /// The <c>ProfileTypes</c> row id that identifies the partner subtype.
+    /// D-186: must reference an active row with
+    /// <c>UserType = Visitor</c> AND <c>IsVisitor = false</c> (partner /
+    /// staff scope) — the request is rejected if the chosen ProfileType
+    /// is audience-side or admin-scope.
     /// </summary>
     public Guid ProfileTypeId { get; set; }
 }
@@ -241,18 +244,24 @@ public sealed record AdminProfileTypeSummary(
     // carries into the Flutter app. Serialised as the enum name
     // ("None" / "Staff" / "Moderator").
     string MobileAppRole,
-    bool IsActive);
+    bool IsActive,
+    // D-186 — audience-vs-partner split inside the Visitor scope.
+    // true = audience profile type (VIP, Normal); false = partner /
+    // staff profile type (Sponsor, Exhibitor, Media, Staff).
+    bool IsVisitor);
 
 /// <summary>
 /// D-115 — body of <c>POST /api/v1/admin/profile-types</c>. Creates a
-/// new ProfileType row scoped to a single <see cref="UserType"/>
-/// (Visitor or Other today; Admin is rejected since admins don't carry
-/// a profile type). Per-UserType name uniqueness is enforced
-/// server-side (case-insensitive).
+/// new ProfileType row. D-186 collapsed UserType to Visitor-only for
+/// non-admin profile types; the audience-vs-partner distinction is
+/// expressed via <see cref="IsVisitor"/>. Per-UserType name uniqueness
+/// is enforced server-side (case-insensitive).
 /// </summary>
 public sealed class AdminCreateProfileTypeRequest
 {
-    /// <summary>"Visitor" or "Other". Any other value returns 400.</summary>
+    /// <summary>D-186: only "Visitor" is accepted for non-admin profile
+    /// types (Admin-side profile types remain reserved for future use).
+    /// The audience-vs-partner split lives on <see cref="IsVisitor"/>.</summary>
     public string UserType { get; set; } = string.Empty;
 
     /// <summary>English display name (1-128 chars; unique per UserType).</summary>
@@ -273,12 +282,19 @@ public sealed class AdminCreateProfileTypeRequest
 
     /// <summary>Whether the row is visible in pickers from the moment of creation. Default true.</summary>
     public bool IsActive { get; set; } = true;
+
+    /// <summary>D-186 — audience (true) or partner / staff (false). Default
+    /// true so a freshly created profile type lands on the Visitors
+    /// approval queue until an admin explicitly flips it.</summary>
+    public bool IsVisitor { get; set; } = true;
 }
 
 /// <summary>
 /// D-115 — body of <c>PUT /api/v1/admin/profile-types/{id}</c>. Mutates
 /// every field except <c>UserType</c> — a profile type cannot migrate
-/// between Visitor and Other after creation (decisions log).
+/// between Visitor and Admin scopes after creation. D-186: <see cref="IsVisitor"/>
+/// can be flipped because it only re-routes the CP approval queue, not
+/// the underlying user account.
 /// </summary>
 public sealed class AdminUpdateProfileTypeRequest
 {
@@ -288,6 +304,9 @@ public sealed class AdminUpdateProfileTypeRequest
     /// <summary>D-161 — see <see cref="AdminCreateProfileTypeRequest.MobileAppRole"/>.</summary>
     public string? MobileAppRole { get; set; }
     public bool IsActive { get; set; } = true;
+
+    /// <summary>D-186 — audience (true) or partner / staff (false).</summary>
+    public bool IsVisitor { get; set; } = true;
 }
 
 /// <summary>

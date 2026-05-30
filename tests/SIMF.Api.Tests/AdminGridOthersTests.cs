@@ -89,7 +89,9 @@ public sealed class AdminGridOthersTests : IClassFixture<SimfApiFactory>
         var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
         var copy = await users.FindByEmailAsync(newEmail);
         Assert.NotNull(copy);
-        Assert.Equal(UserType.Other, copy!.UserType);
+        // D-186: Other accounts are now Visitor-typed; the partner-side
+// distinction lives on the linked ProfileType.IsVisitor=false.
+Assert.Equal(UserType.Visitor, copy!.UserType);
     }
 
     [Fact]
@@ -192,7 +194,9 @@ public sealed class AdminGridOthersTests : IClassFixture<SimfApiFactory>
         var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
         var ok = await users.FindByEmailAsync(eOk);
         Assert.NotNull(ok);
-        Assert.Equal(UserType.Other, ok!.UserType);
+        // D-186: Other accounts are now Visitor-typed; partner status
+        // lives on the linked ProfileType.IsVisitor=false.
+        Assert.Equal(UserType.Visitor, ok!.UserType);
     }
 
     // -- Helpers --------------------------------------------------------------
@@ -202,10 +206,13 @@ public sealed class AdminGridOthersTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        // The IdentitySeeder lands "Other — Staff" on first boot
-        // (see EnsureProfileTypeAsync).
+        // D-186: the IdentitySeeder lands "Staff" under UserType.Visitor
+        // with IsVisitor=false on first boot. Partner-side seeded rows
+        // are the ones the CP "Others" page filters on.
         var seeded = await appDb.ProfileTypes
-            .FirstOrDefaultAsync(p => p.UserType == UserType.Other && p.IsActive);
+            .FirstOrDefaultAsync(p => p.UserType == UserType.Visitor
+                                       && p.IsVisitor == false
+                                       && p.IsActive);
         if (seeded is not null) return seeded.Id;
         // Defensive fallback for environments where the seeder did not run.
         var fresh = new ProfileType
@@ -214,7 +221,8 @@ public sealed class AdminGridOthersTests : IClassFixture<SimfApiFactory>
             Name = "Other — TestSeed",
             NameArabic = "أخرى — اختبار",
             PageColor = "#10B981",
-            UserType = UserType.Other,
+            UserType = UserType.Visitor,
+            IsVisitor = false,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

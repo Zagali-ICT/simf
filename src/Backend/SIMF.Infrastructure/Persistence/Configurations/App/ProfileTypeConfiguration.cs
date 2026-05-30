@@ -42,8 +42,19 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<Profil
             .HasDefaultValue(MobileAppRole.None)
             .IsRequired();
 
+        // D-186 — audience/partner split inside the Visitor scope.
+        // Defaults to true so freshly created profile types are
+        // assumed audience-side until an admin toggles them.
+        builder.Property(profileType => profileType.IsVisitor)
+            .HasDefaultValue(true)
+            .IsRequired();
+
         // The picker filters by (UserType, IsActive) — keep one
-        // composite index so the dropdown is one lookup.
+        // composite index so the dropdown is one lookup. D-186 adds
+        // IsVisitor to a second composite index so the CP Others-
+        // approval-queue filter (IsVisitor=false on the Visitor pool)
+        // hits an index too.
         builder.HasIndex(profileType => new { profileType.UserType, profileType.IsActive });
+        builder.HasIndex(profileType => new { profileType.IsVisitor, profileType.IsActive });
     }
 }

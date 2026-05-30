@@ -42,7 +42,8 @@ internal sealed class AdminProfileTypeQueryService(
                 profileType.PageColor,
                 profileType.UserType.ToString(),
                 profileType.MobileAppRole.ToString(),
-                profileType.IsActive))
+                profileType.IsActive,
+                profileType.IsVisitor))
             .ToListAsync(cancellationToken);
     }
 }

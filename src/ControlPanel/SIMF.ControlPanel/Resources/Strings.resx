@@ -86,6 +86,8 @@
   <data name="Admin.ProfileTypes.Column.UserType" xml:space="preserve"><value>Account type</value></data>
   <data name="Admin.ProfileTypes.Field.UserType" xml:space="preserve"><value>Account type</value></data>
   <data name="Admin.ProfileTypes.UserType.Hint" xml:space="preserve"><value>Cannot be changed after creation.</value></data>
+  <data name="Admin.ProfileTypes.Scope.Audience" xml:space="preserve"><value>Visitor (audience)</value></data>
+  <data name="Admin.ProfileTypes.Scope.Partner" xml:space="preserve"><value>Partner / staff (Sponsor, Exhibitor, Media, …)</value></data>
   <data name="Admin.ProfileTypes.Column.Actions" xml:space="preserve"><value>Actions</value></data>
   <data name="Admin.ProfileTypes.Active.Yes" xml:space="preserve"><value>Yes</value></data>
   <data name="Admin.ProfileTypes.Active.No" xml:space="preserve"><value>No</value></data>

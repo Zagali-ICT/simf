@@ -85,6 +85,8 @@
   <data name="Admin.ProfileTypes.Column.UserType" xml:space="preserve"><value>نوع الحساب</value></data>
   <data name="Admin.ProfileTypes.Field.UserType" xml:space="preserve"><value>نوع الحساب</value></data>
   <data name="Admin.ProfileTypes.UserType.Hint" xml:space="preserve"><value>لا يمكن تغييره بعد الإنشاء.</value></data>
+  <data name="Admin.ProfileTypes.Scope.Audience" xml:space="preserve"><value>زائر (جمهور)</value></data>
+  <data name="Admin.ProfileTypes.Scope.Partner" xml:space="preserve"><value>شريك / فريق (راعي، عارض، إعلام، …)</value></data>
   <data name="Admin.ProfileTypes.Column.Actions" xml:space="preserve"><value>الإجراءات</value></data>
   <data name="Admin.ProfileTypes.Active.Yes" xml:space="preserve"><value>نعم</value></data>
   <data name="Admin.ProfileTypes.Active.No" xml:space="preserve"><value>لا</value></data>

@@ -70,7 +70,11 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<PendingProfileResponse>>())!;
         Assert.NotNull(body.Data);
-        Assert.Equal("Other", body.Data!.UserType);
+        // D-186: Other accounts are now Visitor-typed; the partner
+        // status lives on the linked ProfileType.IsVisitor=false. The
+        // wire shape exposes the SimfUser.UserType (now Visitor) and
+        // the CP infers audience-vs-partner from the linked profile.
+        Assert.Equal("Visitor", body.Data!.UserType);
     }
 
     [Fact]
@@ -207,8 +211,12 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        // D-186: partner-side profile types live under UserType.Visitor
+        // with IsVisitor=false. The CP "Others" queue filters this set.
         var seeded = await appDb.ProfileTypes
-            .FirstOrDefaultAsync(p => p.UserType == UserType.Other && p.IsActive);
+            .FirstOrDefaultAsync(p => p.UserType == UserType.Visitor
+                                       && p.IsVisitor == false
+                                       && p.IsActive);
         if (seeded is not null) { return seeded.Id; }
         var fresh = new ProfileType
         {
@@ -216,7 +224,8 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
             Name = "Other — PendingReadTestSeed",
             NameArabic = "أخرى — اختبار",
             PageColor = "#10B981",
-            UserType = UserType.Other,
+            UserType = UserType.Visitor,
+            IsVisitor = false,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

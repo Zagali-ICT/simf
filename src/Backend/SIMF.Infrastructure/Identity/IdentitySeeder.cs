@@ -158,20 +158,22 @@ public sealed class IdentitySeeder(
         await RenameProfileTypeIfPresentAsync(
             "Visitor — General", "General", "زائر — عام", "عام",
             UserType.Visitor, cancellationToken);
+        // D-186: legacy "Other — Staff" rows are under UserType.Visitor
+        // after the data migration; rename + audience-vs-partner state
+        // is preserved on the row's IsVisitor flag (false for Staff).
         await RenameProfileTypeIfPresentAsync(
             "Other — Staff", "Staff", "أخرى — فريق", "فريق",
-            UserType.Other, cancellationToken);
+            UserType.Visitor, cancellationToken);
 
         // P7 — seed the initial ProfileTypes set so the create / pending
-        // pages have non-empty pickers from first boot. The final v1 set
-        // is open item OI-6 against SIMF-FDS-002 v2.0 — the owner picks
-        // the full list (VVIP / VIP / Gold / Staff / Exhibitor / Sponsor
-        // / Media / ...); this seed ships one row per UserType so the
-        // pickers render.
+        // pages have non-empty pickers from first boot. D-186 collapsed
+        // every seeded row under UserType.Visitor; the partner-side
+        // ones (Staff / Media / Sponsor) carry IsVisitor=false so the
+        // CP "Others" approval queue finds them.
         await EnsureProfileTypeAsync(
             "General", "عام", "#3B82F6",
-            UserType.Visitor, MobileAppRole.None, cancellationToken);
-        // D-161 — Staff is the canonical operational Other-tier profile
+            isVisitor: true, MobileAppRole.None, cancellationToken);
+        // D-161 — Staff is the canonical operational partner-side profile
         // type; the default mobile-app role is Staff (can perform gate
         // operations, look up attendees, print badges). Admins seed the
         // remaining operational types (Volunteer → Staff,
@@ -179,19 +181,19 @@ public sealed class IdentitySeeder(
         // Exhibitor / Sponsor / Speaker → None) via the CP runtime.
         await EnsureProfileTypeAsync(
             "Staff", "فريق", "#10B981",
-            UserType.Other, MobileAppRole.Staff, cancellationToken);
-        // D-163 (PDF §2.5) — Other-tier seed expanded to ship Media and
-        // Sponsor as canonical operational types. Both default to
+            isVisitor: false, MobileAppRole.Staff, cancellationToken);
+        // D-163 (PDF §2.5) — partner-tier seed expanded to ship Media
+        // and Sponsor as canonical operational types. Both default to
         // MobileAppRole.None — they are display categories, not
         // operational authority (a sponsor's representative is not
         // automatically a gate operator). Distinct PageColors so the
         // badges are visually unmistakable.
         await EnsureProfileTypeAsync(
             "Media", "إعلامي", "#F59E0B", // amber
-            UserType.Other, MobileAppRole.None, cancellationToken);
+            isVisitor: false, MobileAppRole.None, cancellationToken);
         await EnsureProfileTypeAsync(
             "Sponsor", "راعي", "#8B5CF6", // purple
-            UserType.Other, MobileAppRole.None, cancellationToken);
+            isVisitor: false, MobileAppRole.None, cancellationToken);
 
         // D-174 (gap doc G11, Mockup page 39) — seed the cybersecurity
         // policy content blocks the Flutter "سياسات وضوابط الأمن
@@ -305,18 +307,21 @@ public sealed class IdentitySeeder(
 
     /// <summary>P7 — idempotent ProfileTypes seed (lookup by Name + UserType).
     /// D-161 added the <paramref name="mobileAppRole"/> parameter so seed
-    /// rows can ship with the right mobile-app authority out of the box.</summary>
+    /// rows can ship with the right mobile-app authority out of the box.
+    /// D-186: every seeded profile type now goes under <c>UserType.Visitor</c>;
+    /// the audience-vs-partner distinction is carried by
+    /// <paramref name="isVisitor"/>.</summary>
     private async Task EnsureProfileTypeAsync(
         string name,
         string nameArabic,
         string pageColor,
-        UserType userType,
+        bool isVisitor,
         MobileAppRole mobileAppRole,
         CancellationToken cancellationToken)
     {
         var exists = await appDbContext.ProfileTypes
             .AnyAsync(profileType =>
-                profileType.UserType == userType && profileType.Name == name,
+                profileType.UserType == UserType.Visitor && profileType.Name == name,
                 cancellationToken);
         if (exists) { return; }
 
@@ -326,7 +331,8 @@ public sealed class IdentitySeeder(
             Name = name,
             NameArabic = nameArabic,
             PageColor = pageColor,
-            UserType = userType,
+            UserType = UserType.Visitor,
+            IsVisitor = isVisitor,
             MobileAppRole = mobileAppRole,
             IsActive = true,
             CreatedAt = timeProvider.GetUtcNow(),

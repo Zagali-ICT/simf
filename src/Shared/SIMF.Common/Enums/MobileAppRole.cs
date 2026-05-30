@@ -14,8 +14,9 @@ namespace SIMF.Common.Enums;
 ///     Programme Coordinator / Operations Lead → <c>Moderator</c>; admins
 ///     rebalance the mapping at runtime without a code change.</item>
 ///   <item><b>None</b> (0) — explicit "no in-app authority" for
-///     <see cref="UserType.Other"/> profile types whose mobile-app effect
-///     is "treated as a Visitor" (Exhibitor, Sponsor, Speaker, Press,
+///     partner-side profile types (D-186: ProfileType.IsVisitor=false
+///     under the unified Visitor UserType) whose mobile-app effect is
+///     "treated as a Visitor" (Exhibitor, Sponsor, Speaker, Press,
 ///     VIP Guest, Government, …).</item>
 /// </list>
 ///

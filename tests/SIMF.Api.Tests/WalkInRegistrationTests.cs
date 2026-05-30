@@ -84,7 +84,9 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var user = await db.Users.SingleAsync(u => u.Id == body.Data!.UserId);
-        Assert.Equal(UserType.Other, user.UserType);
+        // D-186: Other walk-ins are now Visitor-typed accounts; the
+        // partner status lives on the linked ProfileType.IsVisitor=false.
+        Assert.Equal(UserType.Visitor, user.UserType);
         Assert.Equal(AccountState.Approved, user.AccountState);
     }
 
@@ -105,18 +107,24 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Walk_in_with_other_kind_profile_type_on_visitor_endpoint_returns_400()
+    public async Task Walk_in_routing_now_trusts_chosen_profile_type_after_D186()
     {
+        // D-186: the walk-in endpoint pair (/visitors/register-onsite +
+        // /others/register-onsite) used to enforce a strict cross-scope
+        // 400. After the UserType collapse both desks produce Visitor-
+        // typed accounts; the audience/partner queue assignment derives
+        // from the chosen ProfileType.IsVisitor on the request. A desk
+        // submitting a partner-side ProfileType via /visitors/register-
+        // onsite simply creates a Visitor user whose linked partner
+        // ProfileType routes them to the Others approval queue.
         var adminToken = await CreateAdministratorAndSignInAsync();
-        var otherProfileTypeId = await GetOtherProfileTypeAsync();
+        var partnerProfileTypeId = await GetOtherProfileTypeAsync();
 
-        var req = BuildRequest(otherProfileTypeId, $"crossed-{Guid.NewGuid():N}@simf.test");
+        var req = BuildRequest(partnerProfileTypeId, $"crossed-{Guid.NewGuid():N}@simf.test");
         var response = await PostAuthAsync(
             "/api/v1/admin/visitors/register-onsite", req, adminToken);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
-        Assert.Equal(ErrorCodes.AdminProfileTypeInvalid, body.Error!.Code);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
@@ -198,8 +206,12 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        // D-186: partner-side ProfileTypes are UserType.Visitor with
+        // IsVisitor=false.
         var seeded = await appDb.ProfileTypes
-            .FirstOrDefaultAsync(p => p.UserType == UserType.Other && p.IsActive);
+            .FirstOrDefaultAsync(p => p.UserType == UserType.Visitor
+                                       && p.IsVisitor == false
+                                       && p.IsActive);
         if (seeded is not null) return seeded.Id;
         var fresh = new ProfileType
         {
@@ -207,7 +219,8 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             Name = "Other — WalkInTestSeed",
             NameArabic = "أخرى — اختبار",
             PageColor = "#10B981",
-            UserType = UserType.Other,
+            UserType = UserType.Visitor,
+            IsVisitor = false,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

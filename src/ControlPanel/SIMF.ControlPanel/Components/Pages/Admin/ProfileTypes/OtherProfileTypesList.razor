@@ -97,7 +97,9 @@
 {
     <SimfModal Open="true" Title="@L["Admin.ProfileTypes.Add.Title"]" OnClose="@(() => _addOpen = false)">
         <ChildContent>
-            <ProfileTypeForm UserType="Other"
+            @* D-186: partner-side form — UserType is always Visitor;
+               IsPartnerForm=true tells the form to send IsVisitor=false. *@
+            <ProfileTypeForm IsPartnerForm="true"
                              OnSuccess="OnSavedAsync"
                              OnCancel="@(() => _addOpen = false)" />
         </ChildContent>
@@ -171,10 +173,17 @@
 }
 
 @code {
+    // D-186: this page is the partner-side queue. Server-side
+    // contract collapsed UserType into Visitor; the partner/audience
+    // split now lives on ProfileType.IsVisitor — we filter on that.
     private GridQuery _query = new()
     {
         Top = 20,
-        Filters = new Dictionary<string, string> { ["userType"] = "Other" },
+        Filters = new Dictionary<string, string>
+        {
+            ["userType"] = "Visitor",
+            ["isVisitor"] = "false",
+        },
     };
     private GridPage<AdminProfileTypeSummary>? _page;
     private bool _loading;
@@ -190,7 +199,9 @@
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
-        next.Filters["userType"] = "Other";
+        // Keep both filters pinned across grid-state changes.
+        next.Filters["userType"] = "Visitor";
+        next.Filters["isVisitor"] = "false";
         _query = next;
         await LoadAsync();
     }

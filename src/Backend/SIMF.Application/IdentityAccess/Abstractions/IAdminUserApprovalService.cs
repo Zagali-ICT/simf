@@ -61,8 +61,9 @@ public interface IAdminUserApprovalService
         AdminBulkApprovalRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>D-164 — bulk approve <see cref="UserType.Other"/>. Same
-    /// shape as the visitor variant.</summary>
+    /// <summary>D-164 — bulk approve partner-side accounts (D-186:
+    /// Visitor users whose linked ProfileType.IsVisitor is false).
+    /// Same shape as the visitor variant.</summary>
     Task<AdminBulkApprovalResponse> BulkApproveOthersAsync(
         Guid actorUserId,
         AdminBulkApprovalRequest request,

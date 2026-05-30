@@ -58,6 +58,12 @@ internal sealed class AdminProfileTypeCommandService(
         {
             rows = rows.Where(profileType => profileType.IsActive == isActive);
         }
+        // D-186: the CP Other-profile-types page filters this server-side.
+        if (query.Filters.TryGetValue("isVisitor", out var isVisitorFilter)
+            && bool.TryParse(isVisitorFilter, out var isVisitorValue))
+        {
+            rows = rows.Where(profileType => profileType.IsVisitor == isVisitorValue);
+        }
 
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
@@ -83,7 +89,8 @@ internal sealed class AdminProfileTypeCommandService(
                 profileType.PageColor,
                 profileType.UserType.ToString(),
                 profileType.MobileAppRole.ToString(),
-                profileType.IsActive))
+                profileType.IsActive,
+                profileType.IsVisitor))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminProfileTypeSummary>.Of(page, total,
@@ -106,13 +113,16 @@ internal sealed class AdminProfileTypeCommandService(
         AdminCreateProfileTypeRequest request,
         CancellationToken cancellationToken = default)
     {
+        // D-186: only the Visitor scope is accepted for non-admin
+        // profile types; the audience-vs-partner split lives on
+        // request.IsVisitor (true = audience, false = partner / staff).
         if (!Enum.TryParse<UserType>(request.UserType, ignoreCase: true, out var userType)
-            || (userType != UserType.Visitor && userType != UserType.Other))
+            || userType != UserType.Visitor)
         {
             throw new ApiException(
                 ErrorCodes.ProfileTypeInvalidUserType, 400,
-                "A profile type may only be created for Visitor or Other.",
-                "لا يمكن إنشاء نوع ملف شخصي إلا للزائر أو لنوع أخرى.");
+                "A profile type may only be created for the Visitor scope.",
+                "لا يمكن إنشاء نوع ملف شخصي إلا ضمن نطاق الزائر.");
         }
 
         var name = (request.Name ?? string.Empty).Trim();
@@ -144,6 +154,9 @@ internal sealed class AdminProfileTypeCommandService(
             NameArabic = nameArabic,
             PageColor = pageColor,
             UserType = userType,
+            // D-186: IsVisitor drives CP queue routing — true = Visitors
+            // approval queue, false = Others approval queue.
+            IsVisitor = request.IsVisitor,
             MobileAppRole = mobileAppRole,
             IsActive = request.IsActive,
             CreatedAt = now,
@@ -204,6 +217,10 @@ internal sealed class AdminProfileTypeCommandService(
         profileType.PageColor = (request.PageColor ?? string.Empty).Trim();
         profileType.MobileAppRole = ParseMobileAppRole(request.MobileAppRole);
         profileType.IsActive = request.IsActive;
+        // D-186: IsVisitor is mutable — flipping it re-routes the row
+        // between the CP Visitors and Others approval queues. The
+        // underlying user accounts already use UserType.Visitor either way.
+        profileType.IsVisitor = request.IsVisitor;
         profileType.UpdatedAt = timeProvider.GetUtcNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -269,7 +286,8 @@ internal sealed class AdminProfileTypeCommandService(
             profileType.PageColor,
             profileType.UserType.ToString(),
             profileType.MobileAppRole.ToString(),
-            profileType.IsActive);
+            profileType.IsActive,
+            profileType.IsVisitor);
 
     /// <summary>D-161 — parses the wire-side stringly mobile-app-role,
     /// rejecting unknown values with a typed 400. Null / empty defaults

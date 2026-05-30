@@ -93,7 +93,9 @@
 {
     <SimfModal Open="true" Title="@L["Admin.ProfileTypes.Add.Title"]" OnClose="@(() => _addOpen = false)">
         <ChildContent>
-            <ProfileTypeForm UserType="Visitor"
+            @* D-186: audience-side form — IsPartnerForm=false sends
+               IsVisitor=true on Create. *@
+            <ProfileTypeForm IsPartnerForm="false"
                              OnSuccess="OnSavedAsync"
                              OnCancel="@(() => _addOpen = false)" />
         </ChildContent>
@@ -165,10 +167,17 @@
 }
 
 @code {
+    // D-186: every non-admin profile type lives under UserType.Visitor;
+    // the audience-vs-partner split rides on IsVisitor. This page is
+    // the audience queue.
     private GridQuery _query = new()
     {
         Top = 20,
-        Filters = new Dictionary<string, string> { ["userType"] = "Visitor" },
+        Filters = new Dictionary<string, string>
+        {
+            ["userType"] = "Visitor",
+            ["isVisitor"] = "true",
+        },
     };
     private GridPage<AdminProfileTypeSummary>? _page;
     private bool _loading;
@@ -184,9 +193,10 @@
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
-        // Always re-apply the type filter — the grid drops filter keys on
-        // sort/page change, but the userType pin is structural to this page.
+        // Always re-apply both filters — the grid drops filter keys on
+        // sort/page change, but both pins are structural to this page.
         next.Filters["userType"] = "Visitor";
+        next.Filters["isVisitor"] = "true";
         _query = next;
         await LoadAsync();
     }

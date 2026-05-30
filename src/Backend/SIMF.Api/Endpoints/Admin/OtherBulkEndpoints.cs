@@ -34,7 +34,8 @@ public sealed class BulkDeleteOthersEndpoint(IAdminUserBulkService adminAccountS
             return;
         }
         var response = await adminAccountService.BulkDeleteUsersByKindAsync(
-            actorId, UserType.Other, req, ct);
+            // D-186: Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
+            actorId, UserType.Visitor, requirePartnerScope: true, req, ct);
         await Send.OkAsync(ApiResult<AdminBulkDeleteResponse>.Ok(response), ct);
     }
 }
@@ -65,7 +66,8 @@ public sealed class DuplicateOtherEndpoint(IAdminUserBulkService adminAccountSer
             return;
         }
         var created = await adminAccountService.DuplicateUserByKindAsync(
-            actorId, UserType.Other, req, ct);
+            // D-186: Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
+            actorId, UserType.Visitor, requirePartnerScope: true, req, ct);
         await Send.OkAsync(ApiResult<AdminCreateUserResponse>.Ok(created), ct);
     }
 }
@@ -95,7 +97,8 @@ public sealed class ExportOthersEndpoint(IAdminUserBulkService adminAccountServi
             return;
         }
         var bytes = await adminAccountService.ExportUsersByKindAsync(
-            actorId, UserType.Other, req, ct);
+            // D-186: Other = Visitor + partner-scope (ProfileType.IsVisitor=false).
+            actorId, UserType.Visitor, requirePartnerScope: true, req, ct);
         HttpContext.Response.Headers.ContentDisposition =
             $"attachment; filename=\"simf-others-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx\"";
         await Send.BytesAsync(bytes,
@@ -164,7 +167,8 @@ public sealed class ImportOthersEndpoint(IAdminUserBulkService adminAccountServi
         }
 
         var response = await adminAccountService.ImportUsersByKindAsync(
-            actorId, UserType.Other, bytes, ct);
+            // D-186: Other import = partner-scope flag.
+            actorId, partnerScope: true, bytes, ct);
         await Send.OkAsync(ApiResult<AdminImportUsersResponse>.Ok(response), ct);
     }
 

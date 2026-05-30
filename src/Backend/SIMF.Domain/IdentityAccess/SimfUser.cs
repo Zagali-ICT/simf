@@ -25,10 +25,10 @@ public class SimfUser : IdentityUser<Guid>
     public AccountState AccountState { get; set; } = AccountState.Registered;
 
     /// <summary>
-    /// The hardcoded user type (P7 — D-048; P8 — D-049). Determines
-    /// where the user can sign in (CP for <see cref="UserType.Admin"/>;
-    /// App / Website for <see cref="UserType.Visitor"/> and
-    /// <see cref="UserType.Other"/>) and whether RBAC applies (Admin
+    /// The hardcoded user type (P7 — D-048; P8 — D-049; D-186 collapsed
+    /// Other into Visitor). Determines where the user can sign in (CP
+    /// for <see cref="UserType.Admin"/>; App / Website for
+    /// <see cref="UserType.Visitor"/>) and whether RBAC applies (Admin
     /// only). Defaults to <see cref="UserType.Visitor"/> — the
     /// least-privileged surface — so any row that loses its metadata
     /// falls into the safest bucket.

@@ -35,8 +35,12 @@ public sealed class RegisterOtherOnSiteEndpoint(IAdminUserProvisioningService se
             await Send.UnauthorizedAsync(ct);
             return;
         }
+        // D-186: walk-in registrations always create Visitor-typed
+        // accounts; the audience-vs-partner split derives from the
+        // chosen ProfileType.IsVisitor on the request (the desk picks
+        // the partner-side ProfileType from the CP).
         var response = await service.RegisterOnSiteAsync(
-            actorId, UserType.Other, req, ct);
+            actorId, UserType.Visitor, req, ct);
         await Send.OkAsync(ApiResult<AdminWalkInRegistrationResponse>.Ok(response), ct);
     }
 }

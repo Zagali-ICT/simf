@@ -88,7 +88,8 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
         var adminToken = await CreateAdministratorAndSignInAsync();
         var name = $"Sponsor {Guid.NewGuid():N}";
 
-        var created = await CreateProfileTypeAsync(adminToken, "Other", name, "راعٍ", "#3B82F6");
+        // D-186: partner-side profile types are UserType=Visitor with IsVisitor=false.
+        var created = await CreateProfileTypeAsync(adminToken, "Visitor", name, "راعٍ", "#3B82F6");
 
         var renamed = $"{name} (Platinum)";
         var update = await PutAuthAsync(
@@ -99,6 +100,7 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
                 NameArabic = "راعٍ بلاتيني",
                 PageColor = "#FFFFFF",
                 IsActive = true,
+                IsVisitor = true,
             },
             adminToken);
         Assert.Equal(HttpStatusCode.OK, update.StatusCode);
@@ -106,8 +108,8 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<AdminProfileTypeSummary>>())!.Data!;
         Assert.Equal(renamed, updated.Name);
         // The route doesn't accept UserType in the body, so the value
-        // cannot drift between Visitor and Other after create.
-        Assert.Equal("Other", updated.UserType);
+        // cannot drift after create. D-186: every non-admin row is Visitor.
+        Assert.Equal("Visitor", updated.UserType);
     }
 
     [Fact]
@@ -116,12 +118,14 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
         var adminToken = await CreateAdministratorAndSignInAsync();
         var name = $"Exhibitor {Guid.NewGuid():N}";
 
-        await CreateProfileTypeAsync(adminToken, "Other", name, "عارض", "#10B981");
+        // D-186: partner-side profile types live under UserType.Visitor.
+        await CreateProfileTypeAsync(adminToken, "Visitor", name, "عارض", "#10B981");
         var second = await PostAuthAsync(
             "/api/v1/admin/profile-types",
             new AdminCreateProfileTypeRequest
             {
-                UserType = "Other",
+                UserType = "Visitor",
+                IsVisitor = false,
                 Name = name,
                 NameArabic = "عارض",
                 PageColor = "#10B981",
@@ -135,17 +139,36 @@ public sealed class AdminProfileTypeTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Same_name_across_different_user_types_is_allowed()
+    public async Task Same_name_across_audience_and_partner_scope_returns_409()
     {
+        // D-186: Visitor + Other used to be two distinct UserType scopes,
+        // each with its own name-uniqueness bucket. After D-186 both are
+        // UserType.Visitor; the audience-vs-partner split is IsVisitor.
+        // The unique constraint is per (UserType, Name) so the same name
+        // can no longer coexist across audience + partner. Documented as
+        // expected behaviour — operators rename one of the rows.
         var adminToken = await CreateAdministratorAndSignInAsync();
         var name = $"Gold {Guid.NewGuid():N}";
 
-        var visitorRow = await CreateProfileTypeAsync(adminToken, "Visitor", name, "ذهبي", "#FFD700");
-        var otherRow = await CreateProfileTypeAsync(adminToken, "Other", name, "ذهبي", "#FFD700");
+        var audienceRow = await CreateProfileTypeAsync(
+            adminToken, "Visitor", name, "ذهبي", "#FFD700");
 
-        Assert.NotEqual(visitorRow.Id, otherRow.Id);
-        Assert.Equal("Visitor", visitorRow.UserType);
-        Assert.Equal("Other", otherRow.UserType);
+        var partnerAttempt = await PostAuthAsync(
+            "/api/v1/admin/profile-types",
+            new AdminCreateProfileTypeRequest
+            {
+                UserType = "Visitor",
+                IsVisitor = false,
+                Name = name,
+                NameArabic = "ذهبي",
+                PageColor = "#FFD700",
+                IsActive = true,
+            },
+            adminToken);
+
+        Assert.Equal(HttpStatusCode.Conflict, partnerAttempt.StatusCode);
+        Assert.Equal("Visitor", audienceRow.UserType);
+        Assert.True(audienceRow.IsVisitor);
     }
 
     [Fact]

@@ -256,9 +256,13 @@ internal sealed class UserProfileService(
     }
 
     /// <summary>D-161 — implements <see cref="IUserProfileService.ResolveMobileAppRoleAsync"/>.
-    /// Visitor short-circuits to <see cref="MobileAppRole.Visitor"/>; Admin
-    /// short-circuits to <see cref="MobileAppRole.None"/>; Other looks up
-    /// the assigned profile-type's role with one cheap JOIN.</summary>
+    /// Admin short-circuits to <see cref="MobileAppRole.None"/>. D-186
+    /// folded Other accounts into Visitor: audience-side Visitors
+    /// (ProfileType.IsVisitor=true or no ProfileType) resolve to
+    /// <see cref="MobileAppRole.Visitor"/>; partner-side Visitors
+    /// (ProfileType.IsVisitor=false) inherit the assigned profile-type's
+    /// MobileAppRole — Staff / Moderator authority still flows from
+    /// the partner ProfileType row, just under the unified UserType.</summary>
     public async Task<MobileAppRole> ResolveMobileAppRoleAsync(
         Guid userId, CancellationToken cancellationToken = default)
     {
@@ -268,22 +272,24 @@ internal sealed class UserProfileService(
             .Select(u => new { u.UserType })
             .SingleOrDefaultAsync(cancellationToken);
         if (user is null) { return MobileAppRole.None; }
-        switch (user.UserType)
+        if (user.UserType == UserType.Admin)
         {
-            case UserType.Visitor:
-                return MobileAppRole.Visitor;
-            case UserType.Admin:
-                return MobileAppRole.None;
-            case UserType.Other:
-                return await appDbContext.UserProfiles
-                    .AsNoTracking()
-                    .Where(p => p.UserId == userId)
-                    .Where(p => p.ProfileType != null)
-                    .Select(p => p.ProfileType!.MobileAppRole)
-                    .FirstOrDefaultAsync(cancellationToken);
-            default:
-                return MobileAppRole.None;
+            return MobileAppRole.None;
         }
+
+        // Visitor scope — partner profile types carry an operational
+        // MobileAppRole; audience profile types (or no profile yet)
+        // resolve to the default Visitor mobile role.
+        var profile = await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.UserId == userId && p.ProfileType != null)
+            .Select(p => new { IsVisitor = p.ProfileType!.IsVisitor, p.ProfileType.MobileAppRole })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (profile is null || profile.IsVisitor)
+        {
+            return MobileAppRole.Visitor;
+        }
+        return profile.MobileAppRole;
     }
 
     private async Task DispatchProfileSubmittedAsync(

@@ -343,9 +343,9 @@ public sealed class SignInService(
     /// <summary>
     /// Enforces the audience gate (P2, rekeyed by P7b). The CP surface
     /// is for <see cref="UserType.Admin"/> only; the visitor surfaces
-    /// (Web, Flutter app) are for <see cref="UserType.Visitor"/> and
-    /// <see cref="UserType.Other"/>. A mismatch audits one
-    /// <c>SignIn.WrongSurface</c> row and throws 403.
+    /// (Web, Flutter app) are for <see cref="UserType.Visitor"/>
+    /// (D-186 collapsed the legacy Other type into Visitor). A
+    /// mismatch audits one <c>SignIn.WrongSurface</c> row and throws 403.
     ///
     /// <para>The <paramref name="roles"/> argument is kept on the
     /// signature so the call site does not have to re-fetch them; the

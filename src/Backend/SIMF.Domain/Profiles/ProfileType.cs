@@ -3,23 +3,28 @@ using SIMF.Common.Enums;
 namespace SIMF.Domain.Profiles;
 
 /// <summary>
-/// A dynamic subtype assigned to a <see cref="SimfUser"/> (P7 — decision
-/// D-048). Visitors carry one (VVIP / VIP / Gold / … with a bag /
-/// page colour); Others carry one (Staff / Exhibitor / Sponsor / Media /
-/// … colour for the App badge). Editable from the CP at runtime — adding
-/// a new subtype is a row insert, not a code change.
+/// A dynamic subtype assigned to a <see cref="SimfUser"/>. After D-186
+/// every non-admin account is <c>UserType.Visitor</c>, and the
+/// audience-vs-partner split lives on <see cref="IsVisitor"/>:
+/// <c>IsVisitor = true</c> for audience profile types (VVIP, VIP, Gold,
+/// Normal); <c>IsVisitor = false</c> for partner / staff profile types
+/// (Staff, Exhibitor, Sponsor, Media). Editable from the CP at runtime
+/// — adding a new subtype is a row insert, not a code change.
 ///
-/// <para>The lookup is **bilingual** (EN + AR) and **scoped by
-/// <see cref="UserType"/></para>: a Visitor's subtype picker filters
-/// <c>UserType = Visitor</c>; an Other's picker filters <c>UserType =
-/// Other</c>. Admins do not carry a profile type today; the column is
-/// retained on this entity to keep one table for any future
-/// Admin-side metadata.</para>
+/// <para><see cref="UserType"/> still scopes the picker per surface
+/// (Visitor profile types vs the rare Admin-side profile type); within
+/// the Visitor scope, <see cref="IsVisitor"/> decides whether the CP
+/// approval queue treats the account as audience or as partner. The CP
+/// keeps the two approval pages (Visitors / Others) physically
+/// separated to avoid admin confusion during approval; the filter
+/// behind each page is <c>UserType = Visitor AND
+/// ProfileType.IsVisitor = {true|false}</c>.</para>
 ///
 /// <para><b>Permissions:</b> a profile type grants **no permissions**.
 /// It is metadata for display + business rules in the App (which bag,
-/// which badge colour). All permission checks key off
-/// <see cref="UserType"/> and the user's RBAC roles (Admin only).</para>
+/// which badge colour, which approval queue). All permission checks
+/// key off <see cref="UserType"/> and the user's RBAC roles
+/// (Admin only).</para>
 /// </summary>
 public sealed class ProfileType
 {
@@ -38,8 +43,20 @@ public sealed class ProfileType
     /// </summary>
     public string PageColor { get; set; } = string.Empty;
 
-    /// <summary>Which <see cref="UserType"/> this profile type applies to.</summary>
+    /// <summary>Which <see cref="UserType"/> this profile type applies to.
+    /// After D-186 this is <c>Visitor</c> for every audience or partner
+    /// profile type; reserved for future Admin-side profile types.</summary>
     public UserType UserType { get; set; }
+
+    /// <summary>D-186 — audience vs partner split inside the Visitor
+    /// scope. <c>true</c> for audience profile types (VVIP, VIP, Gold,
+    /// Normal); <c>false</c> for partner / staff profile types
+    /// (Sponsor, Exhibitor, Media, Staff) that pre-D-186 lived under
+    /// <c>UserType = Other</c>. Defaults to <c>true</c> so a brand-new
+    /// profile type is assumed audience-side until an admin says
+    /// otherwise. Ignored for Admin-scope profile types (which don't
+    /// route through the visitor/other approval queues).</summary>
+    public bool IsVisitor { get; set; } = true;
 
     /// <summary>D-161 — the mobile-app authority any user assigned to this
     /// profile type carries into the Flutter app (SIMF-FDS-002 §8.5).

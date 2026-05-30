@@ -185,9 +185,14 @@ internal sealed class AdminAccountService(
         Guid actorUserId,
         AdminCreateOtherRequest request,
         CancellationToken cancellationToken = default) =>
+        // D-186: Other accounts are now Visitor-typed under the hood;
+        // the partner-side ProfileType (IsVisitor=false) carries the
+        // queue routing instead. The caller is expected to pass a
+        // ProfileTypeId whose ProfileType.IsVisitor=false — admin walk-in
+        // / create flows enforce this server-side at CreateAccountAsync.
         CreateAccountAsync(
             actorUserId, request.Email, request.DisplayName,
-            UserType.Other, profileTypeId: request.ProfileTypeId,
+            UserType.Visitor, profileTypeId: request.ProfileTypeId,
             roles: Array.Empty<string>(), cancellationToken);
 
     public Task<AdminCreateUserResponse> CreateVisitorAsync(
@@ -214,12 +219,17 @@ internal sealed class AdminAccountService(
         AdminWalkInRegistrationRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (kind != UserType.Visitor && kind != UserType.Other)
+        // D-186: walk-in registration always creates a Visitor-typed
+        // account. The audience-vs-partner split lives entirely on the
+        // chosen ProfileType.IsVisitor — the legacy `kind` argument is
+        // still accepted for endpoint-shape stability but only rejects
+        // Admin walk-ins.
+        if (kind == UserType.Admin)
         {
             throw new ApiException(
                 ErrorCodes.AdminProfileTypeInvalid, 400,
-                "Walk-in registration is only available for Visitor or Other.",
-                "التسجيل الفوري متاح فقط للزائر أو لنوع أخرى.");
+                "Walk-in registration is not available for Admin accounts.",
+                "التسجيل الفوري غير متاح لحسابات المسؤولين.");
         }
 
         // Resolve the profile type up-front so we can fail fast + return
@@ -231,12 +241,15 @@ internal sealed class AdminAccountService(
                 ErrorCodes.AdminProfileTypeInvalid, 400,
                 "The selected profile type is not valid.",
                 "نوع الملف الشخصي المحدّد غير صالح.");
-        if (!profileType.IsActive || profileType.UserType != kind)
+        // D-186: the chosen ProfileType must belong to the Visitor
+        // scope and be active. Audience-vs-partner is the desk's
+        // pick on the CP; the server trusts the chosen ProfileType.
+        if (!profileType.IsActive || profileType.UserType != UserType.Visitor)
         {
             throw new ApiException(
                 ErrorCodes.AdminProfileTypeInvalid, 400,
-                "The selected profile type does not apply to this user kind.",
-                "نوع الملف الشخصي المحدّد لا ينطبق على هذا النوع من المستخدمين.");
+                "The selected profile type is not active or does not apply.",
+                "نوع الملف الشخصي المحدّد غير نشط أو غير منطبق.");
         }
 
         // Email is optional for walk-ins; synthesize a placeholder so
@@ -588,21 +601,30 @@ internal sealed class AdminAccountService(
 
     public Task<GridPage<AdminUserSummary>> ListAdminsAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
-        ListAccountsAsync(query, UserType.Admin, cancellationToken);
+        ListAccountsAsync(query, UserType.Admin, profileScope: null, cancellationToken);
 
     public Task<GridPage<AdminUserSummary>> ListOthersAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
-        ListAccountsAsync(query, UserType.Other, cancellationToken);
+        // D-186: Others = Visitor users carrying a partner-side
+        // ProfileType (IsVisitor=false). The underlying account is the
+        // same Visitor pool — only the linked ProfileType distinguishes.
+        ListAccountsAsync(query, UserType.Visitor, profileScope: false, cancellationToken);
 
     public Task<GridPage<AdminUserSummary>> ListVisitorsAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
-        ListAccountsAsync(query, UserType.Visitor, cancellationToken);
+        // D-186: Visitors = Visitor users carrying an audience-side
+        // ProfileType (IsVisitor=true) OR no ProfileType yet.
+        ListAccountsAsync(query, UserType.Visitor, profileScope: true, cancellationToken);
 
-    /// <summary>Shared back-end of every list call (P7c — D-048).
-    /// Narrows to one <see cref="UserType"/> and runs the same filter /
-    /// sort / page pipeline.</summary>
+    /// <summary>Shared back-end of every list call. Narrows to one
+    /// <see cref="UserType"/> and (D-186) optionally further by the
+    /// linked ProfileType's <c>IsVisitor</c> flag. <paramref name="profileScope"/>:
+    /// <c>true</c> = audience side (no profile or IsVisitor=true);
+    /// <c>false</c> = partner side (IsVisitor=false); <c>null</c> = no
+    /// profile-scope filter (used by the Admins list).</summary>
     private async Task<GridPage<AdminUserSummary>> ListAccountsAsync(
-        GridQuery query, UserType userType, CancellationToken cancellationToken)
+        GridQuery query, UserType userType, bool? profileScope,
+        CancellationToken cancellationToken)
     {
         // Normalise: clamp Top to [1..200], clamp Skip to [0..). The grid
         // contract (SIMF.Common.GridQuery) says the endpoint owns the clamp.
@@ -613,10 +635,24 @@ internal sealed class AdminAccountService(
         // flag. Only Admin-typed users carry RBAC roles per the P7 model.
         var adminRoleId = await GetAdministratorRoleIdAsync(cancellationToken);
 
+        // D-186: cross-context scope guard — fetch the user-id set that
+        // matches the requested profile scope. SimfUser lives in the
+        // Identity DB and UserProfile + ProfileType in the App DB so EF
+        // join is not available. The set is small under the current
+        // single-event SIMF scale (<2k partner accounts); a future
+        // multi-event variant should swap this for a batched contains
+        // or replicate the scope flag onto SimfUser.
+        var scopedUserIds = await ResolveProfileScopedUserIdsAsync(
+            profileScope, cancellationToken);
+
         // P7c — narrow by UserType. The list is narrowed BEFORE any
         // filter/sort/page so the totals are correct.
         var users = dbContext.Users
             .Where(u => u.UserType == userType);
+        if (scopedUserIds is not null)
+        {
+            users = users.Where(u => scopedUserIds.Contains(u.Id));
+        }
 
         // -- Search ---------------------------------------------------------
         if (!string.IsNullOrWhiteSpace(query.Search))
@@ -724,43 +760,167 @@ internal sealed class AdminAccountService(
 
     public Task ApproveAdminAsync(
         Guid actorUserId, Guid subjectUserId, CancellationToken cancellationToken = default) =>
-        ApproveAsync(actorUserId, subjectUserId, UserType.Admin, cancellationToken);
+        ApproveAsync(actorUserId, subjectUserId, ApprovalScope.Admin, cancellationToken);
 
     public Task ApproveOtherAsync(
         Guid actorUserId, Guid subjectUserId, CancellationToken cancellationToken = default) =>
-        ApproveAsync(actorUserId, subjectUserId, UserType.Other, cancellationToken);
+        ApproveAsync(actorUserId, subjectUserId, ApprovalScope.PartnerOther, cancellationToken);
 
     public Task ApproveVisitorAsync(
         Guid actorUserId, Guid subjectUserId, CancellationToken cancellationToken = default) =>
-        ApproveAsync(actorUserId, subjectUserId, UserType.Visitor, cancellationToken);
+        ApproveAsync(actorUserId, subjectUserId, ApprovalScope.AudienceVisitor, cancellationToken);
 
     public Task RejectAdminAsync(
         Guid actorUserId, Guid subjectUserId, AdminRejectRequest request,
         CancellationToken cancellationToken = default) =>
-        RejectAsync(actorUserId, subjectUserId, request, UserType.Admin, cancellationToken);
+        RejectAsync(actorUserId, subjectUserId, request, ApprovalScope.Admin, cancellationToken);
 
     public Task RejectOtherAsync(
         Guid actorUserId, Guid subjectUserId, AdminRejectRequest request,
         CancellationToken cancellationToken = default) =>
-        RejectAsync(actorUserId, subjectUserId, request, UserType.Other, cancellationToken);
+        RejectAsync(actorUserId, subjectUserId, request, ApprovalScope.PartnerOther, cancellationToken);
 
     public Task RejectVisitorAsync(
         Guid actorUserId, Guid subjectUserId, AdminRejectRequest request,
         CancellationToken cancellationToken = default) =>
-        RejectAsync(actorUserId, subjectUserId, request, UserType.Visitor, cancellationToken);
+        RejectAsync(actorUserId, subjectUserId, request, ApprovalScope.AudienceVisitor, cancellationToken);
 
     public Task<AdminBulkApprovalResponse> BulkApproveVisitorsAsync(
         Guid actorUserId, AdminBulkApprovalRequest request,
         CancellationToken cancellationToken = default) =>
-        BulkApproveAsync(actorUserId, request, UserType.Visitor, cancellationToken);
+        BulkApproveAsync(actorUserId, request, ApprovalScope.AudienceVisitor, cancellationToken);
 
     public Task<AdminBulkApprovalResponse> BulkApproveOthersAsync(
         Guid actorUserId, AdminBulkApprovalRequest request,
         CancellationToken cancellationToken = default) =>
-        BulkApproveAsync(actorUserId, request, UserType.Other, cancellationToken);
+        BulkApproveAsync(actorUserId, request, ApprovalScope.PartnerOther, cancellationToken);
+
+    // D-186 — approval queue scope. Audience / Partner both back onto
+    // UserType.Visitor; only the linked ProfileType.IsVisitor flag
+    // distinguishes. Admin is its own queue.
+    private enum ApprovalScope { AudienceVisitor, PartnerOther, Admin }
+
+    private static UserType UserTypeOf(ApprovalScope scope) => scope switch
+    {
+        ApprovalScope.Admin => UserType.Admin,
+        _ => UserType.Visitor,
+    };
+
+    private static bool? ProfileScopeOf(ApprovalScope scope) => scope switch
+    {
+        ApprovalScope.AudienceVisitor => true,
+        ApprovalScope.PartnerOther => false,
+        _ => null,
+    };
+
+    // D-186 — endpoints still take a legacy UserType parameter
+    // (Visitor / Other) for backward-compat URL routing. Map it to
+    // the IsVisitor flag the scope guards expect.
+    private static bool ProfileScopeFromLegacyKind(UserType kind) =>
+        kind == UserType.Visitor;
+
+    // D-186 — fetch the set of SimfUser ids that match the requested
+    // ProfileType.IsVisitor scope. Returns null when no profile-scope
+    // filter is requested (Admin queue). The audience side includes
+    // users with no ProfileType yet — a self-signed-up visitor with
+    // no admin-assigned tier still lands on the Visitors queue.
+    private async Task<HashSet<Guid>?> ResolveProfileScopedUserIdsAsync(
+        bool? profileScope, CancellationToken cancellationToken)
+    {
+        if (profileScope is null) { return null; }
+        var requireIsVisitor = profileScope.Value;
+
+        var matchingProfileTypeIds = await appDbContext.ProfileTypes
+            .AsNoTracking()
+            .Where(p => p.IsVisitor == requireIsVisitor
+                        && p.UserType == UserType.Visitor)
+            .Select(p => p.Id)
+            .ToListAsync(cancellationToken);
+
+        var idsViaProfileType = await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.ProfileTypeId != null
+                && matchingProfileTypeIds.Contains(p.ProfileTypeId.Value))
+            .Select(p => p.UserId)
+            .ToListAsync(cancellationToken);
+
+        if (!requireIsVisitor)
+        {
+            // Partner scope = only users explicitly linked to a partner
+            // ProfileType. No-profile users are NOT partners.
+            return new HashSet<Guid>(idsViaProfileType);
+        }
+
+        // Audience scope = users with an audience ProfileType OR no
+        // ProfileType at all. Cross-context: query the two contexts
+        // separately and compute the union in memory (EF can't
+        // translate a `appDbContext.UserProfiles.Any(...)` predicate
+        // against a `dbContext.Users` query).
+        var visitorIds = await dbContext.Users
+            .AsNoTracking()
+            .Where(u => u.UserType == UserType.Visitor)
+            .Select(u => u.Id)
+            .ToListAsync(cancellationToken);
+
+        var withAnyProfile = await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(p => visitorIds.Contains(p.UserId))
+            .Select(p => p.UserId)
+            .ToListAsync(cancellationToken);
+        var withAnyProfileSet = new HashSet<Guid>(withAnyProfile);
+
+        var set = new HashSet<Guid>(idsViaProfileType);
+        foreach (var id in visitorIds)
+        {
+            // Include users that have no profile row yet (audience-side
+            // default). Users with an audience-side profile row are
+            // already in idsViaProfileType.
+            if (!withAnyProfileSet.Contains(id))
+            {
+                set.Add(id);
+            }
+        }
+        return set;
+    }
+
+    // D-186 — duplicate helper that inspects the source's linked
+    // ProfileType to decide whether the duplicate lands on the
+    // audience queue or the partner queue. Partner duplicates require
+    // the source to have an explicit ProfileTypeId.
+    private async Task<AdminCreateUserResponse> DuplicateVisitorScopedAsync(
+        Guid actorUserId, SimfUser source, string newEmail,
+        Guid? sourceProfileTypeId, CancellationToken cancellationToken)
+    {
+        var isPartnerSource = sourceProfileTypeId is not null
+            && await appDbContext.ProfileTypes
+                .AsNoTracking()
+                .AnyAsync(p => p.Id == sourceProfileTypeId.Value
+                            && p.IsVisitor == false,
+                          cancellationToken);
+
+        if (isPartnerSource)
+        {
+            return await CreateOtherAsync(actorUserId,
+                new AdminCreateOtherRequest
+                {
+                    Email = newEmail,
+                    DisplayName = source.DisplayName,
+                    ProfileTypeId = sourceProfileTypeId!.Value,
+                },
+                cancellationToken);
+        }
+        return await CreateVisitorAsync(actorUserId,
+            new AdminCreateVisitorRequest
+            {
+                Email = newEmail,
+                DisplayName = source.DisplayName,
+                ProfileTypeId = sourceProfileTypeId,
+            },
+            cancellationToken);
+    }
 
     private async Task<AdminBulkApprovalResponse> BulkApproveAsync(
-        Guid actorUserId, AdminBulkApprovalRequest request, UserType expected,
+        Guid actorUserId, AdminBulkApprovalRequest request, ApprovalScope scope,
         CancellationToken cancellationToken)
     {
         // D-164 — distinct ids; cap at 500 per request so the batch fits
@@ -773,7 +933,7 @@ internal sealed class AdminAccountService(
         {
             try
             {
-                await ApproveAsync(actorUserId, subjectId, expected, cancellationToken);
+                await ApproveAsync(actorUserId, subjectId, scope, cancellationToken);
                 approved++;
             }
             catch (ApiException ex)
@@ -804,11 +964,11 @@ internal sealed class AdminAccountService(
     }
 
     private async Task ApproveAsync(
-        Guid actorUserId, Guid subjectUserId, UserType expected,
+        Guid actorUserId, Guid subjectUserId, ApprovalScope scope,
         CancellationToken cancellationToken)
     {
         var subject = await LoadPendingSubjectAsync(
-            subjectUserId, expected, cancellationToken);
+            subjectUserId, scope, cancellationToken);
         var now = timeProvider.GetUtcNow();
         subject.AccountState = AccountState.Approved;
         subject.UpdatedAt = now;
@@ -840,7 +1000,7 @@ internal sealed class AdminAccountService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = ApprovalEventType(expected, approved: true),
+            EventType = ApprovalEventType(scope, approved: true),
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             SubjectUserId = subject.Id,
@@ -872,10 +1032,10 @@ internal sealed class AdminAccountService(
 
     private async Task RejectAsync(
         Guid actorUserId, Guid subjectUserId, AdminRejectRequest request,
-        UserType expected, CancellationToken cancellationToken)
+        ApprovalScope scope, CancellationToken cancellationToken)
     {
         var subject = await LoadPendingSubjectAsync(
-            subjectUserId, expected, cancellationToken);
+            subjectUserId, scope, cancellationToken);
         var now = timeProvider.GetUtcNow();
         subject.AccountState = AccountState.Rejected;
         subject.UpdatedAt = now;
@@ -902,7 +1062,7 @@ internal sealed class AdminAccountService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = ApprovalEventType(expected, approved: false),
+            EventType = ApprovalEventType(scope, approved: false),
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             SubjectUserId = subject.Id,
@@ -932,37 +1092,51 @@ internal sealed class AdminAccountService(
         }, cancellationToken);
     }
 
-    /// <summary>P7c — maps a (UserType, approved/rejected) pair to the
-    /// right audit event name. The Admin and Visitor names stay the
-    /// historical "Staff" / "Visitor" pair (P4); the Other names are
-    /// new in P7c.</summary>
-    private static string ApprovalEventType(UserType type, bool approved) => type switch
+    /// <summary>P7c — maps an approval scope + outcome to the right
+    /// audit event name. D-186 reframed the discriminator from UserType
+    /// (Visitor / Other / Admin) to ApprovalScope (AudienceVisitor /
+    /// PartnerOther / Admin) so the audit-event names stay the same
+    /// even though Other accounts are now Visitor-typed under the
+    /// hood.</summary>
+    private static string ApprovalEventType(ApprovalScope scope, bool approved) => scope switch
     {
-        UserType.Admin when approved => AuditEvents.AdminStaffApproved,
-        UserType.Admin => AuditEvents.AdminStaffRejected,
-        UserType.Other when approved => AuditEvents.AdminOtherApproved,
-        UserType.Other => AuditEvents.AdminOtherRejected,
+        ApprovalScope.Admin when approved => AuditEvents.AdminStaffApproved,
+        ApprovalScope.Admin => AuditEvents.AdminStaffRejected,
+        ApprovalScope.PartnerOther when approved => AuditEvents.AdminOtherApproved,
+        ApprovalScope.PartnerOther => AuditEvents.AdminOtherRejected,
         _ when approved => AuditEvents.AdminVisitorApproved,
         _ => AuditEvents.AdminVisitorRejected,
     };
 
     /// <summary>Loads a user that must currently be in PendingApproval
-    /// **and** carry the expected UserType — any other state or a
-    /// type-mismatch throws <see cref="ApiException"/>. Shared by every
-    /// approve/reject path; type-checking here closes the "approve an
-    /// admin via the visitor URL" hole.</summary>
+    /// **and** match the expected approval scope (D-186) — any other
+    /// state or a scope-mismatch throws <see cref="ApiException"/>.
+    /// Shared by every approve/reject path; the scope check closes the
+    /// "approve an admin via the visitor URL" hole AND the new D-186
+    /// "approve a sponsor via the visitors URL" hole.</summary>
     private async Task<SimfUser> LoadPendingSubjectAsync(
-        Guid subjectUserId, UserType expected, CancellationToken cancellationToken)
+        Guid subjectUserId, ApprovalScope scope, CancellationToken cancellationToken)
     {
         var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken)
             ?? throw new ApiException(ErrorCodes.AdminUserNotFound, 404,
                 "The target account was not found.",
                 "تعذّر العثور على الحساب المستهدف.");
-        if (subject.UserType != expected)
+        if (subject.UserType != UserTypeOf(scope))
         {
             throw new ApiException(ErrorCodes.AdminUserNotFound, 404,
                 "The target account is not of the expected type.",
                 "نوع الحساب المستهدف لا يطابق المتوقع.");
+        }
+        // D-186: within the Visitor scope, also enforce the
+        // audience-vs-partner queue match via the linked ProfileType.
+        var requireProfileScope = ProfileScopeOf(scope);
+        if (requireProfileScope is not null
+            && !await SubjectMatchesProfileScopeAsync(
+                subject.Id, requireProfileScope.Value, cancellationToken))
+        {
+            throw new ApiException(ErrorCodes.AdminUserNotFound, 404,
+                "The target account is not in the expected approval queue.",
+                "الحساب المستهدف ليس في قائمة الاعتماد المتوقعة.");
         }
         if (subject.AccountState != AccountState.PendingApproval)
         {
@@ -971,6 +1145,33 @@ internal sealed class AdminAccountService(
                 "الحساب المستهدف ليس في انتظار الموافقة.");
         }
         return subject;
+    }
+
+    // D-186 — checks the subject's linked ProfileType.IsVisitor matches
+    // the expected scope flag. Audience scope (true) accepts a missing
+    // ProfileType (a self-signed-up visitor without an admin-assigned
+    // type still lands on the audience queue); partner scope (false)
+    // rejects a missing ProfileType — a user without a partner-side
+    // type is not a partner.
+    private async Task<bool> SubjectMatchesProfileScopeAsync(
+        Guid subjectUserId, bool requireIsVisitor,
+        CancellationToken cancellationToken)
+    {
+        var profileTypeId = await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.UserId == subjectUserId)
+            .Select(p => p.ProfileTypeId)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (profileTypeId is null)
+        {
+            return requireIsVisitor;
+        }
+        var isVisitor = await appDbContext.ProfileTypes
+            .AsNoTracking()
+            .Where(p => p.Id == profileTypeId)
+            .Select(p => (bool?)p.IsVisitor)
+            .SingleOrDefaultAsync(cancellationToken);
+        return (isVisitor ?? true) == requireIsVisitor;
     }
 
     /// <summary>
@@ -1003,26 +1204,37 @@ internal sealed class AdminAccountService(
 
     public Task<GridPage<AdminPendingUserSummary>> ListPendingAdminsAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
-        ListPendingAsync(query, UserType.Admin, cancellationToken);
+        ListPendingAsync(query, UserType.Admin, profileScope: null, cancellationToken);
 
     public Task<GridPage<AdminPendingUserSummary>> ListPendingOthersAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
-        ListPendingAsync(query, UserType.Other, cancellationToken);
+        ListPendingAsync(query, UserType.Visitor, profileScope: false, cancellationToken);
 
     public Task<GridPage<AdminPendingUserSummary>> ListPendingVisitorsAsync(
         GridQuery query, CancellationToken cancellationToken = default) =>
-        ListPendingAsync(query, UserType.Visitor, cancellationToken);
+        ListPendingAsync(query, UserType.Visitor, profileScope: true, cancellationToken);
 
-    /// <summary>P7c — pending-approval list narrowed by UserType.</summary>
+    /// <summary>P7c — pending-approval list narrowed by UserType.
+    /// D-186: <paramref name="profileScope"/> further narrows the
+    /// Visitor scope into the audience (true) and partner (false)
+    /// approval queues; null = no profile-scope filter (Admin queue).</summary>
     private async Task<GridPage<AdminPendingUserSummary>> ListPendingAsync(
-        GridQuery query, UserType userType, CancellationToken cancellationToken)
+        GridQuery query, UserType userType, bool? profileScope,
+        CancellationToken cancellationToken)
     {
         var skip = query.Skip < 0 ? 0 : query.Skip;
         var top = query.Top switch { < 1 => 20, > 200 => 200, _ => query.Top };
 
+        var scopedUserIds = await ResolveProfileScopedUserIdsAsync(
+            profileScope, cancellationToken);
+
         var users = dbContext.Users
             .Where(u => u.AccountState == AccountState.PendingApproval
                 && u.UserType == userType);
+        if (scopedUserIds is not null)
+        {
+            users = users.Where(u => scopedUserIds.Contains(u.Id));
+        }
 
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
@@ -1189,33 +1401,23 @@ internal sealed class AdminAccountService(
             .Where(p => p.UserId == source.Id)
             .Select(p => p.ProfileTypeId)
             .SingleOrDefaultAsync(cancellationToken);
-        var created = source.UserType switch
-        {
-            UserType.Admin => await CreateAdminAsync(actorUserId,
+        // D-186: source UserType is now Admin or Visitor. For Visitor
+        // sources we check the linked ProfileType.IsVisitor to decide
+        // whether to route through CreateOther (partner scope) or
+        // CreateVisitor (audience scope) so the duplicate inherits the
+        // source's queue.
+        var created = source.UserType == UserType.Admin
+            ? await CreateAdminAsync(actorUserId,
                 new AdminCreateAdminRequest
                 {
                     Email = request.NewEmail,
                     DisplayName = source.DisplayName,
                     Roles = sourceRoles.ToList(),
                 },
-                cancellationToken),
-            UserType.Other => await CreateOtherAsync(actorUserId,
-                new AdminCreateOtherRequest
-                {
-                    Email = request.NewEmail,
-                    DisplayName = source.DisplayName,
-                    ProfileTypeId = sourceProfileTypeId ?? Guid.Empty,
-                },
-                cancellationToken),
-            _ => await CreateVisitorAsync(actorUserId,
-                new AdminCreateVisitorRequest
-                {
-                    Email = request.NewEmail,
-                    DisplayName = source.DisplayName,
-                    ProfileTypeId = sourceProfileTypeId,
-                },
-                cancellationToken),
-        };
+                cancellationToken)
+            : await DuplicateVisitorScopedAsync(
+                actorUserId, source, request.NewEmail,
+                sourceProfileTypeId, cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -1388,6 +1590,7 @@ internal sealed class AdminAccountService(
     public async Task<AdminBulkDeleteResponse> BulkDeleteUsersByKindAsync(
         Guid actorUserId,
         UserType kind,
+        bool? requirePartnerScope,
         AdminBulkDeleteRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -1400,7 +1603,12 @@ internal sealed class AdminAccountService(
             cancellationToken.ThrowIfCancellationRequested();
 
             var target = await accounts.FindByIdAsync(targetId, cancellationToken);
-            if (target is null || target.UserType != kind)
+            var scopeOk = target is not null
+                && target.UserType == kind
+                && (requirePartnerScope is null
+                    || await SubjectMatchesProfileScopeAsync(
+                        target.Id, !requirePartnerScope.Value, cancellationToken));
+            if (target is null || !scopeOk)
             {
                 // Wrong-type or missing — audited as the same "not found"
                 // code so a probing admin cannot tell the two apart.
@@ -1504,14 +1712,20 @@ internal sealed class AdminAccountService(
     public async Task<AdminCreateUserResponse> DuplicateUserByKindAsync(
         Guid actorUserId,
         UserType kind,
+        bool? requirePartnerScope,
         AdminDuplicateUserRequest request,
         CancellationToken cancellationToken = default)
     {
         var source = await accounts.FindByIdAsync(request.SourceId, cancellationToken);
-        if (source is null || source.UserType != kind)
+        var scopeOk = source is not null
+            && source.UserType == kind
+            && (requirePartnerScope is null
+                || await SubjectMatchesProfileScopeAsync(
+                    source.Id, !requirePartnerScope.Value, cancellationToken));
+        if (source is null || !scopeOk)
         {
             // 404 for either branch — never reveal "the id exists but is
-            // the wrong type" to the duplicating admin.
+            // the wrong type / wrong scope" to the duplicating admin.
             throw new ApiException(
                 ErrorCodes.AdminUserNotFound, 404,
                 "The source account was not found.",
@@ -1526,15 +1740,33 @@ internal sealed class AdminAccountService(
     public async Task<byte[]> ExportUsersByKindAsync(
         Guid actorUserId,
         UserType kind,
+        bool? requirePartnerScope,
         AdminExportUsersRequest request,
         CancellationToken cancellationToken = default)
     {
         IReadOnlyList<AdminUserSummary> rows;
+        // D-186: convert the new partner-scope flag to the audience-vs-
+        // partner profileScope notion ListAccountsAsync uses.
+        bool? profileScope = requirePartnerScope switch
+        {
+            true => false,    // partner side → ProfileType.IsVisitor=false
+            false => true,    // audience side → ProfileType.IsVisitor=true (or no profile)
+            null => null,
+        };
         if (request.Ids.Count > 0)
         {
             // Selected-ids path — narrow by both id AND UserType so a
             // smuggled wrong-type id never appears in the workbook.
+            // D-186: also narrow by the profile-scope id set so a
+            // wrong-scope id (e.g. an audience-side visitor smuggled
+            // into the Others export) does not leak in either.
             var idSet = request.Ids.ToHashSet();
+            var scopedIds = await ResolveProfileScopedUserIdsAsync(
+                profileScope, cancellationToken);
+            if (scopedIds is not null)
+            {
+                idSet.IntersectWith(scopedIds);
+            }
             var adminRoleId = await GetAdministratorRoleIdAsync(cancellationToken);
             var projected = await dbContext.Users
                 .Where(u => idSet.Contains(u.Id) && u.UserType == kind)
@@ -1567,7 +1799,7 @@ internal sealed class AdminAccountService(
                 SortDescending = source.SortDescending,
                 Filters = new Dictionary<string, string>(source.Filters),
             };
-            var page = await ListAccountsAsync(query, kind, cancellationToken);
+            var page = await ListAccountsAsync(query, kind, profileScope, cancellationToken);
             rows = page.Items;
         }
 
@@ -1587,12 +1819,16 @@ internal sealed class AdminAccountService(
         return bytes;
     }
 
+    // D-186 — bulk-import always creates Visitor-typed accounts;
+    // partnerScope=true additionally requires a ProfileTypeId per row
+    // and the chosen ProfileType.IsVisitor must be false.
     public async Task<AdminImportUsersResponse> ImportUsersByKindAsync(
         Guid actorUserId,
-        UserType kind,
+        bool partnerScope,
         byte[] xlsx,
         CancellationToken cancellationToken = default)
     {
+        var kind = UserType.Visitor;
         if (xlsx is null || xlsx.Length == 0)
         {
             throw new ApiException(
@@ -1622,20 +1858,32 @@ internal sealed class AdminAccountService(
                 skipped++;
                 continue;
             }
-            // D-113 — Other rows require a parseable ProfileTypeId in the
-            // sheet (matches the AdminCreateOtherRequest validator). Visitor
-            // rows accept a null ProfileTypeId (the tier is optional).
-            if (kind == UserType.Other && row.ProfileTypeId is null)
+            // D-186: partner-side imports require a parseable
+            // ProfileTypeId (matches AdminCreateOtherRequest validator).
+            // Audience-side imports accept null (tier is optional).
+            if (partnerScope && row.ProfileTypeId is null)
             {
                 errors.Add(new AdminImportError(row.RowNumber, row.Email,
-                    "A ProfileTypeId is required for an Other-kind import."));
+                    "A ProfileTypeId is required for a partner-kind import."));
                 skipped++;
                 continue;
             }
 
             try
             {
-                if (kind == UserType.Visitor)
+                if (partnerScope)
+                {
+                    // ProfileTypeId is non-null per the guard above.
+                    await CreateOtherAsync(actorUserId,
+                        new AdminCreateOtherRequest
+                        {
+                            Email = row.Email,
+                            DisplayName = row.DisplayName,
+                            ProfileTypeId = row.ProfileTypeId!.Value,
+                        },
+                        cancellationToken);
+                }
+                else
                 {
                     await CreateVisitorAsync(actorUserId,
                         new AdminCreateVisitorRequest
@@ -1643,18 +1891,6 @@ internal sealed class AdminAccountService(
                             Email = row.Email,
                             DisplayName = row.DisplayName,
                             ProfileTypeId = row.ProfileTypeId,
-                        },
-                        cancellationToken);
-                }
-                else
-                {
-                    // Other — ProfileTypeId is non-null per the guard above.
-                    await CreateOtherAsync(actorUserId,
-                        new AdminCreateOtherRequest
-                        {
-                            Email = row.Email,
-                            DisplayName = row.DisplayName,
-                            ProfileTypeId = row.ProfileTypeId!.Value,
                         },
                         cancellationToken);
                 }

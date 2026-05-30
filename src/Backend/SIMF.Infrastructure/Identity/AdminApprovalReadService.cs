@@ -27,21 +27,25 @@ internal sealed class AdminApprovalReadService(
     SimfAppDbContext appDbContext)
     : IAdminApprovalReadService
 {
+    // D-186: every non-admin account is UserType.Visitor. The
+    // audience-vs-partner queue split routes on the linked
+    // ProfileType.IsVisitor flag — true (or no profile yet) lands on
+    // the Visitors queue, false lands on the Others queue.
     public Task<PendingProfileResponse?> GetPendingVisitorProfileAsync(
         Guid subjectUserId, CancellationToken cancellationToken = default) =>
-        GetAsync(subjectUserId, UserType.Visitor, cancellationToken);
+        GetAsync(subjectUserId, expectAudienceScope: true, cancellationToken);
 
     public Task<PendingProfileResponse?> GetPendingOtherProfileAsync(
         Guid subjectUserId, CancellationToken cancellationToken = default) =>
-        GetAsync(subjectUserId, UserType.Other, cancellationToken);
+        GetAsync(subjectUserId, expectAudienceScope: false, cancellationToken);
 
     public Task<AdminUserProfileView?> GetVisitorProfileAsync(
         Guid subjectUserId, CancellationToken cancellationToken = default) =>
-        GetFullProfileAsync(subjectUserId, UserType.Visitor, cancellationToken);
+        GetFullProfileAsync(subjectUserId, expectAudienceScope: true, cancellationToken);
 
     public Task<AdminUserProfileView?> GetOtherProfileAsync(
         Guid subjectUserId, CancellationToken cancellationToken = default) =>
-        GetFullProfileAsync(subjectUserId, UserType.Other, cancellationToken);
+        GetFullProfileAsync(subjectUserId, expectAudienceScope: false, cancellationToken);
 
     public async Task<AdminWalkInRegistrationResponse?> LookupByQrIdAsync(
         string qrId, CancellationToken cancellationToken = default)
@@ -82,17 +86,25 @@ internal sealed class AdminApprovalReadService(
             row.ProfileTypeColor ?? "#244A77");
     }
 
-    /// <summary>D-126 — any-state full profile read scoped to a UserType.
-    /// Drops the AccountState guard the D-124 GetAsync helper enforces; keeps
-    /// the type-match guard so cross-kind enumeration still 404s.</summary>
+    /// <summary>D-126 — any-state full profile read scoped to the
+    /// audience-vs-partner queue. D-186: every non-admin account is
+    /// UserType.Visitor; the audience-vs-partner distinction is the
+    /// linked <c>ProfileType.IsVisitor</c> flag (audience when true or
+    /// when no profile type is set yet; partner when explicitly false).
+    /// Keeps the scope-match guard so cross-queue enumeration still
+    /// 404s.</summary>
     private async Task<AdminUserProfileView?> GetFullProfileAsync(
         Guid subjectUserId,
-        UserType expectedKind,
+        bool expectAudienceScope,
         CancellationToken cancellationToken)
     {
+        if (!await MatchesScopeAsync(subjectUserId, expectAudienceScope, cancellationToken))
+        {
+            return null;
+        }
         var user = await dbContext.Users
             .AsNoTracking()
-            .Where(u => u.Id == subjectUserId && u.UserType == expectedKind)
+            .Where(u => u.Id == subjectUserId && u.UserType == UserType.Visitor)
             .Select(u => new
             {
                 u.Id,
@@ -172,17 +184,23 @@ internal sealed class AdminApprovalReadService(
 
     private async Task<PendingProfileResponse?> GetAsync(
         Guid subjectUserId,
-        UserType expectedKind,
+        bool expectAudienceScope,
         CancellationToken cancellationToken)
     {
+        if (!await MatchesScopeAsync(subjectUserId, expectAudienceScope, cancellationToken))
+        {
+            return null;
+        }
         // The single guarded query — both the state AND the type are
         // filtered before any projection so a wrong-type or
-        // wrong-state id never produces a row.
+        // wrong-state id never produces a row. D-186: scope guard
+        // (audience vs partner) is enforced upstream by
+        // MatchesScopeAsync over the linked ProfileType.IsVisitor.
         var user = await dbContext.Users
             .AsNoTracking()
             .Where(u => u.Id == subjectUserId
                 && u.AccountState == AccountState.PendingApproval
-                && u.UserType == expectedKind)
+                && u.UserType == UserType.Visitor)
             .Select(u => new
             {
                 u.Id,
@@ -264,5 +282,44 @@ internal sealed class AdminApprovalReadService(
             .Where(country => country.Id == id)
             .Select(country => country.Code)
             .SingleOrDefaultAsync(cancellationToken) ?? string.Empty;
+    }
+
+    // D-186 — audience-vs-partner scope guard. Audience scope (the
+    // visitors queue) accepts a user with no profile type yet OR a
+    // profile type whose IsVisitor flag is true. Partner scope (the
+    // others queue) requires an explicitly false IsVisitor — a user
+    // with no profile type is not a partner. Cross-context: the
+    // ProfileType row lives in the App DB so the lookup is two
+    // single-row queries (cheap, and the page typically opens once
+    // per row).
+    private async Task<bool> MatchesScopeAsync(
+        Guid subjectUserId,
+        bool expectAudienceScope,
+        CancellationToken cancellationToken)
+    {
+        var profileTypeId = await appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.UserId == subjectUserId)
+            .Select(p => p.ProfileTypeId)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (profileTypeId is null)
+        {
+            // No profile yet → audience-side by default; partner queue
+            // rejects this id with the usual 404.
+            return expectAudienceScope;
+        }
+
+        var isVisitor = await appDbContext.ProfileTypes
+            .AsNoTracking()
+            .Where(p => p.Id == profileTypeId)
+            .Select(p => (bool?)p.IsVisitor)
+            .SingleOrDefaultAsync(cancellationToken);
+        if (isVisitor is null)
+        {
+            return expectAudienceScope;
+        }
+
+        return isVisitor.Value == expectAudienceScope;
     }
 }

@@ -54,14 +54,20 @@ public interface IAdminUserBulkService
 
     /// <summary>
     /// Like <see cref="BulkDeleteUsersAsync"/> but narrowed to subjects whose
-    /// <see cref="UserType"/> matches <paramref name="kind"/>. Subjects of
-    /// the wrong UserType are counted as Skipped and audited as a delete
-    /// failure with the AdminUserNotFound code — same shape as the unknown-id
-    /// branch so an admin probing the wrong endpoint learns nothing.
+    /// <see cref="UserType"/> matches <paramref name="kind"/>. D-186:
+    /// <paramref name="requirePartnerScope"/> further narrows the Visitor
+    /// scope — <c>true</c> means "partner only" (linked ProfileType.IsVisitor
+    /// = false), <c>false</c> means "audience only" (no ProfileType or
+    /// IsVisitor = true), <c>null</c> means "no scope guard". Subjects of
+    /// the wrong UserType (or wrong scope) are counted as Skipped and audited
+    /// as a delete failure with the AdminUserNotFound code — same shape as
+    /// the unknown-id branch so an admin probing the wrong endpoint learns
+    /// nothing.
     /// </summary>
     Task<AdminBulkDeleteResponse> BulkDeleteUsersByKindAsync(
         Guid actorUserId,
         UserType kind,
+        bool? requirePartnerScope,
         AdminBulkDeleteRequest request,
         CancellationToken cancellationToken = default);
 
@@ -69,11 +75,14 @@ public interface IAdminUserBulkService
     /// Like <see cref="DuplicateUserAsync"/> but refuses any source whose
     /// <see cref="UserType"/> doesn't match <paramref name="kind"/> — returns
     /// 404 (same code as a missing source) so cross-type duplication probes
-    /// don't reveal whether a wrong-type id exists.
+    /// don't reveal whether a wrong-type id exists. D-186:
+    /// <paramref name="requirePartnerScope"/> applies the same scope guard
+    /// as the bulk delete (see above).
     /// </summary>
     Task<AdminCreateUserResponse> DuplicateUserByKindAsync(
         Guid actorUserId,
         UserType kind,
+        bool? requirePartnerScope,
         AdminDuplicateUserRequest request,
         CancellationToken cancellationToken = default);
 
@@ -82,24 +91,27 @@ public interface IAdminUserBulkService
     /// <see cref="UserType"/> matches <paramref name="kind"/> — both the
     /// selected-ids path and the whole-result-set path apply the filter
     /// BEFORE projection so a smuggled wrong-type id never appears in the
-    /// workbook.
+    /// workbook. D-186: <paramref name="requirePartnerScope"/> applies the
+    /// same scope guard as the bulk delete (see above).
     /// </summary>
     Task<byte[]> ExportUsersByKindAsync(
         Guid actorUserId,
         UserType kind,
+        bool? requirePartnerScope,
         AdminExportUsersRequest request,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Like <see cref="ImportUsersAsync"/> but every created user is forced
-    /// to <see cref="UserType"/> = <paramref name="kind"/> — any Role column
-    /// in the spreadsheet is ignored for non-Admin kinds (the type-smuggling
-    /// guard). For <see cref="UserType.Other"/> the optional ProfileTypeId
-    /// column is mandatory per row; rows missing it land in the error report.
+    /// to <see cref="UserType.Visitor"/> (D-186 removed the standalone
+    /// Other type). <paramref name="partnerScope"/>: <c>false</c> = audience
+    /// import (ProfileTypeId optional, audience-side ProfileType required
+    /// when supplied); <c>true</c> = partner import (ProfileTypeId mandatory
+    /// per row and the chosen ProfileType must be IsVisitor=false).
     /// </summary>
     Task<AdminImportUsersResponse> ImportUsersByKindAsync(
         Guid actorUserId,
-        UserType kind,
+        bool partnerScope,
         byte[] xlsx,
         CancellationToken cancellationToken = default);
 }

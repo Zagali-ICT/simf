@@ -14,7 +14,6 @@ public static class ResUserType
             typeof(ResUserType).Assembly);
 
     public static string Visitor => Get(nameof(Visitor));
-    public static string Other => Get(nameof(Other));
     public static string Admin => Get(nameof(Admin));
 
     private static string Get(string key) =>
