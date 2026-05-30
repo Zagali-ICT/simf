@@ -99,6 +99,22 @@ builder.Services.AddHttpClient<SimfAccountClient>(client =>
     var baseUrl = builder.Configuration["Api:BaseUrl"]!;
     client.BaseAddress = new Uri(baseUrl);
 });
+// The typed client for the SIMF anonymous public-read endpoints (D-199).
+// Anonymous, so no bearer token; BaseAddress only — the public endpoints do
+// not require an X-App-Key header in this build.
+builder.Services.AddHttpClient<SimfPublicClient>(client =>
+{
+    var baseUrl = builder.Configuration["Api:BaseUrl"]
+        ?? throw new InvalidOperationException(
+            "Configuration value 'Api:BaseUrl' is required but was not found.");
+    var baseUri = new Uri(baseUrl);
+    if (!builder.Environment.IsDevelopment() && baseUri.Scheme != Uri.UriSchemeHttps)
+    {
+        throw new InvalidOperationException(
+            "'Api:BaseUrl' must use HTTPS outside the Development environment.");
+    }
+    client.BaseAddress = baseUri;
+});
 
 var app = builder.Build();
 

@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@inject IStringLocalizer<Strings> L
 
 @* H22 — D-081: WCAG 1.3.1 / 2.4.1. Every Website Blazor page (auth pages,
    /account/profile, /account/notifications, /account/pending,
@@ -14,6 +15,14 @@
    the four banner pages set role="main" explicitly, browsers tolerate
    the nesting and AT typically navigates to the outermost. Tracked as
    a follow-up. *@
+@* Public navigation — links to the anonymous read-only pages (D-199).
+   Anchors styled with the shared button classes (the same anchor-as-button
+   idiom UserProfile.razor uses); labels localised via L[...]. *@
+<nav>
+    <a class="simf-button simf-button--secondary" href="/programme">@L["Nav.Programme"]</a>
+    <a class="simf-button simf-button--secondary" href="/visit">@L["Nav.Visit"]</a>
+</nav>
+
 <main id="main-content" tabindex="-1">@Body</main>
 
 <div id="blazor-error-ui" data-nosnippet>

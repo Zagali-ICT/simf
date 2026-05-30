@@ -148,4 +148,30 @@
   <data name="Account.Notifications.Next" xml:space="preserve"><value>Next</value></data>
   <data name="Account.Notifications.Loading" xml:space="preserve"><value>Loading notifications…</value></data>
   <data name="Account.Notifications.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+
+  <data name="Nav.Programme" xml:space="preserve"><value>Programme</value></data>
+  <data name="Nav.Visit" xml:space="preserve"><value>Visit</value></data>
+
+  <data name="Programme.PageTitle" xml:space="preserve"><value>Programme · Saudi International Maritime Forum</value></data>
+  <data name="Programme.Banner.Title" xml:space="preserve"><value>Programme</value></data>
+  <data name="Programme.Banner.Subtitle" xml:space="preserve"><value>The full forum agenda — sessions, halls and times.</value></data>
+  <data name="Programme.Loading" xml:space="preserve"><value>Loading the programme…</value></data>
+  <data name="Programme.Error" xml:space="preserve"><value>The programme could not be loaded. Please try again.</value></data>
+  <data name="Programme.Empty.Title" xml:space="preserve"><value>No sessions yet</value></data>
+  <data name="Programme.Empty.Text" xml:space="preserve"><value>The agenda has not been published yet. Please check back soon.</value></data>
+  <data name="Programme.Speakers.Title" xml:space="preserve"><value>Speakers</value></data>
+
+  <data name="Visit.PageTitle" xml:space="preserve"><value>Visit &amp; entry · Saudi International Maritime Forum</value></data>
+  <data name="Visit.Banner.Title" xml:space="preserve"><value>Visit &amp; entry</value></data>
+  <data name="Visit.Banner.Subtitle" xml:space="preserve"><value>Everything you need to know before you arrive at the forum.</value></data>
+  <data name="Visit.GettingHere.Title" xml:space="preserve"><value>Getting here</value></data>
+  <data name="Visit.GettingHere.Body" xml:space="preserve"><value>The forum is held at the official event venue. The full address and a venue map will be published here closer to the event. Please follow on-site signage and the directions of stewards on arrival.</value></data>
+  <data name="Visit.GettingHere.Transport" xml:space="preserve"><value>Parking and transport details, including the nearest access routes, will be announced ahead of the opening day.</value></data>
+  <data name="Visit.Entry.Title" xml:space="preserve"><value>Entry &amp; badges</value></data>
+  <data name="Visit.Entry.Badge" xml:space="preserve"><value>Entry is by QR badge. After your account is approved, open the SIMF mobile app to display your personal QR badge, which staff scan at the entrance to check you in.</value></data>
+  <data name="Visit.Entry.SignUp" xml:space="preserve"><value>Do not have an account yet? Sign up in the SIMF app before you travel so your badge is ready in time for entry.</value></data>
+  <data name="Visit.Hours.Title" xml:space="preserve"><value>Opening hours</value></data>
+  <data name="Visit.Hours.Body" xml:space="preserve"><value>The forum opens daily during the event dates. Exact opening and closing times for each day will be confirmed here before the event begins.</value></data>
+  <data name="Visit.Accessibility.Title" xml:space="preserve"><value>Accessibility</value></data>
+  <data name="Visit.Accessibility.Body" xml:space="preserve"><value>The venue is designed to be accessible to visitors with reduced mobility. If you have specific access requirements, please contact your event coordinator in advance so we can assist you on the day.</value></data>
 </root>

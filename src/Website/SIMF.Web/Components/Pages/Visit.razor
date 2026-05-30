@@ -1,0 +1,37 @@
+@* Website — Visit & Entry (public attendee info). INFORMATIONAL only:
+   there is no public gate-data endpoint (gates are operator-only), so this
+   page renders clean bilingual static copy via L[...] — no API client, no
+   fabricated gate data. Static SSR is the right mode for read-only public
+   content. The section bodies are placeholder copy now; they could later be
+   driven by the CMS ContentBlock endpoint without changing this layout. *@
+@page "/visit"
+@inject IStringLocalizer<Strings> L
+
+<PageTitle>@L["Visit.PageTitle"]</PageTitle>
+
+<section class="simf-account-page">
+    @* SimfBanner renders the page <h1>; the section cards below are <h2>. *@
+    <SimfBanner Title="@L["Visit.Banner.Title"]" Subtitle="@L["Visit.Banner.Subtitle"]" />
+
+    <section class="simf-card simf-page-card" aria-labelledby="visit-getting-here-title">
+        <h2 id="visit-getting-here-title" class="simf-card__title">@L["Visit.GettingHere.Title"]</h2>
+        <p class="simf-card__supporting">@L["Visit.GettingHere.Body"]</p>
+        <p class="simf-card__supporting">@L["Visit.GettingHere.Transport"]</p>
+    </section>
+
+    <section class="simf-card simf-page-card" aria-labelledby="visit-entry-title">
+        <h2 id="visit-entry-title" class="simf-card__title">@L["Visit.Entry.Title"]</h2>
+        <p class="simf-card__supporting">@L["Visit.Entry.Badge"]</p>
+        <p class="simf-card__supporting">@L["Visit.Entry.SignUp"]</p>
+    </section>
+
+    <section class="simf-card simf-page-card" aria-labelledby="visit-hours-title">
+        <h2 id="visit-hours-title" class="simf-card__title">@L["Visit.Hours.Title"]</h2>
+        <p class="simf-card__supporting">@L["Visit.Hours.Body"]</p>
+    </section>
+
+    <section class="simf-card simf-page-card" aria-labelledby="visit-accessibility-title">
+        <h2 id="visit-accessibility-title" class="simf-card__title">@L["Visit.Accessibility.Title"]</h2>
+        <p class="simf-card__supporting">@L["Visit.Accessibility.Body"]</p>
+    </section>
+</section>

@@ -148,4 +148,30 @@
   <data name="Account.Notifications.Next" xml:space="preserve"><value>التالي</value></data>
   <data name="Account.Notifications.Loading" xml:space="preserve"><value>جارٍ تحميل الإشعارات…</value></data>
   <data name="Account.Notifications.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+
+  <data name="Nav.Programme" xml:space="preserve"><value>البرنامج</value></data>
+  <data name="Nav.Visit" xml:space="preserve"><value>الزيارة</value></data>
+
+  <data name="Programme.PageTitle" xml:space="preserve"><value>البرنامج · الملتقى البحري السعودي الدولي</value></data>
+  <data name="Programme.Banner.Title" xml:space="preserve"><value>البرنامج</value></data>
+  <data name="Programme.Banner.Subtitle" xml:space="preserve"><value>الأجندة الكاملة للملتقى — الجلسات والقاعات والأوقات.</value></data>
+  <data name="Programme.Loading" xml:space="preserve"><value>جارٍ تحميل البرنامج…</value></data>
+  <data name="Programme.Error" xml:space="preserve"><value>تعذّر تحميل البرنامج. حاول مرة أخرى.</value></data>
+  <data name="Programme.Empty.Title" xml:space="preserve"><value>لا توجد جلسات بعد</value></data>
+  <data name="Programme.Empty.Text" xml:space="preserve"><value>لم يتم نشر الأجندة بعد. يُرجى التحقق لاحقًا.</value></data>
+  <data name="Programme.Speakers.Title" xml:space="preserve"><value>المتحدثون</value></data>
+
+  <data name="Visit.PageTitle" xml:space="preserve"><value>الزيارة والدخول · الملتقى البحري السعودي الدولي</value></data>
+  <data name="Visit.Banner.Title" xml:space="preserve"><value>الزيارة والدخول</value></data>
+  <data name="Visit.Banner.Subtitle" xml:space="preserve"><value>كل ما تحتاج معرفته قبل وصولك إلى الملتقى.</value></data>
+  <data name="Visit.GettingHere.Title" xml:space="preserve"><value>الوصول إلى الموقع</value></data>
+  <data name="Visit.GettingHere.Body" xml:space="preserve"><value>يُقام الملتقى في مقر الفعالية الرسمي. سيُنشر العنوان الكامل وخريطة الموقع هنا مع اقتراب موعد الفعالية. يُرجى اتباع اللافتات الإرشادية في الموقع وتوجيهات المنظمين عند الوصول.</value></data>
+  <data name="Visit.GettingHere.Transport" xml:space="preserve"><value>سيُعلن عن تفاصيل مواقف السيارات ووسائل النقل، بما في ذلك أقرب طرق الوصول، قبل يوم الافتتاح.</value></data>
+  <data name="Visit.Entry.Title" xml:space="preserve"><value>الدخول والبطاقات</value></data>
+  <data name="Visit.Entry.Badge" xml:space="preserve"><value>يتم الدخول عن طريق بطاقة رمز الاستجابة السريعة (QR). بعد اعتماد حسابك، افتح تطبيق سيمف للجوال لعرض بطاقتك الشخصية، ويقوم الموظفون بمسحها عند المدخل لتسجيل دخولك.</value></data>
+  <data name="Visit.Entry.SignUp" xml:space="preserve"><value>ليس لديك حساب بعد؟ سجّل في تطبيق سيمف قبل سفرك ليكون بطاقتك جاهزة في الوقت المناسب للدخول.</value></data>
+  <data name="Visit.Hours.Title" xml:space="preserve"><value>ساعات العمل</value></data>
+  <data name="Visit.Hours.Body" xml:space="preserve"><value>يفتح الملتقى أبوابه يوميًا خلال أيام الفعالية. سيتم تأكيد مواعيد الفتح والإغلاق الدقيقة لكل يوم هنا قبل بدء الفعالية.</value></data>
+  <data name="Visit.Accessibility.Title" xml:space="preserve"><value>إمكانية الوصول</value></data>
+  <data name="Visit.Accessibility.Body" xml:space="preserve"><value>تم تصميم الموقع ليكون متاحًا للزوار من ذوي الحركة المحدودة. إذا كانت لديك احتياجات وصول محددة، يُرجى التواصل مع منسق الفعالية مسبقًا حتى نتمكن من مساعدتك في يوم الزيارة.</value></data>
 </root>
