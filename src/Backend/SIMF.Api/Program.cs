@@ -128,14 +128,28 @@ builder.Services.AddRateLimiter(rateLimiter =>
     // not protect against an office shared by multiple admins, or a
     // stolen-credential botnet rotating IPs. Partitioned on the JWT
     // `sub` claim so each admin gets their own bucket regardless of
-    // source IP. Anonymous (no `sub` claim) falls through to the
-    // global per-IP cap — the endpoint requires Administrator anyway.
+    // source IP.
+    //
+    // D-181 (review-pass hardening): the no-sub partition used to be
+    // `GetNoLimiter` — fine in normal operation (Administrator policy
+    // ensures `sub` is present) but the silent zero-cap behaviour
+    // masked any JWT-claim-mapper regression. Replaced with a tight
+    // fixed-window so an unexpected no-sub request gets bounded
+    // automatically instead of disappearing into an unbounded bucket.
     rateLimiter.AddPolicy("ai-test", httpContext =>
     {
         var sub = httpContext.User.FindFirst("sub")?.Value;
         if (string.IsNullOrEmpty(sub))
         {
-            return RateLimitPartition.GetNoLimiter<string>("no-sub");
+            return RateLimitPartition.GetFixedWindowLimiter(
+                "ai-test:no-sub",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    // D-181 — defense-in-depth: tight cap so a claim-mapper
+                    // regression cannot silently kill the rate-limit guard.
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(1),
+                });
         }
         return RateLimitPartition.GetFixedWindowLimiter(
             "ai-test:" + sub,

@@ -241,6 +241,18 @@ public static class DependencyInjection
         // client is fine for the current scope).
         services.Configure<SIMF.Infrastructure.Ai.AiOptions>(
             configuration.GetSection(SIMF.Infrastructure.Ai.AiOptions.SectionName));
+        // D-181 — install the HMAC key for prompt-content drift hashes.
+        // Reads from `Ai:PromptHash:Secret` (env var
+        // `SIMF_Ai__PromptHash__Secret` in production). If empty, the
+        // helper uses a deterministic dev-mode derivation so tests pass
+        // without configuration — production should always supply.
+        // D-181 (review-pass) — hosting layers should check
+        // `AiAuditDetail.IsHmacKeyDevFallback` at startup and refuse to
+        // start (or page on-call) in production when the secret is
+        // unconfigured. The flag is set as a side-effect of this call.
+        SIMF.Infrastructure.Ai.AiAuditDetail.ConfigureHmacKey(
+            configuration.GetValue<string?>(
+                $"{SIMF.Infrastructure.Ai.AiOptions.SectionName}:PromptHash:Secret"));
         services.AddSingleton<SIMF.Application.Ai.Abstractions.IAiProvider,
             SIMF.Infrastructure.Ai.EchoAiProvider>();
         services.AddSingleton(_ => new HttpClient { Timeout = TimeSpan.FromSeconds(30) });

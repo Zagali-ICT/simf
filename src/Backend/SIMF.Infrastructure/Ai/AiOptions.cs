@@ -18,6 +18,9 @@ public sealed class AiOptions
     public AiProvider DefaultProvider { get; set; } = AiProvider.Echo;
 
     public OpenAiOptions OpenAi { get; set; } = new();
+
+    /// <summary>D-181 — HMAC key for prompt-content drift hashes.</summary>
+    public AiPromptHashOptions PromptHash { get; set; } = new();
 }
 
 public sealed class OpenAiOptions
@@ -31,4 +34,24 @@ public sealed class OpenAiOptions
 
     /// <summary>Model fallback when a prompt omits its own Model.</summary>
     public string DefaultModel { get; set; } = "gpt-4o-mini";
+}
+
+/// <summary>D-181 (review-pass hardening of D-179) — HMAC key for
+/// <see cref="SIMF.Infrastructure.Ai.AiAuditDetail.PromptContentHash"/>.
+/// Raw SHA-256 over `SystemPrompt + 0x1F + UserPromptTemplate` lets an
+/// insider with audit-read brute-force short or templated prompts via
+/// rainbow tables ("Summarise: {visitorName}" is highly guessable).
+/// HMAC-SHA256 keyed on this server-only secret keeps the drift-detection
+/// property and adds preimage resistance even against insiders.
+/// Provide via env var <c>SIMF_Ai__PromptHashSecret</c>. Rotation
+/// changes all hashes — that's acceptable because the audit log is
+/// time-bounded and SOC compares hashes within a window, not against
+/// historical baselines.</summary>
+public sealed class AiPromptHashOptions
+{
+    /// <summary>Random ≥32-byte ASCII or base64 secret. If empty, the
+    /// hasher falls back to a deterministic process-static derivation —
+    /// fine for dev / tests, but logs a warning at startup so production
+    /// noise surfaces a misconfiguration.</summary>
+    public string? Secret { get; set; }
 }

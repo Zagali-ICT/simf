@@ -196,6 +196,95 @@ public sealed class AiHardeningTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public void PromptContentHash_is_deterministic_and_v1_prefixed()
+    {
+        // D-181 — HMAC-SHA256 over the same input MUST produce the same
+        // hash within one process. SOC drift detection depends on this:
+        // an Updated audit row's `contentHashOld` is the previous Created
+        // / Updated row's `contentHashNew`, and SIEM joins on equality.
+        // The `v1:` prefix exists for future key-rotation versioning.
+        var h1 = AiAuditDetail.PromptContentHash("Hello", "World");
+        var h2 = AiAuditDetail.PromptContentHash("Hello", "World");
+        Assert.Equal(h1, h2);
+        Assert.StartsWith("v1:", h1);
+        Assert.Equal(3 + 64, h1.Length); // "v1:" + 64-char hex
+        Assert.Matches("^v1:[0-9a-f]{64}$", h1);
+    }
+
+    [Fact]
+    public void PromptContentHash_known_answer_under_a_fixed_key()
+    {
+        // D-181 (review-pass, code-reviewer suggestion) — known-answer
+        // test pins both the HMAC algorithm AND the input concatenation
+        // formula. A future swap (e.g. HMAC-SHA1, SHA3-256, different
+        // delimiter) breaks this without breaking the determinism +
+        // length tests above. Snapshot the test-fixture key + hash.
+        AiAuditDetail.ConfigureHmacKey("test-key-for-known-answer-d181");
+        try
+        {
+            var hash = AiAuditDetail.PromptContentHash("Hello", "World");
+            // The pinned hex below was produced by the implementation at
+            // commit time with HMAC-SHA256(test-key-for-known-answer-d181,
+            // "HelloWorld"). If this changes, the algorithm OR the
+            // delimiter changed — either is a load-bearing regression.
+            Assert.Equal(
+                "v1:e9ef841849a7e4da5ee311f445f5f9cd"
+                + "5cecea118702d7af557703e2274e4214",
+                hash);
+        }
+        finally
+        {
+            // Restore the test fixture's key (the rest of the suite
+            // relies on the SimfApiFactory-installed key).
+            // SimfApiFactory.EnsureDatabaseCreated re-registers DI,
+            // but explicit reset keeps subsequent same-class tests
+            // independent.
+            AiAuditDetail.ConfigureHmacKey(null);
+        }
+    }
+
+    [Theory]
+    [InlineData("My ID is 1098765432.", "[REDACTED_NID]", "1098765432")]
+    [InlineData("Call me on 0501234567 please", "[REDACTED_PHONE]", "0501234567")]
+    [InlineData("Wire to SA0380000000608010167519", "[REDACTED_IBAN]", "SA0380000000608010167519")]
+    [InlineData("AKIAIOSFODNN7EXAMPLE leaked", "[REDACTED_KEY]", "AKIAIOSFODNN7EXAMPLE")]
+    [InlineData("ghp_abcdefghijklmnopqrstuvwxyz0123456789", "[REDACTED_KEY]", "ghp_abcdefghijklmnopqrstuvwxyz0123456789")]
+    [InlineData("AIzaSyDxabcdefghijklmnopqrstuvwxyz12345", "[REDACTED_KEY]", "AIzaSyDxabcdefghijklmnopqrstuvwxyz12345")]
+    [InlineData("xoxb-12345-abcdefghij-klmnopqrstuv", "[REDACTED_KEY]", "xoxb-12345-abcdefghij-klmnopqrstuv")]
+    [InlineData("-----BEGIN RSA PRIVATE KEY-----\nMIIE", "[REDACTED_PEM]", "BEGIN RSA PRIVATE KEY")]
+    public void RedactValue_masks_the_new_D181_patterns(
+        string input, string expectedMarker, string mustNotAppear)
+    {
+        // D-181 — new redaction patterns: Saudi NID + mobile + IBAN,
+        // AWS AKIA/ASIA, GitHub PATs, Google AIza, Slack xox, PEM
+        // private-key block. Each test row asserts both the
+        // redaction marker AND absence of the raw secret prefix so a
+        // half-match regex regression still fails.
+        var redacted = AiAuditDetail.RedactValue(input);
+        Assert.Contains(expectedMarker, redacted);
+        Assert.DoesNotContain(mustNotAppear, redacted);
+    }
+
+    [Fact]
+    public void RedactValue_does_not_panic_or_hang_on_adversarial_input()
+    {
+        // D-181 — NonBacktracking guarantees O(n) — a 50KB string of
+        // digits (worst case for the PAN regex's bounded backtracker)
+        // should run in milliseconds, not seconds.
+        // D-181 (review-pass, test analyst) — warm the regexes via a
+        // tiny prior call so first-run JIT + regex-compile costs don't
+        // count against the 1s budget on a cold CI agent.
+        AiAuditDetail.RedactValue("warmup");
+        var adversarial = new string('9', 50_000);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var redacted = AiAuditDetail.RedactValue(adversarial);
+        sw.Stop();
+        Assert.True(sw.ElapsedMilliseconds < 1000,
+            $"RedactValue took {sw.ElapsedMilliseconds}ms on 50KB digit run — NonBacktracking should keep this sub-second.");
+        Assert.NotNull(redacted);
+    }
+
+    [Fact]
     public async Task AiPromptCreated_audit_carries_content_hash()
     {
         var admin = await CreateAdministratorAndSignInAsync();
@@ -227,8 +316,13 @@ public sealed class AiHardeningTests : IClassFixture<SimfApiFactory>
 
         var detail = JsonDocument.Parse(auditRow.Detail!);
         Assert.True(detail.RootElement.TryGetProperty("contentHash", out var hash));
-        Assert.False(string.IsNullOrEmpty(hash.GetString()));
-        Assert.Equal(64, hash.GetString()!.Length); // SHA-256 hex
+        // D-181 (review-pass) — hash now carries a `v1:` version prefix
+        // so a future HMAC key rotation can bump to `v2:` and SOC
+        // rules can explicitly skip cross-version drift compares.
+        var hashStr = hash.GetString()!;
+        Assert.StartsWith("v1:", hashStr);
+        Assert.Equal(3 + 64, hashStr.Length); // "v1:" + 64-char hex
+        Assert.Matches("^v1:[0-9a-f]{64}$", hashStr);
     }
 
     [Fact]
