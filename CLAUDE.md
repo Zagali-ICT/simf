@@ -82,3 +82,18 @@ the InitialCreate baseline (`App/D186_AddProfileTypeIsVisitor` +
 value `2`; the `1` slot is reserved. See `docs/decisions/DECISIONS_LOG.md`
 D-186 for the full rationale. No other freeze items are lifted; future
 schema or enum changes still require explicit owner approval.
+
+### D-199 broad lift (2026-05-30)
+
+Owner authorised a broad lift of the D-110 freeze to deliver the full
+App + CP + API for the event push. New EF tables/columns on
+`SimfAppDbContext` are now permitted for these new/extended event modules:
+News, Media gallery, Media partners, Booths (Exhibition), Sponsors,
+Archive editions, Audience comments, Ratings/Feedback, Statistics
+snapshots, and Live-session columns. Each lands as **additive** tables via
+new migrations (one consolidated migration per build wave). The
+**Identity** schema stays frozen, and the existing enums stay frozen
+against **rename/reorder** (additive new values still allowed). See
+`docs/decisions/DECISIONS_LOG.md` D-199 for the rationale and the four
+owner decisions taken with it (freeze lift; provider-stub for live/AI;
+exhibitor/sponsor = CP-only Company + accounts; 2D venue map).
