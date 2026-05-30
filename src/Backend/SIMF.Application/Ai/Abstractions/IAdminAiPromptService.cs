@@ -37,4 +37,12 @@ public interface IAdminAiPromptService
     /// admin grid; this method is the audit-trail read.</summary>
     Task<AdminAiInvocationDetail?> GetInvocationAsync(
         Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>D-188 — append-only snapshot history for the given
+    /// AiPrompt id. Newest-first. Empty list when the prompt has
+    /// never been updated past v1. Returns an empty list for an
+    /// unknown id (no 404 — the caller already does the existence
+    /// check via <see cref="GetAsync"/> when needed).</summary>
+    Task<IReadOnlyList<AdminAiPromptHistoryEntry>> GetHistoryAsync(
+        Guid promptId, CancellationToken cancellationToken = default);
 }

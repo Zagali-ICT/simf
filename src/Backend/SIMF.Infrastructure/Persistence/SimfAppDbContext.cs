@@ -114,6 +114,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     /// Editable from the CP at runtime; one row per logical key.</summary>
     public DbSet<AiPrompt> AiPrompts => Set<AiPrompt>();
 
+    /// <summary>D-188 (D-181 carry-over) — append-only snapshot table
+    /// for AiPrompt edits. One row per (AiPromptId, Version) captured
+    /// BEFORE the version bump that produced it.</summary>
+    public DbSet<AiPromptHistory> AiPromptHistory => Set<AiPromptHistory>();
+
     /// <summary>D-176 (gap doc G12) — append-only telemetry log of
     /// every AI invocation (success or failure).</summary>
     public DbSet<AiInvocation> AiInvocations => Set<AiInvocation>();

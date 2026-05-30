@@ -1394,6 +1394,16 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Get, $"ai/prompts/{id}", content: null,
             accessToken, cancellationToken);
 
+    /// <summary>D-188 — append-only edit history for one prompt.
+    /// Newest first. Empty list when the prompt has never been
+    /// updated past v1.</summary>
+    public Task<ApiCallResult<IReadOnlyList<AdminAiPromptHistoryEntry>>> GetAiPromptHistoryAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<AdminAiPromptHistoryEntry>>(
+            HttpMethod.Get, $"ai/prompts/{id}/history", content: null,
+            accessToken, cancellationToken);
+
     public Task<ApiCallResult<AdminAiPromptDetail>> CreateAiPromptAsync(
         CreateAiPromptRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>

@@ -147,6 +147,33 @@ internal sealed class AdminAiPromptService(
         var oldHash = AiAuditDetail.PromptContentHash(
             prompt.SystemPrompt, prompt.UserPromptTemplate);
 
+        // D-188 — snapshot the PRE-mutation state into AiPromptHistory
+        // so SOC + the CP history tab can reconstruct any prior
+        // version after a drift detection. Captured BEFORE the
+        // version bump; uses the current prompt.Version so the
+        // snapshot's Version equals the live version that's about to
+        // be replaced. The hash matches the `contentHashOld` value
+        // the audit row will carry — SOC can correlate the audit
+        // row and the history snapshot by hash.
+        var now = timeProvider.GetUtcNow();
+        appDbContext.AiPromptHistory.Add(new AiPromptHistory
+        {
+            Id = Guid.NewGuid(),
+            AiPromptId = prompt.Id,
+            Version = prompt.Version,
+            SystemPrompt = prompt.SystemPrompt,
+            UserPromptTemplate = prompt.UserPromptTemplate,
+            Provider = prompt.Provider,
+            Model = prompt.Model,
+            Temperature = prompt.Temperature,
+            MaxOutputTokens = prompt.MaxOutputTokens,
+            IsActive = prompt.IsActive,
+            ContentHash = oldHash,
+            CapturedFromUpdatedAt = prompt.UpdatedAt ?? prompt.CreatedAt,
+            UpdatedByUserId = prompt.UpdatedByUserId,
+            CapturedAt = now,
+        });
+
         prompt.Feature = validated.Feature;
         prompt.DisplayName = validated.DisplayName;
         prompt.DisplayNameArabic = validated.DisplayNameArabic;
@@ -160,8 +187,13 @@ internal sealed class AdminAiPromptService(
         prompt.MaxOutputTokens = validated.MaxOutputTokens;
         prompt.IsActive = request.IsActive;
         prompt.Version++;
-        prompt.UpdatedAt = timeProvider.GetUtcNow();
+        prompt.UpdatedAt = now;
         prompt.UpdatedByUserId = actorUserId;
+        // D-188: SaveChangesAsync writes both the snapshot AND the
+        // live-row update in one transaction. EF SaveChanges is
+        // atomic per call; if the snapshot insert fails (e.g. unique
+        // index violation on a duplicate version retry), the live
+        // mutation is not persisted either.
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         var newHash = AiAuditDetail.PromptContentHash(
@@ -387,4 +419,34 @@ internal sealed class AdminAiPromptService(
         p.Description, p.DescriptionArabic, p.Provider, p.Model,
         p.SystemPrompt, p.UserPromptTemplate, p.Temperature, p.MaxOutputTokens,
         p.IsActive, p.Version, p.CreatedAt, p.UpdatedAt);
+
+    /// <summary>D-188 — read the append-only edit history for one
+    /// prompt. Newest first. Capped at the natural ceiling of how
+    /// many edits a single prompt accumulates over an event
+    /// lifetime (single-digit hundreds at most); no paging needed
+    /// today.</summary>
+    public async Task<IReadOnlyList<AdminAiPromptHistoryEntry>> GetHistoryAsync(
+        Guid promptId, CancellationToken cancellationToken = default)
+    {
+        return await appDbContext.AiPromptHistory
+            .AsNoTracking()
+            .Where(h => h.AiPromptId == promptId)
+            .OrderByDescending(h => h.Version)
+            .Select(h => new AdminAiPromptHistoryEntry(
+                h.Id,
+                h.AiPromptId,
+                h.Version,
+                h.Provider,
+                h.Model,
+                h.SystemPrompt,
+                h.UserPromptTemplate,
+                h.Temperature,
+                h.MaxOutputTokens,
+                h.IsActive,
+                h.ContentHash,
+                h.CapturedFromUpdatedAt,
+                h.UpdatedByUserId,
+                h.CapturedAt))
+            .ToListAsync(cancellationToken);
+    }
 }

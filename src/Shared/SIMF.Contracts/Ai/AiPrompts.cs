@@ -38,6 +38,35 @@ public sealed record AdminAiPromptDetail(
     DateTimeOffset CreatedAt,
     DateTimeOffset? UpdatedAt);
 
+/// <summary>D-188 — one historical snapshot of an
+/// <see cref="AdminAiPromptDetail"/> (captured BEFORE the live row
+/// was updated past <see cref="Version"/>). The history endpoint
+/// returns these ordered newest-first.</summary>
+public sealed record AdminAiPromptHistoryEntry(
+    Guid Id,
+    Guid AiPromptId,
+    int Version,
+    AiProvider Provider,
+    string Model,
+    string SystemPrompt,
+    string UserPromptTemplate,
+    double Temperature,
+    int MaxOutputTokens,
+    bool IsActive,
+    /// <summary>D-181-shaped HMAC of the snapshot's prompt content
+    /// (carries the <c>v1:</c> / <c>v2:</c> prefix). Matches the
+    /// <c>contentHashOld</c> the audit row emitted at the time.</summary>
+    string ContentHash,
+    /// <summary>The live row's <c>UpdatedAt</c> from the version
+    /// this snapshot captures (or <c>CreatedAt</c> for v1).</summary>
+    DateTimeOffset CapturedFromUpdatedAt,
+    /// <summary>The admin who authored the version this snapshot
+    /// captures. Null on v1 (the original CreateAsync path).</summary>
+    Guid? UpdatedByUserId,
+    /// <summary>When the snapshot row was written (i.e. when the
+    /// successor version replaced this one).</summary>
+    DateTimeOffset CapturedAt);
+
 /// <summary>D-176 — create admin request. Open for inheritance per
 /// D-168 / D-174 / D-175 pattern.</summary>
 public class CreateAiPromptRequest

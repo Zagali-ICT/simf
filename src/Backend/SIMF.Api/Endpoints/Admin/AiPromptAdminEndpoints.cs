@@ -50,6 +50,32 @@ public sealed class GetAiPromptEndpoint(IAdminAiPromptService service)
     }
 }
 
+/// <summary>D-188 — <c>GET /admin/ai/prompts/{id}/history</c> returns
+/// the append-only snapshot list (newest first) for the given prompt.
+/// Empty list when the prompt has never been updated.</summary>
+public sealed class GetAiPromptHistoryEndpoint(IAdminAiPromptService service)
+    : Endpoint<GetAiPromptRoute, ApiResult<IReadOnlyList<AdminAiPromptHistoryEntry>>>
+{
+    public override void Configure()
+    {
+        Get("/admin/ai/prompts/{id:guid}/history");
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        // D-188: per-record drill-down on the prompt-edit history is
+        // an audit-content read — apply the same auth rate-limit as
+        // the meeting-request detail endpoint (D-185 review-pass) so
+        // a compromised admin cannot burst-scrape historical
+        // prompt-text without hitting the limiter.
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+    public override async Task HandleAsync(GetAiPromptRoute req, CancellationToken ct)
+    {
+        var history = await service.GetHistoryAsync(req.Id, ct);
+        await Send.OkAsync(ApiResult<IReadOnlyList<AdminAiPromptHistoryEntry>>.Ok(history), ct);
+    }
+}
+
 public sealed class CreateAiPromptEndpoint(IAdminAiPromptService service)
     : Endpoint<CreateAiPromptRequest, ApiResult<AdminAiPromptDetail>>
 {

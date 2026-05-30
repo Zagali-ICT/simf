@@ -168,6 +168,21 @@ internal static class AiAuditDetail
     private static readonly Regex AwsAccessKeyRegex = new(
         @"\b(AKIA|ASIA)[0-9A-Z]{16}\b", Opts);
 
+    // D-188 — AWS secret access keys do NOT have a prefix and look
+    // like an arbitrary 40-char base64-ish string, so a value-only
+    // match would catch every random 40-char run (huge false-positive
+    // rate). The high-fidelity signal is the surrounding context: the
+    // key is almost always written as `aws_secret_access_key=<value>`
+    // or `aws_secret_access_key: <value>` (env-var / config style),
+    // or `AWS_SECRET_ACCESS_KEY=<value>` (uppercase env-var). This
+    // context-only pattern redacts the value PLUS the prefix, leaving
+    // a marker that names the context. Matches the prefix
+    // case-insensitively but redacts the whole `prefix=value` span so
+    // the SOC pipeline cannot reconstruct either half.
+    private static readonly Regex AwsSecretAccessKeyContextRegex = new(
+        @"(?i)\baws[_-]?secret[_-]?access[_-]?key\s*[:=]\s*[A-Za-z0-9/+=]{20,}",
+        Opts);
+
     // D-181 — GitHub personal-access tokens (ghp_ / gho_ / ghu_ / ghs_ / ghr_).
     private static readonly Regex GithubTokenRegex = new(
         @"\bgh[poshru]_[A-Za-z0-9]{36,}\b", Opts);
@@ -215,6 +230,11 @@ internal static class AiAuditDetail
         s = GoogleApiKeyRegex.Replace(s, "[REDACTED_KEY]");
         s = SlackTokenRegex.Replace(s, "[REDACTED_KEY]");
         s = AwsAccessKeyRegex.Replace(s, "[REDACTED_KEY]");
+        // D-188 — AWS secret-key context redaction runs alongside the
+        // AKIA / ASIA value match. The two patterns are independent
+        // (one matches the public access-key id; the other matches
+        // the secret-key value via its surrounding context).
+        s = AwsSecretAccessKeyContextRegex.Replace(s, "[REDACTED_KEY]");
         s = SaudiIbanRegex.Replace(s, "[REDACTED_IBAN]");
         // Saudi NID + mobile before email so a 10-digit ID isn't lost in
         // the @-anchor of the email regex.

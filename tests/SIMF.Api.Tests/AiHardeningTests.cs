@@ -265,6 +265,28 @@ public sealed class AiHardeningTests : IClassFixture<SimfApiFactory>
         Assert.DoesNotContain(mustNotAppear, redacted);
     }
 
+    [Theory]
+    // D-188 — AWS secret-key context redaction. The value has no
+    // prefix so the high-fidelity signal is the surrounding context
+    // (`aws_secret_access_key=...`). These rows cover the common
+    // config-file and env-var shapes.
+    [InlineData("aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")]
+    [InlineData("AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")]
+    [InlineData("aws_secret_access_key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")]
+    [InlineData("aws-secret-access-key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")]
+    public void RedactValue_masks_aws_secret_access_key_by_context(string input)
+    {
+        // The whole prefix=value span is redacted (not just the
+        // value) so the SOC pipeline cannot reconstruct either half.
+        var redacted = AiAuditDetail.RedactValue(input);
+        Assert.Contains("[REDACTED_KEY]", redacted);
+        Assert.DoesNotContain("wJalrXUtnFEMI", redacted);
+        Assert.DoesNotContain("aws_secret_access_key", redacted,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("aws-secret-access-key", redacted,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void RedactValue_does_not_panic_or_hang_on_adversarial_input()
     {
@@ -461,5 +483,90 @@ public sealed class AiHardeningTests : IClassFixture<SimfApiFactory>
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return _client.SendAsync(request);
+    }
+
+    // -- D-188 — AiPromptHistory snapshot tests ---------------------------------
+
+    [Fact]
+    public async Task Update_writes_an_AiPromptHistory_snapshot_capturing_the_prior_state()
+    {
+        // D-188: every successful Update snapshots the PRE-mutation
+        // state into AiPromptHistory before the version bump. The
+        // snapshot's Version equals the live version that was about
+        // to be replaced, and the snapshot's content matches what
+        // the live row carried at that moment.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var (id, originalSystem, originalUser) =
+            await GetSeededPromptAsync("translate");
+
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/ai/prompts/{id}",
+            new UpdateAiPromptRequest
+            {
+                Feature = AiFeature.Translate,
+                DisplayName = "Translate",
+                DisplayNameArabic = "ترجمة",
+                Provider = AiProvider.Echo,
+                Model = "echo",
+                SystemPrompt = originalSystem + " (D-188 change)",
+                UserPromptTemplate = originalUser,
+                Temperature = 0.1,
+                MaxOutputTokens = 256,
+                IsActive = true,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var snapshot = await db.AiPromptHistory.AsNoTracking()
+            .Where(h => h.AiPromptId == id)
+            .OrderByDescending(h => h.Version)
+            .FirstOrDefaultAsync();
+        Assert.NotNull(snapshot);
+        // The snapshot's Version is the PRE-bump value (i.e. the
+        // live row was at this version when the snapshot ran).
+        Assert.Equal(1, snapshot!.Version);
+        Assert.Equal(originalSystem, snapshot.SystemPrompt);
+        Assert.Equal(originalUser, snapshot.UserPromptTemplate);
+        Assert.StartsWith("v1:", snapshot.ContentHash);
+    }
+
+    [Fact]
+    public async Task Get_history_endpoint_returns_snapshots_newest_first()
+    {
+        // D-188: GET /admin/ai/prompts/{id}/history returns the
+        // append-only snapshot list ordered by Version descending.
+        var admin = await CreateAdministratorAndSignInAsync();
+        var (id, originalSystem, originalUser) =
+            await GetSeededPromptAsync("faq-answer");
+
+        // Two updates -> two snapshot rows (v1 then v2).
+        for (var i = 1; i <= 2; i++)
+        {
+            await PutAuthAsync(
+                $"/api/v1/admin/ai/prompts/{id}",
+                new UpdateAiPromptRequest
+                {
+                    Feature = AiFeature.Faq,
+                    DisplayName = "FAQ",
+                    DisplayNameArabic = "أسئلة",
+                    Provider = AiProvider.Echo,
+                    Model = "echo",
+                    SystemPrompt = $"{originalSystem} v{i + 1}",
+                    UserPromptTemplate = originalUser,
+                    Temperature = 0.2,
+                    MaxOutputTokens = 256,
+                    IsActive = true,
+                }, admin);
+        }
+
+        var response = await GetAuthAsync(
+            $"/api/v1/admin/ai/prompts/{id}/history", admin);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var history = (await response.Content
+            .ReadFromJsonAsync<ApiResult<List<AdminAiPromptHistoryEntry>>>())!.Data!;
+        Assert.Equal(2, history.Count);
+        Assert.Equal(2, history[0].Version);  // newest first
+        Assert.Equal(1, history[1].Version);
     }
 }
