@@ -249,6 +249,8 @@ public static class DependencyInjection
             SIMF.Infrastructure.Media.PublicMediaService>();
         services.AddScoped<SIMF.Application.Media.Abstractions.IAdminMediaService,
             SIMF.Infrastructure.Media.AdminMediaService>();
+        services.Configure<SIMF.Infrastructure.Media.MediaImageStorageOptions>(
+            configuration.GetSection(SIMF.Infrastructure.Media.MediaImageStorageOptions.SectionName));
         services.AddSingleton<SIMF.Application.Abstractions.IMediaImageStorage,
             SIMF.Infrastructure.Media.FilesystemMediaImageStorage>();
         services.AddScoped<SIMF.Application.Exhibition.Abstractions.IPublicBoothService,
@@ -267,7 +269,8 @@ public static class DependencyInjection
             SIMF.Infrastructure.SessionComments.SessionCommentService>();
         services.AddScoped<SIMF.Application.SessionComments.Abstractions.IAdminSessionCommentService,
             SIMF.Infrastructure.SessionComments.AdminSessionCommentService>();
-        services.AddScoped<SIMF.Application.SessionComments.Abstractions.ICommentAiFilter,
+        // Stateless (reads only IOptions) — register as singleton.
+        services.AddSingleton<SIMF.Application.SessionComments.Abstractions.ICommentAiFilter,
             SIMF.Infrastructure.SessionComments.StubCommentAiFilter>();
         services.AddScoped<SIMF.Application.Feedback.Abstractions.IRatingService,
             SIMF.Infrastructure.Feedback.RatingService>();

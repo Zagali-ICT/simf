@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
-using SIMF.Application.Media;
 using SIMF.Application.Media.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -125,7 +124,7 @@ internal sealed class AdminMediaService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = MediaAuditEvents.MediaCreated,
+            EventType = AuditEvents.MediaCreated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"id={item.Id}; kind={item.Kind}",
@@ -147,7 +146,7 @@ internal sealed class AdminMediaService(
         var item = await dbContext.MediaItems
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(
-                MediaErrorCodes.MediaNotFound, 404,
+                ErrorCodes.MediaNotFound, 404,
                 "The media item was not found.",
                 "لم يتم العثور على عنصر الوسائط.");
 
@@ -167,7 +166,7 @@ internal sealed class AdminMediaService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = MediaAuditEvents.MediaUpdated,
+            EventType = AuditEvents.MediaUpdated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"id={item.Id}; active={item.IsActive}",
@@ -184,7 +183,7 @@ internal sealed class AdminMediaService(
         var item = await dbContext.MediaItems
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(
-                MediaErrorCodes.MediaNotFound, 404,
+                ErrorCodes.MediaNotFound, 404,
                 "The media item was not found.",
                 "لم يتم العثور على عنصر الوسائط.");
 
@@ -199,7 +198,7 @@ internal sealed class AdminMediaService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = MediaAuditEvents.MediaDeactivated,
+            EventType = AuditEvents.MediaDeactivated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"id={item.Id}",
@@ -216,7 +215,7 @@ internal sealed class AdminMediaService(
         var item = await dbContext.MediaItems
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(
-                MediaErrorCodes.MediaNotFound, 404,
+                ErrorCodes.MediaNotFound, 404,
                 "The media item was not found.",
                 "لم يتم العثور على عنصر الوسائط.");
 
@@ -228,7 +227,7 @@ internal sealed class AdminMediaService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = MediaAuditEvents.MediaImageSet,
+            EventType = AuditEvents.MediaImageSet,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"id={item.Id}; path={relativePath}",
@@ -244,14 +243,14 @@ internal sealed class AdminMediaService(
         if (!Enum.IsDefined(kind))
         {
             throw new ApiException(
-                MediaErrorCodes.MediaInvalid, 400,
+                ErrorCodes.MediaInvalid, 400,
                 "Media kind is invalid.",
                 "نوع الوسائط غير صالح.");
         }
         if (displayOrder < 0)
         {
             throw new ApiException(
-                MediaErrorCodes.MediaInvalid, 400,
+                ErrorCodes.MediaInvalid, 400,
                 "Display order must be zero or a positive integer.",
                 "يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.");
         }
@@ -267,7 +266,7 @@ internal sealed class AdminMediaService(
         if (kind == MediaKind.Video && string.IsNullOrWhiteSpace(url))
         {
             throw new ApiException(
-                MediaErrorCodes.MediaInvalid, 400,
+                ErrorCodes.MediaInvalid, 400,
                 "A video media item requires a URL.",
                 "يتطلّب عنصر الفيديو رابطاً.");
         }
@@ -278,7 +277,7 @@ internal sealed class AdminMediaService(
         if (!string.IsNullOrWhiteSpace(value) && value.Length > max)
         {
             throw new ApiException(
-                MediaErrorCodes.MediaInvalid, 400,
+                ErrorCodes.MediaInvalid, 400,
                 $"{fieldEn} must be {max} characters or less.",
                 $"يجب ألا يتجاوز {fieldAr} {max} حرفاً.");
         }

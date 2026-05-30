@@ -91,34 +91,37 @@ internal sealed class AdminBoothService(
         AdminCreateBoothRequest request,
         CancellationToken cancellationToken = default)
     {
-        var (code, nameEn, nameAr) = ValidateAndNormalise(
-            request.Code, request.NameEn, request.NameAr);
+        var v = ValidateAndNormalise(
+            request.Code, request.NameEn, request.NameAr,
+            request.ExhibitorNameEn, request.ExhibitorNameAr,
+            request.SectorEn, request.SectorAr,
+            request.DescriptionEn, request.DescriptionAr);
         await EnsureHallIsValidAsync(request.HallId, cancellationToken);
 
         var clash = await dbContext.Booths
             .AsNoTracking()
-            .AnyAsync(row => row.Code == code, cancellationToken);
+            .AnyAsync(row => row.Code == v.Code, cancellationToken);
         if (clash)
         {
             throw new ApiException(
                 ErrorCodes.BoothCodeDuplicate, 409,
-                $"A booth with code '{code}' already exists.",
-                $"يوجد جناح بالرمز '{code}' بالفعل.");
+                $"A booth with code '{v.Code}' already exists.",
+                $"يوجد جناح بالرمز '{v.Code}' بالفعل.");
         }
 
         var now = timeProvider.GetUtcNow();
         var booth = new Booth
         {
             Id = Guid.NewGuid(),
-            Code = code,
-            NameEn = nameEn,
-            NameAr = nameAr,
-            ExhibitorNameEn = NullIfBlank(request.ExhibitorNameEn),
-            ExhibitorNameAr = NullIfBlank(request.ExhibitorNameAr),
-            SectorEn = NullIfBlank(request.SectorEn),
-            SectorAr = NullIfBlank(request.SectorAr),
-            DescriptionEn = NullIfBlank(request.DescriptionEn),
-            DescriptionAr = NullIfBlank(request.DescriptionAr),
+            Code = v.Code,
+            NameEn = v.NameEn,
+            NameAr = v.NameAr,
+            ExhibitorNameEn = v.ExhibitorNameEn,
+            ExhibitorNameAr = v.ExhibitorNameAr,
+            SectorEn = v.SectorEn,
+            SectorAr = v.SectorAr,
+            DescriptionEn = v.DescriptionEn,
+            DescriptionAr = v.DescriptionAr,
             HallId = request.HallId,
             MapX = request.MapX,
             MapY = request.MapY,
@@ -133,12 +136,12 @@ internal sealed class AdminBoothService(
             EventType = AuditEvents.BoothCreated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={booth.Id}; code={code}; nameEn={nameEn}",
+            Detail = $"id={booth.Id}; code={v.Code}; nameEn={v.NameEn}",
         }, cancellationToken);
 
         logger.LogInformation(
             "Admin {ActorId} created Booth {Code} ({Id})",
-            actorUserId, code, booth.Id);
+            actorUserId, v.Code, booth.Id);
 
         return ToDetail(booth);
     }
@@ -156,33 +159,36 @@ internal sealed class AdminBoothService(
                 "The booth was not found.",
                 "لم يتم العثور على الجناح.");
 
-        var (code, nameEn, nameAr) = ValidateAndNormalise(
-            request.Code, request.NameEn, request.NameAr);
+        var v = ValidateAndNormalise(
+            request.Code, request.NameEn, request.NameAr,
+            request.ExhibitorNameEn, request.ExhibitorNameAr,
+            request.SectorEn, request.SectorAr,
+            request.DescriptionEn, request.DescriptionAr);
         await EnsureHallIsValidAsync(request.HallId, cancellationToken);
 
-        if (!string.Equals(booth.Code, code, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(booth.Code, v.Code, StringComparison.OrdinalIgnoreCase))
         {
             var clash = await dbContext.Booths
                 .AsNoTracking()
-                .AnyAsync(row => row.Id != id && row.Code == code, cancellationToken);
+                .AnyAsync(row => row.Id != id && row.Code == v.Code, cancellationToken);
             if (clash)
             {
                 throw new ApiException(
                     ErrorCodes.BoothCodeDuplicate, 409,
-                    $"A booth with code '{code}' already exists.",
-                    $"يوجد جناح بالرمز '{code}' بالفعل.");
+                    $"A booth with code '{v.Code}' already exists.",
+                    $"يوجد جناح بالرمز '{v.Code}' بالفعل.");
             }
         }
 
-        booth.Code = code;
-        booth.NameEn = nameEn;
-        booth.NameAr = nameAr;
-        booth.ExhibitorNameEn = NullIfBlank(request.ExhibitorNameEn);
-        booth.ExhibitorNameAr = NullIfBlank(request.ExhibitorNameAr);
-        booth.SectorEn = NullIfBlank(request.SectorEn);
-        booth.SectorAr = NullIfBlank(request.SectorAr);
-        booth.DescriptionEn = NullIfBlank(request.DescriptionEn);
-        booth.DescriptionAr = NullIfBlank(request.DescriptionAr);
+        booth.Code = v.Code;
+        booth.NameEn = v.NameEn;
+        booth.NameAr = v.NameAr;
+        booth.ExhibitorNameEn = v.ExhibitorNameEn;
+        booth.ExhibitorNameAr = v.ExhibitorNameAr;
+        booth.SectorEn = v.SectorEn;
+        booth.SectorAr = v.SectorAr;
+        booth.DescriptionEn = v.DescriptionEn;
+        booth.DescriptionAr = v.DescriptionAr;
         booth.HallId = request.HallId;
         booth.MapX = request.MapX;
         booth.MapY = request.MapY;
@@ -195,7 +201,7 @@ internal sealed class AdminBoothService(
             EventType = AuditEvents.BoothUpdated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={booth.Id}; code={code}; active={booth.IsActive}",
+            Detail = $"id={booth.Id}; code={v.Code}; active={booth.IsActive}",
         }, cancellationToken);
 
         return ToDetail(booth);
@@ -231,8 +237,17 @@ internal sealed class AdminBoothService(
         }, cancellationToken);
     }
 
-    private static (string code, string nameEn, string nameAr) ValidateAndNormalise(
-        string codeRaw, string nameEnRaw, string nameArRaw)
+    private sealed record BoothDraft(
+        string Code, string NameEn, string NameAr,
+        string? ExhibitorNameEn, string? ExhibitorNameAr,
+        string? SectorEn, string? SectorAr,
+        string? DescriptionEn, string? DescriptionAr);
+
+    private static BoothDraft ValidateAndNormalise(
+        string codeRaw, string nameEnRaw, string nameArRaw,
+        string? exhibitorNameEnRaw, string? exhibitorNameArRaw,
+        string? sectorEnRaw, string? sectorArRaw,
+        string? descriptionEnRaw, string? descriptionArRaw)
     {
         var code = (codeRaw ?? string.Empty).Trim().ToUpperInvariant();
         if (code.Length is < 2 or > 16)
@@ -258,7 +273,40 @@ internal sealed class AdminBoothService(
                 "Booth Arabic name must be between 1 and 128 characters.",
                 "يجب أن يتراوح طول الاسم العربي للجناح بين 1 و 128 حرفاً.");
         }
-        return (code, nameEn, nameAr);
+
+        // Optional fields — lengths mirror BoothConfiguration.HasMaxLength
+        // (Exhibitor* = 256, Sector* = 128, Description* = 2048).
+        var exhibitorNameEn = OptionalText(
+            exhibitorNameEnRaw, 256, "Booth exhibitor English name", "اسم العارض الإنجليزي للجناح");
+        var exhibitorNameAr = OptionalText(
+            exhibitorNameArRaw, 256, "Booth exhibitor Arabic name", "اسم العارض العربي للجناح");
+        var sectorEn = OptionalText(
+            sectorEnRaw, 128, "Booth English sector", "قطاع الجناح الإنجليزي");
+        var sectorAr = OptionalText(
+            sectorArRaw, 128, "Booth Arabic sector", "قطاع الجناح العربي");
+        var descriptionEn = OptionalText(
+            descriptionEnRaw, 2048, "Booth English description", "وصف الجناح الإنجليزي");
+        var descriptionAr = OptionalText(
+            descriptionArRaw, 2048, "Booth Arabic description", "وصف الجناح العربي");
+
+        return new BoothDraft(
+            code, nameEn, nameAr,
+            exhibitorNameEn, exhibitorNameAr,
+            sectorEn, sectorAr,
+            descriptionEn, descriptionAr);
+    }
+
+    private static string? OptionalText(string? raw, int maxLength, string fieldEn, string fieldAr)
+    {
+        var value = NullIfBlank(raw);
+        if (value is not null && value.Length > maxLength)
+        {
+            throw new ApiException(
+                ErrorCodes.BoothInvalid, 400,
+                $"{fieldEn} must be {maxLength} characters or fewer.",
+                $"يجب ألا يتجاوز {fieldAr} {maxLength} حرفاً.");
+        }
+        return value;
     }
 
     private async Task EnsureHallIsValidAsync(

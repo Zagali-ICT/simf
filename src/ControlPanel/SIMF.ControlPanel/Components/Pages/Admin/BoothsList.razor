@@ -93,47 +93,54 @@
                                Value="@_form.Code"
                                ValueChanged="@(v => _form.Code = v)"
                                ValueExpression="@(() => _form.Code)"
+                               MaxLength="16"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Booths.Field.NameEn"]"
                                Value="@_form.NameEn"
                                ValueChanged="@(v => _form.NameEn = v)"
                                ValueExpression="@(() => _form.NameEn)"
+                               MaxLength="128"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Booths.Field.NameAr"]"
                                Value="@_form.NameAr"
                                ValueChanged="@(v => _form.NameAr = v)"
                                ValueExpression="@(() => _form.NameAr)"
+                               MaxLength="128"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Booths.Field.ExhibitorEn"]"
                                Value="@_form.ExhibitorNameEn"
                                ValueChanged="@(v => _form.ExhibitorNameEn = v)"
                                ValueExpression="@(() => _form.ExhibitorNameEn)"
+                               MaxLength="256"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Booths.Field.ExhibitorAr"]"
                                Value="@_form.ExhibitorNameAr"
                                ValueChanged="@(v => _form.ExhibitorNameAr = v)"
                                ValueExpression="@(() => _form.ExhibitorNameAr)"
+                               MaxLength="256"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Booths.Field.SectorEn"]"
                                Value="@_form.SectorEn"
                                ValueChanged="@(v => _form.SectorEn = v)"
                                ValueExpression="@(() => _form.SectorEn)"
+                               MaxLength="128"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Booths.Field.SectorAr"]"
                                Value="@_form.SectorAr"
                                ValueChanged="@(v => _form.SectorAr = v)"
                                ValueExpression="@(() => _form.SectorAr)"
+                               MaxLength="128"
                                Disabled="_busy" />
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.Booths.Field.DescriptionEn"]</span>
-                    <textarea class="simf-field__input" rows="3"
+                    <textarea class="simf-field__input" rows="3" maxlength="2048"
                               value="@_form.DescriptionEn"
                               @onchange="OnDescriptionEnChanged"
                               disabled="@_busy"></textarea>
                 </label>
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.Booths.Field.DescriptionAr"]</span>
-                    <textarea class="simf-field__input" rows="3"
+                    <textarea class="simf-field__input" rows="3" maxlength="2048"
                               value="@_form.DescriptionAr"
                               @onchange="OnDescriptionArChanged"
                               disabled="@_busy"></textarea>

@@ -30,12 +30,6 @@ internal sealed class RatingService(
     private const int MaxStars = 5;
     private const int CommentMaxLength = 2000;
 
-    // Module-local audit event types. Kept here (not in the central
-    // AuditEvents catalogue) so this module adds no central-file edit;
-    // central integration may promote these to AuditEvents constants.
-    private const string RatingSubmittedEvent = "Rating.Submitted";
-    private const string RatingRevisedEvent = "Rating.Revised";
-
     public async Task<RatingView> RateAsync(
         Guid userId, RateRequest request, CancellationToken cancellationToken = default)
     {
@@ -74,7 +68,7 @@ internal sealed class RatingService(
 
             await auditLog.WriteAsync(new AuditEntry
             {
-                EventType = RatingRevisedEvent,
+                EventType = AuditEvents.RatingRevised,
                 Outcome = AuditOutcome.Success,
                 ActorUserId = userId,
                 Detail = $"ratingId={existing.Id}; stars={existing.Stars}",
@@ -101,7 +95,7 @@ internal sealed class RatingService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = RatingSubmittedEvent,
+            EventType = AuditEvents.RatingSubmitted,
             Outcome = AuditOutcome.Success,
             ActorUserId = userId,
             Detail = $"ratingId={rating.Id}; stars={rating.Stars}",

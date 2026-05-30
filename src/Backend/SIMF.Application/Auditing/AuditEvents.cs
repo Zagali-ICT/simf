@@ -271,4 +271,38 @@ public static class AuditEvents
     public const string CompanyUpdated = "Company.Updated";
     public const string CompanyDeactivated = "Company.Deactivated";
     public const string CompanyAccountProvisioned = "Company.AccountProvisioned";
+
+    // News (D-199 — PR / marketing news. Promoted from AdminNewsService
+    // module-local consts; string values are the audit contract and must
+    // stay verbatim).
+    public const string NewsCreated = "news.created";
+    public const string NewsUpdated = "news.updated";
+    public const string NewsDeactivated = "news.deactivated";
+
+    // Media (D-199 — media gallery, Mockup page 30. Promoted from the
+    // module-local MediaAuditEvents; string values are the audit contract).
+    public const string MediaCreated = "admin.media.created";
+    public const string MediaUpdated = "admin.media.updated";
+    public const string MediaDeactivated = "admin.media.deactivated";
+    public const string MediaImageSet = "admin.media.image.set";
+
+    // Media partners (D-199, Mockup page 31. Promoted from the
+    // AdminMediaPartnerService module-local consts; string values are the
+    // audit contract).
+    public const string MediaPartnerCreated = "MediaPartnerCreated";
+    public const string MediaPartnerUpdated = "MediaPartnerUpdated";
+    public const string MediaPartnerDeactivated = "MediaPartnerDeactivated";
+
+    // Archive (D-199 — past editions, Mockup screen 24. Promoted from
+    // AdminArchiveService module-local consts; string values are the audit
+    // contract).
+    public const string ArchiveEditionCreated = "archive_edition.created";
+    public const string ArchiveEditionUpdated = "archive_edition.updated";
+    public const string ArchiveEditionDeactivated = "archive_edition.deactivated";
+
+    // Ratings (D-199 — "Rate the Forum", Mockup screen 40. Promoted from the
+    // RatingService module-local consts; string values are the audit
+    // contract).
+    public const string RatingSubmitted = "Rating.Submitted";
+    public const string RatingRevised = "Rating.Revised";
 }

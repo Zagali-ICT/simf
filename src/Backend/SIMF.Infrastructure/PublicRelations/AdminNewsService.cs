@@ -16,31 +16,13 @@ namespace SIMF.Infrastructure.PublicRelations;
 /// built on <see cref="SimfAppDbContext"/>, writes one audit row per mutation,
 /// stamps timestamps via <see cref="TimeProvider"/>, and guards a unique
 /// English title with a 409. The admin list returns every row (including
-/// soft-deleted / not-yet-published) so editors can manage drafts.
-/// <para>
-/// The error-code + audit-event string constants are defined locally here
-/// rather than in the shared <c>SIMF.Common.ErrorCodes</c> /
-/// <c>SIMF.Application.Auditing.AuditEvents</c> tables: this module was built in
-/// parallel with other event modules and must not edit those shared files. The
-/// integration owner can promote these constants into the central tables in the
-/// same changeset that wires up the DbSet (see the module hand-off notes).
-/// </para></summary>
+/// soft-deleted / not-yet-published) so editors can manage drafts.</summary>
 internal sealed class AdminNewsService(
     SimfAppDbContext dbContext,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<AdminNewsService> logger) : IAdminNewsService
 {
-    // Module-local stable wire codes (see class remarks).
-    private const string NewsInvalidCode = "NEWS_INVALID";
-    private const string NewsNotFoundCode = "NEWS_NOT_FOUND";
-    private const string NewsTitleDuplicateCode = "NEWS_TITLE_DUPLICATE";
-
-    // Module-local audit event types (see class remarks).
-    private const string NewsCreatedEvent = "news.created";
-    private const string NewsUpdatedEvent = "news.updated";
-    private const string NewsDeactivatedEvent = "news.deactivated";
-
     private const int TitleMaxLength = 200;
     private const int ExcerptMaxLength = 500;
     private const int BodyMaxLength = 8000;
@@ -127,7 +109,7 @@ internal sealed class AdminNewsService(
         if (clash)
         {
             throw new ApiException(
-                NewsTitleDuplicateCode, 409,
+                ErrorCodes.NewsTitleDuplicate, 409,
                 $"A news article with the English title '{draft.TitleEn}' already exists.",
                 $"يوجد خبر بالعنوان الإنجليزي '{draft.TitleEn}' بالفعل.");
         }
@@ -155,7 +137,7 @@ internal sealed class AdminNewsService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = NewsCreatedEvent,
+            EventType = AuditEvents.NewsCreated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"id={news.Id}; titleEn={news.TitleEn}",
@@ -177,7 +159,7 @@ internal sealed class AdminNewsService(
         var news = await dbContext.News
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(
-                NewsNotFoundCode, 404,
+                ErrorCodes.NewsNotFound, 404,
                 "The news article was not found.",
                 "لم يتم العثور على الخبر.");
 
@@ -196,7 +178,7 @@ internal sealed class AdminNewsService(
             if (clash)
             {
                 throw new ApiException(
-                    NewsTitleDuplicateCode, 409,
+                    ErrorCodes.NewsTitleDuplicate, 409,
                     $"A news article with the English title '{draft.TitleEn}' already exists.",
                     $"يوجد خبر بالعنوان الإنجليزي '{draft.TitleEn}' بالفعل.");
             }
@@ -219,7 +201,7 @@ internal sealed class AdminNewsService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = NewsUpdatedEvent,
+            EventType = AuditEvents.NewsUpdated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"id={news.Id}; titleEn={news.TitleEn}; active={news.IsActive}",
@@ -236,7 +218,7 @@ internal sealed class AdminNewsService(
         var news = await dbContext.News
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw new ApiException(
-                NewsNotFoundCode, 404,
+                ErrorCodes.NewsNotFound, 404,
                 "The news article was not found.",
                 "لم يتم العثور على الخبر.");
 
@@ -248,7 +230,7 @@ internal sealed class AdminNewsService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = NewsDeactivatedEvent,
+            EventType = AuditEvents.NewsDeactivated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"id={news.Id}; titleEn={news.TitleEn}",
@@ -283,7 +265,7 @@ internal sealed class AdminNewsService(
         if (displayOrderRaw < 0)
         {
             throw new ApiException(
-                NewsInvalidCode, 400,
+                ErrorCodes.NewsInvalid, 400,
                 "Display order must be zero or a positive integer.",
                 "يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.");
         }
@@ -299,14 +281,14 @@ internal sealed class AdminNewsService(
         if (value.Length < 1)
         {
             throw new ApiException(
-                NewsInvalidCode, 400,
+                ErrorCodes.NewsInvalid, 400,
                 $"News {fieldEn} is required.",
                 $"{fieldAr} مطلوب.");
         }
         if (value.Length > maxLength)
         {
             throw new ApiException(
-                NewsInvalidCode, 400,
+                ErrorCodes.NewsInvalid, 400,
                 $"News {fieldEn} must be {maxLength} characters or fewer.",
                 $"يجب ألا يتجاوز {fieldAr} {maxLength} حرفاً.");
         }
@@ -320,7 +302,7 @@ internal sealed class AdminNewsService(
         if (value.Length > maxLength)
         {
             throw new ApiException(
-                NewsInvalidCode, 400,
+                ErrorCodes.NewsInvalid, 400,
                 $"News {fieldEn} must be {maxLength} characters or fewer.",
                 $"يجب ألا يتجاوز {fieldAr} {maxLength} حرفاً.");
         }

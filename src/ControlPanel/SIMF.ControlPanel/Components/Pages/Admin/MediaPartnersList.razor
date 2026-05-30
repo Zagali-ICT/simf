@@ -91,21 +91,25 @@
                                Value="@_form.NameEn"
                                ValueChanged="@(v => _form.NameEn = v)"
                                ValueExpression="@(() => _form.NameEn)"
+                               MaxLength="256"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.MediaPartners.Field.NameAr"]"
                                Value="@_form.NameAr"
                                ValueChanged="@(v => _form.NameAr = v)"
                                ValueExpression="@(() => _form.NameAr)"
+                               MaxLength="256"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.MediaPartners.Field.Logo"]"
                                Value="@_form.LogoRelativePath"
                                ValueChanged="@(v => _form.LogoRelativePath = v)"
                                ValueExpression="@(() => _form.LogoRelativePath)"
+                               MaxLength="512"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.MediaPartners.Field.Url"]"
                                Value="@_form.Url"
                                ValueChanged="@(v => _form.Url = v)"
                                ValueExpression="@(() => _form.Url)"
+                               MaxLength="512"
                                Disabled="_busy" />
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.MediaPartners.Field.DisplayOrder"]</span>

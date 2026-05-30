@@ -14,29 +14,13 @@ namespace SIMF.Infrastructure.Archive;
 /// <summary>D-199 — admin CRUD over <see cref="ArchiveEdition"/>. One edition
 /// per year; year uniqueness is validated and surfaced as a 409. Mirrors
 /// <c>AdminDelegationService</c> / <c>AdminCountryService</c> structure
-/// (inline Validate, audit on every mutation, soft-delete via IsActive).
-///
-/// Error codes and audit-event strings are declared locally to keep this
-/// module self-contained; central integration may lift them into
-/// <c>SIMF.Common.ErrorCodes</c> / <c>SIMF.Application.Auditing.AuditEvents</c>
-/// (see integration notes) using the same string values to preserve the wire
-/// + audit contract.</summary>
+/// (inline Validate, audit on every mutation, soft-delete via IsActive).</summary>
 internal sealed class AdminArchiveService(
     SimfAppDbContext appDbContext,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<AdminArchiveService> logger) : IAdminArchiveService
 {
-    // -- error codes (string values are the wire contract) --
-    private const string ArchiveEditionNotFound = "archive_edition_not_found";
-    private const string ArchiveEditionInvalid = "archive_edition_invalid";
-    private const string ArchiveEditionYearDuplicate = "archive_edition_year_duplicate";
-
-    // -- audit events --
-    private const string ArchiveEditionCreated = "archive_edition.created";
-    private const string ArchiveEditionUpdated = "archive_edition.updated";
-    private const string ArchiveEditionDeactivated = "archive_edition.deactivated";
-
     private const int MinYear = 2000;
     private const int MaxYear = 2100;
 
@@ -104,7 +88,7 @@ internal sealed class AdminArchiveService(
             .AnyAsync(e => e.Year == v.Year, cancellationToken);
         if (yearClash)
         {
-            throw new ApiException(ArchiveEditionYearDuplicate, 409,
+            throw new ApiException(ErrorCodes.ArchiveEditionYearDuplicate, 409,
                 $"An archive edition for year {v.Year} already exists.",
                 $"توجد نسخة أرشيف للعام {v.Year} بالفعل.");
         }
@@ -131,7 +115,7 @@ internal sealed class AdminArchiveService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = ArchiveEditionCreated,
+            EventType = AuditEvents.ArchiveEditionCreated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"id={edition.Id}; year={v.Year}; titleEn={v.TitleEn}",
@@ -150,7 +134,7 @@ internal sealed class AdminArchiveService(
     {
         var edition = await appDbContext.ArchiveEditions
             .SingleOrDefaultAsync(e => e.Id == id, cancellationToken)
-            ?? throw new ApiException(ArchiveEditionNotFound, 404,
+            ?? throw new ApiException(ErrorCodes.ArchiveEditionNotFound, 404,
                 "The archive edition was not found.",
                 "لم يتم العثور على نسخة الأرشيف.");
 
@@ -165,7 +149,7 @@ internal sealed class AdminArchiveService(
                 .AnyAsync(e => e.Id != id && e.Year == v.Year, cancellationToken);
             if (clash)
             {
-                throw new ApiException(ArchiveEditionYearDuplicate, 409,
+                throw new ApiException(ErrorCodes.ArchiveEditionYearDuplicate, 409,
                     $"An archive edition for year {v.Year} already exists.",
                     $"توجد نسخة أرشيف للعام {v.Year} بالفعل.");
             }
@@ -187,7 +171,7 @@ internal sealed class AdminArchiveService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = ArchiveEditionUpdated,
+            EventType = AuditEvents.ArchiveEditionUpdated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"id={id}; year={v.Year}; active={edition.IsActive}",
@@ -201,7 +185,7 @@ internal sealed class AdminArchiveService(
     {
         var edition = await appDbContext.ArchiveEditions
             .SingleOrDefaultAsync(e => e.Id == id, cancellationToken)
-            ?? throw new ApiException(ArchiveEditionNotFound, 404,
+            ?? throw new ApiException(ErrorCodes.ArchiveEditionNotFound, 404,
                 "The archive edition was not found.",
                 "لم يتم العثور على نسخة الأرشيف.");
 
@@ -213,7 +197,7 @@ internal sealed class AdminArchiveService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = ArchiveEditionDeactivated,
+            EventType = AuditEvents.ArchiveEditionDeactivated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"id={id}; year={edition.Year}",
@@ -231,7 +215,7 @@ internal sealed class AdminArchiveService(
     {
         if (yearRaw is < MinYear or > MaxYear)
         {
-            throw new ApiException(ArchiveEditionInvalid, 400,
+            throw new ApiException(ErrorCodes.ArchiveEditionInvalid, 400,
                 $"Year must be between {MinYear} and {MaxYear}.",
                 $"يجب أن يكون العام بين {MinYear} و {MaxYear}.");
         }
@@ -239,7 +223,7 @@ internal sealed class AdminArchiveService(
         var titleEn = (titleEnRaw ?? string.Empty).Trim();
         if (titleEn.Length is < 1 or > 200)
         {
-            throw new ApiException(ArchiveEditionInvalid, 400,
+            throw new ApiException(ErrorCodes.ArchiveEditionInvalid, 400,
                 "English title must be between 1 and 200 characters.",
                 "يجب أن يتراوح العنوان الإنجليزي بين 1 و 200 حرفاً.");
         }
@@ -247,7 +231,7 @@ internal sealed class AdminArchiveService(
         var titleAr = (titleArRaw ?? string.Empty).Trim();
         if (titleAr.Length is < 1 or > 200)
         {
-            throw new ApiException(ArchiveEditionInvalid, 400,
+            throw new ApiException(ErrorCodes.ArchiveEditionInvalid, 400,
                 "Arabic title must be between 1 and 200 characters.",
                 "يجب أن يتراوح العنوان العربي بين 1 و 200 حرفاً.");
         }
@@ -256,7 +240,7 @@ internal sealed class AdminArchiveService(
             ? null : summaryEnRaw.Trim();
         if (summaryEn is { Length: > 1024 })
         {
-            throw new ApiException(ArchiveEditionInvalid, 400,
+            throw new ApiException(ErrorCodes.ArchiveEditionInvalid, 400,
                 "English summary must be 1024 characters or fewer.",
                 "يجب ألا يتجاوز الملخص الإنجليزي 1024 حرفاً.");
         }
@@ -265,14 +249,14 @@ internal sealed class AdminArchiveService(
             ? null : summaryArRaw.Trim();
         if (summaryAr is { Length: > 1024 })
         {
-            throw new ApiException(ArchiveEditionInvalid, 400,
+            throw new ApiException(ErrorCodes.ArchiveEditionInvalid, 400,
                 "Arabic summary must be 1024 characters or fewer.",
                 "يجب ألا يتجاوز الملخص العربي 1024 حرفاً.");
         }
 
         if (attendeesRaw < 0 || sessionsRaw < 0 || speakersRaw < 0)
         {
-            throw new ApiException(ArchiveEditionInvalid, 400,
+            throw new ApiException(ErrorCodes.ArchiveEditionInvalid, 400,
                 "Attendees, sessions and speakers must be zero or positive.",
                 "يجب أن تكون أعداد الحضور والجلسات والمتحدثين صفراً أو موجبة.");
         }
@@ -280,7 +264,7 @@ internal sealed class AdminArchiveService(
         var cover = string.IsNullOrWhiteSpace(coverRaw) ? null : coverRaw.Trim();
         if (cover is { Length: > 512 })
         {
-            throw new ApiException(ArchiveEditionInvalid, 400,
+            throw new ApiException(ErrorCodes.ArchiveEditionInvalid, 400,
                 "Cover image path must be 512 characters or fewer.",
                 "يجب ألا يتجاوز مسار صورة الغلاف 512 حرفاً.");
         }

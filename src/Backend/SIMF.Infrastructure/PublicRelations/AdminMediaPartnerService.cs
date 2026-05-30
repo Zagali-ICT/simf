@@ -17,25 +17,13 @@ namespace SIMF.Infrastructure.PublicRelations;
 /// detection is on the English name (case-insensitive) since a media
 /// partner has no separate business code. Mirrors AdminCountryService /
 /// AdminSpeakerService structure (inline validation + 409 on duplicate +
-/// audit trail).
-///
-/// NOTE (central integration): this service intentionally uses the generic
-/// <see cref="ErrorCodes.NotFound"/> / <see cref="ErrorCodes.MediaPartnerNameDuplicate"/> /
-/// <see cref="ErrorCodes.ValidationFailed"/> codes and literal audit-event
-/// strings so the module compiles without touching the shared
-/// <c>ErrorCodes</c> / <c>AuditEvents</c> files (parallel-agent safety).
-/// Promote these to dedicated MediaPartner* constants during integration —
-/// see the module's integration notes.</summary>
+/// audit trail).</summary>
 internal sealed class AdminMediaPartnerService(
     SimfAppDbContext appDbContext,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<AdminMediaPartnerService> logger) : IAdminMediaPartnerService
 {
-    private const string EventCreated = "MediaPartnerCreated";
-    private const string EventUpdated = "MediaPartnerUpdated";
-    private const string EventDeactivated = "MediaPartnerDeactivated";
-
     public async Task<GridPage<AdminMediaPartnerSummary>> ListAllAsync(GridQuery query, CancellationToken cancellationToken = default)
     {
         var skip = Math.Max(0, query.Skip);
@@ -117,7 +105,7 @@ internal sealed class AdminMediaPartnerService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = EventCreated,
+            EventType = AuditEvents.MediaPartnerCreated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"id={partner.Id}; nameEn={nameEn}",
@@ -166,7 +154,7 @@ internal sealed class AdminMediaPartnerService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = EventUpdated,
+            EventType = AuditEvents.MediaPartnerUpdated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"id={id}; nameEn={nameEn}; active={partner.IsActive}",
@@ -191,7 +179,7 @@ internal sealed class AdminMediaPartnerService(
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = EventDeactivated,
+            EventType = AuditEvents.MediaPartnerDeactivated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             Detail = $"id={id}; nameEn={partner.NameEn}",

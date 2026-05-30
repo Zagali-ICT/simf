@@ -2,7 +2,6 @@
 using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
-using SIMF.Application.Media;
 using SIMF.Application.Media.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Media;
@@ -40,7 +39,7 @@ public sealed class GetMediaEndpoint(IAdminMediaService service)
     {
         var detail = await service.GetAsync(req.Id, ct)
             ?? throw new ApiException(
-                MediaErrorCodes.MediaNotFound, 404,
+                ErrorCodes.MediaNotFound, 404,
                 "The media item was not found.",
                 "لم يتم العثور على عنصر الوسائط.");
         await Send.OkAsync(ApiResult<AdminMediaDetail>.Ok(detail), ct);

@@ -145,6 +145,25 @@ public static class ErrorCodes
     public const string BoothNotFound = "BOOTH_NOT_FOUND";
     public const string BoothCodeDuplicate = "BOOTH_CODE_DUPLICATE";
 
+    // News (D-199 — PR / marketing news, Mockup. Promoted from
+    // AdminNewsService module-local consts; string values are the wire
+    // contract and must stay verbatim).
+    public const string NewsInvalid = "NEWS_INVALID";
+    public const string NewsNotFound = "NEWS_NOT_FOUND";
+    public const string NewsTitleDuplicate = "NEWS_TITLE_DUPLICATE";
+
+    // Media (D-199 — media gallery, Mockup page 30. Promoted from the
+    // module-local MediaErrorCodes; string values are the wire contract).
+    public const string MediaNotFound = "media_not_found";
+    public const string MediaInvalid = "media_invalid";
+
+    // Archive (D-199 — past editions, Mockup screen 24. Promoted from
+    // AdminArchiveService module-local consts; string values are the wire
+    // contract).
+    public const string ArchiveEditionNotFound = "archive_edition_not_found";
+    public const string ArchiveEditionInvalid = "archive_edition_invalid";
+    public const string ArchiveEditionYearDuplicate = "archive_edition_year_duplicate";
+
     // Operations toggles (D-166, gap doc G4 — registration gate +
     // archive visibility singletons).
     public const string RegistrationClosed = "REGISTRATION_CLOSED";
