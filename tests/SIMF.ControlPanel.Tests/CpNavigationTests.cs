@@ -6,9 +6,13 @@ namespace SIMF.ControlPanel.Tests;
 public sealed class CpNavigationTests
 {
     [Fact]
-    public void There_are_nine_navigation_groups()
+    public void There_are_eight_navigation_groups()
     {
-        Assert.Equal(9, CpNavigation.Groups.Count);
+        // D-132 removed the standalone Notifications group (the bell + the
+        // operator inbox at /account/notifications cover that surface), so
+        // the canonical count dropped from 9 → 8 (Overview, People,
+        // Programme, Exhibition, Engagement, Knowledge, Content, System).
+        Assert.Equal(8, CpNavigation.Groups.Count);
     }
 
     [Fact]
@@ -23,8 +27,10 @@ public sealed class CpNavigationTests
 
     [Theory]
     [InlineData("/", "Module.Dashboard")]
-    [InlineData("/m/sessions", "Module.Sessions")]
-    [InlineData("/M/SESSIONS", "Module.Sessions")]
+    // D-165 renamed /m/sessions → /admin/sessions; uppercase variant keeps
+    // the case-insensitive lookup contract under test.
+    [InlineData("/admin/sessions", "Module.Sessions")]
+    [InlineData("/ADMIN/SESSIONS", "Module.Sessions")]
     // P7e — D-055: three-UserType admin pages.
     [InlineData("/admin/admins", "Module.AdminAdmins")]
     [InlineData("/admin/admins/pending", "Module.AdminAdminsPending")]

@@ -4,8 +4,9 @@ using SIMF.Common.Enums;
 namespace SIMF.ControlPanel;
 
 /// <summary>
-/// The Control Panel navigation map — the nine groups and their modules
-/// (SIMF-CPD-001 section 5.1). Each label is a resource key resolved through
+/// The Control Panel navigation map — the eight groups and their modules
+/// (SIMF-CPD-001 section 5.1; D-132 removed the standalone Notifications
+/// group). Each label is a resource key resolved through
 /// <see cref="Strings" />. Permission filtering of this map is gated on the
 /// per-type permission map (SIMF-CPD-001 OI-3 / gate D1) and is not applied yet.
 /// </summary>
@@ -20,7 +21,7 @@ public static class CpNavigation
     /// <summary>One navigation group — a heading and its items.</summary>
     public sealed record NavGroup(string LabelKey, IReadOnlyList<NavItem> Items);
 
-    /// <summary>The nine navigation groups, in display order.</summary>
+    /// <summary>The eight navigation groups, in display order.</summary>
     public static readonly IReadOnlyList<NavGroup> Groups =
     [
         new("Nav.Overview",
