@@ -15,6 +15,8 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <!-- D-191 — bUnit harness for CP Razor component behavior tests. -->
+    <PackageReference Include="bunit" Version="1.40.0" />
   </ItemGroup>
 
   <ItemGroup>
