@@ -31,4 +31,10 @@ public interface IAdminAiPromptService
 
     Task<GridPage<AdminAiInvocationRow>> ListInvocationsAsync(
         GridQuery query, CancellationToken cancellationToken = default);
+
+    /// <summary>D-179 — full payload (InputJson + OutputText) for SOC
+    /// drill-down. The grid row deliberately omits these for the
+    /// admin grid; this method is the audit-trail read.</summary>
+    Task<AdminAiInvocationDetail?> GetInvocationAsync(
+        Guid id, CancellationToken cancellationToken = default);
 }

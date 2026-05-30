@@ -1,8 +1,11 @@
-// Tests: SIMF.Api.Tests/AiAdminTests.cs
+// Tests: SIMF.Api.Tests/AiAdminTests.cs, SIMF.Api.Tests/AiHardeningTests.cs
 using System.Security.Claims;
+using System.Text.Json;
 using FastEndpoints;
 using SIMF.Application.Ai.Abstractions;
+using SIMF.Application.Auditing;
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Ai;
 
 namespace SIMF.Api.Endpoints.Admin;
@@ -130,7 +133,10 @@ public sealed class TestAiPromptEndpoint(IAdminAiPromptService service)
         Post("/admin/ai/prompts/{id:guid}/test");
         Policies(nameof(AuthorizationPolicies.AdministratorOnly),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
-        Options(rb => rb.RequireRateLimiting("auth"));
+        // D-179 — per-admin partition (sub-keyed) on the dry-run
+        // endpoint, not just per-IP "auth", so shared offices and
+        // stolen-credential botnets cannot bypass the cap.
+        Options(rb => rb.RequireRateLimiting("ai-test"));
         Tags("Admin");
     }
     public override async Task HandleAsync(TestAiPromptRoute req, CancellationToken ct)
@@ -158,4 +164,63 @@ public sealed class ListAiInvocationsEndpoint(IAdminAiPromptService service)
     public override async Task HandleAsync(GridQuery req, CancellationToken ct) =>
         await Send.OkAsync(ApiResult<GridPage<AdminAiInvocationRow>>.Ok(
             await service.ListInvocationsAsync(req, ct)), ct);
+}
+
+/// <summary>D-179 — SOC drill-down: returns the full invocation
+/// payload (<c>InputJson</c> + <c>OutputText</c>) for one row. The
+/// grid list deliberately omits these for lightness + PII discipline;
+/// this endpoint is the audit-trail read for threat hunting (e.g.
+/// search the input column for jailbreak phrases). Inputs are already
+/// redacted at write time per D-179 (<c>AiAuditDetail.SerialiseAndRedact</c>),
+/// so SOC sees masked PII/keys; output text is the LLM response
+/// verbatim and should be treated as restricted. Admin-only for now;
+/// when a dedicated SecurityAuditor role lands, swap the policy.</summary>
+public sealed class GetAiInvocationDetailRoute { public Guid Id { get; set; } }
+
+public sealed class GetAiInvocationDetailEndpoint(
+    IAdminAiPromptService service,
+    IAuditLog auditLog)
+    : Endpoint<GetAiInvocationDetailRoute, ApiResult<AdminAiInvocationDetail>>
+{
+    public override void Configure()
+    {
+        Get("/admin/ai/invocations/{id:guid}");
+        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        // D-179 (review-pass) — same per-admin window as the Test
+        // endpoint so an admin can't pull the whole invocation log
+        // one row at a time uncapped.
+        Options(rb => rb.RequireRateLimiting("ai-test"));
+        Tags("Admin");
+    }
+    public override async Task HandleAsync(
+        GetAiInvocationDetailRoute req, CancellationToken ct)
+    {
+        var detail = await service.GetInvocationAsync(req.Id, ct)
+            ?? throw new ApiException(
+                ErrorCodes.NotFound, 404,
+                "AI invocation not found.",
+                "لم يتم العثور على استدعاء الذكاء الاصطناعي.");
+
+        // D-179 (review-pass) — admin-on-admin surveillance trail.
+        // Without this, "admin reads 50k invocations on Sunday night"
+        // is invisible to SOC.
+        Guid? viewedBy = Guid.TryParse(User.FindFirstValue("sub"), out var p)
+            ? p : null;
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AiInvocationViewed,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = viewedBy ?? Guid.Empty,
+            Detail = JsonSerializer.Serialize(new
+            {
+                invocationId = detail.Id,
+                promptKey = detail.PromptKey,
+                feature = detail.Feature.ToString(),
+                hasOutput = detail.OutputText is not null,
+            }),
+        }, ct);
+
+        await Send.OkAsync(ApiResult<AdminAiInvocationDetail>.Ok(detail), ct);
+    }
 }

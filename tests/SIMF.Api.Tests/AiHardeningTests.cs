@@ -1,0 +1,371 @@
+// D-179 (gap doc G12 hardening) — backend hardening of the AI
+// module flagged by D-178 review agents:
+//   (1) per-admin rate limit on /admin/ai/prompts/{id}/test
+//   (2) Inputs.Count + value length cap at Test endpoint
+//   (3) structured JSON audit Detail (was free-text)
+//   (4) SHA-256 prompt-content hash in AiPromptUpdated audit
+//   (5) input redaction at SerialiseInputs (was a comment promise)
+//   (6) SOC drill-down GetInvocationDetail endpoint
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using SIMF.Common;
+using SIMF.Common.Enums;
+using SIMF.Contracts.Ai;
+using SIMF.Contracts.Authentication;
+using SIMF.Domain.IdentityAccess;
+using SIMF.Infrastructure.Ai;
+using SIMF.Infrastructure.Persistence;
+using Xunit;
+
+namespace SIMF.Api.Tests;
+
+public sealed class AiHardeningTests : IClassFixture<SimfApiFactory>
+{
+    private const string AdministratorRole = "Administrator";
+
+    private readonly SimfApiFactory _factory;
+    private readonly HttpClient _client;
+
+    public AiHardeningTests(SimfApiFactory factory)
+    {
+        _factory = factory;
+        _factory.EnsureDatabaseCreated();
+        _client = factory.CreateClient();
+    }
+
+    // -- (2) Inputs cap ------------------------------------------------------
+
+    [Fact]
+    public async Task Test_endpoint_rejects_more_than_MaxInputsCount()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var prompt = await GetSeededPromptIdAsync("assistance");
+
+        var oversized = new Dictionary<string, string>();
+        for (var i = 0; i < AiService.MaxInputsCount + 1; i++) oversized[$"k{i}"] = "v";
+
+        var response = await PostAuthAsync(
+            $"/api/v1/admin/ai/prompts/{prompt}/test",
+            new TestAiPromptRequest { Inputs = oversized }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AiInputInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Test_endpoint_rejects_value_length_over_cap()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var prompt = await GetSeededPromptIdAsync("assistance");
+
+        var huge = new string('x', AiService.MaxInputValueLength + 1);
+        var response = await PostAuthAsync(
+            $"/api/v1/admin/ai/prompts/{prompt}/test",
+            new TestAiPromptRequest
+            {
+                Inputs = new Dictionary<string, string> { ["message"] = huge },
+            }, admin);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AiInputInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Public_FAQ_endpoint_also_rejects_oversized_input()
+    {
+        // D-179 (review-pass) — the chokepoint is now IAiService.InvokeAsync,
+        // so public feature endpoints also enforce the cap. This closes the
+        // bypass reality-checker flagged: an approved visitor cannot paste a
+        // megabyte question into /api/v1/ai/faq.
+        var huge = new string('x', AiService.MaxInputValueLength + 1);
+        var response = await _client.PostAsJsonAsync(
+            "/api/v1/ai/faq", new AskFaqRequest { Question = huge });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.AiInputInvalid, body.Error!.Code);
+    }
+
+    // -- (5) Input redaction -------------------------------------------------
+
+    [Fact]
+    public void SerialiseAndRedact_masks_email_jwt_apikey_and_pan()
+    {
+        // Real JWT shape: base64(header).base64(payload).base64(signature)
+        // where header + payload start with "eyJ" (base64 of "{") but
+        // signature is opaque bytes — does NOT start with eyJ.
+        var inputs = new Dictionary<string, string>
+        {
+            ["email"] = "captain@simf.test",
+            ["jwt"] = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                + ".eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4ifQ"
+                + ".SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+            ["openai"] = "sk-abcdefghijklmnopqrstuvwxyz12345",
+            ["pan"] = "4242 4242 4242 4242",
+        };
+        var json = AiAuditDetail.SerialiseAndRedact(inputs);
+        Assert.Contains("[REDACTED_EMAIL]", json);
+        Assert.Contains("[REDACTED_JWT]", json);
+        Assert.Contains("[REDACTED_KEY]", json);
+        Assert.Contains("[REDACTED_PAN]", json);
+        Assert.DoesNotContain("captain@simf.test", json);
+        Assert.DoesNotContain("4242 4242 4242 4242", json);
+        Assert.DoesNotContain("sk-abcdefghijklmnop", json);
+        Assert.DoesNotContain("SflKxwRJSMeKKF2QT4", json);
+    }
+
+    [Fact]
+    public async Task FAQ_endpoint_persists_redacted_input_to_invocation_row()
+    {
+        var pii = "Reach me at captain.ahmed@simf.test";
+        var response = await _client.PostAsJsonAsync(
+            "/api/v1/ai/faq", new AskFaqRequest { Question = pii });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AiCallResult>>())!.Data!;
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var invocation = await db.AiInvocations.AsNoTracking()
+            .SingleAsync(i => i.Id == body.InvocationId);
+        Assert.Contains("[REDACTED_EMAIL]", invocation.InputJson);
+        Assert.DoesNotContain("captain.ahmed@simf.test", invocation.InputJson);
+    }
+
+    // -- (3) + (4) Structured JSON audit + prompt-content hash ---------------
+
+    [Fact]
+    public async Task AiPromptUpdated_audit_carries_old_and_new_content_hash()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var (id, originalSystem, originalUser) =
+            await GetSeededPromptAsync("assistance");
+
+        // First update — change SystemPrompt; hash should change.
+        var update = await PutAuthAsync(
+            $"/api/v1/admin/ai/prompts/{id}",
+            new UpdateAiPromptRequest
+            {
+                Feature = AiFeature.Assistance,
+                DisplayName = "Visitor Concierge",
+                DisplayNameArabic = "خدمة الزوّار",
+                Provider = AiProvider.Echo,
+                Model = "echo",
+                SystemPrompt = originalSystem + " (D-179 change)",
+                UserPromptTemplate = originalUser,
+                Temperature = 0.2,
+                MaxOutputTokens = 512,
+                IsActive = true,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, update.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        // D-179 (review-pass) — filter by promptId so a parallel test
+        // editing a different prompt cannot win the race.
+        var auditRow = await db.OperationLog.AsNoTracking()
+            .Where(e => e.EventType == "AiPrompt.Updated"
+                && e.Detail!.Contains(id.ToString()))
+            .OrderByDescending(e => e.TimestampUtc)
+            .FirstAsync();
+
+        Assert.NotNull(auditRow.Detail);
+        var detail = JsonDocument.Parse(auditRow.Detail!);
+        Assert.True(detail.RootElement.TryGetProperty("contentHashOld", out var oldHash));
+        Assert.True(detail.RootElement.TryGetProperty("contentHashNew", out var newHash));
+        Assert.True(detail.RootElement.TryGetProperty("contentChanged", out var changed));
+        Assert.NotEqual(oldHash.GetString(), newHash.GetString());
+        Assert.True(changed.GetBoolean());
+    }
+
+    [Fact]
+    public void PromptContentHash_treats_field_swap_as_different()
+    {
+        // D-179 (review-pass) — code-reviewer's regression test: without
+        // a proper field separator, ("AB", "C") collides with ("A", "BC").
+        // This test pins the 0x1F () unit-separator semantics.
+        var a = AiAuditDetail.PromptContentHash("AB", "C");
+        var b = AiAuditDetail.PromptContentHash("A", "BC");
+        Assert.NotEqual(a, b);
+    }
+
+    [Fact]
+    public async Task AiPromptCreated_audit_carries_content_hash()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var key = $"hash-{Guid.NewGuid().ToString("N")[..8]}";
+        var create = await PostAuthAsync(
+            "/api/v1/admin/ai/prompts",
+            new CreateAiPromptRequest
+            {
+                Key = key,
+                Feature = AiFeature.Assistance,
+                DisplayName = "X",
+                DisplayNameArabic = "X",
+                Provider = AiProvider.Echo,
+                Model = "echo",
+                SystemPrompt = "Be helpful.",
+                UserPromptTemplate = "{message}",
+                Temperature = 0.1,
+                MaxOutputTokens = 100,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var auditRow = await db.OperationLog.AsNoTracking()
+            .Where(e => e.EventType == "AiPrompt.Created"
+                && e.Detail!.Contains(key))
+            .OrderByDescending(e => e.TimestampUtc)
+            .FirstAsync();
+
+        var detail = JsonDocument.Parse(auditRow.Detail!);
+        Assert.True(detail.RootElement.TryGetProperty("contentHash", out var hash));
+        Assert.False(string.IsNullOrEmpty(hash.GetString()));
+        Assert.Equal(64, hash.GetString()!.Length); // SHA-256 hex
+    }
+
+    [Fact]
+    public async Task AiInvocationSucceeded_audit_is_valid_json()
+    {
+        var response = await _client.PostAsJsonAsync(
+            "/api/v1/ai/faq", new AskFaqRequest { Question = "Q" });
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AiCallResult>>())!.Data!;
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var auditRow = await db.OperationLog.AsNoTracking()
+            .Where(e => e.EventType == "AiInvocation.Succeeded"
+                && e.Detail!.Contains(body.InvocationId.ToString()))
+            .FirstAsync();
+
+        var detail = JsonDocument.Parse(auditRow.Detail!);
+        Assert.Equal("faq-answer",
+            detail.RootElement.GetProperty("promptKey").GetString());
+        Assert.Equal("Faq",
+            detail.RootElement.GetProperty("feature").GetString());
+        Assert.Equal("Echo",
+            detail.RootElement.GetProperty("provider").GetString());
+    }
+
+    // -- (6) GetInvocationDetail endpoint ------------------------------------
+
+    [Fact]
+    public async Task Admin_can_drill_down_to_invocation_detail()
+    {
+        // Trigger an invocation we can look up.
+        var response = await _client.PostAsJsonAsync(
+            "/api/v1/ai/faq", new AskFaqRequest { Question = "Drill-down test" });
+        var body = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AiCallResult>>())!.Data!;
+
+        var admin = await CreateAdministratorAndSignInAsync();
+        var detail = await GetAuthAsync(
+            $"/api/v1/admin/ai/invocations/{body.InvocationId}", admin);
+        Assert.Equal(HttpStatusCode.OK, detail.StatusCode);
+        var payload = (await detail.Content
+            .ReadFromJsonAsync<ApiResult<AdminAiInvocationDetail>>())!.Data!;
+        Assert.Equal(body.InvocationId, payload.Id);
+        Assert.Contains("Drill-down test", payload.InputJson);
+        Assert.NotNull(payload.OutputText);
+    }
+
+    [Fact]
+    public async Task GetInvocationDetail_returns_404_for_unknown_id()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var detail = await GetAuthAsync(
+            $"/api/v1/admin/ai/invocations/{Guid.NewGuid()}", admin);
+        Assert.Equal(HttpStatusCode.NotFound, detail.StatusCode);
+        var body = (await detail.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.NotFound, body.Error!.Code);
+    }
+
+    // -- Helpers --------------------------------------------------------------
+
+    private async Task<Guid> GetSeededPromptIdAsync(string key)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        return await db.AiPrompts.AsNoTracking()
+            .Where(p => p.Key == key).Select(p => p.Id).SingleAsync();
+    }
+
+    private async Task<(Guid Id, string SystemPrompt, string UserPromptTemplate)>
+        GetSeededPromptAsync(string key)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var p = await db.AiPrompts.AsNoTracking()
+            .SingleAsync(p => p.Key == key);
+        return (p.Id, p.SystemPrompt, p.UserPromptTemplate);
+    }
+
+    private async Task<string> CreateAdministratorAndSignInAsync()
+    {
+        var email = $"ai-hardening-admin-{Guid.NewGuid():N}@simf.test";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
+            if (!await roles.RoleExistsAsync(AdministratorRole))
+            {
+                await roles.CreateAsync(new SimfRole { Name = AdministratorRole });
+            }
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
+            {
+                UserName = email, Email = email, EmailConfirmed = true,
+                DisplayName = "AI Hardening Admin",
+                AccountState = AccountState.Approved,
+                UserType = UserType.Admin,
+            };
+            await users.CreateAsync(user, AuthFlow.Password);
+            await users.AddToRoleAsync(user, AdministratorRole);
+        }
+        var sign = await _client.PostAsJsonAsync(
+            "/api/v1/auth/sign-in",
+            new SignInRequest
+            {
+                Email = email, Password = AuthFlow.Password,
+                Audience = SignInAudience.Cp,
+            });
+        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        return body.Data!.Tokens!.AccessToken;
+    }
+
+    private Task<HttpResponseMessage> PostAuthAsync<TBody>(
+        string url, TBody body, string token) where TBody : class
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = JsonContent.Create(body),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> PutAuthAsync<TBody>(
+        string url, TBody body, string token) where TBody : class
+    {
+        var request = new HttpRequestMessage(HttpMethod.Put, url)
+        {
+            Content = JsonContent.Create(body),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> GetAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+}

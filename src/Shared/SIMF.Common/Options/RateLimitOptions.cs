@@ -48,4 +48,16 @@ public sealed class RateLimitOptions
 
     /// <summary>The global window length, in seconds.</summary>
     public int GlobalWindowSeconds { get; set; } = 60;
+
+    /// <summary>D-179 (gap doc G12 hardening) — per-admin cap on the AI
+    /// prompt dry-run endpoint (<c>POST /admin/ai/prompts/{id}/test</c>).
+    /// The existing per-IP "auth" window does not protect against an
+    /// office shared by multiple admins, or a stolen-credential botnet
+    /// rotating IPs. Partitioned on the JWT <c>sub</c> claim so each
+    /// admin gets their own bucket regardless of source IP.</summary>
+    public int AiTestPermitLimit { get; set; } = 20;
+
+    /// <summary>The per-admin AI-test window length, in seconds. Default
+    /// 3600 (1 hour) so 20 permits = 20 dry-runs per admin per hour.</summary>
+    public int AiTestWindowSeconds { get; set; } = 3600;
 }

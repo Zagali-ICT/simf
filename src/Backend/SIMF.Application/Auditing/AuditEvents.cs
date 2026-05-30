@@ -182,6 +182,11 @@ public static class AuditEvents
     public const string AiInvocationSucceeded = "AiInvocation.Succeeded";
     public const string AiInvocationFailed = "AiInvocation.Failed";
 
+    // D-179 (review-pass) — admin drill-down on an invocation. SOC sees
+    // admin-on-admin surveillance: "admin reads 50k invocations on Sunday
+    // night" is otherwise invisible.
+    public const string AiInvocationViewed = "AiInvocation.Viewed";
+
     // Invitations + VIP notify (D-168, gap doc G5 — public-relations
     // module, PDF §2.7.3)
     public const string InvitationCreated = "Invitation.Created";

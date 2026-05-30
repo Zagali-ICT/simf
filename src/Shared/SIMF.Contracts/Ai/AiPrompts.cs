@@ -108,6 +108,29 @@ public sealed record AdminAiInvocationRow(
     string? ErrorCode,
     DateTimeOffset CreatedAt);
 
+/// <summary>D-179 (gap doc G12 hardening) — full invocation payload
+/// for SOC threat-hunting. The grid row (<see cref="AdminAiInvocationRow"/>)
+/// deliberately omits <c>InputJson</c> + <c>OutputText</c> so the
+/// admin grid stays light and non-PII; this drill-down endpoint
+/// returns them for the security-auditor role. Inputs are already
+/// redacted by <c>AiAuditDetail.SerialiseAndRedact</c> at write
+/// time — common secret / PII patterns are masked.</summary>
+public sealed record AdminAiInvocationDetail(
+    Guid Id,
+    string PromptKey,
+    AiFeature Feature,
+    AiProvider Provider,
+    string Model,
+    string CallerKind,
+    Guid? CallerUserId,
+    int? TokensInput,
+    int? TokensOutput,
+    int LatencyMs,
+    string? ErrorCode,
+    string InputJson,
+    string? OutputText,
+    DateTimeOffset CreatedAt);
+
 // Feature request bodies ------------------------------------------------
 
 public class FilterQuestionRequest

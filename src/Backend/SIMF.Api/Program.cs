@@ -123,6 +123,29 @@ builder.Services.AddRateLimiter(rateLimiter =>
             });
     });
 
+    // D-179 (gap doc G12 hardening) — per-admin partition on the AI
+    // prompt dry-run endpoint. The existing per-IP "auth" window does
+    // not protect against an office shared by multiple admins, or a
+    // stolen-credential botnet rotating IPs. Partitioned on the JWT
+    // `sub` claim so each admin gets their own bucket regardless of
+    // source IP. Anonymous (no `sub` claim) falls through to the
+    // global per-IP cap — the endpoint requires Administrator anyway.
+    rateLimiter.AddPolicy("ai-test", httpContext =>
+    {
+        var sub = httpContext.User.FindFirst("sub")?.Value;
+        if (string.IsNullOrEmpty(sub))
+        {
+            return RateLimitPartition.GetNoLimiter<string>("no-sub");
+        }
+        return RateLimitPartition.GetFixedWindowLimiter(
+            "ai-test:" + sub,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = rateLimitOptions.AiTestPermitLimit,
+                Window = TimeSpan.FromSeconds(rateLimitOptions.AiTestWindowSeconds),
+            });
+    });
+
     rateLimiter.OnRejected = async (context, cancellationToken) =>
     {
         var http = context.HttpContext;

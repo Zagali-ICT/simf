@@ -1,6 +1,5 @@
-// Tests: SIMF.Api.Tests/AiServiceTests.cs
+// Tests: SIMF.Api.Tests/AiServiceTests.cs, SIMF.Api.Tests/AiHardeningTests.cs
 using System.Diagnostics;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Ai.Abstractions;
@@ -43,6 +42,32 @@ internal sealed class AiService(
                 ErrorCodes.AiInputInvalid, 400,
                 "Prompt key is required.",
                 "مفتاح المحفّز مطلوب.");
+        }
+        // D-179 (review-pass): caps live at the IAiService chokepoint, not
+        // only at AdminAiPromptService.TestAsync. The public feature endpoints
+        // (FAQ, Assistance, Translate, live-translation, live-sign-language)
+        // call InvokeAsync directly with raw user text — without this cap an
+        // approved visitor can paste megabyte payloads or arbitrary-cardinality
+        // dictionaries into the LLM call. Bounds: MaxInputsCount = 16 keys,
+        // MaxInputKeyLength = 64 chars, MaxInputValueLength = 4000 chars.
+        if (inputs.Count > MaxInputsCount)
+        {
+            throw new ApiException(
+                ErrorCodes.AiInputInvalid, 400,
+                $"Too many inputs (max {MaxInputsCount}).",
+                $"عدد المدخلات يتجاوز الحدّ الأقصى ({MaxInputsCount}).");
+        }
+        foreach (var (key, value) in inputs)
+        {
+            if (key.Length > MaxInputKeyLength
+                || (value?.Length ?? 0) > MaxInputValueLength)
+            {
+                throw new ApiException(
+                    ErrorCodes.AiInputInvalid, 400,
+                    $"Input key/value exceeds size limit "
+                        + $"(key {MaxInputKeyLength}, value {MaxInputValueLength}).",
+                    $"حجم المفتاح/القيمة يتجاوز الحدّ المسموح به.");
+            }
         }
 
         var prompt = await appDbContext.AiPrompts.AsNoTracking()
@@ -117,8 +142,14 @@ internal sealed class AiService(
             Feature = prompt.Feature,
             Provider = prompt.Provider,
             Model = prompt.Model,
-            InputJson = SerialiseInputs(inputs),
-            OutputText = providerResponse.OutputText,
+            // D-179 — redact common secret / PII patterns before
+            // persistence so PII/keys never land raw in the DB
+            // (was an unfulfilled promise — comment in AiInvocation.cs:20).
+            // D-179 (review-pass) — also redact OutputText: an LLM that
+            // echoes a user-pasted secret (or names a person verbatim
+            // from RAG context) would otherwise persist it.
+            InputJson = AiAuditDetail.SerialiseAndRedact(inputs),
+            OutputText = AiAuditDetail.RedactValue(providerResponse.OutputText),
             TokensInput = providerResponse.TokensInput,
             TokensOutput = providerResponse.TokensOutput,
             LatencyMs = latencyMs,
@@ -130,13 +161,25 @@ internal sealed class AiService(
         appDbContext.AiInvocations.Add(invocation);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
+        // D-179 — JSON-shape the audit Detail so SIEM field-extracts
+        // instead of regex-parsing free text.
         await auditLog.WriteAsync(new AuditEntry
         {
             EventType = AuditEvents.AiInvocationSucceeded,
             Outcome = AuditOutcome.Success,
             ActorUserId = caller.UserId ?? Guid.Empty,
-            Detail = $"promptKey={prompt.Key}; feature={prompt.Feature}; "
-                + $"provider={prompt.Provider}; latencyMs={latencyMs}",
+            Detail = AiAuditDetail.ToJson(new
+            {
+                promptKey = prompt.Key,
+                feature = prompt.Feature.ToString(),
+                provider = prompt.Provider.ToString(),
+                model = prompt.Model,
+                callerKind = caller.CallerKind,
+                latencyMs,
+                tokensInput = providerResponse.TokensInput,
+                tokensOutput = providerResponse.TokensOutput,
+                invocationId = invocation.Id,
+            }),
         }, cancellationToken);
 
         return new AiCallResult(
@@ -159,7 +202,8 @@ internal sealed class AiService(
             Feature = prompt.Feature,
             Provider = prompt.Provider,
             Model = prompt.Model,
-            InputJson = SerialiseInputs(inputs),
+            // D-179 — redacted serialise on failure path too.
+            InputJson = AiAuditDetail.SerialiseAndRedact(inputs),
             OutputText = null,
             LatencyMs = latencyMs,
             ErrorCode = errorCode,
@@ -174,10 +218,27 @@ internal sealed class AiService(
             EventType = AuditEvents.AiInvocationFailed,
             Outcome = AuditOutcome.Failure,
             ActorUserId = caller.UserId ?? Guid.Empty,
-            Detail = $"promptKey={prompt.Key}; feature={prompt.Feature}; "
-                + $"provider={prompt.Provider}; errorCode={errorCode}",
+            Detail = AiAuditDetail.ToJson(new
+            {
+                promptKey = prompt.Key,
+                feature = prompt.Feature.ToString(),
+                provider = prompt.Provider.ToString(),
+                model = prompt.Model,
+                callerKind = caller.CallerKind,
+                latencyMs,
+                errorCode,
+                invocationId = invocation.Id,
+            }),
         }, cancellationToken);
     }
+
+    // D-179 (review-pass) — single source of truth for AI input caps.
+    // Test analyst flagged the duplicated constants on the admin path;
+    // the tests should reference these so a future cap-raise doesn't
+    // pass an outdated boundary test.
+    public const int MaxInputsCount = 16;
+    public const int MaxInputKeyLength = 64;
+    public const int MaxInputValueLength = 4000;
 
     private static string Substitute(
         string template, IReadOnlyDictionary<string, string> inputs)
@@ -195,15 +256,4 @@ internal sealed class AiService(
         return result;
     }
 
-    private static string SerialiseInputs(IReadOnlyDictionary<string, string> inputs)
-    {
-        try
-        {
-            return JsonSerializer.Serialize(inputs);
-        }
-        catch
-        {
-            return "{}";
-        }
-    }
 }

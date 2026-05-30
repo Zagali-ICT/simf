@@ -104,12 +104,25 @@ internal sealed class AdminAiPromptService(
         appDbContext.AiPrompts.Add(prompt);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
+        // D-179 — structured JSON detail with prompt-content hash so
+        // SOC can detect prompt drift across edits without storing
+        // the raw text (may contain prompt-injection payloads).
         await auditLog.WriteAsync(new AuditEntry
         {
             EventType = AuditEvents.AiPromptCreated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"promptId={prompt.Id}; key={prompt.Key}; feature={prompt.Feature}",
+            Detail = AiAuditDetail.ToJson(new
+            {
+                promptId = prompt.Id,
+                key = prompt.Key,
+                feature = prompt.Feature.ToString(),
+                provider = prompt.Provider.ToString(),
+                model = prompt.Model,
+                version = prompt.Version,
+                contentHash = AiAuditDetail.PromptContentHash(
+                    prompt.SystemPrompt, prompt.UserPromptTemplate),
+            }),
         }, cancellationToken);
         logger.LogInformation(
             "AI prompt {Key} created by {Actor}", prompt.Key, actorUserId);
@@ -128,6 +141,12 @@ internal sealed class AdminAiPromptService(
                 "AI prompt not found.",
                 "لم يتم العثور على محفّز الذكاء الاصطناعي.");
 
+        // D-179 — capture old hash BEFORE mutation so the audit row
+        // carries both old + new content hashes; SOC can flag any
+        // prompt-text drift even without raw text access.
+        var oldHash = AiAuditDetail.PromptContentHash(
+            prompt.SystemPrompt, prompt.UserPromptTemplate);
+
         prompt.Feature = validated.Feature;
         prompt.DisplayName = validated.DisplayName;
         prompt.DisplayNameArabic = validated.DisplayNameArabic;
@@ -145,12 +164,23 @@ internal sealed class AdminAiPromptService(
         prompt.UpdatedByUserId = actorUserId;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
+        var newHash = AiAuditDetail.PromptContentHash(
+            prompt.SystemPrompt, prompt.UserPromptTemplate);
         await auditLog.WriteAsync(new AuditEntry
         {
             EventType = AuditEvents.AiPromptUpdated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"promptId={prompt.Id}; key={prompt.Key}; version={prompt.Version}",
+            Detail = AiAuditDetail.ToJson(new
+            {
+                promptId = prompt.Id,
+                key = prompt.Key,
+                version = prompt.Version,
+                contentHashOld = oldHash,
+                contentHashNew = newHash,
+                contentChanged = !string.Equals(oldHash, newHash, StringComparison.Ordinal),
+                isActive = prompt.IsActive,
+            }),
         }, cancellationToken);
         return ToDetail(prompt);
     }
@@ -176,7 +206,11 @@ internal sealed class AdminAiPromptService(
             EventType = AuditEvents.AiPromptDeactivated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"promptId={prompt.Id}; key={prompt.Key}",
+            Detail = AiAuditDetail.ToJson(new
+            {
+                promptId = prompt.Id,
+                key = prompt.Key,
+            }),
         }, cancellationToken);
     }
 
@@ -184,6 +218,9 @@ internal sealed class AdminAiPromptService(
         Guid actorUserId, Guid id, TestAiPromptRequest request,
         CancellationToken cancellationToken = default)
     {
+        // D-179 review-pass: input caps now live in AiService.InvokeAsync
+        // so every caller (admin Test + public feature endpoints) goes
+        // through the same chokepoint. No duplicate validation here.
         var prompt = await appDbContext.AiPrompts.AsNoTracking()
             .SingleOrDefaultAsync(p => p.Id == id, cancellationToken)
             ?? throw new ApiException(
@@ -194,6 +231,19 @@ internal sealed class AdminAiPromptService(
             prompt.Key, request.Inputs ?? new(),
             new AiCallerContext(actorUserId, "Admin"),
             cancellationToken);
+    }
+
+    public async Task<AdminAiInvocationDetail?> GetInvocationAsync(
+        Guid id, CancellationToken cancellationToken = default)
+    {
+        return await appDbContext.AiInvocations.AsNoTracking()
+            .Where(i => i.Id == id)
+            .Select(i => new AdminAiInvocationDetail(
+                i.Id, i.PromptKey, i.Feature, i.Provider, i.Model,
+                i.CallerKind, i.CallerUserId,
+                i.TokensInput, i.TokensOutput, i.LatencyMs,
+                i.ErrorCode, i.InputJson, i.OutputText, i.CreatedAt))
+            .SingleOrDefaultAsync(cancellationToken);
     }
 
     public async Task<GridPage<AdminAiInvocationRow>> ListInvocationsAsync(
