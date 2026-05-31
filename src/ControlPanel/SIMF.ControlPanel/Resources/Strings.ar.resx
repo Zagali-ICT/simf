@@ -248,7 +248,6 @@
   <data name="Admin.Roles.Edit.BaselineNotice" xml:space="preserve"><value>هذا دور مدمج ولا يمكن إعادة تسميته.</value></data>
   <data name="Admin.Roles.Details.Title" xml:space="preserve"><value>تفاصيل الدور</value></data>
   <data name="Admin.Roles.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
-  <data name="Admin.Roles.Details.PermissionEditorDeferred" xml:space="preserve"><value>محرر منح الصلاحيات وتعيين الدور للمستخدمين سيُشحن في تحديث لاحق.</value></data>
   <data name="Admin.Roles.New.Submit" xml:space="preserve"><value>إنشاء الدور</value></data>
   <data name="Admin.Roles.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء</value></data>
   <data name="Admin.Roles.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
@@ -940,7 +939,6 @@
   <data name="Admin.CreateUser.Supporting" xml:space="preserve"><value>سيتلقى المستخدم الجديد بريدًا إلكترونيًا يحتوي على رمز لمرة واحدة لتعيين كلمة المرور. الدعوة صالحة لمدة 7 أيام.</value></data>
   <data name="Admin.CreateUser.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
   <data name="Admin.CreateUser.DisplayName" xml:space="preserve"><value>الاسم المعروض</value></data>
-  <data name="Admin.CreateUser.GrantAdministrator" xml:space="preserve"><value>منح صلاحيات المسؤول (وصول كامل إلى لوحة التحكم)</value></data>
   <data name="Admin.CreateUser.Submit" xml:space="preserve"><value>إنشاء المستخدم</value></data>
   <data name="Admin.CreateUser.Submitting" xml:space="preserve"><value>جارٍ الإنشاء</value></data>
   <data name="Admin.CreateUser.BackToList" xml:space="preserve"><value>العودة إلى المستخدمين</value></data>

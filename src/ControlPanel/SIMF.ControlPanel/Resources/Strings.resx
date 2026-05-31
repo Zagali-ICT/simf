@@ -251,7 +251,6 @@
   <data name="Admin.Roles.Edit.BaselineNotice" xml:space="preserve"><value>This is a built-in role and cannot be renamed.</value></data>
   <data name="Admin.Roles.Details.Title" xml:space="preserve"><value>Role details</value></data>
   <data name="Admin.Roles.Details.Close" xml:space="preserve"><value>Close</value></data>
-  <data name="Admin.Roles.Details.PermissionEditorDeferred" xml:space="preserve"><value>The per-permission grant editor and assign-to-user flows ship in a follow-up.</value></data>
   <data name="Admin.Roles.New.Submit" xml:space="preserve"><value>Create role</value></data>
   <data name="Admin.Roles.New.Submitting" xml:space="preserve"><value>Creating</value></data>
   <data name="Admin.Roles.Edit.Submit" xml:space="preserve"><value>Save changes</value></data>
@@ -949,7 +948,6 @@
   <data name="Admin.CreateUser.Supporting" xml:space="preserve"><value>The new user will receive an email invitation with a one-time code to set their password. The invitation is valid for 7 days.</value></data>
   <data name="Admin.CreateUser.Email" xml:space="preserve"><value>Email address</value></data>
   <data name="Admin.CreateUser.DisplayName" xml:space="preserve"><value>Display name</value></data>
-  <data name="Admin.CreateUser.GrantAdministrator" xml:space="preserve"><value>Grant the Administrator role (full Control Panel access)</value></data>
   <data name="Admin.CreateUser.Submit" xml:space="preserve"><value>Create user</value></data>
   <data name="Admin.CreateUser.Submitting" xml:space="preserve"><value>Creating</value></data>
   <data name="Admin.CreateUser.BackToList" xml:space="preserve"><value>Back to users</value></data>
