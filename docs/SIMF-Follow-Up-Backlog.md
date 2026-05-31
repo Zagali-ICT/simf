@@ -1,7 +1,7 @@
 # SIMF — Follow-Up Backlog (post-Sprint-1, post-R3, post-second-review)
 
 **Status:** Queued items not closed by the H1 → H27 + R1 → R3g sweep.
-**Last updated:** 2026-05-26
+**Last updated:** 2026-05-31
 
 This is the consolidated backlog that survives Sprint 1 closure plus
 the two 5-agent review passes (the post-H1/H2/H3 review and the post-R3
@@ -231,6 +231,21 @@ file itself is left untouched per the standing "never commit
 - L8  App sign-up + OTP confirm + profile + interests + await approval.
 - L9  App menu switch by UserType.
 - L10 Admin-added users without confirm (later CP module).
+
+### 3.9 Operator (admin) user manual — access-control chapter
+
+Companion to the developer guide
+(`docs/manuals/SIMF-Auth-Permissions-Dev-Guide.md`, shipped 2026-05-31).
+The dev guide is code-facing; the **operator** still has no non-technical
+chapter for the access-control surface now that the Access control nav
+group + role→permission editor + user→role assignment shipped
+(D-207 / D-208). Author the already-planned **Admin-Manual §4.4 "Roles &
+permissions"** chapter in `docs/manuals/Admin-Manual.md`: how an
+administrator creates a role, grants it permissions, assigns roles to a
+user, resets a user's 2FA, and what each guard / refusal message means —
+task-first with screenshots, matching the manual's existing chapter shape.
+Deferred from the permissions / gaps / E2E plan on owner instruction
+(2026-05-31).
 
 ---
 
