@@ -140,6 +140,9 @@ public static class DependencyInjection
         // Infrastructure → Application. The services no longer inject
         // SimfIdentityDbContext directly.
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        // R4 — D-209: InterestService moved to Application; its EF query
+        // shapes live behind IInterestRepository (over SimfAppDbContext).
+        services.AddScoped<IInterestRepository, InterestRepository>();
 
         services.AddScoped<ITransactionRunner, TransactionRunner>();
         services.AddScoped<IAuditLog, AuditLog>();
