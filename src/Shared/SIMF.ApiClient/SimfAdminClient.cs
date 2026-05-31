@@ -390,6 +390,15 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>P1.3 (D-214) — bulk-approve a batch of pending admins.</summary>
+    public Task<ApiCallResult<AdminBulkApprovalResponse>> BulkApproveAdminsAsync(
+        AdminBulkApprovalRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBulkApprovalResponse>(
+            HttpMethod.Post, "admins/bulk-approve",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     /// <summary>D-209 — bulk-reject a batch of pending visitors with a shared
     /// reason. Per-subject failures are reported in
     /// <see cref="AdminBulkRejectResponse.Failures"/>.</summary>
@@ -407,6 +416,15 @@ public sealed class SimfAdminClient(HttpClient http)
         CancellationToken cancellationToken = default) =>
         SendAsync<AdminBulkRejectResponse>(
             HttpMethod.Post, "others/bulk-reject",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>P1.3 (D-214) — bulk-reject a batch of pending admins.</summary>
+    public Task<ApiCallResult<AdminBulkRejectResponse>> BulkRejectAdminsAsync(
+        AdminBulkRejectRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBulkRejectResponse>(
+            HttpMethod.Post, "admins/bulk-reject",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 

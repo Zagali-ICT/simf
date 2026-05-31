@@ -30,6 +30,11 @@ internal sealed partial class AdminAccountService
         CancellationToken cancellationToken = default) =>
         BulkApproveAsync(actorUserId, request, ApprovalScope.PartnerOther, cancellationToken);
 
+    public Task<AdminBulkApprovalResponse> BulkApproveAdminsAsync(
+        Guid actorUserId, AdminBulkApprovalRequest request,
+        CancellationToken cancellationToken = default) =>
+        BulkApproveAsync(actorUserId, request, ApprovalScope.Admin, cancellationToken);
+
     private async Task<AdminBulkApprovalResponse> BulkApproveAsync(
         Guid actorUserId, AdminBulkApprovalRequest request, ApprovalScope scope,
         CancellationToken cancellationToken)
@@ -83,6 +88,11 @@ internal sealed partial class AdminAccountService
         Guid actorUserId, AdminBulkRejectRequest request,
         CancellationToken cancellationToken = default) =>
         BulkRejectAsync(actorUserId, request, ApprovalScope.PartnerOther, cancellationToken);
+
+    public Task<AdminBulkRejectResponse> BulkRejectAdminsAsync(
+        Guid actorUserId, AdminBulkRejectRequest request,
+        CancellationToken cancellationToken = default) =>
+        BulkRejectAsync(actorUserId, request, ApprovalScope.Admin, cancellationToken);
 
     private async Task<AdminBulkRejectResponse> BulkRejectAsync(
         Guid actorUserId, AdminBulkRejectRequest request, ApprovalScope scope,

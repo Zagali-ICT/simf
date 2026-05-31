@@ -236,6 +236,14 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.BulkApproveOthersAsync(body, token));
         });
+        // P1.3 (D-214) — admin-queue bulk approve passthrough.
+        group.MapPost("/admin/admins/bulk-approve",
+            async (AdminBulkApprovalRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.BulkApproveAdminsAsync(body, token));
+        });
 
         // D-209 — bulk reject passthroughs (the reject counterpart of D-164).
         group.MapPost("/admin/visitors/bulk-reject",
@@ -251,6 +259,14 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.BulkRejectOthersAsync(body, token));
+        });
+        // P1.3 (D-214) — admin-queue bulk reject passthrough.
+        group.MapPost("/admin/admins/bulk-reject",
+            async (AdminBulkRejectRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.BulkRejectAdminsAsync(body, token));
         });
 
         // D-124 — scoped pending-profile reads for the CP "preview before approve"

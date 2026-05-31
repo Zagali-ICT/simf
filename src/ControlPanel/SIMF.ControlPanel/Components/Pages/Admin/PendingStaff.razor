@@ -28,6 +28,10 @@
                       Loading="_loading"
                       OnQueryChanged="OnQueryChangedAsync"
                       Multiselect="true"
+                      OnApproveSelected="OnBulkApproveAsync"
+                      ApproveSelectedLabel="@L["Admin.Pending.Action.BulkApprove"]"
+                      OnRejectSelected="OnBulkRejectAsync"
+                      RejectSelectedLabel="@L["Admin.Pending.Action.BulkReject"]"
                       RowKey="@(u => u.Id.ToString())"
                       RowLabel="@(u => u.Email)"
                       Caption="@L["Admin.Pending.Staff.Title"]"
@@ -104,6 +108,35 @@
     </SimfModal>
 }
 
+@* P1.3 (D-214) — bulk reject: shared-reason modal for the selected pending admins. *@
+@if (_bulkRejectSelected is not null)
+{
+    <SimfModal Open="true"
+               Title="@L["Admin.Pending.BulkReject.Title"]"
+               OnClose="@(() => _bulkRejectSelected = null)">
+        <ChildContent>
+            <p>@string.Format(L["Admin.Pending.BulkReject.Confirm"], _bulkRejectSelected.Count)</p>
+            <SimfTextarea Label="@L["Admin.Pending.Reject.Reason"]"
+                          Helper="@L["Admin.Pending.Reject.ReasonHint"]"
+                          Rows="3" MaxLength="500"
+                          Value="@_bulkRejectReason"
+                          ValueChanged="@(v => _bulkRejectReason = v)" />
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary"
+                        OnClick="@(() => _bulkRejectSelected = null)">
+                @L["Admin.Pending.Reject.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" Variant="primary"
+                        Loading="_busy"
+                        Disabled="@(_bulkRejectReason.Length is < 10 or > 500)"
+                        OnClick="ConfirmBulkRejectAsync">
+                @L["Admin.Pending.BulkReject.Submit"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
 @code {
     private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminPendingUserSummary>? _page;
@@ -111,6 +144,9 @@
     private bool _busy;
     private AdminPendingUserSummary? _rejectTarget;
     private string _rejectReason = string.Empty;
+    // P1.3 (D-214) — bulk reject (shared-reason) modal state.
+    private IReadOnlyList<AdminPendingUserSummary>? _bulkRejectSelected;
+    private string _bulkRejectReason = string.Empty;
     private string? _toast;
     private string _toastVariant = "success";
 
@@ -189,6 +225,76 @@
             else
             {
                 _toast = envelope?.Error?.MessageForCurrentCulture() ?? L["Admin.Users.Fallback"];
+                _toastVariant = "error";
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    // P1.3 (D-214) — bulk approve the selected pending admins.
+    private async Task OnBulkApproveAsync(IReadOnlyList<AdminPendingUserSummary> selected)
+    {
+        if (_busy || selected.Count == 0) return;
+        _busy = true;
+        try
+        {
+            var ids = selected.Select(u => u.Id).ToList();
+            var envelope = await JS.InvokeAsync<ApiResult<AdminBulkApprovalResponse>>(
+                "simfAccount.postJson", "/account/api/admin/admins/bulk-approve",
+                new AdminBulkApprovalRequest { Ids = ids });
+            if (envelope is { Success: true, Data: not null })
+            {
+                var result = envelope.Data;
+                _toast = string.Format(
+                    L["Admin.Pending.BulkApproved.Toast"],
+                    result.Approved, result.Skipped);
+                _toastVariant = result.Skipped == 0 ? "success" : "warning";
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Users.Fallback"];
+                _toastVariant = "error";
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    // P1.3 (D-214) — open the shared-reason modal with the selected pending rows.
+    private void OnBulkRejectAsync(IReadOnlyList<AdminPendingUserSummary> selected)
+    {
+        if (_busy || selected.Count == 0) return;
+        _bulkRejectSelected = selected;
+        _bulkRejectReason = string.Empty;
+        _toast = null;
+    }
+
+    private async Task ConfirmBulkRejectAsync()
+    {
+        if (_busy || _bulkRejectSelected is null) return;
+        _busy = true;
+        try
+        {
+            var ids = _bulkRejectSelected.Select(u => u.Id).ToList();
+            var envelope = await JS.InvokeAsync<ApiResult<AdminBulkRejectResponse>>(
+                "simfAccount.postJson", "/account/api/admin/admins/bulk-reject",
+                new AdminBulkRejectRequest { Ids = ids, Reason = _bulkRejectReason });
+            if (envelope is { Success: true, Data: not null })
+            {
+                var result = envelope.Data;
+                _toast = string.Format(
+                    L["Admin.Pending.BulkRejected.Toast"],
+                    result.Rejected, result.Skipped);
+                _toastVariant = result.Skipped == 0 ? "success" : "warning";
+                _bulkRejectSelected = null;
+                _bulkRejectReason = string.Empty;
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Users.Fallback"];
                 _toastVariant = "error";
             }
         }

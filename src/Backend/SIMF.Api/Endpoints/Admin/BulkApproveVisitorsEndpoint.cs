@@ -53,8 +53,12 @@ public sealed class BulkApproveOthersEndpoint(IAdminUserApprovalService service)
 {
     public override void Configure()
     {
+        // P1.3 (D-214) security fix — was gated on Visitors.Approve, which let
+        // an admin holding only visitor-approve rights bulk-approve PARTNER
+        // (Other) accounts. The partner queue must gate on Others.Approve, the
+        // same code the single ApproveOther endpoint uses.
         Post("/admin/others/bulk-approve");
-        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Approve),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Others.Approve),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
