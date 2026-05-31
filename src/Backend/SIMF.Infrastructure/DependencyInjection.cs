@@ -144,6 +144,9 @@ public static class DependencyInjection
         services.AddScoped<ITransactionRunner, TransactionRunner>();
         services.AddScoped<IAuditLog, AuditLog>();
         services.AddScoped<IRegistrationService, RegistrationService>();
+        // Issue-1 — resolves a user's permission codes from their roles for
+        // the `perm` claim baked into the JWT (Administrator → wildcard).
+        services.AddScoped<IPermissionResolver, PermissionResolver>();
         services.AddScoped<ISignInService, SignInService>();
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IPasswordService, PasswordService>();

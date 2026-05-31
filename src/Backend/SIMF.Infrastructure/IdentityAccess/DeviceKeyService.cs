@@ -30,6 +30,7 @@ internal sealed class DeviceKeyService(
     IRefreshTokenRepository refreshTokenRepository,
     IUserProfileService userProfiles,
     IJwtTokenService jwtTokenService,
+    IPermissionResolver permissionResolver,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<DeviceKeyService> logger) : IDeviceKeyService
@@ -292,9 +293,10 @@ internal sealed class DeviceKeyService(
         SimfUser user, CancellationToken cancellationToken)
     {
         var roles = await accounts.GetRolesAsync(user);
+        var permissions = await permissionResolver.ResolveForRolesAsync(roles, cancellationToken);
         var mobileAppRole = await userProfiles
             .ResolveMobileAppRoleAsync(user.Id, cancellationToken);
-        var accessToken = jwtTokenService.CreateAccessToken(user, roles, mobileAppRole);
+        var accessToken = jwtTokenService.CreateAccessToken(user, roles, permissions, mobileAppRole);
 
         var refreshValue = OpaqueToken.Generate();
         var now = timeProvider.GetUtcNow();

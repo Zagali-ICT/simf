@@ -5,11 +5,13 @@ using System.Threading.RateLimiting;
 using FastEndpoints;
 using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using SIMF.Api.Authentication;
+using SIMF.Api.Authorization;
 using SIMF.Api.Endpoints.Admin;
 using SIMF.Api.Middleware;
 using SIMF.Api.RateLimiting;
@@ -234,6 +236,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services
     .AddAuthorizationBuilder()
     .AddSimfAuthorization();
+
+// Issue-1 — per-page/per-action permission policies (perm:<code>) are
+// materialised on demand by the dynamic provider, and the handler matches
+// the required code against the caller's `perm` claims (Administrator's
+// wildcard satisfies any code). Registered after the builder so this
+// provider wins over the default one for `perm:` policy names.
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 // The reverse-proxy allowlist — the rate limiter and the audit-log source IP
 // depend on it, so an X-Forwarded-For header is honoured only from a trusted

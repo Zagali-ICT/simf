@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SIMF.Application.IdentityAccess;
+using SIMF.Common;
 using SIMF.Common.Options;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Profiles;
@@ -15,7 +16,9 @@ namespace SIMF.Infrastructure.Identity;
 /// <summary>Issues HMAC-SHA256-signed JWT access tokens (SIMF-API-001 section 12.2).</summary>
 internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider timeProvider)    : IJwtTokenService
 {
-    public AccessToken CreateAccessToken(SimfUser user, IEnumerable<string> roles, MobileAppRole mobileAppRole)
+    public AccessToken CreateAccessToken(
+        SimfUser user, IEnumerable<string> roles, IEnumerable<string> permissions,
+        MobileAppRole mobileAppRole)
     {
         var settings = options.Value;
         var now = timeProvider.GetUtcNow();
@@ -42,6 +45,12 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
             new("mobile_app_role", mobileAppRole.ToString()),
         };
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+        // Issue-1 — the resolved permission codes (or the single wildcard "*"
+        // for an Administrator), minted as `perm` claims so the authorization
+        // handler can gate per page-and-action without a per-request DB lookup
+        // (PermissionCatalog.ClaimType).
+        claims.AddRange(permissions.Select(code => new Claim(PermissionCatalog.ClaimType, code)));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.SigningKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

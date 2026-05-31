@@ -21,6 +21,7 @@ public sealed class SessionService(
     IRefreshTokenRepository refreshTokenRepository,
     ITransactionRunner transactionRunner,
     IJwtTokenService jwtTokenService,
+    IPermissionResolver permissionResolver,
     IUserProfileService userProfiles,
     IAuditLog auditLog,
     TimeProvider timeProvider,
@@ -139,8 +140,9 @@ public sealed class SessionService(
             cancellationToken);
 
         var roles = await accounts.GetRolesAsync(user);
+        var permissions = await permissionResolver.ResolveForRolesAsync(roles, cancellationToken);
         var mobileAppRole = await userProfiles.ResolveMobileAppRoleAsync(user.Id, cancellationToken);
-        var accessToken = jwtTokenService.CreateAccessToken(user, roles, mobileAppRole);
+        var accessToken = jwtTokenService.CreateAccessToken(user, roles, permissions, mobileAppRole);
 
         await AuditAsync(AuditEvents.RefreshTokenRotated, AuditOutcome.Success,
             user.Email, user.Id, cancellationToken: cancellationToken);

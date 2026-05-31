@@ -33,6 +33,7 @@ public sealed class SignInService(
     INotificationDispatcher notifications,
     IUserProfileService userProfiles,
     IJwtTokenService jwtTokenService,
+    IPermissionResolver permissionResolver,
     ITotpVerifier totpVerifier,
     IRecoveryCodeService recoveryCodes,
     IAuditLog auditLog,
@@ -570,8 +571,9 @@ public sealed class SignInService(
     private async Task<AuthTokens> IssueTokensAsync(SimfUser user, CancellationToken cancellationToken)
     {
         var roles = await accounts.GetRolesAsync(user);
+        var permissions = await permissionResolver.ResolveForRolesAsync(roles, cancellationToken);
         var mobileAppRole = await userProfiles.ResolveMobileAppRoleAsync(user.Id, cancellationToken);
-        var accessToken = jwtTokenService.CreateAccessToken(user, roles, mobileAppRole);
+        var accessToken = jwtTokenService.CreateAccessToken(user, roles, permissions, mobileAppRole);
 
         var refreshValue = OpaqueToken.Generate();
         var now = timeProvider.GetUtcNow();

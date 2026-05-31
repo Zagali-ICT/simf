@@ -11,8 +11,12 @@ public interface IJwtTokenService
     /// <summary>D-161 — the <paramref name="mobileAppRole"/> resolved
     /// per <see cref="IUserProfileService.ResolveMobileAppRoleAsync"/>
     /// is carried on the JWT as the <c>mobile_app_role</c> claim so the
-    /// Flutter app reads it directly without an extra round-trip.</summary>
+    /// Flutter app reads it directly without an extra round-trip.
+    /// <para>Issue-1 — <paramref name="permissions"/> are the resolved
+    /// permission codes (or the single wildcard for an Administrator),
+    /// minted as <c>perm</c> claims so the authorization handler can gate
+    /// per page-and-action without a per-request database lookup.</para></summary>
     AccessToken CreateAccessToken(
-        SimfUser user, IEnumerable<string> roles,
+        SimfUser user, IEnumerable<string> roles, IEnumerable<string> permissions,
         SIMF.Common.Enums.MobileAppRole mobileAppRole);
 }
