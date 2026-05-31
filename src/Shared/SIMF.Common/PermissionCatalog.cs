@@ -383,13 +383,17 @@ public static class PermissionCatalog
         public const string Notify = "Vips.Notify";
     }
 
-    /// <summary>Every permission in the catalogue, in display order. The
-    /// seeder inserts one row per entry (idempotent by <see cref="PermissionDef.Code"/>).</summary>
-    public static readonly IReadOnlyList<PermissionDef> All = BuildAll();
-
+    // These baseline-role lists MUST be declared before `All`: static field
+    // initializers run in textual order, and `BuildAll()` reads them — declaring
+    // them after `All` would capture their null defaults (seeding every entry
+    // with null BaselineRoles, which then NREs the seeder's grant loop).
     private static readonly IReadOnlyList<string> AdminOnly = [];
     private static readonly IReadOnlyList<string> GateOperator = [AppRoles.GateOperator];
     private static readonly IReadOnlyList<string> PublicRelations = [AppRoles.PublicRelations];
+
+    /// <summary>Every permission in the catalogue, in display order. The
+    /// seeder inserts one row per entry (idempotent by <see cref="PermissionDef.Code"/>).</summary>
+    public static readonly IReadOnlyList<PermissionDef> All = BuildAll();
 
     private static List<PermissionDef> BuildAll() =>
     [
