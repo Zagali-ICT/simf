@@ -77,13 +77,17 @@ Three Architecture SEV-1s remain after R1–R3 + H20+H21:
 
 Plus two natural follow-ups surfaced by the post-R3 review:
 
-- **Arch SEV-1.2 follow-up** — `AdminAccountService` implementation
-  is still one 1091-line class implementing all five interfaces split
-  in R2 (D-075). Splitting the impl into 5 cohesive 150-250-line
-  classes is the rest of the work. Add the docstring constraint
-  (post-R3 review SEV-2.1) noting that all five interface
-  registrations MUST resolve to the same scoped instance until the
-  impl split lands.
+- **Arch SEV-1.2 follow-up** — **partially closed (D-209).** The
+  `AdminAccountService` implementation (which had grown to ~1900 lines)
+  was split into cohesive **partial-class files** (`.cs` + `.Approval.cs`
+  + `.Bulk.cs` + `.Roles.cs`) — navigability only, no behaviour/DI change;
+  it remains one type backing all interfaces from one scoped instance.
+  **Deferred post-event (owner):** the Infra→Application *move* of this
+  service (the R4 remainder) — it is security-critical and would need
+  brand-new `RoleManager`/`UserRoles` Application abstractions, judged
+  too high-risk to land right before the event. A future move could
+  also graduate the partial files into genuinely separate classes +
+  a shared scope/role-resolver collaborator.
 - **`IUserAccountRepository` granularity** (post-R3 review SEV-1.2 —
   Architecture lens) — the 22-method aggregate is a method-for-method
   port of `UserManager`. The reviewer's recommendation: after R5, split

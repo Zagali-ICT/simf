@@ -16,14 +16,23 @@ The two refactors already shipped:
 | R1 | Typed `StorageOptions` | Arch SEV-1.5 | D-074 |
 | R2 | `IAdminAccountService` split (interface only) | Arch SEV-1.2 | D-075 |
 
-The four still queued:
+Status of the rest (corrected 2026-05-31, D-209 — the table below was stale):
 
-| Queued | Item | Closes | Size |
-|--------|------|--------|------|
-| R3 | `IUserAccountRepository` abstraction around `UserManager` | Arch SEV-1.4 | Multi-day |
-| R4 | Move services from Infrastructure → Application | Arch SEV-1.6 | Multi-day (depends on R3) |
-| R5 | Pure-POCO Domain (`SimfUser` no longer `IdentityUser<Guid>`) | Arch SEV-1.1 | Full sprint |
-| R6 | Split `SimfIdentityDbContext` into bounded-context contexts | Arch SEV-1.3 | Full sprint |
+| Item | Closes | Status |
+|------|--------|--------|
+| R3 | `IUserAccountRepository` abstraction around `UserManager` | Arch SEV-1.4 | **DONE — D-076** |
+| R3.5 | Split the 22-method aggregate into 5 role-cohesive sub-interfaces | Arch SEV-1.2 (granularity) | **DONE — D-094** |
+| R4 | Move services from Infrastructure → Application | Arch SEV-1.6 | **PARTIAL** — Notification svc+dispatcher (D-095), Interest + UserProfile (D-209) done; **`AdminAccountService` move DEFERRED post-event** (security-critical, would need new `RoleManager`/`UserRoles` abstractions) |
+| R5 | Pure-POCO Domain (`SimfUser` no longer `IdentityUser<Guid>`) | Arch SEV-1.1 | **DONE — D-090→093** |
+| R6 | Split `SimfIdentityDbContext` into bounded-context contexts | Arch SEV-1.3 | **QUEUED — owner gate** (High risk; touches D-110 frozen migration history) |
+
+Separately, the `AdminAccountService` **implementation** was split (D-209, A2) from
+one 1900-line class into cohesive **partial-class files** (`.cs` + `.Approval.cs` +
+`.Bulk.cs` + `.Roles.cs`) — navigability only, no behaviour/DI change. The Infra→App
+*move* of that service is the deferred R4 remainder above.
+
+> The detailed per-item sections below predate this status correction; treat the
+> table above as authoritative for what is done vs. queued.
 
 ---
 
