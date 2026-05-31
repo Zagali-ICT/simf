@@ -37,7 +37,10 @@ public static class CpNavigation
         ]),
         new("Nav.People",
         [
-            new("Module.RegistrationRequests", "/m/registration-requests", IsStub: true),
+            // P1.1 (D-214) — the "Registration requests" stub was removed: pending
+            // approvals are delivered by the real per-type queues (Visitors →
+            // Pending, Others → Pending under System; Admins → Pending under
+            // Access control), so the placeholder was a misleading duplicate.
             // D-134 Sprint A — combined attendee roster over Visitors +
             // Others (read-only join on existing tables; no migration).
             new("Module.Attendees", "/admin/attendees", RequiredPermission: PermissionCatalog.Attendees.View),
@@ -77,7 +80,10 @@ public static class CpNavigation
         ]),
         new("Nav.Exhibition",
         [
-            new("Module.Exhibitors", "/m/exhibitors", IsStub: true),
+            // P1.1 (D-214) — the "Exhibitors" stub was removed: exhibitor/sponsor
+            // onboarding is delivered by the real Companies page (CP-only company
+            // + account provisioning, D-202) plus Booths and Sponsors; in-app
+            // exhibitor self-signup was permanently descoped (D-199/D-202).
             // D-202 Track-2 — exhibitor / sponsor company CRUD + account provisioning.
             new("Module.Companies", "/admin/companies", RequiredPermission: PermissionCatalog.Companies.View),
             // D-199 — Exhibition booths admin CRUD (Mockup page 22).
