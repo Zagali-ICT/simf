@@ -111,8 +111,8 @@ we do the broadcast?
 
 | # | Item | Permissions | Tests | Notes |
 |---|------|-------------|-------|-------|
-| 1.1 | Tidy the 2 superseded nav stubs (registration-requests → pending queues; exhibitors → Companies) | n/a | nav test | relabel/point only; no deletion of real pages |
-| 1.2 | **Permission grant editor + assign-to-user/role UI** (FR-1201/1202) | reuse `Roles.*` | api+cp | **enables the Scientific-Committee role config** |
+| 1.1 | ~~Tidy the 2 superseded nav stubs~~ — **DONE (commit 7b8decb)** | n/a | nav 19/19 | Removed both stub NavItems (repoint rejected — would duplicate routes + fail the unique-route test); real pages already cover them. |
+| 1.2 | ~~Permission grant editor + assign-to-user/role UI~~ — **ALREADY SHIPPED (verified 2026-05-31)** | reuse `Roles.*` | existing | `RolePermissionsEditor.razor` (grant editor, gated `Roles.AssignPermissions`) + `UsersList.razor` edit-roles modal + `CreateAdminForm.razor` role picker + GET/PUT `/admin/roles/{id}/permissions` + GET/PUT `/admin/admins/{id}/roles`. Scientific-Committee role is configurable today. Gap report "deferred" row is stale. Only roles **bulk-delete** remains (minor, deferred). |
 | 1.3 | Bulk admin/staff pending-queue parity + per-user Edit (B1, FR-212) | existing | api | symmetric to D-210 |
 | 1.4 | Seat-grid visual renderer (FR-405/505) | existing | cp | backend already done |
 | 1.5 | CMS markdown rendering + brand-colour tokens (FR-1203) | existing | web | rendering only |
