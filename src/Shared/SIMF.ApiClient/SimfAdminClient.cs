@@ -370,6 +370,24 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>P1.3 (D-214) — edit a visitor (email, display name, tier).</summary>
+    public Task<ApiCallResult<bool>> UpdateVisitorAsync(
+        Guid id, AdminUpdateVisitorRequest body, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Put, $"visitors/{id}",
+            JsonContent.Create(body, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>P1.3 (D-214) — edit a partner (Other) account.</summary>
+    public Task<ApiCallResult<bool>> UpdateOtherAsync(
+        Guid id, AdminUpdateOtherRequest body, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Put, $"others/{id}",
+            JsonContent.Create(body, options: JsonOptions),
+            accessToken, cancellationToken);
+
     /// <summary>D-164 (gap doc G2) — bulk-approve a batch of pending visitors.
     /// Up to 500 ids per request; per-subject failures are reported in
     /// <see cref="AdminBulkApprovalResponse.Failures"/>.</summary>

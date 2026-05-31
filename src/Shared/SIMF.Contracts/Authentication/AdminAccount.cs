@@ -116,6 +116,49 @@ public sealed class AdminCreateVisitorRequest
     public Guid? ProfileTypeId { get; set; }
 }
 
+/// <summary>
+/// The body of <c>PUT /api/v1/admin/visitors/{id}</c> (P1.3 / D-214 — promotes
+/// the D-114 edit stub to a real edit). Updates an existing <b>Visitor</b>'s
+/// editable fields: login <see cref="Email"/> (re-checked for uniqueness; a
+/// change rolls the security stamp + revokes sessions), <see cref="DisplayName"/>,
+/// and the optional <see cref="ProfileTypeId"/> tier. Approval state is NOT
+/// editable here (use the approve/reject path). Administrator-only.
+/// </summary>
+public sealed class AdminUpdateVisitorRequest
+{
+    /// <summary>The visitor's login email; must not collide with another account.</summary>
+    public string Email { get; set; } = string.Empty;
+
+    /// <summary>The display name shown in the UI (2–128 characters).</summary>
+    public string DisplayName { get; set; } = string.Empty;
+
+    /// <summary>The visitor tier (<c>ProfileTypes</c> row id). Optional; when
+    /// supplied the row must be active with <c>UserType = Visitor</c> and
+    /// <c>IsVisitor = true</c> (audience scope).</summary>
+    public Guid? ProfileTypeId { get; set; }
+}
+
+/// <summary>
+/// The body of <c>PUT /api/v1/admin/others/{id}</c> (P1.3 / D-214). Updates an
+/// existing partner-side (<b>Other</b>) account. Same shape as
+/// <see cref="AdminUpdateVisitorRequest"/> but the partner subtype is
+/// mandatory and must be partner-scope (<c>IsVisitor = false</c>).
+/// Administrator-only.
+/// </summary>
+public sealed class AdminUpdateOtherRequest
+{
+    /// <summary>The account's login email; must not collide with another account.</summary>
+    public string Email { get; set; } = string.Empty;
+
+    /// <summary>The display name shown in the UI (2–128 characters).</summary>
+    public string DisplayName { get; set; } = string.Empty;
+
+    /// <summary>The partner subtype (<c>ProfileTypes</c> row id). Required; the
+    /// row must be active with <c>UserType = Visitor</c> and
+    /// <c>IsVisitor = false</c> (partner scope).</summary>
+    public Guid ProfileTypeId { get; set; }
+}
+
 /// <summary>The body of a successful admin-created account (D-042).</summary>
 public sealed record AdminCreateUserResponse(
     Guid UserId,

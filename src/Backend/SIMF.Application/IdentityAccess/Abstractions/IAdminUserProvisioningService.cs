@@ -66,6 +66,36 @@ public interface IAdminUserProvisioningService
         GridQuery query,
         CancellationToken cancellationToken = default);
 
+    // -- P1.3 (D-214) — per-user Edit for Visitor / Other --------------------
+
+    /// <summary>
+    /// Updates an existing Visitor's editable fields: login email,
+    /// display name, and the optional tier (<c>ProfileTypeId</c>, audience
+    /// scope). Re-checks email uniqueness (excluding the subject); a changed
+    /// email rolls the security stamp + revokes the subject's sessions.
+    /// Throws <c>AdminUserNotFound</c> (404) when the id is missing or is not
+    /// an audience-side Visitor, <c>AdminEmailAlreadyRegistered</c> (409) on a
+    /// collision, and <c>AdminProfileTypeInvalid</c> (400) for a wrong-scope
+    /// or inactive profile type. Approval state is NOT changed here.
+    /// </summary>
+    Task UpdateVisitorAsync(
+        Guid actorUserId,
+        Guid userId,
+        AdminUpdateVisitorRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates an existing partner-side (Other) account. Same contract as
+    /// <see cref="UpdateVisitorAsync"/> but the subject must be partner-scope
+    /// (<c>ProfileType.IsVisitor = false</c>) and the profile type is
+    /// mandatory.
+    /// </summary>
+    Task UpdateOtherAsync(
+        Guid actorUserId,
+        Guid userId,
+        AdminUpdateOtherRequest request,
+        CancellationToken cancellationToken = default);
+
     // -- Duplicate (single-user create with a different source) --------------
 
     /// <summary>

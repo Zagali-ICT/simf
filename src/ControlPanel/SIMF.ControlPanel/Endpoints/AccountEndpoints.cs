@@ -220,6 +220,22 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.RejectVisitorAsync(id, body, token));
         });
+        // P1.3 (D-214) — visitor edit passthrough.
+        group.MapPut("/admin/visitors/{id:guid}",
+            async (Guid id, AdminUpdateVisitorRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateVisitorAsync(id, body, token));
+        });
+        // P1.3 (D-214) — Other edit passthrough.
+        group.MapPut("/admin/others/{id:guid}",
+            async (Guid id, AdminUpdateOtherRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateOtherAsync(id, body, token));
+        });
 
         // D-164 (gap doc G2) — bulk approve passthroughs.
         group.MapPost("/admin/visitors/bulk-approve",

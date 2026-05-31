@@ -86,6 +86,9 @@ public static class AuditEvents
     public const string AdminTwoFactorResetFailed = "Admin.TwoFactorResetFailed";
     public const string AdminUserCreated = "Admin.UserCreated";
     public const string AdminUserCreateFailed = "Admin.UserCreateFailed";
+    // P1.3 (D-214) — admin edit of a Visitor / Other account.
+    public const string AdminUserUpdated = "Admin.UserUpdated";
+    public const string AdminUserUpdateFailed = "Admin.UserUpdateFailed";
 
     // Admin-driven bulk actions (D-044 b)
     public const string AdminUserDeleted = "Admin.UserDeleted";

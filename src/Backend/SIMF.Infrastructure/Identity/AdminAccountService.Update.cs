@@ -1,0 +1,207 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using SIMF.Application.Auditing;
+using SIMF.Common;
+using SIMF.Contracts.Authentication;
+using SIMF.Domain.Auditing;
+using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Profiles;
+using SIMF.Common.Enums;
+
+namespace SIMF.Infrastructure.Identity;
+
+/// <summary>
+/// P1.3 (D-214) — per-user Edit for Visitor / Other accounts (promotes the
+/// D-114 CP edit stub to a real edit). Mirrors the create path
+/// (<c>CreateAccountAsync</c>): same scope guard, same email-uniqueness and
+/// profile-type validation, the same two-context save. Adds the identity-change
+/// protection a create does not need: when the login email changes the security
+/// stamp is rolled and the subject's refresh tokens are revoked, so a stale
+/// session cannot keep signing in under the old identity.
+/// </summary>
+internal sealed partial class AdminAccountService
+{
+    public Task UpdateVisitorAsync(
+        Guid actorUserId, Guid userId, AdminUpdateVisitorRequest request,
+        CancellationToken cancellationToken = default) =>
+        UpdateAccountAsync(
+            actorUserId, userId, request.Email, request.DisplayName,
+            request.ProfileTypeId, expectedIsVisitor: true,
+            profileTypeRequired: false, cancellationToken);
+
+    public Task UpdateOtherAsync(
+        Guid actorUserId, Guid userId, AdminUpdateOtherRequest request,
+        CancellationToken cancellationToken = default) =>
+        UpdateAccountAsync(
+            actorUserId, userId, request.Email, request.DisplayName,
+            request.ProfileTypeId, expectedIsVisitor: false,
+            profileTypeRequired: true, cancellationToken);
+
+    private async Task UpdateAccountAsync(
+        Guid actorUserId, Guid userId, string email, string displayName,
+        Guid? profileTypeId, bool expectedIsVisitor, bool profileTypeRequired,
+        CancellationToken cancellationToken)
+    {
+        var trimmedEmail = (email ?? string.Empty).Trim();
+        var trimmedName = (displayName ?? string.Empty).Trim();
+
+        // Load the subject. A wrong-scope subject (e.g. an Other edited via the
+        // Visitors desk) is reported as the same 404 as a missing id so the
+        // desk cannot probe across scopes — identical to the approval path.
+        var target = await accounts.FindByIdAsync(userId, cancellationToken);
+        var scopeOk = target is not null
+            && target.UserType == UserType.Visitor
+            && await SubjectMatchesProfileScopeAsync(
+                target.Id, expectedIsVisitor, cancellationToken);
+        if (target is null || !scopeOk)
+        {
+            await AuditFailure(
+                AuditEvents.AdminUserUpdateFailed, actorUserId, trimmedEmail,
+                userId, ErrorCodes.AdminUserNotFound, cancellationToken);
+            throw new ApiException(
+                ErrorCodes.AdminUserNotFound, 404,
+                "The account was not found.",
+                "لم يتم العثور على الحساب.");
+        }
+
+        // Email uniqueness — re-check, but a hit on the subject's own row is
+        // fine (an edit that leaves the email unchanged must succeed).
+        var existing = await accounts.FindByEmailAsync(trimmedEmail, cancellationToken);
+        if (existing is not null && existing.Id != target.Id)
+        {
+            await AuditFailure(
+                AuditEvents.AdminUserUpdateFailed, actorUserId, trimmedEmail,
+                target.Id, ErrorCodes.AdminEmailAlreadyRegistered, cancellationToken);
+            throw new ApiException(
+                ErrorCodes.AdminEmailAlreadyRegistered, 409,
+                "An account with this email address already exists.",
+                "يوجد حساب مسجّل بهذا البريد الإلكتروني بالفعل.");
+        }
+
+        // Validate the chosen profile type (existence + active + UserType +
+        // audience/partner scope). Mirrors the create-time guard. A required
+        // type that is missing/empty is rejected before any write.
+        var resolvedProfileTypeId = await ResolveEditProfileTypeAsync(
+            actorUserId, trimmedEmail, target.Id, profileTypeId,
+            expectedIsVisitor, profileTypeRequired, cancellationToken);
+
+        var emailChanged = !string.Equals(
+            target.Email, trimmedEmail, StringComparison.OrdinalIgnoreCase);
+        var now = timeProvider.GetUtcNow();
+
+        await transactionRunner.ExecuteAsync(async (innerCt) =>
+        {
+            target.Email = trimmedEmail;
+            target.UserName = trimmedEmail;
+            target.DisplayName = trimmedName;
+            target.UpdatedAt = now;
+            var updateResult = await accounts.UpdateAsync(target);
+            if (!updateResult.Succeeded)
+            {
+                throw new ApiException(
+                    ErrorCodes.InternalError, 500,
+                    "The account could not be updated.",
+                    "تعذّر تحديث الحساب.");
+            }
+
+            // A login-email change is an identity change: roll the stamp and
+            // revoke sessions so the old email cannot keep an active session.
+            if (emailChanged)
+            {
+                await accounts.UpdateSecurityStampAsync(target);
+                await refreshTokenRepository.RevokeAllForUserAsync(
+                    target.Id, now, innerCt);
+            }
+
+            await UpsertProfileTypeAsync(target.Id, resolvedProfileTypeId, now, innerCt);
+
+            await auditLog.WriteAsync(new AuditEntry
+            {
+                EventType = AuditEvents.AdminUserUpdated,
+                Outcome = AuditOutcome.Success,
+                SubjectEmail = trimmedEmail,
+                SubjectUserId = target.Id,
+                ActorUserId = actorUserId,
+                Detail = $"scope={(expectedIsVisitor ? "visitor" : "other")}; "
+                    + $"emailChanged={emailChanged}; profileType={resolvedProfileTypeId}",
+            }, innerCt);
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Admin {ActorId} updated account {SubjectId} (emailChanged={EmailChanged})",
+            actorUserId, target.Id, emailChanged);
+    }
+
+    // Validates the chosen ProfileType for an edit and returns the id to
+    // persist (null when none supplied and none required). Mirrors the
+    // create-time checks in CreateAccountAsync.
+    private async Task<Guid?> ResolveEditProfileTypeAsync(
+        Guid actorUserId, string email, Guid subjectId, Guid? profileTypeId,
+        bool expectedIsVisitor, bool profileTypeRequired,
+        CancellationToken cancellationToken)
+    {
+        if (profileTypeId is null || profileTypeId == Guid.Empty)
+        {
+            if (profileTypeRequired)
+            {
+                await AuditFailure(
+                    AuditEvents.AdminUserUpdateFailed, actorUserId, email,
+                    subjectId, ErrorCodes.AdminProfileTypeInvalid, cancellationToken);
+                throw new ApiException(
+                    ErrorCodes.AdminProfileTypeInvalid, 400,
+                    "A profile type is required.",
+                    "نوع الملف الشخصي مطلوب.");
+            }
+            return null;
+        }
+
+        var profileType = await appDbContext.ProfileTypes
+            .AsNoTracking()
+            .SingleOrDefaultAsync(p => p.Id == profileTypeId.Value, cancellationToken);
+        if (profileType is null
+            || !profileType.IsActive
+            || profileType.UserType != UserType.Visitor
+            || profileType.IsVisitor != expectedIsVisitor)
+        {
+            await AuditFailure(
+                AuditEvents.AdminUserUpdateFailed, actorUserId, email,
+                subjectId, ErrorCodes.AdminProfileTypeInvalid, cancellationToken);
+            throw new ApiException(
+                ErrorCodes.AdminProfileTypeInvalid, 400,
+                "The selected profile type is not valid for this account.",
+                "نوع الملف الشخصي المحدّد غير صالح لهذا الحساب.");
+        }
+        return profileType.Id;
+    }
+
+    // Sets the subject's ProfileTypeId on the App-DB UserProfile row. The row
+    // may not exist yet (a self-signed-up visitor with no admin-assigned type);
+    // create a minimal row in that case so the tier sticks.
+    private async Task UpsertProfileTypeAsync(
+        Guid subjectId, Guid? profileTypeId, DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var profile = await appDbContext.UserProfiles
+            .SingleOrDefaultAsync(p => p.UserId == subjectId, cancellationToken);
+        if (profile is null)
+        {
+            if (profileTypeId is null)
+            {
+                return;
+            }
+            appDbContext.UserProfiles.Add(new UserProfile
+            {
+                Id = Guid.NewGuid(),
+                UserId = subjectId,
+                ProfileTypeId = profileTypeId,
+                CreatedAt = now,
+            });
+        }
+        else
+        {
+            profile.ProfileTypeId = profileTypeId;
+            profile.UpdatedAt = now;
+        }
+        await appDbContext.SaveChangesAsync(cancellationToken);
+    }
+}
