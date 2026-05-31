@@ -60,7 +60,7 @@
            CloseLabel="@L["Auth.ChangePassword.Close"]" OnClose="CloseChangePassword">
     <p class="simf-form__helper">@L["Auth.ChangePassword.Intro"]</p>
     <ChangePasswordCard ShowCurrentField="false" Block="true" Busy="_changeBusy"
-                        ErrorMessage="_changeError" SubmitLabel="@L["Auth.ChangePassword.Submit"]"
+                        ErrorMessage="@_changeError" SubmitLabel="@L["Auth.ChangePassword.Submit"]"
                         OnSubmit="CompletePasswordChangeAsync" />
 </SimfModal>
 
