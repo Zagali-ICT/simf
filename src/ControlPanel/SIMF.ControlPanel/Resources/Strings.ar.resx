@@ -807,6 +807,11 @@
   <!-- D-164 -->
   <data name="Admin.Pending.Action.BulkApprove" xml:space="preserve"><value>اعتماد المحدد</value></data>
   <data name="Admin.Pending.BulkApproved.Toast" xml:space="preserve"><value>تم اعتماد {0} مستخدم/ين. تم تخطي {1}.</value></data>
+  <data name="Admin.Pending.Action.BulkReject" xml:space="preserve"><value>رفض المحدد</value></data>
+  <data name="Admin.Pending.BulkReject.Title" xml:space="preserve"><value>رفض الحسابات المحددة</value></data>
+  <data name="Admin.Pending.BulkReject.Confirm" xml:space="preserve"><value>أنت على وشك رفض {0} حساب معلّق. السبب أدناه يُسجَّل ويُعرض لكل مستخدم.</value></data>
+  <data name="Admin.Pending.BulkReject.Submit" xml:space="preserve"><value>رفض المحدد</value></data>
+  <data name="Admin.Pending.BulkRejected.Toast" xml:space="preserve"><value>تم رفض {0} مستخدم/ين. تم تخطي {1}.</value></data>
   <data name="Admin.Pending.Rejected.Toast" xml:space="preserve"><value>تمّ رفض {0}.</value></data>
   <data name="Admin.Pending.Pager.First" xml:space="preserve"><value>الصفحة الأولى</value></data>
   <data name="Admin.Pending.Pager.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>

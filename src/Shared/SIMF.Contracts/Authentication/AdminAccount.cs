@@ -179,6 +179,29 @@ public sealed record AdminBulkApprovalFailure(
     string Message,
     string MessageArabic);
 
+/// <summary>D-209 — the body of <c>POST /api/v1/admin/{visitors,others}/bulk-reject</c>.
+/// Rejects a batch of pending users with one shared reason. The reason is
+/// mandatory (10–500 chars — same rule as the single reject) and audited per
+/// subject; empty id arrays / out-of-range reasons are rejected with HTTP 400
+/// by the validator, and the worker clamps to a max of 500 ids per request.</summary>
+public sealed class AdminBulkRejectRequest
+{
+    /// <summary>The pending user ids to reject.</summary>
+    public IList<Guid> Ids { get; set; } = new List<Guid>();
+
+    /// <summary>The shared rejection reason applied to every subject (10–500 chars).</summary>
+    public string Reason { get; set; } = string.Empty;
+}
+
+/// <summary>D-209 — outcome of a bulk reject. Mirrors
+/// <see cref="AdminBulkApprovalResponse"/> (reusing
+/// <see cref="AdminBulkApprovalFailure"/> for the per-subject failure rows);
+/// <see cref="Rejected"/> is the count that flipped to Rejected.</summary>
+public sealed record AdminBulkRejectResponse(
+    int Rejected,
+    int Skipped,
+    IReadOnlyList<AdminBulkApprovalFailure> Failures);
+
 /// <summary>The body of <c>POST /api/v1/admin/users/duplicate</c> (D-044 b).
 /// Creates a new user as a copy of the source — same display-name pattern,
 /// same Administrator-role membership, no password, fresh invite email.</summary>

@@ -68,4 +68,23 @@ public interface IAdminUserApprovalService
         Guid actorUserId,
         AdminBulkApprovalRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>D-209 — bulk reject a batch of pending audience-side
+    /// <see cref="UserType.Visitor"/> users with one shared reason. Mirrors
+    /// <see cref="BulkApproveVisitorsAsync"/>: each subject is rejected in its
+    /// own step via the single-reject path (scope guard + state flip + token
+    /// revoke + audit + notification); per-subject failures are reported and
+    /// do not block the rest.</summary>
+    Task<AdminBulkRejectResponse> BulkRejectVisitorsAsync(
+        Guid actorUserId,
+        AdminBulkRejectRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>D-209 — bulk reject partner-side (Other) pending accounts
+    /// (Visitor users whose linked ProfileType.IsVisitor is false). Same
+    /// shape as the visitor variant.</summary>
+    Task<AdminBulkRejectResponse> BulkRejectOthersAsync(
+        Guid actorUserId,
+        AdminBulkRejectRequest request,
+        CancellationToken cancellationToken = default);
 }

@@ -237,6 +237,22 @@ internal static class AccountEndpoints
             return Forward(await api.BulkApproveOthersAsync(body, token));
         });
 
+        // D-209 — bulk reject passthroughs (the reject counterpart of D-164).
+        group.MapPost("/admin/visitors/bulk-reject",
+            async (AdminBulkRejectRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.BulkRejectVisitorsAsync(body, token));
+        });
+        group.MapPost("/admin/others/bulk-reject",
+            async (AdminBulkRejectRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.BulkRejectOthersAsync(body, token));
+        });
+
         // D-124 — scoped pending-profile reads for the CP "preview before approve"
         // modal. 404-for-mismatch is preserved by Forward() since the API returns
         // an ApiResult error envelope with status 404.

@@ -89,6 +89,17 @@
                         @ApproveSelectedLabel
                     </SimfToolbarButton>
                 }
+                @* D-209 — bulk reject. Mirrors bulk approve; the parent opens a
+                   shared-reason modal before calling the API. *@
+                @if (OnRejectSelected.HasDelegate)
+                {
+                    <SimfToolbarButton Icon="close" Title="@RejectSelectedLabel"
+                                       Danger="true"
+                                       Disabled="@(SelectedOnPageCount == 0)"
+                                       OnClick="@(() => OnRejectSelected.InvokeAsync(SelectedItemsOnPage()))">
+                        @RejectSelectedLabel
+                    </SimfToolbarButton>
+                }
                 @if (OnCopySelected.HasDelegate)
                 {
                     <SimfToolbarButton Icon="copy" Title="@CopyLabel"
@@ -476,6 +487,12 @@
     /// row on the current page is selected.</summary>
     [Parameter] public EventCallback<IReadOnlyList<TItem>> OnApproveSelected { get; set; }
 
+    /// <summary>D-209 — bulk reject the selected rows. When set, a "Reject
+    /// selected" toolbar button appears alongside Approve, enabled only when
+    /// ≥ 1 row on the current page is selected. The parent collects the
+    /// shared reason before calling the API.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<TItem>> OnRejectSelected { get; set; }
+
     /// <summary>Delete one row (per-row button + context menu).</summary>
     [Parameter] public EventCallback<TItem> OnDeleteOne { get; set; }
 
@@ -519,6 +536,8 @@
     [Parameter] public string DeleteLabel { get; set; } = "Delete";
     /// <summary>D-164 — label for the bulk-approve toolbar button.</summary>
     [Parameter] public string ApproveSelectedLabel { get; set; } = "Approve selected";
+    /// <summary>D-209 — label for the bulk-reject toolbar button.</summary>
+    [Parameter] public string RejectSelectedLabel { get; set; } = "Reject selected";
     [Parameter] public string CopyLabel { get; set; } = "Copy";
     [Parameter] public string PasteLabel { get; set; } = "Paste";
     [Parameter] public string DuplicateLabel { get; set; } = "Duplicate";

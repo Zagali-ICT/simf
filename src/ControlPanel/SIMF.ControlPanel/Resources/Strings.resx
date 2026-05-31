@@ -817,6 +817,11 @@
   <!-- D-164 (gap doc G2) — bulk approve labels. -->
   <data name="Admin.Pending.Action.BulkApprove" xml:space="preserve"><value>Approve selected</value></data>
   <data name="Admin.Pending.BulkApproved.Toast" xml:space="preserve"><value>Approved {0} user(s). Skipped {1}.</value></data>
+  <data name="Admin.Pending.Action.BulkReject" xml:space="preserve"><value>Reject selected</value></data>
+  <data name="Admin.Pending.BulkReject.Title" xml:space="preserve"><value>Reject selected accounts</value></data>
+  <data name="Admin.Pending.BulkReject.Confirm" xml:space="preserve"><value>You are about to reject {0} pending account(s). The reason below is recorded and shown to each user.</value></data>
+  <data name="Admin.Pending.BulkReject.Submit" xml:space="preserve"><value>Reject selected</value></data>
+  <data name="Admin.Pending.BulkRejected.Toast" xml:space="preserve"><value>Rejected {0} user(s). Skipped {1}.</value></data>
   <data name="Admin.Pending.Rejected.Toast" xml:space="preserve"><value>Rejected {0}.</value></data>
   <data name="Admin.Pending.Pager.First" xml:space="preserve"><value>First page</value></data>
   <data name="Admin.Pending.Pager.Last" xml:space="preserve"><value>Last page</value></data>

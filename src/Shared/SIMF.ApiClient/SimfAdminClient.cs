@@ -390,6 +390,26 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>D-209 — bulk-reject a batch of pending visitors with a shared
+    /// reason. Per-subject failures are reported in
+    /// <see cref="AdminBulkRejectResponse.Failures"/>.</summary>
+    public Task<ApiCallResult<AdminBulkRejectResponse>> BulkRejectVisitorsAsync(
+        AdminBulkRejectRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBulkRejectResponse>(
+            HttpMethod.Post, "visitors/bulk-reject",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>D-209 — bulk-reject a batch of pending Other-tier users.</summary>
+    public Task<ApiCallResult<AdminBulkRejectResponse>> BulkRejectOthersAsync(
+        AdminBulkRejectRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminBulkRejectResponse>(
+            HttpMethod.Post, "others/bulk-reject",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     /// <summary>One page of pending-approval Admins (P7c — renamed from ListPendingStaffAsync).</summary>
     public Task<ApiCallResult<GridPage<AdminPendingUserSummary>>> ListPendingAdminsAsync(
         GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>

@@ -70,7 +70,7 @@ Real, working code exists but the intended scope is only partly covered.
 |---|---|---|---|
 | **Interactive 3D / isometric venue map** (FR-605, Mockup #15) | App / CP | `mkp_map.dart` lists halls + booth counts as a **textual stand-in**; CP `VenueMap` is a stub. 2D-interactive is the agreed target. | D-199 |
 | **Seat grid / seat map** (FR-405/FR-505, Mockup #18) | API / CP / App | Backend reserve/random/release + hall layout editor + per-session seat plan shipped; CP renders **plain inputs/tables**, not a visual grid; visitor-view preview + bulk row ops deferred. App `mkp_my_seat` works. | D-182 / D-175 |
-| **Bulk approve / reject for pending users** (FR-212) | API / CP | `bulk-approve` exists for visitors/others; real bulk-approve/reject + PendingStaff review-before-approve parity deferred. | D-118 / D-132 |
+| **Bulk approve / reject for pending users** (FR-212) | API / CP | `bulk-approve` (D-164) **and now `bulk-reject` (D-210)** ship for visitors/others (Select-All + shared-reason modal). PendingStaff (Admin-queue) bulk parity + per-user Edit still deferred. | D-118 / D-132 / D-210 |
 | **On-site registration + badge reprint** (FR-217) | API / CP | `register-onsite` + `PrintBag.razor` + `WalkInRegistrationForm` shipped. Walk-in exhibitor extras (Company/Booth/Role) + walk-in ID-doc upload deferred. | D-127 |
 | **Roles & permissions management** (FR-1201/FR-1202) | API / CP | Roles list/CRUD shipped, but **per-permission grant editor, assign-to-user surface, bulk delete deferred** — this is the subject of the planned permission build. | D-134-A1 |
 | **Permission-gated CP navigation** (FR-1201) | CP | `CpNavigation.cs` (lines 9-11) states permission filtering is **not applied yet**; the full nav shows to every admin. | D-018 / D-167 (gate D1) |

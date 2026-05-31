@@ -74,6 +74,60 @@ internal sealed partial class AdminAccountService
         return new AdminBulkApprovalResponse(approved, failures.Count, failures);
     }
 
+    public Task<AdminBulkRejectResponse> BulkRejectVisitorsAsync(
+        Guid actorUserId, AdminBulkRejectRequest request,
+        CancellationToken cancellationToken = default) =>
+        BulkRejectAsync(actorUserId, request, ApprovalScope.AudienceVisitor, cancellationToken);
+
+    public Task<AdminBulkRejectResponse> BulkRejectOthersAsync(
+        Guid actorUserId, AdminBulkRejectRequest request,
+        CancellationToken cancellationToken = default) =>
+        BulkRejectAsync(actorUserId, request, ApprovalScope.PartnerOther, cancellationToken);
+
+    private async Task<AdminBulkRejectResponse> BulkRejectAsync(
+        Guid actorUserId, AdminBulkRejectRequest request, ApprovalScope scope,
+        CancellationToken cancellationToken)
+    {
+        // D-209 — mirror of BulkApproveAsync. Distinct ids, capped at 500;
+        // each subject is rejected in its own step via the single-reject
+        // worker (which owns the scope guard + state flip + token revoke +
+        // audit + notification), so per-subject behaviour is identical to a
+        // single reject. The shared reason is applied to every subject.
+        var ids = request.Ids.Distinct().Take(500).ToList();
+        var rejectRequest = new AdminRejectRequest { Reason = request.Reason };
+        var rejected = 0;
+        var failures = new List<AdminBulkApprovalFailure>();
+        foreach (var subjectId in ids)
+        {
+            try
+            {
+                await RejectAsync(actorUserId, subjectId, rejectRequest, scope, cancellationToken);
+                rejected++;
+            }
+            catch (ApiException ex)
+            {
+                var subject = await accounts.FindByIdAsync(subjectId, cancellationToken);
+                failures.Add(new AdminBulkApprovalFailure(
+                    subjectId,
+                    subject?.Email,
+                    ex.Code,
+                    ex.Message,
+                    ex.MessageArabic));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "Bulk-reject subject {SubjectId} failed for actor {ActorId}",
+                    subjectId, actorUserId);
+                failures.Add(new AdminBulkApprovalFailure(
+                    subjectId, null, ErrorCodes.InternalError,
+                    "An unexpected error prevented this rejection.",
+                    "حدث خطأ غير متوقع أثناء رفض هذا المستخدم."));
+            }
+        }
+        return new AdminBulkRejectResponse(rejected, failures.Count, failures);
+    }
+
     // D-186 — duplicate helper that inspects the source's linked
     // ProfileType to decide whether the duplicate lands on the
     // audience queue or the partner queue. Partner duplicates require
