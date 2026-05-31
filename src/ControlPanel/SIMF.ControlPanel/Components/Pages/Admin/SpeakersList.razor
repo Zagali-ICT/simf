@@ -2,7 +2,7 @@
    HallsList canonical pattern. *@
 @page "/admin/speakers"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Speakers.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

@@ -3,7 +3,7 @@
    (PDF §2.4). Both expose a single state row + a save button. *@
 @page "/admin/operations"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Operations.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

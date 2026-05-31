@@ -3,7 +3,7 @@
    Hall + Speakers + Themes pickers and the StartUtc/EndUtc window. *@
 @page "/admin/sessions"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Sessions.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

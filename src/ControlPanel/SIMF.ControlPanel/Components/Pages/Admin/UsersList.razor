@@ -7,7 +7,7 @@
    page as a deep-link fallback (Q-D). *@
 @page "/admin/admins"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Admins.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

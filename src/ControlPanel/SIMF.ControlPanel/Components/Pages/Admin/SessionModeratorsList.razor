@@ -4,7 +4,7 @@
    naming-collision rule). *@
 @page "/admin/session-moderators"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.SessionModerators.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

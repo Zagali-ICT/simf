@@ -5,7 +5,7 @@
    item row exists, so the upload control lives in the Edit modal. *@
 @page "/admin/media"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Media.View)]
 @using SIMF.Common.Enums
 @using SIMF.Contracts.Media
 @inject IStringLocalizer<Strings> L

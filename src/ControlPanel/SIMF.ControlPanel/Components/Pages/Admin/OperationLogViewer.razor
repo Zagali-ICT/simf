@@ -5,7 +5,7 @@
    security audit events. *@
 @page "/admin/operation-log"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.OperationLog.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

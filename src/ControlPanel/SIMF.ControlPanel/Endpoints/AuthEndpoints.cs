@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using SIMF.ApiClient;
 using SIMF.ControlPanel;
 
+using SIMF.Common;
 using SIMF.Common.Enums;
 
 namespace SIMF.ControlPanel.Endpoints;
@@ -50,6 +51,38 @@ internal static class AuthEndpoints
             // A malformed token can't yield roles — fall back to "no roles",
             // which means every role-gated page denies. The /account/profile
             // and dashboard are still reachable; the user can re-sign-in.
+            return [];
+        }
+    }
+
+    /// <summary>
+    /// Reads the permission codes (the <c>perm</c> claim, multi-valued) from a
+    /// JWT access token without signature validation — the API already verified
+    /// the token; the CP only copies the values across. Administrator carries
+    /// the single wildcard "*". Returns an empty set on a malformed token, which
+    /// denies every permission-gated page until the user re-signs-in.
+    /// </summary>
+    private static IEnumerable<string> ExtractPermissionClaims(string accessToken)
+    {
+        if (string.IsNullOrEmpty(accessToken))
+        {
+            return [];
+        }
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+            if (!handler.CanReadToken(accessToken))
+            {
+                return [];
+            }
+            var token = handler.ReadJwtToken(accessToken);
+            return token.Claims
+                .Where(claim => claim.Type == PermissionCatalog.ClaimType)
+                .Select(claim => claim.Value)
+                .ToArray();
+        }
+        catch (Exception)
+        {
             return [];
         }
     }
@@ -119,6 +152,15 @@ internal static class AuthEndpoints
             foreach (var role in ExtractRoleClaims(tokens.AccessToken))
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
+            // Issue-1 — copy the per-page/per-action permission codes from the
+            // JWT into the cookie so [RequirePermission] page gates + the
+            // side-menu filter can read them without an API round-trip.
+            // Administrator carries the single wildcard "*".
+            foreach (var code in ExtractPermissionClaims(tokens.AccessToken))
+            {
+                claims.Add(new Claim(PermissionCatalog.ClaimType, code));
             }
 
             // P11 — D-052: copy account_state + user_type from the JWT into

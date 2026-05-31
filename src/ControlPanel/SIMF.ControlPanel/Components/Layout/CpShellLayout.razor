@@ -47,14 +47,18 @@
     <SideNav>
         @foreach (var group in CpNavigation.Groups)
         {
-            <SimfNavGroup Label='@L[group.LabelKey]'>
-                @foreach (var item in group.Items)
-                {
-                    <SimfNavItem Href="@item.Href"
-                                 Label='@L[item.LabelKey]'
-                                 BadgeLabel='@(item.IsStub ? L["Nav.Soon"].Value : null)' />
-                }
-            </SimfNavGroup>
+            var visibleItems = group.Items.Where(CanSee).ToList();
+            if (visibleItems.Count > 0)
+            {
+                <SimfNavGroup Label='@L[group.LabelKey]'>
+                    @foreach (var item in visibleItems)
+                    {
+                        <SimfNavItem Href="@item.Href"
+                                     Label='@L[item.LabelKey]'
+                                     BadgeLabel='@(item.IsStub ? L["Nav.Soon"].Value : null)' />
+                    }
+                </SimfNavGroup>
+            }
         }
     </SideNav>
     <ChildContent>
@@ -74,6 +78,21 @@
         }
     }
 
+    // Issue-1 — the signed-in user's permission codes (copied from the JWT into
+    // the cookie at sign-in). The side menu hides items the user lacks; an
+    // Administrator carries the wildcard "*" and sees everything. Defaults to
+    // an empty set so the brief pre-auth render is fail-closed.
+    private HashSet<string> _permissions = new(StringComparer.Ordinal);
+    private bool _hasAllPermissions;
+
+    // True when the user may see a nav item: ungated items (RequiredPermission
+    // null — the dashboard + not-yet-built stubs) are always shown; otherwise
+    // the user must hold the code (or the Administrator wildcard).
+    private bool CanSee(CpNavigation.NavItem item) =>
+        item.RequiredPermission is null
+        || _hasAllPermissions
+        || _permissions.Contains(item.RequiredPermission);
+
     protected override async Task OnInitializedAsync()
     {
         // P11 — D-052: guard every CP shell page. A non-Approved user is
@@ -81,6 +100,13 @@
         // content renders. The pending / rejected pages use MainLayout
         // (not this layout), so they don't trigger this guard themselves.
         var auth = await AuthState.GetAuthenticationStateAsync();
+
+        // Issue-1 — snapshot the permission claims for the side-menu filter.
+        _permissions = auth.User.FindAll(PermissionCatalog.ClaimType)
+            .Select(claim => claim.Value)
+            .ToHashSet(StringComparer.Ordinal);
+        _hasAllPermissions = _permissions.Contains(PermissionCatalog.Wildcard);
+
         var state = auth.User.FindFirst("account_state")?.Value;
         if (string.Equals(state, "PendingApproval", StringComparison.Ordinal))
         {

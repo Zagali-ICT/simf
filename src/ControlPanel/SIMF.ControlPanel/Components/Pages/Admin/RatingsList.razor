@@ -4,7 +4,7 @@
    delete — ratings are owned by the attendees who submit them. *@
 @page "/admin/ratings"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Ratings.View)]
 @using SIMF.Contracts.Feedback
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS

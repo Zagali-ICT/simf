@@ -4,7 +4,7 @@
    control all three fields here. *@
 @page "/admin/delegations"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Delegations.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

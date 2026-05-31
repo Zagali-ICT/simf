@@ -6,7 +6,7 @@
    *@
 @page "/admin/halls/seat-layouts"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.SeatLayouts.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

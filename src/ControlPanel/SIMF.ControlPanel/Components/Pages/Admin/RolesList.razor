@@ -7,7 +7,7 @@
    flows are deferred to a follow-up. *@
 @page "/admin/roles"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Roles.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

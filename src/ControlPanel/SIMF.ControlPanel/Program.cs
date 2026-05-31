@@ -82,6 +82,14 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Events.OnValidatePrincipal = SimfCookieRefreshHandler.OnValidatePrincipalAsync;
     });
 builder.Services.AddAuthorization();
+// Issue-1 — per-page/per-action permission policies (perm:<code>). The dynamic
+// provider materialises them on demand and the handler matches the required
+// code against the principal's `perm` claims (Administrator's wildcard passes
+// any). Registered after AddAuthorization so this provider wins for perm: names.
+builder.Services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationPolicyProvider,
+    SIMF.ControlPanel.Authorization.PermissionPolicyProvider>();
+builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler,
+    SIMF.ControlPanel.Authorization.PermissionAuthorizationHandler>();
 builder.Services.AddCascadingAuthenticationState();
 
 // D-122 — Cropper.Blazor DI registration (was missing in D-116). Without

@@ -1,0 +1,18 @@
+@* Issue-1 — renders its content only when the signed-in user holds the given
+   permission code (or the Administrator wildcard). Wrap an action control —
+   a create / edit / delete button — so it disappears for users who lack the
+   permission. The API still enforces the same permission, so this is a UX
+   layer (don't show what you can't do), not the security boundary. *@
+<AuthorizeView Policy="@_policy">
+    <Authorized>@ChildContent</Authorized>
+</AuthorizeView>
+
+@code {
+    /// <summary>The permission code that gates the content, e.g.
+    /// <c>PermissionCatalog.Sessions.Edit</c>.</summary>
+    [Parameter, EditorRequired] public string Permission { get; set; } = string.Empty;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string _policy => PermissionCatalog.PolicyFor(Permission);
+}

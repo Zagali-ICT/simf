@@ -6,7 +6,7 @@
    pattern but over comments rather than live Q&A questions. *@
 @page "/admin/comments-moderation"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Comments.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

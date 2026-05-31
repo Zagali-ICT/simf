@@ -4,7 +4,7 @@
    follows the CP form-card convention (D-043). *@
 @page "/admin/reset-2fa"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Admins.ResetTwoFactor)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

@@ -5,7 +5,7 @@
    server-side (MEETING_REQUEST_STATUS_INVALID). *@
 @page "/admin/meeting-requests"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.MeetingRequests.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

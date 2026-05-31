@@ -4,7 +4,7 @@
    ContentBlocksList. *@
 @page "/admin/ai/prompts"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.AiPrompts.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

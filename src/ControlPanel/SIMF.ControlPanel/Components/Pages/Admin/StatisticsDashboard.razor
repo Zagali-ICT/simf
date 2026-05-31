@@ -5,7 +5,7 @@
    value is a live aggregate read computed on demand by the backend. *@
 @page "/admin/statistics"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Statistics.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

@@ -4,7 +4,7 @@
    relative path, and the active flag that gates public visibility. *@
 @page "/admin/archive"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Archive.View)]
 @using SIMF.Contracts.Archive
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS

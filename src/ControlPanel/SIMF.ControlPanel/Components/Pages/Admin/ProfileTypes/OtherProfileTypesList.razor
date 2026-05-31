@@ -2,7 +2,7 @@
    Lookup-table CRUD scoped to UserType=Other. Twin of VisitorProfileTypesList. *@
 @page "/admin/profile-types/other"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.ProfileTypes.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

@@ -2,7 +2,7 @@
    announcements. Admin CRUD; public read filters by current window. *@
 @page "/admin/banners"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Banners.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

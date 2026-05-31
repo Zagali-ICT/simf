@@ -6,7 +6,7 @@
    and reactivate soft-deleted items. *@
 @page "/admin/news"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.News.View)]
 @using SIMF.Contracts.PublicRelations
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS

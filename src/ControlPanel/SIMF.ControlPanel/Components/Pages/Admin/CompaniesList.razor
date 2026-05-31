@@ -5,7 +5,7 @@
    pending-approval state through the existing admin provisioning pipeline. *@
 @page "/admin/companies"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Companies.View)]
 @using SIMF.Contracts.Companies
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS

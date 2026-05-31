@@ -4,7 +4,7 @@
    deep-link fallback per Q-D. *@
 @page "/admin/visitors/new"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Visitors.Create)]
 @inject IStringLocalizer<Strings> L
 @inject NavigationManager Nav
 

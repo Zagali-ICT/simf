@@ -4,7 +4,7 @@
    deep-link fallback per Q-D — bookmarks and direct links keep working. *@
 @page "/admin/admins/new"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Admins.Create)]
 @inject IStringLocalizer<Strings> L
 @inject NavigationManager Nav
 

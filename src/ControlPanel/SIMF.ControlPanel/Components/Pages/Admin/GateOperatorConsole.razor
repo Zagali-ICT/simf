@@ -2,7 +2,7 @@
    Role-adaptive: auto-selects on a single assignment, picker on multi. *@
 @page "/admin/gates/operator"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator,GateOperator")]
+@attribute [RequirePermission(PermissionCatalog.Gates.Operate)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

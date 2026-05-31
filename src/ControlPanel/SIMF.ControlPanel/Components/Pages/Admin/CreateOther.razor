@@ -3,7 +3,7 @@
    /admin/others/new stays as a deep-link fallback per Q-D. *@
 @page "/admin/others/new"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Others.Create)]
 @inject IStringLocalizer<Strings> L
 @inject NavigationManager Nav
 

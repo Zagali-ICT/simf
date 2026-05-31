@@ -1,7 +1,7 @@
 @* D-134 Sprint B — Halls CRUD. SIMF-FDS-004 §5.2. Mirrors ThemesList. *@
 @page "/admin/halls"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Halls.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

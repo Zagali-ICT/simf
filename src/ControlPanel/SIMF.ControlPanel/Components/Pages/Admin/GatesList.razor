@@ -2,7 +2,7 @@
    Mirrors HallsList; adds DirectionMode column + operator-count + allow-count. *@
 @page "/admin/gates"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Gates.Manage)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 

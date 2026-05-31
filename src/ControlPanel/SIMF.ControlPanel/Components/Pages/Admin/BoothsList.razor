@@ -4,7 +4,7 @@
    an optional MapX/MapY position used by the public 2D venue map. *@
 @page "/admin/booths"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Booths.View)]
 @using SIMF.Contracts.Exhibition
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS

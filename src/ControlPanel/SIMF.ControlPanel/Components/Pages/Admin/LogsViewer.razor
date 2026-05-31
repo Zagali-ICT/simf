@@ -4,7 +4,7 @@
    Mirrors the IBS pattern: per-project, per-day. *@
 @page "/admin/logs"
 @layout CpShellLayout
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [RequirePermission(PermissionCatalog.Logs.View)]
 @implements IDisposable
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
