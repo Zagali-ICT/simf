@@ -57,41 +57,21 @@ public sealed class IdentitySeeder(
             await EnsureRoleAsync(role);
         }
 
-        // D-148 — Gate Module permissions seeded idempotently. Granted to
-        // GateOperator (its raison d'être) and to Administrator (admins
-        // can also operate a gate from the CP console for testing).
-        await EnsurePermissionAsync(Permissions.GatesManage,
-            page: "Gates", action: "Manage", displayName: "Manage gates",
-            grantToRoles: new[] { AppRoles.Administrator },
-            cancellationToken);
-        await EnsurePermissionAsync(Permissions.GatesOperate,
-            page: "Gates", action: "Operate", displayName: "Operate a gate",
-            grantToRoles: new[] { AppRoles.Administrator, AppRoles.GateOperator },
-            cancellationToken);
-        await EnsurePermissionAsync(Permissions.GatesViewOwnReports,
-            page: "Gates", action: "ViewOwnReports",
-            displayName: "View own gate reports",
-            grantToRoles: new[] { AppRoles.Administrator, AppRoles.GateOperator },
-            cancellationToken);
-
-        // D-168 (gap doc G5) — public-relations permission triad. Granted
-        // to PublicRelations (its raison d'être) and to Administrator
-        // (admins can also operate the invitation desk).
-        await EnsurePermissionAsync(Permissions.InvitationsManage,
-            page: "Invitations", action: "Manage",
-            displayName: "Manage invitations",
-            grantToRoles: new[] { AppRoles.Administrator, AppRoles.PublicRelations },
-            cancellationToken);
-        await EnsurePermissionAsync(Permissions.VipsView,
-            page: "Vips", action: "View",
-            displayName: "View the VIP list",
-            grantToRoles: new[] { AppRoles.Administrator, AppRoles.PublicRelations },
-            cancellationToken);
-        await EnsurePermissionAsync(Permissions.VipsNotify,
-            page: "Vips", action: "Notify",
-            displayName: "Notify VIPs",
-            grantToRoles: new[] { AppRoles.Administrator, AppRoles.PublicRelations },
-            cancellationToken);
+        // Issue-1 — seed the full page-and-action permission catalogue
+        // (SIMF-RPM-001 §8, PermissionCatalog). Idempotent by Code, so it is
+        // safe on every boot. Baseline non-Administrator roles get their
+        // seeded grants from PermissionDef.BaselineRoles (GateOperator → the
+        // gate operator pair; PublicRelations → the invitation + VIP set).
+        // Administrator is never granted per-code: it carries the wildcard
+        // permission ("*") minted into its token and so holds every
+        // permission implicitly. The six pre-catalogue codes (D-148 gate
+        // triad, D-168 PR/VIP triad) keep their exact strings and grants.
+        foreach (var permission in PermissionCatalog.All)
+        {
+            await EnsurePermissionAsync(
+                permission.Code, permission.Page, permission.Action,
+                permission.DisplayName, permission.BaselineRoles, cancellationToken);
+        }
 
         var admin = await accounts.FindByEmailAsync(settings.Email)
             ?? await CreateSuperAdminAsync(settings, cancellationToken);
