@@ -7,7 +7,6 @@ using SIMF.Application.Email;
 using SIMF.Application.Excel;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.Notifications;
-using SIMF.Infrastructure.Notifications;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Logs;
 using SIMF.Infrastructure.Logs;
@@ -143,6 +142,10 @@ public static class DependencyInjection
         // R4 — D-209: InterestService moved to Application; its EF query
         // shapes live behind IInterestRepository (over SimfAppDbContext).
         services.AddScoped<IInterestRepository, InterestRepository>();
+        // R4 — D-209: UserProfileService moved to Application; it spans both
+        // DBs (profile + lookups on App, account reads + transactional save on
+        // Identity) behind IUserProfileRepository.
+        services.AddScoped<IUserProfileRepository, UserProfileRepository>();
 
         services.AddScoped<ITransactionRunner, TransactionRunner>();
         services.AddScoped<IAuditLog, AuditLog>();

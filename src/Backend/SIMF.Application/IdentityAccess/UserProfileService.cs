@@ -1,25 +1,20 @@
-﻿// Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
+// Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
 //        round-trip, get-empty-when-not-saved-yet, nationality-unknown)
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+//        SIMF.Api.Tests/UserProfileRollbackTests.cs (H16 — transaction rollback)
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
 using SIMF.Application.Auditing;
-using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Application.Notifications;
 using SIMF.Common;
+using SIMF.Common.Enums;
 using SIMF.Contracts.UserProfile;
 using SIMF.Domain.Auditing;
 using SIMF.Domain.IdentityAccess;
-using SIMF.Domain.Profiles;
 using SIMF.Domain.Notifications;
-using SIMF.Infrastructure.Notifications;
-using SIMF.Infrastructure.Persistence;
+using SIMF.Domain.Profiles;
 
-using SIMF.Common.Enums;
-
-namespace SIMF.Infrastructure.Identity;
+namespace SIMF.Application.IdentityAccess;
 
 /// <summary>
 /// User self-service profile + encrypted ID-document storage (decisions
@@ -27,11 +22,16 @@ namespace SIMF.Infrastructure.Identity;
 /// actor identity is taken from the access token (the endpoint resolves
 /// <c>sub</c>); every call operates on the actor's own row, so the
 /// service does not need an admin-vs-self check.
+///
+/// <para>R4 — D-209: moved from <c>SIMF.Infrastructure.Identity</c>;
+/// persistence is delegated to <see cref="IUserProfileRepository"/> (which
+/// spans both DBs). This service keeps only the orchestration — validation,
+/// the admin-wins precedence, the interest diff, the two-phase commit
+/// ordering, audit, and notification dispatch.</para>
 /// </summary>
 internal sealed class UserProfileService(
     IUserAccountRepository accounts,
-    SimfIdentityDbContext dbContext,
-    SimfAppDbContext appDbContext,
+    IUserProfileRepository profiles,
     IUserIdDocumentStorage idStorage,
     IAuditLog auditLog,
     TimeProvider timeProvider,
@@ -49,10 +49,7 @@ internal sealed class UserProfileService(
                 "The acting account was not found.",
                 "لم يتم العثور على الحساب.");
 
-        var profile = await appDbContext.UserProfiles
-            .AsNoTracking()
-            .Include(p => p.Interests)
-            .SingleOrDefaultAsync(p => p.UserId == actorUserId, cancellationToken);
+        var profile = await profiles.GetWithInterestsAsync(actorUserId, tracked: false, cancellationToken);
 
         if (profile is null)
         {
@@ -64,7 +61,7 @@ internal sealed class UserProfileService(
             return new UserProfileResponse();
         }
 
-        var nationalityCode = await ResolveCodeAsync(profile.NationalityId, cancellationToken);
+        var nationalityCode = await profiles.ResolveCountryCodeAsync(profile.NationalityId, cancellationToken);
         return ToResponse(profile, profile.QrId, nationalityCode);
     }
 
@@ -76,7 +73,7 @@ internal sealed class UserProfileService(
         // D-151 — resolve the wire-side code to the Country PK. The
         // validator already checked shape; here we enforce the existence
         // rule against the live Country table (in SimfAppDbContext).
-        var nationalityId = await ResolveIdAsync(request.NationalityCode, cancellationToken)
+        var nationalityId = await profiles.ResolveCountryIdAsync(request.NationalityCode, cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.ProfileNationalityUnknown, 400,
                 $"Nationality code '{request.NationalityCode}' is not supported.",
@@ -96,11 +93,7 @@ internal sealed class UserProfileService(
         // existing profile row is loaded).
         if (request.ProfileTypeId is { } pickedProfileTypeId)
         {
-            var pickedProfileType = await appDbContext.ProfileTypes
-                .AsNoTracking()
-                .Where(p => p.Id == pickedProfileTypeId)
-                .Select(p => new { p.IsActive, p.UserType })
-                .SingleOrDefaultAsync(cancellationToken);
+            var pickedProfileType = await profiles.FindProfileTypeAsync(pickedProfileTypeId, cancellationToken);
             if (pickedProfileType is null)
             {
                 throw new ApiException(
@@ -127,11 +120,7 @@ internal sealed class UserProfileService(
         // P9 — validate the picked interest ids: every id must exist
         // and be active. (The validator already enforces 1-10 count.)
         var requestedIds = request.InterestIds.Distinct().ToList();
-        var foundActiveIds = await appDbContext.Interests
-            .AsNoTracking()
-            .Where(interest => requestedIds.Contains(interest.Id) && interest.IsActive)
-            .Select(interest => interest.Id)
-            .ToListAsync(cancellationToken);
+        var foundActiveIds = await profiles.FilterActiveInterestIdsAsync(requestedIds, cancellationToken);
         if (foundActiveIds.Count != requestedIds.Count)
         {
             throw new ApiException(
@@ -141,9 +130,7 @@ internal sealed class UserProfileService(
         }
 
         var now = timeProvider.GetUtcNow();
-        var profile = await appDbContext.UserProfiles
-            .Include(p => p.Interests)
-            .SingleOrDefaultAsync(p => p.UserId == actorUserId, cancellationToken);
+        var profile = await profiles.GetWithInterestsAsync(actorUserId, tracked: true, cancellationToken);
 
         var isNew = profile is null;
         // P8 — the admin may have created a stub row with a ProfileTypeId
@@ -185,7 +172,7 @@ internal sealed class UserProfileService(
 
         if (isNew)
         {
-            appDbContext.UserProfiles.Add(profile);
+            profiles.Add(profile);
         }
 
         // P9 — diff the interests: remove ones no longer picked, add the
@@ -203,9 +190,7 @@ internal sealed class UserProfileService(
         var toAddIds = requestedSet.Except(existingIds).ToList();
         if (toAddIds.Count > 0)
         {
-            var freshRows = await appDbContext.Interests
-                .Where(interest => toAddIds.Contains(interest.Id))
-                .ToListAsync(cancellationToken);
+            var freshRows = await profiles.GetInterestsByIdsAsync(toAddIds, cancellationToken);
             foreach (var row in freshRows)
             {
                 profile.Interests.Add(row);
@@ -234,7 +219,7 @@ internal sealed class UserProfileService(
             // the historical "all or nothing" guarantee. If App throws
             // after Identity commits, the user retries the save and
             // we converge.
-            await dbContext.SaveChangesAsync(token);
+            await profiles.SaveIdentityChangesAsync(token);
 
             if (isNew && user.AccountState == AccountState.EmailVerified)
             {
@@ -263,7 +248,7 @@ internal sealed class UserProfileService(
         // this). The window where Identity commits and App fails is
         // covered by user retry — the next upsert reattempts the App
         // save against an idempotent (UserId-unique) row.
-        await appDbContext.SaveChangesAsync(cancellationToken);
+        await profiles.SaveAppChangesAsync(cancellationToken);
 
         // D-190 — the audit Detail now carries the ProfileTypeId so
         // the CP pending-profile review surface shows the user's
@@ -299,18 +284,9 @@ internal sealed class UserProfileService(
     /// Reads the bilingual rejection text directly from UserProfile; the
     /// SignInService uses this for the AccountStateInfo state-banner.
     /// </summary>
-    public async Task<RejectionText?> GetRejectionTextAsync(
-        Guid userId, CancellationToken cancellationToken = default)
-    {
-        var row = await appDbContext.UserProfiles
-            .AsNoTracking()
-            .Where(p => p.UserId == userId)
-            .Select(p => new { p.RejectionReason, p.RejectionReasonArabic })
-            .SingleOrDefaultAsync(cancellationToken);
-        if (row is null) { return null; }
-        if (row.RejectionReason is null && row.RejectionReasonArabic is null) { return null; }
-        return new RejectionText(row.RejectionReason, row.RejectionReasonArabic);
-    }
+    public Task<RejectionText?> GetRejectionTextAsync(
+        Guid userId, CancellationToken cancellationToken = default) =>
+        profiles.GetRejectionTextAsync(userId, cancellationToken);
 
     /// <summary>D-161 — implements <see cref="IUserProfileService.ResolveMobileAppRoleAsync"/>.
     /// Admin short-circuits to <see cref="MobileAppRole.None"/>. D-186
@@ -323,11 +299,7 @@ internal sealed class UserProfileService(
     public async Task<MobileAppRole> ResolveMobileAppRoleAsync(
         Guid userId, CancellationToken cancellationToken = default)
     {
-        var user = await dbContext.Users
-            .AsNoTracking()
-            .Where(u => u.Id == userId)
-            .Select(u => new { u.UserType, u.AccountState })
-            .SingleOrDefaultAsync(cancellationToken);
+        var user = await accounts.FindByIdAsync(userId, cancellationToken);
         if (user is null) { return MobileAppRole.None; }
         if (user.UserType == UserType.Admin)
         {
@@ -353,16 +325,12 @@ internal sealed class UserProfileService(
         // Visitor scope — partner profile types carry an operational
         // MobileAppRole; audience profile types (or no profile yet)
         // resolve to the default Visitor mobile role.
-        var profile = await appDbContext.UserProfiles
-            .AsNoTracking()
-            .Where(p => p.UserId == userId && p.ProfileType != null)
-            .Select(p => new { IsVisitor = p.ProfileType!.IsVisitor, p.ProfileType.MobileAppRole })
-            .FirstOrDefaultAsync(cancellationToken);
-        if (profile is null || profile.IsVisitor)
+        var profileType = await profiles.GetAssignedProfileTypeRoleAsync(userId, cancellationToken);
+        if (profileType is null || profileType.IsVisitor)
         {
             return MobileAppRole.Visitor;
         }
-        return profile.MobileAppRole;
+        return profileType.MobileAppRole;
     }
 
     private async Task DispatchProfileSubmittedAsync(
@@ -393,11 +361,7 @@ internal sealed class UserProfileService(
         // Every Admin gets one in-app notification + email per pending
         // visitor. No bulk-send today; the admin count is small (event
         // ops staff).
-        var admins = await dbContext.Users
-            .AsNoTracking()
-            .Where(u => u.UserType == UserType.Admin && u.AccountState == AccountState.Approved)
-            .Select(u => new { u.Id, u.Email, u.DisplayName })
-            .ToListAsync(cancellationToken);
+        var admins = await profiles.ListApprovedAdminsAsync(cancellationToken);
 
         foreach (var admin in admins)
         {
@@ -439,8 +403,7 @@ internal sealed class UserProfileService(
         // ID image follows the avatar contract (D-039): magic-byte and
         // size already checked at the endpoint, the storage layer
         // encrypts and writes.
-        var profile = await appDbContext.UserProfiles
-            .SingleOrDefaultAsync(p => p.UserId == actorUserId, cancellationToken);
+        var profile = await profiles.FindAsync(actorUserId, cancellationToken);
         if (profile is null)
         {
             // ID image only makes sense alongside a profile row — create
@@ -450,7 +413,7 @@ internal sealed class UserProfileService(
                 UserId = actorUserId,
                 CreatedAt = timeProvider.GetUtcNow(),
             };
-            appDbContext.UserProfiles.Add(profile);
+            profiles.Add(profile);
         }
 
         var relativePath = await idStorage.SaveAsync(
@@ -458,7 +421,7 @@ internal sealed class UserProfileService(
         profile.IdImageRelativePath = relativePath;
         profile.UpdatedAt = timeProvider.GetUtcNow();
         // D-167: UserProfile is on the App DB now.
-        await appDbContext.SaveChangesAsync(cancellationToken);
+        await profiles.SaveAppChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -474,14 +437,12 @@ internal sealed class UserProfileService(
     public async Task<UserIdDocumentImage?> ReadIdImageAsync(
         Guid actorUserId, CancellationToken cancellationToken = default)
     {
-        var profile = await appDbContext.UserProfiles
-            .AsNoTracking()
-            .SingleOrDefaultAsync(p => p.UserId == actorUserId, cancellationToken);
-        if (profile is null || string.IsNullOrEmpty(profile.IdImageRelativePath))
+        var path = await profiles.GetIdImagePathAsync(actorUserId, cancellationToken);
+        if (path is null)
         {
             return null;
         }
-        var read = await idStorage.OpenReadAsync(profile.IdImageRelativePath, cancellationToken);
+        var read = await idStorage.OpenReadAsync(path, cancellationToken);
         return read is null ? null : new UserIdDocumentImage(read.Content, read.ContentType);
     }
 
@@ -507,8 +468,7 @@ internal sealed class UserProfileService(
                 "تعذّر العثور على الحساب المستهدف.");
         }
 
-        var profile = await appDbContext.UserProfiles
-            .SingleOrDefaultAsync(p => p.UserId == subjectUserId, cancellationToken);
+        var profile = await profiles.FindAsync(subjectUserId, cancellationToken);
         if (profile is null)
         {
             profile = new UserProfile
@@ -516,7 +476,7 @@ internal sealed class UserProfileService(
                 UserId = subjectUserId,
                 CreatedAt = timeProvider.GetUtcNow(),
             };
-            appDbContext.UserProfiles.Add(profile);
+            profiles.Add(profile);
         }
 
         var relativePath = await idStorage.SaveAsync(
@@ -524,7 +484,7 @@ internal sealed class UserProfileService(
         profile.IdImageRelativePath = relativePath;
         profile.UpdatedAt = timeProvider.GetUtcNow();
         // D-167: UserProfile is on the App DB now.
-        await appDbContext.SaveChangesAsync(cancellationToken);
+        await profiles.SaveAppChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
@@ -545,14 +505,12 @@ internal sealed class UserProfileService(
         var subject = await accounts.FindByIdAsync(subjectUserId, cancellationToken);
         if (subject is null || subject.UserType != expectedKind) { return null; }
 
-        var profile = await appDbContext.UserProfiles
-            .AsNoTracking()
-            .SingleOrDefaultAsync(p => p.UserId == subjectUserId, cancellationToken);
-        if (profile is null || string.IsNullOrEmpty(profile.IdImageRelativePath))
+        var path = await profiles.GetIdImagePathAsync(subjectUserId, cancellationToken);
+        if (path is null)
         {
             return null;
         }
-        var read = await idStorage.OpenReadAsync(profile.IdImageRelativePath, cancellationToken);
+        var read = await idStorage.OpenReadAsync(path, cancellationToken);
         return read is null ? null : new UserIdDocumentImage(read.Content, read.ContentType);
     }
 
@@ -580,29 +538,4 @@ internal sealed class UserProfileService(
 
     private static string? NormaliseOptional(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-
-    // D-151 — Country lookup helpers. Code ↔ Id translation lives here
-    // because the Country table is in SimfAppDbContext while the user
-    // profile is in SimfIdentityDbContext; EF cannot join across
-    // contexts, so we do two cheap single-row index lookups instead.
-    private async Task<int?> ResolveIdAsync(string code, CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(code)) { return null; }
-        var upper = code.Trim().ToUpperInvariant();
-        return await appDbContext.Countries
-            .AsNoTracking()
-            .Where(country => country.Code == upper && country.IsActive)
-            .Select(country => (int?)country.Id)
-            .SingleOrDefaultAsync(cancellationToken);
-    }
-
-    private async Task<string> ResolveCodeAsync(int id, CancellationToken cancellationToken)
-    {
-        if (id == 0) { return string.Empty; }
-        return await appDbContext.Countries
-            .AsNoTracking()
-            .Where(country => country.Id == id)
-            .Select(country => country.Code)
-            .SingleOrDefaultAsync(cancellationToken) ?? string.Empty;
-    }
 }

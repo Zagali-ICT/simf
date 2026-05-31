@@ -3,7 +3,7 @@ using SIMF.Domain.Notifications;
 
 using SIMF.Common.Enums;
 
-namespace SIMF.Infrastructure.Notifications;
+namespace SIMF.Application.Notifications;
 
 /// <summary>
 /// Inline bilingual email templates for the P13 — D-054 lifecycle
@@ -14,12 +14,17 @@ namespace SIMF.Infrastructure.Notifications;
 /// <see cref="NotificationKind"/>-keyed lookup so a typo in a template
 /// dispatch can't slip past the compiler.</para>
 ///
+/// <para>R4 — D-209: moved from <c>SIMF.Infrastructure.Notifications</c> to
+/// the Application layer alongside <see cref="NotificationDispatcher"/>, so
+/// the Application services that pre-render an email body (UserProfileService,
+/// AdminAccountService) no longer have to reach into Infrastructure.</para>
+///
 /// <para>The templates are intentionally minimal — one paragraph each.
 /// A future re-skin (header logo, footer, brand colours) can swap the
 /// implementation behind <see cref="Render"/> without changing every
 /// call site.</para>
 /// </summary>
-internal static class NotificationEmailTemplates
+public static class NotificationEmailTemplates
 {
     /// <summary>Renders the HTML body for one notification kind.</summary>
     /// <param name="kind">The dispatch kind.</param>
