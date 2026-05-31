@@ -30,6 +30,10 @@ public static class AuditEvents
     public const string SignInAccountLockedOut = "SignIn.AccountLockedOut";
     public const string SignInStateBlocked = "SignIn.StateBlocked";
     public const string SignInPasswordChangeRequired = "SignIn.PasswordChangeRequired";
+    // D-206: a Control Panel sign-in with a forced-change credential was handed a
+    // single-use password-change ticket (in place of the 403). The completion is
+    // audited as PasswordChanged, like any other password change.
+    public const string SignInPasswordChangeTicketIssued = "SignIn.PasswordChangeTicketIssued";
     public const string SignInWrongSurface = "SignIn.WrongSurface";
     public const string SignInSecondFactorIssued = "SignIn.SecondFactorIssued";
     public const string SignInSecondFactorFailed = "SignIn.SecondFactorFailed";

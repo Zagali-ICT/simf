@@ -554,24 +554,99 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     }
 
     // ----------------------------------------------------------------------
-    // H4 — D-059: PasswordChangeRequired is now enforced at sign-in. A user
-    // whose row has the flag set (the super-admin out of the seeder, an
-    // admin-rotated credential) cannot mint a session — they must run the
-    // password-reset flow first, which clears the flag.
+    // H4 — D-059 + D-206: PasswordChangeRequired is enforced at sign-in. The
+    // Control Panel now hands the operator a single-use password-change ticket
+    // (in place of the old 403) so they can set a new password in-flow; every
+    // other audience keeps the 403. The flag is still enforced at every later
+    // token-mint path (see the refresh test below), and clearing it lets the
+    // normal challenge run.
     // ----------------------------------------------------------------------
 
     [Fact]
-    public async Task Sign_in_is_blocked_when_PasswordChangeRequired_even_with_the_right_password()
+    public async Task Sign_in_with_forced_change_returns_a_password_change_ticket_for_the_Control_Panel()
     {
         var (email, _) = await CreateAdminAsync();
         SetPasswordChangeRequired(email, value: true);
 
         var response = await SignInAsync(email, Password, SignInAudience.Cp);
 
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        Assert.True(body.Success);
+        Assert.NotNull(body.Data!.PasswordChangeToken);
+        Assert.NotEmpty(body.Data.PasswordChangeToken!);
+        // No session is minted yet — the ticket is the only thing returned.
+        Assert.False(body.Data.MfaRequired);
+        Assert.Null(body.Data.Tokens);
+        Assert.True(AuditEntryExists(email, AuditEvents.SignInPasswordChangeTicketIssued));
+    }
+
+    [Fact]
+    public async Task Sign_in_with_forced_change_is_still_blocked_for_non_Control_Panel_audiences()
+    {
+        // D-206 leaves mobile/web unchanged: a flagged visitor still gets the 403.
+        var email = await RegisterVerifiedVisitorAsync();
+        SetPasswordChangeRequired(email, value: true);
+
+        var response = await SignInAsync(email, Password, SignInAudience.Web);
+
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<ApiResult<object>>();
         Assert.False(body!.Success);
         Assert.Equal(ErrorCodes.AuthPasswordChangeRequired, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Complete_password_change_with_the_ticket_clears_the_flag_and_lets_sign_in_proceed()
+    {
+        var (email, _) = await CreateAdminAsync();
+        SetPasswordChangeRequired(email, value: true);
+
+        var signIn = await SignInAsync(email, Password, SignInAudience.Cp);
+        var ticket = (await signIn.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!
+            .Data!.PasswordChangeToken;
+        Assert.NotNull(ticket);
+
+        const string newPassword = "N3wPassw0rd!";
+        var change = await _client.PostAsJsonAsync(
+            "/api/v1/auth/complete-password-change",
+            new CompletePasswordChangeRequest
+            {
+                PasswordChangeToken = ticket!,
+                NewPassword = newPassword,
+                ConfirmPassword = newPassword,
+            });
+
+        Assert.Equal(HttpStatusCode.OK, change.StatusCode);
+        var changeBody =
+            (await change.Content.ReadFromJsonAsync<ApiResult<CompletePasswordChangeResponse>>())!;
+        Assert.True(changeBody.Success);
+        Assert.True(changeBody.Data!.PasswordChanged);
+
+        // The flag is cleared and the new password now reaches the second factor.
+        var after = await SignInAsync(email, newPassword, SignInAudience.Cp);
+        Assert.Equal(HttpStatusCode.OK, after.StatusCode);
+        var afterBody = (await after.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        Assert.True(afterBody.Data!.MfaRequired);
+        Assert.Null(afterBody.Data.PasswordChangeToken);
+    }
+
+    [Fact]
+    public async Task Complete_password_change_rejects_an_unknown_ticket()
+    {
+        var change = await _client.PostAsJsonAsync(
+            "/api/v1/auth/complete-password-change",
+            new CompletePasswordChangeRequest
+            {
+                PasswordChangeToken = "not-a-real-ticket",
+                NewPassword = "N3wPassw0rd!",
+                ConfirmPassword = "N3wPassw0rd!",
+            });
+
+        Assert.Equal(HttpStatusCode.BadRequest, change.StatusCode);
+        var body = await change.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.False(body!.Success);
+        Assert.Equal(ErrorCodes.AuthMfaTokenInvalid, body.Error!.Code);
     }
 
     [Fact]

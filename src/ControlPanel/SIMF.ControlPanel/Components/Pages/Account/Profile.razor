@@ -142,30 +142,12 @@ else
         @* -- Change password ----------------------------------------------------- *@
         <section class="simf-card simf-page-card">
             <h2 class="simf-card__title">@L["Profile.Password.Title"]</h2>
-            @if (_passwordError is not null)
-            {
-                <SimfAlert Variant="error">@_passwordError</SimfAlert>
-            }
             @* No success banner — a successful change rolls the security stamp
-               and signs the user out, so the page navigates away. *@
-            <EditForm Model="_passwordModel" OnSubmit="ChangePasswordAsync" class="simf-form">
-                <div class="simf-form__fields">
-                    <SimfPasswordField Label="@L["Profile.Password.Current"]"
-                                       @bind-Value="_passwordModel.CurrentPassword"
-                                       Autocomplete="current-password" Disabled="_busy" />
-                    <SimfPasswordField Label="@L["Profile.Password.New"]"
-                                       @bind-Value="_passwordModel.NewPassword"
-                                       Autocomplete="new-password" Disabled="_busy" />
-                    <SimfPasswordField Label="@L["Profile.Password.Confirm"]"
-                                       @bind-Value="_passwordModel.ConfirmPassword"
-                                       Autocomplete="new-password" Disabled="_busy" />
-                </div>
-                <div class="simf-form__actions">
-                    <SimfButton Loading="_busy" LoadingLabel="@L["Profile.Password.Submit"]">
-                        @L["Profile.Password.Submit"]
-                    </SimfButton>
-                </div>
-            </EditForm>
+               and signs the user out, so the page navigates away. D-206: the
+               form is the shared ChangePasswordCard (also used by the
+               forced-change sign-in popup). *@
+            <ChangePasswordCard ShowCurrentField="true" Busy="_busy"
+                                ErrorMessage="_passwordError" OnSubmit="ChangePasswordAsync" />
         </section>
 
         @* -- My roles ------------------------------------------------------------ *@
@@ -258,7 +240,6 @@ else
     private IReadOnlyList<string>? _recoveryCodes;
     private readonly CodeModel _codeModel = new();
     private readonly CodeModel _disableModel = new();
-    private readonly PasswordModel _passwordModel = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -396,7 +377,7 @@ else
 
     // -- Change password ------------------------------------------------------
 
-    private async Task ChangePasswordAsync()
+    private async Task ChangePasswordAsync(ChangePasswordCard.Model model)
     {
         _passwordError = null;
         _busy = true;
@@ -406,9 +387,9 @@ else
                 "simfAccount.postJson", "/account/api/change-password",
                 new ChangePasswordRequest
                 {
-                    CurrentPassword = _passwordModel.CurrentPassword,
-                    NewPassword = _passwordModel.NewPassword,
-                    ConfirmPassword = _passwordModel.ConfirmPassword,
+                    CurrentPassword = model.CurrentPassword,
+                    NewPassword = model.NewPassword,
+                    ConfirmPassword = model.ConfirmPassword,
                 });
             if (envelope is { Success: true })
             {
@@ -535,10 +516,4 @@ else
         public string Code { get; set; } = string.Empty;
     }
 
-    private sealed class PasswordModel
-    {
-        public string CurrentPassword { get; set; } = string.Empty;
-        public string NewPassword { get; set; } = string.Empty;
-        public string ConfirmPassword { get; set; } = string.Empty;
-    }
 }

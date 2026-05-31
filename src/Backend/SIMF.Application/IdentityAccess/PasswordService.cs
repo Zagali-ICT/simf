@@ -24,6 +24,7 @@ public sealed class PasswordService(
     IUserAccountRepository accounts,
     IAccountCodeRepository accountCodeRepository,
     IRefreshTokenRepository refreshTokenRepository,
+    ISecondFactorTokenRepository secondFactorTokenRepository,
     ITransactionRunner transactionRunner,
     IEmailQueue emailQueue,
     INotificationDispatcher notifications,
@@ -249,27 +250,87 @@ public sealed class PasswordService(
         await AuditAsync(AuditEvents.PasswordChanged, AuditOutcome.Success,
             user.Email!, user.Id, cancellationToken: cancellationToken);
 
-        // D-111: security notice — in-app row + email confirming the change.
-        // Wrapped in TryDispatchAsync so a notification failure never
-        // re-throws after the password is already changed.
-        var changedTime = timeProvider.GetUtcNow().UtcDateTime.ToString("u",
-            System.Globalization.CultureInfo.InvariantCulture);
-        await notifications.TryDispatchAsync(new NotificationRequest
-        {
-            UserId = user.Id,
-            Kind = NotificationKind.AccountPasswordChanged,
-            Title = "Your SIMF password was changed",
-            TitleArabic = "تم تغيير كلمة المرور",
-            Body = $"Your SIMF password was changed at {changedTime}. "
-                + "If you did not do this, contact the SIMF security team immediately.",
-            BodyArabic = $"تم تغيير كلمة المرور الخاصة بك في SIMF بتاريخ {changedTime}. "
-                + "إذا لم تكن أنت من قام بذلك، تواصل مع فريق الأمن في SIMF فوراً.",
-            Severity = NotificationSeverity.Warning,
-            SendEmail = true,
-        }, logger, cancellationToken);
+        await SendPasswordChangedNoticeAsync(
+            user, timeProvider.GetUtcNow(), cancellationToken);
 
         logger.LogInformation("Password changed for {Email}", user.Email);
         return new ChangePasswordResponse(true);
+    }
+
+    public async Task<CompletePasswordChangeResponse> CompletePasswordChangeAsync(
+        CompletePasswordChangeRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.GetUtcNow();
+
+        // D-206: the single-use ticket the sign-in password step issued is the
+        // authorisation here — it proves the current password was already
+        // verified at sign-in, so no password is re-collected. The checks
+        // mirror SignInService.GetValidTicketAsync (kind, consumed, expiry);
+        // every failure returns the same generic code so the endpoint cannot be
+        // used as an account-existence oracle.
+        var ticket = await secondFactorTokenRepository.GetByTokenHashAsync(
+            OpaqueToken.Hash(request.PasswordChangeToken), cancellationToken);
+
+        if (ticket is null
+            || ticket.Kind != SecondFactorKind.PasswordChange
+            || ticket.ConsumedAt is not null)
+        {
+            await AuditAsync(AuditEvents.PasswordChangeFailed, AuditOutcome.Failure,
+                null, ticket?.UserId, ErrorCodes.AuthMfaTokenInvalid,
+                cancellationToken: cancellationToken);
+            throw new ApiException(ErrorCodes.AuthMfaTokenInvalid, 400,
+                "The sign-in session is no longer valid. Sign in again.",
+                "جلسة تسجيل الدخول لم تعد صالحة. سجّل الدخول مرة أخرى.");
+        }
+
+        if (now >= ticket.ExpiresAt)
+        {
+            await AuditAsync(AuditEvents.PasswordChangeFailed, AuditOutcome.Failure,
+                null, ticket.UserId, ErrorCodes.AuthMfaTokenExpired,
+                cancellationToken: cancellationToken);
+            throw new ApiException(ErrorCodes.AuthMfaTokenExpired, 400,
+                "The sign-in session has expired. Sign in again.",
+                "انتهت صلاحية جلسة تسجيل الدخول. سجّل الدخول مرة أخرى.");
+        }
+
+        var user = await accounts.FindByIdAsync(ticket.UserId, cancellationToken);
+
+        // The flag is what the sign-in step checked when it issued the ticket;
+        // if the account is gone or a concurrent change already cleared it,
+        // treat the ticket as spent (same generic code — no oracle).
+        if (user is null || !user.PasswordChangeRequired)
+        {
+            await AuditAsync(AuditEvents.PasswordChangeFailed, AuditOutcome.Failure,
+                user?.Email, ticket.UserId, ErrorCodes.AuthMfaTokenInvalid,
+                cancellationToken: cancellationToken);
+            throw new ApiException(ErrorCodes.AuthMfaTokenInvalid, 400,
+                "The sign-in session is no longer valid. Sign in again.",
+                "جلسة تسجيل الدخول لم تعد صالحة. سجّل الدخول مرة أخرى.");
+        }
+
+        // The ticket authorised this — set the password, consume the ticket,
+        // clear the forced-change flag and end every session, all in one
+        // transaction. A policy-rejected new password throws inside the
+        // transaction and rolls back, leaving the ticket valid for a retry
+        // within its lifetime.
+        await transactionRunner.ExecuteAsync(
+            async token =>
+            {
+                await SetPasswordAsync(user, request.NewPassword);
+                ticket.ConsumedAt = now;
+                await secondFactorTokenRepository.UpdateAsync(ticket, token);
+                await ClearChangeFlagAndEndSessionsAsync(user, now, token);
+            },
+            cancellationToken);
+
+        await AuditAsync(AuditEvents.PasswordChanged, AuditOutcome.Success,
+            user.Email!, user.Id, cancellationToken: cancellationToken);
+
+        await SendPasswordChangedNoticeAsync(user, now, cancellationToken);
+
+        logger.LogInformation("Forced password change completed for {Email}", user.Email);
+        return new CompletePasswordChangeResponse(true);
     }
 
     /// <summary>
@@ -308,6 +369,36 @@ public sealed class PasswordService(
         user.UpdatedAt = now;
         await accounts.UpdateAsync(user).EnsureSuccessAsync();
         await refreshTokenRepository.RevokeAllForUserAsync(user.Id, now, cancellationToken);
+    }
+
+    /// <summary>
+    /// D-111 / D-206: the security notice — in-app row + email — confirming a
+    /// password change. Shared by the authenticated change path
+    /// (<see cref="ChangePasswordAsync"/>) and the forced-change ticket path
+    /// (<see cref="CompletePasswordChangeAsync"/>). Wrapped in
+    /// <c>TryDispatchAsync</c> so a notification failure never re-throws after
+    /// the password is already changed.
+    /// </summary>
+    private Task SendPasswordChangedNoticeAsync(
+        SimfUser user,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var changedTime = now.UtcDateTime.ToString("u",
+            System.Globalization.CultureInfo.InvariantCulture);
+        return notifications.TryDispatchAsync(new NotificationRequest
+        {
+            UserId = user.Id,
+            Kind = NotificationKind.AccountPasswordChanged,
+            Title = "Your SIMF password was changed",
+            TitleArabic = "تم تغيير كلمة المرور",
+            Body = $"Your SIMF password was changed at {changedTime}. "
+                + "If you did not do this, contact the SIMF security team immediately.",
+            BodyArabic = $"تم تغيير كلمة المرور الخاصة بك في SIMF بتاريخ {changedTime}. "
+                + "إذا لم تكن أنت من قام بذلك، تواصل مع فريق الأمن في SIMF فوراً.",
+            Severity = NotificationSeverity.Warning,
+            SendEmail = true,
+        }, logger, cancellationToken);
     }
 
     private async Task<string> IssueResetCodeAsync(

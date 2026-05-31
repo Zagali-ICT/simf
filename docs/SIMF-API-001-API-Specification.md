@@ -659,16 +659,43 @@ visitor (email OTP, here).
 - Success — 200: `{ "passwordChanged": true }`.
 - Failure: `VALIDATION_FAILED` (400), `AUTH_INVALID_CREDENTIALS` (401).
 
-A user in the **password-change-required** state (a seeded or admin-created
-account holding a temporary password) may call only this endpoint; every other
-protected endpoint returns `AUTH_PASSWORD_CHANGE_REQUIRED` (403) until the
-password is changed.
+A user in the **password-change-required** state holds a seeded or
+admin-rotated temporary password that must be replaced before any session is
+minted. The behaviour depends on the sign-in audience (D-206):
+
+- **Control Panel (`audience = "Cp"`):** after the password is verified, the
+  sign-in response returns a single-use `passwordChangeToken` (and no session —
+  `mfaRequired = false`, `tokens = null`) instead of the 403. The operator sets
+  a new password via the dedicated endpoint below and then signs in normally.
+- **Every other audience (web / mobile):** sign-in returns
+  `AUTH_PASSWORD_CHANGE_REQUIRED` (403), unchanged.
+
+The forced-change gate is still enforced at every token-mint path (TOTP /
+recovery / email-OTP verification and refresh), so no session is issued until
+the password is actually changed.
+
+### A.2.1 New endpoint — complete a forced password change (D-206)
+
+`POST /api/v1/auth/complete-password-change` — anonymous; authorised by the
+single-use `passwordChangeToken` the sign-in step issued (same posture as
+`/auth/verify-totp`). The current password is **not** re-collected — the token
+already proves it was verified at sign-in.
+
+- Request: `{ "passwordChangeToken": "<opaque>", "newPassword": "<...>", "confirmPassword": "<...>" }`
+- Rules: the token is valid, unconsumed and unexpired; the new password meets
+  §12.5 and equals its confirmation. On success the temporary-password flag is
+  cleared and every refresh token for the account is revoked. No tokens are
+  issued — the user signs in again with the new password.
+- Success — 200: `{ "passwordChanged": true }`.
+- Failure: `VALIDATION_FAILED` (400), `AUTH_MFA_TOKEN_INVALID` (400),
+  `AUTH_MFA_TOKEN_EXPIRED` (400).
 
 ### A.3 Second-factor tokens
 
-`mfaToken` (admin TOTP) and `otpToken` (visitor email OTP) are short-lived
-(2–5 minutes), **single-use**, stored **hashed**, invalidated after a small
-number of failed attempts, and bound to the originating sign-in.
+`mfaToken` (admin TOTP), `otpToken` (visitor email OTP) and the D-206
+`passwordChangeToken` (forced password change) are short-lived (2–5 minutes),
+**single-use**, stored **hashed**, invalidated after a small number of failed
+attempts, and bound to the originating sign-in.
 
 ### A.4 Account lockout
 

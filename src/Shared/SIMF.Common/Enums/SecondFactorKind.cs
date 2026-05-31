@@ -3,7 +3,12 @@ using SIMF.Common.Resources.Enums;
 
 namespace SIMF.Common.Enums;
 
-/// <summary>The kind of second factor a sign-in is completed with.</summary>
+/// <summary>
+/// What kind of step a single-use sign-in ticket expects to complete the
+/// sign-in: a second factor (<see cref="Totp"/> / <see cref="EmailOtp"/>) or,
+/// for an account holding a forced-change credential, the password-change step
+/// (<see cref="PasswordChange"/>).
+/// </summary>
 public enum SecondFactorKind
 {
     /// <summary>An authenticator-app TOTP code — for Control Panel users.</summary>
@@ -13,4 +18,14 @@ public enum SecondFactorKind
     /// <summary>A code emailed to the user — for visitors.</summary>
     [Display(Description = nameof(ResSecondFactorKind.EmailOtp), ResourceType = typeof(ResSecondFactorKind))]
     EmailOtp = 1,
+
+    /// <summary>
+    /// D-206: a forced-password-change ticket. Issued at the password step (in
+    /// place of the old <c>AUTH_PASSWORD_CHANGE_REQUIRED</c> 403) when a Control
+    /// Panel account holds a seeded/admin-rotated credential it must replace
+    /// before any session is minted. Exchanged at
+    /// <c>POST /auth/complete-password-change</c>. Internal plumbing only — never
+    /// rendered, so no display resource is attached.
+    /// </summary>
+    PasswordChange = 2,
 }

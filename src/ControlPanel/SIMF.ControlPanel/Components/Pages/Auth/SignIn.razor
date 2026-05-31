@@ -28,6 +28,10 @@
                     {
                         <SimfAlert Variant="error">@_error</SimfAlert>
                     }
+                    @if (_info is not null)
+                    {
+                        <SimfAlert Variant="success">@_info</SimfAlert>
+                    }
                     <div class="simf-form__fields">
                         <SimfTextField Label="@L["Auth.SignIn.Email"]" @bind-Value="_model.Email"
                                        Type="email" Icon="mail" InputMode="email"
@@ -48,12 +52,31 @@
     </ChildContent>
 </SimfAuthLayout>
 
+@* D-206: forced-change popup. A Control Panel sign-in whose credential is
+   flagged for change comes back with a single-use ticket instead of a session;
+   the operator sets a new password here (current password not re-asked — the
+   ticket already proves it) and then signs in normally. *@
+<SimfModal Open="_mustChangePassword" Title="@L["Auth.ChangePassword.Title"]"
+           CloseLabel="@L["Auth.ChangePassword.Close"]" OnClose="CloseChangePassword">
+    <p class="simf-form__helper">@L["Auth.ChangePassword.Intro"]</p>
+    <ChangePasswordCard ShowCurrentField="false" Block="true" Busy="_changeBusy"
+                        ErrorMessage="_changeError" SubmitLabel="@L["Auth.ChangePassword.Submit"]"
+                        OnSubmit="CompletePasswordChangeAsync" />
+</SimfModal>
+
 @code {
     private readonly SignInModel _model = new();
     private EditContext _editContext = default!;
     private ValidationMessageStore _messages = default!;
     private bool _loading;
     private string? _error;
+    private string? _info;
+
+    // D-206 — forced-change popup state.
+    private bool _mustChangePassword;
+    private string? _passwordChangeToken;
+    private bool _changeBusy;
+    private string? _changeError;
 
     protected override void OnInitialized()
     {
@@ -88,6 +111,7 @@
 
         _loading = true;
         _error = null;
+        _info = null;
         try
         {
             _messages.Clear();
@@ -126,6 +150,18 @@
                 return;
             }
 
+            // D-206: a forced-change Control Panel credential comes back with a
+            // single-use ticket instead of a session — open the change-password
+            // popup instead of routing to the second factor. The ticket
+            // authorises the change; the user signs in normally afterwards.
+            if (result.Data.PasswordChangeToken is not null)
+            {
+                _passwordChangeToken = result.Data.PasswordChangeToken;
+                _changeError = null;
+                _mustChangePassword = true;
+                return;
+            }
+
             // Skip the second factor when the account has TwoFactorEnabled=false
             // (myComment #34). The API answers with tokens immediately in that
             // case; no MfaToken is returned. P11 — D-052: stash the optional
@@ -148,6 +184,52 @@
         {
             _loading = false;
         }
+    }
+
+    // D-206: complete the forced password change against the ticket. On success
+    // no session is minted — the operator signs in again with the new password,
+    // so we close the popup, clear the password field and show a success note.
+    private async Task CompletePasswordChangeAsync(ChangePasswordCard.Model model)
+    {
+        if (_changeBusy)
+        {
+            return;
+        }
+
+        _changeBusy = true;
+        _changeError = null;
+        try
+        {
+            var result = await Api.CompletePasswordChangeAsync(new CompletePasswordChangeRequest
+            {
+                PasswordChangeToken = _passwordChangeToken ?? string.Empty,
+                NewPassword = model.NewPassword,
+                ConfirmPassword = model.ConfirmPassword,
+            });
+
+            if (!result.Success)
+            {
+                _changeError = result.Error?.MessageForCurrentCulture()
+                    ?? L["Auth.ChangePassword.Fallback"];
+                return;
+            }
+
+            _mustChangePassword = false;
+            _passwordChangeToken = null;
+            _model.Password = string.Empty;
+            _info = L["Auth.ChangePassword.Success"];
+        }
+        finally
+        {
+            _changeBusy = false;
+        }
+    }
+
+    private void CloseChangePassword()
+    {
+        _mustChangePassword = false;
+        _passwordChangeToken = null;
+        _changeError = null;
     }
 
     private sealed class SignInModel

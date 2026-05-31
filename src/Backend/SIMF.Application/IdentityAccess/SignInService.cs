@@ -93,23 +93,6 @@ public sealed class SignInService(
             throw new ApiException(blockCode, 403, blockMessage!, blockMessageArabic!);
         }
 
-        // H4 — D-059 + H19 — D-080: a SimfUser with PasswordChangeRequired=true
-        // holds a seeded or admin-rotated credential they must change before
-        // any session is minted. Now enforced at every token-mint path, not
-        // just the initial password step — see RequirePasswordChangeNotRequired
-        // helper used by VerifyTotpAsync / VerifyRecoveryCodeAsync /
-        // VerifyOtpAsync, and by SessionService.RefreshAsync.
-        RequirePasswordChangeNotRequired(user);
-        if (user.PasswordChangeRequired)
-        {
-            // Defensive — the helper throws; this is unreachable. Audit at
-            // sign-in level so SOC sees the trigger surface.
-            await AuditAsync(AuditEvents.SignInPasswordChangeRequired,
-                AuditOutcome.Failure, user.Email!, user.Id,
-                ErrorCodes.AuthPasswordChangeRequired,
-                cancellationToken: cancellationToken);
-        }
-
         var now = timeProvider.GetUtcNow();
         var roles = await accounts.GetRolesAsync(user);
 
@@ -118,6 +101,54 @@ public sealed class SignInService(
         // existence oracle. Throws 403 with AUTH_WRONG_SURFACE_CP or
         // AUTH_WRONG_SURFACE_WEB and writes one SignIn.WrongSurface audit row.
         await EnforceAudienceAsync(user, roles, request.Audience, cancellationToken);
+
+        // H4 — D-059 + H19 — D-080 + D-206: a SimfUser with
+        // PasswordChangeRequired=true holds a seeded or admin-rotated credential
+        // it must replace before any session is minted. This runs *after* the
+        // audience gate so a wrong-surface caller hits AUTH_WRONG_SURFACE first
+        // and cannot use the forced-change branch as an account-existence
+        // oracle (the D-080 state-block ordering is likewise preserved above).
+        //
+        // D-206: the Control Panel hands the operator a single-use
+        // password-change ticket (in place of the old
+        // AUTH_PASSWORD_CHANGE_REQUIRED 403) so they can set a new password
+        // in-flow and then sign in normally. The credential was already proven
+        // at CheckPasswordAsync above, so the ticket — not a re-typed
+        // password — authorises the change. Every other audience keeps the
+        // 403. The gate still fires at every later token-mint path via
+        // RequirePasswordChangeNotRequired (VerifyTotpAsync /
+        // VerifyRecoveryCodeAsync / VerifyOtpAsync / SessionService.RefreshAsync),
+        // so no session can be minted until the password is actually changed.
+        if (user.PasswordChangeRequired)
+        {
+            if (request.Audience != SignInAudience.Cp)
+            {
+                await AuditAsync(AuditEvents.SignInPasswordChangeRequired,
+                    AuditOutcome.Failure, user.Email!, user.Id,
+                    ErrorCodes.AuthPasswordChangeRequired,
+                    cancellationToken: cancellationToken);
+                throw new ApiException(ErrorCodes.AuthPasswordChangeRequired, 403,
+                    "You must change your password before signing in. Use the password-reset flow to set a new one.",
+                    "يجب تغيير كلمة المرور قبل تسجيل الدخول. استخدم تدفّق إعادة تعيين كلمة المرور لتعيين كلمة جديدة.");
+            }
+
+            var changeTicketValue = OpaqueToken.Generate();
+            await secondFactorTokenRepository.AddAsync(
+                new SecondFactorToken
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    TokenHash = OpaqueToken.Hash(changeTicketValue),
+                    Kind = SecondFactorKind.PasswordChange,
+                    CreatedAt = now,
+                    ExpiresAt = now.Add(TicketLifetime),
+                },
+                cancellationToken);
+            await AuditAsync(AuditEvents.SignInPasswordChangeTicketIssued,
+                AuditOutcome.Success, user.Email!, user.Id,
+                cancellationToken: cancellationToken);
+            return new SignInResponse(false, null, null, null, null, changeTicketValue);
+        }
 
         // When 2FA is turned off for the account (myComment #34, D-033), the
         // password step IS the sign-in — issue tokens directly. This applies

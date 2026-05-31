@@ -28,6 +28,13 @@ public sealed class SignInRequest
 ///     is set, <see cref="MfaRequired"/> is <c>false</c> and <see cref="Tokens"/>
 ///     carries the issued tokens directly — sign-in is complete (myComment #34,
 ///     decision D-033).</item>
+///   <item>D-206: when a Control Panel account must change a forced
+///     (seeded/admin-rotated) password, <see cref="PasswordChangeToken"/> is set
+///     and every other field is null/false. The caller collects a new password
+///     and completes the change at <c>POST /auth/complete-password-change</c>;
+///     no session is minted until that succeeds and the user signs in again.
+///     For non-Control-Panel audiences the forced-change case still returns the
+///     <c>AUTH_PASSWORD_CHANGE_REQUIRED</c> 403 unchanged.</item>
 /// </list>
 /// </summary>
 public sealed record SignInResponse(
@@ -35,7 +42,8 @@ public sealed record SignInResponse(
     string? MfaToken,
     string? OtpToken,
     AuthTokens? Tokens = null,
-    AccountStateInfo? AccountState = null);
+    AccountStateInfo? AccountState = null,
+    string? PasswordChangeToken = null);
 
 /// <summary>
 /// Carries the user's account state on a sign-in response when the

@@ -999,6 +999,13 @@
   <data name="Auth.Forgot.Fallback" xml:space="preserve"><value>تعذّر إكمال الطلب. حاول مرة أخرى.</value></data>
   <data name="Auth.Forgot.BackToSignIn" xml:space="preserve"><value>العودة إلى تسجيل الدخول</value></data>
 
+  <data name="Auth.ChangePassword.Title" xml:space="preserve"><value>تغيير كلمة المرور</value></data>
+  <data name="Auth.ChangePassword.Intro" xml:space="preserve"><value>يجب تغيير كلمة المرور قبل تسجيل الدخول. اختر كلمة مرور جديدة أدناه.</value></data>
+  <data name="Auth.ChangePassword.Submit" xml:space="preserve"><value>تغيير كلمة المرور</value></data>
+  <data name="Auth.ChangePassword.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Auth.ChangePassword.Success" xml:space="preserve"><value>تم تغيير كلمة المرور. سجّل الدخول بكلمة المرور الجديدة.</value></data>
+  <data name="Auth.ChangePassword.Fallback" xml:space="preserve"><value>تعذّر تغيير كلمة المرور. حاول مرة أخرى.</value></data>
+
   <data name="Auth.Reset.Title" xml:space="preserve"><value>إعادة تعيين كلمة المرور</value></data>
   <data name="Auth.Reset.Supporting" xml:space="preserve"><value>أدخل الرمز المرسل إلى بريدك واختر كلمة مرور جديدة.</value></data>
   <data name="Auth.Reset.Code" xml:space="preserve"><value>رمز إعادة التعيين</value></data>
