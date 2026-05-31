@@ -32,7 +32,7 @@ public sealed class GetArchiveVisibilityAdminEndpoint(IOperationsToggleService s
     public override void Configure()
     {
         Get("/admin/archive/visibility");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Operations.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -48,7 +48,7 @@ public sealed class UpdateArchiveVisibilityEndpoint(IOperationsToggleService ser
     public override void Configure()
     {
         Put("/admin/archive/visibility");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Operations.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

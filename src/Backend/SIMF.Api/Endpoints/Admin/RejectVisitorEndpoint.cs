@@ -18,7 +18,7 @@ public sealed class RejectVisitorEndpoint(IAdminUserApprovalService adminAccount
     public override void Configure()
     {
         Post("/admin/visitors/{id:guid}/reject");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Reject), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Reject a pending visitor. Requires the Administrator role (P7b).");

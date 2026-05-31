@@ -59,7 +59,7 @@ public sealed class ListAdminRatingsEndpoint(IRatingService service)
     public override void Configure()
     {
         Post("/admin/feedback/ratings");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Ratings.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }

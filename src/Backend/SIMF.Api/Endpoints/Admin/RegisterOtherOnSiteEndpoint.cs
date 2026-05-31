@@ -20,7 +20,7 @@ public sealed class RegisterOtherOnSiteEndpoint(IAdminUserProvisioningService se
     public override void Configure()
     {
         Post("/admin/others/register-onsite");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Others.RegisterOnsite), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

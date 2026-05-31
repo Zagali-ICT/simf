@@ -19,7 +19,7 @@ public sealed class ListRolesEndpoint(IAdminRoleService service)
     public override void Configure()
     {
         Post("/admin/roles/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Roles.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return one page of roles. Requires Administrator role.");
@@ -43,7 +43,7 @@ public sealed class GetRoleEndpoint(IAdminRoleService service)
     public override void Configure()
     {
         Get("/admin/roles/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Roles.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return one role. Requires Administrator role.");
@@ -69,7 +69,7 @@ public sealed class CreateRoleEndpoint(IAdminRoleService service)
     public override void Configure()
     {
         Post("/admin/roles");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Roles.Create), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -101,7 +101,7 @@ public sealed class UpdateRoleEndpoint(IAdminRoleService service)
     public override void Configure()
     {
         Put("/admin/roles/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Roles.Edit), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -133,7 +133,7 @@ public sealed class DeleteRoleEndpoint(IAdminRoleService service)
     public override void Configure()
     {
         Delete("/admin/roles/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Roles.Delete), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

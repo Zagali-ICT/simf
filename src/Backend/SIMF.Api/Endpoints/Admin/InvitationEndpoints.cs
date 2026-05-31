@@ -8,16 +8,17 @@ using SIMF.Contracts.Admin;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>D-168 (gap doc G5, PDF §2.7.3) — admin CRUD over
-/// <c>Invitations</c>. Gated by <see cref="AuthorizationPolicies.PublicRelationsAccess"/>
-/// so both Administrator and the PublicRelations role hit the same
-/// surface; the service layer is role-agnostic.</summary>
+/// <c>Invitations</c>. Gated by the per-action <c>Invitations.View</c> /
+/// <c>Invitations.Manage</c> permissions (Issue-1). The PublicRelations role
+/// holds them as seeded baseline grants and Administrator via the wildcard, so
+/// both hit the same surface; the service layer is role-agnostic.</summary>
 public sealed class ListInvitationsEndpoint(IAdminInvitationService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminInvitationSummary>>>
 {
     public override void Configure()
     {
         Post("/admin/invitations/list");
-        Policies(nameof(AuthorizationPolicies.PublicRelationsAccess),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Invitations.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -35,7 +36,7 @@ public sealed class GetInvitationEndpoint(IAdminInvitationService service)
     public override void Configure()
     {
         Get("/admin/invitations/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.PublicRelationsAccess),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Invitations.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -57,7 +58,7 @@ public sealed class CreateInvitationEndpoint(IAdminInvitationService service)
     public override void Configure()
     {
         Post("/admin/invitations");
-        Policies(nameof(AuthorizationPolicies.PublicRelationsAccess),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Invitations.Manage),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -89,7 +90,7 @@ public sealed class UpdateInvitationEndpoint(IAdminInvitationService service)
     public override void Configure()
     {
         Put("/admin/invitations/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.PublicRelationsAccess),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Invitations.Manage),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -115,7 +116,7 @@ public sealed class DeactivateInvitationEndpoint(IAdminInvitationService service
     public override void Configure()
     {
         Delete("/admin/invitations/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.PublicRelationsAccess),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Invitations.Manage),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

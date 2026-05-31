@@ -26,7 +26,7 @@ public sealed class ResetTwoFactorEndpoint(IAdminTwoFactorService adminAccountSe
         Post("/admin/admins/reset-two-factor");
         // No AllowAnonymous — the caller must be authenticated and hold the
         // Administrator role.
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Admins.ResetTwoFactor), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

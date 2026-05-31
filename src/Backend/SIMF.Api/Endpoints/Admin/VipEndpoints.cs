@@ -17,7 +17,7 @@ public sealed class ListVipsEndpoint(IAdminInvitationService service)
     public override void Configure()
     {
         Post("/admin/vips/list");
-        Policies(nameof(AuthorizationPolicies.PublicRelationsAccess),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Vips.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -33,7 +33,7 @@ public sealed class NotifyVipsEndpoint(IAdminInvitationService service)
     public override void Configure()
     {
         Post("/admin/vips/notify");
-        Policies(nameof(AuthorizationPolicies.PublicRelationsAccess),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Vips.Notify),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

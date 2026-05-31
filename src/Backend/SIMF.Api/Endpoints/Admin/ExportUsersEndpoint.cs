@@ -3,6 +3,7 @@ using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.IdentityAccess;
 using SIMF.Application.IdentityAccess.Abstractions;
+using SIMF.Common;
 using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Admin;
@@ -18,7 +19,7 @@ public sealed class ExportUsersEndpoint(IAdminUserBulkService adminAccountServic
     public override void Configure()
     {
         Post("/admin/admins/export");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Admins.Export), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         // The request is JSON (the selected ids + grid query); the response

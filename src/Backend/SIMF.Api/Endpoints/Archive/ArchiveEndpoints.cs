@@ -34,7 +34,7 @@ public sealed class ListAdminArchiveEndpoint(IAdminArchiveService service)
     public override void Configure()
     {
         Post("/admin/archive/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Archive.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -52,7 +52,7 @@ public sealed class GetArchiveEditionEndpoint(IAdminArchiveService service)
     public override void Configure()
     {
         Get("/admin/archive/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Archive.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -74,7 +74,7 @@ public sealed class CreateArchiveEditionEndpoint(IAdminArchiveService service)
     public override void Configure()
     {
         Post("/admin/archive");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Archive.Create),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -104,7 +104,7 @@ public sealed class UpdateArchiveEditionEndpoint(IAdminArchiveService service)
     public override void Configure()
     {
         Put("/admin/archive/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Archive.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -131,7 +131,7 @@ public sealed class DeleteArchiveEditionEndpoint(IAdminArchiveService service)
     public override void Configure()
     {
         Delete("/admin/archive/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Archive.Delete),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

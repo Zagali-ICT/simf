@@ -23,7 +23,7 @@ public sealed class CreateAdminEndpoint(IAdminUserProvisioningService adminAccou
     public override void Configure()
     {
         Post("/admin/admins");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Admins.Create), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -54,7 +54,7 @@ public sealed class CreateOtherEndpoint(IAdminUserProvisioningService adminAccou
     public override void Configure()
     {
         Post("/admin/others");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Others.Create), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -83,7 +83,7 @@ public sealed class CreateVisitorEndpoint(IAdminUserProvisioningService adminAcc
     public override void Configure()
     {
         Post("/admin/visitors");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Create), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

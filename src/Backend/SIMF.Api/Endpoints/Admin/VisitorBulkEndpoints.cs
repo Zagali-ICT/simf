@@ -20,7 +20,7 @@ public sealed class BulkDeleteVisitorsEndpoint(IAdminUserBulkService adminAccoun
     public override void Configure()
     {
         Post("/admin/visitors/bulk-delete");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Delete), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -52,7 +52,7 @@ public sealed class DuplicateVisitorEndpoint(IAdminUserBulkService adminAccountS
     public override void Configure()
     {
         Post("/admin/visitors/duplicate");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Create), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -84,7 +84,7 @@ public sealed class ExportVisitorsEndpoint(IAdminUserBulkService adminAccountSer
     public override void Configure()
     {
         Post("/admin/visitors/export");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Export), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -128,7 +128,7 @@ public sealed class ImportVisitorsEndpoint(IAdminUserBulkService adminAccountSer
     public override void Configure()
     {
         Post("/admin/visitors/import");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Import), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         AllowFileUploads();

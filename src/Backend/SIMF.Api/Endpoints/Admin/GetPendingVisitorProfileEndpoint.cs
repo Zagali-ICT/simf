@@ -26,7 +26,7 @@ public sealed class GetPendingVisitorProfileEndpoint(IAdminApprovalReadService s
     public override void Configure()
     {
         Get("/admin/visitors/{id:guid}/profile-for-approval");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Read the full profile for a pending Visitor. Returns 404 for unknown / approved / wrong-type ids.");

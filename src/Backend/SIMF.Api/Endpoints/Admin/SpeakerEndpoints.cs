@@ -15,7 +15,7 @@ public sealed class ListSpeakersEndpoint(IAdminSpeakerService service)
     public override void Configure()
     {
         Post("/admin/speakers/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Speakers.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -33,7 +33,7 @@ public sealed class GetSpeakerEndpoint(IAdminSpeakerService service)
     public override void Configure()
     {
         Get("/admin/speakers/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Speakers.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -55,7 +55,7 @@ public sealed class CreateSpeakerEndpoint(IAdminSpeakerService service)
     public override void Configure()
     {
         Post("/admin/speakers");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Speakers.Create),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -105,7 +105,7 @@ public sealed class UpdateSpeakerEndpoint(IAdminSpeakerService service)
     public override void Configure()
     {
         Put("/admin/speakers/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Speakers.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -155,7 +155,7 @@ public sealed class DeactivateSpeakerEndpoint(IAdminSpeakerService service)
     public override void Configure()
     {
         Delete("/admin/speakers/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Speakers.Delete),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

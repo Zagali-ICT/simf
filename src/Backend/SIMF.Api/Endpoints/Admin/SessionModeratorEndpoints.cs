@@ -16,7 +16,7 @@ public sealed class ListSessionModeratorsEndpoint(IAdminSessionModeratorService 
     public override void Configure()
     {
         Post("/admin/session-moderators/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SessionModerators.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -32,7 +32,7 @@ public sealed class AssignSessionModeratorEndpoint(IAdminSessionModeratorService
     public override void Configure()
     {
         Post("/admin/session-moderators");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SessionModerators.Assign),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -62,7 +62,7 @@ public sealed class RevokeSessionModeratorEndpoint(IAdminSessionModeratorService
     public override void Configure()
     {
         Delete("/admin/session-moderators/{sessionId:guid}/{userId:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SessionModerators.Revoke),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

@@ -24,7 +24,7 @@ public sealed class GetVisitorProfileEndpoint(IAdminApprovalReadService service)
     public override void Configure()
     {
         Get("/admin/visitors/{id:guid}/profile");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return the full visitor profile. 404 for unknown / wrong-type ids.");

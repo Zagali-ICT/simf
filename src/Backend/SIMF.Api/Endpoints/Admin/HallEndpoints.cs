@@ -13,7 +13,7 @@ public sealed class ListHallsEndpoint(IAdminHallService service)
     public override void Configure()
     {
         Post("/admin/halls/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Halls.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -32,7 +32,7 @@ public sealed class GetHallEndpoint(IAdminHallService service)
     public override void Configure()
     {
         Get("/admin/halls/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Halls.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -52,7 +52,7 @@ public sealed class CreateHallEndpoint(IAdminHallService service)
     public override void Configure()
     {
         Post("/admin/halls");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Halls.Create),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -87,7 +87,7 @@ public sealed class UpdateHallEndpoint(IAdminHallService service)
     public override void Configure()
     {
         Put("/admin/halls/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Halls.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -118,7 +118,7 @@ public sealed class DeactivateHallEndpoint(IAdminHallService service)
     public override void Configure()
     {
         Delete("/admin/halls/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Halls.Delete),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

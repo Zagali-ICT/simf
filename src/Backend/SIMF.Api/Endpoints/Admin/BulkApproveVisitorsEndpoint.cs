@@ -17,7 +17,7 @@ public sealed class BulkApproveVisitorsEndpoint(IAdminUserApprovalService servic
     public override void Configure()
     {
         Post("/admin/visitors/bulk-approve");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Approve),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -54,7 +54,7 @@ public sealed class BulkApproveOthersEndpoint(IAdminUserApprovalService service)
     public override void Configure()
     {
         Post("/admin/others/bulk-approve");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Approve),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

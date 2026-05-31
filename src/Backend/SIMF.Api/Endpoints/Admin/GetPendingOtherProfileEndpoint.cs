@@ -22,7 +22,7 @@ public sealed class GetPendingOtherProfileEndpoint(IAdminApprovalReadService ser
     public override void Configure()
     {
         Get("/admin/others/{id:guid}/profile-for-approval");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Others.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Read the full profile for a pending Other account. Returns 404 for unknown / approved / wrong-type ids.");

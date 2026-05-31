@@ -9,18 +9,18 @@ using SIMF.Contracts.PublicRelations;
 
 namespace SIMF.Api.Endpoints.News;
 
-/// <summary>D-199 — admin CRUD over News (PR / marketing). Gated by
-/// <see cref="AuthorizationPolicies.PublicRelationsAccess"/> +
-/// <see cref="AuthorizationPolicies.RequireApprovedAccount"/> so both
-/// Administrator and the PublicRelations role hit the same surface — exactly
-/// the gate the Invitation admin endpoints use.</summary>
+/// <summary>D-199 — admin CRUD over News (PR / marketing). Gated by the
+/// per-action <c>News.*</c> permissions (Issue-1) + <see
+/// cref="AuthorizationPolicies.RequireApprovedAccount"/>. The PublicRelations
+/// role holds <c>News.*</c> as a seeded baseline grant, and Administrator holds
+/// it via the permission wildcard, so both hit the same surface.</summary>
 public sealed class ListNewsEndpoint(IAdminNewsService service)
     : Endpoint<GridQuery, ApiResult<GridPage<AdminNewsSummary>>>
 {
     public override void Configure()
     {
         Post("/admin/news/list");
-        Policies(nameof(AuthorizationPolicies.PublicRelationsAccess),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.News.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -37,7 +37,7 @@ public sealed class GetNewsEndpoint(IAdminNewsService service)
     public override void Configure()
     {
         Get("/admin/news/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.PublicRelationsAccess),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.News.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -58,7 +58,7 @@ public sealed class CreateNewsEndpoint(IAdminNewsService service)
     public override void Configure()
     {
         Post("/admin/news");
-        Policies(nameof(AuthorizationPolicies.PublicRelationsAccess),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.News.Create),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -84,7 +84,7 @@ public sealed class UpdateNewsEndpoint(IAdminNewsService service)
     public override void Configure()
     {
         Put("/admin/news/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.PublicRelationsAccess),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.News.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -110,7 +110,7 @@ public sealed class DeleteNewsEndpoint(IAdminNewsService service)
     public override void Configure()
     {
         Delete("/admin/news/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.PublicRelationsAccess),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.News.Delete),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

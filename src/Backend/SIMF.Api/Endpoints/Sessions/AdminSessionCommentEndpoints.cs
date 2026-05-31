@@ -46,7 +46,7 @@ public sealed class ListSessionCommentsModerationEndpoint(IAdminSessionCommentSe
     public override void Configure()
     {
         Post("/admin/sessions/{sessionId:guid}/comments/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Comments.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -82,7 +82,7 @@ public sealed class SetSessionCommentStatusEndpoint(IAdminSessionCommentService 
     public override void Configure()
     {
         Put("/admin/sessions/{sessionId:guid}/comments/{commentId:guid}/status");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Comments.Moderate),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -116,7 +116,7 @@ public sealed class DeactivateSessionCommentEndpoint(IAdminSessionCommentService
     public override void Configure()
     {
         Delete("/admin/sessions/{sessionId:guid}/comments/{commentId:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Comments.Moderate),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

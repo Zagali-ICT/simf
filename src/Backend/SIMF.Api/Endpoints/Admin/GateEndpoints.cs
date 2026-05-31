@@ -14,9 +14,8 @@ public sealed class ListGatesEndpoint(IAdminGateService service)
     public override void Configure()
     {
         Post("/admin/gates/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
-                 nameof(AuthorizationPolicies.RequireApprovedAccount),
-                 nameof(AuthorizationPolicies.GatesManage));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Manage),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
     public override async Task HandleAsync(GridQuery req, CancellationToken ct) =>
@@ -32,9 +31,8 @@ public sealed class GetGateEndpoint(IAdminGateService service)
     public override void Configure()
     {
         Get("/admin/gates/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
-                 nameof(AuthorizationPolicies.RequireApprovedAccount),
-                 nameof(AuthorizationPolicies.GatesManage));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Manage),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
     public override async Task HandleAsync(GetGateRequest req, CancellationToken ct)
@@ -53,9 +51,8 @@ public sealed class CreateGateEndpoint(IAdminGateService service)
     public override void Configure()
     {
         Post("/admin/gates");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
-                 nameof(AuthorizationPolicies.RequireApprovedAccount),
-                 nameof(AuthorizationPolicies.GatesManage));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Manage),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
     }
@@ -91,9 +88,8 @@ public sealed class UpdateGateEndpoint(IAdminGateService service)
     public override void Configure()
     {
         Put("/admin/gates/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
-                 nameof(AuthorizationPolicies.RequireApprovedAccount),
-                 nameof(AuthorizationPolicies.GatesManage));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Manage),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
     }
@@ -125,9 +121,8 @@ public sealed class DeactivateGateEndpoint(IAdminGateService service)
     public override void Configure()
     {
         Delete("/admin/gates/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
-                 nameof(AuthorizationPolicies.RequireApprovedAccount),
-                 nameof(AuthorizationPolicies.GatesManage));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Manage),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
     }
@@ -151,9 +146,8 @@ public sealed class ListGateAssignmentsEndpoint(IAdminGateService service)
     public override void Configure()
     {
         Get("/admin/gates/{id:guid}/assignments");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
-                 nameof(AuthorizationPolicies.RequireApprovedAccount),
-                 nameof(AuthorizationPolicies.GatesManage));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Manage),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
     public override async Task HandleAsync(ListGateAssignmentsRequest req, CancellationToken ct) =>
@@ -167,9 +161,8 @@ public sealed class GateScansReportEndpoint(IAdminGateService service)
     public override void Configure()
     {
         Post("/admin/gates/reports/scans");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
-                 nameof(AuthorizationPolicies.RequireApprovedAccount),
-                 nameof(AuthorizationPolicies.GatesManage));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Manage),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
     public override async Task HandleAsync(AdminGateScanReportFilter req, CancellationToken ct) =>
@@ -183,9 +176,8 @@ public sealed class GateCurrentlyInsideEndpoint(IAdminGateService service)
     public override void Configure()
     {
         Get("/admin/gates/reports/currently-inside");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
-                 nameof(AuthorizationPolicies.RequireApprovedAccount),
-                 nameof(AuthorizationPolicies.GatesManage));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Manage),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
     public override async Task HandleAsync(CancellationToken ct) =>
@@ -199,9 +191,8 @@ public sealed class GateScansXlsxEndpoint(IAdminGateService service)
     public override void Configure()
     {
         Post("/admin/gates/reports/scans.xlsx");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
-                 nameof(AuthorizationPolicies.RequireApprovedAccount),
-                 nameof(AuthorizationPolicies.GatesManage));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Manage),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
     public override async Task HandleAsync(AdminGateScanReportFilter req, CancellationToken ct)

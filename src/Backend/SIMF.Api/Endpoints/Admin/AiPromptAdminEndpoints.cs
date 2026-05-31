@@ -18,7 +18,7 @@ public sealed class ListAiPromptsEndpoint(IAdminAiPromptService service)
     public override void Configure()
     {
         Post("/admin/ai/prompts/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.AiPrompts.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -35,7 +35,7 @@ public sealed class GetAiPromptEndpoint(IAdminAiPromptService service)
     public override void Configure()
     {
         Get("/admin/ai/prompts/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.AiPrompts.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -59,7 +59,7 @@ public sealed class GetAiPromptHistoryEndpoint(IAdminAiPromptService service)
     public override void Configure()
     {
         Get("/admin/ai/prompts/{id:guid}/history");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.AiPrompts.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         // D-188: per-record drill-down on the prompt-edit history is
         // an audit-content read — apply the same auth rate-limit as
@@ -82,7 +82,7 @@ public sealed class CreateAiPromptEndpoint(IAdminAiPromptService service)
     public override void Configure()
     {
         Post("/admin/ai/prompts");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.AiPrompts.Create),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -107,7 +107,7 @@ public sealed class UpdateAiPromptEndpoint(IAdminAiPromptService service)
     public override void Configure()
     {
         Put("/admin/ai/prompts/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.AiPrompts.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -132,7 +132,7 @@ public sealed class DeleteAiPromptEndpoint(IAdminAiPromptService service)
     public override void Configure()
     {
         Delete("/admin/ai/prompts/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.AiPrompts.Delete),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -157,7 +157,7 @@ public sealed class TestAiPromptEndpoint(IAdminAiPromptService service)
     public override void Configure()
     {
         Post("/admin/ai/prompts/{id:guid}/test");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.AiPrompts.Test),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         // D-179 — per-admin partition (sub-keyed) on the dry-run
         // endpoint, not just per-IP "auth", so shared offices and
@@ -183,7 +183,7 @@ public sealed class ListAiInvocationsEndpoint(IAdminAiPromptService service)
     public override void Configure()
     {
         Post("/admin/ai/invocations/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.AiInvocations.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -211,7 +211,7 @@ public sealed class GetAiInvocationDetailEndpoint(
     public override void Configure()
     {
         Get("/admin/ai/invocations/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.AiInvocations.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         // D-179 (review-pass) — same per-admin window as the Test
         // endpoint so an admin can't pull the whole invocation log

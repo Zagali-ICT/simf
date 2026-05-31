@@ -35,7 +35,7 @@ public sealed class ListMediaPartnersEndpoint(IAdminMediaPartnerService service)
     public override void Configure()
     {
         Post("/admin/media-partners/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.MediaPartners.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -53,7 +53,7 @@ public sealed class GetMediaPartnerEndpoint(IAdminMediaPartnerService service)
     public override void Configure()
     {
         Get("/admin/media-partners/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.MediaPartners.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -74,7 +74,7 @@ public sealed class CreateMediaPartnerEndpoint(IAdminMediaPartnerService service
     public override void Configure()
     {
         Post("/admin/media-partners");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.MediaPartners.Create),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -109,7 +109,7 @@ public sealed class UpdateMediaPartnerEndpoint(IAdminMediaPartnerService service
     public override void Configure()
     {
         Put("/admin/media-partners/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.MediaPartners.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -144,7 +144,7 @@ public sealed class DeactivateMediaPartnerEndpoint(IAdminMediaPartnerService ser
     public override void Configure()
     {
         Delete("/admin/media-partners/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.MediaPartners.Delete),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

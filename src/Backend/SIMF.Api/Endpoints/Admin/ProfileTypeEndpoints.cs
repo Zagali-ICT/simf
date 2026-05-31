@@ -18,7 +18,7 @@ public sealed class ListAdminProfileTypesEndpoint(IAdminProfileTypeCommandServic
     public override void Configure()
     {
         Post("/admin/profile-types/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.ProfileTypes.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return one page of profile types. Requires Administrator role.");
@@ -43,7 +43,7 @@ public sealed class GetAdminProfileTypeEndpoint(IAdminProfileTypeCommandService 
     public override void Configure()
     {
         Get("/admin/profile-types/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.ProfileTypes.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return one profile type. Requires Administrator role.");
@@ -72,7 +72,7 @@ public sealed class CreateAdminProfileTypeEndpoint(IAdminProfileTypeCommandServi
     public override void Configure()
     {
         Post("/admin/profile-types");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.ProfileTypes.Create), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -114,7 +114,7 @@ public sealed class UpdateAdminProfileTypeEndpoint(IAdminProfileTypeCommandServi
     public override void Configure()
     {
         Put("/admin/profile-types/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.ProfileTypes.Edit), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -157,7 +157,7 @@ public sealed class DeactivateAdminProfileTypeEndpoint(IAdminProfileTypeCommandS
     public override void Configure()
     {
         Delete("/admin/profile-types/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.ProfileTypes.Delete), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

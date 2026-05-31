@@ -17,7 +17,7 @@ public sealed class ApproveVisitorEndpoint(IAdminUserApprovalService adminAccoun
     public override void Configure()
     {
         Post("/admin/visitors/{id:guid}/approve");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Approve), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Approve a pending visitor. Requires the Administrator role (P7b).");

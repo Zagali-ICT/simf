@@ -15,7 +15,7 @@ public sealed class ListThemesEndpoint(IAdminThemeService service)
     public override void Configure()
     {
         Post("/admin/themes/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Themes.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return one page of programme themes. Requires Administrator role.");
@@ -36,7 +36,7 @@ public sealed class GetThemeEndpoint(IAdminThemeService service)
     public override void Configure()
     {
         Get("/admin/themes/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Themes.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
 
@@ -60,7 +60,7 @@ public sealed class CreateThemeEndpoint(IAdminThemeService service)
     public override void Configure()
     {
         Post("/admin/themes");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Themes.Create), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Tags("Admin");
     }
@@ -96,7 +96,7 @@ public sealed class UpdateThemeEndpoint(IAdminThemeService service)
     public override void Configure()
     {
         Put("/admin/themes/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Themes.Edit), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Tags("Admin");
     }
@@ -132,7 +132,7 @@ public sealed class DeactivateThemeEndpoint(IAdminThemeService service)
     public override void Configure()
     {
         Delete("/admin/themes/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Themes.Delete), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Tags("Admin");
     }

@@ -15,7 +15,7 @@ public sealed class ListContentBlocksEndpoint(IAdminCmsService service)
     public override void Configure()
     {
         Post("/admin/content-blocks/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.ContentBlocks.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -32,7 +32,7 @@ public sealed class GetContentBlockEndpoint(IAdminCmsService service)
     public override void Configure()
     {
         Get("/admin/content-blocks/{key}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.ContentBlocks.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -53,7 +53,7 @@ public sealed class UpsertContentBlockEndpoint(IAdminCmsService service)
     public override void Configure()
     {
         Put("/admin/content-blocks");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.ContentBlocks.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -78,7 +78,7 @@ public sealed class DeleteContentBlockEndpoint(IAdminCmsService service)
     public override void Configure()
     {
         Delete("/admin/content-blocks/{key}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.ContentBlocks.Delete),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -101,7 +101,7 @@ public sealed class ListBannersEndpoint(IAdminCmsService service)
     public override void Configure()
     {
         Post("/admin/banners/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Banners.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -118,7 +118,7 @@ public sealed class GetBannerEndpoint(IAdminCmsService service)
     public override void Configure()
     {
         Get("/admin/banners/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Banners.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -139,7 +139,7 @@ public sealed class CreateBannerEndpoint(IAdminCmsService service)
     public override void Configure()
     {
         Post("/admin/banners");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Banners.Create),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -164,7 +164,7 @@ public sealed class UpdateBannerEndpoint(IAdminCmsService service)
     public override void Configure()
     {
         Put("/admin/banners/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Banners.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -189,7 +189,7 @@ public sealed class DeleteBannerEndpoint(IAdminCmsService service)
     public override void Configure()
     {
         Delete("/admin/banners/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Banners.Delete),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

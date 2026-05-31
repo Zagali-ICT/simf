@@ -21,7 +21,7 @@ public sealed class RegisterVisitorOnSiteEndpoint(IAdminUserProvisioningService 
     public override void Configure()
     {
         Post("/admin/visitors/register-onsite");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.RegisterOnsite), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

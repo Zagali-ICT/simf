@@ -15,7 +15,7 @@ public sealed class ListBoothsEndpoint(IAdminBoothService service)
     public override void Configure()
     {
         Post("/admin/booths/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Booths.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -33,7 +33,7 @@ public sealed class GetBoothEndpoint(IAdminBoothService service)
     public override void Configure()
     {
         Get("/admin/booths/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Booths.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -55,7 +55,7 @@ public sealed class CreateBoothEndpoint(IAdminBoothService service)
     public override void Configure()
     {
         Post("/admin/booths");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Booths.Create),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -97,7 +97,7 @@ public sealed class UpdateBoothEndpoint(IAdminBoothService service)
     public override void Configure()
     {
         Put("/admin/booths/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Booths.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -139,7 +139,7 @@ public sealed class DeactivateBoothEndpoint(IAdminBoothService service)
     public override void Configure()
     {
         Delete("/admin/booths/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Booths.Delete),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

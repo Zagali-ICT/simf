@@ -52,7 +52,7 @@ public sealed class ListAdminMeetingRequestsEndpoint(IMeetingRequestService serv
     public override void Configure()
     {
         Post("/admin/meeting-requests/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.MeetingRequests.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -82,7 +82,7 @@ public sealed class GetAdminMeetingRequestEndpoint(IMeetingRequestService servic
     public override void Configure()
     {
         Get("/admin/meeting-requests/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.MeetingRequests.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         // D-185 (security review-pass): rate-limit the per-record
         // PII drill-down so a compromised admin can't burst-fetch
@@ -113,7 +113,7 @@ public sealed class RespondToMeetingRequestEndpoint(IMeetingRequestService servi
     public override void Configure()
     {
         Put("/admin/meeting-requests/{id:guid}/respond");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.MeetingRequests.Manage),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

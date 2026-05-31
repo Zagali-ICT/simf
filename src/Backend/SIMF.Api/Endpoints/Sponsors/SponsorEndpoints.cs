@@ -35,7 +35,7 @@ public sealed class ListSponsorsEndpoint(IAdminSponsorService service)
     public override void Configure()
     {
         Post("/admin/sponsors/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Sponsors.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -53,7 +53,7 @@ public sealed class GetSponsorEndpoint(IAdminSponsorService service)
     public override void Configure()
     {
         Get("/admin/sponsors/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Sponsors.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -74,7 +74,7 @@ public sealed class CreateSponsorEndpoint(IAdminSponsorService service)
     public override void Configure()
     {
         Post("/admin/sponsors");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Sponsors.Create),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -110,7 +110,7 @@ public sealed class UpdateSponsorEndpoint(IAdminSponsorService service)
     public override void Configure()
     {
         Put("/admin/sponsors/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Sponsors.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -146,7 +146,7 @@ public sealed class DeactivateSponsorEndpoint(IAdminSponsorService service)
     public override void Configure()
     {
         Delete("/admin/sponsors/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Sponsors.Delete),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

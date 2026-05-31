@@ -16,7 +16,7 @@ public sealed class GetStatisticsDashboardEndpoint(IStatisticsService service)
     public override void Configure()
     {
         Get("/admin/statistics");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Statistics.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }

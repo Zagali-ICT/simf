@@ -20,7 +20,7 @@ public sealed class BulkDeleteUsersEndpoint(IAdminUserBulkService adminAccountSe
     public override void Configure()
     {
         Post("/admin/admins/bulk-delete");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Admins.Delete), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

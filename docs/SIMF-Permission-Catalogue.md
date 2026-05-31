@@ -53,7 +53,7 @@ into their single-row verb.
 |---|---|---|
 | **Administrator** | *all* (via the `*` wildcard, not per-code rows) | mint-time |
 | **GateOperator** | `Gates.Operate`, `Gates.ViewOwnReports` | seeded grant (D-148) |
-| **PublicRelations** | `Invitations.View`, `Invitations.Manage`, `Vips.View`, `Vips.Notify` | seeded grant (D-168) |
+| **PublicRelations** | `Invitations.View`, `Invitations.Manage`, `Vips.View`, `Vips.Notify`, `News.*` | seeded grant (D-168; News carried over from the PR-gated admin News endpoints) |
 | *(custom roles)* | whatever an Administrator assigns in the CP | runtime |
 
 Every other code is, by default, held only by Administrator (wildcard). An
@@ -138,7 +138,7 @@ Administrator can grant any code to any custom role at runtime.
 | `ContentBlocks.View/Edit/Delete` | `/admin/content-blocks` (`Edit` = upsert) |
 | `Banners.*` | `/admin/banners` |
 | `Media.*` | `/admin/media` (`Edit` = update + image upload) |
-| `News.*` | `/admin/news` |
+| `News.*` | `/admin/news` (baseline: PublicRelations) |
 | `MediaPartners.*` | `/admin/media-partners` |
 | `Archive.*` | `/admin/archive` |
 

@@ -16,7 +16,7 @@ public sealed class ListSessionsEndpoint(IAdminSessionService service)
     public override void Configure()
     {
         Post("/admin/sessions/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Sessions.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -34,7 +34,7 @@ public sealed class GetSessionEndpoint(IAdminSessionService service)
     public override void Configure()
     {
         Get("/admin/sessions/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Sessions.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -56,7 +56,7 @@ public sealed class CreateSessionEndpoint(IAdminSessionService service)
     public override void Configure()
     {
         Post("/admin/sessions");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Sessions.Create),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -98,7 +98,7 @@ public sealed class UpdateSessionEndpoint(IAdminSessionService service)
     public override void Configure()
     {
         Put("/admin/sessions/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Sessions.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -139,7 +139,7 @@ public sealed class DeactivateSessionEndpoint(IAdminSessionService service)
     public override void Configure()
     {
         Delete("/admin/sessions/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Sessions.Delete),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

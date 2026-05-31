@@ -16,7 +16,7 @@ public sealed class ListAttendeesEndpoint(IAdminAttendeeService service)
     public override void Configure()
     {
         Post("/admin/attendees/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Attendees.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return one page of the attendee roster (Visitors + Others). " +

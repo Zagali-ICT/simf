@@ -24,7 +24,7 @@ public sealed class QrLookupEndpoint(IAdminApprovalReadService service)
     public override void Configure()
     {
         Get("/admin/qr-lookup/{qrId}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Attendees.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Resolve a QR id to the visitor / Other badge data for the print-bag station.");

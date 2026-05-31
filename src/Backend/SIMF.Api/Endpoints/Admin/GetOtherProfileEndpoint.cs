@@ -18,7 +18,7 @@ public sealed class GetOtherProfileEndpoint(IAdminApprovalReadService service)
     public override void Configure()
     {
         Get("/admin/others/{id:guid}/profile");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Others.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return the full Other-account profile. 404 for unknown / wrong-type ids.");

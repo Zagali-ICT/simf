@@ -536,10 +536,13 @@ public static class PermissionCatalog
         new(Media.Edit, "Media", "Edit", "Edit media items", AdminOnly),
         new(Media.Delete, "Media", "Delete", "Delete media items", AdminOnly),
 
-        new(News.View, "News", "View", "View news articles", AdminOnly),
-        new(News.Create, "News", "Create", "Create news articles", AdminOnly),
-        new(News.Edit, "News", "Edit", "Edit news articles", AdminOnly),
-        new(News.Delete, "News", "Delete", "Delete news articles", AdminOnly),
+        // News is PR/marketing territory: the admin News endpoints were gated
+        // by PublicRelationsAccess before this catalogue, so the PublicRelations
+        // role keeps News as a seeded baseline grant (preserves prior behaviour).
+        new(News.View, "News", "View", "View news articles", PublicRelations),
+        new(News.Create, "News", "Create", "Create news articles", PublicRelations),
+        new(News.Edit, "News", "Edit", "Edit news articles", PublicRelations),
+        new(News.Delete, "News", "Delete", "Delete news articles", PublicRelations),
 
         new(MediaPartners.View, "MediaPartners", "View", "View media partners", AdminOnly),
         new(MediaPartners.Create, "MediaPartners", "Create", "Create media partners", AdminOnly),

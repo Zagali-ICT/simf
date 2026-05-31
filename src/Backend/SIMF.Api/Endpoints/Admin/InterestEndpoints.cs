@@ -17,7 +17,7 @@ public sealed class ListInterestsEndpoint(IInterestService service)
     public override void Configure()
     {
         Post("/admin/interests/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Interests.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return one page of interests. Requires Administrator role.");
@@ -45,7 +45,7 @@ public sealed class GetInterestEndpoint(IInterestService service)
     public override void Configure()
     {
         Get("/admin/interests/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Interests.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return one interest. Requires Administrator role.");
@@ -75,7 +75,7 @@ public sealed class CreateInterestEndpoint(IInterestService service)
     public override void Configure()
     {
         Post("/admin/interests");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Interests.Create), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -115,7 +115,7 @@ public sealed class UpdateInterestEndpoint(IInterestService service)
     public override void Configure()
     {
         Put("/admin/interests/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Interests.Edit), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -157,7 +157,7 @@ public sealed class DeactivateInterestEndpoint(IInterestService service)
     public override void Configure()
     {
         Delete("/admin/interests/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Interests.Delete), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

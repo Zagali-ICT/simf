@@ -15,7 +15,7 @@ public sealed class ListCompaniesEndpoint(IAdminCompanyService service)
     public override void Configure()
     {
         Post("/admin/companies/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Companies.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -33,7 +33,7 @@ public sealed class GetCompanyEndpoint(IAdminCompanyService service)
     public override void Configure()
     {
         Get("/admin/companies/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Companies.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -55,7 +55,7 @@ public sealed class CreateCompanyEndpoint(IAdminCompanyService service)
     public override void Configure()
     {
         Post("/admin/companies");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Companies.Create),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -81,7 +81,7 @@ public sealed class UpdateCompanyEndpoint(IAdminCompanyService service)
     public override void Configure()
     {
         Put("/admin/companies/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Companies.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -107,7 +107,7 @@ public sealed class DeleteCompanyEndpoint(IAdminCompanyService service)
     public override void Configure()
     {
         Delete("/admin/companies/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Companies.Delete),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -135,7 +135,7 @@ public sealed class ListCompanyAccountsEndpoint(IAdminCompanyService service)
     public override void Configure()
     {
         Get("/admin/companies/{id:guid}/accounts");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Companies.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -156,7 +156,7 @@ public sealed class ProvisionCompanyAccountEndpoint(IAdminCompanyService service
     public override void Configure()
     {
         Post("/admin/companies/{id:guid}/accounts");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Companies.Create),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

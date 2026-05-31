@@ -19,7 +19,7 @@ public sealed class ListAdminsEndpoint(IAdminUserProvisioningService adminAccoun
     public override void Configure()
     {
         Post("/admin/admins/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Admins.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return one page of Admin accounts. Requires Administrator role.");
@@ -42,7 +42,7 @@ public sealed class ListOthersEndpoint(IAdminUserProvisioningService adminAccoun
     public override void Configure()
     {
         Post("/admin/others/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Others.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return one page of Other accounts. Requires Administrator role.");
@@ -65,7 +65,7 @@ public sealed class ListVisitorsEndpoint(IAdminUserProvisioningService adminAcco
     public override void Configure()
     {
         Post("/admin/visitors/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return one page of visitor accounts. Requires Administrator role.");

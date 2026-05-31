@@ -18,7 +18,7 @@ public sealed class ListPendingAdminsEndpoint(IAdminUserProvisioningService admi
     public override void Configure()
     {
         Post("/admin/admins/pending/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Admins.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "List pending Admins. Requires Administrator role.");
@@ -41,7 +41,7 @@ public sealed class ListPendingOthersEndpoint(IAdminUserProvisioningService admi
     public override void Configure()
     {
         Post("/admin/others/pending/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Others.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "List pending Others. Requires Administrator role.");
@@ -64,7 +64,7 @@ public sealed class ListPendingVisitorsEndpoint(IAdminUserProvisioningService ad
     public override void Configure()
     {
         Post("/admin/visitors/pending/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "List pending visitors. Requires the Administrator role.");

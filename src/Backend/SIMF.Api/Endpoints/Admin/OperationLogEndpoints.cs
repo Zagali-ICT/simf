@@ -16,7 +16,7 @@ public sealed class ListOperationLogEndpoint(IAdminOperationLogService service)
     public override void Configure()
     {
         Post("/admin/operation-log/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.OperationLog.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return one page of OperationLog entries with optional filters. " +
@@ -41,7 +41,7 @@ public sealed class GetOperationLogEndpoint(IAdminOperationLogService service)
     public override void Configure()
     {
         Get("/admin/operation-log/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.OperationLog.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Return one OperationLog entry (full detail). Requires Administrator role.");

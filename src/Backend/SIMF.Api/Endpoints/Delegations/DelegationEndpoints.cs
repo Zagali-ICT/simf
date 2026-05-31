@@ -33,7 +33,7 @@ public sealed class ListAdminDelegationsEndpoint(IAdminDelegationService service
     public override void Configure()
     {
         Post("/admin/delegations/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Delegations.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -50,7 +50,7 @@ public sealed class GetDelegationEndpoint(IAdminDelegationService service)
     public override void Configure()
     {
         Get("/admin/delegations/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Delegations.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -71,7 +71,7 @@ public sealed class CreateDelegationEndpoint(IAdminDelegationService service)
     public override void Configure()
     {
         Post("/admin/delegations");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Delegations.Create),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -96,7 +96,7 @@ public sealed class UpdateDelegationEndpoint(IAdminDelegationService service)
     public override void Configure()
     {
         Put("/admin/delegations/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Delegations.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -121,7 +121,7 @@ public sealed class DeleteDelegationEndpoint(IAdminDelegationService service)
     public override void Configure()
     {
         Delete("/admin/delegations/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Delegations.Delete),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

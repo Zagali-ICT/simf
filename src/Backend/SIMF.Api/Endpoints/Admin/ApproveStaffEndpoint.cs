@@ -19,7 +19,7 @@ public sealed class ApproveAdminEndpoint(IAdminUserApprovalService adminAccountS
     public override void Configure()
     {
         Post("/admin/admins/{id:guid}/approve");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Admins.Approve), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Approve a pending Admin. Requires Administrator role.");
@@ -47,7 +47,7 @@ public sealed class ApproveOtherEndpoint(IAdminUserApprovalService adminAccountS
     public override void Configure()
     {
         Post("/admin/others/{id:guid}/approve");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Admins.Approve), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Approve a pending Other. Requires Administrator role.");

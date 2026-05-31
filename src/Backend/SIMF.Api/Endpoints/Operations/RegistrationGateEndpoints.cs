@@ -17,7 +17,7 @@ public sealed class GetRegistrationGateEndpoint(IOperationsToggleService service
     public override void Configure()
     {
         Get("/admin/registration-gate");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Operations.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -33,7 +33,7 @@ public sealed class UpdateRegistrationGateEndpoint(IOperationsToggleService serv
     public override void Configure()
     {
         Put("/admin/registration-gate");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Operations.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

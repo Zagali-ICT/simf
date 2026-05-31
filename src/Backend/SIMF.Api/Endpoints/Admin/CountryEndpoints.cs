@@ -13,7 +13,7 @@ public sealed class ListCountriesEndpoint(IAdminCountryService service)
     public override void Configure()
     {
         Post("/admin/countries/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Countries.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -30,7 +30,7 @@ public sealed class GetCountryEndpoint(IAdminCountryService service)
     public override void Configure()
     {
         Get("/admin/countries/{id:int}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Countries.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -50,7 +50,7 @@ public sealed class CreateCountryEndpoint(IAdminCountryService service)
     public override void Configure()
     {
         Post("/admin/countries");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Countries.Create),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -84,7 +84,7 @@ public sealed class UpdateCountryEndpoint(IAdminCountryService service)
     public override void Configure()
     {
         Put("/admin/countries/{id:int}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Countries.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -118,7 +118,7 @@ public sealed class DeactivateCountryEndpoint(IAdminCountryService service)
     public override void Configure()
     {
         Delete("/admin/countries/{id:int}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Countries.Delete),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

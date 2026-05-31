@@ -14,7 +14,7 @@ public sealed class ListMediaEndpoint(IAdminMediaService service)
     public override void Configure()
     {
         Post("/admin/media/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Media.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -31,7 +31,7 @@ public sealed class GetMediaEndpoint(IAdminMediaService service)
     public override void Configure()
     {
         Get("/admin/media/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Media.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -52,7 +52,7 @@ public sealed class CreateMediaEndpoint(IAdminMediaService service)
     public override void Configure()
     {
         Post("/admin/media");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Media.Create),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -77,7 +77,7 @@ public sealed class UpdateMediaEndpoint(IAdminMediaService service)
     public override void Configure()
     {
         Put("/admin/media/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Media.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -102,7 +102,7 @@ public sealed class DeleteMediaEndpoint(IAdminMediaService service)
     public override void Configure()
     {
         Delete("/admin/media/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Media.Delete),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -136,7 +136,7 @@ public sealed class MediaImageUploadEndpoint(IAdminMediaService service)
     {
         Post("/admin/media/{id:guid}/image");
         AllowFileUploads();
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Media.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");

@@ -122,7 +122,7 @@ public sealed class GetHallSeatLayoutEndpoint(ISeatReservationService service)
     public override void Configure()
     {
         Get("/admin/halls/{hallId:guid}/seat-layout");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SeatLayouts.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }
@@ -142,7 +142,7 @@ public sealed class SetHallSeatLayoutEndpoint(ISeatReservationService service)
     public override void Configure()
     {
         Put("/admin/halls/{hallId:guid}/seat-layout");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SeatLayouts.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -175,7 +175,7 @@ public sealed class AdminReserveRowEndpoint(ISeatReservationService service)
     public override void Configure()
     {
         Post("/admin/sessions/{sessionId:guid}/seats/reserve-row");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SeatPlans.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -205,7 +205,7 @@ public sealed class AdminReleaseSeatEndpoint(ISeatReservationService service)
     public override void Configure()
     {
         Delete("/admin/sessions/{sessionId:guid}/seats/{id:guid}");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SeatPlans.Edit),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Admin");
@@ -239,7 +239,7 @@ public sealed class ListSessionSeatReservationsEndpoint(ISeatReservationService 
     public override void Configure()
     {
         Post("/admin/sessions/{sessionId:guid}/seats/list");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly),
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.SeatPlans.View),
                  nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
     }

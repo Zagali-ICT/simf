@@ -98,7 +98,7 @@ public sealed class UploadVisitorIdDocumentEndpoint(IUserProfileService service)
     public override void Configure()
     {
         Post("/admin/visitors/{id:guid}/id-document");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.Edit), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         AllowFileUploads();
@@ -121,7 +121,7 @@ public sealed class UploadOtherIdDocumentEndpoint(IUserProfileService service)
     public override void Configure()
     {
         Post("/admin/others/{id:guid}/id-document");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Others.Edit), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         AllowFileUploads();
@@ -162,7 +162,7 @@ public sealed class FetchVisitorIdDocumentEndpoint(IUserProfileService service)
     public override void Configure()
     {
         Get("/admin/visitors/{id:guid}/id-document");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Visitors.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Stream the visitor's ID-document image.");
@@ -183,7 +183,7 @@ public sealed class FetchOtherIdDocumentEndpoint(IUserProfileService service)
     public override void Configure()
     {
         Get("/admin/others/{id:guid}/id-document");
-        Policies(nameof(AuthorizationPolicies.AdministratorOnly), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Others.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Admin");
         Summary(summary => summary.Summary =
             "Stream the Other account's ID-document image.");
