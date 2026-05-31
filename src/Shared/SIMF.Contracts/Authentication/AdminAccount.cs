@@ -50,6 +50,21 @@ public sealed class AdminCreateAdminRequest
     public IList<string> Roles { get; set; } = new List<string>();
 }
 
+/// <summary>The response of <c>GET /api/v1/admin/admins/{id}/roles</c>
+/// (Issue-1) — the RBAC role names an admin user currently holds, used to
+/// pre-fill the user-roles editor.</summary>
+public sealed record AdminUserRolesResponse(
+    Guid UserId,
+    IReadOnlyList<string> Roles);
+
+/// <summary>The body of <c>PUT /api/v1/admin/admins/{id}/roles</c>
+/// (Issue-1) — the complete set of role names the admin user should hold.
+/// The server replaces the user's roles with exactly this set.</summary>
+public sealed class AdminSetUserRolesRequest
+{
+    public List<string> Roles { get; set; } = new();
+}
+
 /// <summary>
 /// The body of <c>POST /api/v1/admin/others</c> (P7c — new). Creates a
 /// new <b>Other</b> user — an event team / partner who signs in to the

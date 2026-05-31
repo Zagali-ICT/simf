@@ -75,6 +75,10 @@ public static class ErrorCodes
     // P7c — ProfileTypes lookup validation
     public const string AdminProfileTypeInvalid = "ADMIN_PROFILE_TYPE_INVALID";
 
+    // Issue-1 — RBAC role assignment to an existing admin user.
+    public const string AdminRolesTargetNotAdmin = "ADMIN_ROLES_TARGET_NOT_ADMIN";
+    public const string AdminCannotRemoveLastAdministrator = "ADMIN_CANNOT_REMOVE_LAST_ADMINISTRATOR";
+
     // D-115 — ProfileTypes CRUD (admin lookup management)
     public const string ProfileTypeNotFound = "PROFILE_TYPE_NOT_FOUND";
     public const string ProfileTypeInUse = "PROFILE_TYPE_IN_USE";

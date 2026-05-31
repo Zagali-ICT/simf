@@ -109,4 +109,23 @@ public interface IAdminUserProvisioningService
         AdminWalkInRegistrationRequest request,
         CancellationToken cancellationToken = default,
         bool? expectedIsVisitor = null);
+
+    // -- Issue-1 — RBAC role assignment for an existing admin user ----------
+
+    /// <summary>The RBAC role names an Admin-typed user currently holds.
+    /// Throws <c>UserNotFound</c> (404) when the user is missing.</summary>
+    Task<AdminUserRolesResponse> GetUserRolesAsync(
+        Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>Replaces an Admin-typed user's RBAC roles with exactly
+    /// <paramref name="roleNames"/> (every name must be an existing role).
+    /// Rolls the user's security stamp so the change takes effect on the
+    /// next request. Throws <c>UserNotFound</c> (404), a 409 when the target
+    /// is not an Admin account, <c>RoleNotFound</c> (400) for an unknown
+    /// role, and a 409 when the change would remove the last Administrator.</summary>
+    Task SetUserRolesAsync(
+        Guid actorUserId,
+        Guid userId,
+        IReadOnlyCollection<string> roleNames,
+        CancellationToken cancellationToken = default);
 }

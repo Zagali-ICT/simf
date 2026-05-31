@@ -25,6 +25,7 @@
 
   <data name="Nav.Overview" xml:space="preserve"><value>نظرة عامة</value></data>
   <data name="Nav.People" xml:space="preserve"><value>الأشخاص</value></data>
+  <data name="Nav.AccessControl" xml:space="preserve"><value>التحكم في الوصول</value></data>
   <data name="Nav.Programme" xml:space="preserve"><value>البرنامج</value></data>
   <data name="Nav.Exhibition" xml:space="preserve"><value>المعرض</value></data>
   <data name="Nav.Engagement" xml:space="preserve"><value>التفاعل</value></data>
@@ -240,6 +241,7 @@
   <data name="Admin.Roles.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
   <data name="Admin.Roles.Action.Details" xml:space="preserve"><value>تفاصيل</value></data>
   <data name="Admin.Roles.Action.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Roles.Action.Permissions" xml:space="preserve"><value>الصلاحيات</value></data>
   <data name="Admin.Roles.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
   <data name="Admin.Roles.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
   <data name="Admin.Roles.Add.Title" xml:space="preserve"><value>إضافة دور</value></data>
@@ -914,9 +916,16 @@
   <data name="Admin.Users.Action.Details" xml:space="preserve"><value>التفاصيل</value></data>
   <data name="Admin.Users.Add.Title" xml:space="preserve"><value>إضافة مستخدم</value></data>
   <data name="Admin.Users.Add.Close" xml:space="preserve"><value>إغلاق</value></data>
-  <data name="Admin.Users.Edit.Title" xml:space="preserve"><value>تعديل المستخدم</value></data>
-  <data name="Admin.Users.Edit.NotYet" xml:space="preserve"><value>تعديل المستخدم سيتوفر مع وحدة إدارة المستخدمين. تم تجهيز الشبكة لذلك مسبقًا.</value></data>
-  <data name="Admin.Users.Edit.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Users.EditRoles.Title" xml:space="preserve"><value>تعديل الأدوار — {0}</value></data>
+  <data name="Admin.Users.EditRoles.Intro" xml:space="preserve"><value>حدّد الأدوار التي يحملها هذا المستخدم. صلاحياته هي مجموع صلاحيات الأدوار المختارة؛ وتُطبَّق التغييرات عند تسجيل دخوله في المرة التالية.</value></data>
+  <data name="Admin.Users.EditRoles.Loading" xml:space="preserve"><value>جارٍ تحميل الأدوار…</value></data>
+  <data name="Admin.Users.EditRoles.NoRoles" xml:space="preserve"><value>لا توجد أدوار متاحة للإسناد.</value></data>
+  <data name="Admin.Users.EditRoles.Save" xml:space="preserve"><value>حفظ الأدوار</value></data>
+  <data name="Admin.Users.EditRoles.Saving" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
+  <data name="Admin.Users.EditRoles.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Users.EditRoles.Saved" xml:space="preserve"><value>تم تحديث أدوار {0}.</value></data>
+  <data name="Admin.Users.EditRoles.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الأدوار.</value></data>
+  <data name="Admin.Users.EditRoles.Fallback" xml:space="preserve"><value>تعذّر حفظ الأدوار. حاول مرة أخرى.</value></data>
   <data name="Admin.Users.Details.Title" xml:space="preserve"><value>تفاصيل المستخدم — {0}</value></data>
   <data name="Admin.Users.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
   <data name="Admin.Users.Details.Field.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>

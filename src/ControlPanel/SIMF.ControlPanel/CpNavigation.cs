@@ -43,9 +43,16 @@ public static class CpNavigation
             new("Module.Attendees", "/admin/attendees", RequiredPermission: PermissionCatalog.Attendees.View),
             // D-130 — print-bag station: lookup by QR id + reprint badge.
             new("Module.PrintBag", "/admin/print-bag", RequiredPermission: PermissionCatalog.Attendees.PrintBag),
-            // D-134 Sprint A — Roles module shipped against the existing
-            // SimfRole + Permission + RolePermission entities (no migration).
+        ]),
+        // Issue-1 — access control grouped together: the admin accounts that
+        // sign in to the CP, the roles & permissions they hold, and 2FA reset.
+        new("Nav.AccessControl",
+        [
+            new("Module.AdminAdmins", "/admin/admins", RequiredPermission: PermissionCatalog.Admins.View),
+            new("Module.AdminAdminsPending", "/admin/admins/pending", RequiredPermission: PermissionCatalog.Admins.View),
+            // D-134 Sprint A / Issue-1 — roles + their per-page/per-action grants.
             new("Module.Roles", "/admin/roles", RequiredPermission: PermissionCatalog.Roles.View),
+            new("Module.AdminResetTwoFactor", "/admin/reset-2fa", RequiredPermission: PermissionCatalog.Admins.ResetTwoFactor),
         ]),
         new("Nav.Programme",
         [
@@ -116,11 +123,8 @@ public static class CpNavigation
         // the placeholder instead of the real inbox.
         new("Nav.System",
         [
-            // P7e — D-055: three pairs of pages, one per UserType
-            // (Admin / Other / Visitor). The "Staff" label is gone —
-            // P7c renamed the API; P7e finishes the rename on the CP UI.
-            new("Module.AdminAdmins", "/admin/admins", RequiredPermission: PermissionCatalog.Admins.View),
-            new("Module.AdminAdminsPending", "/admin/admins/pending", RequiredPermission: PermissionCatalog.Admins.View),
+            // P7e — D-055: Other + Visitor account pages (the Admin account
+            // pages moved to the Access control group in Issue-1).
             new("Module.AdminOthers", "/admin/others", RequiredPermission: PermissionCatalog.Others.View),
             new("Module.AdminOthersPending", "/admin/others/pending", RequiredPermission: PermissionCatalog.Others.View),
             new("Module.AdminVisitors", "/admin/visitors", RequiredPermission: PermissionCatalog.Visitors.View),
@@ -131,7 +135,6 @@ public static class CpNavigation
             // D-118 — admin-managed lookup CRUD for ProfileType (per UserType).
             new("Module.AdminVisitorProfileTypes", "/admin/profile-types/visitor", RequiredPermission: PermissionCatalog.ProfileTypes.View),
             new("Module.AdminOtherProfileTypes", "/admin/profile-types/other", RequiredPermission: PermissionCatalog.ProfileTypes.View),
-            new("Module.AdminResetTwoFactor", "/admin/reset-2fa", RequiredPermission: PermissionCatalog.Admins.ResetTwoFactor),
             new("Module.AdminLogs", "/admin/logs", RequiredPermission: PermissionCatalog.Logs.View),
             // D-148 — Gate Module: master CRUD + role-adaptive operator console
             // (SIMF-FDS-003 §5.6 / SIMF-API-GATES-001).

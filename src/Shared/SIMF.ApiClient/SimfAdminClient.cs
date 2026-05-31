@@ -672,6 +672,23 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    /// <summary>Issue-1 — the RBAC roles an admin user currently holds.</summary>
+    public Task<ApiCallResult<AdminUserRolesResponse>> GetUserRolesAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminUserRolesResponse>(
+            HttpMethod.Get, $"admins/{id}/roles", content: null,
+            accessToken, cancellationToken);
+
+    /// <summary>Issue-1 — replaces an admin user's RBAC roles.</summary>
+    public Task<ApiCallResult<bool>> SetUserRolesAsync(
+        Guid id, AdminSetUserRolesRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Put, $"admins/{id}/roles",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     // -- D-134 Sprint A — Operation log read-only viewer ---------------------
 
     /// <summary>One page of OperationLog entries (D-134 Sprint A). Filters

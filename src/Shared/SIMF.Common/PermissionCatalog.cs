@@ -71,6 +71,7 @@ public static class PermissionCatalog
         public const string Export = "Admins.Export";
         public const string Import = "Admins.Import";
         public const string ResetTwoFactor = "Admins.ResetTwoFactor";
+        public const string AssignRoles = "Admins.AssignRoles";
     }
 
     /// <summary>"Other" (partner-side) accounts — Staff / Media / Sponsor.</summary>
@@ -406,6 +407,7 @@ public static class PermissionCatalog
         new(Admins.Export, "Admins", "Export", "Export admins", AdminOnly),
         new(Admins.Import, "Admins", "Import", "Import admins", AdminOnly),
         new(Admins.ResetTwoFactor, "Admins", "ResetTwoFactor", "Reset a user's two-factor", AdminOnly),
+        new(Admins.AssignRoles, "Admins", "AssignRoles", "Assign roles to admins", AdminOnly),
 
         new(Others.View, "Others", "View", "View other accounts", AdminOnly),
         new(Others.Create, "Others", "Create", "Create other accounts", AdminOnly),

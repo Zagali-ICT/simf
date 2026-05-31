@@ -144,16 +144,47 @@
     </SimfModal>
 }
 
-@* D-117 — Edit stub modal (real Edit ships with the User Management module). *@
-@if (_editOpen)
+@* Issue-1 — Edit a user's RBAC roles (replaces the D-117 stub). *@
+@if (_editTarget is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.Users.Edit.Title"]" OnClose="@(() => _editOpen = false)">
+    <SimfModal Open="true"
+               Title="@string.Format(L["Admin.Users.EditRoles.Title"], _editTarget.Email)"
+               OnClose="CloseEdit">
         <ChildContent>
-            <p>@L["Admin.Users.Edit.NotYet"]</p>
+            @if (_editError is not null)
+            {
+                <SimfAlert Variant="error">@_editError</SimfAlert>
+            }
+            @if (_editLoading)
+            {
+                <p>@L["Admin.Users.EditRoles.Loading"]</p>
+            }
+            else if (_availableRoles.Count == 0)
+            {
+                <p>@L["Admin.Users.EditRoles.NoRoles"]</p>
+            }
+            else
+            {
+                <p>@L["Admin.Users.EditRoles.Intro"]</p>
+                @foreach (var roleName in _availableRoles)
+                {
+                    <SimfCheckbox Value="_editSelectedRoles.Contains(roleName)"
+                                  ValueChanged="@((bool on) => ToggleEditRole(roleName, on))"
+                                  Disabled="_editBusy">
+                        @roleName
+                    </SimfCheckbox>
+                }
+            }
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="@(() => _editOpen = false)">
-                @L["Admin.Users.Edit.Close"]
+            <SimfButton Type="button" Variant="primary" Loading="_editBusy"
+                        LoadingLabel="@L["Admin.Users.EditRoles.Saving"]"
+                        Disabled="@(_editLoading || _availableRoles.Count == 0)"
+                        OnClick="SaveRolesAsync">
+                @L["Admin.Users.EditRoles.Save"]
+            </SimfButton>
+            <SimfButton Type="button" Variant="secondary" Disabled="_editBusy" OnClick="CloseEdit">
+                @L["Admin.Users.EditRoles.Cancel"]
             </SimfButton>
         </Footer>
     </SimfModal>
@@ -279,8 +310,13 @@
     // D-117 — Add modal state (replaces navigation to /admin/admins/new).
     private bool _addOpen;
 
-    // D-117 — Edit stub modal state (real Edit awaits User Management module).
-    private bool _editOpen;
+    // Issue-1 — Edit-roles modal state.
+    private AdminUserSummary? _editTarget;
+    private readonly List<string> _availableRoles = new();
+    private readonly HashSet<string> _editSelectedRoles = new(StringComparer.Ordinal);
+    private bool _editLoading;
+    private bool _editBusy;
+    private string? _editError;
 
     // D-117 — Details modal state. Read-only view of the row's data.
     private AdminUserSummary? _detailsTarget;
@@ -337,12 +373,73 @@
         await LoadAsync();
     }
 
-    private Task OnEditAsync(AdminUserSummary _)
+    private async Task OnEditAsync(AdminUserSummary user)
     {
-        // D-117 — Edit is wired but stubbed; real edit ships with User Management.
-        _editOpen = true;
-        return Task.CompletedTask;
+        _editTarget = user;
+        _editError = null;
+        _editLoading = true;
+        _availableRoles.Clear();
+        _editSelectedRoles.Clear();
+        try
+        {
+            var roles = await JS.InvokeAsync<ApiResult<GridPage<AdminRoleSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/roles/list",
+                new GridQuery { Top = 200, Sort = "name" });
+            if (roles is { Success: true, Data: not null })
+            {
+                _availableRoles.AddRange(roles.Data.Items.Select(role => role.Name));
+            }
+
+            var current = await JS.InvokeAsync<ApiResult<AdminUserRolesResponse>>(
+                "simfAccount.getJson", $"/account/api/admin/admins/{user.Id}/roles");
+            if (current is { Success: true, Data: not null })
+            {
+                foreach (var roleName in current.Data.Roles)
+                {
+                    _editSelectedRoles.Add(roleName);
+                }
+            }
+        }
+        catch (JSException)
+        {
+            _editError = L["Admin.Users.EditRoles.LoadFailed"];
+        }
+        finally { _editLoading = false; }
     }
+
+    private void ToggleEditRole(string roleName, bool on)
+    {
+        if (on) { _editSelectedRoles.Add(roleName); }
+        else { _editSelectedRoles.Remove(roleName); }
+    }
+
+    private async Task SaveRolesAsync()
+    {
+        if (_editTarget is null || _editBusy) { return; }
+        _editBusy = true;
+        _editError = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.putJson", $"/account/api/admin/admins/{_editTarget.Id}/roles",
+                new AdminSetUserRolesRequest { Roles = _editSelectedRoles.ToList() });
+            if (envelope is { Success: true })
+            {
+                var email = _editTarget.Email;
+                _editTarget = null;
+                ShowToast("success", string.Format(L["Admin.Users.EditRoles.Saved"], email));
+                await LoadAsync();
+            }
+            else
+            {
+                _editError = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Users.EditRoles.Fallback"];
+            }
+        }
+        finally { _editBusy = false; }
+    }
+
+    private void CloseEdit() => _editTarget = null;
 
     private Task OnDetailsAsync(AdminUserSummary user)
     {

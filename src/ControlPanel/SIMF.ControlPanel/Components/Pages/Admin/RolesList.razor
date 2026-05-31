@@ -82,6 +82,13 @@
                     <CellTemplate>@context.PermissionCount</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>
+            <RowActions Context="role">
+                <AuthorizedAction Permission="@PermissionCatalog.Roles.AssignPermissions">
+                    <SimfLink Href="@($"/admin/roles/{role.Id}/permissions")">
+                        @L["Admin.Roles.Action.Permissions"]
+                    </SimfLink>
+                </AuthorizedAction>
+            </RowActions>
             <EmptyTemplate>
                 <SimfEmptyState Title="@L["Admin.Roles.None"]" />
             </EmptyTemplate>
