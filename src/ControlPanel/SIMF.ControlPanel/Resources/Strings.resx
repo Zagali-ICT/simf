@@ -34,6 +34,21 @@
   <data name="Nav.Communications" xml:space="preserve"><value>Communications</value></data>
   <data name="Nav.System" xml:space="preserve"><value>System</value></data>
 
+  <!-- P1.3 (D-214) — shared admin Edit form (Visitor / Other). -->
+  <data name="Admin.Edit.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.Edit.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Admin.Edit.DisplayName" xml:space="preserve"><value>Display name</value></data>
+  <data name="Admin.Edit.ProfileType" xml:space="preserve"><value>Profile type</value></data>
+  <data name="Admin.Edit.ProfileType.None" xml:space="preserve"><value>— none —</value></data>
+  <data name="Admin.Edit.ProfileType.Choose" xml:space="preserve"><value>Choose a profile type…</value></data>
+  <data name="Admin.Edit.EmailChangeNote" xml:space="preserve"><value>Changing the email signs the account out of all sessions.</value></data>
+  <data name="Admin.Edit.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Edit.Save" xml:space="preserve"><value>Save changes</value></data>
+  <data name="Admin.Edit.Saving" xml:space="preserve"><value>Saving…</value></data>
+  <data name="Admin.Edit.Saved" xml:space="preserve"><value>The account was updated.</value></data>
+  <data name="Admin.Edit.LoadFailed" xml:space="preserve"><value>The account could not be loaded.</value></data>
+  <data name="Admin.Edit.Fallback" xml:space="preserve"><value>The account could not be updated.</value></data>
+
   <data name="Module.Dashboard" xml:space="preserve"><value>Dashboard</value></data>
   <data name="Module.Statistics" xml:space="preserve"><value>Statistics</value></data>
   <data name="Module.RegistrationRequests" xml:space="preserve"><value>Registration requests</value></data>

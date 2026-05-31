@@ -34,6 +34,21 @@
   <data name="Nav.Communications" xml:space="preserve"><value>الاتصالات</value></data>
   <data name="Nav.System" xml:space="preserve"><value>النظام</value></data>
 
+  <!-- P1.3 (D-214) — shared admin Edit form (Visitor / Other). -->
+  <data name="Admin.Edit.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.Edit.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Edit.DisplayName" xml:space="preserve"><value>الاسم المعروض</value></data>
+  <data name="Admin.Edit.ProfileType" xml:space="preserve"><value>نوع الملف الشخصي</value></data>
+  <data name="Admin.Edit.ProfileType.None" xml:space="preserve"><value>— بدون —</value></data>
+  <data name="Admin.Edit.ProfileType.Choose" xml:space="preserve"><value>اختر نوع الملف الشخصي…</value></data>
+  <data name="Admin.Edit.EmailChangeNote" xml:space="preserve"><value>تغيير البريد الإلكتروني يُنهي جميع جلسات الحساب.</value></data>
+  <data name="Admin.Edit.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Edit.Save" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.Edit.Saving" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
+  <data name="Admin.Edit.Saved" xml:space="preserve"><value>تم تحديث الحساب.</value></data>
+  <data name="Admin.Edit.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الحساب.</value></data>
+  <data name="Admin.Edit.Fallback" xml:space="preserve"><value>تعذّر تحديث الحساب.</value></data>
+
   <data name="Module.Dashboard" xml:space="preserve"><value>لوحة المعلومات</value></data>
   <data name="Module.Statistics" xml:space="preserve"><value>الإحصائيات</value></data>
   <data name="Module.RegistrationRequests" xml:space="preserve"><value>طلبات التسجيل</value></data>

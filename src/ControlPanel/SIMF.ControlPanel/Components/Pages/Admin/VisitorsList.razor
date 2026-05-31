@@ -106,18 +106,15 @@
     </SimfModal>
 }
 
-@* D-114 — Edit stub modal (real Edit awaits the generic-CRUD API). *@
-@if (_editOpen)
+@* P1.3 (D-214) — real Edit modal: email + display name + tier. *@
+@if (_editTarget is not null)
 {
-    <SimfModal Open="true" Title="@L["Admin.Visitors.Edit.Title"]" OnClose="@(() => _editOpen = false)">
+    <SimfModal Open="true" Title="@L["Admin.Visitors.Edit.Title"]" OnClose="@(() => _editTarget = null)">
         <ChildContent>
-            <p>@L["Admin.Visitors.Edit.NotYet"]</p>
+            <EditAccountForm AccountId="_editTarget.Id" Scope="visitors" IsVisitorScope="true"
+                             OnSaved="OnEditSavedAsync"
+                             OnCancel="@(() => _editTarget = null)" />
         </ChildContent>
-        <Footer>
-            <SimfButton Type="button" OnClick="@(() => _editOpen = false)">
-                @L["Admin.Visitors.Edit.Close"]
-            </SimfButton>
-        </Footer>
     </SimfModal>
 }
 
@@ -278,7 +275,7 @@
     private bool _busy;
 
     private bool _addOpen;
-    private bool _editOpen;
+    private AdminUserSummary? _editTarget;
     private AdminUserSummary? _detailsTarget;
     private AdminUserProfileView? _detailsProfile;
     private bool _detailsLoading;
@@ -331,10 +328,17 @@
         await LoadAsync();
     }
 
-    private Task OnEditAsync(AdminUserSummary _)
+    private Task OnEditAsync(AdminUserSummary user)
     {
-        _editOpen = true;
+        _editTarget = user;
         return Task.CompletedTask;
+    }
+
+    private async Task OnEditSavedAsync()
+    {
+        _editTarget = null;
+        ShowToast("success", L["Admin.Edit.Saved"]);
+        await LoadAsync();
     }
 
     private async Task OnDetailsAsync(AdminUserSummary user)
