@@ -77,6 +77,7 @@ Administrator can grant any code to any custom role at runtime.
 | `Admins.Export` | Admins · Export | — | `POST /admin/admins/export` |
 | `Admins.Import` | Admins · Import | — | `POST /admin/admins/import` |
 | `Admins.ResetTwoFactor` | Admins · ResetTwoFactor | — | `/admin/reset-2fa`; `POST /admin/admins/reset-two-factor` |
+| `Admins.AssignRoles` | Admins · AssignRoles | — | `GET/PUT /admin/admins/{id}/roles`; the existing-user role editor (D-208) |
 | `Others.View` | Others · View | — | `/admin/others`, `…/pending`; lists + profile reads + id-document fetch |
 | `Others.Create` | Others · Create | — | `/admin/others/new`; `POST /admin/others`, `…/duplicate` |
 | `Others.Edit` | Others · Edit | — | id-document upload |
@@ -93,7 +94,7 @@ Administrator can grant any code to any custom role at runtime.
 | `Roles.Create` | Roles · Create | — | `POST /admin/roles` |
 | `Roles.Edit` | Roles · Edit | — | `PUT /admin/roles/{id}` |
 | `Roles.Delete` | Roles · Delete | — | `DELETE /admin/roles/{id}` |
-| `Roles.AssignPermissions` | Roles · AssignPermissions | — | role→permission editor (Phase 4) |
+| `Roles.AssignPermissions` | Roles · AssignPermissions | — | `GET/PUT /admin/roles/{id}/permissions`; the role→permission editor |
 | `Interests.*` | Interests · View/Create/Edit/Delete | — | `/admin/interests`; `/admin/interests*` |
 | `Countries.*` | Countries · View/Create/Edit/Delete | — | `/admin/countries`; `/admin/countries*` |
 | `ProfileTypes.*` | ProfileTypes · View/Create/Edit/Delete | — | `/admin/profile-types/*`; `/admin/profile-types*` |
