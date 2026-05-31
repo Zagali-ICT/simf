@@ -51,6 +51,27 @@ not push `feature/login-api` to origin.
 writing (a count that grows with each follow-up commit). Push gated
 by §1.1.
 
+### 1.3 D-211 programme — deferred items (owner / external) — DECISION required
+
+The "finish all remaining stubs + open gap items" programme (D-211)
+deferred three items that cannot proceed without owner input or external
+procurement. They stay here until resolved:
+
+- **GPS geofence chain** (FR-305 hall-arrival, FR-506 session attendance,
+  FR-1103 movement/dwell) **and** question-gating-on-verified-arrival
+  (FR-704) — **blocked on G-OI-2**: the venue-boundary data model + source
+  (per-hall polygon GeoJSON vs. rectangular bounds vs. external map data).
+  Only the seam exists today; no `VenueBoundary` table, no geofence check.
+- **Real live-video provider** — **blocked on D7**: external streaming
+  provider procurement + keys. The seam/stub (`mkp_live.dart`, CP
+  `LiveSessions`) ships now; the live provider is swapped in when bought.
+- **Exact statistics metric list** — **blocked on D6**: the live-counts
+  dashboard (`/admin/statistics`) ships; the final metric set awaits the
+  owner's list.
+
+Device-calendar add (FR-409) is Flutter-app work and is tracked in the
+mobile workstream, not this CP/backend programme.
+
 ---
 
 ## 2. Architectural refactor sprint (R4–R6)

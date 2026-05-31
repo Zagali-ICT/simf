@@ -122,3 +122,22 @@ against **rename/reorder** (additive new values still allowed). See
 `docs/decisions/DECISIONS_LOG.md` D-199 for the rationale and the four
 owner decisions taken with it (freeze lift; provider-stub for live/AI;
 exhibitor/sponsor = CP-only Company + accounts; 2D venue map).
+
+### D-211 programme freeze-lift (2026-05-31)
+
+Owner authorised a further freeze-lift to deliver the "finish all
+remaining stubs + open gap items" programme. New **additive** EF
+tables/columns on `SimfAppDbContext` are now permitted for: FAQ
+(`FaqGroup` + `FaqEntry`), the Booking approval workflow, Speaker
+presentation-files, System Configuration, Venue-Map 2D nodes, and
+Networking connections — each as a consolidated additive migration per
+feature. The **Identity** schema stays frozen and the existing enums
+stay frozen against **rename/reorder** (additive new values still
+allowed). Three items were **deferred** with the same decision and are
+NOT in scope: the GPS geofence → arrival → attendance → movement chain
+(FR-305/506/1103) + question-gating-on-arrival (FR-704), pending the
+**G-OI-2** venue-boundary decision; a real live-video provider, pending
+external procurement (**D7**); and the exact statistics metric list,
+pending **D6**. See `docs/decisions/DECISIONS_LOG.md` D-211. No other
+freeze items are lifted; future schema/enum changes beyond this named
+list still require explicit owner approval.
