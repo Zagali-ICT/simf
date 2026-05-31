@@ -38,5 +38,13 @@
         }
     }
 
-    private async Task ToggleAsync() => _isDark = await JS.InvokeAsync<bool>("simfTheme.toggle");
+    // simfTheme.toggle returns the new theme NAME (a string — like setNamed /
+    // current), not a bool. Read it as a string and derive the dark state;
+    // InvokeAsync<bool> here threw a JSException (and tore down the circuit)
+    // trying to deserialise "light"/"dark" into a bool.
+    private async Task ToggleAsync()
+    {
+        var theme = await JS.InvokeAsync<string>("simfTheme.toggle");
+        _isDark = theme == "dark";
+    }
 }

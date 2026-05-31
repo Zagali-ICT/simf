@@ -21,11 +21,16 @@ window.simfTheme = (function () {
 
     function setNamed(name) {
         if (KNOWN.indexOf(name) < 0) { name = "light"; }
+        var de = document.documentElement;
         if (name === "light") {
-            document.documentElement.removeAttribute("data-theme");
+            de.removeAttribute("data-theme");
         } else {
-            document.documentElement.setAttribute("data-theme", name);
+            de.setAttribute("data-theme", name);
         }
+        // Keep the browser's native UI (canvas, scrollbars, form controls) in
+        // step with the theme so a runtime toggle never leaves a light scrollbar
+        // on a dark page. Only "dark" is a dark scheme; grey is a light surface.
+        de.style.colorScheme = (name === "dark") ? "dark" : "light";
         try {
             window.localStorage.setItem(STORAGE_KEY, name);
         } catch (e) {

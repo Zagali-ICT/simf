@@ -16,7 +16,12 @@
         (function () {
             try {
                 if (localStorage.getItem('simf-theme') === 'dark') {
-                    document.documentElement.setAttribute('data-theme', 'dark');
+                    var de = document.documentElement;
+                    de.setAttribute('data-theme', 'dark');
+                    // color-scheme makes the browser paint a dark canvas + native
+                    // controls immediately, before the stylesheet loads — this is
+                    // what removes the white flash on reload in dark mode.
+                    de.style.colorScheme = 'dark';
                 }
             } catch (e) { /* localStorage may be unavailable */ }
         })();
