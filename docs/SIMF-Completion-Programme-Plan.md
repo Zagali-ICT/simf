@@ -87,7 +87,23 @@ we do the broadcast?
 > re-cast as **recorded-playback** features under Option A. If you want true
 > live, pick Option B and we add D7 (provider) + G-OI-2 (geofence) back to scope.
 
-**This is a recommendation — §2 needs your confirm before P3 builds.**
+### Decided — broadcast + storage (D-213, 2026-05-31)
+
+- **Broadcast = Option A (recorded → published).** Owner confirmed "recorded
+  by now, unless a new live requirement appears."
+- **Storage/serving (engineering call, delegated to the build team, made from
+  the researched best practices):** on-prem **filesystem** at a configured root
+  (reusing the D-90 path-in-DB / bytes-on-disk pattern + `StorageOptions`);
+  **progressive MP4 served with HTTP range streaming**
+  (`enableRangeProcessing: true`, async I/O, no whole-file reads); access via a
+  **short-lived JWT** streaming endpoint behind the reverse proxy; **volume-level
+  encryption** (e.g. BitLocker) + the recordings folder in the backup/rollback
+  set. All behind an **`ISessionRecordingStorage`** interface (mirrors
+  `IMediaImageStorage` / `IUserIdDocumentStorage`) so **MinIO object storage and
+  HLS adaptive streaming are a later impl swap, not a redesign**.
+- Rationale: a single annual forum is a few dozen recordings (low-hundreds-of-GB),
+  so MinIO's multi-node scaling and an ffmpeg HLS pipeline add deadline risk for
+  little gain now; the seam keeps that upgrade open. Sources in the research note.
 
 ---
 
@@ -198,8 +214,8 @@ real AI provider + keys are available now, or we ship the seam + stub.**
 
 ## 8. Open confirmations before P3/P4 build
 
-1. **Broadcast model** — confirm **Option A (recorded → published)**, or pick B/C.
-2. **Request Interview (screen 27)** — reuse `MeetingRequest`, new feature, or defer.
-3. **AI provider** — real provider + keys available now, or ship seam + stub.
+1. ~~Broadcast model~~ — **RESOLVED (D-213):** Option A + on-prem filesystem / MP4 range-streaming / JWT / volume encryption, behind `ISessionRecordingStorage`.
+2. **Request Interview (screen 27)** — reuse `MeetingRequest`, new feature, or defer. *(gates only P3.5)*
+3. **AI provider** — real provider + keys available now, or ship seam + stub. *(gates only P4)*
 
-P1 and P2 are unblocked and need none of the above — approval to start P1 is enough to begin.
+P1 and P2 are unblocked and need none of the above. P3 is now unblocked except P3.5 (Request-Interview). Building proceeds P1 → P2 → P3.
