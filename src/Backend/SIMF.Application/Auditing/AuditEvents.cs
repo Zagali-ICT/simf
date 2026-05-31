@@ -122,6 +122,8 @@ public static class AuditEvents
     public const string RoleCreated = "Role.Created";
     public const string RoleUpdated = "Role.Updated";
     public const string RoleDeleted = "Role.Deleted";
+    // Issue-1 — an admin changed a custom role's permission grants.
+    public const string RolePermissionsUpdated = "Role.PermissionsUpdated";
 
     // Themes (D-134 Sprint B — programme themes, SIMF-FDS-004 §5.1)
     public const string ThemeCreated = "Theme.Created";

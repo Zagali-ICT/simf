@@ -10,6 +10,7 @@
 @attribute [RequirePermission(PermissionCatalog.Roles.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
+@inject NavigationManager Nav
 
 <PageTitle>@L["Admin.Roles.Title"] · SIMF</PageTitle>
 
@@ -140,10 +141,16 @@
                 <dt>@L["Admin.Roles.Column.PermissionCount"]</dt>
                 <dd>@_detailsTarget.PermissionCount</dd>
             </dl>
-            <p class="simf-walkin__hint">@L["Admin.Roles.Details.PermissionEditorDeferred"]</p>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="@(() => _detailsTarget = null)">
+            <AuthorizedAction Permission="@PermissionCatalog.Roles.AssignPermissions">
+                <SimfButton Type="button" Variant="primary"
+                            OnClick="@(() => OpenPermissionEditor(_detailsTarget))">
+                    @L["Admin.Roles.Details.EditPermissions"]
+                </SimfButton>
+            </AuthorizedAction>
+            <SimfButton Type="button" Variant="secondary"
+                        OnClick="@(() => _detailsTarget = null)">
                 @L["Admin.Roles.Details.Close"]
             </SimfButton>
         </Footer>
@@ -222,6 +229,10 @@
         _detailsTarget = row;
         return Task.CompletedTask;
     }
+
+    // Issue-1 — open the per-role permission editor page.
+    private void OpenPermissionEditor(AdminRoleSummary row) =>
+        Nav.NavigateTo($"/admin/roles/{row.Id}/permissions");
 
     private async Task OnDeleteAsync(AdminRoleSummary row)
     {

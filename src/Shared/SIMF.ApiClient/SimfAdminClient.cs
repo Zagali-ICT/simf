@@ -655,6 +655,23 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"roles/{id}", content: null,
             accessToken, cancellationToken);
 
+    /// <summary>Issue-1 — a role's currently granted permission codes.</summary>
+    public Task<ApiCallResult<AdminRolePermissionsResponse>> GetRolePermissionsAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminRolePermissionsResponse>(
+            HttpMethod.Get, $"roles/{id}/permissions", content: null,
+            accessToken, cancellationToken);
+
+    /// <summary>Issue-1 — replaces a custom role's permission grants.</summary>
+    public Task<ApiCallResult<bool>> SetRolePermissionsAsync(
+        Guid id, AdminSetRolePermissionsRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Put, $"roles/{id}/permissions",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     // -- D-134 Sprint A — Operation log read-only viewer ---------------------
 
     /// <summary>One page of OperationLog entries (D-134 Sprint A). Filters

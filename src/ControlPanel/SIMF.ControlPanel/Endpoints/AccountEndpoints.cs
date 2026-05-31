@@ -699,6 +699,24 @@ internal static class AccountEndpoints
             return Forward(await api.DeleteRoleAsync(id, token));
         });
 
+        // Issue-1 — role -> permission grants (read + replace).
+        group.MapGet("/admin/roles/{id:guid}/permissions",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetRolePermissionsAsync(id, token));
+        });
+
+        group.MapPut("/admin/roles/{id:guid}/permissions",
+            async (Guid id, AdminSetRolePermissionsRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.SetRolePermissionsAsync(id, body, token));
+        });
+
         // D-134 Sprint A — Operation log viewer proxy (read-only over
         // the existing OperationLogEntry table; no schema change).
         group.MapPost("/admin/operation-log/list",

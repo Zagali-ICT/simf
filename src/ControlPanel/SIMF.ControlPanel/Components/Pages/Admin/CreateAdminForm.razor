@@ -24,9 +24,28 @@
         <SimfTextField Label="@L["Admin.CreateUser.DisplayName"]"
                        @bind-Value="_model.DisplayName"
                        Autocomplete="off" Disabled="_busy" />
-        <SimfCheckbox @bind-Value="_model.GrantAdministratorRole" Disabled="_busy">
-            @L["Admin.CreateUser.GrantAdministrator"]
-        </SimfCheckbox>
+        <div class="simf-form__group">
+            <p class="simf-form__group-label">@L["Admin.CreateUser.RolesLabel"]</p>
+            @if (_rolesLoading)
+            {
+                <p>@L["Admin.CreateUser.RolesLoading"]</p>
+            }
+            else if (_roleNames.Count == 0)
+            {
+                <p>@L["Admin.CreateUser.RolesNone"]</p>
+            }
+            else
+            {
+                @foreach (var roleName in _roleNames)
+                {
+                    <SimfCheckbox Value="_selectedRoles.Contains(roleName)"
+                                  ValueChanged="@((bool on) => ToggleRole(roleName, on))"
+                                  Disabled="_busy">
+                        @roleName
+                    </SimfCheckbox>
+                }
+            }
+        </div>
     </div>
     <div class="simf-form__actions">
         <SimfButton Loading="_busy" LoadingLabel="@L["Admin.CreateUser.Submitting"]">
@@ -51,6 +70,11 @@
     private string? _success;
     private string? _error;
 
+    // Issue-1 — the assignable CP roles (fetched) and the admin's selection.
+    private readonly List<string> _roleNames = new();
+    private readonly HashSet<string> _selectedRoles = new(StringComparer.Ordinal);
+    private bool _rolesLoading = true;
+
     /// <summary>Raised after a successful create. Receives the API response.</summary>
     [Parameter] public EventCallback<AdminCreateUserResponse> OnSuccess { get; set; }
 
@@ -66,6 +90,34 @@
         _messages = new ValidationMessageStore(_editContext);
         _editContext.OnFieldChanged += ClearFieldError;
         CancelLabel ??= L["Admin.CreateUser.BackToList"];
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Issue-1 — load the assignable roles for the multi-select. If the
+        // caller lacks Roles.View the list comes back empty; the form still
+        // creates the user (with no roles) so it degrades gracefully.
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminRoleSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/roles/list",
+                new GridQuery { Top = 200, Sort = "name" });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _roleNames.AddRange(envelope.Data.Items.Select(role => role.Name));
+            }
+        }
+        catch (JSException)
+        {
+            // Best-effort — leave the role list empty on a transport error.
+        }
+        finally { _rolesLoading = false; }
+    }
+
+    private void ToggleRole(string roleName, bool on)
+    {
+        if (on) { _selectedRoles.Add(roleName); }
+        else { _selectedRoles.Remove(roleName); }
     }
 
     private void ClearFieldError(object? sender, FieldChangedEventArgs e)
@@ -106,16 +158,14 @@
                 {
                     Email = _model.Email,
                     DisplayName = _model.DisplayName,
-                    Roles = _model.GrantAdministratorRole
-                        ? new List<string> { AppRoles.Administrator }
-                        : new List<string>(),
+                    Roles = _selectedRoles.ToList(),
                 });
             if (envelope is { Success: true, Data: not null })
             {
                 _success = string.Format(L["Admin.CreateUser.Success"], envelope.Data.Email);
                 _model.Email = string.Empty;
                 _model.DisplayName = string.Empty;
-                _model.GrantAdministratorRole = false;
+                _selectedRoles.Clear();
                 await OnSuccess.InvokeAsync(envelope.Data);
             }
             else
@@ -131,6 +181,5 @@
     {
         public string Email { get; set; } = string.Empty;
         public string DisplayName { get; set; } = string.Empty;
-        public bool GrantAdministratorRole { get; set; }
     }
 }

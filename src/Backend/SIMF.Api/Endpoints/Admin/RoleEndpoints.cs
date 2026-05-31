@@ -122,6 +122,70 @@ public sealed class UpdateRoleEndpoint(IAdminRoleService service)
     }
 }
 
+public sealed class GetRolePermissionsRequest
+{
+    public Guid Id { get; set; }
+}
+
+/// <summary>Issue-1 — the permission codes a role currently grants.</summary>
+public sealed class GetRolePermissionsEndpoint(IAdminRoleService service)
+    : Endpoint<GetRolePermissionsRequest, ApiResult<AdminRolePermissionsResponse>>
+{
+    public override void Configure()
+    {
+        Get("/admin/roles/{id:guid}/permissions");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Roles.View), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+        Summary(summary => summary.Summary = "Return a role's granted permission codes.");
+    }
+
+    public override async Task HandleAsync(GetRolePermissionsRequest req, CancellationToken ct)
+    {
+        var response = await service.GetPermissionsAsync(req.Id, ct);
+        if (response is null)
+        {
+            throw new ApiException(
+                ErrorCodes.RoleNotFound, 404,
+                "The role was not found.",
+                "لم يتم العثور على الدور.");
+        }
+        await Send.OkAsync(ApiResult<AdminRolePermissionsResponse>.Ok(response), ct);
+    }
+}
+
+public sealed class SetRolePermissionsRequest
+{
+    public Guid Id { get; set; }
+    public List<string> Codes { get; set; } = new();
+}
+
+/// <summary>Issue-1 — replaces a custom role's permission grants. Gated by
+/// <c>Roles.AssignPermissions</c>.</summary>
+public sealed class SetRolePermissionsEndpoint(IAdminRoleService service)
+    : Endpoint<SetRolePermissionsRequest, ApiResult<bool>>
+{
+    public override void Configure()
+    {
+        Put("/admin/roles/{id:guid}/permissions");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Roles.AssignPermissions), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+        Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
+        Summary(summary => summary.Summary =
+            "Set a custom role's permission grants. Requires Roles.AssignPermissions.");
+    }
+
+    public override async Task HandleAsync(SetRolePermissionsRequest req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await service.SetPermissionsAsync(actorId, req.Id, req.Codes, ct);
+        await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
+    }
+}
+
 public sealed class DeleteRoleRequest
 {
     public Guid Id { get; set; }

@@ -1936,4 +1936,19 @@
   <data name="Admin.ProgrammeTimeline.Col.Title" xml:space="preserve"><value>Session</value></data>
   <data name="Admin.ProgrammeTimeline.Col.Hall" xml:space="preserve"><value>Hall</value></data>
   <data name="Admin.ProgrammeTimeline.Day.Count" xml:space="preserve"><value>{0} session(s) on this day</value></data>
+  <data name="Admin.CreateUser.RolesLabel" xml:space="preserve"><value>Roles</value></data>
+  <data name="Admin.CreateUser.RolesLoading" xml:space="preserve"><value>Loading roles…</value></data>
+  <data name="Admin.CreateUser.RolesNone" xml:space="preserve"><value>No roles are available to assign.</value></data>
+  <data name="Admin.Roles.Details.EditPermissions" xml:space="preserve"><value>Edit permissions</value></data>
+  <data name="Admin.RolePermissions.Title" xml:space="preserve"><value>Role permissions</value></data>
+  <data name="Admin.RolePermissions.TitleFor" xml:space="preserve"><value>Permissions — {0}</value></data>
+  <data name="Admin.RolePermissions.Intro" xml:space="preserve"><value>Select the pages and actions this role can use. Changes apply the next time a holder of the role signs in.</value></data>
+  <data name="Admin.RolePermissions.BaselineNotice" xml:space="preserve"><value>This is a built-in role; its permissions are managed by the system and cannot be edited here.</value></data>
+  <data name="Admin.RolePermissions.Loading" xml:space="preserve"><value>Loading permissions…</value></data>
+  <data name="Admin.RolePermissions.Saving" xml:space="preserve"><value>Saving…</value></data>
+  <data name="Admin.RolePermissions.Save" xml:space="preserve"><value>Save permissions</value></data>
+  <data name="Admin.RolePermissions.Back" xml:space="preserve"><value>Back to roles</value></data>
+  <data name="Admin.RolePermissions.Saved" xml:space="preserve"><value>Permissions saved.</value></data>
+  <data name="Admin.RolePermissions.LoadFailed" xml:space="preserve"><value>The role permissions could not be loaded.</value></data>
+  <data name="Admin.RolePermissions.Fallback" xml:space="preserve"><value>The permissions could not be saved. Please try again.</value></data>
 </root>

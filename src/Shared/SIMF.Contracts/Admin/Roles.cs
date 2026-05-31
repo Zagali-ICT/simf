@@ -28,3 +28,23 @@ public sealed class AdminUpdateRoleRequest
 {
     public string Name { get; set; } = string.Empty;
 }
+
+/// <summary>The response of <c>GET /api/v1/admin/roles/{id}/permissions</c>
+/// (Issue-1) — the permission codes a role currently grants. The full
+/// catalogue is not returned: the CP builds it from
+/// <c>PermissionCatalog.All</c>. Baseline roles are read-only (their grants
+/// are seeded / wildcard), so the editor disables them.</summary>
+public sealed record AdminRolePermissionsResponse(
+    Guid RoleId,
+    string RoleName,
+    bool IsBaseline,
+    IReadOnlyList<string> GrantedCodes);
+
+/// <summary>The body of <c>PUT /api/v1/admin/roles/{id}/permissions</c>
+/// (Issue-1) — the complete set of permission codes the (custom) role should
+/// grant. The server replaces the role's grants with exactly this set; every
+/// code must exist in the permission catalogue.</summary>
+public sealed class AdminSetRolePermissionsRequest
+{
+    public List<string> Codes { get; set; } = new();
+}

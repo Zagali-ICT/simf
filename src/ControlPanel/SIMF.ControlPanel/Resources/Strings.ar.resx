@@ -1928,4 +1928,19 @@
   <data name="Admin.ProgrammeTimeline.Col.Title" xml:space="preserve"><value>الجلسة</value></data>
   <data name="Admin.ProgrammeTimeline.Col.Hall" xml:space="preserve"><value>القاعة</value></data>
   <data name="Admin.ProgrammeTimeline.Day.Count" xml:space="preserve"><value>{0} جلسة في هذا اليوم</value></data>
+  <data name="Admin.CreateUser.RolesLabel" xml:space="preserve"><value>الأدوار</value></data>
+  <data name="Admin.CreateUser.RolesLoading" xml:space="preserve"><value>جارٍ تحميل الأدوار…</value></data>
+  <data name="Admin.CreateUser.RolesNone" xml:space="preserve"><value>لا توجد أدوار متاحة للإسناد.</value></data>
+  <data name="Admin.Roles.Details.EditPermissions" xml:space="preserve"><value>تعديل الصلاحيات</value></data>
+  <data name="Admin.RolePermissions.Title" xml:space="preserve"><value>صلاحيات الدور</value></data>
+  <data name="Admin.RolePermissions.TitleFor" xml:space="preserve"><value>الصلاحيات — {0}</value></data>
+  <data name="Admin.RolePermissions.Intro" xml:space="preserve"><value>حدّد الصفحات والإجراءات التي يمكن لهذا الدور استخدامها. تُطبَّق التغييرات عند تسجيل دخول حامل الدور في المرة التالية.</value></data>
+  <data name="Admin.RolePermissions.BaselineNotice" xml:space="preserve"><value>هذا دور أساسي؛ تُدار صلاحياته بواسطة النظام ولا يمكن تعديلها هنا.</value></data>
+  <data name="Admin.RolePermissions.Loading" xml:space="preserve"><value>جارٍ تحميل الصلاحيات…</value></data>
+  <data name="Admin.RolePermissions.Saving" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
+  <data name="Admin.RolePermissions.Save" xml:space="preserve"><value>حفظ الصلاحيات</value></data>
+  <data name="Admin.RolePermissions.Back" xml:space="preserve"><value>العودة إلى الأدوار</value></data>
+  <data name="Admin.RolePermissions.Saved" xml:space="preserve"><value>تم حفظ الصلاحيات.</value></data>
+  <data name="Admin.RolePermissions.LoadFailed" xml:space="preserve"><value>تعذّر تحميل صلاحيات الدور.</value></data>
+  <data name="Admin.RolePermissions.Fallback" xml:space="preserve"><value>تعذّر حفظ الصلاحيات. حاول مرة أخرى.</value></data>
 </root>

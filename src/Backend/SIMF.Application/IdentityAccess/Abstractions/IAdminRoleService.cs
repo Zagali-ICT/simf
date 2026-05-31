@@ -48,4 +48,20 @@ public interface IAdminRoleService
         Guid actorUserId,
         Guid id,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Issue-1 — the permission codes a role currently grants, plus
+    /// its name + baseline flag. Returns <c>null</c> when the role is missing.</summary>
+    Task<AdminRolePermissionsResponse?> GetPermissionsAsync(
+        Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>Issue-1 — replaces a <i>custom</i> role's permission grants
+    /// with exactly <paramref name="codes"/>. Throws <c>RoleIsBaseline</c>
+    /// (409) for baseline roles (Administrator is the wildcard; GateOperator /
+    /// PublicRelations are seeded) and <c>ValidationFailed</c> (400) when any
+    /// code is not in the permission catalogue.</summary>
+    Task SetPermissionsAsync(
+        Guid actorUserId,
+        Guid id,
+        IReadOnlyCollection<string> codes,
+        CancellationToken cancellationToken = default);
 }
