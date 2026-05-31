@@ -109,18 +109,30 @@ rewrite immediately.
 
 ## 3. Quality + observability follow-ups
 
+**Re-audited 2026-05-31 (post-D-210) and deferred as a group** — owner call,
+event-deadline-aware. Outcome of the re-audit: **3.3 is already done** (H29/D-088
+global per-IP cap), **3.1 is addressed** (H28/D-088 entry-throw; full mid-op
+support is blocked on replacing ASP.NET Identity, not on R5), **3.5** stays
+deferred (no production signal). The genuinely-open items — **3.2** audit
+fire-and-forget channel (M, a latency optimisation with no reported latency
+problem; audit is already best-effort), **3.4** notification outbox (M, spans two
+DBs), **3.6** Website skip-link (S, but WCAG 2.4.1 already met by the `<main>`
+landmark), **3.7** full bUnit harness (M, base harness + markup tests already
+exist) — carry no event-blocking value, so they wait for a non-deadline window.
+
 Single-commit-sized items the next sprint can pick up in any order:
 
-### 3.1 Cancellation-token propagation on `IUserAccountRepository`
+### 3.1 Cancellation-token propagation on `IUserAccountRepository` — ✅ ADDRESSED (H28 / D-088)
 
-(Post-R3 review Finding I.) The repository methods declare
-`CancellationToken cancellationToken = default` but the pass-through
-implementation never forwards the token to `UserManager` (which
-doesn't accept tokens on its public API). Fully honouring it requires
-the R5-level swap to a Domain-owned user store. Until then, the
-interface keeps the parameter so call sites can pass it and a future
-Identity-replacement honours it — `UserAccountRepository` swallows it
-deliberately, documented in the class docstring.
+(Post-R3 review Finding I.) **Addressed at the honest minimum.** Every
+`UserAccountRepository` method now calls
+`cancellationToken.ThrowIfCancellationRequested()` at entry, so a pre-cancelled
+call fails fast. *True mid-operation* cancellation is blocked by `UserManager`
+(its public API takes no token) — and **R5 did NOT unblock this** (R5 made the
+Domain `SimfUser` a POCO, but `UserManager` is still the backing store), so full
+support requires replacing ASP.NET Identity entirely (its own epic, not this
+item). The entry-throw is documented in the class docstring as the deliberate
+boundary.
 
 ### 3.2 Audit-log fire-and-forget channel
 
@@ -130,12 +142,13 @@ write drained by a background worker (mirroring `EmailQueue` +
 `EmailBackgroundService`) — is queued. Useful for every audit-write
 on the request path, not just bearer rejections.
 
-### 3.3 Per-IP rate-limit on bearer-protected endpoints
+### 3.3 Per-IP rate-limit on bearer-protected endpoints — ✅ DONE (H29 / D-088)
 
-(Post-R3 review Security SEV-2.1.) The `"auth"` rate-limit policy is
-bound only to `/auth/*` endpoints; bearer-protected routes have no
-per-route rate limit. A global default policy (per-IP, generous cap)
-would close the gap.
+(Post-R3 review Security SEV-2.1.) **Closed.** `Program.cs` now installs a
+`GlobalLimiter` (`PartitionedRateLimiter` keyed per-IP, 600/min default) that
+applies to **every** request, stacking with the per-route `"auth"` /
+`"auth-email"` caps. The original gap (bearer-protected routes had no per-IP
+cap) no longer exists.
 
 ### 3.4 Notification dispatch outbox
 
