@@ -115,7 +115,7 @@ we do the broadcast?
 | 1.2 | ~~Permission grant editor + assign-to-user/role UI~~ — **ALREADY SHIPPED (verified 2026-05-31)** | reuse `Roles.*` | existing | `RolePermissionsEditor.razor` (grant editor, gated `Roles.AssignPermissions`) + `UsersList.razor` edit-roles modal + `CreateAdminForm.razor` role picker + GET/PUT `/admin/roles/{id}/permissions` + GET/PUT `/admin/admins/{id}/roles`. Scientific-Committee role is configurable today. Gap report "deferred" row is stale. Only roles **bulk-delete** remains (minor, deferred). |
 | 1.3 | Bulk admin/staff pending-queue parity + per-user Edit (B1, FR-212) | existing | api | symmetric to D-210 |
 | 1.4 | Seat-grid visual renderer (FR-405/505) | existing | cp | backend already done |
-| 1.5 | CMS markdown rendering + brand-colour tokens (FR-1203) | existing | web | rendering only |
+| 1.5 | ~~CMS markdown rendering + brand-colour tokens~~ — **DEFERRED (D-216)** to the Website content wave | existing | web | No public content surface to render into yet; deferred. Markdig add reverted. Sanitizer pkg id = `HtmlSanitizer`. Open: which content keys on which pages. |
 | 1.6 | XLSX export + date filters (operation-log, attendees) (FR-1205) | existing | api | export logic |
 | 1.7 | Notification trigger events (session-reminder, booking-confirmed) (FR-902/903) | existing | api | additive enum values only (freeze-safe) |
 
