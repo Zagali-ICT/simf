@@ -1,6 +1,6 @@
 # SIMF — Project Instructions
 
-Last updated: 2026-05-25
+Last updated: 2026-05-31
 
 The global rule set at `~/.claude/CLAUDE.md` (§0–§20) applies in full. This file
 adds SIMF-specific pointers only. It does not restate or override the global rules.
@@ -45,6 +45,31 @@ bUnit harness, end-to-end lifecycle test, no-IP rate-limit hardening) are listed
 
 Next stage per the programme plan is the User Management module increment on top of
 the closed Login API foundation.
+
+## Access control — per-page/per-action permissions (D-207 / D-208)
+
+The Control Panel and admin API enforce a **per-page/per-action permission system**:
+assignment is **roles-only**, permission codes are baked into the JWT, and
+`Administrator = "*"` (wildcard). The single source of truth is the catalogue in
+`src/Shared/SIMF.Common/PermissionCatalog.cs`. The full design + workflow + the
+step-by-step playbook are in `docs/manuals/SIMF-Auth-Permissions-Dev-Guide.md`
+(companion: `docs/SIMF-Permission-Catalogue.md`).
+
+**HARD RULE — a new CP page or admin API action is NOT "done" until its permission
+exists, is seeded, and gates BOTH the API and the CP.** Whenever you add a Control
+Panel page or a new admin endpoint/action you MUST:
+
+1. Add the `const` code(s) to the right nested class in `PermissionCatalog` (format `Page.Action`).
+2. Add `new(...)` entries to `PermissionCatalog.All` (`BaselineRoles` usually `AdminOnly`) — the seeder is idempotent, so **no migration** (the `Permission`/`RolePermission` tables pre-exist).
+3. Gate the API endpoint(s): `Policies(PermissionCatalog.PolicyFor(PermissionCatalog.X.Y), nameof(AuthorizationPolicies.RequireApprovedAccount))`.
+4. Gate the CP page: `@attribute [RequirePermission(PermissionCatalog.X.Y)]`.
+5. Set the `CpNavigation` item's `RequiredPermission` (`null` only for the dashboard / `IsStub` placeholders).
+6. Wrap action buttons in `<AuthorizedAction Permission="PermissionCatalog.X.Y">`.
+
+`tests/SIMF.ControlPanel.Tests/CpNavigationPermissionTests.cs` and
+`tests/SIMF.Api.Tests/PermissionEnforcementTests.cs` fail the build if a gate is
+missing. An ungated admin page/endpoint is reachable by **any** signed-in admin
+regardless of role — treat a missing permission as a security defect.
 
 ## FREEZE — D-110 baseline (2026-05-26)
 
