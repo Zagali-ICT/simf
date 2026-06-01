@@ -163,6 +163,15 @@ public static class PermissionCatalog
 
     // ── Programme ────────────────────────────────────────────────────────
 
+    /// <summary>B9b — D-226: dynamic session-category lookup (FDS-004 §5.4).</summary>
+    public static class SessionCategories
+    {
+        public const string View = "SessionCategories.View";
+        public const string Create = "SessionCategories.Create";
+        public const string Edit = "SessionCategories.Edit";
+        public const string Delete = "SessionCategories.Delete";
+    }
+
     public static class Themes
     {
         public const string View = "Themes.View";
@@ -492,6 +501,12 @@ public static class PermissionCatalog
         new(Themes.Create, "Themes", "Create", "Create themes", AdminOnly),
         new(Themes.Edit, "Themes", "Edit", "Edit themes", AdminOnly),
         new(Themes.Delete, "Themes", "Delete", "Delete themes", AdminOnly),
+
+        // B9b — D-226: session categories (dynamic lookup).
+        new(SessionCategories.View, "SessionCategories", "View", "View session categories", AdminOnly),
+        new(SessionCategories.Create, "SessionCategories", "Create", "Create session categories", AdminOnly),
+        new(SessionCategories.Edit, "SessionCategories", "Edit", "Edit session categories", AdminOnly),
+        new(SessionCategories.Delete, "SessionCategories", "Delete", "Delete session categories", AdminOnly),
 
         new(Sessions.View, "Sessions", "View", "View sessions", AdminOnly),
         new(Sessions.Create, "Sessions", "Create", "Create sessions", AdminOnly),

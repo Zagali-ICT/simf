@@ -63,6 +63,8 @@ public static class CpNavigation
             new("Module.Themes", "/admin/themes", RequiredPermission: PermissionCatalog.Themes.View),
             // D-165 (gap doc G3) — programme sessions (SIMF-FDS-004 §5.3 + PDF §2.9).
             new("Module.Sessions", "/admin/sessions", RequiredPermission: PermissionCatalog.Sessions.View),
+            // B9b (D-226) — dynamic session-category lookup (SIMF-FDS-004 §5.4).
+            new("Module.SessionCategories", "/admin/session-categories", RequiredPermission: PermissionCatalog.SessionCategories.View),
             // Read-only run-of-show timeline over the existing sessions list.
             new("Module.ProgrammeTimeline", "/admin/programme/timeline", RequiredPermission: PermissionCatalog.ProgrammeTimeline.View),
             // D-134 Sprint B (D-135) — venue halls (SIMF-FDS-004 §5.2).

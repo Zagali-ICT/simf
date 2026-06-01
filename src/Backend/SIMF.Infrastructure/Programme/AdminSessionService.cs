@@ -81,7 +81,8 @@ internal sealed class AdminSessionService(
                 session.EndUtc,
                 session.CapacityOverride ?? session.Hall!.Capacity,
                 session.IsActive,
-                session.CreatedAt))
+                session.CreatedAt,
+                session.CategoryId))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminSessionSummary>.Of(page, total,
@@ -113,6 +114,7 @@ internal sealed class AdminSessionService(
         var hall = await ResolveHallAsync(request.HallId, cancellationToken);
         await EnsureSpeakersExistAsync(request.Speakers, cancellationToken);
         await EnsureThemesExistAsync(request.ThemeIds, cancellationToken);
+        await EnsureCategoryIsValidAsync(request.CategoryId, cancellationToken);
 
         var clash = await dbContext.Sessions
             .AsNoTracking()
@@ -135,6 +137,7 @@ internal sealed class AdminSessionService(
             Description = NullIfBlank(request.Description),
             DescriptionArabic = NullIfBlank(request.DescriptionArabic),
             HallId = hall.Id,
+            CategoryId = request.CategoryId,
             StartUtc = request.StartUtc,
             EndUtc = request.EndUtc,
             CapacityOverride = request.CapacityOverride,
@@ -200,6 +203,7 @@ internal sealed class AdminSessionService(
         var hall = await ResolveHallAsync(request.HallId, cancellationToken);
         await EnsureSpeakersExistAsync(request.Speakers, cancellationToken);
         await EnsureThemesExistAsync(request.ThemeIds, cancellationToken);
+        await EnsureCategoryIsValidAsync(request.CategoryId, cancellationToken);
 
         if (!string.Equals(session.Code, code, StringComparison.OrdinalIgnoreCase))
         {
@@ -221,6 +225,7 @@ internal sealed class AdminSessionService(
         session.Description = NullIfBlank(request.Description);
         session.DescriptionArabic = NullIfBlank(request.DescriptionArabic);
         session.HallId = hall.Id;
+        session.CategoryId = request.CategoryId;
         session.StartUtc = request.StartUtc;
         session.EndUtc = request.EndUtc;
         session.CapacityOverride = request.CapacityOverride;
@@ -391,6 +396,24 @@ internal sealed class AdminSessionService(
         }
     }
 
+    // B9b — D-226: the session category, when set, must be an active row in the
+    // dynamic SessionCategory lookup. Mirrors ResolveHallAsync's active check.
+    private async Task EnsureCategoryIsValidAsync(
+        Guid? categoryId, CancellationToken cancellationToken)
+    {
+        if (categoryId is null) { return; }
+        var exists = await dbContext.SessionCategories
+            .AsNoTracking()
+            .AnyAsync(category => category.Id == categoryId.Value && category.IsActive, cancellationToken);
+        if (!exists)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionCategoryInvalid, 400,
+                $"Session category '{categoryId}' does not exist or is inactive.",
+                $"تصنيف الجلسة '{categoryId}' غير موجود أو غير مفعّل.");
+        }
+    }
+
     private void ReplaceSpeakerLinks(
         Session session, IList<AdminSessionSpeakerEntry> entries)
     {
@@ -458,6 +481,7 @@ internal sealed class AdminSessionService(
             speakers,
             themeIds,
             session.CreatedAt,
-            session.UpdatedAt);
+            session.UpdatedAt,
+            session.CategoryId);
     }
 }

@@ -1989,6 +1989,47 @@ public sealed class SimfAdminClient(HttpClient http)
             accessToken, cancellationToken);
     }
 
+    // -- B9b (D-226) — Session-category dynamic lookup admin CRUD
+    //    (SIMF.Contracts.Admin) ---------------------------------------------
+
+    public Task<ApiCallResult<GridPage<AdminSessionCategorySummary>>> ListSessionCategoriesAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminSessionCategorySummary>>(
+            HttpMethod.Post, "session-categories/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSessionCategoryDetail>> GetSessionCategoryAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionCategoryDetail>(
+            HttpMethod.Get, $"session-categories/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSessionCategoryDetail>> CreateSessionCategoryAsync(
+        AdminCreateSessionCategoryRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionCategoryDetail>(
+            HttpMethod.Post, "session-categories",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSessionCategoryDetail>> UpdateSessionCategoryAsync(
+        Guid id, AdminUpdateSessionCategoryRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionCategoryDetail>(
+            HttpMethod.Put, $"session-categories/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeactivateSessionCategoryAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"session-categories/{id}", content: null,
+            accessToken, cancellationToken);
+
     // -- D-199 — Archive edition admin CRUD (SIMF.Contracts.Archive) --------
 
     public Task<ApiCallResult<GridPage<AdminArchiveEditionSummary>>> ListArchiveEditionsAsync(

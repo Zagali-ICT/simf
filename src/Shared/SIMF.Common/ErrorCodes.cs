@@ -287,4 +287,8 @@ public static class ErrorCodes
     public const string ConnectionAlreadyExists = "CONNECTION_ALREADY_EXISTS";
     public const string ConnectionSelf = "CONNECTION_SELF";
     public const string ConnectionTargetNotFound = "CONNECTION_TARGET_NOT_FOUND";
+
+    // Session categories (B9b / D-226 — dynamic lookup, FDS-004 §5.4).
+    public const string SessionCategoryInvalid = "SESSION_CATEGORY_INVALID";
+    public const string SessionCategoryNotFound = "SESSION_CATEGORY_NOT_FOUND";
 }

@@ -1,0 +1,305 @@
+@* B9b (D-226) — CP management for the dynamic session-category lookup
+   (SIMF-FDS-004 §5.4). Admin CRUD over a small bilingual lookup; the table
+   ships empty and is seeded by the team once the client confirms the list
+   (open item OI-2). Mirrors BoothsList. *@
+@page "/admin/session-categories"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.SessionCategories.View)]
+@using SIMF.Contracts.Admin
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.SessionCategories.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.SessionCategories.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form__actions">
+            <AuthorizedAction Permission="@PermissionCatalog.SessionCategories.Create">
+                <SimfButton Type="button" OnClick="OnAdd">
+                    @L["Admin.SessionCategories.New"]
+                </SimfButton>
+            </AuthorizedAction>
+        </div>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.SessionCategories.Loading"]</p>
+        }
+        else if (_page.Items.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.SessionCategories.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.SessionCategories.Col.NameEn"]</th>
+                        <th>@L["Admin.SessionCategories.Col.NameAr"]</th>
+                        <th>@L["Admin.SessionCategories.Col.Order"]</th>
+                        <th>@L["Admin.SessionCategories.Col.Active"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _page.Items)
+                    {
+                        <tr>
+                            <td>@row.NameEn</td>
+                            <td>@row.NameAr</td>
+                            <td>@row.DisplayOrder</td>
+                            <td>@(row.IsActive ? "✓" : "—")</td>
+                            <td>
+                                <AuthorizedAction Permission="@PermissionCatalog.SessionCategories.Edit">
+                                    <SimfButton Type="button" Disabled="_busy"
+                                                OnClick="@(() => OnEdit(row))">
+                                        @L["Admin.SessionCategories.Edit"]
+                                    </SimfButton>
+                                </AuthorizedAction>
+                                <AuthorizedAction Permission="@PermissionCatalog.SessionCategories.Delete">
+                                    <SimfButton Type="button" Disabled="_busy"
+                                                OnClick="@(() => OnDeleteAsync(row))">
+                                        @L["Admin.SessionCategories.Delete"]
+                                    </SimfButton>
+                                </AuthorizedAction>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="simf-table__summary">
+                @(string.Format(L["Admin.SessionCategories.Summary"],
+                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
+            </p>
+        }
+    </div>
+</div>
+
+@if (_editOpen)
+{
+    <SimfModal Open="true"
+               Title="@(_isEdit ? L["Admin.SessionCategories.Edit.Title"] : L["Admin.SessionCategories.Add.Title"])"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.SessionCategories.Field.NameEn"]"
+                               Value="@_form.NameEn"
+                               ValueChanged="@(v => _form.NameEn = v)"
+                               ValueExpression="@(() => _form.NameEn)"
+                               MaxLength="128"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.SessionCategories.Field.NameAr"]"
+                               Value="@_form.NameAr"
+                               ValueChanged="@(v => _form.NameAr = v)"
+                               ValueExpression="@(() => _form.NameAr)"
+                               MaxLength="128"
+                               Disabled="_busy" />
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.SessionCategories.Field.DisplayOrder"]</span>
+                    <input class="simf-field__input" type="number" step="1" min="0"
+                           value="@_form.DisplayOrder"
+                           @onchange="OnDisplayOrderChanged"
+                           disabled="@_busy" />
+                </label>
+                <SimfCheckbox Value="_form.IsActive"
+                              ValueChanged="@(v => _form.IsActive = v)"
+                              Disabled="_busy">
+                    @L["Admin.SessionCategories.Field.IsActive"]
+                </SimfCheckbox>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Disabled="_busy" OnClick="@(() => _editOpen = false)">
+                @L["Admin.SessionCategories.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+                @L["Admin.SessionCategories.Save"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private sealed class FormModel
+    {
+        public string NameEn { get; set; } = string.Empty;
+        public string NameAr { get; set; } = string.Empty;
+        public int DisplayOrder { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+
+    private GridQuery _query = new() { Top = 100 };
+    private GridPage<AdminSessionCategorySummary> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private bool _editOpen;
+    private bool _isEdit;
+    private Guid _editingId;
+    private FormModel _form = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminSessionCategorySummary>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/session-categories/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionCategories.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnAdd()
+    {
+        _editOpen = true;
+        _isEdit = false;
+        _editingId = Guid.Empty;
+        _form = new FormModel();
+        _toast = null;
+    }
+
+    private async Task OnEdit(AdminSessionCategorySummary row)
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminSessionCategoryDetail>>(
+                "simfAccount.getJson",
+                $"/account/api/admin/session-categories/{row.Id}");
+            if (env is { Success: true, Data: not null })
+            {
+                var d = env.Data;
+                _editingId = d.Id;
+                _form = new FormModel
+                {
+                    NameEn = d.NameEn,
+                    NameAr = d.NameAr,
+                    DisplayOrder = d.DisplayOrder,
+                    IsActive = d.IsActive,
+                };
+                _isEdit = true;
+                _editOpen = true;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionCategories.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+        if (string.IsNullOrWhiteSpace(_form.NameEn)
+            || string.IsNullOrWhiteSpace(_form.NameAr))
+        {
+            _toast = new Toast("error", L["Admin.SessionCategories.Required"]);
+            return;
+        }
+        _busy = true;
+        _toast = null;
+        try
+        {
+            ApiResult<AdminSessionCategoryDetail>? env;
+            if (_isEdit)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminSessionCategoryDetail>>(
+                    "simfAccount.putJson",
+                    $"/account/api/admin/session-categories/{_editingId}",
+                    new AdminUpdateSessionCategoryRequest
+                    {
+                        NameEn = _form.NameEn,
+                        NameAr = _form.NameAr,
+                        DisplayOrder = _form.DisplayOrder,
+                        IsActive = _form.IsActive,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminSessionCategoryDetail>>(
+                    "simfAccount.postJson",
+                    "/account/api/admin/session-categories",
+                    new AdminCreateSessionCategoryRequest
+                    {
+                        NameEn = _form.NameEn,
+                        NameAr = _form.NameAr,
+                        DisplayOrder = _form.DisplayOrder,
+                    });
+            }
+            if (env is { Success: true })
+            {
+                _editOpen = false;
+                _toast = new Toast("success", L["Admin.SessionCategories.Saved"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionCategories.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteAsync(AdminSessionCategorySummary row)
+    {
+        if (_busy) return;
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", L["Admin.SessionCategories.Delete.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/session-categories/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.SessionCategories.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionCategories.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnDisplayOrderChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        _form.DisplayOrder = int.TryParse(raw, out var n) ? n : 0;
+    }
+}

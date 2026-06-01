@@ -45,6 +45,12 @@ public class Session
     public Guid HallId { get; set; }
     public Hall? Hall { get; set; }
 
+    /// <summary>B9b — D-226 (FDS-004 §5.4): the session's category, an optional
+    /// real FK to the dynamic <see cref="SessionCategory"/> lookup (same
+    /// DbContext, OnDelete.Restrict). Null until a category is assigned.</summary>
+    public Guid? CategoryId { get; set; }
+    public SessionCategory? Category { get; set; }
+
     /// <summary>Session start (UTC). The Flutter agenda renders local-
     /// time per the user's tz.</summary>
     public DateTimeOffset StartUtc { get; set; }

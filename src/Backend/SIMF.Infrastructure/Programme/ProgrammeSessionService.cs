@@ -54,6 +54,10 @@ internal sealed class ProgrammeSessionService(SimfAppDbContext dbContext)
                 HallNameArabic = session.Hall!.NameArabic,
                 session.StartUtc,
                 session.EndUtc,
+                // B9b — D-226: the session's category (dynamic lookup), if set.
+                session.CategoryId,
+                CategoryName = session.Category != null ? session.Category.NameEn : null,
+                CategoryNameArabic = session.Category != null ? session.Category.NameAr : null,
                 Themes = session.Themes
                     .Where(link => link.Theme!.IsActive)
                     .Select(link => new
@@ -87,7 +91,10 @@ internal sealed class ProgrammeSessionService(SimfAppDbContext dbContext)
                     row.EndUtc,
                     primary?.Name,
                     primary?.NameArabic,
-                    primary?.PageColor);
+                    primary?.PageColor,
+                    row.CategoryId,
+                    row.CategoryName,
+                    row.CategoryNameArabic);
             })
             .ToList();
 
@@ -102,6 +109,7 @@ internal sealed class ProgrammeSessionService(SimfAppDbContext dbContext)
             .Include(row => row.Hall)
             .Include(row => row.Speakers).ThenInclude(link => link.Speaker)
             .Include(row => row.Themes).ThenInclude(link => link.Theme)
+            .Include(row => row.Category)
             .SingleOrDefaultAsync(
                 row => row.Id == id && row.IsActive, cancellationToken);
 
@@ -161,6 +169,9 @@ internal sealed class ProgrammeSessionService(SimfAppDbContext dbContext)
             session.EndUtc,
             themes,
             speakers,
-            seats);
+            seats,
+            session.CategoryId,
+            session.Category?.NameEn,
+            session.Category?.NameAr);
     }
 }

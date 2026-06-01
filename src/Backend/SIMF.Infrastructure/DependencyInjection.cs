@@ -298,6 +298,9 @@ public static class DependencyInjection
         // B6 — D-224: visitor-to-visitor networking connections (app-facing).
         services.AddScoped<SIMF.Application.Networking.Abstractions.INetworkingService,
             SIMF.Infrastructure.Networking.NetworkingService>();
+        // B9b — D-226: dynamic session-category lookup (FDS-004 §5.4).
+        services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSessionCategoryService,
+            SIMF.Infrastructure.Programme.AdminSessionCategoryService>();
         // D-202 — Track-2: Statistics dashboard (read-only aggregate) +
         // Company/exhibitor-sponsor provisioning.
         services.AddScoped<SIMF.Application.Statistics.Abstractions.IStatisticsService,

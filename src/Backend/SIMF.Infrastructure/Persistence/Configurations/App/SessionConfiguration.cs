@@ -30,6 +30,14 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
             .HasForeignKey(s => s.HallId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // B9b — D-226: optional real FK to the dynamic SessionCategory lookup.
+        // Restrict (a category cannot be hard-deleted while a session points at
+        // it; admins soft-delete via IsActive). HasForeignKey creates the index.
+        builder.HasOne(s => s.Category)
+            .WithMany()
+            .HasForeignKey(s => s.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Two query indexes the agenda screen + the operator views ride.
         builder.HasIndex(s => new { s.IsActive, s.StartUtc });
         builder.HasIndex(s => new { s.HallId, s.StartUtc });

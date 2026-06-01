@@ -17,7 +17,9 @@ public sealed record AdminSessionSummary(
     DateTimeOffset EndUtc,
     int Capacity,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    // B9b — D-226: appended (default) — the CP grid resolves the name client-side.
+    Guid? CategoryId = null);
 
 /// <summary>D-165 — full session detail (Details + Edit modals).
 /// Includes the speaker and theme join sets so the editor can
@@ -41,7 +43,9 @@ public sealed record AdminSessionDetail(
     IReadOnlyList<AdminSessionSpeakerEntry> Speakers,
     IReadOnlyList<Guid> ThemeIds,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTimeOffset? UpdatedAt,
+    // B9b — D-226: the session's category (dynamic lookup); null when unset.
+    Guid? CategoryId = null);
 
 /// <summary>D-165 — one entry in <see cref="AdminSessionDetail.Speakers"/>.
 /// Order matters: 0 = primary speaker for the session card.</summary>
@@ -65,6 +69,8 @@ public sealed class AdminCreateSessionRequest
     public DateTimeOffset StartUtc { get; set; }
     public DateTimeOffset EndUtc { get; set; }
     public int? CapacityOverride { get; set; }
+    // B9b — D-226: optional session category (dynamic lookup).
+    public Guid? CategoryId { get; set; }
     public IList<AdminSessionSpeakerEntry> Speakers { get; set; }
         = new List<AdminSessionSpeakerEntry>();
     public IList<Guid> ThemeIds { get; set; } = new List<Guid>();
@@ -81,6 +87,8 @@ public sealed class AdminUpdateSessionRequest
     public DateTimeOffset StartUtc { get; set; }
     public DateTimeOffset EndUtc { get; set; }
     public int? CapacityOverride { get; set; }
+    // B9b — D-226: optional session category (dynamic lookup).
+    public Guid? CategoryId { get; set; }
     public IList<AdminSessionSpeakerEntry> Speakers { get; set; }
         = new List<AdminSessionSpeakerEntry>();
     public IList<Guid> ThemeIds { get; set; } = new List<Guid>();

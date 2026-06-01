@@ -83,6 +83,7 @@ public sealed class UpdateSessionRequest
     public string? Description { get; set; }
     public string? DescriptionArabic { get; set; }
     public Guid HallId { get; set; }
+    public Guid? CategoryId { get; set; }
     public DateTimeOffset StartUtc { get; set; }
     public DateTimeOffset EndUtc { get; set; }
     public int? CapacityOverride { get; set; }
@@ -121,6 +122,7 @@ public sealed class UpdateSessionEndpoint(IAdminSessionService service)
                     Description = req.Description,
                     DescriptionArabic = req.DescriptionArabic,
                     HallId = req.HallId,
+                    CategoryId = req.CategoryId,
                     StartUtc = req.StartUtc,
                     EndUtc = req.EndUtc,
                     CapacityOverride = req.CapacityOverride,

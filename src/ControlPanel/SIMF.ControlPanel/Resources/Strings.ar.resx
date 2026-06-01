@@ -1285,6 +1285,33 @@
   <data name="Admin.Sessions.Action.Remove" xml:space="preserve"><value>حذف</value></data>
   <data name="Admin.Sessions.Role.Speaker" xml:space="preserve"><value>متحدّث</value></data>
   <data name="Admin.Sessions.Role.Host" xml:space="preserve"><value>مضيف</value></data>
+  <data name="Admin.Sessions.Field.Category" xml:space="preserve"><value>التصنيف</value></data>
+  <data name="Admin.Sessions.Field.CategoryNone" xml:space="preserve"><value>— بدون تصنيف —</value></data>
+  <data name="Module.SessionCategories" xml:space="preserve"><value>تصنيفات الجلسات</value></data>
+  <data name="Admin.SessionCategories.Title" xml:space="preserve"><value>تصنيفات الجلسات</value></data>
+  <data name="Admin.SessionCategories.New" xml:space="preserve"><value>تصنيف جديد</value></data>
+  <data name="Admin.SessionCategories.Loading" xml:space="preserve"><value>جارٍ تحميل التصنيفات…</value></data>
+  <data name="Admin.SessionCategories.None" xml:space="preserve"><value>لا توجد تصنيفات جلسات بعد.</value></data>
+  <data name="Admin.SessionCategories.Col.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.SessionCategories.Col.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.SessionCategories.Col.Order" xml:space="preserve"><value>الترتيب</value></data>
+  <data name="Admin.SessionCategories.Col.Active" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.SessionCategories.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.SessionCategories.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.SessionCategories.Delete.Confirm" xml:space="preserve"><value>حذف هذا التصنيف؟</value></data>
+  <data name="Admin.SessionCategories.Add.Title" xml:space="preserve"><value>إضافة تصنيف</value></data>
+  <data name="Admin.SessionCategories.Edit.Title" xml:space="preserve"><value>تعديل تصنيف</value></data>
+  <data name="Admin.SessionCategories.Field.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.SessionCategories.Field.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.SessionCategories.Field.DisplayOrder" xml:space="preserve"><value>ترتيب العرض</value></data>
+  <data name="Admin.SessionCategories.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.SessionCategories.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.SessionCategories.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.SessionCategories.Saved" xml:space="preserve"><value>تم حفظ التصنيف.</value></data>
+  <data name="Admin.SessionCategories.Deleted" xml:space="preserve"><value>تم حذف التصنيف.</value></data>
+  <data name="Admin.SessionCategories.Required" xml:space="preserve"><value>كلا الاسمين مطلوبان.</value></data>
+  <data name="Admin.SessionCategories.LoadFailed" xml:space="preserve"><value>تعذّر تحميل التصنيفات.</value></data>
+  <data name="Admin.SessionCategories.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
   <data name="Admin.Sessions.Field.Code" xml:space="preserve"><value>الرمز</value></data>
   <data name="Admin.Sessions.Field.CodeHint" xml:space="preserve"><value>من 2 إلى 16 حرفاً؛ فريد. يُستخدم في رابط الجلسة العامة (مثل SES-001).</value></data>
   <data name="Admin.Sessions.Field.CodeInvalid" xml:space="preserve"><value>يجب أن يتراوح طول الرمز بين 2 و16 حرفاً.</value></data>

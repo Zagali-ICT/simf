@@ -42,6 +42,17 @@
                     ValueChanged="@(v => _hallIdInput = v ?? string.Empty)"
                     Disabled="_busy" />
 
+        @* B9b (D-226) — optional session category (dynamic lookup). *@
+        <SimfSelect TValue="string"
+                    Label="@L["Admin.Sessions.Field.Category"]"
+                    Placeholder="@L["Admin.Sessions.Field.CategoryNone"]"
+                    Items="_categoryIds"
+                    ValueFor="@(id => id)"
+                    LabelFor="@(id => CategoryLabel(id))"
+                    Value="@_categoryIdInput"
+                    ValueChanged="@(v => _categoryIdInput = v ?? string.Empty)"
+                    Disabled="_busy" />
+
         <SimfTextField Label="@L["Admin.Sessions.Field.StartUtc"]"
                        Type="datetime-local"
                        Value="@_startInput"
@@ -168,6 +179,7 @@
 @code {
     private readonly Model _model = new();
     private string _hallIdInput = string.Empty;
+    private string _categoryIdInput = string.Empty;
     private string _startInput = string.Empty;
     private string _endInput = string.Empty;
     private string _capacityInput = string.Empty;
@@ -183,6 +195,8 @@
     private Dictionary<string, AdminSpeakerSummary> _speakersById = new();
     private string[] _themeOptions = Array.Empty<string>();
     private Dictionary<string, AdminThemeSummary> _themesById = new();
+    private string[] _categoryIds = Array.Empty<string>();
+    private Dictionary<string, AdminSessionCategorySummary> _categoriesById = new();
 
     private readonly List<AdminSessionSpeakerEntry> _selectedSpeakers = new();
     private readonly List<Guid> _selectedThemes = new();
@@ -202,6 +216,7 @@
             _model.DescriptionArabic = Initial.DescriptionArabic ?? string.Empty;
             _model.IsActive = Initial.IsActive;
             _hallIdInput = Initial.HallId.ToString();
+            _categoryIdInput = Initial.CategoryId?.ToString() ?? string.Empty;
             _startInput = Initial.StartUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm");
             _endInput = Initial.EndUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm");
             _capacityInput = Initial.CapacityOverride?.ToString() ?? string.Empty;
@@ -217,6 +232,7 @@
         await LoadHallsAsync();
         await LoadSpeakersAsync();
         await LoadThemesAsync();
+        await LoadCategoriesAsync();
         StateHasChanged();
     }
 
@@ -269,6 +285,33 @@
             }
         }
         catch { }
+    }
+
+    private async Task LoadCategoriesAsync()
+    {
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminSessionCategorySummary>>>(
+                "simfAccount.postJson", "/account/api/admin/session-categories/list",
+                new GridQuery { Top = 500, Filters = new Dictionary<string, string> { ["isActive"] = "true" } });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _categoriesById = envelope.Data.Items.ToDictionary(c => c.Id.ToString(), c => c);
+                _categoryIds = envelope.Data.Items
+                    .OrderBy(c => c.DisplayOrder).ThenBy(c => c.NameEn)
+                    .Select(c => c.Id.ToString())
+                    .ToArray();
+            }
+        }
+        catch { }
+    }
+
+    private string CategoryLabel(string id)
+    {
+        if (!_categoriesById.TryGetValue(id, out var c)) return id;
+        return CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? c.NameAr
+            : c.NameEn;
     }
 
     private void RefreshSpeakerOptions()
@@ -436,6 +479,8 @@
             }
             capacityOverride = parsed;
         }
+        // B9b — D-226: optional category (empty selection = no category).
+        Guid? categoryId = Guid.TryParse(_categoryIdInput, out var cid) ? cid : null;
 
         _busy = true;
         try
@@ -453,6 +498,7 @@
                         Description = NullIfBlank(_model.Description),
                         DescriptionArabic = NullIfBlank(_model.DescriptionArabic),
                         HallId = hallId,
+                        CategoryId = categoryId,
                         StartUtc = start,
                         EndUtc = end,
                         CapacityOverride = capacityOverride,
@@ -472,6 +518,7 @@
                         Description = NullIfBlank(_model.Description),
                         DescriptionArabic = NullIfBlank(_model.DescriptionArabic),
                         HallId = hallId,
+                        CategoryId = categoryId,
                         StartUtc = start,
                         EndUtc = end,
                         CapacityOverride = capacityOverride,

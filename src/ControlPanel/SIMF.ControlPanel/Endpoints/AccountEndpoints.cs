@@ -1954,6 +1954,44 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.DeactivateOrganisationAsync(id, token));
         });
+
+        // B9b (D-226) — session-category dynamic lookup admin CRUD passthroughs.
+        group.MapPost("/admin/session-categories/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListSessionCategoriesAsync(body, token));
+        });
+        group.MapGet("/admin/session-categories/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetSessionCategoryAsync(id, token));
+        });
+        group.MapPost("/admin/session-categories",
+            async (AdminCreateSessionCategoryRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateSessionCategoryAsync(body, token));
+        });
+        group.MapPut("/admin/session-categories/{id:guid}",
+            async (Guid id, AdminUpdateSessionCategoryRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateSessionCategoryAsync(id, body, token));
+        });
+        group.MapDelete("/admin/session-categories/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateSessionCategoryAsync(id, token));
+        });
+
         // Multipart gov-Excel import (same SameSite=Lax CSRF stance as media upload).
         group.MapPost("/admin/organisations/import",
             async (HttpContext http, SimfAdminClient api) =>

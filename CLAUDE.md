@@ -169,10 +169,10 @@ changes, and that surface backs the shipped mobile app + the NCA posture. The
 freeze must be **re-instated before the production publish / handover**, and
 even with the schema freeze lifted the **shipped mobile wire contract** (public
 JSON field names the app decodes) must be preserved. See
-`docs/decisions/DECISIONS_LOG.md` D-219 (+ D-220..D-225 as-built). As-built so
-far: D-220 Organisation lookup, D-221 `UserProfile.OrganisationId`+Gender,
+`docs/decisions/DECISIONS_LOG.md` D-219 (+ D-220..D-226 as-built). As-built:
+D-220 Organisation lookup, D-221 `UserProfile.OrganisationId`+Gender,
 D-222 Booth→Company+officer, D-223 audience-comment likes, D-224 networking
-connections, D-225 session speaker/host role. The "session category" item is
-**not yet built** — FDS-004 §5.4 models it as a dynamic Category lookup whose
-value list is open (OI-2), so it awaits an owner go-ahead (build the lookup,
-team-seeds values) rather than an invented fixed enum.
+connections, D-225 session speaker/host role, D-226 dynamic `SessionCategory`
+lookup + `Session.CategoryId` (built as a team-seeded lookup per FDS-004 §5.4 —
+NOT a fixed enum; the table ships empty pending the client's category list,
+OI-2). The freeze must be re-instated before the production publish / handover.

@@ -197,6 +197,11 @@ public static class AuditEvents
     public const string ConnectionAccepted = "Connection.Accepted";
     public const string ConnectionRemoved = "Connection.Removed";
 
+    // Session categories (B9b — D-226: dynamic lookup, FDS-004 §5.4).
+    public const string SessionCategoryCreated = "SessionCategory.Created";
+    public const string SessionCategoryUpdated = "SessionCategory.Updated";
+    public const string SessionCategoryDeactivated = "SessionCategory.Deactivated";
+
     // Device keys / biometric sign-in (D-172, gap doc G10 — PDF §2.5)
     public const string DeviceKeyRegistered = "DeviceKey.Registered";
     public const string DeviceKeyRevoked = "DeviceKey.Revoked";

@@ -21,7 +21,11 @@ public sealed record PublicSessionListItem(
     DateTimeOffset EndUtc,
     string? PrimaryThemeName,
     string? PrimaryThemeNameArabic,
-    string? PrimaryThemeColor);
+    string? PrimaryThemeColor,
+    // B9b — D-226: appended (additive — wire contract preserved, D-219).
+    Guid? CategoryId = null,
+    string? CategoryName = null,
+    string? CategoryNameArabic = null);
 
 /// <summary>D-199 — envelope for the public agenda list.</summary>
 public sealed record PublicSessions(IReadOnlyList<PublicSessionListItem> Items);
@@ -45,7 +49,11 @@ public sealed record PublicSessionDetail(
     DateTimeOffset EndUtc,
     IReadOnlyList<PublicSessionTheme> Themes,
     IReadOnlyList<PublicSessionSpeaker> Speakers,
-    PublicSessionSeatSummary Seats);
+    PublicSessionSeatSummary Seats,
+    // B9b — D-226: appended (additive — wire contract preserved, D-219).
+    Guid? CategoryId = null,
+    string? CategoryName = null,
+    string? CategoryNameArabic = null);
 
 /// <summary>D-199 — one theme/pillar tag on a public session. Order
 /// follows the session's theme order; the first is the primary pillar
