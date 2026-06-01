@@ -43,6 +43,24 @@
                         </select>
                     </div>
                 </div>
+                @* P1.6 — date-range filter (inclusive). The service filters
+                   OperationLogEntry.TimestampUtc. *@
+                <div class="simf-field">
+                    <label class="simf-field__label" for="op-from">@L["Admin.OperationLog.Filter.From"]</label>
+                    <div class="simf-field__control">
+                        <input id="op-from" type="date" class="simf-field__input"
+                               value="@_fromFilter"
+                               @onchange="@(e => _fromFilter = e.Value?.ToString() ?? string.Empty)" />
+                    </div>
+                </div>
+                <div class="simf-field">
+                    <label class="simf-field__label" for="op-to">@L["Admin.OperationLog.Filter.To"]</label>
+                    <div class="simf-field__control">
+                        <input id="op-to" type="date" class="simf-field__input"
+                               value="@_toFilter"
+                               @onchange="@(e => _toFilter = e.Value?.ToString() ?? string.Empty)" />
+                    </div>
+                </div>
             </div>
             <div class="simf-form__actions">
                 <SimfButton Type="button" Variant="primary" OnClick="ApplyFiltersAsync">
@@ -51,6 +69,13 @@
                 <SimfButton Type="button" Variant="secondary" OnClick="ClearFiltersAsync">
                     @L["Admin.OperationLog.Filter.Clear"]
                 </SimfButton>
+                @* P1.6 — export the filtered result set. Gated by the dedicated
+                   OperationLog.Export permission (separate from View). *@
+                <AuthorizedAction Permission="@PermissionCatalog.OperationLog.Export">
+                    <SimfButton Type="button" Variant="secondary" OnClick="OnExportAsync">
+                        @L["Admin.OperationLog.Action.Export"]
+                    </SimfButton>
+                </AuthorizedAction>
             </div>
         </div>
 
@@ -173,6 +198,8 @@
     private string _eventTypeFilter = string.Empty;
     private string _subjectEmailFilter = string.Empty;
     private string _outcomeFilter = string.Empty;
+    private string _fromFilter = string.Empty;
+    private string _toFilter = string.Empty;
 
     private AdminOperationLogSummary? _detailsTarget;
     private AdminOperationLogDetail? _detailsDetail;
@@ -215,6 +242,11 @@
         SetOrRemove(filters, "eventType", _eventTypeFilter);
         SetOrRemove(filters, "subjectEmail", _subjectEmailFilter);
         SetOrRemove(filters, "outcome", _outcomeFilter);
+        // The "to" bound is made inclusive of the whole picked day; "from"
+        // is start-of-day as the date input already gives it.
+        SetOrRemove(filters, "from", _fromFilter);
+        SetOrRemove(filters, "to",
+            string.IsNullOrWhiteSpace(_toFilter) ? string.Empty : _toFilter + "T23:59:59");
         source.Filters = filters;
         return source;
     }
@@ -243,10 +275,18 @@
         _eventTypeFilter = string.Empty;
         _subjectEmailFilter = string.Empty;
         _outcomeFilter = string.Empty;
+        _fromFilter = string.Empty;
+        _toFilter = string.Empty;
         _query.Skip = 0;
         _query.Filters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         await LoadAsync();
     }
+
+    // P1.6 — download the filtered result set as XLSX. The browser saves the
+    // file; the BFF streams the workbook bytes (no ApiResult envelope).
+    private async Task OnExportAsync() =>
+        await JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/operation-log/export", ApplyFilterValues(_query));
 
     private async Task OnDetailsAsync(AdminOperationLogSummary row)
     {

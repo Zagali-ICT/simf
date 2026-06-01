@@ -147,6 +147,36 @@ public sealed class SimfAdminClient(HttpClient http)
         }
     }
 
+    /// <summary>P1.6 — XLSX of the filtered operation log.</summary>
+    public Task<(int StatusCode, byte[] Bytes)> ExportOperationLogAsync(
+        GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>
+        PostForBytesAsync("operation-log/export", query, accessToken, cancellationToken);
+
+    /// <summary>P1.6 — POSTs a JSON body and returns the raw response bytes
+    /// (an XLSX workbook). Shared by the read-only-grid exports; the response
+    /// body is binary, so it bypasses the <c>ApiResult</c> envelope.</summary>
+    private async Task<(int StatusCode, byte[] Bytes)> PostForBytesAsync(
+        string relativePath, object body, string accessToken,
+        CancellationToken cancellationToken)
+    {
+        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + relativePath)
+        {
+            Content = JsonContent.Create(body, options: JsonOptions),
+        };
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return ((int)response.StatusCode, bytes);
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException)
+        {
+            return ((int)HttpStatusCode.ServiceUnavailable, Array.Empty<byte>());
+        }
+    }
+
     // -- D-113 — type-scoped bulk operations for Visitors and Others ---------
 
     /// <summary>Soft-deletes one or many visitor accounts (D-113).</summary>

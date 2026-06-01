@@ -801,6 +801,23 @@ internal static class AccountEndpoints
             return Forward(await api.GetOperationLogAsync(id, token));
         });
 
+        // P1.6 — binary XLSX download. Cannot reuse Forward() because the
+        // response body is the workbook bytes, not the JSON envelope.
+        group.MapPost("/admin/operation-log/export",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, bytes) = await api.ExportOperationLogAsync(body, token);
+            if (status != 200 || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            return Results.File(bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"simf-operation-log-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx");
+        });
+
         // D-134 Sprint A — Attendees roster proxy (read-only join over
         // SimfUser + UserProfile + ProfileType; no schema change).
         group.MapPost("/admin/attendees/list",

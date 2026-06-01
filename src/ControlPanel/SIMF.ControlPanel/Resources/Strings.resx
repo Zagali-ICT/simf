@@ -299,6 +299,7 @@
   <data name="Admin.OperationLog.Action.Details" xml:space="preserve"><value>Details</value></data>
   <data name="Admin.OperationLog.Action.SelectAll" xml:space="preserve"><value>Select all</value></data>
   <data name="Admin.OperationLog.Action.SelectRow" xml:space="preserve"><value>Select row</value></data>
+  <data name="Admin.OperationLog.Action.Export" xml:space="preserve"><value>Export</value></data>
   <data name="Admin.OperationLog.Filter.EventType" xml:space="preserve"><value>Event type contains</value></data>
   <data name="Admin.OperationLog.Filter.EventTypePlaceholder" xml:space="preserve"><value>e.g. SignIn, PasswordReset, Role.Created</value></data>
   <data name="Admin.OperationLog.Filter.SubjectEmail" xml:space="preserve"><value>Subject email contains</value></data>
@@ -306,6 +307,8 @@
   <data name="Admin.OperationLog.Filter.OutcomeAny" xml:space="preserve"><value>Any</value></data>
   <data name="Admin.OperationLog.Filter.OutcomeSuccess" xml:space="preserve"><value>Success</value></data>
   <data name="Admin.OperationLog.Filter.OutcomeFailure" xml:space="preserve"><value>Failure</value></data>
+  <data name="Admin.OperationLog.Filter.From" xml:space="preserve"><value>From date</value></data>
+  <data name="Admin.OperationLog.Filter.To" xml:space="preserve"><value>To date</value></data>
   <data name="Admin.OperationLog.Filter.Apply" xml:space="preserve"><value>Apply filters</value></data>
   <data name="Admin.OperationLog.Filter.Clear" xml:space="preserve"><value>Clear</value></data>
   <data name="Admin.OperationLog.Details.Title" xml:space="preserve"><value>Audit entry</value></data>

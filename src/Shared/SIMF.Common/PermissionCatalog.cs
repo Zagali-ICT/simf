@@ -361,6 +361,9 @@ public static class PermissionCatalog
     public static class OperationLog
     {
         public const string View = "OperationLog.View";
+
+        // P1.6 — XLSX export of the (filtered) operation log.
+        public const string Export = "OperationLog.Export";
     }
 
     public static class Logs
@@ -571,6 +574,7 @@ public static class PermissionCatalog
         new(Operations.Edit, "Operations", "Edit", "Change operations toggles", AdminOnly),
 
         new(OperationLog.View, "OperationLog", "View", "View the operation log", AdminOnly),
+        new(OperationLog.Export, "OperationLog", "Export", "Export the operation log", AdminOnly),
         new(Logs.View, "Logs", "View", "View system logs", AdminOnly),
 
         new(Invitations.View, "Invitations", "View", "View invitations", PublicRelations),

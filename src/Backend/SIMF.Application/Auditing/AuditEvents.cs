@@ -97,6 +97,9 @@ public static class AuditEvents
     public const string AdminUsersExported = "Admin.UsersExported";
     public const string AdminUsersImported = "Admin.UsersImported";
 
+    // P1.6 — XLSX export of the read-only admin grids (filtered result set).
+    public const string AdminOperationLogExported = "Admin.OperationLogExported";
+
     // User profile (myComment #18 — D-046; P8 renamed from VisitorProfile.*)
     public const string UserProfileSaved = "UserProfile.Saved";
     public const string UserProfileIdImageUploaded = "UserProfile.IdImageUploaded";

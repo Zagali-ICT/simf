@@ -24,4 +24,10 @@ public interface IAdminOperationLogService
     /// <summary>One row by id, or <c>null</c> when missing.</summary>
     Task<AdminOperationLogDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>P1.6 — XLSX of the filtered result set (same
+    /// <see cref="GridQuery.Filters"/> as <see cref="ListAsync"/>, bounded to a
+    /// safe row cap). Writes an <c>Admin.OperationLogExported</c> audit row.</summary>
+    Task<byte[]> ExportAsync(
+        Guid actorUserId, GridQuery query, CancellationToken cancellationToken = default);
 }

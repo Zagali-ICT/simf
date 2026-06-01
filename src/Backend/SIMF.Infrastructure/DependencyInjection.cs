@@ -348,6 +348,8 @@ public static class DependencyInjection
         services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddSingleton<IUserExcelService, ClosedXmlUserExcelService>();
+        // P1.6 — export-only workbook builder for the operation-log grid.
+        services.AddSingleton<IOperationLogExcelService, ClosedXmlOperationLogExcelService>();
         services.AddSingleton<IAvatarStorage, FilesystemAvatarStorage>();
         services.AddSingleton<IUserIdDocumentStorage, EncryptedUserIdDocumentStorage>();
         services.AddSingleton<ILogFileService, LogFileService>();
