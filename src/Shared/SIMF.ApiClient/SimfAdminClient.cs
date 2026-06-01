@@ -9,6 +9,7 @@ using SIMF.Contracts.Archive;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Companies;
 using SIMF.Contracts.Exhibition;
+using SIMF.Contracts.Faq;
 using SIMF.Contracts.Feedback;
 using SIMF.Contracts.Logs;
 using SIMF.Contracts.Media;
@@ -698,6 +699,53 @@ public sealed class SimfAdminClient(HttpClient http)
         CancellationToken cancellationToken = default) =>
         SendAsync<bool>(
             HttpMethod.Delete, $"interests/{id}", content: null,
+            accessToken, cancellationToken);
+
+    // -- P2.1 (D-211) — FAQ management (two-level group → entry) --
+
+    public Task<ApiCallResult<GridPage<AdminFaqGroupSummary>>> ListFaqGroupsAsync(
+        GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminFaqGroupSummary>>(HttpMethod.Post, "faq/groups/list",
+            JsonContent.Create(query, options: JsonOptions), accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminFaqGroupSummary>> GetFaqGroupAsync(
+        Guid id, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminFaqGroupSummary>(HttpMethod.Get, $"faq/groups/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminFaqGroupSummary>> CreateFaqGroupAsync(
+        CreateFaqGroupRequest request, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminFaqGroupSummary>(HttpMethod.Post, "faq/groups",
+            JsonContent.Create(request, options: JsonOptions), accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminFaqGroupSummary>> UpdateFaqGroupAsync(
+        Guid id, UpdateFaqGroupRequest request, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminFaqGroupSummary>(HttpMethod.Put, $"faq/groups/{id}",
+            JsonContent.Create(request, options: JsonOptions), accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeleteFaqGroupAsync(
+        Guid id, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(HttpMethod.Delete, $"faq/groups/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<AdminFaqEntrySummary>>> ListFaqEntriesAsync(
+        Guid groupId, GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminFaqEntrySummary>>(HttpMethod.Post, $"faq/groups/{groupId}/entries/list",
+            JsonContent.Create(query, options: JsonOptions), accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminFaqEntrySummary>> CreateFaqEntryAsync(
+        CreateFaqEntryRequest request, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminFaqEntrySummary>(HttpMethod.Post, "faq/entries",
+            JsonContent.Create(request, options: JsonOptions), accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminFaqEntrySummary>> UpdateFaqEntryAsync(
+        Guid id, UpdateFaqEntryRequest request, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminFaqEntrySummary>(HttpMethod.Put, $"faq/entries/{id}",
+            JsonContent.Create(request, options: JsonOptions), accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeleteFaqEntryAsync(
+        Guid id, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(HttpMethod.Delete, $"faq/entries/{id}", content: null,
             accessToken, cancellationToken);
 
     // -- D-134 Sprint A — Roles admin CRUD (existing schema, no migration) --

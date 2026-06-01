@@ -8,6 +8,7 @@ using SIMF.Contracts.Archive;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Companies;
 using SIMF.Contracts.Exhibition;
+using SIMF.Contracts.Faq;
 using SIMF.Contracts.Logs;
 using SIMF.Contracts.Media;
 using SIMF.Contracts.PublicRelations;
@@ -703,6 +704,71 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.DeactivateInterestAsync(id, token));
+        });
+
+        // P2.1 (D-211) — FAQ management proxy (two-level group → entry).
+        group.MapPost("/admin/faq/groups/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListFaqGroupsAsync(body, token));
+        });
+        group.MapGet("/admin/faq/groups/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetFaqGroupAsync(id, token));
+        });
+        group.MapPost("/admin/faq/groups",
+            async (CreateFaqGroupRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateFaqGroupAsync(body, token));
+        });
+        group.MapPut("/admin/faq/groups/{id:guid}",
+            async (Guid id, UpdateFaqGroupRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateFaqGroupAsync(id, body, token));
+        });
+        group.MapDelete("/admin/faq/groups/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteFaqGroupAsync(id, token));
+        });
+        group.MapPost("/admin/faq/groups/{groupId:guid}/entries/list",
+            async (Guid groupId, GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListFaqEntriesAsync(groupId, body, token));
+        });
+        group.MapPost("/admin/faq/entries",
+            async (CreateFaqEntryRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateFaqEntryAsync(body, token));
+        });
+        group.MapPut("/admin/faq/entries/{id:guid}",
+            async (Guid id, UpdateFaqEntryRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateFaqEntryAsync(id, body, token));
+        });
+        group.MapDelete("/admin/faq/entries/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteFaqEntryAsync(id, token));
         });
 
         // D-134 Sprint A — Roles CRUD proxy (existing schema, no migration).

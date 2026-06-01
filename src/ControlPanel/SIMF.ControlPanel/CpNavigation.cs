@@ -102,7 +102,8 @@ public static class CpNavigation
         ]),
         new("Nav.Knowledge",
         [
-            new("Module.Faq", "/m/faq", IsStub: true),
+            // P2.1 (D-211) — FAQ management (two-level group → entry).
+            new("Module.Faq", "/admin/faq", RequiredPermission: PermissionCatalog.Faq.View),
             // D-176 (gap doc G12) — centralised AI module: prompt
             // catalogue + invocations log. Real pages, no longer stubs.
             new("Module.AiPrompts", "/admin/ai/prompts", RequiredPermission: PermissionCatalog.AiPrompts.View),

@@ -252,6 +252,9 @@ public static class DependencyInjection
             SIMF.Infrastructure.PublicRelations.PublicNewsService>();
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminNewsService,
             SIMF.Infrastructure.PublicRelations.AdminNewsService>();
+        // P2.1 (D-211) — FAQ management (two-level group → entry).
+        services.AddScoped<SIMF.Application.Faq.Abstractions.IAdminFaqService,
+            SIMF.Infrastructure.Faq.AdminFaqService>();
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IPublicMediaPartnerService,
             SIMF.Infrastructure.PublicRelations.PublicMediaPartnerService>();
         services.AddScoped<SIMF.Application.PublicRelations.Abstractions.IAdminMediaPartnerService,

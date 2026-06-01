@@ -74,6 +74,42 @@
   <data name="Module.Moderation" xml:space="preserve"><value>Moderation queue</value></data>
   <data name="Module.Faq" xml:space="preserve"><value>FAQ groups &amp; entries</value></data>
   <data name="Module.AiSettings" xml:space="preserve"><value>AI settings</value></data>
+  <data name="Admin.Faq.Title" xml:space="preserve"><value>FAQ management</value></data>
+  <data name="Admin.Faq.Groups.Heading" xml:space="preserve"><value>FAQ groups</value></data>
+  <data name="Admin.Faq.Groups.Add" xml:space="preserve"><value>Add group</value></data>
+  <data name="Admin.Faq.Groups.None" xml:space="preserve"><value>No FAQ groups yet.</value></data>
+  <data name="Admin.Faq.Col.NameEn" xml:space="preserve"><value>Name (EN)</value></data>
+  <data name="Admin.Faq.Col.NameAr" xml:space="preserve"><value>Name (AR)</value></data>
+  <data name="Admin.Faq.Col.Order" xml:space="preserve"><value>Order</value></data>
+  <data name="Admin.Faq.Col.EntryCount" xml:space="preserve"><value>Entries</value></data>
+  <data name="Admin.Faq.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Faq.Col.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Admin.Faq.Col.Question" xml:space="preserve"><value>Question (EN)</value></data>
+  <data name="Admin.Faq.Active.Yes" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Faq.Active.No" xml:space="preserve"><value>Hidden</value></data>
+  <data name="Admin.Faq.Action.ManageEntries" xml:space="preserve"><value>Manage entries</value></data>
+  <data name="Admin.Faq.Action.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.Faq.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.Faq.Action.AddEntry" xml:space="preserve"><value>Add entry</value></data>
+  <data name="Admin.Faq.Entries.Heading" xml:space="preserve"><value>Entries in “{0}”</value></data>
+  <data name="Admin.Faq.Entries.None" xml:space="preserve"><value>No entries in this group yet.</value></data>
+  <data name="Admin.Faq.Group.Add.Title" xml:space="preserve"><value>Add FAQ group</value></data>
+  <data name="Admin.Faq.Group.Edit.Title" xml:space="preserve"><value>Edit FAQ group</value></data>
+  <data name="Admin.Faq.Entry.Add.Title" xml:space="preserve"><value>Add FAQ entry</value></data>
+  <data name="Admin.Faq.Entry.Edit.Title" xml:space="preserve"><value>Edit FAQ entry</value></data>
+  <data name="Admin.Faq.Field.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Faq.Field.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Faq.Field.Order" xml:space="preserve"><value>Display order</value></data>
+  <data name="Admin.Faq.Field.IsActive" xml:space="preserve"><value>Active (visible)</value></data>
+  <data name="Admin.Faq.Field.QuestionEn" xml:space="preserve"><value>Question (English)</value></data>
+  <data name="Admin.Faq.Field.QuestionAr" xml:space="preserve"><value>Question (Arabic)</value></data>
+  <data name="Admin.Faq.Field.AnswerEn" xml:space="preserve"><value>Answer (English)</value></data>
+  <data name="Admin.Faq.Field.AnswerAr" xml:space="preserve"><value>Answer (Arabic)</value></data>
+  <data name="Admin.Faq.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.Faq.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Faq.LoadFailed" xml:space="preserve"><value>Could not complete the request. Please try again.</value></data>
+  <data name="Admin.Faq.Saved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="Admin.Faq.Deactivated" xml:space="preserve"><value>Deactivated.</value></data>
   <data name="Module.AiPrompts" xml:space="preserve"><value>AI prompts</value></data>
   <data name="Module.AiInvocations" xml:space="preserve"><value>AI invocations</value></data>
   <data name="Module.Media" xml:space="preserve"><value>Media Center</value></data>

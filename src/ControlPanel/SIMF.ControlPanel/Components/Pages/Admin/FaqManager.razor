@@ -1,0 +1,464 @@
+@* P2.1 (D-211) — FAQ management. Two-level: a groups table (top) and, when a
+   group is selected, its entries table (below). FAQ is small-scale (a handful
+   of groups, dozens of entries) so the page loads all rows — no server paging.
+   Mirrors the custom-page approach of SessionSeatPlan rather than SimfDataGrid. *@
+@page "/admin/faq"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Faq.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Faq.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Faq.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-toolbar">
+            <h2 class="simf-section__title">@L["Admin.Faq.Groups.Heading"]</h2>
+            <AuthorizedAction Permission="@PermissionCatalog.Faq.Create">
+                <SimfButton Type="button" OnClick="OpenAddGroup">@L["Admin.Faq.Groups.Add"]</SimfButton>
+            </AuthorizedAction>
+        </div>
+
+        @if (_groups.Count == 0 && !_loading)
+        {
+            <SimfEmptyState Title="@L["Admin.Faq.Groups.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.Faq.Col.NameEn"]</th>
+                        <th>@L["Admin.Faq.Col.NameAr"]</th>
+                        <th>@L["Admin.Faq.Col.Order"]</th>
+                        <th>@L["Admin.Faq.Col.EntryCount"]</th>
+                        <th>@L["Admin.Faq.Col.Active"]</th>
+                        <th>@L["Admin.Faq.Col.Actions"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var g in _groups)
+                    {
+                        <tr class="@(_selectedGroup?.Id == g.Id ? "is-selected" : null)">
+                            <td>@g.NameEn</td>
+                            <td>@g.NameAr</td>
+                            <td>@g.DisplayOrder</td>
+                            <td>@g.EntryCount</td>
+                            <td>
+                                @if (g.IsActive)
+                                {
+                                    <SimfPill Variant="on">@L["Admin.Faq.Active.Yes"]</SimfPill>
+                                }
+                                else
+                                {
+                                    <SimfPill Variant="off">@L["Admin.Faq.Active.No"]</SimfPill>
+                                }
+                            </td>
+                            <td>
+                                <SimfButton Type="button" Variant="secondary"
+                                            OnClick="@(() => SelectGroupAsync(g))">
+                                    @L["Admin.Faq.Action.ManageEntries"]
+                                </SimfButton>
+                                <AuthorizedAction Permission="@PermissionCatalog.Faq.Edit">
+                                    <SimfButton Type="button" Variant="secondary"
+                                                OnClick="@(() => OpenEditGroup(g))">
+                                        @L["Admin.Faq.Action.Edit"]
+                                    </SimfButton>
+                                </AuthorizedAction>
+                                <AuthorizedAction Permission="@PermissionCatalog.Faq.Delete">
+                                    <SimfButton Type="button" Variant="secondary"
+                                                OnClick="@(() => DeactivateGroupAsync(g))">
+                                        @L["Admin.Faq.Action.Deactivate"]
+                                    </SimfButton>
+                                </AuthorizedAction>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        @if (_selectedGroup is not null)
+        {
+            <h2 class="simf-section__title">
+                @(string.Format(L["Admin.Faq.Entries.Heading"], _selectedGroup.NameEn))
+            </h2>
+            <div class="simf-toolbar">
+                <AuthorizedAction Permission="@PermissionCatalog.Faq.Create">
+                    <SimfButton Type="button" OnClick="OpenAddEntry">@L["Admin.Faq.Action.AddEntry"]</SimfButton>
+                </AuthorizedAction>
+            </div>
+
+            @if (_entries.Count == 0)
+            {
+                <SimfEmptyState Title="@L["Admin.Faq.Entries.None"]" />
+            }
+            else
+            {
+                <table class="simf-table">
+                    <thead>
+                        <tr>
+                            <th>@L["Admin.Faq.Col.Question"]</th>
+                            <th>@L["Admin.Faq.Col.NameAr"]</th>
+                            <th>@L["Admin.Faq.Col.Order"]</th>
+                            <th>@L["Admin.Faq.Col.Active"]</th>
+                            <th>@L["Admin.Faq.Col.Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var e in _entries)
+                        {
+                            <tr>
+                                <td>@e.QuestionEn</td>
+                                <td>@e.QuestionAr</td>
+                                <td>@e.DisplayOrder</td>
+                                <td>
+                                    @if (e.IsActive)
+                                    {
+                                        <SimfPill Variant="on">@L["Admin.Faq.Active.Yes"]</SimfPill>
+                                    }
+                                    else
+                                    {
+                                        <SimfPill Variant="off">@L["Admin.Faq.Active.No"]</SimfPill>
+                                    }
+                                </td>
+                                <td>
+                                    <AuthorizedAction Permission="@PermissionCatalog.Faq.Edit">
+                                        <SimfButton Type="button" Variant="secondary"
+                                                    OnClick="@(() => OpenEditEntry(e))">
+                                            @L["Admin.Faq.Action.Edit"]
+                                        </SimfButton>
+                                    </AuthorizedAction>
+                                    <AuthorizedAction Permission="@PermissionCatalog.Faq.Delete">
+                                        <SimfButton Type="button" Variant="secondary"
+                                                    OnClick="@(() => DeactivateEntryAsync(e))">
+                                            @L["Admin.Faq.Action.Deactivate"]
+                                        </SimfButton>
+                                    </AuthorizedAction>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        }
+    </div>
+</div>
+
+@if (_groupModalOpen)
+{
+    <SimfModal Open="true" Title="@(_groupEditId is null ? L["Admin.Faq.Group.Add.Title"] : L["Admin.Faq.Group.Edit.Title"])"
+               OnClose="CloseGroupModal">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.Faq.Field.NameEn"]" MaxLength="128"
+                               @bind-Value="_groupNameEn" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Faq.Field.NameAr"]" MaxLength="128"
+                               @bind-Value="_groupNameAr" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Faq.Field.Order"]" Type="number"
+                               Value="@_groupOrder" ValueChanged="@(v => _groupOrder = v)"
+                               ValueExpression="@(() => _groupOrder)" Disabled="_busy" />
+                @if (_groupEditId is not null)
+                {
+                    <SimfCheckbox @bind-Value="_groupActive" Disabled="_busy">
+                        @L["Admin.Faq.Field.IsActive"]
+                    </SimfCheckbox>
+                }
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="SaveGroupAsync" Loading="_busy">@L["Admin.Faq.Save"]</SimfButton>
+            <SimfButton Type="button" Variant="secondary" OnClick="CloseGroupModal" Disabled="_busy">
+                @L["Admin.Faq.Cancel"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@if (_entryModalOpen)
+{
+    <SimfModal Open="true" Title="@(_entryEditId is null ? L["Admin.Faq.Entry.Add.Title"] : L["Admin.Faq.Entry.Edit.Title"])"
+               OnClose="CloseEntryModal">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.Faq.Field.QuestionEn"]" MaxLength="512"
+                               @bind-Value="_entryQuestionEn" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Faq.Field.QuestionAr"]" MaxLength="512"
+                               @bind-Value="_entryQuestionAr" Disabled="_busy" />
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Faq.Field.AnswerEn"]</span>
+                    <textarea class="simf-field__input" rows="4" maxlength="4000"
+                              @bind="_entryAnswerEn" disabled="@_busy"></textarea>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Faq.Field.AnswerAr"]</span>
+                    <textarea class="simf-field__input" rows="4" maxlength="4000"
+                              @bind="_entryAnswerAr" disabled="@_busy"></textarea>
+                </label>
+                <SimfTextField Label="@L["Admin.Faq.Field.Order"]" Type="number"
+                               Value="@_entryOrder" ValueChanged="@(v => _entryOrder = v)"
+                               ValueExpression="@(() => _entryOrder)" Disabled="_busy" />
+                @if (_entryEditId is not null)
+                {
+                    <SimfCheckbox @bind-Value="_entryActive" Disabled="_busy">
+                        @L["Admin.Faq.Field.IsActive"]
+                    </SimfCheckbox>
+                }
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" OnClick="SaveEntryAsync" Loading="_busy">@L["Admin.Faq.Save"]</SimfButton>
+            <SimfButton Type="button" Variant="secondary" OnClick="CloseEntryModal" Disabled="_busy">
+                @L["Admin.Faq.Cancel"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private List<AdminFaqGroupSummary> _groups = new();
+    private AdminFaqGroupSummary? _selectedGroup;
+    private List<AdminFaqEntrySummary> _entries = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    // Group modal state.
+    private bool _groupModalOpen;
+    private Guid? _groupEditId;
+    private string _groupNameEn = string.Empty;
+    private string _groupNameAr = string.Empty;
+    private string _groupOrder = "0";
+    private bool _groupActive = true;
+
+    // Entry modal state.
+    private bool _entryModalOpen;
+    private Guid? _entryEditId;
+    private string _entryQuestionEn = string.Empty;
+    private string _entryQuestionAr = string.Empty;
+    private string _entryAnswerEn = string.Empty;
+    private string _entryAnswerAr = string.Empty;
+    private string _entryOrder = "0";
+    private bool _entryActive = true;
+
+    protected override async Task OnInitializedAsync() => await LoadGroupsAsync();
+
+    private async Task LoadGroupsAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminFaqGroupSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/faq/groups/list",
+                new GridQuery { Top = 200 });
+            if (env is { Success: true, Data: not null })
+            {
+                _groups = env.Data.Items.ToList();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task SelectGroupAsync(AdminFaqGroupSummary group)
+    {
+        _selectedGroup = group;
+        await LoadEntriesAsync();
+    }
+
+    private async Task LoadEntriesAsync()
+    {
+        if (_selectedGroup is null) return;
+        var env = await JS.InvokeAsync<ApiResult<GridPage<AdminFaqEntrySummary>>>(
+            "simfAccount.postJson",
+            $"/account/api/admin/faq/groups/{_selectedGroup.Id}/entries/list",
+            new GridQuery { Top = 200 });
+        if (env is { Success: true, Data: not null })
+        {
+            _entries = env.Data.Items.ToList();
+        }
+        else
+        {
+            _toast = new Toast("error",
+                env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"]);
+        }
+    }
+
+    // -- Group modal --
+    private void OpenAddGroup()
+    {
+        _groupEditId = null;
+        _groupNameEn = _groupNameAr = string.Empty;
+        _groupOrder = "0";
+        _groupActive = true;
+        _groupModalOpen = true;
+    }
+
+    private void OpenEditGroup(AdminFaqGroupSummary g)
+    {
+        _groupEditId = g.Id;
+        _groupNameEn = g.NameEn;
+        _groupNameAr = g.NameAr;
+        _groupOrder = g.DisplayOrder.ToString();
+        _groupActive = g.IsActive;
+        _groupModalOpen = true;
+    }
+
+    private void CloseGroupModal() => _groupModalOpen = false;
+
+    private async Task SaveGroupAsync()
+    {
+        _busy = true;
+        _toast = null;
+        try
+        {
+            int.TryParse(_groupOrder, out var order);
+            ApiResult<AdminFaqGroupSummary>? env;
+            if (_groupEditId is null)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminFaqGroupSummary>>(
+                    "simfAccount.postJson", "/account/api/admin/faq/groups",
+                    new CreateFaqGroupRequest { NameEn = _groupNameEn, NameAr = _groupNameAr, DisplayOrder = order });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminFaqGroupSummary>>(
+                    "simfAccount.putJson", $"/account/api/admin/faq/groups/{_groupEditId}",
+                    new UpdateFaqGroupRequest { NameEn = _groupNameEn, NameAr = _groupNameAr, DisplayOrder = order, IsActive = _groupActive });
+            }
+            if (env is { Success: true })
+            {
+                _groupModalOpen = false;
+                _toast = new Toast("success", L["Admin.Faq.Saved"]);
+                await LoadGroupsAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task DeactivateGroupAsync(AdminFaqGroupSummary g)
+    {
+        _toast = null;
+        var env = await JS.InvokeAsync<ApiResult<bool>>(
+            "simfAccount.deleteJson", $"/account/api/admin/faq/groups/{g.Id}");
+        if (env is { Success: true })
+        {
+            _toast = new Toast("success", L["Admin.Faq.Deactivated"]);
+            if (_selectedGroup?.Id == g.Id) { _selectedGroup = null; }
+            await LoadGroupsAsync();
+        }
+        else
+        {
+            _toast = new Toast("error",
+                env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"]);
+        }
+    }
+
+    // -- Entry modal --
+    private void OpenAddEntry()
+    {
+        _entryEditId = null;
+        _entryQuestionEn = _entryQuestionAr = _entryAnswerEn = _entryAnswerAr = string.Empty;
+        _entryOrder = "0";
+        _entryActive = true;
+        _entryModalOpen = true;
+    }
+
+    private void OpenEditEntry(AdminFaqEntrySummary e)
+    {
+        _entryEditId = e.Id;
+        _entryQuestionEn = e.QuestionEn;
+        _entryQuestionAr = e.QuestionAr;
+        _entryAnswerEn = e.AnswerEn;
+        _entryAnswerAr = e.AnswerAr;
+        _entryOrder = e.DisplayOrder.ToString();
+        _entryActive = e.IsActive;
+        _entryModalOpen = true;
+    }
+
+    private void CloseEntryModal() => _entryModalOpen = false;
+
+    private async Task SaveEntryAsync()
+    {
+        if (_selectedGroup is null) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            int.TryParse(_entryOrder, out var order);
+            ApiResult<AdminFaqEntrySummary>? env;
+            if (_entryEditId is null)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminFaqEntrySummary>>(
+                    "simfAccount.postJson", "/account/api/admin/faq/entries",
+                    new CreateFaqEntryRequest
+                    {
+                        FaqGroupId = _selectedGroup.Id,
+                        QuestionEn = _entryQuestionEn, QuestionAr = _entryQuestionAr,
+                        AnswerEn = _entryAnswerEn, AnswerAr = _entryAnswerAr,
+                        DisplayOrder = order,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminFaqEntrySummary>>(
+                    "simfAccount.putJson", $"/account/api/admin/faq/entries/{_entryEditId}",
+                    new UpdateFaqEntryRequest
+                    {
+                        QuestionEn = _entryQuestionEn, QuestionAr = _entryQuestionAr,
+                        AnswerEn = _entryAnswerEn, AnswerAr = _entryAnswerAr,
+                        DisplayOrder = order, IsActive = _entryActive,
+                    });
+            }
+            if (env is { Success: true })
+            {
+                _entryModalOpen = false;
+                _toast = new Toast("success", L["Admin.Faq.Saved"]);
+                await LoadEntriesAsync();
+                await LoadGroupsAsync(); // refresh entry counts
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task DeactivateEntryAsync(AdminFaqEntrySummary e)
+    {
+        _toast = null;
+        var env = await JS.InvokeAsync<ApiResult<bool>>(
+            "simfAccount.deleteJson", $"/account/api/admin/faq/entries/{e.Id}");
+        if (env is { Success: true })
+        {
+            _toast = new Toast("success", L["Admin.Faq.Deactivated"]);
+            await LoadEntriesAsync();
+            await LoadGroupsAsync();
+        }
+        else
+        {
+            _toast = new Toast("error",
+                env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"]);
+        }
+    }
+}

@@ -8,6 +8,7 @@ using SIMF.Domain.Common;
 using SIMF.Domain.Companies;
 using SIMF.Domain.Delegations;
 using SIMF.Domain.Exhibition;
+using SIMF.Domain.Faq;
 using SIMF.Domain.Feedback;
 using SIMF.Domain.Media;
 using SIMF.Domain.MeetingRequests;
@@ -146,6 +147,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     // on the Identity DB — no cross-DB navigation).
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<CompanyMembership> CompanyMemberships => Set<CompanyMembership>();
+
+    // P2.1 (D-211) — two-level FAQ: groups own ordered question/answer entries.
+    public DbSet<FaqGroup> FaqGroups => Set<FaqGroup>();
+    public DbSet<FaqEntry> FaqEntries => Set<FaqEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

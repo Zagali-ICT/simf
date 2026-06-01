@@ -156,6 +156,11 @@ public static class ErrorCodes
     public const string NewsNotFound = "NEWS_NOT_FOUND";
     public const string NewsTitleDuplicate = "NEWS_TITLE_DUPLICATE";
 
+    // FAQ (P2.1 / D-211).
+    public const string FaqInvalid = "FAQ_INVALID";
+    public const string FaqGroupNotFound = "FAQ_GROUP_NOT_FOUND";
+    public const string FaqEntryNotFound = "FAQ_ENTRY_NOT_FOUND";
+
     // Media (D-199 — media gallery, Mockup page 30. Promoted from the
     // module-local MediaErrorCodes; string values are the wire contract).
     public const string MediaNotFound = "media_not_found";

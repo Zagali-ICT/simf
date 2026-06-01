@@ -321,6 +321,15 @@ public static class PermissionCatalog
         public const string Delete = "News.Delete";
     }
 
+    /// <summary>P2.1 (D-211) — FAQ management (two-level group → entry).</summary>
+    public static class Faq
+    {
+        public const string View = "Faq.View";
+        public const string Create = "Faq.Create";
+        public const string Edit = "Faq.Edit";
+        public const string Delete = "Faq.Delete";
+    }
+
     public static class MediaPartners
     {
         public const string View = "MediaPartners.View";
@@ -556,6 +565,11 @@ public static class PermissionCatalog
         new(News.Create, "News", "Create", "Create news articles", PublicRelations),
         new(News.Edit, "News", "Edit", "Edit news articles", PublicRelations),
         new(News.Delete, "News", "Delete", "Delete news articles", PublicRelations),
+
+        new(Faq.View, "Faq", "View", "View FAQ groups + entries", AdminOnly),
+        new(Faq.Create, "Faq", "Create", "Create FAQ groups + entries", AdminOnly),
+        new(Faq.Edit, "Faq", "Edit", "Edit FAQ groups + entries", AdminOnly),
+        new(Faq.Delete, "Faq", "Delete", "Delete FAQ groups + entries", AdminOnly),
 
         new(MediaPartners.View, "MediaPartners", "View", "View media partners", AdminOnly),
         new(MediaPartners.Create, "MediaPartners", "Create", "Create media partners", AdminOnly),

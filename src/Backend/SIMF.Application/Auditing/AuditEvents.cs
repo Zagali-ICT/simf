@@ -294,6 +294,14 @@ public static class AuditEvents
     public const string NewsUpdated = "news.updated";
     public const string NewsDeactivated = "news.deactivated";
 
+    // FAQ (P2.1 / D-211 — two-level group → entry CRUD).
+    public const string FaqGroupCreated = "faq.group.created";
+    public const string FaqGroupUpdated = "faq.group.updated";
+    public const string FaqGroupDeactivated = "faq.group.deactivated";
+    public const string FaqEntryCreated = "faq.entry.created";
+    public const string FaqEntryUpdated = "faq.entry.updated";
+    public const string FaqEntryDeactivated = "faq.entry.deactivated";
+
     // Media (D-199 — media gallery, Mockup page 30. Promoted from the
     // module-local MediaAuditEvents; string values are the audit contract).
     public const string MediaCreated = "admin.media.created";

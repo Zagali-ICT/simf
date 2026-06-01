@@ -74,6 +74,42 @@
   <data name="Module.Moderation" xml:space="preserve"><value>قائمة الإشراف</value></data>
   <data name="Module.Faq" xml:space="preserve"><value>الأسئلة الشائعة</value></data>
   <data name="Module.AiSettings" xml:space="preserve"><value>إعدادات الذكاء الاصطناعي</value></data>
+  <data name="Admin.Faq.Title" xml:space="preserve"><value>إدارة الأسئلة الشائعة</value></data>
+  <data name="Admin.Faq.Groups.Heading" xml:space="preserve"><value>مجموعات الأسئلة</value></data>
+  <data name="Admin.Faq.Groups.Add" xml:space="preserve"><value>إضافة مجموعة</value></data>
+  <data name="Admin.Faq.Groups.None" xml:space="preserve"><value>لا توجد مجموعات أسئلة بعد.</value></data>
+  <data name="Admin.Faq.Col.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.Faq.Col.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Faq.Col.Order" xml:space="preserve"><value>الترتيب</value></data>
+  <data name="Admin.Faq.Col.EntryCount" xml:space="preserve"><value>الأسئلة</value></data>
+  <data name="Admin.Faq.Col.Active" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.Faq.Col.Actions" xml:space="preserve"><value>إجراءات</value></data>
+  <data name="Admin.Faq.Col.Question" xml:space="preserve"><value>السؤال (إنجليزي)</value></data>
+  <data name="Admin.Faq.Active.Yes" xml:space="preserve"><value>ظاهر</value></data>
+  <data name="Admin.Faq.Active.No" xml:space="preserve"><value>مخفي</value></data>
+  <data name="Admin.Faq.Action.ManageEntries" xml:space="preserve"><value>إدارة الأسئلة</value></data>
+  <data name="Admin.Faq.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Faq.Action.Deactivate" xml:space="preserve"><value>إلغاء التفعيل</value></data>
+  <data name="Admin.Faq.Action.AddEntry" xml:space="preserve"><value>إضافة سؤال</value></data>
+  <data name="Admin.Faq.Entries.Heading" xml:space="preserve"><value>أسئلة المجموعة «{0}»</value></data>
+  <data name="Admin.Faq.Entries.None" xml:space="preserve"><value>لا توجد أسئلة في هذه المجموعة بعد.</value></data>
+  <data name="Admin.Faq.Group.Add.Title" xml:space="preserve"><value>إضافة مجموعة أسئلة</value></data>
+  <data name="Admin.Faq.Group.Edit.Title" xml:space="preserve"><value>تعديل مجموعة الأسئلة</value></data>
+  <data name="Admin.Faq.Entry.Add.Title" xml:space="preserve"><value>إضافة سؤال</value></data>
+  <data name="Admin.Faq.Entry.Edit.Title" xml:space="preserve"><value>تعديل السؤال</value></data>
+  <data name="Admin.Faq.Field.NameEn" xml:space="preserve"><value>الاسم (الإنجليزية)</value></data>
+  <data name="Admin.Faq.Field.NameAr" xml:space="preserve"><value>الاسم (العربية)</value></data>
+  <data name="Admin.Faq.Field.Order" xml:space="preserve"><value>ترتيب العرض</value></data>
+  <data name="Admin.Faq.Field.IsActive" xml:space="preserve"><value>نشط (ظاهر)</value></data>
+  <data name="Admin.Faq.Field.QuestionEn" xml:space="preserve"><value>السؤال (الإنجليزية)</value></data>
+  <data name="Admin.Faq.Field.QuestionAr" xml:space="preserve"><value>السؤال (العربية)</value></data>
+  <data name="Admin.Faq.Field.AnswerEn" xml:space="preserve"><value>الإجابة (الإنجليزية)</value></data>
+  <data name="Admin.Faq.Field.AnswerAr" xml:space="preserve"><value>الإجابة (العربية)</value></data>
+  <data name="Admin.Faq.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.Faq.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Faq.LoadFailed" xml:space="preserve"><value>تعذّر إكمال الطلب. حاول مرة أخرى.</value></data>
+  <data name="Admin.Faq.Saved" xml:space="preserve"><value>تم الحفظ.</value></data>
+  <data name="Admin.Faq.Deactivated" xml:space="preserve"><value>تم إلغاء التفعيل.</value></data>
   <data name="Module.AiPrompts" xml:space="preserve"><value>محفّزات الذكاء الاصطناعي</value></data>
   <data name="Module.AiInvocations" xml:space="preserve"><value>سجلّ استدعاءات الذكاء الاصطناعي</value></data>
   <data name="Module.Media" xml:space="preserve"><value>المركز الإعلامي</value></data>
