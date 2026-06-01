@@ -28,6 +28,7 @@ public static class ResNotificationKind
     public static string AdminPendingApproval => Get(nameof(AdminPendingApproval));
     public static string InvitationReceived => Get(nameof(InvitationReceived));
     public static string VipBroadcast => Get(nameof(VipBroadcast));
+    public static string BookingConfirmed => Get(nameof(BookingConfirmed));
 
     private static string Get(string key) =>
         ResourceManager.GetString(key, CultureInfo.CurrentUICulture) ?? key;

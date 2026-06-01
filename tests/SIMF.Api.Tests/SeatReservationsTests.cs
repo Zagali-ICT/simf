@@ -61,6 +61,28 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Reserving_a_seat_writes_a_booking_confirmed_notification()
+    {
+        // P1.7 — a successful self-pick fires an in-app BookingConfirmed row.
+        var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 3);
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var pick = await PostAuthAsync(
+            $"/api/v1/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var note = await db.Notifications
+            .SingleOrDefaultAsync(n => n.Kind == NotificationKind.BookingConfirmed
+                && n.RelatedEntityId == session.Id);
+        Assert.NotNull(note);
+        Assert.Equal(NotificationSeverity.Success, note!.Severity);
+        Assert.Contains("A1", note.Body);
+    }
+
+    [Fact]
     public async Task Second_visitor_cannot_take_a_seat_already_taken()
     {
         var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 3);

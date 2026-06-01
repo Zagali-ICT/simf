@@ -83,4 +83,10 @@ public enum NotificationKind
     /// message; sent as an in-app row + a queued email.</summary>
     [Display(Description = nameof(ResNotificationKind.VipBroadcast), ResourceType = typeof(ResNotificationKind))]
     VipBroadcast = 31,
+
+    /// <summary>P1.7: dispatched to a visitor when their seat reservation for a
+    /// session is confirmed (self-pick or random allocation). In-app row only
+    /// — a low-stakes confirmation, no email.</summary>
+    [Display(Description = nameof(ResNotificationKind.BookingConfirmed), ResourceType = typeof(ResNotificationKind))]
+    BookingConfirmed = 40,
 }

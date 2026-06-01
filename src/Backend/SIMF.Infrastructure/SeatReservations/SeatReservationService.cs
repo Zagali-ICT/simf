@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
+using SIMF.Application.Notifications;
 using SIMF.Application.SeatReservations.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
@@ -21,6 +22,7 @@ namespace SIMF.Infrastructure.SeatReservations;
 internal sealed class SeatReservationService(
     SimfAppDbContext appDbContext,
     IAuditLog auditLog,
+    INotificationDispatcher notifications,
     TimeProvider timeProvider,
     ILogger<SeatReservationService> logger) : ISeatReservationService
 {
@@ -126,6 +128,7 @@ internal sealed class SeatReservationService(
             "Seat {Row}{Seat} reserved on session {SessionId} by user {Actor}",
             row, seat, sessionId, actorUserId);
 
+        await TryNotifyBookingAsync(actorUserId, ctx, reservation, cancellationToken);
         return ToMine(reservation);
     }
 
@@ -186,6 +189,8 @@ internal sealed class SeatReservationService(
                     Detail = $"reservationId={reservation.Id}; sessionId={sessionId}; "
                         + $"row={rowLabel}; seat={seat}; kind=RandomAssignment",
                 }, cancellationToken);
+
+                await TryNotifyBookingAsync(actorUserId, ctx, reservation, cancellationToken);
                 return ToMine(reservation);
             }
         }
@@ -448,7 +453,8 @@ internal sealed class SeatReservationService(
             .SingleAsync(cancellationToken);
         return new SessionContext(
             session.Id, session.HallId, session.CapacityOverride,
-            hallCapacity, layout, ParseRowLabels(layout.RowLabels));
+            hallCapacity, layout, ParseRowLabels(layout.RowLabels),
+            session.Title, session.TitleArabic);
     }
 
     private async Task<SessionSnapshot> LoadSessionAsync(
@@ -456,7 +462,8 @@ internal sealed class SeatReservationService(
     {
         return await appDbContext.Sessions.AsNoTracking()
             .Where(s => s.Id == sessionId && s.IsActive)
-            .Select(s => new SessionSnapshot(s.Id, s.HallId, s.CapacityOverride))
+            .Select(s => new SessionSnapshot(
+                s.Id, s.HallId, s.CapacityOverride, s.Title, s.TitleArabic))
             .SingleOrDefaultAsync(cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.SessionNotFound, 404,
@@ -548,11 +555,47 @@ internal sealed class SeatReservationService(
         }
     }
 
+    // P1.7 — fire the booking-confirmed in-app notification. The dispatcher
+    // writes to a different DbContext (Identity), so the seat is already
+    // committed by the time we get here; a notification failure must never
+    // fail or roll back the booking, hence the swallow-and-log.
+    private async Task TryNotifyBookingAsync(
+        Guid userId, SessionContext ctx, SeatReservation reservation,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await notifications.DispatchAsync(new NotificationRequest
+            {
+                UserId = userId,
+                Kind = NotificationKind.BookingConfirmed,
+                Title = "Seat reservation confirmed",
+                TitleArabic = "تم تأكيد حجز المقعد",
+                Body = $"Your seat {reservation.RowLabel}{reservation.SeatNumber} "
+                    + $"for \"{ctx.SessionTitle}\" is confirmed.",
+                BodyArabic = $"تم تأكيد مقعدك {reservation.RowLabel}{reservation.SeatNumber} "
+                    + $"لجلسة \"{ctx.SessionTitleArabic}\".",
+                Severity = NotificationSeverity.Success,
+                RelatedEntityType = "Session",
+                RelatedEntityId = reservation.SessionId,
+                SendEmail = false,
+            }, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "Booking-confirmed notification failed for reservation {ReservationId}",
+                reservation.Id);
+        }
+    }
+
     private static MySeatReservation ToMine(SeatReservation r) =>
         new(r.Id, r.SessionId, r.RowLabel, r.SeatNumber, r.Kind, r.CreatedAt);
 
-    private sealed record SessionSnapshot(Guid Id, Guid HallId, int? CapacityOverride);
+    private sealed record SessionSnapshot(
+        Guid Id, Guid HallId, int? CapacityOverride, string Title, string TitleArabic);
     private sealed record SessionContext(
         Guid SessionId, Guid HallId, int? CapacityOverride, int HallCapacity,
-        HallSeatLayout Layout, IReadOnlyList<string> RowLabels);
+        HallSeatLayout Layout, IReadOnlyList<string> RowLabels,
+        string SessionTitle, string SessionTitleArabic);
 }

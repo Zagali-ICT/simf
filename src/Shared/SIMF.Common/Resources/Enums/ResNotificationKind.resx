@@ -20,4 +20,5 @@
   <data name="AdminPendingApproval" xml:space="preserve"><value>New account awaiting approval</value></data>
   <data name="InvitationReceived" xml:space="preserve"><value>You received an invitation</value></data>
   <data name="VipBroadcast" xml:space="preserve"><value>Message from SIMF Public Relations</value></data>
+  <data name="BookingConfirmed" xml:space="preserve"><value>Seat reservation confirmed</value></data>
 </root>

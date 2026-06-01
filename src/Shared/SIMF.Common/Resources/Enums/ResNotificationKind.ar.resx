@@ -20,4 +20,5 @@
   <data name="AdminPendingApproval" xml:space="preserve"><value>حساب جديد بانتظار الموافقة</value></data>
   <data name="InvitationReceived" xml:space="preserve"><value>تلقّيت دعوة</value></data>
   <data name="VipBroadcast" xml:space="preserve"><value>رسالة من العلاقات العامة لـ SIMF</value></data>
+  <data name="BookingConfirmed" xml:space="preserve"><value>تم تأكيد حجز المقعد</value></data>
 </root>
