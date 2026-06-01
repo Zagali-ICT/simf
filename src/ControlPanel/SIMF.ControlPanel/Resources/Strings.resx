@@ -1806,6 +1806,13 @@
   <data name="Admin.Booths.Field.DescriptionAr" xml:space="preserve"><value>Description (Arabic)</value></data>
   <data name="Admin.Booths.Field.HallId" xml:space="preserve"><value>Hall</value></data>
   <data name="Admin.Booths.Field.HallNone" xml:space="preserve"><value>— No hall —</value></data>
+  <data name="Admin.Booths.Col.Company" xml:space="preserve"><value>Company</value></data>
+  <data name="Admin.Booths.Field.Company" xml:space="preserve"><value>Exhibitor company</value></data>
+  <data name="Admin.Booths.Field.CompanyNone" xml:space="preserve"><value>— No company —</value></data>
+  <data name="Admin.Booths.Field.OfficerName" xml:space="preserve"><value>Booth officer name</value></data>
+  <data name="Admin.Booths.Field.OfficerPhone" xml:space="preserve"><value>Booth officer phone</value></data>
+  <data name="Admin.Booths.Field.OfficerEmail" xml:space="preserve"><value>Booth officer email</value></data>
+  <data name="Admin.Booths.CompaniesLoadFailed" xml:space="preserve"><value>Could not load the company list.</value></data>
   <data name="Admin.Booths.Field.MapX" xml:space="preserve"><value>Map X position</value></data>
   <data name="Admin.Booths.Field.MapY" xml:space="preserve"><value>Map Y position</value></data>
   <data name="Admin.Booths.Field.IsActive" xml:space="preserve"><value>Active</value></data>

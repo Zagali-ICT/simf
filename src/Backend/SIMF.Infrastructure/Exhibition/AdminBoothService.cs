@@ -66,7 +66,7 @@ internal sealed class AdminBoothService(
                 Code = booth.Code,
                 NameEn = booth.NameEn,
                 NameAr = booth.NameAr,
-                ExhibitorNameEn = booth.ExhibitorNameEn,
+                CompanyId = booth.CompanyId,
                 SectorEn = booth.SectorEn,
                 HallId = booth.HallId,
                 IsActive = booth.IsActive,
@@ -93,10 +93,11 @@ internal sealed class AdminBoothService(
     {
         var v = ValidateAndNormalise(
             request.Code, request.NameEn, request.NameAr,
-            request.ExhibitorNameEn, request.ExhibitorNameAr,
+            request.OfficerName, request.OfficerPhone, request.OfficerEmail,
             request.SectorEn, request.SectorAr,
             request.DescriptionEn, request.DescriptionAr);
         await EnsureHallIsValidAsync(request.HallId, cancellationToken);
+        await EnsureCompanyIsValidAsync(request.CompanyId, cancellationToken);
 
         var clash = await dbContext.Booths
             .AsNoTracking()
@@ -116,8 +117,10 @@ internal sealed class AdminBoothService(
             Code = v.Code,
             NameEn = v.NameEn,
             NameAr = v.NameAr,
-            ExhibitorNameEn = v.ExhibitorNameEn,
-            ExhibitorNameAr = v.ExhibitorNameAr,
+            CompanyId = request.CompanyId,
+            OfficerName = v.OfficerName,
+            OfficerPhone = v.OfficerPhone,
+            OfficerEmail = v.OfficerEmail,
             SectorEn = v.SectorEn,
             SectorAr = v.SectorAr,
             DescriptionEn = v.DescriptionEn,
@@ -161,10 +164,11 @@ internal sealed class AdminBoothService(
 
         var v = ValidateAndNormalise(
             request.Code, request.NameEn, request.NameAr,
-            request.ExhibitorNameEn, request.ExhibitorNameAr,
+            request.OfficerName, request.OfficerPhone, request.OfficerEmail,
             request.SectorEn, request.SectorAr,
             request.DescriptionEn, request.DescriptionAr);
         await EnsureHallIsValidAsync(request.HallId, cancellationToken);
+        await EnsureCompanyIsValidAsync(request.CompanyId, cancellationToken);
 
         if (!string.Equals(booth.Code, v.Code, StringComparison.OrdinalIgnoreCase))
         {
@@ -183,8 +187,10 @@ internal sealed class AdminBoothService(
         booth.Code = v.Code;
         booth.NameEn = v.NameEn;
         booth.NameAr = v.NameAr;
-        booth.ExhibitorNameEn = v.ExhibitorNameEn;
-        booth.ExhibitorNameAr = v.ExhibitorNameAr;
+        booth.CompanyId = request.CompanyId;
+        booth.OfficerName = v.OfficerName;
+        booth.OfficerPhone = v.OfficerPhone;
+        booth.OfficerEmail = v.OfficerEmail;
         booth.SectorEn = v.SectorEn;
         booth.SectorAr = v.SectorAr;
         booth.DescriptionEn = v.DescriptionEn;
@@ -239,13 +245,13 @@ internal sealed class AdminBoothService(
 
     private sealed record BoothDraft(
         string Code, string NameEn, string NameAr,
-        string? ExhibitorNameEn, string? ExhibitorNameAr,
+        string? OfficerName, string? OfficerPhone, string? OfficerEmail,
         string? SectorEn, string? SectorAr,
         string? DescriptionEn, string? DescriptionAr);
 
     private static BoothDraft ValidateAndNormalise(
         string codeRaw, string nameEnRaw, string nameArRaw,
-        string? exhibitorNameEnRaw, string? exhibitorNameArRaw,
+        string? officerNameRaw, string? officerPhoneRaw, string? officerEmailRaw,
         string? sectorEnRaw, string? sectorArRaw,
         string? descriptionEnRaw, string? descriptionArRaw)
     {
@@ -275,11 +281,21 @@ internal sealed class AdminBoothService(
         }
 
         // Optional fields — lengths mirror BoothConfiguration.HasMaxLength
-        // (Exhibitor* = 256, Sector* = 128, Description* = 2048).
-        var exhibitorNameEn = OptionalText(
-            exhibitorNameEnRaw, 256, "Booth exhibitor English name", "اسم العارض الإنجليزي للجناح");
-        var exhibitorNameAr = OptionalText(
-            exhibitorNameArRaw, 256, "Booth exhibitor Arabic name", "اسم العارض العربي للجناح");
+        // (Officer name = 256 / phone = 32 / email = 320, Sector* = 128,
+        // Description* = 2048). B1 — D-222: booth-officer contact.
+        var officerName = OptionalText(
+            officerNameRaw, 256, "Booth officer name", "اسم مسؤول الجناح");
+        var officerPhone = OptionalText(
+            officerPhoneRaw, 32, "Booth officer phone", "هاتف مسؤول الجناح");
+        var officerEmail = OptionalText(
+            officerEmailRaw, 320, "Booth officer email", "بريد مسؤول الجناح");
+        if (officerEmail is not null && !officerEmail.Contains('@'))
+        {
+            throw new ApiException(
+                ErrorCodes.BoothInvalid, 400,
+                "Booth officer email is not a valid email address.",
+                "بريد مسؤول الجناح غير صالح.");
+        }
         var sectorEn = OptionalText(
             sectorEnRaw, 128, "Booth English sector", "قطاع الجناح الإنجليزي");
         var sectorAr = OptionalText(
@@ -291,7 +307,7 @@ internal sealed class AdminBoothService(
 
         return new BoothDraft(
             code, nameEn, nameAr,
-            exhibitorNameEn, exhibitorNameAr,
+            officerName, officerPhone, officerEmail,
             sectorEn, sectorAr,
             descriptionEn, descriptionAr);
     }
@@ -325,6 +341,27 @@ internal sealed class AdminBoothService(
         }
     }
 
+    // B1 — D-222: the exhibitor must be an active company of kind Exhibitor.
+    // Mirrors EnsureHallIsValidAsync. Sponsor / inactive companies are
+    // rejected so a booth never points at a non-exhibitor row.
+    private async Task EnsureCompanyIsValidAsync(
+        Guid? companyId, CancellationToken cancellationToken)
+    {
+        if (companyId is null) { return; }
+        var exists = await dbContext.Companies
+            .AsNoTracking()
+            .AnyAsync(company => company.Id == companyId.Value
+                && company.IsActive
+                && company.Type == CompanyType.Exhibitor, cancellationToken);
+        if (!exists)
+        {
+            throw new ApiException(
+                ErrorCodes.BoothInvalid, 400,
+                $"Company id '{companyId}' is not an active exhibitor company.",
+                $"معرّف الشركة '{companyId}' ليس شركة عارضة مفعّلة.");
+        }
+    }
+
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
@@ -334,8 +371,10 @@ internal sealed class AdminBoothService(
         Code = b.Code,
         NameEn = b.NameEn,
         NameAr = b.NameAr,
-        ExhibitorNameEn = b.ExhibitorNameEn,
-        ExhibitorNameAr = b.ExhibitorNameAr,
+        CompanyId = b.CompanyId,
+        OfficerName = b.OfficerName,
+        OfficerPhone = b.OfficerPhone,
+        OfficerEmail = b.OfficerEmail,
         SectorEn = b.SectorEn,
         SectorAr = b.SectorAr,
         DescriptionEn = b.DescriptionEn,

@@ -30,11 +30,31 @@ public class Booth
     /// <summary>Arabic booth name (1–128 chars).</summary>
     public string NameAr { get; set; } = string.Empty;
 
-    /// <summary>English exhibitor / company name (≤ 256 chars), e.g.
-    /// "Saudi Arabian Military Industries". Optional.</summary>
+    /// <summary>B1 — D-222: the curated exhibitor, a real FK to
+    /// <c>Company.Id</c> (same App DB; only <c>CompanyType.Exhibitor</c>
+    /// companies are valid). This is the source of truth for the exhibitor;
+    /// the public projection fills <see cref="ExhibitorNameEn"/> /
+    /// <see cref="ExhibitorNameAr"/> from the linked company when set.
+    /// Nullable — a booth may exist before its company is provisioned.</summary>
+    public Guid? CompanyId { get; set; }
+
+    /// <summary>B1 — D-222: booth-officer contact name (≤ 256 chars). Optional.</summary>
+    public string? OfficerName { get; set; }
+
+    /// <summary>B1 — D-222: booth-officer phone (≤ 32 chars). Optional.</summary>
+    public string? OfficerPhone { get; set; }
+
+    /// <summary>B1 — D-222: booth-officer email (≤ 320 chars). Optional.</summary>
+    public string? OfficerEmail { get; set; }
+
+    /// <summary>English exhibitor / company name (≤ 256 chars). Legacy free-text
+    /// fallback retained for the public wire contract (D-219) and pre-D-222
+    /// rows; new booths source the exhibitor from <see cref="CompanyId"/>. Not
+    /// settable from the admin write surface any more.</summary>
     public string? ExhibitorNameEn { get; set; }
 
-    /// <summary>Arabic exhibitor / company name (≤ 256 chars). Optional.</summary>
+    /// <summary>Arabic exhibitor / company name (≤ 256 chars). Legacy free-text
+    /// fallback — see <see cref="ExhibitorNameEn"/>.</summary>
     public string? ExhibitorNameAr { get; set; }
 
     /// <summary>English sector tag shown in the card header (≤ 128 chars),

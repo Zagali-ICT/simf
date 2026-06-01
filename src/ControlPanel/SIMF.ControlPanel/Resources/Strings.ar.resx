@@ -1798,6 +1798,13 @@
   <data name="Admin.Booths.Field.DescriptionAr" xml:space="preserve"><value>الوصف (عربي)</value></data>
   <data name="Admin.Booths.Field.HallId" xml:space="preserve"><value>القاعة</value></data>
   <data name="Admin.Booths.Field.HallNone" xml:space="preserve"><value>— بدون قاعة —</value></data>
+  <data name="Admin.Booths.Col.Company" xml:space="preserve"><value>الشركة</value></data>
+  <data name="Admin.Booths.Field.Company" xml:space="preserve"><value>الشركة العارضة</value></data>
+  <data name="Admin.Booths.Field.CompanyNone" xml:space="preserve"><value>— بدون شركة —</value></data>
+  <data name="Admin.Booths.Field.OfficerName" xml:space="preserve"><value>اسم مسؤول الجناح</value></data>
+  <data name="Admin.Booths.Field.OfficerPhone" xml:space="preserve"><value>هاتف مسؤول الجناح</value></data>
+  <data name="Admin.Booths.Field.OfficerEmail" xml:space="preserve"><value>بريد مسؤول الجناح</value></data>
+  <data name="Admin.Booths.CompaniesLoadFailed" xml:space="preserve"><value>تعذّر تحميل قائمة الشركات.</value></data>
   <data name="Admin.Booths.Field.MapX" xml:space="preserve"><value>موضع الخريطة س</value></data>
   <data name="Admin.Booths.Field.MapY" xml:space="preserve"><value>موضع الخريطة ص</value></data>
   <data name="Admin.Booths.Field.IsActive" xml:space="preserve"><value>نشط</value></data>

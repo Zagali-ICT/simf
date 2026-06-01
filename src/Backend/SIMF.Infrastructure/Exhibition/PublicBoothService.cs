@@ -22,8 +22,17 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 Code = b.Code,
                 NameEn = b.NameEn,
                 NameAr = b.NameAr,
-                ExhibitorNameEn = b.ExhibitorNameEn,
-                ExhibitorNameAr = b.ExhibitorNameAr,
+                // B1 — D-222: the exhibitor name comes from the linked Company
+                // when set (the curated source of truth), falling back to the
+                // legacy free-text. The wire field names are unchanged (D-219).
+                ExhibitorNameEn = b.CompanyId == null
+                    ? b.ExhibitorNameEn
+                    : db.Companies.Where(c => c.Id == b.CompanyId)
+                        .Select(c => c.NameEn).FirstOrDefault(),
+                ExhibitorNameAr = b.CompanyId == null
+                    ? b.ExhibitorNameAr
+                    : db.Companies.Where(c => c.Id == b.CompanyId)
+                        .Select(c => c.NameAr).FirstOrDefault(),
                 SectorEn = b.SectorEn,
                 SectorAr = b.SectorAr,
                 HallId = b.HallId,
@@ -42,8 +51,16 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 Code = b.Code,
                 NameEn = b.NameEn,
                 NameAr = b.NameAr,
-                ExhibitorNameEn = b.ExhibitorNameEn,
-                ExhibitorNameAr = b.ExhibitorNameAr,
+                // B1 — D-222: exhibitor name from the linked Company when set,
+                // else the legacy free-text (wire field names unchanged).
+                ExhibitorNameEn = b.CompanyId == null
+                    ? b.ExhibitorNameEn
+                    : db.Companies.Where(c => c.Id == b.CompanyId)
+                        .Select(c => c.NameEn).FirstOrDefault(),
+                ExhibitorNameAr = b.CompanyId == null
+                    ? b.ExhibitorNameAr
+                    : db.Companies.Where(c => c.Id == b.CompanyId)
+                        .Select(c => c.NameAr).FirstOrDefault(),
                 SectorEn = b.SectorEn,
                 SectorAr = b.SectorAr,
                 DescriptionEn = b.DescriptionEn,

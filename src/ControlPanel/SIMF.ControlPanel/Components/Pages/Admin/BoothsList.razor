@@ -6,6 +6,7 @@
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Booths.View)]
 @using SIMF.Contracts.Exhibition
+@using SIMF.Contracts.Companies
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 
@@ -42,7 +43,7 @@
                         <th>@L["Admin.Booths.Col.Code"]</th>
                         <th>@L["Admin.Booths.Col.NameEn"]</th>
                         <th>@L["Admin.Booths.Col.NameAr"]</th>
-                        <th>@L["Admin.Booths.Col.ExhibitorEn"]</th>
+                        <th>@L["Admin.Booths.Col.Company"]</th>
                         <th>@L["Admin.Booths.Col.SectorEn"]</th>
                         <th>@L["Admin.Booths.Col.Hall"]</th>
                         <th>@L["Admin.Booths.Col.Active"]</th>
@@ -56,7 +57,7 @@
                             <td>@row.Code</td>
                             <td>@row.NameEn</td>
                             <td>@row.NameAr</td>
-                            <td>@(row.ExhibitorNameEn ?? "—")</td>
+                            <td>@CompanyName(row.CompanyId)</td>
                             <td>@(row.SectorEn ?? "—")</td>
                             <td>@HallName(row.HallId)</td>
                             <td>@(row.IsActive ? "✓" : "—")</td>
@@ -107,17 +108,36 @@
                                ValueExpression="@(() => _form.NameAr)"
                                MaxLength="128"
                                Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.Booths.Field.ExhibitorEn"]"
-                               Value="@_form.ExhibitorNameEn"
-                               ValueChanged="@(v => _form.ExhibitorNameEn = v)"
-                               ValueExpression="@(() => _form.ExhibitorNameEn)"
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Booths.Field.Company"]</span>
+                    <select class="simf-field__input"
+                            value="@(_form.CompanyId?.ToString() ?? string.Empty)"
+                            @onchange="OnCompanyIdChanged"
+                            disabled="@_busy">
+                        <option value="">@L["Admin.Booths.Field.CompanyNone"]</option>
+                        @foreach (var company in _companies)
+                        {
+                            <option value="@company.Id">@company.NameEn — @company.NameAr</option>
+                        }
+                    </select>
+                </label>
+                <SimfTextField Label="@L["Admin.Booths.Field.OfficerName"]"
+                               Value="@_form.OfficerName"
+                               ValueChanged="@(v => _form.OfficerName = v)"
+                               ValueExpression="@(() => _form.OfficerName)"
                                MaxLength="256"
                                Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.Booths.Field.ExhibitorAr"]"
-                               Value="@_form.ExhibitorNameAr"
-                               ValueChanged="@(v => _form.ExhibitorNameAr = v)"
-                               ValueExpression="@(() => _form.ExhibitorNameAr)"
-                               MaxLength="256"
+                <SimfTextField Label="@L["Admin.Booths.Field.OfficerPhone"]"
+                               Value="@_form.OfficerPhone"
+                               ValueChanged="@(v => _form.OfficerPhone = v)"
+                               ValueExpression="@(() => _form.OfficerPhone)"
+                               MaxLength="32"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Booths.Field.OfficerEmail"]"
+                               Value="@_form.OfficerEmail"
+                               ValueChanged="@(v => _form.OfficerEmail = v)"
+                               ValueExpression="@(() => _form.OfficerEmail)"
+                               MaxLength="320"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Booths.Field.SectorEn"]"
                                Value="@_form.SectorEn"
@@ -198,8 +218,10 @@
         public string Code { get; set; } = string.Empty;
         public string NameEn { get; set; } = string.Empty;
         public string NameAr { get; set; } = string.Empty;
-        public string ExhibitorNameEn { get; set; } = string.Empty;
-        public string ExhibitorNameAr { get; set; } = string.Empty;
+        public Guid? CompanyId { get; set; }
+        public string OfficerName { get; set; } = string.Empty;
+        public string OfficerPhone { get; set; } = string.Empty;
+        public string OfficerEmail { get; set; } = string.Empty;
         public string SectorEn { get; set; } = string.Empty;
         public string SectorAr { get; set; } = string.Empty;
         public string DescriptionEn { get; set; } = string.Empty;
@@ -219,6 +241,11 @@
     // round-trip on every Add/Edit modal open. The same list also resolves
     // the Hall column in the grid (HallName).
     private List<AdminHallSummary> _halls = new();
+    // B1 — D-222: active exhibitor companies cached at mount so the form's
+    // Company dropdown is ready on first open and the grid's Company column
+    // can resolve a name (mirrors the Hall pattern). Bounded → one Top=500
+    // round-trip is fine.
+    private List<AdminCompanySummary> _companies = new();
 
     private bool _editOpen;
     private bool _isEdit;
@@ -228,7 +255,43 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadHallsAsync();
+        await LoadCompaniesAsync();
         await LoadAsync();
+    }
+
+    private async Task LoadCompaniesAsync()
+    {
+        var env = await JS.InvokeAsync<ApiResult<GridPage<AdminCompanySummary>>>(
+            "simfAccount.postJson", "/account/api/admin/companies/list",
+            new GridQuery { Top = 500 });
+        if (env is { Success: true, Data: not null })
+        {
+            // Only active exhibitor companies (Type 0 == Exhibitor) can staff
+            // a booth — the server enforces the same rule.
+            _companies = env.Data.Items
+                .Where(c => c.IsActive && c.Type == 0)
+                .OrderBy(c => c.NameEn).ToList();
+        }
+        else
+        {
+            _toast = new Toast("error",
+                env?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.Booths.CompaniesLoadFailed"]);
+        }
+    }
+
+    private string CompanyName(Guid? companyId)
+    {
+        if (companyId is null) return "—";
+        var company = _companies.FirstOrDefault(c => c.Id == companyId.Value);
+        return company is null ? "—" : company.NameEn;
+    }
+
+    private void OnCompanyIdChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        _form.CompanyId = string.IsNullOrWhiteSpace(raw) ? null
+            : (Guid.TryParse(raw, out var g) ? g : (Guid?)null);
     }
 
     private async Task LoadHallsAsync()
@@ -312,8 +375,10 @@
                     Code = d.Code,
                     NameEn = d.NameEn,
                     NameAr = d.NameAr,
-                    ExhibitorNameEn = d.ExhibitorNameEn ?? string.Empty,
-                    ExhibitorNameAr = d.ExhibitorNameAr ?? string.Empty,
+                    CompanyId = d.CompanyId,
+                    OfficerName = d.OfficerName ?? string.Empty,
+                    OfficerPhone = d.OfficerPhone ?? string.Empty,
+                    OfficerEmail = d.OfficerEmail ?? string.Empty,
                     SectorEn = d.SectorEn ?? string.Empty,
                     SectorAr = d.SectorAr ?? string.Empty,
                     DescriptionEn = d.DescriptionEn ?? string.Empty,
@@ -363,8 +428,10 @@
                         Code = _form.Code,
                         NameEn = _form.NameEn,
                         NameAr = _form.NameAr,
-                        ExhibitorNameEn = Trimmed(_form.ExhibitorNameEn),
-                        ExhibitorNameAr = Trimmed(_form.ExhibitorNameAr),
+                        CompanyId = _form.CompanyId,
+                        OfficerName = Trimmed(_form.OfficerName),
+                        OfficerPhone = Trimmed(_form.OfficerPhone),
+                        OfficerEmail = Trimmed(_form.OfficerEmail),
                         SectorEn = Trimmed(_form.SectorEn),
                         SectorAr = Trimmed(_form.SectorAr),
                         DescriptionEn = Trimmed(_form.DescriptionEn),
@@ -385,8 +452,10 @@
                         Code = _form.Code,
                         NameEn = _form.NameEn,
                         NameAr = _form.NameAr,
-                        ExhibitorNameEn = Trimmed(_form.ExhibitorNameEn),
-                        ExhibitorNameAr = Trimmed(_form.ExhibitorNameAr),
+                        CompanyId = _form.CompanyId,
+                        OfficerName = Trimmed(_form.OfficerName),
+                        OfficerPhone = Trimmed(_form.OfficerPhone),
+                        OfficerEmail = Trimmed(_form.OfficerEmail),
                         SectorEn = Trimmed(_form.SectorEn),
                         SectorAr = Trimmed(_form.SectorAr),
                         DescriptionEn = Trimmed(_form.DescriptionEn),
