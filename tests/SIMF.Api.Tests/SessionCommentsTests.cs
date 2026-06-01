@@ -266,7 +266,148 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    // -- B5 — D-223: likes ----------------------------------------------------
+
+    [Fact]
+    public async Task Like_increments_count_sets_LikedByMe_and_is_idempotent()
+    {
+        await CreateAdministratorAndSignInAsync();
+        var session = await SeedSessionAsync(isActive: true);
+        var visitor = await SignInApprovedVisitorAsync();
+        var commentId = await SubmitCommentAsync(session.Id, "Like me", visitor.AccessToken);
+
+        var like = await PostAuthAsync(
+            $"/api/v1/sessions/{session.Id}/comments/{commentId}/like",
+            new { }, visitor.AccessToken);
+        Assert.Equal(HttpStatusCode.OK, like.StatusCode);
+        var result = (await like.Content
+            .ReadFromJsonAsync<ApiResult<SessionCommentLikeResult>>())!.Data!;
+        Assert.Equal(1, result.LikeCount);
+        Assert.True(result.LikedByMe);
+
+        // Liking again is a no-op — the count stays at 1.
+        var again = await PostAuthAsync(
+            $"/api/v1/sessions/{session.Id}/comments/{commentId}/like",
+            new { }, visitor.AccessToken);
+        var againResult = (await again.Content
+            .ReadFromJsonAsync<ApiResult<SessionCommentLikeResult>>())!.Data!;
+        Assert.Equal(1, againResult.LikeCount);
+
+        // The feed reflects the like for the requester.
+        var feed = await GetAuthAsync(
+            $"/api/v1/sessions/{session.Id}/comments", visitor.AccessToken);
+        var rows = (await feed.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionCommentFeedRow>>>())!.Data!;
+        var row = Assert.Single(rows, r => r.Id == commentId);
+        Assert.Equal(1, row.LikeCount);
+        Assert.True(row.LikedByMe);
+    }
+
+    [Fact]
+    public async Task Unlike_decrements_count_and_is_idempotent()
+    {
+        await CreateAdministratorAndSignInAsync();
+        var session = await SeedSessionAsync(isActive: true);
+        var visitor = await SignInApprovedVisitorAsync();
+        var commentId = await SubmitCommentAsync(session.Id, "Toggle me", visitor.AccessToken);
+
+        await PostAuthAsync(
+            $"/api/v1/sessions/{session.Id}/comments/{commentId}/like",
+            new { }, visitor.AccessToken);
+
+        var unlike = await DeleteAuthAsync(
+            $"/api/v1/sessions/{session.Id}/comments/{commentId}/like", visitor.AccessToken);
+        Assert.Equal(HttpStatusCode.OK, unlike.StatusCode);
+        var result = (await unlike.Content
+            .ReadFromJsonAsync<ApiResult<SessionCommentLikeResult>>())!.Data!;
+        Assert.Equal(0, result.LikeCount);
+        Assert.False(result.LikedByMe);
+
+        // Unliking again is a no-op — the count stays clamped at 0.
+        var again = await DeleteAuthAsync(
+            $"/api/v1/sessions/{session.Id}/comments/{commentId}/like", visitor.AccessToken);
+        var againResult = (await again.Content
+            .ReadFromJsonAsync<ApiResult<SessionCommentLikeResult>>())!.Data!;
+        Assert.Equal(0, againResult.LikeCount);
+        Assert.False(againResult.LikedByMe);
+    }
+
+    [Fact]
+    public async Task LikedByMe_is_per_requester()
+    {
+        await CreateAdministratorAndSignInAsync();
+        var session = await SeedSessionAsync(isActive: true);
+        var alice = await SignInApprovedVisitorAsync();
+        var bob = await SignInApprovedVisitorAsync();
+        var commentId = await SubmitCommentAsync(session.Id, "Shared", alice.AccessToken);
+
+        await PostAuthAsync(
+            $"/api/v1/sessions/{session.Id}/comments/{commentId}/like",
+            new { }, alice.AccessToken);
+
+        // Bob sees the count but not his own like.
+        var feed = await GetAuthAsync(
+            $"/api/v1/sessions/{session.Id}/comments", bob.AccessToken);
+        var rows = (await feed.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionCommentFeedRow>>>())!.Data!;
+        var row = Assert.Single(rows, r => r.Id == commentId);
+        Assert.Equal(1, row.LikeCount);
+        Assert.False(row.LikedByMe);
+    }
+
+    [Fact]
+    public async Task Like_on_missing_comment_is_SESSION_COMMENT_NOT_FOUND()
+    {
+        await CreateAdministratorAndSignInAsync();
+        var session = await SeedSessionAsync(isActive: true);
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var response = await PostAuthAsync(
+            $"/api/v1/sessions/{session.Id}/comments/{Guid.NewGuid()}/like",
+            new { }, visitor.AccessToken);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionCommentNotFound, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Like_on_a_hidden_comment_is_404()
+    {
+        await CreateAdministratorAndSignInAsync();
+        var session = await SeedSessionAsync(isActive: true);
+        var visitor = await SignInApprovedVisitorAsync();
+        var visitorId = Guid.Parse(VisitorIdFromToken(visitor.AccessToken));
+        // A hidden comment is not visible to the audience, so it cannot be liked.
+        await SeedRawCommentAsync(session.Id, visitorId, "hidden", SessionCommentStatus.Hidden, true);
+        var hiddenId = await LatestCommentIdAsync(session.Id, "hidden");
+
+        var response = await PostAuthAsync(
+            $"/api/v1/sessions/{session.Id}/comments/{hiddenId}/like",
+            new { }, visitor.AccessToken);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     // -- Helpers --------------------------------------------------------------
+
+    private async Task<Guid> SubmitCommentAsync(Guid sessionId, string body, string token)
+    {
+        var submit = await PostAuthAsync(
+            $"/api/v1/sessions/{sessionId}/comments",
+            new SubmitSessionCommentRequest { Body = body }, token);
+        return (await submit.Content
+            .ReadFromJsonAsync<ApiResult<SessionCommentSubmitted>>())!.Data!.Id;
+    }
+
+    private async Task<Guid> LatestCommentIdAsync(Guid sessionId, string body)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        return await db.SessionComments
+            .Where(c => c.SessionId == sessionId && c.Body == body)
+            .OrderByDescending(c => c.CreatedAt)
+            .Select(c => c.Id)
+            .FirstAsync();
+    }
 
     private async Task<AuthTokens> SignInApprovedVisitorAsync()
     {

@@ -99,6 +99,7 @@ internal sealed class SessionCommentService(
 
     public async Task<IReadOnlyList<SessionCommentFeedRow>> ListApprovedAsync(
         Guid sessionId,
+        Guid userId,
         CancellationToken cancellationToken = default)
     {
         var rows = await appDbContext.SessionComments
@@ -114,6 +115,7 @@ internal sealed class SessionCommentService(
                 c.UserId,
                 c.Body,
                 c.CreatedAt,
+                c.LikeCount,
             })
             .ToListAsync(cancellationToken);
 
@@ -129,6 +131,15 @@ internal sealed class SessionCommentService(
             .Select(u => new { u.Id, u.DisplayName })
             .ToDictionaryAsync(u => u.Id, cancellationToken);
 
+        // B5 — D-223: which of these comments the requester has liked, in one
+        // round-trip (avoids an N+1 over the feed).
+        var commentIds = rows.Select(r => r.Id).ToList();
+        var likedByMe = (await appDbContext.SessionCommentLikes
+            .AsNoTracking()
+            .Where(like => like.UserId == userId && commentIds.Contains(like.CommentId))
+            .Select(like => like.CommentId)
+            .ToListAsync(cancellationToken)).ToHashSet();
+
         return rows.Select(r =>
         {
             users.TryGetValue(r.UserId, out var user);
@@ -138,7 +149,94 @@ internal sealed class SessionCommentService(
                 r.UserId,
                 user?.DisplayName ?? string.Empty,
                 r.Body,
-                r.CreatedAt);
+                r.CreatedAt,
+                r.LikeCount,
+                likedByMe.Contains(r.Id));
         }).ToList();
+    }
+
+    public async Task<SessionCommentLikeResult> LikeAsync(
+        Guid commentId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var comment = await LoadLikeableCommentAsync(commentId, cancellationToken);
+
+        var existing = await appDbContext.SessionCommentLikes
+            .FindAsync([commentId, userId], cancellationToken);
+        if (existing is not null)
+        {
+            // Idempotent — already liked. No state change, no audit.
+            return new SessionCommentLikeResult(commentId, comment.LikeCount, true);
+        }
+
+        appDbContext.SessionCommentLikes.Add(new SessionCommentLike
+        {
+            CommentId = commentId,
+            UserId = userId,
+            CreatedAt = timeProvider.GetUtcNow(),
+        });
+        comment.LikeCount += 1;
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SessionCommentLiked,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = userId,
+            Detail = $"commentId={commentId}; likeCount={comment.LikeCount}",
+        }, cancellationToken);
+
+        return new SessionCommentLikeResult(commentId, comment.LikeCount, true);
+    }
+
+    public async Task<SessionCommentLikeResult> UnlikeAsync(
+        Guid commentId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var comment = await LoadLikeableCommentAsync(commentId, cancellationToken);
+
+        var existing = await appDbContext.SessionCommentLikes
+            .FindAsync([commentId, userId], cancellationToken);
+        if (existing is null)
+        {
+            // Idempotent — not liked. No state change, no audit.
+            return new SessionCommentLikeResult(commentId, comment.LikeCount, false);
+        }
+
+        appDbContext.SessionCommentLikes.Remove(existing);
+        comment.LikeCount = Math.Max(0, comment.LikeCount - 1);
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SessionCommentUnliked,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = userId,
+            Detail = $"commentId={commentId}; likeCount={comment.LikeCount}",
+        }, cancellationToken);
+
+        return new SessionCommentLikeResult(commentId, comment.LikeCount, false);
+    }
+
+    // B5 — D-223: the tracked comment a like/unlike targets. Only an Approved
+    // + active comment is likeable; anything else is a 404 (a hidden / deleted
+    // comment is not visible to the audience, so it cannot be liked).
+    private async Task<SessionComment> LoadLikeableCommentAsync(
+        Guid commentId, CancellationToken cancellationToken)
+    {
+        var comment = await appDbContext.SessionComments
+            .SingleOrDefaultAsync(c => c.Id == commentId, cancellationToken);
+        if (comment is null
+            || !comment.IsActive
+            || comment.Status != SessionCommentStatus.Approved)
+        {
+            throw new ApiException(
+                ErrorCodes.SessionCommentNotFound, 404,
+                "The comment was not found.",
+                "لم يتم العثور على التعليق.");
+        }
+        return comment;
     }
 }

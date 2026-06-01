@@ -141,6 +141,8 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     public DbSet<Sponsor> Sponsors => Set<Sponsor>();
     public DbSet<ArchiveEdition> ArchiveEditions => Set<ArchiveEdition>();
     public DbSet<SessionComment> SessionComments => Set<SessionComment>();
+    // B5 — D-223: per-user likes on audience comments.
+    public DbSet<SessionCommentLike> SessionCommentLikes => Set<SessionCommentLike>();
     public DbSet<Rating> Ratings => Set<Rating>();
 
     // D-202 — exhibitor/sponsor companies + the accounts provisioned under

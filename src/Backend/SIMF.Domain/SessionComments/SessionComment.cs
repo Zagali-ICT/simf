@@ -57,6 +57,12 @@ public sealed class SessionComment
     /// rows.</summary>
     public string? AiFilterVerdict { get; set; }
 
+    /// <summary>B5 — D-223: denormalised like counter. Incremented /
+    /// decremented inside <c>LikeAsync</c> / <c>UnlikeAsync</c> in the same
+    /// SaveChanges as the per-user <see cref="SessionCommentLike"/> row, so the
+    /// hot feed read never needs a COUNT subquery. Never negative.</summary>
+    public int LikeCount { get; set; }
+
     /// <summary>Soft-delete flag (CLAUDE.md §7). A deactivated comment
     /// is excluded from every list (public and admin) but the row is
     /// retained. Distinct from <see cref="SessionCommentStatus.Hidden"/>:

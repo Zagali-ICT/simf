@@ -31,6 +31,10 @@ internal sealed class SessionCommentConfiguration : IEntityTypeConfiguration<Ses
         // so the integer mapping is stable.
         builder.Property(c => c.Status);
 
+        // B5 — D-223: denormalised like counter. Default 0 backfills existing
+        // rows cleanly in the additive migration.
+        builder.Property(c => c.LikeCount).HasDefaultValue(0);
+
         // Real DB FK to Session — same context. Cascade so a Session
         // delete (rare; usually deactivate) takes its comments with it.
         builder.HasOne(c => c.Session)

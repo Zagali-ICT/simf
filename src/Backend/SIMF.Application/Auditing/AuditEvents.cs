@@ -188,6 +188,9 @@ public static class AuditEvents
     public const string SessionCommentHidden = "SessionComment.Hidden";
     public const string SessionCommentRepended = "SessionComment.Repended";
     public const string SessionCommentDeactivated = "SessionComment.Deactivated";
+    // B5 — D-223: per-user likes on audience comments.
+    public const string SessionCommentLiked = "SessionComment.Liked";
+    public const string SessionCommentUnliked = "SessionComment.Unliked";
 
     // Device keys / biometric sign-in (D-172, gap doc G10 — PDF §2.5)
     public const string DeviceKeyRegistered = "DeviceKey.Registered";

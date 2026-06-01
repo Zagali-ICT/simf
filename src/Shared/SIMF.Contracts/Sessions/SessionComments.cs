@@ -32,7 +32,18 @@ public sealed record SessionCommentFeedRow(
     Guid UserId,
     string AuthorDisplayName,
     string Body,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    // B5 — D-223: appended (additive — wire contract preserved, D-219).
+    int LikeCount,
+    bool LikedByMe);
+
+/// <summary>B5 — D-223: result of a like / unlike action. Echoes the comment's
+/// new <see cref="LikeCount"/> and the caller's resulting
+/// <see cref="LikedByMe"/> state so the client updates without a refetch.</summary>
+public sealed record SessionCommentLikeResult(
+    Guid CommentId,
+    int LikeCount,
+    bool LikedByMe);
 
 /// <summary>D-199 — one row in the admin moderation list. Adds the
 /// moderation fields the public feed omits: current

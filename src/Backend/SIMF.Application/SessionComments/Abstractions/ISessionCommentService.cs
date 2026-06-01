@@ -22,8 +22,26 @@ public interface ISessionCommentService
 
     /// <summary>The public approved feed for a session — only
     /// Approved + active comments, newest first (Mockup page 28 lists
-    /// most-recent at the top).</summary>
+    /// most-recent at the top). <paramref name="userId"/> is the requesting
+    /// attendee, used to project the per-row <c>LikedByMe</c> flag.</summary>
     Task<IReadOnlyList<SessionCommentFeedRow>> ListApprovedAsync(
         Guid sessionId,
+        Guid userId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>B5 — D-223: like a comment (idempotent — liking again is a
+    /// no-op that returns the current state). Only an Approved + active
+    /// comment can be liked. Returns the new like count + LikedByMe=true.</summary>
+    Task<SessionCommentLikeResult> LikeAsync(
+        Guid commentId,
+        Guid userId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>B5 — D-223: remove the caller's like (idempotent — unliking
+    /// when not liked is a no-op). Returns the new like count +
+    /// LikedByMe=false.</summary>
+    Task<SessionCommentLikeResult> UnlikeAsync(
+        Guid commentId,
+        Guid userId,
         CancellationToken cancellationToken = default);
 }
