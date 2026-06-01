@@ -152,6 +152,11 @@ public sealed class SimfAdminClient(HttpClient http)
         GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>
         PostForBytesAsync("operation-log/export", query, accessToken, cancellationToken);
 
+    /// <summary>P1.6 — XLSX of the filtered attendee roster.</summary>
+    public Task<(int StatusCode, byte[] Bytes)> ExportAttendeesAsync(
+        GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>
+        PostForBytesAsync("attendees/export", query, accessToken, cancellationToken);
+
     /// <summary>P1.6 — POSTs a JSON body and returns the raw response bytes
     /// (an XLSX workbook). Shared by the read-only-grid exports; the response
     /// body is binary, so it bypasses the <c>ApiResult</c> envelope.</summary>

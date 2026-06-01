@@ -107,6 +107,9 @@ public static class PermissionCatalog
     {
         public const string View = "Attendees.View";
         public const string PrintBag = "Attendees.PrintBag";
+
+        // P1.6 — XLSX export of the (filtered) attendee roster.
+        public const string Export = "Attendees.Export";
     }
 
     /// <summary>RBAC roles and their permission grants.</summary>
@@ -434,6 +437,7 @@ public static class PermissionCatalog
 
         new(Attendees.View, "Attendees", "View", "View the attendee roster", AdminOnly),
         new(Attendees.PrintBag, "Attendees", "PrintBag", "Print attendee badges", AdminOnly),
+        new(Attendees.Export, "Attendees", "Export", "Export the attendee roster", AdminOnly),
 
         new(Roles.View, "Roles", "View", "View roles", AdminOnly),
         new(Roles.Create, "Roles", "Create", "Create roles", AdminOnly),

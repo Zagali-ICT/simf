@@ -828,6 +828,22 @@ internal static class AccountEndpoints
             return Forward(await api.ListAttendeesAsync(body, token));
         });
 
+        // P1.6 — binary XLSX download of the filtered roster.
+        group.MapPost("/admin/attendees/export",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, bytes) = await api.ExportAttendeesAsync(body, token);
+            if (status != 200 || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            return Results.File(bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"simf-attendees-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx");
+        });
+
         // D-134 Sprint B — Themes CRUD proxy (D-135 freeze-lift).
         group.MapPost("/admin/themes/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

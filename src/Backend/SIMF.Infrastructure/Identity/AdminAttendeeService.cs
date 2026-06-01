@@ -1,9 +1,12 @@
-// Tests: SIMF.Api.Tests/AdminAttendeesTests.cs
+// Tests: SIMF.Api.Tests/AdminAttendeesTests.cs, SIMF.Api.Tests/AdminAttendeesExportTests.cs
 using Microsoft.EntityFrameworkCore;
+using SIMF.Application.Auditing;
+using SIMF.Application.Excel;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
+using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.Identity;
@@ -16,22 +19,59 @@ namespace SIMF.Infrastructure.Identity;
 /// page the SimfUser rows (Identity DB), then load the matching
 /// UserProfile + ProfileType rows (App DB) keyed by user id, then merge
 /// in memory. Total = the Identity count; the App round-trip only fetches
-/// the visible page's worth of rows.
+/// the visible page's worth of rows. P1.6 added the XLSX export + a
+/// CreatedAt date-range filter; list + export share one filter/merge path.
 /// </summary>
 internal sealed class AdminAttendeeService(
     SimfIdentityDbContext dbContext,
-    SimfAppDbContext appDbContext)
+    SimfAppDbContext appDbContext,
+    IAuditLog auditLog,
+    IAttendeeExcelService excel)
     : IAdminAttendeeService
 {
+    /// <summary>P1.6 — the export bound. Matches the user export's cap so an
+    /// accidental "export everything" can't load the whole roster into RAM.</summary>
+    private const int ExportRowCap = 5_000;
+
     public async Task<GridPage<AdminAttendeeSummary>> ListAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
         var skip = Math.Max(0, query.Skip);
         var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
 
-        // 1) Identity-side page: SimfUser filtered + sorted, admins
-        // excluded. profileTypeId-as-filter requires a cross-DB lookup;
-        // we defer it to step 3 and apply in-memory.
+        var users = await BuildFilteredUsersAsync(query, cancellationToken);
+
+        var total = await users.CountAsync(cancellationToken);
+        var page = await MaterialiseAsync(users, skip, top, cancellationToken);
+
+        return GridPage<AdminAttendeeSummary>.Of(page, total,
+            new GridQuery { Skip = skip, Top = top });
+    }
+
+    public async Task<byte[]> ExportAsync(
+        Guid actorUserId, GridQuery query, CancellationToken cancellationToken = default)
+    {
+        var users = await BuildFilteredUsersAsync(query, cancellationToken);
+        var rows = await MaterialiseAsync(users, 0, ExportRowCap, cancellationToken);
+
+        var bytes = excel.Export(rows);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.AdminAttendeesExported,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"count={rows.Count}",
+        }, cancellationToken);
+
+        return bytes;
+    }
+
+    // Identity-side filtered + sorted query (admins excluded). The
+    // profileTypeId filter needs a cross-DB lookup, so this is async.
+    private async Task<IQueryable<SimfUser>> BuildFilteredUsersAsync(
+        GridQuery query, CancellationToken cancellationToken)
+    {
         var users = dbContext.Users.AsNoTracking()
             .Where(user => user.UserType != UserType.Admin);
 
@@ -56,6 +96,17 @@ internal sealed class AdminAttendeeService(
         {
             users = users.Where(user => user.AccountState == state);
         }
+        // P1.6 — registration date-range filter (CreatedAt).
+        if (query.Filters.TryGetValue("from", out var fromRaw)
+            && DateTimeOffset.TryParse(fromRaw, out var from))
+        {
+            users = users.Where(user => user.CreatedAt >= from);
+        }
+        if (query.Filters.TryGetValue("to", out var toRaw)
+            && DateTimeOffset.TryParse(toRaw, out var to))
+        {
+            users = users.Where(user => user.CreatedAt <= to);
+        }
 
         users = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
@@ -69,9 +120,9 @@ internal sealed class AdminAttendeeService(
             _ => users.OrderByDescending(user => user.CreatedAt),
         };
 
-        // If the caller filters by profile type, we have to evaluate
-        // it across the two contexts: fetch matching UserProfile.UserId
-        // values from App DB first and restrict the Identity query.
+        // If the caller filters by profile type, evaluate it across the two
+        // contexts: fetch matching UserProfile.UserId values from App DB first
+        // and restrict the Identity query.
         if (query.Filters.TryGetValue("profileTypeId", out var profileTypeFilter)
             && Guid.TryParse(profileTypeFilter, out var profileTypeId))
         {
@@ -83,10 +134,17 @@ internal sealed class AdminAttendeeService(
             users = users.Where(user => matchingUserIds.Contains(user.Id));
         }
 
-        var total = await users.CountAsync(cancellationToken);
+        return users;
+    }
+
+    // Page the Identity rows, then load + merge the App-side profile +
+    // profile-type rows for just that page.
+    private async Task<List<AdminAttendeeSummary>> MaterialiseAsync(
+        IQueryable<SimfUser> users, int skip, int take, CancellationToken cancellationToken)
+    {
         var pageUsers = await users
             .Skip(skip)
-            .Take(top)
+            .Take(take)
             .Select(user => new
             {
                 user.Id,
@@ -98,8 +156,6 @@ internal sealed class AdminAttendeeService(
             })
             .ToListAsync(cancellationToken);
 
-        // 2) App-side load for the visible page: UserProfile + ProfileType
-        // keyed by user id.
         var userIds = pageUsers.Select(u => u.Id).ToList();
         var profilesByUserId = await appDbContext.UserProfiles
             .AsNoTracking()
@@ -128,8 +184,7 @@ internal sealed class AdminAttendeeService(
             })
             .ToDictionaryAsync(profileType => profileType.Id, cancellationToken);
 
-        // 3) Merge in memory.
-        var page = pageUsers.Select(user =>
+        return pageUsers.Select(user =>
         {
             profilesByUserId.TryGetValue(user.Id, out var profile);
             string? profileTypeName = null;
@@ -154,8 +209,5 @@ internal sealed class AdminAttendeeService(
                 profile?.QrId,
                 user.CreatedAt);
         }).ToList();
-
-        return GridPage<AdminAttendeeSummary>.Of(page, total,
-            new GridQuery { Skip = skip, Top = top });
     }
 }

@@ -15,7 +15,14 @@ public interface IAdminAttendeeService
     /// <summary>One page of the attendees grid. <see cref="GridQuery.Filters"/>
     /// keys: <c>userType</c> (Visitor|Other|All, default All),
     /// <c>profileTypeId</c> (Guid), <c>accountState</c> (AccountState enum
-    /// name). Default sort: newest CreatedAt first.</summary>
+    /// name), <c>from</c> + <c>to</c> (ISO-8601, on CreatedAt). Default sort:
+    /// newest CreatedAt first.</summary>
     Task<GridPage<AdminAttendeeSummary>> ListAsync(
         GridQuery query, CancellationToken cancellationToken = default);
+
+    /// <summary>P1.6 — XLSX of the filtered roster (same
+    /// <see cref="GridQuery.Filters"/> as <see cref="ListAsync"/>, bounded to a
+    /// safe row cap). Writes an <c>Admin.AttendeesExported</c> audit row.</summary>
+    Task<byte[]> ExportAsync(
+        Guid actorUserId, GridQuery query, CancellationToken cancellationToken = default);
 }

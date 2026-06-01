@@ -99,6 +99,7 @@ public static class AuditEvents
 
     // P1.6 — XLSX export of the read-only admin grids (filtered result set).
     public const string AdminOperationLogExported = "Admin.OperationLogExported";
+    public const string AdminAttendeesExported = "Admin.AttendeesExported";
 
     // User profile (myComment #18 — D-046; P8 renamed from VisitorProfile.*)
     public const string UserProfileSaved = "UserProfile.Saved";

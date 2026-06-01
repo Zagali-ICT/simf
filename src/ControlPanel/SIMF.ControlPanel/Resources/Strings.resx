@@ -349,6 +349,7 @@
   <data name="Admin.Attendees.AccountState.Rejected" xml:space="preserve"><value>Rejected</value></data>
   <data name="Admin.Attendees.Action.SelectAll" xml:space="preserve"><value>Select all</value></data>
   <data name="Admin.Attendees.Action.SelectRow" xml:space="preserve"><value>Select row</value></data>
+  <data name="Admin.Attendees.Action.Export" xml:space="preserve"><value>Export</value></data>
   <data name="Admin.Attendees.Filter.UserType" xml:space="preserve"><value>Kind</value></data>
   <data name="Admin.Attendees.Filter.UserTypeAll" xml:space="preserve"><value>All</value></data>
   <data name="Admin.Attendees.Filter.UserTypeVisitor" xml:space="preserve"><value>Visitors only</value></data>
@@ -362,6 +363,8 @@
   <data name="Admin.Attendees.Filter.SearchPlaceholder" xml:space="preserve"><value>e.g. ahmed or @example.com</value></data>
   <data name="Admin.Attendees.Filter.Apply" xml:space="preserve"><value>Apply filters</value></data>
   <data name="Admin.Attendees.Filter.Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="Admin.Attendees.Filter.From" xml:space="preserve"><value>From date</value></data>
+  <data name="Admin.Attendees.Filter.To" xml:space="preserve"><value>To date</value></data>
 
   <!-- D-134 Sprint B (D-135) — Themes admin CRUD (SIMF-FDS-004 §5.1) -->
   <data name="Admin.Themes.Title" xml:space="preserve"><value>Themes &amp; pillars</value></data>

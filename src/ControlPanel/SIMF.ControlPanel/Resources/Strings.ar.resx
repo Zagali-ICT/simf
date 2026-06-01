@@ -346,6 +346,7 @@
   <data name="Admin.Attendees.AccountState.Rejected" xml:space="preserve"><value>مرفوض</value></data>
   <data name="Admin.Attendees.Action.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
   <data name="Admin.Attendees.Action.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
+  <data name="Admin.Attendees.Action.Export" xml:space="preserve"><value>تصدير</value></data>
   <data name="Admin.Attendees.Filter.UserType" xml:space="preserve"><value>النوع</value></data>
   <data name="Admin.Attendees.Filter.UserTypeAll" xml:space="preserve"><value>الكل</value></data>
   <data name="Admin.Attendees.Filter.UserTypeVisitor" xml:space="preserve"><value>الزوار فقط</value></data>
@@ -359,6 +360,8 @@
   <data name="Admin.Attendees.Filter.SearchPlaceholder" xml:space="preserve"><value>مثال: أحمد أو ‎@example.com</value></data>
   <data name="Admin.Attendees.Filter.Apply" xml:space="preserve"><value>تطبيق التصفية</value></data>
   <data name="Admin.Attendees.Filter.Clear" xml:space="preserve"><value>مسح</value></data>
+  <data name="Admin.Attendees.Filter.From" xml:space="preserve"><value>من تاريخ</value></data>
+  <data name="Admin.Attendees.Filter.To" xml:space="preserve"><value>إلى تاريخ</value></data>
 
   <!-- D-134 Sprint B (D-135) — Themes admin CRUD (SIMF-FDS-004 §5.1) -->
   <data name="Admin.Themes.Title" xml:space="preserve"><value>المحاور والمواضيع</value></data>
