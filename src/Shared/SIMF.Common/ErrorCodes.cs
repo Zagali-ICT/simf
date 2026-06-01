@@ -280,4 +280,11 @@ public static class ErrorCodes
     public const string OrganisationInvalid = "ORGANISATION_INVALID";
     public const string OrganisationNotFound = "ORGANISATION_NOT_FOUND";
     public const string OrganisationImportFailed = "ORGANISATION_IMPORT_FAILED";
+
+    // Networking connections (B6 / D-224 — visitor-to-visitor request/accept).
+    public const string ConnectionInvalid = "CONNECTION_INVALID";
+    public const string ConnectionNotFound = "CONNECTION_NOT_FOUND";
+    public const string ConnectionAlreadyExists = "CONNECTION_ALREADY_EXISTS";
+    public const string ConnectionSelf = "CONNECTION_SELF";
+    public const string ConnectionTargetNotFound = "CONNECTION_TARGET_NOT_FOUND";
 }

@@ -192,6 +192,11 @@ public static class AuditEvents
     public const string SessionCommentLiked = "SessionComment.Liked";
     public const string SessionCommentUnliked = "SessionComment.Unliked";
 
+    // Networking connections (B6 — D-224: visitor-to-visitor request/accept).
+    public const string ConnectionRequested = "Connection.Requested";
+    public const string ConnectionAccepted = "Connection.Accepted";
+    public const string ConnectionRemoved = "Connection.Removed";
+
     // Device keys / biometric sign-in (D-172, gap doc G10 — PDF §2.5)
     public const string DeviceKeyRegistered = "DeviceKey.Registered";
     public const string DeviceKeyRevoked = "DeviceKey.Revoked";

@@ -295,6 +295,9 @@ public static class DependencyInjection
             SIMF.Infrastructure.SessionComments.StubCommentAiFilter>();
         services.AddScoped<SIMF.Application.Feedback.Abstractions.IRatingService,
             SIMF.Infrastructure.Feedback.RatingService>();
+        // B6 — D-224: visitor-to-visitor networking connections (app-facing).
+        services.AddScoped<SIMF.Application.Networking.Abstractions.INetworkingService,
+            SIMF.Infrastructure.Networking.NetworkingService>();
         // D-202 — Track-2: Statistics dashboard (read-only aggregate) +
         // Company/exhibitor-sponsor provisioning.
         services.AddScoped<SIMF.Application.Statistics.Abstractions.IStatisticsService,

@@ -12,6 +12,7 @@ using SIMF.Domain.Faq;
 using SIMF.Domain.Feedback;
 using SIMF.Domain.Media;
 using SIMF.Domain.MeetingRequests;
+using SIMF.Domain.Networking;
 using SIMF.Domain.Operations;
 using SIMF.Domain.Organisations;
 using SIMF.Domain.Profiles;
@@ -158,6 +159,9 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     // P2.1 (D-211) — two-level FAQ: groups own ordered question/answer entries.
     public DbSet<FaqGroup> FaqGroups => Set<FaqGroup>();
     public DbSet<FaqEntry> FaqEntries => Set<FaqEntry>();
+
+    // B6 (D-224) — visitor-to-visitor networking connections (request/accept).
+    public DbSet<Connection> Connections => Set<Connection>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
