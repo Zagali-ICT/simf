@@ -7,6 +7,7 @@
 @attribute [RequirePermission(PermissionCatalog.Booths.View)]
 @using SIMF.Contracts.Exhibition
 @using SIMF.Contracts.Companies
+@using SIMF.Common.Enums
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 
@@ -266,10 +267,10 @@
             new GridQuery { Top = 500 });
         if (env is { Success: true, Data: not null })
         {
-            // Only active exhibitor companies (Type 0 == Exhibitor) can staff
-            // a booth — the server enforces the same rule.
+            // Only active exhibitor companies can staff a booth — the server
+            // enforces the same rule.
             _companies = env.Data.Items
-                .Where(c => c.IsActive && c.Type == 0)
+                .Where(c => c.IsActive && c.Type == (int)CompanyType.Exhibitor)
                 .OrderBy(c => c.NameEn).ToList();
         }
         else
