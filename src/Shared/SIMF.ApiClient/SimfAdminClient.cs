@@ -10,6 +10,7 @@ using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Companies;
 using SIMF.Contracts.Exhibition;
 using SIMF.Contracts.Faq;
+using SIMF.Contracts.Organisations;
 using SIMF.Contracts.Feedback;
 using SIMF.Contracts.Logs;
 using SIMF.Contracts.Media;
@@ -1931,6 +1932,62 @@ public sealed class SimfAdminClient(HttpClient http)
         SendAsync<bool>(
             HttpMethod.Delete, $"booths/{id}", content: null,
             accessToken, cancellationToken);
+
+    // -- B3 (D-220) — Organisation lookup admin CRUD + gov-Excel import
+    //    (SIMF.Contracts.Organisations) ------------------------------------
+
+    public Task<ApiCallResult<GridPage<AdminOrganisationSummary>>> ListOrganisationsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminOrganisationSummary>>(
+            HttpMethod.Post, "organisations/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminOrganisationDetail>> GetOrganisationAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminOrganisationDetail>(
+            HttpMethod.Get, $"organisations/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminOrganisationDetail>> CreateOrganisationAsync(
+        CreateOrganisationRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminOrganisationDetail>(
+            HttpMethod.Post, "organisations",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminOrganisationDetail>> UpdateOrganisationAsync(
+        Guid id, UpdateOrganisationRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminOrganisationDetail>(
+            HttpMethod.Put, $"organisations/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeactivateOrganisationAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"organisations/{id}", content: null,
+            accessToken, cancellationToken);
+
+    /// <summary>B3 (D-220) — bulk-import a government Excel sheet of Saudi
+    /// companies (multipart; form field "file"). Idempotent upsert by CR.</summary>
+    public Task<ApiCallResult<OrganisationImportResult>> ImportOrganisationsAsync(
+        byte[] content, string contentType, string fileName,
+        string accessToken, CancellationToken cancellationToken = default)
+    {
+        var multipart = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(content);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        multipart.Add(fileContent, "file", fileName);
+        return SendAsync<OrganisationImportResult>(
+            HttpMethod.Post, "organisations/import", multipart,
+            accessToken, cancellationToken);
+    }
 
     // -- D-199 — Archive edition admin CRUD (SIMF.Contracts.Archive) --------
 

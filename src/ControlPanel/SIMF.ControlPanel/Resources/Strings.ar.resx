@@ -2012,4 +2012,47 @@
   <data name="Admin.RolePermissions.Saved" xml:space="preserve"><value>تم حفظ الصلاحيات.</value></data>
   <data name="Admin.RolePermissions.LoadFailed" xml:space="preserve"><value>تعذّر تحميل صلاحيات الدور.</value></data>
   <data name="Admin.RolePermissions.Fallback" xml:space="preserve"><value>تعذّر حفظ الصلاحيات. حاول مرة أخرى.</value></data>
+  <data name="Module.Organisations" xml:space="preserve"><value>الجهات</value></data>
+  <data name="Admin.Organisations.Title" xml:space="preserve"><value>الجهات</value></data>
+  <data name="Admin.Organisations.Search" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Organisations.Search.Placeholder" xml:space="preserve"><value>ابحث بالاسم أو السجل التجاري أو القطاع أو المدينة</value></data>
+  <data name="Admin.Organisations.Search.Apply" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Organisations.New" xml:space="preserve"><value>جهة جديدة</value></data>
+  <data name="Admin.Organisations.Import" xml:space="preserve"><value>استيراد Excel</value></data>
+  <data name="Admin.Organisations.Loading" xml:space="preserve"><value>جارٍ تحميل الجهات…</value></data>
+  <data name="Admin.Organisations.None" xml:space="preserve"><value>لا توجد جهات</value></data>
+  <data name="Admin.Organisations.Col.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Organisations.Col.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.Organisations.Col.CommercialRegistration" xml:space="preserve"><value>السجل التجاري</value></data>
+  <data name="Admin.Organisations.Col.Sector" xml:space="preserve"><value>القطاع</value></data>
+  <data name="Admin.Organisations.Col.City" xml:space="preserve"><value>المدينة</value></data>
+  <data name="Admin.Organisations.Col.Active" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="Admin.Organisations.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Organisations.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Organisations.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Organisations.Add.Title" xml:space="preserve"><value>إضافة جهة</value></data>
+  <data name="Admin.Organisations.Edit.Title" xml:space="preserve"><value>تعديل جهة</value></data>
+  <data name="Admin.Organisations.Field.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Organisations.Field.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.Organisations.Field.CommercialRegistration" xml:space="preserve"><value>السجل التجاري</value></data>
+  <data name="Admin.Organisations.Field.Sector" xml:space="preserve"><value>القطاع</value></data>
+  <data name="Admin.Organisations.Field.City" xml:space="preserve"><value>المدينة</value></data>
+  <data name="Admin.Organisations.Field.Phone" xml:space="preserve"><value>الهاتف</value></data>
+  <data name="Admin.Organisations.Field.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Organisations.Field.Website" xml:space="preserve"><value>الموقع الإلكتروني</value></data>
+  <data name="Admin.Organisations.Field.IsActive" xml:space="preserve"><value>مفعّل</value></data>
+  <data name="Admin.Organisations.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Organisations.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.Organisations.Required" xml:space="preserve"><value>الاسم بالعربية مطلوب.</value></data>
+  <data name="Admin.Organisations.Saved" xml:space="preserve"><value>تم حفظ الجهة.</value></data>
+  <data name="Admin.Organisations.Deleted" xml:space="preserve"><value>تم تعطيل الجهة.</value></data>
+  <data name="Admin.Organisations.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الجهات.</value></data>
+  <data name="Admin.Organisations.Delete.Confirm" xml:space="preserve"><value>تعطيل هذه الجهة؟ ستُزال من قائمة البحث العامة.</value></data>
+  <data name="Admin.Organisations.Import.Title" xml:space="preserve"><value>استيراد الجهات من Excel</value></data>
+  <data name="Admin.Organisations.Import.Hint" xml:space="preserve"><value>ارفع ملف Excel (.xlsx) حكومي. تُطابَق الصفوف الحالية بالسجل التجاري وتُحدَّث، وتُضاف الصفوف الجديدة.</value></data>
+  <data name="Admin.Organisations.Import.File" xml:space="preserve"><value>ملف Excel (.xlsx)</value></data>
+  <data name="Admin.Organisations.Import.Upload" xml:space="preserve"><value>رفع</value></data>
+  <data name="Admin.Organisations.Import.Result" xml:space="preserve"><value>الصفوف المقروءة: {0} · المُضافة: {1} · المُحدَّثة: {2} · المتجاهَلة: {3}</value></data>
+  <data name="Admin.Organisations.Import.Done" xml:space="preserve"><value>اكتمل الاستيراد — {0} مُضافة، {1} مُحدَّثة، {2} متجاهَلة.</value></data>
+  <data name="Admin.Organisations.Import.Failed" xml:space="preserve"><value>فشل استيراد Excel.</value></data>
 </root>

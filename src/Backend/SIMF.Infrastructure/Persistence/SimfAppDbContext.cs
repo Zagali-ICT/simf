@@ -13,6 +13,7 @@ using SIMF.Domain.Feedback;
 using SIMF.Domain.Media;
 using SIMF.Domain.MeetingRequests;
 using SIMF.Domain.Operations;
+using SIMF.Domain.Organisations;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 using SIMF.Domain.PublicRelations;
@@ -147,6 +148,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     // on the Identity DB — no cross-DB navigation).
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<CompanyMembership> CompanyMemberships => Set<CompanyMembership>();
+
+    // B3 (D-220) — Saudi-companies lookup, bulk-loaded from a government Excel
+    // sheet; the visitor الجهة (UserProfile.OrganisationId) picker reads from it.
+    public DbSet<Organisation> Organisations => Set<Organisation>();
 
     // P2.1 (D-211) — two-level FAQ: groups own ordered question/answer entries.
     public DbSet<FaqGroup> FaqGroups => Set<FaqGroup>();

@@ -9,6 +9,7 @@ using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Companies;
 using SIMF.Contracts.Exhibition;
 using SIMF.Contracts.Faq;
+using SIMF.Contracts.Organisations;
 using SIMF.Contracts.Logs;
 using SIMF.Contracts.Media;
 using SIMF.Contracts.PublicRelations;
@@ -1916,6 +1917,66 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.DeactivateBoothAsync(id, token));
         });
+
+        // B3 (D-220) — Organisation lookup admin CRUD + gov-Excel import passthroughs.
+        group.MapPost("/admin/organisations/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListOrganisationsAsync(body, token));
+        });
+        group.MapGet("/admin/organisations/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetOrganisationAsync(id, token));
+        });
+        group.MapPost("/admin/organisations",
+            async (CreateOrganisationRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateOrganisationAsync(body, token));
+        });
+        group.MapPut("/admin/organisations/{id:guid}",
+            async (Guid id, UpdateOrganisationRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateOrganisationAsync(id, body, token));
+        });
+        group.MapDelete("/admin/organisations/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateOrganisationAsync(id, token));
+        });
+        // Multipart gov-Excel import (same SameSite=Lax CSRF stance as media upload).
+        group.MapPost("/admin/organisations/import",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.ValidationFailed,
+                    Message = "An Excel file is required.",
+                    MessageArabic = "ملف Excel مطلوب.",
+                }));
+            }
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return Forward(await api.ImportOrganisationsAsync(
+                stream.ToArray(), file.ContentType, file.FileName, token));
+        }).DisableAntiforgery();
 
         // D-199 — Archive edition admin CRUD BFF passthroughs.
         group.MapPost("/admin/archive/list",

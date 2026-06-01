@@ -149,6 +149,18 @@ public static class PermissionCatalog
         public const string Delete = "ProfileTypes.Delete";
     }
 
+    /// <summary>B3 (D-220) — Saudi-companies lookup, bulk-loaded from a
+    /// government Excel sheet; the visitor الجهة picker reads from this
+    /// reference table.</summary>
+    public static class Organisations
+    {
+        public const string View = "Organisations.View";
+        public const string Create = "Organisations.Create";
+        public const string Edit = "Organisations.Edit";
+        public const string Delete = "Organisations.Delete";
+        public const string Import = "Organisations.Import";
+    }
+
     // ── Programme ────────────────────────────────────────────────────────
 
     public static class Themes
@@ -468,6 +480,12 @@ public static class PermissionCatalog
         new(ProfileTypes.Create, "ProfileTypes", "Create", "Create profile types", AdminOnly),
         new(ProfileTypes.Edit, "ProfileTypes", "Edit", "Edit profile types", AdminOnly),
         new(ProfileTypes.Delete, "ProfileTypes", "Delete", "Delete profile types", AdminOnly),
+
+        new(Organisations.View, "Organisations", "View", "View organisations", AdminOnly),
+        new(Organisations.Create, "Organisations", "Create", "Create organisations", AdminOnly),
+        new(Organisations.Edit, "Organisations", "Edit", "Edit organisations", AdminOnly),
+        new(Organisations.Delete, "Organisations", "Delete", "Delete organisations", AdminOnly),
+        new(Organisations.Import, "Organisations", "Import", "Import organisations from Excel", AdminOnly),
 
         // Programme
         new(Themes.View, "Themes", "View", "View themes", AdminOnly),

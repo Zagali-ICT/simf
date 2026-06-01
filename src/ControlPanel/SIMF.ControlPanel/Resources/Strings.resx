@@ -2020,4 +2020,47 @@
   <data name="Admin.RolePermissions.Saved" xml:space="preserve"><value>Permissions saved.</value></data>
   <data name="Admin.RolePermissions.LoadFailed" xml:space="preserve"><value>The role permissions could not be loaded.</value></data>
   <data name="Admin.RolePermissions.Fallback" xml:space="preserve"><value>The permissions could not be saved. Please try again.</value></data>
+  <data name="Module.Organisations" xml:space="preserve"><value>Organisations</value></data>
+  <data name="Admin.Organisations.Title" xml:space="preserve"><value>Organisations</value></data>
+  <data name="Admin.Organisations.Search" xml:space="preserve"><value>Search</value></data>
+  <data name="Admin.Organisations.Search.Placeholder" xml:space="preserve"><value>Search by name, CR, sector or city</value></data>
+  <data name="Admin.Organisations.Search.Apply" xml:space="preserve"><value>Search</value></data>
+  <data name="Admin.Organisations.New" xml:space="preserve"><value>New organisation</value></data>
+  <data name="Admin.Organisations.Import" xml:space="preserve"><value>Import Excel</value></data>
+  <data name="Admin.Organisations.Loading" xml:space="preserve"><value>Loading organisations…</value></data>
+  <data name="Admin.Organisations.None" xml:space="preserve"><value>No organisations found</value></data>
+  <data name="Admin.Organisations.Col.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Organisations.Col.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Organisations.Col.CommercialRegistration" xml:space="preserve"><value>CR</value></data>
+  <data name="Admin.Organisations.Col.Sector" xml:space="preserve"><value>Sector</value></data>
+  <data name="Admin.Organisations.Col.City" xml:space="preserve"><value>City</value></data>
+  <data name="Admin.Organisations.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Organisations.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.Organisations.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.Organisations.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.Organisations.Add.Title" xml:space="preserve"><value>Add organisation</value></data>
+  <data name="Admin.Organisations.Edit.Title" xml:space="preserve"><value>Edit organisation</value></data>
+  <data name="Admin.Organisations.Field.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Organisations.Field.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Organisations.Field.CommercialRegistration" xml:space="preserve"><value>Commercial registration</value></data>
+  <data name="Admin.Organisations.Field.Sector" xml:space="preserve"><value>Sector</value></data>
+  <data name="Admin.Organisations.Field.City" xml:space="preserve"><value>City</value></data>
+  <data name="Admin.Organisations.Field.Phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="Admin.Organisations.Field.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Admin.Organisations.Field.Website" xml:space="preserve"><value>Website</value></data>
+  <data name="Admin.Organisations.Field.IsActive" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Organisations.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Organisations.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.Organisations.Required" xml:space="preserve"><value>Arabic name is required.</value></data>
+  <data name="Admin.Organisations.Saved" xml:space="preserve"><value>Organisation saved.</value></data>
+  <data name="Admin.Organisations.Deleted" xml:space="preserve"><value>Organisation deactivated.</value></data>
+  <data name="Admin.Organisations.LoadFailed" xml:space="preserve"><value>Could not load organisations.</value></data>
+  <data name="Admin.Organisations.Delete.Confirm" xml:space="preserve"><value>Deactivate this organisation? It will be removed from the public lookup.</value></data>
+  <data name="Admin.Organisations.Import.Title" xml:space="preserve"><value>Import organisations from Excel</value></data>
+  <data name="Admin.Organisations.Import.Hint" xml:space="preserve"><value>Upload a government .xlsx sheet. Existing rows are matched by commercial registration and updated; new rows are inserted.</value></data>
+  <data name="Admin.Organisations.Import.File" xml:space="preserve"><value>Excel file (.xlsx)</value></data>
+  <data name="Admin.Organisations.Import.Upload" xml:space="preserve"><value>Upload</value></data>
+  <data name="Admin.Organisations.Import.Result" xml:space="preserve"><value>Rows read: {0} · Inserted: {1} · Updated: {2} · Skipped: {3}</value></data>
+  <data name="Admin.Organisations.Import.Done" xml:space="preserve"><value>Import complete — {0} inserted, {1} updated, {2} skipped.</value></data>
+  <data name="Admin.Organisations.Import.Failed" xml:space="preserve"><value>Excel import failed.</value></data>
 </root>

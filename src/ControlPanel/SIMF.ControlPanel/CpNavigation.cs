@@ -139,6 +139,8 @@ public static class CpNavigation
             new("Module.AdminInterests", "/admin/interests", RequiredPermission: PermissionCatalog.Interests.View),
             // D-155 — country lookup admin CRUD (D-151 / D-152 reference data).
             new("Module.AdminCountries", "/admin/countries", RequiredPermission: PermissionCatalog.Countries.View),
+            // B3 (D-220) — Saudi-companies lookup (gov Excel import) feeding the visitor الجهة picker.
+            new("Module.Organisations", "/admin/organisations", RequiredPermission: PermissionCatalog.Organisations.View),
             // D-118 — admin-managed lookup CRUD for ProfileType (per UserType).
             new("Module.AdminVisitorProfileTypes", "/admin/profile-types/visitor", RequiredPermission: PermissionCatalog.ProfileTypes.View),
             new("Module.AdminOtherProfileTypes", "/admin/profile-types/other", RequiredPermission: PermissionCatalog.ProfileTypes.View),

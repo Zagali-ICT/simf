@@ -274,4 +274,10 @@ public static class ErrorCodes
     public const string CompanyNotFound = "COMPANY_NOT_FOUND";
     public const string CompanyInactive = "COMPANY_INACTIVE";
     public const string CompanyAccountInvalid = "COMPANY_ACCOUNT_INVALID";
+
+    // Organisations (B3 / D-220 — Saudi-companies lookup, government Excel
+    // bulk-import; the visitor الجهة picker reads from this table).
+    public const string OrganisationInvalid = "ORGANISATION_INVALID";
+    public const string OrganisationNotFound = "ORGANISATION_NOT_FOUND";
+    public const string OrganisationImportFailed = "ORGANISATION_IMPORT_FAILED";
 }

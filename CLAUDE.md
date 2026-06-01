@@ -154,3 +154,19 @@ frozen and the existing enums stay frozen against **rename/reorder**
 (additive new values still allowed). See `docs/decisions/DECISIONS_LOG.md`
 D-217. No other freeze items are lifted; future schema/enum changes beyond
 this named column still require explicit owner approval.
+
+### D-219 audit-driven build-wave freeze-lift (2026-06-01)
+
+Owner directive "remove any freeze now" lifted the D-110 freeze as an active
+gate for the **audit-driven build wave** — new **additive** EF tables/columns
+on `SimfAppDbContext` are permitted for the wave's data-model items
+(Organisation lookup [D-220], Booth↔Company + booth-officer contact, audience
+comment likes, networking connections, session speaker/host role + session
+type, and further audit-surfaced additions), each as an additive migration.
+The **Identity** schema stays frozen and the existing enums stay frozen against
+**rename/reorder** (additive values still allowed) — no wave item needs Identity
+changes, and that surface backs the shipped mobile app + the NCA posture. The
+freeze must be **re-instated before the production publish / handover**, and
+even with the schema freeze lifted the **shipped mobile wire contract** (public
+JSON field names the app decodes) must be preserved. See
+`docs/decisions/DECISIONS_LOG.md` D-219 (+ D-220 as-built).

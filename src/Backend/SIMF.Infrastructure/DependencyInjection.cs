@@ -271,6 +271,13 @@ public static class DependencyInjection
             SIMF.Infrastructure.Exhibition.PublicBoothService>();
         services.AddScoped<SIMF.Application.Exhibition.Abstractions.IAdminBoothService,
             SIMF.Infrastructure.Exhibition.AdminBoothService>();
+        // B3 (D-220) — Organisation lookup (gov Excel import) + visitor picker search.
+        services.AddScoped<SIMF.Application.Organisations.Abstractions.IAdminOrganisationService,
+            SIMF.Infrastructure.Organisations.AdminOrganisationService>();
+        services.AddScoped<SIMF.Application.Organisations.Abstractions.IPublicOrganisationService,
+            SIMF.Infrastructure.Organisations.PublicOrganisationService>();
+        services.AddScoped<SIMF.Application.Organisations.Abstractions.IOrganisationExcelReader,
+            SIMF.Infrastructure.Excel.ClosedXmlOrganisationReader>();
         services.AddScoped<SIMF.Application.Sponsors.Abstractions.IPublicSponsorService,
             SIMF.Infrastructure.Sponsors.PublicSponsorService>();
         services.AddScoped<SIMF.Application.Sponsors.Abstractions.IAdminSponsorService,

@@ -328,4 +328,11 @@ public static class AuditEvents
     // contract).
     public const string RatingSubmitted = "Rating.Submitted";
     public const string RatingRevised = "Rating.Revised";
+
+    // Organisations (B3 / D-220 — Saudi-companies lookup + government Excel
+    // bulk-import; one Imported row per upload carries the counts).
+    public const string OrganisationCreated = "organisation.created";
+    public const string OrganisationUpdated = "organisation.updated";
+    public const string OrganisationDeactivated = "organisation.deactivated";
+    public const string OrganisationImported = "organisation.imported";
 }
