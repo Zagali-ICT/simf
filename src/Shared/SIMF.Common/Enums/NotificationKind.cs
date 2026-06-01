@@ -89,4 +89,10 @@ public enum NotificationKind
     /// — a low-stakes confirmation, no email.</summary>
     [Display(Description = nameof(ResNotificationKind.BookingConfirmed), ResourceType = typeof(ResNotificationKind))]
     BookingConfirmed = 40,
+
+    /// <summary>P1.7: dispatched by the automated reminder worker to every
+    /// attendee with an active seat in a session that is about to start.
+    /// In-app row only.</summary>
+    [Display(Description = nameof(ResNotificationKind.SessionReminder), ResourceType = typeof(ResNotificationKind))]
+    SessionReminder = 41,
 }

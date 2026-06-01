@@ -21,4 +21,5 @@
   <data name="InvitationReceived" xml:space="preserve"><value>You received an invitation</value></data>
   <data name="VipBroadcast" xml:space="preserve"><value>Message from SIMF Public Relations</value></data>
   <data name="BookingConfirmed" xml:space="preserve"><value>Seat reservation confirmed</value></data>
+  <data name="SessionReminder" xml:space="preserve"><value>Session starting soon</value></data>
 </root>

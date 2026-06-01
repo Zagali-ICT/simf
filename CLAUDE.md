@@ -141,3 +141,16 @@ external procurement (**D7**); and the exact statistics metric list,
 pending **D6**. See `docs/decisions/DECISIONS_LOG.md` D-211. No other
 freeze items are lifted; future schema/enum changes beyond this named
 list still require explicit owner approval.
+
+### D-217 session-reminder freeze-lift (2026-06-01)
+
+Owner pre-authorised the automated session-reminder scheduler, which
+needs one **additive nullable column `Session.ReminderSentUtc`** on
+`SimfAppDbContext` (migration `App/D217_AddSessionReminderSentUtc`) as the
+worker's once-only dedup guard. Two **additive** `NotificationKind` values
+were also added — `BookingConfirmed = 40` and `SessionReminder = 41`
+(persisted by name; no wire/schema impact). The **Identity** schema stays
+frozen and the existing enums stay frozen against **rename/reorder**
+(additive new values still allowed). See `docs/decisions/DECISIONS_LOG.md`
+D-217. No other freeze items are lifted; future schema/enum changes beyond
+this named column still require explicit owner approval.

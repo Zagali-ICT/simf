@@ -64,6 +64,12 @@ public class Session
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
 
+    /// <summary>P1.7 (D-217 freeze-lift) — set by the automated reminder
+    /// worker once it has dispatched the "starting soon" notifications for
+    /// this session. The null check is the worker's dedup guard: a session
+    /// is reminded exactly once. Null until reminded (the normal state).</summary>
+    public DateTimeOffset? ReminderSentUtc { get; set; }
+
     /// <summary>M-to-M with <see cref="Speaker"/> via the explicit join
     /// entity <see cref="SessionSpeaker"/>. Explicit because the
     /// composite key + the per-row metadata (DisplayOrder) earns the

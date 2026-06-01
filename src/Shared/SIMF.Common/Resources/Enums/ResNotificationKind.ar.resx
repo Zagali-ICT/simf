@@ -21,4 +21,5 @@
   <data name="InvitationReceived" xml:space="preserve"><value>تلقّيت دعوة</value></data>
   <data name="VipBroadcast" xml:space="preserve"><value>رسالة من العلاقات العامة لـ SIMF</value></data>
   <data name="BookingConfirmed" xml:space="preserve"><value>تم تأكيد حجز المقعد</value></data>
+  <data name="SessionReminder" xml:space="preserve"><value>تبدأ الجلسة قريباً</value></data>
 </root>
