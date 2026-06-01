@@ -1,3 +1,5 @@
+using SIMF.Common.Enums;
+
 namespace SIMF.Contracts.Admin;
 
 /// <summary>D-165 (gap doc G3, PDF §2.9) — one row in the admin Sessions
@@ -47,7 +49,10 @@ public sealed record AdminSessionSpeakerEntry(
     Guid SpeakerId,
     string Name,
     string NameArabic,
-    int DisplayOrder);
+    int DisplayOrder,
+    // B9 — D-225: speaker/host role. Default keeps existing construction sites
+    // (and old request payloads that omit it) compiling as plain speakers.
+    SessionSpeakerRole Role = SessionSpeakerRole.Speaker);
 
 public sealed class AdminCreateSessionRequest
 {

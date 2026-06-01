@@ -1283,6 +1283,8 @@
   <data name="Admin.Sessions.Action.Up" xml:space="preserve"><value>أعلى</value></data>
   <data name="Admin.Sessions.Action.Down" xml:space="preserve"><value>أسفل</value></data>
   <data name="Admin.Sessions.Action.Remove" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Sessions.Role.Speaker" xml:space="preserve"><value>متحدّث</value></data>
+  <data name="Admin.Sessions.Role.Host" xml:space="preserve"><value>مضيف</value></data>
   <data name="Admin.Sessions.Field.Code" xml:space="preserve"><value>الرمز</value></data>
   <data name="Admin.Sessions.Field.CodeHint" xml:space="preserve"><value>من 2 إلى 16 حرفاً؛ فريد. يُستخدم في رابط الجلسة العامة (مثل SES-001).</value></data>
   <data name="Admin.Sessions.Field.CodeInvalid" xml:space="preserve"><value>يجب أن يتراوح طول الرمز بين 2 و16 حرفاً.</value></data>

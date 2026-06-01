@@ -1,3 +1,5 @@
+using SIMF.Common.Enums;
+
 namespace SIMF.Contracts.Programme;
 
 /// <summary>D-199 (gap doc G3, Mockup page 16 "Agenda") — one row in the
@@ -64,7 +66,9 @@ public sealed record PublicSessionSpeaker(
     string Name,
     string NameArabic,
     string? Title,
-    int DisplayOrder);
+    int DisplayOrder,
+    // B9 — D-225: appended (additive — wire contract preserved, D-219).
+    SessionSpeakerRole Role = SessionSpeakerRole.Speaker);
 
 /// <summary>D-199 — cheap seat-availability summary for the session
 /// detail. <see cref="Capacity"/> is the effective capacity

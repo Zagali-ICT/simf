@@ -182,8 +182,10 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
                 EndUtc = DateTimeOffset.UtcNow.AddHours(2),
                 Speakers = new List<AdminSessionSpeakerEntry>
                 {
+                    // B9 — D-225: speaker 0 is a plain speaker, speaker 1 is the host.
                     new(speakers[0].Id, speakers[0].Name, speakers[0].NameArabic, 0),
-                    new(speakers[1].Id, speakers[1].Name, speakers[1].NameArabic, 1),
+                    new(speakers[1].Id, speakers[1].Name, speakers[1].NameArabic, 1,
+                        SessionSpeakerRole.Host),
                 },
                 ThemeIds = new List<Guid> { theme.Id },
             },
@@ -194,7 +196,10 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(2, detail.Speakers.Count);
         Assert.Equal(speakers[0].Id, detail.Speakers[0].SpeakerId);
         Assert.Equal(0, detail.Speakers[0].DisplayOrder);
+        // B9 — D-225: the per-session speaker/host role round-trips.
+        Assert.Equal(SessionSpeakerRole.Speaker, detail.Speakers[0].Role);
         Assert.Equal(speakers[1].Id, detail.Speakers[1].SpeakerId);
+        Assert.Equal(SessionSpeakerRole.Host, detail.Speakers[1].Role);
         Assert.Single(detail.ThemeIds);
         Assert.Equal(theme.Id, detail.ThemeIds[0]);
     }

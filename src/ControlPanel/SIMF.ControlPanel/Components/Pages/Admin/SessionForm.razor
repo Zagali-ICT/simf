@@ -1,6 +1,7 @@
 @* D-165 (gap doc G3) — reusable Session Add/Edit form, hosted in the
    modal from SessionsList. Loads Hall picker, Speaker picker (with
    reorderable list), and Theme multi-picker lazily on first render. *@
+@using SIMF.Common.Enums
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 
@@ -84,6 +85,13 @@
                     var entry = _selectedSpeakers[ix];
                     <li class="simf-form__chip">
                         <span>@(ix + 1). @SpeakerLabel(entry.SpeakerId.ToString())</span>
+                        <select class="simf-field__input"
+                                value="@((int)entry.Role)"
+                                @onchange="@(e => OnSpeakerRoleChanged(ix, e))"
+                                disabled="@_busy">
+                            <option value="0">@L["Admin.Sessions.Role.Speaker"]</option>
+                            <option value="1">@L["Admin.Sessions.Role.Host"]</option>
+                        </select>
                         <SimfButton Type="button" Variant="ghost"
                                     Disabled="@(_busy || ix == 0)"
                                     OnClick="@(() => MoveSpeakerUp(ix))">
@@ -347,6 +355,17 @@
         _selectedSpeakers.RemoveAt(index);
         RenumberSpeakers();
         RefreshSpeakerOptions();
+    }
+
+    // B9 — D-225: set a speaker's per-session role (speaker / host).
+    private void OnSpeakerRoleChanged(int index, ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var raw)
+            && Enum.IsDefined(typeof(SessionSpeakerRole), raw))
+        {
+            _selectedSpeakers[index] =
+                _selectedSpeakers[index] with { Role = (SessionSpeakerRole)raw };
+        }
     }
 
     private void RenumberSpeakers()

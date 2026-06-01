@@ -148,6 +148,7 @@ internal sealed class AdminSessionService(
                 SessionId = session.Id,
                 SpeakerId = entry.SpeakerId,
                 DisplayOrder = entry.DisplayOrder,
+                Role = entry.Role,
             });
         }
         foreach (var themeId in request.ThemeIds.Distinct())
@@ -402,6 +403,7 @@ internal sealed class AdminSessionService(
                 SessionId = session.Id,
                 SpeakerId = entry.SpeakerId,
                 DisplayOrder = entry.DisplayOrder,
+                Role = entry.Role,
             });
         }
     }
@@ -433,7 +435,8 @@ internal sealed class AdminSessionService(
                 link.SpeakerId,
                 link.Speaker?.Name ?? string.Empty,
                 link.Speaker?.NameArabic ?? string.Empty,
-                link.DisplayOrder))
+                link.DisplayOrder,
+                link.Role))
             .ToList();
         var themeIds = session.Themes.Select(link => link.ThemeId).ToList();
         return new AdminSessionDetail(

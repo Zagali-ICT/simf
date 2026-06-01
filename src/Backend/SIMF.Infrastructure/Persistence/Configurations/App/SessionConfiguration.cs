@@ -44,6 +44,9 @@ internal sealed class SessionSpeakerConfiguration
         builder.ToTable("SessionSpeakers");
         builder.HasKey(ss => new { ss.SessionId, ss.SpeakerId });
 
+        // B9 — D-225: speaker/host role on the join (stored as int).
+        builder.Property(ss => ss.Role);
+
         builder.HasOne(ss => ss.Session)
             .WithMany(s => s.Speakers)
             .HasForeignKey(ss => ss.SessionId)

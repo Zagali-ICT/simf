@@ -1,3 +1,5 @@
+using SIMF.Common.Enums;
+
 namespace SIMF.Domain.Programme;
 
 /// <summary>
@@ -99,6 +101,10 @@ public class SessionSpeaker
     /// <summary>Order of the speaker in the session's speaker list
     /// (0 = primary).</summary>
     public int DisplayOrder { get; set; }
+
+    /// <summary>B9 — D-225 (FDS-004 §5.4): this person's role in THIS session —
+    /// speaker or host. Defaults to <see cref="SessionSpeakerRole.Speaker"/>.</summary>
+    public SessionSpeakerRole Role { get; set; }
 }
 
 /// <summary>D-165 — join row linking a <see cref="Session"/> to one

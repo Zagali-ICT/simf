@@ -138,7 +138,8 @@ internal sealed class ProgrammeSessionService(SimfAppDbContext dbContext)
                 link.Speaker!.Name,
                 link.Speaker!.NameArabic,
                 link.Speaker!.Rank,
-                link.DisplayOrder))
+                link.DisplayOrder,
+                link.Role))
             .ToList();
 
         var seats = new PublicSessionSeatSummary(

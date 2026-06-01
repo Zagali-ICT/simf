@@ -1291,6 +1291,8 @@
   <data name="Admin.Sessions.Action.Up" xml:space="preserve"><value>Up</value></data>
   <data name="Admin.Sessions.Action.Down" xml:space="preserve"><value>Down</value></data>
   <data name="Admin.Sessions.Action.Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Admin.Sessions.Role.Speaker" xml:space="preserve"><value>Speaker</value></data>
+  <data name="Admin.Sessions.Role.Host" xml:space="preserve"><value>Host</value></data>
   <data name="Admin.Sessions.Field.Code" xml:space="preserve"><value>Code</value></data>
   <data name="Admin.Sessions.Field.CodeHint" xml:space="preserve"><value>2–16 characters; unique. Used in the public session URL (e.g. SES-001).</value></data>
   <data name="Admin.Sessions.Field.CodeInvalid" xml:space="preserve"><value>Code must be between 2 and 16 characters.</value></data>
