@@ -672,6 +672,88 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         return row.Id;
     }
 
+    // -- B3 — D-221: الجهة (Organisation) + الجنس (Gender) --------------------
+
+    [Fact]
+    public async Task Upsert_with_OrganisationId_and_Gender_round_trips_to_GET()
+    {
+        var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var organisationId = await SeedOrganisationAsync();
+
+        var request = await ValidSaudiRequestAsync();
+        request.OrganisationId = organisationId;
+        request.Gender = Gender.Male;
+
+        var save = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, save.StatusCode);
+        var saved = (await save.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        Assert.Equal(organisationId, saved.OrganisationId);
+        Assert.Equal(Gender.Male, saved.Gender);
+
+        var get = await GetAuthAsync(Path, token);
+        var fetched = (await get.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        Assert.Equal(organisationId, fetched.OrganisationId);
+        Assert.Equal(Gender.Male, fetched.Gender);
+    }
+
+    [Fact]
+    public async Task Upsert_with_unknown_OrganisationId_returns_400()
+    {
+        var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.OrganisationId = Guid.NewGuid();   // never seeded
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.OrganisationInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Upsert_with_inactive_OrganisationId_returns_400()
+    {
+        var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var dormantId = await SeedOrganisationAsync(isActive: false);
+
+        var request = await ValidSaudiRequestAsync();
+        request.OrganisationId = dormantId;
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.OrganisationInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Upsert_with_an_out_of_range_Gender_returns_400()
+    {
+        var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.Gender = (Gender)99;   // not a defined enum value
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    private async Task<Guid> SeedOrganisationAsync(bool isActive = true)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = new SIMF.Domain.Organisations.Organisation
+        {
+            Id = Guid.NewGuid(),
+            NameAr = $"جهة اختبار {Guid.NewGuid():N}",
+            NameEn = $"Test Organisation {Guid.NewGuid():N}",
+            IsActive = isActive,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        appDb.Organisations.Add(row);
+        await appDb.SaveChangesAsync();
+        return row.Id;
+    }
+
     // -- Helpers ---------------------------------------------------------------
 
     private async Task<UpsertUserProfileRequest> ValidSaudiRequestAsync(

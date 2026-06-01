@@ -117,6 +117,18 @@ internal sealed class UserProfileService(
             }
         }
 
+        // B3 — D-221: validate the الجهة pick exists and is active. Cross-
+        // context existence check (Organisation lives on the App DB), exactly
+        // like the nationality / profile-type checks above.
+        if (request.OrganisationId is { } organisationId
+            && !await profiles.OrganisationExistsActiveAsync(organisationId, cancellationToken))
+        {
+            throw new ApiException(
+                ErrorCodes.OrganisationInvalid, 400,
+                "The selected organisation is not valid.",
+                "الجهة المحددة غير صالحة.");
+        }
+
         // P9 — validate the picked interest ids: every id must exist
         // and be active. (The validator already enforces 1-10 count.)
         var requestedIds = request.InterestIds.Distinct().ToList();
@@ -165,6 +177,9 @@ internal sealed class UserProfileService(
         profile.PassportNumber = request.IsSaudi ? null : request.PassportNumber;
         profile.SaudiMobile = NormaliseOptional(request.SaudiMobile);
         profile.InternationalMobile = NormaliseOptional(request.InternationalMobile);
+        // B3 — D-221: الجهة + الجنس.
+        profile.OrganisationId = request.OrganisationId;
+        profile.Gender = request.Gender;
         if (!isNew)
         {
             profile.UpdatedAt = now;
@@ -532,6 +547,8 @@ internal sealed class UserProfileService(
             PassportNumber = profile.PassportNumber,
             SaudiMobile = profile.SaudiMobile,
             InternationalMobile = profile.InternationalMobile,
+            OrganisationId = profile.OrganisationId,
+            Gender = profile.Gender,
             HasIdImage = !string.IsNullOrEmpty(profile.IdImageRelativePath),
             QrId = qrId,
         };

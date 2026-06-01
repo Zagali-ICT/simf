@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SIMF.Domain.Organisations;
 using SIMF.Domain.Profiles;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -66,6 +67,16 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.HasOne(profile => profile.ProfileType)
             .WithMany()
             .HasForeignKey(profile => profile.ProfileTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // B3 — D-221: الجهة. Real DB FK to the Organisation lookup; Restrict
+        // so an organisation cannot be removed while any profile points at it.
+        // Nullable, so profile stubs simply leave it null. Gender is stored as
+        // its int value by EF's default enum mapping (no explicit conversion).
+        builder.HasIndex(profile => profile.OrganisationId);
+        builder.HasOne(profile => profile.Organisation)
+            .WithMany()
+            .HasForeignKey(profile => profile.OrganisationId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // P9 — M-to-M with Interests (D-050). Composite-PK join table

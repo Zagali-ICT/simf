@@ -1,4 +1,5 @@
 using SIMF.Common.Enums;
+using SIMF.Domain.Organisations;
 
 namespace SIMF.Domain.Profiles;
 
@@ -129,6 +130,23 @@ public class UserProfile
     /// future bilingual admin form may diverge the two.
     /// </summary>
     public string? RejectionReasonArabic { get; set; }
+
+    /// <summary>
+    /// B3 — D-221 (الجهة): the visitor's organisation / employer, picked from
+    /// the curated <see cref="Organisation"/> lookup (the team bulk-loads it
+    /// from a government Excel — D-220). Optional. Unlike <see cref="NationalityId"/>
+    /// this IS a real DB FK (<c>OnDelete.Restrict</c>, mirroring the ProfileType
+    /// FK) — safe because the column is nullable, so stubs simply leave it null.
+    /// </summary>
+    public Guid? OrganisationId { get; set; }
+
+    /// <summary>Navigation to the picked <see cref="Organisation"/>.</summary>
+    public Organisation? Organisation { get; set; }
+
+    /// <summary>B3 — D-221 (الجنس): the user's gender, captured on the profile /
+    /// sign-up screen (Mockup screen 05). <see cref="Gender.Unspecified"/> until
+    /// the user picks.</summary>
+    public Gender Gender { get; set; }
 
     /// <summary>When the row was created (UTC).</summary>
     public DateTimeOffset CreatedAt { get; set; }

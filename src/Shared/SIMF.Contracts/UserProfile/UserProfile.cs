@@ -1,3 +1,5 @@
+using SIMF.Common.Enums;
+
 namespace SIMF.Contracts.UserProfile;
 
 /// <summary>The body returned by <c>GET /api/v1/account/profile</c>
@@ -30,6 +32,14 @@ public sealed class UserProfileResponse
     public string? PassportNumber { get; set; }
     public string? SaudiMobile { get; set; }
     public string? InternationalMobile { get; set; }
+
+    /// <summary>B3 — D-221 (الجهة): the picked <see cref="Organisation"/> id,
+    /// or null when the user has not picked one.</summary>
+    public Guid? OrganisationId { get; set; }
+
+    /// <summary>B3 — D-221 (الجنس): the user's gender;
+    /// <see cref="Gender.Unspecified"/> until picked.</summary>
+    public Gender Gender { get; set; }
 
     /// <summary>True when an ID-image has been uploaded. The image bytes
     /// themselves are not in the response — fetch them at
@@ -78,6 +88,15 @@ public sealed class UpsertUserProfileRequest
     public string? PassportNumber { get; set; }
     public string? SaudiMobile { get; set; }
     public string? InternationalMobile { get; set; }
+
+    /// <summary>B3 — D-221 (الجهة): the user's self-picked
+    /// <see cref="Organisation"/> id (from <c>GET /api/v1/organisations</c>).
+    /// Optional; the service rejects an unknown / inactive id.</summary>
+    public Guid? OrganisationId { get; set; }
+
+    /// <summary>B3 — D-221 (الجنس): the user's gender. Optional —
+    /// <see cref="Gender.Unspecified"/> when not picked.</summary>
+    public Gender Gender { get; set; }
 }
 
 /// <summary>One country entry surfaced to the client picker.</summary>

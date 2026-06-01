@@ -72,6 +72,11 @@ public interface IUserProfileRepository
     Task<string> ResolveCountryCodeAsync(
         int id, CancellationToken cancellationToken = default);
 
+    /// <summary>B3 — D-221: true when the id is an active <c>Organisation</c>
+    /// row. Used to validate the profile's الجهة pick at write time.</summary>
+    Task<bool> OrganisationExistsActiveAsync(
+        Guid id, CancellationToken cancellationToken = default);
+
     // --- Identity DB: account reads ----------------------------------------
 
     /// <summary>Every approved Admin — the recipients of the new-pending-
