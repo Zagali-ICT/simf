@@ -156,7 +156,9 @@ public static class CpNavigation
             new("Module.GatesOperator", "/admin/gates/operator", RequiredPermission: PermissionCatalog.Gates.Operate),
             // Read-only gates operations dashboard over existing gate reports.
             new("Module.GatesDashboard", "/admin/gates/dashboard", RequiredPermission: PermissionCatalog.Gates.Manage),
-            new("Module.Configuration", "/m/configuration", IsStub: true),
+            // P2.4 (D-229) — System Configuration (FDS-012 §5.5). Collapses the
+            // former /m/configuration + /m/settings stubs into one real page.
+            new("Module.Configuration", "/admin/configuration", RequiredPermission: PermissionCatalog.Configuration.View),
             // D-134 Sprint A — Operation log viewer over the existing
             // OperationLogEntry table (no migration).
             new("Module.OperationLog", "/admin/operation-log", RequiredPermission: PermissionCatalog.OperationLog.View),
@@ -174,7 +176,8 @@ public static class CpNavigation
             // is /sessions/{id}/moderate — accessed from the Sessions
             // grid, not the nav.
             new("Module.SessionModerators", "/admin/session-moderators", RequiredPermission: PermissionCatalog.SessionModerators.View),
-            new("Module.Settings", "/m/settings", IsStub: true),
+            // P2.4 (D-229) — the former /m/settings stub is collapsed into the
+            // System Configuration page above; no separate Settings nav item.
         ]),
     ];
 

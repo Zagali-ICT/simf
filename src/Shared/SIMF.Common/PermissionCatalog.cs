@@ -399,6 +399,15 @@ public static class PermissionCatalog
         public const string Edit = "Operations.Edit";
     }
 
+    /// <summary>P2.4 (D-229) — System Configuration page (FDS-012 §5.5).</summary>
+    public static class Configuration
+    {
+        public const string View = "Configuration.View";
+        public const string Create = "Configuration.Create";
+        public const string Edit = "Configuration.Edit";
+        public const string Delete = "Configuration.Delete";
+    }
+
     public static class OperationLog
     {
         public const string View = "OperationLog.View";
@@ -636,6 +645,12 @@ public static class PermissionCatalog
 
         new(Operations.View, "Operations", "View", "View operations toggles", AdminOnly),
         new(Operations.Edit, "Operations", "Edit", "Change operations toggles", AdminOnly),
+
+        // P2.4 — D-229: System Configuration settings.
+        new(Configuration.View, "Configuration", "View", "View system configuration", AdminOnly),
+        new(Configuration.Create, "Configuration", "Create", "Create system settings", AdminOnly),
+        new(Configuration.Edit, "Configuration", "Edit", "Edit system settings", AdminOnly),
+        new(Configuration.Delete, "Configuration", "Delete", "Delete system settings", AdminOnly),
 
         new(OperationLog.View, "OperationLog", "View", "View the operation log", AdminOnly),
         new(OperationLog.Export, "OperationLog", "Export", "Export the operation log", AdminOnly),

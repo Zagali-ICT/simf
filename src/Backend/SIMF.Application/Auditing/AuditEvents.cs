@@ -158,6 +158,11 @@ public static class AuditEvents
     public const string SpeakerPresentationUploaded = "SpeakerPresentation.Uploaded";
     public const string SpeakerPresentationDeleted = "SpeakerPresentation.Deleted";
 
+    // System configuration settings (P2.4 / D-229 — FDS-012 §5.5)
+    public const string SystemSettingCreated = "SystemSetting.Created";
+    public const string SystemSettingUpdated = "SystemSetting.Updated";
+    public const string SystemSettingDeactivated = "SystemSetting.Deactivated";
+
     // Booths (D-199 — Exhibition module, Mockup page 22 + 2D venue map).
     public const string BoothCreated = "Booth.Created";
     public const string BoothUpdated = "Booth.Updated";

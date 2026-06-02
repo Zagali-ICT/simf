@@ -1,0 +1,291 @@
+@* P2.4 (D-229) — System Configuration page (SIMF-FDS-012 §5.5). Admin CRUD
+   over the platform system-settings store (the settings that are not content
+   and not categories). Ships empty; the team seeds the keys once the client
+   confirms the list (FDS-012 OI-2). Mirrors SessionCategoriesList. Registration
+   open/close lives on its own Operations page. *@
+@page "/admin/configuration"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Configuration.View)]
+@using SIMF.Contracts.Admin
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Configuration.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Configuration.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form__actions">
+            <AuthorizedAction Permission="@PermissionCatalog.Configuration.Create">
+                <SimfButton Type="button" OnClick="OnAdd">@L["Admin.Configuration.New"]</SimfButton>
+            </AuthorizedAction>
+        </div>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.Configuration.Loading"]</p>
+        }
+        else if (_page.Items.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.Configuration.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.Configuration.Col.Key"]</th>
+                        <th>@L["Admin.Configuration.Col.Value"]</th>
+                        <th>@L["Admin.Configuration.Col.Description"]</th>
+                        <th>@L["Admin.Configuration.Col.Active"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _page.Items)
+                    {
+                        <tr>
+                            <td>@row.Key</td>
+                            <td>@row.Value</td>
+                            <td>@row.Description</td>
+                            <td>@(row.IsActive ? "✓" : "—")</td>
+                            <td>
+                                <AuthorizedAction Permission="@PermissionCatalog.Configuration.Edit">
+                                    <SimfButton Type="button" Disabled="_busy"
+                                                OnClick="@(() => OnEdit(row))">
+                                        @L["Admin.Configuration.Edit"]
+                                    </SimfButton>
+                                </AuthorizedAction>
+                                <AuthorizedAction Permission="@PermissionCatalog.Configuration.Delete">
+                                    <SimfButton Type="button" Disabled="_busy"
+                                                OnClick="@(() => OnDeleteAsync(row))">
+                                        @L["Admin.Configuration.Delete"]
+                                    </SimfButton>
+                                </AuthorizedAction>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="simf-table__summary">
+                @(string.Format(L["Admin.Configuration.Summary"],
+                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
+            </p>
+        }
+    </div>
+</div>
+
+@if (_editOpen)
+{
+    <SimfModal Open="true"
+               Title="@(_isEdit ? L["Admin.Configuration.Edit.Title"] : L["Admin.Configuration.Add.Title"])"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.Configuration.Field.Key"]"
+                               Value="@_form.Key"
+                               ValueChanged="@(v => _form.Key = v)"
+                               ValueExpression="@(() => _form.Key)"
+                               MaxLength="128"
+                               Disabled="@(_busy || _isEdit)" />
+                <SimfTextField Label="@L["Admin.Configuration.Field.Value"]"
+                               Value="@_form.Value"
+                               ValueChanged="@(v => _form.Value = v)"
+                               ValueExpression="@(() => _form.Value)"
+                               MaxLength="2048"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Configuration.Field.Description"]"
+                               Value="@_form.Description"
+                               ValueChanged="@(v => _form.Description = v)"
+                               ValueExpression="@(() => _form.Description)"
+                               MaxLength="512"
+                               Disabled="_busy" />
+                @if (_isEdit)
+                {
+                    <SimfCheckbox Value="_form.IsActive"
+                                  ValueChanged="@(v => _form.IsActive = v)"
+                                  Disabled="_busy">
+                        @L["Admin.Configuration.Field.IsActive"]
+                    </SimfCheckbox>
+                }
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Disabled="_busy" OnClick="@(() => _editOpen = false)">
+                @L["Admin.Configuration.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+                @L["Admin.Configuration.Save"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private sealed class FormModel
+    {
+        public string Key { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+
+    private GridQuery _query = new() { Top = 200 };
+    private GridPage<AdminSystemSettingSummary> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private bool _editOpen;
+    private bool _isEdit;
+    private Guid _editingId;
+    private FormModel _form = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminSystemSettingSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/system-settings/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Configuration.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnAdd()
+    {
+        _editOpen = true;
+        _isEdit = false;
+        _editingId = Guid.Empty;
+        _form = new FormModel();
+        _toast = null;
+    }
+
+    private async Task OnEdit(AdminSystemSettingSummary row)
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminSystemSettingDetail>>(
+                "simfAccount.getJson", $"/account/api/admin/system-settings/{row.Id}");
+            if (env is { Success: true, Data: not null })
+            {
+                var d = env.Data;
+                _editingId = d.Id;
+                _form = new FormModel
+                {
+                    Key = d.Key,
+                    Value = d.Value,
+                    Description = d.Description ?? string.Empty,
+                    IsActive = d.IsActive,
+                };
+                _isEdit = true;
+                _editOpen = true;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Configuration.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+        if (string.IsNullOrWhiteSpace(_form.Key))
+        {
+            _toast = new Toast("error", L["Admin.Configuration.Required"]);
+            return;
+        }
+        _busy = true;
+        _toast = null;
+        try
+        {
+            ApiResult<AdminSystemSettingDetail>? env;
+            if (_isEdit)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminSystemSettingDetail>>(
+                    "simfAccount.putJson",
+                    $"/account/api/admin/system-settings/{_editingId}",
+                    new AdminUpdateSystemSettingRequest
+                    {
+                        Value = _form.Value,
+                        Description = string.IsNullOrWhiteSpace(_form.Description) ? null : _form.Description,
+                        IsActive = _form.IsActive,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminSystemSettingDetail>>(
+                    "simfAccount.postJson",
+                    "/account/api/admin/system-settings",
+                    new AdminCreateSystemSettingRequest
+                    {
+                        Key = _form.Key,
+                        Value = _form.Value,
+                        Description = string.IsNullOrWhiteSpace(_form.Description) ? null : _form.Description,
+                    });
+            }
+            if (env is { Success: true })
+            {
+                _editOpen = false;
+                _toast = new Toast("success", L["Admin.Configuration.Saved"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Configuration.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteAsync(AdminSystemSettingSummary row)
+    {
+        if (_busy) return;
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", L["Admin.Configuration.Delete.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/system-settings/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.Configuration.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Configuration.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+}

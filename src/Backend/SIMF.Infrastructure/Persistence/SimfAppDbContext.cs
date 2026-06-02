@@ -57,6 +57,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     // B9b — D-226: dynamic session-category lookup (FDS-004 §5.4).
     public DbSet<SessionCategory> SessionCategories => Set<SessionCategory>();
 
+    /// <summary>P2.4 — D-229 (FDS-012 §5.5): platform system settings.</summary>
+    public DbSet<SIMF.Domain.Configuration.SystemSetting> SystemSettings =>
+        Set<SIMF.Domain.Configuration.SystemSetting>();
+
     /// <summary>D-166 (gap doc G4, PDF §2.3) — registration open/close gate.</summary>
     public DbSet<RegistrationGate> RegistrationGate => Set<RegistrationGate>();
 

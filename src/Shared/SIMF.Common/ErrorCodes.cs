@@ -140,6 +140,11 @@ public static class ErrorCodes
     public const string SpeakerPresentationInvalid = "SPEAKER_PRESENTATION_INVALID";
     public const string SpeakerPresentationNotFound = "SPEAKER_PRESENTATION_NOT_FOUND";
 
+    // System configuration settings (P2.4 / D-229 — FDS-012 §5.5).
+    public const string SystemSettingInvalid = "SYSTEM_SETTING_INVALID";
+    public const string SystemSettingNotFound = "SYSTEM_SETTING_NOT_FOUND";
+    public const string SystemSettingKeyDuplicate = "SYSTEM_SETTING_KEY_DUPLICATE";
+
     // Sponsors (D-199 — event sponsors, Mockup page 23).
     public const string SponsorInvalid = "SPONSOR_INVALID";
     public const string SponsorNotFound = "SPONSOR_NOT_FOUND";

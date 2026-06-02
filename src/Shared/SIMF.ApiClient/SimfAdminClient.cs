@@ -2123,6 +2123,46 @@ public sealed class SimfAdminClient(HttpClient http)
         }
     }
 
+    // -- P2.4 (D-229) — System Configuration settings (SIMF.Contracts.Admin) -
+
+    public Task<ApiCallResult<GridPage<AdminSystemSettingSummary>>> ListSystemSettingsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminSystemSettingSummary>>(
+            HttpMethod.Post, "system-settings/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSystemSettingDetail>> GetSystemSettingAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSystemSettingDetail>(
+            HttpMethod.Get, $"system-settings/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSystemSettingDetail>> CreateSystemSettingAsync(
+        AdminCreateSystemSettingRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSystemSettingDetail>(
+            HttpMethod.Post, "system-settings",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSystemSettingDetail>> UpdateSystemSettingAsync(
+        Guid id, AdminUpdateSystemSettingRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSystemSettingDetail>(
+            HttpMethod.Put, $"system-settings/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeleteSystemSettingAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"system-settings/{id}", content: null,
+            accessToken, cancellationToken);
+
     // -- D-199 — Archive edition admin CRUD (SIMF.Contracts.Archive) --------
 
     public Task<ApiCallResult<GridPage<AdminArchiveEditionSummary>>> ListArchiveEditionsAsync(

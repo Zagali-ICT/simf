@@ -2050,6 +2050,43 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateSessionCategoryAsync(id, token));
         });
 
+        // P2.4 (D-229) — System Configuration settings passthroughs.
+        group.MapPost("/admin/system-settings/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListSystemSettingsAsync(body, token));
+        });
+        group.MapGet("/admin/system-settings/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetSystemSettingAsync(id, token));
+        });
+        group.MapPost("/admin/system-settings",
+            async (AdminCreateSystemSettingRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateSystemSettingAsync(body, token));
+        });
+        group.MapPut("/admin/system-settings/{id:guid}",
+            async (Guid id, AdminUpdateSystemSettingRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateSystemSettingAsync(id, body, token));
+        });
+        group.MapDelete("/admin/system-settings/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteSystemSettingAsync(id, token));
+        });
+
         // P2.2 (D-227) — booking approval queue passthroughs.
         group.MapPost("/admin/bookings/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

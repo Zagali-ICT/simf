@@ -194,6 +194,9 @@ public static class DependencyInjection
         // P2.3 — D-228 (FR-407): speaker presentation-file management + storage.
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSpeakerPresentationService,
             SIMF.Infrastructure.Programme.AdminSpeakerPresentationService>();
+        // P2.4 — D-229 (FDS-012 §5.5): System Configuration settings store.
+        services.AddScoped<SIMF.Application.Configuration.Abstractions.IAdminSystemSettingService,
+            SIMF.Infrastructure.Configuration.AdminSystemSettingService>();
         services.Configure<SIMF.Infrastructure.Programme.SpeakerPresentationStorageOptions>(
             configuration.GetSection(SIMF.Infrastructure.Programme.SpeakerPresentationStorageOptions.SectionName));
         services.AddSingleton<SIMF.Application.Programme.Abstractions.ISpeakerPresentationStorage,
