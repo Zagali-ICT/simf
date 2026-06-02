@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/SessionQuestionsTests.cs
+// Tests: SIMF.Api.Tests/QuestionArrivalGatingTests.cs (P5.1c — D-242 FR-704)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -13,10 +14,11 @@ namespace SIMF.Infrastructure.SessionQuestions;
 
 /// <summary>
 /// D-169 (gap doc G6, PDF §2.7.2 + §2.10) — public submission service.
-/// The geofence guard (§G7) is **deferred** — a placeholder check
-/// goes here once G-OI-2 resolves. Until then submission requires
-/// only that the session is active and currently within (or near)
-/// its time window.
+/// Submission requires the session to be active and within (or near) its time
+/// window, and the attendee to be at the hall. P5.1 — D-242 (FR-704) resolved
+/// the §G7 / G-OI-2 venue gate: when the session's hall has a geofence (D-240)
+/// the attendee must have a <c>HallAttendance</c> arrival record (D-241); when
+/// it has none, the gate falls back to the D-171 self-assert toggle.
 /// </summary>
 internal sealed class SessionQuestionService(
     SimfAppDbContext appDbContext,
@@ -49,31 +51,17 @@ internal sealed class SessionQuestionService(
                 "يجب أن يتراوح طول نص السؤال بين 1 و 1000 حرف.");
         }
 
-        // D-171 (gap doc G7, PDF §2.10) — venue self-assert toggle. Owner-
-        // default resolution of G-OI-2: the lightest input source that
-        // does not require GPS permissions or a maintained venue-WiFi list.
-        // Hardening to lat/lon polygon or SSID can be added later as a
-        // strictly more restrictive layer on top of this gate.
-        if (!request.IsAtVenue)
-        {
-            await auditLog.WriteAsync(new AuditEntry
-            {
-                EventType = AuditEvents.SessionQuestionRejectedNotAtVenue,
-                Outcome = AuditOutcome.Failure,
-                ActorUserId = submittedByUserId,
-                ErrorCode = ErrorCodes.NotAtVenue,
-                Detail = $"sessionId={sessionId}",
-            }, cancellationToken);
-            throw new ApiException(
-                ErrorCodes.NotAtVenue, 403,
-                "You must be at the venue to ask a question.",
-                "يجب أن تكون في مكان الفعالية لطرح سؤال.");
-        }
-
         var session = await appDbContext.Sessions
             .AsNoTracking()
             .Where(s => s.Id == sessionId)
-            .Select(s => new { s.Id, s.IsActive, s.StartUtc, s.EndUtc, s.Code })
+            .Select(s => new
+            {
+                s.Id, s.IsActive, s.StartUtc, s.EndUtc, s.Code,
+                // P5.1 — D-242 (FR-704): does this session's hall have a geofence
+                // (D-240)? If so, hall arrival is the authoritative gate; if not,
+                // we fall back to the D-171 self-assert toggle.
+                HasGeofence = s.Hall!.GeofenceRadiusMeters != null,
+            })
             .SingleOrDefaultAsync(cancellationToken)
             ?? throw new ApiException(
                 ErrorCodes.SessionNotFound, 404,
@@ -96,6 +84,35 @@ internal sealed class SessionQuestionService(
                 ErrorCodes.SessionNotLiveForQuestions, 400,
                 "The session is not currently accepting questions.",
                 "الجلسة لا تستقبل الأسئلة في الوقت الحالي.");
+        }
+
+        // P5.1 — D-242 (FR-704): questions are gated by hall arrival. When the
+        // hall has a geofence (D-240) the authoritative gate is a HallAttendance
+        // arrival record (D-241); when it has none (QR-only / coordinates not yet
+        // seeded), fall back to the D-171 self-assert toggle so nothing breaks
+        // pre-seed. The session-end close is the time-window check above (FR-704).
+        var atVenue = session.HasGeofence
+            ? await appDbContext.HallAttendances.AnyAsync(
+                a => a.SessionId == sessionId && a.UserId == submittedByUserId, cancellationToken)
+            : request.IsAtVenue;
+        if (!atVenue)
+        {
+            await auditLog.WriteAsync(new AuditEntry
+            {
+                EventType = AuditEvents.SessionQuestionRejectedNotAtVenue,
+                Outcome = AuditOutcome.Failure,
+                ActorUserId = submittedByUserId,
+                ErrorCode = ErrorCodes.NotAtVenue,
+                Detail = $"sessionId={sessionId}; gate={(session.HasGeofence ? "geofence" : "self-assert")}",
+            }, cancellationToken);
+            throw new ApiException(
+                ErrorCodes.NotAtVenue, 403,
+                session.HasGeofence
+                    ? "You must have arrived at the hall to ask a question."
+                    : "You must be at the venue to ask a question.",
+                session.HasGeofence
+                    ? "يجب أن تكون قد وصلت إلى القاعة لطرح سؤال."
+                    : "يجب أن تكون في مكان الفعالية لطرح سؤال.");
         }
 
         // New arrivals all carry Order=0; the moderator queue sort is

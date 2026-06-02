@@ -9,15 +9,17 @@ using SIMF.Contracts.Sessions;
 namespace SIMF.Api.Endpoints.Sessions;
 
 /// <summary>D-169 (gap doc G6, PDF §2.7.2 + §2.10) — public submission
-/// endpoint. The §G7 geofence guard is deferred — once G-OI-2 resolves,
-/// the geofence check moves into the service layer.</summary>
+/// endpoint. P5.1 — D-242 (FR-704): the venue gate is enforced in the service —
+/// a HallAttendance arrival when the hall has a geofence (D-240/D-241), else the
+/// <see cref="SubmitSessionQuestionRoute.IsAtVenue"/> self-assert fallback.</summary>
 public sealed class SubmitSessionQuestionRoute
 {
     public Guid SessionId { get; set; }
     public string QuestionText { get; set; } = string.Empty;
 
-    /// <summary>D-171 (gap doc G7) — the venue self-assert flag. Must be
-    /// true for the submission to be accepted.</summary>
+    /// <summary>D-171 (gap doc G7) — the venue self-assert flag. Used as the
+    /// gate only when the session's hall has no geofence configured (D-242);
+    /// otherwise the authoritative gate is the HallAttendance arrival record.</summary>
     public bool IsAtVenue { get; set; }
 
     /// <summary>D-174 (gap doc G11, Mockup page 26) — Speaker or Host.</summary>
