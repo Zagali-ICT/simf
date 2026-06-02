@@ -142,6 +142,17 @@ pending **D6**. See `docs/decisions/DECISIONS_LOG.md` D-211. No other
 freeze items are lifted; future schema/enum changes beyond this named
 list still require explicit owner approval.
 
+**As-built (P2 wave, 2026-06-02):** four of the D-211 named items shipped as
+additive migrations — D-227 Booking approval workflow (`SeatReservation`
++Status/+review columns, `App/D227`), D-228 Speaker presentation-files
+(`SpeakerPresentations` table + `ISpeakerPresentationStorage`, `App/D228`),
+D-229 System Configuration (`SystemSettings` key/value table, `App/D229`),
+D-230 Venue-Map 2D nodes (`VenueMapNodes` table + `VenueMapNodeKind` enum,
+`App/D230`). New `NotificationKind.BookingRejected=42` (additive value,
+persisted by name). Identity schema + existing enum names/values untouched;
+shipped mobile wire contracts preserved (append-only). FAQ shipped earlier
+(D-218); Networking shipped earlier (D-224). See DECISIONS_LOG D-227..D-230.
+
 ### D-217 session-reminder freeze-lift (2026-06-01)
 
 Owner pre-authorised the automated session-reminder scheduler, which
