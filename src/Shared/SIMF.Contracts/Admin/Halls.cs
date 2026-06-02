@@ -12,7 +12,9 @@ public sealed record AdminHallSummary(
     bool IsActive,
     DateTimeOffset CreatedAt);
 
-/// <summary>Full hall detail (Details + Edit modals).</summary>
+/// <summary>Full hall detail (Details + Edit modals). P5.1 — D-240: the optional
+/// GPS geofence (centre lat/lon + radius in metres) is appended (all null when
+/// not configured); the wire contract is append-only (D-219).</summary>
 public sealed record AdminHallDetail(
     Guid Id,
     string Code,
@@ -23,7 +25,10 @@ public sealed record AdminHallDetail(
     string? EquipmentNotes,
     bool IsActive,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTimeOffset? UpdatedAt,
+    double? GeofenceCenterLat = null,
+    double? GeofenceCenterLon = null,
+    double? GeofenceRadiusMeters = null);
 
 public sealed class AdminCreateHallRequest
 {
@@ -33,6 +38,10 @@ public sealed class AdminCreateHallRequest
     public int Capacity { get; set; }
     public string? Floor { get; set; }
     public string? EquipmentNotes { get; set; }
+    // P5.1 — D-240: optional GPS geofence (all three set together, or all null).
+    public double? GeofenceCenterLat { get; set; }
+    public double? GeofenceCenterLon { get; set; }
+    public double? GeofenceRadiusMeters { get; set; }
 }
 
 public sealed class AdminUpdateHallRequest
@@ -44,4 +53,8 @@ public sealed class AdminUpdateHallRequest
     public string? Floor { get; set; }
     public string? EquipmentNotes { get; set; }
     public bool IsActive { get; set; } = true;
+    // P5.1 — D-240: optional GPS geofence (all three set together, or all null).
+    public double? GeofenceCenterLat { get; set; }
+    public double? GeofenceCenterLon { get; set; }
+    public double? GeofenceRadiusMeters { get; set; }
 }

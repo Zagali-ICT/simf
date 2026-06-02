@@ -1,4 +1,5 @@
 @* D-134 Sprint B — reusable Hall Add/Edit form. Mirrors ThemeForm. *@
+@using System.Globalization
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 
@@ -37,6 +38,24 @@
                       Rows="3" MaxLength="1024"
                       Value="@_model.EquipmentNotes"
                       ValueChanged="@(v => _model.EquipmentNotes = v)" />
+        <SimfTextField Label="@L["Admin.Halls.Field.GeofenceLat"]"
+                       Helper="@L["Admin.Halls.Field.GeofenceHint"]"
+                       Value="@_geoLatInput"
+                       ValueChanged="@(v => _geoLatInput = v)"
+                       ValueExpression="@(() => _geoLatInput)"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Halls.Field.GeofenceLon"]"
+                       Value="@_geoLonInput"
+                       ValueChanged="@(v => _geoLonInput = v)"
+                       ValueExpression="@(() => _geoLonInput)"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Halls.Field.GeofenceRadius"]"
+                       Helper="@L["Admin.Halls.Field.GeofenceRadiusHint"]"
+                       Type="number"
+                       Value="@_geoRadiusInput"
+                       ValueChanged="@(v => _geoRadiusInput = v)"
+                       ValueExpression="@(() => _geoRadiusInput)"
+                       Disabled="_busy" />
         @if (Initial is not null)
         {
             <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
@@ -62,6 +81,9 @@
 @code {
     private readonly Model _model = new();
     private string _capacityInput = "0";
+    private string _geoLatInput = string.Empty;
+    private string _geoLonInput = string.Empty;
+    private string _geoRadiusInput = string.Empty;
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
@@ -81,6 +103,9 @@
             _model.EquipmentNotes = Initial.EquipmentNotes ?? string.Empty;
             _model.IsActive = Initial.IsActive;
             _capacityInput = Initial.Capacity.ToString();
+            _geoLatInput = Initial.GeofenceCenterLat?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            _geoLonInput = Initial.GeofenceCenterLon?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            _geoRadiusInput = Initial.GeofenceRadiusMeters?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
         }
         _editContext = new EditContext(_model);
     }
@@ -98,6 +123,8 @@
         { _error = L["Admin.Halls.Field.NameArabicInvalid"]; return; }
         if (!int.TryParse(_capacityInput, out var capacity) || capacity < 0)
         { _error = L["Admin.Halls.Field.CapacityInvalid"]; return; }
+        if (!TryParseGeofence(out var geoLat, out var geoLon, out var geoRadius))
+        { _error = L["Admin.Halls.Field.GeofenceInvalid"]; return; }
 
         _busy = true;
         try
@@ -115,6 +142,9 @@
                         Capacity = capacity,
                         Floor = string.IsNullOrWhiteSpace(_model.Floor) ? null : _model.Floor.Trim(),
                         EquipmentNotes = string.IsNullOrWhiteSpace(_model.EquipmentNotes) ? null : _model.EquipmentNotes.Trim(),
+                        GeofenceCenterLat = geoLat,
+                        GeofenceCenterLon = geoLon,
+                        GeofenceRadiusMeters = geoRadius,
                     });
             }
             else
@@ -130,6 +160,9 @@
                         Floor = string.IsNullOrWhiteSpace(_model.Floor) ? null : _model.Floor.Trim(),
                         EquipmentNotes = string.IsNullOrWhiteSpace(_model.EquipmentNotes) ? null : _model.EquipmentNotes.Trim(),
                         IsActive = _model.IsActive,
+                        GeofenceCenterLat = geoLat,
+                        GeofenceCenterLon = geoLon,
+                        GeofenceRadiusMeters = geoRadius,
                     });
             }
 
@@ -148,6 +181,37 @@
             _error = L["Admin.Halls.Fallback"];
         }
         finally { _busy = false; }
+    }
+
+    // P5.1 — D-240: parse the geofence inputs. All three together (a valid
+    // coordinate + positive radius ≤ 100 km), or all three empty (no geofence).
+    private bool TryParseGeofence(out double? lat, out double? lon, out double? radius)
+    {
+        lat = lon = radius = null;
+        var latRaw = (_geoLatInput ?? string.Empty).Trim();
+        var lonRaw = (_geoLonInput ?? string.Empty).Trim();
+        var radiusRaw = (_geoRadiusInput ?? string.Empty).Trim();
+
+        if (latRaw.Length == 0 && lonRaw.Length == 0 && radiusRaw.Length == 0)
+        {
+            return true; // no geofence configured
+        }
+        if (latRaw.Length == 0 || lonRaw.Length == 0 || radiusRaw.Length == 0)
+        {
+            return false; // partial
+        }
+        if (!double.TryParse(latRaw, NumberStyles.Float, CultureInfo.InvariantCulture, out var latV)
+            || !double.TryParse(lonRaw, NumberStyles.Float, CultureInfo.InvariantCulture, out var lonV)
+            || !double.TryParse(radiusRaw, NumberStyles.Float, CultureInfo.InvariantCulture, out var radiusV))
+        {
+            return false;
+        }
+        if (latV is < -90 or > 90 || lonV is < -180 or > 180 || radiusV is <= 0 or > 100_000)
+        {
+            return false;
+        }
+        lat = latV; lon = lonV; radius = radiusV;
+        return true;
     }
 
     private sealed class Model

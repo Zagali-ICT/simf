@@ -640,6 +640,12 @@
   <data name="Admin.Halls.Field.FloorHint" xml:space="preserve"><value>اختياري. حتى 32 حرفاً (مثل "الأرضي" أو "الطابق 2").</value></data>
   <data name="Admin.Halls.Field.EquipmentNotes" xml:space="preserve"><value>ملاحظات المعدات وإمكانية الوصول</value></data>
   <data name="Admin.Halls.Field.EquipmentNotesHint" xml:space="preserve"><value>اختياري. حتى 1024 حرفاً.</value></data>
+  <data name="Admin.Halls.Field.GeofenceLat" xml:space="preserve"><value>خط عرض مركز السياج الجغرافي</value></data>
+  <data name="Admin.Halls.Field.GeofenceLon" xml:space="preserve"><value>خط طول مركز السياج الجغرافي</value></data>
+  <data name="Admin.Halls.Field.GeofenceRadius" xml:space="preserve"><value>نصف قطر السياج (بالأمتار)</value></data>
+  <data name="Admin.Halls.Field.GeofenceHint" xml:space="preserve"><value>اختياري. اضبط خط العرض والطول ونصف القطر معاً لتفعيل الوصول عبر GPS، أو اترك الثلاثة فارغة للاكتفاء بمسح QR.</value></data>
+  <data name="Admin.Halls.Field.GeofenceRadiusHint" xml:space="preserve"><value>أكبر من 0، وحتى 100000 متر.</value></data>
+  <data name="Admin.Halls.Field.GeofenceInvalid" xml:space="preserve"><value>يحتاج السياج إلى خط عرض صحيح (−90..90) وخط طول (−180..180) ونصف قطر (أكبر من 0 وحتى 100000 م) — اضبط الثلاثة معاً أو اتركها فارغة.</value></data>
   <data name="Admin.Halls.Field.IsActive" xml:space="preserve"><value>نشط — متاح لتعيين الجلسات</value></data>
   <data name="Admin.Halls.Add.Title" xml:space="preserve"><value>إضافة قاعة</value></data>
   <data name="Admin.Halls.Edit.Title" xml:space="preserve"><value>تعديل القاعة</value></data>

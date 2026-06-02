@@ -643,6 +643,12 @@
   <data name="Admin.Halls.Field.FloorHint" xml:space="preserve"><value>Optional. Up to 32 characters (e.g. "Ground", "Level 2").</value></data>
   <data name="Admin.Halls.Field.EquipmentNotes" xml:space="preserve"><value>Equipment + accessibility notes</value></data>
   <data name="Admin.Halls.Field.EquipmentNotesHint" xml:space="preserve"><value>Optional. Up to 1024 characters.</value></data>
+  <data name="Admin.Halls.Field.GeofenceLat" xml:space="preserve"><value>Geofence centre latitude</value></data>
+  <data name="Admin.Halls.Field.GeofenceLon" xml:space="preserve"><value>Geofence centre longitude</value></data>
+  <data name="Admin.Halls.Field.GeofenceRadius" xml:space="preserve"><value>Geofence radius (metres)</value></data>
+  <data name="Admin.Halls.Field.GeofenceHint" xml:space="preserve"><value>Optional. Set latitude, longitude and radius together to enable GPS arrival, or leave all three empty for QR-scan-only.</value></data>
+  <data name="Admin.Halls.Field.GeofenceRadiusHint" xml:space="preserve"><value>Greater than 0, up to 100000 metres.</value></data>
+  <data name="Admin.Halls.Field.GeofenceInvalid" xml:space="preserve"><value>The geofence needs a valid latitude (−90..90), longitude (−180..180) and radius (greater than 0, up to 100000 m) — set all three or leave all empty.</value></data>
   <data name="Admin.Halls.Field.IsActive" xml:space="preserve"><value>Active — available for Session assignment</value></data>
   <data name="Admin.Halls.Add.Title" xml:space="preserve"><value>Add hall</value></data>
   <data name="Admin.Halls.Edit.Title" xml:space="preserve"><value>Edit hall</value></data>

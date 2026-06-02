@@ -79,6 +79,8 @@ internal sealed class AdminHallService(
         var (code, name, nameArabic, floor, equipmentNotes) = Validate(request.Code,
             request.Name, request.NameArabic, request.Floor, request.EquipmentNotes,
             request.Capacity);
+        var (geoLat, geoLon, geoRadius) = ValidateGeofence(
+            request.GeofenceCenterLat, request.GeofenceCenterLon, request.GeofenceRadiusMeters);
 
         var clash = await dbContext.Halls.AsNoTracking()
             .AnyAsync(hall => hall.Code == code, cancellationToken);
@@ -96,6 +98,7 @@ internal sealed class AdminHallService(
             Code = code, Name = name, NameArabic = nameArabic,
             Capacity = request.Capacity,
             Floor = floor, EquipmentNotes = equipmentNotes,
+            GeofenceCenterLat = geoLat, GeofenceCenterLon = geoLon, GeofenceRadiusMeters = geoRadius,
             IsActive = true,
             CreatedAt = now,
         };
@@ -129,6 +132,8 @@ internal sealed class AdminHallService(
         var (code, name, nameArabic, floor, equipmentNotes) = Validate(request.Code,
             request.Name, request.NameArabic, request.Floor, request.EquipmentNotes,
             request.Capacity);
+        var (geoLat, geoLon, geoRadius) = ValidateGeofence(
+            request.GeofenceCenterLat, request.GeofenceCenterLon, request.GeofenceRadiusMeters);
 
         if (!string.Equals(hall.Code, code, StringComparison.OrdinalIgnoreCase))
         {
@@ -145,6 +150,8 @@ internal sealed class AdminHallService(
         hall.Code = code; hall.Name = name; hall.NameArabic = nameArabic;
         hall.Capacity = request.Capacity;
         hall.Floor = floor; hall.EquipmentNotes = equipmentNotes;
+        hall.GeofenceCenterLat = geoLat; hall.GeofenceCenterLon = geoLon;
+        hall.GeofenceRadiusMeters = geoRadius;
         hall.IsActive = request.IsActive;
         hall.UpdatedAt = timeProvider.GetUtcNow();
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -236,5 +243,38 @@ internal sealed class AdminHallService(
     private static AdminHallDetail ToDetail(Hall hall) =>
         new(hall.Id, hall.Code, hall.Name, hall.NameArabic,
             hall.Capacity, hall.Floor, hall.EquipmentNotes,
-            hall.IsActive, hall.CreatedAt, hall.UpdatedAt);
+            hall.IsActive, hall.CreatedAt, hall.UpdatedAt,
+            hall.GeofenceCenterLat, hall.GeofenceCenterLon, hall.GeofenceRadiusMeters);
+
+    /// <summary>P5.1 — D-240 (FDS-003 §5.4): validate the optional hall geofence.
+    /// All three values are set together or all null (a partial geofence is
+    /// meaningless). When set: latitude −90..90, longitude −180..180, radius in
+    /// metres &gt; 0 and ≤ 100 km (a venue-scale sanity cap).</summary>
+    private static (double? Lat, double? Lon, double? Radius) ValidateGeofence(
+        double? lat, double? lon, double? radius)
+    {
+        if (lat is null && lon is null && radius is null)
+        {
+            return (null, null, null);
+        }
+        if (lat is null || lon is null || radius is null)
+        {
+            throw new ApiException(ErrorCodes.HallGeofenceInvalid, 400,
+                "The geofence needs a centre latitude, a centre longitude, and a radius — set all three or leave all empty.",
+                "يحتاج السياج الجغرافي إلى خط عرض وخط طول للمركز ونصف قطر — اضبط الثلاثة معاً أو اتركها فارغة.");
+        }
+        if (lat is < -90 or > 90 || lon is < -180 or > 180)
+        {
+            throw new ApiException(ErrorCodes.HallGeofenceInvalid, 400,
+                "The geofence centre must be a valid coordinate (latitude −90..90, longitude −180..180).",
+                "يجب أن يكون مركز السياج إحداثية صحيحة (خط العرض −90..90، خط الطول −180..180).");
+        }
+        if (radius is <= 0 or > 100_000)
+        {
+            throw new ApiException(ErrorCodes.HallGeofenceInvalid, 400,
+                "The geofence radius must be greater than 0 and at most 100000 metres.",
+                "يجب أن يكون نصف قطر السياج أكبر من 0 ولا يتجاوز 100000 متر.");
+        }
+        return (lat, lon, radius);
+    }
 }

@@ -275,6 +275,8 @@ public static class ErrorCodes
     public const string SessionCodeDuplicate = "SESSION_CODE_DUPLICATE";
     public const string SessionInvalidTimeWindow = "SESSION_INVALID_TIME_WINDOW";
     public const string SessionHallNotFound = "SESSION_HALL_NOT_FOUND";
+    // P5.1 — D-240: hall geofence invalid (partial set, or out-of-range lat/lon/radius).
+    public const string HallGeofenceInvalid = "HALL_GEOFENCE_INVALID";
     public const string SessionSpeakerNotFound = "SESSION_SPEAKER_NOT_FOUND";
     public const string SessionThemeNotFound = "SESSION_THEME_NOT_FOUND";
     // P3.2 — D-231: illegal broadcast-lifecycle transition (e.g. skipping a step).

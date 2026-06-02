@@ -34,6 +34,22 @@ public class Hall
     /// <summary>Soft-delete flag.</summary>
     public bool IsActive { get; set; } = true;
 
+    /// <summary>P5.1 — D-240 (FDS-003 §5.4 + OI-2): the hall's optional GPS
+    /// geofence centre latitude (WGS-84 degrees, −90..90). All three geofence
+    /// columns are null together when no geofence is configured — the hall then
+    /// records arrivals by QR door scan only. Set together by the admin in the
+    /// CP; the event team seeds the real coordinates (G-OI-2, "ship empty").</summary>
+    public double? GeofenceCenterLat { get; set; }
+
+    /// <summary>P5.1 — D-240: the geofence centre longitude (−180..180), paired
+    /// with <see cref="GeofenceCenterLat"/>.</summary>
+    public double? GeofenceCenterLon { get; set; }
+
+    /// <summary>P5.1 — D-240: the geofence radius in metres (&gt; 0). An attendee
+    /// whose reported GPS point is within this radius of the centre is treated as
+    /// arrived at the hall (<c>Method = Geofence</c>).</summary>
+    public double? GeofenceRadiusMeters { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? UpdatedAt { get; set; }
 }
