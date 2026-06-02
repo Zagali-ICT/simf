@@ -104,6 +104,20 @@ public sealed record PublicSessionSeatSummary(
     int Reserved,
     int Available);
 
+/// <summary>P3.4 — D-235 (Completion Programme §5.4): one question in a
+/// published session's recorded Q&amp;A archive — the Committee-approved
+/// questions, attributed to the asker. <see cref="IsPushed"/> marks the ones
+/// that were pushed to the speaker live (answered on stage). Served by
+/// <c>GET /api/v1/programme/sessions/{id}/recorded-questions</c> for an
+/// approved (signed-in) account.</summary>
+public sealed record PublicRecordedQuestion(
+    Guid Id,
+    string QuestionText,
+    string AskedByDisplayName,
+    SessionQuestionRecipient Recipient,
+    bool IsPushed,
+    DateTimeOffset CreatedAt);
+
 /// <summary>P3.2b — D-232 (D-213): the response from the recording stream-token
 /// endpoint. <see cref="Token"/> is a short-lived JWT scoped to one recording;
 /// the player appends it to <see cref="StreamUrl"/> on the query string

@@ -1,6 +1,8 @@
 // Tests: SIMF.Api.Tests/ProgrammeSessionsTests.cs
+// Tests: SIMF.Api.Tests/RecordedQuestionsTests.cs (P3.4 — D-235)
 using System.Globalization;
 using FastEndpoints;
+using SIMF.Api.Endpoints.Admin;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
 using SIMF.Contracts.Programme;
@@ -80,4 +82,27 @@ public sealed class GetProgrammeSessionEndpoint(IProgrammeSessionService service
                 "لم يتم العثور على الجلسة.");
         await Send.OkAsync(ApiResult<PublicSessionDetail>.Ok(detail), ct);
     }
+}
+
+/// <summary>P3.4 — D-235 (Completion Programme §5.4): the recorded Q&amp;A archive
+/// for a published session — the Committee-approved questions attributed to the
+/// asker. Requires an approved (signed-in) account: attendee display names are
+/// not exposed to anonymous callers. Returns an empty list when the session is
+/// not active+published.</summary>
+public sealed class ListRecordedQuestionsRequest { public Guid Id { get; set; } }
+
+public sealed class ListRecordedQuestionsEndpoint(IProgrammeSessionService service)
+    : Endpoint<ListRecordedQuestionsRequest, ApiResult<IReadOnlyList<PublicRecordedQuestion>>>
+{
+    public override void Configure()
+    {
+        Get("/programme/sessions/{id:guid}/recorded-questions");
+        Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Programme");
+    }
+
+    public override async Task HandleAsync(
+        ListRecordedQuestionsRequest req, CancellationToken ct) =>
+        await Send.OkAsync(ApiResult<IReadOnlyList<PublicRecordedQuestion>>.Ok(
+            await service.ListRecordedQuestionsAsync(req.Id, ct)), ct);
 }

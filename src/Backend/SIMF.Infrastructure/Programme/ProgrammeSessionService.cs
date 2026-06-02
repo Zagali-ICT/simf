@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/ProgrammeSessionsTests.cs
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 public status read)
 // Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 published-recording gate)
+// Tests: SIMF.Api.Tests/RecordedQuestionsTests.cs (P3.4 — D-235 recorded Q&A archive)
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common.Enums;
@@ -19,7 +20,9 @@ namespace SIMF.Infrastructure.Programme;
 /// (non-released) reservations — no per-seat grid (that is the
 /// seat-map endpoint's job).
 /// </summary>
-internal sealed class ProgrammeSessionService(SimfAppDbContext dbContext)
+internal sealed class ProgrammeSessionService(
+    SimfAppDbContext dbContext,
+    SimfIdentityDbContext identityDbContext)
     : IProgrammeSessionService
 {
     public async Task<PublicSessions> ListAsync(
@@ -212,5 +215,61 @@ internal sealed class ProgrammeSessionService(SimfAppDbContext dbContext)
                 row.RecordingStoredFileName!,
                 row.RecordingContentType ?? "application/octet-stream",
                 row.RecordingFileName ?? "recording");
+    }
+
+    public async Task<IReadOnlyList<PublicRecordedQuestion>> ListRecordedQuestionsAsync(
+        Guid id, CancellationToken cancellationToken = default)
+    {
+        // Gated like the recording: only an active, published session exposes
+        // its recorded Q&A archive.
+        var published = await dbContext.Sessions
+            .AsNoTracking()
+            .AnyAsync(
+                s => s.Id == id && s.IsActive && s.Status == SessionStatus.Published,
+                cancellationToken);
+        if (!published)
+        {
+            return Array.Empty<PublicRecordedQuestion>();
+        }
+
+        var rows = await dbContext.SessionQuestions
+            .AsNoTracking()
+            .Where(q => q.SessionId == id && q.Status == QuestionStatus.Approved)
+            .OrderBy(q => q.Order).ThenBy(q => q.CreatedAt)
+            .Select(q => new
+            {
+                q.Id,
+                q.SubmittedByUserId,
+                q.QuestionText,
+                q.Recipient,
+                q.IsPushed,
+                q.CreatedAt,
+            })
+            .ToListAsync(cancellationToken);
+
+        if (rows.Count == 0)
+        {
+            return Array.Empty<PublicRecordedQuestion>();
+        }
+
+        // Attribute to the asker via the Identity DB (no cross-DB JOIN, D-157).
+        var userIds = rows.Select(r => r.SubmittedByUserId).Distinct().ToList();
+        var users = await identityDbContext.Users
+            .AsNoTracking()
+            .Where(u => userIds.Contains(u.Id))
+            .Select(u => new { u.Id, u.DisplayName })
+            .ToDictionaryAsync(u => u.Id, cancellationToken);
+
+        return rows.Select(r =>
+        {
+            users.TryGetValue(r.SubmittedByUserId, out var user);
+            return new PublicRecordedQuestion(
+                r.Id,
+                r.QuestionText,
+                user?.DisplayName ?? string.Empty,
+                r.Recipient,
+                r.IsPushed,
+                r.CreatedAt);
+        }).ToList();
     }
 }

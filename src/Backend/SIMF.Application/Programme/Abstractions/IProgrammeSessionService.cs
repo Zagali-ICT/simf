@@ -28,6 +28,13 @@ public interface IProgrammeSessionService
     /// session is not reachable through this path.</summary>
     Task<SessionRecordingRef?> GetPublishedRecordingAsync(
         Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>P3.4 — D-235 (Completion Programme §5.4): the recorded Q&amp;A
+    /// archive for a published session — the Committee-approved questions,
+    /// attributed to the asker, in the moderator's display order. Empty when the
+    /// session is not active+published (the archive is gated like the recording).</summary>
+    Task<IReadOnlyList<PublicRecordedQuestion>> ListRecordedQuestionsAsync(
+        Guid id, CancellationToken cancellationToken = default);
 }
 
 /// <summary>P3.2b — D-232: a pointer to a published session's recording on
