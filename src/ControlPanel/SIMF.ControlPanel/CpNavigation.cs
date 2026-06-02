@@ -82,6 +82,11 @@ public static class CpNavigation
             new("Module.SpeakerPresentations", "/admin/speaker-presentations", RequiredPermission: PermissionCatalog.Speakers.View),
             // P2.2 (D-227) — booking approval queue (FDS-005 §5.2).
             new("Module.Bookings", "/admin/bookings", RequiredPermission: PermissionCatalog.Bookings.View),
+            // SIMF-FDS-013 (D-248) — flexible hall config: purpose + meeting tables
+            // + hall allocations (whole / random-by-count / row-column).
+            new("Module.MeetingTables", "/admin/meeting-tables", RequiredPermission: PermissionCatalog.MeetingTables.View),
+            // SIMF-FDS-013 (D-248) — admin-arranged B2B/B2C business meetings.
+            new("Module.BusinessMeetings", "/admin/business-meetings", RequiredPermission: PermissionCatalog.BusinessMeetings.View),
         ]),
         new("Nav.Exhibition",
         [

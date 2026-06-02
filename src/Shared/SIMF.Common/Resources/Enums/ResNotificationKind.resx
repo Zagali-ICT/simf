@@ -23,4 +23,6 @@
   <data name="BookingConfirmed" xml:space="preserve"><value>Seat reservation confirmed</value></data>
   <data name="SessionReminder" xml:space="preserve"><value>Session starting soon</value></data>
   <data name="BookingRejected" xml:space="preserve"><value>Seat booking rejected</value></data>
+  <data name="MeetingScheduled" xml:space="preserve"><value>A meeting was scheduled for you</value></data>
+  <data name="MeetingCancelled" xml:space="preserve"><value>A meeting was cancelled</value></data>
 </root>

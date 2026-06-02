@@ -233,6 +233,23 @@ public static class ErrorCodes
     public const string BookingRejectionReasonRequired = "BOOKING_REJECTION_REASON_REQUIRED";
     public const string BookingSessionStarted = "BOOKING_SESSION_STARTED";
 
+    // Flexible hall config + B2B/B2C business meetings (SIMF-FDS-013 / D-248).
+    public const string HallPurposeInvalid = "HALL_PURPOSE_INVALID";
+    public const string HallNotMeetingPurpose = "HALL_NOT_MEETING_PURPOSE";
+    public const string MeetingTableInvalid = "MEETING_TABLE_INVALID";
+    public const string MeetingTableNotFound = "MEETING_TABLE_NOT_FOUND";
+    public const string MeetingTableCodeDuplicate = "MEETING_TABLE_CODE_DUPLICATE";
+    public const string HallAllocationInvalid = "HALL_ALLOCATION_INVALID";
+    public const string HallAllocationOverlap = "HALL_ALLOCATION_OVERLAP";
+    public const string HallAllocationNotFound = "HALL_ALLOCATION_NOT_FOUND";
+    public const string BusinessMeetingInvalid = "BUSINESS_MEETING_INVALID";
+    public const string BusinessMeetingNotFound = "BUSINESS_MEETING_NOT_FOUND";
+    public const string BusinessMeetingNotConfirmed = "BUSINESS_MEETING_NOT_CONFIRMED";
+    public const string BusinessMeetingTableConflict = "BUSINESS_MEETING_TABLE_CONFLICT";
+    public const string BusinessMeetingParticipantConflict = "BUSINESS_MEETING_PARTICIPANT_CONFLICT";
+    public const string MeetingParticipantInvalid = "MEETING_PARTICIPANT_INVALID";
+    public const string MeetingCapacityExceeded = "MEETING_CAPACITY_EXCEEDED";
+
     // Centralised AI module (D-176, gap doc G12).
     public const string AiPromptInvalid = "AI_PROMPT_INVALID";
     public const string AiPromptNotFound = "AI_PROMPT_NOT_FOUND";

@@ -3,6 +3,7 @@ using SIMF.Domain.AccessControl;
 using SIMF.Domain.Ai;
 using SIMF.Domain.Archive;
 using SIMF.Domain.Auditing;
+using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Cms;
 using SIMF.Domain.Common;
 using SIMF.Domain.Companies;
@@ -182,6 +183,14 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
 
     // B6 (D-224) — visitor-to-visitor networking connections (request/accept).
     public DbSet<Connection> Connections => Set<Connection>();
+
+    // SIMF-FDS-013 — D-248: flexible hall allocation + admin-arranged B2B/B2C
+    // business meetings (meeting tables, hall allocations, meetings + participants).
+    public DbSet<MeetingTable> MeetingTables => Set<MeetingTable>();
+    public DbSet<HallAllocation> HallAllocations => Set<HallAllocation>();
+    public DbSet<BusinessMeeting> BusinessMeetings => Set<BusinessMeeting>();
+    public DbSet<BusinessMeetingParticipant> BusinessMeetingParticipants =>
+        Set<BusinessMeetingParticipant>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -277,6 +277,17 @@ public static class AuditEvents
     public const string BookingRejected = "Booking.Rejected";
     public const string BookingCancelled = "Booking.Cancelled";
 
+    // Flexible hall config + B2B/B2C business meetings (SIMF-FDS-013 / D-248).
+    public const string HallPurposeChanged = "Hall.PurposeChanged";
+    public const string MeetingTableCreated = "MeetingTable.Created";
+    public const string MeetingTableUpdated = "MeetingTable.Updated";
+    public const string MeetingTableDeactivated = "MeetingTable.Deactivated";
+    public const string MeetingTablesGenerated = "MeetingTable.Generated";
+    public const string HallAllocationCreated = "HallAllocation.Created";
+    public const string HallAllocationReleased = "HallAllocation.Released";
+    public const string BusinessMeetingScheduled = "BusinessMeeting.Scheduled";
+    public const string BusinessMeetingCancelled = "BusinessMeeting.Cancelled";
+
     // Centralised AI module (D-176, gap doc G12)
     public const string AiPromptCreated = "AiPrompt.Created";
     public const string AiPromptUpdated = "AiPrompt.Updated";

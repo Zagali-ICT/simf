@@ -227,6 +227,30 @@ public static class PermissionCatalog
         public const string Reject = "Bookings.Reject";
     }
 
+    /// <summary>SIMF-FDS-013 (D-248) — meeting tables inside a Meeting/General hall
+    /// (define / generate random-by-count / by row-column).</summary>
+    public static class MeetingTables
+    {
+        public const string View = "MeetingTables.View";
+        public const string Edit = "MeetingTables.Edit";
+    }
+
+    /// <summary>SIMF-FDS-013 (D-248) — the flexible hall allocation layer
+    /// (reserve whole / random-by-count / row-column over a time-slot).</summary>
+    public static class HallAllocations
+    {
+        public const string View = "HallAllocations.View";
+        public const string Edit = "HallAllocations.Edit";
+    }
+
+    /// <summary>SIMF-FDS-013 (D-248) — admin-arranged B2B/B2C business meetings.</summary>
+    public static class BusinessMeetings
+    {
+        public const string View = "BusinessMeetings.View";
+        public const string Schedule = "BusinessMeetings.Schedule";
+        public const string Cancel = "BusinessMeetings.Cancel";
+    }
+
     public static class Delegations
     {
         public const string View = "Delegations.View";
@@ -593,6 +617,15 @@ public static class PermissionCatalog
         new(Bookings.View, "Bookings", "View", "View the booking approval queue", AdminOnly),
         new(Bookings.Approve, "Bookings", "Approve", "Approve bookings", AdminOnly),
         new(Bookings.Reject, "Bookings", "Reject", "Reject bookings", AdminOnly),
+
+        // SIMF-FDS-013 — D-248: flexible hall config + B2B/B2C business meetings.
+        new(MeetingTables.View, "MeetingTables", "View", "View meeting tables", AdminOnly),
+        new(MeetingTables.Edit, "MeetingTables", "Edit", "Define / generate meeting tables", AdminOnly),
+        new(HallAllocations.View, "HallAllocations", "View", "View hall allocations", AdminOnly),
+        new(HallAllocations.Edit, "HallAllocations", "Edit", "Reserve / release hall allocations", AdminOnly),
+        new(BusinessMeetings.View, "BusinessMeetings", "View", "View business meetings", AdminOnly),
+        new(BusinessMeetings.Schedule, "BusinessMeetings", "Schedule", "Schedule business meetings", AdminOnly),
+        new(BusinessMeetings.Cancel, "BusinessMeetings", "Cancel", "Cancel business meetings", AdminOnly),
 
         new(Delegations.View, "Delegations", "View", "View delegations", AdminOnly),
         new(Delegations.Create, "Delegations", "Create", "Create delegations", AdminOnly),

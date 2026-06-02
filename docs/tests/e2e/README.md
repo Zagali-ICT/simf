@@ -78,6 +78,9 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/programme/timeline` | [`cp-admin-programme-timeline.md`](cp-admin-programme-timeline.md) | E2E-PTL-001..011 |
 | `/admin/bookings` | [`cp-admin-bookings.md`](cp-admin-bookings.md) | E2E-BKG-001..010 |
 | `/admin/meeting-requests` | [`cp-admin-meeting-requests.md`](cp-admin-meeting-requests.md) | E2E-MTR-001..011 |
+| `/admin/meeting-tables` | [`cp-meeting-tables.md`](cp-meeting-tables.md) | E2E-MHT-001..012 |
+| `/admin/business-meetings` | [`cp-business-meetings.md`](cp-business-meetings.md) | E2E-BMT-001..013 |
+<!-- SIMF-FDS-013 (D-248) — flexible hall config + B2B/B2C business meetings -->
 
 ### Control Panel — Engagement, Q&A & attendance
 

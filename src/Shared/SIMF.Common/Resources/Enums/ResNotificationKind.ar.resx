@@ -23,4 +23,6 @@
   <data name="BookingConfirmed" xml:space="preserve"><value>تم تأكيد حجز المقعد</value></data>
   <data name="SessionReminder" xml:space="preserve"><value>تبدأ الجلسة قريباً</value></data>
   <data name="BookingRejected" xml:space="preserve"><value>تم رفض حجز المقعد</value></data>
+  <data name="MeetingScheduled" xml:space="preserve"><value>تم تحديد موعد اجتماع لك</value></data>
+  <data name="MeetingCancelled" xml:space="preserve"><value>تم إلغاء اجتماع</value></data>
 </root>

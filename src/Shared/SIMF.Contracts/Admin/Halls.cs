@@ -10,7 +10,10 @@ public sealed record AdminHallSummary(
     int Capacity,
     string? Floor,
     bool IsActive,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    // SIMF-FDS-013 — D-248: the hall's purpose (HallPurpose; 0 = General).
+    // Appended (defaulted) so the wire contract stays append-only (D-219).
+    int Purpose = 0);
 
 /// <summary>Full hall detail (Details + Edit modals). P5.1 — D-240: the optional
 /// GPS geofence (centre lat/lon + radius in metres) is appended (all null when

@@ -2285,4 +2285,108 @@
   <data name="Admin.Organisations.Import.Result" xml:space="preserve"><value>Rows read: {0} · Inserted: {1} · Updated: {2} · Skipped: {3}</value></data>
   <data name="Admin.Organisations.Import.Done" xml:space="preserve"><value>Import complete — {0} inserted, {1} updated, {2} skipped.</value></data>
   <data name="Admin.Organisations.Import.Failed" xml:space="preserve"><value>Excel import failed.</value></data>
+
+  <!-- SIMF-FDS-013 (D-248) — flexible hall config + B2B/B2C business meetings -->
+  <data name="Module.MeetingTables" xml:space="preserve"><value>Meeting Tables</value></data>
+  <data name="Module.BusinessMeetings" xml:space="preserve"><value>Business Meetings</value></data>
+
+  <data name="Admin.BusinessMeetings.Title" xml:space="preserve"><value>Business Meetings</value></data>
+  <data name="Admin.BusinessMeetings.New" xml:space="preserve"><value>Schedule meeting</value></data>
+  <data name="Admin.BusinessMeetings.Filter.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.BusinessMeetings.Filter.All" xml:space="preserve"><value>All</value></data>
+  <data name="Admin.BusinessMeetings.Filter.Confirmed" xml:space="preserve"><value>Confirmed</value></data>
+  <data name="Admin.BusinessMeetings.Filter.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Admin.BusinessMeetings.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.BusinessMeetings.None" xml:space="preserve"><value>No business meetings yet.</value></data>
+  <data name="Admin.BusinessMeetings.Col.Hall" xml:space="preserve"><value>Hall</value></data>
+  <data name="Admin.BusinessMeetings.Col.Table" xml:space="preserve"><value>Table</value></data>
+  <data name="Admin.BusinessMeetings.Col.Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Admin.BusinessMeetings.Col.Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Admin.BusinessMeetings.Col.End" xml:space="preserve"><value>End</value></data>
+  <data name="Admin.BusinessMeetings.Col.Parties" xml:space="preserve"><value>Participants</value></data>
+  <data name="Admin.BusinessMeetings.Col.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.BusinessMeetings.View" xml:space="preserve"><value>View</value></data>
+  <data name="Admin.BusinessMeetings.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.BusinessMeetings.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.BusinessMeetings.LoadFailed" xml:space="preserve"><value>Could not load business meetings.</value></data>
+  <data name="Admin.BusinessMeetings.Scheduled" xml:space="preserve"><value>Meeting scheduled.</value></data>
+  <data name="Admin.BusinessMeetings.Cancelled" xml:space="preserve"><value>Meeting cancelled.</value></data>
+  <data name="Admin.BusinessMeetings.Schedule.Title" xml:space="preserve"><value>Schedule a meeting</value></data>
+  <data name="Admin.BusinessMeetings.Schedule.Submit" xml:space="preserve"><value>Schedule</value></data>
+  <data name="Admin.BusinessMeetings.Field.Hall" xml:space="preserve"><value>Hall</value></data>
+  <data name="Admin.BusinessMeetings.Field.HallChoose" xml:space="preserve"><value>— choose a hall —</value></data>
+  <data name="Admin.BusinessMeetings.Field.Table" xml:space="preserve"><value>Table</value></data>
+  <data name="Admin.BusinessMeetings.Field.TableChoose" xml:space="preserve"><value>— choose a table —</value></data>
+  <data name="Admin.BusinessMeetings.Field.Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Admin.BusinessMeetings.Field.Start" xml:space="preserve"><value>Start (UTC)</value></data>
+  <data name="Admin.BusinessMeetings.Field.End" xml:space="preserve"><value>End (UTC)</value></data>
+  <data name="Admin.BusinessMeetings.Field.Participants" xml:space="preserve"><value>Participants</value></data>
+  <data name="Admin.BusinessMeetings.Field.Notes" xml:space="preserve"><value>Notes</value></data>
+  <data name="Admin.BusinessMeetings.Party.Company" xml:space="preserve"><value>Company</value></data>
+  <data name="Admin.BusinessMeetings.Party.Visitor" xml:space="preserve"><value>Visitor</value></data>
+  <data name="Admin.BusinessMeetings.Party.Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Admin.BusinessMeetings.Party.Add" xml:space="preserve"><value>Add</value></data>
+  <data name="Admin.BusinessMeetings.Party.ChooseCompany" xml:space="preserve"><value>— choose a company —</value></data>
+  <data name="Admin.BusinessMeetings.Party.ChooseVisitor" xml:space="preserve"><value>— choose a visitor —</value></data>
+  <data name="Admin.BusinessMeetings.Cancel.Title" xml:space="preserve"><value>Cancel meeting</value></data>
+  <data name="Admin.BusinessMeetings.Cancel.Prompt" xml:space="preserve"><value>Cancel the meeting in {0} at table {1}?</value></data>
+  <data name="Admin.BusinessMeetings.Cancel.Reason" xml:space="preserve"><value>Reason (optional)</value></data>
+  <data name="Admin.BusinessMeetings.Cancel.Keep" xml:space="preserve"><value>Keep meeting</value></data>
+  <data name="Admin.BusinessMeetings.Cancel.Confirm" xml:space="preserve"><value>Cancel meeting</value></data>
+  <data name="Admin.BusinessMeetings.Detail.Title" xml:space="preserve"><value>Meeting detail</value></data>
+  <data name="Admin.BusinessMeetings.Detail.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.BusinessMeetings.Validation.Table" xml:space="preserve"><value>Choose a table.</value></data>
+  <data name="Admin.BusinessMeetings.Validation.Slot" xml:space="preserve"><value>Enter a valid start and end time (end after start).</value></data>
+  <data name="Admin.BusinessMeetings.Validation.Participants" xml:space="preserve"><value>Add at least two participants.</value></data>
+
+  <data name="Admin.MeetingTables.Title" xml:space="preserve"><value>Meeting Tables &amp; Hall Allocation</value></data>
+  <data name="Admin.MeetingTables.LoadFailed" xml:space="preserve"><value>Could not load the page.</value></data>
+  <data name="Admin.MeetingTables.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.MeetingTables.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.MeetingTables.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.MeetingTables.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.MeetingTables.Saved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="Admin.MeetingTables.Deleted" xml:space="preserve"><value>Deleted.</value></data>
+  <data name="Admin.MeetingTables.Generated" xml:space="preserve"><value>Tables generated.</value></data>
+  <data name="Admin.MeetingTables.Released" xml:space="preserve"><value>Allocation released.</value></data>
+  <data name="Admin.MeetingTables.Field.Hall" xml:space="preserve"><value>Hall</value></data>
+  <data name="Admin.MeetingTables.Field.HallChoose" xml:space="preserve"><value>— choose a hall —</value></data>
+  <data name="Admin.MeetingTables.Field.Purpose" xml:space="preserve"><value>Purpose</value></data>
+  <data name="Admin.MeetingTables.Purpose.General" xml:space="preserve"><value>General</value></data>
+  <data name="Admin.MeetingTables.Purpose.Booth" xml:space="preserve"><value>Booth</value></data>
+  <data name="Admin.MeetingTables.Purpose.Session" xml:space="preserve"><value>Session</value></data>
+  <data name="Admin.MeetingTables.Purpose.Meeting" xml:space="preserve"><value>Meeting</value></data>
+  <data name="Admin.MeetingTables.Purpose.Save" xml:space="preserve"><value>Set purpose</value></data>
+  <data name="Admin.MeetingTables.Purpose.Saved" xml:space="preserve"><value>Hall purpose saved.</value></data>
+  <data name="Admin.MeetingTables.Tables.Heading" xml:space="preserve"><value>Meeting tables</value></data>
+  <data name="Admin.MeetingTables.Tables.None" xml:space="preserve"><value>No tables in this hall yet.</value></data>
+  <data name="Admin.MeetingTables.AddTable" xml:space="preserve"><value>Add table</value></data>
+  <data name="Admin.MeetingTables.Generate" xml:space="preserve"><value>Generate tables</value></data>
+  <data name="Admin.MeetingTables.Allocations.Heading" xml:space="preserve"><value>Hall allocations</value></data>
+  <data name="Admin.MeetingTables.Allocations.None" xml:space="preserve"><value>No active allocations for this hall.</value></data>
+  <data name="Admin.MeetingTables.AddAllocation" xml:space="preserve"><value>Reserve hall</value></data>
+  <data name="Admin.MeetingTables.Release" xml:space="preserve"><value>Release</value></data>
+  <data name="Admin.MeetingTables.Col.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Admin.MeetingTables.Col.Row" xml:space="preserve"><value>Row</value></data>
+  <data name="Admin.MeetingTables.Col.Column" xml:space="preserve"><value>Column</value></data>
+  <data name="Admin.MeetingTables.Col.Capacity" xml:space="preserve"><value>Capacity</value></data>
+  <data name="Admin.MeetingTables.Col.Purpose" xml:space="preserve"><value>Purpose</value></data>
+  <data name="Admin.MeetingTables.Col.Mode" xml:space="preserve"><value>Mode</value></data>
+  <data name="Admin.MeetingTables.Col.Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Admin.MeetingTables.Col.End" xml:space="preserve"><value>End</value></data>
+  <data name="Admin.MeetingTables.EditTable.Title" xml:space="preserve"><value>Edit table</value></data>
+  <data name="Admin.MeetingTables.AddTable.Title" xml:space="preserve"><value>Add table</value></data>
+  <data name="Admin.MeetingTables.Generate.Title" xml:space="preserve"><value>Generate tables</value></data>
+  <data name="Admin.MeetingTables.Generate.Count" xml:space="preserve"><value>Number of tables</value></data>
+  <data name="Admin.MeetingTables.Generate.Spec" xml:space="preserve"><value>Row/column codes (CSV)</value></data>
+  <data name="Admin.MeetingTables.Generate.Reset" xml:space="preserve"><value>Reset — remove existing tables first</value></data>
+  <data name="Admin.MeetingTables.Generate.Submit" xml:space="preserve"><value>Generate</value></data>
+  <data name="Admin.MeetingTables.Mode.Whole" xml:space="preserve"><value>Whole hall</value></data>
+  <data name="Admin.MeetingTables.Mode.RandomByCount" xml:space="preserve"><value>Random by count</value></data>
+  <data name="Admin.MeetingTables.Mode.RowColumn" xml:space="preserve"><value>By row/column</value></data>
+  <data name="Admin.MeetingTables.AddAllocation.Title" xml:space="preserve"><value>Reserve hall space</value></data>
+  <data name="Admin.MeetingTables.Delete.Confirm" xml:space="preserve"><value>Delete this table?</value></data>
+  <data name="Admin.MeetingTables.Release.Confirm" xml:space="preserve"><value>Release this allocation?</value></data>
+  <data name="Admin.MeetingTables.Validation.Code" xml:space="preserve"><value>A table code is required.</value></data>
+  <data name="Admin.MeetingTables.Validation.Slot" xml:space="preserve"><value>Enter a valid start and end time (end after start).</value></data>
 </root>

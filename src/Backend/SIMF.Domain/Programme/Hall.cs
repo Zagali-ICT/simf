@@ -1,3 +1,5 @@
+using SIMF.Common.Enums;
+
 namespace SIMF.Domain.Programme;
 
 /// <summary>
@@ -33,6 +35,16 @@ public class Hall
 
     /// <summary>Soft-delete flag.</summary>
     public bool IsActive { get; set; } = true;
+
+    /// <summary>SIMF-FDS-013 — D-248: what the hall is designated for. Defaults to
+    /// <see cref="HallPurpose.General"/> (value 0) — every pre-existing hall keeps
+    /// the un-specialised behaviour it had before this column was added (it may
+    /// back both <c>Session.HallId</c> and <c>Booth.HallId</c>). An admin may
+    /// dedicate a hall to a single purpose (Booth / Session / Meeting) so the
+    /// Control Panel surfaces the matching layout + allocation tools. A
+    /// <c>MeetingTable</c> / business-meeting may only target a Meeting or General
+    /// hall.</summary>
+    public HallPurpose Purpose { get; set; } = HallPurpose.General;
 
     /// <summary>P5.1 — D-240 (FDS-003 §5.4 + OI-2): the hall's optional GPS
     /// geofence centre latitude (WGS-84 degrees, −90..90). All three geofence

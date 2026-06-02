@@ -101,4 +101,15 @@ public enum NotificationKind
     /// In-app row only.</summary>
     [Display(Description = nameof(ResNotificationKind.BookingRejected), ResourceType = typeof(ResNotificationKind))]
     BookingRejected = 42,
+
+    /// <summary>SIMF-FDS-013 — D-248: dispatched to each participant when the
+    /// Control Panel schedules an admin-arranged B2B/B2C business meeting for
+    /// them. In-app row only.</summary>
+    [Display(Description = nameof(ResNotificationKind.MeetingScheduled), ResourceType = typeof(ResNotificationKind))]
+    MeetingScheduled = 43,
+
+    /// <summary>SIMF-FDS-013 — D-248: dispatched to each participant when the
+    /// Control Panel cancels a confirmed business meeting. In-app row only.</summary>
+    [Display(Description = nameof(ResNotificationKind.MeetingCancelled), ResourceType = typeof(ResNotificationKind))]
+    MeetingCancelled = 44,
 }

@@ -58,7 +58,8 @@ internal sealed class AdminHallService(
             .Skip(skip).Take(top)
             .Select(hall => new AdminHallSummary(
                 hall.Id, hall.Code, hall.Name, hall.NameArabic,
-                hall.Capacity, hall.Floor, hall.IsActive, hall.CreatedAt))
+                hall.Capacity, hall.Floor, hall.IsActive, hall.CreatedAt,
+                (int)hall.Purpose))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminHallSummary>.Of(page, total,

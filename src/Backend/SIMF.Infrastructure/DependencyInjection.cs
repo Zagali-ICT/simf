@@ -271,6 +271,10 @@ public static class DependencyInjection
         // reservations (visitor self-pick + random + admin row blocks).
         services.AddScoped<SIMF.Application.SeatReservations.Abstractions.ISeatReservationService,
             SIMF.Infrastructure.SeatReservations.SeatReservationService>();
+        // SIMF-FDS-013 — D-248: flexible hall config + admin-arranged B2B/B2C
+        // business meetings (meeting tables, hall allocations, meetings).
+        services.AddScoped<SIMF.Application.BusinessMeetings.Abstractions.IBusinessMeetingService,
+            SIMF.Infrastructure.BusinessMeetings.BusinessMeetingService>();
         // D-199 — event modules (freeze lift): programme/speaker public reads,
         // news, media + media-partners, booths, sponsors, archive, comments, ratings.
         services.AddScoped<SIMF.Application.Programme.Abstractions.IPublicSpeakerService,
