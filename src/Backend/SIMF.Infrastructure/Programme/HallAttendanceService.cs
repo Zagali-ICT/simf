@@ -87,7 +87,20 @@ internal sealed class HallAttendanceService(
             CreatedAt = now,
         };
         appDbContext.HallAttendances.Add(row);
-        await appDbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await appDbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // A concurrent arrival (e.g. a double-tap) raced the one-open-row
+            // unique index (D-241). Arrival is idempotent: detach our losing row
+            // and return the row the other request committed — never a 500.
+            // Mirrors SeatReservationService.PersistWithUniquenessGuardAsync.
+            appDbContext.Entry(row).State = EntityState.Detached;
+            var existing = await OpenRowAsync(userId, sessionId, cancellationToken);
+            return ToStatus(existing);
+        }
 
         await auditLog.WriteAsync(new AuditEntry
         {

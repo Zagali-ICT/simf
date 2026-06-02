@@ -60,6 +60,24 @@ public sealed class QuestionArrivalGatingTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Arrived_then_departed_can_still_ask_within_the_window()
+    {
+        // FR-704 gates on "has an enter record this session" (D-242), not current
+        // presence — a brief departure does not revoke the right to ask.
+        var visitor = await SeedApprovedVisitorAsync();
+        var sessionId = await SeedSessionAsync(withGeofence: true);
+
+        var arrival = await PostAuthAsync($"/api/v1/sessions/{sessionId}/arrival",
+            new RecordArrivalRequest { Lat = CenterLat, Lon = CenterLon }, visitor);
+        Assert.Equal(HttpStatusCode.OK, arrival.StatusCode);
+        var departure = await PostAuthAsync($"/api/v1/sessions/{sessionId}/departure", new { }, visitor);
+        Assert.Equal(HttpStatusCode.OK, departure.StatusCode);
+
+        var response = await SubmitAsync(sessionId, visitor, isAtVenue: false);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Non_geofenced_hall_falls_back_to_the_self_assert_toggle()
     {
         var visitor = await SeedApprovedVisitorAsync();

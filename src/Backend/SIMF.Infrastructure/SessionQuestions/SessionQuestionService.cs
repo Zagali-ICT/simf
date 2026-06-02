@@ -91,6 +91,14 @@ internal sealed class SessionQuestionService(
         // arrival record (D-241); when it has none (QR-only / coordinates not yet
         // seeded), fall back to the D-171 self-assert toggle so nothing breaks
         // pre-seed. The session-end close is the time-window check above (FR-704).
+        //
+        // Intentionally NO `LeaveUtc == null` filter: FDS-007 FR-704 gates on
+        // "has a HallAttendance enter record for the session" — i.e. arrived at
+        // any point this session, not "currently inside". A visitor who briefly
+        // stepped out (closing their row) keeps the right to ask within the
+        // window, and the future QR-door-scan path's closed rows also satisfy
+        // the gate. (This is a deliberate divergence from the present-tense
+        // `HallAttendanceStatus.Arrived`, which reports current presence.)
         var atVenue = session.HasGeofence
             ? await appDbContext.HallAttendances.AnyAsync(
                 a => a.SessionId == sessionId && a.UserId == submittedByUserId, cancellationToken)
