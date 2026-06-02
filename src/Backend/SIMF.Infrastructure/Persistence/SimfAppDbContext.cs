@@ -26,9 +26,12 @@ using SIMF.Domain.Sponsors;
 namespace SIMF.Infrastructure.Persistence;
 
 /// <summary>
-/// The application database context — the SIMF business entities. It shares one
-/// physical database with <see cref="SimfIdentityDbContext"/> (decision C-1) but
-/// keeps its own migration history table.
+/// The application database context — the SIMF business entities. It lives in
+/// its own **physically separate** database (<c>SIMF_App</c>), distinct from
+/// <see cref="SimfIdentityDbContext"/>'s <c>SIMF_Identity</c> database (D-157,
+/// superseding the earlier one-shared-DB design C-1). There is no cross-database
+/// relation/FK and no duplicated data: a reference to an Identity user is a bare
+/// <c>Guid</c> resolved on read (see the Data/Identity separation rule).
 /// </summary>
 public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbContext(options)
 {

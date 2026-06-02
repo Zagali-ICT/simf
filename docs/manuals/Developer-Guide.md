@@ -99,10 +99,11 @@ Increment 2 establishes the Identity & Access data foundation:
   `AccountCodePurpose` enums.
 - **Two database contexts** (`SIMF.Infrastructure/Persistence`) —
   `SimfIdentityDbContext` (built on `IdentityDbContext`) holds the Identity &
-  Access tables; `SimfAppDbContext` holds the business entities (none yet).
-  Both target **one physical database** (decision C-1) and each keeps its own
-  migration history table (`__EFMigrationsHistory_Identity` and
-  `__EFMigrationsHistory_App`).
+  Access tables; `SimfAppDbContext` holds the business entities.
+  They target **two physically separated databases** — `SIMF_Identity` and
+  `SIMF_App` (D-157, superseding C-1) — each with its own migration history
+  table (`__EFMigrationsHistory_Identity` and `__EFMigrationsHistory_App`). No
+  cross-database FK; cross-DB user references are bare `Guid`s resolved on read.
 - **Repositories** — `IRefreshTokenRepository`, `IAccountCodeRepository` and
   `IPermissionRepository` (interfaces in `SIMF.Application`, implementations in
   `SIMF.Infrastructure`). Users and roles are reached through ASP.NET Identity's
@@ -547,16 +548,22 @@ public static class ErrorCodes
 
 ## 17. The data layer — EF Core + audit interceptor
 
-### 17.1 Two contexts, one database
+### 17.1 Two contexts, two physically separated databases
 
-| Context | Schema | Purpose |
-|---------|--------|---------|
-| `SimfIdentityDbContext` | `identity` | Users, roles, permissions, refresh tokens, account codes |
-| `SimfAppDbContext` | `app` | Business entities (UserProfiles, Interests, ProfileTypes, OperationLog, RowAudit) |
+| Context | Database | Purpose |
+|---------|----------|---------|
+| `SimfIdentityDbContext` | `SIMF_Identity` | Users, roles, permissions, refresh tokens, account codes |
+| `SimfAppDbContext` | `SIMF_App` | Business entities (UserProfiles, Interests, ProfileTypes, OperationLog, RowAudit, programme, exhibition, …) |
 
-Same physical SQL Server database (decision C-1), separate migration
-histories (`__EFMigrationsHistory_Identity` and `__EFMigrationsHistory_App`).
-Both registered in `SIMF.Infrastructure.DependencyInjection.AddInfrastructure`.
+**Two physically separated databases** (D-157, superseding C-1; reaffirmed
+D-246), separate migration histories (`__EFMigrationsHistory_Identity` and
+`__EFMigrationsHistory_App`), separate connection strings (`SimfIdentityDb` +
+`SimfAppDb`). Both registered in
+`SIMF.Infrastructure.DependencyInjection.AddInfrastructure`. **No cross-database
+relation/FK and no duplicated data:** an App reference to a user is a bare `Guid`
+resolved on read; there is no cross-DB transaction. The legacy table schema
+qualifiers (`identity` / `app`) are a harmless artefact of the old shared-DB
+design.
 
 ### 17.2 Adding a migration
 

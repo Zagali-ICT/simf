@@ -15,10 +15,12 @@ internal sealed class RowAuditConfiguration : IEntityTypeConfiguration<RowAudit>
 {
     public void Configure(EntityTypeBuilder<RowAudit> builder)
     {
-        // D-109: schema-scoped so the same physical database can host
-        // both the Identity-context and App-context row-audit tables
-        // (decision C-1 puts both contexts in one DB; without a schema
-        // they would collide on dbo.RowAudits).
+        // D-157: the Identity context lives in its own physically separate
+        // database (SIMF_Identity), so its RowAudits no longer co-habits a DB
+        // with the App context's table. The `identity` schema qualifier is
+        // retained from the earlier one-shared-DB design (C-1, superseded) —
+        // harmless under the split, and changing it now would be a frozen-schema
+        // change.
         builder.ToTable("RowAudits", schema: "identity");
         builder.HasKey(audit => audit.Id);
         builder.Property(audit => audit.Id).ValueGeneratedOnAdd();

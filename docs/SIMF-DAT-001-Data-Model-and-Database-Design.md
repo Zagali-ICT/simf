@@ -44,8 +44,10 @@ matters to a contract it is aligned across the layers per SIMF-SES-001 section
 
 ## 3. Approach
 
-- **One database.** A single SQL Server 2022 database holds the whole system
-  (SIMF-SAD-001 section 7).
+- **Two physically separated databases** (D-157, superseding C-1; reaffirmed
+  D-246). `SIMF_Identity` holds the Identity & Access tables; `SIMF_App` holds
+  all other tables. No cross-database relation/FK and no duplicated data — see
+  §A.1.
 - **EF Core, code-first.** The schema is defined in code and applied through
   reviewed migrations.
 - **A context owns its tables.** Each bounded context owns its own tables. A
@@ -357,14 +359,28 @@ erDiagram
 The two architecture reviews of 2026-05-21 amend this data model. The changes
 below are authoritative.
 
-### A.1 One database, two contexts — amends §3 and §7
-SIMF uses **one physical SQL Server 2022 database** accessed through **two EF
-Core contexts** — `SimfIdentityDbContext` (the Identity & Access tables) and
-`SimfAppDbContext` (all other tables) — each with its **own migration history**,
-so migrations are generated and applied per context. Both contexts target the
-same database, so a unit of work spanning identity and application data remains
-one transaction and foreign keys still hold. This supersedes the earlier
-"two physical databases" proposal.
+### A.1 Two physically separated databases, two contexts — amends §3 and §7
+SIMF uses **two physically separated SQL Server 2022 databases** — `SIMF_Identity`
+(the Identity & Access tables, via `SimfIdentityDbContext`) and `SIMF_App` (all
+other tables, via `SimfAppDbContext`) — each with its **own migration history**,
+generated and applied per context. **This is decision D-157 (2026-05-29),
+reaffirmed D-246 (2026-06-02), superseding the earlier one-shared-database design
+(C-1).** Consequences of physical separation, by design:
+- **No cross-database foreign keys.** Any reference from one database to the
+  other (e.g. an App row pointing at an Identity user) is a **logical** FK — a
+  bare `Guid` enforced in application code, never a DB constraint.
+- **No cross-database transaction.** A unit of work touches one context/database
+  at a time; there is no distributed transaction spanning both.
+- **No duplicated data.** Identity-owned data is not copied into `SIMF_App` (or
+  vice versa); it is resolved on read. The sole exception is the deliberate
+  **audit snapshot** pattern (action logs in `SIMF_App` capture the actor's
+  display name/email at write time so the audit trail is self-contained — a
+  historical record, not a live mirror).
+
+The split is a security boundary (Identity can be backed up / encrypted /
+access-controlled independently) and gives deployment independence; the two
+connection strings can point at the same instance or **separate physical
+servers**.
 
 ### A.2 GpsPresence as telemetry — amends §5.11
 `GpsPresence` is **batched append-only telemetry**, not transactional data. The

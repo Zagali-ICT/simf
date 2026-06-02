@@ -97,6 +97,36 @@ Whenever you add or materially change a page/action you MUST:
 Treat a shipped page with no authored catalogue file as an incomplete change —
 the catalogue is the executable proof the page still works end-to-end.
 
+**Companion DoD rule (D-246):** at the end of ANY new function / page / API,
+update the docs (`PAGE-INDEX.md` + the per-page reference doc) **and** add the
+unit + integration tests **and** the E2E catalogue file — in the same changeset.
+A change is not "done" without all three.
+
+## Data ↔ Identity DB separation (D-157 / D-246 — PERMANENT)
+
+The system uses **two physically separated SQL Server databases** — `SIMF_Identity`
+(`SimfIdentityDbContext` — users, roles, permissions, 2FA, tokens) and `SIMF_App`
+(`SimfAppDbContext` — everything else). This is permanent (D-157, reaffirmed
+D-246; it superseded the old one-shared-DB design C-1).
+
+**HARD RULES — never regress this:**
+
+1. **No cross-database relation / FK.** Never add an EF navigation or
+   `HasForeignKey` between an App entity and an Identity entity (either
+   direction). A cross-DB reference is a **bare `Guid`** (logical FK) resolved
+   on read with a second query on the other context — never a DB constraint,
+   never a cross-DB JOIN.
+2. **No duplicated data.** Never persist a copy of Identity-owned data inside
+   `SIMF_App` (or vice versa); resolve it on read. The **only** allowed copies
+   are the existing immutable **audit snapshots** (`OperationLog` / `RowAudit` /
+   `GateScan` capture the actor's display-name/email at write time so the audit
+   trail is self-contained) — do not extend that pattern to live data.
+3. **No cross-database transaction.** A unit of work touches one context/database
+   at a time; there is no distributed transaction spanning both.
+
+The two connection strings (`SimfIdentityDb` + `SimfAppDb`) may point at the same
+instance or separate physical servers. The Identity schema is also frozen (D-110).
+
 ## FREEZE — D-110 baseline (2026-05-26)
 
 The following surface is **frozen** as of commit `67e2263` and must NOT be

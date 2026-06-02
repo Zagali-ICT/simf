@@ -8,9 +8,11 @@ namespace SIMF.Infrastructure.Persistence;
 /// <summary>
 /// The Identity and Access database context — users, roles, permissions,
 /// refresh tokens and account codes. Built on ASP.NET Core Identity
-/// (SIMF-DAT-001 section 5.1, Amendment A.1). It shares one physical database
-/// with <see cref="SimfAppDbContext"/> (decision C-1) but keeps its own
-/// migration history table.
+/// (SIMF-DAT-001 section 5.1). It lives in its own **physically separate**
+/// database (<c>SIMF_Identity</c>), distinct from <see cref="SimfAppDbContext"/>'s
+/// <c>SIMF_App</c> database (D-157, superseding the earlier one-shared-DB design
+/// C-1). No cross-database relation/FK; App-side user references are bare
+/// <c>Guid</c>s resolved on read.
 /// </summary>
 public class SimfIdentityDbContext(DbContextOptions<SimfIdentityDbContext> options)
     : IdentityDbContext<SimfUser, SimfRole, Guid>(options)
