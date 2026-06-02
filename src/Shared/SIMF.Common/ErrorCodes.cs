@@ -277,6 +277,8 @@ public static class ErrorCodes
     public const string SessionHallNotFound = "SESSION_HALL_NOT_FOUND";
     public const string SessionSpeakerNotFound = "SESSION_SPEAKER_NOT_FOUND";
     public const string SessionThemeNotFound = "SESSION_THEME_NOT_FOUND";
+    // P3.2 — D-231: illegal broadcast-lifecycle transition (e.g. skipping a step).
+    public const string SessionStatusTransitionInvalid = "SESSION_STATUS_TRANSITION_INVALID";
 
     // Gates (D-148 — Gate Module, SIMF-FDS-003 §5.6, SIMF-API-GATES-001).
     public const string GateInvalid = "GATE_INVALID";

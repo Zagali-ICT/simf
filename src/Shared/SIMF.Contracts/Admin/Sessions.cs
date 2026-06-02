@@ -19,7 +19,9 @@ public sealed record AdminSessionSummary(
     bool IsActive,
     DateTimeOffset CreatedAt,
     // B9b — D-226: appended (default) — the CP grid resolves the name client-side.
-    Guid? CategoryId = null);
+    Guid? CategoryId = null,
+    // P3.2 — D-231: broadcast lifecycle status (appended, default Scheduled).
+    SessionStatus Status = SessionStatus.Scheduled);
 
 /// <summary>D-165 — full session detail (Details + Edit modals).
 /// Includes the speaker and theme join sets so the editor can
@@ -45,7 +47,10 @@ public sealed record AdminSessionDetail(
     DateTimeOffset CreatedAt,
     DateTimeOffset? UpdatedAt,
     // B9b — D-226: the session's category (dynamic lookup); null when unset.
-    Guid? CategoryId = null);
+    Guid? CategoryId = null,
+    // P3.2 — D-231: broadcast lifecycle (appended, defaults preserve the wire).
+    SessionStatus Status = SessionStatus.Scheduled,
+    DateTimeOffset? PublishedAt = null);
 
 /// <summary>D-165 — one entry in <see cref="AdminSessionDetail.Speakers"/>.
 /// Order matters: 0 = primary speaker for the session card.</summary>
@@ -93,4 +98,13 @@ public sealed class AdminUpdateSessionRequest
         = new List<AdminSessionSpeakerEntry>();
     public IList<Guid> ThemeIds { get; set; } = new List<Guid>();
     public bool IsActive { get; set; } = true;
+}
+
+/// <summary>P3.2 — D-231: the Committee's lifecycle transition. The service
+/// enforces the allowed adjacent moves
+/// (<c>Scheduled ↔ Held ↔ Recorded ↔ Published</c>); an illegal jump is a
+/// 400. Setting the same status is an idempotent no-op.</summary>
+public sealed class SetSessionStatusRequest
+{
+    public SessionStatus Status { get; set; }
 }

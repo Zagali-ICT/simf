@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/ProgrammeSessionsTests.cs
+// Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 public status read)
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Contracts.Programme;
@@ -54,6 +55,8 @@ internal sealed class ProgrammeSessionService(SimfAppDbContext dbContext)
                 HallNameArabic = session.Hall!.NameArabic,
                 session.StartUtc,
                 session.EndUtc,
+                // P3.2 — D-231: broadcast lifecycle status.
+                session.Status,
                 // B9b — D-226: the session's category (dynamic lookup), if set.
                 session.CategoryId,
                 CategoryName = session.Category != null ? session.Category.NameEn : null,
@@ -94,7 +97,8 @@ internal sealed class ProgrammeSessionService(SimfAppDbContext dbContext)
                     primary?.PageColor,
                     row.CategoryId,
                     row.CategoryName,
-                    row.CategoryNameArabic);
+                    row.CategoryNameArabic,
+                    row.Status);
             })
             .ToList();
 
@@ -172,6 +176,8 @@ internal sealed class ProgrammeSessionService(SimfAppDbContext dbContext)
             seats,
             session.CategoryId,
             session.Category?.NameEn,
-            session.Category?.NameAr);
+            session.Category?.NameAr,
+            session.Status,
+            session.PublishedAt);
     }
 }

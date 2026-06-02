@@ -1283,6 +1283,19 @@
   <data name="Admin.Sessions.Column.Actions" xml:space="preserve"><value>Actions</value></data>
   <data name="Admin.Sessions.Active.Yes" xml:space="preserve"><value>Active</value></data>
   <data name="Admin.Sessions.Active.No" xml:space="preserve"><value>Inactive</value></data>
+  <data name="Admin.Sessions.Column.Status" xml:space="preserve"><value>Lifecycle</value></data>
+  <data name="Admin.Sessions.Status.Scheduled" xml:space="preserve"><value>Scheduled</value></data>
+  <data name="Admin.Sessions.Status.Held" xml:space="preserve"><value>Held</value></data>
+  <data name="Admin.Sessions.Status.Recorded" xml:space="preserve"><value>Recorded</value></data>
+  <data name="Admin.Sessions.Status.Published" xml:space="preserve"><value>Published</value></data>
+  <data name="Admin.Sessions.Lifecycle.PublishedAt" xml:space="preserve"><value>Published at</value></data>
+  <data name="Admin.Sessions.Lifecycle.MarkHeld" xml:space="preserve"><value>Mark held</value></data>
+  <data name="Admin.Sessions.Lifecycle.BackToScheduled" xml:space="preserve"><value>Back to scheduled</value></data>
+  <data name="Admin.Sessions.Lifecycle.MarkRecorded" xml:space="preserve"><value>Mark recorded</value></data>
+  <data name="Admin.Sessions.Lifecycle.BackToHeld" xml:space="preserve"><value>Back to held</value></data>
+  <data name="Admin.Sessions.Lifecycle.Publish" xml:space="preserve"><value>Publish</value></data>
+  <data name="Admin.Sessions.Lifecycle.Unpublish" xml:space="preserve"><value>Un-publish</value></data>
+  <data name="Admin.Sessions.Lifecycle.Changed" xml:space="preserve"><value>Session lifecycle set to {0}.</value></data>
   <data name="Admin.Sessions.Action.Add" xml:space="preserve"><value>Add session</value></data>
   <data name="Admin.Sessions.Action.Edit" xml:space="preserve"><value>Edit</value></data>
   <data name="Admin.Sessions.Action.Details" xml:space="preserve"><value>Details</value></data>

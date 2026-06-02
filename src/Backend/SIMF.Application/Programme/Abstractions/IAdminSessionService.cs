@@ -24,4 +24,16 @@ public interface IAdminSessionService
     Task DeactivateAsync(
         Guid actorUserId, Guid id,
         CancellationToken cancellationToken = default);
+
+    /// <summary>P3.2 — D-231 (Completion Programme §5.2): the Scientific
+    /// Committee moves the session along its broadcast lifecycle. Only the
+    /// adjacent transitions are legal
+    /// (<c>Scheduled ↔ Held ↔ Recorded ↔ Published</c>); an illegal jump
+    /// throws <c>SESSION_STATUS_TRANSITION_INVALID</c> (400). Moving to
+    /// <see cref="SIMF.Common.Enums.SessionStatus.Published"/> stamps
+    /// <c>PublishedAt</c>; leaving it clears the stamp. Setting the same
+    /// status is an idempotent no-op.</summary>
+    Task<AdminSessionDetail> SetStatusAsync(
+        Guid actorUserId, Guid id, SIMF.Common.Enums.SessionStatus status,
+        CancellationToken cancellationToken = default);
 }

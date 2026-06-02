@@ -182,6 +182,10 @@ public static class AuditEvents
     public const string SessionCreated = "Session.Created";
     public const string SessionUpdated = "Session.Updated";
     public const string SessionDeactivated = "Session.Deactivated";
+    // P3.2 — D-231: broadcast-lifecycle transitions.
+    public const string SessionStatusChanged = "Session.StatusChanged";
+    public const string SessionPublished = "Session.Published";
+    public const string SessionUnpublished = "Session.Unpublished";
 
     // Session questions + moderator grants (D-169, gap doc G6 — PDF §2.7.2)
     public const string SessionQuestionSubmitted = "SessionQuestion.Submitted";

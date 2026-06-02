@@ -94,6 +94,12 @@
                         }
                     </CellTemplate>
                 </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionSummary" Key="status"
+                                    Header="@L["Admin.Sessions.Column.Status"]">
+                    <CellTemplate>
+                        <SimfPill Variant="@StatusPillVariant(context.Status)">@StatusLabel(context.Status)</SimfPill>
+                    </CellTemplate>
+                </SimfDataGridColumn>
             </Columns>
             <EmptyTemplate>
                 <SimfEmptyState Title="@L["Admin.Sessions.None"]" />
@@ -169,9 +175,33 @@
                 </dd>
                 <dt>@L["Admin.Sessions.Column.Active"]</dt>
                 <dd>@(_detailsTarget.IsActive ? L["Admin.Sessions.Active.Yes"] : L["Admin.Sessions.Active.No"])</dd>
+                <dt>@L["Admin.Sessions.Column.Status"]</dt>
+                <dd>
+                    <SimfPill Variant="@StatusPillVariant(_detailsTarget.Status)">
+                        @StatusLabel(_detailsTarget.Status)
+                    </SimfPill>
+                </dd>
+                @if (_detailsTarget.PublishedAt is { } published)
+                {
+                    <dt>@L["Admin.Sessions.Lifecycle.PublishedAt"]</dt>
+                    <dd>@published.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+                }
             </dl>
         </ChildContent>
         <Footer>
+            @* P3.2 — D-231: the Committee drives the broadcast lifecycle here,
+               gated by Sessions.Publish (distinct from session edit). *@
+            <AuthorizedAction Permission="@PermissionCatalog.Sessions.Publish">
+                <div class="simf-form__actions">
+                    @foreach (var move in NextTransitions(_detailsTarget.Status))
+                    {
+                        <SimfButton Type="button" Disabled="_lifecycleBusy"
+                                    OnClick="@(() => SetStatusAsync(move.Target))">
+                            @L[move.LabelKey]
+                        </SimfButton>
+                    }
+                </div>
+            </AuthorizedAction>
             <SimfButton Type="button" OnClick="@(() => _detailsTarget = null)">
                 @L["Admin.Sessions.Details.Close"]
             </SimfButton>
@@ -190,6 +220,7 @@
     private bool _addOpen;
     private AdminSessionDetail? _editTarget;
     private AdminSessionDetail? _detailsTarget;
+    private bool _lifecycleBusy;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -283,6 +314,67 @@
                 envelope?.Error?.MessageForCurrentCulture()
                 ?? L["Admin.Sessions.Fallback"]);
         }
+    }
+
+    // P3.2 — D-231: the broadcast lifecycle. The Committee moves the session
+    // along Scheduled → Held → Recorded → Published (and the reverse adjacent
+    // steps); the backend enforces the legal moves, the UI just offers them.
+    // The resx keys are 1:1 with the enum names (Admin.Sessions.Status.<Name>),
+    // so derive the key — no switch + dead fallback to keep in sync. A missing
+    // key surfaces the raw key (normal resx-miss behaviour), not a silent mislabel.
+    private string StatusLabel(SessionStatus status) =>
+        L[$"Admin.Sessions.Status.{status}"];
+
+    private static string StatusPillVariant(SessionStatus status) => status switch
+    {
+        SessionStatus.Published => "on",
+        SessionStatus.Scheduled => "neutral",
+        _ => "admin",
+    };
+
+    private static IEnumerable<(SessionStatus Target, string LabelKey)> NextTransitions(
+        SessionStatus current) => current switch
+    {
+        SessionStatus.Scheduled =>
+            [(SessionStatus.Held, "Admin.Sessions.Lifecycle.MarkHeld")],
+        SessionStatus.Held =>
+            [(SessionStatus.Scheduled, "Admin.Sessions.Lifecycle.BackToScheduled"),
+             (SessionStatus.Recorded, "Admin.Sessions.Lifecycle.MarkRecorded")],
+        SessionStatus.Recorded =>
+            [(SessionStatus.Held, "Admin.Sessions.Lifecycle.BackToHeld"),
+             (SessionStatus.Published, "Admin.Sessions.Lifecycle.Publish")],
+        SessionStatus.Published =>
+            [(SessionStatus.Recorded, "Admin.Sessions.Lifecycle.Unpublish")],
+        _ => [],
+    };
+
+    private async Task SetStatusAsync(SessionStatus target)
+    {
+        if (_detailsTarget is null) { return; }
+        _lifecycleBusy = true;
+        _toast = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminSessionDetail>>(
+                "simfAccount.putJson",
+                $"/account/api/admin/sessions/{_detailsTarget.Id}/status",
+                new SetSessionStatusRequest { Status = target });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _detailsTarget = envelope.Data;
+                _toast = new Toast("success",
+                    string.Format(L["Admin.Sessions.Lifecycle.Changed"],
+                        StatusLabel(envelope.Data.Status)));
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Sessions.Fallback"]);
+            }
+        }
+        finally { _lifecycleBusy = false; }
     }
 
     private static string HallLabel(AdminSessionSummary row) =>

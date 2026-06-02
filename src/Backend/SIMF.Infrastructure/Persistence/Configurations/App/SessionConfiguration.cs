@@ -41,6 +41,14 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         // Two query indexes the agenda screen + the operator views ride.
         builder.HasIndex(s => new { s.IsActive, s.StartUtc });
         builder.HasIndex(s => new { s.HallId, s.StartUtc });
+
+        // P3.2 — D-231: the Committee's lifecycle queue lists sessions by
+        // status (e.g. the Recorded ones awaiting publish), most-recent first.
+        // Status is stored as int (enum, by convention); no HasDefaultValue —
+        // the service always writes an explicit value (avoids the EF "0 looks
+        // unset" default-backfill trap), and the migration backfills existing
+        // rows to Scheduled (0).
+        builder.HasIndex(s => new { s.Status, s.StartUtc });
     }
 }
 

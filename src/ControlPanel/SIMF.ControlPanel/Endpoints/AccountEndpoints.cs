@@ -1108,6 +1108,15 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.DeactivateSessionAsync(id, token));
         });
+        // P3.2 — D-231: session broadcast-lifecycle transition.
+        group.MapPut("/admin/sessions/{id:guid}/status",
+            async (Guid id, SetSessionStatusRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.SetSessionStatusAsync(id, body, token));
+        });
 
         // D-166 (gap doc G4) — registration gate + archive visibility BFF passthroughs.
         group.MapGet("/admin/registration-gate",

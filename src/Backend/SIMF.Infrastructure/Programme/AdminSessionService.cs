@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/AdminSessionsTests.cs
+// Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 lifecycle)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -82,7 +83,8 @@ internal sealed class AdminSessionService(
                 session.CapacityOverride ?? session.Hall!.Capacity,
                 session.IsActive,
                 session.CreatedAt,
-                session.CategoryId))
+                session.CategoryId,
+                session.Status))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminSessionSummary>.Of(page, total,
@@ -276,6 +278,82 @@ internal sealed class AdminSessionService(
             ActorUserId = actorUserId,
             Detail = $"id={session.Id}; code={session.Code}",
         }, cancellationToken);
+    }
+
+    // P3.2 — D-231: the legal adjacent lifecycle moves. Any pair not listed
+    // (and not a same-status no-op) is rejected — so the Committee cannot
+    // skip a step (e.g. Scheduled → Published) by hand.
+    private static readonly HashSet<(SessionStatus From, SessionStatus To)> AllowedTransitions =
+    [
+        (SessionStatus.Scheduled, SessionStatus.Held),
+        (SessionStatus.Held, SessionStatus.Scheduled),
+        (SessionStatus.Held, SessionStatus.Recorded),
+        (SessionStatus.Recorded, SessionStatus.Held),
+        (SessionStatus.Recorded, SessionStatus.Published),
+        (SessionStatus.Published, SessionStatus.Recorded),
+    ];
+
+    public async Task<AdminSessionDetail> SetStatusAsync(
+        Guid actorUserId,
+        Guid id,
+        SessionStatus status,
+        CancellationToken cancellationToken = default)
+    {
+        // Load the full graph once, tracked (we mutate it), with the same
+        // includes ToDetail needs — so the DTO is built in memory after the save
+        // with no second round-trip. Create/Update re-fetch via GetAsync because
+        // they deliberately don't load these navigations; SetStatus loads them
+        // up front and skips the re-fetch.
+        var session = await dbContext.Sessions
+            .Include(row => row.Hall)
+            .Include(row => row.Speakers).ThenInclude(link => link.Speaker)
+            .Include(row => row.Themes)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.SessionNotFound, 404,
+                "The session was not found.",
+                "لم يتم العثور على الجلسة.");
+
+        var from = session.Status;
+        if (from == status)
+        {
+            return ToDetail(session); // idempotent — nothing changed
+        }
+
+        if (!AllowedTransitions.Contains((from, status)))
+        {
+            throw new ApiException(
+                ErrorCodes.SessionStatusTransitionInvalid, 400,
+                $"A session cannot move from {from} to {status}.",
+                $"لا يمكن نقل الجلسة من {from} إلى {status}.");
+        }
+
+        var now = timeProvider.GetUtcNow();
+        session.Status = status;
+        session.PublishedAt = status == SessionStatus.Published ? now : null;
+        session.UpdatedAt = now;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var eventType = status switch
+        {
+            SessionStatus.Published => AuditEvents.SessionPublished,
+            SessionStatus.Recorded when from == SessionStatus.Published
+                => AuditEvents.SessionUnpublished,
+            _ => AuditEvents.SessionStatusChanged,
+        };
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = eventType,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"id={session.Id}; code={session.Code}; {from}->{status}",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Admin {ActorId} moved Session {Code} ({Id}) {From} -> {To}",
+            actorUserId, session.Code, session.Id, from, status);
+
+        return ToDetail(session);
     }
 
     // -- helpers --------------------------------------------------------------
@@ -482,6 +560,8 @@ internal sealed class AdminSessionService(
             themeIds,
             session.CreatedAt,
             session.UpdatedAt,
-            session.CategoryId);
+            session.CategoryId,
+            session.Status,
+            session.PublishedAt);
     }
 }

@@ -78,6 +78,18 @@ public class Session
     /// is reminded exactly once. Null until reminded (the normal state).</summary>
     public DateTimeOffset? ReminderSentUtc { get; set; }
 
+    /// <summary>P3.2 — D-231 (Completion Programme §5.2, Option A): the
+    /// broadcast lifecycle. The Scientific Committee drives the transitions
+    /// in the CP (<c>Scheduled → Held → Recorded → Published</c>).
+    /// Orthogonal to <see cref="IsActive"/> (soft-delete). New sessions
+    /// start <see cref="SessionStatus.Scheduled"/>.</summary>
+    public SessionStatus Status { get; set; } = SessionStatus.Scheduled;
+
+    /// <summary>P3.2 — D-231: stamped when the session is published
+    /// (<see cref="SessionStatus.Published"/>) and cleared if it is
+    /// un-published. Null in every other state.</summary>
+    public DateTimeOffset? PublishedAt { get; set; }
+
     /// <summary>M-to-M with <see cref="Speaker"/> via the explicit join
     /// entity <see cref="SessionSpeaker"/>. Explicit because the
     /// composite key + the per-row metadata (DisplayOrder) earns the

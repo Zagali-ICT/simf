@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/AdminSessionsTests.cs
+// Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 lifecycle)
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.Programme.Abstractions;
@@ -156,5 +157,34 @@ public sealed class DeactivateSessionEndpoint(IAdminSessionService service)
         }
         await service.DeactivateAsync(actorId, req.Id, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
+    }
+}
+
+/// <summary>P3.2 — D-231 (Completion Programme §5.2): the Scientific
+/// Committee moves the session along its broadcast lifecycle. Gated by the
+/// dedicated <c>Sessions.Publish</c> permission (distinct from edit) so the
+/// Committee role can publish without full session-edit rights.</summary>
+public sealed class SetSessionStatusEndpoint(IAdminSessionService service)
+    : Endpoint<SetSessionStatusRequest, ApiResult<AdminSessionDetail>>
+{
+    public override void Configure()
+    {
+        Put("/admin/sessions/{id:guid}/status");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Sessions.Publish),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(SetSessionStatusRequest req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        var id = Route<Guid>("id");
+        await Send.OkAsync(ApiResult<AdminSessionDetail>.Ok(
+            await service.SetStatusAsync(actorId, id, req.Status, ct)), ct);
     }
 }

@@ -25,7 +25,10 @@ public sealed record PublicSessionListItem(
     // B9b — D-226: appended (additive — wire contract preserved, D-219).
     Guid? CategoryId = null,
     string? CategoryName = null,
-    string? CategoryNameArabic = null);
+    string? CategoryNameArabic = null,
+    // P3.2 — D-231: broadcast lifecycle status (appended; lets the agenda
+    // chip a "Recorded"/"Published" badge). Default preserves the wire.
+    SessionStatus Status = SessionStatus.Scheduled);
 
 /// <summary>D-199 — envelope for the public agenda list.</summary>
 public sealed record PublicSessions(IReadOnlyList<PublicSessionListItem> Items);
@@ -53,7 +56,14 @@ public sealed record PublicSessionDetail(
     // B9b — D-226: appended (additive — wire contract preserved, D-219).
     Guid? CategoryId = null,
     string? CategoryName = null,
-    string? CategoryNameArabic = null);
+    string? CategoryNameArabic = null,
+    // P3.2 — D-231: broadcast lifecycle status + publish stamp. A presentation
+    // signal only — the client badges the state and PublishedAt marks when it
+    // went live. This DTO carries NO recording payload yet: the recording field
+    // + the server-side "only when Published" gate land in P3.2b, and the
+    // recorded-Q&A read in P3.4. Appended; defaults preserve the wire (D-219).
+    SessionStatus Status = SessionStatus.Scheduled,
+    DateTimeOffset? PublishedAt = null);
 
 /// <summary>D-199 — one theme/pillar tag on a public session. Order
 /// follows the session's theme order; the first is the primary pillar

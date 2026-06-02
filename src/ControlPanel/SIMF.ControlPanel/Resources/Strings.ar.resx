@@ -1275,6 +1275,19 @@
   <data name="Admin.Sessions.Column.Actions" xml:space="preserve"><value>الإجراءات</value></data>
   <data name="Admin.Sessions.Active.Yes" xml:space="preserve"><value>مفعّلة</value></data>
   <data name="Admin.Sessions.Active.No" xml:space="preserve"><value>غير مفعّلة</value></data>
+  <data name="Admin.Sessions.Column.Status" xml:space="preserve"><value>المرحلة</value></data>
+  <data name="Admin.Sessions.Status.Scheduled" xml:space="preserve"><value>مجدولة</value></data>
+  <data name="Admin.Sessions.Status.Held" xml:space="preserve"><value>منعقدة</value></data>
+  <data name="Admin.Sessions.Status.Recorded" xml:space="preserve"><value>مُسجّلة</value></data>
+  <data name="Admin.Sessions.Status.Published" xml:space="preserve"><value>منشورة</value></data>
+  <data name="Admin.Sessions.Lifecycle.PublishedAt" xml:space="preserve"><value>تاريخ النشر</value></data>
+  <data name="Admin.Sessions.Lifecycle.MarkHeld" xml:space="preserve"><value>تحديد كمنعقدة</value></data>
+  <data name="Admin.Sessions.Lifecycle.BackToScheduled" xml:space="preserve"><value>إرجاع إلى مجدولة</value></data>
+  <data name="Admin.Sessions.Lifecycle.MarkRecorded" xml:space="preserve"><value>تحديد كمُسجّلة</value></data>
+  <data name="Admin.Sessions.Lifecycle.BackToHeld" xml:space="preserve"><value>إرجاع إلى منعقدة</value></data>
+  <data name="Admin.Sessions.Lifecycle.Publish" xml:space="preserve"><value>نشر</value></data>
+  <data name="Admin.Sessions.Lifecycle.Unpublish" xml:space="preserve"><value>إلغاء النشر</value></data>
+  <data name="Admin.Sessions.Lifecycle.Changed" xml:space="preserve"><value>تم ضبط مرحلة الجلسة إلى {0}.</value></data>
   <data name="Admin.Sessions.Action.Add" xml:space="preserve"><value>إضافة جلسة</value></data>
   <data name="Admin.Sessions.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
   <data name="Admin.Sessions.Action.Details" xml:space="preserve"><value>تفاصيل</value></data>

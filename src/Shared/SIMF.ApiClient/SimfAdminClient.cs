@@ -1068,6 +1068,15 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"sessions/{id}", content: null,
             accessToken, cancellationToken);
 
+    // P3.2 — D-231: session broadcast-lifecycle transition.
+    public Task<ApiCallResult<AdminSessionDetail>> SetSessionStatusAsync(
+        Guid id, SetSessionStatusRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionDetail>(
+            HttpMethod.Put, $"sessions/{id}/status",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     // -- D-166 (gap doc G4) — registration gate + archive visibility -------
 
     public Task<ApiCallResult<RegistrationGateState>> GetRegistrationGateAsync(
