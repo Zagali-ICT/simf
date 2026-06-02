@@ -1404,6 +1404,51 @@ internal static class AccountEndpoints
                 sessionId, body.OrderedQuestionIds.ToList(), token));
         });
 
+        // P4.1 — D-238: AI session-summary / محضر committee desk passthroughs.
+        group.MapGet("/admin/session-summaries",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListSessionSummariesAsync(token));
+        });
+        group.MapGet("/admin/session-summaries/{sessionId:guid}",
+            async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetSessionSummaryAsync(sessionId, token));
+        });
+        group.MapPost("/admin/session-summaries/{sessionId:guid}/generate",
+            async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GenerateSessionSummaryAsync(sessionId, token));
+        });
+        group.MapPut("/admin/session-summaries/{sessionId:guid}",
+            async (Guid sessionId, SaveSessionSummaryRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.SaveSessionSummaryAsync(sessionId, body, token));
+        });
+        group.MapPut("/admin/session-summaries/{sessionId:guid}/publish",
+            async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.PublishSessionSummaryAsync(sessionId, token));
+        });
+        group.MapPut("/admin/session-summaries/{sessionId:guid}/unpublish",
+            async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UnpublishSessionSummaryAsync(sessionId, token));
+        });
+
         // D-148 — Gate Module BFF passthroughs (admin + operator).
         group.MapPost("/admin/gates/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

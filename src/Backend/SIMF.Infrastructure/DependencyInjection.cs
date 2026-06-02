@@ -208,6 +208,10 @@ public static class DependencyInjection
         // to a Hall + M-to-M Speakers + M-to-M Themes (PDF §2.9).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSessionService,
             SIMF.Infrastructure.Programme.AdminSessionService>();
+        // P4.1 — D-238: AI session-summary / محضر committee desk (drafts via
+        // the central IAiService seam; publishes for the app read in D-237).
+        services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSessionSummaryService,
+            SIMF.Infrastructure.Programme.AdminSessionSummaryService>();
         // P3.2b — D-232 (D-213): out-of-row session-recording storage (streamed
         // both ways, range-served behind a short-lived stream token).
         services.Configure<SIMF.Infrastructure.Programme.SessionRecordingStorageOptions>(

@@ -1,0 +1,292 @@
+@* P4.1 — D-238 (Completion Programme §6.4.1, Mockup screen 34): the Scientific-
+   Committee AI session-summary / محضر desk. Lists every active session with its
+   summary state; AI-draft (generate) or hand-write (edit), then publish for the
+   app to read. Gated by SessionSummaries.* . *@
+@page "/admin/session-summaries"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.SessionSummaries.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.SessionSummaries.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.SessionSummaries.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        @if (_loading)
+        {
+            <p>@L["Admin.SessionSummaries.Loading"]</p>
+        }
+        else if (_rows.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.SessionSummaries.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.SessionSummaries.Col.Session"]</th>
+                        <th>@L["Admin.SessionSummaries.Col.Status"]</th>
+                        <th>@L["Admin.SessionSummaries.Col.Source"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _rows)
+                    {
+                        <tr>
+                            <td>@row.SessionTitle</td>
+                            <td>@StatusLabel(row)</td>
+                            <td>@SourceLabel(row)</td>
+                            <td>
+                                <AuthorizedAction Permission="@PermissionCatalog.SessionSummaries.Edit">
+                                    <SimfButton Type="button" Disabled="_busy"
+                                                OnClick="@(() => GenerateAsync(row.SessionId))">
+                                        @L["Admin.SessionSummaries.Action.Generate"]
+                                    </SimfButton>
+                                    @if (row.HasSummary)
+                                    {
+                                        <SimfButton Type="button" Disabled="_busy"
+                                                    OnClick="@(() => OpenEditorAsync(row.SessionId))">
+                                            @L["Admin.SessionSummaries.Action.Edit"]
+                                        </SimfButton>
+                                    }
+                                </AuthorizedAction>
+                                @if (row.HasSummary)
+                                {
+                                    <AuthorizedAction Permission="@PermissionCatalog.SessionSummaries.Publish">
+                                        @if (row.IsPublished)
+                                        {
+                                            <SimfButton Type="button" Disabled="_busy"
+                                                        OnClick="@(() => SetPublishedAsync(row.SessionId, false))">
+                                                @L["Admin.SessionSummaries.Action.Unpublish"]
+                                            </SimfButton>
+                                        }
+                                        else
+                                        {
+                                            <SimfButton Type="button" Disabled="_busy"
+                                                        OnClick="@(() => SetPublishedAsync(row.SessionId, true))">
+                                                @L["Admin.SessionSummaries.Action.Publish"]
+                                            </SimfButton>
+                                        }
+                                    </AuthorizedAction>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@if (_edit is not null)
+{
+    <SimfModal Open="true" Title="@_editTitle" OnClose="CloseEditor">
+        <ChildContent>
+            @if (_editAiModel is not null)
+            {
+                <SimfAlert Variant="info">@L["Admin.SessionSummaries.AiBanner"]</SimfAlert>
+            }
+            <SimfTextarea Label="@L["Admin.SessionSummaries.Field.KeyPoints"]" Rows="3" MaxLength="4000"
+                          @bind-Value="_edit.KeyPoints" Disabled="_busy" />
+            <SimfTextarea Label="@L["Admin.SessionSummaries.Field.KeyPointsArabic"]" Rows="3" MaxLength="4000"
+                          @bind-Value="_edit.KeyPointsArabic" Disabled="_busy" />
+            <SimfTextarea Label="@L["Admin.SessionSummaries.Field.Recommendations"]" Rows="3" MaxLength="4000"
+                          @bind-Value="_edit.Recommendations" Disabled="_busy" />
+            <SimfTextarea Label="@L["Admin.SessionSummaries.Field.RecommendationsArabic"]" Rows="3" MaxLength="4000"
+                          @bind-Value="_edit.RecommendationsArabic" Disabled="_busy" />
+            <SimfTextarea Label="@L["Admin.SessionSummaries.Field.Speakers"]" Rows="2" MaxLength="1000"
+                          @bind-Value="_edit.Speakers" Disabled="_busy" />
+            <SimfTextarea Label="@L["Admin.SessionSummaries.Field.SpeakersArabic"]" Rows="2" MaxLength="1000"
+                          @bind-Value="_edit.SpeakersArabic" Disabled="_busy" />
+            <SimfTextarea Label="@L["Admin.SessionSummaries.Field.FullText"]" Rows="5" MaxLength="8000"
+                          @bind-Value="_edit.FullText" Disabled="_busy" />
+            <SimfTextarea Label="@L["Admin.SessionSummaries.Field.FullTextArabic"]" Rows="5" MaxLength="8000"
+                          @bind-Value="_edit.FullTextArabic" Disabled="_busy" />
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Loading="_busy" OnClick="SaveAsync">
+                @L["Admin.SessionSummaries.Editor.Save"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="CloseEditor">
+                @L["Admin.SessionSummaries.Editor.Cancel"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private List<AdminSessionSummaryRow> _rows = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private SaveSessionSummaryRequest? _edit;
+    private Guid _editSessionId;
+    private string _editTitle = string.Empty;
+    private string? _editAiModel;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminSessionSummaryRow>>>(
+                "simfAccount.getJson", "/account/api/admin/session-summaries");
+            if (envelope is { Success: true, Data: not null })
+            {
+                _rows = envelope.Data.ToList();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionSummaries.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task GenerateAsync(Guid sessionId)
+    {
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminSessionSummaryDetail>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/session-summaries/{sessionId}/generate", new { });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _toast = new Toast("success", L["Admin.SessionSummaries.Generated"]);
+                LoadEditor(envelope.Data);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionSummaries.Fallback"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OpenEditorAsync(Guid sessionId)
+    {
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminSessionSummaryDetail>>(
+                "simfAccount.getJson", $"/account/api/admin/session-summaries/{sessionId}");
+            if (envelope is { Success: true, Data: not null })
+            {
+                LoadEditor(envelope.Data);
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionSummaries.Fallback"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void LoadEditor(AdminSessionSummaryDetail detail)
+    {
+        _editSessionId = detail.SessionId;
+        _editTitle = detail.SessionTitle;
+        _editAiModel = detail.AiModel;
+        _edit = new SaveSessionSummaryRequest
+        {
+            KeyPoints = detail.KeyPoints,
+            KeyPointsArabic = detail.KeyPointsArabic,
+            Recommendations = detail.Recommendations,
+            RecommendationsArabic = detail.RecommendationsArabic,
+            Speakers = detail.Speakers,
+            SpeakersArabic = detail.SpeakersArabic,
+            FullText = detail.FullText,
+            FullTextArabic = detail.FullTextArabic,
+        };
+    }
+
+    private void CloseEditor() => _edit = null;
+
+    private async Task SaveAsync()
+    {
+        if (_edit is null) { return; }
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminSessionSummaryDetail>>(
+                "simfAccount.putJson",
+                $"/account/api/admin/session-summaries/{_editSessionId}", _edit);
+            if (envelope is { Success: true })
+            {
+                _edit = null;
+                _toast = new Toast("success", L["Admin.SessionSummaries.Saved"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionSummaries.Fallback"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task SetPublishedAsync(Guid sessionId, bool publish)
+    {
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var url = publish
+                ? $"/account/api/admin/session-summaries/{sessionId}/publish"
+                : $"/account/api/admin/session-summaries/{sessionId}/unpublish";
+            var envelope = await JS.InvokeAsync<ApiResult<AdminSessionSummaryDetail>>(
+                "simfAccount.putJson", url, new { });
+            if (envelope is { Success: true })
+            {
+                _toast = new Toast("success",
+                    publish ? L["Admin.SessionSummaries.Published"]
+                            : L["Admin.SessionSummaries.Unpublished"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionSummaries.Fallback"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private string StatusLabel(AdminSessionSummaryRow row) =>
+        !row.HasSummary ? L["Admin.SessionSummaries.Status.None"]
+        : row.IsPublished ? L["Admin.SessionSummaries.Status.Published"]
+        : L["Admin.SessionSummaries.Status.Draft"];
+
+    private string SourceLabel(AdminSessionSummaryRow row) =>
+        !row.HasSummary ? "—"
+        : row.GeneratedByAi ? L["Admin.SessionSummaries.Source.Ai"]
+        : L["Admin.SessionSummaries.Source.Manual"];
+}

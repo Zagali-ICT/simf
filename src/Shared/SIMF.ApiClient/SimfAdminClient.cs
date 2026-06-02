@@ -1030,10 +1030,10 @@ public sealed class SimfAdminClient(HttpClient http)
 
     // -- D-165 (gap doc G3) — Session admin CRUD -----------------------------
 
-    public Task<ApiCallResult<GridPage<AdminSessionSummary>>> ListSessionsAsync(
+    public Task<ApiCallResult<GridPage<AdminSessionSummaryDetail>>> ListSessionsAsync(
         GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<GridPage<AdminSessionSummary>>(
+        SendAsync<GridPage<AdminSessionSummaryDetail>>(
             HttpMethod.Post, "sessions/list",
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
@@ -1315,6 +1315,48 @@ public sealed class SimfAdminClient(HttpClient http)
         SendAsync<SIMF.Contracts.Sessions.SessionQuestionQueueRow>(
             HttpMethod.Put, $"questions/{questionId}/escalate",
             JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    // P4.1 — D-238: AI session-summary / محضر committee desk (/admin/session-summaries/*).
+    public Task<ApiCallResult<IReadOnlyList<AdminSessionSummaryRow>>>
+        ListSessionSummariesAsync(string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<AdminSessionSummaryRow>>(
+            HttpMethod.Get, "session-summaries", content: null, accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSessionSummaryDetail>>
+        GetSessionSummaryAsync(Guid sessionId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionSummaryDetail>(
+            HttpMethod.Get, $"session-summaries/{sessionId}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSessionSummaryDetail>>
+        GenerateSessionSummaryAsync(Guid sessionId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionSummaryDetail>(
+            HttpMethod.Post, $"session-summaries/{sessionId}/generate", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSessionSummaryDetail>>
+        SaveSessionSummaryAsync(Guid sessionId, SaveSessionSummaryRequest request,
+            string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionSummaryDetail>(
+            HttpMethod.Put, $"session-summaries/{sessionId}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSessionSummaryDetail>>
+        PublishSessionSummaryAsync(Guid sessionId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionSummaryDetail>(
+            HttpMethod.Put, $"session-summaries/{sessionId}/publish", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSessionSummaryDetail>>
+        UnpublishSessionSummaryAsync(Guid sessionId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionSummaryDetail>(
+            HttpMethod.Put, $"session-summaries/{sessionId}/unpublish", content: null,
             accessToken, cancellationToken);
 
     public Task<ApiCallResult<IReadOnlyList<SIMF.Contracts.Sessions.SessionQuestionModeratorRow>>>

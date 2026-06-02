@@ -274,6 +274,17 @@ public static class PermissionCatalog
         public const string Escalate = "Questions.Escalate";
     }
 
+    /// <summary>P4.1 — D-238: the Scientific-Committee AI session-summary / محضر
+    /// desk (Completion Programme §6.4.1, Mockup screen 34). View the desk +
+    /// editor; Edit drafts (AI-generate or hand-write + save); Publish makes the
+    /// محضر public to the app (and un-publishes).</summary>
+    public static class SessionSummaries
+    {
+        public const string View = "SessionSummaries.View";
+        public const string Edit = "SessionSummaries.Edit";
+        public const string Publish = "SessionSummaries.Publish";
+    }
+
     // ── Exhibition ───────────────────────────────────────────────────────
 
     public static class Companies
@@ -597,6 +608,11 @@ public static class PermissionCatalog
         new(Questions.View, "Questions", "View", "View the question queue", AdminOnly),
         new(Questions.Moderate, "Questions", "Moderate", "Approve / hide questions", AdminOnly),
         new(Questions.Escalate, "Questions", "Escalate", "Escalate questions to a role", AdminOnly),
+
+        // P4.1 — D-238: AI session-summary / محضر committee desk.
+        new(SessionSummaries.View, "SessionSummaries", "View", "View session summaries", AdminOnly),
+        new(SessionSummaries.Edit, "SessionSummaries", "Edit", "Generate / edit session summaries", AdminOnly),
+        new(SessionSummaries.Publish, "SessionSummaries", "Publish", "Publish / un-publish session summaries", AdminOnly),
 
         // Exhibition
         new(Companies.View, "Companies", "View", "View companies", AdminOnly),

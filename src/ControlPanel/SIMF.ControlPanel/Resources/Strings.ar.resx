@@ -1557,6 +1557,39 @@
   <data name="Admin.QuestionQueue.Escalate.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.QuestionQueue.Phase.Pre" xml:space="preserve"><value>قبل</value></data>
   <data name="Admin.QuestionQueue.Phase.Live" xml:space="preserve"><value>مباشر</value></data>
+  <data name="Module.SessionSummaries" xml:space="preserve"><value>ملخصات الجلسات</value></data>
+  <data name="Admin.SessionSummaries.Title" xml:space="preserve"><value>ملخصات الجلسات (المحاضر)</value></data>
+  <data name="Admin.SessionSummaries.Loading" xml:space="preserve"><value>جارٍ تحميل الملخصات…</value></data>
+  <data name="Admin.SessionSummaries.None" xml:space="preserve"><value>لا توجد جلسات لتلخيصها بعد.</value></data>
+  <data name="Admin.SessionSummaries.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الملخصات.</value></data>
+  <data name="Admin.SessionSummaries.Fallback" xml:space="preserve"><value>حدث خطأ ما. يرجى المحاولة مرة أخرى.</value></data>
+  <data name="Admin.SessionSummaries.Col.Session" xml:space="preserve"><value>الجلسة</value></data>
+  <data name="Admin.SessionSummaries.Col.Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.SessionSummaries.Col.Source" xml:space="preserve"><value>المصدر</value></data>
+  <data name="Admin.SessionSummaries.Status.None" xml:space="preserve"><value>لا يوجد ملخص</value></data>
+  <data name="Admin.SessionSummaries.Status.Draft" xml:space="preserve"><value>مسودة</value></data>
+  <data name="Admin.SessionSummaries.Status.Published" xml:space="preserve"><value>منشور</value></data>
+  <data name="Admin.SessionSummaries.Source.Ai" xml:space="preserve"><value>مُولّد بالذكاء الاصطناعي</value></data>
+  <data name="Admin.SessionSummaries.Source.Manual" xml:space="preserve"><value>مُدخل يدويًا</value></data>
+  <data name="Admin.SessionSummaries.Action.Generate" xml:space="preserve"><value>توليد بالذكاء الاصطناعي</value></data>
+  <data name="Admin.SessionSummaries.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.SessionSummaries.Action.Publish" xml:space="preserve"><value>نشر</value></data>
+  <data name="Admin.SessionSummaries.Action.Unpublish" xml:space="preserve"><value>إلغاء النشر</value></data>
+  <data name="Admin.SessionSummaries.AiBanner" xml:space="preserve"><value>تم توليد هذه المسودة بالذكاء الاصطناعي — راجعها وعدّلها قبل النشر.</value></data>
+  <data name="Admin.SessionSummaries.Field.KeyPoints" xml:space="preserve"><value>أبرز النقاط (الإنجليزية) — نقطة في كل سطر</value></data>
+  <data name="Admin.SessionSummaries.Field.KeyPointsArabic" xml:space="preserve"><value>أبرز النقاط (العربية) — نقطة في كل سطر</value></data>
+  <data name="Admin.SessionSummaries.Field.Recommendations" xml:space="preserve"><value>التوصيات (الإنجليزية)</value></data>
+  <data name="Admin.SessionSummaries.Field.RecommendationsArabic" xml:space="preserve"><value>التوصيات (العربية)</value></data>
+  <data name="Admin.SessionSummaries.Field.Speakers" xml:space="preserve"><value>المتحدثون (الإنجليزية)</value></data>
+  <data name="Admin.SessionSummaries.Field.SpeakersArabic" xml:space="preserve"><value>المتحدثون (العربية)</value></data>
+  <data name="Admin.SessionSummaries.Field.FullText" xml:space="preserve"><value>النص الكامل (الإنجليزية)</value></data>
+  <data name="Admin.SessionSummaries.Field.FullTextArabic" xml:space="preserve"><value>النص الكامل (العربية)</value></data>
+  <data name="Admin.SessionSummaries.Editor.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.SessionSummaries.Editor.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.SessionSummaries.Generated" xml:space="preserve"><value>تم توليد مسودة بالذكاء الاصطناعي.</value></data>
+  <data name="Admin.SessionSummaries.Saved" xml:space="preserve"><value>تم حفظ الملخص.</value></data>
+  <data name="Admin.SessionSummaries.Published" xml:space="preserve"><value>تم نشر الملخص.</value></data>
+  <data name="Admin.SessionSummaries.Unpublished" xml:space="preserve"><value>تم إلغاء نشر الملخص.</value></data>
   <data name="Admin.SessionModerators.Title" xml:space="preserve"><value>مشرفو الجلسات</value></data>
   <data name="Admin.SessionModerators.Loading" xml:space="preserve"><value>جارٍ تحميل المشرفين…</value></data>
   <data name="Admin.SessionModerators.LoadFailed" xml:space="preserve"><value>تعذّر تحميل مشرفي الجلسات.</value></data>

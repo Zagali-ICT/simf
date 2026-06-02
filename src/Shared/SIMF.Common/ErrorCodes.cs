@@ -282,6 +282,9 @@ public static class ErrorCodes
     // P3.2b — D-232: recording upload rejected (empty / too large) / not found.
     public const string SessionRecordingInvalid = "SESSION_RECORDING_INVALID";
     public const string SessionRecordingNotFound = "SESSION_RECORDING_NOT_FOUND";
+    // P4.1 — D-238: AI session-summary / محضر validation + lookup.
+    public const string SessionSummaryInvalid = "SESSION_SUMMARY_INVALID";
+    public const string SessionSummaryNotFound = "SESSION_SUMMARY_NOT_FOUND";
 
     // Gates (D-148 — Gate Module, SIMF-FDS-003 §5.6, SIMF-API-GATES-001).
     public const string GateInvalid = "GATE_INVALID";

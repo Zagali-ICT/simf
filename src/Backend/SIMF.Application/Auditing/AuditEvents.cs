@@ -189,6 +189,11 @@ public static class AuditEvents
     // P3.2b — D-232: session-recording attach / delete.
     public const string SessionRecordingUploaded = "Session.RecordingUploaded";
     public const string SessionRecordingDeleted = "Session.RecordingDeleted";
+    // P4.1 — D-238: AI session-summary / محضر committee actions.
+    public const string SessionSummaryGenerated = "SessionSummary.Generated";
+    public const string SessionSummarySaved = "SessionSummary.Saved";
+    public const string SessionSummaryPublished = "SessionSummary.Published";
+    public const string SessionSummaryUnpublished = "SessionSummary.Unpublished";
 
     // Session questions + moderator grants (D-169, gap doc G6 — PDF §2.7.2)
     public const string SessionQuestionSubmitted = "SessionQuestion.Submitted";

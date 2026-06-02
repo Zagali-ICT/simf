@@ -13,4 +13,8 @@ public enum AiFeature
     Translate = 3,
     LiveTranslation = 4,
     LiveSignLanguage = 5,
+
+    /// <summary>P4.1 — D-238: AI session-summary / محضر drafting (Completion
+    /// Programme §6.4.1). Additive value — appended, never reorders the above.</summary>
+    SessionSummary = 6,
 }

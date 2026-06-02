@@ -492,6 +492,11 @@ public sealed class IdentitySeeder(
                 "Live Sign-Language Gloss", "ترجمة الإشارة الحيّة",
                 "Convert this in-progress transcript chunk into a glossed sign-language sequence suitable for a downstream avatar renderer. Keep glosses uppercase and space-separated.",
                 "{text}"),
+            // P4.1 — D-238: AI session-summary / محضر drafting (Mockup screen 34).
+            ("session-summary", AiFeature.SessionSummary,
+                "Session Minutes (محضر) Drafter", "مُسوّد محضر الجلسة",
+                "You are the rapporteur for the SIMF (Saudi International Maritime Forum). From the session metadata you are given, draft concise, formal minutes (محضر) in Arabic covering the key points discussed, the recommendations, and who took part. The Scientific Committee reviews and edits your draft before it is published.",
+                "Session: {sessionTitle}\nSpeakers: {speakers}\nAbstract: {sessionAbstract}"),
         };
 
         var existing = await appDbContext.AiPrompts.AsNoTracking()

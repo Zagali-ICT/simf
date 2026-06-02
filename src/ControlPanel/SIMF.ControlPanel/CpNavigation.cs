@@ -179,6 +179,8 @@ public static class CpNavigation
             new("Module.SessionModerators", "/admin/session-moderators", RequiredPermission: PermissionCatalog.SessionModerators.View),
             // P3.3 (D-234) — Scientific-Committee central Q&A queue (stage 2).
             new("Module.QuestionQueue", "/admin/question-queue", RequiredPermission: PermissionCatalog.Questions.View),
+            // P4.1 (D-238) — Scientific-Committee AI session-summary / محضر desk.
+            new("Module.SessionSummaries", "/admin/session-summaries", RequiredPermission: PermissionCatalog.SessionSummaries.View),
             // P2.4 (D-229) — the former /m/settings stub is collapsed into the
             // System Configuration page above; no separate Settings nav item.
         ]),
