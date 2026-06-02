@@ -24,6 +24,14 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
 
         builder.Property(x => x.RowLabel).HasMaxLength(8).IsRequired();
 
+        // P2.2 — D-227: booking-approval state. NO model-level default: with
+        // Pending = 0 = the CLR default, HasDefaultValue would make EF treat
+        // every Pending insert as "unset" and apply the store default. The
+        // service sets Status explicitly on every create; existing prod rows
+        // are backfilled to Approved by the migration's one-time AddColumn
+        // default (not a persisted model concern).
+        builder.Property(x => x.RejectionReason).HasMaxLength(512);
+
         builder.HasOne(x => x.Session)
             .WithMany()
             .HasForeignKey(x => x.SessionId)
@@ -42,5 +50,8 @@ internal sealed class SeatReservationConfiguration : IEntityTypeConfiguration<Se
         // Lookup support for grid + per-user "my seat" queries.
         builder.HasIndex(x => new { x.ReservedForUserId, x.ReleasedAt });
         builder.HasIndex(x => new { x.SessionId, x.ReleasedAt });
+
+        // P2.2 — D-227: the booking approval queue lists Pending, held bookings.
+        builder.HasIndex(x => new { x.Status, x.ReleasedAt });
     }
 }

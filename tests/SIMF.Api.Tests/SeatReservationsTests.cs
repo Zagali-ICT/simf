@@ -61,9 +61,10 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Reserving_a_seat_writes_a_booking_confirmed_notification()
+    public async Task Reserving_a_seat_creates_a_pending_booking_without_a_confirmation()
     {
-        // P1.7 — a successful self-pick fires an in-app BookingConfirmed row.
+        // P2.2 — D-227: a fresh self-pick is Pending; the booking-confirmed
+        // notification now fires on APPROVE (FDS-005 §5.2), not on reserve.
         var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 3);
         var visitor = await SignInApprovedVisitorAsync();
 
@@ -71,15 +72,16 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             $"/api/v1/sessions/{session.Id}/seats/reserve",
             new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
         Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+        var mine = (await pick.Content
+            .ReadFromJsonAsync<ApiResult<MySeatReservation>>())!.Data!;
+        Assert.Equal(BookingStatus.Pending, mine.Status);
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var note = await db.Notifications
             .SingleOrDefaultAsync(n => n.Kind == NotificationKind.BookingConfirmed
                 && n.RelatedEntityId == session.Id);
-        Assert.NotNull(note);
-        Assert.Equal(NotificationSeverity.Success, note!.Severity);
-        Assert.Contains("A1", note.Body);
+        Assert.Null(note); // nothing dispatched until the CP approves
     }
 
     [Fact]
@@ -230,8 +232,10 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
             Title = "Live", TitleArabic = "مباشر",
             HallId = hall.Id,
-            StartUtc = DateTimeOffset.UtcNow.AddMinutes(-15),
-            EndUtc = DateTimeOffset.UtcNow.AddMinutes(45),
+            // P2.2 — D-227: a FUTURE window so bookings can be cancelled before
+            // the session starts (the new cancel-before-start guard, FR-504).
+            StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+            EndUtc = DateTimeOffset.UtcNow.AddHours(2),
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

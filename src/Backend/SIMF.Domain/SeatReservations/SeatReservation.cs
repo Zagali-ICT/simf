@@ -51,4 +51,25 @@ public sealed class SeatReservation
     /// or admin clears). Released rows are excluded from the unique
     /// indexes so the seat is bookable again.</summary>
     public DateTimeOffset? ReleasedAt { get; set; }
+
+    /// <summary>P2.2 — D-227 (FDS-005 §4): the booking-approval state.
+    /// Visitor bookings (UserBooking / RandomAssignment) are created
+    /// <see cref="BookingStatus.Pending"/> and the Control Panel approves or
+    /// rejects them; AdminReservedRow blocks are created
+    /// <see cref="BookingStatus.Approved"/>. Existing rows backfill to
+    /// Approved (the EF default) — they pre-date the approval workflow and
+    /// were already confirmed.</summary>
+    public BookingStatus Status { get; set; }
+
+    /// <summary>P2.2 — the admin (logical FK to SimfUser on the Identity DB)
+    /// who approved or rejected the booking; null while Pending.</summary>
+    public Guid? ReviewedByUserId { get; set; }
+
+    /// <summary>P2.2 — when the booking was approved or rejected; null while
+    /// Pending.</summary>
+    public DateTimeOffset? ReviewedAt { get; set; }
+
+    /// <summary>P2.2 — the reason recorded when a booking is rejected
+    /// (required on reject, FDS-005 §8); null otherwise. ≤512 chars.</summary>
+    public string? RejectionReason { get; set; }
 }

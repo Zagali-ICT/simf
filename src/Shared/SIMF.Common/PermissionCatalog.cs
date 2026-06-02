@@ -215,6 +215,14 @@ public static class PermissionCatalog
         public const string Edit = "SeatPlans.Edit";
     }
 
+    /// <summary>P2.2 (D-227) — the booking approval queue (FDS-005 §5.2).</summary>
+    public static class Bookings
+    {
+        public const string View = "Bookings.View";
+        public const string Approve = "Bookings.Approve";
+        public const string Reject = "Bookings.Reject";
+    }
+
     public static class Delegations
     {
         public const string View = "Delegations.View";
@@ -525,6 +533,11 @@ public static class PermissionCatalog
 
         new(SeatPlans.View, "SeatPlans", "View", "View session seat plans", AdminOnly),
         new(SeatPlans.Edit, "SeatPlans", "Edit", "Edit session seat plans", AdminOnly),
+
+        // P2.2 — D-227: booking approval queue.
+        new(Bookings.View, "Bookings", "View", "View the booking approval queue", AdminOnly),
+        new(Bookings.Approve, "Bookings", "Approve", "Approve bookings", AdminOnly),
+        new(Bookings.Reject, "Bookings", "Reject", "Reject bookings", AdminOnly),
 
         new(Delegations.View, "Delegations", "View", "View delegations", AdminOnly),
         new(Delegations.Create, "Delegations", "Create", "Create delegations", AdminOnly),

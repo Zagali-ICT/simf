@@ -65,11 +65,40 @@ public sealed record HallSeatLayoutSnapshot(
     int HallCapacity);
 
 /// <summary>D-175 — what the user sees after a successful reservation.
-/// Returned by both self-pick and random-allocate.</summary>
+/// Returned by both self-pick and random-allocate. <see cref="Status"/>
+/// (P2.2 — D-227) is appended: a fresh booking is <c>Pending</c> until the
+/// Control Panel approves it (the field is append-only — the shipped app
+/// ignores unknown JSON keys).</summary>
 public sealed record MySeatReservation(
     Guid ReservationId,
     Guid SessionId,
     string RowLabel,
     int SeatNumber,
     SeatReservationKind Kind,
+    DateTimeOffset CreatedAt,
+    BookingStatus Status = BookingStatus.Pending);
+
+/// <summary>P2.2 — D-227 (FDS-005 §5.2): one row in the Control Panel booking
+/// approval queue. Carries the session + seat + attendee so the reviewer can
+/// decide without a drill-down. <see cref="AttendeeName"/> is resolved from
+/// the Identity DB in a separate round-trip (no cross-DB JOIN, D-157).</summary>
+public sealed record BookingQueueRow(
+    Guid ReservationId,
+    Guid SessionId,
+    string SessionTitle,
+    string SessionTitleArabic,
+    DateTimeOffset SessionStartUtc,
+    string RowLabel,
+    int SeatNumber,
+    SeatReservationKind Kind,
+    Guid? AttendeeUserId,
+    string AttendeeName,
     DateTimeOffset CreatedAt);
+
+/// <summary>P2.2 — D-227: admin reject request. The reason is required
+/// (FDS-005 §8) and recorded on the booking + sent to the attendee. Open for
+/// inheritance so the route-binding endpoint can carry the booking id.</summary>
+public class RejectBookingRequest
+{
+    public string Reason { get; set; } = string.Empty;
+}

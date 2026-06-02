@@ -95,4 +95,10 @@ public enum NotificationKind
     /// In-app row only.</summary>
     [Display(Description = nameof(ResNotificationKind.SessionReminder), ResourceType = typeof(ResNotificationKind))]
     SessionReminder = 41,
+
+    /// <summary>P2.2 — D-227 (FDS-005 §5.2): dispatched to a visitor when the
+    /// Control Panel rejects their seat booking; the body carries the reason.
+    /// In-app row only.</summary>
+    [Display(Description = nameof(ResNotificationKind.BookingRejected), ResourceType = typeof(ResNotificationKind))]
+    BookingRejected = 42,
 }

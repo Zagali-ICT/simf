@@ -1,0 +1,260 @@
+@* P2.2 (D-227) — booking approval queue (SIMF-FDS-005 §5.2). Lists Pending,
+   still-held visitor seat bookings; a reviewer approves (seat confirmed +
+   booking-confirmed notification) or rejects with a reason (seat released +
+   attendee notified). Bulk-approve supported. Mirrors SessionCategoriesList. *@
+@page "/admin/bookings"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Bookings.View)]
+@using SIMF.Contracts.Sessions
+@using SIMF.Contracts.Authentication
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Bookings.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Bookings.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        @if (_loading)
+        {
+            <p>@L["Admin.Bookings.Loading"]</p>
+        }
+        else if (_page.Items.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.Bookings.None"]" />
+        }
+        else
+        {
+            <div class="simf-form__actions">
+                <AuthorizedAction Permission="@PermissionCatalog.Bookings.Approve">
+                    <SimfButton Type="button" Disabled="@(_busy || _selected.Count == 0)"
+                                OnClick="ApproveSelectedAsync">
+                        @(string.Format(L["Admin.Bookings.ApproveSelected"], _selected.Count))
+                    </SimfButton>
+                </AuthorizedAction>
+            </div>
+
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>@L["Admin.Bookings.Col.Session"]</th>
+                        <th>@L["Admin.Bookings.Col.Start"]</th>
+                        <th>@L["Admin.Bookings.Col.Seat"]</th>
+                        <th>@L["Admin.Bookings.Col.Attendee"]</th>
+                        <th>@L["Admin.Bookings.Col.BookedAt"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _page.Items)
+                    {
+                        <tr>
+                            <td>
+                                <input type="checkbox"
+                                       checked="@_selected.Contains(row.ReservationId)"
+                                       @onchange="@(e => ToggleSelect(row.ReservationId, e))" />
+                            </td>
+                            <td>@row.SessionTitle</td>
+                            <td>@row.SessionStartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@row.RowLabel@row.SeatNumber</td>
+                            <td>@row.AttendeeName</td>
+                            <td>@row.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>
+                                <AuthorizedAction Permission="@PermissionCatalog.Bookings.Approve">
+                                    <SimfButton Type="button" Disabled="_busy"
+                                                OnClick="@(() => ApproveAsync(row.ReservationId))">
+                                        @L["Admin.Bookings.Approve"]
+                                    </SimfButton>
+                                </AuthorizedAction>
+                                <AuthorizedAction Permission="@PermissionCatalog.Bookings.Reject">
+                                    <SimfButton Type="button" Disabled="_busy"
+                                                OnClick="@(() => OpenReject(row))">
+                                        @L["Admin.Bookings.Reject"]
+                                    </SimfButton>
+                                </AuthorizedAction>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="simf-table__summary">
+                @(string.Format(L["Admin.Bookings.Summary"],
+                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
+            </p>
+        }
+    </div>
+</div>
+
+@if (_rejectOpen)
+{
+    <SimfModal Open="true"
+               Title="@L["Admin.Bookings.Reject.Title"]"
+               OnClose="@(() => _rejectOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Bookings.Reject.Reason"]</span>
+                    <textarea class="simf-field__input" rows="3" maxlength="512"
+                              value="@_rejectReason"
+                              @onchange="OnRejectReasonChanged"
+                              disabled="@_busy"></textarea>
+                </label>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Disabled="_busy" OnClick="@(() => _rejectOpen = false)">
+                @L["Admin.Bookings.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="ConfirmRejectAsync" Loading="_busy">
+                @L["Admin.Bookings.Reject.Confirm"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 100 };
+    private GridPage<BookingQueueRow> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+    private readonly HashSet<Guid> _selected = new();
+
+    private bool _rejectOpen;
+    private Guid _rejectingId;
+    private string _rejectReason = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _selected.Clear();
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<BookingQueueRow>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/bookings/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Bookings.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void ToggleSelect(Guid id, ChangeEventArgs e)
+    {
+        if (e.Value is true) _selected.Add(id);
+        else _selected.Remove(id);
+    }
+
+    private async Task ApproveAsync(Guid id)
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/bookings/{id}/approve", new { });
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.Bookings.Approved"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Bookings.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task ApproveSelectedAsync()
+    {
+        if (_busy || _selected.Count == 0) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<int>>(
+                "simfAccount.postJson",
+                "/account/api/admin/bookings/bulk-approve",
+                new AdminBulkApprovalRequest { Ids = _selected.ToList() });
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success",
+                    string.Format(L["Admin.Bookings.BulkApproved"], env.Data));
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Bookings.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OpenReject(BookingQueueRow row)
+    {
+        _rejectingId = row.ReservationId;
+        _rejectReason = string.Empty;
+        _rejectOpen = true;
+        _toast = null;
+    }
+
+    private void OnRejectReasonChanged(ChangeEventArgs e) =>
+        _rejectReason = e.Value?.ToString() ?? string.Empty;
+
+    private async Task ConfirmRejectAsync()
+    {
+        if (_busy) return;
+        if (string.IsNullOrWhiteSpace(_rejectReason))
+        {
+            _toast = new Toast("error", L["Admin.Bookings.ReasonRequired"]);
+            return;
+        }
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/bookings/{_rejectingId}/reject",
+                new RejectBookingRequest { Reason = _rejectReason.Trim() });
+            if (env is { Success: true })
+            {
+                _rejectOpen = false;
+                _toast = new Toast("success", L["Admin.Bookings.Rejected"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Bookings.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+}

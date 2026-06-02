@@ -1289,6 +1289,27 @@
   <data name="Admin.Sessions.Field.CategoryNone" xml:space="preserve"><value>— بدون تصنيف —</value></data>
   <data name="Module.SessionCategories" xml:space="preserve"><value>تصنيفات الجلسات</value></data>
   <data name="Admin.SessionCategories.Title" xml:space="preserve"><value>تصنيفات الجلسات</value></data>
+  <data name="Admin.Bookings.Title" xml:space="preserve"><value>اعتماد الحجوزات</value></data>
+  <data name="Admin.Bookings.Loading" xml:space="preserve"><value>جارٍ تحميل الحجوزات…</value></data>
+  <data name="Admin.Bookings.None" xml:space="preserve"><value>لا توجد حجوزات بانتظار الاعتماد.</value></data>
+  <data name="Admin.Bookings.Col.Session" xml:space="preserve"><value>الجلسة</value></data>
+  <data name="Admin.Bookings.Col.Start" xml:space="preserve"><value>تبدأ (UTC)</value></data>
+  <data name="Admin.Bookings.Col.Seat" xml:space="preserve"><value>المقعد</value></data>
+  <data name="Admin.Bookings.Col.Attendee" xml:space="preserve"><value>الحاضر</value></data>
+  <data name="Admin.Bookings.Col.BookedAt" xml:space="preserve"><value>تاريخ الحجز (UTC)</value></data>
+  <data name="Admin.Bookings.Approve" xml:space="preserve"><value>اعتماد</value></data>
+  <data name="Admin.Bookings.Reject" xml:space="preserve"><value>رفض</value></data>
+  <data name="Admin.Bookings.ApproveSelected" xml:space="preserve"><value>اعتماد المحدد ({0})</value></data>
+  <data name="Admin.Bookings.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Bookings.Approved" xml:space="preserve"><value>تم اعتماد الحجز.</value></data>
+  <data name="Admin.Bookings.Rejected" xml:space="preserve"><value>تم رفض الحجز.</value></data>
+  <data name="Admin.Bookings.BulkApproved" xml:space="preserve"><value>تم اعتماد {0} حجز.</value></data>
+  <data name="Admin.Bookings.LoadFailed" xml:space="preserve"><value>تعذّر إكمال العملية. يُرجى المحاولة مرة أخرى.</value></data>
+  <data name="Admin.Bookings.Reject.Title" xml:space="preserve"><value>رفض الحجز</value></data>
+  <data name="Admin.Bookings.Reject.Reason" xml:space="preserve"><value>السبب (يُرسل إلى الحاضر)</value></data>
+  <data name="Admin.Bookings.Reject.Confirm" xml:space="preserve"><value>رفض الحجز</value></data>
+  <data name="Admin.Bookings.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Bookings.ReasonRequired" xml:space="preserve"><value>يلزم إدخال سبب لرفض الحجز.</value></data>
   <data name="Admin.SessionCategories.New" xml:space="preserve"><value>تصنيف جديد</value></data>
   <data name="Admin.SessionCategories.Loading" xml:space="preserve"><value>جارٍ تحميل التصنيفات…</value></data>
   <data name="Admin.SessionCategories.None" xml:space="preserve"><value>لا توجد تصنيفات جلسات بعد.</value></data>

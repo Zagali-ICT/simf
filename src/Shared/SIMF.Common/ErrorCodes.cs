@@ -213,6 +213,13 @@ public static class ErrorCodes
     public const string SeatCapacityExceeded = "SEAT_CAPACITY_EXCEEDED";
     public const string SeatSessionFull = "SEAT_SESSION_FULL";
 
+    // Booking approval workflow (P2.2 / D-227 — FDS-005 §5).
+    public const string BookingOverlap = "BOOKING_OVERLAP";
+    public const string BookingNotFound = "BOOKING_NOT_FOUND";
+    public const string BookingNotPending = "BOOKING_NOT_PENDING";
+    public const string BookingRejectionReasonRequired = "BOOKING_REJECTION_REASON_REQUIRED";
+    public const string BookingSessionStarted = "BOOKING_SESSION_STARTED";
+
     // Centralised AI module (D-176, gap doc G12).
     public const string AiPromptInvalid = "AI_PROMPT_INVALID";
     public const string AiPromptNotFound = "AI_PROMPT_NOT_FOUND";

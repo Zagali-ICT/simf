@@ -1992,6 +1992,37 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateSessionCategoryAsync(id, token));
         });
 
+        // P2.2 (D-227) — booking approval queue passthroughs.
+        group.MapPost("/admin/bookings/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListPendingBookingsAsync(body, token));
+        });
+        group.MapPost("/admin/bookings/{id:guid}/approve",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ApproveBookingAsync(id, token));
+        });
+        group.MapPost("/admin/bookings/{id:guid}/reject",
+            async (Guid id, RejectBookingRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RejectBookingAsync(id, body, token));
+        });
+        group.MapPost("/admin/bookings/bulk-approve",
+            async (AdminBulkApprovalRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.BulkApproveBookingsAsync(
+                body.Ids?.ToList() ?? new List<Guid>(), token));
+        });
+
         // Multipart gov-Excel import (same SameSite=Lax CSRF stance as media upload).
         group.MapPost("/admin/organisations/import",
             async (HttpContext http, SimfAdminClient api) =>

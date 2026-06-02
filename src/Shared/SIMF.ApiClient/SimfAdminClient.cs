@@ -2030,6 +2030,39 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"session-categories/{id}", content: null,
             accessToken, cancellationToken);
 
+    // -- P2.2 (D-227) — Booking approval queue (SIMF.Contracts.Sessions) -----
+
+    public Task<ApiCallResult<GridPage<BookingQueueRow>>> ListPendingBookingsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<BookingQueueRow>>(
+            HttpMethod.Post, "bookings/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> ApproveBookingAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"bookings/{id}/approve", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> RejectBookingAsync(
+        Guid id, RejectBookingRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"bookings/{id}/reject",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<int>> BulkApproveBookingsAsync(
+        IReadOnlyList<Guid> reservationIds, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<int>(
+            HttpMethod.Post, "bookings/bulk-approve",
+            JsonContent.Create(new { ReservationIds = reservationIds }, options: JsonOptions),
+            accessToken, cancellationToken);
+
     // -- D-199 — Archive edition admin CRUD (SIMF.Contracts.Archive) --------
 
     public Task<ApiCallResult<GridPage<AdminArchiveEditionSummary>>> ListArchiveEditionsAsync(

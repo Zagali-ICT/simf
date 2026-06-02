@@ -30,6 +30,7 @@ public static class ResNotificationKind
     public static string VipBroadcast => Get(nameof(VipBroadcast));
     public static string BookingConfirmed => Get(nameof(BookingConfirmed));
     public static string SessionReminder => Get(nameof(SessionReminder));
+    public static string BookingRejected => Get(nameof(BookingRejected));
 
     private static string Get(string key) =>
         ResourceManager.GetString(key, CultureInfo.CurrentUICulture) ?? key;

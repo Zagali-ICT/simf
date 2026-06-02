@@ -240,6 +240,11 @@ public static class AuditEvents
     public const string SeatRowAdminReserved = "SeatReservation.RowAdminReserved";
     public const string SeatRowAdminReleased = "SeatReservation.RowAdminReleased";
 
+    // Booking approval workflow (P2.2 / D-227 — FDS-005 §5.2).
+    public const string BookingApproved = "Booking.Approved";
+    public const string BookingRejected = "Booking.Rejected";
+    public const string BookingCancelled = "Booking.Cancelled";
+
     // Centralised AI module (D-176, gap doc G12)
     public const string AiPromptCreated = "AiPrompt.Created";
     public const string AiPromptUpdated = "AiPrompt.Updated";
