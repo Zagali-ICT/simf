@@ -136,6 +136,10 @@ public static class ErrorCodes
     public const string SpeakerCodeDuplicate = "SPEAKER_CODE_DUPLICATE";
     public const string SpeakerInUse = "SPEAKER_IN_USE";
 
+    // Speaker presentations (P2.3 / D-228 — FR-407).
+    public const string SpeakerPresentationInvalid = "SPEAKER_PRESENTATION_INVALID";
+    public const string SpeakerPresentationNotFound = "SPEAKER_PRESENTATION_NOT_FOUND";
+
     // Sponsors (D-199 — event sponsors, Mockup page 23).
     public const string SponsorInvalid = "SPONSOR_INVALID";
     public const string SponsorNotFound = "SPONSOR_NOT_FOUND";

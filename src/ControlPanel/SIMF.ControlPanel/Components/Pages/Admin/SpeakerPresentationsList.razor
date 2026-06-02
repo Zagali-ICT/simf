@@ -1,0 +1,250 @@
+@* P2.3 (D-228) — speaker presentation-file management (SIMF-FDS-004 §5.3,
+   FR-407). Pick a speaker, see their presentation files (each linked to a
+   session), upload a new file for a session, download or remove existing ones.
+   Gated by Speakers.* (View to read, Edit to upload/delete). Mirrors the
+   MediaList out-of-row upload via simfAccount.uploadFile. *@
+@page "/admin/speaker-presentations"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Speakers.View)]
+@using SIMF.Contracts.Admin
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.SpeakerPresentations.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.SpeakerPresentations.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form__fields">
+            <label class="simf-field">
+                <span class="simf-field__label">@L["Admin.SpeakerPresentations.Speaker"]</span>
+                <select class="simf-field__input" value="@_speakerId"
+                        @onchange="OnSpeakerChanged" disabled="@_busy">
+                    <option value="">@L["Admin.SpeakerPresentations.SelectSpeaker"]</option>
+                    @foreach (var s in _speakers)
+                    {
+                        <option value="@s.Id">@s.Name</option>
+                    }
+                </select>
+            </label>
+        </div>
+
+        @if (!string.IsNullOrEmpty(_speakerId))
+        {
+            <AuthorizedAction Permission="@PermissionCatalog.Speakers.Edit">
+                <div class="simf-form__fields">
+                    <label class="simf-field">
+                        <span class="simf-field__label">@L["Admin.SpeakerPresentations.Session"]</span>
+                        <select class="simf-field__input" value="@_sessionId"
+                                @onchange="OnSessionChanged" disabled="@_busy">
+                            <option value="">@L["Admin.SpeakerPresentations.SelectSession"]</option>
+                            @foreach (var s in _sessions)
+                            {
+                                <option value="@s.Id">@s.Title</option>
+                            }
+                        </select>
+                    </label>
+                    <label class="simf-field">
+                        <span class="simf-field__label">@L["Admin.SpeakerPresentations.File"]</span>
+                        <input class="simf-field__input" type="file" id="presentation-file-input"
+                               disabled="@_busy" />
+                    </label>
+                    <SimfButton Type="button" Loading="_busy"
+                                Disabled="@(string.IsNullOrEmpty(_sessionId))"
+                                OnClick="UploadAsync">
+                        @L["Admin.SpeakerPresentations.Upload"]
+                    </SimfButton>
+                </div>
+            </AuthorizedAction>
+
+            @if (_loading)
+            {
+                <p>@L["Admin.SpeakerPresentations.Loading"]</p>
+            }
+            else if (_rows.Count == 0)
+            {
+                <SimfEmptyState Title="@L["Admin.SpeakerPresentations.None"]" />
+            }
+            else
+            {
+                <table class="simf-table">
+                    <thead>
+                        <tr>
+                            <th>@L["Admin.SpeakerPresentations.Col.File"]</th>
+                            <th>@L["Admin.SpeakerPresentations.Col.Session"]</th>
+                            <th>@L["Admin.SpeakerPresentations.Col.Size"]</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _rows)
+                        {
+                            <tr>
+                                <td>@row.FileName</td>
+                                <td>@row.SessionTitle</td>
+                                <td>@FormatSize(row.SizeBytes)</td>
+                                <td>
+                                    <a class="simf-link" target="_blank"
+                                       href="@($"/account/api/admin/speaker-presentations/{row.Id}/file")">
+                                        @L["Admin.SpeakerPresentations.Download"]
+                                    </a>
+                                    <AuthorizedAction Permission="@PermissionCatalog.Speakers.Edit">
+                                        <SimfButton Type="button" Disabled="_busy"
+                                                    OnClick="@(() => DeleteAsync(row))">
+                                            @L["Admin.SpeakerPresentations.Delete"]
+                                        </SimfButton>
+                                    </AuthorizedAction>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private List<AdminSpeakerSummary> _speakers = new();
+    private List<AdminSessionSummary> _sessions = new();
+    private List<AdminSpeakerPresentationRow> _rows = new();
+
+    private string _speakerId = string.Empty;
+    private string _sessionId = string.Empty;
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSpeakersAsync();
+        await LoadSessionsAsync();
+    }
+
+    private async Task LoadSpeakersAsync()
+    {
+        var env = await JS.InvokeAsync<ApiResult<GridPage<AdminSpeakerSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/speakers/list",
+            new GridQuery { Top = 500 });
+        if (env is { Success: true, Data: not null })
+        {
+            _speakers = env.Data.Items.ToList();
+        }
+    }
+
+    private async Task LoadSessionsAsync()
+    {
+        var env = await JS.InvokeAsync<ApiResult<GridPage<AdminSessionSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/sessions/list",
+            new GridQuery { Top = 500 });
+        if (env is { Success: true, Data: not null })
+        {
+            _sessions = env.Data.Items.Where(s => s.IsActive).ToList();
+        }
+    }
+
+    private async Task OnSpeakerChanged(ChangeEventArgs e)
+    {
+        _speakerId = e.Value?.ToString() ?? string.Empty;
+        _rows = new();
+        _toast = null;
+        if (!string.IsNullOrEmpty(_speakerId))
+        {
+            await LoadPresentationsAsync();
+        }
+    }
+
+    private void OnSessionChanged(ChangeEventArgs e) =>
+        _sessionId = e.Value?.ToString() ?? string.Empty;
+
+    private async Task LoadPresentationsAsync()
+    {
+        if (string.IsNullOrEmpty(_speakerId)) return;
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<List<AdminSpeakerPresentationRow>>>(
+                "simfAccount.getJson",
+                $"/account/api/admin/speakers/{_speakerId}/presentations");
+            if (env is { Success: true, Data: not null })
+            {
+                _rows = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SpeakerPresentations.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task UploadAsync()
+    {
+        if (_busy || string.IsNullOrEmpty(_speakerId) || string.IsNullOrEmpty(_sessionId)) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminSpeakerPresentationRow>>(
+                "simfAccount.uploadFile",
+                $"/account/api/admin/speakers/{_speakerId}/presentations?sessionId={_sessionId}",
+                "presentation-file-input");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.SpeakerPresentations.Uploaded"]);
+                await LoadPresentationsAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SpeakerPresentations.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task DeleteAsync(AdminSpeakerPresentationRow row)
+    {
+        if (_busy) return;
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", L["Admin.SpeakerPresentations.Delete.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/speaker-presentations/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.SpeakerPresentations.Deleted"]);
+                await LoadPresentationsAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SpeakerPresentations.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private static string FormatSize(long bytes)
+    {
+        if (bytes >= 1024 * 1024) return $"{bytes / (1024.0 * 1024.0):0.0} MB";
+        if (bytes >= 1024) return $"{bytes / 1024.0:0.0} KB";
+        return $"{bytes} B";
+    }
+}

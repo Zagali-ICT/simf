@@ -154,6 +154,10 @@ public static class AuditEvents
     public const string SpeakerUpdated = "Speaker.Updated";
     public const string SpeakerDeactivated = "Speaker.Deactivated";
 
+    // Speaker presentations (P2.3 / D-228 — FR-407)
+    public const string SpeakerPresentationUploaded = "SpeakerPresentation.Uploaded";
+    public const string SpeakerPresentationDeleted = "SpeakerPresentation.Deleted";
+
     // Booths (D-199 — Exhibition module, Mockup page 22 + 2D venue map).
     public const string BoothCreated = "Booth.Created";
     public const string BoothUpdated = "Booth.Updated";

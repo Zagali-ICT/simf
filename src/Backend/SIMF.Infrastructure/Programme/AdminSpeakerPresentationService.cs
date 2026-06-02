@@ -1,0 +1,175 @@
+// Tests: SIMF.Api.Tests/SpeakerPresentationsTests.cs
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using SIMF.Application.Auditing;
+using SIMF.Application.Programme.Abstractions;
+using SIMF.Common;
+using SIMF.Common.Enums;
+using SIMF.Contracts.Admin;
+using SIMF.Domain.Auditing;
+using SIMF.Domain.Programme;
+using SIMF.Infrastructure.Persistence;
+
+namespace SIMF.Infrastructure.Programme;
+
+/// <summary>P2.3 — D-228 (FR-407): admin management of speaker presentation
+/// files (SIMF-FDS-004 §5.3). Bytes are stored out-of-row via
+/// <see cref="ISpeakerPresentationStorage"/>; the row holds only metadata.
+/// Both Speaker and Session are real FKs on <see cref="SimfAppDbContext"/>, so
+/// the session title is resolved in the same context.</summary>
+internal sealed class AdminSpeakerPresentationService(
+    SimfAppDbContext db,
+    ISpeakerPresentationStorage storage,
+    IAuditLog auditLog,
+    TimeProvider timeProvider,
+    ILogger<AdminSpeakerPresentationService> logger) : IAdminSpeakerPresentationService
+{
+    private const long MaxFileBytes = 50 * 1024 * 1024; // 50 MB
+
+    public async Task<IReadOnlyList<AdminSpeakerPresentationRow>> ListForSpeakerAsync(
+        Guid speakerId, CancellationToken cancellationToken = default)
+    {
+        return await db.SpeakerPresentations.AsNoTracking()
+            .Where(p => p.SpeakerId == speakerId && p.IsActive)
+            .OrderByDescending(p => p.CreatedAt)
+            .Join(db.Sessions.AsNoTracking(),
+                p => p.SessionId, s => s.Id,
+                (p, s) => new AdminSpeakerPresentationRow(
+                    p.Id, p.SpeakerId, p.SessionId, s.Title, s.TitleArabic,
+                    p.FileName, p.ContentType, p.SizeBytes, p.CreatedAt))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<AdminSpeakerPresentationRow> UploadAsync(
+        Guid actorUserId, Guid speakerId, Guid sessionId,
+        byte[] content, string fileName, string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        if (content is null || content.Length == 0)
+        {
+            throw new ApiException(
+                ErrorCodes.SpeakerPresentationInvalid, 400,
+                "No file was uploaded.",
+                "لم يتم رفع أي ملف.");
+        }
+        if (content.Length > MaxFileBytes)
+        {
+            throw new ApiException(
+                ErrorCodes.SpeakerPresentationInvalid, 400,
+                "The presentation file must be 50 MB or smaller.",
+                "يجب ألا يتجاوز حجم ملف العرض 50 ميجابايت.");
+        }
+
+        var speakerExists = await db.Speakers.AsNoTracking()
+            .AnyAsync(s => s.Id == speakerId && s.IsActive, cancellationToken);
+        if (!speakerExists)
+        {
+            throw new ApiException(
+                ErrorCodes.SpeakerNotFound, 404,
+                "The speaker was not found.",
+                "لم يتم العثور على المتحدث.");
+        }
+
+        var session = await db.Sessions.AsNoTracking()
+            .Where(s => s.Id == sessionId && s.IsActive)
+            .Select(s => new { s.Id, s.Title, s.TitleArabic })
+            .SingleOrDefaultAsync(cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.SessionNotFound, 404,
+                "The session was not found.",
+                "لم يتم العثور على الجلسة.");
+
+        var safeName = SanitiseFileName(fileName);
+        var presentationId = Guid.NewGuid();
+        var storedName = await storage.SaveAsync(
+            presentationId, content, safeName, cancellationToken);
+
+        var presentation = new SpeakerPresentation
+        {
+            Id = presentationId,
+            SpeakerId = speakerId,
+            SessionId = sessionId,
+            FileName = safeName,
+            StoredFileName = storedName,
+            ContentType = string.IsNullOrWhiteSpace(contentType)
+                ? "application/octet-stream" : contentType,
+            SizeBytes = content.Length,
+            UploadedByUserId = actorUserId,
+            IsActive = true,
+            CreatedAt = timeProvider.GetUtcNow(),
+        };
+        db.SpeakerPresentations.Add(presentation);
+        await db.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SpeakerPresentationUploaded,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"presentationId={presentation.Id}; speakerId={speakerId}; "
+                + $"sessionId={sessionId}; file={safeName}; bytes={content.Length}",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Speaker presentation {File} uploaded for speaker {SpeakerId} session {SessionId} by {Actor}",
+            safeName, speakerId, sessionId, actorUserId);
+
+        return new AdminSpeakerPresentationRow(
+            presentation.Id, speakerId, sessionId, session.Title, session.TitleArabic,
+            safeName, presentation.ContentType, presentation.SizeBytes, presentation.CreatedAt);
+    }
+
+    public async Task<(byte[] Content, string ContentType, string FileName)?> GetFileAsync(
+        Guid presentationId, CancellationToken cancellationToken = default)
+    {
+        var row = await db.SpeakerPresentations.AsNoTracking()
+            .Where(p => p.Id == presentationId && p.IsActive)
+            .Select(p => new { p.StoredFileName, p.ContentType, p.FileName })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (row is null)
+        {
+            return null;
+        }
+        var file = await storage.GetAsync(row.StoredFileName, row.ContentType, cancellationToken);
+        return file is null ? null : (file.Value.Content, file.Value.ContentType, row.FileName);
+    }
+
+    public async Task DeleteAsync(
+        Guid actorUserId, Guid presentationId,
+        CancellationToken cancellationToken = default)
+    {
+        var presentation = await db.SpeakerPresentations
+            .SingleOrDefaultAsync(p => p.Id == presentationId, cancellationToken)
+            ?? throw new ApiException(
+                ErrorCodes.SpeakerPresentationNotFound, 404,
+                "The presentation was not found.",
+                "لم يتم العثور على العرض.");
+        if (!presentation.IsActive)
+        {
+            return; // idempotent
+        }
+
+        presentation.Deactivate();
+        await db.SaveChangesAsync(cancellationToken);
+        await storage.DeleteAsync(presentation.StoredFileName, cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SpeakerPresentationDeleted,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"presentationId={presentation.Id}; speakerId={presentation.SpeakerId}; "
+                + $"file={presentation.FileName}",
+        }, cancellationToken);
+    }
+
+    private static string SanitiseFileName(string fileName)
+    {
+        var name = Path.GetFileName(fileName ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(name))
+        {
+            name = "presentation";
+        }
+        return name.Length > 256 ? name[^256..] : name;
+    }
+}

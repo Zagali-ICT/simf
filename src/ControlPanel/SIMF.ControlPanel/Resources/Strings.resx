@@ -65,6 +65,7 @@
   <data name="Module.GatesOperator" xml:space="preserve"><value>Gate operator</value></data>
   <data name="Module.Speakers" xml:space="preserve"><value>Speakers</value></data>
   <data name="Module.Bookings" xml:space="preserve"><value>Bookings</value></data>
+  <data name="Module.SpeakerPresentations" xml:space="preserve"><value>Speaker presentations</value></data>
   <data name="Module.Exhibitors" xml:space="preserve"><value>Exhibitors</value></data>
   <data name="Module.Booths" xml:space="preserve"><value>Booths</value></data>
   <data name="Module.Companies" xml:space="preserve"><value>Companies</value></data>
@@ -1318,6 +1319,24 @@
   <data name="Admin.Bookings.Reject.Confirm" xml:space="preserve"><value>Reject booking</value></data>
   <data name="Admin.Bookings.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.Bookings.ReasonRequired" xml:space="preserve"><value>A reason is required to reject a booking.</value></data>
+  <data name="Admin.SpeakerPresentations.Title" xml:space="preserve"><value>Speaker presentations</value></data>
+  <data name="Admin.SpeakerPresentations.Speaker" xml:space="preserve"><value>Speaker</value></data>
+  <data name="Admin.SpeakerPresentations.SelectSpeaker" xml:space="preserve"><value>— Select a speaker —</value></data>
+  <data name="Admin.SpeakerPresentations.Session" xml:space="preserve"><value>Session</value></data>
+  <data name="Admin.SpeakerPresentations.SelectSession" xml:space="preserve"><value>— Select a session —</value></data>
+  <data name="Admin.SpeakerPresentations.File" xml:space="preserve"><value>Presentation file</value></data>
+  <data name="Admin.SpeakerPresentations.Upload" xml:space="preserve"><value>Upload</value></data>
+  <data name="Admin.SpeakerPresentations.Loading" xml:space="preserve"><value>Loading presentations…</value></data>
+  <data name="Admin.SpeakerPresentations.None" xml:space="preserve"><value>This speaker has no presentation files yet.</value></data>
+  <data name="Admin.SpeakerPresentations.Col.File" xml:space="preserve"><value>File</value></data>
+  <data name="Admin.SpeakerPresentations.Col.Session" xml:space="preserve"><value>Session</value></data>
+  <data name="Admin.SpeakerPresentations.Col.Size" xml:space="preserve"><value>Size</value></data>
+  <data name="Admin.SpeakerPresentations.Download" xml:space="preserve"><value>Download</value></data>
+  <data name="Admin.SpeakerPresentations.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.SpeakerPresentations.Uploaded" xml:space="preserve"><value>Presentation uploaded.</value></data>
+  <data name="Admin.SpeakerPresentations.Deleted" xml:space="preserve"><value>Presentation removed.</value></data>
+  <data name="Admin.SpeakerPresentations.LoadFailed" xml:space="preserve"><value>The action could not be completed. Please try again.</value></data>
+  <data name="Admin.SpeakerPresentations.Delete.Confirm" xml:space="preserve"><value>Remove this presentation file?</value></data>
   <data name="Admin.SessionCategories.New" xml:space="preserve"><value>New category</value></data>
   <data name="Admin.SessionCategories.Loading" xml:space="preserve"><value>Loading categories…</value></data>
   <data name="Admin.SessionCategories.None" xml:space="preserve"><value>No session categories yet.</value></data>

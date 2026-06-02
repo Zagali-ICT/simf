@@ -191,6 +191,13 @@ public static class DependencyInjection
         // UserProfileId logical FK + bilingual rich text + consent + social).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSpeakerService,
             SIMF.Infrastructure.Programme.AdminSpeakerService>();
+        // P2.3 — D-228 (FR-407): speaker presentation-file management + storage.
+        services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSpeakerPresentationService,
+            SIMF.Infrastructure.Programme.AdminSpeakerPresentationService>();
+        services.Configure<SIMF.Infrastructure.Programme.SpeakerPresentationStorageOptions>(
+            configuration.GetSection(SIMF.Infrastructure.Programme.SpeakerPresentationStorageOptions.SectionName));
+        services.AddSingleton<SIMF.Application.Programme.Abstractions.ISpeakerPresentationStorage,
+            SIMF.Infrastructure.Programme.FilesystemSpeakerPresentationStorage>();
         // D-165 (gap doc G3) — Session admin CRUD: programme sessions tied
         // to a Hall + M-to-M Speakers + M-to-M Themes (PDF §2.9).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSessionService,

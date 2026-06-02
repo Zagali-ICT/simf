@@ -65,6 +65,7 @@
   <data name="Module.GatesOperator" xml:space="preserve"><value>مشغل البوابة</value></data>
   <data name="Module.Speakers" xml:space="preserve"><value>المتحدثون</value></data>
   <data name="Module.Bookings" xml:space="preserve"><value>الحجوزات</value></data>
+  <data name="Module.SpeakerPresentations" xml:space="preserve"><value>عروض المتحدثين</value></data>
   <data name="Module.Exhibitors" xml:space="preserve"><value>العارضون</value></data>
   <data name="Module.Booths" xml:space="preserve"><value>الأجنحة</value></data>
   <data name="Module.Companies" xml:space="preserve"><value>الشركات</value></data>
@@ -1310,6 +1311,24 @@
   <data name="Admin.Bookings.Reject.Confirm" xml:space="preserve"><value>رفض الحجز</value></data>
   <data name="Admin.Bookings.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.Bookings.ReasonRequired" xml:space="preserve"><value>يلزم إدخال سبب لرفض الحجز.</value></data>
+  <data name="Admin.SpeakerPresentations.Title" xml:space="preserve"><value>عروض المتحدثين</value></data>
+  <data name="Admin.SpeakerPresentations.Speaker" xml:space="preserve"><value>المتحدث</value></data>
+  <data name="Admin.SpeakerPresentations.SelectSpeaker" xml:space="preserve"><value>— اختر متحدثاً —</value></data>
+  <data name="Admin.SpeakerPresentations.Session" xml:space="preserve"><value>الجلسة</value></data>
+  <data name="Admin.SpeakerPresentations.SelectSession" xml:space="preserve"><value>— اختر جلسة —</value></data>
+  <data name="Admin.SpeakerPresentations.File" xml:space="preserve"><value>ملف العرض</value></data>
+  <data name="Admin.SpeakerPresentations.Upload" xml:space="preserve"><value>رفع</value></data>
+  <data name="Admin.SpeakerPresentations.Loading" xml:space="preserve"><value>جارٍ تحميل العروض…</value></data>
+  <data name="Admin.SpeakerPresentations.None" xml:space="preserve"><value>لا توجد ملفات عروض لهذا المتحدث بعد.</value></data>
+  <data name="Admin.SpeakerPresentations.Col.File" xml:space="preserve"><value>الملف</value></data>
+  <data name="Admin.SpeakerPresentations.Col.Session" xml:space="preserve"><value>الجلسة</value></data>
+  <data name="Admin.SpeakerPresentations.Col.Size" xml:space="preserve"><value>الحجم</value></data>
+  <data name="Admin.SpeakerPresentations.Download" xml:space="preserve"><value>تنزيل</value></data>
+  <data name="Admin.SpeakerPresentations.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.SpeakerPresentations.Uploaded" xml:space="preserve"><value>تم رفع العرض.</value></data>
+  <data name="Admin.SpeakerPresentations.Deleted" xml:space="preserve"><value>تمت إزالة العرض.</value></data>
+  <data name="Admin.SpeakerPresentations.LoadFailed" xml:space="preserve"><value>تعذّر إكمال العملية. يُرجى المحاولة مرة أخرى.</value></data>
+  <data name="Admin.SpeakerPresentations.Delete.Confirm" xml:space="preserve"><value>هل تريد إزالة ملف العرض هذا؟</value></data>
   <data name="Admin.SessionCategories.New" xml:space="preserve"><value>تصنيف جديد</value></data>
   <data name="Admin.SessionCategories.Loading" xml:space="preserve"><value>جارٍ تحميل التصنيفات…</value></data>
   <data name="Admin.SessionCategories.None" xml:space="preserve"><value>لا توجد تصنيفات جلسات بعد.</value></data>

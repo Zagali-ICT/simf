@@ -1796,6 +1796,64 @@ internal static class AccountEndpoints
             return Forward(await api.DeleteMediaAsync(id, token));
         });
 
+        // P2.3 (D-228) — speaker presentation files (list / upload / download / delete).
+        group.MapGet("/admin/speakers/{speakerId:guid}/presentations",
+            async (Guid speakerId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListSpeakerPresentationsAsync(speakerId, token));
+        });
+        group.MapPost("/admin/speakers/{speakerId:guid}/presentations",
+            async (Guid speakerId, Guid sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.SpeakerPresentationInvalid,
+                    Message = "A presentation file is required.",
+                    MessageArabic = "ملف العرض مطلوب.",
+                }));
+            }
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return Forward(await api.UploadSpeakerPresentationAsync(
+                speakerId, sessionId, stream.ToArray(), file.ContentType, file.FileName, token));
+        }).DisableAntiforgery();
+        group.MapDelete("/admin/speaker-presentations/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteSpeakerPresentationAsync(id, token));
+        });
+        group.MapGet("/admin/speaker-presentations/{id:guid}/file",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, contentType, contentDisposition, bytes) =
+                await api.FetchSpeakerPresentationAsync(id, token);
+            if (status != 200 || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            string? downloadName = null;
+            if (!string.IsNullOrWhiteSpace(contentDisposition)
+                && System.Net.Http.Headers.ContentDispositionHeaderValue.TryParse(
+                    contentDisposition, out var parsed))
+            {
+                downloadName = parsed.FileNameStar ?? parsed.FileName?.Trim('"');
+            }
+            return Results.File(bytes, contentType ?? "application/octet-stream", downloadName);
+        });
+
         // D-199 — Media image upload (multipart; same SameSite=Lax CSRF stance
         // as /admin/visitors/{id}/id-document, D-029).
         group.MapPost("/admin/media/{id:guid}/image",

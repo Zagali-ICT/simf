@@ -2063,6 +2063,66 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(new { ReservationIds = reservationIds }, options: JsonOptions),
             accessToken, cancellationToken);
 
+    // -- P2.3 (D-228) — Speaker presentation files (SIMF.Contracts.Admin) ----
+
+    public Task<ApiCallResult<IReadOnlyList<AdminSpeakerPresentationRow>>> ListSpeakerPresentationsAsync(
+        Guid speakerId, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<AdminSpeakerPresentationRow>>(
+            HttpMethod.Get, $"speakers/{speakerId}/presentations", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSpeakerPresentationRow>> UploadSpeakerPresentationAsync(
+        Guid speakerId, Guid sessionId, byte[] content, string contentType, string fileName,
+        string accessToken, CancellationToken cancellationToken = default)
+    {
+        var multipart = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(content);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        multipart.Add(fileContent, "file", fileName);
+        return SendAsync<AdminSpeakerPresentationRow>(
+            HttpMethod.Post, $"speakers/{speakerId}/presentations?sessionId={sessionId}",
+            multipart, accessToken, cancellationToken);
+    }
+
+    public Task<ApiCallResult<bool>> DeleteSpeakerPresentationAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"speaker-presentations/{id}", content: null,
+            accessToken, cancellationToken);
+
+    /// <summary>P2.3 — streamed read of a presentation file for the CP download
+    /// proxy. Bypasses the <c>ApiResult</c> envelope (binary body); returns the
+    /// status, content type, content-disposition and bytes verbatim.</summary>
+    public async Task<(int StatusCode, string? ContentType, string? ContentDisposition, byte[] Bytes)>
+        FetchSpeakerPresentationAsync(
+            Guid id, string accessToken, CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(
+            HttpMethod.Get, $"{BasePath}speaker-presentations/{id}/file");
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return ((int)response.StatusCode, null, null, []);
+            }
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return (
+                (int)response.StatusCode,
+                response.Content.Headers.ContentType?.ToString(),
+                response.Content.Headers.ContentDisposition?.ToString(),
+                bytes);
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException)
+        {
+            return ((int)HttpStatusCode.ServiceUnavailable, null, null, []);
+        }
+    }
+
     // -- D-199 — Archive edition admin CRUD (SIMF.Contracts.Archive) --------
 
     public Task<ApiCallResult<GridPage<AdminArchiveEditionSummary>>> ListArchiveEditionsAsync(

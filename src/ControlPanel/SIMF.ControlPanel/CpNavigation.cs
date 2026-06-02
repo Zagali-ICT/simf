@@ -78,6 +78,8 @@ public static class CpNavigation
             new("Module.MeetingRequests", "/admin/meeting-requests", RequiredPermission: PermissionCatalog.MeetingRequests.View),
             // D-153 — programme speakers (SIMF-DAT-001 §5.4).
             new("Module.Speakers", "/admin/speakers", RequiredPermission: PermissionCatalog.Speakers.View),
+            // P2.3 (D-228) — speaker presentation files (FR-407). Reuses Speakers.*.
+            new("Module.SpeakerPresentations", "/admin/speaker-presentations", RequiredPermission: PermissionCatalog.Speakers.View),
             // P2.2 (D-227) — booking approval queue (FDS-005 §5.2).
             new("Module.Bookings", "/admin/bookings", RequiredPermission: PermissionCatalog.Bookings.View),
         ]),
