@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/ProgrammeSessionsTests.cs
 // Tests: SIMF.Api.Tests/RecordedQuestionsTests.cs (P3.4 — D-235)
+// Tests: SIMF.Api.Tests/SessionSummaryTests.cs (P4.1a — D-237)
 using System.Globalization;
 using FastEndpoints;
 using SIMF.Api.Endpoints.Admin;
@@ -105,4 +106,33 @@ public sealed class ListRecordedQuestionsEndpoint(IProgrammeSessionService servi
         ListRecordedQuestionsRequest req, CancellationToken ct) =>
         await Send.OkAsync(ApiResult<IReadOnlyList<PublicRecordedQuestion>>.Ok(
             await service.ListRecordedQuestionsAsync(req.Id, ct)), ct);
+}
+
+/// <summary>P4.1 — D-237 (Completion Programme §6.4.1, Mockup screen 34): the
+/// published AI session summary / محضر for one session. Anonymous like the
+/// session detail — published editorial content with no attendee PII (the
+/// "speakers" line is curated public text). 404 when the session is missing /
+/// soft-deleted or the Committee has not published a summary yet.</summary>
+public sealed class GetSessionSummaryRequest { public Guid Id { get; set; } }
+
+public sealed class GetSessionSummaryEndpoint(IProgrammeSessionService service)
+    : Endpoint<GetSessionSummaryRequest, ApiResult<PublicSessionSummary>>
+{
+    public override void Configure()
+    {
+        Get("/programme/sessions/{id:guid}/summary");
+        AllowAnonymous();
+        Tags("Public");
+    }
+
+    public override async Task HandleAsync(
+        GetSessionSummaryRequest req, CancellationToken ct)
+    {
+        var summary = await service.GetSessionSummaryAsync(req.Id, ct)
+            ?? throw new ApiException(
+                ErrorCodes.SessionNotFound, 404,
+                "No published summary was found for this session.",
+                "لم يتم العثور على ملخّص منشور لهذه الجلسة.");
+        await Send.OkAsync(ApiResult<PublicSessionSummary>.Ok(summary), ct);
+    }
 }

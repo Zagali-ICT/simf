@@ -118,6 +118,27 @@ public sealed record PublicRecordedQuestion(
     bool IsPushed,
     DateTimeOffset CreatedAt);
 
+/// <summary>P4.1 — D-237 (Completion Programme §6.4.1, Mockup screen 34): the
+/// published AI session summary / محضر the app reads. Every section is bilingual
+/// (English + Arabic) so the app renders the active locale with a fallback;
+/// <see cref="KeyPoints"/>/<see cref="KeyPointsArabic"/> are newline-delimited
+/// (one bullet per non-empty line). <see cref="GeneratedByAi"/> drives the
+/// "auto-generated" banner. Served by
+/// <c>GET /api/v1/programme/sessions/{id}/summary</c> only once the Committee
+/// has published it (else 404).</summary>
+public sealed record PublicSessionSummary(
+    Guid SessionId,
+    string KeyPoints,
+    string KeyPointsArabic,
+    string Recommendations,
+    string RecommendationsArabic,
+    string Speakers,
+    string SpeakersArabic,
+    string FullText,
+    string FullTextArabic,
+    bool GeneratedByAi,
+    DateTimeOffset PublishedAt);
+
 /// <summary>P3.2b — D-232 (D-213): the response from the recording stream-token
 /// endpoint. <see cref="Token"/> is a short-lived JWT scoped to one recording;
 /// the player appends it to <see cref="StreamUrl"/> on the query string

@@ -35,6 +35,15 @@ public interface IProgrammeSessionService
     /// session is not active+published (the archive is gated like the recording).</summary>
     Task<IReadOnlyList<PublicRecordedQuestion>> ListRecordedQuestionsAsync(
         Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>P4.1 — D-237 (Completion Programme §6.4.1, Mockup screen 34): the
+    /// published AI session summary / محضر for one session, or null when the
+    /// session is soft-deleted, has no summary, or the summary is still an
+    /// unpublished draft. Gated on the summary's own <c>PublishedAt</c> (the
+    /// Committee's editorial publish), independent of the broadcast
+    /// <c>Session.Status</c>.</summary>
+    Task<PublicSessionSummary?> GetSessionSummaryAsync(
+        Guid id, CancellationToken cancellationToken = default);
 }
 
 /// <summary>P3.2b — D-232: a pointer to a published session's recording on

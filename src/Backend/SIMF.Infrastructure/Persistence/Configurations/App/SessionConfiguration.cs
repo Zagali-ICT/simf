@@ -57,6 +57,40 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
     }
 }
 
+/// <summary>P4.1 — D-237: SessionSummary (محضر) configuration. One summary per
+/// session (unique <c>SessionId</c>), cascade-deleted with its session. Every
+/// HasMaxLength here is the single source of truth the edit form + validator
+/// align to (§7); the full-text columns match the News body length (8000).</summary>
+internal sealed class SessionSummaryConfiguration
+    : IEntityTypeConfiguration<SessionSummary>
+{
+    public void Configure(EntityTypeBuilder<SessionSummary> builder)
+    {
+        builder.ToTable("SessionSummaries");
+        builder.HasKey(s => s.Id);
+
+        builder.Property(s => s.KeyPoints).HasMaxLength(4000).IsRequired();
+        builder.Property(s => s.KeyPointsArabic).HasMaxLength(4000).IsRequired();
+        builder.Property(s => s.Recommendations).HasMaxLength(4000).IsRequired();
+        builder.Property(s => s.RecommendationsArabic).HasMaxLength(4000).IsRequired();
+        builder.Property(s => s.Speakers).HasMaxLength(1000).IsRequired();
+        builder.Property(s => s.SpeakersArabic).HasMaxLength(1000).IsRequired();
+        builder.Property(s => s.FullText).HasMaxLength(8000).IsRequired();
+        builder.Property(s => s.FullTextArabic).HasMaxLength(8000).IsRequired();
+        builder.Property(s => s.AiModel).HasMaxLength(64);
+
+        // 1:1 — exactly one summary per session, cascade with the session.
+        builder.HasIndex(s => s.SessionId).IsUnique();
+        builder.HasOne(s => s.Session)
+            .WithMany()
+            .HasForeignKey(s => s.SessionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // The app reads published summaries; the Committee desk lists drafts.
+        builder.HasIndex(s => new { s.IsActive, s.PublishedAt });
+    }
+}
+
 internal sealed class SessionSpeakerConfiguration
     : IEntityTypeConfiguration<SessionSpeaker>
 {

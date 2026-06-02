@@ -2,6 +2,7 @@
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 public status read)
 // Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 published-recording gate)
 // Tests: SIMF.Api.Tests/RecordedQuestionsTests.cs (P3.4 — D-235 recorded Q&A archive)
+// Tests: SIMF.Api.Tests/SessionSummaryTests.cs (P4.1a — D-237 published-summary read)
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common.Enums;
@@ -271,5 +272,32 @@ internal sealed class ProgrammeSessionService(
                 r.IsPushed,
                 r.CreatedAt);
         }).ToList();
+    }
+
+    public async Task<PublicSessionSummary?> GetSessionSummaryAsync(
+        Guid id, CancellationToken cancellationToken = default)
+    {
+        // Gated on the summary's own publish stamp (the Committee's editorial
+        // action), not the broadcast Session.Status. The session must still be
+        // active (soft-delete hides its summary too).
+        return await dbContext.SessionSummaries
+            .AsNoTracking()
+            .Where(summary => summary.SessionId == id
+                && summary.IsActive
+                && summary.PublishedAt != null
+                && summary.Session!.IsActive)
+            .Select(summary => new PublicSessionSummary(
+                summary.SessionId,
+                summary.KeyPoints,
+                summary.KeyPointsArabic,
+                summary.Recommendations,
+                summary.RecommendationsArabic,
+                summary.Speakers,
+                summary.SpeakersArabic,
+                summary.FullText,
+                summary.FullTextArabic,
+                summary.AiModel != null,
+                summary.PublishedAt!.Value))
+            .SingleOrDefaultAsync(cancellationToken);
     }
 }

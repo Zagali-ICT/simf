@@ -54,6 +54,8 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     public DbSet<Session> Sessions => Set<Session>();
     public DbSet<SessionSpeaker> SessionSpeakers => Set<SessionSpeaker>();
     public DbSet<SessionTheme> SessionThemes => Set<SessionTheme>();
+    // P4.1 — D-237: AI session summary / محضر (one per session).
+    public DbSet<SessionSummary> SessionSummaries => Set<SessionSummary>();
     // B9b — D-226: dynamic session-category lookup (FDS-004 §5.4).
     public DbSet<SessionCategory> SessionCategories => Set<SessionCategory>();
 
