@@ -197,6 +197,9 @@ public static class DependencyInjection
         // P2.4 — D-229 (FDS-012 §5.5): System Configuration settings store.
         services.AddScoped<SIMF.Application.Configuration.Abstractions.IAdminSystemSettingService,
             SIMF.Infrastructure.Configuration.AdminSystemSettingService>();
+        // P2.5 — D-230 (FR-605): 2D venue map (admin CRUD + public read).
+        services.AddScoped<SIMF.Application.Venue.Abstractions.IVenueMapService,
+            SIMF.Infrastructure.Venue.VenueMapService>();
         services.Configure<SIMF.Infrastructure.Programme.SpeakerPresentationStorageOptions>(
             configuration.GetSection(SIMF.Infrastructure.Programme.SpeakerPresentationStorageOptions.SectionName));
         services.AddSingleton<SIMF.Application.Programme.Abstractions.ISpeakerPresentationStorage,

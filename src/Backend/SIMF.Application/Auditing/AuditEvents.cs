@@ -163,6 +163,11 @@ public static class AuditEvents
     public const string SystemSettingUpdated = "SystemSetting.Updated";
     public const string SystemSettingDeactivated = "SystemSetting.Deactivated";
 
+    // Venue map nodes (P2.5 / D-230 — FR-605)
+    public const string VenueMapNodeCreated = "VenueMapNode.Created";
+    public const string VenueMapNodeUpdated = "VenueMapNode.Updated";
+    public const string VenueMapNodeDeactivated = "VenueMapNode.Deactivated";
+
     // Booths (D-199 — Exhibition module, Mockup page 22 + 2D venue map).
     public const string BoothCreated = "Booth.Created";
     public const string BoothUpdated = "Booth.Updated";

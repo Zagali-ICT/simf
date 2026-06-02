@@ -2163,6 +2163,46 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"system-settings/{id}", content: null,
             accessToken, cancellationToken);
 
+    // -- P2.5 (D-230) — 2D venue-map node CRUD (SIMF.Contracts.Admin) --------
+
+    public Task<ApiCallResult<GridPage<AdminVenueMapNodeSummary>>> ListVenueMapNodesAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminVenueMapNodeSummary>>(
+            HttpMethod.Post, "venue-map/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminVenueMapNodeDetail>> GetVenueMapNodeAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminVenueMapNodeDetail>(
+            HttpMethod.Get, $"venue-map/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminVenueMapNodeDetail>> CreateVenueMapNodeAsync(
+        AdminCreateVenueMapNodeRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminVenueMapNodeDetail>(
+            HttpMethod.Post, "venue-map",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminVenueMapNodeDetail>> UpdateVenueMapNodeAsync(
+        Guid id, AdminUpdateVenueMapNodeRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminVenueMapNodeDetail>(
+            HttpMethod.Put, $"venue-map/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeleteVenueMapNodeAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"venue-map/{id}", content: null,
+            accessToken, cancellationToken);
+
     // -- D-199 — Archive edition admin CRUD (SIMF.Contracts.Archive) --------
 
     public Task<ApiCallResult<GridPage<AdminArchiveEditionSummary>>> ListArchiveEditionsAsync(

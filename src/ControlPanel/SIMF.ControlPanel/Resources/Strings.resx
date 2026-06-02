@@ -1361,6 +1361,35 @@
   <data name="Admin.Configuration.Required" xml:space="preserve"><value>A key is required.</value></data>
   <data name="Admin.Configuration.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
   <data name="Admin.Configuration.Delete.Confirm" xml:space="preserve"><value>Remove this setting?</value></data>
+  <data name="Admin.VenueMap.Title" xml:space="preserve"><value>Venue map</value></data>
+  <data name="Admin.VenueMap.New" xml:space="preserve"><value>New node</value></data>
+  <data name="Admin.VenueMap.Loading" xml:space="preserve"><value>Loading venue map…</value></data>
+  <data name="Admin.VenueMap.None" xml:space="preserve"><value>No venue-map nodes yet.</value></data>
+  <data name="Admin.VenueMap.None.Option" xml:space="preserve"><value>— None —</value></data>
+  <data name="Admin.VenueMap.Col.Label" xml:space="preserve"><value>Label</value></data>
+  <data name="Admin.VenueMap.Col.Kind" xml:space="preserve"><value>Kind</value></data>
+  <data name="Admin.VenueMap.Col.Position" xml:space="preserve"><value>Position (x, y)</value></data>
+  <data name="Admin.VenueMap.Col.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.VenueMap.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Admin.VenueMap.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.VenueMap.Add.Title" xml:space="preserve"><value>New venue-map node</value></data>
+  <data name="Admin.VenueMap.Edit.Title" xml:space="preserve"><value>Edit venue-map node</value></data>
+  <data name="Admin.VenueMap.Field.Label" xml:space="preserve"><value>Label (English)</value></data>
+  <data name="Admin.VenueMap.Field.LabelArabic" xml:space="preserve"><value>Label (Arabic)</value></data>
+  <data name="Admin.VenueMap.Field.Kind" xml:space="preserve"><value>Kind</value></data>
+  <data name="Admin.VenueMap.Field.X" xml:space="preserve"><value>X position</value></data>
+  <data name="Admin.VenueMap.Field.Y" xml:space="preserve"><value>Y position</value></data>
+  <data name="Admin.VenueMap.Field.Hall" xml:space="preserve"><value>Linked hall (optional)</value></data>
+  <data name="Admin.VenueMap.Field.Booth" xml:space="preserve"><value>Linked booth (optional)</value></data>
+  <data name="Admin.VenueMap.Field.IsActive" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.VenueMap.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.VenueMap.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.VenueMap.Saved" xml:space="preserve"><value>Node saved.</value></data>
+  <data name="Admin.VenueMap.Deleted" xml:space="preserve"><value>Node removed.</value></data>
+  <data name="Admin.VenueMap.LoadFailed" xml:space="preserve"><value>The action could not be completed. Please try again.</value></data>
+  <data name="Admin.VenueMap.Required" xml:space="preserve"><value>Both labels are required.</value></data>
+  <data name="Admin.VenueMap.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <data name="Admin.VenueMap.Delete.Confirm" xml:space="preserve"><value>Remove this venue-map node?</value></data>
   <data name="Admin.SessionCategories.New" xml:space="preserve"><value>New category</value></data>
   <data name="Admin.SessionCategories.Loading" xml:space="preserve"><value>Loading categories…</value></data>
   <data name="Admin.SessionCategories.None" xml:space="preserve"><value>No session categories yet.</value></data>

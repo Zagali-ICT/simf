@@ -1353,6 +1353,35 @@
   <data name="Admin.Configuration.Required" xml:space="preserve"><value>المفتاح مطلوب.</value></data>
   <data name="Admin.Configuration.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
   <data name="Admin.Configuration.Delete.Confirm" xml:space="preserve"><value>هل تريد إزالة هذا الإعداد؟</value></data>
+  <data name="Admin.VenueMap.Title" xml:space="preserve"><value>خريطة المكان</value></data>
+  <data name="Admin.VenueMap.New" xml:space="preserve"><value>عقدة جديدة</value></data>
+  <data name="Admin.VenueMap.Loading" xml:space="preserve"><value>جارٍ تحميل خريطة المكان…</value></data>
+  <data name="Admin.VenueMap.None" xml:space="preserve"><value>لا توجد عقد على الخريطة بعد.</value></data>
+  <data name="Admin.VenueMap.None.Option" xml:space="preserve"><value>— لا شيء —</value></data>
+  <data name="Admin.VenueMap.Col.Label" xml:space="preserve"><value>التسمية</value></data>
+  <data name="Admin.VenueMap.Col.Kind" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.VenueMap.Col.Position" xml:space="preserve"><value>الموضع (س، ص)</value></data>
+  <data name="Admin.VenueMap.Col.Active" xml:space="preserve"><value>مُفعّل</value></data>
+  <data name="Admin.VenueMap.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.VenueMap.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.VenueMap.Add.Title" xml:space="preserve"><value>عقدة خريطة جديدة</value></data>
+  <data name="Admin.VenueMap.Edit.Title" xml:space="preserve"><value>تعديل عقدة الخريطة</value></data>
+  <data name="Admin.VenueMap.Field.Label" xml:space="preserve"><value>التسمية (بالإنجليزية)</value></data>
+  <data name="Admin.VenueMap.Field.LabelArabic" xml:space="preserve"><value>التسمية (بالعربية)</value></data>
+  <data name="Admin.VenueMap.Field.Kind" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.VenueMap.Field.X" xml:space="preserve"><value>الموضع الأفقي (س)</value></data>
+  <data name="Admin.VenueMap.Field.Y" xml:space="preserve"><value>الموضع الرأسي (ص)</value></data>
+  <data name="Admin.VenueMap.Field.Hall" xml:space="preserve"><value>القاعة المرتبطة (اختياري)</value></data>
+  <data name="Admin.VenueMap.Field.Booth" xml:space="preserve"><value>الجناح المرتبط (اختياري)</value></data>
+  <data name="Admin.VenueMap.Field.IsActive" xml:space="preserve"><value>مُفعّل</value></data>
+  <data name="Admin.VenueMap.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.VenueMap.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.VenueMap.Saved" xml:space="preserve"><value>تم حفظ العقدة.</value></data>
+  <data name="Admin.VenueMap.Deleted" xml:space="preserve"><value>تمت إزالة العقدة.</value></data>
+  <data name="Admin.VenueMap.LoadFailed" xml:space="preserve"><value>تعذّر إكمال العملية. يُرجى المحاولة مرة أخرى.</value></data>
+  <data name="Admin.VenueMap.Required" xml:space="preserve"><value>كلا التسميتين مطلوبتان.</value></data>
+  <data name="Admin.VenueMap.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.VenueMap.Delete.Confirm" xml:space="preserve"><value>هل تريد إزالة عقدة الخريطة هذه؟</value></data>
   <data name="Admin.SessionCategories.New" xml:space="preserve"><value>تصنيف جديد</value></data>
   <data name="Admin.SessionCategories.Loading" xml:space="preserve"><value>جارٍ تحميل التصنيفات…</value></data>
   <data name="Admin.SessionCategories.None" xml:space="preserve"><value>لا توجد تصنيفات جلسات بعد.</value></data>

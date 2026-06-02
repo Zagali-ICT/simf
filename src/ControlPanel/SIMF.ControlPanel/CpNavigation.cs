@@ -95,7 +95,8 @@ public static class CpNavigation
             new("Module.Booths", "/admin/booths", RequiredPermission: PermissionCatalog.Booths.View),
             // D-199 — sponsors admin CRUD (Mockup page 23).
             new("Module.Sponsors", "/admin/sponsors", RequiredPermission: PermissionCatalog.Sponsors.View),
-            new("Module.VenueMap", "/m/venue-map", IsStub: true),
+            // P2.5 (D-230) — 2D venue map editor (FR-605, FDS-006 §5.3).
+            new("Module.VenueMap", "/admin/venue-map", RequiredPermission: PermissionCatalog.VenueMap.View),
         ]),
         new("Nav.Engagement",
         [

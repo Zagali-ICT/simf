@@ -1,0 +1,356 @@
+@* P2.5 (D-230) — 2D venue-map editor (SIMF-FDS-006 §5.3, FR-605). Place nodes
+   (a label + a 2D position + an optional Hall/Booth link). The app renders the
+   nodes on its 2D canvas. Ships empty; the Logistics team places the nodes.
+   Mirrors SessionCategoriesList; Hall/Booth pickers loaded at mount. *@
+@page "/admin/venue-map"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.VenueMap.View)]
+@using SIMF.Common.Enums
+@using SIMF.Contracts.Admin
+@using SIMF.Contracts.Exhibition
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.VenueMap.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.VenueMap.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form__actions">
+            <AuthorizedAction Permission="@PermissionCatalog.VenueMap.Create">
+                <SimfButton Type="button" OnClick="OnAdd">@L["Admin.VenueMap.New"]</SimfButton>
+            </AuthorizedAction>
+        </div>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.VenueMap.Loading"]</p>
+        }
+        else if (_page.Items.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.VenueMap.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.VenueMap.Col.Label"]</th>
+                        <th>@L["Admin.VenueMap.Col.Kind"]</th>
+                        <th>@L["Admin.VenueMap.Col.Position"]</th>
+                        <th>@L["Admin.VenueMap.Col.Active"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _page.Items)
+                    {
+                        <tr>
+                            <td>@row.Label</td>
+                            <td>@row.Kind</td>
+                            <td>@row.X.ToString("0.#"), @row.Y.ToString("0.#")</td>
+                            <td>@(row.IsActive ? "✓" : "—")</td>
+                            <td>
+                                <AuthorizedAction Permission="@PermissionCatalog.VenueMap.Edit">
+                                    <SimfButton Type="button" Disabled="_busy"
+                                                OnClick="@(() => OnEdit(row))">
+                                        @L["Admin.VenueMap.Edit"]
+                                    </SimfButton>
+                                </AuthorizedAction>
+                                <AuthorizedAction Permission="@PermissionCatalog.VenueMap.Delete">
+                                    <SimfButton Type="button" Disabled="_busy"
+                                                OnClick="@(() => OnDeleteAsync(row))">
+                                        @L["Admin.VenueMap.Delete"]
+                                    </SimfButton>
+                                </AuthorizedAction>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="simf-table__summary">
+                @(string.Format(L["Admin.VenueMap.Summary"],
+                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
+            </p>
+        }
+    </div>
+</div>
+
+@if (_editOpen)
+{
+    <SimfModal Open="true"
+               Title="@(_isEdit ? L["Admin.VenueMap.Edit.Title"] : L["Admin.VenueMap.Add.Title"])"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.VenueMap.Field.Label"]"
+                               Value="@_form.Label" ValueChanged="@(v => _form.Label = v)"
+                               ValueExpression="@(() => _form.Label)" MaxLength="128" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.VenueMap.Field.LabelArabic"]"
+                               Value="@_form.LabelArabic" ValueChanged="@(v => _form.LabelArabic = v)"
+                               ValueExpression="@(() => _form.LabelArabic)" MaxLength="128" Disabled="_busy" />
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.VenueMap.Field.Kind"]</span>
+                    <select class="simf-field__input" value="@((int)_form.Kind)"
+                            @onchange="OnKindChanged" disabled="@_busy">
+                        @foreach (var k in Enum.GetValues<VenueMapNodeKind>())
+                        {
+                            <option value="@((int)k)">@k</option>
+                        }
+                    </select>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.VenueMap.Field.X"]</span>
+                    <input class="simf-field__input" type="number" step="0.1"
+                           value="@_form.X" @onchange="OnXChanged" disabled="@_busy" />
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.VenueMap.Field.Y"]</span>
+                    <input class="simf-field__input" type="number" step="0.1"
+                           value="@_form.Y" @onchange="OnYChanged" disabled="@_busy" />
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.VenueMap.Field.Hall"]</span>
+                    <select class="simf-field__input" value="@_form.HallId"
+                            @onchange="@(e => _form.HallId = e.Value?.ToString() ?? string.Empty)"
+                            disabled="@_busy">
+                        <option value="">@L["Admin.VenueMap.None.Option"]</option>
+                        @foreach (var h in _halls)
+                        {
+                            <option value="@h.Id">@h.Name</option>
+                        }
+                    </select>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.VenueMap.Field.Booth"]</span>
+                    <select class="simf-field__input" value="@_form.BoothId"
+                            @onchange="@(e => _form.BoothId = e.Value?.ToString() ?? string.Empty)"
+                            disabled="@_busy">
+                        <option value="">@L["Admin.VenueMap.None.Option"]</option>
+                        @foreach (var b in _booths)
+                        {
+                            <option value="@b.Id">@b.NameEn</option>
+                        }
+                    </select>
+                </label>
+                @if (_isEdit)
+                {
+                    <SimfCheckbox Value="_form.IsActive" ValueChanged="@(v => _form.IsActive = v)"
+                                  Disabled="_busy">
+                        @L["Admin.VenueMap.Field.IsActive"]
+                    </SimfCheckbox>
+                }
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Disabled="_busy" OnClick="@(() => _editOpen = false)">
+                @L["Admin.VenueMap.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+                @L["Admin.VenueMap.Save"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private sealed class FormModel
+    {
+        public string Label { get; set; } = string.Empty;
+        public string LabelArabic { get; set; } = string.Empty;
+        public VenueMapNodeKind Kind { get; set; }
+        public double X { get; set; }
+        public double Y { get; set; }
+        public string HallId { get; set; } = string.Empty;
+        public string BoothId { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+
+    private GridQuery _query = new() { Top = 200 };
+    private GridPage<AdminVenueMapNodeSummary> _page = new();
+    private List<AdminHallSummary> _halls = new();
+    private List<AdminBoothSummary> _booths = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private bool _editOpen;
+    private bool _isEdit;
+    private Guid _editingId;
+    private FormModel _form = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPickersAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadPickersAsync()
+    {
+        var halls = await JS.InvokeAsync<ApiResult<GridPage<AdminHallSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/halls/list", new GridQuery { Top = 500 });
+        if (halls is { Success: true, Data: not null }) _halls = halls.Data.Items.ToList();
+
+        var booths = await JS.InvokeAsync<ApiResult<GridPage<AdminBoothSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/booths/list", new GridQuery { Top = 500 });
+        if (booths is { Success: true, Data: not null }) _booths = booths.Data.Items.ToList();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminVenueMapNodeSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/venue-map/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.VenueMap.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnAdd()
+    {
+        _editOpen = true;
+        _isEdit = false;
+        _editingId = Guid.Empty;
+        _form = new FormModel();
+        _toast = null;
+    }
+
+    private async Task OnEdit(AdminVenueMapNodeSummary row)
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminVenueMapNodeDetail>>(
+                "simfAccount.getJson", $"/account/api/admin/venue-map/{row.Id}");
+            if (env is { Success: true, Data: not null })
+            {
+                var d = env.Data;
+                _editingId = d.Id;
+                _form = new FormModel
+                {
+                    Label = d.Label,
+                    LabelArabic = d.LabelArabic,
+                    Kind = d.Kind,
+                    X = d.X,
+                    Y = d.Y,
+                    HallId = d.HallId?.ToString() ?? string.Empty,
+                    BoothId = d.BoothId?.ToString() ?? string.Empty,
+                    IsActive = d.IsActive,
+                };
+                _isEdit = true;
+                _editOpen = true;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.VenueMap.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+        if (string.IsNullOrWhiteSpace(_form.Label) || string.IsNullOrWhiteSpace(_form.LabelArabic))
+        {
+            _toast = new Toast("error", L["Admin.VenueMap.Required"]);
+            return;
+        }
+        _busy = true;
+        _toast = null;
+        try
+        {
+            Guid? hallId = Guid.TryParse(_form.HallId, out var hid) ? hid : null;
+            Guid? boothId = Guid.TryParse(_form.BoothId, out var bid) ? bid : null;
+            ApiResult<AdminVenueMapNodeDetail>? env;
+            if (_isEdit)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminVenueMapNodeDetail>>(
+                    "simfAccount.putJson", $"/account/api/admin/venue-map/{_editingId}",
+                    new AdminUpdateVenueMapNodeRequest
+                    {
+                        Label = _form.Label, LabelArabic = _form.LabelArabic, Kind = _form.Kind,
+                        X = _form.X, Y = _form.Y, HallId = hallId, BoothId = boothId,
+                        IsActive = _form.IsActive,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminVenueMapNodeDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/venue-map",
+                    new AdminCreateVenueMapNodeRequest
+                    {
+                        Label = _form.Label, LabelArabic = _form.LabelArabic, Kind = _form.Kind,
+                        X = _form.X, Y = _form.Y, HallId = hallId, BoothId = boothId,
+                    });
+            }
+            if (env is { Success: true })
+            {
+                _editOpen = false;
+                _toast = new Toast("success", L["Admin.VenueMap.Saved"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.VenueMap.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteAsync(AdminVenueMapNodeSummary row)
+    {
+        if (_busy) return;
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", L["Admin.VenueMap.Delete.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/venue-map/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.VenueMap.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.VenueMap.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnKindChanged(ChangeEventArgs e) =>
+        _form.Kind = Enum.TryParse<VenueMapNodeKind>(e.Value?.ToString(), out var k) ? k : VenueMapNodeKind.Hall;
+
+    private void OnXChanged(ChangeEventArgs e) =>
+        _form.X = double.TryParse(e.Value?.ToString(), out var v) ? v : 0;
+
+    private void OnYChanged(ChangeEventArgs e) =>
+        _form.Y = double.TryParse(e.Value?.ToString(), out var v) ? v : 0;
+}

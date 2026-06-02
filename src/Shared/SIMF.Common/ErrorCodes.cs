@@ -145,6 +145,10 @@ public static class ErrorCodes
     public const string SystemSettingNotFound = "SYSTEM_SETTING_NOT_FOUND";
     public const string SystemSettingKeyDuplicate = "SYSTEM_SETTING_KEY_DUPLICATE";
 
+    // Venue map nodes (P2.5 / D-230 — FR-605, FDS-006 §5.3).
+    public const string VenueMapNodeInvalid = "VENUE_MAP_NODE_INVALID";
+    public const string VenueMapNodeNotFound = "VENUE_MAP_NODE_NOT_FOUND";
+
     // Sponsors (D-199 — event sponsors, Mockup page 23).
     public const string SponsorInvalid = "SPONSOR_INVALID";
     public const string SponsorNotFound = "SPONSOR_NOT_FOUND";

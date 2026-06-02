@@ -285,6 +285,15 @@ public static class PermissionCatalog
         public const string Delete = "Sponsors.Delete";
     }
 
+    /// <summary>P2.5 (D-230) — 2D venue map editor (FR-605, FDS-006 §5.3).</summary>
+    public static class VenueMap
+    {
+        public const string View = "VenueMap.View";
+        public const string Create = "VenueMap.Create";
+        public const string Edit = "VenueMap.Edit";
+        public const string Delete = "VenueMap.Delete";
+    }
+
     // ── Engagement ───────────────────────────────────────────────────────
 
     /// <summary>Audience comment moderation.</summary>
@@ -582,6 +591,12 @@ public static class PermissionCatalog
         new(Sponsors.Create, "Sponsors", "Create", "Create sponsors", AdminOnly),
         new(Sponsors.Edit, "Sponsors", "Edit", "Edit sponsors", AdminOnly),
         new(Sponsors.Delete, "Sponsors", "Delete", "Delete sponsors", AdminOnly),
+
+        // P2.5 — D-230: 2D venue map editor.
+        new(VenueMap.View, "VenueMap", "View", "View the venue map", AdminOnly),
+        new(VenueMap.Create, "VenueMap", "Create", "Create venue-map nodes", AdminOnly),
+        new(VenueMap.Edit, "VenueMap", "Edit", "Edit venue-map nodes", AdminOnly),
+        new(VenueMap.Delete, "VenueMap", "Delete", "Delete venue-map nodes", AdminOnly),
 
         // Engagement
         new(Comments.View, "Comments", "View", "View audience comments", AdminOnly),

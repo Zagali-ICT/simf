@@ -2087,6 +2087,43 @@ internal static class AccountEndpoints
             return Forward(await api.DeleteSystemSettingAsync(id, token));
         });
 
+        // P2.5 (D-230) — 2D venue-map node CRUD passthroughs.
+        group.MapPost("/admin/venue-map/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListVenueMapNodesAsync(body, token));
+        });
+        group.MapGet("/admin/venue-map/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetVenueMapNodeAsync(id, token));
+        });
+        group.MapPost("/admin/venue-map",
+            async (AdminCreateVenueMapNodeRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateVenueMapNodeAsync(body, token));
+        });
+        group.MapPut("/admin/venue-map/{id:guid}",
+            async (Guid id, AdminUpdateVenueMapNodeRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateVenueMapNodeAsync(id, body, token));
+        });
+        group.MapDelete("/admin/venue-map/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteVenueMapNodeAsync(id, token));
+        });
+
         // P2.2 (D-227) — booking approval queue passthroughs.
         group.MapPost("/admin/bookings/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
