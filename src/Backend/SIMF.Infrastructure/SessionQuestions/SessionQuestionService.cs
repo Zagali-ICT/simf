@@ -22,6 +22,7 @@ internal sealed class SessionQuestionService(
     SimfAppDbContext appDbContext,
     IAuditLog auditLog,
     TimeProvider timeProvider,
+    IQuestionAiFilter questionAiFilter,
     ILogger<SessionQuestionService> logger) : ISessionQuestionService
 {
     /// <summary>How long after a session ends to keep accepting
@@ -103,9 +104,14 @@ internal sealed class SessionQuestionService(
         // the racy "max+1 then insert" pattern that an earlier draft
         // shipped. A moderator who reorders writes explicit Order
         // values to override the natural order.
+        // P4.2 — D-236: stage 1 of the pipeline. The AI filter is ADVISORY — it
+        // tags a verdict for the Committee but never changes the status; the
+        // question still lands Pending (stage 2). The shipped impl is a stub.
+        var verdict = await questionAiFilter.ScreenAsync(
+            sessionId, submittedByUserId, text, cancellationToken);
+
         // P3.3 — D-212: phase is pre vs live relative to the session start; the
-        // question lands Pending for the Scientific Committee (stage 2 of the
-        // pipeline). The AI advisory verdict (stage 1) is wired in P4.2.
+        // question lands Pending for the Scientific Committee (stage 2).
         var question = new SessionQuestion
         {
             Id = Guid.NewGuid(),
@@ -119,6 +125,7 @@ internal sealed class SessionQuestionService(
             CreatedAt = now,
             Phase = now < session.StartUtc ? QuestionPhase.Pre : QuestionPhase.Live,
             Status = QuestionStatus.Pending,
+            AiFilterVerdict = verdict.Verdict,
         };
         appDbContext.SessionQuestions.Add(question);
         await appDbContext.SaveChangesAsync(cancellationToken);

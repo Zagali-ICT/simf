@@ -71,6 +71,9 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
         // session (StartUtc 15 min ago) yields the Live phase.
         Assert.Equal(QuestionStatus.Pending, row.Status);
         Assert.Equal(QuestionPhase.Live, row.Phase);
+        // P4.2 — D-236: the advisory AI filter (stub) tagged a verdict — and it
+        // did NOT change the status (still Pending).
+        Assert.Equal("stub-clean", row.AiFilterVerdict);
     }
 
     [Fact]

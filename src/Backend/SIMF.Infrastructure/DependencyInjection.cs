@@ -315,6 +315,9 @@ public static class DependencyInjection
         // Stateless (reads only IOptions) — register as singleton.
         services.AddSingleton<SIMF.Application.SessionComments.Abstractions.ICommentAiFilter,
             SIMF.Infrastructure.SessionComments.StubCommentAiFilter>();
+        // P4.2 — D-236: advisory question AI filter (stub). Stateless singleton.
+        services.AddSingleton<SIMF.Application.SessionQuestions.Abstractions.IQuestionAiFilter,
+            SIMF.Infrastructure.SessionQuestions.StubQuestionAiFilter>();
         services.AddScoped<SIMF.Application.Feedback.Abstractions.IRatingService,
             SIMF.Infrastructure.Feedback.RatingService>();
         // B6 — D-224: visitor-to-visitor networking connections (app-facing).
