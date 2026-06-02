@@ -16,7 +16,7 @@ public sealed class SignOutEndpoint(ISessionService sessionService)
 {
     public override void Configure()
     {
-        Post("/auth/sign-out");
+        Post("/app/auth/sign-out");
         // No AllowAnonymous() — FastEndpoints requires an authenticated caller.
         Tags("Authentication");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));

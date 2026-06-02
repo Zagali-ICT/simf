@@ -19,7 +19,7 @@ namespace SIMF.ApiClient;
 /// </summary>
 public sealed class SimfAccountClient(HttpClient http)
 {
-    private const string BasePath = "api/v1/";
+    private const string BasePath = "api/v1/app/";
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 

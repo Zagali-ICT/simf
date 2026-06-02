@@ -35,7 +35,7 @@ public sealed class FilterQuestionEndpoint(IAiService service)
 {
     public override void Configure()
     {
-        Post("/ai/question-filter");
+        Post("/app/ai/question-filter");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("AI");
@@ -56,7 +56,7 @@ public sealed class AskFaqEndpoint(IAiService service)
 {
     public override void Configure()
     {
-        Post("/ai/faq");
+        Post("/app/ai/faq");
         AllowAnonymous();
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("AI");
@@ -77,7 +77,7 @@ public sealed class AssistanceEndpoint(IAiService service)
 {
     public override void Configure()
     {
-        Post("/ai/assistance");
+        Post("/app/ai/assistance");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("AI");
@@ -98,7 +98,7 @@ public sealed class TranslateEndpoint(IAiService service)
 {
     public override void Configure()
     {
-        Post("/ai/translate");
+        Post("/app/ai/translate");
         AllowAnonymous();
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("AI");

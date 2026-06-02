@@ -16,7 +16,7 @@ public sealed class ListPublicDelegationsEndpoint(IPublicDelegationService servi
 {
     public override void Configure()
     {
-        Get("/delegations");
+        Get("/app/delegations");
         AllowAnonymous();
         Tags("Public");
     }

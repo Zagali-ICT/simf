@@ -79,7 +79,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
                 Key = key, ContentEn = "Hello", ContentAr = "مرحباً", IsActive = true,
             }, admin);
 
-        var response = await _client.GetAsync($"/api/v1/content/{key}");
+        var response = await _client.GetAsync($"/api/v1/app/content/{key}");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<PublicContentBlock>>())!.Data!;
@@ -99,7 +99,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
                 Key = key, ContentEn = "x", ContentAr = "س", IsActive = false,
             }, admin);
 
-        var response = await _client.GetAsync($"/api/v1/content/{key}");
+        var response = await _client.GetAsync($"/api/v1/app/content/{key}");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
@@ -116,14 +116,14 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             }, admin);
 
         // First fetch — get the Last-Modified.
-        var first = await _client.GetAsync($"/api/v1/content/{key}");
+        var first = await _client.GetAsync($"/api/v1/app/content/{key}");
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
         var lastModified = first.Content.Headers.LastModified
             ?? DateTimeOffset.UtcNow;
 
         // Second fetch with If-Modified-Since equal to the last
         // modification time — server returns 304 with no body.
-        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/content/{key}");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/app/content/{key}");
         request.Headers.IfModifiedSince = lastModified;
         var second = await _client.SendAsync(request);
         Assert.Equal(HttpStatusCode.NotModified, second.StatusCode);
@@ -141,7 +141,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             new UpsertContentBlockRequest { Key = k2, ContentEn = "b", ContentAr = "ب", IsActive = true }, admin);
 
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/content/batch",
+            "/api/v1/app/content/batch",
             new PublicContentBlockBatchRequest
             {
                 Keys = new List<string> { k1, k2, "does-not-exist" },
@@ -184,7 +184,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
                 DisplayOrder = 1,
             }, admin);
 
-        var publicList = await _client.GetAsync("/api/v1/banners");
+        var publicList = await _client.GetAsync("/api/v1/app/banners");
         Assert.Equal(HttpStatusCode.OK, publicList.StatusCode);
         var body = (await publicList.Content
             .ReadFromJsonAsync<ApiResult<PublicBanners>>())!.Data!;
@@ -244,7 +244,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
         };
         foreach (var key in keys)
         {
-            var response = await _client.GetAsync($"/api/v1/content/{key}");
+            var response = await _client.GetAsync($"/api/v1/app/content/{key}");
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var body = (await response.Content
                 .ReadFromJsonAsync<ApiResult<PublicContentBlock>>())!.Data!;
@@ -269,7 +269,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/content-blocks/{key}", admin);
         Assert.Equal(HttpStatusCode.OK, del.StatusCode);
 
-        var publicRead = await _client.GetAsync($"/api/v1/content/{key}");
+        var publicRead = await _client.GetAsync($"/api/v1/app/content/{key}");
         Assert.Equal(HttpStatusCode.NotFound, publicRead.StatusCode);
     }
 
@@ -297,7 +297,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password,

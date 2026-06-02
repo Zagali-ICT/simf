@@ -107,7 +107,7 @@ public sealed class NewsTests : IClassFixture<SimfApiFactory>
             SampleCreate("Speaker line-up announced"), token);
         create.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var list = await _client.GetAsync("/api/v1/news?page=1&pageSize=20");
+        var list = await _client.GetAsync("/api/v1/app/news?page=1&pageSize=20");
         list.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var page = await list.Content.ReadFromJsonAsync<ApiResult<PublicNewsPage>>();
@@ -123,12 +123,12 @@ public sealed class NewsTests : IClassFixture<SimfApiFactory>
             SampleCreate("Embargoed announcement", DateTimeOffset.UtcNow.AddDays(7)), token);
         var created = await create.Content.ReadFromJsonAsync<ApiResult<AdminNewsDetail>>();
 
-        var list = await _client.GetAsync("/api/v1/news");
+        var list = await _client.GetAsync("/api/v1/app/news");
         var page = await list.Content.ReadFromJsonAsync<ApiResult<PublicNewsPage>>();
         page!.Data!.Items.Should().NotContain(i => i.TitleEn == "Embargoed announcement");
 
         // The public detail endpoint hides the not-yet-published article too.
-        var detail = await _client.GetAsync($"/api/v1/news/{created!.Data!.Id}");
+        var detail = await _client.GetAsync($"/api/v1/app/news/{created!.Data!.Id}");
         detail.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -143,7 +143,7 @@ public sealed class NewsTests : IClassFixture<SimfApiFactory>
         var del = await DeleteAuthAsync($"/api/v1/admin/news/{created!.Data!.Id}", token);
         del.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var list = await _client.GetAsync("/api/v1/news");
+        var list = await _client.GetAsync("/api/v1/app/news");
         var page = await list.Content.ReadFromJsonAsync<ApiResult<PublicNewsPage>>();
         page!.Data!.Items.Should().NotContain(i => i.TitleEn == "Press accreditation now open");
     }
@@ -179,7 +179,7 @@ public sealed class NewsTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password,

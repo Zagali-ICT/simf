@@ -12,7 +12,7 @@ public sealed class ResendCodeEndpoint(IRegistrationService registrationService)
 {
     public override void Configure()
     {
-        Post("/auth/resend-code");
+        Post("/app/auth/resend-code");
         AllowAnonymous();
         Tags("Authentication");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));

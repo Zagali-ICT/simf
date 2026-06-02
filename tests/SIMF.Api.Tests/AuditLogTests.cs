@@ -33,7 +33,7 @@ public sealed class AuditLogTests : IClassFixture<SimfApiFactory>
 
     private Task<HttpResponseMessage> SignUpAsync(string email) =>
         _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
+            "/api/v1/app/auth/sign-up",
             new SignUpRequest { Email = email, Password = ValidPassword, ConfirmPassword = ValidPassword });
 
     [Fact]
@@ -72,7 +72,7 @@ public sealed class AuditLogTests : IClassFixture<SimfApiFactory>
         var email = NewEmail();
         await SignUpAsync(email);
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest { Email = email, Code = GetActiveVerificationCode(email) });
 
         // Sign-up against the now-verified account is deflected (D-198): the
@@ -92,7 +92,7 @@ public sealed class AuditLogTests : IClassFixture<SimfApiFactory>
         var email = NewEmail();
 
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest { Email = email, Code = "123456" });
 
         var entry = FindAuditEntry(email, AuditEvents.EmailVerificationAccountNotFound);
@@ -104,7 +104,7 @@ public sealed class AuditLogTests : IClassFixture<SimfApiFactory>
     public async Task An_audit_entry_records_the_inbound_correlation_id()
     {
         var email = NewEmail();
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/sign-up")
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/app/auth/sign-up")
         {
             Content = JsonContent.Create(new SignUpRequest
             {

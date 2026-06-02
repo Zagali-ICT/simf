@@ -18,7 +18,7 @@ public sealed class GetPublicContentBlockEndpoint(IPublicCmsService service)
 {
     public override void Configure()
     {
-        Get("/content/{key}");
+        Get("/app/content/{key}");
         AllowAnonymous();
         Tags("Public");
     }
@@ -60,7 +60,7 @@ public sealed class BatchPublicContentBlocksEndpoint(IPublicCmsService service)
 {
     public override void Configure()
     {
-        Post("/content/batch");
+        Post("/app/content/batch");
         AllowAnonymous();
         Tags("Public");
     }
@@ -77,7 +77,7 @@ public sealed class GetPublicBannersEndpoint(IPublicCmsService service)
 {
     public override void Configure()
     {
-        Get("/banners");
+        Get("/app/banners");
         AllowAnonymous();
         Tags("Public");
     }

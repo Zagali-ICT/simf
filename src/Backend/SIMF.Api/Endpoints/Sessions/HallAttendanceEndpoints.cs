@@ -18,7 +18,7 @@ public sealed class RecordArrivalEndpoint(IHallAttendanceService service)
 {
     public override void Configure()
     {
-        Post("/sessions/{sessionId:guid}/arrival");
+        Post("/app/sessions/{sessionId:guid}/arrival");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Sessions");
@@ -42,7 +42,7 @@ public sealed class RecordDepartureEndpoint(IHallAttendanceService service)
 {
     public override void Configure()
     {
-        Post("/sessions/{sessionId:guid}/departure");
+        Post("/app/sessions/{sessionId:guid}/departure");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Sessions");
@@ -66,7 +66,7 @@ public sealed class GetHallAttendanceStatusEndpoint(IHallAttendanceService servi
 {
     public override void Configure()
     {
-        Get("/sessions/{sessionId:guid}/attendance");
+        Get("/app/sessions/{sessionId:guid}/attendance");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Sessions");
     }

@@ -64,7 +64,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
         // 1. Sign up → Registered.
         // ----------------------------------------------------------------
         var signUp = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
+            "/api/v1/app/auth/sign-up",
             new SignUpRequest { Email = email, Password = Password, ConfirmPassword = Password });
         Assert.Equal(HttpStatusCode.Created, signUp.StatusCode);
         Assert.Equal(AccountState.Registered, GetAccountState(email));
@@ -74,7 +74,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
         // ----------------------------------------------------------------
         var verifyCode = AuthFlow.GetActiveCode(_factory, email, AccountCodePurpose.EmailVerification);
         var verify = await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest { Email = email, Code = verifyCode });
         Assert.Equal(HttpStatusCode.OK, verify.StatusCode);
         Assert.Equal(AccountState.EmailVerified, GetAccountState(email));
@@ -84,7 +84,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
         //    the profile-upsert call.
         // ----------------------------------------------------------------
         var firstSignIn = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = Password, Audience = SignInAudience.Web });
         Assert.Equal(HttpStatusCode.OK, firstSignIn.StatusCode);
         var firstBody = (await firstSignIn.Content
@@ -103,7 +103,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
         // ----------------------------------------------------------------
         var interestId = await SeedInterestAsync();
         var upsertRequest = new HttpRequestMessage(
-            HttpMethod.Post, "/api/v1/account/user-profile")
+            HttpMethod.Post, "/api/v1/app/account/user-profile")
         {
             Content = JsonContent.Create(new UpsertUserProfileRequest
             {
@@ -141,7 +141,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
         //    account_state=Approved and user_type=Visitor.
         // ----------------------------------------------------------------
         var finalSignIn = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = Password, Audience = SignInAudience.App,
@@ -229,7 +229,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, Password);
             await users.AddToRoleAsync(user, AppRoles.Administrator);
         }
-        var signIn = await _client.PostAsJsonAsync("/api/v1/auth/sign-in",
+        var signIn = await _client.PostAsJsonAsync("/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = adminEmail, Password = Password, Audience = SignInAudience.Cp,

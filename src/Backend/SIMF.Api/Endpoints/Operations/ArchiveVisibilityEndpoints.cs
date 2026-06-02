@@ -16,7 +16,7 @@ public sealed class GetArchiveVisibilityPublicEndpoint(IOperationsToggleService 
 {
     public override void Configure()
     {
-        Get("/archive/visibility");
+        Get("/app/archive/visibility");
         AllowAnonymous();
         Tags("Public");
     }

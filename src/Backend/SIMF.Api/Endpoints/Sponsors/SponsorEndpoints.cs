@@ -17,7 +17,7 @@ public sealed class ListPublicSponsorsEndpoint(IPublicSponsorService service)
 {
     public override void Configure()
     {
-        Get("/sponsors");
+        Get("/app/sponsors");
         AllowAnonymous();
         Tags("Public");
     }

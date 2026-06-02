@@ -25,7 +25,7 @@ namespace SIMF.Api.Tests;
 /// </summary>
 public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
 {
-    private const string Path = "/api/v1/account/user-profile";
+    private const string Path = "/api/v1/app/account/user-profile";
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -551,7 +551,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             userId = user.Id;
         }
 
-        var sign = await _client.PostAsJsonAsync("/api/v1/auth/sign-in",
+        var sign = await _client.PostAsJsonAsync("/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,
@@ -832,7 +832,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return body.Data!.Tokens!.AccessToken;

@@ -19,7 +19,7 @@ public sealed class GetSessionSeatMapEndpoint(ISeatReservationService service)
 {
     public override void Configure()
     {
-        Get("/sessions/{sessionId:guid}/seats");
+        Get("/app/sessions/{sessionId:guid}/seats");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Sessions");
     }
@@ -42,7 +42,7 @@ public sealed class ReserveSeatEndpoint(ISeatReservationService service)
 {
     public override void Configure()
     {
-        Post("/sessions/{sessionId:guid}/seats/reserve");
+        Post("/app/sessions/{sessionId:guid}/seats/reserve");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Sessions");
@@ -71,7 +71,7 @@ public sealed class ReserveRandomSeatEndpoint(ISeatReservationService service)
 {
     public override void Configure()
     {
-        Post("/sessions/{sessionId:guid}/seats/reserve-random");
+        Post("/app/sessions/{sessionId:guid}/seats/reserve-random");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Sessions");
@@ -95,7 +95,7 @@ public sealed class ReleaseMySeatEndpoint(ISeatReservationService service)
 {
     public override void Configure()
     {
-        Delete("/sessions/{sessionId:guid}/seats/mine");
+        Delete("/app/sessions/{sessionId:guid}/seats/mine");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Sessions");

@@ -15,7 +15,7 @@ public sealed class VerifyOtpEndpoint(ISignInService signInService)
 {
     public override void Configure()
     {
-        Post("/auth/verify-otp");
+        Post("/app/auth/verify-otp");
         AllowAnonymous();
         Tags("Authentication");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));

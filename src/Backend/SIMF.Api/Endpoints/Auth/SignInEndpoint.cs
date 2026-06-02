@@ -12,7 +12,7 @@ public sealed class SignInEndpoint(ISignInService signInService)
 {
     public override void Configure()
     {
-        Post("/auth/sign-in");
+        Post("/app/auth/sign-in");
         AllowAnonymous();
         Tags("Authentication");
         Options(routeBuilder => routeBuilder

@@ -25,7 +25,7 @@ public sealed class ProfileCountriesEndpoint(SimfAppDbContext appDb)
 {
     public override void Configure()
     {
-        Get("/account/user-profile/countries");
+        Get("/app/account/user-profile/countries");
         Tags("Account");
         Summary(summary => summary.Summary =
             "Return the supported nationality list.");

@@ -32,7 +32,7 @@ public sealed class SubmitSessionQuestionEndpoint(ISessionQuestionService servic
 {
     public override void Configure()
     {
-        Post("/sessions/{sessionId:guid}/questions");
+        Post("/app/sessions/{sessionId:guid}/questions");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Sessions");
@@ -97,7 +97,7 @@ public sealed class ListModeratorQueueEndpoint(ISessionModerationService service
 {
     public override void Configure()
     {
-        Get("/sessions/{sessionId:guid}/questions/moderate");
+        Get("/app/sessions/{sessionId:guid}/questions/moderate");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Sessions");
     }
@@ -129,7 +129,7 @@ public sealed class HideQuestionEndpoint(ISessionModerationService service)
 {
     public override void Configure()
     {
-        Put("/sessions/{sessionId:guid}/questions/{questionId:guid}/hide");
+        Put("/app/sessions/{sessionId:guid}/questions/{questionId:guid}/hide");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Sessions");
@@ -161,7 +161,7 @@ public sealed class PushQuestionEndpoint(ISessionModerationService service)
 {
     public override void Configure()
     {
-        Put("/sessions/{sessionId:guid}/questions/{questionId:guid}/push");
+        Put("/app/sessions/{sessionId:guid}/questions/{questionId:guid}/push");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Sessions");
@@ -193,7 +193,7 @@ public sealed class ReorderQuestionsEndpoint(ISessionModerationService service)
 {
     public override void Configure()
     {
-        Put("/sessions/{sessionId:guid}/questions/reorder");
+        Put("/app/sessions/{sessionId:guid}/questions/reorder");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Sessions");

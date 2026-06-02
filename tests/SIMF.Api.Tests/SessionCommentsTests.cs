@@ -40,7 +40,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
 
         var response = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments",
+            $"/api/v1/app/sessions/{session.Id}/comments",
             new SubmitSessionCommentRequest { Body = "Great session on maritime AI!" },
             visitor.AccessToken);
 
@@ -60,7 +60,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
 
         var response = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments",
+            $"/api/v1/app/sessions/{session.Id}/comments",
             new SubmitSessionCommentRequest { Body = "   " },
             visitor.AccessToken);
 
@@ -77,7 +77,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
 
         var response = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments",
+            $"/api/v1/app/sessions/{session.Id}/comments",
             new SubmitSessionCommentRequest { Body = "Is this on?" },
             visitor.AccessToken);
 
@@ -93,7 +93,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
 
         var response = await PostAuthAsync(
-            $"/api/v1/sessions/{Guid.NewGuid()}/comments",
+            $"/api/v1/app/sessions/{Guid.NewGuid()}/comments",
             new SubmitSessionCommentRequest { Body = "Ghost session" },
             visitor.AccessToken);
 
@@ -111,7 +111,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
 
         // First approved comment (stub auto-approves).
         await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments",
+            $"/api/v1/app/sessions/{session.Id}/comments",
             new SubmitSessionCommentRequest { Body = "First comment" },
             visitor.AccessToken);
         // Advance the (fake) clock so the second comment is genuinely newer —
@@ -119,7 +119,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
         _factory.Time.Advance(TimeSpan.FromSeconds(1));
         // Second approved comment.
         var second = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments",
+            $"/api/v1/app/sessions/{session.Id}/comments",
             new SubmitSessionCommentRequest { Body = "Second comment" },
             visitor.AccessToken);
         var secondId = (await second.Content
@@ -130,7 +130,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
             "Pending hidden body", SessionCommentStatus.Pending, isActive: true);
 
         var feed = await GetAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments", visitor.AccessToken);
+            $"/api/v1/app/sessions/{session.Id}/comments", visitor.AccessToken);
         Assert.Equal(HttpStatusCode.OK, feed.StatusCode);
         var rows = (await feed.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionCommentFeedRow>>>())!.Data!;
@@ -175,7 +175,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
 
         var submit = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments",
+            $"/api/v1/app/sessions/{session.Id}/comments",
             new SubmitSessionCommentRequest { Body = "To be hidden" },
             visitor.AccessToken);
         var commentId = (await submit.Content
@@ -193,7 +193,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
 
         // Gone from the public feed.
         var feed = await GetAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments", visitor.AccessToken);
+            $"/api/v1/app/sessions/{session.Id}/comments", visitor.AccessToken);
         var rows = (await feed.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionCommentFeedRow>>>())!.Data!;
         Assert.DoesNotContain(rows, r => r.Id == commentId);
@@ -214,7 +214,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
 
         var submit = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments",
+            $"/api/v1/app/sessions/{session.Id}/comments",
             new SubmitSessionCommentRequest { Body = "Delete me" },
             visitor.AccessToken);
         var commentId = (await submit.Content
@@ -225,7 +225,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, delete.StatusCode);
 
         var feed = await GetAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments", visitor.AccessToken);
+            $"/api/v1/app/sessions/{session.Id}/comments", visitor.AccessToken);
         var feedRows = (await feed.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionCommentFeedRow>>>())!.Data!;
         Assert.DoesNotContain(feedRows, r => r.Id == commentId);
@@ -277,7 +277,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
         var commentId = await SubmitCommentAsync(session.Id, "Like me", visitor.AccessToken);
 
         var like = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments/{commentId}/like",
+            $"/api/v1/app/sessions/{session.Id}/comments/{commentId}/like",
             new { }, visitor.AccessToken);
         Assert.Equal(HttpStatusCode.OK, like.StatusCode);
         var result = (await like.Content
@@ -287,7 +287,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
 
         // Liking again is a no-op — the count stays at 1.
         var again = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments/{commentId}/like",
+            $"/api/v1/app/sessions/{session.Id}/comments/{commentId}/like",
             new { }, visitor.AccessToken);
         var againResult = (await again.Content
             .ReadFromJsonAsync<ApiResult<SessionCommentLikeResult>>())!.Data!;
@@ -295,7 +295,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
 
         // The feed reflects the like for the requester.
         var feed = await GetAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments", visitor.AccessToken);
+            $"/api/v1/app/sessions/{session.Id}/comments", visitor.AccessToken);
         var rows = (await feed.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionCommentFeedRow>>>())!.Data!;
         var row = Assert.Single(rows, r => r.Id == commentId);
@@ -312,11 +312,11 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
         var commentId = await SubmitCommentAsync(session.Id, "Toggle me", visitor.AccessToken);
 
         await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments/{commentId}/like",
+            $"/api/v1/app/sessions/{session.Id}/comments/{commentId}/like",
             new { }, visitor.AccessToken);
 
         var unlike = await DeleteAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments/{commentId}/like", visitor.AccessToken);
+            $"/api/v1/app/sessions/{session.Id}/comments/{commentId}/like", visitor.AccessToken);
         Assert.Equal(HttpStatusCode.OK, unlike.StatusCode);
         var result = (await unlike.Content
             .ReadFromJsonAsync<ApiResult<SessionCommentLikeResult>>())!.Data!;
@@ -325,7 +325,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
 
         // Unliking again is a no-op — the count stays clamped at 0.
         var again = await DeleteAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments/{commentId}/like", visitor.AccessToken);
+            $"/api/v1/app/sessions/{session.Id}/comments/{commentId}/like", visitor.AccessToken);
         var againResult = (await again.Content
             .ReadFromJsonAsync<ApiResult<SessionCommentLikeResult>>())!.Data!;
         Assert.Equal(0, againResult.LikeCount);
@@ -342,12 +342,12 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
         var commentId = await SubmitCommentAsync(session.Id, "Shared", alice.AccessToken);
 
         await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments/{commentId}/like",
+            $"/api/v1/app/sessions/{session.Id}/comments/{commentId}/like",
             new { }, alice.AccessToken);
 
         // Bob sees the count but not his own like.
         var feed = await GetAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments", bob.AccessToken);
+            $"/api/v1/app/sessions/{session.Id}/comments", bob.AccessToken);
         var rows = (await feed.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionCommentFeedRow>>>())!.Data!;
         var row = Assert.Single(rows, r => r.Id == commentId);
@@ -363,7 +363,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
 
         var response = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments/{Guid.NewGuid()}/like",
+            $"/api/v1/app/sessions/{session.Id}/comments/{Guid.NewGuid()}/like",
             new { }, visitor.AccessToken);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -382,7 +382,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
         var hiddenId = await LatestCommentIdAsync(session.Id, "hidden");
 
         var response = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/comments/{hiddenId}/like",
+            $"/api/v1/app/sessions/{session.Id}/comments/{hiddenId}/like",
             new { }, visitor.AccessToken);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -392,7 +392,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
     private async Task<Guid> SubmitCommentAsync(Guid sessionId, string body, string token)
     {
         var submit = await PostAuthAsync(
-            $"/api/v1/sessions/{sessionId}/comments",
+            $"/api/v1/app/sessions/{sessionId}/comments",
             new SubmitSessionCommentRequest { Body = body }, token);
         return (await submit.Content
             .ReadFromJsonAsync<ApiResult<SessionCommentSubmitted>>())!.Data!.Id;
@@ -413,10 +413,10 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
     {
         var email = $"sc-visitor-{Guid.NewGuid():N}@simf.test";
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
+            "/api/v1/app/auth/sign-up",
             new SignUpRequest { Email = email, Password = AuthFlow.Password, ConfirmPassword = AuthFlow.Password });
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest
             {
                 Email = email,
@@ -425,7 +425,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
         AuthFlow.SetAccountState(_factory, email, AccountState.Approved);
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var envelope = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return envelope.Data!.Tokens!;
@@ -504,7 +504,7 @@ public sealed class SessionCommentsTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password,

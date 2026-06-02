@@ -75,12 +75,12 @@ public sealed class RecoveryCodesTests : IClassFixture<SimfApiFactory>
         await SignInWithRecoveryCodeAsync(enrolled.Email, enrolled.Codes[0]);
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = enrolled.Email, Password = AuthFlow.Password });
         var challenge =
             (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!;
         var verify = await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-recovery-code",
+            "/api/v1/app/auth/verify-recovery-code",
             new VerifyRecoveryCodeRequest
             {
                 MfaToken = challenge.MfaToken!,
@@ -99,12 +99,12 @@ public sealed class RecoveryCodesTests : IClassFixture<SimfApiFactory>
         var enrolled = await EnrolAsync();
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = enrolled.Email, Password = AuthFlow.Password });
         var challenge =
             (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!;
         var verify = await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-recovery-code",
+            "/api/v1/app/auth/verify-recovery-code",
             new VerifyRecoveryCodeRequest
             {
                 MfaToken = challenge.MfaToken!,
@@ -123,19 +123,19 @@ public sealed class RecoveryCodesTests : IClassFixture<SimfApiFactory>
         var fresh = await RefreshAsync(enrolled.RefreshToken);
 
         var regen = await PostAuthAsync<object>(
-            "/api/v1/account/recovery-codes/regenerate", null, fresh.AccessToken);
+            "/api/v1/app/account/recovery-codes/regenerate", null, fresh.AccessToken);
         var second = (await regen.Content.ReadFromJsonAsync<ApiResult<RecoveryCodesResponse>>())!;
         Assert.Equal(10, second.Data!.RecoveryCodes.Count);
         Assert.DoesNotContain(enrolled.Codes[0], second.Data.RecoveryCodes);
 
         // The first batch is now dead — using one of its codes is rejected.
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = enrolled.Email, Password = AuthFlow.Password });
         var challenge =
             (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!;
         var verify = await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-recovery-code",
+            "/api/v1/app/auth/verify-recovery-code",
             new VerifyRecoveryCodeRequest
             {
                 MfaToken = challenge.MfaToken!,
@@ -156,7 +156,7 @@ public sealed class RecoveryCodesTests : IClassFixture<SimfApiFactory>
         var disableCode = new OtpNet.Totp(OtpNet.Base32Encoding.ToBytes(enrolled.Secret))
             .ComputeTotp(DateTime.UtcNow);
         var disable = await PostAuthAsync(
-            "/api/v1/auth/totp/disable",
+            "/api/v1/app/auth/totp/disable",
             new TotpDisableRequest { Code = disableCode },
             fresh.AccessToken);
         Assert.Equal(HttpStatusCode.OK, disable.StatusCode);
@@ -185,14 +185,14 @@ public sealed class RecoveryCodesTests : IClassFixture<SimfApiFactory>
     {
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
         var setupResponse = await PostAuthAsync<object>(
-            "/api/v1/auth/totp/setup", null, tokens.AccessToken);
+            "/api/v1/app/auth/totp/setup", null, tokens.AccessToken);
         var setup = (await setupResponse.Content.ReadFromJsonAsync<ApiResult<TotpSetupResponse>>())!
             .Data!;
 
         var firstCode = new OtpNet.Totp(OtpNet.Base32Encoding.ToBytes(setup.Secret))
             .ComputeTotp(DateTime.UtcNow);
         var confirm = await PostAuthAsync(
-            "/api/v1/auth/totp/confirm",
+            "/api/v1/app/auth/totp/confirm",
             new TotpConfirmRequest { Code = firstCode },
             tokens.AccessToken);
         var confirmBody =
@@ -209,12 +209,12 @@ public sealed class RecoveryCodesTests : IClassFixture<SimfApiFactory>
     private async Task<AuthTokens> SignInWithRecoveryCodeAsync(string email, string code)
     {
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var challenge =
             (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!;
         var verify = await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-recovery-code",
+            "/api/v1/app/auth/verify-recovery-code",
             new VerifyRecoveryCodeRequest { MfaToken = challenge.MfaToken!, Code = code });
         verify.EnsureSuccessStatusCode();
         var body = (await verify.Content.ReadFromJsonAsync<ApiResult<AuthTokens>>())!;
@@ -224,7 +224,7 @@ public sealed class RecoveryCodesTests : IClassFixture<SimfApiFactory>
     private async Task<AuthTokens> RefreshAsync(string refreshToken)
     {
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/auth/refresh", new RefreshRequest { RefreshToken = refreshToken });
+            "/api/v1/app/auth/refresh", new RefreshRequest { RefreshToken = refreshToken });
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<AuthTokens>>())!;
         return body.Data!;
     }
@@ -232,7 +232,7 @@ public sealed class RecoveryCodesTests : IClassFixture<SimfApiFactory>
     private async Task<ProfileResponse> ReadProfileAsync(string accessToken)
     {
         using var request = new HttpRequestMessage(
-            HttpMethod.Get, "/api/v1/account/profile");
+            HttpMethod.Get, "/api/v1/app/account/profile");
         request.Headers.Authorization =
             new AuthenticationHeaderValue("Bearer", accessToken);
         var response = await _client.SendAsync(request);

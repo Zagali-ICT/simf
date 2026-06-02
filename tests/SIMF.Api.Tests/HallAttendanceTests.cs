@@ -90,7 +90,7 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
         var sessionId = await SeedSessionAsync(withGeofence: true);
         await ArriveAsync(sessionId, CenterLat, CenterLon, visitor);
 
-        var response = await PostAuthAsync($"/api/v1/sessions/{sessionId}/departure", new { }, visitor);
+        var response = await PostAuthAsync($"/api/v1/app/sessions/{sessionId}/departure", new { }, visitor);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var status = (await response.Content.ReadFromJsonAsync<ApiResult<HallAttendanceStatus>>())!.Data!;
         Assert.False(status.Arrived);
@@ -113,7 +113,7 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
         var visitor = await SeedApprovedVisitorAsync();
         var sessionId = await SeedSessionAsync(withGeofence: true);
 
-        var response = await GetAuthAsync($"/api/v1/sessions/{sessionId}/attendance", visitor);
+        var response = await GetAuthAsync($"/api/v1/app/sessions/{sessionId}/attendance", visitor);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var status = (await response.Content.ReadFromJsonAsync<ApiResult<HallAttendanceStatus>>())!.Data!;
         Assert.False(status.Arrived);
@@ -124,7 +124,7 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
     {
         var sessionId = await SeedSessionAsync(withGeofence: true);
         var response = await _client.PostAsJsonAsync(
-            $"/api/v1/sessions/{sessionId}/arrival",
+            $"/api/v1/app/sessions/{sessionId}/arrival",
             new RecordArrivalRequest { Lat = CenterLat, Lon = CenterLon });
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -141,7 +141,7 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
 
     private Task<HttpResponseMessage> PostArriveAsync(
         Guid sessionId, double lat, double lon, string token) =>
-        PostAuthAsync($"/api/v1/sessions/{sessionId}/arrival",
+        PostAuthAsync($"/api/v1/app/sessions/{sessionId}/arrival",
             new RecordArrivalRequest { Lat = lat, Lon = lon }, token);
 
     private async Task<Guid> SeedSessionAsync(bool withGeofence)
@@ -190,7 +190,7 @@ public sealed class HallAttendanceTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return body.Data!.Tokens!.AccessToken;

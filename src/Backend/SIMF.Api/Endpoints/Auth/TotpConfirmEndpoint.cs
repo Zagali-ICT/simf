@@ -18,7 +18,7 @@ public sealed class TotpConfirmEndpoint(ITotpEnrollmentService totpEnrollment)
 {
     public override void Configure()
     {
-        Post("/auth/totp/confirm");
+        Post("/app/auth/totp/confirm");
         Tags("Authentication");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

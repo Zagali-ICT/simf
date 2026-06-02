@@ -16,7 +16,7 @@ public sealed class ForgotPasswordEndpoint(IPasswordService passwordService)
 {
     public override void Configure()
     {
-        Post("/auth/forgot-password");
+        Post("/app/auth/forgot-password");
         AllowAnonymous();
         Tags("Authentication");
         Options(routeBuilder => routeBuilder

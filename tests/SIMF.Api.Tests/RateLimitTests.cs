@@ -32,7 +32,7 @@ public sealed class RateLimitTests : IClassFixture<RateLimitedApiFactory>
         for (var attempt = 0; attempt < 5; attempt++)
         {
             var response = await _client.PostAsJsonAsync(
-                "/api/v1/auth/sign-up",
+                "/api/v1/app/auth/sign-up",
                 new SignUpRequest
                 {
                     Email = $"rl-{Guid.NewGuid():N}@simf.test",

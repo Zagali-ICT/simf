@@ -22,7 +22,7 @@ public sealed class SubmitMeetingRequestEndpoint(IMeetingRequestService service)
 {
     public override void Configure()
     {
-        Post("/sessions/{sessionId:guid}/meeting-requests");
+        Post("/app/sessions/{sessionId:guid}/meeting-requests");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Sessions");

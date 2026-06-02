@@ -18,7 +18,7 @@ public sealed class ListNotificationsEndpoint(INotificationService service)
 {
     public override void Configure()
     {
-        Post("/account/notifications/list");
+        Post("/app/account/notifications/list");
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -46,7 +46,7 @@ public sealed class UnreadNotificationCountEndpoint(INotificationService service
 {
     public override void Configure()
     {
-        Get("/account/notifications/unread-count");
+        Get("/app/account/notifications/unread-count");
         Tags("Account");
         Summary(summary => summary.Summary =
             "Return the count of unread notifications for the signed-in user.");
@@ -77,7 +77,7 @@ public sealed class MarkNotificationReadEndpoint(INotificationService service)
 {
     public override void Configure()
     {
-        Post("/account/notifications/{id:guid}/read");
+        Post("/app/account/notifications/{id:guid}/read");
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -104,7 +104,7 @@ public sealed class MarkAllNotificationsReadEndpoint(INotificationService servic
 {
     public override void Configure()
     {
-        Post("/account/notifications/read-all");
+        Post("/app/account/notifications/read-all");
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =
@@ -135,7 +135,7 @@ public sealed class DeleteNotificationEndpoint(INotificationService service)
 {
     public override void Configure()
     {
-        Delete("/account/notifications/{id:guid}");
+        Delete("/app/account/notifications/{id:guid}");
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

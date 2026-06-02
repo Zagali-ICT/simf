@@ -18,7 +18,7 @@ public sealed class ProfileEndpoint(IAccountService accountService)
 {
     public override void Configure()
     {
-        Get("/account/profile");
+        Get("/app/account/profile");
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

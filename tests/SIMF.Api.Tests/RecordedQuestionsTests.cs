@@ -95,7 +95,7 @@ public sealed class RecordedQuestionsTests : IClassFixture<SimfApiFactory>
         await PublishAsync(session.Id, admin);
 
         var response = await _client.GetAsync(
-            $"/api/v1/programme/sessions/{session.Id}/recorded-questions");
+            $"/api/v1/app/programme/sessions/{session.Id}/recorded-questions");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -105,7 +105,7 @@ public sealed class RecordedQuestionsTests : IClassFixture<SimfApiFactory>
         Guid sessionId, string token)
     {
         var response = await GetAuthAsync(
-            $"/api/v1/programme/sessions/{sessionId}/recorded-questions", token);
+            $"/api/v1/app/programme/sessions/{sessionId}/recorded-questions", token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return (await response.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<PublicRecordedQuestion>>>())!.Data!;
@@ -124,7 +124,7 @@ public sealed class RecordedQuestionsTests : IClassFixture<SimfApiFactory>
     private async Task<Guid> SubmitQuestionAsync(Guid sessionId, string visitorToken)
     {
         var response = await PostAuthAsync(
-            $"/api/v1/sessions/{sessionId}/questions",
+            $"/api/v1/app/sessions/{sessionId}/questions",
             new SubmitSessionQuestionRequest { QuestionText = "Archived question?", IsAtVenue = true },
             visitorToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -149,7 +149,7 @@ public sealed class RecordedQuestionsTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return (body.Data!.Tokens!.AccessToken, displayName);
@@ -204,7 +204,7 @@ public sealed class RecordedQuestionsTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,

@@ -75,7 +75,7 @@ public sealed class EmailEnqueueFailureTests : IClassFixture<ThrowingEmailQueueA
         // The endpoint must NOT throw to the caller; the always-200 contract
         // (no enumeration oracle) is preserved.
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/auth/forgot-password",
+            "/api/v1/app/auth/forgot-password",
             new ForgotPasswordRequest { Email = email });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -98,7 +98,7 @@ public sealed class EmailEnqueueFailureTests : IClassFixture<ThrowingEmailQueueA
         var email = $"enq-su-{Guid.NewGuid():N}@simf.test";
 
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
+            "/api/v1/app/auth/sign-up",
             new SignUpRequest
             {
                 Email = email, Password = "Passw0rd!", ConfirmPassword = "Passw0rd!",

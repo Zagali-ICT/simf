@@ -18,7 +18,7 @@ public sealed class RecoveryCodesRegenerateEndpoint(IAccountService accountServi
 {
     public override void Configure()
     {
-        Post("/account/recovery-codes/regenerate");
+        Post("/app/account/recovery-codes/regenerate");
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

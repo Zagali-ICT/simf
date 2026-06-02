@@ -173,7 +173,7 @@ public sealed class AdminResetTwoFactorTests : IClassFixture<SimfApiFactory>
     {
         var (email, _) = await CreateAdministratorAsync();
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,
@@ -228,12 +228,12 @@ public sealed class AdminResetTwoFactorTests : IClassFixture<SimfApiFactory>
         // Setup + confirm — sets the authenticator key, flips TwoFactorEnabled
         // and mints recovery codes, all of which the admin reset should wipe.
         var setup = await PostAuthAsync<object>(
-            "/api/v1/auth/totp/setup", null, tokens.AccessToken);
+            "/api/v1/app/auth/totp/setup", null, tokens.AccessToken);
         var secret = (await setup.Content.ReadFromJsonAsync<ApiResult<TotpSetupResponse>>())!
             .Data!.Secret;
         var code = new Totp(Base32Encoding.ToBytes(secret)).ComputeTotp(DateTime.UtcNow);
         await PostAuthAsync(
-            "/api/v1/auth/totp/confirm",
+            "/api/v1/app/auth/totp/confirm",
             new TotpConfirmRequest { Code = code },
             tokens.AccessToken);
 

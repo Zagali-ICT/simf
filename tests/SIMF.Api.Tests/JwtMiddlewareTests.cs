@@ -116,7 +116,7 @@ public sealed class JwtMiddlewareTests : IClassFixture<SimfApiFactory>
         var malformedToken = "this-is-not-a-valid-jwt";
         for (var i = 0; i < 15; i++)
         {
-            using var req = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/sign-out");
+            using var req = new HttpRequestMessage(HttpMethod.Post, "/api/v1/app/auth/sign-out");
             req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", malformedToken);
             var resp = await _client.SendAsync(req);
             Assert.Equal(HttpStatusCode.Unauthorized, resp.StatusCode);
@@ -139,7 +139,7 @@ public sealed class JwtMiddlewareTests : IClassFixture<SimfApiFactory>
 
     private async Task AssertRejectedAsync(string token)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/sign-out");
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/app/auth/sign-out");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var response = await _client.SendAsync(request);

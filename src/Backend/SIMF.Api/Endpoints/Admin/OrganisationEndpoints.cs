@@ -250,7 +250,7 @@ public sealed class OrganisationPickerSearchEndpoint(IPublicOrganisationService 
 {
     public override void Configure()
     {
-        Get("/organisations");
+        Get("/app/organisations");
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

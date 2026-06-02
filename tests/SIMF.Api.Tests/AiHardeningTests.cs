@@ -83,10 +83,10 @@ public sealed class AiHardeningTests : IClassFixture<SimfApiFactory>
         // D-179 (review-pass) — the chokepoint is now IAiService.InvokeAsync,
         // so public feature endpoints also enforce the cap. This closes the
         // bypass reality-checker flagged: an approved visitor cannot paste a
-        // megabyte question into /api/v1/ai/faq.
+        // megabyte question into /api/v1/app/ai/faq.
         var huge = new string('x', AiService.MaxInputValueLength + 1);
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/ai/faq", new AskFaqRequest { Question = huge });
+            "/api/v1/app/ai/faq", new AskFaqRequest { Question = huge });
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
         Assert.Equal(ErrorCodes.AiInputInvalid, body.Error!.Code);
@@ -125,7 +125,7 @@ public sealed class AiHardeningTests : IClassFixture<SimfApiFactory>
     {
         var pii = "Reach me at captain.ahmed@simf.test";
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/ai/faq", new AskFaqRequest { Question = pii });
+            "/api/v1/app/ai/faq", new AskFaqRequest { Question = pii });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<AiCallResult>>())!.Data!;
@@ -351,7 +351,7 @@ public sealed class AiHardeningTests : IClassFixture<SimfApiFactory>
     public async Task AiInvocationSucceeded_audit_is_valid_json()
     {
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/ai/faq", new AskFaqRequest { Question = "Q" });
+            "/api/v1/app/ai/faq", new AskFaqRequest { Question = "Q" });
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<AiCallResult>>())!.Data!;
 
@@ -378,7 +378,7 @@ public sealed class AiHardeningTests : IClassFixture<SimfApiFactory>
     {
         // Trigger an invocation we can look up.
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/ai/faq", new AskFaqRequest { Question = "Drill-down test" });
+            "/api/v1/app/ai/faq", new AskFaqRequest { Question = "Drill-down test" });
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<AiCallResult>>())!.Data!;
 
@@ -446,7 +446,7 @@ public sealed class AiHardeningTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password,

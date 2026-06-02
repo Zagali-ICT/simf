@@ -42,7 +42,7 @@ public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
     {
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
 
-        var response = await GetAuthAsync("/api/v1/account/profile", tokens.AccessToken);
+        var response = await GetAuthAsync("/api/v1/app/account/profile", tokens.AccessToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<ProfileResponse>>())!;
@@ -56,7 +56,7 @@ public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task GetProfile_without_a_bearer_token_returns_401()
     {
-        var response = await _client.GetAsync("/api/v1/account/profile");
+        var response = await _client.GetAsync("/api/v1/app/account/profile");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -69,7 +69,7 @@ public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
         var upload = await UploadAvatarAsync(OnePixelPng, "image/png", "avatar.png", tokens.AccessToken);
         Assert.Equal(HttpStatusCode.OK, upload.StatusCode);
 
-        var profile = (await (await GetAuthAsync("/api/v1/account/profile", tokens.AccessToken))
+        var profile = (await (await GetAuthAsync("/api/v1/app/account/profile", tokens.AccessToken))
             .Content.ReadFromJsonAsync<ApiResult<ProfileResponse>>())!;
         Assert.NotNull(profile.Data!.AvatarUrl);
         Assert.Contains($"/account/api/avatar/{tokens.User.Id:N}", profile.Data.AvatarUrl);
@@ -79,7 +79,7 @@ public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
         // content type — that's what the CP proxy turns around and serves to
         // the browser.
         var fetched = await GetAuthAsync(
-            $"/api/v1/account/avatar/{tokens.User.Id:N}", tokens.AccessToken);
+            $"/api/v1/app/account/avatar/{tokens.User.Id:N}", tokens.AccessToken);
         Assert.Equal(HttpStatusCode.OK, fetched.StatusCode);
         Assert.Equal("image/png", fetched.Content.Headers.ContentType?.MediaType);
         var fetchedBytes = await fetched.Content.ReadAsByteArrayAsync();
@@ -92,7 +92,7 @@ public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
 
         var response = await GetAuthAsync(
-            $"/api/v1/account/avatar/{Guid.NewGuid():N}", tokens.AccessToken);
+            $"/api/v1/app/account/avatar/{Guid.NewGuid():N}", tokens.AccessToken);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -103,7 +103,7 @@ public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
 
         var response = await GetAuthAsync(
-            $"/api/v1/account/avatar/{tokens.User.Id:N}", tokens.AccessToken);
+            $"/api/v1/app/account/avatar/{tokens.User.Id:N}", tokens.AccessToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -190,7 +190,7 @@ public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var profile = (await (await GetAuthAsync("/api/v1/account/profile", tokens.AccessToken))
+        var profile = (await (await GetAuthAsync("/api/v1/app/account/profile", tokens.AccessToken))
             .Content.ReadFromJsonAsync<ApiResult<ProfileResponse>>())!;
         Assert.NotNull(profile.Data!.AvatarUrl);
 
@@ -207,13 +207,13 @@ public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
         await UploadAvatarAsync(OnePixelPng, "image/png", "avatar.png", tokens.AccessToken);
 
-        using var request = new HttpRequestMessage(HttpMethod.Delete, "/api/v1/account/avatar");
+        using var request = new HttpRequestMessage(HttpMethod.Delete, "/api/v1/app/account/avatar");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokens.AccessToken);
         var response = await _client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var profile = (await (await GetAuthAsync("/api/v1/account/profile", tokens.AccessToken))
+        var profile = (await (await GetAuthAsync("/api/v1/app/account/profile", tokens.AccessToken))
             .Content.ReadFromJsonAsync<ApiResult<ProfileResponse>>())!;
         Assert.Null(profile.Data!.AvatarUrl);
 
@@ -236,7 +236,7 @@ public sealed class ProfileEndpointsTests : IClassFixture<SimfApiFactory>
         var fileContent = new ByteArrayContent(content);
         fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
         multipart.Add(fileContent, "File", fileName);
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/account/avatar")
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/app/account/avatar")
         {
             Content = multipart,
         };

@@ -1624,19 +1624,19 @@ public sealed class SimfAdminClient(HttpClient http)
     }
 
     /// <summary>D-148 — operator-surface helper. Routes through the
-    /// <c>/api/v1/gates/</c> prefix rather than <c>/api/v1/admin/</c>.</summary>
+    /// <c>/api/v1/app/gates/</c> prefix rather than <c>/api/v1/admin/</c>.</summary>
     private Task<ApiCallResult<T>> SendOperatorAsync<T>(
         HttpMethod method, string path, HttpContent? content,
         string accessToken, CancellationToken cancellationToken) =>
-        SendWithBaseAsync<T>("api/v1/gates/", method, path, content,
+        SendWithBaseAsync<T>("api/v1/app/gates/", method, path, content,
             accessToken, cancellationToken);
 
     /// <summary>D-169 (gap doc G6) — sessions/questions helper. Routes
-    /// through the <c>/api/v1/sessions/</c> prefix.</summary>
+    /// through the <c>/api/v1/app/sessions/</c> prefix.</summary>
     private Task<ApiCallResult<T>> SendSessionsAsync<T>(
         HttpMethod method, string path, HttpContent? content,
         string accessToken, CancellationToken cancellationToken) =>
-        SendWithBaseAsync<T>("api/v1/sessions/", method, path, content,
+        SendWithBaseAsync<T>("api/v1/app/sessions/", method, path, content,
             accessToken, cancellationToken);
 
     private Task<ApiCallResult<T>> SendAsync<T>(

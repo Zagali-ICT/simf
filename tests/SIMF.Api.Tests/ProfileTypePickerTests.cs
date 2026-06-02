@@ -1,5 +1,5 @@
 // D-190 (D-186 follow-up, mobile sign-up unblock) — integration
-// tests for the public GET /api/v1/account/profile-types picker
+// tests for the public GET /api/v1/app/account/profile-types picker
 // endpoint. Authenticated (not admin-only, not approval-gated) so
 // mid-registration users can populate the Screen-2 dropdown.
 using System.Net;
@@ -33,7 +33,7 @@ public sealed class ProfileTypePickerTests : IClassFixture<SimfApiFactory>
     {
         // No Authorization header — the endpoint sits behind the
         // standard authentication floor.
-        var response = await _client.GetAsync("/api/v1/account/profile-types");
+        var response = await _client.GetAsync("/api/v1/app/account/profile-types");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -44,7 +44,7 @@ public sealed class ProfileTypePickerTests : IClassFixture<SimfApiFactory>
         await SeedProfileTypeAsync($"Partner-{Guid.NewGuid():N}", isVisitor: false);
 
         var token = await SignInVisitorAsync();
-        var response = await GetAuthAsync("/api/v1/account/profile-types", token);
+        var response = await GetAuthAsync("/api/v1/app/account/profile-types", token);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content
@@ -64,7 +64,7 @@ public sealed class ProfileTypePickerTests : IClassFixture<SimfApiFactory>
 
         var token = await SignInVisitorAsync();
         var response = await GetAuthAsync(
-            "/api/v1/account/profile-types?isVisitor=true", token);
+            "/api/v1/app/account/profile-types?isVisitor=true", token);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content
@@ -81,7 +81,7 @@ public sealed class ProfileTypePickerTests : IClassFixture<SimfApiFactory>
 
         var token = await SignInVisitorAsync();
         var response = await GetAuthAsync(
-            "/api/v1/account/profile-types?isVisitor=false", token);
+            "/api/v1/app/account/profile-types?isVisitor=false", token);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content
@@ -97,7 +97,7 @@ public sealed class ProfileTypePickerTests : IClassFixture<SimfApiFactory>
             $"DormantPick-{Guid.NewGuid():N}", isVisitor: true, isActive: false);
 
         var token = await SignInVisitorAsync();
-        var response = await GetAuthAsync("/api/v1/account/profile-types", token);
+        var response = await GetAuthAsync("/api/v1/app/account/profile-types", token);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content

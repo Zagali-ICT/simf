@@ -21,7 +21,7 @@ public sealed class MeetPeopleLikeYouEndpoint(IRecommendationService service)
 {
     public override void Configure()
     {
-        Get("/account/recommendations/meet-like-you");
+        Get("/app/account/recommendations/meet-like-you");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Account");
     }

@@ -36,7 +36,7 @@ public sealed class UserIdDocumentUploadEndpoint(
 
     public override void Configure()
     {
-        Post("/account/user-profile/id-image");
+        Post("/app/account/user-profile/id-image");
         Tags("Account");
         AllowFileUploads();
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));

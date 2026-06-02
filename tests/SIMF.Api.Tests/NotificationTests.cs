@@ -42,7 +42,7 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
         await SeedAsync(userId, "Second", DateTimeOffset.UtcNow.AddMinutes(-1));
         await SeedAsync(otherUserId, "Not mine", DateTimeOffset.UtcNow);
 
-        var response = await PostAuthAsync("/api/v1/account/notifications/list",
+        var response = await PostAuthAsync("/api/v1/app/account/notifications/list",
             new GridQuery { Top = 50 }, token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var page = (await response.Content
@@ -60,7 +60,7 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
         await SeedAsync(userId, "B", DateTimeOffset.UtcNow, readAt: DateTimeOffset.UtcNow);
 
         var response = await GetAuthAsync(
-            "/api/v1/account/notifications/unread-count", token);
+            "/api/v1/app/account/notifications/unread-count", token);
         var count = (await response.Content
             .ReadFromJsonAsync<ApiResult<UnreadCountResponse>>())!.Data!.UnreadCount;
         Assert.Equal(1, count);
@@ -73,7 +73,7 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
         var id = await SeedAsync(userId, "Z", DateTimeOffset.UtcNow);
 
         var first = await PostAuthAsync(
-            $"/api/v1/account/notifications/{id}/read", new { }, token);
+            $"/api/v1/app/account/notifications/{id}/read", new { }, token);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
 
         using var scope = _factory.Services.CreateScope();
@@ -83,7 +83,7 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
 
         // Second call is a no-op (still OK).
         var second = await PostAuthAsync(
-            $"/api/v1/account/notifications/{id}/read", new { }, token);
+            $"/api/v1/app/account/notifications/{id}/read", new { }, token);
         Assert.Equal(HttpStatusCode.OK, second.StatusCode);
     }
 
@@ -96,7 +96,7 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
         await SeedAsync(userId, "C", DateTimeOffset.UtcNow);
 
         var response = await PostAuthAsync(
-            "/api/v1/account/notifications/read-all", new { }, token);
+            "/api/v1/app/account/notifications/read-all", new { }, token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var count = await GetUnreadCountAsync(token);
@@ -110,11 +110,11 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
         var id = await SeedAsync(userId, "Doomed", DateTimeOffset.UtcNow);
 
         var first = await DeleteAuthAsync(
-            $"/api/v1/account/notifications/{id}", token);
+            $"/api/v1/app/account/notifications/{id}", token);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
 
         var second = await DeleteAuthAsync(
-            $"/api/v1/account/notifications/{id}", token);
+            $"/api/v1/app/account/notifications/{id}", token);
         Assert.Equal(HttpStatusCode.OK, second.StatusCode);
 
         using var scope = _factory.Services.CreateScope();
@@ -153,7 +153,7 @@ public sealed class NotificationTests : IClassFixture<SimfApiFactory>
     private async Task<int> GetUnreadCountAsync(string token)
     {
         var response = await GetAuthAsync(
-            "/api/v1/account/notifications/unread-count", token);
+            "/api/v1/app/account/notifications/unread-count", token);
         return (await response.Content
             .ReadFromJsonAsync<ApiResult<UnreadCountResponse>>())!.Data!.UnreadCount;
     }

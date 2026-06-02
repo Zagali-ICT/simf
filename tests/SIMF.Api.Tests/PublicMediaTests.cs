@@ -46,7 +46,7 @@ public sealed class PublicMediaTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, del.StatusCode);
 
         // Anonymous read (no Authorization header).
-        var resp = await _client.GetAsync($"/api/v1/media?album={album}&top=100");
+        var resp = await _client.GetAsync($"/api/v1/app/media?album={album}&top=100");
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
         var page = (await resp.Content
             .ReadFromJsonAsync<ApiResult<PublicMediaPage>>())!;
@@ -70,7 +70,7 @@ public sealed class PublicMediaTests : IClassFixture<SimfApiFactory>
         await PostAuthAsync("/api/v1/admin/media",
             new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "in-b", AlbumEn = albumB, DisplayOrder = 1 }, token);
 
-        var resp = await _client.GetAsync($"/api/v1/media?album={albumA}&top=100");
+        var resp = await _client.GetAsync($"/api/v1/app/media?album={albumA}&top=100");
         var page = (await resp.Content
             .ReadFromJsonAsync<ApiResult<PublicMediaPage>>())!.Data!;
         Assert.All(page.Items, i => Assert.Equal(albumA, i.AlbumEn));
@@ -88,20 +88,20 @@ public sealed class PublicMediaTests : IClassFixture<SimfApiFactory>
         var id = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminMediaDetail>>())!.Data!.Id;
 
-        var resp = await _client.GetAsync($"/api/v1/media?album={album}&top=100");
+        var resp = await _client.GetAsync($"/api/v1/app/media?album={album}&top=100");
         var page = (await resp.Content
             .ReadFromJsonAsync<ApiResult<PublicMediaPage>>())!.Data!;
         var item = Assert.Single(page.Items, i => i.Id == id);
         Assert.Null(item.ImageUrl);
 
-        var img = await _client.GetAsync($"/api/v1/media/{id}/image");
+        var img = await _client.GetAsync($"/api/v1/app/media/{id}/image");
         Assert.Equal(HttpStatusCode.NotFound, img.StatusCode);
     }
 
     [Fact]
     public async Task Image_stream_404_for_unknown_id()
     {
-        var resp = await _client.GetAsync($"/api/v1/media/{Guid.NewGuid()}/image");
+        var resp = await _client.GetAsync($"/api/v1/app/media/{Guid.NewGuid()}/image");
         Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
     }
 
@@ -132,7 +132,7 @@ public sealed class PublicMediaTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,

@@ -12,7 +12,7 @@ public sealed class SignUpEndpoint(IRegistrationService registrationService)
 {
     public override void Configure()
     {
-        Post("/auth/sign-up");
+        Post("/app/auth/sign-up");
         AllowAnonymous();
         Tags("Authentication");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));

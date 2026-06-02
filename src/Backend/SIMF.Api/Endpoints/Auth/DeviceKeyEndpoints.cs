@@ -16,7 +16,7 @@ public sealed class RegisterDeviceKeyEndpoint(IDeviceKeyService service)
 {
     public override void Configure()
     {
-        Post("/auth/device-keys");
+        Post("/app/auth/device-keys");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Auth");
@@ -39,7 +39,7 @@ public sealed class ListMyDeviceKeysEndpoint(IDeviceKeyService service)
 {
     public override void Configure()
     {
-        Get("/auth/device-keys");
+        Get("/app/auth/device-keys");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Auth");
     }
@@ -69,7 +69,7 @@ public sealed class IssueDeviceKeyChallengeEndpoint(IDeviceKeyService service)
 {
     public override void Configure()
     {
-        Post("/auth/device-keys/{id:guid}/challenge");
+        Post("/app/auth/device-keys/{id:guid}/challenge");
         AllowAnonymous();
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Auth");
@@ -90,7 +90,7 @@ public sealed class SignInWithDeviceKeyEndpoint(IDeviceKeyService service)
 {
     public override void Configure()
     {
-        Post("/auth/sign-in-with-device-key");
+        Post("/app/auth/sign-in-with-device-key");
         AllowAnonymous();
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Auth");
@@ -120,7 +120,7 @@ public sealed class RevokeMyDeviceKeyEndpoint(IDeviceKeyService service)
 {
     public override void Configure()
     {
-        Delete("/auth/device-keys/{id:guid}");
+        Delete("/app/auth/device-keys/{id:guid}");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Auth");

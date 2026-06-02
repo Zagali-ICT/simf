@@ -63,7 +63,7 @@ public sealed class SessionLifecycleTests : IClassFixture<SimfApiFactory>
         Assert.NotNull(published.PublishedAt);
 
         // The public read reflects the published state.
-        var pub = await _client.GetAsync($"/api/v1/programme/sessions/{session.Id}");
+        var pub = await _client.GetAsync($"/api/v1/app/programme/sessions/{session.Id}");
         Assert.Equal(HttpStatusCode.OK, pub.StatusCode);
         var detail = (await pub.Content
             .ReadFromJsonAsync<ApiResult<PublicSessionDetail>>())!.Data!;
@@ -202,7 +202,7 @@ public sealed class SessionLifecycleTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,

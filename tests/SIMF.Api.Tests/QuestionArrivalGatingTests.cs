@@ -51,7 +51,7 @@ public sealed class QuestionArrivalGatingTests : IClassFixture<SimfApiFactory>
         var sessionId = await SeedSessionAsync(withGeofence: true);
 
         // Arrive via the geofence first, then ask.
-        var arrival = await PostAuthAsync($"/api/v1/sessions/{sessionId}/arrival",
+        var arrival = await PostAuthAsync($"/api/v1/app/sessions/{sessionId}/arrival",
             new RecordArrivalRequest { Lat = CenterLat, Lon = CenterLon }, visitor);
         Assert.Equal(HttpStatusCode.OK, arrival.StatusCode);
 
@@ -67,10 +67,10 @@ public sealed class QuestionArrivalGatingTests : IClassFixture<SimfApiFactory>
         var visitor = await SeedApprovedVisitorAsync();
         var sessionId = await SeedSessionAsync(withGeofence: true);
 
-        var arrival = await PostAuthAsync($"/api/v1/sessions/{sessionId}/arrival",
+        var arrival = await PostAuthAsync($"/api/v1/app/sessions/{sessionId}/arrival",
             new RecordArrivalRequest { Lat = CenterLat, Lon = CenterLon }, visitor);
         Assert.Equal(HttpStatusCode.OK, arrival.StatusCode);
-        var departure = await PostAuthAsync($"/api/v1/sessions/{sessionId}/departure", new { }, visitor);
+        var departure = await PostAuthAsync($"/api/v1/app/sessions/{sessionId}/departure", new { }, visitor);
         Assert.Equal(HttpStatusCode.OK, departure.StatusCode);
 
         var response = await SubmitAsync(sessionId, visitor, isAtVenue: false);
@@ -93,7 +93,7 @@ public sealed class QuestionArrivalGatingTests : IClassFixture<SimfApiFactory>
     // -- Helpers --------------------------------------------------------------
 
     private Task<HttpResponseMessage> SubmitAsync(Guid sessionId, string token, bool isAtVenue) =>
-        PostAuthAsync($"/api/v1/sessions/{sessionId}/questions",
+        PostAuthAsync($"/api/v1/app/sessions/{sessionId}/questions",
             new SubmitSessionQuestionRequest
             {
                 QuestionText = "Is the maritime corridor secure?",
@@ -146,7 +146,7 @@ public sealed class QuestionArrivalGatingTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return body.Data!.Tokens!.AccessToken;

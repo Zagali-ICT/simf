@@ -14,7 +14,7 @@ public sealed class ListPublicSpeakersEndpoint(IPublicSpeakerService service)
 {
     public override void Configure()
     {
-        Get("/speakers");
+        Get("/app/speakers");
         AllowAnonymous();
         Tags("Public");
     }
@@ -33,7 +33,7 @@ public sealed class GetPublicSpeakerEndpoint(IPublicSpeakerService service)
 {
     public override void Configure()
     {
-        Get("/speakers/{id:guid}");
+        Get("/app/speakers/{id:guid}");
         AllowAnonymous();
         Tags("Public");
     }

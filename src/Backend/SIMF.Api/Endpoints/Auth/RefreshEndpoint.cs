@@ -15,7 +15,7 @@ public sealed class RefreshEndpoint(ISessionService sessionService)
 {
     public override void Configure()
     {
-        Post("/auth/refresh");
+        Post("/app/auth/refresh");
         AllowAnonymous();
         Tags("Authentication");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));

@@ -28,10 +28,10 @@ internal static class AuthFlow
         var email = $"flow-{Guid.NewGuid():N}@simf.test";
 
         await client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
+            "/api/v1/app/auth/sign-up",
             new SignUpRequest { Email = email, Password = Password, ConfirmPassword = Password });
         await client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest
             {
                 Email = email,
@@ -63,10 +63,10 @@ internal static class AuthFlow
         var email = $"flow-noTfa-{Guid.NewGuid():N}@simf.test";
 
         await client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
+            "/api/v1/app/auth/sign-up",
             new SignUpRequest { Email = email, Password = Password, ConfirmPassword = Password });
         await client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest
             {
                 Email = email,
@@ -75,7 +75,7 @@ internal static class AuthFlow
         // TwoFactorEnabled stays at the Identity default (false).
 
         var response = await client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = Password });
         var envelope = (await response.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return envelope.Data!.Tokens!;
@@ -87,12 +87,12 @@ internal static class AuthFlow
         var email = await RegisterVerifiedVisitorAsync(client, factory);
 
         var signIn = await client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = Password });
         var challenge = (await signIn.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!;
 
         var verify = await client.PostAsJsonAsync(
-            "/api/v1/auth/verify-otp",
+            "/api/v1/app/auth/verify-otp",
             new VerifyOtpRequest
             {
                 OtpToken = challenge.OtpToken!,

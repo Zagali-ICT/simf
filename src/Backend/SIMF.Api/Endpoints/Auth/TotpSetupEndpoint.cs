@@ -18,7 +18,7 @@ public sealed class TotpSetupEndpoint(ITotpEnrollmentService totpEnrollment)
 {
     public override void Configure()
     {
-        Post("/auth/totp/setup");
+        Post("/app/auth/totp/setup");
         // No AllowAnonymous — FastEndpoints requires an authenticated caller.
         Tags("Authentication");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));

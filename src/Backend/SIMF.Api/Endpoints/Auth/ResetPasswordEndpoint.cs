@@ -15,7 +15,7 @@ public sealed class ResetPasswordEndpoint(IPasswordService passwordService)
 {
     public override void Configure()
     {
-        Post("/auth/reset-password");
+        Post("/app/auth/reset-password");
         AllowAnonymous();
         Tags("Authentication");
         Options(routeBuilder => routeBuilder

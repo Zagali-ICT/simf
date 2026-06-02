@@ -13,7 +13,7 @@ public sealed class PublicVenueMapEndpoint(IVenueMapService service)
 {
     public override void Configure()
     {
-        Get("/venue-map");
+        Get("/app/venue-map");
         AllowAnonymous();
         Tags("Public");
     }

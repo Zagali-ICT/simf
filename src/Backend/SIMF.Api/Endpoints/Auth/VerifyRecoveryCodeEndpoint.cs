@@ -18,7 +18,7 @@ public sealed class VerifyRecoveryCodeEndpoint(ISignInService signInService)
 {
     public override void Configure()
     {
-        Post("/auth/verify-recovery-code");
+        Post("/app/auth/verify-recovery-code");
         AllowAnonymous();
         Tags("Authentication");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));

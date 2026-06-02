@@ -33,7 +33,7 @@ public sealed class MediaPartnersTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Public_list_is_anonymous_and_returns_ok()
     {
-        var response = await _client.GetAsync("/api/v1/media-partners");
+        var response = await _client.GetAsync("/api/v1/app/media-partners");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var payload = (await response.Content
@@ -58,7 +58,7 @@ public sealed class MediaPartnersTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<AdminMediaPartnerDetail>>())!.Data!.Id;
 
         // Active -> appears on the anonymous public list.
-        var before = await _client.GetAsync("/api/v1/media-partners");
+        var before = await _client.GetAsync("/api/v1/app/media-partners");
         var beforeItems = (await before.Content
             .ReadFromJsonAsync<ApiResult<PublicMediaPartners>>())!.Data!.Items;
         Assert.Contains(beforeItems, p => p.Id == id);
@@ -67,7 +67,7 @@ public sealed class MediaPartnersTests : IClassFixture<SimfApiFactory>
         var delete = await DeleteAuthAsync($"/api/v1/admin/media-partners/{id}", token);
         Assert.Equal(HttpStatusCode.OK, delete.StatusCode);
 
-        var after = await _client.GetAsync("/api/v1/media-partners");
+        var after = await _client.GetAsync("/api/v1/app/media-partners");
         var afterItems = (await after.Content
             .ReadFromJsonAsync<ApiResult<PublicMediaPartners>>())!.Data!.Items;
         Assert.DoesNotContain(afterItems, p => p.Id == id);
@@ -94,7 +94,7 @@ public sealed class MediaPartnersTests : IClassFixture<SimfApiFactory>
         var highId = (await high.Content
             .ReadFromJsonAsync<ApiResult<AdminMediaPartnerDetail>>())!.Data!.Id;
 
-        var response = await _client.GetAsync("/api/v1/media-partners");
+        var response = await _client.GetAsync("/api/v1/app/media-partners");
         var items = (await response.Content
             .ReadFromJsonAsync<ApiResult<PublicMediaPartners>>())!.Data!.Items;
 
@@ -141,7 +141,7 @@ public sealed class MediaPartnersTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,

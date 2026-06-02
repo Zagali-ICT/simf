@@ -21,7 +21,7 @@ public sealed class TotpPairingVerifyEndpoint(ITotpEnrollmentService totpEnrollm
 {
     public override void Configure()
     {
-        Post("/auth/totp/pairing/verify");
+        Post("/app/auth/totp/pairing/verify");
         Tags("Authentication");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

@@ -14,7 +14,7 @@ public sealed class MyAssignmentsEndpoint(IGateOperatorService service)
 {
     public override void Configure()
     {
-        Get("/gates/my-assignments");
+        Get("/app/gates/my-assignments");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount),
                  PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Operate));
         Tags("Gates");
@@ -46,7 +46,7 @@ public sealed class PostScanEndpoint(IGateOperatorService service)
 {
     public override void Configure()
     {
-        Post("/gates/{gateId:guid}/scans");
+        Post("/app/gates/{gateId:guid}/scans");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount),
                  PermissionCatalog.PolicyFor(PermissionCatalog.Gates.Operate));
         Options(rb => rb.RequireRateLimiting("auth"));
@@ -137,7 +137,7 @@ public sealed class PostGateVisitorsListEndpoint(IGateOperatorService service)
 {
     public override void Configure()
     {
-        Post("/gates/{gateId:guid}/visitors/list");
+        Post("/app/gates/{gateId:guid}/visitors/list");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount),
                  PermissionCatalog.PolicyFor(PermissionCatalog.Gates.ViewOwnReports));
         Options(rb => rb.RequireRateLimiting("auth"));
@@ -184,7 +184,7 @@ public sealed class MyDailyReportEndpoint(IGateOperatorService service)
 {
     public override void Configure()
     {
-        Get("/gates/my-reports/today");
+        Get("/app/gates/my-reports/today");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount),
                  PermissionCatalog.PolicyFor(PermissionCatalog.Gates.ViewOwnReports));
         Tags("Gates");

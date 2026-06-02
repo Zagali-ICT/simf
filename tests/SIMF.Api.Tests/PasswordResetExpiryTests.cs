@@ -31,7 +31,7 @@ public sealed class PasswordResetExpiryTests : IClassFixture<SimfApiFactory>
     {
         var email = await AuthFlow.RegisterVerifiedVisitorAsync(_client, _factory);
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/forgot-password",
+            "/api/v1/app/auth/forgot-password",
             new ForgotPasswordRequest { Email = email });
         var code = AuthFlow.GetActiveCode(_factory, email, AccountCodePurpose.PasswordReset);
 
@@ -39,7 +39,7 @@ public sealed class PasswordResetExpiryTests : IClassFixture<SimfApiFactory>
         _factory.Time.Advance(TimeSpan.FromMinutes(11));
 
         var reset = await _client.PostAsJsonAsync(
-            "/api/v1/auth/reset-password",
+            "/api/v1/app/auth/reset-password",
             new ResetPasswordRequest
             {
                 Email = email,

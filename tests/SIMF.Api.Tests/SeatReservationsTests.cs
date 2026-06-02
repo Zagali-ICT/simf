@@ -38,7 +38,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
 
         var pick = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/seats/reserve",
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
             new ReserveSeatRequest { RowLabel = "A", SeatNumber = 3 },
             visitor);
         Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
@@ -49,12 +49,12 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(SeatReservationKind.UserBooking, mine.Kind);
 
         var release = await DeleteAuthAsync(
-            $"/api/v1/sessions/{session.Id}/seats/mine", visitor);
+            $"/api/v1/app/sessions/{session.Id}/seats/mine", visitor);
         Assert.Equal(HttpStatusCode.OK, release.StatusCode);
 
         // After release, picking the same seat again should succeed.
         var rePick = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/seats/reserve",
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
             new ReserveSeatRequest { RowLabel = "A", SeatNumber = 3 },
             visitor);
         Assert.Equal(HttpStatusCode.OK, rePick.StatusCode);
@@ -69,7 +69,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
 
         var pick = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/seats/reserve",
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
             new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
         Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
         var mine = (await pick.Content
@@ -92,12 +92,12 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         var v2 = await SignInApprovedVisitorAsync();
 
         var first = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/seats/reserve",
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
             new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, v1);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
 
         var second = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/seats/reserve",
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
             new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, v2);
         Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
         var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -111,12 +111,12 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
 
         var first = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/seats/reserve",
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
             new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
 
         var second = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/seats/reserve",
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
             new ReserveSeatRequest { RowLabel = "A", SeatNumber = 2 }, visitor);
         Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
         var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -129,7 +129,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 2);
         var visitor = await SignInApprovedVisitorAsync();
         var response = await PostAuthAsync<object>(
-            $"/api/v1/sessions/{session.Id}/seats/reserve-random",
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve-random",
             new { }, visitor);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var mine = (await response.Content
@@ -148,12 +148,12 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         var v2 = await SignInApprovedVisitorAsync();
 
         var first = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/seats/reserve",
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
             new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, v1);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
 
         var second = await PostAuthAsync<object>(
-            $"/api/v1/sessions/{session.Id}/seats/reserve-random",
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve-random",
             new { }, v2);
         Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
         var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -173,13 +173,13 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
 
         var visitor = await SignInApprovedVisitorAsync();
         var attempt = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/seats/reserve",
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
             new ReserveSeatRequest { RowLabel = "A", SeatNumber = 1 }, visitor);
         Assert.Equal(HttpStatusCode.Conflict, attempt.StatusCode);
 
         // Row B is still free.
         var freeRow = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/seats/reserve",
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
             new ReserveSeatRequest { RowLabel = "B", SeatNumber = 1 }, visitor);
         Assert.Equal(HttpStatusCode.OK, freeRow.StatusCode);
     }
@@ -265,10 +265,10 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
     {
         var email = $"sr-visitor-{Guid.NewGuid():N}@simf.test";
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
+            "/api/v1/app/auth/sign-up",
             new SignUpRequest { Email = email, Password = AuthFlow.Password, ConfirmPassword = AuthFlow.Password });
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest
             {
                 Email = email,
@@ -276,7 +276,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             });
         AuthFlow.SetAccountState(_factory, email, AccountState.Approved);
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return body.Data!.Tokens!.AccessToken;
@@ -304,7 +304,7 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password,

@@ -150,7 +150,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
         var created = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminBoothDetail>>())!.Data!;
 
-        var publicList = await _client.GetAsync("/api/v1/booths");
+        var publicList = await _client.GetAsync("/api/v1/app/booths");
         var list = (await publicList.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<PublicBoothSummary>>>())!.Data!;
         var row = Assert.Single(list, b => b.Id == created.Id);
@@ -206,7 +206,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, second.StatusCode); // idempotent
 
         // The public anonymous list must no longer contain the deactivated booth.
-        var publicList = await _client.GetAsync("/api/v1/booths");
+        var publicList = await _client.GetAsync("/api/v1/app/booths");
         var list = (await publicList.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<PublicBoothSummary>>>())!.Data!;
         Assert.DoesNotContain(list, b => b.Id == created.Id);
@@ -275,7 +275,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,

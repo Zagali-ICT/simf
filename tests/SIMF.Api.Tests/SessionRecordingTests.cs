@@ -72,7 +72,7 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
         var session = await CreateAndPublishWithRecordingAsync(token);
 
         var response = await PostAuthAsync(
-            $"/api/v1/programme/sessions/{session}/recording/token",
+            $"/api/v1/app/programme/sessions/{session}/recording/token",
             new { }, token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content
@@ -90,7 +90,7 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
         await UploadRecordingAsync(session.Id, token); // recorded but not published
 
         var response = await PostAuthAsync(
-            $"/api/v1/programme/sessions/{session.Id}/recording/token",
+            $"/api/v1/app/programme/sessions/{session.Id}/recording/token",
             new { }, token);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -105,7 +105,7 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
         var streamToken = await MintStreamTokenAsync(session, token);
 
         var response = await _client.GetAsync(
-            $"/api/v1/programme/sessions/{session}/recording/stream?access_token={streamToken}");
+            $"/api/v1/app/programme/sessions/{session}/recording/stream?access_token={streamToken}");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var bytes = await response.Content.ReadAsByteArrayAsync();
         Assert.Equal(SampleRecording, bytes);
@@ -141,7 +141,7 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
         var streamToken = await MintStreamTokenAsync(session, token);
 
         var request = new HttpRequestMessage(HttpMethod.Get,
-            $"/api/v1/programme/sessions/{session}/recording/stream?access_token={streamToken}");
+            $"/api/v1/app/programme/sessions/{session}/recording/stream?access_token={streamToken}");
         request.Headers.Range = new RangeHeaderValue(0, 3);
         var response = await _client.SendAsync(request);
 
@@ -160,7 +160,7 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
         // A token minted for B must not stream A.
         var tokenForB = await MintStreamTokenAsync(sessionB, token);
         var response = await _client.GetAsync(
-            $"/api/v1/programme/sessions/{sessionA}/recording/stream?access_token={tokenForB}");
+            $"/api/v1/app/programme/sessions/{sessionA}/recording/stream?access_token={tokenForB}");
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
@@ -171,7 +171,7 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
         var session = await CreateAndPublishWithRecordingAsync(token);
 
         var response = await _client.GetAsync(
-            $"/api/v1/programme/sessions/{session}/recording/stream");
+            $"/api/v1/app/programme/sessions/{session}/recording/stream");
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -234,7 +234,7 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
     private async Task<string> MintStreamTokenAsync(Guid id, string token)
     {
         var response = await PostAuthAsync(
-            $"/api/v1/programme/sessions/{id}/recording/token", new { }, token);
+            $"/api/v1/app/programme/sessions/{id}/recording/token", new { }, token);
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<RecordingStreamTokenResponse>>())!.Data!;
         return body.Token;
@@ -266,7 +266,7 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
 
     private async Task<PublicSessionDetail> ReadPublicDetailAsync(Guid id)
     {
-        var response = await _client.GetAsync($"/api/v1/programme/sessions/{id}");
+        var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{id}");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return (await response.Content
             .ReadFromJsonAsync<ApiResult<PublicSessionDetail>>())!.Data!;
@@ -336,7 +336,7 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,

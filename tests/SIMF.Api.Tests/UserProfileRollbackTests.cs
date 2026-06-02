@@ -129,7 +129,7 @@ public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshToke
             await users.CreateAsync(user, "Passw0rd!");
             userId = user.Id;
         }
-        var signIn = await _client.PostAsJsonAsync("/api/v1/auth/sign-in",
+        var signIn = await _client.PostAsJsonAsync("/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = "Passw0rd!",
@@ -164,7 +164,7 @@ public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshToke
         // which the stubbed repo throws on. The transaction must roll
         // back: no UserProfile row, AccountState stays EmailVerified.
         var request = new HttpRequestMessage(
-            HttpMethod.Post, "/api/v1/account/user-profile")
+            HttpMethod.Post, "/api/v1/app/account/user-profile")
         {
             Content = JsonContent.Create(new UpsertUserProfileRequest
             {

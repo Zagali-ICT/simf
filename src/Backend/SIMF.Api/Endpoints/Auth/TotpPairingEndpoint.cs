@@ -22,7 +22,7 @@ public sealed class TotpPairingEndpoint(ITotpEnrollmentService totpEnrollment)
 {
     public override void Configure()
     {
-        Get("/auth/totp/pairing");
+        Get("/app/auth/totp/pairing");
         // No AllowAnonymous — FastEndpoints requires an authenticated caller.
         Tags("Authentication");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));

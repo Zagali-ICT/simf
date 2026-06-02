@@ -23,7 +23,7 @@ public sealed class RequestRecordingStreamTokenEndpoint(
 {
     public override void Configure()
     {
-        Post("/programme/sessions/{id:guid}/recording/token");
+        Post("/app/programme/sessions/{id:guid}/recording/token");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Programme");
@@ -64,7 +64,7 @@ public sealed class StreamSessionRecordingEndpoint(
 {
     public override void Configure()
     {
-        Get("/programme/sessions/{id:guid}/recording/stream");
+        Get("/app/programme/sessions/{id:guid}/recording/stream");
         AuthSchemes(JwtBearerSetup.StreamScheme);
         Tags("Programme");
     }

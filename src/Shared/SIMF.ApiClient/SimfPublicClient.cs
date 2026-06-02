@@ -24,24 +24,24 @@ namespace SIMF.ApiClient;
 /// </summary>
 public sealed class SimfPublicClient(HttpClient http)
 {
-    private const string BasePath = "api/v1/";
+    private const string BasePath = "api/v1/app/";
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     /// <summary>The public agenda — every published session
-    /// (<c>GET /api/v1/programme/sessions</c>). Returns <c>null</c> on a
+    /// (<c>GET /api/v1/app/programme/sessions</c>). Returns <c>null</c> on a
     /// failed envelope or an unreachable service.</summary>
     public Task<PublicSessions?> GetProgrammeSessionsAsync(CancellationToken cancellationToken = default) =>
         GetAsync<PublicSessions>("programme/sessions", cancellationToken);
 
     /// <summary>The full public view of one session
-    /// (<c>GET /api/v1/programme/sessions/{id}</c>). Returns <c>null</c> on a
+    /// (<c>GET /api/v1/app/programme/sessions/{id}</c>). Returns <c>null</c> on a
     /// failed envelope (for example an unknown id) or an unreachable
     /// service.</summary>
     public Task<PublicSessionDetail?> GetSessionAsync(Guid id, CancellationToken cancellationToken = default) =>
         GetAsync<PublicSessionDetail>($"programme/sessions/{id}", cancellationToken);
 
-    /// <summary>The public speakers list (<c>GET /api/v1/speakers</c>).
+    /// <summary>The public speakers list (<c>GET /api/v1/app/speakers</c>).
     /// Returns <c>null</c> on a failed envelope or an unreachable
     /// service.</summary>
     public Task<PublicSpeakers?> GetSpeakersAsync(CancellationToken cancellationToken = default) =>

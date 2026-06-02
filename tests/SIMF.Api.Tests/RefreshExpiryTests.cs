@@ -32,7 +32,7 @@ public sealed class RefreshExpiryTests : IClassFixture<SimfApiFactory>
         _factory.Time.Advance(TimeSpan.FromDays(31));
 
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/auth/refresh",
+            "/api/v1/app/auth/refresh",
             new RefreshRequest { RefreshToken = tokens.RefreshToken });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);

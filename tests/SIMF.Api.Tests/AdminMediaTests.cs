@@ -112,7 +112,7 @@ public sealed class AdminMediaTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, del.StatusCode);
 
         // Public list must not surface the soft-deleted item.
-        var list = await _client.GetAsync($"/api/v1/media?album={album}&top=100");
+        var list = await _client.GetAsync($"/api/v1/app/media?album={album}&top=100");
         Assert.Equal(HttpStatusCode.OK, list.StatusCode);
         var page = (await list.Content
             .ReadFromJsonAsync<ApiResult<PublicMediaPage>>())!;
@@ -189,13 +189,13 @@ public sealed class AdminMediaTests : IClassFixture<SimfApiFactory>
         Assert.True(afterUpload.HasImage);
 
         // Public (anonymous) image stream now returns the bytes.
-        var img = await _client.GetAsync($"/api/v1/media/{id}/image");
+        var img = await _client.GetAsync($"/api/v1/app/media/{id}/image");
         Assert.Equal(HttpStatusCode.OK, img.StatusCode);
         var bytes = await img.Content.ReadAsByteArrayAsync();
         Assert.NotEmpty(bytes);
 
         // And the public list now carries the image url.
-        var list = await _client.GetAsync($"/api/v1/media?album={album}&top=100");
+        var list = await _client.GetAsync($"/api/v1/app/media?album={album}&top=100");
         var page = (await list.Content
             .ReadFromJsonAsync<ApiResult<PublicMediaPage>>())!.Data!;
         Assert.Contains(page.Items, i => i.Id == id && i.ImageUrl != null);
@@ -256,7 +256,7 @@ public sealed class AdminMediaTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,

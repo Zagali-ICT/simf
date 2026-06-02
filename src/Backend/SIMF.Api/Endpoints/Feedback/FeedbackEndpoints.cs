@@ -33,7 +33,7 @@ public sealed class RateFeedbackEndpoint(IRatingService service)
 {
     public override void Configure()
     {
-        Post("/feedback/rate");
+        Post("/app/feedback/rate");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Feedback");

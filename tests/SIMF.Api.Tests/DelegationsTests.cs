@@ -49,7 +49,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<AdminDelegationSummary>>())!.Data!;
         Assert.True(created.IsPriority);
 
-        var publicList = await _client.GetAsync("/api/v1/delegations");
+        var publicList = await _client.GetAsync("/api/v1/app/delegations");
         Assert.Equal(HttpStatusCode.OK, publicList.StatusCode);
         var body = (await publicList.Content
             .ReadFromJsonAsync<ApiResult<PublicDelegations>>())!.Data!;
@@ -77,7 +77,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
                 IsPriority = true, IsInternational = false,
             }, admin);
 
-        var list = await _client.GetAsync("/api/v1/delegations");
+        var list = await _client.GetAsync("/api/v1/app/delegations");
         var body = (await list.Content
             .ReadFromJsonAsync<ApiResult<PublicDelegations>>())!.Data!;
         var priorityIndex = -1;
@@ -108,7 +108,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
 
         await DeleteAuthAsync($"/api/v1/admin/delegations/{created.Id}", admin);
 
-        var list = await _client.GetAsync("/api/v1/delegations");
+        var list = await _client.GetAsync("/api/v1/app/delegations");
         var body = (await list.Content
             .ReadFromJsonAsync<ApiResult<PublicDelegations>>())!.Data!;
         Assert.DoesNotContain(body.Items, d => d.Id == created.Id);
@@ -149,7 +149,7 @@ public sealed class DelegationsTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password,

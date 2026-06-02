@@ -26,7 +26,7 @@ public sealed class SubmitSessionCommentEndpoint(ISessionCommentService service)
 {
     public override void Configure()
     {
-        Post("/sessions/{sessionId:guid}/comments");
+        Post("/app/sessions/{sessionId:guid}/comments");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Sessions");
@@ -62,7 +62,7 @@ public sealed class ListSessionCommentsEndpoint(ISessionCommentService service)
 {
     public override void Configure()
     {
-        Get("/sessions/{sessionId:guid}/comments");
+        Get("/app/sessions/{sessionId:guid}/comments");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Sessions");
     }
@@ -93,7 +93,7 @@ public sealed class LikeSessionCommentEndpoint(ISessionCommentService service)
 {
     public override void Configure()
     {
-        Post("/sessions/{sessionId:guid}/comments/{commentId:guid}/like");
+        Post("/app/sessions/{sessionId:guid}/comments/{commentId:guid}/like");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Sessions");
@@ -116,7 +116,7 @@ public sealed class UnlikeSessionCommentEndpoint(ISessionCommentService service)
 {
     public override void Configure()
     {
-        Delete("/sessions/{sessionId:guid}/comments/{commentId:guid}/like");
+        Delete("/app/sessions/{sessionId:guid}/comments/{commentId:guid}/like");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Sessions");

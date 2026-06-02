@@ -148,7 +148,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
     // -- Helpers --------------------------------------------------------------
 
     private static string PublicUrl(Guid sessionId) =>
-        $"/api/v1/programme/sessions/{sessionId}/summary";
+        $"/api/v1/app/programme/sessions/{sessionId}/summary";
 
     private async Task<AdminSessionSummaryDetail> GenerateAsync(Guid sessionId, string token)
     {
@@ -212,7 +212,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
             await users.CreateAsync(user, AuthFlow.Password);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return body.Data!.Tokens!.AccessToken;
@@ -240,7 +240,7 @@ public sealed class SessionSummaryCommitteeTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,

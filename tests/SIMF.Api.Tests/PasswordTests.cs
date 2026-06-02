@@ -157,7 +157,7 @@ public sealed class PasswordTests : IClassFixture<SimfApiFactory>
         await ResetAsync(tokens.User.Email, code, NewPassword);
 
         var refresh = await _client.PostAsJsonAsync(
-            "/api/v1/auth/refresh",
+            "/api/v1/app/auth/refresh",
             new RefreshRequest { RefreshToken = tokens.RefreshToken });
 
         Assert.Equal(HttpStatusCode.Unauthorized, refresh.StatusCode);
@@ -179,7 +179,7 @@ public sealed class PasswordTests : IClassFixture<SimfApiFactory>
     public async Task Change_password_requires_authentication()
     {
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/auth/change-password",
+            "/api/v1/app/auth/change-password",
             new ChangePasswordRequest
             {
                 CurrentPassword = Password,
@@ -234,7 +234,7 @@ public sealed class PasswordTests : IClassFixture<SimfApiFactory>
         await ChangeAsync(tokens.AccessToken, Password, NewPassword);
 
         var refresh = await _client.PostAsJsonAsync(
-            "/api/v1/auth/refresh",
+            "/api/v1/app/auth/refresh",
             new RefreshRequest { RefreshToken = tokens.RefreshToken });
         Assert.Equal(HttpStatusCode.Unauthorized, refresh.StatusCode);
     }
@@ -300,12 +300,12 @@ public sealed class PasswordTests : IClassFixture<SimfApiFactory>
 
     private Task<HttpResponseMessage> ForgotAsync(string email) =>
         _client.PostAsJsonAsync(
-            "/api/v1/auth/forgot-password",
+            "/api/v1/app/auth/forgot-password",
             new ForgotPasswordRequest { Email = email });
 
     private Task<HttpResponseMessage> ResetAsync(string email, string code, string newPassword) =>
         _client.PostAsJsonAsync(
-            "/api/v1/auth/reset-password",
+            "/api/v1/app/auth/reset-password",
             new ResetPasswordRequest
             {
                 Email = email,
@@ -316,13 +316,13 @@ public sealed class PasswordTests : IClassFixture<SimfApiFactory>
 
     private Task<HttpResponseMessage> SignInAsync(string email, string password) =>
         _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = password });
 
     private Task<HttpResponseMessage> ChangeAsync(
         string accessToken, string currentPassword, string newPassword)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/change-password")
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/app/auth/change-password")
         {
             Content = JsonContent.Create(new ChangePasswordRequest
             {

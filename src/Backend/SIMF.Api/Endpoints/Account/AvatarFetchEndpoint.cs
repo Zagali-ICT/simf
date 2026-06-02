@@ -21,7 +21,7 @@ public sealed class AvatarFetchEndpoint(
 {
     public override void Configure()
     {
-        Get("/account/avatar/{userId:guid}");
+        Get("/app/account/avatar/{userId:guid}");
         Tags("Account");
         Summary(summary => summary.Summary = "Stream the signed-in user's avatar bytes.");
     }

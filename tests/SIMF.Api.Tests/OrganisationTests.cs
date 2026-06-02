@@ -186,7 +186,7 @@ public sealed class OrganisationTests : IClassFixture<SimfApiFactory>
 
         // The picker search is authenticated (signed-in user completing their
         // profile); it is deliberately NOT anonymous, so pass the bearer token.
-        var search = await GetAuthAsync($"/api/v1/organisations?search={marker}&top=20", token);
+        var search = await GetAuthAsync($"/api/v1/app/organisations?search={marker}&top=20", token);
         Assert.Equal(HttpStatusCode.OK, search.StatusCode);
         var items = (await search.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<OrganisationPickerItem>>>())!.Data!;
@@ -259,7 +259,7 @@ public sealed class OrganisationTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,

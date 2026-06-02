@@ -85,7 +85,7 @@ public sealed class SessionTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Sign_out_without_a_token_returns_401()
     {
-        var response = await _client.PostAsync("/api/v1/auth/sign-out", content: null);
+        var response = await _client.PostAsync("/api/v1/app/auth/sign-out", content: null);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -161,12 +161,12 @@ public sealed class SessionTests : IClassFixture<SimfApiFactory>
 
     private Task<HttpResponseMessage> RefreshAsync(string refreshToken) =>
         _client.PostAsJsonAsync(
-            "/api/v1/auth/refresh",
+            "/api/v1/app/auth/refresh",
             new RefreshRequest { RefreshToken = refreshToken });
 
     private Task<HttpResponseMessage> SignOutAsync(string accessToken)
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/sign-out");
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/app/auth/sign-out");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         return _client.SendAsync(request);
     }

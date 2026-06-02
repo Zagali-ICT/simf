@@ -32,7 +32,7 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
         var sessionId = await SeedSummaryAsync(
             published: true, sessionActive: true, summaryActive: true, aiModel: "echo");
 
-        var response = await _client.GetAsync($"/api/v1/programme/sessions/{sessionId}/summary");
+        var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{sessionId}/summary");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var summary = (await response.Content
@@ -55,7 +55,7 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
         var sessionId = await SeedSummaryAsync(
             published: true, sessionActive: true, summaryActive: true, aiModel: null);
 
-        var response = await _client.GetAsync($"/api/v1/programme/sessions/{sessionId}/summary");
+        var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{sessionId}/summary");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var summary = (await response.Content
@@ -69,7 +69,7 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
         var sessionId = await SeedSummaryAsync(
             published: false, sessionActive: true, summaryActive: true, aiModel: "echo");
 
-        var response = await _client.GetAsync($"/api/v1/programme/sessions/{sessionId}/summary");
+        var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{sessionId}/summary");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
@@ -78,7 +78,7 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
     {
         var sessionId = await SeedSessionOnlyAsync(active: true);
 
-        var response = await _client.GetAsync($"/api/v1/programme/sessions/{sessionId}/summary");
+        var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{sessionId}/summary");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
@@ -88,7 +88,7 @@ public sealed class SessionSummaryTests : IClassFixture<SimfApiFactory>
         var sessionId = await SeedSummaryAsync(
             published: true, sessionActive: false, summaryActive: true, aiModel: "echo");
 
-        var response = await _client.GetAsync($"/api/v1/programme/sessions/{sessionId}/summary");
+        var response = await _client.GetAsync($"/api/v1/app/programme/sessions/{sessionId}/summary");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 

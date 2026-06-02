@@ -27,7 +27,7 @@ public sealed class ListProgrammeSessionsEndpoint(IProgrammeSessionService servi
 {
     public override void Configure()
     {
-        Get("/programme/sessions");
+        Get("/app/programme/sessions");
         AllowAnonymous();
         Tags("Public");
     }
@@ -68,7 +68,7 @@ public sealed class GetProgrammeSessionEndpoint(IProgrammeSessionService service
 {
     public override void Configure()
     {
-        Get("/programme/sessions/{id:guid}");
+        Get("/app/programme/sessions/{id:guid}");
         AllowAnonymous();
         Tags("Public");
     }
@@ -97,7 +97,7 @@ public sealed class ListRecordedQuestionsEndpoint(IProgrammeSessionService servi
 {
     public override void Configure()
     {
-        Get("/programme/sessions/{id:guid}/recorded-questions");
+        Get("/app/programme/sessions/{id:guid}/recorded-questions");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Programme");
     }
@@ -120,7 +120,7 @@ public sealed class GetSessionSummaryEndpoint(IProgrammeSessionService service)
 {
     public override void Configure()
     {
-        Get("/programme/sessions/{id:guid}/summary");
+        Get("/app/programme/sessions/{id:guid}/summary");
         AllowAnonymous();
         Tags("Public");
     }

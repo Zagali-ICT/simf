@@ -20,7 +20,7 @@ public sealed class UserProfileGetEndpoint(IUserProfileService service)
 {
     public override void Configure()
     {
-        Get("/account/user-profile");
+        Get("/app/account/user-profile");
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

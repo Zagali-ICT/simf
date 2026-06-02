@@ -33,7 +33,7 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
     {
         var (callerToken, _) = await SeedApprovedVisitorWithInterestsAsync(0);
         var response = await GetAuthAsync(
-            "/api/v1/account/recommendations/meet-like-you", callerToken);
+            "/api/v1/app/account/recommendations/meet-like-you", callerToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<RecommendationsResponse>>())!.Data!;
@@ -53,7 +53,7 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
             new[] { interestB.Id }); // shares 0 — should be excluded
 
         var response = await GetAuthAsync(
-            "/api/v1/account/recommendations/meet-like-you", callerToken);
+            "/api/v1/app/account/recommendations/meet-like-you", callerToken);
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<RecommendationsResponse>>())!.Data!;
         Assert.Single(body.Matches);
@@ -73,7 +73,7 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
             new[] { interestA.Id });
 
         var response = await GetAuthAsync(
-            "/api/v1/account/recommendations/meet-like-you", callerToken);
+            "/api/v1/app/account/recommendations/meet-like-you", callerToken);
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<RecommendationsResponse>>())!.Data!;
         Assert.True(body.Matches.Count >= 2);
@@ -92,7 +92,7 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
         await SeedApprovedVisitorWithSpecificInterestsAsync(new[] { interest.Id });
 
         var response = await GetAuthAsync(
-            "/api/v1/account/recommendations/meet-like-you", callerToken);
+            "/api/v1/app/account/recommendations/meet-like-you", callerToken);
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<RecommendationsResponse>>())!.Data!;
         Assert.DoesNotContain(body.Matches,
@@ -109,7 +109,7 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
         await SeedNonApprovedVisitorWithSpecificInterestsAsync(new[] { interest.Id });
 
         var response = await GetAuthAsync(
-            "/api/v1/account/recommendations/meet-like-you", callerToken);
+            "/api/v1/app/account/recommendations/meet-like-you", callerToken);
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<RecommendationsResponse>>())!.Data!;
         Assert.Empty(body.Matches);
@@ -127,7 +127,7 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
         }
 
         var response = await GetAuthAsync(
-            "/api/v1/account/recommendations/meet-like-you?take=3", callerToken);
+            "/api/v1/app/account/recommendations/meet-like-you?take=3", callerToken);
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<RecommendationsResponse>>())!.Data!;
         Assert.True(body.Matches.Count <= 3);
@@ -210,7 +210,7 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var envelope = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return (envelope.Data!.Tokens!.AccessToken, userId);

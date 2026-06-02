@@ -33,7 +33,7 @@ public sealed class ArchiveTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Public_list_is_anonymous_and_returns_ok()
     {
-        var response = await _client.GetAsync("/api/v1/archive");
+        var response = await _client.GetAsync("/api/v1/app/archive");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<PublicArchive>>())!;
@@ -63,7 +63,7 @@ public sealed class ArchiveTests : IClassFixture<SimfApiFactory>
             }, admin);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
 
-        var list = await _client.GetAsync("/api/v1/archive");
+        var list = await _client.GetAsync("/api/v1/app/archive");
         var body = (await list.Content
             .ReadFromJsonAsync<ApiResult<PublicArchive>>())!.Data!;
         Assert.Contains(body.Items, e => e.Year == 2018 && e.TitleEn == "SIMF 2018");
@@ -95,7 +95,7 @@ public sealed class ArchiveTests : IClassFixture<SimfApiFactory>
 
         try
         {
-            var list = await _client.GetAsync("/api/v1/archive");
+            var list = await _client.GetAsync("/api/v1/app/archive");
             var body = (await list.Content
                 .ReadFromJsonAsync<ApiResult<PublicArchive>>())!.Data!;
             Assert.Empty(body.Items);
@@ -132,7 +132,7 @@ public sealed class ArchiveTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password,

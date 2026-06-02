@@ -20,7 +20,7 @@ public sealed class ListPublicNewsEndpoint(IPublicNewsService service)
 {
     public override void Configure()
     {
-        Get("/news");
+        Get("/app/news");
         AllowAnonymous();
         Tags("Public");
     }
@@ -38,7 +38,7 @@ public sealed class GetPublicNewsEndpoint(IPublicNewsService service)
 {
     public override void Configure()
     {
-        Get("/news/{id:guid}");
+        Get("/app/news/{id:guid}");
         AllowAnonymous();
         Tags("Public");
     }

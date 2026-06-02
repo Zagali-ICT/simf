@@ -17,7 +17,7 @@ public sealed class ListPublicMediaPartnersEndpoint(IPublicMediaPartnerService s
 {
     public override void Configure()
     {
-        Get("/media-partners");
+        Get("/app/media-partners");
         AllowAnonymous();
         Tags("Public");
     }

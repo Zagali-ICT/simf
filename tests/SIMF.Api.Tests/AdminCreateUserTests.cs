@@ -301,7 +301,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
             .FirstAsync();
 
         var reset = await _client.PostAsJsonAsync(
-            "/api/v1/auth/reset-password",
+            "/api/v1/app/auth/reset-password",
             new ResetPasswordRequest
             {
                 Email = newEmail,
@@ -318,7 +318,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, approve.StatusCode);
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = newEmail,
@@ -358,7 +358,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,

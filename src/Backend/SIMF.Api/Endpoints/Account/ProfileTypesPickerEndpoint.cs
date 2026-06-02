@@ -39,7 +39,7 @@ public sealed class ProfileTypesPickerEndpoint(SimfAppDbContext appDb)
 {
     public override void Configure()
     {
-        Get("/account/profile-types");
+        Get("/app/account/profile-types");
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

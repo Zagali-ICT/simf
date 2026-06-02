@@ -20,7 +20,7 @@ class AuthApi {
   // SIMF-API-001 §12.4
   Future<SignInResponseData> signIn(SignInRequest request) {
     return _client.post<SignInResponseData>(
-      '/auth/sign-in',
+      '/app/auth/sign-in',
       body: request.toJson(),
       decodeData: (data) {
         if (data is! Map<String, dynamic>) {
@@ -35,7 +35,7 @@ class AuthApi {
 
   Future<TokenPayloadDto> verifyTotp(VerifyTotpRequest request) {
     return _client.post<TokenPayloadDto>(
-      '/auth/verify-totp',
+      '/app/auth/verify-totp',
       body: request.toJson(),
       decodeData: _decodeTokenPayload,
     );
@@ -44,7 +44,7 @@ class AuthApi {
   // SIMF-API-001 §12.4
   Future<Map<String, dynamic>> signUp(SignUpRequest request) {
     return _client.post<Map<String, dynamic>>(
-      '/auth/sign-up',
+      '/app/auth/sign-up',
       body: request.toJson(),
       decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
     );
@@ -52,7 +52,7 @@ class AuthApi {
 
   Future<Map<String, dynamic>> verifyEmail(VerifyEmailRequest request) {
     return _client.post<Map<String, dynamic>>(
-      '/auth/verify-email',
+      '/app/auth/verify-email',
       body: request.toJson(),
       decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
     );
@@ -60,7 +60,7 @@ class AuthApi {
 
   Future<Map<String, dynamic>> resendCode(ResendCodeRequest request) {
     return _client.post<Map<String, dynamic>>(
-      '/auth/resend-code',
+      '/app/auth/resend-code',
       body: request.toJson(),
       decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
     );
@@ -68,7 +68,7 @@ class AuthApi {
 
   Future<TokenPayloadDto> refresh(RefreshRequest request) {
     return _client.post<TokenPayloadDto>(
-      '/auth/refresh',
+      '/app/auth/refresh',
       body: request.toJson(),
       decodeData: _decodeTokenPayload,
     );
@@ -76,7 +76,7 @@ class AuthApi {
 
   Future<Map<String, dynamic>> signOut(SignOutRequest request) {
     return _client.post<Map<String, dynamic>>(
-      '/auth/sign-out',
+      '/app/auth/sign-out',
       body: request.toJson(),
       decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
     );
@@ -85,7 +85,7 @@ class AuthApi {
   // SIMF-MOB-API-001 §5.1
   Future<CurrentUserDto> getCurrentUser() {
     return _client.get<CurrentUserDto>(
-      '/users/me',
+      '/app/users/me',
       decodeData: (data) {
         if (data is! Map<String, dynamic>) {
           throw const FormatException(
@@ -100,7 +100,7 @@ class AuthApi {
   // Password reset — planned, SIMF-API-001 OI-3.
   Future<Map<String, dynamic>> forgotPassword(ForgotPasswordRequest request) {
     return _client.post<Map<String, dynamic>>(
-      '/auth/forgot-password',
+      '/app/auth/forgot-password',
       body: request.toJson(),
       decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
     );
@@ -108,7 +108,7 @@ class AuthApi {
 
   Future<Map<String, dynamic>> resetPassword(ResetPasswordRequest request) {
     return _client.post<Map<String, dynamic>>(
-      '/auth/reset-password',
+      '/app/auth/reset-password',
       body: request.toJson(),
       decodeData: (data) => (data as Map?)?.cast<String, dynamic>() ?? const {},
     );

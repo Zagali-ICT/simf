@@ -57,7 +57,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
         Assert.DoesNotContain(pendingQueue, q => q.Id == qid);
 
         var desk = await GetAuthAsync(
-            $"/api/v1/sessions/{session.Id}/questions/moderate", admin);
+            $"/api/v1/app/sessions/{session.Id}/questions/moderate", admin);
         var rows = (await desk.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>>())!.Data!;
         Assert.Contains(rows, r => r.Id == qid && r.Status == QuestionStatus.Approved);
@@ -73,7 +73,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
         await PutAuthAsync($"/api/v1/admin/questions/{qid}/hide", new { }, admin);
 
         var desk = await GetAuthAsync(
-            $"/api/v1/sessions/{session.Id}/questions/moderate", admin);
+            $"/api/v1/app/sessions/{session.Id}/questions/moderate", admin);
         var rows = (await desk.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>>())!.Data!;
         Assert.DoesNotContain(rows, r => r.Id == qid);
@@ -97,7 +97,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
         await PutAuthAsync($"/api/v1/admin/questions/{qid}/approve", new { }, admin);
 
         var desk = await GetAuthAsync(
-            $"/api/v1/sessions/{session.Id}/questions/moderate", admin);
+            $"/api/v1/app/sessions/{session.Id}/questions/moderate", admin);
         var rows = (await desk.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>>())!.Data!;
         Assert.Contains(rows, r =>
@@ -165,7 +165,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
     {
         var token = await SignInApprovedVisitorAsync();
         var response = await PostAuthAsync(
-            $"/api/v1/sessions/{sessionId}/questions",
+            $"/api/v1/app/sessions/{sessionId}/questions",
             new SubmitSessionQuestionRequest { QuestionText = "Pipeline question?", IsAtVenue = true },
             token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -179,10 +179,10 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
     {
         var email = $"cq-visitor-{Guid.NewGuid():N}@simf.test";
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
+            "/api/v1/app/auth/sign-up",
             new SignUpRequest { Email = email, Password = AuthFlow.Password, ConfirmPassword = AuthFlow.Password });
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest
             {
                 Email = email,
@@ -191,7 +191,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
         AuthFlow.SetAccountState(_factory, email, AccountState.Approved);
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var envelope = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return envelope.Data!.Tokens!.AccessToken;
@@ -247,7 +247,7 @@ public sealed class SessionQuestionCommitteeTests : IClassFixture<SimfApiFactory
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,

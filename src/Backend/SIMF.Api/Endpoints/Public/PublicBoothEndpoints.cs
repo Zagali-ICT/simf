@@ -14,7 +14,7 @@ public sealed class ListPublicBoothsEndpoint(IPublicBoothService service)
 {
     public override void Configure()
     {
-        Get("/booths");
+        Get("/app/booths");
         AllowAnonymous();
         Tags("Public");
     }
@@ -32,7 +32,7 @@ public sealed class GetPublicBoothEndpoint(IPublicBoothService service)
 {
     public override void Configure()
     {
-        Get("/booths/{id:guid}");
+        Get("/app/booths/{id:guid}");
         AllowAnonymous();
         Tags("Public");
     }

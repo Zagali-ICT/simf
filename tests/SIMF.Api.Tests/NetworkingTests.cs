@@ -12,7 +12,7 @@ namespace SIMF.Api.Tests;
 
 public sealed class NetworkingTests : IClassFixture<SimfApiFactory>
 {
-    private const string Path = "/api/v1/account/connections";
+    private const string Path = "/api/v1/app/account/connections";
 
     private readonly SimfApiFactory _factory;
     private readonly HttpClient _client;
@@ -167,9 +167,9 @@ public sealed class NetworkingTests : IClassFixture<SimfApiFactory>
     private async Task<(string AccessToken, Guid UserId)> CreateApprovedVisitorAsync()
     {
         var email = $"net-{Guid.NewGuid():N}@simf.test";
-        await _client.PostAsJsonAsync("/api/v1/auth/sign-up",
+        await _client.PostAsJsonAsync("/api/v1/app/auth/sign-up",
             new SignUpRequest { Email = email, Password = AuthFlow.Password, ConfirmPassword = AuthFlow.Password });
-        await _client.PostAsJsonAsync("/api/v1/auth/verify-email",
+        await _client.PostAsJsonAsync("/api/v1/app/auth/verify-email",
             new VerifyEmailRequest
             {
                 Email = email,
@@ -177,7 +177,7 @@ public sealed class NetworkingTests : IClassFixture<SimfApiFactory>
             });
         AuthFlow.SetAccountState(_factory, email, AccountState.Approved);
 
-        var sign = await _client.PostAsJsonAsync("/api/v1/auth/sign-in",
+        var sign = await _client.PostAsJsonAsync("/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var token = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!.Data!.Tokens!.AccessToken;
         return (token, UserIdFromToken(token));

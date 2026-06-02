@@ -34,7 +34,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Public_list_is_anonymous_and_succeeds()
     {
-        var response = await _client.GetAsync("/api/v1/speakers");
+        var response = await _client.GetAsync("/api/v1/app/speakers");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<PublicSpeakers>>())!;
@@ -65,7 +65,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
         var created = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminSpeakerDetail>>())!.Data!;
 
-        var list = await _client.GetAsync("/api/v1/speakers");
+        var list = await _client.GetAsync("/api/v1/app/speakers");
         var rows = (await list.Content
             .ReadFromJsonAsync<ApiResult<PublicSpeakers>>())!.Data!;
         var row = Assert.Single(rows.Items, s => s.Id == created.Id);
@@ -73,7 +73,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
         Assert.Equal("Captain", row.Rank);
         Assert.Equal("Saudi Arabia", row.CountryNameEn);
 
-        var detailResponse = await _client.GetAsync($"/api/v1/speakers/{created.Id}");
+        var detailResponse = await _client.GetAsync($"/api/v1/app/speakers/{created.Id}");
         Assert.Equal(HttpStatusCode.OK, detailResponse.StatusCode);
         var detail = (await detailResponse.Content
             .ReadFromJsonAsync<ApiResult<PublicSpeakerDetail>>())!.Data!;
@@ -91,7 +91,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
         var later = await CreateSpeakerAsync(token, displayOrder: 90);
         var earlier = await CreateSpeakerAsync(token, displayOrder: 5);
 
-        var list = await _client.GetAsync("/api/v1/speakers");
+        var list = await _client.GetAsync("/api/v1/app/speakers");
         var body = (await list.Content
             .ReadFromJsonAsync<ApiResult<PublicSpeakers>>())!.Data!;
 
@@ -105,7 +105,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Public_detail_unknown_id_returns_404()
     {
-        var response = await _client.GetAsync($"/api/v1/speakers/{Guid.NewGuid()}");
+        var response = await _client.GetAsync($"/api/v1/app/speakers/{Guid.NewGuid()}");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
@@ -118,12 +118,12 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
         var delete = await DeleteAuthAsync($"/api/v1/admin/speakers/{speakerId}", token);
         Assert.Equal(HttpStatusCode.OK, delete.StatusCode);
 
-        var list = await _client.GetAsync("/api/v1/speakers");
+        var list = await _client.GetAsync("/api/v1/app/speakers");
         var body = (await list.Content
             .ReadFromJsonAsync<ApiResult<PublicSpeakers>>())!.Data!;
         Assert.DoesNotContain(body.Items, s => s.Id == speakerId);
 
-        var detailResponse = await _client.GetAsync($"/api/v1/speakers/{speakerId}");
+        var detailResponse = await _client.GetAsync($"/api/v1/app/speakers/{speakerId}");
         Assert.Equal(HttpStatusCode.NotFound, detailResponse.StatusCode);
     }
 
@@ -136,7 +136,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
         var start = DateTimeOffset.UtcNow.AddDays(2).Date.AddHours(9);
         var session = await CreateSessionAsync(token, hallId, speakerId, start, start.AddHours(1));
 
-        var detailResponse = await _client.GetAsync($"/api/v1/speakers/{speakerId}");
+        var detailResponse = await _client.GetAsync($"/api/v1/app/speakers/{speakerId}");
         var detail = (await detailResponse.Content
             .ReadFromJsonAsync<ApiResult<PublicSpeakerDetail>>())!.Data!;
 
@@ -171,7 +171,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
         var notSharingId = (await notSharing.Content
             .ReadFromJsonAsync<ApiResult<AdminSpeakerDetail>>())!.Data!.Id;
 
-        var hiddenResponse = await _client.GetAsync($"/api/v1/speakers/{notSharingId}");
+        var hiddenResponse = await _client.GetAsync($"/api/v1/app/speakers/{notSharingId}");
         var hidden = (await hiddenResponse.Content
             .ReadFromJsonAsync<ApiResult<PublicSpeakerDetail>>())!.Data!;
         Assert.Null(hidden.FacebookUrl);
@@ -195,7 +195,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
         var sharingId = (await sharing.Content
             .ReadFromJsonAsync<ApiResult<AdminSpeakerDetail>>())!.Data!.Id;
 
-        var shownResponse = await _client.GetAsync($"/api/v1/speakers/{sharingId}");
+        var shownResponse = await _client.GetAsync($"/api/v1/app/speakers/{sharingId}");
         var shown = (await shownResponse.Content
             .ReadFromJsonAsync<ApiResult<PublicSpeakerDetail>>())!.Data!;
         Assert.Equal("https://facebook.com/sharing", shown.FacebookUrl);
@@ -307,7 +307,7 @@ public sealed class PublicSpeakersTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,

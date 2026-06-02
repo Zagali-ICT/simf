@@ -31,7 +31,7 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Public_list_is_anonymous_and_succeeds()
     {
-        var response = await _client.GetAsync("/api/v1/booths");
+        var response = await _client.GetAsync("/api/v1/app/booths");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<PublicBoothSummary>>>())!;
@@ -59,12 +59,12 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
         var created = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminBoothDetail>>())!.Data!;
 
-        var list = await _client.GetAsync("/api/v1/booths");
+        var list = await _client.GetAsync("/api/v1/app/booths");
         var rows = (await list.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<PublicBoothSummary>>>())!.Data!;
         Assert.Contains(rows, b => b.Id == created.Id && b.Code == code);
 
-        var detailResponse = await _client.GetAsync($"/api/v1/booths/{created.Id}");
+        var detailResponse = await _client.GetAsync($"/api/v1/app/booths/{created.Id}");
         Assert.Equal(HttpStatusCode.OK, detailResponse.StatusCode);
         var detail = (await detailResponse.Content
             .ReadFromJsonAsync<ApiResult<PublicBoothDetail>>())!.Data!;
@@ -75,7 +75,7 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Public_detail_unknown_id_returns_404()
     {
-        var response = await _client.GetAsync($"/api/v1/booths/{Guid.NewGuid()}");
+        var response = await _client.GetAsync($"/api/v1/app/booths/{Guid.NewGuid()}");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
@@ -94,7 +94,7 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
         var delete = await DeleteAuthAsync($"/api/v1/admin/booths/{created.Id}", token);
         Assert.Equal(HttpStatusCode.OK, delete.StatusCode);
 
-        var detailResponse = await _client.GetAsync($"/api/v1/booths/{created.Id}");
+        var detailResponse = await _client.GetAsync($"/api/v1/app/booths/{created.Id}");
         Assert.Equal(HttpStatusCode.NotFound, detailResponse.StatusCode);
     }
 
@@ -127,7 +127,7 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,

@@ -16,7 +16,7 @@ public sealed class ListPublicArchiveEndpoint(IPublicArchiveService service)
 {
     public override void Configure()
     {
-        Get("/archive");
+        Get("/app/archive");
         AllowAnonymous();
         Tags("Public");
     }

@@ -23,9 +23,9 @@ public sealed class EmailRateLimitKeyMiddleware
 
     private static readonly HashSet<string> CredentialPaths = new(StringComparer.OrdinalIgnoreCase)
     {
-        "/api/v1/auth/sign-in",
-        "/api/v1/auth/forgot-password",
-        "/api/v1/auth/reset-password",
+        "/api/v1/app/auth/sign-in",
+        "/api/v1/app/auth/forgot-password",
+        "/api/v1/app/auth/reset-password",
     };
 
     private readonly RequestDelegate _next;

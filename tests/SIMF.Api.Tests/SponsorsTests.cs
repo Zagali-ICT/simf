@@ -50,7 +50,7 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<AdminSponsorDetail>>())!.Data!;
         Assert.Equal((int)SponsorTier.Platinum, created.Tier);
 
-        var publicList = await _client.GetAsync("/api/v1/sponsors");
+        var publicList = await _client.GetAsync("/api/v1/app/sponsors");
         Assert.Equal(HttpStatusCode.OK, publicList.StatusCode);
         var body = (await publicList.Content
             .ReadFromJsonAsync<ApiResult<PublicSponsors>>())!.Data!;
@@ -78,7 +78,7 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
                 Tier = (int)SponsorTier.Platinum, DisplayOrder = 0,
             }, admin);
 
-        var list = await _client.GetAsync("/api/v1/sponsors");
+        var list = await _client.GetAsync("/api/v1/app/sponsors");
         var body = (await list.Content
             .ReadFromJsonAsync<ApiResult<PublicSponsors>>())!.Data!;
 
@@ -110,7 +110,7 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
 
         await DeleteAuthAsync($"/api/v1/admin/sponsors/{created.Id}", admin);
 
-        var list = await _client.GetAsync("/api/v1/sponsors");
+        var list = await _client.GetAsync("/api/v1/app/sponsors");
         var body = (await list.Content
             .ReadFromJsonAsync<ApiResult<PublicSponsors>>())!.Data!;
         Assert.DoesNotContain(
@@ -177,7 +177,7 @@ public sealed class SponsorsTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password,

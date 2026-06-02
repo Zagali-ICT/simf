@@ -52,7 +52,7 @@ public sealed class VenueMapTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, get.StatusCode);
 
         // Public read (AllowAnonymous) returns the active node.
-        var pub = await _client.GetAsync("/api/v1/venue-map");
+        var pub = await _client.GetAsync("/api/v1/app/venue-map");
         Assert.Equal(HttpStatusCode.OK, pub.StatusCode);
         var nodes = (await pub.Content
             .ReadFromJsonAsync<ApiResult<List<PublicVenueMapNode>>>())!.Data!;
@@ -95,7 +95,7 @@ public sealed class VenueMapTests : IClassFixture<SimfApiFactory>
         var delete = await DeleteAuthAsync($"/api/v1/admin/venue-map/{created.Id}", token);
         Assert.Equal(HttpStatusCode.OK, delete.StatusCode);
 
-        var pub = await _client.GetAsync("/api/v1/venue-map");
+        var pub = await _client.GetAsync("/api/v1/app/venue-map");
         var nodes = (await pub.Content
             .ReadFromJsonAsync<ApiResult<List<PublicVenueMapNode>>>())!.Data!;
         Assert.DoesNotContain(nodes, n => n.Id == created.Id);
@@ -139,7 +139,7 @@ public sealed class VenueMapTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,

@@ -17,7 +17,7 @@ public sealed class SendConnectionEndpoint(INetworkingService service)
 {
     public override void Configure()
     {
-        Post("/account/connections");
+        Post("/app/account/connections");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Account");
@@ -42,7 +42,7 @@ public sealed class AcceptConnectionEndpoint(INetworkingService service)
 {
     public override void Configure()
     {
-        Put("/account/connections/{id:guid}/accept");
+        Put("/app/account/connections/{id:guid}/accept");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Account");
@@ -67,7 +67,7 @@ public sealed class RemoveConnectionEndpoint(INetworkingService service)
 {
     public override void Configure()
     {
-        Delete("/account/connections/{id:guid}");
+        Delete("/app/account/connections/{id:guid}");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("Account");
@@ -90,7 +90,7 @@ public sealed class ListConnectionsEndpoint(INetworkingService service)
 {
     public override void Configure()
     {
-        Get("/account/connections");
+        Get("/app/account/connections");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Tags("Account");
     }

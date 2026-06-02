@@ -16,7 +16,7 @@ public sealed class ChangePasswordEndpoint(IPasswordService passwordService)
 {
     public override void Configure()
     {
-        Post("/auth/change-password");
+        Post("/app/auth/change-password");
         // No AllowAnonymous() — FastEndpoints requires an authenticated caller.
         Tags("Authentication");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));

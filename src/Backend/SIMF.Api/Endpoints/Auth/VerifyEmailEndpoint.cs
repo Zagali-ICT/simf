@@ -12,7 +12,7 @@ public sealed class VerifyEmailEndpoint(IRegistrationService registrationService
 {
     public override void Configure()
     {
-        Post("/auth/verify-email");
+        Post("/app/auth/verify-email");
         AllowAnonymous();
         Tags("Authentication");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));

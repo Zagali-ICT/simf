@@ -58,7 +58,7 @@ public sealed class OperationsTogglesTests : IClassFixture<SimfApiFactory>
         try
         {
             var signUp = await _client.PostAsJsonAsync(
-                "/api/v1/auth/sign-up",
+                "/api/v1/app/auth/sign-up",
                 new SignUpRequest
                 {
                     Email = $"gated-{Guid.NewGuid():N}@simf.test",
@@ -80,7 +80,7 @@ public sealed class OperationsTogglesTests : IClassFixture<SimfApiFactory>
     {
         await ResetGateOpenAsync();
         var signUp = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
+            "/api/v1/app/auth/sign-up",
             new SignUpRequest
             {
                 Email = $"open-{Guid.NewGuid():N}@simf.test",
@@ -107,7 +107,7 @@ public sealed class OperationsTogglesTests : IClassFixture<SimfApiFactory>
         try
         {
             var signUp = await _client.PostAsJsonAsync(
-                "/api/v1/auth/sign-up",
+                "/api/v1/app/auth/sign-up",
                 new SignUpRequest
                 {
                     Email = $"past-{Guid.NewGuid():N}@simf.test",
@@ -127,7 +127,7 @@ public sealed class OperationsTogglesTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Public_archive_visibility_endpoint_requires_no_auth()
     {
-        var response = await _client.GetAsync("/api/v1/archive/visibility");
+        var response = await _client.GetAsync("/api/v1/app/archive/visibility");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var state = (await response.Content
             .ReadFromJsonAsync<ApiResult<ArchiveVisibilityState>>())!.Data!;
@@ -146,7 +146,7 @@ public sealed class OperationsTogglesTests : IClassFixture<SimfApiFactory>
                 token);
             Assert.Equal(HttpStatusCode.OK, hide.StatusCode);
 
-            var publicGet = await _client.GetAsync("/api/v1/archive/visibility");
+            var publicGet = await _client.GetAsync("/api/v1/app/archive/visibility");
             var state = (await publicGet.Content
                 .ReadFromJsonAsync<ApiResult<ArchiveVisibilityState>>())!.Data!;
             Assert.False(state.IsVisible);
@@ -232,7 +232,7 @@ public sealed class OperationsTogglesTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,

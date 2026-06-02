@@ -1,4 +1,4 @@
-﻿// D-160 — POST /api/v1/gates/{gateId}/visitors/list — cursor-paged
+﻿// D-160 — POST /api/v1/app/gates/{gateId}/visitors/list — cursor-paged
 // view of scans at a single gate, backed by the D-158 snapshot columns.
 using System.Net;
 using System.Net.Http.Headers;
@@ -173,7 +173,7 @@ public sealed class GateVisitorsListTests : IClassFixture<SimfApiFactory>
         Guid gateId, PostBody body, string token)
     {
         var request = new HttpRequestMessage(
-            HttpMethod.Post, $"/api/v1/gates/{gateId}/visitors/list")
+            HttpMethod.Post, $"/api/v1/app/gates/{gateId}/visitors/list")
         {
             Content = JsonContent.Create(body),
         };
@@ -185,7 +185,7 @@ public sealed class GateVisitorsListTests : IClassFixture<SimfApiFactory>
         Guid gateId, string qr, string token)
     {
         var request = new HttpRequestMessage(
-            HttpMethod.Post, $"/api/v1/gates/{gateId}/scans")
+            HttpMethod.Post, $"/api/v1/app/gates/{gateId}/scans")
         {
             Content = JsonContent.Create(new GateScanRequest
             {
@@ -282,7 +282,7 @@ public sealed class GateVisitorsListTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,

@@ -110,7 +110,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         Assert.NotNull(challenge.OtpToken);
 
         var verify = await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-otp",
+            "/api/v1/app/auth/verify-otp",
             new VerifyOtpRequest
             {
                 OtpToken = challenge.OtpToken!,
@@ -133,7 +133,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         var realCode = GetActiveCode(email, AccountCodePurpose.SignInOtp);
 
         var verify = await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-otp",
+            "/api/v1/app/auth/verify-otp",
             new VerifyOtpRequest
             {
                 OtpToken = challenge.OtpToken!,
@@ -154,10 +154,10 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
 
         for (var attempt = 0; attempt < 5; attempt++)
         {
-            await _client.PostAsJsonAsync("/api/v1/auth/verify-otp", wrong);
+            await _client.PostAsJsonAsync("/api/v1/app/auth/verify-otp", wrong);
         }
 
-        var capped = await _client.PostAsJsonAsync("/api/v1/auth/verify-otp", wrong);
+        var capped = await _client.PostAsJsonAsync("/api/v1/app/auth/verify-otp", wrong);
         Assert.Equal(HttpStatusCode.BadRequest, capped.StatusCode);
         var body = await capped.Content.ReadFromJsonAsync<ApiResult<object>>();
         Assert.Equal(ErrorCodes.AuthOtpTokenInvalid, body!.Error!.Code);
@@ -170,7 +170,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         var challenge = await ExpectChallengeAsync(email, Password);
 
         var verify = await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-totp",
+            "/api/v1/app/auth/verify-totp",
             new VerifyTotpRequest { MfaToken = challenge.OtpToken!, Code = "123456" });
 
         Assert.Equal(HttpStatusCode.BadRequest, verify.StatusCode);
@@ -188,7 +188,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
 
         var totp = new Totp(Base32Encoding.ToBytes(secret)).ComputeTotp();
         var verify = await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-totp",
+            "/api/v1/app/auth/verify-totp",
             new VerifyTotpRequest { MfaToken = challenge.MfaToken!, Code = totp });
 
         Assert.Equal(HttpStatusCode.OK, verify.StatusCode);
@@ -203,7 +203,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         var challenge = await ExpectChallengeAsync(adminEmail, Password, SignInAudience.Cp);
 
         var verify = await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-totp",
+            "/api/v1/app/auth/verify-totp",
             new VerifyTotpRequest { MfaToken = challenge.MfaToken!, Code = "000000" });
 
         Assert.Equal(HttpStatusCode.BadRequest, verify.StatusCode);
@@ -219,13 +219,13 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
 
         var first = await ExpectChallengeAsync(adminEmail, Password, SignInAudience.Cp);
         var firstVerify = await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-totp",
+            "/api/v1/app/auth/verify-totp",
             new VerifyTotpRequest { MfaToken = first.MfaToken!, Code = totp });
         Assert.Equal(HttpStatusCode.OK, firstVerify.StatusCode);
 
         var second = await ExpectChallengeAsync(adminEmail, Password, SignInAudience.Cp);
         var replay = await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-totp",
+            "/api/v1/app/auth/verify-totp",
             new VerifyTotpRequest { MfaToken = second.MfaToken!, Code = totp });
 
         Assert.Equal(HttpStatusCode.BadRequest, replay.StatusCode);
@@ -240,7 +240,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         _factory.Time.Advance(TimeSpan.FromMinutes(6));
 
         var verify = await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-totp",
+            "/api/v1/app/auth/verify-totp",
             new VerifyTotpRequest { MfaToken = challenge.MfaToken!, Code = "000000" });
 
         Assert.Equal(HttpStatusCode.BadRequest, verify.StatusCode);
@@ -254,7 +254,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         var email = await RegisterVerifiedVisitorAsync();
         var challenge = await ExpectChallengeAsync(email, Password);
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-otp",
+            "/api/v1/app/auth/verify-otp",
             new VerifyOtpRequest
             {
                 OtpToken = challenge.OtpToken!,
@@ -282,7 +282,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         var email = NewEmail();
         await SignUpAsync(email);
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest
             {
                 Email = email,
@@ -314,7 +314,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         var email = NewEmail();
         await SignUpAsync(email);
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest
             {
                 Email = email,
@@ -351,7 +351,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         var email = NewEmail();
         await SignUpAsync(email);
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest
             {
                 Email = email,
@@ -609,7 +609,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
 
         const string newPassword = "N3wPassw0rd!";
         var change = await _client.PostAsJsonAsync(
-            "/api/v1/auth/complete-password-change",
+            "/api/v1/app/auth/complete-password-change",
             new CompletePasswordChangeRequest
             {
                 PasswordChangeToken = ticket!,
@@ -635,7 +635,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     public async Task Complete_password_change_rejects_an_unknown_ticket()
     {
         var change = await _client.PostAsJsonAsync(
-            "/api/v1/auth/complete-password-change",
+            "/api/v1/app/auth/complete-password-change",
             new CompletePasswordChangeRequest
             {
                 PasswordChangeToken = "not-a-real-ticket",
@@ -717,7 +717,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         SetPasswordChangeRequired(email, value: true);
 
         var refreshResponse = await _client.PostAsJsonAsync(
-            "/api/v1/auth/refresh",
+            "/api/v1/app/auth/refresh",
             new RefreshRequest { RefreshToken = refreshToken });
 
         Assert.Equal(HttpStatusCode.Forbidden, refreshResponse.StatusCode);
@@ -743,12 +743,12 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     private Task<HttpResponseMessage> SignInAsync(
         string email, string password, SignInAudience audience) =>
         _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = password, Audience = audience });
 
     private Task<HttpResponseMessage> SignUpAsync(string email) =>
         _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
+            "/api/v1/app/auth/sign-up",
             new SignUpRequest { Email = email, Password = Password, ConfirmPassword = Password });
 
     private async Task<SignInResponse> ExpectChallengeAsync(string email, string password)
@@ -772,7 +772,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         var email = NewEmail();
         await SignUpAsync(email);
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest
             {
                 Email = email,

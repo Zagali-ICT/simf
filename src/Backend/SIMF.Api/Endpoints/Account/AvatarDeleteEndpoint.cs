@@ -17,7 +17,7 @@ public sealed class AvatarDeleteEndpoint(IAccountService accountService)
 {
     public override void Configure()
     {
-        Delete("/account/avatar");
+        Delete("/app/account/avatar");
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary = "Remove the signed-in user's avatar.");

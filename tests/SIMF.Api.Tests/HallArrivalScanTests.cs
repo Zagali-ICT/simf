@@ -56,7 +56,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
         var (qrId, userId, visitorToken, _) = await CreateApprovedVisitorWithQrAsync(approved: true);
 
         // Attendee arrives via GPS first.
-        var arrival = await PostAuthAsync($"/api/v1/sessions/{sessionId}/arrival",
+        var arrival = await PostAuthAsync($"/api/v1/app/sessions/{sessionId}/arrival",
             new RecordArrivalRequest { Lat = CenterLat, Lon = CenterLon }, visitorToken);
         Assert.Equal(HttpStatusCode.OK, arrival.StatusCode);
 
@@ -186,7 +186,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
         if (approved)
         {
             var sign = await _client.PostAsJsonAsync(
-                "/api/v1/auth/sign-in",
+                "/api/v1/app/auth/sign-in",
                 new SignInRequest { Email = email, Password = AuthFlow.Password });
             var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
             token = body.Data!.Tokens!.AccessToken;
@@ -216,7 +216,7 @@ public sealed class HallArrivalScanTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,

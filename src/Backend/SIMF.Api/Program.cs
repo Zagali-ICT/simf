@@ -195,15 +195,33 @@ builder.Services.AddRateLimiter(rateLimiter =>
     };
 });
 
-// FastEndpoints and the OpenAPI document.
+// FastEndpoints and the OpenAPI documents. The App↔CP split (D-247) emits
+// TWO OpenAPI documents from the one API so a mobile/App developer reads only
+// the App surface and a CP developer reads only the admin surface. The filter
+// keys off the route segment — every App route is under /app/* and every CP
+// route under /admin/* (SIMF-API-001 §4).
 builder.Services.AddFastEndpoints();
 builder.Services.SwaggerDocument(options =>
 {
     options.DocumentSettings = settings =>
     {
-        settings.Title = "SIMF API";
+        settings.Title = "SIMF App API";
+        settings.DocumentName = "app";
         settings.Version = "v1";
     };
+    options.EndpointFilter = ep =>
+        ep.Routes?.Any(route => route.Contains("app/") && !route.Contains("admin/")) == true;
+});
+builder.Services.SwaggerDocument(options =>
+{
+    options.DocumentSettings = settings =>
+    {
+        settings.Title = "SIMF CP API";
+        settings.DocumentName = "cp";
+        settings.Version = "v1";
+    };
+    options.EndpointFilter = ep =>
+        ep.Routes?.Any(route => route.Contains("admin/")) == true;
 });
 
 // Readiness checks (SIMF-OPS-001 Amendment A.4).

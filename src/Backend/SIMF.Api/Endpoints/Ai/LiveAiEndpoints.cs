@@ -21,7 +21,7 @@ public sealed class LiveTranslateChunkEndpoint(IAiService service)
 {
     public override void Configure()
     {
-        Post("/ai/live-translation/chunk");
+        Post("/app/ai/live-translation/chunk");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("AI");
@@ -48,7 +48,7 @@ public sealed class LiveSignChunkEndpoint(IAiService service)
 {
     public override void Configure()
     {
-        Post("/ai/live-sign-language/chunk");
+        Post("/app/ai/live-sign-language/chunk");
         Policies(nameof(AuthorizationPolicies.RequireApprovedAccount));
         Options(rb => rb.RequireRateLimiting("auth"));
         Tags("AI");

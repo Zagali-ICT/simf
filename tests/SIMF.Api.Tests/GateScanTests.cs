@@ -225,7 +225,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
         var gate = await CreateGateAsync(token, allowedProfileTypeIds: null,
             ownAsOperator: true, mode: DirectionMode.Both);
 
-        var response = await GetAuthAsync("/api/v1/gates/my-assignments", token);
+        var response = await GetAuthAsync("/api/v1/app/gates/my-assignments", token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<OperatorGateAssignment>>>())!.Data!;
@@ -242,7 +242,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
 
         await PostScanAsync(gate.Id, qr: qrId, token, idempotencyKey: null);
 
-        var response = await GetAuthAsync("/api/v1/gates/my-reports/today", token);
+        var response = await GetAuthAsync("/api/v1/app/gates/my-reports/today", token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var report = (await response.Content
             .ReadFromJsonAsync<ApiResult<OperatorDailyReport>>())!.Data!;
@@ -255,7 +255,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
         Guid gateId, string qr, string token, string? idempotencyKey)
     {
         var request = new HttpRequestMessage(
-            HttpMethod.Post, $"/api/v1/gates/{gateId}/scans")
+            HttpMethod.Post, $"/api/v1/app/gates/{gateId}/scans")
         {
             Content = JsonContent.Create(new GateScanRequest
             {
@@ -385,7 +385,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,

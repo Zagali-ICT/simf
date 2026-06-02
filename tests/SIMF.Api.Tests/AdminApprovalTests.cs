@@ -307,7 +307,7 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
 
     private async Task<string> SignInAndGetTokenAsync(string email, SignInAudience audience)
     {
-        var sign = await _client.PostAsJsonAsync("/api/v1/auth/sign-in",
+        var sign = await _client.PostAsJsonAsync("/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = Password, Audience = audience });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return body.Data!.Tokens!.AccessToken;

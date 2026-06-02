@@ -34,7 +34,7 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
 
         var response = await PostAuthAsync(
-            "/api/v1/feedback/rate",
+            "/api/v1/app/feedback/rate",
             new RateRequest(5, "Excellent forum"), visitor);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -51,14 +51,14 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
 
         var first = await PostAuthAsync(
-            "/api/v1/feedback/rate",
+            "/api/v1/app/feedback/rate",
             new RateRequest(3, "Good"), visitor);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
         var firstView = (await first.Content
             .ReadFromJsonAsync<ApiResult<RatingView>>())!.Data!;
 
         var second = await PostAuthAsync(
-            "/api/v1/feedback/rate",
+            "/api/v1/app/feedback/rate",
             new RateRequest(4, "Better on day two"), visitor);
         Assert.Equal(HttpStatusCode.OK, second.StatusCode);
         var secondView = (await second.Content
@@ -77,7 +77,7 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
 
         var response = await PostAuthAsync(
-            "/api/v1/feedback/rate",
+            "/api/v1/app/feedback/rate",
             new RateRequest(6, null), visitor);
         // FluentValidation rejects before the handler runs.
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -87,7 +87,7 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
     public async Task Unauthenticated_rate_is_401()
     {
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/feedback/rate", new RateRequest(5, null));
+            "/api/v1/app/feedback/rate", new RateRequest(5, null));
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
@@ -97,11 +97,11 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
         // Two visitors rate 2 and 4 -> average 3.0 across these two rows.
         var v1 = await SignInApprovedVisitorAsync();
         Assert.Equal(HttpStatusCode.OK,
-            (await PostAuthAsync("/api/v1/feedback/rate", new RateRequest(2, "meh"), v1)).StatusCode);
+            (await PostAuthAsync("/api/v1/app/feedback/rate", new RateRequest(2, "meh"), v1)).StatusCode);
 
         var v2 = await SignInApprovedVisitorAsync();
         Assert.Equal(HttpStatusCode.OK,
-            (await PostAuthAsync("/api/v1/feedback/rate", new RateRequest(4, "nice"), v2)).StatusCode);
+            (await PostAuthAsync("/api/v1/app/feedback/rate", new RateRequest(4, "nice"), v2)).StatusCode);
 
         var admin = await CreateAdministratorAndSignInAsync();
         var response = await PostAuthAsync(
@@ -132,7 +132,7 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
     {
         var email = $"rate-visitor-{Guid.NewGuid():N}@simf.test";
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
+            "/api/v1/app/auth/sign-up",
             new SignUpRequest
             {
                 Email = email,
@@ -140,7 +140,7 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
                 ConfirmPassword = AuthFlow.Password,
             });
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest
             {
                 Email = email,
@@ -149,7 +149,7 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
             });
         AuthFlow.SetAccountState(_factory, email, AccountState.Approved);
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return body.Data!.Tokens!.AccessToken;
@@ -177,7 +177,7 @@ public sealed class FeedbackRatingsTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password,

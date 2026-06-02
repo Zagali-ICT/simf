@@ -21,7 +21,7 @@ public sealed class ListPublicMediaEndpoint(IPublicMediaService service)
 {
     public override void Configure()
     {
-        Get("/media");
+        Get("/app/media");
         AllowAnonymous();
         Tags("Public");
     }
@@ -41,7 +41,7 @@ public sealed class PublicMediaImageEndpoint(IPublicMediaService service)
 {
     public override void Configure()
     {
-        Get("/media/{id:guid}/image");
+        Get("/app/media/{id:guid}/image");
         AllowAnonymous();
         Tags("Public");
     }
@@ -70,7 +70,7 @@ public sealed class PublicMediaThumbnailEndpoint(IPublicMediaService service)
 {
     public override void Configure()
     {
-        Get("/media/{id:guid}/thumbnail");
+        Get("/app/media/{id:guid}/thumbnail");
         AllowAnonymous();
         Tags("Public");
     }

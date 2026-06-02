@@ -56,7 +56,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
         };
 
         var response = await PostAuthAsync(
-            "/api/v1/account/user-profile", request, subjectToken);
+            "/api/v1/app/account/user-profile", request, subjectToken);
         Assert.True(response.IsSuccessStatusCode);
 
         using var scope = _factory.Services.CreateScope();
@@ -130,10 +130,10 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
         var email = $"welcome-{Guid.NewGuid():N}@simf.test";
 
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
+            "/api/v1/app/auth/sign-up",
             new SignUpRequest { Email = email, Password = AuthFlow.Password, ConfirmPassword = AuthFlow.Password });
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest
             {
                 Email = email,
@@ -222,7 +222,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
         const string newPassword = "Newp@ssw0rd!";
 
         using var changeRequest = new HttpRequestMessage(
-            HttpMethod.Post, "/api/v1/auth/change-password")
+            HttpMethod.Post, "/api/v1/app/auth/change-password")
         {
             Content = JsonContent.Create(new ChangePasswordRequest
             {
@@ -251,13 +251,13 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
     {
         var email = await AuthFlow.RegisterVerifiedVisitorAsync(_client, _factory);
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/forgot-password",
+            "/api/v1/app/auth/forgot-password",
             new ForgotPasswordRequest { Email = email });
         var code = AuthFlow.GetActiveCode(_factory, email, AccountCodePurpose.PasswordReset);
         const string newPassword = "Resetp@ssw0rd!";
 
         var reset = await _client.PostAsJsonAsync(
-            "/api/v1/auth/reset-password",
+            "/api/v1/app/auth/reset-password",
             new ResetPasswordRequest
             {
                 Email = email,
@@ -300,7 +300,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
             userId = user.Id;
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return (body.Data!.Tokens!.AccessToken, userId);
@@ -336,7 +336,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
     {
         var (email, _) = await CreateAdminAsync();
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,

@@ -175,7 +175,7 @@ these under one App-auth tag (tracked as a §5 cleanup item, no behaviour change
 Summary: one read-only aggregate `GET /account/dashboard` (identity card + two counters
 + today's merged schedule), plus `calendar.ics` (full schedule, RFC 5545) and
 `contact-card.vcf` (vCard) for the native share intent. All **additive, no schema
-change**. Routes use today's `/api/v1/account/*` until the App↔CP split lands (Appendix A.2).
+change**. App routes are under **`/api/v1/app/*`** (App↔CP split shipped, D-247) — e.g. `GET /api/v1/app/account/dashboard`.
 
 Other Section-2 account endpoints (sign-up profile steps, countries, interests,
 ProfileType picker, ID-document upload — `Endpoints/Account/*`) are detailed in a later wave.
@@ -232,14 +232,12 @@ restating it. *Cross-reference only; no new contract here.*
 1. **Reconcile screen numbers.** Fill the "Screen" columns with the explicit
    `Mockup.html` numbers (the route table maps names → numbers; numbers not yet
    transcribed here).
-2. **Separation approach — DECIDED: Approach B (physical split).** Owner directed
-   (2026-06-02) that the App API be separated from the CP API **in directory and in
-   path prefix** (e.g. App under `/api/v1/app/...`, CP/admin under `/api/v1/admin/...`).
-   This supersedes the earlier "Approach A vs B" question and contradicts SIMF-API-001
-   §2 ("one door, no separate endpoints") — so §2 of API-001 and the governing docs
-   must be updated in the same change. Design + migration plan pending (tracked in the
-   programme todo); the §6 routes above use the current `/account/*` prefix until the
-   split lands.
+2. **Separation approach — Approach B (physical split). Phase 1 SHIPPED (D-247,
+   2026-06-03).** App + public routes are now under `/api/v1/app/*` and the CP/admin
+   surface under `/api/v1/admin/*`, with two OpenAPI documents (`SIMF App API`,
+   `SIMF CP API`). `SIMF-API-001` was amended to v1.3 (§3/§4/§13). **Phase 2** — the
+   physical directory reorg (`Endpoints/App` + `Endpoints/Cp`, splitting the mixed
+   files) for a future project extraction — is the remaining, reorganisation-only step.
 3. **App-auth tag unification.** Decide whether to unify the `"Authentication"` /
    `"Auth"` tags under one App-auth grouping (folds into the Approach-B split).
 4. **Fill §6–§13** wave-by-wave after Auth is locked, each with verb/route/access and

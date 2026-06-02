@@ -7,9 +7,9 @@ schedule rules are in [Page_014_Logic.md](Page_014_Logic.md).
 > **Status:** spec drafted, **not built**. All three endpoints are **additive,
 > read-only aggregates over existing tables** — no schema change, no enum change, no migration.
 >
-> **Path-prefix note:** routes use today's `/api/v1/account/*`. When the App↔CP split
-> lands (own directory + prefix), every App route moves under `/api/v1/app/...`; these
-> contracts are unaffected by the move.
+> **Path-prefix note:** App routes are under **`/api/v1/app/*`** (App↔CP split shipped,
+> D-247) — so the routes below are `GET /api/v1/app/account/dashboard`,
+> `/api/v1/app/account/calendar.ics`, `/api/v1/app/account/contact-card.vcf`.
 
 ## E1 — `GET /account/dashboard`
 | | |

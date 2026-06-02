@@ -18,7 +18,7 @@ public sealed class CompletePasswordChangeEndpoint(IPasswordService passwordServ
 {
     public override void Configure()
     {
-        Post("/auth/complete-password-change");
+        Post("/app/auth/complete-password-change");
         AllowAnonymous();
         Tags("Authentication");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));

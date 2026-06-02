@@ -34,7 +34,7 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
     public async Task Anonymous_FAQ_returns_echo_response_and_writes_invocation()
     {
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/ai/faq",
+            "/api/v1/app/ai/faq",
             new AskFaqRequest { Question = "What time is the keynote?" });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content
@@ -58,7 +58,7 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
     {
         var visitor = await SignInApprovedVisitorAsync();
         var response = await PostAuthAsync(
-            "/api/v1/ai/assistance",
+            "/api/v1/app/ai/assistance",
             new AssistanceRequest { Message = "Where is hall H1?" },
             visitor);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -78,7 +78,7 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
     public async Task Anonymous_translate_substitutes_lang_inputs_into_template()
     {
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/ai/translate",
+            "/api/v1/app/ai/translate",
             new TranslateRequest
             {
                 Text = "Welcome to SIMF",
@@ -97,7 +97,7 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
     {
         var visitor = await SignInApprovedVisitorAsync();
         var response = await PostAuthAsync(
-            "/api/v1/ai/live-translation/chunk",
+            "/api/v1/app/ai/live-translation/chunk",
             new LiveTranslateChunkRequest
             {
                 Text = "Good morning",
@@ -117,7 +117,7 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
     {
         var visitor = await SignInApprovedVisitorAsync();
         var response = await PostAuthAsync(
-            "/api/v1/ai/live-sign-language/chunk",
+            "/api/v1/app/ai/live-sign-language/chunk",
             new LiveSignChunkRequest { Text = "Welcome to SIMF" },
             visitor);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -257,7 +257,7 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
     {
         // Trigger one invocation so the log is not empty.
         await _client.PostAsJsonAsync(
-            "/api/v1/ai/faq", new AskFaqRequest { Question = "Q" });
+            "/api/v1/app/ai/faq", new AskFaqRequest { Question = "Q" });
 
         var admin = await CreateAdministratorAndSignInAsync();
         var list = await PostAuthAsync(
@@ -319,10 +319,10 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
     {
         var email = $"ai-visitor-{Guid.NewGuid():N}@simf.test";
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
+            "/api/v1/app/auth/sign-up",
             new SignUpRequest { Email = email, Password = AuthFlow.Password, ConfirmPassword = AuthFlow.Password });
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest
             {
                 Email = email,
@@ -330,7 +330,7 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
             });
         AuthFlow.SetAccountState(_factory, email, AccountState.Approved);
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return body.Data!.Tokens!.AccessToken;
@@ -358,7 +358,7 @@ public sealed class AiModuleTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password,

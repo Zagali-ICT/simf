@@ -33,7 +33,7 @@ public sealed class RegistrationEndpointsTests : IClassFixture<SimfApiFactory>
 
     private Task<HttpResponseMessage> SignUpAsync(string email, string? password = null) =>
         _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
+            "/api/v1/app/auth/sign-up",
             new SignUpRequest
             {
                 Email = email,
@@ -43,7 +43,7 @@ public sealed class RegistrationEndpointsTests : IClassFixture<SimfApiFactory>
 
     private Task<HttpResponseMessage> VerifyEmailAsync(string email, string code) =>
         _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest { Email = email, Code = code });
 
     // -- sign-up --------------------------------------------------------------
@@ -126,7 +126,7 @@ public sealed class RegistrationEndpointsTests : IClassFixture<SimfApiFactory>
     public async Task SignUp_returns_400_when_the_passwords_do_not_match()
     {
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
+            "/api/v1/app/auth/sign-up",
             new SignUpRequest
             {
                 Email = NewEmail(),
@@ -236,7 +236,7 @@ public sealed class RegistrationEndpointsTests : IClassFixture<SimfApiFactory>
         var firstCode = GetActiveCode(email);
 
         var resend = await _client.PostAsJsonAsync(
-            "/api/v1/auth/resend-code",
+            "/api/v1/app/auth/resend-code",
             new ResendCodeRequest { Email = email });
         Assert.Equal(HttpStatusCode.OK, resend.StatusCode);
 
@@ -251,7 +251,7 @@ public sealed class RegistrationEndpointsTests : IClassFixture<SimfApiFactory>
         await SignUpAsync(email);
 
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/resend-code",
+            "/api/v1/app/auth/resend-code",
             new ResendCodeRequest { Email = email });
 
         var response = await VerifyEmailAsync(email, GetActiveCode(email));
@@ -262,7 +262,7 @@ public sealed class RegistrationEndpointsTests : IClassFixture<SimfApiFactory>
     public async Task ResendCode_returns_404_for_an_unknown_email()
     {
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/auth/resend-code",
+            "/api/v1/app/auth/resend-code",
             new ResendCodeRequest { Email = NewEmail() });
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -278,7 +278,7 @@ public sealed class RegistrationEndpointsTests : IClassFixture<SimfApiFactory>
         for (var attempt = 0; attempt < 5; attempt++)
         {
             lastResponse = await _client.PostAsJsonAsync(
-                "/api/v1/auth/resend-code",
+                "/api/v1/app/auth/resend-code",
                 new ResendCodeRequest { Email = email });
         }
 
@@ -316,7 +316,7 @@ public sealed class RegistrationEndpointsTests : IClassFixture<SimfApiFactory>
 
     private Task<HttpResponseMessage> SignInAsync(string email, string password) =>
         _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = password });
 
     private int ActiveVerificationCodeCount(string email)

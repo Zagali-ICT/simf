@@ -36,7 +36,7 @@ public sealed class MeetingRequestsTests : IClassFixture<SimfApiFactory>
         var session = await SeedActiveSessionAsync();
         var visitor = await SignInApprovedVisitorAsync();
         var submit = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/meeting-requests",
+            $"/api/v1/app/sessions/{session.Id}/meeting-requests",
             new SubmitMeetingRequestRequest
             {
                 RequesterName = "Captain Ahmed",
@@ -55,7 +55,7 @@ public sealed class MeetingRequestsTests : IClassFixture<SimfApiFactory>
         var session = await SeedActiveSessionAsync();
         var visitor = await SignInApprovedVisitorAsync();
         var submit = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/meeting-requests",
+            $"/api/v1/app/sessions/{session.Id}/meeting-requests",
             new SubmitMeetingRequestRequest
             {
                 RequesterName = "Visitor", Subject = "Test topic",
@@ -106,19 +106,19 @@ public sealed class MeetingRequestsTests : IClassFixture<SimfApiFactory>
         var visitor = await SignInApprovedVisitorAsync();
         // Seed three requests in three distinct statuses.
         var pendingId = (await (await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/meeting-requests",
+            $"/api/v1/app/sessions/{session.Id}/meeting-requests",
             new SubmitMeetingRequestRequest
             {
                 RequesterName = "Pending", Subject = "Stays pending",
             }, visitor)).Content.ReadFromJsonAsync<ApiResult<MeetingRequestSubmitted>>())!.Data!.Id;
         var acceptedId = (await (await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/meeting-requests",
+            $"/api/v1/app/sessions/{session.Id}/meeting-requests",
             new SubmitMeetingRequestRequest
             {
                 RequesterName = "Accept", Subject = "Will be accepted",
             }, visitor)).Content.ReadFromJsonAsync<ApiResult<MeetingRequestSubmitted>>())!.Data!.Id;
         var rejectedId = (await (await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/meeting-requests",
+            $"/api/v1/app/sessions/{session.Id}/meeting-requests",
             new SubmitMeetingRequestRequest
             {
                 RequesterName = "Reject", Subject = "Will be rejected",
@@ -158,7 +158,7 @@ public sealed class MeetingRequestsTests : IClassFixture<SimfApiFactory>
         var session = await SeedActiveSessionAsync();
         var visitor = await SignInApprovedVisitorAsync();
         await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/meeting-requests",
+            $"/api/v1/app/sessions/{session.Id}/meeting-requests",
             new SubmitMeetingRequestRequest
             {
                 RequesterName = "Visitor", Subject = "T",
@@ -189,7 +189,7 @@ public sealed class MeetingRequestsTests : IClassFixture<SimfApiFactory>
         var session = await SeedActiveSessionAsync();
         var visitor = await SignInApprovedVisitorAsync();
         var submit = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/meeting-requests",
+            $"/api/v1/app/sessions/{session.Id}/meeting-requests",
             new SubmitMeetingRequestRequest
             {
                 RequesterName = "V", Subject = "T",
@@ -235,7 +235,7 @@ public sealed class MeetingRequestsTests : IClassFixture<SimfApiFactory>
         var session = await SeedActiveSessionAsync();
         var visitor = await SignInApprovedVisitorAsync();
         var submit = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/meeting-requests",
+            $"/api/v1/app/sessions/{session.Id}/meeting-requests",
             new SubmitMeetingRequestRequest
             {
                 RequesterName = "V", Subject = "T",
@@ -265,7 +265,7 @@ public sealed class MeetingRequestsTests : IClassFixture<SimfApiFactory>
         var session = await SeedActiveSessionAsync();
         var visitor = await SignInApprovedVisitorAsync();
         var submit = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/meeting-requests",
+            $"/api/v1/app/sessions/{session.Id}/meeting-requests",
             new SubmitMeetingRequestRequest
             {
                 RequesterName = "V", Subject = "T",
@@ -298,7 +298,7 @@ public sealed class MeetingRequestsTests : IClassFixture<SimfApiFactory>
         var session = await SeedActiveSessionAsync();
         var visitor = await SignInApprovedVisitorAsync();
         var submit = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/meeting-requests",
+            $"/api/v1/app/sessions/{session.Id}/meeting-requests",
             new SubmitMeetingRequestRequest
             {
                 RequesterName = "V", Subject = "T",
@@ -323,7 +323,7 @@ public sealed class MeetingRequestsTests : IClassFixture<SimfApiFactory>
     {
         var visitor = await SignInApprovedVisitorAsync();
         var response = await PostAuthAsync(
-            $"/api/v1/sessions/{Guid.NewGuid()}/meeting-requests",
+            $"/api/v1/app/sessions/{Guid.NewGuid()}/meeting-requests",
             new SubmitMeetingRequestRequest
             {
                 RequesterName = "V", Subject = "T",
@@ -339,7 +339,7 @@ public sealed class MeetingRequestsTests : IClassFixture<SimfApiFactory>
         var session = await SeedActiveSessionAsync();
         var visitor = await SignInApprovedVisitorAsync();
         var response = await PostAuthAsync(
-            $"/api/v1/sessions/{session.Id}/meeting-requests",
+            $"/api/v1/app/sessions/{session.Id}/meeting-requests",
             new SubmitMeetingRequestRequest
             {
                 RequesterName = "Captain", Subject = "  ",
@@ -384,10 +384,10 @@ public sealed class MeetingRequestsTests : IClassFixture<SimfApiFactory>
     {
         var email = $"mr-visitor-{Guid.NewGuid():N}@simf.test";
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-up",
+            "/api/v1/app/auth/sign-up",
             new SignUpRequest { Email = email, Password = AuthFlow.Password, ConfirmPassword = AuthFlow.Password });
         await _client.PostAsJsonAsync(
-            "/api/v1/auth/verify-email",
+            "/api/v1/app/auth/verify-email",
             new VerifyEmailRequest
             {
                 Email = email,
@@ -395,7 +395,7 @@ public sealed class MeetingRequestsTests : IClassFixture<SimfApiFactory>
             });
         AuthFlow.SetAccountState(_factory, email, AccountState.Approved);
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return body.Data!.Tokens!.AccessToken;
@@ -431,7 +431,7 @@ public sealed class MeetingRequestsTests : IClassFixture<SimfApiFactory>
             userId = user.Id;
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password,

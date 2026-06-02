@@ -139,7 +139,7 @@ public sealed class InterestTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, deactivate.StatusCode);
 
         // The visitor list filters by IsActive — confirm.
-        var visitorList = await GetAuthAsync("/api/v1/account/interests", adminToken);
+        var visitorList = await GetAuthAsync("/api/v1/app/account/interests", adminToken);
         var visitorBody = (await visitorList.Content
             .ReadFromJsonAsync<ApiResult<InterestListResponse>>())!.Data!;
         Assert.DoesNotContain(visitorBody.Interests, item => item.Id == created.Id);
@@ -174,7 +174,7 @@ public sealed class InterestTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<AdminInterestSummary>>())!.Data!.Id;
         await DeleteAuthAsync($"/api/v1/admin/interests/{dormantId}", adminToken);
 
-        var visitorList = await GetAuthAsync("/api/v1/account/interests", adminToken);
+        var visitorList = await GetAuthAsync("/api/v1/app/account/interests", adminToken);
         var body = (await visitorList.Content
             .ReadFromJsonAsync<ApiResult<InterestListResponse>>())!.Data!;
         Assert.DoesNotContain(body.Interests, item => item.Id == dormantId);
@@ -233,7 +233,7 @@ public sealed class InterestTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email,

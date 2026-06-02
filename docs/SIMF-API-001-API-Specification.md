@@ -4,7 +4,7 @@
 |-------|-------|
 | Document ID | SIMF-API-001 |
 | Title | API Specification |
-| Version | 1.2 |
+| Version | 1.3 |
 | Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
@@ -20,6 +20,7 @@
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. API conventions and the authentication surface. Feature endpoints follow as their requirements close. |
 | 1.1 | 2026-05-20 | Engineering & Architecture Team | Specified the password-reset flow in §12.7 (forgot-password / reset-password, six-digit email OTP on ASP.NET Core Identity; reset-password revokes the account's refresh tokens); added AUTH_RESET_CODE_INVALID and AUTH_RESET_CODE_EXPIRED to §12.6; closed open item OI-3. |
 | 1.2 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): added the `verify-otp` and `change-password` endpoints; added `AUTH_ACCOUNT_LOCKED`, `AUTH_OTP_INVALID`, `AUTH_OTP_EXPIRED`, `AUTH_OTP_TOKEN_INVALID`, `AUTH_PASSWORD_CHANGE_REQUIRED`; scoped `X-Anti-Forgery` to the Blazor cookie surfaces. |
+| 1.3 | 2026-06-03 | Engineering & Architecture Team | **App/CP route split (D-247).** The single API is segmented by audience into two route groups: the App + public surface under `/api/v1/app/*` and the Control-Panel/admin surface under `/api/v1/admin/*`. Two OpenAPI documents are now emitted (`SIMF App API`, `SIMF CP API`). §3 (principles 2 & 5), §4, and §13 amended accordingly. The split is structural only — one deployable API, one envelope, one error model, one header set; no contract bodies changed. |
 
 ---
 
@@ -45,12 +46,19 @@ conventions, as each feature's requirements close.
 1. One predictable response shape for everything. A client parses success and
    failure the same way every time.
 2. The API is the only door. The website, the Control Panel and the mobile app
-   all go through it. No client gets a private side channel.
+   all go through it. No client gets a private side channel. The one API is
+   segmented by audience into two route groups — the App + public surface under
+   `/api/v1/app/*` and the Control-Panel/admin surface under `/api/v1/admin/*`
+   (§4, D-247) — each with its own OpenAPI document (§13). It remains one
+   deployable API behind one base path.
 3. Endpoints are explicit about authorisation. An endpoint states what it needs;
    nothing is open by default.
 4. The contract is stable. A breaking change means a new API version, not a
    quiet change to an existing one.
-5. The API is the same for every client. Device differences are carried in a
+5. The API separates **audiences** by route, not **devices**. The App + public
+   surface (`/api/v1/app/*`) and the Control-Panel surface (`/api/v1/admin/*`)
+   are distinct route groups (§4, D-247). Within a surface, device differences
+   (for example web versus mobile on the App surface) are still carried in a
    header, not in separate endpoints.
 
 ## 4. Base URL and versioning
@@ -65,6 +73,20 @@ The version in the path is the major version. A breaking change to a contract
 introduces `/api/v2`; `/api/v1` keeps working until its clients have moved.
 Non-breaking additions — a new optional field, a new endpoint — do not change
 the version.
+
+Within the version, the API is split into two audience route groups (D-247):
+
+```
+/api/v1/app/      App + public surface — mobile app, website public reads,
+                  authentication, account, sessions, gates-operator, etc.
+/api/v1/admin/    Control-Panel / administrative surface
+```
+
+Each group is published as its own OpenAPI document (§13). The split is
+structural only: one deployable API, one `ApiResult<T>` envelope, one error
+model, one standard header set. An App developer works the `/app/*` surface
+without seeing admin endpoints, and the two surfaces can be extracted into
+separate projects later without changing any client contract.
 
 ## 5. Standard request headers
 
@@ -600,13 +622,16 @@ registered.
 
 ## 13. OpenAPI
 
-FastEndpoints generates an OpenAPI (Swagger) description of the API. The
-generated description is the live, machine-readable contract; this document is
-the human explanation of the conventions and the intent behind it. The two are
-kept in step: an endpoint change updates both.
+FastEndpoints generates the OpenAPI (Swagger) description of the API. Following
+the audience split (§4, D-247) it emits **two** documents — `SIMF App API`
+(the `/api/v1/app/*` surface) and `SIMF CP API` (the `/api/v1/admin/*`
+surface) — each the live, machine-readable contract for its audience, filtered
+by route group. This document is the human explanation of the conventions
+behind both. They are kept in step: an endpoint change updates the document for
+its surface.
 
-In non-production environments the Swagger UI is available for developers and
-testers. In production it is disabled.
+In non-production environments the Swagger UI exposes both documents for
+developers and testers. In production it is disabled.
 
 ## 14. Conventions for future endpoints
 

@@ -17,7 +17,7 @@ public sealed class TotpDisableEndpoint(ITotpEnrollmentService totpEnrollment)
 {
     public override void Configure()
     {
-        Post("/auth/totp/disable");
+        Post("/app/auth/totp/disable");
         Tags("Authentication");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

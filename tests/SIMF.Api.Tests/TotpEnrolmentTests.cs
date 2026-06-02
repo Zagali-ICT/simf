@@ -31,7 +31,7 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
     public async Task Setup_returns_a_secret_an_otpauth_uri_and_a_qr_svg()
     {
         var (token, _, _) = await SignInAsync();
-        var response = await PostAuthAsync<object>("/api/v1/auth/totp/setup", null, token);
+        var response = await PostAuthAsync<object>("/api/v1/app/auth/totp/setup", null, token);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<TotpSetupResponse>>())!;
@@ -46,13 +46,13 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
     {
         var (token, email, _) = await SignInAsync();
         var setup = await ReadAsync<TotpSetupResponse>(
-            await PostAuthAsync<object>("/api/v1/auth/totp/setup", null, token));
+            await PostAuthAsync<object>("/api/v1/app/auth/totp/setup", null, token));
 
         var bytes = Base32Encoding.ToBytes(setup.Secret);
         var code = new Totp(bytes).ComputeTotp(DateTime.UtcNow);
 
         var response = await PostAuthAsync(
-            "/api/v1/auth/totp/confirm", new TotpConfirmRequest { Code = code }, token);
+            "/api/v1/app/auth/totp/confirm", new TotpConfirmRequest { Code = code }, token);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<TotpConfirmResponse>>())!;
@@ -73,10 +73,10 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
     public async Task Confirm_with_a_wrong_code_returns_400()
     {
         var (token, _, _) = await SignInAsync();
-        await PostAuthAsync<object>("/api/v1/auth/totp/setup", null, token);
+        await PostAuthAsync<object>("/api/v1/app/auth/totp/setup", null, token);
 
         var response = await PostAuthAsync(
-            "/api/v1/auth/totp/confirm", new TotpConfirmRequest { Code = "000000" }, token);
+            "/api/v1/app/auth/totp/confirm", new TotpConfirmRequest { Code = "000000" }, token);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -89,7 +89,7 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
         var (token, _, _) = await SignInAsync();
 
         var response = await PostAuthAsync(
-            "/api/v1/auth/totp/confirm", new TotpConfirmRequest { Code = "123456" }, token);
+            "/api/v1/app/auth/totp/confirm", new TotpConfirmRequest { Code = "123456" }, token);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -101,24 +101,24 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
     {
         var (token, email, refreshToken) = await SignInAsync();
         var setup = await ReadAsync<TotpSetupResponse>(
-            await PostAuthAsync<object>("/api/v1/auth/totp/setup", null, token));
+            await PostAuthAsync<object>("/api/v1/app/auth/totp/setup", null, token));
 
         var bytes = Base32Encoding.ToBytes(setup.Secret);
         var enableCode = new Totp(bytes).ComputeTotp(DateTime.UtcNow);
         await PostAuthAsync(
-            "/api/v1/auth/totp/confirm", new TotpConfirmRequest { Code = enableCode }, token);
+            "/api/v1/app/auth/totp/confirm", new TotpConfirmRequest { Code = enableCode }, token);
 
         // Confirming TOTP rolls the security stamp; the old access token is
         // now rejected. Rotate to a fresh pair via the refresh endpoint.
         var refreshed = await ReadAsync<AuthTokens>(await _client.PostAsJsonAsync(
-            "/api/v1/auth/refresh", new RefreshRequest { RefreshToken = refreshToken }));
+            "/api/v1/app/auth/refresh", new RefreshRequest { RefreshToken = refreshToken }));
 
         // Wait one full step so the disable code is a different time-step
         // than the one used by Confirm — otherwise the replay guard rejects.
         await Task.Delay(TimeSpan.FromSeconds(31));
         var disableCode = new Totp(bytes).ComputeTotp(DateTime.UtcNow);
         var response = await PostAuthAsync(
-            "/api/v1/auth/totp/disable",
+            "/api/v1/app/auth/totp/disable",
             new TotpDisableRequest { Code = disableCode },
             refreshed.AccessToken);
 
@@ -136,7 +136,7 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
         var (token, _, _) = await SignInAsync();
 
         var response = await PostAuthAsync(
-            "/api/v1/auth/totp/disable", new TotpDisableRequest { Code = "123456" }, token);
+            "/api/v1/app/auth/totp/disable", new TotpDisableRequest { Code = "123456" }, token);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -146,7 +146,7 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Setup_without_a_bearer_token_returns_401()
     {
-        var response = await _client.PostAsync("/api/v1/auth/totp/setup", null);
+        var response = await _client.PostAsync("/api/v1/app/auth/totp/setup", null);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -160,7 +160,7 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
         var (token, _, _) = await SignInAsync();
 
         var response = await PostAuthAsync(
-            "/api/v1/auth/totp/confirm", new TotpConfirmRequest { Code = "123456" }, token);
+            "/api/v1/app/auth/totp/confirm", new TotpConfirmRequest { Code = "123456" }, token);
 
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
         Assert.False(string.IsNullOrWhiteSpace(body.Error!.Message));
@@ -175,7 +175,7 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
         // Profile page to enrol" rather than as an error.
         var (token, _, _) = await SignInAsync();
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/auth/totp/pairing");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/app/auth/totp/pairing");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var response = await _client.SendAsync(request);
 
@@ -191,19 +191,19 @@ public sealed class TotpEnrolmentTests : IClassFixture<SimfApiFactory>
         // rotates a candidate secret on every call.
         var (token, _, refreshToken) = await SignInAsync();
         var setup = await ReadAsync<TotpSetupResponse>(
-            await PostAuthAsync<object>("/api/v1/auth/totp/setup", null, token));
+            await PostAuthAsync<object>("/api/v1/app/auth/totp/setup", null, token));
         var bytes = Base32Encoding.ToBytes(setup.Secret);
         var code = new Totp(bytes).ComputeTotp(DateTime.UtcNow);
         var confirm = await PostAuthAsync(
-            "/api/v1/auth/totp/confirm", new TotpConfirmRequest { Code = code }, token);
+            "/api/v1/app/auth/totp/confirm", new TotpConfirmRequest { Code = code }, token);
         Assert.Equal(HttpStatusCode.OK, confirm.StatusCode);
 
         // Confirming TOTP rolls the security stamp; the old access token is
         // now rejected. Rotate to a fresh pair via the refresh endpoint.
         var refreshed = await ReadAsync<AuthTokens>(await _client.PostAsJsonAsync(
-            "/api/v1/auth/refresh", new RefreshRequest { RefreshToken = refreshToken }));
+            "/api/v1/app/auth/refresh", new RefreshRequest { RefreshToken = refreshToken }));
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/auth/totp/pairing");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/app/auth/totp/pairing");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", refreshed.AccessToken);
         var response = await _client.SendAsync(request);
 

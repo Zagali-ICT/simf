@@ -38,7 +38,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
 
         // 2) Register the public key (authenticated).
         var register = await PostAuthAsync(
-            "/api/v1/auth/device-keys",
+            "/api/v1/app/auth/device-keys",
             new RegisterDeviceKeyRequest
             {
                 PublicKey = publicKeyBase64,
@@ -52,7 +52,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
 
         // 3) Ask for a challenge (anonymous).
         var challengeResponse = await _client.PostAsJsonAsync(
-            $"/api/v1/auth/device-keys/{entry.Id}/challenge", new { });
+            $"/api/v1/app/auth/device-keys/{entry.Id}/challenge", new { });
         Assert.Equal(HttpStatusCode.OK, challengeResponse.StatusCode);
         var challenge = (await challengeResponse.Content
             .ReadFromJsonAsync<ApiResult<DeviceKeyChallenge>>())!.Data!;
@@ -64,7 +64,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
             DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
 
         var signInResponse = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in-with-device-key",
+            "/api/v1/app/auth/sign-in-with-device-key",
             new SignInWithDeviceKeyRequest
             {
                 DeviceKeyId = entry.Id,
@@ -86,7 +86,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
         var publicKeyBase64 = Convert.ToBase64String(ecdsa.ExportSubjectPublicKeyInfo());
 
         var register = await PostAuthAsync(
-            "/api/v1/auth/device-keys",
+            "/api/v1/app/auth/device-keys",
             new RegisterDeviceKeyRequest
             {
                 PublicKey = publicKeyBase64, Algorithm = "ES256", Label = "Test",
@@ -95,7 +95,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<DeviceKeyEntry>>())!.Data!;
 
         var challengeResponse = await _client.PostAsJsonAsync(
-            $"/api/v1/auth/device-keys/{entry.Id}/challenge", new { });
+            $"/api/v1/app/auth/device-keys/{entry.Id}/challenge", new { });
         var challenge = (await challengeResponse.Content
             .ReadFromJsonAsync<ApiResult<DeviceKeyChallenge>>())!.Data!;
 
@@ -106,7 +106,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
             DSASignatureFormat.IeeeP1363FixedFieldConcatenation);
 
         var signInResponse = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in-with-device-key",
+            "/api/v1/app/auth/sign-in-with-device-key",
             new SignInWithDeviceKeyRequest
             {
                 DeviceKeyId = entry.Id,
@@ -124,7 +124,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
         var publicKeyBase64 = Convert.ToBase64String(ecdsa.ExportSubjectPublicKeyInfo());
 
         var register = await PostAuthAsync(
-            "/api/v1/auth/device-keys",
+            "/api/v1/app/auth/device-keys",
             new RegisterDeviceKeyRequest
             {
                 PublicKey = publicKeyBase64, Algorithm = "ES256", Label = "Test",
@@ -133,7 +133,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<DeviceKeyEntry>>())!.Data!;
 
         var challengeResponse = await _client.PostAsJsonAsync(
-            $"/api/v1/auth/device-keys/{entry.Id}/challenge", new { });
+            $"/api/v1/app/auth/device-keys/{entry.Id}/challenge", new { });
         var challenge = (await challengeResponse.Content
             .ReadFromJsonAsync<ApiResult<DeviceKeyChallenge>>())!.Data!;
 
@@ -144,7 +144,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
 
         // First sign-in succeeds.
         var first = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in-with-device-key",
+            "/api/v1/app/auth/sign-in-with-device-key",
             new SignInWithDeviceKeyRequest
             {
                 DeviceKeyId = entry.Id,
@@ -155,7 +155,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
 
         // Replay with the same challenge + signature → 401.
         var replay = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in-with-device-key",
+            "/api/v1/app/auth/sign-in-with-device-key",
             new SignInWithDeviceKeyRequest
             {
                 DeviceKeyId = entry.Id,
@@ -173,7 +173,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
         var publicKeyBase64 = Convert.ToBase64String(ecdsa.ExportSubjectPublicKeyInfo());
 
         var register = await PostAuthAsync(
-            "/api/v1/auth/device-keys",
+            "/api/v1/app/auth/device-keys",
             new RegisterDeviceKeyRequest
             {
                 PublicKey = publicKeyBase64, Algorithm = "ES256", Label = "Test",
@@ -182,11 +182,11 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<DeviceKeyEntry>>())!.Data!;
 
         var revoke = await DeleteAuthAsync(
-            $"/api/v1/auth/device-keys/{entry.Id}", visitor);
+            $"/api/v1/app/auth/device-keys/{entry.Id}", visitor);
         Assert.Equal(HttpStatusCode.OK, revoke.StatusCode);
 
         var challengeResponse = await _client.PostAsJsonAsync(
-            $"/api/v1/auth/device-keys/{entry.Id}/challenge", new { });
+            $"/api/v1/app/auth/device-keys/{entry.Id}/challenge", new { });
         Assert.Equal(HttpStatusCode.Unauthorized, challengeResponse.StatusCode);
         var body = (await challengeResponse.Content
             .ReadFromJsonAsync<ApiResult<object>>())!;
@@ -202,7 +202,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
         var publicKeyBase64 = Convert.ToBase64String(ecdsa.ExportSubjectPublicKeyInfo());
 
         var register = await PostAuthAsync(
-            "/api/v1/auth/device-keys",
+            "/api/v1/app/auth/device-keys",
             new RegisterDeviceKeyRequest
             {
                 PublicKey = publicKeyBase64, Algorithm = "ES256", Label = "A's iPhone",
@@ -213,7 +213,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
         // B tries to delete A's key — must return 404 (the service hides
         // the row from non-owners).
         var revoke = await DeleteAuthAsync(
-            $"/api/v1/auth/device-keys/{entry.Id}", visitorB);
+            $"/api/v1/app/auth/device-keys/{entry.Id}", visitorB);
         Assert.Equal(HttpStatusCode.NotFound, revoke.StatusCode);
     }
 
@@ -223,7 +223,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
         var (visitor, _) = await CreateApprovedVisitorAsync();
 
         var register = await PostAuthAsync(
-            "/api/v1/auth/device-keys",
+            "/api/v1/app/auth/device-keys",
             new RegisterDeviceKeyRequest
             {
                 PublicKey = "not-base64!!!", Algorithm = "ES256", Label = "Bad",
@@ -241,7 +241,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
         var publicKeyBase64 = Convert.ToBase64String(ecdsa.ExportSubjectPublicKeyInfo());
 
         var register = await PostAuthAsync(
-            "/api/v1/auth/device-keys",
+            "/api/v1/app/auth/device-keys",
             new RegisterDeviceKeyRequest
             {
                 PublicKey = publicKeyBase64, Algorithm = "RS256", Label = "Test",
@@ -272,7 +272,7 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
         }
 
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var envelope = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return (envelope.Data!.Tokens!.AccessToken, userId);

@@ -19,7 +19,7 @@ public sealed class UserIdDocumentFetchEndpoint(IUserProfileService service)
 {
     public override void Configure()
     {
-        Get("/account/user-profile/id-image");
+        Get("/app/account/user-profile/id-image");
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

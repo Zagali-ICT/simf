@@ -41,7 +41,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
             new[] { themeId }, start, start.AddHours(1));
 
         // Anonymous client — no Authorization header.
-        var list = await _client.GetAsync("/api/v1/programme/sessions");
+        var list = await _client.GetAsync("/api/v1/app/programme/sessions");
         Assert.Equal(HttpStatusCode.OK, list.StatusCode);
 
         var body = (await list.Content
@@ -66,7 +66,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var earlier = await CreateSessionAsync(admin, hallId, speakerId,
             Array.Empty<Guid>(), day.AddHours(9), day.AddHours(10));
 
-        var list = await _client.GetAsync("/api/v1/programme/sessions");
+        var list = await _client.GetAsync("/api/v1/app/programme/sessions");
         var body = (await list.Content
             .ReadFromJsonAsync<ApiResult<PublicSessions>>())!.Data!;
 
@@ -93,7 +93,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
             Array.Empty<Guid>(), dayTwo.AddHours(9), dayTwo.AddHours(10));
 
         var filter = dayOne.ToString("yyyy-MM-dd");
-        var list = await _client.GetAsync($"/api/v1/programme/sessions?day={filter}");
+        var list = await _client.GetAsync($"/api/v1/app/programme/sessions?day={filter}");
         Assert.Equal(HttpStatusCode.OK, list.StatusCode);
 
         var body = (await list.Content
@@ -105,7 +105,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
     [Fact]
     public async Task Malformed_day_filter_is_rejected_with_400()
     {
-        var list = await _client.GetAsync("/api/v1/programme/sessions?day=not-a-date");
+        var list = await _client.GetAsync("/api/v1/app/programme/sessions?day=not-a-date");
         Assert.Equal(HttpStatusCode.BadRequest, list.StatusCode);
     }
 
@@ -121,7 +121,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var created = await CreateSessionAsync(admin, hallId, speakerId,
             new[] { themeId }, start, start.AddMinutes(45));
 
-        var get = await _client.GetAsync($"/api/v1/programme/sessions/{created.Id}");
+        var get = await _client.GetAsync($"/api/v1/app/programme/sessions/{created.Id}");
         Assert.Equal(HttpStatusCode.OK, get.StatusCode);
 
         var detail = (await get.Content
@@ -153,7 +153,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var created = await CreateSessionAsync(admin, hallId, speakerId,
             Array.Empty<Guid>(), start, start.AddHours(1), capacityOverride: 30);
 
-        var get = await _client.GetAsync($"/api/v1/programme/sessions/{created.Id}");
+        var get = await _client.GetAsync($"/api/v1/app/programme/sessions/{created.Id}");
         var detail = (await get.Content
             .ReadFromJsonAsync<ApiResult<PublicSessionDetail>>())!.Data!;
 
@@ -174,12 +174,12 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
 
         await DeleteAuthAsync($"/api/v1/admin/sessions/{created.Id}", admin);
 
-        var list = await _client.GetAsync("/api/v1/programme/sessions");
+        var list = await _client.GetAsync("/api/v1/app/programme/sessions");
         var body = (await list.Content
             .ReadFromJsonAsync<ApiResult<PublicSessions>>())!.Data!;
         Assert.DoesNotContain(body.Items, i => i.Id == created.Id);
 
-        var get = await _client.GetAsync($"/api/v1/programme/sessions/{created.Id}");
+        var get = await _client.GetAsync($"/api/v1/app/programme/sessions/{created.Id}");
         Assert.Equal(HttpStatusCode.NotFound, get.StatusCode);
     }
 
@@ -187,7 +187,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
     public async Task Unknown_session_id_returns_404()
     {
         var get = await _client.GetAsync(
-            $"/api/v1/programme/sessions/{Guid.NewGuid()}");
+            $"/api/v1/app/programme/sessions/{Guid.NewGuid()}");
         Assert.Equal(HttpStatusCode.NotFound, get.StatusCode);
     }
 
@@ -300,7 +300,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
             await users.AddToRoleAsync(user, AdministratorRole);
         }
         var sign = await _client.PostAsJsonAsync(
-            "/api/v1/auth/sign-in",
+            "/api/v1/app/auth/sign-in",
             new SignInRequest
             {
                 Email = email, Password = AuthFlow.Password,

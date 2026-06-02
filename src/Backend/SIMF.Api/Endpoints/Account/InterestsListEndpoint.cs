@@ -17,7 +17,7 @@ public sealed class InterestsListEndpoint(IInterestService service)
 {
     public override void Configure()
     {
-        Get("/account/interests");
+        Get("/app/account/interests");
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

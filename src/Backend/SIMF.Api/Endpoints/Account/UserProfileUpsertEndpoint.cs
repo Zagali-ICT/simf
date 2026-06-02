@@ -19,7 +19,7 @@ public sealed class UserProfileUpsertEndpoint(IUserProfileService service)
 {
     public override void Configure()
     {
-        Post("/account/user-profile");
+        Post("/app/account/user-profile");
         Tags("Account");
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
         Summary(summary => summary.Summary =

@@ -23,7 +23,7 @@ public sealed class AvatarUploadEndpoint(IAccountService accountService)
 {
     public override void Configure()
     {
-        Post("/account/avatar");
+        Post("/app/account/avatar");
         Tags("Account");
         AllowFileUploads();
         Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
