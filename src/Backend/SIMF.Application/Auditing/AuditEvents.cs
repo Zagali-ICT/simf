@@ -189,6 +189,9 @@ public static class AuditEvents
     // P3.2b — D-232: session-recording attach / delete.
     public const string SessionRecordingUploaded = "Session.RecordingUploaded";
     public const string SessionRecordingDeleted = "Session.RecordingDeleted";
+    // P5.1 — D-241 (FDS-003 §5.4): hall arrival / departure (geofence or QR door scan).
+    public const string HallArrivalRecorded = "HallAttendance.ArrivalRecorded";
+    public const string HallDepartureRecorded = "HallAttendance.DepartureRecorded";
     // P4.1 — D-238: AI session-summary / محضر committee actions.
     public const string SessionSummaryGenerated = "SessionSummary.Generated";
     public const string SessionSummarySaved = "SessionSummary.Saved";

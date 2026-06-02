@@ -212,6 +212,9 @@ public static class DependencyInjection
         // the central IAiService seam; publishes for the app read in D-237).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSessionSummaryService,
             SIMF.Infrastructure.Programme.AdminSessionSummaryService>();
+        // P5.1 — D-241: attendee-facing hall arrival/departure via GPS geofence.
+        services.AddScoped<SIMF.Application.Programme.Abstractions.IHallAttendanceService,
+            SIMF.Infrastructure.Programme.HallAttendanceService>();
         // P3.2b — D-232 (D-213): out-of-row session-recording storage (streamed
         // both ways, range-served behind a short-lived stream token).
         services.Configure<SIMF.Infrastructure.Programme.SessionRecordingStorageOptions>(

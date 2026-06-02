@@ -277,6 +277,8 @@ public static class ErrorCodes
     public const string SessionHallNotFound = "SESSION_HALL_NOT_FOUND";
     // P5.1 — D-240: hall geofence invalid (partial set, or out-of-range lat/lon/radius).
     public const string HallGeofenceInvalid = "HALL_GEOFENCE_INVALID";
+    // P5.1 — D-241: GPS arrival attempted at a hall with no geofence configured.
+    public const string HallGeofenceNotConfigured = "HALL_GEOFENCE_NOT_CONFIGURED";
     public const string SessionSpeakerNotFound = "SESSION_SPEAKER_NOT_FOUND";
     public const string SessionThemeNotFound = "SESSION_THEME_NOT_FOUND";
     // P3.2 — D-231: illegal broadcast-lifecycle transition (e.g. skipping a step).
