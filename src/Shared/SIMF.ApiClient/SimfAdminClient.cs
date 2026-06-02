@@ -1280,6 +1280,43 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"session-moderators/{sessionId}/{userId}", content: null,
             accessToken, cancellationToken);
 
+    // P3.3 — D-234: Scientific-Committee Q&A queue (admin base, /admin/questions/*).
+    public Task<ApiCallResult<IReadOnlyList<SIMF.Contracts.Sessions.SessionQuestionQueueRow>>>
+        ListQuestionQueueAsync(
+            SIMF.Common.Enums.QuestionStatus? status, Guid? sessionId,
+            string accessToken, CancellationToken cancellationToken = default)
+    {
+        var parts = new List<string>();
+        if (status is { } s) { parts.Add($"status={s}"); }
+        if (sessionId is { } sid) { parts.Add($"sessionId={sid}"); }
+        var qs = parts.Count > 0 ? "?" + string.Join("&", parts) : string.Empty;
+        return SendAsync<IReadOnlyList<SIMF.Contracts.Sessions.SessionQuestionQueueRow>>(
+            HttpMethod.Get, $"questions/queue{qs}", content: null,
+            accessToken, cancellationToken);
+    }
+
+    public Task<ApiCallResult<SIMF.Contracts.Sessions.SessionQuestionQueueRow>>
+        ApproveQuestionAsync(Guid questionId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<SIMF.Contracts.Sessions.SessionQuestionQueueRow>(
+            HttpMethod.Put, $"questions/{questionId}/approve", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SIMF.Contracts.Sessions.SessionQuestionQueueRow>>
+        HideQuestionFromQueueAsync(Guid questionId, string accessToken,
+            CancellationToken cancellationToken = default) =>
+        SendAsync<SIMF.Contracts.Sessions.SessionQuestionQueueRow>(
+            HttpMethod.Put, $"questions/{questionId}/hide", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<SIMF.Contracts.Sessions.SessionQuestionQueueRow>>
+        EscalateQuestionAsync(Guid questionId, SIMF.Contracts.Sessions.EscalateQuestionRequest request,
+            string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<SIMF.Contracts.Sessions.SessionQuestionQueueRow>(
+            HttpMethod.Put, $"questions/{questionId}/escalate",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     public Task<ApiCallResult<IReadOnlyList<SIMF.Contracts.Sessions.SessionQuestionModeratorRow>>>
         ListModeratorQueueAsync(Guid sessionId, string accessToken,
             CancellationToken cancellationToken = default) =>

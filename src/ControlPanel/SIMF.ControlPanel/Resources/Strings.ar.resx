@@ -1534,6 +1534,29 @@
   <data name="Admin.Vips.Notify.Sent" xml:space="preserve"><value>تم الإرسال إلى {0} ضيفاً ({1} بريداً إلكترونياً).</value></data>
   <data name="Admin.Vips.Notify.Failed" xml:space="preserve"><value>تعذّر إرسال الرسالة.</value></data>
   <data name="Module.SessionModerators" xml:space="preserve"><value>مشرفو الجلسات</value></data>
+  <data name="Module.QuestionQueue" xml:space="preserve"><value>قائمة الأسئلة</value></data>
+  <data name="Admin.QuestionQueue.Title" xml:space="preserve"><value>قائمة الأسئلة</value></data>
+  <data name="Admin.QuestionQueue.None" xml:space="preserve"><value>لا توجد أسئلة بانتظار المراجعة.</value></data>
+  <data name="Admin.QuestionQueue.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.QuestionQueue.LoadFailed" xml:space="preserve"><value>تعذّر تحميل قائمة الأسئلة.</value></data>
+  <data name="Admin.QuestionQueue.Fallback" xml:space="preserve"><value>تعذّر إكمال الإجراء.</value></data>
+  <data name="Admin.QuestionQueue.Col.Session" xml:space="preserve"><value>الجلسة</value></data>
+  <data name="Admin.QuestionQueue.Col.Question" xml:space="preserve"><value>السؤال</value></data>
+  <data name="Admin.QuestionQueue.Col.Submitter" xml:space="preserve"><value>مقدّم السؤال</value></data>
+  <data name="Admin.QuestionQueue.Col.Phase" xml:space="preserve"><value>المرحلة</value></data>
+  <data name="Admin.QuestionQueue.Col.Ai" xml:space="preserve"><value>حكم الذكاء الاصطناعي</value></data>
+  <data name="Admin.QuestionQueue.Action.Approve" xml:space="preserve"><value>اعتماد</value></data>
+  <data name="Admin.QuestionQueue.Action.Hide" xml:space="preserve"><value>إخفاء</value></data>
+  <data name="Admin.QuestionQueue.Action.Escalate" xml:space="preserve"><value>تصعيد</value></data>
+  <data name="Admin.QuestionQueue.Approved" xml:space="preserve"><value>تم اعتماد السؤال.</value></data>
+  <data name="Admin.QuestionQueue.Hidden" xml:space="preserve"><value>تم إخفاء السؤال.</value></data>
+  <data name="Admin.QuestionQueue.Escalated" xml:space="preserve"><value>تم تصعيد السؤال.</value></data>
+  <data name="Admin.QuestionQueue.Escalate.Title" xml:space="preserve"><value>التصعيد إلى دور</value></data>
+  <data name="Admin.QuestionQueue.Escalate.Role" xml:space="preserve"><value>الدور</value></data>
+  <data name="Admin.QuestionQueue.Escalate.Submit" xml:space="preserve"><value>تصعيد</value></data>
+  <data name="Admin.QuestionQueue.Escalate.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.QuestionQueue.Phase.Pre" xml:space="preserve"><value>قبل</value></data>
+  <data name="Admin.QuestionQueue.Phase.Live" xml:space="preserve"><value>مباشر</value></data>
   <data name="Admin.SessionModerators.Title" xml:space="preserve"><value>مشرفو الجلسات</value></data>
   <data name="Admin.SessionModerators.Loading" xml:space="preserve"><value>جارٍ تحميل المشرفين…</value></data>
   <data name="Admin.SessionModerators.LoadFailed" xml:space="preserve"><value>تعذّر تحميل مشرفي الجلسات.</value></data>

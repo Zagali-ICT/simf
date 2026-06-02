@@ -234,6 +234,9 @@ public static class DependencyInjection
             SIMF.Infrastructure.SessionQuestions.SessionModerationService>();
         services.AddScoped<SIMF.Application.SessionQuestions.Abstractions.IAdminSessionModeratorService,
             SIMF.Infrastructure.SessionQuestions.AdminSessionModeratorService>();
+        // P3.3 — D-212/D-234: Scientific-Committee central Q&A queue (stage 2).
+        services.AddScoped<SIMF.Application.SessionQuestions.Abstractions.ISessionQuestionCommitteeService,
+            SIMF.Infrastructure.SessionQuestions.SessionQuestionCommitteeService>();
         // D-170 (gap doc G9) — "Meet People Like You" interest-intersection
         // ranker (PDF §2.8). Read-only service over UserProfile.Interests.
         services.AddScoped<SIMF.Application.Recommendations.Abstractions.IRecommendationService,

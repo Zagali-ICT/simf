@@ -201,6 +201,9 @@ public static class AuditEvents
 
     // Venue self-assert (D-171, gap doc G7 — PDF §2.10)
     public const string SessionQuestionRejectedNotAtVenue = "SessionQuestion.RejectedNotAtVenue";
+    // P3.3 — D-212: Scientific-Committee pipeline actions.
+    public const string SessionQuestionApproved = "SessionQuestion.Approved";
+    public const string SessionQuestionEscalated = "SessionQuestion.Escalated";
 
     // Audience comments (D-199, Mockup page 28 — public submit + AI-filter
     // landing state + admin moderation; distinct from SessionQuestion)

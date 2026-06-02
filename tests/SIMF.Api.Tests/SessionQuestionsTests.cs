@@ -106,15 +106,26 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Moderator_queue_lists_all_questions_with_submitter_projection()
+    public async Task Moderator_queue_lists_committee_approved_questions_with_submitter_projection()
     {
         var admin = await CreateAdministratorAndSignInAsync();
         var (session, _) = await SeedLiveSessionAsync();
         var visitor = await SignInApprovedVisitorAsync();
-        await PostAuthAsync(
+        var submit = await PostAuthAsync(
             $"/api/v1/sessions/{session.Id}/questions",
             new SubmitSessionQuestionRequest { QuestionText = "Q1", IsAtVenue = true },
             visitor.AccessToken);
+        var qid = (await submit.Content
+            .ReadFromJsonAsync<ApiResult<SessionQuestionSubmitted>>())!.Data!.Id;
+
+        // P3.3 — D-212: a Pending question is NOT on the moderator desk yet.
+        var pending = await GetAuthAsync(
+            $"/api/v1/sessions/{session.Id}/questions/moderate", admin);
+        Assert.Empty((await pending.Content
+            .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>>())!.Data!);
+
+        // The Committee approves it (stage 2); then the desk shows it (stage 3).
+        await PutAuthAsync($"/api/v1/admin/questions/{qid}/approve", new { }, admin);
 
         var response = await GetAuthAsync(
             $"/api/v1/sessions/{session.Id}/questions/moderate", admin);
@@ -122,6 +133,7 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
         var rows = (await response.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>>())!.Data!;
         Assert.Single(rows);
+        Assert.Equal(QuestionStatus.Approved, rows[0].Status);
         Assert.False(string.IsNullOrEmpty(rows[0].SubmittedByDisplayName));
     }
 
@@ -206,6 +218,11 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
             },
             visitor.AccessToken);
         Assert.Equal(HttpStatusCode.OK, submit.StatusCode);
+        var qid = (await submit.Content
+            .ReadFromJsonAsync<ApiResult<SessionQuestionSubmitted>>())!.Data!.Id;
+
+        // P3.3 — D-212: approve it through the Committee so it reaches the desk.
+        await PutAuthAsync($"/api/v1/admin/questions/{qid}/approve", new { }, admin);
 
         var queue = await GetAuthAsync(
             $"/api/v1/sessions/{session.Id}/questions/moderate", admin);

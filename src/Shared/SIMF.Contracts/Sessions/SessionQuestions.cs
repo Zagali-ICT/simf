@@ -50,7 +50,45 @@ public sealed record SessionQuestionModeratorRow(
     bool IsHidden,
     bool IsPushed,
     DateTimeOffset? PushedAt,
+    DateTimeOffset CreatedAt,
+    // P3.3 — D-212: pipeline phase + status (appended; wire preserved).
+    QuestionPhase Phase = QuestionPhase.Live,
+    QuestionStatus Status = QuestionStatus.Approved);
+
+/// <summary>P3.3 — D-212 (Completion Programme §5.3): one row in the Scientific
+/// Committee's central queue (stage 2). Carries the session title + submitter
+/// projection so the queue needs no second fetch, plus the AI advisory verdict
+/// (stage 1) and any escalation routing.</summary>
+public sealed record SessionQuestionQueueRow(
+    Guid Id,
+    Guid SessionId,
+    string SessionTitle,
+    Guid SubmittedByUserId,
+    string SubmittedByDisplayName,
+    string? SubmittedByEmail,
+    string QuestionText,
+    SessionQuestionRecipient Recipient,
+    QuestionPhase Phase,
+    QuestionStatus Status,
+    string? AiFilterVerdict,
+    string? AssignedToRole,
     DateTimeOffset CreatedAt);
+
+/// <summary>P3.3 — D-212: committee filter for the queue list. Null status =
+/// the default Pending queue.</summary>
+public sealed class ListQuestionQueueRequest
+{
+    public QuestionStatus? Status { get; set; }
+    public Guid? SessionId { get; set; }
+}
+
+/// <summary>P3.3 — D-212: committee action — escalate a question "to a team"
+/// (a role, not an individual). The role name is free text matched against the
+/// app's roles by the owner's convention.</summary>
+public sealed class EscalateQuestionRequest
+{
+    public string Role { get; set; } = string.Empty;
+}
 
 /// <summary>D-169 — moderator action: hide / unhide one question.
 /// <see cref="IsHidden"/> is the target state (idempotent).</summary>

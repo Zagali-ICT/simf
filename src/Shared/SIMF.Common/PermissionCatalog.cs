@@ -263,6 +263,17 @@ public static class PermissionCatalog
         public const string Moderate = "SessionModeration.Moderate";
     }
 
+    /// <summary>P3.3 — D-212: the Scientific-Committee central Q&amp;A queue
+    /// (stage 2 of the pipeline). The "Scientific Committee" is a role = a
+    /// bundle of these + the programme codes, created by the owner in the
+    /// grant editor (D-207/D-208) — not new infrastructure.</summary>
+    public static class Questions
+    {
+        public const string View = "Questions.View";
+        public const string Moderate = "Questions.Moderate";
+        public const string Escalate = "Questions.Escalate";
+    }
+
     // ── Exhibition ───────────────────────────────────────────────────────
 
     public static class Companies
@@ -581,6 +592,11 @@ public static class PermissionCatalog
         new(SessionModerators.Revoke, "SessionModerators", "Revoke", "Revoke session moderators", AdminOnly),
 
         new(SessionModeration.Moderate, "SessionModeration", "Moderate", "Moderate a live session", AdminOnly),
+
+        // P3.3 — D-212: Scientific-Committee central Q&A queue.
+        new(Questions.View, "Questions", "View", "View the question queue", AdminOnly),
+        new(Questions.Moderate, "Questions", "Moderate", "Approve / hide questions", AdminOnly),
+        new(Questions.Escalate, "Questions", "Escalate", "Escalate questions to a role", AdminOnly),
 
         // Exhibition
         new(Companies.View, "Companies", "View", "View companies", AdminOnly),

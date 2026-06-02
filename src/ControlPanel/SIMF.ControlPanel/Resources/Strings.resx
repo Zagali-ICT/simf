@@ -1541,6 +1541,29 @@
   <data name="Admin.Vips.Notify.Sent" xml:space="preserve"><value>Sent to {0} VIPs ({1} emails enqueued).</value></data>
   <data name="Admin.Vips.Notify.Failed" xml:space="preserve"><value>The broadcast could not be sent.</value></data>
   <data name="Module.SessionModerators" xml:space="preserve"><value>Session moderators</value></data>
+  <data name="Module.QuestionQueue" xml:space="preserve"><value>Question queue</value></data>
+  <data name="Admin.QuestionQueue.Title" xml:space="preserve"><value>Question queue</value></data>
+  <data name="Admin.QuestionQueue.None" xml:space="preserve"><value>No questions awaiting review.</value></data>
+  <data name="Admin.QuestionQueue.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.QuestionQueue.LoadFailed" xml:space="preserve"><value>Could not load the question queue.</value></data>
+  <data name="Admin.QuestionQueue.Fallback" xml:space="preserve"><value>The action could not be completed.</value></data>
+  <data name="Admin.QuestionQueue.Col.Session" xml:space="preserve"><value>Session</value></data>
+  <data name="Admin.QuestionQueue.Col.Question" xml:space="preserve"><value>Question</value></data>
+  <data name="Admin.QuestionQueue.Col.Submitter" xml:space="preserve"><value>Submitter</value></data>
+  <data name="Admin.QuestionQueue.Col.Phase" xml:space="preserve"><value>Phase</value></data>
+  <data name="Admin.QuestionQueue.Col.Ai" xml:space="preserve"><value>AI verdict</value></data>
+  <data name="Admin.QuestionQueue.Action.Approve" xml:space="preserve"><value>Approve</value></data>
+  <data name="Admin.QuestionQueue.Action.Hide" xml:space="preserve"><value>Hide</value></data>
+  <data name="Admin.QuestionQueue.Action.Escalate" xml:space="preserve"><value>Escalate</value></data>
+  <data name="Admin.QuestionQueue.Approved" xml:space="preserve"><value>Question approved.</value></data>
+  <data name="Admin.QuestionQueue.Hidden" xml:space="preserve"><value>Question hidden.</value></data>
+  <data name="Admin.QuestionQueue.Escalated" xml:space="preserve"><value>Question escalated.</value></data>
+  <data name="Admin.QuestionQueue.Escalate.Title" xml:space="preserve"><value>Escalate to a role</value></data>
+  <data name="Admin.QuestionQueue.Escalate.Role" xml:space="preserve"><value>Role</value></data>
+  <data name="Admin.QuestionQueue.Escalate.Submit" xml:space="preserve"><value>Escalate</value></data>
+  <data name="Admin.QuestionQueue.Escalate.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.QuestionQueue.Phase.Pre" xml:space="preserve"><value>Pre</value></data>
+  <data name="Admin.QuestionQueue.Phase.Live" xml:space="preserve"><value>Live</value></data>
   <data name="Admin.SessionModerators.Title" xml:space="preserve"><value>Session moderators</value></data>
   <data name="Admin.SessionModerators.Loading" xml:space="preserve"><value>Loading moderators…</value></data>
   <data name="Admin.SessionModerators.LoadFailed" xml:space="preserve"><value>The session moderators could not be loaded.</value></data>

@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/SessionQuestionsTests.cs
+// Tests: SIMF.Api.Tests/SessionQuestionCommitteeTests.cs (P3.3 — D-234 desk = Approved set)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -25,9 +26,13 @@ internal sealed class SessionModerationService(
     public async Task<IReadOnlyList<SessionQuestionModeratorRow>> ListAsync(
         Guid sessionId, CancellationToken cancellationToken = default)
     {
+        // P3.3 — D-212: the desk shows the Committee-approved set only (stage 3).
+        // Pending questions await the Committee (stage 2); Hidden ones were
+        // rejected. Recovery of a hidden question is via the Committee queue
+        // (its status=Hidden filter), not this desk.
         var rows = await appDbContext.SessionQuestions
             .AsNoTracking()
-            .Where(q => q.SessionId == sessionId)
+            .Where(q => q.SessionId == sessionId && q.Status == QuestionStatus.Approved)
             .OrderBy(q => q.Order).ThenBy(q => q.CreatedAt)
             .Select(q => new
             {
@@ -37,10 +42,11 @@ internal sealed class SessionModerationService(
                 q.QuestionText,
                 q.Recipient,
                 q.Order,
-                q.IsHidden,
                 q.IsPushed,
                 q.PushedAt,
                 q.CreatedAt,
+                q.Phase,
+                q.Status,
             })
             .ToListAsync(cancellationToken);
 
@@ -68,10 +74,12 @@ internal sealed class SessionModerationService(
                 r.QuestionText,
                 r.Recipient,
                 r.Order,
-                r.IsHidden,
+                r.Status == QuestionStatus.Hidden,
                 r.IsPushed,
                 r.PushedAt,
-                r.CreatedAt);
+                r.CreatedAt,
+                r.Phase,
+                r.Status);
         }).ToList();
     }
 
@@ -84,11 +92,15 @@ internal sealed class SessionModerationService(
     {
         var question = await LoadQuestionAsync(sessionId, questionId, cancellationToken);
 
-        if (question.IsHidden == isHidden)
+        // P3.3 — D-212: Status is the single source of truth for visibility; the
+        // row's IsHidden marker is derived from it. Hide → Hidden, un-hide →
+        // Approved. (The persisted IsHidden column is no longer written.)
+        var currentlyHidden = question.Status == QuestionStatus.Hidden;
+        if (currentlyHidden == isHidden)
         {
             return await ToRowAsync(question, cancellationToken); // idempotent
         }
-        question.IsHidden = isHidden;
+        question.Status = isHidden ? QuestionStatus.Hidden : QuestionStatus.Approved;
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
@@ -226,9 +238,11 @@ internal sealed class SessionModerationService(
             question.QuestionText,
             question.Recipient,
             question.Order,
-            question.IsHidden,
+            question.Status == QuestionStatus.Hidden,
             question.IsPushed,
             question.PushedAt,
-            question.CreatedAt);
+            question.CreatedAt,
+            question.Phase,
+            question.Status);
     }
 }

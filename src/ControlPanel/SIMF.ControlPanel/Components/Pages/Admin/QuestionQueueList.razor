@@ -1,0 +1,197 @@
+@* P3.3 — D-234 (Completion Programme §5.3): the Scientific-Committee central
+   Q&A queue (stage 2). Lists Pending questions across sessions; approve / hide /
+   escalate-to-a-role. Gated by Questions.* — the approved set then flows to the
+   per-session moderator desk (stage 3). *@
+@page "/admin/question-queue"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Questions.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.QuestionQueue.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.QuestionQueue.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        @if (_loading)
+        {
+            <p>@L["Admin.QuestionQueue.Loading"]</p>
+        }
+        else if (_rows.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.QuestionQueue.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.QuestionQueue.Col.Session"]</th>
+                        <th>@L["Admin.QuestionQueue.Col.Question"]</th>
+                        <th>@L["Admin.QuestionQueue.Col.Submitter"]</th>
+                        <th>@L["Admin.QuestionQueue.Col.Phase"]</th>
+                        <th>@L["Admin.QuestionQueue.Col.Ai"]</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _rows)
+                    {
+                        <tr>
+                            <td>@row.SessionTitle</td>
+                            <td>@row.QuestionText</td>
+                            <td>@row.SubmittedByDisplayName</td>
+                            <td>@PhaseLabel(row.Phase)</td>
+                            <td>@(row.AiFilterVerdict ?? "—")</td>
+                            <td>
+                                <AuthorizedAction Permission="@PermissionCatalog.Questions.Moderate">
+                                    <SimfButton Type="button" Disabled="_busy"
+                                                OnClick="@(() => ApproveAsync(row.Id))">
+                                        @L["Admin.QuestionQueue.Action.Approve"]
+                                    </SimfButton>
+                                    <SimfButton Type="button" Disabled="_busy"
+                                                OnClick="@(() => HideAsync(row.Id))">
+                                        @L["Admin.QuestionQueue.Action.Hide"]
+                                    </SimfButton>
+                                </AuthorizedAction>
+                                <AuthorizedAction Permission="@PermissionCatalog.Questions.Escalate">
+                                    <SimfButton Type="button" Disabled="_busy"
+                                                OnClick="@(() => OpenEscalate(row.Id))">
+                                        @L["Admin.QuestionQueue.Action.Escalate"]
+                                    </SimfButton>
+                                </AuthorizedAction>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@if (_escalateId is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.QuestionQueue.Escalate.Title"]"
+               OnClose="@(() => _escalateId = null)">
+        <ChildContent>
+            <SimfTextField Label="@L["Admin.QuestionQueue.Escalate.Role"]"
+                           @bind-Value="_escalateRole" Disabled="_busy" />
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Loading="_busy" OnClick="EscalateAsync">
+                @L["Admin.QuestionQueue.Escalate.Submit"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="@(() => _escalateId = null)">
+                @L["Admin.QuestionQueue.Escalate.Cancel"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private List<SessionQuestionQueueRow> _rows = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private Guid? _escalateId;
+    private string _escalateRole = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<SessionQuestionQueueRow>>>(
+                "simfAccount.getJson", "/account/api/admin/questions/queue");
+            if (envelope is { Success: true, Data: not null })
+            {
+                _rows = envelope.Data.ToList();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.QuestionQueue.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private Task ApproveAsync(Guid id) =>
+        ActAsync($"/account/api/admin/questions/{id}/approve", L["Admin.QuestionQueue.Approved"]);
+
+    private Task HideAsync(Guid id) =>
+        ActAsync($"/account/api/admin/questions/{id}/hide", L["Admin.QuestionQueue.Hidden"]);
+
+    private void OpenEscalate(Guid id)
+    {
+        _escalateId = id;
+        _escalateRole = string.Empty;
+    }
+
+    private async Task EscalateAsync()
+    {
+        if (_escalateId is not { } id) { return; }
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<SessionQuestionQueueRow>>(
+                "simfAccount.putJson",
+                $"/account/api/admin/questions/{id}/escalate",
+                new EscalateQuestionRequest { Role = _escalateRole });
+            if (envelope is { Success: true })
+            {
+                _escalateId = null;
+                _toast = new Toast("success", L["Admin.QuestionQueue.Escalated"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.QuestionQueue.Fallback"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task ActAsync(string url, string successMessage)
+    {
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<SessionQuestionQueueRow>>(
+                "simfAccount.putJson", url, new { });
+            if (envelope is { Success: true })
+            {
+                _toast = new Toast("success", successMessage);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.QuestionQueue.Fallback"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private string PhaseLabel(QuestionPhase phase) =>
+        phase == QuestionPhase.Pre
+            ? L["Admin.QuestionQueue.Phase.Pre"]
+            : L["Admin.QuestionQueue.Phase.Live"];
+}

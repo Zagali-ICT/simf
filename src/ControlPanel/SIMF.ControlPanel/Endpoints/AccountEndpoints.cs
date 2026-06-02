@@ -1340,6 +1340,36 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.RevokeSessionModeratorAsync(sessionId, userId, token));
         });
+        // P3.3 — D-234: Scientific-Committee Q&A queue passthroughs.
+        group.MapGet("/admin/questions/queue",
+            async (QuestionStatus? status, Guid? sessionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListQuestionQueueAsync(status, sessionId, token));
+        });
+        group.MapPut("/admin/questions/{questionId:guid}/approve",
+            async (Guid questionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ApproveQuestionAsync(questionId, token));
+        });
+        group.MapPut("/admin/questions/{questionId:guid}/hide",
+            async (Guid questionId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.HideQuestionFromQueueAsync(questionId, token));
+        });
+        group.MapPut("/admin/questions/{questionId:guid}/escalate",
+            async (Guid questionId, EscalateQuestionRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.EscalateQuestionAsync(questionId, body, token));
+        });
         group.MapGet("/sessions/{sessionId:guid}/questions/moderate",
             async (Guid sessionId, HttpContext http, SimfAdminClient api) =>
         {
