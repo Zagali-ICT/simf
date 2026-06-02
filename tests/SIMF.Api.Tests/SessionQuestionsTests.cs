@@ -51,6 +51,29 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Submit_lands_pending_with_computed_phase()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var (session, _) = await SeedLiveSessionAsync();
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var response = await PostAuthAsync(
+            $"/api/v1/sessions/{session.Id}/questions",
+            new SubmitSessionQuestionRequest { QuestionText = "Pipeline?", IsAtVenue = true },
+            visitor.AccessToken);
+        var id = (await response.Content
+            .ReadFromJsonAsync<ApiResult<SessionQuestionSubmitted>>())!.Data!.Id;
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var row = await db.SessionQuestions.AsNoTracking().SingleAsync(q => q.Id == id);
+        // P3.3 — D-212: every new question awaits the Committee (Pending); a live
+        // session (StartUtc 15 min ago) yields the Live phase.
+        Assert.Equal(QuestionStatus.Pending, row.Status);
+        Assert.Equal(QuestionPhase.Live, row.Phase);
+    }
+
+    [Fact]
     public async Task Submit_outside_live_window_returns_SESSION_NOT_LIVE_FOR_QUESTIONS()
     {
         var admin = await CreateAdministratorAndSignInAsync();

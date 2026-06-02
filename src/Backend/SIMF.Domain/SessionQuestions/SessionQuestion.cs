@@ -63,6 +63,31 @@ public sealed class SessionQuestion
     public DateTimeOffset? PushedAt { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
+
+    /// <summary>P3.3 — D-212: pre-session vs live question. Set at submit time
+    /// from the session's start.</summary>
+    public QuestionPhase Phase { get; set; } = QuestionPhase.Live;
+
+    /// <summary>P3.3 — D-212: the 3-stage pipeline state. New questions are
+    /// <see cref="QuestionStatus.Pending"/> until the Scientific Committee
+    /// approves or hides them.</summary>
+    public QuestionStatus Status { get; set; } = QuestionStatus.Pending;
+
+    /// <summary>P3.3 — D-212 / P4.2: the AI advisory verdict (free-text bucket,
+    /// e.g. "clean" / "flagged"). Advisory only — never auto-hides. Null until
+    /// the question AI filter is wired (P4.2).</summary>
+    public string? AiFilterVerdict { get; set; }
+
+    /// <summary>P3.3 — D-212: when the Committee escalates "to a team", the role
+    /// name it is routed to (a role, not an individual). Null unless escalated.</summary>
+    public string? AssignedToRole { get; set; }
+
+    /// <summary>P3.3 — D-212: the Committee member who escalated. Bare Guid,
+    /// cross-context (Identity DB), no FK (D-157). Null unless escalated.</summary>
+    public Guid? EscalatedByUserId { get; set; }
+
+    /// <summary>P3.3 — D-212: when the question was escalated. Null unless escalated.</summary>
+    public DateTimeOffset? EscalatedAt { get; set; }
 }
 
 /// <summary>

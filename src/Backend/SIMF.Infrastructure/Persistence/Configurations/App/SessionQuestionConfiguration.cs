@@ -18,6 +18,12 @@ internal sealed class SessionQuestionConfiguration : IEntityTypeConfiguration<Se
 
         builder.Property(q => q.QuestionText).HasMaxLength(1000).IsRequired();
 
+        // P3.3 — D-212: Q&A pipeline columns. No HasDefaultValue on Status — the
+        // service always writes an explicit value (the migration backfills
+        // existing rows). Phase/Status stored as int by convention.
+        builder.Property(q => q.AiFilterVerdict).HasMaxLength(256);
+        builder.Property(q => q.AssignedToRole).HasMaxLength(64);
+
         // Real DB FK to Session — same context. Cascade so a Session
         // delete (rare; usually deactivate) takes its questions with
         // it. Reorder + hide stay on the row, not the cascade path.
@@ -28,6 +34,10 @@ internal sealed class SessionQuestionConfiguration : IEntityTypeConfiguration<Se
 
         builder.HasIndex(q => new { q.SessionId, q.IsHidden, q.Order });
         builder.HasIndex(q => q.SubmittedByUserId);
+        // P3.3 — D-212: the moderator desk lists the Committee-approved set per
+        // session; the Committee queue scans Pending across sessions.
+        builder.HasIndex(q => new { q.SessionId, q.Status, q.Order });
+        builder.HasIndex(q => new { q.Status, q.CreatedAt });
     }
 }
 

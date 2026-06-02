@@ -103,6 +103,9 @@ internal sealed class SessionQuestionService(
         // the racy "max+1 then insert" pattern that an earlier draft
         // shipped. A moderator who reorders writes explicit Order
         // values to override the natural order.
+        // P3.3 — D-212: phase is pre vs live relative to the session start; the
+        // question lands Pending for the Scientific Committee (stage 2 of the
+        // pipeline). The AI advisory verdict (stage 1) is wired in P4.2.
         var question = new SessionQuestion
         {
             Id = Guid.NewGuid(),
@@ -114,6 +117,8 @@ internal sealed class SessionQuestionService(
             IsHidden = false,
             IsPushed = false,
             CreatedAt = now,
+            Phase = now < session.StartUtc ? QuestionPhase.Pre : QuestionPhase.Live,
+            Status = QuestionStatus.Pending,
         };
         appDbContext.SessionQuestions.Add(question);
         await appDbContext.SaveChangesAsync(cancellationToken);
