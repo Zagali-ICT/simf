@@ -1,132 +1,390 @@
-# E2E test catalogue — Visitors CRUD (`/admin/visitors`)
+# E2E test catalogue — Visitors (`/admin/visitors`)
 
 | | |
 |--|--|
 | **Page** | [`cp/admin-visitors.md`](../../pages/cp/admin-visitors.md) |
+| **Route** | `/admin/visitors` |
 | **Surface** | Control Panel |
-| **Last reviewed** | 2026-05-28 |
+| **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
+| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Last reviewed** | 2026-06-02 |
+
+> **Page permission:** `[RequirePermission(PermissionCatalog.Visitors.View)]` (`Visitors.View`).
+> Per-action gates on the backing API: `Visitors.Create` (Duplicate),
+> `Visitors.RegisterOnsite` (the register-onsite call the Add wizard fires),
+> `Visitors.Edit` (Edit), `Visitors.Delete` (row + bulk delete),
+> `Visitors.Export`, `Visitors.Import`. `Administrator = "*"` satisfies all.
+> The Add modal hosts the **D-127 walk-in registration wizard** (`CreateVisitorForm` →
+> `WalkInRegistrationForm`), **not** a slim 2-field create form — register-onsite mints
+> the QR badge and auto-approves the account in one transaction.
 
 ## Coverage matrix
 
-| ID | Scenario | Priority |
-|----|----------|----------|
-| E2E-VIS-001 | Walk-in Saudi visitor (D-127 wizard) golden | P0 |
-| E2E-VIS-002 | Walk-in non-Saudi Passport branch | P0 |
-| E2E-VIS-003 | Saudi ID typo (regex fail) → 400 + form error | P1 |
-| E2E-VIS-004 | Details modal renders ID image inline (D-129) | P1 |
-| E2E-VIS-005 | Cross-kind id on `/admin/visitors/{otherId}/profile` → 404 (D-124) | P0 |
-| E2E-VIS-006 | Bulk-delete with reason → toast + reload | P1 |
-| E2E-VIS-007 | Export selected → XLSX downloads | P2 |
-| E2E-VIS-008 | RTL: walk-in wizard mirrors correctly | P1 |
+| ID | Scenario | Type | Priority | Status |
+|----|----------|------|----------|--------|
+| E2E-VIS-001 | Golden round-trip — walk-in Add (Saudi) → Details (ID image) → Edit → row Delete | happy | P0 | _to author_ |
+| E2E-VIS-002 | Walk-in non-Saudi branch (Passport) → Approved + QR minted | happy | P1 | _to author_ |
+| E2E-VIS-003 | Empty list renders `SimfEmptyState` ("No visitors yet.") | happy | P1 | _to author_ |
+| E2E-VIS-004 | Auth gate — admin lacking `Visitors.View` → `/not-permitted` | auth | P0 | _to author_ |
+| E2E-VIS-005 | List filter + sort + paging round-trip | happy | P1 | _to author_ |
+| E2E-VIS-006 | Details modal — full profile + inline ID-document image (D-129) | happy | P1 | _to author_ |
+| E2E-VIS-007 | Walk-in validation — Saudi ID typo → server 400 + form error | error | P1 | _to author_ |
+| E2E-VIS-008 | Duplicate visitor with a new email → toast + reload | happy | P1 | _to author_ |
+| E2E-VIS-009 | Duplicate conflict — reused email → 409 `AdminEmailAlreadyRegistered` | error | P1 | _to author_ |
+| E2E-VIS-010 | Bulk delete (multiselect) with reason ≥10 chars → toast + reload | happy | P1 | _to author_ |
+| E2E-VIS-011 | Bulk delete with no selection → "Select at least one row first." | error | P2 | _to author_ |
+| E2E-VIS-012 | Row delete with reason < 10 chars → Delete button stays disabled | error | P2 | _to author_ |
+| E2E-VIS-013 | Export selected → XLSX download (`simf-visitors-*.xlsx`) | happy | P1 | _to author_ |
+| E2E-VIS-014 | Import XLSX → result modal (created/skipped + per-row errors) | happy | P1 | _to author_ |
+| E2E-VIS-015 | Import non-XLSX file → bilingual validation error | error | P2 | _to author_ |
+| E2E-VIS-016 | Copy one / copy selected → info toast | happy | P2 | _to author_ |
+| E2E-VIS-017 | Paste → "Paste-to-add will land with the User Management module." | happy | P2 | _to author_ |
+| E2E-VIS-018 | Cross-kind id on `/admin/visitors/{otherId}/profile` → 404 (D-124) | error | P1 | _to author_ |
+| E2E-VIS-019 | Server 500 on `/list` → empty grid, no crash (resilient fallback) | resilience | P2 | _to author_ |
+| E2E-VIS-020 | RTL / Arabic render — page + Add wizard + Details modal mirror | i18n | P1 | _to author_ |
 
 ## Scenarios
 
-### E2E-VIS-001 — Walk-in Saudi golden
+### E2E-VIS-001 — Golden round-trip (walk-in Add → Details → Edit → Delete)
 
 ```gherkin
-Scenario: Register a walk-in Saudi visitor end-to-end
-  Given an admin (desk staff) is signed in on /admin/visitors
-  And at least one Visitor profile-type "General" exists
-  When they click "+ Add"
-  Then the D-127 walk-in wizard opens at section 1 (Badge type)
-  When they pick the "General" tile
-  And in section 2 they fill Name on badge="Mohammed A.", DOB=1990-01-15, English name="Mohammed Ahmed", Arabic name="محمد أحمد", Place of birth="Riyadh"
-  And in section 3 they keep the Saudi toggle on
-  And fill National ID="1234567890"
-  And in section 4 they fill Saudi mobile="+966500000000"
-  And leave Email blank
-  And in section 5 they skip the ID document upload
-  And in section 6 they pick 2 interest chips
-  And they click "Register"
-  Then the WalkInSuccessModal opens with:
-    - the profile-type color stripe
-    - "Mohammed A." as the name
-    - a server-rendered SVG QR
-    - the 12-char QR id below
-  And the server has created a SimfUser with AccountState=Approved
-  And synthesized email "walkin-{guid}@simf.local"
-  And minted the QR via IQrIdMinter
-  And audited Admin.WalkInRegistered with the desk staff actor
-  When the desk clicks "Print badge"
-  Then window.print() fires with the @media print CSS isolating .simf-walkin-badge
+Feature: Visitors page golden round-trip
+  As an Administrator on the registration desk
+  I want to register a walk-in, inspect the profile, edit it, then remove it
+  So that the visitor roster stays accurate end-to-end
+
+Background:
+  Given the API is reachable on http://localhost:5175
+  And the Control Panel is reachable on http://localhost:5158
+  And an Administrator has signed in via /login + /login/totp using the Get-Totp helper
+  And they have landed on /admin/visitors
+  And the grid has loaded via POST /account/api/admin/visitors/list
+
+Scenario: Register a Saudi walk-in, view, edit and delete them
+  Given the grid currently shows {N} rows
+  When the administrator clicks the toolbar "Add visitor" action
+  Then the SimfModal "Add visitor" opens hosting the D-127 walk-in wizard
+  And section 1 "Badge type" shows the colour-coded ProfileType tile picker
+
+  When they pick a Visitor profile-type tile
+  And in section 2 "Identity" they fill Name on badge="Faisal Al-Otaibi", Date of birth="1990-04-12", English name="Faisal Al-Otaibi", Arabic name="فيصل العتيبي", Place of birth="Riyadh"
+  And in section 3 "Nationality and ID" they keep the "Saudi" toggle and fill National ID="1099887766"
+  And in section 4 "Contact" they fill Saudi mobile="+966500112233" and leave Email blank
+  And they leave section 5 "ID document" empty and pick two interests in section 6
+  And they submit the wizard
+  Then the BFF forwards POST /account/api/admin/visitors/register-onsite (AdminWalkInRegistrationRequest)
+  And the API returns 200 with AdminWalkInRegistrationResponse { UserId, QrId, Email }
+  And the WalkInSuccessModal renders the badge with an SVG QR and Done / Print / Register another
+  When they click "Done"
+  Then the Add modal closes
+  And a green toast reads "Invitation sent to {email}." (Admin.CreateVisitor.Success)
+  And the grid reloads and shows {N + 1} rows including the new Approved visitor
+
+  When the administrator clicks the "Details" action on that row
+  Then a read-only modal "Visitor details — {email}" opens
+  And GET /account/api/admin/visitors/{id}/profile returns 200
+  And the description lists render Email, Display name, User type, State=Approved, Created, English/Arabic name, Nationality, Identity type="National ID", Identity number="1099887766", Saudi mobile, Interest count and QR id
+  When they click "Close"
+  Then the modal closes
+
+  When the administrator clicks the "Edit" action on that row
+  Then the SimfModal "Edit visitor" opens with EditAccountForm (Scope=visitors) pre-filled
+  When they change the Display name and click Save
+  Then PUT /account/api/admin/visitors/{id} returns 200
+  And the modal closes and a green toast reads "The account was updated." (Admin.Edit.Saved)
+  And the grid reloads with the new display name
+
+  When the administrator clicks the "Delete" action on that row
+  Then the "Delete visitors" modal opens reading "This will disable 1 visitor account(s)..."
+  And the Delete button is disabled until the Reason has 10–500 chars
+  When they type Reason="Test fixture cleanup for E2E run" and click "Delete"
+  Then POST /account/api/admin/visitors/bulk-delete returns 200
+  And a green toast reads "{deleted} deleted, {skipped} skipped." (Admin.Users.BulkDelete.Success)
+  And the grid reloads back to {N} rows
 ```
 
-### E2E-VIS-002 — Non-Saudi Passport
+**Evidence captured:**
+- Screenshot before: `docs/screenshots/cp-admin-visitors-golden-before.png`
+- Screenshot after: `docs/screenshots/cp-admin-visitors-golden-after.png` (+ `-walkin-wizard.png`, `-success-modal.png`, `-details-modal.png`, `-edit-modal.png`, `-bulkdelete-modal.png`)
+- Console errors: 0 expected
+- Network: every `/account/api/admin/visitors/*` call returns 200; the register-onsite, profile, PUT and bulk-delete calls are all 200
+- Audit rows: `OperationLog` / `RowAudit` rows for `Admin.WalkInRegistered`, the profile read, the update, and the soft-delete, each with the actor id
+
+### E2E-VIS-002 — Walk-in non-Saudi branch (Passport)
 
 ```gherkin
-Scenario: Walk-in non-Saudi visitor with Passport
-  Given the wizard is open at section 3
-  When the desk toggles Saudi off
-  Then a country picker appears + Iqama/Passport sub-picker
-  When the desk picks Country="United Kingdom"
-  And toggles Passport
-  And fills Passport number="GB1234567"
-  And completes sections 2, 4, 5, 6 as in E2E-VIS-001
-  And clicks "Register"
-  Then the success modal opens with the badge
-  And the server stored NationalityCode="GB" + PassportNumber="GB1234567"
-  And NationalId is null + IqamaNumber is null
+Scenario: Register a non-Saudi visitor by passport
+  Given the Add walk-in wizard is open
+  When in section 3 the administrator flips the toggle to "Non-Saudi"
+  Then a country picker and an Iqama/Passport sub-picker appear
+  When they choose country="GBR", pick the "Passport" sub-option and fill Passport="P1234567"
+  And in section 4 they fill International mobile="+447700900123"
+  And they complete the required identity fields and submit
+  Then POST /account/api/admin/visitors/register-onsite returns 200
+  And the account lands in Approved state with a minted QR id
+  And the WalkInSuccessModal renders the badge
 ```
 
-### E2E-VIS-003 — Saudi ID typo
+### E2E-VIS-003 — Empty list
 
 ```gherkin
-Scenario: Invalid Saudi national ID is rejected
-  Given the wizard is open with Saudi toggle on
-  When the desk fills National ID="0123456789" (starts with 0, not 1)
-  And clicks "Register"
-  Then the server returns HTTP 400 with ApiResult.Error.Code="ValidationFailed"
-  And the bilingual error reads "Saudi national ID must be 10 digits starting with 1."
-  And the wizard stays open with the ID field flagged
+Scenario: Empty list renders SimfEmptyState
+  Given the database has no Visitor accounts
+  When the administrator opens /admin/visitors
+  Then POST /account/api/admin/visitors/list returns 200 with an empty page
+  And the grid body renders the SimfEmptyState component titled "No visitors yet." / "لا يوجد زوار بعد." (Admin.Visitors.None)
+  And the toolbar still shows the "Add visitor" action
+  And no error toast appears
 ```
 
-### E2E-VIS-004 — Details with ID image
+### E2E-VIS-004 — Auth gate
 
 ```gherkin
-Scenario: Details modal shows the ID image inline (D-129)
-  Given a visitor row exists with HasIdImage=true
-  When the admin clicks the Details icon on that row
-  Then a modal opens with every profile field rendered in a description list
-  And an <img src="/account/api/admin/visitors/{id}/id-document?v={ticks}"> renders inline
-  And the image is the decrypted ID photo (AES-GCM at rest)
+Scenario: Signed-in admin lacking Visitors.View is denied
+  Given a signed-in Control Panel user whose roles do NOT grant Visitors.View
+  When they navigate to /admin/visitors
+  Then they land on /not-permitted with HTTP 200
+  And no POST /account/api/admin/visitors/list request fires
+  And the "Visitors" nav-rail item is hidden (its RequiredPermission is Visitors.View)
 ```
 
-### E2E-VIS-005 — Cross-kind id security guard
+### E2E-VIS-005 — Filter + sort + paging
 
 ```gherkin
-Scenario: Other-typed id on the visitors profile endpoint returns 404
-  Given an Other-typed user with id O1 exists
-  When the admin GETs /account/api/admin/visitors/O1/profile
-  Then the server returns HTTP 404 with ApiResult.Error.Code="NotFound"
-  And the response shape is identical to an unknown-id 404 (no enumeration leak)
+Scenario: Filter, sort and page through the grid
+  Given the grid shows more than one page of visitors at PageSize=20
+  When the administrator types "alotaibi" into the filter for the Email column
+  Then POST /account/api/admin/visitors/list fires with the filter in the GridQuery
+  And only matching rows render and the pager summary updates
+  When they clear the filter and click the "Email" header to sort
+  Then the list reloads sorted by email and the sort indicator shows on that column
+  When they click "Next" / "Last" in the pager
+  Then the list reloads with the new Skip/Top and the page formatter updates ("Page X of Y")
 ```
 
-### E2E-VIS-006 — Bulk-delete
+### E2E-VIS-006 — Details modal with ID-document image
 
 ```gherkin
-Scenario: Bulk-delete visitors with reason
-  Same shape as E2E-USR-002 but on /admin/visitors.
-  Audit rows are Admin.VisitorDeleted.
+Scenario: Details modal renders the inline ID-document image
+  Given a visitor exists who has an ID document on file (HasIdImage = true)
+  When the administrator clicks "Details" on that row
+  Then GET /account/api/admin/visitors/{id}/profile returns 200 with HasIdImage = true
+  And the modal shows the "ID document" heading
+  And an <img> is rendered with src "/account/api/admin/visitors/{id}/id-document?v={ticks}"
+  And that GET streams the decrypted image and returns 200 (image content-type)
+  And no Console error is logged for the image request
 ```
 
-### E2E-VIS-007 — Export
+### E2E-VIS-007 — Walk-in validation failure
 
 ```gherkin
-Scenario: Export selected visitors to XLSX
-  Same shape as E2E-USR-006 but on /admin/visitors.
+Scenario: A malformed Saudi national ID is rejected
+  Given the Add walk-in wizard is open on the Saudi branch
+  When the administrator fills National ID="0123456789" (not matching ^1\d{9}$)
+  And completes the other required fields and submits
+  Then the server-side AdminWalkInRegistrationRequestValidator rejects it
+  And POST /account/api/admin/visitors/register-onsite returns HTTP 400 (DataValidationException)
+  And the wizard stays open showing the field-level validation error
+  And no visitor row is added to the grid
 ```
 
-### E2E-VIS-008 — RTL wizard
+### E2E-VIS-008 — Duplicate visitor (happy)
 
 ```gherkin
-Scenario: Walk-in wizard mirrors correctly in Arabic
-  Given the wizard is open in English
-  When the desk clicks "العربية" outside the modal first
-  And reopens "+ Add"
-  Then the wizard renders RTL
-  And all 6 section badges + labels + chips are Arabic
-  And the numbered section circles still read 1..6
-  And submit button is on the leading edge
+Scenario: Duplicate an existing visitor under a new email
+  Given a visitor row exists
+  When the administrator clicks the "Duplicate" action on that row
+  Then the "Duplicate visitor" modal opens reading "Create a copy of {email} under a new email address."
+  And the Duplicate button is disabled until the new email looks valid (contains '@', ≤256 chars)
+  When they fill New email address="faisal.copy@example.com" and click "Duplicate"
+  Then POST /account/api/admin/visitors/duplicate (AdminDuplicateUserRequest) returns 200
+  And the modal closes and a green toast reads "Created faisal.copy@example.com." (Admin.Users.Duplicate.Success)
+  And the grid reloads with the new row
 ```
 
-_Last reviewed:_ 2026-05-28 by Claude (D-133 follow-up).
+### E2E-VIS-009 — Duplicate conflict (reused email)
+
+```gherkin
+Scenario: Duplicating onto an email that already exists returns 409
+  Given a visitor with email "existing@example.com" already exists
+  When the administrator opens the Duplicate modal on any visitor row
+  And fills New email address="existing@example.com" and clicks "Duplicate"
+  Then POST /account/api/admin/visitors/duplicate returns HTTP 409
+  And ApiResult.Error.Code = "AdminEmailAlreadyRegistered"
+  And the modal stays open
+  And a red toast surfaces the bilingual MessageForCurrentCulture()
+      "An account with this email address already exists." / "يوجد حساب مسجّل بهذا البريد الإلكتروني بالفعل."
+```
+
+### E2E-VIS-010 — Bulk delete with reason
+
+```gherkin
+Scenario: Bulk-delete two selected visitors with an audited reason
+  Given the administrator ticks the multiselect checkboxes on two visitor rows
+  When they click the toolbar "Delete" (bulk) action
+  Then the "Delete visitors" modal opens reading "This will disable 2 visitor account(s)..."
+  And the Reason textarea shows the helper "10–500 characters, audited."
+  And the Delete button is disabled while the reason length is < 10 or > 500
+  When they type Reason="Duplicate registrations removed after audit" and click "Delete"
+  Then POST /account/api/admin/visitors/bulk-delete returns 200
+  And a green toast reads "{deleted} deleted, {skipped} skipped." (Admin.Users.BulkDelete.Success)
+  And the grid reloads without the deleted rows
+```
+
+### E2E-VIS-011 — Bulk delete with no selection
+
+```gherkin
+Scenario: Bulk delete with nothing selected shows a guard toast
+  Given no rows are selected
+  When the administrator triggers the bulk "Delete" action with an empty selection
+  Then no modal opens
+  And a red toast reads "Select at least one row first." / "اختر صفًا واحدًا على الأقل." (Admin.Users.NoSelection)
+  And no POST /account/api/admin/visitors/bulk-delete request fires
+```
+
+### E2E-VIS-012 — Delete reason too short
+
+```gherkin
+Scenario: A short reason keeps the Delete button disabled
+  Given the row "Delete" action has opened the "Delete visitors" modal for one row
+  When the administrator types Reason="too short" (9 chars, < 10)
+  Then the "Delete" button stays disabled
+  And no POST /account/api/admin/visitors/bulk-delete request fires
+  When they extend the reason to "removed per audit" (≥ 10 chars)
+  Then the "Delete" button becomes enabled
+```
+
+### E2E-VIS-013 — Export selected to XLSX
+
+```gherkin
+Scenario: Export selected visitors downloads an XLSX
+  Given the administrator has ticked one or more visitor rows
+  When they click the toolbar "Export" action
+  Then POST /account/api/admin/visitors/export (AdminExportUsersRequest with the selected Ids) fires
+  And the response is application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+  And the browser downloads a file named "simf-visitors-{yyyyMMddHHmmss}.xlsx"
+  When no rows are selected and Export is clicked
+  Then the request carries Query=_query instead of Ids and exports the current filtered view
+```
+
+### E2E-VIS-014 — Import XLSX
+
+```gherkin
+Scenario: Import a visitors workbook and read the result modal
+  Given the administrator has a valid .xlsx workbook with visitor rows
+  When they click the toolbar "Import" action
+  Then the hidden #visitors-import-input file picker opens (accept=".xlsx")
+  When they choose the workbook
+  Then POST /account/api/admin/visitors/import (multipart) returns 200 with AdminImportUsersResponse
+  And the "Import result" modal opens reading "{created} created, {skipped} skipped." (Admin.Users.Import.ResultBody)
+  And any per-row failures render as "Row {n} ({email}): {reason}" list items
+  And the grid reloads to include the imported visitors
+```
+
+### E2E-VIS-015 — Import non-XLSX file
+
+```gherkin
+Scenario: Importing a non-workbook file is rejected
+  Given the Import picker is open
+  When the administrator selects a file that is not a valid .xlsx (no ZIP magic 50 4B 03 04)
+  Then POST /account/api/admin/visitors/import returns a 400 DataValidationException
+  And a red toast surfaces the bilingual message
+      "The file is not a valid Excel workbook." / "الملف ليس مصنف Excel صالحًا."
+      (or the Admin.Users.Import.Fallback "Import failed." / "فشل الاستيراد." when no server message is present)
+  And no Import result modal opens
+```
+
+### E2E-VIS-016 — Copy actions
+
+```gherkin
+Scenario: Copy one and copy selected raise info toasts
+  When the administrator clicks "Copy" on a single row
+  Then an info toast reads "Copied {email} to the clipboard." (Admin.Users.Copy.One)
+  When they tick two rows and use the bulk "Copy" action
+  Then an info toast reads "Copied 2 rows to the clipboard." (Admin.Users.Copy.Count)
+  And neither action fires a network request
+```
+
+### E2E-VIS-017 — Paste action
+
+```gherkin
+Scenario: Paste surfaces the deferred-feature notice
+  When the administrator triggers the "Paste" action with clipboard content
+  Then an info toast reads "Paste-to-add will land with the User Management module." (Admin.Users.Paste.NotImplemented)
+  When they trigger Paste with an empty clipboard
+  Then a red toast reads "The clipboard is empty." (Admin.Users.Paste.Empty)
+```
+
+### E2E-VIS-018 — Cross-kind id 404 (D-124 security)
+
+```gherkin
+Scenario: Requesting a non-Visitor id on the visitor profile route returns 404
+  Given the id of an Other/partner-typed account (not a Visitor)
+  When a GET /account/api/admin/visitors/{otherId}/profile is issued (e.g. via a hand-crafted Details deep-link)
+  Then the API returns HTTP 404 with ApiResult.Error.Code = "NotFound"
+      message "No visitor was found for this id." / "لم يتم العثور على زائر بهذا المعرّف."
+  And the Details modal shows the SimfAlert error (no profile fields leak)
+  And the response never reveals "exists but wrong type"
+```
+
+### E2E-VIS-019 — Server 500 on list
+
+```gherkin
+Scenario: API 500 on /list degrades to an empty grid without crashing
+  Given the API is configured to fail POST /admin/visitors/list (e.g. DB down)
+  When the administrator opens /admin/visitors
+  Then the BFF returns a non-success envelope
+  And the page falls back to GridPage.Of(empty) — the grid renders the SimfEmptyState
+  And the page does not throw; no unhandled Console error blocks interaction
+```
+
+### E2E-VIS-020 — RTL / Arabic render
+
+```gherkin
+Scenario: Arabic toggle mirrors the page, the Add wizard and the Details modal
+  Given the administrator is on /admin/visitors in English
+  When they switch culture to Arabic
+  Then the page reloads with <html dir="rtl" lang="ar">
+  And the SimfBanner title reads "الزوار" (Admin.Visitors.Title)
+  And the nav rail and toolbar mirror (Arabic labels, reversed order)
+  And the empty state, if shown, reads "لا يوجد زوار بعد."
+
+  When they open the "Add visitor" modal
+  Then the walk-in wizard renders RTL with Arabic section labels and reversed actions
+  When they open a Details modal
+  Then the description list labels are Arabic and the modal title reads "تفاصيل الزائر — {email}"
+```
+
+---
+
+## Implementation notes
+
+- **Manual smoke is canonical today.** Until Playwright is adopted, the canonical
+  "run" of these scenarios is a Chrome DevTools MCP session: sign in per the
+  Auth setup, walk each scenario, and capture screenshots into
+  `docs/screenshots/cp-admin-visitors-{scenario}.png`. Each Gherkin block is
+  written runner-agnostic so it ports straight into a `.feature` file under
+  `tests/SIMF.E2E.Tests/` later.
+- **The Add modal is the D-127 walk-in wizard, not a 2-field create.** Drive
+  `WalkInRegistrationForm` (badge type → identity → nationality/ID → contact →
+  ID document → interests) and assert the `WalkInSuccessModal` QR badge. The
+  account is created already-Approved (no pending queue) and a QR id is minted
+  in the same transaction. `/admin/visitors/new` (`CreateVisitor.razor`) is a
+  preserved deep-link fallback to the same flow.
+- **API integration tests cover the same surface at a lower layer** (no browser):
+  - `tests/SIMF.Api.Tests/AdminGridVisitorsTests.cs` — list/grid + bulk-delete /
+    duplicate / export / import type-scoping (incl. the `AdminUserNotFound` 404
+    on cross-kind ids).
+  - `tests/SIMF.Api.Tests/WalkInRegistrationTests.cs` — register-onsite golden +
+    Saudi/Iqama/Passport validation branches.
+  - `tests/SIMF.Api.Tests/AdminUpdateUserTests.cs` — the visitor Edit (PUT) path.
+  - `tests/SIMF.Api.Tests/PendingProfileReadTests.cs` — the profile read + the
+    D-124 404-for-mismatch rule.
+  - `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs` — the per-action
+    `Visitors.*` policy gates that back the auth-gate scenario.
+  Where an E2E scenario fully covers one of these, the lower-layer case may be
+  retired later — keep both during the transition.
+
+---
+
+_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).

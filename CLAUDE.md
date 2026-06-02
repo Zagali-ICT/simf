@@ -71,6 +71,32 @@ Panel page or a new admin endpoint/action you MUST:
 missing. An ungated admin page/endpoint is reachable by **any** signed-in admin
 regardless of role — treat a missing permission as a security defect.
 
+## E2E test-case catalogue (D-133 / D-245)
+
+SIMF keeps a **per-page End-to-End test-case catalogue** under `docs/tests/e2e/`
+(index: `docs/tests/e2e/README.md`; template: `_TEMPLATE.md`). One file per page
+(`{cp|web|mobile}-{slug}.md`) with a Coverage matrix + concrete, data-bearing
+**Gherkin** scenarios (stable ids `E2E-{NS}-{NNN}`, runner-agnostic). **Purpose:**
+after a batch of fixes, an agent reads every case and drives each page — enters
+real data, performs each CRUD/action, asserts each expected outcome — as a full
+regression pass that proves production-readiness. The auth-setup line uses the
+`Get-Totp` helper, **never a literal secret**.
+
+**HARD RULE — a new CP page, app screen, Website page, or admin API action is NOT
+"done" until its catalogue file exists, is authored (not a stub), and is indexed.**
+Whenever you add or materially change a page/action you MUST:
+
+1. Author/update `docs/tests/e2e/{cp|web|mobile}-{slug}.md` from `_TEMPLATE.md`
+   (cover the golden CRUD path + every distinct function on the page + empty /
+   auth-gate / validation / conflict / server-500 / RTL), grounded in the real
+   fields, buttons, permissions, error codes and bilingual toast text.
+2. Add the row to `docs/tests/e2e/README.md` (route → file → scenario id range).
+3. Cross-link the route in `docs/pages/PAGE-INDEX.md` (doc + test columns) and
+   the per-page reference doc under `docs/pages/{cp|web}/{slug}.md`.
+
+Treat a shipped page with no authored catalogue file as an incomplete change —
+the catalogue is the executable proof the page still works end-to-end.
+
 ## FREEZE — D-110 baseline (2026-05-26)
 
 The following surface is **frozen** as of commit `67e2263` and must NOT be

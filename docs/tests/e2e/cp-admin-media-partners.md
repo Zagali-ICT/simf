@@ -1,0 +1,287 @@
+# E2E test catalogue — Media Partners CRUD (`/admin/media-partners`)
+
+| | |
+|--|--|
+| **Page** | [`cp/admin-media-partners.md`](../../pages/cp/admin-media-partners.md) |
+| **Route** | `/admin/media-partners` |
+| **Surface** | Control Panel |
+| **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
+| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Last reviewed** | 2026-06-02 |
+
+> **Page facts grounded in source** (`Components/Pages/Admin/MediaPartnersList.razor`,
+> `Endpoints/PublicRelations/MediaPartnerEndpoints.cs`,
+> `Infrastructure/PublicRelations/AdminMediaPartnerService.cs`):
+> - Required permission: `PermissionCatalog.MediaPartners.View` (`MediaPartners.View`).
+> - Toolbar action: **Add media partner** (`Admin.MediaPartners.New`).
+> - Grid columns: Name (English), Name (Arabic), Logo path, Link, Display order,
+>   Active (`✓`/`—`), plus per-row **Edit** + **Delete** buttons.
+> - Add/Edit modal fields: NameEn (max 256), NameAr (max 256), Logo path
+>   (max 512), Link (max 512), Display order (number, min 0 max 99999),
+>   **Active** checkbox (`SimfCheckbox`). The Active checkbox is shown for both
+>   Add and Edit, but Create always persists `IsActive = true` server-side
+>   regardless (the create request carries no IsActive); Edit honours it.
+> - **No Details modal** on this page (unlike Interests) — view = grid row only.
+> - **Delete** is a soft-deactivate (HTTP `DELETE` → `IsActive = false`), guarded
+>   by a JS `confirm()` dialog (`Admin.MediaPartners.Delete.Confirm`). A
+>   deactivated row is **dropped from the public list** but, because the admin
+>   list is unfiltered, it still appears in the admin grid with Active = `—`.
+> - BFF passthroughs (`AccountEndpoints.cs`): `POST /account/api/admin/media-partners/list`,
+>   `POST /account/api/admin/media-partners`, `PUT /account/api/admin/media-partners/{id}`,
+>   `DELETE /account/api/admin/media-partners/{id}`.
+> - API error codes: `VALIDATION_FAILED` (400, name length / logo / url / order),
+>   `MEDIA_PARTNER_NAME_DUPLICATE` (409, English name clash, case-insensitive),
+>   `NOT_FOUND` (404, unknown id).
+> - Audit event keys: `MediaPartnerCreated`, `MediaPartnerUpdated`,
+>   `MediaPartnerDeactivated`.
+
+## Coverage matrix
+
+| ID | Scenario | Type | Priority | Status |
+|----|----------|------|----------|--------|
+| E2E-MPR-001 | Full CRUD round-trip — Add → Edit → Deactivate (Delete) | happy | P0 | _to author_ |
+| E2E-MPR-002 | Add media partner — optional fields (logo + link) persisted | happy | P1 | _to author_ |
+| E2E-MPR-003 | Edit — toggle Active flag off then on | happy | P1 | _to author_ |
+| E2E-MPR-004 | Delete — confirm dialog cancelled leaves row untouched | happy | P1 | _to author_ |
+| E2E-MPR-005 | Empty list renders `SimfEmptyState` | happy | P1 | _to author_ |
+| E2E-MPR-006 | Auth gate: signed-in admin lacking `MediaPartners.View` → `/not-permitted` | auth | P0 | _to author_ |
+| E2E-MPR-007 | Client validation: blank English/Arabic name → bilingual toast, no POST | error | P1 | _to author_ |
+| E2E-MPR-008 | Server validation: name > 256 chars → 400 bilingual error | error | P2 | _to author_ |
+| E2E-MPR-009 | Conflict: duplicate English name → 409 + bilingual message | error | P1 | _to author_ |
+| E2E-MPR-010 | Server 500 on `/list` → bilingual fallback toast | resilience | P2 | _to author_ |
+| E2E-MPR-011 | RTL/Arabic render: page + modal mirror | i18n | P1 | _to author_ |
+
+## Scenarios
+
+### E2E-MPR-001 — Full CRUD round-trip
+
+```gherkin
+Feature: Media Partners CRUD round-trip
+  As an Administrator
+  I want to manage the public media-partner grid ("شركاء النجاح", Mockup page 31)
+  So that the app's media-partner section stays accurate for the event
+
+Background:
+  Given the API is reachable on http://localhost:5175
+  And the Control Panel is reachable on http://localhost:5158
+  And an Administrator holding the MediaPartners.View/Create/Edit/Delete permissions
+    has signed in via /login + /login/totp using superadmin@zagali-ict.com and a Get-Totp code
+  And they have landed on /admin/media-partners
+
+Scenario: Create, edit, then deactivate one media partner
+  Given the grid currently shows {N} rows
+  When the administrator clicks "Add media partner"
+  Then the Add modal opens titled "Add media partner"
+  And it shows fields: Name (English), Name (Arabic), Logo path, Link, Display order, and an "Active" checkbox (ticked)
+  When they fill Name (English)="Naval Times"
+  And they fill Name (Arabic)="أوقات البحرية"
+  And they fill Display order="100"
+  And they click "Save"
+  Then a POST /account/api/admin/media-partners returns 200
+  And the modal closes
+  And a green toast reads "Media partner saved." / "تم حفظ الشريك الإعلامي."
+  And the grid reloads and shows {N + 1} rows
+  And a row exists with Name (English)="Naval Times", Display order=100, and Active="✓"
+
+  When the administrator clicks "Edit" on the "Naval Times" row
+  Then the Edit modal opens titled "Edit media partner" with the row's values pre-filled
+  And the "Active" checkbox is ticked
+  When they change Display order to "5"
+  And they fill Link="https://navaltimes.example"
+  And they click "Save"
+  Then a PUT /account/api/admin/media-partners/{id} returns 200
+  And the modal closes
+  And a green toast reads "Media partner saved." / "تم حفظ الشريك الإعلامي."
+  And the "Naval Times" row now shows Display order=5 and Link="https://navaltimes.example"
+
+  When the administrator clicks "Delete" on the "Naval Times" row
+  Then a browser confirm dialog appears reading "Delete this media partner? It will be removed from the public list immediately."
+  When they accept the confirm dialog
+  Then a DELETE /account/api/admin/media-partners/{id} returns 200
+  And a green toast reads "Media partner deleted." / "تم حذف الشريك الإعلامي."
+  And the "Naval Times" row remains in the admin grid but its Active column now reads "—"
+```
+
+**Evidence captured:**
+- Screenshot before: `docs/screenshots/cp-admin-media-partners-001-before.png`
+- Screenshot after add: `docs/screenshots/cp-admin-media-partners-001-add.png`
+- Screenshot after edit: `docs/screenshots/cp-admin-media-partners-001-edit.png`
+- Screenshot after delete: `docs/screenshots/cp-admin-media-partners-001-after.png`
+- Console errors: 0 expected
+- Network: every `/account/api/admin/media-partners/*` call returns 200
+- Audit rows: `OperationLog`/`AuditEntry` rows with `Event = 'MediaPartnerCreated'`,
+  `'MediaPartnerUpdated'`, `'MediaPartnerDeactivated'`, each carrying the actor's id.
+
+### E2E-MPR-002 — Add with optional fields
+
+```gherkin
+Scenario: Logo path and Link are persisted when supplied
+  Given the Add modal is open
+  When the administrator fills Name (English)="Gulf Maritime Press"
+  And fills Name (Arabic)="صحافة الخليج البحرية"
+  And fills Logo path="media-partners/gulf-press.png"
+  And fills Link="https://gulfpress.example"
+  And fills Display order="200"
+  And clicks "Save"
+  Then a POST /account/api/admin/media-partners returns 200
+  And the new grid row shows Logo path="media-partners/gulf-press.png" and Link="https://gulfpress.example"
+  And rows with blank logo/link instead render "—" in those columns
+```
+
+### E2E-MPR-003 — Toggle Active off then on
+
+```gherkin
+Scenario: Editing the Active checkbox flips the row's Active column
+  Given a media partner "Gulf Maritime Press" exists with Active="✓"
+  When the administrator clicks "Edit" on that row
+  And unticks the "Active" checkbox
+  And clicks "Save"
+  Then a PUT /account/api/admin/media-partners/{id} returns 200
+  And the row's Active column now reads "—"
+  When the administrator clicks "Edit" again
+  And ticks the "Active" checkbox
+  And clicks "Save"
+  Then the row's Active column reads "✓" again
+```
+
+### E2E-MPR-004 — Delete confirm cancelled
+
+```gherkin
+Scenario: Cancelling the confirm dialog makes no API call
+  Given a media partner "Gulf Maritime Press" exists in the grid
+  When the administrator clicks "Delete" on that row
+  Then a browser confirm dialog appears
+  When they dismiss/cancel the confirm dialog
+  Then no DELETE /account/api/admin/media-partners/{id} request fires
+  And the row is unchanged (Active column still reads "✓")
+  And no toast appears
+```
+
+### E2E-MPR-005 — Empty list
+
+```gherkin
+Scenario: Empty list renders SimfEmptyState
+  Given the database has no MediaPartner rows
+  When the administrator opens /admin/media-partners
+  Then the grid body renders the SimfEmptyState component
+  And the empty state shows the bilingual copy "No media partners yet." / "لا يوجد شركاء إعلاميون بعد."
+  And the toolbar still shows the "Add media partner" button
+```
+
+### E2E-MPR-006 — Auth gate
+
+```gherkin
+Scenario: Signed-in admin lacking MediaPartners.View is denied
+  Given a signed-in Control Panel user whose roles do NOT grant the MediaPartners.View permission
+  When they navigate to /admin/media-partners
+  Then they land on /not-permitted with HTTP 200
+  And no /account/api/admin/media-partners/list request fires
+  And the "Media Partners" item is hidden from the CP nav rail (RequiredPermission gate)
+```
+
+### E2E-MPR-007 — Client-side validation (blank name)
+
+```gherkin
+Scenario: Blank English or Arabic name shows bilingual error without calling the API
+  Given the Add modal is open
+  When the administrator leaves Name (English) blank
+  And fills Name (Arabic)="اسم عربي صالح"
+  And clicks "Save"
+  Then a SimfAlert error appears reading "Both the English and Arabic names are required." / "الاسم بالإنجليزية والعربية مطلوبان."
+  And the modal stays open
+  And no POST /account/api/admin/media-partners request fires
+
+  When they fill Name (English)="Valid Name"
+  And clear Name (Arabic)
+  And click "Save"
+  Then the same bilingual "Both the English and Arabic names are required." error appears
+  And still no POST request fires
+```
+
+### E2E-MPR-008 — Server-side validation (name too long)
+
+```gherkin
+Scenario: English name longer than 256 chars returns a 400 with bilingual error
+  Given the Add modal is open
+  When the administrator fills Name (English) with a 300-character string
+  And fills Name (Arabic)="اسم صالح"
+  And clicks "Save"
+  Then the BFF forwards POST /account/api/admin/media-partners
+  And the API returns HTTP 400 with ApiResult.Error.Code = "VALIDATION_FAILED"
+  And the modal stays open
+  And the error toast surfaces "Media partner English name must be between 1 and 256 characters." / "يجب أن يتراوح الاسم الإنجليزي للشريك الإعلامي بين 1 و 256 حرفاً."
+```
+
+> Note: the modal `SimfTextField` caps NameEn/NameAr at `MaxLength="256"`, so this
+> path is normally hit via the API integration test or by pasting past the cap;
+> the catalogue keeps it to prove the server guard, not only the UI cap.
+
+### E2E-MPR-009 — Duplicate English name
+
+```gherkin
+Scenario: Duplicate English name returns 409 with bilingual server message
+  Given a media partner with Name (English)="Naval Times" already exists
+  When the administrator opens the Add modal
+  And fills Name (English)="naval times" (case-insensitive clash)
+  And fills Name (Arabic)="أوقات بحرية أخرى"
+  And fills Display order="0"
+  And clicks "Save"
+  Then the BFF forwards POST /account/api/admin/media-partners
+  And the API returns HTTP 409 with ApiResult.Error.Code = "MEDIA_PARTNER_NAME_DUPLICATE"
+  And the modal stays open
+  And the error toast surfaces "A media partner named 'naval times' already exists." / "يوجد شريك إعلامي بالاسم 'naval times' بالفعل."
+```
+
+### E2E-MPR-010 — Server 500 on list
+
+```gherkin
+Scenario: API 500 on /list shows the fallback bilingual toast
+  Given the API is configured to return 500 on /admin/media-partners/list (e.g. DB down)
+  When the administrator opens /admin/media-partners
+  Then the page shows the "Loading media partners…" indicator
+  And then a red toast appears reading "Could not load media partners. Please try again." / "تعذّر تحميل الشركاء الإعلاميين. يُرجى المحاولة مرة أخرى."
+  And no rows render
+```
+
+### E2E-MPR-011 — RTL / Arabic render
+
+```gherkin
+Scenario: Arabic toggle mirrors the page and the Add modal
+  Given the administrator is on /admin/media-partners in English
+  When they switch the UI language to Arabic ("العربية")
+  Then the page reloads with <html dir="rtl" lang="ar">
+  And the SimfBanner title reads "شركاء النجاح"
+  And the nav rail mirrors to the right with Arabic labels
+  And the grid headers read "الاسم (إنجليزي)", "الاسم (عربي)", "مسار الشعار", "الرابط", "ترتيب العرض", "نشط"
+  And the toolbar button reads "إضافة شريك إعلامي"
+
+  When they click "إضافة شريك إعلامي"
+  Then the Add modal opens in RTL titled "إضافة شريك إعلامي"
+  And the field labels are Arabic ("الاسم (إنجليزي)", "الاسم (عربي)", "مسار الشعار", "الرابط", "ترتيب العرض", "نشط")
+  And the footer buttons read "إلغاء" (Cancel) and "حفظ" (Save) in reverse order
+```
+
+---
+
+## Implementation notes
+
+- **Manual smoke as canonical-source-of-truth today.** Until Playwright is
+  adopted, the canonical "run" of these scenarios is a Chrome DevTools MCP
+  session — sign in via the Background steps, walk each scenario, and capture
+  screenshots into `docs/screenshots/cp-admin-media-partners-{scenario}.png`.
+- **Convert to Playwright** when the runner is adopted: copy each Gherkin
+  scenario into a `.feature` file under `tests/SIMF.E2E.Tests/` (project to be
+  created) + a step-definition class. The Gherkin shape is already
+  runner-agnostic.
+- **API integration tests** at `tests/SIMF.Api.Tests/AdminMediaPartnersTests.cs`
+  cover the same surface at a lower layer (no browser): create→list round-trip,
+  get-by-id, 409 duplicate English name (`MEDIA_PARTNER_NAME_DUPLICATE`),
+  update-persists, 404 unknown id (`NOT_FOUND`), 400 blank English name
+  (`VALIDATION_FAILED`), and the non-admin caller → 403 forbidden gate. The
+  public anonymous read is covered by `tests/SIMF.Api.Tests/MediaPartnersTests.cs`.
+  E2E-MPR-006/007/008/009 mirror those at the browser layer (including the
+  client-only NameRequired guard, which has no API equivalent).
+
+---
+
+_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).

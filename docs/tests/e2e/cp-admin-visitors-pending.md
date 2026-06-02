@@ -1,92 +1,339 @@
-# E2E test catalogue — Pending visitors (`/admin/visitors/pending`)
+# E2E test catalogue — Pending visitor approvals (`/admin/visitors/pending`)
 
 | | |
 |--|--|
 | **Page** | [`cp/admin-visitors-pending.md`](../../pages/cp/admin-visitors-pending.md) |
+| **Route** | `/admin/visitors/pending` |
 | **Surface** | Control Panel |
-| **Last reviewed** | 2026-05-28 |
+| **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
+| **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
+| **Last reviewed** | 2026-06-02 |
+
+> **Page permission:** the page itself is gated by
+> `[RequirePermission(PermissionCatalog.Visitors.View)]` (`"Visitors.View"`).
+> The **Approve** action API is gated by `Visitors.Approve`, **Reject** (single +
+> bulk) by `Visitors.Reject`. A holder of `Visitors.View` alone can *open* the page
+> and read profiles but the per-row / bulk approve & reject calls return 403 — this
+> is its own scenario (E2E-VPN-010).
 
 ## Coverage matrix
 
-| ID | Scenario | Priority |
-|----|----------|----------|
-| E2E-VPN-001 | D-128 approve-with-review: View modal → Confirm → row vanishes | P0 |
-| E2E-VPN-002 | Reject with 50-char reason → AccountState=Rejected + reason audited | P0 |
-| E2E-VPN-003 | Reject reason < 10 chars → Submit disabled | P1 |
-| E2E-VPN-004 | View shows ID image inline when HasIdImage | P1 |
-| E2E-VPN-005 | Stale row (sibling admin already approved) → 404 toast | P1 |
+| ID | Scenario | Type | Priority | Status |
+|----|----------|------|----------|--------|
+| E2E-VPN-001 | Golden round-trip — list → View → Approve-with-review → row vanishes + QR minted + audit | happy | P0 | _to author_ |
+| E2E-VPN-002 | View (read-only) modal renders the full profile `<dl>` and closes | happy | P1 | _to author_ |
+| E2E-VPN-003 | View modal renders the ID-document image inline when `HasIdImage` | happy | P1 | _to author_ |
+| E2E-VPN-004 | View modal on a profile with no form data → `Admin.Pending.View.Empty` info alert | happy | P2 | _to author_ |
+| E2E-VPN-005 | Reject one visitor with a 50-char reason → Rejected + reason audited | happy | P0 | _to author_ |
+| E2E-VPN-006 | Reject validation — Submit disabled below 10 / above 500 chars | error | P1 | _to author_ |
+| E2E-VPN-007 | Bulk approve — select rows + "Approve selected" → `Approved {n}. Skipped {m}.` | happy | P1 | _to author_ |
+| E2E-VPN-008 | Bulk reject — select rows + "Reject selected" → shared-reason modal → `Rejected {n}. Skipped {m}.` | happy | P1 | _to author_ |
+| E2E-VPN-009 | Empty queue renders `SimfEmptyState` (`Admin.Pending.None`) | happy | P1 | _to author_ |
+| E2E-VPN-010 | Auth gate — user lacking `Visitors.View` → `/not-permitted` | auth | P0 | _to author_ |
+| E2E-VPN-011 | Stale row — sibling admin already actioned → 409 `AdminUserNotPending` toast | error | P1 | _to author_ |
+| E2E-VPN-012 | Scope guard — approving a partner/admin id via the visitors URL → 404 `AdminUserNotFound` | error | P2 | _to author_ |
+| E2E-VPN-013 | Server 500 on `/pending/list` → empty grid, no crash | resilience | P2 | _to author_ |
+| E2E-VPN-014 | RTL / Arabic render mirrors page + Reject modal | i18n | P1 | _to author_ |
 
 ## Scenarios
 
-### E2E-VPN-001 — Approve-with-review
+### E2E-VPN-001 — Golden round-trip (View → Approve-with-review)
 
 ```gherkin
-Scenario: Approve a pending visitor only after reviewing the full profile
-  Given a visitor V1 is in AccountState=PendingApproval
-  And V1 has a complete profile (HasIdImage=true)
-  When the admin opens /admin/visitors/pending
-  And clicks "Approve" on V1's row
-  Then a modal opens preloaded via GET /admin/visitors/V1/profile-for-approval
-  And shows every profile field + the inline ID image
-  And the footer reads "Cancel" + "Confirm and Approve"
-  When the admin clicks "Confirm and Approve"
-  Then POST /admin/visitors/V1/approve fires
-  And V1.AccountState becomes Approved
-  And a fresh QR id is minted on V1
-  And the toast reads "Approved {email}"
-  And the row vanishes from the queue
-  And the audit log records Admin.UserApproved with the actor
+Feature: Pending visitor approval golden path
+  As an Administrator on the approval queue
+  I want to review a pending visitor's profile and approve it
+  So that their QR badge is minted and event entry is unlocked
+
+Background:
+  Given the API is reachable on http://localhost:5175
+  And the Control Panel is reachable on http://localhost:5158
+  And an Administrator has signed in via /login + /login/totp (Get-Totp helper)
+  And at least one Visitor account is in AccountState=PendingApproval
+  And the administrator has landed on /admin/visitors/pending
+
+Scenario: Review then approve a single pending visitor
+  Given the grid shows {N} pending rows with columns Email, Display name, Submitted
+  And a row exists for visitor.e2e@example.com
+  When the administrator clicks "Approve" on that row
+  Then the review modal opens titled "Review and approve — visitor.e2e@example.com"
+  And it fires GET /account/api/admin/visitors/{id}/profile-for-approval
+  And while loading it shows "Loading the profile…"
+  And on load it renders the profile description list:
+    | Email          | visitor.e2e@example.com |
+    | Display name   | (the row value)         |
+    | Account type   | Visitor                 |
+    | Profile type   | (the assigned type or —)|
+  And the form fields (Full name Arabic/English, Nationality, Date of birth, Place
+      of birth, Identity type, Identity number, Saudi mobile, International mobile,
+      ID image uploaded, Selected interests) render when present
+  And the footer shows "Cancel" and "Confirm approval"
+  When the administrator clicks "Confirm approval"
+  Then the review modal closes
+  And POST /account/api/admin/visitors/{id}/approve returns 200 with ApiResult.Success=true
+  And a green toast reads "Approved visitor.e2e@example.com."
+  And the grid reloads and the row no longer appears (the account is now Approved)
+  And the grid count drops to {N - 1}
 ```
 
-### E2E-VPN-002 — Reject with reason
+**Evidence captured:**
+- Screenshot before: `docs/screenshots/cp-admin-visitors-pending-golden-before.png`
+- Screenshot after (review modal): `docs/screenshots/cp-admin-visitors-pending-golden-review.png`
+- Screenshot after (toast + reloaded grid): `docs/screenshots/cp-admin-visitors-pending-golden-after.png`
+- Console errors: 0 expected
+- Network: `GET /account/api/admin/visitors/{id}/profile-for-approval` → 200, then
+  `POST /account/api/admin/visitors/{id}/approve` → 200, then
+  `POST /account/api/admin/visitors/pending/list` → 200
+- Side effects: subject `AccountState=Approved`, `UserProfile.QrId` minted (non-null),
+  every refresh token for the subject revoked, `NotificationKind.AccountApproved`
+  dispatched + email queued
+- Audit row: `Admin.VisitorApproved` (`AuditEvents.AdminVisitorApproved`) with the
+  actor's id, the subject id/email, and `Detail = profile.QrId`
+
+### E2E-VPN-002 — View (read-only) modal
 
 ```gherkin
-Scenario: Reject with a 50-character reason
-  Given V1 is in PendingApproval
-  When the admin clicks "Reject" on V1's row
-  Then the reject reason modal opens with a SimfTextarea
-  When they type "Email domain not approved for the 2026 forum."
-  And click "Reject"
-  Then POST /admin/visitors/V1/reject fires with the reason
-  And V1.AccountState becomes Rejected
-  And V1.RejectionReason holds the verbatim reason
-  And the audit log records Admin.UserRejected
-  And the toast reads "Rejected {email}"
+Scenario: View opens a read-only profile preview and closes
+  Given the queue shows a pending visitor row
+  When the administrator clicks "View" on that row
+  Then a modal opens titled "Application details — {email}"
+  And it fires GET /account/api/admin/visitors/{id}/profile-for-approval (200)
+  And the profile renders in description lists (no Confirm button — read-only mode)
+  And the footer shows a single "Close" button
+  When the administrator clicks "Close"
+  Then the modal closes and no approve/reject call fires
+  And the grid row is unchanged
 ```
 
-### E2E-VPN-003 — Reason length gate
+### E2E-VPN-003 — ID image inline in View modal
 
 ```gherkin
-Scenario: Reject reason shorter than 10 chars keeps Submit disabled
-  Given the reject modal is open
-  When the admin types "Too short"
-  Then the Submit button is disabled
-  When they extend to "Too short — adding context to pass the 10-char gate"
-  Then Submit enables
+Scenario: View modal shows the uploaded ID document inline
+  Given a pending visitor whose profile has HasIdImage=true
+  When the administrator clicks "View" on that row
+  Then the "ID image uploaded" field reads "Yes"
+  And an <img> renders under the "ID document" heading
+  And its src is /account/api/admin/visitors/{id}/id-document?v={cache-buster}
+  And that GET returns 200 with an image content-type
 ```
 
-### E2E-VPN-004 — ID image inline
+### E2E-VPN-004 — Profile with no form data
 
 ```gherkin
-Scenario: View shows ID document image
-  Given V1 has HasIdImage=true
-  When the admin clicks "View" on V1's row
-  Then the modal renders an <img> with src "/account/api/admin/visitors/V1/id-document?v={ticks}"
-  And the decrypted image displays
+Scenario: View modal on an empty profile shows the info alert
+  Given a pending visitor whose profile has no form data
+      (no Arabic/English name, nationality, DOB, identity, mobile, ID image, interests)
+  When the administrator clicks "View" on that row
+  Then the base identity description list still renders (Email, Display name, etc.)
+  And a SimfAlert info reads "This account has not filled out the profile form yet."
+  And no profile-form description list is shown
 ```
 
-### E2E-VPN-005 — Stale row
+### E2E-VPN-005 — Reject one visitor with a reason
 
 ```gherkin
-Scenario: Approving a row that another admin just handled returns 404
-  Given Admin A and Admin B both have /admin/visitors/pending open
-  And both rows include V1
-  When Admin A successfully approves V1
-  And Admin B then clicks "Approve" on V1's stale row
-  Then the server returns HTTP 404 + ApiResult.Error.Code="NotFound"
-  And Admin B's modal closes
-  And the toast surfaces the bilingual fallback "The visitor was not found or is no longer pending."
-  And Admin B's grid reloads (V1 is gone)
+Scenario: Reject a single pending visitor with a valid reason
+  Given the queue shows a pending visitor row for visitor.reject@example.com
+  When the administrator clicks "Reject" on that row
+  Then the reject modal opens titled "Reject account"
+  And the body reads "Reject visitor.reject@example.com? This sets the account to
+      Rejected and writes an audit row."
+  And it shows a "Reason" textarea with hint "Between 10 and 500 characters. Shown to
+      operators in the audit log." (MaxLength 500, 3 rows)
+  When the administrator types "Documents do not match the registered identity."
+  And the "Reject" submit button becomes enabled (reason length is 10..500)
+  And they click "Reject"
+  Then POST /account/api/admin/visitors/{id}/reject returns 200
+      with body { "reason": "Documents do not match the registered identity." }
+  And the modal closes
+  And a green toast reads "Rejected visitor.reject@example.com."
+  And the grid reloads and the row no longer appears
 ```
 
-_Last reviewed:_ 2026-05-28 by Claude (D-133 follow-up).
+**Evidence captured:**
+- Screenshots: `docs/screenshots/cp-admin-visitors-pending-reject-modal.png`,
+  `docs/screenshots/cp-admin-visitors-pending-reject-after.png`
+- Console errors: 0 expected
+- Network: `POST /account/api/admin/visitors/{id}/reject` → 200, then
+  `POST /account/api/admin/visitors/pending/list` → 200
+- Side effects: subject `AccountState=Rejected`, `UserProfile.RejectionReason` +
+  `RejectionReasonArabic` set to the reason, refresh tokens revoked,
+  `NotificationKind.AccountRejected` dispatched + email queued
+- Audit row: `Admin.VisitorRejected` (`AuditEvents.AdminVisitorRejected`) with the
+  actor id, subject id/email, and `Detail = reason`
+
+### E2E-VPN-006 — Reject reason length validation (client-side gate)
+
+```gherkin
+Scenario Outline: Reject submit stays disabled outside 10..500 chars
+  Given the reject modal is open for a pending visitor
+  When the administrator types a reason of <length> characters
+  Then the "Reject" submit button is <state>
+  And no POST /account/api/admin/visitors/{id}/reject fires while disabled
+
+  Examples:
+    | length | state    |
+    | 0      | disabled |
+    | 5      | disabled |
+    | 9      | disabled |
+    | 10     | enabled  |
+    | 500    | enabled  |
+    | 501    | disabled |
+```
+
+### E2E-VPN-007 — Bulk approve
+
+```gherkin
+Scenario: Approve several pending visitors in one batch
+  Given the queue shows at least 3 pending visitor rows
+  When the administrator ticks the "Select all" checkbox (or several per-row checkboxes)
+  And clicks "Approve selected"
+  Then POST /account/api/admin/visitors/bulk-approve fires with body
+      { "ids": [ ...selected guids... ] } and returns 200
+  And a toast reads "Approved {Approved} user(s). Skipped {Skipped}."
+  And the toast is green when Skipped=0, amber (warning) when Skipped>0
+  And the grid reloads with the approved rows removed
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-visitors-pending-bulk-approve.png`
+- Network: `POST /account/api/admin/visitors/bulk-approve` → 200 (one audit +
+  one operation-log row per approved subject), then `/pending/list` → 200
+
+### E2E-VPN-008 — Bulk reject (shared reason)
+
+```gherkin
+Scenario: Reject several pending visitors with one shared reason
+  Given the queue shows at least 2 pending visitor rows
+  When the administrator ticks the per-row checkboxes for those rows
+  And clicks "Reject selected"
+  Then a shared-reason modal opens titled "Reject selected"
+  And the body reads the count of selected rows ("Reject {n} accounts? ...")
+  And it shows the same "Reason" textarea (10..500 chars, MaxLength 500)
+  When the administrator types "Batch rejected — duplicate registrations."
+  And clicks "Reject"
+  Then POST /account/api/admin/visitors/bulk-reject fires with body
+      { "ids": [...], "reason": "Batch rejected — duplicate registrations." } → 200
+  And a toast reads "Rejected {Rejected} user(s). Skipped {Skipped}."
+  And the toast is green when Skipped=0, amber (warning) when Skipped>0
+  And the grid reloads with the rejected rows removed
+```
+
+### E2E-VPN-009 — Empty queue
+
+```gherkin
+Scenario: Empty queue renders SimfEmptyState
+  Given no Visitor accounts are in PendingApproval
+  When the administrator opens /admin/visitors/pending
+  Then POST /account/api/admin/visitors/pending/list returns 200 with 0 rows
+  And the grid body renders the SimfEmptyState component
+  And it shows the bilingual copy "No accounts are waiting for approval." /
+      "لا توجد حسابات بانتظار الموافقة."
+  And no error toast appears
+```
+
+### E2E-VPN-010 — Auth gate
+
+```gherkin
+Scenario: A signed-in user without Visitors.View is denied
+  Given a signed-in admin whose roles grant no "Visitors.View" permission
+      (and are not Administrator="*")
+  When they navigate to /admin/visitors/pending
+  Then they land on /not-permitted with HTTP 200
+  And no POST /account/api/admin/visitors/pending/list request fires
+  And the page is not rendered (RequirePermission attribute blocks it)
+```
+
+### E2E-VPN-011 — Stale row (concurrent action)
+
+```gherkin
+Scenario: Approving a row a sibling admin already actioned shows the 409 toast
+  Given the administrator loaded the queue showing visitor.stale@example.com
+  And another admin approved (or rejected) that same account in the meantime
+      (subject is no longer in AccountState=PendingApproval)
+  When the administrator opens the review modal and clicks "Confirm approval"
+  Then POST /account/api/admin/visitors/{id}/approve returns HTTP 409
+      with ApiResult.Error.Code = "AdminUserNotPending"
+  And a red toast surfaces the bilingual MessageForCurrentCulture()
+      "The target account is not pending approval." /
+      "الحساب المستهدف ليس في انتظار الموافقة."
+  And the grid reloads (the stale row falls off)
+```
+
+### E2E-VPN-012 — Scope guard (wrong queue)
+
+```gherkin
+Scenario: Approving a partner/admin id via the visitors endpoint is rejected
+  Given a pending account whose linked ProfileType.IsVisitor=false (a partner/Other)
+      OR a UserType=Admin id
+  When a request hits POST /account/api/admin/visitors/{thatId}/approve
+  Then the API returns HTTP 404 with ApiResult.Error.Code = "AdminUserNotFound"
+  And the bilingual message reads "The target account is not in the expected approval
+      queue." / "الحساب المستهدف ليس في قائمة الاعتماد المتوقعة."
+  And a SOC audit row "Admin.ApprovalScopeMismatch" is written (Outcome=Failure)
+  (Note: such an id is not normally present on the visitors queue grid; this guards
+   a hand-crafted / forged request.)
+```
+
+### E2E-VPN-013 — Server 500 on list
+
+```gherkin
+Scenario: API 500 on /pending/list leaves an empty grid, no crash
+  Given the API is configured to return 500 on /admin/visitors/pending/list (DB down)
+  When the administrator opens /admin/visitors/pending
+  Then the grid shows the loading indicator while the call is in flight
+  And on failure LoadAsync falls back to an empty GridPage (0 rows)
+  And the grid body renders the SimfEmptyState (no unhandled exception, no console error)
+```
+
+### E2E-VPN-014 — RTL / Arabic render
+
+```gherkin
+Scenario: Arabic toggle mirrors the page and the Reject modal
+  Given the administrator is on /admin/visitors/pending in English
+  When they switch the UI language to العربية
+  Then the page reloads with <html dir="rtl" lang="ar">
+  And the SimfBanner title reads "موافقات الزوار المعلّقة"
+  And the supporting text + grid headers render in Arabic, mirrored
+  And the row action buttons (View / Approve / Reject) appear in reverse order
+
+  When the administrator clicks "رفض" (Reject) on a row
+  Then the reject modal opens RTL titled "رفض الحساب"
+  And the "Reason" textarea label + hint are Arabic
+  And the submit button reads "رفض" and footer actions are reverse-ordered
+```
+
+---
+
+## Implementation notes
+
+- **Manual smoke is the canonical run today.** Until a Playwright project exists,
+  the canonical execution is a Chrome DevTools MCP session: sign in per the Auth
+  setup, walk each scenario, and capture screenshots into
+  `docs/screenshots/cp-admin-visitors-pending-{scenario}.png`. Keep the Gherkin
+  steps runner-agnostic so they port to `.feature` files later.
+- **Permission split is load-bearing.** The page opens on `Visitors.View`, but the
+  approve / reject / bulk calls are independently gated (`Visitors.Approve`,
+  `Visitors.Reject`). E2E-VPN-010 covers the page gate; a view-only admin reaching
+  the page but getting 403 on the action calls is a real path worth a dedicated
+  probe when the test runner lands.
+- **API integration tests cover the same surface at a lower layer (no browser):**
+  - `tests/SIMF.Api.Tests/AdminApprovalTests.cs` — single approve/reject, the
+    `Admin.VisitorApproved` / `Admin.VisitorRejected` audit rows, and the
+    `AdminUserNotPending` (409) / `AdminUserNotFound` (404) guards.
+  - `tests/SIMF.Api.Tests/AdminBulkApprovalTests.cs` — bulk-approve batch +
+    per-subject skip reporting.
+  - `tests/SIMF.Api.Tests/AdminBulkRejectTests.cs` — bulk-reject shared-reason
+    batch + per-subject skip reporting.
+  When E2E covers a scenario you can usually drop the matching `Api.Tests` case —
+  but during the transition keep both.
+- **Doc drift note:** `docs/pages/cp/admin-visitors-pending.md` (last reviewed
+  2026-05-28) states bulk endpoints "do not exist yet" and that the stale-row case
+  returns 404. As built, the bulk-approve (D-164) and bulk-reject (D-209) endpoints
+  ship and are wired to the grid's Multiselect, and the stale-row case returns **409
+  `AdminUserNotPending`** (404 `AdminUserNotFound` is the missing-id / wrong-scope
+  case). This catalogue reflects the as-built code.
+
+---
+
+_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
