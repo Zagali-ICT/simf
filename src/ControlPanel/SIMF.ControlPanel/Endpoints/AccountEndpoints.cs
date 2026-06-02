@@ -1,5 +1,6 @@
 // Tests: SIMF.ControlPanel.Tests/AccountEndpointsTests.cs (todo).
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http.Features;
 using SIMF.ApiClient;
 using SIMF.Common;
 using SIMF.Contracts.Admin;
@@ -32,6 +33,11 @@ namespace SIMF.ControlPanel.Endpoints;
 /// </summary>
 internal static class AccountEndpoints
 {
+    // P3.2b — D-232: fallback if SessionRecordingStorage:MaxUploadBytes is absent
+    // from CP config (1 GiB). The live value is read from configuration so it is
+    // sourced once, not baked into code — see the recording-upload BFF route.
+    private const long DefaultRecordingMaxUploadBytes = 1_073_741_824L;
+
     public static void MapAccountEndpoints(this IEndpointRouteBuilder routes)
     {
         var group = routes.MapGroup("/account/api").RequireAuthorization();
@@ -1116,6 +1122,54 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.SetSessionStatusAsync(id, body, token));
+        });
+        // P3.2b — D-232: session recording upload / delete passthrough. The
+        // per-request body + multipart limits are raised from config (mirrors the
+        // API's SessionRecordingStorage:MaxUploadBytes) — scoped to this route, so
+        // every other CP endpoint keeps its smaller limit. ReadFormAsync stages a
+        // large file to a temp file on disk (the established CP upload convention,
+        // as for images/presentations) then StreamContent forwards it to the API
+        // without holding a byte[] in memory; the API does the authoritative checks.
+        group.MapPost("/admin/sessions/{id:guid}/recording",
+            async (Guid id, HttpContext http, SimfAdminClient api, IConfiguration config) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+
+            var maxBytes = config.GetValue(
+                "SessionRecordingStorage:MaxUploadBytes", DefaultRecordingMaxUploadBytes);
+            var sizeFeature = http.Features.Get<IHttpMaxRequestBodySizeFeature>();
+            if (sizeFeature is { IsReadOnly: false })
+            {
+                sizeFeature.MaxRequestBodySize = maxBytes;
+            }
+            http.Features.Set<IFormFeature>(
+                new FormFeature(http.Request,
+                    new FormOptions { MultipartBodyLengthLimit = maxBytes }));
+
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.SessionRecordingInvalid,
+                    Message = "A recording file is required.",
+                    MessageArabic = "ملف التسجيل مطلوب.",
+                }));
+            }
+            var contentType = string.IsNullOrWhiteSpace(file.ContentType)
+                ? "video/mp4" : file.ContentType;
+            await using var stream = file.OpenReadStream();
+            return Forward(await api.UploadSessionRecordingAsync(
+                id, stream, contentType, file.FileName, token));
+        }).DisableAntiforgery();
+        group.MapDelete("/admin/sessions/{id:guid}/recording",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteSessionRecordingAsync(id, token));
         });
 
         // D-166 (gap doc G4) — registration gate + archive visibility BFF passthroughs.

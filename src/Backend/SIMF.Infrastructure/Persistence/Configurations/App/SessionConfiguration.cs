@@ -20,6 +20,11 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         builder.Property(s => s.Description).HasMaxLength(2048);
         builder.Property(s => s.DescriptionArabic).HasMaxLength(2048);
 
+        // P3.2b — D-232: recording metadata (the bytes live out-of-row on disk).
+        builder.Property(s => s.RecordingStoredFileName).HasMaxLength(64);
+        builder.Property(s => s.RecordingFileName).HasMaxLength(260);
+        builder.Property(s => s.RecordingContentType).HasMaxLength(128);
+
         builder.HasIndex(s => s.Code).IsUnique();
 
         // Real DB FK to Hall — same context. Restrict matches the

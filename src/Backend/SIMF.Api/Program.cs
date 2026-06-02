@@ -229,7 +229,11 @@ if (Encoding.UTF8.GetByteCount(jwtOptions.SigningKey) < 32)
 // Bearer authentication — validates the access token on a protected endpoint
 // (see JwtBearerSetup for the hardened parameters and the security-stamp check).
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options => JwtBearerSetup.Configure(options, jwtOptions));
+    .AddJwtBearer(options => JwtBearerSetup.Configure(options, jwtOptions))
+    // P3.2b — D-232 (D-213): a second scheme for short-lived recording-stream
+    // tokens (distinct audience, query-string token, no security-stamp check).
+    .AddJwtBearer(JwtBearerSetup.StreamScheme,
+        options => JwtBearerSetup.ConfigureStream(options, jwtOptions));
 
 // The Administrator-only policy is the gate for the admin-reset endpoint
 // (D-041). Add new role/permission policies here as more admin actions land.

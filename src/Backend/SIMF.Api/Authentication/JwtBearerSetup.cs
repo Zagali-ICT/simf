@@ -18,6 +18,10 @@ namespace SIMF.Api.Authentication;
 /// </summary>
 internal static class JwtBearerSetup
 {
+    /// <summary>P3.2b — D-232: the bearer scheme name for recording-stream
+    /// tokens (distinct from the default user scheme).</summary>
+    public const string StreamScheme = "StreamToken";
+
     public static void Configure(JwtBearerOptions options, JwtOptions jwt)
     {
         options.MapInboundClaims = false;
@@ -37,6 +41,46 @@ internal static class JwtBearerSetup
         options.Events = new JwtBearerEvents
         {
             OnTokenValidated = OnTokenValidatedAsync,
+            OnAuthenticationFailed = OnAuthenticationFailedAsync,
+            OnChallenge = OnChallengeAsync,
+        };
+    }
+
+    /// <summary>P3.2b — D-232 (D-213): the dedicated bearer scheme for
+    /// short-lived session-recording stream tokens. Validates the distinct
+    /// <c>StreamAudience</c> (so a stream token is never accepted as a user
+    /// token, nor vice-versa) with HS256 pinned, reads the token from the
+    /// <c>?access_token=</c> query (an HTML5 <c>&lt;video&gt;</c> / the app's
+    /// player cannot set an Authorization header on range GETs), and runs NO
+    /// security-stamp revocation check — the token is short-lived and scoped
+    /// to one recording, and the range-streaming hot path must not hit the DB
+    /// per request.</summary>
+    public static void ConfigureStream(JwtBearerOptions options, JwtOptions jwt)
+    {
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwt.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwt.StreamAudience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30),
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey)),
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var fromQuery = context.Request.Query["access_token"].ToString();
+                if (!string.IsNullOrEmpty(fromQuery))
+                {
+                    context.Token = fromQuery;
+                }
+                return Task.CompletedTask;
+            },
             OnAuthenticationFailed = OnAuthenticationFailedAsync,
             OnChallenge = OnChallengeAsync,
         };

@@ -19,4 +19,11 @@ public interface IJwtTokenService
     AccessToken CreateAccessToken(
         SimfUser user, IEnumerable<string> roles, IEnumerable<string> permissions,
         SIMF.Common.Enums.MobileAppRole mobileAppRole);
+
+    /// <summary>P3.2b — D-232 (D-213): mints a short-lived token scoped to ONE
+    /// session recording, for the range-streaming endpoint. Distinct audience
+    /// (<c>Jwt:StreamAudience</c>) + a <c>recording_session_id</c> claim — it
+    /// carries no roles / permissions / security-stamp, so it cannot be replayed
+    /// against any other endpoint. Lifetime is <c>Jwt:StreamTokenMinutes</c>.</summary>
+    AccessToken CreateRecordingStreamToken(Guid sessionId);
 }

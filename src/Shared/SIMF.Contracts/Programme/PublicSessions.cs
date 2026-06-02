@@ -57,13 +57,17 @@ public sealed record PublicSessionDetail(
     Guid? CategoryId = null,
     string? CategoryName = null,
     string? CategoryNameArabic = null,
-    // P3.2 — D-231: broadcast lifecycle status + publish stamp. A presentation
-    // signal only — the client badges the state and PublishedAt marks when it
-    // went live. This DTO carries NO recording payload yet: the recording field
-    // + the server-side "only when Published" gate land in P3.2b, and the
-    // recorded-Q&A read in P3.4. Appended; defaults preserve the wire (D-219).
+    // P3.2 — D-231: broadcast lifecycle status + publish stamp. The client
+    // badges the state; PublishedAt marks when it went live. Appended; defaults
+    // preserve the wire (D-219).
     SessionStatus Status = SessionStatus.Scheduled,
-    DateTimeOffset? PublishedAt = null);
+    DateTimeOffset? PublishedAt = null,
+    // P3.2b — D-232: true when this published session has a recording the app
+    // can stream. The app then POSTs the stream-token endpoint and plays the
+    // range-streaming URL. The server only surfaces the recording when
+    // Status == Published AND a recording exists (the recorded-Q&A read lands
+    // in P3.4). No stored file name is exposed — only this flag.
+    bool HasRecording = false);
 
 /// <summary>D-199 — one theme/pillar tag on a public session. Order
 /// follows the session's theme order; the first is the primary pillar
@@ -99,3 +103,12 @@ public sealed record PublicSessionSeatSummary(
     int Capacity,
     int Reserved,
     int Available);
+
+/// <summary>P3.2b — D-232 (D-213): the response from the recording stream-token
+/// endpoint. <see cref="Token"/> is a short-lived JWT scoped to one recording;
+/// the player appends it to <see cref="StreamUrl"/> on the query string
+/// (<c>?access_token=…</c>) since an HTML5 <c>&lt;video&gt;</c> cannot set an
+/// Authorization header. <see cref="ExpiresInSeconds"/> tells the client when
+/// to re-request a token if a long viewing session outlives it.</summary>
+public sealed record RecordingStreamTokenResponse(
+    string Token, int ExpiresInSeconds, string StreamUrl);

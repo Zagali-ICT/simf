@@ -1,7 +1,9 @@
 // Tests: SIMF.Api.Tests/ProgrammeSessionsTests.cs
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 public status read)
+// Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 published-recording gate)
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Programme.Abstractions;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Programme;
 using SIMF.Infrastructure.Persistence;
 
@@ -178,6 +180,37 @@ internal sealed class ProgrammeSessionService(SimfAppDbContext dbContext)
             session.Category?.NameEn,
             session.Category?.NameAr,
             session.Status,
-            session.PublishedAt);
+            session.PublishedAt,
+            // P3.2b — D-232: the app shows a player only for a published
+            // session that actually has a recording.
+            session.Status == SessionStatus.Published
+                && session.RecordingStoredFileName is not null);
+    }
+
+    public async Task<SessionRecordingRef?> GetPublishedRecordingAsync(
+        Guid id, CancellationToken cancellationToken = default)
+    {
+        // The public visibility gate: a recording is reachable only when the
+        // session is active, Published, and a recording file is attached.
+        var row = await dbContext.Sessions
+            .AsNoTracking()
+            .Where(session => session.Id == id
+                && session.IsActive
+                && session.Status == SessionStatus.Published
+                && session.RecordingStoredFileName != null)
+            .Select(session => new
+            {
+                session.RecordingStoredFileName,
+                session.RecordingContentType,
+                session.RecordingFileName,
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        return row is null
+            ? null
+            : new SessionRecordingRef(
+                row.RecordingStoredFileName!,
+                row.RecordingContentType ?? "application/octet-stream",
+                row.RecordingFileName ?? "recording");
     }
 }

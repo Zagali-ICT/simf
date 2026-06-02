@@ -90,6 +90,32 @@ public class Session
     /// un-published. Null in every other state.</summary>
     public DateTimeOffset? PublishedAt { get; set; }
 
+    /// <summary>P3.2b — D-232 (D-213): the recording attached to this session,
+    /// stored out-of-row on the filesystem behind <c>ISessionRecordingStorage</c>.
+    /// All null until a recording is uploaded; cleared when it is deleted.
+    /// Orthogonal to <see cref="Status"/> — uploading does not change the
+    /// lifecycle, and the public stream requires both a recording AND
+    /// <see cref="SessionStatus.Published"/>.</summary>
+    public string? RecordingStoredFileName { get; set; }
+
+    /// <summary>The original upload file name (shown in the CP, used as the
+    /// download name).</summary>
+    public string? RecordingFileName { get; set; }
+
+    /// <summary>The recording's MIME type (e.g. <c>video/mp4</c>) — echoed on
+    /// the stream response so the player knows how to decode it.</summary>
+    public string? RecordingContentType { get; set; }
+
+    /// <summary>The recording's size in bytes (shown in the CP).</summary>
+    public long? RecordingSizeBytes { get; set; }
+
+    /// <summary>When the recording was last uploaded.</summary>
+    public DateTimeOffset? RecordingUploadedAt { get; set; }
+
+    /// <summary>Bare <c>Guid</c> of the admin who uploaded the recording —
+    /// cross-context (Identity DB), no FK (D-157).</summary>
+    public Guid? RecordingUploadedByUserId { get; set; }
+
     /// <summary>M-to-M with <see cref="Speaker"/> via the explicit join
     /// entity <see cref="SessionSpeaker"/>. Explicit because the
     /// composite key + the per-row metadata (DisplayOrder) earns the

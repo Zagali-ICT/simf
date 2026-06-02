@@ -208,6 +208,12 @@ public static class DependencyInjection
         // to a Hall + M-to-M Speakers + M-to-M Themes (PDF §2.9).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSessionService,
             SIMF.Infrastructure.Programme.AdminSessionService>();
+        // P3.2b — D-232 (D-213): out-of-row session-recording storage (streamed
+        // both ways, range-served behind a short-lived stream token).
+        services.Configure<SIMF.Infrastructure.Programme.SessionRecordingStorageOptions>(
+            configuration.GetSection(SIMF.Infrastructure.Programme.SessionRecordingStorageOptions.SectionName));
+        services.AddSingleton<SIMF.Application.Programme.Abstractions.ISessionRecordingStorage,
+            SIMF.Infrastructure.Programme.FilesystemSessionRecordingStorage>();
         // D-166 (gap doc G4) — registration gate + archive visibility
         // singletons + the auto-close background worker (PDF §2.3, §2.4).
         services.AddScoped<SIMF.Application.Operations.Abstractions.IOperationsToggleService,

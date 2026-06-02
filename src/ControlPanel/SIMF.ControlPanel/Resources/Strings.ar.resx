@@ -1288,6 +1288,14 @@
   <data name="Admin.Sessions.Lifecycle.Publish" xml:space="preserve"><value>نشر</value></data>
   <data name="Admin.Sessions.Lifecycle.Unpublish" xml:space="preserve"><value>إلغاء النشر</value></data>
   <data name="Admin.Sessions.Lifecycle.Changed" xml:space="preserve"><value>تم ضبط مرحلة الجلسة إلى {0}.</value></data>
+  <data name="Admin.Sessions.Recording.Label" xml:space="preserve"><value>التسجيل</value></data>
+  <data name="Admin.Sessions.Recording.None" xml:space="preserve"><value>لا يوجد تسجيل</value></data>
+  <data name="Admin.Sessions.Recording.File" xml:space="preserve"><value>ملف التسجيل</value></data>
+  <data name="Admin.Sessions.Recording.Upload" xml:space="preserve"><value>رفع التسجيل</value></data>
+  <data name="Admin.Sessions.Recording.Delete" xml:space="preserve"><value>حذف التسجيل</value></data>
+  <data name="Admin.Sessions.Recording.Uploaded" xml:space="preserve"><value>تم رفع التسجيل.</value></data>
+  <data name="Admin.Sessions.Recording.Deleted" xml:space="preserve"><value>تم حذف التسجيل.</value></data>
+
   <data name="Admin.Sessions.Action.Add" xml:space="preserve"><value>إضافة جلسة</value></data>
   <data name="Admin.Sessions.Action.Edit" xml:space="preserve"><value>تعديل</value></data>
   <data name="Admin.Sessions.Action.Details" xml:space="preserve"><value>تفاصيل</value></data>

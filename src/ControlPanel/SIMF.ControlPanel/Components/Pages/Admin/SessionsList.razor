@@ -186,7 +186,43 @@
                     <dt>@L["Admin.Sessions.Lifecycle.PublishedAt"]</dt>
                     <dd>@published.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
                 }
+                <dt>@L["Admin.Sessions.Recording.Label"]</dt>
+                <dd>
+                    @if (_detailsTarget.HasRecording)
+                    {
+                        <span>@_detailsTarget.RecordingFileName (@FormatBytes(_detailsTarget.RecordingSizeBytes))</span>
+                    }
+                    else
+                    {
+                        <span>@L["Admin.Sessions.Recording.None"]</span>
+                    }
+                </dd>
             </dl>
+
+            @* P3.2b — D-232: the Committee attaches/removes the recording here,
+               gated by Sessions.Publish (same permission as the lifecycle). *@
+            <AuthorizedAction Permission="@PermissionCatalog.Sessions.Publish">
+                <div class="simf-form">
+                    <label class="simf-field">
+                        <span class="simf-field__label">@L["Admin.Sessions.Recording.File"]</span>
+                        <input class="simf-field__input" type="file" id="session-recording-input"
+                               accept="video/*" disabled="@_recordingBusy" />
+                    </label>
+                    <div class="simf-form__actions">
+                        <SimfButton Type="button" Loading="_recordingBusy"
+                                    OnClick="UploadRecordingAsync">
+                            @L["Admin.Sessions.Recording.Upload"]
+                        </SimfButton>
+                        @if (_detailsTarget.HasRecording)
+                        {
+                            <SimfButton Type="button" Loading="_recordingBusy"
+                                        OnClick="DeleteRecordingAsync">
+                                @L["Admin.Sessions.Recording.Delete"]
+                            </SimfButton>
+                        }
+                    </div>
+                </div>
+            </AuthorizedAction>
         </ChildContent>
         <Footer>
             @* P3.2 — D-231: the Committee drives the broadcast lifecycle here,
@@ -221,6 +257,7 @@
     private AdminSessionDetail? _editTarget;
     private AdminSessionDetail? _detailsTarget;
     private bool _lifecycleBusy;
+    private bool _recordingBusy;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -375,6 +412,68 @@
             }
         }
         finally { _lifecycleBusy = false; }
+    }
+
+    // P3.2b — D-232: attach / remove the session recording. Upload streams the
+    // file through the hidden <input> via simfAccount.uploadFile; the returned
+    // detail refreshes the modal so HasRecording flips immediately.
+    private async Task UploadRecordingAsync()
+    {
+        if (_detailsTarget is null) { return; }
+        _recordingBusy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminSessionDetail>>(
+                "simfAccount.uploadFile",
+                $"/account/api/admin/sessions/{_detailsTarget.Id}/recording",
+                "session-recording-input");
+            if (env is { Success: true, Data: not null })
+            {
+                _detailsTarget = env.Data;
+                _toast = new Toast("success", L["Admin.Sessions.Recording.Uploaded"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Sessions.Fallback"]);
+            }
+        }
+        finally { _recordingBusy = false; }
+    }
+
+    private async Task DeleteRecordingAsync()
+    {
+        if (_detailsTarget is null) { return; }
+        _recordingBusy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminSessionDetail>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/sessions/{_detailsTarget.Id}/recording");
+            if (env is { Success: true, Data: not null })
+            {
+                _detailsTarget = env.Data;
+                _toast = new Toast("success", L["Admin.Sessions.Recording.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Sessions.Fallback"]);
+            }
+        }
+        finally { _recordingBusy = false; }
+    }
+
+    private static string FormatBytes(long? bytes)
+    {
+        if (bytes is not { } value) { return "—"; }
+        return value >= 1_048_576
+            ? $"{value / 1_048_576.0:0.#} MB"
+            : $"{value / 1024.0:0.#} KB";
     }
 
     private static string HallLabel(AdminSessionSummary row) =>

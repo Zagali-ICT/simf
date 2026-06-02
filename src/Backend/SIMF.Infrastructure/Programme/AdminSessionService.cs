@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/AdminSessionsTests.cs
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 lifecycle)
+// Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 recording)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Auditing;
@@ -23,6 +24,7 @@ internal sealed class AdminSessionService(
     SimfAppDbContext dbContext,
     IAuditLog auditLog,
     TimeProvider timeProvider,
+    ISessionRecordingStorage recordingStorage,
     ILogger<AdminSessionService> logger) : IAdminSessionService
 {
     public async Task<GridPage<AdminSessionSummary>> ListAllAsync(
@@ -299,20 +301,10 @@ internal sealed class AdminSessionService(
         SessionStatus status,
         CancellationToken cancellationToken = default)
     {
-        // Load the full graph once, tracked (we mutate it), with the same
-        // includes ToDetail needs — so the DTO is built in memory after the save
-        // with no second round-trip. Create/Update re-fetch via GetAsync because
-        // they deliberately don't load these navigations; SetStatus loads them
-        // up front and skips the re-fetch.
-        var session = await dbContext.Sessions
-            .Include(row => row.Hall)
-            .Include(row => row.Speakers).ThenInclude(link => link.Speaker)
-            .Include(row => row.Themes)
-            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
-            ?? throw new ApiException(
-                ErrorCodes.SessionNotFound, 404,
-                "The session was not found.",
-                "لم يتم العثور على الجلسة.");
+        // Load the full graph once, tracked (we mutate it), so ToDetail builds
+        // the DTO in memory after the save with no second round-trip — unlike
+        // Create/Update, which omit these navigations and must re-fetch.
+        var session = await LoadFullAsync(id, cancellationToken);
 
         var from = session.Status;
         if (from == status)
@@ -356,7 +348,98 @@ internal sealed class AdminSessionService(
         return ToDetail(session);
     }
 
+    public async Task<AdminSessionDetail> UploadRecordingAsync(
+        Guid actorUserId,
+        Guid id,
+        Stream content,
+        string fileName,
+        string contentType,
+        long sizeBytes,
+        CancellationToken cancellationToken = default)
+    {
+        var session = await LoadFullAsync(id, cancellationToken);
+
+        // Stream the bytes to disk (the storage never buffers a whole-file
+        // byte[]); persist only the metadata on the row.
+        var storedFileName = await recordingStorage.SaveAsync(
+            session.Id, content, fileName, cancellationToken);
+
+        var now = timeProvider.GetUtcNow();
+        session.RecordingStoredFileName = storedFileName;
+        session.RecordingFileName = fileName;
+        session.RecordingContentType = contentType;
+        session.RecordingSizeBytes = sizeBytes;
+        session.RecordingUploadedAt = now;
+        session.RecordingUploadedByUserId = actorUserId;
+        session.UpdatedAt = now;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SessionRecordingUploaded,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"id={session.Id}; code={session.Code}; file={fileName}; bytes={sizeBytes}",
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Admin {ActorId} uploaded recording for Session {Code} ({Id}), {Bytes} bytes",
+            actorUserId, session.Code, session.Id, sizeBytes);
+
+        return ToDetail(session);
+    }
+
+    public async Task<AdminSessionDetail> DeleteRecordingAsync(
+        Guid actorUserId,
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var session = await LoadFullAsync(id, cancellationToken);
+
+        if (session.RecordingStoredFileName is null)
+        {
+            return ToDetail(session); // idempotent — nothing to delete
+        }
+
+        var storedFileName = session.RecordingStoredFileName;
+        session.RecordingStoredFileName = null;
+        session.RecordingFileName = null;
+        session.RecordingContentType = null;
+        session.RecordingSizeBytes = null;
+        session.RecordingUploadedAt = null;
+        session.RecordingUploadedByUserId = null;
+        session.UpdatedAt = timeProvider.GetUtcNow();
+        // Clear the metadata first, then drop the file: if the file delete
+        // fails the app already sees "no recording" and only an orphan file
+        // is left behind (harmless), never a row pointing at a missing file.
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await recordingStorage.DeleteAsync(storedFileName, cancellationToken);
+
+        await auditLog.WriteAsync(new AuditEntry
+        {
+            EventType = AuditEvents.SessionRecordingDeleted,
+            Outcome = AuditOutcome.Success,
+            ActorUserId = actorUserId,
+            Detail = $"id={session.Id}; code={session.Code}",
+        }, cancellationToken);
+
+        return ToDetail(session);
+    }
+
     // -- helpers --------------------------------------------------------------
+
+    // P3.2 — loads the session with the navigations ToDetail needs, tracked
+    // (callers mutate it). Shared by SetStatus / Upload / Delete recording.
+    private async Task<Session> LoadFullAsync(Guid id, CancellationToken cancellationToken) =>
+        await dbContext.Sessions
+            .Include(row => row.Hall)
+            .Include(row => row.Speakers).ThenInclude(link => link.Speaker)
+            .Include(row => row.Themes)
+            .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
+        ?? throw new ApiException(
+            ErrorCodes.SessionNotFound, 404,
+            "The session was not found.",
+            "لم يتم العثور على الجلسة.");
 
     private static (string code, string title, string titleArabic) ValidateAndNormalise(
         string codeRaw, string titleRaw, string titleArabicRaw)
@@ -562,6 +645,10 @@ internal sealed class AdminSessionService(
             session.UpdatedAt,
             session.CategoryId,
             session.Status,
-            session.PublishedAt);
+            session.PublishedAt,
+            session.RecordingStoredFileName is not null,
+            session.RecordingFileName,
+            session.RecordingSizeBytes,
+            session.RecordingUploadedAt);
     }
 }

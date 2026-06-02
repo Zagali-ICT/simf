@@ -1,4 +1,5 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿// Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 recording-stream token)
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
@@ -66,5 +67,36 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
         return new AccessToken(
             new JwtSecurityTokenHandler().WriteToken(token),
             settings.AccessTokenMinutes * 60);
+    }
+
+    public AccessToken CreateRecordingStreamToken(Guid sessionId)
+    {
+        var settings = options.Value;
+        var now = timeProvider.GetUtcNow();
+        var expires = now.AddMinutes(settings.StreamTokenMinutes);
+
+        // Deliberately minimal: NO roles, NO perm claims, NO security_stamp —
+        // a stream token authorises one recording and nothing else. The
+        // distinct audience pins it to the StreamToken scheme.
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new("recording_session_id", sessionId.ToString()),
+        };
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.SigningKey));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: settings.Issuer,
+            audience: settings.StreamAudience,
+            claims: claims,
+            notBefore: now.UtcDateTime,
+            expires: expires.UtcDateTime,
+            signingCredentials: credentials);
+
+        return new AccessToken(
+            new JwtSecurityTokenHandler().WriteToken(token),
+            settings.StreamTokenMinutes * 60);
     }
 }

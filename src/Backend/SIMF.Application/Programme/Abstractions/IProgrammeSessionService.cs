@@ -19,4 +19,18 @@ public interface IProgrammeSessionService
     /// the session does not exist or has been soft-deleted.</summary>
     Task<PublicSessionDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>P3.2b — D-232 (D-213): the recording reference for a session
+    /// that is active, <see cref="SIMF.Common.Enums.SessionStatus.Published"/>,
+    /// AND has a recording — else null. Used by the stream-token endpoint (to
+    /// authorise minting) and the range-streaming endpoint (to locate the
+    /// file). Public visibility is gated here: a recording on an unpublished
+    /// session is not reachable through this path.</summary>
+    Task<SessionRecordingRef?> GetPublishedRecordingAsync(
+        Guid id, CancellationToken cancellationToken = default);
 }
+
+/// <summary>P3.2b — D-232: a pointer to a published session's recording on
+/// disk (not a wire DTO — internal to the streaming endpoints).</summary>
+public sealed record SessionRecordingRef(
+    string StoredFileName, string ContentType, string FileName);

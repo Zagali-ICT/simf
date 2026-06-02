@@ -279,6 +279,9 @@ public static class ErrorCodes
     public const string SessionThemeNotFound = "SESSION_THEME_NOT_FOUND";
     // P3.2 — D-231: illegal broadcast-lifecycle transition (e.g. skipping a step).
     public const string SessionStatusTransitionInvalid = "SESSION_STATUS_TRANSITION_INVALID";
+    // P3.2b — D-232: recording upload rejected (empty / too large) / not found.
+    public const string SessionRecordingInvalid = "SESSION_RECORDING_INVALID";
+    public const string SessionRecordingNotFound = "SESSION_RECORDING_NOT_FOUND";
 
     // Gates (D-148 — Gate Module, SIMF-FDS-003 §5.6, SIMF-API-GATES-001).
     public const string GateInvalid = "GATE_INVALID";

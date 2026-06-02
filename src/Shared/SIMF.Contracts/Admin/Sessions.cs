@@ -50,7 +50,12 @@ public sealed record AdminSessionDetail(
     Guid? CategoryId = null,
     // P3.2 — D-231: broadcast lifecycle (appended, defaults preserve the wire).
     SessionStatus Status = SessionStatus.Scheduled,
-    DateTimeOffset? PublishedAt = null);
+    DateTimeOffset? PublishedAt = null,
+    // P3.2b — D-232: recording metadata (the bytes live out-of-row on disk).
+    bool HasRecording = false,
+    string? RecordingFileName = null,
+    long? RecordingSizeBytes = null,
+    DateTimeOffset? RecordingUploadedAt = null);
 
 /// <summary>D-165 — one entry in <see cref="AdminSessionDetail.Speakers"/>.
 /// Order matters: 0 = primary speaker for the session card.</summary>

@@ -1296,6 +1296,13 @@
   <data name="Admin.Sessions.Lifecycle.Publish" xml:space="preserve"><value>Publish</value></data>
   <data name="Admin.Sessions.Lifecycle.Unpublish" xml:space="preserve"><value>Un-publish</value></data>
   <data name="Admin.Sessions.Lifecycle.Changed" xml:space="preserve"><value>Session lifecycle set to {0}.</value></data>
+  <data name="Admin.Sessions.Recording.Label" xml:space="preserve"><value>Recording</value></data>
+  <data name="Admin.Sessions.Recording.None" xml:space="preserve"><value>No recording</value></data>
+  <data name="Admin.Sessions.Recording.File" xml:space="preserve"><value>Recording file</value></data>
+  <data name="Admin.Sessions.Recording.Upload" xml:space="preserve"><value>Upload recording</value></data>
+  <data name="Admin.Sessions.Recording.Delete" xml:space="preserve"><value>Remove recording</value></data>
+  <data name="Admin.Sessions.Recording.Uploaded" xml:space="preserve"><value>Recording uploaded.</value></data>
+  <data name="Admin.Sessions.Recording.Deleted" xml:space="preserve"><value>Recording removed.</value></data>
   <data name="Admin.Sessions.Action.Add" xml:space="preserve"><value>Add session</value></data>
   <data name="Admin.Sessions.Action.Edit" xml:space="preserve"><value>Edit</value></data>
   <data name="Admin.Sessions.Action.Details" xml:space="preserve"><value>Details</value></data>

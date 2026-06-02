@@ -186,6 +186,9 @@ public static class AuditEvents
     public const string SessionStatusChanged = "Session.StatusChanged";
     public const string SessionPublished = "Session.Published";
     public const string SessionUnpublished = "Session.Unpublished";
+    // P3.2b — D-232: session-recording attach / delete.
+    public const string SessionRecordingUploaded = "Session.RecordingUploaded";
+    public const string SessionRecordingDeleted = "Session.RecordingDeleted";
 
     // Session questions + moderator grants (D-169, gap doc G6 — PDF §2.7.2)
     public const string SessionQuestionSubmitted = "SessionQuestion.Submitted";

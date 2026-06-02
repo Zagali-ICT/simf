@@ -1077,6 +1077,28 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
+    // P3.2b — D-232: attach the session recording. The body is STREAMED (not a
+    // byte[]) so a large video is not buffered whole in the CP — the caller's
+    // stream is forwarded straight through to the API.
+    public Task<ApiCallResult<AdminSessionDetail>> UploadSessionRecordingAsync(
+        Guid id, Stream content, string contentType, string fileName,
+        string accessToken, CancellationToken cancellationToken = default)
+    {
+        var multipart = new MultipartFormDataContent();
+        var fileContent = new StreamContent(content);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        multipart.Add(fileContent, "file", fileName);
+        return SendAsync<AdminSessionDetail>(
+            HttpMethod.Post, $"sessions/{id}/recording",
+            multipart, accessToken, cancellationToken);
+    }
+
+    public Task<ApiCallResult<AdminSessionDetail>> DeleteSessionRecordingAsync(
+        Guid id, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSessionDetail>(
+            HttpMethod.Delete, $"sessions/{id}/recording", content: null,
+            accessToken, cancellationToken);
+
     // -- D-166 (gap doc G4) — registration gate + archive visibility -------
 
     public Task<ApiCallResult<RegistrationGateState>> GetRegistrationGateAsync(
