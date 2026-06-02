@@ -155,6 +155,8 @@ public static class CpNavigation
             // (SIMF-FDS-003 §5.6 / SIMF-API-GATES-001).
             new("Module.Gates", "/admin/gates", RequiredPermission: PermissionCatalog.Gates.Manage),
             new("Module.GatesOperator", "/admin/gates/operator", RequiredPermission: PermissionCatalog.Gates.Operate),
+            // P5.1d — D-244: hall-door arrival console (operator scans badge QR).
+            new("Module.HallArrivals", "/admin/hall-arrivals", RequiredPermission: PermissionCatalog.HallArrivals.View),
             // Read-only gates operations dashboard over existing gate reports.
             new("Module.GatesDashboard", "/admin/gates/dashboard", RequiredPermission: PermissionCatalog.Gates.Manage),
             // P2.4 (D-229) — System Configuration (FDS-012 §5.5). Collapses the

@@ -21,3 +21,19 @@ public sealed record HallAttendanceStatus(
     DateTimeOffset? EnterUtc,
     DateTimeOffset? LeaveUtc,
     AttendanceMethod? Method);
+
+/// <summary>P5.1d — D-244: the operator's hall-door QR scan — the badge QR id to
+/// resolve to the attendee.</summary>
+public sealed class RecordQrArrivalRequest
+{
+    public string QrId { get; set; } = string.Empty;
+}
+
+/// <summary>P5.1d — D-244: the result of an operator QR-door scan — the resolved
+/// attendee (so the operator console can confirm WHO was recorded) plus the
+/// resulting attendance state.</summary>
+public sealed record QrArrivalResult(
+    Guid UserId,
+    string DisplayName,
+    string DisplayNameArabic,
+    HallAttendanceStatus Status);

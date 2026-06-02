@@ -285,6 +285,15 @@ public static class PermissionCatalog
         public const string Publish = "SessionSummaries.Publish";
     }
 
+    /// <summary>P5.1d — D-244 (FDS-003 §5.4): the hall-door arrival console — an
+    /// operator scans an attendee's badge QR to record hall arrival
+    /// (<c>Method = QrScan</c>). View the console; Record an arrival.</summary>
+    public static class HallArrivals
+    {
+        public const string View = "HallArrivals.View";
+        public const string Record = "HallArrivals.Record";
+    }
+
     // ── Exhibition ───────────────────────────────────────────────────────
 
     public static class Companies
@@ -613,6 +622,10 @@ public static class PermissionCatalog
         new(SessionSummaries.View, "SessionSummaries", "View", "View session summaries", AdminOnly),
         new(SessionSummaries.Edit, "SessionSummaries", "Edit", "Generate / edit session summaries", AdminOnly),
         new(SessionSummaries.Publish, "SessionSummaries", "Publish", "Publish / un-publish session summaries", AdminOnly),
+
+        // P5.1d — D-244: hall-door arrival console (operator QR scan).
+        new(HallArrivals.View, "HallArrivals", "View", "View the hall-arrival console", AdminOnly),
+        new(HallArrivals.Record, "HallArrivals", "Record", "Record a hall arrival by badge scan", AdminOnly),
 
         // Exhibition
         new(Companies.View, "Companies", "View", "View companies", AdminOnly),

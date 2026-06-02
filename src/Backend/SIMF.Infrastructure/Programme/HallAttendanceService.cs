@@ -1,6 +1,8 @@
 // Tests: SIMF.Api.Tests/HallAttendanceTests.cs
+// Tests: SIMF.Api.Tests/HallArrivalScanTests.cs (P5.1d — D-244 operator QR scan)
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SIMF.Application.AccessControl.Abstractions;
 using SIMF.Application.Auditing;
 using SIMF.Application.Programme.Abstractions;
 using SIMF.Common;
@@ -12,14 +14,16 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Programme;
 
 /// <summary>
-/// P5.1 — D-241 (FDS-003 §5.4): the attendee-facing hall-arrival service. The
-/// device reports a GPS point; the server checks it against the session hall's
-/// geofence (D-240) and opens / closes the one attendance row. Only the derived
-/// enter/leave times are persisted — never the raw coordinates (FDS-003 §10,
-/// sensitive PII; continuous movement/dwell is the deferred FR-1103 feature).
+/// P5.1 — D-241 (FDS-003 §5.4): the hall-arrival service. Two means: the
+/// attendee's device crossing the GPS geofence (D-240/D-241) and an operator
+/// scanning the badge QR at the hall door (P5.1d — D-244). Both merge into the
+/// one open attendance row. Only the derived enter/leave times are persisted —
+/// never the raw coordinates (FDS-003 §10, sensitive PII; continuous
+/// movement/dwell is the deferred FR-1103 feature).
 /// </summary>
 internal sealed class HallAttendanceService(
     SimfAppDbContext appDbContext,
+    IQrResolver qrResolver,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     ILogger<HallAttendanceService> logger) : IHallAttendanceService
@@ -68,11 +72,76 @@ internal sealed class HallAttendanceService(
                 "لم تدخل القاعة بعد.");
         }
 
+        var (row, created) = await OpenOrCreateArrivalAsync(
+            userId, sessionId, session.HallId, AttendanceMethod.Geofence, cancellationToken);
+        if (created)
+        {
+            await AuditArrivalAsync(userId, sessionId, session.HallId, AttendanceMethod.Geofence, cancellationToken);
+            logger.LogInformation(
+                "Hall arrival (geofence) recorded for {UserId} at session {SessionId}.",
+                userId, sessionId);
+        }
+        return ToStatus(row);
+    }
+
+    public async Task<QrArrivalResult> RecordQrArrivalAsync(
+        Guid operatorUserId, Guid sessionId, string qrId,
+        CancellationToken cancellationToken = default)
+    {
+        var trimmed = (qrId ?? string.Empty).Trim();
+        var resolved = trimmed.Length == 0
+            ? null
+            : await qrResolver.ResolveAsync(trimmed, cancellationToken);
+        if (resolved is null)
+        {
+            throw new ApiException(ErrorCodes.AttendeeQrUnknown, 400,
+                "That badge QR was not recognised.",
+                "لم يتم التعرّف على رمز الشارة.");
+        }
+        if (resolved.AccountState != AccountState.Approved || resolved.IsLockedOut)
+        {
+            throw new ApiException(ErrorCodes.AttendeeNotApproved, 403,
+                "This attendee's account is not approved for entry.",
+                "حساب هذا الحاضر غير معتمد للدخول.");
+        }
+
+        var session = await appDbContext.Sessions
+            .AsNoTracking()
+            .Where(s => s.Id == sessionId && s.IsActive)
+            .Select(s => new { s.Id, s.HallId })
+            .SingleOrDefaultAsync(cancellationToken)
+            ?? throw new ApiException(ErrorCodes.SessionNotFound, 404,
+                "The session was not found.",
+                "لم يتم العثور على الجلسة.");
+
+        // No geofence check — the operator is physically at the door. Merges
+        // with any existing open row (e.g. a prior geofence arrival).
+        var (row, created) = await OpenOrCreateArrivalAsync(
+            resolved.UserId, sessionId, session.HallId, AttendanceMethod.QrScan, cancellationToken);
+        if (created)
+        {
+            await AuditArrivalAsync(resolved.UserId, sessionId, session.HallId, AttendanceMethod.QrScan, cancellationToken, operatorUserId);
+            logger.LogInformation(
+                "Hall arrival (QR door scan) recorded for {UserId} at session {SessionId} by operator {OperatorId}.",
+                resolved.UserId, sessionId, operatorUserId);
+        }
+        return new QrArrivalResult(
+            resolved.UserId, resolved.DisplayName, resolved.DisplayNameArabic, ToStatus(row));
+    }
+
+    /// <summary>Returns the attendee's open attendance row for the session,
+    /// opening one with <paramref name="method"/> when none exists. Idempotent
+    /// under a concurrent race: on the one-open-row unique-index violation it
+    /// detaches the losing row and returns the committed one (never a 500) —
+    /// mirrors <c>SeatReservationService.PersistWithUniquenessGuardAsync</c>.</summary>
+    private async Task<(HallAttendance Row, bool Created)> OpenOrCreateArrivalAsync(
+        Guid userId, Guid sessionId, Guid hallId, AttendanceMethod method,
+        CancellationToken cancellationToken)
+    {
         var open = await OpenRowAsync(userId, sessionId, cancellationToken);
         if (open is not null)
         {
-            // Already arrived — idempotent.
-            return ToStatus(open);
+            return (open, false);
         }
 
         var now = timeProvider.GetUtcNow();
@@ -80,9 +149,9 @@ internal sealed class HallAttendanceService(
         {
             Id = Guid.NewGuid(),
             SessionId = sessionId,
-            HallId = session.HallId,
+            HallId = hallId,
             UserId = userId,
-            Method = AttendanceMethod.Geofence,
+            Method = method,
             EnterUtc = now,
             CreatedAt = now,
         };
@@ -93,28 +162,25 @@ internal sealed class HallAttendanceService(
         }
         catch (DbUpdateException)
         {
-            // A concurrent arrival (e.g. a double-tap) raced the one-open-row
-            // unique index (D-241). Arrival is idempotent: detach our losing row
-            // and return the row the other request committed — never a 500.
-            // Mirrors SeatReservationService.PersistWithUniquenessGuardAsync.
             appDbContext.Entry(row).State = EntityState.Detached;
             var existing = await OpenRowAsync(userId, sessionId, cancellationToken);
-            return ToStatus(existing);
+            return (existing ?? row, false);
         }
+        return (row, true);
+    }
 
-        await auditLog.WriteAsync(new AuditEntry
+    private Task AuditArrivalAsync(
+        Guid attendeeUserId, Guid sessionId, Guid hallId, AttendanceMethod method,
+        CancellationToken cancellationToken, Guid? operatorUserId = null) =>
+        auditLog.WriteAsync(new AuditEntry
         {
             EventType = AuditEvents.HallArrivalRecorded,
             Outcome = AuditOutcome.Success,
-            ActorUserId = userId,
-            Detail = $"sessionId={sessionId}; hallId={session.HallId}; method=Geofence",
+            ActorUserId = operatorUserId ?? attendeeUserId,
+            Detail = operatorUserId is { } op
+                ? $"sessionId={sessionId}; hallId={hallId}; method={method}; attendee={attendeeUserId}; operator={op}"
+                : $"sessionId={sessionId}; hallId={hallId}; method={method}",
         }, cancellationToken);
-        logger.LogInformation(
-            "Hall arrival (geofence) recorded for {UserId} at session {SessionId}.",
-            userId, sessionId);
-
-        return ToStatus(row);
-    }
 
     public async Task<HallAttendanceStatus> RecordDepartureAsync(
         Guid userId, Guid sessionId, CancellationToken cancellationToken = default)

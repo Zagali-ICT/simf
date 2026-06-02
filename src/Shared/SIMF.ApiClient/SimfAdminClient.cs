@@ -1359,6 +1359,15 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Put, $"session-summaries/{sessionId}/unpublish", content: null,
             accessToken, cancellationToken);
 
+    // P5.1d — D-244: operator hall-door QR arrival (/admin/sessions/{id}/arrivals).
+    public Task<ApiCallResult<SIMF.Contracts.Sessions.QrArrivalResult>>
+        RecordQrArrivalAsync(Guid sessionId, SIMF.Contracts.Sessions.RecordQrArrivalRequest request,
+            string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<SIMF.Contracts.Sessions.QrArrivalResult>(
+            HttpMethod.Post, $"sessions/{sessionId}/arrivals",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     public Task<ApiCallResult<IReadOnlyList<SIMF.Contracts.Sessions.SessionQuestionModeratorRow>>>
         ListModeratorQueueAsync(Guid sessionId, string accessToken,
             CancellationToken cancellationToken = default) =>

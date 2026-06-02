@@ -279,6 +279,9 @@ public static class ErrorCodes
     public const string HallGeofenceInvalid = "HALL_GEOFENCE_INVALID";
     // P5.1 — D-241: GPS arrival attempted at a hall with no geofence configured.
     public const string HallGeofenceNotConfigured = "HALL_GEOFENCE_NOT_CONFIGURED";
+    // P5.1d — D-244: operator QR-door-scan — unknown badge / non-approved attendee.
+    public const string AttendeeQrUnknown = "ATTENDEE_QR_UNKNOWN";
+    public const string AttendeeNotApproved = "ATTENDEE_NOT_APPROVED";
     public const string SessionSpeakerNotFound = "SESSION_SPEAKER_NOT_FOUND";
     public const string SessionThemeNotFound = "SESSION_THEME_NOT_FOUND";
     // P3.2 — D-231: illegal broadcast-lifecycle transition (e.g. skipping a step).
