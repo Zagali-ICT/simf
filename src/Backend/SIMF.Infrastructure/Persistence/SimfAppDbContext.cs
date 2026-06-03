@@ -7,6 +7,7 @@ using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Cms;
 using SIMF.Domain.Common;
 using SIMF.Domain.Companies;
+using SIMF.Domain.Contacts;
 using SIMF.Domain.Delegations;
 using SIMF.Domain.Exhibition;
 using SIMF.Domain.Faq;
@@ -176,6 +177,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     // B3 (D-220) — Saudi-companies lookup, bulk-loaded from a government Excel
     // sheet; the visitor الجهة (UserProfile.OrganisationId) picker reads from it.
     public DbSet<Organisation> Organisations => Set<Organisation>();
+
+    // SIMF-FDS-014 — D-254: shared, de-duplicated contact directory referenced by
+    // Company / Sponsor / MediaPartner / Speaker / Booth (nullable ContactId FK).
+    public DbSet<Contact> Contacts => Set<Contact>();
 
     // P2.1 (D-211) — two-level FAQ: groups own ordered question/answer entries.
     public DbSet<FaqGroup> FaqGroups => Set<FaqGroup>();

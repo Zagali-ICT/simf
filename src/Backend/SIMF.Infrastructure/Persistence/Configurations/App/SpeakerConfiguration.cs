@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Common;
+using SIMF.Domain.Contacts;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
 
@@ -56,6 +57,13 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
         builder.HasOne<UserProfile>()
             .WithMany()
             .HasForeignKey(speaker => speaker.UserProfileId)
+            .OnDelete(DeleteBehavior.Restrict);
+        // SIMF-FDS-014 — D-254: optional shared Contact link. Restrict (a Contact
+        // is soft-deleted, never hard-deleted under a referrer). HasForeignKey
+        // creates the FK index.
+        builder.HasOne<Contact>()
+            .WithMany()
+            .HasForeignKey(speaker => speaker.ContactId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(speaker => new { speaker.IsActive, speaker.DisplayOrder });
     }

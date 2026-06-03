@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SIMF.Domain.Contacts;
 using SIMF.Domain.Sponsors;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -27,6 +28,14 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
 
         builder.Property(sponsor => sponsor.LogoRelativePath).HasMaxLength(256);
         builder.Property(sponsor => sponsor.Url).HasMaxLength(512);
+
+        // SIMF-FDS-014 — D-254: optional shared Contact link. Restrict (a Contact
+        // is soft-deleted, never hard-deleted under a referrer). HasForeignKey
+        // creates the FK index.
+        builder.HasOne<Contact>()
+            .WithMany()
+            .HasForeignKey(sponsor => sponsor.ContactId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Public read order: active first, by tier, then display order.
         builder.HasIndex(sponsor => new

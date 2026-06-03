@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Companies;
+using SIMF.Domain.Contacts;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
@@ -27,6 +28,14 @@ internal sealed class CompanyConfiguration : IEntityTypeConfiguration<Company>
         builder.Property(company => company.ContactEmail).HasMaxLength(320);
         builder.Property(company => company.ContactPhone).HasMaxLength(32);
         builder.Property(company => company.Website).HasMaxLength(512);
+
+        // SIMF-FDS-014 — D-254: optional shared Contact link. Restrict (a Contact
+        // is soft-deleted, never hard-deleted under a referrer). HasForeignKey
+        // creates the FK index.
+        builder.HasOne<Contact>()
+            .WithMany()
+            .HasForeignKey(company => company.ContactId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(company => new
         {

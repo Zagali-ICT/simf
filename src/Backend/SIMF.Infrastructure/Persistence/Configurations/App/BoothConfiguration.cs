@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SIMF.Domain.Companies;
+using SIMF.Domain.Contacts;
 using SIMF.Domain.Exhibition;
 using SIMF.Domain.Programme;
 
@@ -55,6 +56,14 @@ internal sealed class BoothConfiguration : IEntityTypeConfiguration<Booth>
         builder.HasOne<Company>()
             .WithMany()
             .HasForeignKey(booth => booth.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // SIMF-FDS-014 — D-254 (OI-1): optional shared Contact link for the booth
+        // officer. Restrict (a Contact is soft-deleted, never hard-deleted under a
+        // referrer). HasForeignKey creates the FK index.
+        builder.HasOne<Contact>()
+            .WithMany()
+            .HasForeignKey(booth => booth.ContactId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(booth => new { booth.IsActive });

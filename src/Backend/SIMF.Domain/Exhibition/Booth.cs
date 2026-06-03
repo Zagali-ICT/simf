@@ -47,6 +47,13 @@ public class Booth
     /// <summary>B1 — D-222: booth-officer email (≤ 320 chars). Optional.</summary>
     public string? OfficerEmail { get; set; }
 
+    /// <summary>SIMF-FDS-014 (D-254 / OI-1) — optional link to the shared
+    /// <c>Contact</c> directory record for the booth <b>officer</b> (a person,
+    /// distinct from the exhibitor company, which is linked via
+    /// <see cref="CompanyId"/>). Null until linked; multiple entities may
+    /// reference the same Contact.</summary>
+    public Guid? ContactId { get; set; }
+
     /// <summary>English exhibitor / company name (≤ 256 chars). Legacy free-text
     /// fallback retained for the public wire contract (D-219) and pre-D-222
     /// rows; new booths source the exhibitor from <see cref="CompanyId"/>. Not

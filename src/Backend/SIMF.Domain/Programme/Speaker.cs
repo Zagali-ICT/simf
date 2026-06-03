@@ -66,6 +66,13 @@ public class Speaker
     public string? XUrl { get; set; }
 
     public string? PhotoRelativePath { get; set; }
+
+    /// <summary>SIMF-FDS-014 (D-254) — optional link to the shared <c>Contact</c>
+    /// directory record (logo / name / phones / social / website / location /
+    /// country). Null until linked; multiple entities may reference the same
+    /// Contact. The public projection prefers the Contact when set.</summary>
+    public Guid? ContactId { get; set; }
+
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTimeOffset CreatedAt { get; set; }

@@ -36,6 +36,12 @@ public sealed class Sponsor
     /// <see cref="NameArabic"/>.</summary>
     public int DisplayOrder { get; set; }
 
+    /// <summary>SIMF-FDS-014 (D-254) — optional link to the shared <c>Contact</c>
+    /// directory record (logo / name / phones / social / website / location /
+    /// country). Null until linked; multiple entities may reference the same
+    /// Contact. The public projection prefers the Contact when set.</summary>
+    public Guid? ContactId { get; set; }
+
     /// <summary>Soft-delete flag. List endpoints filter on this.</summary>
     public bool IsActive { get; set; } = true;
 

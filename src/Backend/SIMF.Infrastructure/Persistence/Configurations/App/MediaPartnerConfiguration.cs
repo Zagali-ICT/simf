@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SIMF.Domain.Contacts;
 using SIMF.Domain.PublicRelations;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -19,6 +20,14 @@ internal sealed class MediaPartnerConfiguration : IEntityTypeConfiguration<Media
         builder.Property(m => m.NameAr).HasMaxLength(256).IsRequired();
         builder.Property(m => m.LogoRelativePath).HasMaxLength(512);
         builder.Property(m => m.Url).HasMaxLength(512);
+
+        // SIMF-FDS-014 — D-254: optional shared Contact link. Restrict (a Contact
+        // is soft-deleted, never hard-deleted under a referrer). HasForeignKey
+        // creates the FK index.
+        builder.HasOne<Contact>()
+            .WithMany()
+            .HasForeignKey(m => m.ContactId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(m => new { m.IsActive, m.DisplayOrder });
     }
