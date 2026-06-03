@@ -13,7 +13,7 @@
                aria-describedby="@DescribedBy" />
     @if (HasError)
     {
-        <div class="simf-field__error" id="@ErrorElementId">
+        <div class="simf-field__error" id="@ErrorElementId" role="alert">
             <SimfIcon Name="alert" Size="14" Class="simf-field__error-icon" />
             <span>@ErrorMessage</span>
         </div>

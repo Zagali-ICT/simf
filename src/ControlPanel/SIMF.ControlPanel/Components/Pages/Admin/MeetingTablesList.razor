@@ -182,7 +182,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" Disabled="_busy" OnClick="@(() => _tableOpen = false)">
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _tableOpen = false)">
                 @L["Admin.MeetingTables.Cancel"]
             </SimfButton>
             <SimfButton Type="button" OnClick="SaveTableAsync" Loading="_busy">
@@ -233,7 +233,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" Disabled="_busy" OnClick="@(() => _generateOpen = false)">
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _generateOpen = false)">
                 @L["Admin.MeetingTables.Cancel"]
             </SimfButton>
             <SimfButton Type="button" OnClick="GenerateAsync" Loading="_busy">
@@ -297,7 +297,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" Disabled="_busy" OnClick="@(() => _allocOpen = false)">
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _allocOpen = false)">
                 @L["Admin.MeetingTables.Cancel"]
             </SimfButton>
             <SimfButton Type="button" OnClick="SaveAllocationAsync" Loading="_busy">

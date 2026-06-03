@@ -90,7 +90,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="@(() => _addOpen = false)">
+            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _addOpen = false)">
                 @L["Admin.SessionModerators.Cancel"]
             </SimfButton>
             <SimfButton Type="button" OnClick="SubmitAssignAsync" Loading="_busy">

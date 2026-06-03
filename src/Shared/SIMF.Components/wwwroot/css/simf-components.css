@@ -955,6 +955,7 @@
   border-radius: var(--radius-input);
 }
 .simf-user:hover { background-color: var(--color-surface-sunken); }
+.simf-user:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
 .simf-user__icon { color: var(--color-text-muted); }
 .simf-user__avatar {
   inline-size: 24px;
@@ -1873,6 +1874,13 @@ body.simf-modal-open { overflow: hidden; }
   gap: var(--space-1);
   min-width: 0;
 }
+
+/* Route-change focus lands on the page <h1> for screen-reader announcement
+   (Blazor <FocusOnNavigate Selector="h1" />). Suppress the browser's default
+   focus box for that programmatic focus so the page title doesn't look like a
+   text input; a real keyboard focus still gets the standard token ring. */
+h1:focus:not(:focus-visible) { outline: 0; }
+h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
 
 .simf-banner__title {
   margin: 0;

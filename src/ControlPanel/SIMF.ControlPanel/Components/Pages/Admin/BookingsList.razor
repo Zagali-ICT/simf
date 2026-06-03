@@ -109,7 +109,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" Disabled="_busy" OnClick="@(() => _rejectOpen = false)">
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _rejectOpen = false)">
                 @L["Admin.Bookings.Cancel"]
             </SimfButton>
             <SimfButton Type="button" OnClick="ConfirmRejectAsync" Loading="_busy">

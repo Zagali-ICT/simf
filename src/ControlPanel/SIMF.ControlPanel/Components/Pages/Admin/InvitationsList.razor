@@ -101,7 +101,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="@(() => _addOpen = false)">
+            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _addOpen = false)">
                 @L["Admin.Invitations.Cancel"]
             </SimfButton>
             <SimfButton Type="button" OnClick="SubmitCreateAsync"
@@ -133,7 +133,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" OnClick="@(() => _editTarget = null)">
+            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _editTarget = null)">
                 @L["Admin.Invitations.Cancel"]
             </SimfButton>
             <SimfButton Type="button" OnClick="SubmitUpdateAsync"

@@ -110,6 +110,61 @@
   /* -- The compass-and-anchor brand pattern: low opacity
         (SIMF-VID-001 section 8: 10%-30%). -- */
   --pattern-opacity: 0.12;
+
+  /* ------------------------------------------------------------------------
+     Extended scale + alias tokens.
+     The component stylesheet (simf-components.css) and the seat-plan page
+     reference these names; they are defined HERE so theme.tokens.css stays the
+     single source of truth (these were previously undefined, so the rules that
+     used them silently broke — dead focus rings, uncoloured seats, missing
+     shadows). Alias tokens point at an existing functional token with var(),
+     so they inherit every theme override automatically — one value, one source.
+     ---------------------------------------------------------------------- */
+
+  /* Radius scale (sm/md/lg) alongside the semantic field/card radii. */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-input: var(--radius-field);   /* inputs, code cells, user chip */
+  --radius-3: var(--radius-md);          /* log / code block */
+
+  /* Small body size — between body (14px) and caption (12px). */
+  --font-size-body-small: 0.8125rem;     /* 13px */
+  --font-weight-bold: var(--font-weight-heading);  /* 700 */
+
+  /* Monospace stack — log viewer, code cells (one canonical name + alias). */
+  --font-family-mono: ui-monospace, "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+  --font-mono: var(--font-family-mono);
+
+  /* Surface / border / focus aliases used by the component sheet. */
+  --color-surface-2: var(--color-surface-sunken);   /* hover insets (e.g. the bell) */
+  --color-border-subtle: var(--color-border);
+  --color-focus: var(--color-accent-blue);
+
+  /* Strong (terminal-style) surface for the log / diagnostics block —
+     intentionally kept dark across all themes. */
+  --color-surface-strong: #0F1115;
+  --color-text-on-strong: #E6E6E6;
+
+  /* Danger aliases — map onto the existing error tokens (SimfButton danger,
+     notification-bell badge + error item). */
+  --color-danger: var(--color-error);
+  --color-on-danger: var(--color-text-on-primary);
+
+  /* Small + elevated shadows alongside the card shadow. */
+  --shadow-sm: 0 1px 3px rgba(26, 36, 51, 0.12);
+  --shadow-2: var(--shadow-card);
+
+  /* Seat-plan states (SessionSeatPlan). free / free-border alias the theme
+     surfaces so they adapt to light / dark / grey; user + admin are brand
+     tokens; random is a brand-distinct constant; contrast is the label colour
+     on a filled seat. */
+  --color-seat-free: var(--color-surface-sunken);
+  --color-seat-free-border: var(--color-border);
+  --color-seat-user: var(--color-secondary);
+  --color-seat-admin: var(--color-primary);
+  --color-seat-random: #6C5CB0;
+  --color-seat-contrast: #FFFFFF;
 }
 
 /* ----------------------------------------------------------------------------

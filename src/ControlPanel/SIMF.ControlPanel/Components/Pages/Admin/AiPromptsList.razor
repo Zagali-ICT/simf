@@ -167,7 +167,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" Disabled="_busy" OnClick="@(() => _editOpen = false)">
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _editOpen = false)">
                 @L["Admin.AiPrompts.Cancel"]
             </SimfButton>
             <SimfButton Type="button" OnClick="SubmitAsync" Loading="_busy">
@@ -205,7 +205,7 @@
             </div>
         </ChildContent>
         <Footer>
-            <SimfButton Type="button" Disabled="_busy" OnClick="OnTestModalClose">
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="OnTestModalClose">
                 @L["Admin.AiPrompts.Cancel"]
             </SimfButton>
             <SimfButton Type="button" OnClick="RunTestAsync" Loading="_busy">

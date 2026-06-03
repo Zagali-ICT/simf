@@ -87,7 +87,7 @@
             <SimfButton Type="button" Loading="_busy" OnClick="EscalateAsync">
                 @L["Admin.QuestionQueue.Escalate.Submit"]
             </SimfButton>
-            <SimfButton Type="button" OnClick="@(() => _escalateId = null)">
+            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _escalateId = null)">
                 @L["Admin.QuestionQueue.Escalate.Cancel"]
             </SimfButton>
         </Footer>
