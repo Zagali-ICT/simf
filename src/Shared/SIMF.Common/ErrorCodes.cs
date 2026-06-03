@@ -216,6 +216,12 @@ public static class ErrorCodes
     public const string MeetingRequestSessionNotFound = "MEETING_REQUEST_SESSION_NOT_FOUND";
     public const string MeetingRequestStatusInvalid = "MEETING_REQUEST_STATUS_INVALID";
 
+    // Speaker meeting requests (D-269 — Mockup page 20 "Speaker profile").
+    public const string SpeakerMeetingRequestInvalid = "SPEAKER_MEETING_REQUEST_INVALID";
+    public const string SpeakerMeetingRequestNotFound = "SPEAKER_MEETING_REQUEST_NOT_FOUND";
+    public const string SpeakerMeetingRequestsNotAllowed = "SPEAKER_MEETING_REQUESTS_NOT_ALLOWED";
+    public const string SpeakerMeetingRequestStatusInvalid = "SPEAKER_MEETING_REQUEST_STATUS_INVALID";
+
     // Seat reservations (D-175, gap doc G11 — Mockup page 7).
     public const string SeatLayoutInvalid = "SEAT_LAYOUT_INVALID";
     public const string SeatLayoutMissing = "SEAT_LAYOUT_MISSING";

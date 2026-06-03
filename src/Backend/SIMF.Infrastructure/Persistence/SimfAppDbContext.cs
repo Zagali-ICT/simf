@@ -133,6 +133,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     /// <summary>D-174 (gap doc G11, Mockup page 27) — audience meeting requests.</summary>
     public DbSet<MeetingRequest> MeetingRequests => Set<MeetingRequest>();
 
+    /// <summary>D-269 (Mockup page 20) — attendee meeting requests TO a speaker
+    /// (gated by Speaker.AllowsMeetingRequests). Distinct from the session-scoped
+    /// MeetingRequests above.</summary>
+    public DbSet<SpeakerMeetingRequest> SpeakerMeetingRequests => Set<SpeakerMeetingRequest>();
+
     /// <summary>D-175 (gap doc G11, Mockup page 7) — per-hall seat
     /// grid layout (rows + seats-per-row). Optional 1:1 with Hall.</summary>
     public DbSet<HallSeatLayout> HallSeatLayouts => Set<HallSeatLayout>();

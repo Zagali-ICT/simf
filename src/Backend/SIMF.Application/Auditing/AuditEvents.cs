@@ -265,6 +265,14 @@ public static class AuditEvents
     // both events together.
     public const string AdminMeetingRequestViewed = "Admin.MeetingRequestViewed";
 
+    // Speaker meeting requests (D-269 — Mockup page 20). Same SOC rationale as
+    // the session-scoped events above: the list carries requester names and the
+    // per-record detail/respond reveals the requester email.
+    public const string SpeakerMeetingRequestSubmitted = "SpeakerMeetingRequest.Submitted";
+    public const string SpeakerMeetingRequestResponded = "SpeakerMeetingRequest.Responded";
+    public const string AdminSpeakerMeetingRequestsListed = "Admin.SpeakerMeetingRequestsListed";
+    public const string AdminSpeakerMeetingRequestViewed = "Admin.SpeakerMeetingRequestViewed";
+
     // Seat reservations (D-175, gap doc G11 — Mockup page 7)
     public const string HallSeatLayoutUpdated = "HallSeatLayout.Updated";
     public const string SeatReservationCreated = "SeatReservation.Created";

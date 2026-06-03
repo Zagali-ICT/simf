@@ -61,6 +61,7 @@
   <data name="Module.SessionSeatPlans" xml:space="preserve"><value>Session seat plans</value></data>
   <data name="Module.Delegations" xml:space="preserve"><value>Delegations</value></data>
   <data name="Module.MeetingRequests" xml:space="preserve"><value>Meeting requests</value></data>
+  <data name="Module.SpeakerMeetingRequests" xml:space="preserve"><value>Speaker meeting requests</value></data>
   <data name="Module.Gates" xml:space="preserve"><value>Gates</value></data>
   <data name="Module.GatesOperator" xml:space="preserve"><value>Gate operator</value></data>
   <data name="Module.Speakers" xml:space="preserve"><value>Speakers</value></data>
@@ -1845,6 +1846,31 @@
   <data name="Admin.MeetingRequests.Respond.Done" xml:space="preserve"><value>Response sent.</value></data>
   <data name="Admin.MeetingRequests.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.MeetingRequests.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+
+  <!-- D-269 — speaker meeting requests (Mockup page 20). -->
+  <data name="Admin.SpeakerMeetingRequests.Title" xml:space="preserve"><value>Speaker meeting requests</value></data>
+  <data name="Admin.SpeakerMeetingRequests.None" xml:space="preserve"><value>No speaker meeting requests yet.</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Loading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="Admin.SpeakerMeetingRequests.LoadFailed" xml:space="preserve"><value>Could not load speaker meeting requests.</value></data>
+  <data name="Admin.SpeakerMeetingRequests.LoadingDetail" xml:space="preserve"><value>Loading contact details…</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Filter.Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Filter.Accepted" xml:space="preserve"><value>Accepted</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Filter.Rejected" xml:space="preserve"><value>Rejected</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Col.Speaker" xml:space="preserve"><value>Speaker</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Col.Requester" xml:space="preserve"><value>Requester</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Col.Subject" xml:space="preserve"><value>Subject</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Col.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Col.CreatedAt" xml:space="preserve"><value>Submitted</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Col.RespondedAt" xml:space="preserve"><value>Responded</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Respond" xml:space="preserve"><value>Respond</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Respond.Title" xml:space="preserve"><value>Respond to speaker meeting request</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Respond.Status" xml:space="preserve"><value>Decision</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Respond.Accept" xml:space="preserve"><value>Accept</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Respond.Reject" xml:space="preserve"><value>Reject</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Respond.Note" xml:space="preserve"><value>Response note (optional, ≤2000 chars)</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Respond.Submit" xml:space="preserve"><value>Send response</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Respond.Done" xml:space="preserve"><value>Response sent.</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Cancel" xml:space="preserve"><value>Cancel</value></data>
 
   <!-- D-199 — new nav labels (Module.Media/News/Sponsors/Booths/Moderation/PreviousEditions already exist). -->
   <data name="Module.MediaPartners" xml:space="preserve"><value>Media Partners</value></data>

@@ -275,6 +275,12 @@ public static class PermissionCatalog
         public const string Manage = "MeetingRequests.Manage";
     }
 
+    public static class SpeakerMeetingRequests
+    {
+        public const string View = "SpeakerMeetingRequests.View";
+        public const string Manage = "SpeakerMeetingRequests.Manage";
+    }
+
     public static class Speakers
     {
         public const string View = "Speakers.View";
@@ -648,6 +654,9 @@ public static class PermissionCatalog
 
         new(MeetingRequests.View, "MeetingRequests", "View", "View meeting requests", AdminOnly),
         new(MeetingRequests.Manage, "MeetingRequests", "Manage", "Manage meeting requests", AdminOnly),
+
+        new(SpeakerMeetingRequests.View, "SpeakerMeetingRequests", "View", "View speaker meeting requests", AdminOnly),
+        new(SpeakerMeetingRequests.Manage, "SpeakerMeetingRequests", "Manage", "Manage speaker meeting requests", AdminOnly),
 
         new(Speakers.View, "Speakers", "View", "View speakers", AdminOnly),
         new(Speakers.Create, "Speakers", "Create", "Create speakers", AdminOnly),

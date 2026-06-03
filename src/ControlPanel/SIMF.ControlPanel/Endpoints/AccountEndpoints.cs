@@ -13,6 +13,7 @@ using SIMF.Contracts.Faq;
 using SIMF.Contracts.Organisations;
 using SIMF.Contracts.Logs;
 using SIMF.Contracts.Media;
+using SIMF.Contracts.Programme;
 using SIMF.Contracts.PublicRelations;
 using SIMF.Contracts.Sessions;
 
@@ -1867,6 +1868,33 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.RespondToAdminMeetingRequestAsync(
+                id, body, token));
+        });
+
+        // D-269 — speaker meeting requests BFF passthroughs.
+        group.MapPost("/admin/speaker-meeting-requests/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListAdminSpeakerMeetingRequestsAsync(body, token));
+        });
+
+        group.MapGet("/admin/speaker-meeting-requests/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetAdminSpeakerMeetingRequestAsync(id, token));
+        });
+
+        group.MapPut("/admin/speaker-meeting-requests/{id:guid}/respond",
+            async (Guid id, RespondToSpeakerMeetingRequestRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RespondToAdminSpeakerMeetingRequestAsync(
                 id, body, token));
         });
 

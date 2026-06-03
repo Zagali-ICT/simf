@@ -14,6 +14,7 @@ using SIMF.Contracts.Organisations;
 using SIMF.Contracts.Feedback;
 using SIMF.Contracts.Logs;
 using SIMF.Contracts.Media;
+using SIMF.Contracts.Programme;
 using SIMF.Contracts.PublicRelations;
 using SIMF.Contracts.Sessions;
 using SIMF.Contracts.Statistics;
@@ -1848,6 +1849,31 @@ public sealed class SimfAdminClient(HttpClient http)
         CancellationToken cancellationToken = default) =>
         SendAsync<AdminMeetingRequestDetail>(
             HttpMethod.Put, $"meeting-requests/{id}/respond",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    // -- D-269 — speaker meeting requests (SIMF.Contracts.Programme) ---------
+
+    public Task<ApiCallResult<GridPage<AdminSpeakerMeetingRequestRow>>> ListAdminSpeakerMeetingRequestsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<AdminSpeakerMeetingRequestRow>>(
+            HttpMethod.Post, "speaker-meeting-requests/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSpeakerMeetingRequestDetail>> GetAdminSpeakerMeetingRequestAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSpeakerMeetingRequestDetail>(
+            HttpMethod.Get, $"speaker-meeting-requests/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminSpeakerMeetingRequestDetail>> RespondToAdminSpeakerMeetingRequestAsync(
+        Guid id, RespondToSpeakerMeetingRequestRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSpeakerMeetingRequestDetail>(
+            HttpMethod.Put, $"speaker-meeting-requests/{id}/respond",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 

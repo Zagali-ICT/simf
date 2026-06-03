@@ -76,6 +76,8 @@ public static class CpNavigation
             // D-183 (CP UI for D-174 delegations + meeting requests).
             new("Module.Delegations", "/admin/delegations", RequiredPermission: PermissionCatalog.Delegations.View),
             new("Module.MeetingRequests", "/admin/meeting-requests", RequiredPermission: PermissionCatalog.MeetingRequests.View),
+            // D-269 — attendee meeting requests TO a speaker (Mockup page 20).
+            new("Module.SpeakerMeetingRequests", "/admin/speaker-meeting-requests", RequiredPermission: PermissionCatalog.SpeakerMeetingRequests.View),
             // D-153 — programme speakers (SIMF-DAT-001 §5.4).
             new("Module.Speakers", "/admin/speakers", RequiredPermission: PermissionCatalog.Speakers.View),
             // P2.3 (D-228) — speaker presentation files (FR-407). Reuses Speakers.*.

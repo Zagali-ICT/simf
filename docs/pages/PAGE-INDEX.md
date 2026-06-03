@@ -63,6 +63,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/programme/timeline` | ✅ Real | Administrator | — | [e2e/cp-admin-programme-timeline.md](../tests/e2e/cp-admin-programme-timeline.md) |
 | `/admin/bookings` | ✅ Real (D-227) | Administrator | — | [e2e/cp-admin-bookings.md](../tests/e2e/cp-admin-bookings.md) |
 | `/admin/meeting-requests` | ✅ Real | Administrator | — | [e2e/cp-admin-meeting-requests.md](../tests/e2e/cp-admin-meeting-requests.md) |
+| `/admin/speaker-meeting-requests` | ✅ Real (D-269) | Administrator | — | [e2e/cp-admin-speaker-meeting-requests.md](../tests/e2e/cp-admin-speaker-meeting-requests.md) |
 | `/admin/meeting-tables` | ✅ Real (D-248) | Administrator | [cp/meeting-tables.md](cp/meeting-tables.md) | [e2e/cp-meeting-tables.md](../tests/e2e/cp-meeting-tables.md) |
 | `/admin/business-meetings` | ✅ Real (D-248) | Administrator | [cp/business-meetings.md](cp/business-meetings.md) | [e2e/cp-business-meetings.md](../tests/e2e/cp-business-meetings.md) |
 | **Engagement, Q&A & attendance** | | | | |
@@ -170,6 +171,8 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | #16 `agenda` (`GET /app/programme/sessions`) | ✅ API built | Guest+ | [App/Page_016](../App/Page_016/README.md) | [e2e/mobile-agenda.md](../tests/e2e/mobile-agenda.md) |
 | #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats`) | ✅ API built (reuse, D-265) | Guest+ (seat card: Visitor) | [App/Page_017](../App/Page_017/README.md) | [e2e/mobile-session-detail.md](../tests/e2e/mobile-session-detail.md) |
 | #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | ✅ API built (reuse, D-267) | Visitor (login-only) | [App/Page_018](../App/Page_018/README.md) | [e2e/mobile-my-seat.md](../tests/e2e/mobile-my-seat.md) |
+| #19 `speakers` (`GET /app/speakers`) | ✅ API built (reuse, D-199) | Guest+ | [App/Page_019](../App/Page_019/README.md) | [e2e/mobile-speakers.md](../tests/e2e/mobile-speakers.md) |
+| #20 `speakerProfile` (`GET /app/speakers/{id}` + `…/meeting-requests`) | ✅ API built (reads D-199; meeting D-269) | Guest+ (meeting: Visitor) | [App/Page_020](../App/Page_020/README.md) | [e2e/mobile-speaker-profile.md](../tests/e2e/mobile-speaker-profile.md) |
 
 ---
 

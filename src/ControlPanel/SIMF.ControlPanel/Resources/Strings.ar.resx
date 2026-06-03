@@ -61,6 +61,7 @@
   <data name="Module.SessionSeatPlans" xml:space="preserve"><value>مخطط مقاعد الجلسات</value></data>
   <data name="Module.Delegations" xml:space="preserve"><value>الوفود</value></data>
   <data name="Module.MeetingRequests" xml:space="preserve"><value>طلبات المقابلات</value></data>
+  <data name="Module.SpeakerMeetingRequests" xml:space="preserve"><value>طلبات مقابلة المتحدثين</value></data>
   <data name="Module.Gates" xml:space="preserve"><value>البوابات</value></data>
   <data name="Module.GatesOperator" xml:space="preserve"><value>مشغل البوابة</value></data>
   <data name="Module.Speakers" xml:space="preserve"><value>المتحدثون</value></data>
@@ -1838,6 +1839,31 @@
   <data name="Admin.MeetingRequests.Respond.Done" xml:space="preserve"><value>تم إرسال الردّ.</value></data>
   <data name="Admin.MeetingRequests.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.MeetingRequests.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+
+  <!-- D-269 — طلبات مقابلة المتحدثين (Mockup page 20). -->
+  <data name="Admin.SpeakerMeetingRequests.Title" xml:space="preserve"><value>طلبات مقابلة المتحدثين</value></data>
+  <data name="Admin.SpeakerMeetingRequests.None" xml:space="preserve"><value>لا توجد طلبات مقابلة متحدثين حتى الآن.</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Admin.SpeakerMeetingRequests.LoadFailed" xml:space="preserve"><value>تعذّر تحميل طلبات مقابلة المتحدثين.</value></data>
+  <data name="Admin.SpeakerMeetingRequests.LoadingDetail" xml:space="preserve"><value>جارٍ تحميل بيانات التواصل…</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Filter.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Filter.Accepted" xml:space="preserve"><value>مقبول</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Filter.Rejected" xml:space="preserve"><value>مرفوض</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Col.Speaker" xml:space="preserve"><value>المتحدّث</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Col.Requester" xml:space="preserve"><value>مقدّم الطلب</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Col.Subject" xml:space="preserve"><value>الموضوع</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Col.Status" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Col.CreatedAt" xml:space="preserve"><value>تاريخ الطلب</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Col.RespondedAt" xml:space="preserve"><value>تاريخ الردّ</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Respond" xml:space="preserve"><value>الردّ</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Respond.Title" xml:space="preserve"><value>الردّ على طلب مقابلة المتحدّث</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Respond.Status" xml:space="preserve"><value>القرار</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Respond.Accept" xml:space="preserve"><value>قبول</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Respond.Reject" xml:space="preserve"><value>رفض</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Respond.Note" xml:space="preserve"><value>ملاحظة الردّ (اختيارية، حتى 2000 محرف)</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Respond.Submit" xml:space="preserve"><value>إرسال الردّ</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Respond.Done" xml:space="preserve"><value>تم إرسال الردّ.</value></data>
+  <data name="Admin.SpeakerMeetingRequests.Cancel" xml:space="preserve"><value>إلغاء</value></data>
 
   <!-- D-199 — new nav labels (Module.Media/News/Sponsors/Booths/Moderation/PreviousEditions already exist). -->
   <data name="Module.MediaPartners" xml:space="preserve"><value>شركاء النجاح</value></data>
