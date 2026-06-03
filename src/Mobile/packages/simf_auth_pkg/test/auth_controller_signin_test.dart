@@ -95,7 +95,7 @@ void main() {
       );
     });
 
-    test('verify-TOTP hydrates the real app-role', () async {
+    test('email-OTP (2FA) hydrates the real app-role', () async {
       final repo = _MockAuthRepository();
       final secure = _MockSecureStorage();
       when(() => secure.read(any())).thenAnswer((_) async => null);
@@ -105,10 +105,10 @@ void main() {
           email: any(named: 'email'),
           password: any(named: 'password'),
         ),
-      ).thenAnswer((_) async => const SignInChallenge('mfa-token'));
+      ).thenAnswer((_) async => const SignInOtpChallenge('otp-token'));
       when(
-        () => repo.verifyTotp(
-          mfaToken: any(named: 'mfaToken'),
+        () => repo.verifyOtp(
+          otpToken: any(named: 'otpToken'),
           code: any(named: 'code'),
         ),
       ).thenAnswer((_) async => _guestPayloadSession());
@@ -121,10 +121,13 @@ void main() {
 
       await _waitFor(container, (s) => s is AuthStateSignedOut);
       final notifier = container.read(authControllerProvider.notifier);
-      await notifier.signIn(email: 'admin@simf', password: 'pw');
-      expect(container.read(authControllerProvider), isA<AuthStateAwaitingTotp>());
+      await notifier.signIn(email: 'visitor@example.sa', password: 'pw');
+      expect(
+        container.read(authControllerProvider),
+        isA<AuthStateAwaitingOtp>(),
+      );
 
-      await notifier.verifyTotp(code: '123456');
+      await notifier.verifyOtp(code: '123456');
       final state = container.read(authControllerProvider);
       expect(
         (state as AuthStateSignedIn).session.user.appRole,

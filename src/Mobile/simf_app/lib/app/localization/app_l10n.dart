@@ -90,6 +90,48 @@ class AppL10n {
         'بطاقة دخول QR، إشعارات فورية، وتواصل مع مشاركين يشاركونك الاهتمامات.',
         'A QR entry badge, instant notifications, and connect with attendees who share your interests.',
       );
+
+  // Sign in (Page 003).
+  String get signInTitle => _t('تسجيل الدخول', 'Sign in');
+  String get emailLabel => _t('البريد الإلكتروني', 'Email');
+  String get passwordLabel => _t('كلمة المرور', 'Password');
+  String get signInButton => _t('دخول', 'Sign in');
+  String get forgotPasswordLink => _t('نسيت كلمة المرور؟', 'Forgot password?');
+  String get createAccountQuestion =>
+      _t('ليس لديك حساب؟', "Don't have an account?");
+  String get createAccountLink => _t('إنشاء حساب', 'Create account');
+  String get showPasswordTooltip => _t('إظهار كلمة المرور', 'Show password');
+  String get hidePasswordTooltip => _t('إخفاء كلمة المرور', 'Hide password');
+  String get biometricSignInTooltip =>
+      _t('الدخول بالبصمة / الوجه', 'Sign in with biometrics');
+
+  // Email-OTP second factor + reset flow (Page 003 L-5/L-6).
+  String get otpTitle => _t('رمز التحقق', 'Verification code');
+  String get otpBody => _t(
+        'أدخل الرمز المُرسَل إلى بريدك الإلكتروني.',
+        'Enter the code we sent to your email.',
+      );
+  String get otpLabel => _t('الرمز', 'Code');
+  String get verifyButton => _t('تحقّق', 'Verify');
+  String get forgotPasswordTitle =>
+      _t('استعادة كلمة المرور', 'Reset password');
+  String get forgotPasswordBody => _t(
+        'أدخل بريدك الإلكتروني وسنرسل لك رمزاً لإعادة التعيين.',
+        'Enter your email and we will send you a reset code.',
+      );
+  String get sendCodeButton => _t('إرسال الرمز', 'Send code');
+  String get resetPasswordTitle =>
+      _t('تعيين كلمة مرور جديدة', 'Set a new password');
+  String get newPasswordLabel => _t('كلمة المرور الجديدة', 'New password');
+  String get confirmPasswordLabel =>
+      _t('تأكيد كلمة المرور', 'Confirm password');
+  String get resetPasswordButton => _t('تعيين', 'Reset');
+  String get passwordsDoNotMatch =>
+      _t('كلمتا المرور غير متطابقتين.', 'The passwords do not match.');
+  String get resetPasswordSent => _t(
+        'إن كان البريد مسجلاً فستصلك رسالة بالرمز.',
+        'If that email is registered, a code is on its way.',
+      );
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

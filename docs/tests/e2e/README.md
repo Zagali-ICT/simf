@@ -167,6 +167,7 @@ API endpoints land (D-249). The per-screen design docs live under
 |------------|------|-----------|
 | #1 `splash` (`POST /app/auth/refresh` + `GET /app/users/me`) | [`mobile-splash.md`](mobile-splash.md) | E2E-MOB001-001..013 |
 | #2 `onboarding` (no API) | [`mobile-onboarding.md`](mobile-onboarding.md) | E2E-MOB002-001..008 |
+| #3 `signIn` (+ verify-otp / forgot / reset) | [`mobile-sign-in.md`](mobile-sign-in.md) | E2E-MOB003-001..012 |
 | #11 `registrationStatus` (`GET /app/users/me`) | [`mobile-registration-status.md`](mobile-registration-status.md) | E2E-MOB011-001..007 |
 | #13 `home` (`GET /app/bootstrap`) | [`mobile-home.md`](mobile-home.md) | E2E-MOB013-001..007 |
 | #14 `myArea` (`GET /app/account/dashboard` + `.ics` + `.vcf`) | [`mobile-my-area.md`](mobile-my-area.md) | E2E-MOB014-001..008 |

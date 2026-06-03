@@ -123,9 +123,9 @@ class SplashController extends Notifier<SplashState> {
       return SplashReady(routeName: RouteNames.home, softUpdate: softUpdate);
     }
 
-    if (auth is AuthStateAwaitingTotp) {
+    if (auth is AuthStateAwaitingOtp) {
       return SplashReady(
-        routeName: RouteNames.verifyTotp,
+        routeName: RouteNames.verifyOtp,
         softUpdate: softUpdate,
       );
     }

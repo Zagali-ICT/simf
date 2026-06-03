@@ -17,9 +17,10 @@ abstract class AuthRepository {
     required String password,
   });
 
-  /// Complete the TOTP challenge after [signIn] returned [SignInChallenge].
-  Future<Session> verifyTotp({
-    required String mfaToken,
+  /// Complete the email-OTP challenge after [signIn] returned
+  /// [SignInOtpChallenge] — the visitor second factor (the app has no TOTP).
+  Future<Session> verifyOtp({
+    required String otpToken,
     required String code,
   });
 
@@ -65,8 +66,8 @@ abstract class AuthRepository {
   });
 }
 
-/// A successful sign-in either yields a [Session] outright, or a TOTP
-/// challenge for an administrative account. The auth UI branches on this.
+/// A successful sign-in either yields a [Session] outright, or an email-OTP
+/// challenge (the visitor second factor). The auth UI branches on this.
 sealed class SignInResult {
   const SignInResult();
 }
@@ -76,7 +77,7 @@ class SignInSession extends SignInResult {
   final Session session;
 }
 
-class SignInChallenge extends SignInResult {
-  const SignInChallenge(this.mfaToken);
-  final String mfaToken;
+class SignInOtpChallenge extends SignInResult {
+  const SignInOtpChallenge(this.otpToken);
+  final String otpToken;
 }

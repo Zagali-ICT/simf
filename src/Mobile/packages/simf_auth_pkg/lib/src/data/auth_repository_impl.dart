@@ -36,19 +36,19 @@ class AuthRepositoryImpl implements AuthRepository {
     switch (response) {
       case TokenResponseData(:final payload):
         return SignInSession(payload.toSession(issuedAt: _now()));
-      case MfaChallengeResponseData(:final mfaToken):
-        return SignInChallenge(mfaToken);
+      case OtpChallengeResponseData(:final otpToken):
+        return SignInOtpChallenge(otpToken);
     }
   }
 
   @override
-  Future<Session> verifyTotp({
-    required String mfaToken,
+  Future<Session> verifyOtp({
+    required String otpToken,
     required String code,
   }) async {
     final payload = await _guard(
-      () => _api.verifyTotp(
-        VerifyTotpRequest(mfaToken: mfaToken, code: code),
+      () => _api.verifyOtp(
+        VerifyOtpRequest(otpToken: otpToken, code: code),
       ),
     );
     return payload.toSession(issuedAt: _now());

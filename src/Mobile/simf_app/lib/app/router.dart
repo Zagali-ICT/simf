@@ -7,6 +7,10 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../core/widgets/coming_soon_screen.dart';
+import '../features/auth/email_otp_verify_screen.dart';
+import '../features/auth/forgot_password_screen.dart';
+import '../features/auth/reset_password_screen.dart';
+import '../features/auth/sign_in_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/splash/splash_screen.dart';
 import 'route_names.dart';
@@ -95,7 +99,7 @@ const List<_Route> _routes = <_Route>[
 const List<_Route> _auxRoutes = <_Route>[
   _Route(number: 0, name: RouteNames.forgotPassword, path: '/auth/forgot-password', labelAr: 'استعادة كلمة المرور', labelEn: 'Forgot password'),
   _Route(number: 0, name: RouteNames.resetPassword, path: '/auth/reset-password', labelAr: 'تعيين كلمة مرور جديدة', labelEn: 'Reset password'),
-  _Route(number: 0, name: RouteNames.verifyTotp, path: '/auth/verify-totp', labelAr: 'التحقق الثنائي', labelEn: 'Verify TOTP'),
+  _Route(number: 0, name: RouteNames.verifyOtp, path: '/auth/verify-otp', labelAr: 'رمز التحقق', labelEn: 'Verify OTP'),
 ];
 
 /// Screen numbers that need a signed-in user (Visitor or higher). Until
@@ -175,6 +179,9 @@ GoRouter buildRouter(Ref ref) {
             if (r.name == RouteNames.onboarding) {
               return const OnboardingScreen();
             }
+            if (r.name == RouteNames.signIn) {
+              return const SignInScreen();
+            }
             return ComingSoonScreen(
               screenNumber: r.number,
               screenLabelAr: r.labelAr,
@@ -186,11 +193,24 @@ GoRouter buildRouter(Ref ref) {
         GoRoute(
           name: r.name,
           path: r.path,
-          builder: (context, state) => ComingSoonScreen(
-            screenNumber: r.number,
-            screenLabelAr: r.labelAr,
-            screenLabelEn: r.labelEn,
-          ),
+          builder: (context, state) {
+            if (r.name == RouteNames.forgotPassword) {
+              return const ForgotPasswordScreen();
+            }
+            if (r.name == RouteNames.resetPassword) {
+              return ResetPasswordScreen(
+                email: state.uri.queryParameters['email'] ?? '',
+              );
+            }
+            if (r.name == RouteNames.verifyOtp) {
+              return const EmailOtpVerifyScreen();
+            }
+            return ComingSoonScreen(
+              screenNumber: r.number,
+              screenLabelAr: r.labelAr,
+              screenLabelEn: r.labelEn,
+            );
+          },
         ),
     ],
   );

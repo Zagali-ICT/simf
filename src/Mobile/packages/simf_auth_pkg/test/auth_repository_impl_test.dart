@@ -63,18 +63,21 @@ void main() {
       );
     });
 
-    test('returns SignInChallenge when the API returns mfaRequired',
+    test('returns SignInOtpChallenge when the API signals 2FA (email OTP)',
         () async {
       final api = _MockAuthApi();
       when(() => api.signIn(any())).thenAnswer(
-        (_) async => const MfaChallengeResponseData(mfaToken: 'mfa-123'),
+        (_) async => const OtpChallengeResponseData(otpToken: 'otp-123'),
       );
 
       final repo = AuthRepositoryImpl(api: api);
-      final result = await repo.signIn(email: 'admin@simf', password: 'pw');
+      final result = await repo.signIn(
+        email: 'visitor@example.sa',
+        password: 'pw',
+      );
 
-      expect(result, isA<SignInChallenge>());
-      expect((result as SignInChallenge).mfaToken, equals('mfa-123'));
+      expect(result, isA<SignInOtpChallenge>());
+      expect((result as SignInOtpChallenge).otpToken, equals('otp-123'));
     });
 
     test('translates AUTH_INVALID_CREDENTIALS into InvalidCredentials',

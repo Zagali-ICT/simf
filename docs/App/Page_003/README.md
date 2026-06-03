@@ -18,7 +18,7 @@ Per-page documentation folder. Everything about this app page lives here.
 | Section | 1 — Entry / auth screens |
 | Nature | **Authentication** (email + password, biometric re-open, forgot-password OTP) |
 | App privilege | **Guest** (unauthenticated entry point; promotes to Visitor/Admin on success) |
-| Status | API **built** (sign-in / refresh / forgot-password / reset-password / verify-otp / device-key); design **drafted** |
+| Status | **Built** (sign-in + email-OTP + forgot/reset screens, wired to the live API; biometric device-key sign-in **in progress** — next commit); API **built** |
 
 ## Owner reference
 This is owner page **003** "signIn", path `/sign-in`. Email field UI cap **50**, password

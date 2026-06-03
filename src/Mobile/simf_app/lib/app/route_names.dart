@@ -66,5 +66,7 @@ class RouteNames {
   // Auxiliary auth routes (not numbered in the mockup but in API-001 §12)
   static const String forgotPassword = 'forgotPassword';
   static const String resetPassword = 'resetPassword';
-  static const String verifyTotp = 'verifyTotp';
+
+  /// Visitor email-OTP second factor at sign-in (the app has no TOTP).
+  static const String verifyOtp = 'verifyOtp';
 }

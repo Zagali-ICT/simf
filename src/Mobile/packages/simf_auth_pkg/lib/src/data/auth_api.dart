@@ -33,9 +33,10 @@ class AuthApi {
     );
   }
 
-  Future<TokenPayloadDto> verifyTotp(VerifyTotpRequest request) {
+  // SIMF-API-001 Amendment A.1 — visitor email-OTP second factor.
+  Future<TokenPayloadDto> verifyOtp(VerifyOtpRequest request) {
     return _client.post<TokenPayloadDto>(
-      '/app/auth/verify-totp',
+      '/app/auth/verify-otp',
       body: request.toJson(),
       decodeData: _decodeTokenPayload,
     );

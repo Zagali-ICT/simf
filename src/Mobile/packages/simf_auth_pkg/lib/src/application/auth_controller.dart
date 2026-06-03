@@ -35,10 +35,11 @@ class AuthStateSignedIn extends AuthState {
   final Session session;
 }
 
-/// A sign-in needs TOTP. The router redirects to the TOTP screen.
-class AuthStateAwaitingTotp extends AuthState {
-  const AuthStateAwaitingTotp(this.mfaToken);
-  final String mfaToken;
+/// A sign-in needs the emailed OTP second factor (visitor 2FA). The router
+/// redirects to the OTP entry screen. The app has no TOTP path.
+class AuthStateAwaitingOtp extends AuthState {
+  const AuthStateAwaitingOtp(this.otpToken);
+  final String otpToken;
 }
 
 /// The repository the controller consumes. Wired by [authRepositoryProvider]
@@ -125,18 +126,18 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
         // name — hydrate the authoritative app-role + registration status from
         // GET /app/users/me so the app does not treat the user as Guest.
         await reloadCurrentUser();
-      case SignInChallenge(:final mfaToken):
-        state = AuthStateAwaitingTotp(mfaToken);
+      case SignInOtpChallenge(:final otpToken):
+        state = AuthStateAwaitingOtp(otpToken);
     }
   }
 
-  Future<void> verifyTotp({required String code}) async {
+  Future<void> verifyOtp({required String code}) async {
     final current = state;
-    if (current is! AuthStateAwaitingTotp) {
+    if (current is! AuthStateAwaitingOtp) {
       return;
     }
-    final session = await _repository.verifyTotp(
-      mfaToken: current.mfaToken,
+    final session = await _repository.verifyOtp(
+      otpToken: current.otpToken,
       code: code,
     );
     await _persistSession(session);

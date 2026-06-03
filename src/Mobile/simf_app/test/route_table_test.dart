@@ -58,7 +58,7 @@ void main() {
     test('auxiliary auth routes are declared', () {
       expect(RouteNames.forgotPassword, isNotEmpty);
       expect(RouteNames.resetPassword, isNotEmpty);
-      expect(RouteNames.verifyTotp, isNotEmpty);
+      expect(RouteNames.verifyOtp, isNotEmpty);
     });
   });
 }

@@ -41,12 +41,12 @@ class SignOutRequest {
 }
 
 @immutable
-class VerifyTotpRequest {
-  const VerifyTotpRequest({required this.mfaToken, required this.code});
-  final String mfaToken;
+class VerifyOtpRequest {
+  const VerifyOtpRequest({required this.otpToken, required this.code});
+  final String otpToken;
   final String code;
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'mfaToken': mfaToken,
+        'otpToken': otpToken,
         'code': code,
       };
 }
