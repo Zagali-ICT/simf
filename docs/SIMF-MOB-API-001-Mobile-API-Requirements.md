@@ -176,6 +176,9 @@ Summary: one read-only aggregate `GET /account/dashboard` (identity card + two c
 + today's merged schedule), plus `calendar.ics` (full schedule, RFC 5545) and
 `contact-card.vcf` (vCard) for the native share intent. All **additive, no schema
 change**. App routes are under **`/api/v1/app/*`** (App↔CP split shipped, D-247) — e.g. `GET /api/v1/app/account/dashboard`.
+**BUILT (D-249):** all three routes shipped; the meeting counter unions accepted
+speaker meetings with confirmed business meetings (D-248). Full contract +
+counter/schedule rules in [`Page_014_API.md`](App/Page_014/Page_014_API.md).
 
 Other Section-2 account endpoints (sign-up profile steps, countries, interests,
 ProfileType picker, ID-document upload — `Endpoints/Account/*`) are detailed in a later wave.

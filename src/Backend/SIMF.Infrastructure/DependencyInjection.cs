@@ -275,6 +275,10 @@ public static class DependencyInjection
         // business meetings (meeting tables, hall allocations, meetings).
         services.AddScoped<SIMF.Application.BusinessMeetings.Abstractions.IBusinessMeetingService,
             SIMF.Infrastructure.BusinessMeetings.BusinessMeetingService>();
+        // D-249 — App Screen 14 My-Area dashboard (held bookings + accepted
+        // speaker meetings + confirmed business meetings + identity card).
+        services.AddScoped<SIMF.Application.MyArea.IMyAreaService,
+            SIMF.Infrastructure.MyArea.MyAreaService>();
         // D-199 — event modules (freeze lift): programme/speaker public reads,
         // news, media + media-partners, booths, sponsors, archive, comments, ratings.
         services.AddScoped<SIMF.Application.Programme.Abstractions.IPublicSpeakerService,

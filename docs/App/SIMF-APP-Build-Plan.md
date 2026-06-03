@@ -71,7 +71,7 @@ Status legend: ✅ **ready** (endpoint shipped under `/app/*`) · 🟡 **to buil
 | # | Route | Privilege | API status | Page doc |
 |---|-------|-----------|------------|----------|
 | 13 | `home` | Guest+ | ✅ `GET /app/account/notifications` (count) · 🟡 `GET /app/bootstrap` (D9) · live banner deferred (D10) | [Page_013](Page_013/README.md) |
-| 14 | `myArea` | Visitor | ⛔ `GET /app/account/dashboard` + `calendar.ics` + `contact-card.vcf` (spec done; **blocked** — unions BusinessMeetings, landing now) | [Page_014](Page_014/README.md) |
+| 14 | `myArea` | Visitor | ✅ **BUILT (D-249)** `GET /app/account/dashboard` + `calendar.ics` + `contact-card.vcf` — unions held bookings + speaker meetings + confirmed business meetings | [Page_014](Page_014/README.md) |
 | 15 | `venueMap` | Guest | ✅ `GET /app/venue-map` (D-230) + `GET /app/booths` | [Page_015](Page_015/README.md) |
 | 16–20 | `agenda`, `sessionDetail`, `mySeat`, `speakers`, `speakerProfile` | Guest/Visitor | ⏳ existing `Endpoints/Programme/*`, `Endpoints/Sessions/SeatReservation*`, `Endpoints/Public/PublicSpeaker*` (later wave) | — |
 
@@ -115,10 +115,11 @@ following the matching `Page_NNN/` Function/Logic/Design docs.
 
 **Pending (named in D-249, additive — coordinate before building the screen):**
 - 🟡 `GET /app/bootstrap` — the on-login "fetch all + privileges" bundle (D9).
-- ⛔ `GET /app/account/dashboard` + `calendar.ics` + `contact-card.vcf` (Screen 14)
-  — spec complete in [Page_014](Page_014/README.md); **blocked** only until the
-  parallel BusinessMeetings work (D-248) settles, because the dashboard's meeting
-  counter unions confirmed business meetings with speaker meeting-requests.
+
+**Recently shipped (D-249):**
+- ✅ `GET /app/account/dashboard` + `calendar.ics` + `contact-card.vcf` (Screen 14)
+  — the My-Area dashboard, unioning held bookings + accepted speaker meetings +
+  confirmed business meetings (D-248). See [Page_014](Page_014/README.md).
 
 **Deferred (not in this version) — do not build app paths that depend on them:**
 - D4 Nafath sign-in, D8 server-side T&C consent record, D10 live/YouTube banner,

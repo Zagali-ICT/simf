@@ -4,17 +4,20 @@ Authoritative backend contract for this page. Inherits the `ApiResult<T>` envelo
 headers, error model and auth from SIMF-API-001 + SIMF-MOB-API-001 §3–§4. Counter and
 schedule rules are in [Page_014_Logic.md](Page_014_Logic.md).
 
-> **Status:** spec drafted, **not built**. All three endpoints are **additive,
-> read-only aggregates over existing tables** — no schema change, no enum change, no migration.
+> **Status:** **BUILT (D-249).** Three additive, read-only aggregates over existing
+> App-DB tables — no schema change, no enum change, no migration. Implemented as
+> `IMyAreaService` (`MyAreaService`) behind `MyAreaEndpoints`; covered by
+> `tests/SIMF.Api.Tests/MyAreaDashboardTests.cs` (6 tests).
 >
-> **Path-prefix note:** App routes are under **`/api/v1/app/*`** (App↔CP split shipped,
+> **Path-prefix note:** App routes are under **`/api/v1/app/*`** (App↔CP split,
 > D-247) — so the routes below are `GET /api/v1/app/account/dashboard`,
 > `/api/v1/app/account/calendar.ics`, `/api/v1/app/account/contact-card.vcf`.
 
-## E1 — `GET /account/dashboard`
+## E1 — `GET /app/account/dashboard`  **(BUILT — D-249)**
 | | |
 |---|---|
-| Access | Approved account (`RequireApprovedAccount`); own `sub`. No new permission code. |
+| Full route | `GET /api/v1/app/account/dashboard` |
+| Access | Approved account (`Policies(nameof(AuthorizationPolicies.RequireApprovedAccount))`); own `sub`. No new permission code (app self-read). |
 | App privilege | Visitor and above |
 | Returns | `ApiResult<MyAreaDashboard>` |
 
@@ -24,59 +27,74 @@ schedule rules are in [Page_014_Logic.md](Page_014_Logic.md).
   "identity": {
     "fullNameAr": "string",   // UserProfile.ArabicName
     "fullNameEn": "string",   // UserProfile.EnglishName
-    "qrId":       "string",   // UserProfile.QrId  ← card reference (null until Approved)
-    "avatarUrl":  "string?",  // existing GET /account/avatar/{userId}
-    "tierNameEn": "string",   // ProfileType.Name        (resolved from UserProfile.ProfileTypeId)
-    "tierNameAr": "string",   // ProfileType.NameArabic
-    "pageColor":  "string"    // ProfileType.PageColor
+    "qrId":       "string?",  // UserProfile.QrId  ← card reference (null until Approved)
+    "avatarUrl":  "string?",  // resolved from the account (IAccountService) — Identity side, on read
+    "tierNameEn": "string?",  // ProfileType.Name        (null if no ProfileType assigned)
+    "tierNameAr": "string?",  // ProfileType.NameArabic
+    "pageColor":  "string?"   // ProfileType.PageColor
   },
   "counters": {
     "bookedSessionsCount": 0, // held SeatReservation — Page_014_Logic L-2
-    "meetingsCount":       0  // speaker ∪ B2B/B2C meetings — Page_014_Logic L-3
+    "meetingsCount":       0  // accepted speaker meetings ∪ confirmed business meetings — L-3
   },
-  "todaySchedule": [          // merged, time-ordered, today only — Page_014_Logic L-4
+  "todaySchedule": [          // merged, time-ordered, today only (event TZ = AST/UTC+3) — L-4
     {
       "kind": "Session",      // "Session" | "Meeting"
       "startUtc": "2026-09-13T08:00:00Z",
-      "endUtc":   "2026-09-13T09:00:00Z", // null for meetings
-      "titleEn": "string",
+      "endUtc":   "2026-09-13T09:00:00Z", // null only if the source carries no end
+      "titleEn": "string",    // session title; empty for a business meeting
       "titleAr": "string",
-      "hallName": "string?",  // Session.Hall.Name
-      "subject":  "string?",  // meeting topic
-      "status":   "string",   // BookingStatus / MeetingRequestStatus
-      "sessionId":"guid",
-      "meetingId":"guid?"
+      "hallNameEn": "string?",// Session.Hall.Name / MeetingTable.Hall.Name
+      "hallNameAr": "string?",// Session.Hall.NameArabic / MeetingTable.Hall.NameArabic
+      "subject":  "string?",  // meeting topic (speaker request subject / business-meeting note)
+      "status":   "string",   // BookingStatus / "Accepted" / "Confirmed"
+      "sessionId":"guid?",    // set for Session items + speaker meetings; null for business meetings
+      "meetingId":"guid?"     // set for Meeting items; null for Session items
     }
   ]
 }
 ```
 
-## E2 — `GET /account/calendar.ics`  (Share → my full calendar)
+### Counter / union rules (built)
+- **`bookedSessionsCount`** = held `SeatReservation` for the caller
+  (`ReservedForUserId == sub`, `Kind ∈ {UserBooking, RandomAssignment}`,
+  `ReleasedAt IS NULL`, active session). Page_014_Logic L-2.
+- **`meetingsCount`** = accepted speaker meetings (`MeetingRequest.Status == Accepted`,
+  active session) **∪** confirmed business meetings (the caller is a
+  `BusinessMeetingParticipant` with `Kind == Visitor` and the meeting
+  `Status == Confirmed`, D-248). L-3.
+- **Today's window** is the **Arabia Standard Time** (UTC+3, the Riyadh venue, no DST)
+  calendar day, computed from the injected `TimeProvider` — so an evening session
+  stays on today's card. L-4.
+
+## E2 — `GET /app/account/calendar.ics`  (Share → my full calendar)  **(BUILT)**
 | | |
 |---|---|
-| Route | `GET /api/v1/account/calendar.ics` (or `/account/calendar` + `Accept: text/calendar`) |
+| Full route | `GET /api/v1/app/account/calendar.ics` |
 | Access | Approved account; own `sub` |
-| Returns | `text/calendar` (RFC 5545). One **VEVENT per item across all days** — every held booked session + every accepted/arranged meeting. `DTSTART = Session.StartUtc`, `DTEND = Session.EndUtc` (sessions), `SUMMARY = title`, `LOCATION = hall`. |
+| Returns | `text/calendar; charset=utf-8` (RFC 5545), `Content-Disposition: attachment; filename="simf.ics"`. One **VEVENT per item across all days** — every held booked session + every accepted speaker meeting + every confirmed business meeting. `DTSTART`/`DTEND` from the item (UTC), `SUMMARY` = session title or meeting subject, `LOCATION` = hall name, `UID` = item id. Text fields RFC-5545-escaped. |
 
 App fetches and hands to the native **share intent** / add-to-calendar.
 
-## E3 — `GET /account/contact-card.vcf`  (Share → my data, QR-contact standard)
+## E3 — `GET /app/account/contact-card.vcf`  (Share → my data, QR-contact standard)  **(BUILT)**
 | | |
 |---|---|
-| Route | `GET /api/v1/account/contact-card.vcf` (or `Accept: text/vcard`) |
+| Full route | `GET /api/v1/app/account/contact-card.vcf` |
 | Access | Approved account; own `sub` |
-| Returns | `text/vcard` — `FN` (name EN/AR), `TITLE` (job title), `ORG` (organisation), `QrId` as the unique key. Same data the badge QR encodes. |
+| Returns | `text/vcard; charset=utf-8` (vCard 3.0), `Content-Disposition: attachment; filename="simf.vcf"` — `FN`/`N` (name, EN preferred then AR), `TITLE` (`UserProfile.JobTitle`), `ORG` (`Organisation.NameEn ?? NameAr`), `UID` + `NOTE` = `QrId` (the badge's unique key). |
 
-App hands to the native **share intent**. No badge-image endpoint — QR rendered client-side from `qrId`.
+App hands to the native **share intent**. No badge-image endpoint — the QR is rendered client-side from `qrId`.
 
-## Reused existing endpoints (no contract change)
-The dashboard service composes server-side from these shipped, App-facing reads:
-| Existing | Used for |
+## Reused existing reads (no contract change)
+| Source | Used for |
 |---|---|
-| `GET /account/profile` | display name, `avatarUrl`, roles |
-| `GET /account/user-profile` | `ArabicName`, `EnglishName`, `QrId`, `ProfileTypeId`, job title, organisation |
-| `GET /account/avatar/{userId}` | the avatar image stream |
+| `IAccountService.GetProfileAsync` (Identity side) | `avatarUrl` — resolved on read, a second query on the other context (D-157, no cross-DB join) |
+| App-DB `UserProfiles` + `ProfileType` | names, `QrId`, job title, organisation, tier name + colour |
+| App-DB `SeatReservations` / `MeetingRequests` / `BusinessMeetingParticipants` | the counters + schedule union |
 
-## Build dependencies
-- **B2B/B2C meeting source** (Page_014_Logic L-7) is not built — until it ships,
-  `meetingsCount`/Meeting schedule items reflect **speaker meetings only**.
+## Error responses
+| HTTP | When |
+|------|------|
+| 401 | Missing / invalid token |
+| 403 | Authenticated but **not Approved** (`RequireApprovedAccount`) — a pending/rejected user shows the limited card from cached identity instead |
+| 404 | (n/a — the aggregate degrades gracefully: a user with no profile returns empty names + null `qrId`, zero counters, empty schedule) |

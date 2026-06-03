@@ -21,10 +21,12 @@ Union of two kinds of "meeting with others":
 | Kind | Created via | Backing entity | Counted when |
 |------|-------------|----------------|--------------|
 | Speaker / interview | the **App** (`POST /sessions/{id}/meeting-requests`) | `MeetingRequest` | `Status == Accepted` |
-| **B2B / B2C** | the **Control Panel** | *not built yet* (see L-7) | when the entity ships |
+| **B2B / B2C** | the **Control Panel** | `BusinessMeeting` + `BusinessMeetingParticipant` (D-248) | the caller is a `Kind == Visitor` participant **and** the meeting `Status == Confirmed` |
 
-Both are scoped to the caller. Until the B2B/B2C entity exists, the counter reflects
-**speaker meetings only** — the contract already unions both so it does not change shape later.
+Both are scoped to the caller and **both are now built** — the counter (and the
+schedule) union them. A business meeting carries its **own** `StartUtc`/`EndUtc`
+(it is not tied to a `Session`), so its schedule item uses that time directly and
+its hall name comes from `MeetingTable.Hall`.
 
 ## L-4 Today's schedule
 A single list, ordered by start time, **today only**, merging:
@@ -47,10 +49,11 @@ Each item carries its `status` so the UI can badge a still-Pending booking.
 - Single aggregate call → one retry surface on error.
 
 ## L-7 Dependencies
-- **B2B/B2C meeting module is NOT built.** Per owner it is a **CP-managed, pre-reserved
-  hall/table booking** for bilateral meetings between **company / visitor / sponsor** —
-  define halls/tables, then the reservation tables for the session/meeting, managed in
-  the CP. Scoped to the **running programme-plan session**, not the App-API review.
+- **B2B/B2C meeting module is BUILT (D-248).** It is the CP-managed, pre-reserved
+  hall/table booking the owner described: `Hall.Purpose` + `MeetingTable` +
+  `HallAllocation` + `BusinessMeeting`/`BusinessMeetingParticipant` (companies = FK,
+  visitors = bare Guid resolved on read, D-157). The dashboard unions confirmed
+  business meetings (caller as a Visitor participant) with accepted speaker meetings.
 - The QR is rendered **client-side** from `QrId`; there is no server QR-image endpoint.
 
 ## L-8 Localization

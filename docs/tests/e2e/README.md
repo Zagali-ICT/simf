@@ -166,6 +166,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | App screen | File | Scenarios |
 |------------|------|-----------|
 | #11 `registrationStatus` (`GET /app/users/me`) | [`mobile-registration-status.md`](mobile-registration-status.md) | E2E-MOB011-001..007 |
+| #14 `myArea` (`GET /app/account/dashboard` + `.ics` + `.vcf`) | [`mobile-my-area.md`](mobile-my-area.md) | E2E-MOB014-001..008 |
 
 ## How to add a new catalogue file
 
