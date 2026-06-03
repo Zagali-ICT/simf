@@ -29,7 +29,7 @@ public sealed class MeetingRequestsListTests : CpComponentTestBase
             RespondedAt: null);
 
     [Fact]
-    public void Page_load_posts_the_list_query_with_Top_50()
+    public void Page_load_posts_the_list_query_with_Top_20()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         var emptyPage = new GridPage<AdminMeetingRequestRow>();
@@ -46,7 +46,7 @@ public sealed class MeetingRequestsListTests : CpComponentTestBase
         Assert.Equal("/account/api/admin/meeting-requests/list",
             (string)posted.Arguments[0]!);
         var body = (GridQuery)posted.Arguments[1]!;
-        Assert.Equal(50, body.Top);
+        Assert.Equal(20, body.Top); // D-256: SimfDataGrid standard page size
         Assert.Equal(0, body.Skip);
         Assert.Empty(body.Filters); // no filter on first load
     }
@@ -68,11 +68,18 @@ public sealed class MeetingRequestsListTests : CpComponentTestBase
         // First call = initial page load (wait for async OnInit).
         cut.WaitForAssertion(() => Assert.Single(listHandler.Invocations));
 
-        // Trigger the status filter change to "Pending".
-        cut.Find("select.simf-field__input").Change("Pending");
+        // D-256: status is now a filterable SimfDataGrid column, not a custom
+        // <select>. Filterable columns render a per-column filter input in
+        // order (requesterName, subject, status) — the status filter is the
+        // 3rd. Typing into it must reload with Filters["status"] + Skip=0.
+        var filterInputs = cut.FindAll("input.simf-grid__filter-input");
+        Assert.True(filterInputs.Count >= 3);
+        filterInputs[2].Input("Pending");
 
-        // Second call carries Filters["status"]="Pending" + Skip=0.
-        cut.WaitForAssertion(() => Assert.Equal(2, listHandler.Invocations.Count));
+        // Second call (after the grid's 300ms debounce) carries the filter + Skip=0.
+        cut.WaitForAssertion(
+            () => Assert.Equal(2, listHandler.Invocations.Count),
+            TimeSpan.FromSeconds(2));
         var second = listHandler.Invocations.Last();
         var body = (GridQuery)second.Arguments[1]!;
         Assert.Equal("Pending", body.Filters["status"]);
@@ -111,16 +118,24 @@ public sealed class MeetingRequestsListTests : CpComponentTestBase
             inv => inv.Identifier == "simfAccount.getJson")
             .SetResult(ApiResult<AdminMeetingRequestDetail>.Ok(detail));
 
+        // D-256: the Respond action is wrapped in <AuthorizedAction
+        // Permission="MeetingRequests.Manage">. Mirror the production
+        // Administrator (which carries the "*" wildcard) by granting the policy
+        // so the gated button renders.
+        Authorization.SetPolicies(
+            PermissionCatalog.PolicyFor(PermissionCatalog.MeetingRequests.Manage));
+
         var cut = RenderComponent<MeetingRequestsList>();
 
-        // Wait for the initial list-load to render the table row
-        // (the table appears only after _loading flips back to false).
+        // D-256: wait for the data row's Respond action button to render (the
+        // grid shows an empty-state row until the list-load resolves; the
+        // Respond reply button lives in the actions cell of a Pending row).
         cut.WaitForAssertion(() =>
-            Assert.Single(cut.FindAll("table tbody tr")));
+            Assert.Single(cut.FindAll(".simf-grid__td--actions button")));
 
         // Click the row's Respond button.
         await cut.InvokeAsync(() =>
-            cut.Find("table tbody tr button").Click());
+            cut.Find(".simf-grid__td--actions button").Click());
 
         // The detail GET was issued with the row's id.
         cut.WaitForAssertion(() => Assert.Single(detailHandler.Invocations));

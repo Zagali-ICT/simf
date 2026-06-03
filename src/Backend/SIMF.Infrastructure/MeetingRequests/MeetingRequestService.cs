@@ -128,7 +128,40 @@ internal sealed class MeetingRequestService(
             rows = rows.Where(r => r.SessionId == sessionIdFilter);
             sessionFilter = sessionIdFilter.ToString();
         }
-        rows = rows.OrderByDescending(r => r.CreatedAt);
+
+        // D-256 (SimfDataGrid migration) — CP grid per-column text filters
+        // over the entity's own columns. The session code/title columns are
+        // joined AFTER paging below, so they stay non-server-filterable; the
+        // status column keeps its enum-parse filter above. Unknown columns
+        // are ignored.
+        if (query.Filters.TryGetValue("requesterName", out var nameRaw)
+            && !string.IsNullOrWhiteSpace(nameRaw))
+        {
+            var v = nameRaw.Trim();
+            rows = rows.Where(r => r.RequesterName.Contains(v));
+        }
+        if (query.Filters.TryGetValue("subject", out var subjectRaw)
+            && !string.IsNullOrWhiteSpace(subjectRaw))
+        {
+            var v = subjectRaw.Trim();
+            rows = rows.Where(r => r.Subject.Contains(v));
+        }
+
+        // D-256 — CP grid sortable columns. Default preserves the original
+        // newest-first order (CreatedAt descending).
+        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
+        {
+            ("requestername", false) => rows.OrderBy(r => r.RequesterName),
+            ("requestername", true) => rows.OrderByDescending(r => r.RequesterName),
+            ("subject", false) => rows.OrderBy(r => r.Subject),
+            ("subject", true) => rows.OrderByDescending(r => r.Subject),
+            ("status", false) => rows.OrderBy(r => r.Status),
+            ("status", true) => rows.OrderByDescending(r => r.Status),
+            ("createdat", false) => rows.OrderBy(r => r.CreatedAt),
+            ("respondedat", false) => rows.OrderBy(r => r.RespondedAt),
+            ("respondedat", true) => rows.OrderByDescending(r => r.RespondedAt),
+            _ => rows.OrderByDescending(r => r.CreatedAt),
+        };
 
         var total = await rows.CountAsync(cancellationToken);
         var pageRows = await rows

@@ -2,7 +2,9 @@
    lookup. Rows can be created/edited by hand or bulk-loaded from a government
    Excel sheet via "Import Excel" (POST /admin/organisations/import returns an
    OrganisationImportResult with the rows-read / inserted / updated / skipped
-   counts). A search box reloads the grid server-side via GridQuery.Search. *@
+   counts). A search box reloads the grid server-side via GridQuery.Search.
+   Migrated from the raw <table> to the owner-mandated SimfDataGrid
+   (server-paged, sortable + filterable, full pager). *@
 @page "/admin/organisations"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Organisations.View)]
@@ -33,75 +35,83 @@
                     @L["Admin.Organisations.Search.Apply"]
                 </SimfButton>
             </div>
-            <div class="simf-form__actions">
-                <AuthorizedAction Permission="@PermissionCatalog.Organisations.Create">
-                    <SimfButton Type="button" Disabled="_busy" OnClick="OnAdd">
-                        @L["Admin.Organisations.New"]
-                    </SimfButton>
-                </AuthorizedAction>
-                <AuthorizedAction Permission="@PermissionCatalog.Organisations.Import">
-                    <SimfButton Type="button" Disabled="_busy" OnClick="OpenImport">
-                        @L["Admin.Organisations.Import"]
-                    </SimfButton>
-                </AuthorizedAction>
-            </div>
         </div>
 
-        @if (_loading)
-        {
-            <p>@L["Admin.Organisations.Loading"]</p>
-        }
-        else if (_page.Items.Count == 0)
-        {
-            <SimfEmptyState Title="@L["Admin.Organisations.None"]" />
-        }
-        else
-        {
-            <table class="simf-table">
-                <thead>
-                    <tr>
-                        <th>@L["Admin.Organisations.Col.NameAr"]</th>
-                        <th>@L["Admin.Organisations.Col.NameEn"]</th>
-                        <th>@L["Admin.Organisations.Col.CommercialRegistration"]</th>
-                        <th>@L["Admin.Organisations.Col.Sector"]</th>
-                        <th>@L["Admin.Organisations.Col.City"]</th>
-                        <th>@L["Admin.Organisations.Col.Active"]</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _page.Items)
-                    {
-                        <tr>
-                            <td>@row.NameAr</td>
-                            <td>@(string.IsNullOrWhiteSpace(row.NameEn) ? "—" : row.NameEn)</td>
-                            <td>@(string.IsNullOrWhiteSpace(row.CommercialRegistration) ? "—" : row.CommercialRegistration)</td>
-                            <td>@(string.IsNullOrWhiteSpace(row.Sector) ? "—" : row.Sector)</td>
-                            <td>@(string.IsNullOrWhiteSpace(row.City) ? "—" : row.City)</td>
-                            <td>@(row.IsActive ? "✓" : "—")</td>
-                            <td>
-                                <AuthorizedAction Permission="@PermissionCatalog.Organisations.Edit">
-                                    <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => OnEditAsync(row))">
-                                        @L["Admin.Organisations.Edit"]
-                                    </SimfButton>
-                                </AuthorizedAction>
-                                <AuthorizedAction Permission="@PermissionCatalog.Organisations.Delete">
-                                    <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => OnDeleteAsync(row))">
-                                        @L["Admin.Organisations.Delete"]
-                                    </SimfButton>
-                                </AuthorizedAction>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="simf-table__summary">
-                @(string.Format(L["Admin.Organisations.Summary"],
-                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
-            </p>
-        }
+        <SimfDataGrid TItem="AdminOrganisationSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.NameAr)"
+                      Caption="@L["Admin.Organisations.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnAdd="OnAdd"
+                      OnEditOne="OnEditAsync"
+                      OnDeleteOne="OnDeleteAsync"
+                      OnImport="OpenImport"
+                      ImportLabel="@L["Admin.Organisations.Import"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Organisations.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]"
+                      EditLabel="@L["Grid.Edit"]"
+                      DeleteLabel="@L["Grid.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="name"
+                                    Header="@L["Admin.Organisations.Col.NameAr"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.NameAr</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="nameEn"
+                                    Header="@L["Admin.Organisations.Col.NameEn"]"
+                                    Filterable="true">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.NameEn) ? "—" : context.NameEn)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="commercialRegistration"
+                                    Header="@L["Admin.Organisations.Col.CommercialRegistration"]"
+                                    Filterable="true">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.CommercialRegistration) ? "—" : context.CommercialRegistration)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="sector"
+                                    Header="@L["Admin.Organisations.Col.Sector"]"
+                                    Filterable="true">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.Sector) ? "—" : context.Sector)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="city"
+                                    Header="@L["Admin.Organisations.Col.City"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.City) ? "—" : context.City)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="isActive"
+                                    Header="@L["Admin.Organisations.Col.Active"]"
+                                    Sortable="true">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Organisations.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
     </div>
 </div>
 
@@ -245,7 +255,7 @@
         public bool IsActive { get; set; } = true;
     }
 
-    private GridQuery _query = new() { Top = 50 };
+    private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminOrganisationSummary> _page = new();
     private bool _loading;
     private bool _busy;
@@ -269,6 +279,18 @@
     {
         await LoadAsync();
     }
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
 
     private async Task LoadAsync()
     {

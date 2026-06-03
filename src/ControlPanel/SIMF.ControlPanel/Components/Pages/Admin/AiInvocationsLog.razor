@@ -1,5 +1,8 @@
 @* D-176 (gap doc G12) — append-only AI invocations log. Read-only.
-   Filterable by errors-only so SOC + product can spot regressions. *@
+   Filterable by errors-only so SOC + product can spot regressions.
+   Migrated to the canonical SimfDataGrid (owner-mandated): per-column
+   sort/filter, full numbered pager. The page has no CRUD — the only
+   action is the "Errors only" toggle, kept as a CustomToolbar control. *@
 @page "/admin/ai/invocations"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.AiInvocations.View)]
@@ -17,68 +20,94 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        <div class="simf-form__actions">
-            <SimfCheckbox Value="_errorsOnly" ValueChanged="OnErrorsOnlyChangedAsync">
-                @L["Admin.AiInvocations.Filter.ErrorsOnly"]
-            </SimfCheckbox>
-        </div>
-
-        @if (_loading)
-        {
-            <p>@L["Admin.AiInvocations.Loading"]</p>
-        }
-        else if (_page.Items.Count == 0)
-        {
-            <SimfEmptyState Title="@L["Admin.AiInvocations.None"]" />
-        }
-        else
-        {
-            <table class="simf-table">
-                <thead>
-                    <tr>
-                        <th>@L["Admin.AiInvocations.Col.Time"]</th>
-                        <th>@L["Admin.AiInvocations.Col.PromptKey"]</th>
-                        <th>@L["Admin.AiInvocations.Col.Feature"]</th>
-                        <th>@L["Admin.AiInvocations.Col.Provider"]</th>
-                        <th>@L["Admin.AiInvocations.Col.Caller"]</th>
-                        <th>@L["Admin.AiInvocations.Col.Latency"]</th>
-                        <th>@L["Admin.AiInvocations.Col.Tokens"]</th>
-                        <th>@L["Admin.AiInvocations.Col.Error"]</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _page.Items)
-                    {
-                        <tr>
-                            <td>@row.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</td>
-                            <td><code>@row.PromptKey</code></td>
-                            <td>@row.Feature</td>
-                            <td>@row.Provider</td>
-                            <td>@row.CallerKind</td>
-                            <td>@(row.LatencyMs)ms</td>
-                            <td>@(row.TokensInput?.ToString() ?? "—") / @(row.TokensOutput?.ToString() ?? "—")</td>
-                            <td>
-                                @if (row.ErrorCode is not null)
-                                {
-                                    <SimfPill Variant="off">@row.ErrorCode</SimfPill>
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="simf-table__summary">
-                @(string.Format(L["Admin.AiInvocations.Summary"],
-                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
-            </p>
-        }
+        <SimfDataGrid TItem="AdminAiInvocationRow"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="false"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.PromptKey)"
+                      Caption="@L["Admin.AiInvocations.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.AiInvocations.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]"
+                      EditLabel="@L["Grid.Edit"]"
+                      DeleteLabel="@L["Grid.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <CustomToolbar>
+                @* Existing "errors only" filter, preserved. Toggling rebuilds
+                   the query with the errorOnly filter and reloads. *@
+                <SimfCheckbox Value="_errorsOnly" ValueChanged="OnErrorsOnlyChangedAsync">
+                    @L["Admin.AiInvocations.Filter.ErrorsOnly"]
+                </SimfCheckbox>
+            </CustomToolbar>
+            <Columns>
+                <SimfDataGridColumn TItem="AdminAiInvocationRow" Key="createdAt"
+                                    Header="@L["Admin.AiInvocations.Col.Time"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAiInvocationRow" Key="promptKey"
+                                    Header="@L["Admin.AiInvocations.Col.PromptKey"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate><code>@context.PromptKey</code></CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAiInvocationRow" Key="feature"
+                                    Header="@L["Admin.AiInvocations.Col.Feature"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Feature</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAiInvocationRow" Key="provider"
+                                    Header="@L["Admin.AiInvocations.Col.Provider"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Provider</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAiInvocationRow" Key="callerKind"
+                                    Header="@L["Admin.AiInvocations.Col.Caller"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.CallerKind</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAiInvocationRow" Key="latencyMs"
+                                    Header="@L["Admin.AiInvocations.Col.Latency"]"
+                                    Sortable="true">
+                    <CellTemplate>@(context.LatencyMs)ms</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAiInvocationRow" Key="tokens"
+                                    Header="@L["Admin.AiInvocations.Col.Tokens"]">
+                    <CellTemplate>@(context.TokensInput?.ToString() ?? "—") / @(context.TokensOutput?.ToString() ?? "—")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAiInvocationRow" Key="error"
+                                    Header="@L["Admin.AiInvocations.Col.Error"]">
+                    <CellTemplate>
+                        @if (context.ErrorCode is not null)
+                        {
+                            <SimfPill Variant="off">@context.ErrorCode</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.AiInvocations.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
     </div>
 </div>
 
 @code {
     private record Toast(string Variant, string Message);
 
-    private GridQuery _query = new() { Top = 50 };
+    private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminAiInvocationRow> _page = new();
     private bool _loading;
     private bool _errorsOnly;
@@ -86,18 +115,43 @@
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        // The grid drops the errorOnly filter when it rebuilds the query for a
+        // sort/filter/page change; re-apply the page-level toggle each time so
+        // the "Errors only" state survives grid interactions.
+        if (_errorsOnly)
+        {
+            _query.Filters["errorOnly"] = "true";
+        }
+        else
+        {
+            _query.Filters.Remove("errorOnly");
+        }
+        await LoadAsync();
+    }
+
     private async Task OnErrorsOnlyChangedAsync(bool value)
     {
         _errorsOnly = value;
-        _query = new GridQuery
+        if (_errorsOnly)
         {
-            Top = _query.Top,
-            Filters = _errorsOnly
-                ? new Dictionary<string, string> { ["errorOnly"] = "true" }
-                : new Dictionary<string, string>(),
-        };
+            _query.Filters["errorOnly"] = "true";
+        }
+        else
+        {
+            _query.Filters.Remove("errorOnly");
+        }
+        _query.Skip = 0;
         await LoadAsync();
     }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
 
     private async Task LoadAsync()
     {

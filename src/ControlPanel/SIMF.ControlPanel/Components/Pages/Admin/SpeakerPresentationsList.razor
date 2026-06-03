@@ -2,7 +2,12 @@
    FR-407). Pick a speaker, see their presentation files (each linked to a
    session), upload a new file for a session, download or remove existing ones.
    Gated by Speakers.* (View to read, Edit to upload/delete). Mirrors the
-   MediaList out-of-row upload via simfAccount.uploadFile. *@
+   MediaList out-of-row upload via simfAccount.uploadFile.
+
+   The list endpoint (GET /admin/speakers/{id}/presentations) returns the full,
+   non-paged set for one speaker, so the SimfDataGrid is fed a client-side page:
+   _allRows holds the full list and OnQueryChangedAsync slices/filters/sorts it
+   in memory (the backend has no GridQuery contract for this master-detail GET). *@
 @page "/admin/speaker-presentations"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Speakers.View)]
@@ -63,49 +68,65 @@
                 </div>
             </AuthorizedAction>
 
-            @if (_loading)
-            {
-                <p>@L["Admin.SpeakerPresentations.Loading"]</p>
-            }
-            else if (_rows.Count == 0)
-            {
-                <SimfEmptyState Title="@L["Admin.SpeakerPresentations.None"]" />
-            }
-            else
-            {
-                <table class="simf-table">
-                    <thead>
-                        <tr>
-                            <th>@L["Admin.SpeakerPresentations.Col.File"]</th>
-                            <th>@L["Admin.SpeakerPresentations.Col.Session"]</th>
-                            <th>@L["Admin.SpeakerPresentations.Col.Size"]</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var row in _rows)
-                        {
-                            <tr>
-                                <td>@row.FileName</td>
-                                <td>@row.SessionTitle</td>
-                                <td>@FormatSize(row.SizeBytes)</td>
-                                <td>
-                                    <a class="simf-link" target="_blank"
-                                       href="@($"/account/api/admin/speaker-presentations/{row.Id}/file")">
-                                        @L["Admin.SpeakerPresentations.Download"]
-                                    </a>
-                                    <AuthorizedAction Permission="@PermissionCatalog.Speakers.Edit">
-                                        <SimfButton Type="button" Disabled="_busy"
-                                                    OnClick="@(() => DeleteAsync(row))">
-                                            @L["Admin.SpeakerPresentations.Delete"]
-                                        </SimfButton>
-                                    </AuthorizedAction>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            }
+            <SimfDataGrid TItem="AdminSpeakerPresentationRow"
+                          Query="_query"
+                          Page="_page"
+                          Loading="_loading"
+                          OnQueryChanged="OnQueryChangedAsync"
+                          Multiselect="true"
+                          RowKey="@(r => r.Id.ToString())"
+                          RowLabel="@(r => r.FileName)"
+                          Caption="@L["Admin.SpeakerPresentations.Title"]"
+                          FilterColumnLabel="@L["Grid.FilterColumn"]"
+                          PrevLabel="@L["Grid.Prev"]"
+                          NextLabel="@L["Grid.Next"]"
+                          FirstLabel="@L["Grid.First"]"
+                          LastLabel="@L["Grid.Last"]"
+                          PageSizeLabel="@L["Grid.PageSize"]"
+                          PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Admin.SpeakerPresentations.Loading"]"
+                          FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                          ActionsHeader="@L["Grid.Actions"]"
+                          SelectAllLabel="@L["Grid.SelectAll"]"
+                          SelectRowLabel="@L["Grid.SelectRow"]"
+                          SummaryFormatter="@FormatSummary">
+                <Columns>
+                    <SimfDataGridColumn TItem="AdminSpeakerPresentationRow" Key="fileName"
+                                        Header="@L["Admin.SpeakerPresentations.Col.File"]"
+                                        Sortable="true" Filterable="true">
+                        <CellTemplate>@context.FileName</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminSpeakerPresentationRow" Key="sessionTitle"
+                                        Header="@L["Admin.SpeakerPresentations.Col.Session"]"
+                                        Sortable="true" Filterable="true">
+                        <CellTemplate>@context.SessionTitle</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminSpeakerPresentationRow" Key="sizeBytes"
+                                        Header="@L["Admin.SpeakerPresentations.Col.Size"]"
+                                        Sortable="true">
+                        <CellTemplate>@FormatSize(context.SizeBytes)</CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <RowActions>
+                    @* Page-specific quiet action: download the stored file. The
+                       download endpoint sends Content-Disposition: attachment, so
+                       opening it triggers a save without leaving the page. *@
+                    <AuthorizedAction Permission="@PermissionCatalog.Speakers.View">
+                        <SimfToolbarButton Icon="download"
+                                           Title="@L["Admin.SpeakerPresentations.Download"]"
+                                           OnClick="@(() => DownloadAsync(context))" />
+                    </AuthorizedAction>
+                    <AuthorizedAction Permission="@PermissionCatalog.Speakers.Edit">
+                        <SimfToolbarButton Icon="trash" Danger="true"
+                                           Title="@L["Admin.SpeakerPresentations.Delete"]"
+                                           Disabled="_busy"
+                                           OnClick="@(() => DeleteAsync(context))" />
+                    </AuthorizedAction>
+                </RowActions>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.SpeakerPresentations.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
         }
     </div>
 </div>
@@ -115,7 +136,13 @@
 
     private List<AdminSpeakerSummary> _speakers = new();
     private List<AdminSessionSummary> _sessions = new();
-    private List<AdminSpeakerPresentationRow> _rows = new();
+
+    // The full, non-paged set for the selected speaker (newest first, as the
+    // endpoint returns it). The grid renders a client-side page of this.
+    private List<AdminSpeakerPresentationRow> _allRows = new();
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminSpeakerPresentationRow> _page = new();
 
     private string _speakerId = string.Empty;
     private string _sessionId = string.Empty;
@@ -128,6 +155,12 @@
         await LoadSpeakersAsync();
         await LoadSessionsAsync();
     }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
 
     private async Task LoadSpeakersAsync()
     {
@@ -154,7 +187,9 @@
     private async Task OnSpeakerChanged(ChangeEventArgs e)
     {
         _speakerId = e.Value?.ToString() ?? string.Empty;
-        _rows = new();
+        _allRows = new();
+        _query = new GridQuery { Top = 20 };
+        _page = new();
         _toast = null;
         if (!string.IsNullOrEmpty(_speakerId))
         {
@@ -164,6 +199,14 @@
 
     private void OnSessionChanged(ChangeEventArgs e) =>
         _sessionId = e.Value?.ToString() ?? string.Empty;
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        // No server round-trip: the full set is already in memory. Re-page it.
+        BuildPage();
+        await Task.CompletedTask;
+    }
 
     private async Task LoadPresentationsAsync()
     {
@@ -176,7 +219,8 @@
                 $"/account/api/admin/speakers/{_speakerId}/presentations");
             if (env is { Success: true, Data: not null })
             {
-                _rows = env.Data;
+                _allRows = env.Data;
+                BuildPage();
             }
             else
             {
@@ -186,6 +230,50 @@
             }
         }
         finally { _loading = false; }
+    }
+
+    // Applies the grid's current filter, sort and page window to the in-memory
+    // set. The endpoint returns the rows newest-first, which is the default
+    // order when no sort is chosen.
+    private void BuildPage()
+    {
+        IEnumerable<AdminSpeakerPresentationRow> rows = _allRows;
+
+        if (_query.Filters.TryGetValue("fileName", out var fileFilter)
+            && !string.IsNullOrWhiteSpace(fileFilter))
+        {
+            rows = rows.Where(r => r.FileName.Contains(
+                fileFilter, StringComparison.OrdinalIgnoreCase));
+        }
+        if (_query.Filters.TryGetValue("sessionTitle", out var sessionFilter)
+            && !string.IsNullOrWhiteSpace(sessionFilter))
+        {
+            rows = rows.Where(r => r.SessionTitle.Contains(
+                sessionFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        rows = (_query.Sort?.ToLowerInvariant(), _query.SortDescending) switch
+        {
+            ("filename", false) => rows.OrderBy(r => r.FileName),
+            ("filename", true) => rows.OrderByDescending(r => r.FileName),
+            ("sessiontitle", false) => rows.OrderBy(r => r.SessionTitle),
+            ("sessiontitle", true) => rows.OrderByDescending(r => r.SessionTitle),
+            ("sizebytes", false) => rows.OrderBy(r => r.SizeBytes),
+            ("sizebytes", true) => rows.OrderByDescending(r => r.SizeBytes),
+            _ => rows.OrderByDescending(r => r.CreatedAt),
+        };
+
+        var filtered = rows.ToList();
+        var window = filtered.Skip(_query.Skip).Take(_query.Top).ToList();
+        _page = GridPage<AdminSpeakerPresentationRow>.Of(window, filtered.Count, _query);
+    }
+
+    private async Task DownloadAsync(AdminSpeakerPresentationRow row)
+    {
+        // The endpoint returns the bytes with an attachment disposition, so
+        // opening the URL saves the file without navigating away.
+        await JS.InvokeVoidAsync("window.open",
+            $"/account/api/admin/speaker-presentations/{row.Id}/file", "_blank");
     }
 
     private async Task UploadAsync()

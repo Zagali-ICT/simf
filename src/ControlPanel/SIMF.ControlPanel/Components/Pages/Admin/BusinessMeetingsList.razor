@@ -21,92 +21,92 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        <div class="simf-form__actions">
-            <AuthorizedAction Permission="@PermissionCatalog.BusinessMeetings.Schedule">
-                <SimfButton Type="button" OnClick="OnSchedule">
-                    @L["Admin.BusinessMeetings.New"]
-                </SimfButton>
-            </AuthorizedAction>
-        </div>
-
-        <label class="simf-field">
-            <span class="simf-field__label">@L["Admin.BusinessMeetings.Filter.Status"]</span>
-            <select class="simf-field__input" value="@_statusFilter"
-                    @onchange="OnFilterChangedAsync" disabled="@_loading">
-                <option value="">@L["Admin.BusinessMeetings.Filter.All"]</option>
-                <option value="Confirmed">@L["Admin.BusinessMeetings.Filter.Confirmed"]</option>
-                <option value="Cancelled">@L["Admin.BusinessMeetings.Filter.Cancelled"]</option>
-            </select>
-        </label>
-
-        @if (_loading)
-        {
-            <p>@L["Admin.BusinessMeetings.Loading"]</p>
-        }
-        else if (_page.Items.Count == 0)
-        {
-            <SimfEmptyState Title="@L["Admin.BusinessMeetings.None"]" />
-        }
-        else
-        {
-            <table class="simf-table">
-                <thead>
-                    <tr>
-                        <th>@L["Admin.BusinessMeetings.Col.Hall"]</th>
-                        <th>@L["Admin.BusinessMeetings.Col.Table"]</th>
-                        <th>@L["Admin.BusinessMeetings.Col.Type"]</th>
-                        <th>@L["Admin.BusinessMeetings.Col.Start"]</th>
-                        <th>@L["Admin.BusinessMeetings.Col.End"]</th>
-                        <th>@L["Admin.BusinessMeetings.Col.Parties"]</th>
-                        <th>@L["Admin.BusinessMeetings.Col.Status"]</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _page.Items)
-                    {
-                        <tr>
-                            <td>@row.HallName</td>
-                            <td>@row.TableCode</td>
-                            <td>@row.MeetingType</td>
-                            <td>@row.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</td>
-                            <td>@row.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</td>
-                            <td>@row.ParticipantCount</td>
-                            <td>
-                                @switch (row.Status)
-                                {
-                                    case BusinessMeetingStatus.Confirmed:
-                                        <SimfPill Variant="on">@L["Admin.BusinessMeetings.Filter.Confirmed"]</SimfPill>
-                                        break;
-                                    case BusinessMeetingStatus.Cancelled:
-                                        <SimfPill Variant="off">@L["Admin.BusinessMeetings.Filter.Cancelled"]</SimfPill>
-                                        break;
-                                }
-                            </td>
-                            <td>
-                                <SimfButton Type="button" Disabled="_busy"
-                                            OnClick="@(() => OnViewAsync(row))">
-                                    @L["Admin.BusinessMeetings.View"]
-                                </SimfButton>
-                                @if (row.Status == BusinessMeetingStatus.Confirmed)
-                                {
-                                    <AuthorizedAction Permission="@PermissionCatalog.BusinessMeetings.Cancel">
-                                        <SimfButton Type="button" Disabled="_busy"
-                                                    OnClick="@(() => OnCancel(row))">
-                                            @L["Admin.BusinessMeetings.Cancel"]
-                                        </SimfButton>
-                                    </AuthorizedAction>
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="simf-table__summary">
-                @(string.Format(L["Admin.BusinessMeetings.Summary"],
-                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
-            </p>
-        }
+        <SimfDataGrid TItem="BusinessMeetingRow"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => $"{r.HallName} · {r.TableCode}")"
+                      Caption="@L["Admin.BusinessMeetings.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnAdd="OnAddAsync"
+                      OnDetailsOne="OnViewAsync"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.BusinessMeetings.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Admin.BusinessMeetings.New"]"
+                      DetailsLabel="@L["Admin.BusinessMeetings.View"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="BusinessMeetingRow" Key="hall"
+                                    Header="@L["Admin.BusinessMeetings.Col.Hall"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.HallName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="BusinessMeetingRow" Key="table"
+                                    Header="@L["Admin.BusinessMeetings.Col.Table"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.TableCode</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="BusinessMeetingRow" Key="type"
+                                    Header="@L["Admin.BusinessMeetings.Col.Type"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.MeetingType</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="BusinessMeetingRow" Key="start"
+                                    Header="@L["Admin.BusinessMeetings.Col.Start"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="BusinessMeetingRow" Key="end"
+                                    Header="@L["Admin.BusinessMeetings.Col.End"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="BusinessMeetingRow" Key="parties"
+                                    Header="@L["Admin.BusinessMeetings.Col.Parties"]">
+                    <CellTemplate>@context.ParticipantCount</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="BusinessMeetingRow" Key="status"
+                                    Header="@L["Admin.BusinessMeetings.Col.Status"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>
+                        @switch (context.Status)
+                        {
+                            case BusinessMeetingStatus.Confirmed:
+                                <SimfPill Variant="on">@L["Admin.BusinessMeetings.Filter.Confirmed"]</SimfPill>
+                                break;
+                            case BusinessMeetingStatus.Cancelled:
+                                <SimfPill Variant="off">@L["Admin.BusinessMeetings.Filter.Cancelled"]</SimfPill>
+                                break;
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions>
+                @* Page-specific quiet action: cancel a still-confirmed meeting. *@
+                @if (context.Status == BusinessMeetingStatus.Confirmed)
+                {
+                    <AuthorizedAction Permission="@PermissionCatalog.BusinessMeetings.Cancel">
+                        <SimfToolbarButton Icon="close" Title="@L["Admin.BusinessMeetings.Cancel"]"
+                                           OnClick="@(() => OnCancel(context))" />
+                    </AuthorizedAction>
+                }
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.BusinessMeetings.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
     </div>
 </div>
 
@@ -300,9 +300,8 @@
     private record Toast(string Variant, string Message);
     private sealed record PendingParty(MeetingPartyKind Kind, Guid Id, string Name);
 
-    private GridQuery _query = new() { Top = 50 };
+    private GridQuery _query = new() { Top = 20 };
     private GridPage<BusinessMeetingRow> _page = new();
-    private string _statusFilter = string.Empty;
     private bool _loading;
     private bool _busy;
     private Toast? _toast;
@@ -369,15 +368,17 @@
         }
     }
 
-    private async Task OnFilterChangedAsync(ChangeEventArgs e)
+    private async Task OnQueryChangedAsync(GridQuery next)
     {
-        _statusFilter = (e.Value?.ToString() ?? string.Empty).Trim();
-        _query.Filters = string.IsNullOrEmpty(_statusFilter)
-            ? new Dictionary<string, string>()
-            : new Dictionary<string, string> { ["status"] = _statusFilter };
-        _query.Skip = 0;
+        _query = next;
         await LoadAsync();
     }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
 
     private async Task LoadAsync()
     {
@@ -399,7 +400,7 @@
         finally { _loading = false; }
     }
 
-    private void OnSchedule()
+    private void OnAddAsync()
     {
         _scheduleOpen = true;
         _toast = null;

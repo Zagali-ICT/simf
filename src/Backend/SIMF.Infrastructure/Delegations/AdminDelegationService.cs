@@ -31,18 +31,62 @@ internal sealed class AdminDelegationService(
                 EF.Functions.Like(d.Name, $"%{term}%")
                 || EF.Functions.Like(d.NameArabic, $"%{term}%"));
         }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
+
+        // CP grid per-column filters (D-256). Unknown columns are ignored.
+        // The Country column resolves through the same-DB Country navigation
+        // (Countries is an App table, not Identity) so it is EF-translatable.
+        foreach (var (column, raw) in query.Filters)
         {
-            rows = rows.Where(d => d.IsActive == isActive);
-        }
-        if (query.Filters.TryGetValue("isPriority", out var priorityFilter)
-            && bool.TryParse(priorityFilter, out var isPriority))
-        {
-            rows = rows.Where(d => d.IsPriority == isPriority);
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "name":
+                    rows = rows.Where(d => d.Name.Contains(v));
+                    break;
+                case "namearabic":
+                    rows = rows.Where(d => d.NameArabic.Contains(v));
+                    break;
+                case "country":
+                    rows = rows.Where(d => d.Country != null
+                        && (d.Country.NameEn.Contains(v) || d.Country.NameAr.Contains(v)));
+                    break;
+                case "isactive":
+                    if (bool.TryParse(v, out var isActive))
+                    {
+                        rows = rows.Where(d => d.IsActive == isActive);
+                    }
+                    break;
+                case "ispriority":
+                    if (bool.TryParse(v, out var isPriority))
+                    {
+                        rows = rows.Where(d => d.IsPriority == isPriority);
+                    }
+                    break;
+            }
         }
 
-        rows = rows.OrderBy(d => d.DisplayOrder).ThenBy(d => d.NameArabic);
+        // CP grid sortable columns (D-256). Default preserves the public order:
+        // DisplayOrder asc, then NameArabic asc.
+        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
+        {
+            ("name", false) => rows.OrderBy(d => d.Name),
+            ("name", true) => rows.OrderByDescending(d => d.Name),
+            ("namearabic", true) => rows.OrderByDescending(d => d.NameArabic),
+            ("namearabic", false) => rows.OrderBy(d => d.NameArabic),
+            ("country", false) => rows.OrderBy(d => d.Country != null ? d.Country.NameEn : null),
+            ("country", true) => rows.OrderByDescending(d => d.Country != null ? d.Country.NameEn : null),
+            ("membercount", false) => rows.OrderBy(d => d.MemberCount),
+            ("membercount", true) => rows.OrderByDescending(d => d.MemberCount),
+            ("ispriority", false) => rows.OrderBy(d => d.IsPriority),
+            ("ispriority", true) => rows.OrderByDescending(d => d.IsPriority),
+            ("isinternational", false) => rows.OrderBy(d => d.IsInternational),
+            ("isinternational", true) => rows.OrderByDescending(d => d.IsInternational),
+            ("displayorder", true) => rows.OrderByDescending(d => d.DisplayOrder).ThenBy(d => d.NameArabic),
+            ("isactive", false) => rows.OrderBy(d => d.IsActive),
+            ("isactive", true) => rows.OrderByDescending(d => d.IsActive),
+            _ => rows.OrderBy(d => d.DisplayOrder).ThenBy(d => d.NameArabic),
+        };
         var total = await rows.CountAsync(cancellationToken);
         var page = await rows
             .Skip(skip).Take(top)

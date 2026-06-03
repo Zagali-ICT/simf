@@ -19,55 +19,56 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        <div class="simf-form__actions">
-            <SimfButton Type="button" OnClick="OnNotifySelected"
-                        Disabled="@(_selected.Count == 0)">
-                @(string.Format(L["Admin.Vips.NotifySelected"], _selected.Count))
-            </SimfButton>
-        </div>
-
-        @if (_loading)
-        {
-            <p>@L["Admin.Vips.Loading"]</p>
-        }
-        else if (_page.Items.Count == 0)
-        {
-            <SimfEmptyState Title="@L["Admin.Vips.None"]" />
-        }
-        else
-        {
-            <table class="simf-table">
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>@L["Admin.Vips.Col.Name"]</th>
-                        <th>@L["Admin.Vips.Col.JobTitle"]</th>
-                        <th>@L["Admin.Vips.Col.ProfileType"]</th>
-                        <th>@L["Admin.Vips.Col.Email"]</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _page.Items)
-                    {
-                        <tr>
-                            <td>
-                                <input type="checkbox"
-                                       checked="@_selected.Contains(row.UserProfileId)"
-                                       @onchange="@(e => ToggleSelected(row.UserProfileId, e))" />
-                            </td>
-                            <td>@RecipientLabel(row)</td>
-                            <td>@(row.JobTitle ?? "—")</td>
-                            <td>@TypeLabel(row)</td>
-                            <td>@(row.Email ?? "—")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="simf-table__summary">
-                @(string.Format(L["Admin.Vips.Summary"],
-                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
-            </p>
-        }
+        <SimfDataGrid TItem="AdminVipSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.UserProfileId.ToString())"
+                      RowLabel="@(r => RecipientLabel(r))"
+                      OnSelectionChanged="OnSelectionChanged"
+                      Caption="@L["Admin.Vips.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Vips.Loading"]"
+                      SummaryFormatter="@FormatSummary">
+            <CustomToolbar>
+                @* Bulk action: notify the selected VIPs (opens the bilingual message modal). *@
+                <SimfToolbarButton Icon="send"
+                                   Title="@(string.Format(L["Admin.Vips.NotifySelected"], _selected.Count))"
+                                   Disabled="@(_selected.Count == 0)"
+                                   OnClick="OnNotifySelected">
+                    @(string.Format(L["Admin.Vips.NotifySelected"], _selected.Count))
+                </SimfToolbarButton>
+            </CustomToolbar>
+            <Columns>
+                <SimfDataGridColumn TItem="AdminVipSummary" Key="name" Header="@L["Admin.Vips.Col.Name"]">
+                    <CellTemplate>@RecipientLabel(context)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminVipSummary" Key="jobTitle" Header="@L["Admin.Vips.Col.JobTitle"]">
+                    <CellTemplate>@(context.JobTitle ?? "—")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminVipSummary" Key="profileType" Header="@L["Admin.Vips.Col.ProfileType"]">
+                    <CellTemplate>@TypeLabel(context)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminVipSummary" Key="email" Header="@L["Admin.Vips.Col.Email"]">
+                    <CellTemplate>@(context.Email ?? "—")</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Vips.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
     </div>
 </div>
 
@@ -114,7 +115,7 @@
 @code {
     private record Toast(string Variant, string Message);
 
-    private GridQuery _query = new() { Top = 50 };
+    private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminVipSummary> _page = new();
     private bool _loading;
     private bool _busy;
@@ -151,17 +152,26 @@
         finally { _loading = false; }
     }
 
-    private void ToggleSelected(Guid id, ChangeEventArgs e)
+    private void OnSelectionChanged(IReadOnlySet<string> keys)
     {
-        if (e.Value is true)
+        _selected.Clear();
+        foreach (var key in keys)
         {
-            _selected.Add(id);
-        }
-        else
-        {
-            _selected.Remove(id);
+            if (Guid.TryParse(key, out var id)) { _selected.Add(id); }
         }
     }
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
 
     private void OnNotifySelected()
     {

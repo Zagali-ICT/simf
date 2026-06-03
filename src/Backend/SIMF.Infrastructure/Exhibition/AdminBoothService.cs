@@ -41,18 +41,45 @@ internal sealed class AdminBoothService(
                 || EF.Functions.Like(booth.NameEn, $"%{term}%")
                 || EF.Functions.Like(booth.NameAr, $"%{term}%"));
         }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
+
+        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // The Company + Hall columns are resolved client-side from cached
+        // lookups (the summary carries only the ids), so they are NOT
+        // server-filterable and are intentionally absent here.
+        foreach (var (column, raw) in query.Filters)
         {
-            rows = rows.Where(booth => booth.IsActive == isActive);
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "code":
+                    rows = rows.Where(booth => booth.Code.Contains(v));
+                    break;
+                case "nameen":
+                    rows = rows.Where(booth => booth.NameEn.Contains(v));
+                    break;
+                case "namear":
+                    rows = rows.Where(booth => booth.NameAr.Contains(v));
+                    break;
+                case "sectoren":
+                    rows = rows.Where(booth => booth.SectorEn != null && booth.SectorEn.Contains(v));
+                    break;
+            }
         }
 
+        // CP grid sortable columns (D-255). Default: Code. The Company + Hall
+        // columns sort on a client-resolved value, so they are not server-
+        // sortable and are absent here.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("code", true) => rows.OrderByDescending(booth => booth.Code),
             ("code", false) => rows.OrderBy(booth => booth.Code),
-            ("name", true) => rows.OrderByDescending(booth => booth.NameEn),
-            ("name", false) => rows.OrderBy(booth => booth.NameEn),
+            ("nameen", true) => rows.OrderByDescending(booth => booth.NameEn),
+            ("nameen", false) => rows.OrderBy(booth => booth.NameEn),
+            ("sectoren", true) => rows.OrderByDescending(booth => booth.SectorEn),
+            ("sectoren", false) => rows.OrderBy(booth => booth.SectorEn),
+            ("isactive", true) => rows.OrderByDescending(booth => booth.IsActive),
+            ("isactive", false) => rows.OrderBy(booth => booth.IsActive),
             _ => rows.OrderBy(booth => booth.Code),
         };
 

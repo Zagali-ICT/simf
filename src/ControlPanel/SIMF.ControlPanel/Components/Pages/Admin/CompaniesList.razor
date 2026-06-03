@@ -21,65 +21,82 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        <div class="simf-form__actions">
-            <SimfButton Type="button" OnClick="OnAdd">
-                @L["Admin.Companies.New"]
-            </SimfButton>
-        </div>
-
-        @if (_loading)
-        {
-            <p>@L["Admin.Companies.Loading"]</p>
-        }
-        else if (_page.Items.Count == 0)
-        {
-            <SimfEmptyState Title="@L["Admin.Companies.None"]" />
-        }
-        else
-        {
-            <table class="simf-table">
-                <thead>
-                    <tr>
-                        <th>@L["Admin.Companies.Col.NameEn"]</th>
-                        <th>@L["Admin.Companies.Col.NameAr"]</th>
-                        <th>@L["Admin.Companies.Col.Type"]</th>
-                        <th>@L["Admin.Companies.Col.AccountCount"]</th>
-                        <th>@L["Admin.Companies.Col.Active"]</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _page.Items)
-                    {
-                        <tr>
-                            <td>@row.NameEn</td>
-                            <td>@row.NameAr</td>
-                            <td>@TypeLabel(row.Type)</td>
-                            <td>@row.AccountCount</td>
-                            <td>@(row.IsActive ? "✓" : "—")</td>
-                            <td>
-                                <SimfButton Type="button" Disabled="_busy"
-                                            OnClick="@(() => OnEditAsync(row))">
-                                    @L["Admin.Companies.Edit"]
-                                </SimfButton>
-                                <SimfButton Type="button" Disabled="_busy"
-                                            OnClick="@(() => OnAccountsAsync(row))">
-                                    @L["Admin.Companies.Accounts"]
-                                </SimfButton>
-                                <SimfButton Type="button" Disabled="_busy"
-                                            OnClick="@(() => OnDeleteAsync(row))">
-                                    @L["Admin.Companies.Delete"]
-                                </SimfButton>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="simf-table__summary">
-                @(string.Format(L["Admin.Companies.Summary"],
-                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
-            </p>
-        }
+        <SimfDataGrid TItem="AdminCompanySummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.NameEn)"
+                      Caption="@L["Admin.Companies.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnAdd="OnAdd"
+                      OnEditOne="OnEditAsync"
+                      OnDeleteOne="OnDeleteAsync"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Companies.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]"
+                      EditLabel="@L["Grid.Edit"]"
+                      DeleteLabel="@L["Grid.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminCompanySummary" Key="nameEn"
+                                    Header="@L["Admin.Companies.Col.NameEn"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.NameEn</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminCompanySummary" Key="nameAr"
+                                    Header="@L["Admin.Companies.Col.NameAr"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.NameAr</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminCompanySummary" Key="type"
+                                    Header="@L["Admin.Companies.Col.Type"]"
+                                    Sortable="true">
+                    <CellTemplate>@TypeLabel(context.Type)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminCompanySummary" Key="accountCount"
+                                    Header="@L["Admin.Companies.Col.AccountCount"]">
+                    <CellTemplate>@context.AccountCount</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminCompanySummary" Key="isActive"
+                                    Header="@L["Admin.Companies.Col.Active"]"
+                                    Sortable="true">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions>
+                @* Page-specific quiet action: open the per-company account
+                   provisioning sub-flow. Gated by Companies.Edit (no dedicated
+                   provisioning permission exists in the catalogue). *@
+                <AuthorizedAction Permission="@PermissionCatalog.Companies.Edit">
+                    <SimfToolbarButton Icon="user" Title="@L["Admin.Companies.Accounts"]"
+                                       OnClick="@(() => OnAccountsAsync(context))" />
+                </AuthorizedAction>
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Companies.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
     </div>
 </div>
 
@@ -246,7 +263,7 @@
         public string RoleLabel { get; set; } = string.Empty;
     }
 
-    private GridQuery _query = new() { Top = 50 };
+    private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminCompanySummary> _page = new();
     private bool _loading;
     private bool _busy;
@@ -266,6 +283,18 @@
     private ProvisionModel _provision = new();
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
 
     private async Task LoadAsync()
     {

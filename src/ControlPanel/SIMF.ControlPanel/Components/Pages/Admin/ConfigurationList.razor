@@ -21,63 +21,68 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        <div class="simf-form__actions">
-            <AuthorizedAction Permission="@PermissionCatalog.Configuration.Create">
-                <SimfButton Type="button" OnClick="OnAdd">@L["Admin.Configuration.New"]</SimfButton>
-            </AuthorizedAction>
-        </div>
-
-        @if (_loading)
-        {
-            <p>@L["Admin.Configuration.Loading"]</p>
-        }
-        else if (_page.Items.Count == 0)
-        {
-            <SimfEmptyState Title="@L["Admin.Configuration.None"]" />
-        }
-        else
-        {
-            <table class="simf-table">
-                <thead>
-                    <tr>
-                        <th>@L["Admin.Configuration.Col.Key"]</th>
-                        <th>@L["Admin.Configuration.Col.Value"]</th>
-                        <th>@L["Admin.Configuration.Col.Description"]</th>
-                        <th>@L["Admin.Configuration.Col.Active"]</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _page.Items)
-                    {
-                        <tr>
-                            <td>@row.Key</td>
-                            <td>@row.Value</td>
-                            <td>@row.Description</td>
-                            <td>@(row.IsActive ? "✓" : "—")</td>
-                            <td>
-                                <AuthorizedAction Permission="@PermissionCatalog.Configuration.Edit">
-                                    <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => OnEdit(row))">
-                                        @L["Admin.Configuration.Edit"]
-                                    </SimfButton>
-                                </AuthorizedAction>
-                                <AuthorizedAction Permission="@PermissionCatalog.Configuration.Delete">
-                                    <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => OnDeleteAsync(row))">
-                                        @L["Admin.Configuration.Delete"]
-                                    </SimfButton>
-                                </AuthorizedAction>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="simf-table__summary">
-                @(string.Format(L["Admin.Configuration.Summary"],
-                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
-            </p>
-        }
+        <SimfDataGrid TItem="AdminSystemSettingSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.Key)"
+                      Caption="@L["Admin.Configuration.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnAdd="OnAdd"
+                      OnEditOne="OnEdit"
+                      OnDeleteOne="OnDeleteAsync"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Configuration.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]"
+                      EditLabel="@L["Grid.Edit"]"
+                      DeleteLabel="@L["Grid.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminSystemSettingSummary" Key="key"
+                                    Header="@L["Admin.Configuration.Col.Key"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate><code>@context.Key</code></CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSystemSettingSummary" Key="value"
+                                    Header="@L["Admin.Configuration.Col.Value"]"
+                                    Filterable="true">
+                    <CellTemplate>@context.Value</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSystemSettingSummary" Key="description"
+                                    Header="@L["Admin.Configuration.Col.Description"]"
+                                    Filterable="true">
+                    <CellTemplate>@context.Description</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSystemSettingSummary" Key="isActive"
+                                    Header="@L["Admin.Configuration.Col.Active"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Configuration.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
     </div>
 </div>
 
@@ -138,7 +143,7 @@
         public bool IsActive { get; set; } = true;
     }
 
-    private GridQuery _query = new() { Top = 200 };
+    private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminSystemSettingSummary> _page = new();
     private bool _loading;
     private bool _busy;
@@ -150,6 +155,18 @@
     private FormModel _form = new();
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
 
     private async Task LoadAsync()
     {

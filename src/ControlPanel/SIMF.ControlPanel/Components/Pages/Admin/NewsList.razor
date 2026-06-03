@@ -22,65 +22,83 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        <div class="simf-form__actions">
-            <SimfButton Type="button" OnClick="OnAdd">
-                @L["Admin.News.New"]
-            </SimfButton>
-        </div>
-
-        @if (_loading)
-        {
-            <p>@L["Admin.News.Loading"]</p>
-        }
-        else if (_page.Items.Count == 0)
-        {
-            <SimfEmptyState Title="@L["Admin.News.None"]" />
-        }
-        else
-        {
-            <table class="simf-table">
-                <thead>
-                    <tr>
-                        <th>@L["Admin.News.Col.TitleEn"]</th>
-                        <th>@L["Admin.News.Col.TitleAr"]</th>
-                        <th>@L["Admin.News.Col.CategoryEn"]</th>
-                        <th>@L["Admin.News.Col.CategoryAr"]</th>
-                        <th>@L["Admin.News.Col.PublishedAt"]</th>
-                        <th>@L["Admin.News.Col.DisplayOrder"]</th>
-                        <th>@L["Admin.News.Col.Active"]</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _page.Items)
-                    {
-                        <tr>
-                            <td>@row.TitleEn</td>
-                            <td>@row.TitleAr</td>
-                            <td>@row.CategoryEn</td>
-                            <td>@row.CategoryAr</td>
-                            <td>@row.PublishedAt.ToString("yyyy-MM-dd")</td>
-                            <td>@row.DisplayOrder</td>
-                            <td>@(row.IsActive ? "✓" : "—")</td>
-                            <td>
-                                <SimfButton Type="button" Disabled="_busy"
-                                            OnClick="@(() => OnEditAsync(row))">
-                                    @L["Admin.News.Edit"]
-                                </SimfButton>
-                                <SimfButton Type="button" Disabled="_busy"
-                                            OnClick="@(() => OnDeleteAsync(row))">
-                                    @L["Admin.News.Delete"]
-                                </SimfButton>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="simf-table__summary">
-                @(string.Format(L["Admin.News.Summary"],
-                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
-            </p>
-        }
+        <SimfDataGrid TItem="AdminNewsSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.TitleEn)"
+                      Caption="@L["Admin.News.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnAdd="OnAdd"
+                      OnEditOne="OnEditAsync"
+                      OnDeleteOne="OnDeleteAsync"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.News.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]"
+                      EditLabel="@L["Grid.Edit"]"
+                      DeleteLabel="@L["Grid.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminNewsSummary" Key="titleen"
+                                    Header="@L["Admin.News.Col.TitleEn"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.TitleEn</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminNewsSummary" Key="titlear"
+                                    Header="@L["Admin.News.Col.TitleAr"]"
+                                    Filterable="true">
+                    <CellTemplate>@context.TitleAr</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminNewsSummary" Key="categoryen"
+                                    Header="@L["Admin.News.Col.CategoryEn"]"
+                                    Filterable="true">
+                    <CellTemplate>@context.CategoryEn</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminNewsSummary" Key="categoryar"
+                                    Header="@L["Admin.News.Col.CategoryAr"]"
+                                    Filterable="true">
+                    <CellTemplate>@context.CategoryAr</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminNewsSummary" Key="publishedat"
+                                    Header="@L["Admin.News.Col.PublishedAt"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.PublishedAt.ToString("yyyy-MM-dd")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminNewsSummary" Key="displayorder"
+                                    Header="@L["Admin.News.Col.DisplayOrder"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.DisplayOrder</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminNewsSummary" Key="isactive"
+                                    Header="@L["Admin.News.Col.Active"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.News.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
     </div>
 </div>
 
@@ -199,7 +217,7 @@
         public bool IsActive { get; set; } = true;
     }
 
-    private GridQuery _query = new() { Top = 50 };
+    private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminNewsSummary> _page = new();
     private bool _loading;
     private bool _busy;
@@ -219,6 +237,18 @@
     {
         await LoadAsync();
     }
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
 
     private async Task LoadAsync()
     {

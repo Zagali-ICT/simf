@@ -1,7 +1,13 @@
 @* P3.3 — D-234 (Completion Programme §5.3): the Scientific-Committee central
    Q&A queue (stage 2). Lists Pending questions across sessions; approve / hide /
    escalate-to-a-role. Gated by Questions.* — the approved set then flows to the
-   per-session moderator desk (stage 3). *@
+   per-session moderator desk (stage 3).
+
+   D-261 — migrated from the raw <table> to the canonical SimfDataGrid. The
+   backend list endpoint (GET /admin/questions/queue) is a non-paged read that
+   returns the full Pending queue (capped at 200 oldest-first), so the grid is
+   paged / filtered / sorted client-side over the already-fetched list — the
+   data-source contract and the three moderation actions are unchanged. *@
 @page "/admin/question-queue"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Questions.View)]
@@ -19,59 +25,86 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        @if (_loading)
-        {
-            <p>@L["Admin.QuestionQueue.Loading"]</p>
-        }
-        else if (_rows.Count == 0)
-        {
-            <SimfEmptyState Title="@L["Admin.QuestionQueue.None"]" />
-        }
-        else
-        {
-            <table class="simf-table">
-                <thead>
-                    <tr>
-                        <th>@L["Admin.QuestionQueue.Col.Session"]</th>
-                        <th>@L["Admin.QuestionQueue.Col.Question"]</th>
-                        <th>@L["Admin.QuestionQueue.Col.Submitter"]</th>
-                        <th>@L["Admin.QuestionQueue.Col.Phase"]</th>
-                        <th>@L["Admin.QuestionQueue.Col.Ai"]</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _rows)
-                    {
-                        <tr>
-                            <td>@row.SessionTitle</td>
-                            <td>@row.QuestionText</td>
-                            <td>@row.SubmittedByDisplayName</td>
-                            <td>@PhaseLabel(row.Phase)</td>
-                            <td>@(row.AiFilterVerdict ?? "—")</td>
-                            <td>
-                                <AuthorizedAction Permission="@PermissionCatalog.Questions.Moderate">
-                                    <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => ApproveAsync(row.Id))">
-                                        @L["Admin.QuestionQueue.Action.Approve"]
-                                    </SimfButton>
-                                    <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => HideAsync(row.Id))">
-                                        @L["Admin.QuestionQueue.Action.Hide"]
-                                    </SimfButton>
-                                </AuthorizedAction>
-                                <AuthorizedAction Permission="@PermissionCatalog.Questions.Escalate">
-                                    <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => OpenEscalate(row.Id))">
-                                        @L["Admin.QuestionQueue.Action.Escalate"]
-                                    </SimfButton>
-                                </AuthorizedAction>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        }
+        <SimfDataGrid TItem="SessionQuestionQueueRow"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.QuestionText)"
+                      Caption="@L["Admin.QuestionQueue.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.QuestionQueue.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="SessionQuestionQueueRow" Key="session"
+                                    Header="@L["Admin.QuestionQueue.Col.Session"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.SessionTitle</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="SessionQuestionQueueRow" Key="question"
+                                    Header="@L["Admin.QuestionQueue.Col.Question"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.QuestionText</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="SessionQuestionQueueRow" Key="submitter"
+                                    Header="@L["Admin.QuestionQueue.Col.Submitter"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.SubmittedByDisplayName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="SessionQuestionQueueRow" Key="phase"
+                                    Header="@L["Admin.QuestionQueue.Col.Phase"]"
+                                    Sortable="true">
+                    <CellTemplate>
+                        @if (context.Phase == QuestionPhase.Pre)
+                        {
+                            <SimfPill Variant="off">@L["Admin.QuestionQueue.Phase.Pre"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="on">@L["Admin.QuestionQueue.Phase.Live"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="SessionQuestionQueueRow" Key="ai"
+                                    Header="@L["Admin.QuestionQueue.Col.Ai"]"
+                                    Filterable="true">
+                    <CellTemplate>@(context.AiFilterVerdict ?? "—")</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions Context="row">
+                <AuthorizedAction Permission="@PermissionCatalog.Questions.Moderate">
+                    <SimfToolbarButton Icon="check-circle"
+                                       Title="@L["Admin.QuestionQueue.Action.Approve"]"
+                                       Disabled="_busy"
+                                       OnClick="@(() => ApproveAsync(row.Id))" />
+                    <SimfToolbarButton Icon="eye-off"
+                                       Title="@L["Admin.QuestionQueue.Action.Hide"]"
+                                       Disabled="_busy"
+                                       OnClick="@(() => HideAsync(row.Id))" />
+                </AuthorizedAction>
+                <AuthorizedAction Permission="@PermissionCatalog.Questions.Escalate">
+                    <SimfToolbarButton Icon="share"
+                                       Title="@L["Admin.QuestionQueue.Action.Escalate"]"
+                                       Disabled="_busy"
+                                       OnClick="@(() => OpenEscalate(row.Id))" />
+                </AuthorizedAction>
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.QuestionQueue.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
     </div>
 </div>
 
@@ -97,7 +130,12 @@
 @code {
     private record Toast(string Variant, string Message);
 
+    // The full Pending queue as returned by the backend (oldest-first, capped at
+    // 200). The grid pages / filters / sorts this in memory — the backend read
+    // is a plain non-paged list, so there is no server GridQuery to extend.
     private List<SessionQuestionQueueRow> _rows = new();
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<SessionQuestionQueueRow> _page = new();
     private bool _loading;
     private bool _busy;
     private Toast? _toast;
@@ -106,6 +144,15 @@
     private string _escalateRole = string.Empty;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        // A sort / filter / page change re-projects the already-fetched list; no
+        // round-trip — the queue was loaded whole in LoadAsync.
+        _query = next;
+        _page = BuildPage();
+        await Task.CompletedTask;
+    }
 
     private async Task LoadAsync()
     {
@@ -117,6 +164,7 @@
             if (envelope is { Success: true, Data: not null })
             {
                 _rows = envelope.Data.ToList();
+                _page = BuildPage();
             }
             else
             {
@@ -127,6 +175,53 @@
         }
         finally { _loading = false; }
     }
+
+    // Client-side projection of the in-memory queue onto the current GridQuery
+    // (filters → sort → page). Filters are case-insensitive Contains, mirroring
+    // the server-side grids; the default order preserves the backend's
+    // oldest-first (CreatedAt) ordering.
+    private GridPage<SessionQuestionQueueRow> BuildPage()
+    {
+        IEnumerable<SessionQuestionQueueRow> rows = _rows;
+
+        foreach (var (column, raw) in _query.Filters)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            rows = column.ToLowerInvariant() switch
+            {
+                "session" => rows.Where(r => Contains(r.SessionTitle, v)),
+                "question" => rows.Where(r => Contains(r.QuestionText, v)),
+                "submitter" => rows.Where(r => Contains(r.SubmittedByDisplayName, v)),
+                "ai" => rows.Where(r => Contains(r.AiFilterVerdict, v)),
+                _ => rows,
+            };
+        }
+
+        rows = (_query.Sort?.ToLowerInvariant(), _query.SortDescending) switch
+        {
+            ("session", false) => rows.OrderBy(r => r.SessionTitle),
+            ("session", true) => rows.OrderByDescending(r => r.SessionTitle),
+            ("question", false) => rows.OrderBy(r => r.QuestionText),
+            ("question", true) => rows.OrderByDescending(r => r.QuestionText),
+            ("submitter", false) => rows.OrderBy(r => r.SubmittedByDisplayName),
+            ("submitter", true) => rows.OrderByDescending(r => r.SubmittedByDisplayName),
+            ("phase", false) => rows.OrderBy(r => r.Phase),
+            ("phase", true) => rows.OrderByDescending(r => r.Phase),
+            _ => rows.OrderBy(r => r.CreatedAt),
+        };
+
+        var materialised = rows.ToList();
+        var total = materialised.Count;
+        var skip = Math.Max(0, _query.Skip);
+        var top = _query.Top is > 0 ? _query.Top : 20;
+        var items = materialised.Skip(skip).Take(top).ToList();
+        return GridPage<SessionQuestionQueueRow>.Of(items, total, _query);
+    }
+
+    private static bool Contains(string? value, string needle) =>
+        value is not null
+        && value.Contains(needle, StringComparison.OrdinalIgnoreCase);
 
     private Task ApproveAsync(Guid id) =>
         ActAsync($"/account/api/admin/questions/{id}/approve", L["Admin.QuestionQueue.Approved"]);
@@ -190,8 +285,9 @@
         finally { _busy = false; }
     }
 
-    private string PhaseLabel(QuestionPhase phase) =>
-        phase == QuestionPhase.Pre
-            ? L["Admin.QuestionQueue.Phase.Pre"]
-            : L["Admin.QuestionQueue.Phase.Live"];
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
 }

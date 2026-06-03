@@ -29,6 +29,26 @@ internal sealed class AdminSystemSettingService(
         var top = Math.Clamp(query.Top is > 0 ? query.Top : 50, 1, 200);
 
         var rows = db.SystemSettings.AsNoTracking().AsQueryable();
+
+        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        foreach (var (column, raw) in query.Filters)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "key":
+                    rows = rows.Where(s => s.Key.Contains(v));
+                    break;
+                case "value":
+                    rows = rows.Where(s => s.Value.Contains(v));
+                    break;
+                case "description":
+                    rows = rows.Where(s => s.Description != null && s.Description.Contains(v));
+                    break;
+            }
+        }
+
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var term = query.Search.Trim();
@@ -37,6 +57,7 @@ internal sealed class AdminSystemSettingService(
                 || EF.Functions.Like(s.Value, $"%{term}%"));
         }
 
+        // CP grid sortable columns (D-255). Default: Key ascending.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("key", true) => rows.OrderByDescending(s => s.Key),

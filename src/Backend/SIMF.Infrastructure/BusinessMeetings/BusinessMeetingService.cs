@@ -394,31 +394,63 @@ internal sealed class BusinessMeetingService(
     {
         var (skip, top) = Page(query);
 
-        var baseQuery = appDbContext.BusinessMeetings.AsNoTracking().AsQueryable();
-        if (query.Filters is not null
-            && query.Filters.TryGetValue("status", out var statusText)
-            && Enum.TryParse<BusinessMeetingStatus>(statusText, out var status))
-        {
-            baseQuery = baseQuery.Where(m => m.Status == status);
-        }
-
-        var total = await baseQuery.CountAsync(cancellationToken);
-        var rows = await baseQuery
-            .OrderByDescending(m => m.StartUtc)
-            .Skip(skip).Take(top)
+        // Join meeting → table → hall up front so the CP grid can filter and sort
+        // on the joined Hall name / Table code as well as the meeting's own
+        // columns. Every projected column is an App-DB value (no cross-DB resolve),
+        // so all columns are EF-translatable and server-filterable / sortable.
+        var rows = appDbContext.BusinessMeetings.AsNoTracking()
             .Join(appDbContext.MeetingTables.AsNoTracking(),
                 m => m.MeetingTableId, t => t.Id, (m, t) => new { m, t })
             .Join(appDbContext.Halls.AsNoTracking(),
                 x => x.t.HallId, h => h.Id, (x, h) => new BusinessMeetingRow(
                     x.m.Id, x.m.MeetingTableId, x.t.Code, h.Id, h.NameArabic,
                     x.m.MeetingType, x.m.StartUtc, x.m.EndUtc, x.m.Status,
-                    x.m.Participants.Count))
-            // Re-assert the order after the joins — the inner OrderBy only drives
-            // the Skip/Take window; without this the joined page order is undefined.
-            .OrderByDescending(r => r.StartUtc)
-            .ToListAsync(cancellationToken);
+                    x.m.Participants.Count));
 
-        return GridPage<BusinessMeetingRow>.Of(rows, total, new GridQuery { Skip = skip, Top = top });
+        // CP grid per-column filters (D-255). Unknown columns are ignored. The
+        // legacy "status" filter (the old dropdown) still parses the enum name.
+        foreach (var (column, raw) in query.Filters)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "hall":
+                    rows = rows.Where(r => r.HallName.Contains(v));
+                    break;
+                case "table":
+                    rows = rows.Where(r => r.TableCode.Contains(v));
+                    break;
+                case "status":
+                    if (Enum.TryParse<BusinessMeetingStatus>(v, ignoreCase: true, out var status))
+                    {
+                        rows = rows.Where(r => r.Status == status);
+                    }
+                    break;
+            }
+        }
+
+        // CP grid sortable columns (D-255). Default: most recent start first.
+        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
+        {
+            ("hall", false) => rows.OrderBy(r => r.HallName).ThenByDescending(r => r.StartUtc),
+            ("hall", true) => rows.OrderByDescending(r => r.HallName).ThenByDescending(r => r.StartUtc),
+            ("table", false) => rows.OrderBy(r => r.TableCode).ThenByDescending(r => r.StartUtc),
+            ("table", true) => rows.OrderByDescending(r => r.TableCode).ThenByDescending(r => r.StartUtc),
+            ("type", false) => rows.OrderBy(r => r.MeetingType).ThenByDescending(r => r.StartUtc),
+            ("type", true) => rows.OrderByDescending(r => r.MeetingType).ThenByDescending(r => r.StartUtc),
+            ("start", false) => rows.OrderBy(r => r.StartUtc),
+            ("end", false) => rows.OrderBy(r => r.EndUtc),
+            ("end", true) => rows.OrderByDescending(r => r.EndUtc),
+            ("status", false) => rows.OrderBy(r => r.Status).ThenByDescending(r => r.StartUtc),
+            ("status", true) => rows.OrderByDescending(r => r.Status).ThenByDescending(r => r.StartUtc),
+            _ => rows.OrderByDescending(r => r.StartUtc),
+        };
+
+        var total = await rows.CountAsync(cancellationToken);
+        var items = await rows.Skip(skip).Take(top).ToListAsync(cancellationToken);
+
+        return GridPage<BusinessMeetingRow>.Of(items, total, new GridQuery { Skip = skip, Top = top });
     }
 
     public async Task<BusinessMeetingDetail> GetMeetingAsync(

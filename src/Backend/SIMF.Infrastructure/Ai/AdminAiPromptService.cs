@@ -321,22 +321,54 @@ internal sealed class AdminAiPromptService(
         var top = Math.Clamp(query.Top is > 0 ? query.Top : 50, 1, 500);
 
         var rows = appDbContext.AiInvocations.AsNoTracking().AsQueryable();
-        if (query.Filters.TryGetValue("feature", out var fr)
-            && Enum.TryParse<AiFeature>(fr, ignoreCase: true, out var feature))
+
+        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // Feature filters by enum name; the rest are substring matches. The
+        // page-level "Errors only" toggle reaches us as the errorOnly filter.
+        foreach (var (column, raw) in query.Filters)
         {
-            rows = rows.Where(i => i.Feature == feature);
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "promptkey":
+                    rows = rows.Where(i => i.PromptKey.Contains(v));
+                    break;
+                case "callerkind":
+                    rows = rows.Where(i => i.CallerKind.Contains(v));
+                    break;
+                case "feature":
+                    if (Enum.TryParse<AiFeature>(v, ignoreCase: true, out var feature))
+                    {
+                        rows = rows.Where(i => i.Feature == feature);
+                    }
+                    break;
+                case "erroronly":
+                    if (string.Equals(v, "true", StringComparison.OrdinalIgnoreCase))
+                    {
+                        rows = rows.Where(i => i.ErrorCode != null);
+                    }
+                    break;
+            }
         }
-        if (query.Filters.TryGetValue("promptKey", out var pk)
-            && !string.IsNullOrWhiteSpace(pk))
+
+        // CP grid sortable columns (D-255). Default: newest first.
+        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            rows = rows.Where(i => i.PromptKey == pk);
-        }
-        if (query.Filters.TryGetValue("errorOnly", out var eo)
-            && string.Equals(eo, "true", StringComparison.OrdinalIgnoreCase))
-        {
-            rows = rows.Where(i => i.ErrorCode != null);
-        }
-        rows = rows.OrderByDescending(i => i.CreatedAt);
+            ("createdat", false) => rows.OrderBy(i => i.CreatedAt),
+            ("createdat", true) => rows.OrderByDescending(i => i.CreatedAt),
+            ("promptkey", false) => rows.OrderBy(i => i.PromptKey),
+            ("promptkey", true) => rows.OrderByDescending(i => i.PromptKey),
+            ("feature", false) => rows.OrderBy(i => i.Feature),
+            ("feature", true) => rows.OrderByDescending(i => i.Feature),
+            ("provider", false) => rows.OrderBy(i => i.Provider),
+            ("provider", true) => rows.OrderByDescending(i => i.Provider),
+            ("callerkind", false) => rows.OrderBy(i => i.CallerKind),
+            ("callerkind", true) => rows.OrderByDescending(i => i.CallerKind),
+            ("latencyms", false) => rows.OrderBy(i => i.LatencyMs),
+            ("latencyms", true) => rows.OrderByDescending(i => i.LatencyMs),
+            _ => rows.OrderByDescending(i => i.CreatedAt),
+        };
 
         var total = await rows.CountAsync(cancellationToken);
         var items = await rows.Skip(skip).Take(top)

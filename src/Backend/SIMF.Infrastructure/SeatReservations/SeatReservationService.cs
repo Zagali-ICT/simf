@@ -476,22 +476,55 @@ internal sealed class SeatReservationService(
 
         // Pending, still-held visitor bookings. Admin row-blocks are created
         // Approved with a null ReservedForUserId, so they never appear here.
-        var baseQuery = appDbContext.SeatReservations.AsNoTracking()
+        // The session is joined up-front (before paging) so the session and
+        // seat columns are server-filterable/sortable (D-255). The attendee
+        // name is resolved cross-DB from Identity afterwards, so that column
+        // stays non-filterable/non-sortable (D-157).
+        var joined = appDbContext.SeatReservations.AsNoTracking()
             .Where(r => r.Status == BookingStatus.Pending
                 && r.ReleasedAt == null
-                && r.ReservedForUserId != null);
-
-        var total = await baseQuery.CountAsync(cancellationToken);
-        var rows = await baseQuery
-            .OrderByDescending(r => r.CreatedAt)
-            .Skip(skip).Take(top)
+                && r.ReservedForUserId != null)
             .Join(appDbContext.Sessions.AsNoTracking(),
                 r => r.SessionId, s => s.Id,
                 (r, s) => new
                 {
                     r.Id, r.SessionId, s.Title, s.TitleArabic, s.StartUtc,
                     r.RowLabel, r.SeatNumber, r.Kind, r.ReservedForUserId, r.CreatedAt,
-                })
+                });
+
+        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        foreach (var (column, raw) in query.Filters)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "session":
+                    joined = joined.Where(x => x.Title.Contains(v) || x.TitleArabic.Contains(v));
+                    break;
+                case "seat":
+                    joined = joined.Where(x => x.RowLabel.Contains(v));
+                    break;
+            }
+        }
+
+        // CP grid sortable columns (D-255). Default: newest booking first.
+        joined = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
+        {
+            ("session", false) => joined.OrderBy(x => x.Title),
+            ("session", true) => joined.OrderByDescending(x => x.Title),
+            ("start", false) => joined.OrderBy(x => x.StartUtc),
+            ("start", true) => joined.OrderByDescending(x => x.StartUtc),
+            ("seat", false) => joined.OrderBy(x => x.RowLabel).ThenBy(x => x.SeatNumber),
+            ("seat", true) => joined.OrderByDescending(x => x.RowLabel).ThenByDescending(x => x.SeatNumber),
+            ("bookedat", false) => joined.OrderBy(x => x.CreatedAt),
+            ("bookedat", true) => joined.OrderByDescending(x => x.CreatedAt),
+            _ => joined.OrderByDescending(x => x.CreatedAt),
+        };
+
+        var total = await joined.CountAsync(cancellationToken);
+        var rows = await joined
+            .Skip(skip).Take(top)
             .ToListAsync(cancellationToken);
 
         // Resolve attendee display names in one Identity round-trip (no

@@ -51,10 +51,38 @@ internal sealed class AdminOrganisationService(
                 || EF.Functions.Like(org.CommercialRegistration, $"%{term}%")
                 || EF.Functions.Like(org.City, $"%{term}%"));
         }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
+
+        // CP grid per-column filters (D-255). Unknown columns are ignored; the
+        // boolean isActive filter is parsed from its text value.
+        foreach (var (column, raw) in query.Filters)
         {
-            rows = rows.Where(org => org.IsActive == isActive);
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "name":
+                    rows = rows.Where(org => org.NameAr.Contains(v));
+                    break;
+                case "nameen":
+                    rows = rows.Where(org => org.NameEn != null && org.NameEn.Contains(v));
+                    break;
+                case "commercialregistration":
+                    rows = rows.Where(org =>
+                        org.CommercialRegistration != null && org.CommercialRegistration.Contains(v));
+                    break;
+                case "sector":
+                    rows = rows.Where(org => org.Sector != null && org.Sector.Contains(v));
+                    break;
+                case "city":
+                    rows = rows.Where(org => org.City != null && org.City.Contains(v));
+                    break;
+                case "isactive":
+                    if (bool.TryParse(v, out var isActive))
+                    {
+                        rows = rows.Where(org => org.IsActive == isActive);
+                    }
+                    break;
+            }
         }
 
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
@@ -63,6 +91,8 @@ internal sealed class AdminOrganisationService(
             ("name", false) => rows.OrderBy(org => org.NameAr),
             ("city", true) => rows.OrderByDescending(org => org.City),
             ("city", false) => rows.OrderBy(org => org.City),
+            ("isactive", true) => rows.OrderByDescending(org => org.IsActive),
+            ("isactive", false) => rows.OrderBy(org => org.IsActive),
             _ => rows.OrderBy(org => org.NameAr),
         };
 

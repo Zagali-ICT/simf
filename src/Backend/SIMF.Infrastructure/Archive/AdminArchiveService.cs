@@ -46,6 +46,21 @@ internal sealed class AdminArchiveService(
             rows = rows.Where(edition => edition.IsActive == isActive);
         }
 
+        // D-258 — per-column grid filters (SimfDataGrid). Each filterable
+        // column contributes a Contains() narrowing on its mapped property.
+        foreach (var filter in query.Filters)
+        {
+            var value = filter.Value;
+            if (string.IsNullOrWhiteSpace(value)) { continue; }
+
+            rows = filter.Key.ToLowerInvariant() switch
+            {
+                "titleen" => rows.Where(edition => edition.TitleEn.Contains(value)),
+                "titlear" => rows.Where(edition => edition.TitleAr.Contains(value)),
+                _ => rows,
+            };
+        }
+
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("year", false) => rows.OrderBy(edition => edition.Year),

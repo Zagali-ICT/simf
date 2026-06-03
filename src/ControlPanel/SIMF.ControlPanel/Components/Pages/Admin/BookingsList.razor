@@ -1,7 +1,7 @@
 @* P2.2 (D-227) — booking approval queue (SIMF-FDS-005 §5.2). Lists Pending,
    still-held visitor seat bookings; a reviewer approves (seat confirmed +
    booking-confirmed notification) or rejects with a reason (seat released +
-   attendee notified). Bulk-approve supported. Mirrors SessionCategoriesList. *@
+   attendee notified). Bulk-approve supported. Migrated to SimfDataGrid (D-255). *@
 @page "/admin/bookings"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Bookings.View)]
@@ -21,74 +21,71 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        @if (_loading)
-        {
-            <p>@L["Admin.Bookings.Loading"]</p>
-        }
-        else if (_page.Items.Count == 0)
-        {
-            <SimfEmptyState Title="@L["Admin.Bookings.None"]" />
-        }
-        else
-        {
-            <div class="simf-form__actions">
+        <SimfDataGrid TItem="BookingQueueRow"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.ReservationId.ToString())"
+                      RowLabel="@(r => r.AttendeeName)"
+                      Caption="@L["Admin.Bookings.Title"]"
+                      OnApproveSelected="ApproveSelectedAsync"
+                      ApproveSelectedLabel="@L["Admin.Bookings.Approve"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Bookings.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="BookingQueueRow" Key="session"
+                                    Header="@L["Admin.Bookings.Col.Session"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.SessionTitle</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="BookingQueueRow" Key="start"
+                                    Header="@L["Admin.Bookings.Col.Start"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.SessionStartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="BookingQueueRow" Key="seat"
+                                    Header="@L["Admin.Bookings.Col.Seat"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.RowLabel@context.SeatNumber</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="BookingQueueRow" Key="attendee"
+                                    Header="@L["Admin.Bookings.Col.Attendee"]">
+                    <CellTemplate>@context.AttendeeName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="BookingQueueRow" Key="bookedAt"
+                                    Header="@L["Admin.Bookings.Col.BookedAt"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions>
+                @* Page-specific quiet actions: approve / reject one booking. *@
                 <AuthorizedAction Permission="@PermissionCatalog.Bookings.Approve">
-                    <SimfButton Type="button" Disabled="@(_busy || _selected.Count == 0)"
-                                OnClick="ApproveSelectedAsync">
-                        @(string.Format(L["Admin.Bookings.ApproveSelected"], _selected.Count))
-                    </SimfButton>
+                    <SimfToolbarButton Icon="check-circle" Title="@L["Admin.Bookings.Approve"]"
+                                       OnClick="@(() => ApproveAsync(context.ReservationId))" />
                 </AuthorizedAction>
-            </div>
-
-            <table class="simf-table">
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>@L["Admin.Bookings.Col.Session"]</th>
-                        <th>@L["Admin.Bookings.Col.Start"]</th>
-                        <th>@L["Admin.Bookings.Col.Seat"]</th>
-                        <th>@L["Admin.Bookings.Col.Attendee"]</th>
-                        <th>@L["Admin.Bookings.Col.BookedAt"]</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _page.Items)
-                    {
-                        <tr>
-                            <td>
-                                <input type="checkbox"
-                                       checked="@_selected.Contains(row.ReservationId)"
-                                       @onchange="@(e => ToggleSelect(row.ReservationId, e))" />
-                            </td>
-                            <td>@row.SessionTitle</td>
-                            <td>@row.SessionStartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</td>
-                            <td>@row.RowLabel@row.SeatNumber</td>
-                            <td>@row.AttendeeName</td>
-                            <td>@row.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</td>
-                            <td>
-                                <AuthorizedAction Permission="@PermissionCatalog.Bookings.Approve">
-                                    <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => ApproveAsync(row.ReservationId))">
-                                        @L["Admin.Bookings.Approve"]
-                                    </SimfButton>
-                                </AuthorizedAction>
-                                <AuthorizedAction Permission="@PermissionCatalog.Bookings.Reject">
-                                    <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => OpenReject(row))">
-                                        @L["Admin.Bookings.Reject"]
-                                    </SimfButton>
-                                </AuthorizedAction>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="simf-table__summary">
-                @(string.Format(L["Admin.Bookings.Summary"],
-                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
-            </p>
-        }
+                <AuthorizedAction Permission="@PermissionCatalog.Bookings.Reject">
+                    <SimfToolbarButton Icon="close" Title="@L["Admin.Bookings.Reject"]"
+                                       OnClick="@(() => OpenReject(context))" />
+                </AuthorizedAction>
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Bookings.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
     </div>
 </div>
 
@@ -122,12 +119,11 @@
 @code {
     private record Toast(string Variant, string Message);
 
-    private GridQuery _query = new() { Top = 100 };
+    private GridQuery _query = new() { Top = 20 };
     private GridPage<BookingQueueRow> _page = new();
     private bool _loading;
     private bool _busy;
     private Toast? _toast;
-    private readonly HashSet<Guid> _selected = new();
 
     private bool _rejectOpen;
     private Guid _rejectingId;
@@ -135,10 +131,21 @@
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
+
     private async Task LoadAsync()
     {
         _loading = true;
-        _selected.Clear();
         try
         {
             var env = await JS.InvokeAsync<ApiResult<GridPage<BookingQueueRow>>>(
@@ -156,12 +163,6 @@
             }
         }
         finally { _loading = false; }
-    }
-
-    private void ToggleSelect(Guid id, ChangeEventArgs e)
-    {
-        if (e.Value is true) _selected.Add(id);
-        else _selected.Remove(id);
     }
 
     private async Task ApproveAsync(Guid id)
@@ -189,9 +190,9 @@
         finally { _busy = false; }
     }
 
-    private async Task ApproveSelectedAsync()
+    private async Task ApproveSelectedAsync(IReadOnlyList<BookingQueueRow> selected)
     {
-        if (_busy || _selected.Count == 0) return;
+        if (_busy || selected.Count == 0) return;
         _busy = true;
         _toast = null;
         try
@@ -199,7 +200,10 @@
             var env = await JS.InvokeAsync<ApiResult<int>>(
                 "simfAccount.postJson",
                 "/account/api/admin/bookings/bulk-approve",
-                new AdminBulkApprovalRequest { Ids = _selected.ToList() });
+                new AdminBulkApprovalRequest
+                {
+                    Ids = selected.Select(r => r.ReservationId).ToList(),
+                });
             if (env is { Success: true })
             {
                 _toast = new Toast("success",

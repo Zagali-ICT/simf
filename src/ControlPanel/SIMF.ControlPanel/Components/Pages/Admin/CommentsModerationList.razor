@@ -3,7 +3,12 @@
    live session, then sees every comment (Pending / Approved / Hidden) with
    the AI filter verdict, and can Approve, Hide, or Delete (soft-delete)
    each row. Session-scoped, mirroring the existing SessionModerationDesk
-   pattern but over comments rather than live Q&A questions. *@
+   pattern but over comments rather than live Q&A questions.
+
+   Converted from a raw <table> to the canonical SimfDataGrid (owner-mandated).
+   The session picker stays above the grid — comments are session-scoped and
+   the picker is not a grid concern. Per-row Approve / Hide are page-specific
+   quiet actions in <RowActions>; Delete maps to the grid's OnDeleteOne. *@
 @page "/admin/comments-moderation"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Comments.View)]
@@ -42,70 +47,93 @@
             </label>
         }
 
-        @if (_loading)
+        @if (_selectedSessionId is not null)
         {
-            <p>@L["Admin.Comments.Loading"]</p>
-        }
-        else if (_selectedSessionId is not null)
-        {
-            @if (_page.Items.Count == 0)
-            {
-                <SimfEmptyState Title="@L["Admin.Comments.None"]" />
-            }
-            else
-            {
-                <table class="simf-table">
-                    <thead>
-                        <tr>
-                            <th>@L["Admin.Comments.Col.Author"]</th>
-                            <th>@L["Admin.Comments.Col.Body"]</th>
-                            <th>@L["Admin.Comments.Col.Status"]</th>
-                            <th>@L["Admin.Comments.Col.AiVerdict"]</th>
-                            <th>@L["Admin.Comments.Col.Created"]</th>
-                            <th>@L["Admin.Comments.Col.Actions"]</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var row in _page.Items)
+            <SimfDataGrid TItem="SessionCommentModerationRow"
+                          Query="_query"
+                          Page="_page"
+                          Loading="_loading"
+                          OnQueryChanged="OnQueryChangedAsync"
+                          Multiselect="true"
+                          RowKey="@(r => r.Id.ToString())"
+                          RowLabel="@(r => r.AuthorDisplayName)"
+                          Caption="@L["Admin.Comments.Title"]"
+                          FilterColumnLabel="@L["Grid.FilterColumn"]"
+                          OnDeleteOne="OnDeleteAsync"
+                          PrevLabel="@L["Grid.Prev"]"
+                          NextLabel="@L["Grid.Next"]"
+                          FirstLabel="@L["Grid.First"]"
+                          LastLabel="@L["Grid.Last"]"
+                          PageSizeLabel="@L["Grid.PageSize"]"
+                          PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Admin.Comments.Loading"]"
+                          FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                          ActionsHeader="@L["Grid.Actions"]"
+                          SelectAllLabel="@L["Grid.SelectAll"]"
+                          SelectRowLabel="@L["Grid.SelectRow"]"
+                          DeleteLabel="@L["Admin.Comments.Delete"]"
+                          SummaryFormatter="@FormatSummary">
+                <Columns>
+                    <SimfDataGridColumn TItem="SessionCommentModerationRow" Key="author"
+                                        Header="@L["Admin.Comments.Col.Author"]">
+                        <CellTemplate>
+                            @context.AuthorDisplayName
+                            <small>(@(context.AuthorEmail ?? "—"))</small>
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="SessionCommentModerationRow" Key="body"
+                                        Header="@L["Admin.Comments.Col.Body"]"
+                                        Filterable="true">
+                        <CellTemplate>@context.Body</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="SessionCommentModerationRow" Key="status"
+                                        Header="@L["Admin.Comments.Col.Status"]">
+                        <CellTemplate>
+                            @switch (context.Status)
+                            {
+                                case SessionCommentStatus.Approved:
+                                    <SimfPill Variant="on">@L["Admin.Comments.Status.Approved"]</SimfPill>
+                                    break;
+                                case SessionCommentStatus.Hidden:
+                                    <SimfPill Variant="off">@L["Admin.Comments.Status.Hidden"]</SimfPill>
+                                    break;
+                                default:
+                                    <SimfPill Variant="admin">@L["Admin.Comments.Status.Pending"]</SimfPill>
+                                    break;
+                            }
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="SessionCommentModerationRow" Key="aiVerdict"
+                                        Header="@L["Admin.Comments.Col.AiVerdict"]">
+                        <CellTemplate>@(context.AiFilterVerdict ?? "—")</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="SessionCommentModerationRow" Key="created"
+                                        Header="@L["Admin.Comments.Col.Created"]"
+                                        Sortable="true">
+                        <CellTemplate>@context.CreatedAt.ToLocalTime().ToString("g")</CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <RowActions>
+                    @* Page-specific quiet moderation actions — approve / hide.
+                       Each is hidden when the comment already holds that status,
+                       mirroring the original table's conditional buttons. *@
+                    <AuthorizedAction Permission="@PermissionCatalog.Comments.Moderate">
+                        @if (context.Status != SessionCommentStatus.Approved)
                         {
-                            <tr>
-                                <td>
-                                    @row.AuthorDisplayName
-                                    <small>(@(row.AuthorEmail ?? "—"))</small>
-                                </td>
-                                <td>@row.Body</td>
-                                <td>@StatusLabel(row.Status)</td>
-                                <td>@(row.AiFilterVerdict ?? "—")</td>
-                                <td>@row.CreatedAt.ToLocalTime().ToString("g")</td>
-                                <td>
-                                    @if (row.Status != SessionCommentStatus.Approved)
-                                    {
-                                        <SimfButton Type="button" Disabled="_busy"
-                                                    OnClick="@(() => SetStatusAsync(row, SessionCommentStatus.Approved))">
-                                            @L["Admin.Comments.Approve"]
-                                        </SimfButton>
-                                    }
-                                    @if (row.Status != SessionCommentStatus.Hidden)
-                                    {
-                                        <SimfButton Type="button" Disabled="_busy"
-                                                    OnClick="@(() => SetStatusAsync(row, SessionCommentStatus.Hidden))">
-                                            @L["Admin.Comments.Hide"]
-                                        </SimfButton>
-                                    }
-                                    <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => OnDeleteAsync(row))">
-                                        @L["Admin.Comments.Delete"]
-                                    </SimfButton>
-                                </td>
-                            </tr>
+                            <SimfToolbarButton Icon="check-circle" Title="@L["Admin.Comments.Approve"]"
+                                               OnClick="@(() => SetStatusAsync(context, SessionCommentStatus.Approved))" />
                         }
-                    </tbody>
-                </table>
-                <p class="simf-table__summary">
-                    @(string.Format(L["Admin.Comments.Summary"],
-                        _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
-                </p>
-            }
+                        @if (context.Status != SessionCommentStatus.Hidden)
+                        {
+                            <SimfToolbarButton Icon="eye-off" Title="@L["Admin.Comments.Hide"]"
+                                               OnClick="@(() => SetStatusAsync(context, SessionCommentStatus.Hidden))" />
+                        }
+                    </AuthorizedAction>
+                </RowActions>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.Comments.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
         }
     </div>
 </div>
@@ -115,6 +143,7 @@
 
     private List<AdminSessionSummary> _sessions = new();
     private Guid? _selectedSessionId;
+    private GridQuery _query = new() { Top = 20 };
     private GridPage<SessionCommentModerationRow> _page = new();
     private bool _loading;
     private bool _busy;
@@ -156,6 +185,8 @@
         if (Guid.TryParse(e.Value?.ToString(), out var id))
         {
             _selectedSessionId = id;
+            // Reset paging/sort/filter when switching sessions.
+            _query = new GridQuery { Top = 20 };
             await LoadCommentsAsync();
         }
         else
@@ -165,16 +196,34 @@
         }
     }
 
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadCommentsAsync();
+    }
+
     private async Task LoadCommentsAsync()
     {
         if (_selectedSessionId is null) return;
         _loading = true;
         try
         {
+            // The grid surfaces a per-column filter on the comment body; the
+            // backend route filters the body through its free-text `Search`
+            // field (`query.Search`), so the body filter is mapped there. The
+            // `created` column is the only server-honoured sort key.
+            _query.Filters.TryGetValue("body", out var bodyFilter);
             var env = await JS.InvokeAsync<ApiResult<GridPage<SessionCommentModerationRow>>>(
                 "simfAccount.postJson",
                 $"/account/api/admin/sessions/{_selectedSessionId}/comments/list",
-                new ListSessionCommentsBody { Top = 200 });
+                new ListSessionCommentsBody
+                {
+                    Skip = _query.Skip,
+                    Top = _query.Top,
+                    Search = string.IsNullOrWhiteSpace(bodyFilter) ? null : bodyFilter,
+                    Sort = _query.Sort,
+                    SortDescending = _query.SortDescending,
+                });
             if (env is { Success: true, Data: not null })
             {
                 _page = env.Data;
@@ -246,13 +295,11 @@
         finally { _busy = false; }
     }
 
-    private string StatusLabel(SessionCommentStatus status) => status switch
-    {
-        SessionCommentStatus.Pending => L["Admin.Comments.Status.Pending"],
-        SessionCommentStatus.Approved => L["Admin.Comments.Status.Approved"],
-        SessionCommentStatus.Hidden => L["Admin.Comments.Status.Hidden"],
-        _ => status.ToString(),
-    };
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Admin.Comments.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
 
     // The comments-list route carries the paging fields in the body
     // (the backend route composes Skip/Top/Search/Sort itself rather

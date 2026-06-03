@@ -45,22 +45,45 @@ internal sealed class AdminMediaService(
                 || (item.AlbumEn != null && EF.Functions.Like(item.AlbumEn, $"%{term}%"))
                 || (item.AlbumAr != null && EF.Functions.Like(item.AlbumAr, $"%{term}%")));
         }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
+        // CP grid per-column filters (D-256). Keys match the SimfDataGrid
+        // column Key values on MediaList.razor; unknown columns are ignored.
+        foreach (var (column, raw) in query.Filters)
         {
-            rows = rows.Where(item => item.IsActive == isActive);
-        }
-        if (query.Filters.TryGetValue("album", out var album)
-            && !string.IsNullOrWhiteSpace(album))
-        {
-            var albumTerm = album.Trim();
-            rows = rows.Where(item => item.AlbumEn == albumTerm || item.AlbumAr == albumTerm);
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "titleen":
+                    rows = rows.Where(item => item.TitleEn != null && item.TitleEn.Contains(v));
+                    break;
+                case "titlear":
+                    rows = rows.Where(item => item.TitleAr != null && item.TitleAr.Contains(v));
+                    break;
+                case "albumen":
+                    rows = rows.Where(item => item.AlbumEn != null && item.AlbumEn.Contains(v));
+                    break;
+                case "albumar":
+                    rows = rows.Where(item => item.AlbumAr != null && item.AlbumAr.Contains(v));
+                    break;
+                case "isactive":
+                    if (bool.TryParse(v, out var isActive))
+                    {
+                        rows = rows.Where(item => item.IsActive == isActive);
+                    }
+                    break;
+            }
         }
 
+        // CP grid sortable columns (D-256). Default preserves DisplayOrder,
+        // then newest-first by CreatedAt.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("title", true) => rows.OrderByDescending(item => item.TitleEn),
-            ("title", false) => rows.OrderBy(item => item.TitleEn),
+            ("kind", true) => rows.OrderByDescending(item => item.Kind),
+            ("kind", false) => rows.OrderBy(item => item.Kind),
+            ("titleen", true) => rows.OrderByDescending(item => item.TitleEn),
+            ("titleen", false) => rows.OrderBy(item => item.TitleEn),
+            ("isactive", true) => rows.OrderByDescending(item => item.IsActive),
+            ("isactive", false) => rows.OrderBy(item => item.IsActive),
             ("displayorder", true) => rows.OrderByDescending(item => item.DisplayOrder),
             _ => rows.OrderBy(item => item.DisplayOrder)
                      .ThenByDescending(item => item.CreatedAt),

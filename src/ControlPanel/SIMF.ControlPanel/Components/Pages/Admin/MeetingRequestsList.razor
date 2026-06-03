@@ -1,8 +1,11 @@
 @* D-183 (CP UI for D-174 meeting requests, Mockup page 27) — admin
    queue for in-session meeting / interview requests submitted by the
-   audience. Filterable by status. Respond modal accepts / rejects
-   with an optional note. Pending → Pending transitions are rejected
-   server-side (MEETING_REQUEST_STATUS_INVALID). *@
+   audience. Respond modal accepts / rejects with an optional note.
+   Pending → Pending transitions are rejected server-side
+   (MEETING_REQUEST_STATUS_INVALID). D-256 — migrated from the raw
+   <table> to the owner-mandated SimfDataGrid (server-paged, sortable +
+   filterable, full pager). The page-specific Respond action lives in
+   <RowActions> as a quiet reply button, shown only for Pending rows. *@
 @page "/admin/meeting-requests"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.MeetingRequests.View)]
@@ -20,83 +23,90 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        <label class="simf-field">
-            <span class="simf-field__label">@L["Admin.MeetingRequests.Filter.Status"]</span>
-            <select class="simf-field__input" value="@_statusFilter"
-                    @onchange="OnFilterChangedAsync" disabled="@_loading">
-                <option value="">@L["Admin.MeetingRequests.Filter.All"]</option>
-                <option value="Pending">@L["Admin.MeetingRequests.Filter.Pending"]</option>
-                <option value="Accepted">@L["Admin.MeetingRequests.Filter.Accepted"]</option>
-                <option value="Rejected">@L["Admin.MeetingRequests.Filter.Rejected"]</option>
-            </select>
-        </label>
-
-        @if (_loading)
-        {
-            <p>@L["Admin.MeetingRequests.Loading"]</p>
-        }
-        else if (_page.Items.Count == 0)
-        {
-            <SimfEmptyState Title="@L["Admin.MeetingRequests.None"]" />
-        }
-        else
-        {
-            <table class="simf-table">
-                <thead>
-                    <tr>
-                        <th>@L["Admin.MeetingRequests.Col.Session"]</th>
-                        <th>@L["Admin.MeetingRequests.Col.Requester"]</th>
-                        <th>@L["Admin.MeetingRequests.Col.Subject"]</th>
-                        <th>@L["Admin.MeetingRequests.Col.Status"]</th>
-                        <th>@L["Admin.MeetingRequests.Col.CreatedAt"]</th>
-                        <th>@L["Admin.MeetingRequests.Col.RespondedAt"]</th>
-                        <th>@L["Admin.MeetingRequests.Col.Actions"]</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _page.Items)
-                    {
-                        <tr>
-                            <td>@row.SessionCode — @row.SessionTitle</td>
-                            <td>@row.RequesterName</td>
-                            <td>@row.Subject</td>
-                            <td>
-                                @switch (row.Status)
-                                {
-                                    case MeetingRequestStatus.Pending:
-                                        <SimfPill Variant="warn">@L["Admin.MeetingRequests.Filter.Pending"]</SimfPill>
-                                        break;
-                                    case MeetingRequestStatus.Accepted:
-                                        <SimfPill Variant="on">@L["Admin.MeetingRequests.Filter.Accepted"]</SimfPill>
-                                        break;
-                                    case MeetingRequestStatus.Rejected:
-                                        <SimfPill Variant="off">@L["Admin.MeetingRequests.Filter.Rejected"]</SimfPill>
-                                        break;
-                                }
-                            </td>
-                            <td>@row.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</td>
-                            <td>
-                                @(row.RespondedAt is null ? "—"
-                                    : row.RespondedAt.Value.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'"))
-                            </td>
-                            <td>
-                                @if (row.Status == MeetingRequestStatus.Pending)
-                                {
-                                    <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => OnRespondAsync(row))">
-                                        @L["Admin.MeetingRequests.Respond"]
-                                    </SimfButton>
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="simf-table__summary">
-                @(string.Format(L["Admin.MeetingRequests.Summary"],
-                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
-            </p>
-        }
+        <SimfDataGrid TItem="AdminMeetingRequestRow"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.RequesterName)"
+                      Caption="@L["Admin.MeetingRequests.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.MeetingRequests.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminMeetingRequestRow" Key="session"
+                                    Header="@L["Admin.MeetingRequests.Col.Session"]">
+                    <CellTemplate>@context.SessionCode — @context.SessionTitle</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMeetingRequestRow" Key="requesterName"
+                                    Header="@L["Admin.MeetingRequests.Col.Requester"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.RequesterName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMeetingRequestRow" Key="subject"
+                                    Header="@L["Admin.MeetingRequests.Col.Subject"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Subject</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMeetingRequestRow" Key="status"
+                                    Header="@L["Admin.MeetingRequests.Col.Status"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>
+                        @switch (context.Status)
+                        {
+                            case MeetingRequestStatus.Pending:
+                                <SimfPill Variant="warn">@L["Admin.MeetingRequests.Filter.Pending"]</SimfPill>
+                                break;
+                            case MeetingRequestStatus.Accepted:
+                                <SimfPill Variant="on">@L["Admin.MeetingRequests.Filter.Accepted"]</SimfPill>
+                                break;
+                            case MeetingRequestStatus.Rejected:
+                                <SimfPill Variant="off">@L["Admin.MeetingRequests.Filter.Rejected"]</SimfPill>
+                                break;
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMeetingRequestRow" Key="createdAt"
+                                    Header="@L["Admin.MeetingRequests.Col.CreatedAt"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMeetingRequestRow" Key="respondedAt"
+                                    Header="@L["Admin.MeetingRequests.Col.RespondedAt"]"
+                                    Sortable="true">
+                    <CellTemplate>
+                        @(context.RespondedAt is null ? "—"
+                            : context.RespondedAt.Value.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'"))
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions>
+                @* Page-specific quiet action: respond (accept / reject) to a
+                   Pending request. Only Pending rows can transition. *@
+                @if (context.Status == MeetingRequestStatus.Pending)
+                {
+                    <AuthorizedAction Permission="@PermissionCatalog.MeetingRequests.Manage">
+                        <SimfToolbarButton Icon="reply" Title="@L["Admin.MeetingRequests.Respond"]"
+                                           OnClick="@(() => OnRespondAsync(context))" />
+                    </AuthorizedAction>
+                }
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.MeetingRequests.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
     </div>
 </div>
 
@@ -160,9 +170,8 @@
 @code {
     private record Toast(string Variant, string Message);
 
-    private GridQuery _query = new() { Top = 50 };
+    private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminMeetingRequestRow> _page = new();
-    private string _statusFilter = string.Empty;
     private bool _loading;
     private bool _busy;
     private Toast? _toast;
@@ -177,20 +186,17 @@
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
-    private async Task OnFilterChangedAsync(ChangeEventArgs e)
+    private async Task OnQueryChangedAsync(GridQuery next)
     {
-        _statusFilter = (e.Value?.ToString() ?? string.Empty).Trim();
-        _toast = null;
-        // D-183 review-pass: mutate the existing GridQuery so Sort /
-        // SortDescending / Search are preserved for a future pager UI
-        // (code-reviewer flagged the previous full-rebuild as fragile).
-        // Filter change resets paging — Skip = 0 is the explicit intent.
-        _query.Filters = string.IsNullOrEmpty(_statusFilter)
-            ? new Dictionary<string, string>()
-            : new Dictionary<string, string> { ["status"] = _statusFilter };
-        _query.Skip = 0;
+        _query = next;
         await LoadAsync();
     }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
 
     private async Task LoadAsync()
     {

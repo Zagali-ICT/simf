@@ -39,18 +39,48 @@ internal sealed class AdminCompanyService(
                 EF.Functions.Like(c.NameEn, $"%{term}%")
                 || EF.Functions.Like(c.NameAr, $"%{term}%"));
         }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
+
+        // CP grid per-column filters (D-256). Unknown columns are ignored.
+        // AccountCount is a computed sub-query, so it is not server-filterable.
+        foreach (var (column, raw) in query.Filters)
         {
-            rows = rows.Where(c => c.IsActive == isActive);
-        }
-        if (query.Filters.TryGetValue("type", out var typeFilter)
-            && Enum.TryParse<CompanyType>(typeFilter, ignoreCase: true, out var parsedType))
-        {
-            rows = rows.Where(c => c.Type == parsedType);
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "nameen":
+                    rows = rows.Where(c => c.NameEn.Contains(v));
+                    break;
+                case "namear":
+                    rows = rows.Where(c => c.NameAr.Contains(v));
+                    break;
+                case "isactive":
+                    if (bool.TryParse(v, out var isActive))
+                    {
+                        rows = rows.Where(c => c.IsActive == isActive);
+                    }
+                    break;
+                case "type":
+                    if (Enum.TryParse<CompanyType>(v, ignoreCase: true, out var parsedType))
+                    {
+                        rows = rows.Where(c => c.Type == parsedType);
+                    }
+                    break;
+            }
         }
 
-        rows = rows.OrderBy(c => c.Type).ThenBy(c => c.NameAr);
+        // CP grid sortable columns (D-256). Default: Type, then NameAr.
+        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
+        {
+            ("nameen", false) => rows.OrderBy(c => c.NameEn),
+            ("nameen", true) => rows.OrderByDescending(c => c.NameEn),
+            ("namear", false) => rows.OrderBy(c => c.NameAr),
+            ("namear", true) => rows.OrderByDescending(c => c.NameAr),
+            ("isactive", false) => rows.OrderBy(c => c.IsActive),
+            ("isactive", true) => rows.OrderByDescending(c => c.IsActive),
+            ("type", true) => rows.OrderByDescending(c => c.Type).ThenBy(c => c.NameAr),
+            _ => rows.OrderBy(c => c.Type).ThenBy(c => c.NameAr),
+        };
         var total = await rows.CountAsync(cancellationToken);
         var page = await rows
             .Skip(skip).Take(top)

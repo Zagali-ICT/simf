@@ -46,10 +46,34 @@ internal sealed class AdminNewsService(
                 || EF.Functions.Like(news.CategoryEn, $"%{term}%")
                 || EF.Functions.Like(news.CategoryAr, $"%{term}%"));
         }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
+
+        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        // The column keys match the SimfDataGridColumn `Key` values on the page.
+        foreach (var (column, raw) in query.Filters)
         {
-            rows = rows.Where(news => news.IsActive == isActive);
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "titleen":
+                    rows = rows.Where(news => news.TitleEn.Contains(v));
+                    break;
+                case "titlear":
+                    rows = rows.Where(news => news.TitleAr.Contains(v));
+                    break;
+                case "categoryen":
+                    rows = rows.Where(news => news.CategoryEn.Contains(v));
+                    break;
+                case "categoryar":
+                    rows = rows.Where(news => news.CategoryAr.Contains(v));
+                    break;
+                case "isactive":
+                    if (bool.TryParse(v, out var isActive))
+                    {
+                        rows = rows.Where(news => news.IsActive == isActive);
+                    }
+                    break;
+            }
         }
 
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
