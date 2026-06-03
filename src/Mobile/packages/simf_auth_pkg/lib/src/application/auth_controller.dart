@@ -83,8 +83,15 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     }
     try {
       final session = await _repository.refresh(refreshToken: refreshToken);
-      await _persistSession(session);
-      _setSignedIn(session);
+      // The refresh payload's user (AuthUser) carries no app-role; if we are
+      // already signed in, keep the resolved privilege and only rotate tokens
+      // so a mid-session 401 refresh never downgrades the user to Guest.
+      final current = state;
+      final merged = current is AuthStateSignedIn
+          ? session.copyWith(user: current.session.user)
+          : session;
+      await _persistSession(merged);
+      _setSignedIn(merged);
       return true;
     } on AuthFailure {
       await _clearSessionStorage();
@@ -114,6 +121,10 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
       case SignInSession(:final session):
         await _persistSession(session);
         _setSignedIn(session);
+        // The sign-in payload's user (AuthUser) carries only id/email/display
+        // name — hydrate the authoritative app-role + registration status from
+        // GET /app/users/me so the app does not treat the user as Guest.
+        await reloadCurrentUser();
       case SignInChallenge(:final mfaToken):
         state = AuthStateAwaitingTotp(mfaToken);
     }
@@ -130,6 +141,8 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     );
     await _persistSession(session);
     _setSignedIn(session);
+    // Hydrate the authoritative privilege (the token payload omits it) — L-4.
+    await reloadCurrentUser();
   }
 
   Future<void> signOut() async {

@@ -146,11 +146,7 @@ GoRouter buildRouter(Ref ref) {
         return '/splash';
       }
 
-      final routeNumber = _numberFor(goingTo);
-      final needsAuth = routeNumber != null &&
-          _authenticatedRoutes.contains(routeNumber);
-
-      if (needsAuth && !isSignedIn) {
+      if (routePathRequiresAuth(state.fullPath) && !isSignedIn) {
         return '/sign-in';
       }
 
@@ -208,19 +204,25 @@ class _AuthRefreshNotifier extends ChangeNotifier {
   }
 }
 
-int? _numberFor(String location) {
+/// The mockup screen number for a matched route **pattern** — go_router's
+/// `state.fullPath` (e.g. `/agenda/:sessionId/my-seat`), or null. Matching the
+/// pattern exactly (not a prefix of the concrete location) is what stops a
+/// sub-route like My-seat (#18) from being shadowed by its parent
+/// `/agenda/:sessionId` (#17) and silently losing its auth gate.
+int? routeNumberForPath(String? fullPath) {
+  if (fullPath == null) {
+    return null;
+  }
   for (final r in _routes) {
-    // Trivial path match — covers parameterised routes well enough for the
-    // gate decision; if a tighter match is ever needed, switch this to
-    // `state.fullPath`.
-    if (location == r.path) {
-      return r.number;
-    }
-    if (r.path.contains(':') && location.startsWith(r.path.split('/:').first)) {
+    if (r.path == fullPath) {
       return r.number;
     }
   }
   return null;
 }
+
+/// Whether the matched route pattern needs a signed-in user (the auth gate).
+bool routePathRequiresAuth(String? fullPath) =>
+    _authenticatedRoutes.contains(routeNumberForPath(fullPath));
 
 final routerProvider = Provider<GoRouter>(buildRouter);
