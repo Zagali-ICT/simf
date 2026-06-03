@@ -5,11 +5,13 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -71,6 +73,77 @@ public sealed class DeviceKeySignInTests : IClassFixture<SimfApiFactory>
                 Challenge = challenge.Challenge,
                 Signature = Convert.ToBase64String(signature),
             });
+        Assert.Equal(HttpStatusCode.OK, signInResponse.StatusCode);
+        var tokens = (await signInResponse.Content
+            .ReadFromJsonAsync<ApiResult<AuthTokens>>())!.Data!;
+        Assert.False(string.IsNullOrEmpty(tokens.AccessToken));
+        Assert.False(string.IsNullOrEmpty(tokens.RefreshToken));
+    }
+
+    // Interop golden vector — a real ECDSA P-256 public key + signature
+    // produced by the Flutter app's pointycastle DeviceKeyClient (Dart),
+    // captured once from the client and pinned here. The other ceremony tests
+    // generate the key AND sign with .NET's own ECDsa, so they never exercise
+    // the .NET <-> Dart byte interop. This one proves the app's hand-built
+    // SubjectPublicKeyInfo encoding imports, and its IEEE-P1363 (r||s)
+    // signature over SHA-256(challenge) verifies, in .NET's ECDsa verify path.
+    //
+    // Regenerate (only if DeviceKeyClient's encoding ever changes): run a
+    // one-off Dart test that calls DeviceKeyClient.generateKeyPair() and
+    // .sign(challengeBase64: <the fixed 32-byte challenge below>) and paste the
+    // three emitted base64 values here.
+    private const string DartClientPublicKeySpkiBase64 =
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEubfCzZbRNptyv7Gchdc927b+8z6iwi/ieYm/TipSMsg+eXRmufogaD/8E7gxSDMiNMypwHdwawLqBbkl6CSUjA==";
+
+    // base64 of the 32 bytes 0x00..0x1f.
+    private const string DartClientChallengeBase64 =
+        "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=";
+
+    private const string DartClientSignatureBase64 =
+        "RDmeI9xHWYRuQKOAlgMrWC6r+VUG0L9akaW3x0pgd0VEBX6kgqxGAQHjR9PkZ5GtqOtxwyhyxBX5/83ak3pf2Q==";
+
+    [Fact]
+    public async Task Dart_client_signature_verifies_against_the_backend()
+    {
+        var (visitor, _) = await CreateApprovedVisitorAsync();
+
+        // Register the app's REAL public key (Dart-produced SPKI blob).
+        var register = await PostAuthAsync(
+            "/api/v1/app/auth/device-keys",
+            new RegisterDeviceKeyRequest
+            {
+                PublicKey = DartClientPublicKeySpkiBase64,
+                Algorithm = "ES256",
+                Label = "Flutter app (interop vector)",
+            },
+            visitor);
+        Assert.Equal(HttpStatusCode.OK, register.StatusCode);
+        var entry = (await register.Content
+            .ReadFromJsonAsync<ApiResult<DeviceKeyEntry>>())!.Data!;
+
+        // Pin the stored challenge to the vector's fixed challenge — the server
+        // would otherwise issue a random nonce the captured signature cannot
+        // match. ChallengeExpiresAt uses the same fake clock the service reads.
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider
+                .GetRequiredService<SimfIdentityDbContext>();
+            var key = await db.DeviceKeys.SingleAsync(k => k.Id == entry.Id);
+            key.CurrentChallenge = DartClientChallengeBase64;
+            key.ChallengeExpiresAt = _factory.Time.GetUtcNow().AddMinutes(5);
+            await db.SaveChangesAsync();
+        }
+
+        // Submit the Dart-produced signature through the real verify path.
+        var signInResponse = await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/sign-in-with-device-key",
+            new SignInWithDeviceKeyRequest
+            {
+                DeviceKeyId = entry.Id,
+                Challenge = DartClientChallengeBase64,
+                Signature = DartClientSignatureBase64,
+            });
+
         Assert.Equal(HttpStatusCode.OK, signInResponse.StatusCode);
         var tokens = (await signInResponse.Content
             .ReadFromJsonAsync<ApiResult<AuthTokens>>())!.Data!;

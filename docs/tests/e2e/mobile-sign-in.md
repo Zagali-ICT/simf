@@ -32,7 +32,7 @@
 | E2E-MOB003-009 | Pending/rejected account → routed by registration status (Page 11) | edge | P1 | authored (status drives routing) |
 | E2E-MOB003-010 | Network / 500 → non-blocking error; fields preserved; no token mutation | resilience | P1 | authored (error surface) |
 | E2E-MOB003-011 | RTL render (Arabic) — fields, errors, links mirror; email stays LTR | i18n | P1 | authored (screen) |
-| E2E-MOB003-012 | Biometric (device-key) re-open | happy | P0 | authored ✓ (Dart client + controller tests; on-device prompt + .NET interop → simf-run) |
+| E2E-MOB003-012 | Biometric (device-key) re-open | happy | P0 | authored ✓ (Dart client + controller tests; **.NET↔Dart interop proven by backend golden-vector test, D-266**; on-device prompt → simf-run) |
 
 ## Scenarios
 
@@ -135,9 +135,14 @@ Scenario: Face/biometric re-open within the window
 > register/challenge/sign-in-with-device-key wiring + the `local_auth`-gated
 > biometric button are implemented and unit-tested in Dart
 > (`device_key_client_test.dart`, `auth_controller_device_key_test.dart`).
-> **simf-run follow-up:** the `local_auth` native config (manifest / Info.plist /
-> MainActivity) + a secure-enclave key + the **.NET crypto interop** (round-trip
-> against the running backend) are verified in simf-run, where android/ios exist.
+> **.NET ↔ Dart interop — proven (D-266):** a real Dart-produced public key +
+> signature (golden vector) is run through the backend's actual verify path in
+> `DeviceKeySignInTests.Dart_client_signature_verifies_against_the_backend`
+> (`tests/SIMF.Api.Tests/DeviceKeySignInTests.cs`); the app's SPKI imports and its
+> IEEE-P1363 signature over SHA-256(challenge) verifies in .NET's `ECDsa`.
+> **simf-run follow-up (only):** the `local_auth` native config (manifest /
+> Info.plist / MainActivity) + a secure-enclave key — the on-device biometric
+> prompt — land in simf-run, where android/ios exist.
 
 ---
 

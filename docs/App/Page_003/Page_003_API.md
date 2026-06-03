@@ -123,35 +123,49 @@ beyond success; the app proceeds to the reset step regardless.
 | `AUTH_OTP_EXPIRED` | Reset code expired. |
 | `VALIDATION_ERROR` | New password fails server policy. |
 
-## E6 — Device-key (biometric) endpoints — `POST /app/auth/device-key/*`  (Logic L-2)
+## E6 — Device-key (biometric) endpoints (backend D-172, Logic L-2)
 | | |
 |---|---|
-| Route prefix | `POST /api/v1/app/auth/device-key/*` |
-| Access | **enrol** = Approved account (post password sign-in); **refresh** = Anonymous + signed device-key proof |
+| Routes | `POST /api/v1/app/auth/device-keys` (enrol) · `GET …/device-keys` (list mine) · `POST …/device-keys/{id}/challenge` (issue challenge) · `POST /api/v1/app/auth/sign-in-with-device-key` (verify + mint) · `DELETE …/device-keys/{id}` (revoke mine) |
+| Access | enrol / list / revoke = **Approved account** (post password sign-in); challenge + sign-in = **Anonymous** (a leaked device-key id is useless without the private key) |
+| Crypto | **ES256** (ECDSA P-256). Public key = base64 `SubjectPublicKeyInfo`; signature = base64 **IEEE-P1363** (`r‖s`, 64 bytes) over **SHA-256(challenge bytes)**. Challenge = 32 random bytes (base64), 5-minute single-use lifetime. |
 | Returns | `ApiResult<...>` |
 
-The 5-day session window (D1) is the **config-bound device-key refresh lifetime**. The
-biometric re-open path uses the device-key **refresh** to mint fresh tokens without a typed
-password; enrolment registers the device-key after a successful password sign-in.
+The 5-day session window (D1) is the **config-bound device-key refresh lifetime**. The biometric
+re-open path signs a fresh server challenge to mint tokens without a typed password; enrolment
+registers the device-key after a successful password sign-in. The private scalar never leaves the
+device (secure storage; a secure-enclave key is the simf-run hardening follow-up).
 
 ```jsonc
-// Enrol (after password sign-in) — DeviceKeyEnrolRequest
-{ "publicKey": "string", "deviceLabel": "string?" }
-// Returns ApiResult<{ "deviceKeyId": "guid", "windowExpiresUtc": "2026-09-18T00:00:00Z" }>
+// Enrol (after password sign-in) — RegisterDeviceKeyRequest
+{ "publicKey": "<base64 SubjectPublicKeyInfo>", "algorithm": "ES256", "label": "iPhone 15 Pro" }
+// Returns ApiResult<DeviceKeyEntry { id, userId, algorithm, label, createdAt, lastUsedAt?, revokedAt? }>
 ```
 ```jsonc
-// Refresh (biometric re-open) — DeviceKeyRefreshRequest
-{ "deviceKeyId": "guid", "signedChallenge": "string" }
-// Returns ApiResult<SignInResult> { accessToken, refreshToken, expiresInSeconds }
+// Challenge — POST …/device-keys/{id}/challenge  (anonymous, empty body)
+// Returns ApiResult<DeviceKeyChallenge { challenge: "<base64>", expiresInSeconds: 300 }>
 ```
-| Error code | When |
+```jsonc
+// Sign-in (biometric re-open) — SignInWithDeviceKeyRequest
+{ "deviceKeyId": "guid", "challenge": "<base64>", "signature": "<base64 IEEE-P1363 r‖s>" }
+// Returns ApiResult<AuthTokens { accessToken, refreshToken, tokenType, accessTokenExpiresInSeconds, user }>
+```
+| Error code | When (which endpoint surfaces it) |
 |---|---|
-| `AUTH_DEVICE_KEY_INVALID` | Unknown / revoked device-key or bad signature. |
-| `AUTH_DEVICE_KEY_EXPIRED` | Device-key past the configured (5-day) window — fall back to password. |
+| `DEVICE_KEY_INVALID` | Enrol: public key missing / too large / unparseable, or label length ∉ [1,64]. |
+| `DEVICE_KEY_ALGORITHM_UNSUPPORTED` | Enrol: `algorithm` is not `ES256`. |
+| `DEVICE_KEY_NOT_FOUND` | Challenge / revoke: unknown id (also returned to a non-owner on revoke). |
+| `DEVICE_KEY_REVOKED` | Challenge requested for a revoked key (401). |
+| `DEVICE_KEY_SIGNATURE_INVALID` | Sign-in: **all** verify failures collapse to this 401 (bad signature, challenge mismatch / expiry, disabled owner). |
 
-> **Exact request/response field names for the device-key endpoints are illustrative** of
-> the shipped contract; grep `src/Backend` (`device-key` / `DeviceKey`) for the precise DTO
-> if you need byte-exact shapes before coding against them.
+> The granular `DEVICE_KEY_CHALLENGE_INVALID` / `DEVICE_KEY_OWNER_UNAVAILABLE` codes exist but are
+> **audit-log only** — the sign-in endpoint returns the single `DEVICE_KEY_SIGNATURE_INVALID` 401 so
+> a caller cannot distinguish *why* a proof failed.
+>
+> **.NET ↔ Dart interop is proven, not assumed:** the Flutter `DeviceKeyClient` (pointycastle) SPKI
+> public key + IEEE-P1363 signature are captured as a golden vector and run through the real backend
+> verify path in `DeviceKeySignInTests.Dart_client_signature_verifies_against_the_backend` (D-266).
+> Only the on-device biometric prompt + a secure-enclave key remain a simf-run item (native android/ios).
 
 ## Dropped
 - **Nafath** national-identity sign-in is **not** part of this screen (Logic D4) — no endpoint.
