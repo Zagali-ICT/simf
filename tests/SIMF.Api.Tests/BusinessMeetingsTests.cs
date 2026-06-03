@@ -306,6 +306,454 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    // -- D-248 review-hardening regression tests ------------------------------
+
+    [Fact]
+    public async Task Delete_table_with_a_confirmed_upcoming_meeting_is_409()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token, capacity: 4);
+        var start = DateTimeOffset.UtcNow.AddDays(10);
+        await ScheduleConfirmedAsync(tableId, token, start, start.AddHours(1));
+
+        var del = await DeleteAuthAsync($"/api/v1/admin/meeting-tables/{tableId}", token);
+        Assert.Equal(HttpStatusCode.Conflict, del.StatusCode);
+        var body = (await del.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.MeetingTableInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Delete_table_with_no_meetings_succeeds()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token);
+
+        var del = await DeleteAuthAsync($"/api/v1/admin/meeting-tables/{tableId}", token);
+        Assert.Equal(HttpStatusCode.OK, del.StatusCode);
+
+        var list = await PostAuthAsync(
+            $"/api/v1/admin/halls/{hallId}/meeting-tables/list", new { Skip = 0, Top = 100 }, token);
+        var page = (await list.Content.ReadFromJsonAsync<ApiResult<GridPage<MeetingTableRow>>>())!.Data!;
+        Assert.DoesNotContain(page.Items, t => t.Id == tableId);
+    }
+
+    [Fact]
+    public async Task Cancel_an_already_cancelled_meeting_is_409()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token);
+        var start = DateTimeOffset.UtcNow.AddDays(11);
+        var id = await ScheduleConfirmedAsync(tableId, token, start, start.AddHours(1));
+
+        var first = await PostAuthAsync($"/api/v1/admin/business-meetings/{id}/cancel",
+            new CancelMeetingRequest(), token);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        var second = await PostAuthAsync($"/api/v1/admin/business-meetings/{id}/cancel",
+            new CancelMeetingRequest(), token);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+        var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.BusinessMeetingNotConfirmed, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Cancel_unknown_meeting_is_404()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var resp = await PostAuthAsync(
+            $"/api/v1/admin/business-meetings/{Guid.NewGuid()}/cancel",
+            new CancelMeetingRequest(), token);
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+        var body = (await resp.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.BusinessMeetingNotFound, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Schedule_with_unknown_company_is_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token);
+        var start = DateTimeOffset.UtcNow.AddDays(12);
+
+        var resp = await PostAuthAsync("/api/v1/admin/business-meetings",
+            new ScheduleMeetingRequest
+            {
+                MeetingTableId = tableId,
+                MeetingType = BusinessMeetingType.B2B,
+                StartUtc = start,
+                EndUtc = start.AddHours(1),
+                Participants =
+                [
+                    new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
+                    new() { Kind = MeetingPartyKind.Company, CompanyId = Guid.NewGuid() },
+                ],
+            }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        var body = (await resp.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.MeetingParticipantInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Schedule_with_unknown_visitor_is_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token);
+        var start = DateTimeOffset.UtcNow.AddDays(13);
+
+        var resp = await PostAuthAsync("/api/v1/admin/business-meetings",
+            new ScheduleMeetingRequest
+            {
+                MeetingTableId = tableId,
+                MeetingType = BusinessMeetingType.B2C,
+                StartUtc = start,
+                EndUtc = start.AddHours(1),
+                Participants =
+                [
+                    new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
+                    new() { Kind = MeetingPartyKind.Visitor, VisitorUserId = Guid.NewGuid() },
+                ],
+            }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        var body = (await resp.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.MeetingParticipantInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Schedule_with_a_non_visitor_user_as_visitor_is_400()
+    {
+        // An Admin user id must not be acceptable as a "visitor" party.
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token);
+        var adminUserId = await SeedUserAsync(UserType.Admin, AccountState.Approved);
+        var start = DateTimeOffset.UtcNow.AddDays(14);
+
+        var resp = await PostAuthAsync("/api/v1/admin/business-meetings",
+            new ScheduleMeetingRequest
+            {
+                MeetingTableId = tableId,
+                MeetingType = BusinessMeetingType.B2C,
+                StartUtc = start,
+                EndUtc = start.AddHours(1),
+                Participants =
+                [
+                    new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
+                    new() { Kind = MeetingPartyKind.Visitor, VisitorUserId = adminUserId },
+                ],
+            }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        var body = (await resp.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.MeetingParticipantInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Schedule_with_the_same_company_twice_is_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token, capacity: 4);
+        var company = await SeedCompanyAsync();
+        var start = DateTimeOffset.UtcNow.AddDays(15);
+
+        var resp = await PostAuthAsync("/api/v1/admin/business-meetings",
+            new ScheduleMeetingRequest
+            {
+                MeetingTableId = tableId,
+                MeetingType = BusinessMeetingType.B2B,
+                StartUtc = start,
+                EndUtc = start.AddHours(1),
+                Participants =
+                [
+                    new() { Kind = MeetingPartyKind.Company, CompanyId = company },
+                    new() { Kind = MeetingPartyKind.Company, CompanyId = company },
+                ],
+            }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        var body = (await resp.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.MeetingParticipantInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Schedule_company_participant_without_company_id_is_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token);
+        var start = DateTimeOffset.UtcNow.AddDays(16);
+
+        var resp = await PostAuthAsync("/api/v1/admin/business-meetings",
+            new ScheduleMeetingRequest
+            {
+                MeetingTableId = tableId,
+                MeetingType = BusinessMeetingType.B2B,
+                StartUtc = start,
+                EndUtc = start.AddHours(1),
+                Participants =
+                [
+                    new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
+                    new() { Kind = MeetingPartyKind.Company, CompanyId = null },
+                ],
+            }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Schedule_on_unknown_table_is_404()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var start = DateTimeOffset.UtcNow.AddDays(17);
+        var resp = await PostAuthAsync("/api/v1/admin/business-meetings",
+            new ScheduleMeetingRequest
+            {
+                MeetingTableId = Guid.NewGuid(),
+                MeetingType = BusinessMeetingType.B2B,
+                StartUtc = start,
+                EndUtc = start.AddHours(1),
+                Participants =
+                [
+                    new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
+                    new() { Kind = MeetingPartyKind.Company, CompanyId = await SeedCompanyAsync() },
+                ],
+            }, token);
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+        var body = (await resp.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.MeetingTableNotFound, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Get_unknown_meeting_is_404()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var resp = await GetAuthAsync($"/api/v1/admin/business-meetings/{Guid.NewGuid()}", token);
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+        var body = (await resp.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.BusinessMeetingNotFound, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task A_whole_hall_session_allocation_blocks_a_meeting_in_that_hall()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token);
+        var start = DateTimeOffset.UtcNow.AddDays(18);
+
+        var alloc = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/hall-allocations",
+            new CreateHallAllocationRequest
+            {
+                Purpose = HallPurpose.Session,
+                Mode = HallAllocationMode.Whole,
+                StartUtc = start,
+                EndUtc = start.AddHours(3),
+            }, token);
+        Assert.Equal(HttpStatusCode.OK, alloc.StatusCode);
+
+        var resp = await ScheduleAsync(tableId, token, start.AddMinutes(30), start.AddHours(1),
+            await SeedCompanyAsync(), await SeedCompanyAsync());
+        Assert.Equal(HttpStatusCode.Conflict, resp.StatusCode);
+        var body = (await resp.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.BusinessMeetingTableConflict, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Create_duplicate_table_code_in_same_hall_is_409()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var first = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables",
+            new CreateMeetingTableRequest { Code = "T-1", Capacity = 2 }, token);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+
+        // Case-insensitive: 't-1' must also clash.
+        var dup = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables",
+            new CreateMeetingTableRequest { Code = "t-1", Capacity = 2 }, token);
+        Assert.Equal(HttpStatusCode.Conflict, dup.StatusCode);
+        var body = (await dup.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.MeetingTableCodeDuplicate, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Update_table_fields_then_keeping_same_code_succeeds_and_unknown_is_404()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var tableId = await CreateTableAsync(hallId, token, capacity: 2);
+
+        // Happy path: change capacity, keep the (same) code -> 200.
+        var get = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/list",
+            new { Skip = 0, Top = 100 }, token);
+        var row = (await get.Content.ReadFromJsonAsync<ApiResult<GridPage<MeetingTableRow>>>())!
+            .Data!.Items.Single(t => t.Id == tableId);
+        var upd = await PutAuthAsync($"/api/v1/admin/meeting-tables/{tableId}",
+            new UpdateMeetingTableRequest { Code = row.Code, Capacity = 8 }, token);
+        Assert.Equal(HttpStatusCode.OK, upd.StatusCode);
+        var updated = (await upd.Content.ReadFromJsonAsync<ApiResult<MeetingTableRow>>())!.Data!;
+        Assert.Equal(8, updated.Capacity);
+
+        var unknown = await PutAuthAsync($"/api/v1/admin/meeting-tables/{Guid.NewGuid()}",
+            new UpdateMeetingTableRequest { Code = "X-1", Capacity = 2 }, token);
+        Assert.Equal(HttpStatusCode.NotFound, unknown.StatusCode);
+        var body = (await unknown.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.MeetingTableNotFound, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Create_table_with_capacity_out_of_range_is_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+
+        var low = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables",
+            new CreateMeetingTableRequest { Code = "L-1", Capacity = 1 }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, low.StatusCode);
+
+        var high = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables",
+            new CreateMeetingTableRequest { Code = "H-1", Capacity = 101 }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, high.StatusCode);
+    }
+
+    [Fact]
+    public async Task Generate_by_row_column_parses_row_and_column_and_skips_duplicates()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+
+        var gen = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/generate",
+            new GenerateMeetingTablesRequest
+            {
+                Mode = HallAllocationMode.RowColumn,
+                RowColumnSpec = "A1,A1,B3",
+                Capacity = 2,
+            }, token);
+        Assert.Equal(HttpStatusCode.OK, gen.StatusCode);
+        var result = (await gen.Content.ReadFromJsonAsync<ApiResult<MeetingTablesGenerated>>())!.Data!;
+        Assert.Equal(2, result.Created); // A1 deduped
+
+        var list = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/list",
+            new { Skip = 0, Top = 100 }, token);
+        var page = (await list.Content.ReadFromJsonAsync<ApiResult<GridPage<MeetingTableRow>>>())!.Data!;
+        var a1 = page.Items.Single(t => t.Code == "A1");
+        Assert.Equal("A", a1.RowLabel);
+        Assert.Equal(1, a1.ColumnNumber);
+    }
+
+    [Fact]
+    public async Task Generate_with_reset_removes_existing_tables()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/generate",
+            new GenerateMeetingTablesRequest { Mode = HallAllocationMode.RandomByCount, Count = 4, Capacity = 2 }, token);
+
+        var gen = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/generate",
+            new GenerateMeetingTablesRequest
+            { Mode = HallAllocationMode.RandomByCount, Count = 3, Capacity = 2, Reset = true }, token);
+        var result = (await gen.Content.ReadFromJsonAsync<ApiResult<MeetingTablesGenerated>>())!.Data!;
+        Assert.Equal(4, result.Removed);
+        Assert.Equal(3, result.Created);
+
+        var list = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/list",
+            new { Skip = 0, Top = 100 }, token);
+        var page = (await list.Content.ReadFromJsonAsync<ApiResult<GridPage<MeetingTableRow>>>())!.Data!;
+        Assert.Equal(3, page.Total);
+    }
+
+    [Fact]
+    public async Task Generate_random_count_is_capped_at_hall_capacity()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting, capacity: 3);
+
+        var gen = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/generate",
+            new GenerateMeetingTablesRequest { Mode = HallAllocationMode.RandomByCount, Count = 10, Capacity = 2 }, token);
+        var result = (await gen.Content.ReadFromJsonAsync<ApiResult<MeetingTablesGenerated>>())!.Data!;
+        Assert.Equal(3, result.Created);
+    }
+
+    [Fact]
+    public async Task Generate_invalid_modes_and_specs_are_rejected()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+
+        var zero = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/generate",
+            new GenerateMeetingTablesRequest { Mode = HallAllocationMode.RandomByCount, Count = 0, Capacity = 2 }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, zero.StatusCode);
+
+        var emptySpec = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/generate",
+            new GenerateMeetingTablesRequest { Mode = HallAllocationMode.RowColumn, RowColumnSpec = "  ", Capacity = 2 }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, emptySpec.StatusCode);
+
+        var whole = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/generate",
+            new GenerateMeetingTablesRequest { Mode = HallAllocationMode.Whole, Capacity = 2 }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, whole.StatusCode);
+    }
+
+    [Fact]
+    public async Task Generate_in_a_session_hall_is_409()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Session);
+        var gen = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/meeting-tables/generate",
+            new GenerateMeetingTablesRequest { Mode = HallAllocationMode.RandomByCount, Count = 2, Capacity = 2 }, token);
+        Assert.Equal(HttpStatusCode.Conflict, gen.StatusCode);
+        var body = (await gen.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.HallNotMeetingPurpose, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Create_allocation_invalid_inputs_are_rejected()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var start = DateTimeOffset.UtcNow.AddDays(19);
+
+        var badSlot = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/hall-allocations",
+            new CreateHallAllocationRequest
+            { Purpose = HallPurpose.Meeting, Mode = HallAllocationMode.Whole, StartUtc = start, EndUtc = start }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, badSlot.StatusCode);
+
+        var noCount = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/hall-allocations",
+            new CreateHallAllocationRequest
+            { Purpose = HallPurpose.Meeting, Mode = HallAllocationMode.RandomByCount, StartUtc = start, EndUtc = start.AddHours(1) }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, noCount.StatusCode);
+
+        var unknownHall = await PostAuthAsync($"/api/v1/admin/halls/{Guid.NewGuid()}/hall-allocations",
+            new CreateHallAllocationRequest
+            { Purpose = HallPurpose.Meeting, Mode = HallAllocationMode.Whole, StartUtc = start, EndUtc = start.AddHours(1) }, token);
+        Assert.Equal(HttpStatusCode.NotFound, unknownHall.StatusCode);
+    }
+
+    [Fact]
+    public async Task Release_allocation_removes_it_and_second_release_is_404()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hallId = await SeedHallAsync(HallPurpose.Meeting);
+        var start = DateTimeOffset.UtcNow.AddDays(20);
+        var create = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/hall-allocations",
+            new CreateHallAllocationRequest
+            { Purpose = HallPurpose.Meeting, Mode = HallAllocationMode.Whole, StartUtc = start, EndUtc = start.AddHours(2) }, token);
+        var allocId = (await create.Content.ReadFromJsonAsync<ApiResult<HallAllocationRow>>())!.Data!.Id;
+
+        var rel = await DeleteAuthAsync($"/api/v1/admin/hall-allocations/{allocId}", token);
+        Assert.Equal(HttpStatusCode.OK, rel.StatusCode);
+
+        var list = await PostAuthAsync($"/api/v1/admin/halls/{hallId}/hall-allocations/list",
+            new { Skip = 0, Top = 100 }, token);
+        var page = (await list.Content.ReadFromJsonAsync<ApiResult<GridPage<HallAllocationRow>>>())!.Data!;
+        Assert.DoesNotContain(page.Items, a => a.Id == allocId);
+
+        var again = await DeleteAuthAsync($"/api/v1/admin/hall-allocations/{allocId}", token);
+        Assert.Equal(HttpStatusCode.NotFound, again.StatusCode);
+        var body = (await again.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.HallAllocationNotFound, body.Error!.Code);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private Task<HttpResponseMessage> ScheduleAsync(
@@ -455,5 +903,39 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> DeleteAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private async Task<Guid> ScheduleConfirmedAsync(
+        Guid tableId, string token, DateTimeOffset start, DateTimeOffset end)
+    {
+        var resp = await ScheduleAsync(tableId, token, start, end,
+            await SeedCompanyAsync(), await SeedCompanyAsync());
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        return (await resp.Content.ReadFromJsonAsync<ApiResult<BusinessMeetingScheduled>>())!.Data!.Id;
+    }
+
+    private async Task<Guid> SeedUserAsync(UserType userType, AccountState state)
+    {
+        var email = $"party-{Guid.NewGuid():N}@simf.test";
+        using var scope = _factory.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var user = new SimfUser
+        {
+            UserName = email,
+            Email = email,
+            EmailConfirmed = true,
+            DisplayName = "Party",
+            AccountState = state,
+            UserType = userType,
+        };
+        await users.CreateAsync(user, AuthFlow.Password);
+        return user.Id;
     }
 }

@@ -2382,4 +2382,5 @@
   <data name="Admin.MeetingTables.Release.Confirm" xml:space="preserve"><value>تحرير هذا التخصيص؟</value></data>
   <data name="Admin.MeetingTables.Validation.Code" xml:space="preserve"><value>رمز الطاولة مطلوب.</value></data>
   <data name="Admin.MeetingTables.Validation.Slot" xml:space="preserve"><value>أدخل وقت بداية ونهاية صالحين (النهاية بعد البداية).</value></data>
+  <data name="Admin.MeetingTables.Validation.Allocation" xml:space="preserve"><value>التخصيص العشوائي يحتاج إلى عدد؛ تخصيص الصف/العمود يحتاج إلى مخطط.</value></data>
 </root>

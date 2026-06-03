@@ -345,9 +345,11 @@
             "simfAccount.postJson", "/account/api/admin/halls/list", new GridQuery { Top = 500 });
         if (hallsEnv is { Success: true, Data: not null })
         {
-            // Meeting tables live in Meeting (3) or General (0) halls.
+            // Meeting tables live in Meeting or General halls (AdminHallSummary.Purpose
+            // is the int wire value; compare via the enum so a reorder can't drift).
             _meetingHalls = hallsEnv.Data.Items
-                .Where(h => h.IsActive && (h.Purpose == 3 || h.Purpose == 0))
+                .Where(h => h.IsActive
+                    && ((HallPurpose)h.Purpose) is HallPurpose.Meeting or HallPurpose.General)
                 .OrderBy(h => h.Name).ToList();
         }
 

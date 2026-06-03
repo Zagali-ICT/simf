@@ -566,6 +566,13 @@
             _toast = new Toast("error", L["Admin.MeetingTables.Validation.Slot"]);
             return;
         }
+        if ((_allocForm.Mode == HallAllocationMode.RandomByCount && _allocForm.UnitCount is not > 0)
+            || (_allocForm.Mode == HallAllocationMode.RowColumn
+                && string.IsNullOrWhiteSpace(_allocForm.RowColumnSpec)))
+        {
+            _toast = new Toast("error", L["Admin.MeetingTables.Validation.Allocation"]);
+            return;
+        }
         _busy = true;
         try
         {

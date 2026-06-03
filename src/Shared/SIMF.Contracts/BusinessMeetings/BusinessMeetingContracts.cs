@@ -53,8 +53,9 @@ public class GenerateMeetingTablesRequest
 {
     public HallAllocationMode Mode { get; set; }
 
-    /// <summary>For RandomByCount — how many tables to create (capped at hall
-    /// capacity).</summary>
+    /// <summary>For RandomByCount — how many tables to create. Bounded by the
+    /// hall's free table slots (its capacity, hard-capped at 500); fewer may be
+    /// created if the hall is near capacity.</summary>
     public int? Count { get; set; }
 
     /// <summary>For RowColumn — CSV of row/column codes, e.g. "A1,A2,B3".</summary>

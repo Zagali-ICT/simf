@@ -29,6 +29,12 @@ internal sealed class BusinessMeetingService(
 {
     private const int MaxParticipants = 50;
 
+    /// <summary>Hard ceiling on the number of active meeting tables a single hall
+    /// may hold — bounds a generate call regardless of the hall's configured
+    /// capacity (which may be 0), so a huge or unbounded request can never
+    /// materialise a runaway batch.</summary>
+    private const int MaxTablesPerHall = 500;
+
     // ── Hall purpose ─────────────────────────────────────────────────────────
 
     public async Task SetHallPurposeAsync(
@@ -200,6 +206,15 @@ internal sealed class BusinessMeetingService(
             existing.Select(t => t.Code), StringComparer.OrdinalIgnoreCase);
         var toCreate = new List<MeetingTable>();
 
+        // Total active tables in a hall are bounded by the hall's capacity (the
+        // owner's "stop at max") and a hard MaxTablesPerHall ceiling, so a
+        // 0-capacity hall or a huge requested count can never run away. The free
+        // slots subtract the tables already present (after any Reset).
+        var hardCeiling = hall.Capacity > 0
+            ? Math.Min(hall.Capacity, MaxTablesPerHall)
+            : MaxTablesPerHall;
+        var freeSlots = Math.Max(0, hardCeiling - existing.Count);
+
         if (request.Mode == HallAllocationMode.RandomByCount)
         {
             if (request.Count is not > 0)
@@ -208,9 +223,8 @@ internal sealed class BusinessMeetingService(
                     "A positive table count is required.",
                     "يلزم إدخال عدد طاولات موجب.");
             }
-            // Stop at the requested count or the hall capacity, whichever is smaller.
-            var cap = Math.Max(0, hall.Capacity);
-            var target = Math.Min(request.Count.Value, cap == 0 ? request.Count.Value : cap);
+            // Create up to the requested count, bounded by the hall's free table slots.
+            var target = Math.Min(request.Count.Value, freeSlots);
             var seq = 1;
             for (var i = 0; i < target; i++)
             {
@@ -228,6 +242,12 @@ internal sealed class BusinessMeetingService(
                 throw Invalid(ErrorCodes.HallAllocationInvalid,
                     "Provide a row/column spec, e.g. \"A1,A2,B3\".",
                     "يرجى إدخال مخطط صف/عمود، مثل \"A1,A2,B3\".");
+            }
+            if (tokens.Count > freeSlots)
+            {
+                throw Invalid(ErrorCodes.HallAllocationInvalid,
+                    $"That would exceed the hall's table capacity ({hardCeiling}).",
+                    $"سيتجاوز ذلك سعة طاولات القاعة ({hardCeiling}).");
             }
             foreach (var token in tokens)
             {
@@ -393,6 +413,9 @@ internal sealed class BusinessMeetingService(
                     x.m.Id, x.m.MeetingTableId, x.t.Code, h.Id, h.NameArabic,
                     x.m.MeetingType, x.m.StartUtc, x.m.EndUtc, x.m.Status,
                     x.m.Participants.Count))
+            // Re-assert the order after the joins — the inner OrderBy only drives
+            // the Skip/Take window; without this the joined page order is undefined.
+            .OrderByDescending(r => r.StartUtc)
             .ToListAsync(cancellationToken);
 
         return GridPage<BusinessMeetingRow>.Of(rows, total, new GridQuery { Skip = skip, Top = top });
@@ -401,20 +424,16 @@ internal sealed class BusinessMeetingService(
     public async Task<BusinessMeetingDetail> GetMeetingAsync(
         Guid id, CancellationToken cancellationToken = default)
     {
+        // One round-trip: the table + its hall are real navigations off the meeting.
         var meeting = await appDbContext.BusinessMeetings.AsNoTracking()
             .Include(m => m.Participants)
+            .Include(m => m.MeetingTable!).ThenInclude(t => t.Hall!)
             .SingleOrDefaultAsync(m => m.Id == id, cancellationToken)
             ?? throw NotFound(ErrorCodes.BusinessMeetingNotFound,
                 "Meeting not found.", "لم يتم العثور على الاجتماع.");
 
-        var table = await appDbContext.MeetingTables.AsNoTracking()
-            .Where(t => t.Id == meeting.MeetingTableId)
-            .Select(t => new { t.Code, t.HallId })
-            .SingleAsync(cancellationToken);
-        var hallName = await appDbContext.Halls.AsNoTracking()
-            .Where(h => h.Id == table.HallId)
-            .Select(h => h.NameArabic)
-            .SingleAsync(cancellationToken);
+        var table = meeting.MeetingTable!;
+        var hall = table.Hall!;
 
         var participants = meeting.Participants
             .Select(p => new MeetingParticipantDto(
@@ -422,7 +441,7 @@ internal sealed class BusinessMeetingService(
             .ToList();
 
         return new BusinessMeetingDetail(
-            meeting.Id, meeting.MeetingTableId, table.Code, table.HallId, hallName,
+            meeting.Id, meeting.MeetingTableId, table.Code, table.HallId, hall.NameArabic,
             meeting.MeetingType, meeting.StartUtc, meeting.EndUtc, meeting.Status,
             meeting.Notes, meeting.CancellationReason, meeting.CreatedAt,
             meeting.CancelledAt, participants);
@@ -462,6 +481,13 @@ internal sealed class BusinessMeetingService(
 
         var names = await ResolvePartyNamesAsync(companyIds, visitorIds, cancellationToken);
 
+        // The conflict checks below (table / hall / participant overlap) are
+        // read-then-insert: a time range cannot be a SQL unique constraint, so two
+        // truly simultaneous schedules for the same slot could both pass. This is
+        // an accepted residual risk for an admin-only, low-concurrency CP surface
+        // (D-248 review); add a serializable transaction / sp_getapplock here if
+        // automated or concurrent scheduling is ever introduced.
+
         // Table conflict — another Confirmed meeting overlaps this table/slot.
         var tableClash = await appDbContext.BusinessMeetings.AsNoTracking()
             .Where(m => m.MeetingTableId == table.Id
@@ -474,6 +500,24 @@ internal sealed class BusinessMeetingService(
                 ErrorCodes.BusinessMeetingTableConflict, 409,
                 "The table is already booked for an overlapping time-slot.",
                 "الطاولة محجوزة بالفعل في فترة زمنية متداخلة.");
+        }
+
+        // Hall conflict — the table's hall is wholly reserved for a non-meeting
+        // purpose (e.g. a session) for an overlapping slot (FDS-013 §5.6: a
+        // whole-hall allocation is a unit that cannot be double-reserved).
+        var hallReserved = await appDbContext.HallAllocations.AsNoTracking()
+            .Where(a => a.HallId == table.HallId
+                && a.ReleasedAt == null
+                && a.Mode == HallAllocationMode.Whole
+                && a.Purpose != HallPurpose.Meeting)
+            .AnyAsync(a => a.StartUtc < request.EndUtc && request.StartUtc < a.EndUtc,
+                cancellationToken);
+        if (hallReserved)
+        {
+            throw new ApiException(
+                ErrorCodes.BusinessMeetingTableConflict, 409,
+                "The hall is reserved for another purpose at this time.",
+                "القاعة محجوزة لغرض آخر في هذا الوقت.");
         }
 
         // Participant conflict — a party is already in a Confirmed overlapping meeting.
@@ -633,15 +677,21 @@ internal sealed class BusinessMeetingService(
 
         if (visitorIds.Count > 0)
         {
+            // Only an approved Visitor account may be a visitor party (the CP picker
+            // already feeds approved visitors; this guards a hand-crafted request
+            // from seating, e.g., an Admin as a "visitor"). The count-mismatch check
+            // below then rejects any id that is not an approved visitor.
             var users = await identityDbContext.Users.AsNoTracking()
-                .Where(u => visitorIds.Contains(u.Id))
+                .Where(u => visitorIds.Contains(u.Id)
+                    && u.UserType == UserType.Visitor
+                    && u.AccountState == AccountState.Approved)
                 .Select(u => new { u.Id, u.DisplayName })
                 .ToListAsync(cancellationToken);
             if (users.Count != visitorIds.Distinct().Count())
             {
                 throw Invalid(ErrorCodes.MeetingParticipantInvalid,
-                    "One or more visitors were not found.",
-                    "تعذر العثور على زائر واحد أو أكثر.");
+                    "One or more visitors were not found or not approved.",
+                    "تعذر العثور على زائر واحد أو أكثر أو أنه غير معتمد.");
             }
             foreach (var u in users)
             {

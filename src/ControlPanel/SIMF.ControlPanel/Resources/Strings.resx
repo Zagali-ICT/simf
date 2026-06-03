@@ -2389,4 +2389,5 @@
   <data name="Admin.MeetingTables.Release.Confirm" xml:space="preserve"><value>Release this allocation?</value></data>
   <data name="Admin.MeetingTables.Validation.Code" xml:space="preserve"><value>A table code is required.</value></data>
   <data name="Admin.MeetingTables.Validation.Slot" xml:space="preserve"><value>Enter a valid start and end time (end after start).</value></data>
+  <data name="Admin.MeetingTables.Validation.Allocation" xml:space="preserve"><value>Random allocation needs a count; row/column allocation needs a spec.</value></data>
 </root>
