@@ -70,7 +70,7 @@ Status legend: ✅ **ready** (endpoint shipped under `/app/*`) · 🟡 **to buil
 
 | # | Route | Privilege | API status | Page doc |
 |---|-------|-----------|------------|----------|
-| 13 | `home` | Guest+ | ✅ `GET /app/account/notifications` (count) · 🟡 `GET /app/bootstrap` (D9) · live banner deferred (D10) | [Page_013](Page_013/README.md) |
+| 13 | `home` | Guest+ | ✅ `GET /app/account/notifications` (count) · ✅ **`GET /app/bootstrap`** (D-251) · live banner deferred (D10) | [Page_013](Page_013/README.md) |
 | 14 | `myArea` | Visitor | ✅ **BUILT (D-249)** `GET /app/account/dashboard` + `calendar.ics` + `contact-card.vcf` — unions held bookings + speaker meetings + confirmed business meetings | [Page_014](Page_014/README.md) |
 | 15 | `venueMap` | Guest | ✅ `GET /app/venue-map` (D-230) + `GET /app/booths` | [Page_015](Page_015/README.md) |
 | 16–20 | `agenda`, `sessionDetail`, `mySeat`, `speakers`, `speakerProfile` | Guest/Visitor | ⏳ existing `Endpoints/Programme/*`, `Endpoints/Sessions/SeatReservation*`, `Endpoints/Public/PublicSpeaker*` (later wave) | — |
@@ -113,17 +113,23 @@ following the matching `Page_NNN/` Function/Logic/Design docs.
 - **Public**: content blocks (`terms` etc.), venue-map, booths, speakers, news,
   media, sponsors, sessions/agenda.
 
-**Pending (named in D-249, additive — coordinate before building the screen):**
-- 🟡 `GET /app/bootstrap` — the on-login "fetch all + privileges" bundle (D9).
-
-**Recently shipped (D-249):**
+**Recently shipped (D-249 / D-250 / D-251):**
+- ✅ `GET /app/users/me` (Screen 11 registration status) — D-249.
 - ✅ `GET /app/account/dashboard` + `calendar.ics` + `contact-card.vcf` (Screen 14)
   — the My-Area dashboard, unioning held bookings + accepted speaker meetings +
-  confirmed business meetings (D-248). See [Page_014](Page_014/README.md).
+  confirmed business meetings (D-248/D-250). See [Page_014](Page_014/README.md).
+- ✅ `GET /app/bootstrap` (Screen 13 on-login bundle) — current user + unread
+  count + server time, composed from existing reads (D-251).
+
+**No App-API builds remain open for the owner's page batch.** The remaining
+items are the explicitly **deferred** ones below.
 
 **Deferred (not in this version) — do not build app paths that depend on them:**
 - D4 Nafath sign-in, D8 server-side T&C consent record, D10 live/YouTube banner,
   D11 mockup decorations (approval ref#+date, booth logo+hall-name).
+- **D1 — configurable 5-day session** → moved to **V2** (owner, 2026-06-03);
+  see [`SIMF-V2-Plan.md`](../SIMF-V2-Plan.md) **V2-02**. The V1 refresh-token
+  lifetime stays at its current 30-day value.
 
 ---
 

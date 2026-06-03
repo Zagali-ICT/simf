@@ -139,15 +139,32 @@ No public nav per D-064 — every page is reached via direct URL or auth redirec
 
 ---
 
-## Mobile App (Flutter) — DEFERRED
+## Mobile App (Flutter) — App API + per-page docs
 
-The Flutter app build is on a separate branch; per-page docs + `mobile-*.md` E2E
-catalogue files land under `docs/pages/mobile/` and `docs/tests/e2e/` when it
-merges to the main line.
+These rows track the **App API** (`/api/v1/app/*`) and the per-page documentation
+(`docs/App/Page_NNN/` — Function/Logic/API/Design) for the owner's screen batch
+(D-249). The Flutter screens themselves are still a **mockup** for API + UX
+testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 
-| Route | Status | Audience | Doc | Test |
-|-------|--------|----------|-----|------|
-| _to be filled when the Flutter App build merges_ | | | | |
+- ✅ **API built** — the backing endpoint is built + tested this wave (E2E linked).
+- 📄 **Doc** — per-page doc authored; the backing API pre-exists or the screen has
+  none; the Flutter screen is a mockup (E2E lands as the screen is built).
+
+| Screen (route) | Status | Audience | Doc | Test |
+|----------------|--------|----------|-----|------|
+| #1 `splash` | 📄 Doc | Guest | [App/Page_001](../App/Page_001/README.md) | — |
+| #2 `onboarding` | 📄 Doc | Guest | [App/Page_002](../App/Page_002/README.md) | — |
+| #3 `signIn` | 📄 Doc | Guest | [App/Page_003](../App/Page_003/README.md) | — |
+| #4 `signUpType` | 📄 Doc | Guest | [App/Page_004](../App/Page_004/README.md) | — |
+| #5 `signUpForm` | 📄 Doc | Guest | [App/Page_005](../App/Page_005/README.md) | — |
+| #6 `emailOtp` | 📄 Doc | Guest | [App/Page_006](../App/Page_006/README.md) | — |
+| #7 `signUpVisitor` | 📄 Doc | Visitor | [App/Page_007](../App/Page_007/README.md) | — |
+| #9 `terms` | 📄 Doc | Guest | [App/Page_009](../App/Page_009/README.md) | — |
+| #10 `registrationSuccess` | 📄 Doc | Visitor (pending) | [App/Page_010](../App/Page_010/README.md) | — |
+| #11 `registrationStatus` (`GET /app/users/me`) | ✅ API built | Visitor (pending) | [App/Page_011](../App/Page_011/README.md) | [e2e/mobile-registration-status.md](../tests/e2e/mobile-registration-status.md) |
+| #13 `home` (`GET /app/bootstrap`) | ✅ API built | Guest+ | [App/Page_013](../App/Page_013/README.md) | [e2e/mobile-home.md](../tests/e2e/mobile-home.md) |
+| #14 `myArea` (`GET /app/account/dashboard` + `.ics`/`.vcf`) | ✅ API built | Visitor | [App/Page_014](../App/Page_014/README.md) | [e2e/mobile-my-area.md](../tests/e2e/mobile-my-area.md) |
+| #15 `venueMap` | 📄 Doc | Guest | [App/Page_015](../App/Page_015/README.md) | — |
 
 ---
 
