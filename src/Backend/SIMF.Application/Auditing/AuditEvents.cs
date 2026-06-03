@@ -288,6 +288,11 @@ public static class AuditEvents
     public const string BusinessMeetingScheduled = "BusinessMeeting.Scheduled";
     public const string BusinessMeetingCancelled = "BusinessMeeting.Cancelled";
 
+    // Shared contact directory (SIMF-FDS-014 / D-255).
+    public const string ContactCreated = "Contact.Created";
+    public const string ContactUpdated = "Contact.Updated";
+    public const string ContactDeactivated = "Contact.Deactivated";
+
     // Centralised AI module (D-176, gap doc G12)
     public const string AiPromptCreated = "AiPrompt.Created";
     public const string AiPromptUpdated = "AiPrompt.Updated";

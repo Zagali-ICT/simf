@@ -250,6 +250,11 @@ public static class ErrorCodes
     public const string MeetingParticipantInvalid = "MEETING_PARTICIPANT_INVALID";
     public const string MeetingCapacityExceeded = "MEETING_CAPACITY_EXCEEDED";
 
+    // Shared contact directory (SIMF-FDS-014 / D-255).
+    public const string ContactInvalid = "CONTACT_INVALID";
+    public const string ContactNotFound = "CONTACT_NOT_FOUND";
+    public const string ContactInUse = "CONTACT_IN_USE";
+
     // Centralised AI module (D-176, gap doc G12).
     public const string AiPromptInvalid = "AI_PROMPT_INVALID";
     public const string AiPromptNotFound = "AI_PROMPT_NOT_FOUND";
