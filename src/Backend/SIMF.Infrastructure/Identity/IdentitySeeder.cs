@@ -255,7 +255,7 @@ public sealed class IdentitySeeder(
     {
         var legacy = await appDbContext.ProfileTypes
             .SingleOrDefaultAsync(profileType =>
-                profileType.UserType == userType && profileType.Name == oldName,
+                profileType.Name == oldName,
                 cancellationToken);
         if (legacy is null) { return; }
 
@@ -265,8 +265,7 @@ public sealed class IdentitySeeder(
         // (UserType, Name) constraint.
         var collision = await appDbContext.ProfileTypes
             .AnyAsync(profileType =>
-                profileType.UserType == userType
-                && profileType.Id != legacy.Id
+                profileType.Id != legacy.Id
                 && profileType.Name == newName,
                 cancellationToken);
         if (collision) { return; }
@@ -301,7 +300,7 @@ public sealed class IdentitySeeder(
     {
         var exists = await appDbContext.ProfileTypes
             .AnyAsync(profileType =>
-                profileType.UserType == UserType.Visitor && profileType.Name == name,
+                profileType.Name == name,
                 cancellationToken);
         if (exists) { return; }
 
@@ -311,7 +310,6 @@ public sealed class IdentitySeeder(
             Name = name,
             NameArabic = nameArabic,
             PageColor = pageColor,
-            UserType = UserType.Visitor,
             IsForVisitor = isVisitor,
             MobileAppRole = mobileAppRole,
             IsActive = true,

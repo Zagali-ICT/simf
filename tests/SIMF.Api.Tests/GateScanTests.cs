@@ -351,7 +351,6 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             Id = id,
             Name = name,
             NameArabic = name,
-            UserType = userType,
             PageColor = "#244A77",
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,

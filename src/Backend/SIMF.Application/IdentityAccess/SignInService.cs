@@ -581,7 +581,7 @@ public sealed class SignInService(
             new RefreshToken
             {
                 Id = Guid.NewGuid(),
-                CreateBy = user.Id,
+                UserId = user.Id,
                 TokenHash = OpaqueToken.Hash(refreshValue),
                 CreatedAt = now,
                 ExpiresAt = now.Add(RefreshTokenLifetime),

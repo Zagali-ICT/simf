@@ -68,7 +68,7 @@ internal sealed class UserProfileRepository(
         appDbContext.ProfileTypes
             .AsNoTracking()
             .Where(p => p.Id == profileTypeId)
-            .Select(p => new ProfileTypeFacts(p.IsActive, p.UserType))
+            .Select(p => new ProfileTypeFacts(p.IsActive, SIMF.Common.Enums.UserType.Visitor))
             .SingleOrDefaultAsync(cancellationToken);
 
     public async Task<IReadOnlyList<Guid>> FilterActiveInterestIdsAsync(

@@ -703,7 +703,7 @@ internal sealed class BusinessMeetingService(
             }
             foreach (var c in companies)
             {
-                names[$"C:{c.Id}"] = string.IsNullOrWhiteSpace(c.NameAr) ? c.NameEn : c.NameAr;
+                names[$"C:{c.Id}"] = string.IsNullOrWhiteSpace(c.NameArabic) ? c.Name : c.NameArabic;
             }
         }
 

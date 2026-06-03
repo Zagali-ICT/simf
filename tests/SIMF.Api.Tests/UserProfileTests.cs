@@ -503,7 +503,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
             var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var live = await db.RefreshTokens
-                .Where(rt => rt.CreateBy == userId && rt.RevokedAt == null)
+                .Where(rt => rt.UserId == userId && rt.RevokedAt == null)
                 .CountAsync();
             Assert.True(live > 0,
                 "Expected the sign-in to mint at least one live refresh token.");
@@ -525,7 +525,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
 
             // Every refresh token for this user is now revoked.
             var stillLive = await db.RefreshTokens
-                .Where(rt => rt.CreateBy == userId && rt.RevokedAt == null)
+                .Where(rt => rt.UserId == userId && rt.RevokedAt == null)
                 .CountAsync();
             Assert.Equal(0, stillLive);
         }
@@ -662,7 +662,6 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             Name = $"UpsertTier-{Guid.NewGuid():N}",
             NameArabic = "اختبار",
             PageColor = "#1F2937",
-            UserType = UserType.Visitor,
             IsForVisitor = isVisitor,
             IsActive = isActive,
             CreatedAt = DateTimeOffset.UtcNow,

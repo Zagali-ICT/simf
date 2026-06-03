@@ -7,7 +7,7 @@ using SIMF.Application.MeetingRequests.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Programme;
-using SIMF.Domain.MeetingRequests;
+using SIMF.Domain.BusinessMeetings;
 using SIMF.Infrastructure.Persistence;
 
 namespace SIMF.Infrastructure.MeetingRequests;

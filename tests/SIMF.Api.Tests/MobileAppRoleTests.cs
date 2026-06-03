@@ -206,7 +206,6 @@ public sealed class MobileAppRoleTests : IClassFixture<SimfApiFactory>
             Name = $"Partner {Guid.NewGuid():N}",
             NameArabic = "شريك",
             PageColor = "#244A77",
-            UserType = UserType.Visitor,
             IsForVisitor = false,
             MobileAppRole = role,
             IsActive = true,

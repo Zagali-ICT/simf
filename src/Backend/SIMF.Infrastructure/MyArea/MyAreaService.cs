@@ -105,8 +105,8 @@ internal sealed class MyAreaService(
         var account = await accountService.GetProfileAsync(userId, cancellationToken);
 
         return new MyAreaIdentity(
-            profile?.ArabicName ?? string.Empty,
-            profile?.EnglishName ?? string.Empty,
+            profile?.NameArabic ?? string.Empty,
+            profile?.Name ?? string.Empty,
             profile?.QrId,
             account.AvatarUrl,
             profile?.TierEn,

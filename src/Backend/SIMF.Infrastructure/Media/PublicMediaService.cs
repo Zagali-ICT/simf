@@ -62,7 +62,7 @@ internal sealed class PublicMediaService(
                 row.Id,
                 row.Kind,
                 row.TitleEn,
-                row.TitleAr,
+                row.TitleArabic,
                 row.AlbumEn,
                 row.AlbumAr,
                 row.HasImage ? $"/media/{row.Id}/image" : null,

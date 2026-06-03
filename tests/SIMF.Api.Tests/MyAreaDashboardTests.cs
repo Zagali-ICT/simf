@@ -10,7 +10,6 @@ using SIMF.Common.Enums;
 using SIMF.Contracts.Account;
 using SIMF.Contracts.Authentication;
 using SIMF.Domain.BusinessMeetings;
-using SIMF.Domain.MeetingRequests;
 using SIMF.Domain.Organisations;
 using SIMF.Domain.Profiles;
 using SIMF.Domain.Programme;
@@ -197,7 +196,7 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             Name = "VVIP " + Guid.NewGuid().ToString("N")[..4], NameArabic = "كبار الشخصيات",
             PageColor = "#FFD700",
-            UserType = UserType.Visitor, IsForVisitor = true,
+            IsForVisitor = true,
             MobileAppRole = MobileAppRole.None, IsActive = true, CreatedAt = now,
         };
         app.ProfileTypes.Add(profileType);

@@ -160,7 +160,6 @@ internal sealed partial class AdminAccountService
             .SingleOrDefaultAsync(p => p.Id == profileTypeId.Value, cancellationToken);
         if (profileType is null
             || !profileType.IsActive
-            || profileType.UserType != UserType.Visitor
             || profileType.IsForVisitor != expectedIsVisitor)
         {
             await AuditFailure(

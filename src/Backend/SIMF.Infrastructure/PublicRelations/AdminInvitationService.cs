@@ -114,8 +114,8 @@ internal sealed class AdminInvitationService(
             string? profileTypeName = null;
             if (profile is not null)
             {
-                englishName = profile.EnglishName;
-                arabicName = profile.ArabicName;
+                englishName = profile.Name;
+                arabicName = profile.NameArabic;
                 profileTypeName = profile.ProfileTypeName;
                 if (userById.TryGetValue(profile.UserId, out var recipientUser))
                 {
@@ -187,8 +187,8 @@ internal sealed class AdminInvitationService(
             row.SentByUserId,
             sender?.DisplayName ?? string.Empty,
             row.SentToUserProfileId,
-            profile?.EnglishName ?? string.Empty,
-            profile?.ArabicName ?? string.Empty,
+            profile?.Name ?? string.Empty,
+            profile?.NameArabic ?? string.Empty,
             profile?.ProfileTypeName,
             recipientUser?.Email,
             profile?.JobTitle,
@@ -409,8 +409,8 @@ internal sealed class AdminInvitationService(
         var items = pageRows.Select(row => new AdminVipSummary(
             row.Id,
             row.UserId,
-            row.EnglishName,
-            row.ArabicName,
+            row.Name,
+            row.NameArabic,
             row.JobTitle,
             row.ProfileTypeName,
             row.ProfileTypeNameArabic,

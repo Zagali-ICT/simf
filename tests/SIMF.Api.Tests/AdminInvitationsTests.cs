@@ -265,7 +265,7 @@ public sealed class AdminInvitationsTests : IClassFixture<SimfApiFactory>
         };
         var profileType = await appDb.ProfileTypes
             .SingleOrDefaultAsync(pt =>
-                pt.Name == profileTypeName && pt.UserType == UserType.Visitor);
+                pt.Name == profileTypeName);
         if (profileType is null)
         {
             profileType = new UserProfileType
@@ -274,7 +274,6 @@ public sealed class AdminInvitationsTests : IClassFixture<SimfApiFactory>
                 Name = profileTypeName,
                 NameArabic = profileTypeName,
                 PageColor = "#FFD700",
-                UserType = UserType.Visitor,
                 MobileAppRole = MobileAppRole.None,
                 IsActive = true,
                 CreatedAt = DateTimeOffset.UtcNow,

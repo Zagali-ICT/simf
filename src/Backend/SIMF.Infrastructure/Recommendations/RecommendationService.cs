@@ -119,8 +119,8 @@ internal sealed class RecommendationService(
 
             ranked.Add(new RecommendationEntry(
                 candidate.Id,
-                candidate.EnglishName,
-                candidate.ArabicName,
+                candidate.Name,
+                candidate.NameArabic,
                 candidate.JobTitle,
                 candidate.ProfileTypeName,
                 candidate.ProfileTypeNameArabic,

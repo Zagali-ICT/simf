@@ -64,7 +64,7 @@ internal sealed class QrResolver(
             profileRow.profileTypeNameAr,
             profileRow.profileTypePageColor,
             userRow.DisplayName ?? string.Empty,
-            profileRow.ArabicName);
+            profileRow.NameArabic);
     }
 }
 

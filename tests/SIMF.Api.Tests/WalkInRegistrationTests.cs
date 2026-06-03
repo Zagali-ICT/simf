@@ -204,8 +204,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var seeded = await appDb.ProfileTypes
-            .FirstOrDefaultAsync(p => p.UserType == UserType.Visitor
-                                       && p.IsForVisitor == true
+            .FirstOrDefaultAsync(p => p.IsForVisitor == true
                                        && p.IsActive);
         if (seeded is not null) return seeded.Id;
         var fresh = new UserProfileType
@@ -214,7 +213,6 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             Name = "Visitor — WalkInTestSeed",
             NameArabic = "زائر — اختبار",
             PageColor = "#3B82F6",
-            UserType = UserType.Visitor,
             IsForVisitor = true,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
@@ -233,8 +231,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         // D-186: partner-side ProfileTypes are UserType.Visitor with
         // IsVisitor=false.
         var seeded = await appDb.ProfileTypes
-            .FirstOrDefaultAsync(p => p.UserType == UserType.Visitor
-                                       && p.IsForVisitor == false
+            .FirstOrDefaultAsync(p => p.IsForVisitor == false
                                        && p.IsActive);
         if (seeded is not null) return seeded.Id;
         var fresh = new UserProfileType
@@ -243,7 +240,6 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             Name = "Other — WalkInTestSeed",
             NameArabic = "أخرى — اختبار",
             PageColor = "#10B981",
-            UserType = UserType.Visitor,
             IsForVisitor = false,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,

@@ -118,7 +118,6 @@ public sealed class ProfileTypePickerTests : IClassFixture<SimfApiFactory>
             Name = name,
             NameArabic = "اختبار",
             PageColor = "#3B82F6",
-            UserType = UserType.Visitor,
             IsForVisitor = isVisitor,
             IsActive = isActive,
             CreatedAt = DateTimeOffset.UtcNow,

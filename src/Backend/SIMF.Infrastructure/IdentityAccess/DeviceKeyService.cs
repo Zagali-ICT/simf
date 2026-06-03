@@ -89,7 +89,7 @@ internal sealed class DeviceKeyService(
         var deviceKey = new DeviceKey
         {
             Id = Guid.NewGuid(),
-            CreatedAt = callerUserId,
+            UserId = callerUserId,
             PublicKey = publicKey,
             Algorithm = algorithm,
             Label = label,
@@ -120,7 +120,7 @@ internal sealed class DeviceKeyService(
     {
         var rows = await identityDbContext.DeviceKeys
             .AsNoTracking()
-            .Where(k => k.CreatedAt == callerUserId)
+            .Where(k => k.UserId == callerUserId)
             .OrderByDescending(k => k.CreatedAt)
             .ToListAsync(cancellationToken);
         return rows.Select(ToEntry).ToList();
@@ -204,7 +204,7 @@ internal sealed class DeviceKeyService(
         deviceKey.LastUsedAt = timeProvider.GetUtcNow();
         await identityDbContext.SaveChangesAsync(cancellationToken);
 
-        var user = await accounts.FindByIdAsync(deviceKey.CreatedAt, cancellationToken);
+        var user = await accounts.FindByIdAsync(deviceKey.UserId, cancellationToken);
         if (user is null || user.AccountState == AccountState.Disabled)
         {
             await AuditFailureAsync(request.DeviceKeyId,
@@ -229,7 +229,7 @@ internal sealed class DeviceKeyService(
                 "Device key not found.",
                 "لم يتم العثور على مفتاح الجهاز.");
 
-        if (!actorIsAdministrator && deviceKey.CreatedAt != actorUserId)
+        if (!actorIsAdministrator && deviceKey.UserId != actorUserId)
         {
             throw new ApiException(
                 ErrorCodes.DeviceKeyNotFound, 404,
@@ -252,7 +252,7 @@ internal sealed class DeviceKeyService(
             EventType = AuditEvents.DeviceKeyRevoked,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            SubjectUserId = deviceKey.CreatedAt,
+            SubjectUserId = deviceKey.UserId,
             Detail = $"deviceKeyId={deviceKey.Id}; admin={actorIsAdministrator}",
         }, cancellationToken);
     }
@@ -304,7 +304,7 @@ internal sealed class DeviceKeyService(
             new RefreshToken
             {
                 Id = Guid.NewGuid(),
-                CreateBy = user.Id,
+                UserId = user.Id,
                 TokenHash = OpaqueToken.Hash(refreshValue),
                 CreatedAt = now,
                 ExpiresAt = now.Add(RefreshTokenLifetime),
@@ -351,7 +351,7 @@ internal sealed class DeviceKeyService(
     }
 
     private static DeviceKeyEntry ToEntry(DeviceKey deviceKey) =>
-        new(deviceKey.Id, deviceKey.CreatedAt, deviceKey.Algorithm,
+        new(deviceKey.Id, deviceKey.UserId, deviceKey.Algorithm,
             deviceKey.Label, deviceKey.CreatedAt, deviceKey.LastUsedAt,
             deviceKey.RevokedAt);
 }

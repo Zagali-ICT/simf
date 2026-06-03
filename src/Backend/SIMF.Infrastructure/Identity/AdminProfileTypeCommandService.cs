@@ -41,12 +41,6 @@ internal sealed class AdminProfileTypeCommandService(
                 || EF.Functions.Like(profileType.NameArabic, $"%{term}%"));
         }
 
-        if (query.Filters.TryGetValue("userType", out var userTypeFilter)
-            && !string.IsNullOrWhiteSpace(userTypeFilter)
-            && Enum.TryParse<UserType>(userTypeFilter, ignoreCase: true, out var parsedUserType))
-        {
-            rows = rows.Where(profileType => profileType.UserType == parsedUserType);
-        }
         if (query.Filters.TryGetValue("name", out var nameFilter)
             && !string.IsNullOrWhiteSpace(nameFilter))
         {
@@ -71,11 +65,8 @@ internal sealed class AdminProfileTypeCommandService(
             ("name", false) => rows.OrderBy(profileType => profileType.Name),
             ("namearabic", true) => rows.OrderByDescending(profileType => profileType.NameArabic),
             ("namearabic", false) => rows.OrderBy(profileType => profileType.NameArabic),
-            ("usertype", true) => rows.OrderByDescending(profileType => profileType.UserType),
-            ("usertype", false) => rows.OrderBy(profileType => profileType.UserType),
             ("createdat", false) => rows.OrderBy(profileType => profileType.CreatedAt),
-            _ => rows.OrderBy(profileType => profileType.UserType)
-                     .ThenBy(profileType => profileType.Name),
+            _ => rows.OrderBy(profileType => profileType.Name),
         };
 
         var total = await rows.CountAsync(cancellationToken);
@@ -87,7 +78,7 @@ internal sealed class AdminProfileTypeCommandService(
                 profileType.Name,
                 profileType.NameArabic,
                 profileType.PageColor,
-                profileType.UserType.ToString(),
+                nameof(UserType.Visitor),
                 profileType.MobileAppRole.ToString(),
                 profileType.IsActive,
                 profileType.IsForVisitor))
@@ -134,7 +125,7 @@ internal sealed class AdminProfileTypeCommandService(
         var clash = await dbContext.ProfileTypes
             .AsNoTracking()
             .AnyAsync(
-                row => row.UserType == userType && row.Name == name,
+                row => row.Name == name,
                 cancellationToken);
         if (clash)
         {
@@ -153,7 +144,6 @@ internal sealed class AdminProfileTypeCommandService(
             Name = name,
             NameArabic = nameArabic,
             PageColor = pageColor,
-            UserType = userType,
             // D-186: IsVisitor drives CP queue routing — true = Visitors
             // approval queue, false = Others approval queue.
             IsForVisitor = request.IsVisitor,
@@ -200,15 +190,14 @@ internal sealed class AdminProfileTypeCommandService(
                 .AsNoTracking()
                 .AnyAsync(
                     row => row.Id != id
-                        && row.UserType == profileType.UserType
                         && row.Name == name,
                     cancellationToken);
             if (clash)
             {
                 throw new ApiException(
                     ErrorCodes.ProfileTypeNameTaken, 409,
-                    $"A profile type named '{name}' already exists for {profileType.UserType}.",
-                    $"يوجد نوع ملف شخصي بالاسم '{name}' لـ {profileType.UserType} بالفعل.");
+                    $"A profile type named '{name}' already exists.",
+                    $"يوجد نوع ملف شخصي بالاسم '{name}' بالفعل.");
             }
         }
 
@@ -307,7 +296,7 @@ internal sealed class AdminProfileTypeCommandService(
             profileType.Name,
             profileType.NameArabic,
             profileType.PageColor,
-            profileType.UserType.ToString(),
+            nameof(UserType.Visitor),
             profileType.MobileAppRole.ToString(),
             profileType.IsActive,
             profileType.IsForVisitor);

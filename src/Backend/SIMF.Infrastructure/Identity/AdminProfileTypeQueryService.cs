@@ -32,18 +32,21 @@ internal sealed class AdminProfileTypeQueryService(
     public async Task<IReadOnlyList<AdminProfileTypeSummary>> ListProfileTypesAsync(
         UserType userType, CancellationToken cancellationToken = default)
     {
+        // D-186: every profile type is Visitor-scope; echo the requested
+        // scope for the wire-stable UserType field.
+        var scope = userType.ToString();
         return await dbContext.ProfileTypes
-            .Where(profileType => profileType.UserType == userType && profileType.IsActive)
+            .Where(profileType => profileType.IsActive)
             .OrderBy(profileType => profileType.Name)
             .Select(profileType => new AdminProfileTypeSummary(
                 profileType.Id,
                 profileType.Name,
                 profileType.NameArabic,
                 profileType.PageColor,
-                profileType.UserType.ToString(),
+                scope,
                 profileType.MobileAppRole.ToString(),
                 profileType.IsActive,
-                profileType.IsVisitor))
+                profileType.IsForVisitor))
             .ToListAsync(cancellationToken);
     }
 }

@@ -214,8 +214,7 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
         // D-186: partner-side profile types live under UserType.Visitor
         // with IsVisitor=false. The CP "Others" queue filters this set.
         var seeded = await appDb.ProfileTypes
-            .FirstOrDefaultAsync(p => p.UserType == UserType.Visitor
-                                       && p.IsForVisitor == false
+            .FirstOrDefaultAsync(p => p.IsForVisitor == false
                                        && p.IsActive);
         if (seeded is not null) { return seeded.Id; }
         var fresh = new UserProfileType
@@ -224,7 +223,6 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
             Name = "Other — PendingReadTestSeed",
             NameArabic = "أخرى — اختبار",
             PageColor = "#10B981",
-            UserType = UserType.Visitor,
             IsForVisitor = false,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,

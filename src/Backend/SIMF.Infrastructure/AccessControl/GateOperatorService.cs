@@ -507,7 +507,7 @@ internal sealed class GateOperatorService(
                     .SingleOrDefaultAsync(cancellationToken)
                     ?? string.Empty;
                 profile = new GateScanUserProfile(
-                    row.Id, displayName, row.ArabicName,
+                    row.Id, displayName, row.NameArabic,
                     row.ProfileTypeId,
                     row.ProfileTypeName,
                     row.ProfileTypePageColor);

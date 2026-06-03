@@ -252,7 +252,7 @@ internal sealed partial class AdminAccountService(
                 ErrorCodes.AdminProfileTypeInvalid, 400,
                 "The selected profile type is not valid.",
                 "نوع الملف الشخصي المحدّد غير صالح.");
-        if (!profileType.IsActive || profileType.UserType != UserType.Visitor)
+        if (!profileType.IsActive)
         {
             throw new ApiException(
                 ErrorCodes.AdminProfileTypeInvalid, 400,
@@ -472,7 +472,7 @@ internal sealed partial class AdminAccountService(
                     "The selected profile type is not valid or no longer active.",
                     "نوع الملف الشخصي المحدّد غير صالح أو لم يعد مفعّلاً.");
             }
-            if (profileType.UserType != userType)
+            if (userType != UserType.Visitor)
             {
                 throw new ApiException(
                     ErrorCodes.AdminProfileTypeInvalid, 400,
@@ -877,8 +877,7 @@ internal sealed partial class AdminAccountService(
         // ProfileTypeId — they were invisible to BOTH queues.
         var partnerProfileTypeIds = await appDbContext.ProfileTypes
             .AsNoTracking()
-            .Where(p => p.IsForVisitor == false
-                        && p.UserType == UserType.Visitor)
+            .Where(p => p.IsForVisitor == false)
             .Select(p => p.Id)
             .ToListAsync(cancellationToken);
 

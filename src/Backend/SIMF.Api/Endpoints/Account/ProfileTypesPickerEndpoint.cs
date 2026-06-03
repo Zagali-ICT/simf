@@ -55,17 +55,17 @@ public sealed class ProfileTypesPickerEndpoint(SimfAppDbContext appDb)
         // IsActive filter so soft-deleted rows never appear.
         var query = appDb.ProfileTypes
             .AsNoTracking()
-            .Where(p => p.IsActive && p.UserType == UserType.Visitor);
+            .Where(p => p.IsActive);
 
         if (req.IsVisitor is { } flag)
         {
-            query = query.Where(p => p.IsVisitor == flag);
+            query = query.Where(p => p.IsForVisitor == flag);
         }
 
         var rows = await query
             .OrderBy(p => p.Name)
             .Select(p => new ProfileTypePickerDto(
-                p.Id, p.Name, p.NameArabic, p.PageColor, p.IsVisitor))
+                p.Id, p.Name, p.NameArabic, p.PageColor, p.IsForVisitor))
             .ToArrayAsync(ct);
 
         await Send.OkAsync(

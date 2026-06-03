@@ -210,8 +210,7 @@ Assert.Equal(UserType.Visitor, copy!.UserType);
         // with IsVisitor=false on first boot. Partner-side seeded rows
         // are the ones the CP "Others" page filters on.
         var seeded = await appDb.ProfileTypes
-            .FirstOrDefaultAsync(p => p.UserType == UserType.Visitor
-                                       && p.IsForVisitor == false
+            .FirstOrDefaultAsync(p => p.IsForVisitor == false
                                        && p.IsActive);
         if (seeded is not null) return seeded.Id;
         // Defensive fallback for environments where the seeder did not run.
@@ -221,7 +220,6 @@ Assert.Equal(UserType.Visitor, copy!.UserType);
             Name = "Other — TestSeed",
             NameArabic = "أخرى — اختبار",
             PageColor = "#10B981",
-            UserType = UserType.Visitor,
             IsForVisitor = false,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,

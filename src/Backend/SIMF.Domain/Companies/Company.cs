@@ -26,14 +26,16 @@ public sealed class Company : BaseAuditEntity
     /// <summary>Whether the company is an exhibitor or a sponsor.</summary>
     public CompanyType Type { get; set; } = CompanyType.Exhibitor;
 
-    /// <summary>Optional primary contact email (≤320 chars).</summary>
-    /*public string? ContactEmail { get; set; }
-    all in contac
+    /// <summary>Optional primary contact email (≤320 chars). Retained per
+    /// SIMF-FDS-014 (D-260): the entity keeps its own inline contact; the linked
+    /// <see cref="Contact"/> is the fallback when these are null.</summary>
+    public string? ContactEmail { get; set; }
+
     /// <summary>Optional primary contact phone (≤32 chars).</summary>
     public string? ContactPhone { get; set; }
 
     /// <summary>Optional company website (≤512 chars).</summary>
-    public string? Website { get; set; }*/
+    public string? Website { get; set; }
 
     /// <summary>SIMF-FDS-014 (D-260) — optional link to the shared <c>Contact</c>
     /// directory record (logo / name / phones / social / website / location /

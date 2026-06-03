@@ -28,10 +28,6 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserPr
             .HasMaxLength(32)
             .IsRequired();
 
-        builder.Property(profileType => profileType.UserType)
-            .HasConversion<string>()
-            .HasMaxLength(16);
-
         // D-161 — MobileAppRole persisted as the stringly enum value
         // (None / Visitor / Staff / Moderator) so a DBA reading the
         // table can interpret the column without an out-of-band
@@ -49,12 +45,9 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserPr
             .HasDefaultValue(true)
             .IsRequired();
 
-        // The picker filters by (UserType, IsActive) — keep one
-        // composite index so the dropdown is one lookup. D-186 adds
-        // IsVisitor to a second composite index so the CP Others-
-        // approval-queue filter (IsVisitor=false on the Visitor pool)
-        // hits an index too.
-        builder.HasIndex(profileType => new { profileType.UserType, profileType.IsActive });
+        // D-186 — after the UserType collapse every profile type is
+        // Visitor-scope; the CP picker + approval queues filter by
+        // (IsForVisitor, IsActive), so one composite index serves both.
         builder.HasIndex(profileType => new { profileType.IsForVisitor, profileType.IsActive });
     }
 }

@@ -398,7 +398,7 @@ internal sealed class AdminGateService(
                 row.Id,
                 DisplayName = profileUserDisplayNames.TryGetValue(row.UserId, out var name)
                     ? name : string.Empty,
-                row.ArabicName,
+                row.NameArabic,
                 row.ProfileTypeId,
                 ProfileType = row.ProfileType,
             });
@@ -411,7 +411,7 @@ internal sealed class AdminGateService(
                 return new AdminCurrentlyInsideRow(
                     x.UserProfileId,
                     profile.DisplayName,
-                    profile.ArabicName,
+                    profile.NameArabic,
                     profile.ProfileTypeId,
                     profile.ProfileType?.Name,
                     profile.ProfileType?.PageColor,
