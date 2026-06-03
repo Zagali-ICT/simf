@@ -34,7 +34,8 @@
                       PageSizeLabel="@L["Admin.Halls.Pager.PageSize"]"
                       PageFormatter="@FormatPage"
                       LoadingLabel="@L["Admin.Halls.Loading"]"
-                      FilterPlaceholder="@L["Admin.Halls.FilterPlaceholder"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
                       ActionsHeader="@L["Admin.Halls.Column.Actions"]"
                       SelectAllLabel="@L["Admin.Halls.Action.SelectAll"]"
                       SelectRowLabel="@L["Admin.Halls.Action.SelectRow"]"
@@ -45,15 +46,15 @@
                       SummaryFormatter="@FormatSummary">
             <Columns>
                 <SimfDataGridColumn TItem="AdminHallSummary" Key="code"
-                                    Header="@L["Admin.Halls.Column.Code"]" Sortable="true">
+                                    Header="@L["Admin.Halls.Column.Code"]" Sortable="true" Filterable="true">
                     <CellTemplate>@context.Code</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminHallSummary" Key="name"
-                                    Header="@L["Admin.Halls.Column.Name"]" Sortable="true">
+                                    Header="@L["Admin.Halls.Column.Name"]" Sortable="true" Filterable="true">
                     <CellTemplate>@context.Name</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminHallSummary" Key="nameArabic"
-                                    Header="@L["Admin.Halls.Column.NameArabic"]">
+                                    Header="@L["Admin.Halls.Column.NameArabic"]" Sortable="true" Filterable="true">
                     <CellTemplate>@context.NameArabic</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminHallSummary" Key="capacity"
@@ -61,7 +62,7 @@
                     <CellTemplate>@context.Capacity</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminHallSummary" Key="floor"
-                                    Header="@L["Admin.Halls.Column.Floor"]">
+                                    Header="@L["Admin.Halls.Column.Floor"]" Filterable="true">
                     <CellTemplate>@(context.Floor ?? "—")</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminHallSummary" Key="isActive"

@@ -42,12 +42,37 @@ internal sealed class AdminHallService(
             rows = rows.Where(hall => hall.IsActive == isActive);
         }
 
+        // CP grid per-column text filters (D-255). Unknown columns are ignored;
+        // isActive is handled above. Floor is nullable, so guard the null case.
+        foreach (var (column, raw) in query.Filters)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "code":
+                    rows = rows.Where(hall => hall.Code.Contains(v));
+                    break;
+                case "name":
+                    rows = rows.Where(hall => hall.Name.Contains(v));
+                    break;
+                case "namearabic":
+                    rows = rows.Where(hall => hall.NameArabic.Contains(v));
+                    break;
+                case "floor":
+                    rows = rows.Where(hall => hall.Floor != null && hall.Floor.Contains(v));
+                    break;
+            }
+        }
+
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("code", true) => rows.OrderByDescending(hall => hall.Code),
             ("code", false) => rows.OrderBy(hall => hall.Code),
             ("name", true) => rows.OrderByDescending(hall => hall.Name),
             ("name", false) => rows.OrderBy(hall => hall.Name),
+            ("namearabic", true) => rows.OrderByDescending(hall => hall.NameArabic),
+            ("namearabic", false) => rows.OrderBy(hall => hall.NameArabic),
             ("capacity", true) => rows.OrderByDescending(hall => hall.Capacity),
             ("capacity", false) => rows.OrderBy(hall => hall.Capacity),
             _ => rows.OrderBy(hall => hall.Code),

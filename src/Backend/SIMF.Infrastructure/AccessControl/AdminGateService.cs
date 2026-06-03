@@ -36,6 +36,27 @@ internal sealed class AdminGateService(
 
         var rows = appDbContext.Gates.AsNoTracking().AsQueryable();
 
+        // CP grid per-column filters (D-255). Unknown columns are ignored;
+        // isActive is a status filter handled below. Code/Name/NameArabic
+        // are server-side substring matches on App-owned columns.
+        foreach (var (column, raw) in query.Filters)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "code":
+                    rows = rows.Where(gate => gate.Code.Contains(v));
+                    break;
+                case "name":
+                    rows = rows.Where(gate => gate.Name.Contains(v));
+                    break;
+                case "namearabic":
+                    rows = rows.Where(gate => gate.NameArabic.Contains(v));
+                    break;
+            }
+        }
+
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var term = query.Search.Trim();
@@ -56,6 +77,8 @@ internal sealed class AdminGateService(
             ("code", false) => rows.OrderBy(gate => gate.Code),
             ("name", true) => rows.OrderByDescending(gate => gate.Name),
             ("name", false) => rows.OrderBy(gate => gate.Name),
+            ("namearabic", true) => rows.OrderByDescending(gate => gate.NameArabic),
+            ("namearabic", false) => rows.OrderBy(gate => gate.NameArabic),
             ("directionmode", true) => rows.OrderByDescending(gate => gate.DirectionMode),
             ("directionmode", false) => rows.OrderBy(gate => gate.DirectionMode),
             ("createdat", true) => rows.OrderByDescending(gate => gate.CreatedAt),

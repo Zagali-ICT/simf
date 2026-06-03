@@ -44,15 +44,18 @@
                       PageSizeLabel="@L["Admin.Pending.Pager.PageSize"]"
                       PageFormatter="@FormatPage"
                       LoadingLabel="@L["Admin.Users.Loading"]"
-                      FilterPlaceholder="@L["Admin.Users.FilterPlaceholder"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
                       SummaryFormatter="@FormatSummary">
             <Columns>
                 <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="email"
-                                    Header="@L["Admin.Users.Column.Email"]">
+                                    Header="@L["Admin.Users.Column.Email"]"
+                                    Sortable="true" Filterable="true">
                     <CellTemplate>@context.Email</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="displayName"
-                                    Header="@L["Admin.Users.Column.DisplayName"]">
+                                    Header="@L["Admin.Users.Column.DisplayName"]"
+                                    Sortable="true" Filterable="true">
                     <CellTemplate>@context.DisplayName</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="created"

@@ -35,7 +35,8 @@
                       PageSizeLabel="@L["Admin.Gates.Pager.PageSize"]"
                       PageFormatter="@FormatPage"
                       LoadingLabel="@L["Admin.Gates.Loading"]"
-                      FilterPlaceholder="@L["Admin.Gates.FilterPlaceholder"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
                       ActionsHeader="@L["Admin.Gates.Column.Actions"]"
                       SelectAllLabel="@L["Admin.Gates.Action.SelectAll"]"
                       SelectRowLabel="@L["Admin.Gates.Action.SelectRow"]"
@@ -46,15 +47,15 @@
                       SummaryFormatter="@FormatSummary">
             <Columns>
                 <SimfDataGridColumn TItem="AdminGateSummary" Key="code"
-                                    Header="@L["Admin.Gates.Column.Code"]" Sortable="true">
+                                    Header="@L["Admin.Gates.Column.Code"]" Sortable="true" Filterable="true">
                     <CellTemplate>@context.Code</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminGateSummary" Key="name"
-                                    Header="@L["Admin.Gates.Column.Name"]" Sortable="true">
+                                    Header="@L["Admin.Gates.Column.Name"]" Sortable="true" Filterable="true">
                     <CellTemplate>@context.Name</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminGateSummary" Key="nameArabic"
-                                    Header="@L["Admin.Gates.Column.NameArabic"]">
+                                    Header="@L["Admin.Gates.Column.NameArabic"]" Sortable="true" Filterable="true">
                     <CellTemplate>@context.NameArabic</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminGateSummary" Key="directionMode"

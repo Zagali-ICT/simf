@@ -132,6 +132,17 @@ internal sealed class AdminOperationLogService(
                 row.SubjectEmail != null
                 && EF.Functions.Like(row.SubjectEmail, $"%{term}%"));
         }
+        // Per-column grid filter on the source IP (the `sourceIp` column the
+        // viewer exposes as Filterable). SourceIp is a plain stored column on
+        // the entry, so it is server-filterable with a Like.
+        if (query.Filters.TryGetValue("sourceIp", out var sourceIp)
+            && !string.IsNullOrWhiteSpace(sourceIp))
+        {
+            var term = sourceIp.Trim();
+            rows = rows.Where(row =>
+                row.SourceIp != null
+                && EF.Functions.Like(row.SourceIp, $"%{term}%"));
+        }
         if (query.Filters.TryGetValue("from", out var fromRaw)
             && DateTimeOffset.TryParse(fromRaw, out var from))
         {
@@ -159,6 +170,10 @@ internal sealed class AdminOperationLogService(
                                      .ThenByDescending(row => row.TimestampUtc),
             ("outcome", false) => rows.OrderBy(row => row.Outcome)
                                       .ThenByDescending(row => row.TimestampUtc),
+            ("sourceip", true) => rows.OrderByDescending(row => row.SourceIp)
+                                      .ThenByDescending(row => row.TimestampUtc),
+            ("sourceip", false) => rows.OrderBy(row => row.SourceIp)
+                                       .ThenByDescending(row => row.TimestampUtc),
             ("timestamputc", false) => rows.OrderBy(row => row.TimestampUtc),
             _ => rows.OrderByDescending(row => row.TimestampUtc),
         };

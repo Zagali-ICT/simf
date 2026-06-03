@@ -88,6 +88,8 @@
                       RowKey="@(r => r.Id.ToString())"
                       RowLabel="@(r => r.EventType)"
                       Caption="@L["Admin.OperationLog.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
                       OnDetailsOne="OnDetailsAsync"
                       PrevLabel="@L["Admin.OperationLog.Prev"]"
                       NextLabel="@L["Admin.OperationLog.Next"]"
@@ -131,7 +133,8 @@
                     <CellTemplate>@(context.SubjectEmail ?? "—")</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminOperationLogSummary" Key="sourceIp"
-                                    Header="@L["Admin.OperationLog.Column.SourceIp"]">
+                                    Header="@L["Admin.OperationLog.Column.SourceIp"]"
+                                    Sortable="true" Filterable="true">
                     <CellTemplate>@(context.SourceIp ?? "—")</CellTemplate>
                 </SimfDataGridColumn>
             </Columns>

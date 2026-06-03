@@ -960,9 +960,32 @@ internal sealed partial class AdminAccountService(
                 || EF.Functions.Like(u.DisplayName, $"%{term}%"));
         }
 
+        // -- Per-column filters (CP grid Filterable columns: email, displayName) --
+        if (query.Filters.TryGetValue("email", out var emailFilter)
+            && !string.IsNullOrWhiteSpace(emailFilter))
+        {
+            users = users.Where(u =>
+                u.Email != null && EF.Functions.Like(u.Email, $"%{emailFilter}%"));
+        }
+        if (query.Filters.TryGetValue("displayName", out var nameFilter)
+            && !string.IsNullOrWhiteSpace(nameFilter))
+        {
+            users = users.Where(u => EF.Functions.Like(u.DisplayName, $"%{nameFilter}%"));
+        }
+
+        // -- Sort (Sortable columns: email, displayName; default newest-first) --
+        users = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
+        {
+            ("email", true) => users.OrderByDescending(u => u.Email),
+            ("email", false) => users.OrderBy(u => u.Email),
+            ("displayname", true) => users.OrderByDescending(u => u.DisplayName),
+            ("displayname", false) => users.OrderBy(u => u.DisplayName),
+            // Natural order: newest first (the `created` column is not sortable).
+            _ => users.OrderByDescending(u => u.CreatedAt),
+        };
+
         var total = await users.CountAsync(cancellationToken);
         var page = await users
-            .OrderByDescending(u => u.CreatedAt)
             .Skip(skip).Take(top)
             .Select(u => new AdminPendingUserSummary(
                 u.Id, u.Email!, u.DisplayName, u.CreatedAt))
