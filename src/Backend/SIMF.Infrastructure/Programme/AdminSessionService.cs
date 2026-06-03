@@ -145,6 +145,9 @@ internal sealed class AdminSessionService(
             StartUtc = request.StartUtc,
             EndUtc = request.EndUtc,
             CapacityOverride = request.CapacityOverride,
+            // §8 — live broadcast stream URLs (manual stub provider).
+            LiveStreamUrl = NullIfBlank(request.LiveStreamUrl),
+            LiveSignLanguageUrl = NullIfBlank(request.LiveSignLanguageUrl),
             IsActive = true,
             CreatedAt = now,
         };
@@ -233,6 +236,9 @@ internal sealed class AdminSessionService(
         session.StartUtc = request.StartUtc;
         session.EndUtc = request.EndUtc;
         session.CapacityOverride = request.CapacityOverride;
+        // §8 — live broadcast stream URLs (manual stub provider).
+        session.LiveStreamUrl = NullIfBlank(request.LiveStreamUrl);
+        session.LiveSignLanguageUrl = NullIfBlank(request.LiveSignLanguageUrl);
         session.IsActive = request.IsActive;
         session.UpdatedAt = timeProvider.GetUtcNow();
 
@@ -649,6 +655,8 @@ internal sealed class AdminSessionService(
             session.RecordingStoredFileName is not null,
             session.RecordingFileName,
             session.RecordingSizeBytes,
-            session.RecordingUploadedAt);
+            session.RecordingUploadedAt,
+            session.LiveStreamUrl,
+            session.LiveSignLanguageUrl);
     }
 }

@@ -16,7 +16,9 @@ Arabic-primary.
    - **وصف الجلسة** — heading + description paragraph.
    - **المتحدثون** — heading + speaker cards (`ag-d-spk` → `sp`): round avatar +
      name (`b`) + rank/role (`small`, e.g. `القبطان البحري · RSNF`, host = `المضيف`).
-     Each card is tappable → Speaker profile (20).
+     The avatar is the speaker **photo** (`photoRelativePath`); a small **country
+     flag** (from `countryId`) sits on the card with the country name as
+     tooltip / fallback (D-271). Each card is tappable → Speaker profile (20).
    - **مقعدي** *(login + reservation only)* — a **brass-bordered** card
      (`ag-d-seat`): a small seat glyph + `الصف <span dir="ltr">B</span> · مقعد
      <span dir="ltr">12</span>` + a sub-line (`تأكد من إبراز بطاقتك عند الدخول`) +
@@ -35,7 +37,10 @@ Arabic-primary.
   `/agenda/:sessionId/my-seat`, reusing the same seat-map payload.
 - **Category pill** renders only when `categoryName` is present (the "main
   session" / type tag).
-- **Speaker card** tap → `/speakers/:speakerId`.
+- **Speaker card** binds to the cached `speakers[]`: **avatar** ←
+  `photoRelativePath` (placeholder when null), **flag** ← `countryId` (the client
+  maps the id → a flag asset; hide when null), **country label / tooltip** ←
+  `countryNameAr` / `countryNameEn` per locale (D-271). Tap → `/speakers/:speakerId`.
 - **أضف إلى تقويمي** → build a calendar event from the cached session → OS
   add-event intent. **تذكير** → schedule a local notification. Both client-local
   (Page_017_API E4).
@@ -49,6 +54,12 @@ Arabic-primary.
   endpoint 404s → a "session removed / not found" placeholder.
 - **Offline** — the whole screen (and both CTAs) renders from the cached session;
   only the optional live seat-count refresh is skipped.
+- **Live / recorded affordance (links out, D-271)** — when the refreshed detail
+  has a non-null `liveStreamUrl` the screen exposes a **LIVE** entry into the live
+  player (**screen 25**); a recorded session links to the same screen for playback
+  + the AI summary (محضر). Questions deep-link to **screen 26** (open only in the
+  5-min-before → end window — Page_017_Logic L-9). These are navigation targets,
+  not rendered inline on screen 17.
 
 ## RTL / localization
 - Whole screen mirrored RTL; the back chevron and `عرض ←` follow RTL.
@@ -56,3 +67,6 @@ Arabic-primary.
   device tz.
 - Inside the Arabic seat phrase, the **row letter and seat number are `dir="ltr"`**
   (per the mockup) so `B` and `12` read correctly within the RTL line.
+- The speaker **flag** (from `countryId`) and **avatar** (`photoRelativePath`) are
+  locale-neutral graphics; the **country name** uses `countryNameAr` /
+  `countryNameEn` per locale (D-271).

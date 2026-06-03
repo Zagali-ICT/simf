@@ -27,14 +27,13 @@ internal sealed class SessionQuestionService(
     IQuestionAiFilter questionAiFilter,
     ILogger<SessionQuestionService> logger) : ISessionQuestionService
 {
-    /// <summary>How long after a session ends to keep accepting
-    /// questions. PDF §2.10 doesn't pin this; one hour matches the
-    /// typical Q&amp;A window after a talk.</summary>
-    private static readonly TimeSpan PostEndWindow = TimeSpan.FromHours(1);
+    /// <summary>§7 (owner spec "تقفل بنهاية الجلسة") — questions close at the
+    /// end of the session: zero grace after <c>EndUtc</c>.</summary>
+    private static readonly TimeSpan PostEndWindow = TimeSpan.Zero;
 
-    /// <summary>How long before a session starts to begin accepting
-    /// questions (audience pre-submits while seating).</summary>
-    private static readonly TimeSpan PreStartWindow = TimeSpan.FromMinutes(15);
+    /// <summary>§7 (owner spec "قبل الجلسة بخمس دقائق") — questions open five
+    /// minutes before the session starts.</summary>
+    private static readonly TimeSpan PreStartWindow = TimeSpan.FromMinutes(5);
 
     public async Task<SessionQuestionSubmitted> SubmitAsync(
         Guid sessionId,

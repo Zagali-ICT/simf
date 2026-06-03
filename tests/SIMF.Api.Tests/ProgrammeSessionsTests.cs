@@ -3,13 +3,17 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Programme;
+using SIMF.Domain.Common;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.Programme;
+using SIMF.Infrastructure.Persistence;
 using Xunit;
 
 namespace SIMF.Api.Tests;
@@ -80,6 +84,81 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
         var speaker = Assert.Single(item.Speakers!);
         Assert.Equal("Dr. Amal Badawi", speaker.Name);
         Assert.Equal("Chief Scientist", speaker.Title);
+    }
+
+    [Fact]
+    public async Task Session_speaker_carries_country_flag_and_photo()
+    {
+        // §7 (Mockup screen 17 "المتحدثون"): the speaker shown with a session
+        // carries the country (the client renders the flag from CountryId) + the
+        // photo — on both the cached list and the detail.
+        var admin = await CreateAdminAsync();
+        var hallId = await CreateHallAsync(admin);
+        var speakerId = await CreateSpeakerAsync(admin);
+        var start = DateTimeOffset.UtcNow.AddDays(3).Date.AddHours(9);
+        var created = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), start, start.AddHours(1));
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            if (!await db.Countries.AnyAsync(c => c.Id == 682))
+            {
+                db.Countries.Add(new Country
+                {
+                    Id = 682, Code = "SA",
+                    NameEn = "Saudi Arabia", NameAr = "السعودية", DisplayOrder = 0,
+                });
+            }
+            var speaker = await db.Speakers.SingleAsync(s => s.Id == speakerId);
+            speaker.CountryId = 682;
+            speaker.PhotoRelativePath = "speakers/amal.webp";
+            await db.SaveChangesAsync();
+        }
+
+        var list = await _client.GetAsync("/api/v1/app/programme/sessions");
+        var listItem = Assert.Single(
+            (await list.Content.ReadFromJsonAsync<ApiResult<PublicSessions>>())!.Data!.Items,
+            i => i.Id == created.Id);
+        var listSpeaker = Assert.Single(listItem.Speakers!);
+        Assert.Equal(682, listSpeaker.CountryId);
+        Assert.False(string.IsNullOrEmpty(listSpeaker.CountryNameEn));
+        Assert.False(string.IsNullOrEmpty(listSpeaker.CountryNameAr));
+        Assert.Equal("speakers/amal.webp", listSpeaker.PhotoRelativePath);
+
+        var detail = await _client.GetAsync($"/api/v1/app/programme/sessions/{created.Id}");
+        var detailSpeaker = Assert.Single(
+            (await detail.Content.ReadFromJsonAsync<ApiResult<PublicSessionDetail>>())!.Data!.Speakers);
+        Assert.Equal(682, detailSpeaker.CountryId);
+        Assert.Equal("speakers/amal.webp", detailSpeaker.PhotoRelativePath);
+    }
+
+    [Fact]
+    public async Task Session_detail_carries_live_stream_urls_when_set()
+    {
+        // §8 (Mockup screen 25/26): a session with a manually-set live URL is
+        // surfaced to the app (LIVE player); the sign-language feed too.
+        var admin = await CreateAdminAsync();
+        var hallId = await CreateHallAsync(admin);
+        var speakerId = await CreateSpeakerAsync(admin);
+        var start = DateTimeOffset.UtcNow.AddDays(2).Date.AddHours(9);
+        var created = await CreateSessionAsync(admin, hallId, speakerId,
+            Array.Empty<Guid>(), start, start.AddHours(1));
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var session = await db.Sessions.SingleAsync(s => s.Id == created.Id);
+            session.LiveStreamUrl = "https://live.example/stream.m3u8";
+            session.LiveSignLanguageUrl = "https://live.example/sign.m3u8";
+            await db.SaveChangesAsync();
+        }
+
+        var detail = await _client.GetAsync($"/api/v1/app/programme/sessions/{created.Id}");
+        var body = (await detail.Content
+            .ReadFromJsonAsync<ApiResult<PublicSessionDetail>>())!.Data!;
+        Assert.Equal("https://live.example/stream.m3u8", body.LiveStreamUrl);
+        Assert.Equal("https://live.example/sign.m3u8", body.LiveSignLanguageUrl);
     }
 
     [Fact]

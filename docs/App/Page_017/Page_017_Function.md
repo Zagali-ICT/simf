@@ -19,8 +19,10 @@ Users can read the full description and add the session to their calendar").
 2. **Tags row** — the **hall** tag (`القاعة الرئيسية · HALL A`) + the **category**
    tag (`جلسة رئيسية` / "Main session") — the same "type" tag as the agenda.
 3. **وصف الجلسة (Description)** — the full session body.
-4. **المتحدثون (Speakers)** — the ordered speaker cards (avatar · name · rank/role;
-   the host is marked `المضيف`). Each card is tappable.
+4. **المتحدثون (Speakers)** — the ordered speaker cards (photo avatar · name ·
+   rank/role · **country flag**; the host is marked `المضيف`). Each card is
+   tappable. The avatar is the speaker **photo** and the flag is rendered from the
+   speaker's **country id** (D-271).
 5. **مقعدي (My seat) card** — *login + reservation only* — brass-bordered:
    **الصف B · مقعد 12** (Row B · Seat 12) + a `عرض ←` (View) link.
 6. **Two CTAs** — `أضف إلى تقويمي` (Add to my calendar) + `تذكير` (Reminder).
@@ -45,16 +47,34 @@ Users can read the full description and add the session to their calendar").
 ## Acceptance criteria
 - The detail is reachable and fully readable **without signing in**.
 - The session content (title/time/hall/category/description/speakers) renders
-  from the **cached programme** — no per-open round-trip is required.
+  from the **cached programme** — no per-open round-trip is required. Each speaker
+  carries its **country (id + EN/AR name) + photo** (D-271); the card shows the
+  **flag from the country id** and the **avatar from the photo path**.
 - The **my-seat card appears only** for a signed-in approved account that holds an
   active reservation, and shows the correct **row label + seat number**; it is
   **absent** for guest / pending / no-reservation.
 - `عرض ←` opens My Seat map (18); each speaker card opens Speaker profile (20).
 - `أضف إلى تقويمي` produces a standard calendar event for **this** session;
   `تذكير` schedules a local reminder. Both work **offline** (no server call).
+- Each speaker card shows the speaker's **photo avatar** and **country flag**
+  (D-271).
+
+## Related session surfaces (links out — D-271)
+The detail is the launch point for the live session experience (full contracts on
+their own screens — Page_017_Logic L-9):
+- **Ask a question →** the Q&A surface (**screen 26**) — only open **from 5 minutes
+  before the session start until its end**, and only for an **arrived** attendee
+  (else **400 SESSION_NOT_LIVE_FOR_QUESTIONS**).
+- **Watch live / replay + summary →** the live player (**screen 25**) — a **LIVE**
+  player when the session is broadcasting (`liveStreamUrl` set), otherwise the
+  recording + the AI **محضر** summary; the optional **لغة الإشارة** sign-language
+  feed rides the same screen.
+- **Comments** — the standalone comments screen (28) is **removed**; comments now
+  live **inside** the session / live screen (25), passing the AI-filter +
+  admin-moderation pipeline.
 
 ## Where it fits in the journey
-Middle of **Journey E — Agenda planning**: Home (13) → Agenda (16) → **Session
-detail (17)** → add to calendar / reminder / **My Seat (18)** / **Speaker
-profile (20)**. The same session also surfaces in **My Area (14)** under "today's
-schedule".
+Middle of **Journey E — Agenda planning**: Home (13) → **Sessions (16)** →
+**Session detail (17)** → add to calendar / reminder / **My Seat (18)** / **Speaker
+profile (20)** → (live) **Live / Q&A (25/26)**. The same session also surfaces in
+**My Area (14)** under "today's schedule".

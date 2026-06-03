@@ -25,6 +25,10 @@ internal sealed class SessionConfiguration : IEntityTypeConfiguration<Session>
         builder.Property(s => s.RecordingFileName).HasMaxLength(260);
         builder.Property(s => s.RecordingContentType).HasMaxLength(128);
 
+        // §8 — live broadcast stream URLs (manual stub provider).
+        builder.Property(s => s.LiveStreamUrl).HasMaxLength(1024);
+        builder.Property(s => s.LiveSignLanguageUrl).HasMaxLength(1024);
+
         builder.HasIndex(s => s.Code).IsUnique();
 
         // Real DB FK to Hall — same context. Restrict matches the

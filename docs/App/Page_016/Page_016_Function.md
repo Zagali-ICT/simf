@@ -1,17 +1,22 @@
-# Page 016 — Function (الأجندة · Agenda)
+# Page 016 — Function (الجلسات · Sessions)
 
 What the user does on this screen. Grounded in `Mockup.html` screen 16 and the
 Screen Guide SCREEN16 ("Filterable schedule of all sessions, with day selector
 and search").
 
+> **Rename (D-271):** the screen is renamed **الأجندة · Agenda → الجلسات ·
+> Sessions** (title + bottom-nav label + the two filter pills). Behaviour is
+> unchanged; the API route stays `/app/programme/sessions`.
+
 ## Privilege / auth gate
-**Anonymous — Guest and above.** A not-logged-in guest can open the agenda
+**Anonymous — Guest and above.** A not-logged-in guest can open the sessions list
 (Screen Guide Journey C: "the guest can open the agenda, speakers list, map and
 media gallery"). No token required.
 
 ## Elements (top → bottom, from the mockup)
-1. **Top filter pills** — `أجندة قادمة` (Upcoming) / `أجندة الفعالية` (Forum / full).
-   The two view modes the owner described as "open / all-active".
+1. **Top filter pills** — `الجلسات القادمة` (Upcoming) / `جلسات الفعالية` (Forum /
+   full) *(renamed from `أجندة قادمة` / `أجندة الفعالية`, D-271)*. The two view
+   modes the owner described as "open / all-active".
 2. **Day selector strip** — the event days (e.g. SUN 2 … SAT 8), the active day
    highlighted in brass. The owner's "remaining days".
 3. **Search bar** — free-text filter over the list.
@@ -37,10 +42,12 @@ media gallery"). No token required.
   the cached list **in the UI** — no per-filter round-trip.
 - Each cached item carries **Date, Code, Title, Body, Hall (EN/AR), type
   (category), and the ordered speaker list** so both the list row and the detail
-  preview render from the one payload.
+  preview render from the one payload. Each speaker also carries its **country
+  (id + EN/AR name) and photo** (D-271) — the client renders the **flag from the
+  country id** and the **avatar from the photo path**.
 - Sessions are time-ordered; today/active sessions are visually distinguished.
 
 ## Where it fits in the journey
-Start of **Journey E — Agenda planning**: Home (13) → Agenda (16) → tap a session
-→ Session detail (17) → add to calendar / reminder / view seat (18). The same
-session also surfaces in **My Area (14)** under "today's schedule".
+Start of **Journey E — Agenda planning**: Home (13) → **Sessions (16)** → tap a
+session → Session detail (17) → add to calendar / reminder / view seat (18). The
+same session also surfaces in **My Area (14)** under "today's schedule".

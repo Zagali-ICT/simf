@@ -93,6 +93,53 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Questions_are_closed_more_than_five_minutes_before_start()
+    {
+        // §7 ("قبل الجلسة بخمس دقائق") — questions open only 5 min before start;
+        // a session starting in 10 minutes is still closed.
+        var session = await SeedSessionWindowAsync(
+            DateTimeOffset.UtcNow.AddMinutes(10), DateTimeOffset.UtcNow.AddMinutes(70));
+        var visitor = await SignInApprovedVisitorAsync();
+        var response = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions",
+            new SubmitSessionQuestionRequest { QuestionText = "Ten minutes early", IsAtVenue = true },
+            visitor.AccessToken);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionNotLiveForQuestions, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Questions_open_within_five_minutes_before_start()
+    {
+        // §7 — a session starting in 3 minutes accepts questions.
+        var session = await SeedSessionWindowAsync(
+            DateTimeOffset.UtcNow.AddMinutes(3), DateTimeOffset.UtcNow.AddMinutes(63));
+        var visitor = await SignInApprovedVisitorAsync();
+        var response = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions",
+            new SubmitSessionQuestionRequest { QuestionText = "Pre-question", IsAtVenue = true },
+            visitor.AccessToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Questions_are_closed_after_the_session_ends()
+    {
+        // §7 ("تقفل بنهاية الجلسة") — questions close at the end of the session.
+        var session = await SeedSessionWindowAsync(
+            DateTimeOffset.UtcNow.AddMinutes(-70), DateTimeOffset.UtcNow.AddMinutes(-10));
+        var visitor = await SignInApprovedVisitorAsync();
+        var response = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/questions",
+            new SubmitSessionQuestionRequest { QuestionText = "Too late", IsAtVenue = true },
+            visitor.AccessToken);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionNotLiveForQuestions, body.Error!.Code);
+    }
+
+    [Fact]
     public async Task Submit_with_empty_text_is_SESSION_QUESTION_INVALID()
     {
         var admin = await CreateAdministratorAndSignInAsync();
@@ -371,6 +418,39 @@ public sealed class SessionQuestionsTests : IClassFixture<SimfApiFactory>
             HallId = hall.Id,
             StartUtc = DateTimeOffset.UtcNow.AddDays(1),
             EndUtc = DateTimeOffset.UtcNow.AddDays(1).AddHours(1),
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Sessions.Add(session);
+        await db.SaveChangesAsync();
+        return session;
+    }
+
+    // §7 — seed an active session over an explicit time window (no geofence, so
+    // the question gate falls back to the IsAtVenue self-assert).
+    private async Task<Session> SeedSessionWindowAsync(
+        DateTimeOffset startUtc, DateTimeOffset endUtc)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var hall = new Hall
+        {
+            Id = Guid.NewGuid(),
+            Code = "H-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Name = "Hall W", NameArabic = "قاعة و",
+            Capacity = 50,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        db.Halls.Add(hall);
+        var session = new Session
+        {
+            Id = Guid.NewGuid(),
+            Code = "SES-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant(),
+            Title = "Window Session", TitleArabic = "جلسة زمنية",
+            HallId = hall.Id,
+            StartUtc = startUtc,
+            EndUtc = endUtc,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

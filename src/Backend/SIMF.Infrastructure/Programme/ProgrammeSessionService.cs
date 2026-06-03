@@ -92,10 +92,22 @@ internal sealed class ProgrammeSessionService(
                         link.Speaker!.Rank,
                         link.DisplayOrder,
                         link.Role,
+                        // §7: country (flag) + photo shown with the speaker.
+                        link.Speaker!.CountryId,
+                        link.Speaker!.PhotoRelativePath,
                     })
                     .ToList(),
             })
             .ToListAsync(cancellationToken);
+
+        // §7: resolve the country names for every speaker on the page in one
+        // query (Speaker has a CountryId FK but no Country nav — same approach
+        // as PublicSpeakerService).
+        var countriesById = await ResolveCountriesAsync(
+            projected.SelectMany(row => row.Speakers)
+                .Where(speaker => speaker.CountryId.HasValue)
+                .Select(speaker => speaker.CountryId!.Value),
+            cancellationToken);
 
         var items = projected
             .Select(row =>
@@ -107,13 +119,27 @@ internal sealed class ProgrammeSessionService(
                     .FirstOrDefault();
                 var speakers = row.Speakers
                     .OrderBy(speaker => speaker.DisplayOrder)
-                    .Select(speaker => new PublicSessionSpeaker(
-                        speaker.Id,
-                        speaker.Name,
-                        speaker.NameArabic,
-                        speaker.Rank,
-                        speaker.DisplayOrder,
-                        speaker.Role))
+                    .Select(speaker =>
+                    {
+                        string? countryEn = null, countryAr = null;
+                        if (speaker.CountryId.HasValue
+                            && countriesById.TryGetValue(speaker.CountryId.Value, out var country))
+                        {
+                            countryEn = country.NameEn;
+                            countryAr = country.NameAr;
+                        }
+                        return new PublicSessionSpeaker(
+                            speaker.Id,
+                            speaker.Name,
+                            speaker.NameArabic,
+                            speaker.Rank,
+                            speaker.DisplayOrder,
+                            speaker.Role,
+                            speaker.CountryId,
+                            countryEn,
+                            countryAr,
+                            speaker.PhotoRelativePath);
+                    })
                     .ToList();
                 return new PublicSessionListItem(
                     row.Id,
@@ -178,16 +204,38 @@ internal sealed class ProgrammeSessionService(
                 link.Theme!.PageColor))
             .ToList();
 
+        // §7: resolve the country names for the detail's speakers in one query.
+        var detailCountries = await ResolveCountriesAsync(
+            session.Speakers
+                .Where(link => link.Speaker is not null && link.Speaker.IsActive
+                    && link.Speaker.CountryId.HasValue)
+                .Select(link => link.Speaker!.CountryId!.Value),
+            cancellationToken);
+
         var speakers = session.Speakers
             .Where(link => link.Speaker is not null && link.Speaker.IsActive)
             .OrderBy(link => link.DisplayOrder)
-            .Select(link => new PublicSessionSpeaker(
-                link.Speaker!.Id,
-                link.Speaker!.Name,
-                link.Speaker!.NameArabic,
-                link.Speaker!.Rank,
-                link.DisplayOrder,
-                link.Role))
+            .Select(link =>
+            {
+                string? countryEn = null, countryAr = null;
+                if (link.Speaker!.CountryId is { } countryId
+                    && detailCountries.TryGetValue(countryId, out var country))
+                {
+                    countryEn = country.NameEn;
+                    countryAr = country.NameAr;
+                }
+                return new PublicSessionSpeaker(
+                    link.Speaker!.Id,
+                    link.Speaker!.Name,
+                    link.Speaker!.NameArabic,
+                    link.Speaker!.Rank,
+                    link.DisplayOrder,
+                    link.Role,
+                    link.Speaker!.CountryId,
+                    countryEn,
+                    countryAr,
+                    link.Speaker!.PhotoRelativePath);
+            })
             .ToList();
 
         var seats = new PublicSessionSeatSummary(
@@ -218,7 +266,10 @@ internal sealed class ProgrammeSessionService(
             // P3.2b — D-232: the app shows a player only for a published
             // session that actually has a recording.
             session.Status == SessionStatus.Published
-                && session.RecordingStoredFileName is not null);
+                && session.RecordingStoredFileName is not null,
+            // §8: the live broadcast feed(s) — null when the session is not live.
+            session.LiveStreamUrl,
+            session.LiveSignLanguageUrl);
     }
 
     public async Task<SessionRecordingRef?> GetPublishedRecordingAsync(
@@ -329,5 +380,28 @@ internal sealed class ProgrammeSessionService(
                 summary.AiModel != null,
                 summary.PublishedAt!.Value))
             .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    // §7: batch-resolve country (id -> EN/AR names) for the session speakers.
+    // Speaker carries a CountryId FK but no Country navigation, so the
+    // projection cannot dot through to the country in SQL (mirrors
+    // PublicSpeakerService.ResolveCountriesAsync).
+    private async Task<IReadOnlyDictionary<int, (string NameEn, string NameAr)>>
+        ResolveCountriesAsync(
+            IEnumerable<int> countryIds, CancellationToken cancellationToken)
+    {
+        var ids = countryIds.Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            return new Dictionary<int, (string, string)>();
+        }
+        return await dbContext.Countries
+            .AsNoTracking()
+            .Where(country => ids.Contains(country.Id))
+            .Select(country => new { country.Id, country.NameEn, country.NameAr })
+            .ToDictionaryAsync(
+                country => country.Id,
+                country => (country.NameEn, country.NameAr),
+                cancellationToken);
     }
 }

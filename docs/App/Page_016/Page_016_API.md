@@ -1,14 +1,20 @@
-# Page 016 — API (الأجندة · Agenda)
+# Page 016 — API (الجلسات · Sessions)
 
 Authoritative backend contract for this page. Inherits the `ApiResult<T>` envelope,
 headers, error model and auth from SIMF-API-001 + SIMF-MOB-API-001 §3–§4. The
 counter/filter rules are in [Page_016_Logic.md](Page_016_Logic.md).
 
-> **Status:** **BUILT.** The list (`GET /app/programme/sessions`) shipped in D-199
-> and was **enriched in D-252** so the cached payload also carries the body + the
-> ordered speaker cards. The detail (`GET /app/programme/sessions/{id}`) is
-> unchanged. Both `AllowAnonymous`. Covered by
-> `tests/SIMF.Api.Tests/ProgrammeSessionsTests.cs`.
+> **Status:** **BUILT.** The list (`GET /app/programme/sessions`) shipped in D-199,
+> was **enriched in D-252** so the cached payload also carries the body + the
+> ordered speaker cards, and was **further enriched in D-271** so each speaker also
+> carries its **country (id + EN/AR name) + photo**. The detail
+> (`GET /app/programme/sessions/{id}`) is unchanged on this page. Both
+> `AllowAnonymous`. Covered by `tests/SIMF.Api.Tests/ProgrammeSessionsTests.cs`
+> (incl. `Session_speaker_carries_country_flag_and_photo`).
+>
+> **Rename (D-271):** the screen is renamed **الأجندة · Agenda → الجلسات ·
+> Sessions** (title + nav label + pills). The **API route is unchanged**
+> (`/app/programme/sessions`) — the rename is UI-only.
 >
 > **Path-prefix note:** App routes are under **`/api/v1/app/*`** (App↔CP split,
 > D-247) — so the routes below are `GET /api/v1/app/programme/sessions` etc.
@@ -51,7 +57,12 @@ counter/filter rules are in [Page_016_Logic.md](Page_016_Logic.md).
       "nameArabic": "string",
       "title": "string?",   // the speaker's rank/role (e.g. "Chief Scientist")
       "displayOrder": 0,
-      "role": "Speaker"     // "Speaker" | "Host"  (D-225 — the mockup's "host" marker)
+      "role": "Speaker",    // "Speaker" | "Host"  (D-225 — the mockup's "host" marker)
+      // --- added D-271 (append-only, D-219): country flag + photo on the speaker ---
+      "countryId":     null,   // int? → the client renders the FLAG from this id
+      "countryNameEn": null,   // string? → country label / no-flag text fallback
+      "countryNameAr": null,   // string?
+      "photoRelativePath": null // string? → the speaker AVATAR image (null → placeholder)
     }
   ]
 }
@@ -64,6 +75,12 @@ counter/filter rules are in [Page_016_Logic.md](Page_016_Logic.md).
   Session" is a seeded category value, not a boolean (Page_016_Logic L-4). Null
   until the team seeds the category list.
 - `speakers` is always an array (empty when none) — never null on the wire.
+- **Speaker country + photo (D-271)** — each `PublicSessionSpeaker` carries
+  `countryId` (int?), `countryNameEn` / `countryNameAr` (string?) and
+  `photoRelativePath` (string?). The client renders the **flag from `countryId`**
+  (names are the label/fallback) and the **avatar from `photoRelativePath`**. All
+  four are nullable and **append-only** (D-219). They appear on **both** this list
+  and the session detail (Page_017) — `Session_speaker_carries_country_flag_and_photo`.
 
 ## E2 — `GET /app/programme/sessions/{id}`  (session detail, screen 17)  **(BUILT, D-199)**
 | | |
@@ -74,7 +91,9 @@ counter/filter rules are in [Page_016_Logic.md](Page_016_Logic.md).
 
 The detail carries everything the list does plus the seat summary, themes and the
 recording flag. With D-252 the **app can preview a session from the cached list**;
-it still calls the detail when it needs the live seat count / recording state.
+it still calls the detail when it needs the live seat count / recording state. The
+detail's `speakers[]` carry the **same** D-271 country + photo fields as the list
+(append-only) — see Page_017_API E2.
 
 ## Error responses
 | HTTP | When |
@@ -83,5 +102,7 @@ it still calls the detail when it needs the live seat count / recording state.
 | 404 | (detail) session missing / soft-deleted (`SessionNotFound`) |
 
 ## Build dependencies
-None outstanding. The enrichment is **additive over existing tables** — no schema
-change, no migration, append-only wire (D-219).
+None outstanding. The D-252 + D-271 enrichments are **additive over existing
+tables** — no schema change, no migration, append-only wire (D-219). The speaker
+country + photo is covered by
+`tests/SIMF.Api.Tests/ProgrammeSessionsTests.cs.Session_speaker_carries_country_flag_and_photo`.

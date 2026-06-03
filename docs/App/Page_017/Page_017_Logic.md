@@ -66,11 +66,26 @@ Per the Screen Guide both CTAs are **system / on-device** actions:
   server-side automated session-reminder worker, D-217, which is a separate
   back-office concern.)
 
-## L-6 Speakers
-The speaker cards mirror the agenda/detail: **active** speakers only, ordered by
-`DisplayOrder` (0 = primary), each with name (AR/EN), rank (`Title`) and role
+## L-6 Speakers (incl. country flag + photo — D-271)
+The speaker cards mirror the sessions-list/detail: **active** speakers only, ordered
+by `DisplayOrder` (0 = primary), each with name (AR/EN), rank (`Title`) and role
 (`Speaker` / `Host` — D-225, so the mockup's `المضيف` host marker renders). Each
 card opens **Speaker profile (20)** at `/speakers/:speakerId`.
+
+Each `PublicSessionSpeaker` now **also carries (append-only, D-219 / D-271)** the
+speaker's country + photo, surfaced on **both** the sessions list
+(Page_016_Logic L-6) and this detail:
+
+| Field | Type | Drives the card |
+|-------|------|-----------------|
+| `CountryId` | `int?` | the speaker's **country flag** — the client renders the flag **from `CountryId`** |
+| `CountryNameEn` / `CountryNameAr` | `string?` | the country **label / fallback** (tooltip + a no-flag text fallback) |
+| `PhotoRelativePath` | `string?` | the speaker **avatar** (the card's round photo; placeholder when null) |
+
+The **flag is rendered from `CountryId`** (names are label/fallback only) and the
+**avatar from `PhotoRelativePath`**; all four are nullable. Because the detail draws
+from the same cached payload as the list, these need no extra fetch. Covered by
+`tests/SIMF.Api.Tests/ProgrammeSessionsTests.cs.Session_speaker_carries_country_flag_and_photo`.
 
 ## L-7 Edge cases
 - **Session soft-deleted / missing** → the detail endpoint returns **404**
@@ -79,6 +94,8 @@ card opens **Speaker profile (20)** at `/speakers/:speakerId`.
 - **No description** → the description section is omitted (body is optional).
 - **No speakers** → the speakers section is empty (the wire array is empty, never
   null).
+- **Speaker with no country / no photo** → `CountryId` / `PhotoRelativePath` null
+  → no flag (name fallback) / placeholder avatar (D-271).
 - **No category** → the type tag is hidden.
 - **No seat layout for the hall** → the my-seat card still renders from `MyCell`
   if the caller has a reservation (the card needs only row+seat, not the layout).
@@ -86,6 +103,39 @@ card opens **Speaker profile (20)** at `/speakers/:speakerId`.
 ## L-8 Localization
 Arabic primary (RTL), English secondary; bilingual data is paired
 (`Title`/`TitleArabic`, `HallName`/`HallNameArabic`,
-`CategoryName`/`CategoryNameArabic`, speaker `Name`/`NameArabic`). Times are UTC on
-the wire, rendered in the device tz. The seat card row/seat are locale-neutral
-(`dir="ltr"` on the row letter + number inside the Arabic phrase, per the mockup).
+`CategoryName`/`CategoryNameArabic`, speaker `Name`/`NameArabic`, country
+`CountryNameEn`/`CountryNameAr`). Times are UTC on the wire, rendered in the device
+tz. The seat card row/seat are locale-neutral (`dir="ltr"` on the row letter +
+number inside the Arabic phrase, per the mockup); the speaker **flag** (from
+`CountryId`) and **avatar** (`PhotoRelativePath`) are locale-neutral graphics.
+
+## L-9 Related session surfaces — questions, live + recording, comments (D-271 cross-refs)
+The session detail is the hub for several adjacent session surfaces. None of them
+are built **on** screen 17 — it links/relates to them — but they are documented
+here so the contract is discoverable from one place:
+
+- **Live questions → screen 26 (Q&A).** Submitting a question for this session
+  (`POST /api/v1/app/sessions/{id}/questions`, `RequireApprovedAccount`) is gated
+  by **three** rules: (1) **arrival** at the hall (when the hall has a geofence the
+  attendee needs a `HallAttendance` arrival record, else the `IsAtVenue`
+  self-assert — D-242), (2) the window **opens 5 minutes before** `StartUtc`
+  (`PreStartWindow = 5 min`), and (3) it **closes at** `EndUtc`
+  (`PostEndWindow = 0`). Outside the window the API returns **400
+  `SESSION_NOT_LIVE_FOR_QUESTIONS`**. Full contract: **screen 26** (Q&A), tests in
+  `SessionQuestionsTests`. Screen 17 only deep-links into it.
+- **Live broadcast + recording → screen 25 (Live / session player).** When this
+  session has a **live broadcast**, the detail's `LiveStreamUrl` is non-null (the
+  app shows the LIVE player + badge); a null `LiveStreamUrl` means
+  recorded/scheduled. `LiveSignLanguageUrl` is the optional sign-language feed (the
+  live screen's لغة الإشارة toggle). Recorded sessions stream via the **token-gated
+  recording** endpoint (`HasRecording` on `PublicSessionDetail`, D-232); the **AI
+  session summary (محضر)** is `GET /api/v1/app/programme/sessions/{id}/summary`
+  (D-237/238, anonymous, gated by the summary's `PublishedAt`). Full contract:
+  **screen 25** (Live / player). See Page_017_API E2.
+- **Audience comments — two-stage pipeline.** Comments pass **(1)** an AI filter on
+  submit (`ICommentAiFilter` stub → the comment lands **Approved** or **Pending**)
+  then **(2)** admin **approve / hide** in the CP `CommentsModerationList`
+  (`/admin/comments-moderation`). **The standalone app comments screen (28) is
+  removed** per the updated mockup — comments now surface **inside** the
+  session / live screen (screen 25), not on a separate screen. No build change on
+  screen 17.

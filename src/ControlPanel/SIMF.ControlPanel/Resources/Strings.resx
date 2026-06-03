@@ -1449,6 +1449,8 @@
   <data name="Admin.Sessions.Field.TitleArabicInvalid" xml:space="preserve"><value>Arabic title is required (1–256 characters).</value></data>
   <data name="Admin.Sessions.Field.Description" xml:space="preserve"><value>Description (English)</value></data>
   <data name="Admin.Sessions.Field.DescriptionArabic" xml:space="preserve"><value>Description (Arabic)</value></data>
+  <data name="Admin.Sessions.Field.LiveStreamUrl" xml:space="preserve"><value>Live stream URL (live broadcast)</value></data>
+  <data name="Admin.Sessions.Field.LiveSignLanguageUrl" xml:space="preserve"><value>Sign-language stream URL (optional)</value></data>
   <data name="Admin.Sessions.Field.Hall" xml:space="preserve"><value>Hall</value></data>
   <data name="Admin.Sessions.Field.HallPlaceholder" xml:space="preserve"><value>— Select a hall —</value></data>
   <data name="Admin.Sessions.Field.HallRequired" xml:space="preserve"><value>Hall is required.</value></data>

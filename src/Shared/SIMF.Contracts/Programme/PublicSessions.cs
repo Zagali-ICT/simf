@@ -75,7 +75,15 @@ public sealed record PublicSessionDetail(
     // range-streaming URL. The server only surfaces the recording when
     // Status == Published AND a recording exists (the recorded-Q&A read lands
     // in P3.4). No stored file name is exposed — only this flag.
-    bool HasRecording = false);
+    bool HasRecording = false,
+    // §8 (Mockup screen 25/26): the LIVE broadcast. LiveStreamUrl non-null = the
+    // session has a live feed (the app shows the LIVE player + badge); null =
+    // recorded/scheduled. LiveSignLanguageUrl = the optional sign-language
+    // interpretation feed (drives the live screen's لغة الإشارة toggle).
+    // Appended (append-only, D-219). Interim manual-URL stub provider (real
+    // provider deferred, D-211 D7).
+    string? LiveStreamUrl = null,
+    string? LiveSignLanguageUrl = null);
 
 /// <summary>D-199 — one theme/pillar tag on a public session. Order
 /// follows the session's theme order; the first is the primary pillar
@@ -98,7 +106,16 @@ public sealed record PublicSessionSpeaker(
     string? Title,
     int DisplayOrder,
     // B9 — D-225: appended (additive — wire contract preserved, D-219).
-    SessionSpeakerRole Role = SessionSpeakerRole.Speaker);
+    SessionSpeakerRole Role = SessionSpeakerRole.Speaker,
+    // §7 (Mockup screen 17 "المتحدثون"): the speaker shown WITH a session also
+    // carries the country flag + the photo. Appended (append-only, D-219).
+    // CountryId is the ISO 3166-1 numeric the client renders the flag from;
+    // the names are the label/fallback; PhotoRelativePath is the avatar. All
+    // null when the speaker has no recorded country / photo.
+    int? CountryId = null,
+    string? CountryNameEn = null,
+    string? CountryNameAr = null,
+    string? PhotoRelativePath = null);
 
 /// <summary>D-199 — cheap seat-availability summary for the session
 /// detail. <see cref="Capacity"/> is the effective capacity

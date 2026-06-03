@@ -32,6 +32,14 @@
                       Value="@_model.DescriptionArabic"
                       ValueChanged="@(v => _model.DescriptionArabic = v)" />
 
+        @* §8 — live broadcast stream URLs (manual stub provider). *@
+        <SimfTextField Label="@L["Admin.Sessions.Field.LiveStreamUrl"]"
+                       MaxLength="1024"
+                       @bind-Value="_model.LiveStreamUrl" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Sessions.Field.LiveSignLanguageUrl"]"
+                       MaxLength="1024"
+                       @bind-Value="_model.LiveSignLanguageUrl" Disabled="_busy" />
+
         <SimfSelect TValue="string"
                     Label="@L["Admin.Sessions.Field.Hall"]"
                     Placeholder="@L["Admin.Sessions.Field.HallPlaceholder"]"
@@ -214,6 +222,8 @@
             _model.TitleArabic = Initial.TitleArabic;
             _model.Description = Initial.Description ?? string.Empty;
             _model.DescriptionArabic = Initial.DescriptionArabic ?? string.Empty;
+            _model.LiveStreamUrl = Initial.LiveStreamUrl ?? string.Empty;
+            _model.LiveSignLanguageUrl = Initial.LiveSignLanguageUrl ?? string.Empty;
             _model.IsActive = Initial.IsActive;
             _hallIdInput = Initial.HallId.ToString();
             _categoryIdInput = Initial.CategoryId?.ToString() ?? string.Empty;
@@ -504,6 +514,8 @@
                         CapacityOverride = capacityOverride,
                         Speakers = _selectedSpeakers.ToList(),
                         ThemeIds = _selectedThemes.ToList(),
+                        LiveStreamUrl = NullIfBlank(_model.LiveStreamUrl),
+                        LiveSignLanguageUrl = NullIfBlank(_model.LiveSignLanguageUrl),
                     });
             }
             else
@@ -525,6 +537,8 @@
                         Speakers = _selectedSpeakers.ToList(),
                         ThemeIds = _selectedThemes.ToList(),
                         IsActive = _model.IsActive,
+                        LiveStreamUrl = NullIfBlank(_model.LiveStreamUrl),
+                        LiveSignLanguageUrl = NullIfBlank(_model.LiveSignLanguageUrl),
                     });
             }
 
@@ -555,6 +569,9 @@
         public string TitleArabic { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string DescriptionArabic { get; set; } = string.Empty;
+        // §8 — live broadcast stream URLs (manual stub provider).
+        public string LiveStreamUrl { get; set; } = string.Empty;
+        public string LiveSignLanguageUrl { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
     }
 }

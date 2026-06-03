@@ -55,7 +55,10 @@ public sealed record AdminSessionDetail(
     bool HasRecording = false,
     string? RecordingFileName = null,
     long? RecordingSizeBytes = null,
-    DateTimeOffset? RecordingUploadedAt = null);
+    DateTimeOffset? RecordingUploadedAt = null,
+    // §8 — live broadcast feed(s); null when the session is not live.
+    string? LiveStreamUrl = null,
+    string? LiveSignLanguageUrl = null);
 
 /// <summary>D-165 — one entry in <see cref="AdminSessionDetail.Speakers"/>.
 /// Order matters: 0 = primary speaker for the session card.</summary>
@@ -84,6 +87,9 @@ public sealed class AdminCreateSessionRequest
     public IList<AdminSessionSpeakerEntry> Speakers { get; set; }
         = new List<AdminSessionSpeakerEntry>();
     public IList<Guid> ThemeIds { get; set; } = new List<Guid>();
+    // §8 — optional live broadcast stream URLs (manual stub provider).
+    public string? LiveStreamUrl { get; set; }
+    public string? LiveSignLanguageUrl { get; set; }
 }
 
 public sealed class AdminUpdateSessionRequest
@@ -103,6 +109,9 @@ public sealed class AdminUpdateSessionRequest
         = new List<AdminSessionSpeakerEntry>();
     public IList<Guid> ThemeIds { get; set; } = new List<Guid>();
     public bool IsActive { get; set; } = true;
+    // §8 — optional live broadcast stream URLs (manual stub provider).
+    public string? LiveStreamUrl { get; set; }
+    public string? LiveSignLanguageUrl { get; set; }
 }
 
 /// <summary>P3.2 — D-231: the Committee's lifecycle transition. The service

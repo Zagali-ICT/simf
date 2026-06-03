@@ -1442,6 +1442,8 @@
   <data name="Admin.Sessions.Field.TitleArabicInvalid" xml:space="preserve"><value>العنوان العربي مطلوب (1–256 حرفاً).</value></data>
   <data name="Admin.Sessions.Field.Description" xml:space="preserve"><value>الوصف (الإنجليزية)</value></data>
   <data name="Admin.Sessions.Field.DescriptionArabic" xml:space="preserve"><value>الوصف (العربية)</value></data>
+  <data name="Admin.Sessions.Field.LiveStreamUrl" xml:space="preserve"><value>رابط البث المباشر</value></data>
+  <data name="Admin.Sessions.Field.LiveSignLanguageUrl" xml:space="preserve"><value>رابط بث لغة الإشارة (اختياري)</value></data>
   <data name="Admin.Sessions.Field.Hall" xml:space="preserve"><value>القاعة</value></data>
   <data name="Admin.Sessions.Field.HallPlaceholder" xml:space="preserve"><value>— اختر القاعة —</value></data>
   <data name="Admin.Sessions.Field.HallRequired" xml:space="preserve"><value>القاعة مطلوبة.</value></data>

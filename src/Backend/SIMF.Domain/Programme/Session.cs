@@ -116,6 +116,20 @@ public class Session
     /// cross-context (Identity DB), no FK (D-157).</summary>
     public Guid? RecordingUploadedByUserId { get; set; }
 
+    /// <summary>§8 (Mockup screen 25 "البث المباشر") — the LIVE broadcast stream
+    /// URL (HLS / YouTube / etc.), set manually by an admin in the CP. Non-null
+    /// = this session has a live broadcast (the app shows the LIVE player);
+    /// null = recorded/scheduled only. Interim "stub provider": a real managed
+    /// provider replaces the manual URL later (deferred, D-211 D7). Orthogonal
+    /// to <see cref="Status"/> and the recording.</summary>
+    public string? LiveStreamUrl { get; set; }
+
+    /// <summary>§8 (Mockup screen 26 "لغة الإشارة") — the optional alternate
+    /// live stream that carries sign-language interpretation. Non-null = the app
+    /// shows the sign-language toggle on the live player; null = no sign-language
+    /// feed.</summary>
+    public string? LiveSignLanguageUrl { get; set; }
+
     /// <summary>M-to-M with <see cref="Speaker"/> via the explicit join
     /// entity <see cref="SessionSpeaker"/>. Explicit because the
     /// composite key + the per-row metadata (DisplayOrder) earns the
