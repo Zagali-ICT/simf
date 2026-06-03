@@ -201,6 +201,65 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(ErrorCodes.SeatCapacityExceeded, body.Error!.Code);
     }
 
+    [Fact]
+    public async Task Seat_map_returns_my_cell_for_the_reserver()
+    {
+        // Page_017 (Session detail) — the مقعدي card reads SessionSeatMap.MyCell.
+        var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A", "B" }, seatsPerRow: 5);
+        var visitor = await SignInApprovedVisitorAsync();
+
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "B", SeatNumber = 4 }, visitor);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+
+        var map = await GetAuthAsync($"/api/v1/app/sessions/{session.Id}/seats", visitor);
+        Assert.Equal(HttpStatusCode.OK, map.StatusCode);
+        var seatMap = (await map.Content
+            .ReadFromJsonAsync<ApiResult<SessionSeatMap>>())!.Data!;
+
+        Assert.NotNull(seatMap.MyCell);
+        Assert.Equal("B", seatMap.MyCell!.RowLabel);
+        Assert.Equal(4, seatMap.MyCell.SeatNumber);
+        Assert.Equal(SeatReservationKind.UserBooking, seatMap.MyCell.Kind);
+        Assert.Contains(seatMap.ReservedCells, c => c.RowLabel == "B" && c.SeatNumber == 4);
+    }
+
+    [Fact]
+    public async Task Seat_map_my_cell_is_null_for_a_caller_without_a_reservation()
+    {
+        // Page_017 — a signed-in approved account with no booking sees no card:
+        // MyCell is null even though another visitor's seat shows in the grid.
+        var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 5);
+        var booker = await SignInApprovedVisitorAsync();
+        var onlooker = await SignInApprovedVisitorAsync();
+
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "A", SeatNumber = 2 }, booker);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+
+        var map = await GetAuthAsync($"/api/v1/app/sessions/{session.Id}/seats", onlooker);
+        Assert.Equal(HttpStatusCode.OK, map.StatusCode);
+        var seatMap = (await map.Content
+            .ReadFromJsonAsync<ApiResult<SessionSeatMap>>())!.Data!;
+
+        Assert.Null(seatMap.MyCell);
+        Assert.Contains(seatMap.ReservedCells, c => c.RowLabel == "A" && c.SeatNumber == 2);
+    }
+
+    [Fact]
+    public async Task Seat_map_requires_an_approved_account()
+    {
+        // Page_017 — the my-seat card is login-only: the anonymous detail (screen
+        // 17) renders, but the seat endpoint rejects an unauthenticated caller, so
+        // a guest sees no card.
+        var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A" }, seatsPerRow: 3);
+
+        var anon = await _client.GetAsync($"/api/v1/app/sessions/{session.Id}/seats");
+        Assert.Equal(HttpStatusCode.Unauthorized, anon.StatusCode);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private async Task<(Session Session, Hall Hall)> SeedSessionWithLayoutAsync(
@@ -339,6 +398,13 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
     private Task<HttpResponseMessage> DeleteAuthAsync(string url, string token)
     {
         var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> GetAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return _client.SendAsync(request);
     }
