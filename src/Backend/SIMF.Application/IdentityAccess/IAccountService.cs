@@ -13,6 +13,18 @@ public interface IAccountService
         Guid userId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Returns the signed-in user as the Flutter app consumes it
+    /// (<c>GET /api/v1/app/users/me</c>, SIMF-MOB-API-001 §5.1): identity plus
+    /// the resolved mobile app-role and the registration status. Available to
+    /// any signed-in account — including not-yet-approved ones — so the app can
+    /// poll the approval state on the Registration-Status screen (Page 011).
+    /// D-249.
+    /// </summary>
+    Task<CurrentUserResponse> GetCurrentUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Stores a new avatar for the signed-in user.</summary>
     Task<AvatarResponse> SetAvatarAsync(
         Guid userId,

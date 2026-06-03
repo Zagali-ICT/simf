@@ -24,6 +24,7 @@ internal sealed class AccountService(
     IUserAccountRepository accounts,
     IAvatarStorage avatarStorage,
     IRecoveryCodeService recoveryCodes,
+    IUserProfileService userProfiles,
     IAuditLog auditLog,
     ILogger<AccountService> logger) : IAccountService
 {
@@ -52,6 +53,29 @@ internal sealed class AccountService(
             user.TwoFactorEnabled,
             remaining,
             [.. roles]);
+    }
+
+    public async Task<CurrentUserResponse> GetCurrentUserAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await GetUserAsync(userId);
+
+        // The app-role lookup reads the App database (ProfileType.MobileAppRole)
+        // — a second query on the other context, never a cross-DB join (D-157).
+        var mobileAppRole = await userProfiles.ResolveMobileAppRoleAsync(user.Id, cancellationToken);
+
+        return new CurrentUserResponse(
+            user.Id,
+            user.Email ?? string.Empty,
+            user.DisplayName,
+            MapAppRole(mobileAppRole),
+            // The Identity row carries no per-user language today; Arabic is the
+            // primary / default language (SIMF-MAA-001 §10) and the app overrides
+            // it locally. Emitted for wire-shape completeness.
+            PreferredLanguageDefault,
+            MapRegistrationStatus(user.AccountState),
+            BuildAvatarUrl(user));
     }
 
     public async Task<RecoveryCodesResponse> RegenerateRecoveryCodesAsync(
@@ -215,4 +239,33 @@ internal sealed class AccountService(
         string.IsNullOrEmpty(user.AvatarRelativePath)
             ? null
             : $"/account/api/avatar/{user.Id:N}?v={user.UpdatedAt?.UtcTicks ?? 0}";
+
+    /// <summary>The primary-language default emitted for <c>users/me</c> until
+    /// a per-user language preference is persisted (SIMF-MAA-001 §10).</summary>
+    private const string PreferredLanguageDefault = "ar";
+
+    /// <summary>
+    /// Maps the resolved <see cref="MobileAppRole"/> to the wire name the app's
+    /// <c>AppRole</c> enum decodes. <see cref="MobileAppRole.None"/> means
+    /// "treated as a Visitor by the Flutter app" (partner profile types / admins)
+    /// — emit the effective floor so an authenticated user is never read back as
+    /// Guest. The string form is used so the integer drift between the backend and
+    /// app role enums never matters.
+    /// </summary>
+    private static string MapAppRole(MobileAppRole role) =>
+        role == MobileAppRole.None ? nameof(MobileAppRole.Visitor) : role.ToString();
+
+    /// <summary>
+    /// Collapses the six-value <see cref="AccountState"/> onto the app's
+    /// three-value registration vocabulary: the pre-approval states all read as
+    /// <c>Pending</c>; <c>Disabled</c> cannot proceed, so it reads as
+    /// <c>Rejected</c>.
+    /// </summary>
+    private static string MapRegistrationStatus(AccountState state) => state switch
+    {
+        AccountState.Approved => "Approved",
+        AccountState.Rejected => "Rejected",
+        AccountState.Disabled => "Rejected",
+        _ => "Pending",
+    };
 }

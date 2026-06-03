@@ -70,3 +70,32 @@ public sealed record AuthTokens(
 
 /// <summary>The signed-in user, as carried in <see cref="AuthTokens"/>.</summary>
 public sealed record AuthUser(Guid Id, string Email, string DisplayName);
+
+/// <summary>
+/// The signed-in user as the Flutter app decodes it from
+/// <c>GET /api/v1/app/users/me</c> (SIMF-MOB-API-001 §5.1) — the same wire
+/// shape the app's <c>CurrentUserDto</c> consumes. Built additively for the
+/// Registration-Status screen (Page 011) so the app can poll the approval
+/// state; available to any signed-in account, including not-yet-approved ones
+/// (D-249).
+/// <list type="bullet">
+///   <item><see cref="AppRole"/> is the resolved mobile app-role name —
+///     <c>"Visitor"</c>, <c>"Staff"</c> or <c>"Moderator"</c> — matching the
+///     app's <c>AppRole</c> wire names (the string form is used so the int
+///     drift between the two enums never matters).</item>
+///   <item><see cref="RegistrationStatus"/> is the three-value app vocabulary
+///     <c>"Pending"</c> / <c>"Approved"</c> / <c>"Rejected"</c>, collapsed from
+///     the six-value <see cref="SIMF.Common.Enums.AccountState"/>.</item>
+///   <item><see cref="PreferredLanguage"/> is the IETF short tag (<c>"ar"</c> /
+///     <c>"en"</c>); the Identity row carries no per-user language today, so it
+///     is the primary-language default.</item>
+/// </list>
+/// </summary>
+public sealed record CurrentUserResponse(
+    Guid Id,
+    string Email,
+    string DisplayName,
+    string AppRole,
+    string PreferredLanguage,
+    string RegistrationStatus,
+    string? AvatarUrl);

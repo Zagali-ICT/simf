@@ -110,7 +110,7 @@ these under one App-auth tag (tracked as a §5 cleanup item, no behaviour change
 | `signUpForm` | `POST /auth/sign-up` | Anonymous | Create account (email + password + confirm). |
 | `emailOtp` | `POST /auth/verify-email` | Anonymous | Verify the email with the emailed code. |
 | `emailOtp` | `POST /auth/resend-code` | Anonymous | Resend the verification / OTP code. |
-| `registrationStatus` | *(see §6 — `GET /users/me`)* | Guest (signed-in) | Pending/approved/rejected status drives routing. |
+| `registrationStatus` | `GET /app/users/me` **(BUILT — D-249)** | Signed-in (incl. pending) | `{id,email,displayName,appRole,preferredLanguage,registrationStatus,avatarUrl}`; pending/approved/rejected drives routing — full contract in [`Page_011_API.md`](App/Page_011/Page_011_API.md). |
 
 > Sign-up's profile + interests steps (mockup `signUpVisitor` / `signUpExhibitor`)
 > call **Account** endpoints (`/account/*`), catalogued in §6, not §5.

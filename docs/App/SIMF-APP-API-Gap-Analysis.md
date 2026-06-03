@@ -28,6 +28,14 @@ Legend: ✅ exists · 🟡 partial (exists but a gap) · ❌ missing (build) · 
 2. **Seed a `terms.*` content block** (Page 009) — reuse the existing CMS; **no new endpoint**, just a seed (mirrors the shipped `cyber.*`).
 
 ## Owner decisions needed (block doc/build; with recommendation)
+
+> **RESOLVED 2026-06-03 → `DECISIONS_LOG` D-249.** The owner accepted the
+> recommendations ("recommended", "do"). Per-item outcome: **D2** = client-side
+> caps only (server stays 256/128, frozen-schema aligned); **D4** Nafath, **D8**
+> T&C consent record (Identity freeze-lift), **D10** live provider, **D11** mockup
+> decorations = **DEFERRED**; all others accepted as written. Builds that follow:
+> `GET /app/users/me`, D1 refresh-lifetime config-bind (→5d), `GET /app/bootstrap`,
+> and the `Page_014` aggregates. See D-249 for the full resolution.
 | # | Page | Decision | Recommendation |
 |---|------|----------|----------------|
 | **D1** | 003 | "Session 5 days" vs implemented **30-day** refresh/device-key (hardcoded `TimeSpan.FromDays(30)`, not config). | Make it **config-bound** + set to your number (5d?). |

@@ -80,7 +80,6 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/meeting-requests` | [`cp-admin-meeting-requests.md`](cp-admin-meeting-requests.md) | E2E-MTR-001..011 |
 | `/admin/meeting-tables` | [`cp-meeting-tables.md`](cp-meeting-tables.md) | E2E-MHT-001..012 |
 | `/admin/business-meetings` | [`cp-business-meetings.md`](cp-business-meetings.md) | E2E-BMT-001..013 |
-<!-- SIMF-FDS-013 (D-248) — flexible hall config + B2B/B2C business meetings -->
 
 ### Control Panel — Engagement, Q&A & attendance
 
@@ -160,8 +159,13 @@ not reused. Each page owns a unique 3–4 letter namespace.
 
 ### Mobile App (Flutter)
 
-The Flutter app screens are catalogued under `mobile-*.md` once the app build
-lands on the main branch (per the SIMF Program Plan). No mobile files yet.
+The Flutter app screens are catalogued under `mobile-*.md` as their backing App
+API endpoints land (D-249). The per-screen design docs live under
+[`docs/App/Page_NNN/`](../../App/).
+
+| App screen | File | Scenarios |
+|------------|------|-----------|
+| #11 `registrationStatus` (`GET /app/users/me`) | [`mobile-registration-status.md`](mobile-registration-status.md) | E2E-MOB011-001..007 |
 
 ## How to add a new catalogue file
 
