@@ -1,5 +1,3 @@
-using SIMF.Domain.Common;
-
 namespace SIMF.Domain.IdentityAccess;
 
 /// <summary>
@@ -10,11 +8,18 @@ namespace SIMF.Domain.IdentityAccess;
 /// at TOTP-enrolment time and on regeneration; hashed at rest with the same
 /// SHA-256 scheme as <c>RefreshToken</c> and <c>SecondFactorToken</c>.
 /// </summary>
-public sealed class TotpRecoveryCode: BaseEntity
-{ 
+public sealed class TotpRecoveryCode
+{
+    public Guid Id { get; set; }
+
+    /// <summary>The account that owns this code.</summary>
+    public Guid UserId { get; set; }
+
     /// <summary>SHA-256 hash of the plaintext code. The plaintext is never persisted.</summary>
     public string CodeHash { get; set; } = string.Empty;
-     
+
+    /// <summary>When the code was minted (UTC).</summary>
+    public DateTimeOffset CreatedAt { get; set; }
 
     /// <summary>When the code was consumed; null while it is still active.</summary>
     public DateTimeOffset? ConsumedAt { get; set; }

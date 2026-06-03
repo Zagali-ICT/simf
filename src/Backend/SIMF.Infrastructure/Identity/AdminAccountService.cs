@@ -558,7 +558,7 @@ internal sealed partial class AdminAccountService(
         var code = new AccountCode
         {
             Id = Guid.NewGuid(),
-            CreateBy = user.Id,
+            UserId = user.Id,
             Purpose = AccountCodePurpose.PasswordReset,
             Code = VerificationCodeGenerator.Generate(),
             CreatedAt = now,

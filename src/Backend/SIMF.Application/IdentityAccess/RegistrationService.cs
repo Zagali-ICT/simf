@@ -470,7 +470,7 @@ public sealed class RegistrationService(
         var code = new AccountCode
         {
             Id = Guid.NewGuid(),
-            CreateBy = user.Id,
+            UserId = user.Id,
             Purpose = AccountCodePurpose.EmailVerification,
             Code = VerificationCodeGenerator.Generate(),
             CreatedAt = now,

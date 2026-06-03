@@ -13,12 +13,12 @@ internal sealed class TotpRecoveryCodeConfiguration : IEntityTypeConfiguration<T
         // SHA-256 hash, base64 (44 chars). Fixed length so the index is tight.
         builder.Property(code => code.CodeHash).HasMaxLength(64).IsRequired();
 
-        builder.HasIndex(code => code.CreateBy);
+        builder.HasIndex(code => code.UserId);
         builder.HasIndex(code => code.CodeHash);
 
         builder.HasOne<SimfUser>()
             .WithMany()
-            .HasForeignKey(code => code.CreateBy)
+            .HasForeignKey(code => code.UserId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

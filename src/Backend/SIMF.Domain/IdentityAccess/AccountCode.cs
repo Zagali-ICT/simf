@@ -1,5 +1,4 @@
 using SIMF.Common.Enums;
-using SIMF.Domain.Common;
 
 namespace SIMF.Domain.IdentityAccess;
 
@@ -9,16 +8,27 @@ namespace SIMF.Domain.IdentityAccess;
 /// <see cref="Purpose"/> field (SIMF-FDS-001 section 6, SIMF-DAT-001
 /// Amendment A.4).
 /// </summary>
-public class AccountCode : BaseEntity
+public class AccountCode
 {
-    /// <summary>The code value.</summary>
-    public string Code { get; set; } = string.Empty;// must be hashed or encyrpted
+    public Guid Id { get; set; }
+
+    /// <summary>The user the code was issued to.</summary>
+    public Guid UserId { get; set; }
 
     /// <summary>What the code is for.</summary>
     public AccountCodePurpose Purpose { get; set; }
 
+    /// <summary>The code value.</summary>
+    public string Code { get; set; } = string.Empty;
+
     /// <summary>When the code expires (UTC).</summary>
     public DateTimeOffset ExpiresAt { get; set; }
+
+    /// <summary>When the code was created (UTC).</summary>
+    public DateTimeOffset CreatedAt { get; set; }
+
+    /// <summary>When the code was consumed (UTC); null while it is unused.</summary>
+    public DateTimeOffset? ConsumedAt { get; set; }
 
     /// <summary>
     /// How many incorrect values have been submitted against this code. The
@@ -26,7 +36,4 @@ public class AccountCode : BaseEntity
     /// Amendment A.1).
     /// </summary>
     public int AttemptCount { get; set; }
-
-    /// <summary>When the code was consumed (UTC); null while it is unused.</summary>
-    public DateTimeOffset? ConsumedAt { get; set; }
 }
