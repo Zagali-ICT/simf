@@ -1,3 +1,5 @@
+using SIMF.Domain.Common;
+
 namespace SIMF.Domain.IdentityAccess;
 
 /// <summary>
@@ -22,13 +24,13 @@ namespace SIMF.Domain.IdentityAccess;
 /// row already exists to attach it to. The challenge is consumed on
 /// successful verify or after expiry (5 minutes).</para>
 /// </summary>
-public sealed class DeviceKey
+public sealed class DeviceKey : BaseEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
 
-    /// <summary>The user this key binds to. Real FK to
-    /// <see cref="SimfUser.Id"/> (same Identity DbContext).</summary>
-    public Guid UserId { get; set; }
+    /// <summary>User-supplied device label — e.g. "iPhone 15 Pro" — so
+    /// the user can identify the row in the revoke surface. Up to 64
+    /// chars; the server does not validate the contents.</summary>
+    public string Label { get; set; } = string.Empty;
 
     /// <summary>The public key as a base64-encoded
     /// SubjectPublicKeyInfo (DER) blob. Importable on the server with
@@ -40,20 +42,6 @@ public sealed class DeviceKey
     /// the wire.</summary>
     public string Algorithm { get; set; } = "ES256";
 
-    /// <summary>User-supplied device label — e.g. "iPhone 15 Pro" — so
-    /// the user can identify the row in the revoke surface. Up to 64
-    /// chars; the server does not validate the contents.</summary>
-    public string Label { get; set; } = string.Empty;
-
-    public DateTimeOffset CreatedAt { get; set; }
-
-    /// <summary>When the key was last used for a successful sign-in.
-    /// Null until first sign-in completes.</summary>
-    public DateTimeOffset? LastUsedAt { get; set; }
-
-    /// <summary>When the key was revoked (admin or self-service).
-    /// Null while active. Sign-in with a revoked key returns 401.</summary>
-    public DateTimeOffset? RevokedAt { get; set; }
 
     /// <summary>The current challenge nonce as a base64 string. Set
     /// when the client requests a challenge; cleared on consume.
@@ -63,4 +51,16 @@ public sealed class DeviceKey
     /// <summary>When <see cref="CurrentChallenge"/> expires. A
     /// challenge older than this is treated as missing.</summary>
     public DateTimeOffset? ChallengeExpiresAt { get; set; }
+
+
+
+    /// <summary>When the key was last used for a successful sign-in.
+    /// Null until first sign-in completes.</summary>
+    public DateTimeOffset? LastUsedAt { get; set; }
+
+
+
+    /// <summary>When the key was revoked (admin or self-service).
+    /// Null while active. Sign-in with a revoked key returns 401.</summary>
+    public DateTimeOffset? RevokedAt { get; set; }
 }

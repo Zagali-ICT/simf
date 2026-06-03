@@ -36,8 +36,8 @@ internal sealed class AdminCompanyService(
         {
             var term = query.Search.Trim();
             rows = rows.Where(c =>
-                EF.Functions.Like(c.NameEn, $"%{term}%")
-                || EF.Functions.Like(c.NameAr, $"%{term}%"));
+                EF.Functions.Like(c.Name, $"%{term}%")
+                || EF.Functions.Like(c.NameArabic, $"%{term}%"));
         }
 
         // CP grid per-column filters (D-256). Unknown columns are ignored.
@@ -49,10 +49,10 @@ internal sealed class AdminCompanyService(
             switch (column.ToLowerInvariant())
             {
                 case "nameen":
-                    rows = rows.Where(c => c.NameEn.Contains(v));
+                    rows = rows.Where(c => c.Name.Contains(v));
                     break;
                 case "namear":
-                    rows = rows.Where(c => c.NameAr.Contains(v));
+                    rows = rows.Where(c => c.NameArabic.Contains(v));
                     break;
                 case "isactive":
                     if (bool.TryParse(v, out var isActive))
@@ -72,20 +72,20 @@ internal sealed class AdminCompanyService(
         // CP grid sortable columns (D-256). Default: Type, then NameAr.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("nameen", false) => rows.OrderBy(c => c.NameEn),
-            ("nameen", true) => rows.OrderByDescending(c => c.NameEn),
-            ("namear", false) => rows.OrderBy(c => c.NameAr),
-            ("namear", true) => rows.OrderByDescending(c => c.NameAr),
+            ("nameen", false) => rows.OrderBy(c => c.Name),
+            ("nameen", true) => rows.OrderByDescending(c => c.Name),
+            ("namear", false) => rows.OrderBy(c => c.NameArabic),
+            ("namear", true) => rows.OrderByDescending(c => c.NameArabic),
             ("isactive", false) => rows.OrderBy(c => c.IsActive),
             ("isactive", true) => rows.OrderByDescending(c => c.IsActive),
-            ("type", true) => rows.OrderByDescending(c => c.Type).ThenBy(c => c.NameAr),
-            _ => rows.OrderBy(c => c.Type).ThenBy(c => c.NameAr),
+            ("type", true) => rows.OrderByDescending(c => c.Type).ThenBy(c => c.NameArabic),
+            _ => rows.OrderBy(c => c.Type).ThenBy(c => c.NameArabic),
         };
         var total = await rows.CountAsync(cancellationToken);
         var page = await rows
             .Skip(skip).Take(top)
             .Select(c => new AdminCompanySummary(
-                c.Id, c.NameEn, c.NameAr, (int)c.Type,
+                c.Id, c.Name, c.NameArabic, (int)c.Type,
                 c.ContactEmail, c.ContactPhone, c.Website,
                 appDbContext.Set<CompanyMembership>()
                     .Count(m => m.CompanyId == c.Id && m.IsActive),
@@ -102,7 +102,7 @@ internal sealed class AdminCompanyService(
         return await appDbContext.Companies.AsNoTracking()
             .Where(c => c.Id == id)
             .Select(c => new AdminCompanyDetail(
-                c.Id, c.NameEn, c.NameAr, (int)c.Type,
+                c.Id, c.Name, c.NameArabic, (int)c.Type,
                 c.ContactEmail, c.ContactPhone, c.Website,
                 c.IsActive, c.CreatedAt, c.UpdatedAt))
             .SingleOrDefaultAsync(cancellationToken);
@@ -119,8 +119,8 @@ internal sealed class AdminCompanyService(
         var company = new Company
         {
             Id = Guid.NewGuid(),
-            NameEn = request.NameEn.Trim(),
-            NameAr = request.NameAr.Trim(),
+            Name = request.NameEn.Trim(),
+            NameArabic = request.NameAr.Trim(),
             Type = type,
             ContactEmail = NormaliseOptional(request.ContactEmail),
             ContactPhone = NormaliseOptional(request.ContactPhone),
@@ -136,7 +136,7 @@ internal sealed class AdminCompanyService(
             EventType = AuditEvents.CompanyCreated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"companyId={company.Id}; type={company.Type}; name={company.NameAr}",
+            Detail = $"companyId={company.Id}; type={company.Type}; name={company.NameArabic}",
         }, cancellationToken);
 
         return (await GetAsync(company.Id, cancellationToken))!;
@@ -156,8 +156,8 @@ internal sealed class AdminCompanyService(
                 "Company not found.",
                 "لم يتم العثور على الشركة.");
 
-        company.NameEn = request.NameEn.Trim();
-        company.NameAr = request.NameAr.Trim();
+        company.Name = request.NameEn.Trim();
+        company.NameArabic = request.NameAr.Trim();
         company.Type = type;
         company.ContactEmail = NormaliseOptional(request.ContactEmail);
         company.ContactPhone = NormaliseOptional(request.ContactPhone);

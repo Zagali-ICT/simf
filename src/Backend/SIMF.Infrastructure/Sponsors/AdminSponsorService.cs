@@ -30,8 +30,8 @@ internal sealed class AdminSponsorService(
         {
             var term = query.Search.Trim();
             rows = rows.Where(sponsor =>
-                EF.Functions.Like(sponsor.NameEn, $"%{term}%")
-                || EF.Functions.Like(sponsor.NameAr, $"%{term}%"));
+                EF.Functions.Like(sponsor.Name, $"%{term}%")
+                || EF.Functions.Like(sponsor.NameArabic, $"%{term}%"));
         }
 
         if (query.Filters.TryGetValue("isActive", out var activeFilter)
@@ -58,10 +58,10 @@ internal sealed class AdminSponsorService(
             switch (column.ToLowerInvariant())
             {
                 case "nameen":
-                    rows = rows.Where(sponsor => sponsor.NameEn.Contains(v));
+                    rows = rows.Where(sponsor => sponsor.Name.Contains(v));
                     break;
                 case "namear":
-                    rows = rows.Where(sponsor => sponsor.NameAr.Contains(v));
+                    rows = rows.Where(sponsor => sponsor.NameArabic.Contains(v));
                     break;
             }
         }
@@ -70,10 +70,10 @@ internal sealed class AdminSponsorService(
         // Tier, then DisplayOrder, then NameAr — the public ordering.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("nameen", false) => rows.OrderBy(sponsor => sponsor.NameEn),
-            ("nameen", true) => rows.OrderByDescending(sponsor => sponsor.NameEn),
-            ("namear", false) => rows.OrderBy(sponsor => sponsor.NameAr),
-            ("namear", true) => rows.OrderByDescending(sponsor => sponsor.NameAr),
+            ("nameen", false) => rows.OrderBy(sponsor => sponsor.Name),
+            ("nameen", true) => rows.OrderByDescending(sponsor => sponsor.Name),
+            ("namear", false) => rows.OrderBy(sponsor => sponsor.NameArabic),
+            ("namear", true) => rows.OrderByDescending(sponsor => sponsor.NameArabic),
             ("tier", false) => rows.OrderBy(sponsor => sponsor.Tier),
             ("tier", true) => rows.OrderByDescending(sponsor => sponsor.Tier),
             ("displayorder", false) => rows.OrderBy(sponsor => sponsor.DisplayOrder),
@@ -83,7 +83,7 @@ internal sealed class AdminSponsorService(
             _ => rows
                 .OrderBy(sponsor => sponsor.Tier)
                 .ThenBy(sponsor => sponsor.DisplayOrder)
-                .ThenBy(sponsor => sponsor.NameAr),
+                .ThenBy(sponsor => sponsor.NameArabic),
         };
 
         var total = await rows.CountAsync(cancellationToken);
@@ -91,8 +91,8 @@ internal sealed class AdminSponsorService(
             .Skip(skip).Take(top)
             .Select(sponsor => new AdminSponsorSummary(
                 sponsor.Id,
-                sponsor.NameEn,
-                sponsor.NameAr,
+                sponsor.Name,
+                sponsor.NameArabic,
                 (int)sponsor.Tier,
                 sponsor.Tier.ToString(),
                 sponsor.LogoRelativePath,
@@ -127,7 +127,7 @@ internal sealed class AdminSponsorService(
         var clash = await appDbContext.Sponsors.AsNoTracking().AnyAsync(
             sponsor => sponsor.IsActive
                 && sponsor.Tier == tier
-                && sponsor.NameAr == nameAr,
+                && sponsor.NameArabic == nameAr,
             cancellationToken);
         if (clash)
         {
@@ -140,8 +140,8 @@ internal sealed class AdminSponsorService(
         var sponsor = new Sponsor
         {
             Id = Guid.NewGuid(),
-            NameEn = nameEn,
-            NameAr = nameAr,
+            Name = nameEn,
+            NameArabic = nameAr,
             Tier = tier,
             LogoRelativePath = logoRelativePath,
             Url = url,
@@ -179,7 +179,7 @@ internal sealed class AdminSponsorService(
                 "لم يتم العثور على الراعي.");
 
         var renamedOrRetiered =
-            !string.Equals(sponsor.NameAr, nameAr, StringComparison.Ordinal)
+            !string.Equals(sponsor.NameArabic, nameAr, StringComparison.Ordinal)
             || sponsor.Tier != tier;
         if (request.IsActive && renamedOrRetiered)
         {
@@ -187,7 +187,7 @@ internal sealed class AdminSponsorService(
                 s => s.Id != id
                     && s.IsActive
                     && s.Tier == tier
-                    && s.NameAr == nameAr,
+                    && s.NameArabic == nameAr,
                 cancellationToken);
             if (clash)
             {
@@ -197,8 +197,8 @@ internal sealed class AdminSponsorService(
             }
         }
 
-        sponsor.NameEn = nameEn;
-        sponsor.NameAr = nameAr;
+        sponsor.Name = nameEn;
+        sponsor.NameArabic = nameAr;
         sponsor.Tier = tier;
         sponsor.LogoRelativePath = logoRelativePath;
         sponsor.Url = url;
@@ -302,8 +302,8 @@ internal sealed class AdminSponsorService(
 
     private static AdminSponsorDetail ToDetail(Sponsor sponsor) =>
         new(sponsor.Id,
-            sponsor.NameEn,
-            sponsor.NameAr,
+            sponsor.Name,
+            sponsor.NameArabic,
             (int)sponsor.Tier,
             sponsor.Tier.ToString(),
             sponsor.LogoRelativePath,

@@ -28,11 +28,11 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 ExhibitorNameEn = b.CompanyId == null
                     ? b.ExhibitorNameEn
                     : db.Companies.Where(c => c.Id == b.CompanyId)
-                        .Select(c => c.NameEn).FirstOrDefault(),
+                        .Select(c => c.Name).FirstOrDefault(),
                 ExhibitorNameAr = b.CompanyId == null
                     ? b.ExhibitorNameAr
                     : db.Companies.Where(c => c.Id == b.CompanyId)
-                        .Select(c => c.NameAr).FirstOrDefault(),
+                        .Select(c => c.NameArabic).FirstOrDefault(),
                 SectorEn = b.SectorEn,
                 SectorAr = b.SectorAr,
                 HallId = b.HallId,
@@ -56,11 +56,11 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 ExhibitorNameEn = b.CompanyId == null
                     ? b.ExhibitorNameEn
                     : db.Companies.Where(c => c.Id == b.CompanyId)
-                        .Select(c => c.NameEn).FirstOrDefault(),
+                        .Select(c => c.Name).FirstOrDefault(),
                 ExhibitorNameAr = b.CompanyId == null
                     ? b.ExhibitorNameAr
                     : db.Companies.Where(c => c.Id == b.CompanyId)
-                        .Select(c => c.NameAr).FirstOrDefault(),
+                        .Select(c => c.NameArabic).FirstOrDefault(),
                 SectorEn = b.SectorEn,
                 SectorAr = b.SectorAr,
                 DescriptionEn = b.DescriptionEn,

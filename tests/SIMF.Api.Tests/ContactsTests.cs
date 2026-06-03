@@ -299,8 +299,8 @@ public sealed class ContactsTests : IClassFixture<SimfApiFactory>
         appDb.Sponsors.Add(new Sponsor
         {
             Id = Guid.NewGuid(),
-            NameEn = $"Sponsor {Guid.NewGuid():N}",
-            NameAr = "راعٍ",
+            Name = $"Sponsor {Guid.NewGuid():N}",
+            NameArabic = "راعٍ",
             Tier = SponsorTier.Bronze,
             ContactId = contactId,
             IsActive = true,

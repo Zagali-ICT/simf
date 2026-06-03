@@ -46,8 +46,8 @@ internal sealed class AdminOrganisationService(
         {
             var term = query.Search.Trim();
             rows = rows.Where(org =>
-                EF.Functions.Like(org.NameAr, $"%{term}%")
-                || EF.Functions.Like(org.NameEn, $"%{term}%")
+                EF.Functions.Like(org.NameArabic, $"%{term}%")
+                || EF.Functions.Like(org.Name, $"%{term}%")
                 || EF.Functions.Like(org.CommercialRegistration, $"%{term}%")
                 || EF.Functions.Like(org.City, $"%{term}%"));
         }
@@ -61,10 +61,10 @@ internal sealed class AdminOrganisationService(
             switch (column.ToLowerInvariant())
             {
                 case "name":
-                    rows = rows.Where(org => org.NameAr.Contains(v));
+                    rows = rows.Where(org => org.NameArabic.Contains(v));
                     break;
                 case "nameen":
-                    rows = rows.Where(org => org.NameEn != null && org.NameEn.Contains(v));
+                    rows = rows.Where(org => org.Name != null && org.Name.Contains(v));
                     break;
                 case "commercialregistration":
                     rows = rows.Where(org =>
@@ -87,13 +87,13 @@ internal sealed class AdminOrganisationService(
 
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("name", true) => rows.OrderByDescending(org => org.NameAr),
-            ("name", false) => rows.OrderBy(org => org.NameAr),
+            ("name", true) => rows.OrderByDescending(org => org.NameArabic),
+            ("name", false) => rows.OrderBy(org => org.NameArabic),
             ("city", true) => rows.OrderByDescending(org => org.City),
             ("city", false) => rows.OrderBy(org => org.City),
             ("isactive", true) => rows.OrderByDescending(org => org.IsActive),
             ("isactive", false) => rows.OrderBy(org => org.IsActive),
-            _ => rows.OrderBy(org => org.NameAr),
+            _ => rows.OrderBy(org => org.NameArabic),
         };
 
         var total = await rows.CountAsync(ct);
@@ -102,8 +102,8 @@ internal sealed class AdminOrganisationService(
             .Take(top)
             .Select(org => new AdminOrganisationSummary(
                 org.Id,
-                org.NameAr,
-                org.NameEn,
+                org.NameArabic,
+                org.Name,
                 org.CommercialRegistration,
                 org.Sector,
                 org.City,
@@ -147,8 +147,8 @@ internal sealed class AdminOrganisationService(
         var org = new Organisation
         {
             Id = Guid.NewGuid(),
-            NameAr = v.NameAr,
-            NameEn = v.NameEn,
+            NameArabic = v.NameAr,
+            Name = v.NameEn,
             CommercialRegistration = v.CommercialRegistration,
             Sector = v.Sector,
             City = v.City,
@@ -202,8 +202,8 @@ internal sealed class AdminOrganisationService(
             }
         }
 
-        org.NameAr = v.NameAr;
-        org.NameEn = v.NameEn;
+        org.NameArabic = v.NameAr;
+        org.Name = v.NameEn;
         org.CommercialRegistration = v.CommercialRegistration;
         org.Sector = v.Sector;
         org.City = v.City;
@@ -248,7 +248,7 @@ internal sealed class AdminOrganisationService(
             EventType = AuditEvents.OrganisationDeactivated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={org.Id}; nameAr={org.NameAr}",
+            Detail = $"id={org.Id}; nameAr={org.NameArabic}",
         }, ct);
     }
 
@@ -303,7 +303,7 @@ internal sealed class AdminOrganisationService(
                 ? await db.Organisations
                     .SingleOrDefaultAsync(o => o.CommercialRegistration == cr, ct)
                 : await db.Organisations
-                    .SingleOrDefaultAsync(o => o.IsActive && o.NameAr == nameArClamped, ct);
+                    .SingleOrDefaultAsync(o => o.IsActive && o.NameArabic == nameArClamped, ct);
 
             var now = timeProvider.GetUtcNow();
             if (existing is null)
@@ -311,8 +311,8 @@ internal sealed class AdminOrganisationService(
                 db.Organisations.Add(new Organisation
                 {
                     Id = Guid.NewGuid(),
-                    NameAr = nameArClamped,
-                    NameEn = nameEn,
+                    NameArabic = nameArClamped,
+                    Name = nameEn,
                     CommercialRegistration = cr,
                     Sector = sector,
                     City = city,
@@ -326,8 +326,8 @@ internal sealed class AdminOrganisationService(
             }
             else
             {
-                existing.NameAr = nameArClamped;
-                existing.NameEn = nameEn;
+                existing.NameArabic = nameArClamped;
+                existing.Name = nameEn;
                 existing.CommercialRegistration = cr;
                 existing.Sector = sector;
                 existing.City = city;
@@ -444,8 +444,8 @@ internal sealed class AdminOrganisationService(
 
     private static AdminOrganisationDetail ToDetail(Organisation o) => new(
         o.Id,
-        o.NameAr,
-        o.NameEn,
+        o.NameArabic,
+        o.Name,
         o.CommercialRegistration,
         o.Sector,
         o.City,

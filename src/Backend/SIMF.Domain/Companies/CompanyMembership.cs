@@ -1,3 +1,6 @@
+using SIMF.Domain.Common;
+using System.ComponentModel.Design;
+
 namespace SIMF.Domain.Companies;
 
 /// <summary>
@@ -10,12 +13,12 @@ namespace SIMF.Domain.Companies;
 /// provisioning pipeline (a least-privilege Visitor account); this row tags it
 /// to its company. Soft-deleted via <see cref="IsActive"/>.
 /// </summary>
-public sealed class CompanyMembership
+public sealed class CompanyMembership : BaseAuditEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>FK to <see cref="Company.Id"/> on the App database.</summary>
     public Guid CompanyId { get; set; }
+    public Company? Company { get; set; }
 
     /// <summary>Logical FK to <c>SimfUser.Id</c> on the Identity database.
     /// No navigation property, no DB-level FK constraint (cross-database).</summary>
@@ -28,10 +31,5 @@ public sealed class CompanyMembership
     /// (e.g. "Booth Manager") (≤128 chars).</summary>
     public string? RoleLabel { get; set; }
 
-    /// <summary>Soft-delete flag. List endpoints filter on this.</summary>
-    public bool IsActive { get; set; } = true;
-
-    public DateTimeOffset CreatedAt { get; set; }
-
-    public DateTimeOffset? UpdatedAt { get; set; }
+    
 }

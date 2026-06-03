@@ -76,10 +76,10 @@ internal sealed class MyAreaService(
         var card = await appDbContext.UserProfiles.AsNoTracking()
             .Where(p => p.UserId == userId)
             .Select(p => new MyAreaContactCard(
-                p.EnglishName,
-                p.ArabicName,
+                p.Name,
+                p.NameArabic,
                 p.JobTitle,
-                p.Organisation != null ? (p.Organisation.NameEn ?? p.Organisation.NameAr) : null,
+                p.Organisation != null ? (p.Organisation.Name ?? p.Organisation.NameArabic) : null,
                 p.QrId))
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -92,8 +92,8 @@ internal sealed class MyAreaService(
             .Where(p => p.UserId == userId)
             .Select(p => new
             {
-                p.ArabicName,
-                p.EnglishName,
+                p.NameArabic,
+                p.Name,
                 p.QrId,
                 TierEn = p.ProfileType != null ? p.ProfileType.Name : null,
                 TierAr = p.ProfileType != null ? p.ProfileType.NameArabic : null,

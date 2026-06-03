@@ -1,7 +1,7 @@
 using SIMF.Domain.Common;
 
 namespace SIMF.Domain.Delegations;
-
+//remove this perminitally
 /// <summary>
 /// D-174 (gap doc G11, Mockup page 21) — one delegation attending the
 /// forum (e.g. "وفد البحرية الملكية" — Royal Navy Delegation, 8 members).

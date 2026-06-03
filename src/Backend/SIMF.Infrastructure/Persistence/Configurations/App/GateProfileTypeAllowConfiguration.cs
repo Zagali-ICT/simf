@@ -15,7 +15,7 @@ internal sealed class GateProfileTypeAllowConfiguration
     {
         builder.ToTable("GateProfileTypeAllow");
         builder.HasKey(allow => new { allow.GateId, allow.ProfileTypeId });
-        builder.HasOne<ProfileType>()
+        builder.HasOne<UserProfileType>()
             .WithMany()
             .HasForeignKey(allow => allow.ProfileTypeId)
             .OnDelete(DeleteBehavior.Restrict);

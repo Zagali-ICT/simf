@@ -1,4 +1,5 @@
 using SIMF.Common.Enums;
+using SIMF.Domain.Common;
 
 namespace SIMF.Domain.Media;
 
@@ -19,15 +20,13 @@ namespace SIMF.Domain.Media;
 /// <c>DisplayOrder</c> and <c>IsActive</c> (no base class — Speaker does not
 /// use one either).
 /// </summary>
-public class MediaItem
+public class MediaItem:BaseAuditEntity
 {
-    public Guid Id { get; set; }
-
-    /// <summary>image | video (Mockup page 30 mixes both in one grid).</summary>
+     /// <summary>image | video (Mockup page 30 mixes both in one grid).</summary>
     public MediaKind Kind { get; set; }
 
     public string? TitleEn { get; set; }
-    public string? TitleAr { get; set; }
+    public string? TitleArabic { get; set; }
 
     /// <summary>D-90 — relative path of the uploaded image's bytes within the
     /// media object store. Null when the item is an externally hosted video
@@ -43,12 +42,8 @@ public class MediaItem
     /// <see cref="ImageRelativePath"/> directly.</summary>
     public string? ThumbnailRelativePath { get; set; }
 
-    public string? AlbumEn { get; set; }
+    public string? AlbumEn { get; set; }//fix
     public string? AlbumAr { get; set; }
 
     public int DisplayOrder { get; set; }
-    public bool IsActive { get; set; } = true;
-
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
-}
+ }

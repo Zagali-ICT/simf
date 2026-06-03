@@ -1,4 +1,5 @@
 using SIMF.Common.Enums;
+using SIMF.Domain.Common;
 
 namespace SIMF.Domain.Notifications;
 
@@ -9,9 +10,8 @@ namespace SIMF.Domain.Notifications;
 /// changes, etc. — wired in P13 — D-054). Bilingual in the row so the
 /// page picks by current culture without a second lookup.
 /// </summary>
-public sealed class Notification
-{
-    public Guid Id { get; set; }
+public sealed class Notification:BaseEntity
+{ 
 
     /// <summary>The user this notification belongs to.</summary>
     public Guid UserId { get; set; }
@@ -33,8 +33,7 @@ public sealed class Notification
 
     /// <summary>Null until the user marks it read.</summary>
     public DateTimeOffset? ReadAt { get; set; }
-
-    public DateTimeOffset CreatedAt { get; set; }
+     
 
     /// <summary>Optional pointer to the entity that triggered the row —
     /// e.g. "UserProfile" / "Account" / "Interest". Lets a future

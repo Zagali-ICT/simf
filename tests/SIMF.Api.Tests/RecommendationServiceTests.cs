@@ -135,11 +135,11 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
 
     // -- Helpers --------------------------------------------------------------
 
-    private async Task<Interest> SeedInterestAsync(string name)
+    private async Task<UserInterest> SeedInterestAsync(string name)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var interest = new Interest
+        var interest = new UserInterest
         {
             Id = Guid.NewGuid(),
             Name = name + " " + Guid.NewGuid().ToString("N")[..6],
@@ -187,8 +187,8 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
-                EnglishName = $"User {Guid.NewGuid():N}".Substring(0, 16),
-                ArabicName = "مستخدم",
+                Name = $"User {Guid.NewGuid():N}".Substring(0, 16),
+                NameArabic = "مستخدم",
                 PlaceOfBirth = "Riyadh",
                 IsSaudi = true,
                 NationalId = "1234567890",
@@ -239,8 +239,8 @@ public sealed class RecommendationServiceTests : IClassFixture<SimfApiFactory>
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
-                EnglishName = "Pending",
-                ArabicName = "بانتظار",
+                Name = "Pending",
+                NameArabic = "بانتظار",
                 PlaceOfBirth = "Riyadh",
                 IsSaudi = true,
                 NationalId = "1234567890",

@@ -165,8 +165,8 @@ internal sealed class UserProfileService(
             profile.ProfileTypeId = userPick;
         }
 
-        profile.ArabicName = request.ArabicName;
-        profile.EnglishName = request.EnglishName;
+        profile.NameArabic = request.ArabicName;
+        profile.Name = request.EnglishName;
         profile.JobTitle = NormaliseOptional(request.JobTitle);
         profile.NationalityId = nationalityId;
         profile.DateOfBirth = request.DateOfBirth;
@@ -535,8 +535,8 @@ internal sealed class UserProfileService(
         {
             ProfileTypeId = profile.ProfileTypeId,
             InterestIds = profile.Interests.Select(interest => interest.Id).ToList(),
-            ArabicName = profile.ArabicName,
-            EnglishName = profile.EnglishName,
+            ArabicName = profile.NameArabic,
+            EnglishName = profile.Name,
             JobTitle = profile.JobTitle,
             NationalityCode = nationalityCode,
             DateOfBirth = profile.DateOfBirth,

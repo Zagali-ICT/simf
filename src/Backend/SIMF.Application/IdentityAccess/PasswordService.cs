@@ -277,7 +277,7 @@ public sealed class PasswordService(
             || ticket.ConsumedAt is not null)
         {
             await AuditAsync(AuditEvents.PasswordChangeFailed, AuditOutcome.Failure,
-                null, ticket?.UserId, ErrorCodes.AuthMfaTokenInvalid,
+                null, ticket?.CreateBy, ErrorCodes.AuthMfaTokenInvalid,
                 cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthMfaTokenInvalid, 400,
                 "The sign-in session is no longer valid. Sign in again.",
@@ -287,14 +287,14 @@ public sealed class PasswordService(
         if (now >= ticket.ExpiresAt)
         {
             await AuditAsync(AuditEvents.PasswordChangeFailed, AuditOutcome.Failure,
-                null, ticket.UserId, ErrorCodes.AuthMfaTokenExpired,
+                null, ticket.CreateBy, ErrorCodes.AuthMfaTokenExpired,
                 cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthMfaTokenExpired, 400,
                 "The sign-in session has expired. Sign in again.",
                 "انتهت صلاحية جلسة تسجيل الدخول. سجّل الدخول مرة أخرى.");
         }
 
-        var user = await accounts.FindByIdAsync(ticket.UserId, cancellationToken);
+        var user = await accounts.FindByIdAsync(ticket.CreateBy, cancellationToken);
 
         // The flag is what the sign-in step checked when it issued the ticket;
         // if the account is gone or a concurrent change already cleared it,
@@ -302,7 +302,7 @@ public sealed class PasswordService(
         if (user is null || !user.PasswordChangeRequired)
         {
             await AuditAsync(AuditEvents.PasswordChangeFailed, AuditOutcome.Failure,
-                user?.Email, ticket.UserId, ErrorCodes.AuthMfaTokenInvalid,
+                user?.Email, ticket.CreateBy, ErrorCodes.AuthMfaTokenInvalid,
                 cancellationToken: cancellationToken);
             throw new ApiException(ErrorCodes.AuthMfaTokenInvalid, 400,
                 "The sign-in session is no longer valid. Sign in again.",
@@ -417,7 +417,7 @@ public sealed class PasswordService(
         var code = new AccountCode
         {
             Id = Guid.NewGuid(),
-            UserId = user.Id,
+            CreateBy = user.Id,
             Purpose = AccountCodePurpose.PasswordReset,
             Code = VerificationCodeGenerator.Generate(),
             CreatedAt = now,

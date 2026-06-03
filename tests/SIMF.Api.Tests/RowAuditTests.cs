@@ -34,7 +34,7 @@ public sealed class RowAuditTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
-        appDb.Interests.Add(new Interest
+        appDb.Interests.Add(new UserInterest
         {
             Id = interestId,
             Name = $"Audit Insert {Guid.NewGuid():N}",
@@ -49,7 +49,7 @@ public sealed class RowAuditTests : IClassFixture<SimfApiFactory>
         // D-167: Interest moved to the App DB so its row-audit lives there too.
         var audit = await appDb.RowAudits
             .AsNoTracking()
-            .Where(row => row.EntityType == nameof(Interest) && row.PrimaryKey == interestId.ToString())
+            .Where(row => row.EntityType == nameof(UserInterest) && row.PrimaryKey == interestId.ToString())
             .SingleAsync();
 
         Assert.Equal(RowAuditOperation.Insert, audit.Operation);
@@ -67,7 +67,7 @@ public sealed class RowAuditTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
-        var interest = new Interest
+        var interest = new UserInterest
         {
             Id = interestId,
             Name = $"Original {Guid.NewGuid():N}",
@@ -87,7 +87,7 @@ public sealed class RowAuditTests : IClassFixture<SimfApiFactory>
         // D-167: Interest moved to the App DB so its row-audit lives there too.
         var audit = await appDb.RowAudits
             .AsNoTracking()
-            .Where(row => row.EntityType == nameof(Interest)
+            .Where(row => row.EntityType == nameof(UserInterest)
                 && row.PrimaryKey == interestId.ToString()
                 && row.Operation == RowAuditOperation.Update)
             .SingleAsync();
@@ -106,7 +106,7 @@ public sealed class RowAuditTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
-        appDb.Interests.Add(new Interest
+        appDb.Interests.Add(new UserInterest
         {
             Id = interestId,
             Name = $"Recursion Guard {Guid.NewGuid():N}",

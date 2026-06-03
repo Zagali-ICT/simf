@@ -87,8 +87,8 @@ internal sealed class AdminInvitationService(
             {
                 profile.Id,
                 profile.UserId,
-                profile.EnglishName,
-                profile.ArabicName,
+                profile.Name,
+                profile.NameArabic,
                 ProfileTypeName = profile.ProfileType != null ? profile.ProfileType.Name : null,
             })
             .ToListAsync(cancellationToken);
@@ -160,8 +160,8 @@ internal sealed class AdminInvitationService(
             .Select(p => new
             {
                 p.UserId,
-                p.EnglishName,
-                p.ArabicName,
+                p.Name,
+                p.NameArabic,
                 p.JobTitle,
                 ProfileTypeName = p.ProfileType != null ? p.ProfileType.Name : null,
             })
@@ -364,17 +364,17 @@ internal sealed class AdminInvitationService(
         {
             var term = query.Search.Trim();
             vips = vips.Where(profile =>
-                EF.Functions.Like(profile.EnglishName, $"%{term}%")
-                || EF.Functions.Like(profile.ArabicName, $"%{term}%"));
+                EF.Functions.Like(profile.Name, $"%{term}%")
+                || EF.Functions.Like(profile.NameArabic, $"%{term}%"));
         }
 
         vips = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("name", true) => vips.OrderByDescending(profile => profile.EnglishName),
-            ("name", false) => vips.OrderBy(profile => profile.EnglishName),
+            ("name", true) => vips.OrderByDescending(profile => profile.Name),
+            ("name", false) => vips.OrderBy(profile => profile.Name),
             ("profiletype", true) => vips.OrderByDescending(profile => profile.ProfileType!.Name),
             ("profiletype", false) => vips.OrderBy(profile => profile.ProfileType!.Name),
-            _ => vips.OrderBy(profile => profile.EnglishName),
+            _ => vips.OrderBy(profile => profile.Name),
         };
 
         var total = await vips.CountAsync(cancellationToken);
@@ -385,8 +385,8 @@ internal sealed class AdminInvitationService(
             {
                 profile.Id,
                 profile.UserId,
-                profile.EnglishName,
-                profile.ArabicName,
+                profile.Name,
+                profile.NameArabic,
                 profile.JobTitle,
                 ProfileTypeName = profile.ProfileType!.Name,
                 ProfileTypeNameArabic = profile.ProfileType!.NameArabic,

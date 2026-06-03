@@ -24,11 +24,11 @@ internal sealed class DeviceKeyConfiguration : IEntityTypeConfiguration<DeviceKe
 
         builder.HasOne<SimfUser>()
             .WithMany()
-            .HasForeignKey(k => k.UserId)
+            .HasForeignKey(k => k.CreatedAt)
             .OnDelete(DeleteBehavior.Cascade);
 
         // The hot-path lookup is "list my non-revoked keys" — covered
         // by this composite.
-        builder.HasIndex(k => new { k.UserId, k.RevokedAt });
+        builder.HasIndex(k => new { k.CreatedAt, k.RevokedAt });
     }
 }

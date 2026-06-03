@@ -110,11 +110,11 @@ internal sealed class InterestRepository(SimfAppDbContext dbContext)
             : rows.AnyAsync(row => row.Name == name, cancellationToken);
     }
 
-    public Task<Interest?> FindAsync(
+    public Task<UserInterest?> FindAsync(
         Guid id, CancellationToken cancellationToken = default) =>
         dbContext.Interests.SingleOrDefaultAsync(row => row.Id == id, cancellationToken);
 
-    public async Task AddAsync(Interest interest, CancellationToken cancellationToken = default)
+    public async Task AddAsync(UserInterest interest, CancellationToken cancellationToken = default)
     {
         dbContext.Interests.Add(interest);
         await dbContext.SaveChangesAsync(cancellationToken);

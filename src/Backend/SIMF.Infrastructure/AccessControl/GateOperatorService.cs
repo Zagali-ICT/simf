@@ -493,7 +493,7 @@ internal sealed class GateOperatorService(
                 {
                     p.Id,
                     p.UserId,
-                    p.ArabicName,
+                    p.NameArabic,
                     p.ProfileTypeId,
                     ProfileTypeName = p.ProfileType != null ? p.ProfileType.Name : null,
                     ProfileTypePageColor = p.ProfileType != null ? p.ProfileType.PageColor : null,

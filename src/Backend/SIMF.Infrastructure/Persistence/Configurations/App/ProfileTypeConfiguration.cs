@@ -5,10 +5,10 @@ using SIMF.Domain.Profiles;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>EF mapping for <see cref="ProfileType"/> (P7 — D-048).</summary>
-internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<ProfileType>
+/// <summary>EF mapping for <see cref="UserProfileType"/> (P7 — D-048).</summary>
+internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<UserProfileType>
 {
-    public void Configure(EntityTypeBuilder<ProfileType> builder)
+    public void Configure(EntityTypeBuilder<UserProfileType> builder)
     {
         builder.ToTable("ProfileTypes");
 
@@ -45,7 +45,7 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<Profil
         // D-186 — audience/partner split inside the Visitor scope.
         // Defaults to true so freshly created profile types are
         // assumed audience-side until an admin toggles them.
-        builder.Property(profileType => profileType.IsVisitor)
+        builder.Property(profileType => profileType.IsForVisitor)
             .HasDefaultValue(true)
             .IsRequired();
 
@@ -55,6 +55,6 @@ internal sealed class ProfileTypeConfiguration : IEntityTypeConfiguration<Profil
         // approval-queue filter (IsVisitor=false on the Visitor pool)
         // hits an index too.
         builder.HasIndex(profileType => new { profileType.UserType, profileType.IsActive });
-        builder.HasIndex(profileType => new { profileType.IsVisitor, profileType.IsActive });
+        builder.HasIndex(profileType => new { profileType.IsForVisitor, profileType.IsActive });
     }
 }

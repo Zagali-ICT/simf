@@ -63,7 +63,7 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         var profile = await appDb.UserProfiles.SingleAsync(p => p.UserId == user.Id);
         Assert.Equal(profileTypeId, profile.ProfileTypeId);
         Assert.False(string.IsNullOrEmpty(profile.QrId));
-        Assert.Equal("Walk-in Visitor", profile.EnglishName);
+        Assert.Equal("Walk-in Visitor", profile.Name);
     }
 
     [Fact]
@@ -205,17 +205,17 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var seeded = await appDb.ProfileTypes
             .FirstOrDefaultAsync(p => p.UserType == UserType.Visitor
-                                       && p.IsVisitor == true
+                                       && p.IsForVisitor == true
                                        && p.IsActive);
         if (seeded is not null) return seeded.Id;
-        var fresh = new ProfileType
+        var fresh = new UserProfileType
         {
             Id = Guid.NewGuid(),
             Name = "Visitor — WalkInTestSeed",
             NameArabic = "زائر — اختبار",
             PageColor = "#3B82F6",
             UserType = UserType.Visitor,
-            IsVisitor = true,
+            IsForVisitor = true,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
@@ -234,17 +234,17 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         // IsVisitor=false.
         var seeded = await appDb.ProfileTypes
             .FirstOrDefaultAsync(p => p.UserType == UserType.Visitor
-                                       && p.IsVisitor == false
+                                       && p.IsForVisitor == false
                                        && p.IsActive);
         if (seeded is not null) return seeded.Id;
-        var fresh = new ProfileType
+        var fresh = new UserProfileType
         {
             Id = Guid.NewGuid(),
             Name = "Other — WalkInTestSeed",
             NameArabic = "أخرى — اختبار",
             PageColor = "#10B981",
             UserType = UserType.Visitor,
-            IsVisitor = false,
+            IsForVisitor = false,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

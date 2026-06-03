@@ -66,7 +66,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var code = await db.AccountCodes.SingleAsync(
-            c => c.UserId == created.Id
+            c => c.CreateBy == created.Id
                 && c.Purpose == AccountCodePurpose.PasswordReset
                 && c.ConsumedAt == null);
         Assert.True(code.ExpiresAt > code.CreatedAt.AddDays(6));
@@ -293,7 +293,7 @@ public sealed class AdminCreateUserTests : IClassFixture<SimfApiFactory>
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var user = await db.Users.SingleAsync(u => u.Email == newEmail);
         var inviteCode = await db.AccountCodes
-            .Where(c => c.UserId == user.Id
+            .Where(c => c.CreateBy == user.Id
                 && c.Purpose == AccountCodePurpose.PasswordReset
                 && c.ConsumedAt == null)
             .OrderByDescending(c => c.CreatedAt)

@@ -1,3 +1,5 @@
+using SIMF.Domain.Common;
+
 namespace SIMF.Domain.Profiles;
 
 /// <summary>
@@ -12,10 +14,8 @@ namespace SIMF.Domain.Profiles;
 /// auto-generated join table <c>UserProfileInterests</c> (composite PK,
 /// both FKs cascade so deleting either side cleans up the join row).</para>
 /// </summary>
-public sealed class Interest
+public sealed class UserInterest : BaseAuditEntity
 {
-    public Guid Id { get; set; }
-
     /// <summary>English display name — for example "Maritime Security".</summary>
     public string Name { get; set; } = string.Empty;
 
@@ -24,13 +24,5 @@ public sealed class Interest
 
     /// <summary>Sort key in the visitor picker (ascending). Tie-broken by
     /// <see cref="Name"/>.</summary>
-    public int DisplayOrder { get; set; }
-
-    /// <summary>Soft-delete flag — false hides the row from the visitor
-    /// picker but keeps existing user assignments intact.</summary>
-    public bool IsActive { get; set; } = true;
-
-    public DateTimeOffset CreatedAt { get; set; }
-
-    public DateTimeOffset? UpdatedAt { get; set; }
+    public int DisplayOrder { get; set; } 
 }

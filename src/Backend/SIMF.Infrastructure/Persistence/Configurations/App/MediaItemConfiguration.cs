@@ -23,7 +23,7 @@ internal sealed class MediaItemConfiguration : IEntityTypeConfiguration<MediaIte
             .IsRequired();
 
         builder.Property(item => item.TitleEn).HasMaxLength(200);
-        builder.Property(item => item.TitleAr).HasMaxLength(200);
+        builder.Property(item => item.TitleArabic).HasMaxLength(200);
 
         builder.Property(item => item.ImageRelativePath).HasMaxLength(256);
         builder.Property(item => item.Url).HasMaxLength(2048);

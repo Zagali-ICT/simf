@@ -331,8 +331,8 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
             UserId = user.Id,
             QrId = qrId,
             ProfileTypeId = profileTypeId,
-            ArabicName = "زائر اختبار",
-            EnglishName = "Test Visitor",
+            NameArabic = "زائر اختبار",
+            Name = "Test Visitor",
             NationalityId = 682, // ISO 3166-1 numeric — SA
             PlaceOfBirth = "Riyadh",
             CreatedAt = DateTimeOffset.UtcNow,
@@ -346,7 +346,7 @@ public sealed class GateScanTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         var id = Guid.NewGuid();
-        appDb.ProfileTypes.Add(new SIMF.Domain.Profiles.ProfileType
+        appDb.ProfileTypes.Add(new SIMF.Domain.Profiles.UserProfileType
         {
             Id = id,
             Name = name,

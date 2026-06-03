@@ -17,8 +17,8 @@ internal sealed class CompanyConfiguration : IEntityTypeConfiguration<Company>
         builder.ToTable("Companies");
         builder.HasKey(company => company.Id);
 
-        builder.Property(company => company.NameEn).HasMaxLength(256).IsRequired();
-        builder.Property(company => company.NameAr).HasMaxLength(256).IsRequired();
+        builder.Property(company => company.Name).HasMaxLength(256).IsRequired();
+        builder.Property(company => company.NameArabic).HasMaxLength(256).IsRequired();
 
         // Persist the enum by its int value (the wire contract). EF stores
         // enums as int by default; HasConversion<int>() makes that explicit
@@ -41,7 +41,7 @@ internal sealed class CompanyConfiguration : IEntityTypeConfiguration<Company>
         {
             company.IsActive,
             company.Type,
-            company.NameAr,
+            company.NameArabic,
         });
     }
 }

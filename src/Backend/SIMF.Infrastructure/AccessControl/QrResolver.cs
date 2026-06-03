@@ -35,7 +35,7 @@ internal sealed class QrResolver(
                 profileTypeName = profile.ProfileType != null ? profile.ProfileType.Name : null,
                 profileTypeNameAr = profile.ProfileType != null ? profile.ProfileType.NameArabic : null,
                 profileTypePageColor = profile.ProfileType != null ? profile.ProfileType.PageColor : null,
-                profile.ArabicName,
+                profile.NameArabic,
             })
             .SingleOrDefaultAsync(cancellationToken);
         if (profileRow is null) { return null; }

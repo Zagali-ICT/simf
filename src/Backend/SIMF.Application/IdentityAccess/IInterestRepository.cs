@@ -10,7 +10,7 @@ namespace SIMF.Application.IdentityAccess;
 /// Application <see cref="InterestService"/> talks to this contract; the
 /// Infrastructure implementation owns the EF query shapes. Mirrors the
 /// <see cref="Notifications.INotificationRepository"/> idiom — read shapes
-/// return the wire DTOs, mutations return the tracked <see cref="Interest"/>
+/// return the wire DTOs, mutations return the tracked <see cref="UserInterest"/>
 /// so the service can mutate-then-<see cref="SaveChangesAsync"/>.
 /// </summary>
 public interface IInterestRepository
@@ -39,11 +39,11 @@ public interface IInterestRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>The tracked row for mutation, or null when not found.</summary>
-    Task<Interest?> FindAsync(
+    Task<UserInterest?> FindAsync(
         Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>Adds a new interest and persists it.</summary>
-    Task AddAsync(Interest interest, CancellationToken cancellationToken = default);
+    Task AddAsync(UserInterest interest, CancellationToken cancellationToken = default);
 
     /// <summary>Persists pending mutations on tracked rows.</summary>
     Task SaveChangesAsync(CancellationToken cancellationToken = default);

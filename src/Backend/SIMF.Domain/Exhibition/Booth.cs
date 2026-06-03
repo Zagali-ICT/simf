@@ -15,6 +15,11 @@ namespace SIMF.Domain.Exhibition;
 /// (same App DbContext) — a booth may sit inside a hall/zone, or be null
 /// when it has not been placed yet.</para>
 /// </summary>
+/// 
+
+
+//Add exibtor as company and sponser
+//then exibtorBooth
 public class Booth
 {
     public Guid Id { get; set; }

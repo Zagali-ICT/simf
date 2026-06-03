@@ -10,6 +10,7 @@ public class RolePermission
 
     public SimfRole Role { get; set; } = null!;
 
+
     public Guid PermissionId { get; set; }
 
     public Permission Permission { get; set; } = null!;

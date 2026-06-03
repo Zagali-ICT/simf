@@ -126,8 +126,8 @@ internal sealed class AdminApprovalReadService(
                 p.ProfileTypeId,
                 ProfileType = p.ProfileType,
                 p.QrId,
-                p.ArabicName,
-                p.EnglishName,
+                p.NameArabic,
+                p.Name,
                 p.JobTitle,
                 p.NationalityId,
                 p.DateOfBirth,
@@ -224,8 +224,8 @@ internal sealed class AdminApprovalReadService(
             {
                 p.ProfileTypeId,
                 ProfileType = p.ProfileType,
-                p.ArabicName,
-                p.EnglishName,
+                p.NameArabic,
+                p.Name,
                 p.JobTitle,
                 p.NationalityId,
                 p.DateOfBirth,
@@ -313,7 +313,7 @@ internal sealed class AdminApprovalReadService(
         var isVisitor = await appDbContext.ProfileTypes
             .AsNoTracking()
             .Where(p => p.Id == profileTypeId)
-            .Select(p => (bool?)p.IsVisitor)
+            .Select(p => (bool?)p.IsForVisitor)
             .SingleOrDefaultAsync(cancellationToken);
         if (isVisitor is null)
         {

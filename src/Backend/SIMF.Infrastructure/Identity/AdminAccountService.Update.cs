@@ -161,7 +161,7 @@ internal sealed partial class AdminAccountService
         if (profileType is null
             || !profileType.IsActive
             || profileType.UserType != UserType.Visitor
-            || profileType.IsVisitor != expectedIsVisitor)
+            || profileType.IsForVisitor != expectedIsVisitor)
         {
             await AuditFailure(
                 AuditEvents.AdminUserUpdateFailed, actorUserId, email,

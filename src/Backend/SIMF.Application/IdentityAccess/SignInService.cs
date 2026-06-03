@@ -138,7 +138,7 @@ public sealed class SignInService(
                 new SecondFactorToken
                 {
                     Id = Guid.NewGuid(),
-                    UserId = user.Id,
+                    CreateBy = user.Id,
                     TokenHash = OpaqueToken.Hash(changeTicketValue),
                     Kind = SecondFactorKind.PasswordChange,
                     CreatedAt = now,
@@ -197,7 +197,7 @@ public sealed class SignInService(
             new SecondFactorToken
             {
                 Id = Guid.NewGuid(),
-                UserId = user.Id,
+                CreateBy = user.Id,
                 TokenHash = OpaqueToken.Hash(ticketValue),
                 Kind = kind,
                 CreatedAt = now,
@@ -245,7 +245,7 @@ public sealed class SignInService(
     {
         var ticket = await GetValidTicketAsync(
             request.MfaToken, SecondFactorKind.Totp, cancellationToken);
-        var user = await accounts.FindByIdAsync(ticket.UserId, cancellationToken)
+        var user = await accounts.FindByIdAsync(ticket.CreateBy, cancellationToken)
             ?? throw new ApiException(ErrorCodes.AuthMfaTokenInvalid, 400,
                 "The sign-in session is no longer valid.",
                 "جلسة تسجيل الدخول لم تعد صالحة.");
@@ -293,7 +293,7 @@ public sealed class SignInService(
         // brute-force is bounded the same way as a wrong TOTP code.
         var ticket = await GetValidTicketAsync(
             request.MfaToken, SecondFactorKind.Totp, cancellationToken);
-        var user = await accounts.FindByIdAsync(ticket.UserId, cancellationToken)
+        var user = await accounts.FindByIdAsync(ticket.CreateBy, cancellationToken)
             ?? throw new ApiException(ErrorCodes.AuthMfaTokenInvalid, 400,
                 "The sign-in session is no longer valid.",
                 "جلسة تسجيل الدخول لم تعد صالحة.");
@@ -333,7 +333,7 @@ public sealed class SignInService(
     {
         var ticket = await GetValidTicketAsync(
             request.OtpToken, SecondFactorKind.EmailOtp, cancellationToken);
-        var user = await accounts.FindByIdAsync(ticket.UserId, cancellationToken)
+        var user = await accounts.FindByIdAsync(ticket.CreateBy, cancellationToken)
             ?? throw new ApiException(ErrorCodes.AuthOtpTokenInvalid, 400,
                 "The sign-in session is no longer valid.",
                 "جلسة تسجيل الدخول لم تعد صالحة.");
@@ -549,7 +549,7 @@ public sealed class SignInService(
             || ticket.AttemptCount >= MaxSecondFactorAttempts)
         {
             await AuditAsync(AuditEvents.SignInSecondFactorRejected, AuditOutcome.Failure,
-                null, ticket?.UserId, invalidCode, expectedKind.ToString(), cancellationToken);
+                null, ticket?.CreateBy, invalidCode, expectedKind.ToString(), cancellationToken);
             throw new ApiException(invalidCode, 400, "The sign-in session is not valid.",
                 "جلسة تسجيل الدخول غير صالحة.");
         }
@@ -560,7 +560,7 @@ public sealed class SignInService(
                 ? ErrorCodes.AuthMfaTokenExpired
                 : ErrorCodes.AuthOtpTokenInvalid;
             await AuditAsync(AuditEvents.SignInSecondFactorRejected, AuditOutcome.Failure,
-                null, ticket.UserId, expiredCode, "expired", cancellationToken);
+                null, ticket.CreateBy, expiredCode, "expired", cancellationToken);
             throw new ApiException(expiredCode, 400, "The sign-in session has expired.",
                 "انتهت صلاحية جلسة تسجيل الدخول.");
         }
@@ -581,7 +581,7 @@ public sealed class SignInService(
             new RefreshToken
             {
                 Id = Guid.NewGuid(),
-                UserId = user.Id,
+                CreateBy = user.Id,
                 TokenHash = OpaqueToken.Hash(refreshValue),
                 CreatedAt = now,
                 ExpiresAt = now.Add(RefreshTokenLifetime),
@@ -632,7 +632,7 @@ public sealed class SignInService(
         var code = new AccountCode
         {
             Id = Guid.NewGuid(),
-            UserId = user.Id,
+            CreateBy = user.Id,
             Purpose = AccountCodePurpose.SignInOtp,
             Code = VerificationCodeGenerator.Generate(),
             CreatedAt = now,

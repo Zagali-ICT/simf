@@ -305,14 +305,14 @@ public sealed class IdentitySeeder(
                 cancellationToken);
         if (exists) { return; }
 
-        appDbContext.ProfileTypes.Add(new ProfileType
+        appDbContext.ProfileTypes.Add(new UserProfileType
         {
             Id = Guid.NewGuid(),
             Name = name,
             NameArabic = nameArabic,
             PageColor = pageColor,
             UserType = UserType.Visitor,
-            IsVisitor = isVisitor,
+            IsForVisitor = isVisitor,
             MobileAppRole = mobileAppRole,
             IsActive = true,
             CreatedAt = timeProvider.GetUtcNow(),

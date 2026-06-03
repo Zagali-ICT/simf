@@ -411,7 +411,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
             var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-            var interest = new Interest
+            var interest = new UserInterest
             {
                 Id = Guid.NewGuid(),
                 Name = $"Deactivated {Guid.NewGuid():N}",
@@ -447,7 +447,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
             var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var rows = Enumerable.Range(0, 3)
-                .Select(i => new Interest
+                .Select(i => new UserInterest
                 {
                     Id = Guid.NewGuid(),
                     Name = $"Pick {i} {Guid.NewGuid():N}",
@@ -503,7 +503,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
             var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
             var live = await db.RefreshTokens
-                .Where(rt => rt.UserId == userId && rt.RevokedAt == null)
+                .Where(rt => rt.CreateBy == userId && rt.RevokedAt == null)
                 .CountAsync();
             Assert.True(live > 0,
                 "Expected the sign-in to mint at least one live refresh token.");
@@ -525,7 +525,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
 
             // Every refresh token for this user is now revoked.
             var stillLive = await db.RefreshTokens
-                .Where(rt => rt.UserId == userId && rt.RevokedAt == null)
+                .Where(rt => rt.CreateBy == userId && rt.RevokedAt == null)
                 .CountAsync();
             Assert.Equal(0, stillLive);
         }
@@ -656,14 +656,14 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var row = new ProfileType
+        var row = new UserProfileType
         {
             Id = Guid.NewGuid(),
             Name = $"UpsertTier-{Guid.NewGuid():N}",
             NameArabic = "اختبار",
             PageColor = "#1F2937",
             UserType = UserType.Visitor,
-            IsVisitor = isVisitor,
+            IsForVisitor = isVisitor,
             IsActive = isActive,
             CreatedAt = DateTimeOffset.UtcNow,
         };
@@ -744,8 +744,8 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         var row = new SIMF.Domain.Organisations.Organisation
         {
             Id = Guid.NewGuid(),
-            NameAr = $"جهة اختبار {Guid.NewGuid():N}",
-            NameEn = $"Test Organisation {Guid.NewGuid():N}",
+            NameArabic = $"جهة اختبار {Guid.NewGuid():N}",
+            Name = $"Test Organisation {Guid.NewGuid():N}",
             IsActive = isActive,
             CreatedAt = DateTimeOffset.UtcNow,
         };
@@ -774,7 +774,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         };
     }
 
-    /// <summary>Creates one active <see cref="Interest"/> directly via the
+    /// <summary>Creates one active <see cref="UserInterest"/> directly via the
     /// DbContext (the admin endpoint path is exercised in
     /// <see cref="InterestTests"/>). Returns the id so the test can pin
     /// it into the upsert request — the P9 validator requires 1-10.</summary>
@@ -783,7 +783,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var interest = new Interest
+        var interest = new UserInterest
         {
             Id = Guid.NewGuid(),
             Name = $"Test Interest {Guid.NewGuid():N}",

@@ -1,6 +1,7 @@
 using SIMF.Common.Enums;
 using SIMF.Domain.Programme;
 using SIMF.Domain.Exhibition;
+using SIMF.Domain.Common;
 
 namespace SIMF.Domain.Venue;
 
@@ -8,9 +9,8 @@ namespace SIMF.Domain.Venue;
 /// venue map — a position plus an optional reference to the Hall or Booth it
 /// marks (the agreed 2D target, D-199). The Logistics role places nodes; the
 /// app renders them. Soft-deleted via <see cref="IsActive"/>.</summary>
-public sealed class VenueMapNode
-{
-    public Guid Id { get; set; }
+public sealed class VenueMapNode:BaseAuditEntity
+{ 
 
     public string Label { get; set; } = string.Empty;
     public string LabelArabic { get; set; } = string.Empty;
@@ -31,10 +31,5 @@ public sealed class VenueMapNode
     /// (Kind = Booth). Restrict delete.</summary>
     public Guid? BoothId { get; set; }
     public Booth? Booth { get; set; }
-
-    public bool IsActive { get; set; } = true;
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
-
-    public void Deactivate() => IsActive = false;
+     
 }

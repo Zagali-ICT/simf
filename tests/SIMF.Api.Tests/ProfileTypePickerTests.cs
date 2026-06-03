@@ -112,14 +112,14 @@ public sealed class ProfileTypePickerTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var row = new ProfileType
+        var row = new UserProfileType
         {
             Id = Guid.NewGuid(),
             Name = name,
             NameArabic = "اختبار",
             PageColor = "#3B82F6",
             UserType = UserType.Visitor,
-            IsVisitor = isVisitor,
+            IsForVisitor = isVisitor,
             IsActive = isActive,
             CreatedAt = DateTimeOffset.UtcNow,
         };

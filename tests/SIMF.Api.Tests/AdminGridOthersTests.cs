@@ -211,18 +211,18 @@ Assert.Equal(UserType.Visitor, copy!.UserType);
         // are the ones the CP "Others" page filters on.
         var seeded = await appDb.ProfileTypes
             .FirstOrDefaultAsync(p => p.UserType == UserType.Visitor
-                                       && p.IsVisitor == false
+                                       && p.IsForVisitor == false
                                        && p.IsActive);
         if (seeded is not null) return seeded.Id;
         // Defensive fallback for environments where the seeder did not run.
-        var fresh = new ProfileType
+        var fresh = new UserProfileType
         {
             Id = Guid.NewGuid(),
             Name = "Other — TestSeed",
             NameArabic = "أخرى — اختبار",
             PageColor = "#10B981",
             UserType = UserType.Visitor,
-            IsVisitor = false,
+            IsForVisitor = false,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

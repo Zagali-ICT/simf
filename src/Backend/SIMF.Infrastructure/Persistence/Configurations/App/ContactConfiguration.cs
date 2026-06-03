@@ -18,8 +18,8 @@ internal sealed class ContactConfiguration : IEntityTypeConfiguration<Contact>
         builder.ToTable("Contacts");
         builder.HasKey(contact => contact.Id);
 
-        builder.Property(contact => contact.NameAr).HasMaxLength(256).IsRequired();
-        builder.Property(contact => contact.NameEn).HasMaxLength(256);
+        builder.Property(contact => contact.NameArabic).HasMaxLength(256).IsRequired();
+        builder.Property(contact => contact.Name).HasMaxLength(256);
         builder.Property(contact => contact.LogoRelativePath).HasMaxLength(512);
         builder.Property(contact => contact.PhonePrimary).HasMaxLength(32);
         builder.Property(contact => contact.PhoneSecondary).HasMaxLength(32);
@@ -38,6 +38,6 @@ internal sealed class ContactConfiguration : IEntityTypeConfiguration<Contact>
             .HasForeignKey(contact => contact.CountryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(contact => new { contact.IsActive, contact.NameAr });
+        builder.HasIndex(contact => new { contact.IsActive, contact.NameArabic });
     }
 }

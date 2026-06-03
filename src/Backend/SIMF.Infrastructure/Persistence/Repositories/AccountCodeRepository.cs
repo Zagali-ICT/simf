@@ -19,7 +19,7 @@ internal sealed class AccountCodeRepository(SimfIdentityDbContext dbContext) : I
         AccountCodePurpose purpose,
         CancellationToken cancellationToken = default) =>
         dbContext.AccountCodes
-            .Where(code => code.UserId == userId
+            .Where(code => code.CreateBy == userId
                 && code.Purpose == purpose
                 && code.ConsumedAt == null)
             .OrderByDescending(code => code.CreatedAt)
@@ -31,7 +31,7 @@ internal sealed class AccountCodeRepository(SimfIdentityDbContext dbContext) : I
         DateTimeOffset since,
         CancellationToken cancellationToken = default) =>
         dbContext.AccountCodes.CountAsync(
-            code => code.UserId == userId
+            code => code.CreateBy == userId
                 && code.Purpose == purpose
                 && code.CreatedAt >= since,
             cancellationToken);

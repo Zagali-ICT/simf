@@ -215,17 +215,17 @@ public sealed class PendingProfileReadTests : IClassFixture<SimfApiFactory>
         // with IsVisitor=false. The CP "Others" queue filters this set.
         var seeded = await appDb.ProfileTypes
             .FirstOrDefaultAsync(p => p.UserType == UserType.Visitor
-                                       && p.IsVisitor == false
+                                       && p.IsForVisitor == false
                                        && p.IsActive);
         if (seeded is not null) { return seeded.Id; }
-        var fresh = new ProfileType
+        var fresh = new UserProfileType
         {
             Id = Guid.NewGuid(),
             Name = "Other — PendingReadTestSeed",
             NameArabic = "أخرى — اختبار",
             PageColor = "#10B981",
             UserType = UserType.Visitor,
-            IsVisitor = false,
+            IsForVisitor = false,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };

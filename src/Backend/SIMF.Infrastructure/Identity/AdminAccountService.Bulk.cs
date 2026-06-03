@@ -150,7 +150,7 @@ internal sealed partial class AdminAccountService
             && await appDbContext.ProfileTypes
                 .AsNoTracking()
                 .AnyAsync(p => p.Id == sourceProfileTypeId.Value
-                            && p.IsVisitor == false,
+                            && p.IsForVisitor == false,
                           cancellationToken);
 
         if (isPartnerSource)

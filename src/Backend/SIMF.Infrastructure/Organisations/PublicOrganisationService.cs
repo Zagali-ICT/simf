@@ -25,18 +25,18 @@ internal sealed class PublicOrganisationService(SimfAppDbContext db) : IPublicOr
         {
             var term = search.Trim();
             rows = rows.Where(o =>
-                EF.Functions.Like(o.NameAr, $"%{term}%")
-                || EF.Functions.Like(o.NameEn, $"%{term}%")
+                EF.Functions.Like(o.NameArabic, $"%{term}%")
+                || EF.Functions.Like(o.Name, $"%{term}%")
                 || EF.Functions.Like(o.City, $"%{term}%"));
         }
 
         return await rows
-            .OrderBy(o => o.NameAr)
+            .OrderBy(o => o.NameArabic)
             .Take(take)
             .Select(o => new OrganisationPickerItem(
                 o.Id,
-                o.NameAr,
-                o.NameEn,
+                o.NameArabic,
+                o.Name,
                 o.City))
             .ToListAsync(ct);
     }

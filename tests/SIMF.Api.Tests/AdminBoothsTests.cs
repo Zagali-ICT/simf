@@ -239,8 +239,8 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
         var company = new Company
         {
             Id = Guid.NewGuid(),
-            NameEn = nameEn ?? $"Exhibitor {Guid.NewGuid():N}",
-            NameAr = "شركة عارضة",
+            Name = nameEn ?? $"Exhibitor {Guid.NewGuid():N}",
+            NameArabic = "شركة عارضة",
             Type = type,
             IsActive = isActive,
             CreatedAt = DateTimeOffset.UtcNow,

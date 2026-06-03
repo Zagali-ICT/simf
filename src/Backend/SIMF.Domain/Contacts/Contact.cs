@@ -1,5 +1,7 @@
-namespace SIMF.Domain.Contacts;
+using SIMF.Domain.Common;
 
+namespace SIMF.Domain.Contacts;
+//this common
 /// <summary>
 /// SIMF-FDS-014 (D-260) — a shared, de-duplicated contact / party directory
 /// record. The "identity-card" cluster (logo, bilingual name, phones, social
@@ -15,19 +17,17 @@ namespace SIMF.Domain.Contacts;
 /// lookup). <see cref="LogoRelativePath"/> is a relative path (never an absolute
 /// URL), matching Sponsor / MediaPartner / Speaker.</para>
 /// </summary>
-public sealed class Contact
+public sealed class Contact : BaseAuditEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-
-    /// <summary>Arabic display name (1–256 chars) — the primary surface.</summary>
-    public string NameAr { get; set; } = string.Empty;
-
     /// <summary>English display name (≤256 chars). Optional.</summary>
-    public string? NameEn { get; set; }
+    public string? Name { get; set; }
+    /// <summary>Arabic display name (1–256 chars) — the primary surface.</summary>
+    public string NameArabic { get; set; } = string.Empty;
 
-    /// <summary>Relative path to the contact's logo asset (≤512 chars), resolved
-    /// against the static asset root. Optional — never an absolute URL.</summary>
-    public string? LogoRelativePath { get; set; }
+
+
+
+
 
     /// <summary>Primary contact phone (≤32 chars). Optional.</summary>
     public string? PhonePrimary { get; set; }
@@ -53,6 +53,11 @@ public sealed class Contact
     /// <summary>Instagram profile URL (≤256 chars). Optional.</summary>
     public string? InstagramUrl { get; set; }
 
+
+    /// <summary>ISO 3166-1 numeric country id — same-DB FK to
+    /// <c>SIMF.Domain.Common.Country.Id</c>. Optional.</summary>
+    public int? CountryId { get; set; }
+
     /// <summary>Map latitude (WGS84, [-90,90]). Optional — set together with
     /// <see cref="Longitude"/>.</summary>
     public double? Latitude { get; set; }
@@ -61,17 +66,12 @@ public sealed class Contact
     /// <see cref="Latitude"/>.</summary>
     public double? Longitude { get; set; }
 
-    /// <summary>ISO 3166-1 numeric country id — same-DB FK to
-    /// <c>SIMF.Domain.Common.Country.Id</c>. Optional.</summary>
-    public int? CountryId { get; set; }
 
-    /// <summary>Soft-delete flag. Directory list / pickers filter on this.</summary>
-    public bool IsActive { get; set; } = true;
+    /// <summary>Relative path to the contact's logo asset (≤512 chars), resolved
+    /// against the static asset root. Optional — never an absolute URL.</summary>
+    public string? LogoRelativePath { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
 
-    public DateTimeOffset? UpdatedAt { get; set; }
 
-    /// <summary>Soft-delete transition (CLAUDE.md §7).</summary>
-    public void Deactivate() => IsActive = false;
+    
 }

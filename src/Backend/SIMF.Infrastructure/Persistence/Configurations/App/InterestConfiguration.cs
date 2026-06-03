@@ -5,15 +5,15 @@ using SIMF.Domain.Profiles;
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>
-/// EF configuration for the <see cref="Interest"/> lookup (P9 — D-050).
+/// EF configuration for the <see cref="UserInterest"/> lookup (P9 — D-050).
 /// D-167 moved this onto <c>SimfAppDbContext</c>. Length caps line up
 /// with the <c>AdminCreateInterestRequestValidator</c> rules. A composite
 /// filter index on <c>(IsActive, DisplayOrder)</c> matches the
 /// visitor-picker query shape.
 /// </summary>
-internal sealed class InterestConfiguration : IEntityTypeConfiguration<Interest>
+internal sealed class InterestConfiguration : IEntityTypeConfiguration<UserInterest>
 {
-    public void Configure(EntityTypeBuilder<Interest> builder)
+    public void Configure(EntityTypeBuilder<UserInterest> builder)
     {
         builder.ToTable("Interests");
         builder.HasKey(interest => interest.Id);

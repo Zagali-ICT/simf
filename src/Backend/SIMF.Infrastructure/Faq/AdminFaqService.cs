@@ -40,8 +40,8 @@ internal sealed class AdminFaqService(
         {
             var term = query.Search.Trim();
             rows = rows.Where(g =>
-                EF.Functions.Like(g.NameEn, $"%{term}%")
-                || EF.Functions.Like(g.NameAr, $"%{term}%"));
+                EF.Functions.Like(g.Name, $"%{term}%")
+                || EF.Functions.Like(g.NameArabic, $"%{term}%"));
         }
         if (query.Filters.TryGetValue("isActive", out var activeFilter)
             && bool.TryParse(activeFilter, out var isActive))
@@ -51,10 +51,10 @@ internal sealed class AdminFaqService(
 
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("nameen", true) => rows.OrderByDescending(g => g.NameEn),
-            ("nameen", false) => rows.OrderBy(g => g.NameEn),
+            ("nameen", true) => rows.OrderByDescending(g => g.Name),
+            ("nameen", false) => rows.OrderBy(g => g.Name),
             ("displayorder", true) => rows.OrderByDescending(g => g.DisplayOrder),
-            _ => rows.OrderBy(g => g.DisplayOrder).ThenBy(g => g.NameEn),
+            _ => rows.OrderBy(g => g.DisplayOrder).ThenBy(g => g.Name),
         };
 
         var total = await rows.CountAsync(cancellationToken);
@@ -63,8 +63,8 @@ internal sealed class AdminFaqService(
             .Take(top)
             .Select(g => new AdminFaqGroupSummary(
                 g.Id,
-                g.NameEn,
-                g.NameAr,
+                g.Name,
+                g.NameArabic,
                 g.DisplayOrder,
                 g.IsActive,
                 g.Entries.Count(e => e.IsActive),
@@ -81,7 +81,7 @@ internal sealed class AdminFaqService(
             .AsNoTracking()
             .Where(g => g.Id == id)
             .Select(g => new AdminFaqGroupSummary(
-                g.Id, g.NameEn, g.NameAr, g.DisplayOrder, g.IsActive,
+                g.Id, g.Name, g.NameArabic, g.DisplayOrder, g.IsActive,
                 g.Entries.Count(e => e.IsActive), g.CreatedAt))
             .SingleOrDefaultAsync(cancellationToken);
 
@@ -96,8 +96,8 @@ internal sealed class AdminFaqService(
         var group = new FaqGroup
         {
             Id = Guid.NewGuid(),
-            NameEn = nameEn,
-            NameAr = nameAr,
+            Name = nameEn,
+            NameArabic = nameAr,
             DisplayOrder = request.DisplayOrder,
             IsActive = true,
             CreatedAt = now,
@@ -106,9 +106,9 @@ internal sealed class AdminFaqService(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await WriteAuditAsync(AuditEvents.FaqGroupCreated, actorUserId,
-            $"id={group.Id}; nameEn={group.NameEn}", cancellationToken);
+            $"id={group.Id}; nameEn={group.Name}", cancellationToken);
         logger.LogInformation("Admin {ActorId} created FAQ group {Name} ({Id})",
-            actorUserId, group.NameEn, group.Id);
+            actorUserId, group.Name, group.Id);
 
         return ToGroupSummary(group, entryCount: 0);
     }
@@ -120,8 +120,8 @@ internal sealed class AdminFaqService(
             .SingleOrDefaultAsync(g => g.Id == id, cancellationToken)
             ?? throw GroupNotFound();
 
-        group.NameEn = RequireText(request.NameEn, NameMaxLength, "English name", "الاسم الإنجليزي");
-        group.NameAr = RequireText(request.NameAr, NameMaxLength, "Arabic name", "الاسم العربي");
+        group.Name = RequireText(request.NameEn, NameMaxLength, "English name", "الاسم الإنجليزي");
+        group.NameArabic = RequireText(request.NameAr, NameMaxLength, "Arabic name", "الاسم العربي");
         RequireNonNegative(request.DisplayOrder);
         group.DisplayOrder = request.DisplayOrder;
         group.IsActive = request.IsActive;
@@ -129,7 +129,7 @@ internal sealed class AdminFaqService(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await WriteAuditAsync(AuditEvents.FaqGroupUpdated, actorUserId,
-            $"id={group.Id}; nameEn={group.NameEn}; active={group.IsActive}", cancellationToken);
+            $"id={group.Id}; nameEn={group.Name}; active={group.IsActive}", cancellationToken);
 
         var entryCount = await dbContext.FaqEntries
             .CountAsync(e => e.FaqGroupId == id && e.IsActive, cancellationToken);
@@ -149,7 +149,7 @@ internal sealed class AdminFaqService(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await WriteAuditAsync(AuditEvents.FaqGroupDeactivated, actorUserId,
-            $"id={group.Id}; nameEn={group.NameEn}", cancellationToken);
+            $"id={group.Id}; nameEn={group.Name}", cancellationToken);
     }
 
     // -- Entries --------------------------------------------------------------
@@ -284,7 +284,7 @@ internal sealed class AdminFaqService(
         }, cancellationToken);
 
     private static AdminFaqGroupSummary ToGroupSummary(FaqGroup g, int entryCount) =>
-        new(g.Id, g.NameEn, g.NameAr, g.DisplayOrder, g.IsActive, entryCount, g.CreatedAt);
+        new(g.Id, g.Name, g.NameArabic, g.DisplayOrder, g.IsActive, entryCount, g.CreatedAt);
 
     private static AdminFaqEntrySummary ToEntrySummary(FaqEntry e) =>
         new(e.Id, e.FaqGroupId, e.QuestionEn, e.QuestionAr, e.AnswerEn, e.AnswerAr,

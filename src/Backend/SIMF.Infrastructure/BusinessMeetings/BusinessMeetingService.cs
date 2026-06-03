@@ -693,7 +693,7 @@ internal sealed class BusinessMeetingService(
         {
             var companies = await appDbContext.Companies.AsNoTracking()
                 .Where(c => companyIds.Contains(c.Id) && c.IsActive)
-                .Select(c => new { c.Id, c.NameAr, c.NameEn })
+                .Select(c => new { c.Id, c.NameArabic, c.Name })
                 .ToListAsync(cancellationToken);
             if (companies.Count != companyIds.Distinct().Count())
             {

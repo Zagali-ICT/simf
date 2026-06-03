@@ -22,8 +22,8 @@ internal sealed class OrganisationConfiguration : IEntityTypeConfiguration<Organ
         builder.ToTable("Organisations");
         builder.HasKey(organisation => organisation.Id);
 
-        builder.Property(organisation => organisation.NameAr).HasMaxLength(256).IsRequired();
-        builder.Property(organisation => organisation.NameEn).HasMaxLength(256);
+        builder.Property(organisation => organisation.NameArabic).HasMaxLength(256).IsRequired();
+        builder.Property(organisation => organisation.Name).HasMaxLength(256);
         builder.Property(organisation => organisation.CommercialRegistration).HasMaxLength(32);
         builder.Property(organisation => organisation.Sector).HasMaxLength(128);
         builder.Property(organisation => organisation.City).HasMaxLength(128);
@@ -37,6 +37,6 @@ internal sealed class OrganisationConfiguration : IEntityTypeConfiguration<Organ
             .IsUnique()
             .HasFilter("[CommercialRegistration] IS NOT NULL");
 
-        builder.HasIndex(organisation => new { organisation.IsActive, organisation.NameAr });
+        builder.HasIndex(organisation => new { organisation.IsActive, organisation.NameArabic });
     }
 }

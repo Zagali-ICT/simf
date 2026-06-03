@@ -16,11 +16,11 @@ internal sealed class AccountCodeConfiguration : IEntityTypeConfiguration<Accoun
             .HasConversion<string>()
             .HasMaxLength(32);
 
-        builder.HasIndex(code => new { code.UserId, code.Purpose });
+        builder.HasIndex(code => new { code.CreateBy, code.Purpose });
 
         builder.HasOne<SimfUser>()
             .WithMany()
-            .HasForeignKey(code => code.UserId)
+            .HasForeignKey(code => code.CreateBy)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

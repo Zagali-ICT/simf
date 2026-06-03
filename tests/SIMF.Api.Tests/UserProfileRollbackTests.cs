@@ -72,7 +72,7 @@ public sealed class ThrowingRefreshTokenApiFactory : SimfApiFactory
         }
         public Task RevokeAllForUserAsync(Guid userId, DateTimeOffset revokedAt, CancellationToken ct = default) =>
             _db.RefreshTokens
-                .Where(rt => rt.UserId == userId && rt.RevokedAt == null)
+                .Where(rt => rt.CreateBy == userId && rt.RevokedAt == null)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(rt => rt.RevokedAt, revokedAt), ct);
         public Task<int> RevokeIfActiveAsync(Guid tokenId, DateTimeOffset revokedAt, CancellationToken ct = default) =>
             _db.RefreshTokens
@@ -144,7 +144,7 @@ public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshToke
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
             var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-            var interest = new Interest
+            var interest = new UserInterest
             {
                 Id = Guid.NewGuid(),
                 Name = $"Rollback {Guid.NewGuid():N}",

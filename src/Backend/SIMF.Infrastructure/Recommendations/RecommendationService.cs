@@ -75,8 +75,8 @@ internal sealed class RecommendationService(
             .Select(p => new
             {
                 p.Id,
-                p.EnglishName,
-                p.ArabicName,
+                p.Name,
+                p.NameArabic,
                 p.JobTitle,
                 p.ProfileTypeId,
                 ProfileTypeName = p.ProfileType != null ? p.ProfileType.Name : null,

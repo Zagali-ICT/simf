@@ -61,7 +61,7 @@ public interface IUserProfileRepository
 
     /// <summary>The tracked Interest rows for <paramref name="ids"/> — added
     /// to the profile's Interests collection on the diff path.</summary>
-    Task<IReadOnlyList<Interest>> GetInterestsByIdsAsync(
+    Task<IReadOnlyList<UserInterest>> GetInterestsByIdsAsync(
         IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default);
 
     /// <summary>Country PK for an active ISO code, or null when unknown.</summary>
@@ -97,7 +97,7 @@ public interface IUserProfileRepository
     Task SaveAppChangesAsync(CancellationToken cancellationToken = default);
 }
 
-/// <summary>Active + scope facts read off a <see cref="ProfileType"/>.</summary>
+/// <summary>Active + scope facts read off a <see cref="UserProfileType"/>.</summary>
 public sealed record ProfileTypeFacts(bool IsActive, UserType UserType);
 
 /// <summary>Audience flag + mobile role read off an assigned profile type.</summary>

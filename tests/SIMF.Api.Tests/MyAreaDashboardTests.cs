@@ -192,12 +192,12 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
         };
         app.Sessions.Add(session);
 
-        var profileType = new ProfileType
+        var profileType = new UserProfileType
         {
             Id = Guid.NewGuid(),
             Name = "VVIP " + Guid.NewGuid().ToString("N")[..4], NameArabic = "كبار الشخصيات",
             PageColor = "#FFD700",
-            UserType = UserType.Visitor, IsVisitor = true,
+            UserType = UserType.Visitor, IsForVisitor = true,
             MobileAppRole = MobileAppRole.None, IsActive = true, CreatedAt = now,
         };
         app.ProfileTypes.Add(profileType);
@@ -205,8 +205,8 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
         var organisation = new Organisation
         {
             Id = Guid.NewGuid(),
-            NameAr = "القوات البحرية الملكية السعودية",
-            NameEn = "Royal Saudi Naval Forces",
+            NameArabic = "القوات البحرية الملكية السعودية",
+            Name = "Royal Saudi Naval Forces",
             IsActive = true, CreatedAt = now,
         };
         app.Organisations.Add(organisation);
@@ -217,8 +217,8 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
             UserId = userId,
             ProfileTypeId = profileType.Id,
             OrganisationId = organisation.Id,
-            ArabicName = "سعد العتيبي",
-            EnglishName = "Saad Alotaibi",
+            NameArabic = "سعد العتيبي",
+            Name = "Saad Alotaibi",
             JobTitle = "Captain",
             QrId = qrId,
             NationalityId = 682,

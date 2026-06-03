@@ -18,8 +18,8 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
         builder.ToTable("Sponsors");
         builder.HasKey(sponsor => sponsor.Id);
 
-        builder.Property(sponsor => sponsor.NameEn).HasMaxLength(256).IsRequired();
-        builder.Property(sponsor => sponsor.NameAr).HasMaxLength(256).IsRequired();
+        builder.Property(sponsor => sponsor.Name).HasMaxLength(256).IsRequired();
+        builder.Property(sponsor => sponsor.NameArabic).HasMaxLength(256).IsRequired();
 
         // Persist the enum by its int value (the wire/sort contract), matching
         // the additive-only enum discipline. EF stores enums as int by default;

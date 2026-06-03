@@ -1,7 +1,7 @@
 using SIMF.Common.Enums;
 using SIMF.Domain.Programme;
 
-namespace SIMF.Domain.MeetingRequests;
+namespace SIMF.Domain.BusinessMeetings;
 
 /// <summary>
 /// D-269 (Mockup page 20 "Speaker profile") — an attendee's request to meet a

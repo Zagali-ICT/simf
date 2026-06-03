@@ -245,7 +245,7 @@ internal sealed partial class AdminAccountService
         var isVisitor = await appDbContext.ProfileTypes
             .AsNoTracking()
             .Where(p => p.Id == profileTypeId)
-            .Select(p => (bool?)p.IsVisitor)
+            .Select(p => (bool?)p.IsForVisitor)
             .SingleOrDefaultAsync(cancellationToken);
         return (isVisitor ?? true) == requireIsVisitor;
     }

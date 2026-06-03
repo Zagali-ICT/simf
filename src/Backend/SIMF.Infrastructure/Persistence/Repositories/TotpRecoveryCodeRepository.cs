@@ -16,7 +16,7 @@ internal sealed class TotpRecoveryCodeRepository(SimfIdentityDbContext dbContext
         var entities = codeHashes.Select(hash => new TotpRecoveryCode
         {
             Id = Guid.NewGuid(),
-            UserId = userId,
+            CreateBy = userId,
             CodeHash = hash,
             CreatedAt = now,
         });
@@ -29,7 +29,7 @@ internal sealed class TotpRecoveryCodeRepository(SimfIdentityDbContext dbContext
         string codeHash,
         CancellationToken cancellationToken = default) =>
         dbContext.TotpRecoveryCodes.SingleOrDefaultAsync(
-            code => code.UserId == userId
+            code => code.CreateBy == userId
                 && code.CodeHash == codeHash
                 && code.ConsumedAt == null,
             cancellationToken);
@@ -48,7 +48,7 @@ internal sealed class TotpRecoveryCodeRepository(SimfIdentityDbContext dbContext
         Guid userId,
         CancellationToken cancellationToken = default) =>
         dbContext.TotpRecoveryCodes.CountAsync(
-            code => code.UserId == userId && code.ConsumedAt == null,
+            code => code.CreateBy == userId && code.ConsumedAt == null,
             cancellationToken);
 
     public async Task RevokeAllForUserAsync(
@@ -56,7 +56,7 @@ internal sealed class TotpRecoveryCodeRepository(SimfIdentityDbContext dbContext
         CancellationToken cancellationToken = default)
     {
         await dbContext.TotpRecoveryCodes
-            .Where(code => code.UserId == userId)
+            .Where(code => code.CreateBy == userId)
             .ExecuteDeleteAsync(cancellationToken);
     }
 }

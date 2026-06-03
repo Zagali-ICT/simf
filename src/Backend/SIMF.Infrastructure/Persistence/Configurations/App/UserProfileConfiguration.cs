@@ -27,8 +27,8 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         // a sibling row.
         builder.HasIndex(profile => profile.UserId).IsUnique();
 
-        builder.Property(profile => profile.ArabicName).HasMaxLength(256).IsRequired();
-        builder.Property(profile => profile.EnglishName).HasMaxLength(256).IsRequired();
+        builder.Property(profile => profile.NameArabic).HasMaxLength(256).IsRequired();
+        builder.Property(profile => profile.Name).HasMaxLength(256).IsRequired();
         // D-163 — PDF §2.6 optional job title.
         builder.Property(profile => profile.JobTitle).HasMaxLength(128);
         // D-151 / D-167: NationalityId is validated at the service layer
@@ -86,7 +86,7 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
             .WithMany()
             .UsingEntity<Dictionary<string, object>>(
                 "UserProfileInterests",
-                right => right.HasOne<Interest>()
+                right => right.HasOne<UserInterest>()
                     .WithMany()
                     .HasForeignKey("InterestId")
                     .OnDelete(DeleteBehavior.Cascade),

@@ -1,3 +1,5 @@
+using SIMF.Domain.Common;
+
 namespace SIMF.Domain.Feedback;
 
 /// <summary>
@@ -13,9 +15,8 @@ namespace SIMF.Domain.Feedback;
 /// and table contract minimal for the high-volume feedback path.
 /// </para>
 /// </summary>
-public sealed class Rating
-{
-    public Guid Id { get; set; }
+public sealed class Rating:BaseAuditEntity
+{ 
 
     /// <summary>The attendee who submitted the rating
     /// (<c>SimfUser.Id</c> / <c>sub</c> claim). Unique — one row per user.</summary>
@@ -29,14 +30,11 @@ public sealed class Rating
     /// mockup). Null when the attendee submits stars only.</summary>
     public string? Comment { get; set; }
 
-    /// <summary>When the rating was first created.</summary>
-    public DateTimeOffset CreatedAt { get; set; }
+    
 
     /// <summary>When the rating was last changed via upsert; null until the
     /// attendee revises their original submission.</summary>
-    public DateTimeOffset? UpdatedAt { get; set; }
+    //public DateTimeOffset? UpdatedAt { get; set; }
 
-    /// <summary>D-199 — soft-delete flag, consistent with every other
-    /// app-data entity. Admin list filters on <c>IsActive</c>.</summary>
-    public bool IsActive { get; set; } = true;
+     
 }

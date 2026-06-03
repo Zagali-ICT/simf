@@ -1,3 +1,5 @@
+using SIMF.Domain.Common;
+
 namespace SIMF.Domain.Organisations;
 
 /// <summary>
@@ -12,22 +14,20 @@ namespace SIMF.Domain.Organisations;
 /// re-import of the same gov sheet updates the existing row rather than
 /// inserting a duplicate.</para>
 /// </summary>
-public class Organisation
+public class Organisation: BaseAuditEntity
 {
-    /// <summary>Primary key.</summary>
-    public Guid Id { get; set; }
-
+    /// <summary>English organisation name (≤ 256 chars). Optional.</summary>
+    public string? Name { get; set; }
+    
     /// <summary>Arabic organisation name (1–256 chars). Required — the
     /// primary display name in the bilingual lookup.</summary>
-    public string NameAr { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
 
-    /// <summary>English organisation name (≤ 256 chars). Optional.</summary>
-    public string? NameEn { get; set; }
-
+    
     /// <summary>Commercial registration number / سجل تجاري (≤ 32 chars).
     /// Optional, but unique across organisations when present so a re-import
     /// updates the matching row instead of duplicating it.</summary>
-    public string? CommercialRegistration { get; set; }
+    public string? CommercialRegistration { get; set; }//long 700 CR700Id
 
     /// <summary>Business sector / activity (≤ 128 chars), e.g.
     /// "Defense Systems". Optional.</summary>
@@ -43,18 +43,5 @@ public class Organisation
     public string? Email { get; set; }
 
     /// <summary>Organisation website URL (≤ 512 chars). Optional.</summary>
-    public string? Website { get; set; }
-
-    /// <summary>Soft-delete flag. List/read/search endpoints filter on this.</summary>
-    public bool IsActive { get; set; } = true;
-
-    /// <summary>Reverts <see cref="IsActive"/> to false — the soft-delete
-    /// operation used by the admin DELETE endpoint.</summary>
-    public void Deactivate() => IsActive = false;
-
-    /// <summary>UTC timestamp the row was created.</summary>
-    public DateTimeOffset CreatedAt { get; set; }
-
-    /// <summary>UTC timestamp the row was last updated. Null until first edit.</summary>
-    public DateTimeOffset? UpdatedAt { get; set; }
+    public string? Website { get; set; } 
 }

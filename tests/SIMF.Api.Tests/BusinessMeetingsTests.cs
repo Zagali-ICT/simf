@@ -811,8 +811,8 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
         var company = new Company
         {
             Id = Guid.NewGuid(),
-            NameEn = $"Co {Guid.NewGuid():N}",
-            NameAr = "شركة",
+            Name = $"Co {Guid.NewGuid():N}",
+            NameArabic = "شركة",
             Type = CompanyType.Exhibitor,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,

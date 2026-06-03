@@ -364,7 +364,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var user = database.Users.Single(u => u.Email == email);
         var otpCount = database.AccountCodes
-            .Count(c => c.UserId == user.Id && c.Purpose == AccountCodePurpose.SignInOtp);
+            .Count(c => c.CreateBy == user.Id && c.Purpose == AccountCodePurpose.SignInOtp);
         Assert.Equal(0, otpCount);
     }
 
@@ -836,7 +836,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
         var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var user = database.Users.Single(candidate => candidate.Email == email);
         return database.AccountCodes
-            .Where(code => code.UserId == user.Id
+            .Where(code => code.CreateBy == user.Id
                 && code.Purpose == purpose
                 && code.ConsumedAt == null)
             .OrderByDescending(code => code.CreatedAt)

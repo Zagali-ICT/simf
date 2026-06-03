@@ -62,7 +62,7 @@ internal sealed class AdminProfileTypeCommandService(
         if (query.Filters.TryGetValue("isVisitor", out var isVisitorFilter)
             && bool.TryParse(isVisitorFilter, out var isVisitorValue))
         {
-            rows = rows.Where(profileType => profileType.IsVisitor == isVisitorValue);
+            rows = rows.Where(profileType => profileType.IsForVisitor == isVisitorValue);
         }
 
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
@@ -90,7 +90,7 @@ internal sealed class AdminProfileTypeCommandService(
                 profileType.UserType.ToString(),
                 profileType.MobileAppRole.ToString(),
                 profileType.IsActive,
-                profileType.IsVisitor))
+                profileType.IsForVisitor))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminProfileTypeSummary>.Of(page, total,
@@ -147,7 +147,7 @@ internal sealed class AdminProfileTypeCommandService(
         var mobileAppRole = ParseMobileAppRole(request.MobileAppRole);
 
         var now = timeProvider.GetUtcNow();
-        var profileType = new ProfileType
+        var profileType = new UserProfileType
         {
             Id = Guid.NewGuid(),
             Name = name,
@@ -156,7 +156,7 @@ internal sealed class AdminProfileTypeCommandService(
             UserType = userType,
             // D-186: IsVisitor drives CP queue routing — true = Visitors
             // approval queue, false = Others approval queue.
-            IsVisitor = request.IsVisitor,
+            IsForVisitor = request.IsVisitor,
             MobileAppRole = mobileAppRole,
             IsActive = request.IsActive,
             CreatedAt = now,
@@ -216,7 +216,7 @@ internal sealed class AdminProfileTypeCommandService(
         // IsVisitor BEFORE the mutation so the audit Detail records
         // any flip. Silent flips would let an insider mass-launder
         // partner accounts into the audience queue with no SOC trail.
-        var oldIsVisitor = profileType.IsVisitor;
+        var oldIsVisitor = profileType.IsForVisitor;
 
         profileType.Name = name;
         profileType.NameArabic = (request.NameArabic ?? string.Empty).Trim();
@@ -226,11 +226,11 @@ internal sealed class AdminProfileTypeCommandService(
         // D-186: IsVisitor is mutable — flipping it re-routes the row
         // between the CP Visitors and Others approval queues. The
         // underlying user accounts already use UserType.Visitor either way.
-        profileType.IsVisitor = request.IsVisitor;
+        profileType.IsForVisitor = request.IsVisitor;
         profileType.UpdatedAt = timeProvider.GetUtcNow();
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var isVisitorChanged = oldIsVisitor != profileType.IsVisitor;
+        var isVisitorChanged = oldIsVisitor != profileType.IsForVisitor;
         // D-186 review-pass: count linked accounts when the flag
         // changed so SOC can prioritise the audit row (a flip on a
         // ProfileType with hundreds of linked accounts is a much
@@ -249,7 +249,7 @@ internal sealed class AdminProfileTypeCommandService(
                 ? $"id={profileType.Id}; name={profileType.Name}; "
                     + $"active={profileType.IsActive}; "
                     + $"isVisitorChanged=true; isVisitorOld={oldIsVisitor}; "
-                    + $"isVisitorNew={profileType.IsVisitor}; "
+                    + $"isVisitorNew={profileType.IsForVisitor}; "
                     + $"linkedAccountCount={linkedAccountCount}"
                 : $"id={profileType.Id}; name={profileType.Name}; "
                     + $"active={profileType.IsActive}; isVisitorChanged=false",
@@ -302,7 +302,7 @@ internal sealed class AdminProfileTypeCommandService(
         }, cancellationToken);
     }
 
-    private static AdminProfileTypeSummary ToSummary(ProfileType profileType) =>
+    private static AdminProfileTypeSummary ToSummary(UserProfileType profileType) =>
         new(profileType.Id,
             profileType.Name,
             profileType.NameArabic,
@@ -310,7 +310,7 @@ internal sealed class AdminProfileTypeCommandService(
             profileType.UserType.ToString(),
             profileType.MobileAppRole.ToString(),
             profileType.IsActive,
-            profileType.IsVisitor);
+            profileType.IsForVisitor);
 
     /// <summary>D-161 — parses the wire-side stringly mobile-app-role,
     /// rejecting unknown values with a typed 400. Null / empty defaults

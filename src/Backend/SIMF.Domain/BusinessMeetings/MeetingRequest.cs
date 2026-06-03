@@ -1,7 +1,7 @@
 using SIMF.Common.Enums;
 using SIMF.Domain.Programme;
 
-namespace SIMF.Domain.MeetingRequests;
+namespace SIMF.Domain.BusinessMeetings;
 
 /// <summary>
 /// D-174 (gap doc G11, Mockup page 27) — an audience-submitted request

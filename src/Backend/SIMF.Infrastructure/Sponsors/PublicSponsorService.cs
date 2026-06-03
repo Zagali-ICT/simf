@@ -20,11 +20,11 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
             .Where(sponsor => sponsor.IsActive)
             .OrderBy(sponsor => sponsor.Tier)
             .ThenBy(sponsor => sponsor.DisplayOrder)
-            .ThenBy(sponsor => sponsor.NameAr)
+            .ThenBy(sponsor => sponsor.NameArabic)
             .Select(sponsor => new PublicSponsor(
                 sponsor.Id,
-                sponsor.NameEn,
-                sponsor.NameAr,
+                sponsor.Name,
+                sponsor.NameArabic,
                 (int)sponsor.Tier,
                 sponsor.Tier.ToString(),
                 sponsor.LogoRelativePath,

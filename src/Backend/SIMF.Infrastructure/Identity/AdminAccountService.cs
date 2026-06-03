@@ -260,7 +260,7 @@ internal sealed partial class AdminAccountService(
                 "نوع الملف الشخصي المحدّد غير نشط أو غير منطبق.");
         }
         if (expectedIsVisitor is { } expected
-            && profileType.IsVisitor != expected)
+            && profileType.IsForVisitor != expected)
         {
             throw new ApiException(
                 ErrorCodes.AdminProfileTypeInvalid, 400,
@@ -297,7 +297,7 @@ internal sealed partial class AdminAccountService(
         // policy the visitor self-service flow uses.
         var requestedInterests = request.InterestIds.Distinct().ToList();
         var resolvedInterests = requestedInterests.Count == 0
-            ? new List<Interest>()
+            ? new List<UserInterest>()
             : await appDbContext.Interests
                 .Where(i => requestedInterests.Contains(i.Id) && i.IsActive)
                 .ToListAsync(cancellationToken);
@@ -363,8 +363,8 @@ internal sealed partial class AdminAccountService(
             Id = Guid.NewGuid(),
             UserId = user.Id,
             ProfileTypeId = profileType.Id,
-            ArabicName = (request.ArabicName ?? string.Empty).Trim(),
-            EnglishName = (request.EnglishName ?? string.Empty).Trim(),
+            NameArabic = (request.ArabicName ?? string.Empty).Trim(),
+            Name = (request.EnglishName ?? string.Empty).Trim(),
             JobTitle = NormaliseOptional(request.JobTitle),
             NationalityId = nationalityId.Value,
             DateOfBirth = request.DateOfBirth,
@@ -407,7 +407,7 @@ internal sealed partial class AdminAccountService(
             // distinguishes; the desk URL is reflected via the new
             // expectedIsVisitor parameter the endpoint passes in).
             Detail = $"kind={kind}; profileType={profileType.Name}; "
-                + $"profileTypeIsVisitor={profileType.IsVisitor}; "
+                + $"profileTypeIsVisitor={profileType.IsForVisitor}; "
                 + $"hasEmail={hasRealEmail}",
         }, cancellationToken);
 
@@ -480,7 +480,7 @@ internal sealed partial class AdminAccountService(
                     "نوع الملف الشخصي المحدّد لا ينطبق على هذا النوع من المستخدمين.");
             }
             if (expectedIsVisitor is { } expected
-                && profileType.IsVisitor != expected)
+                && profileType.IsForVisitor != expected)
             {
                 throw new ApiException(
                     ErrorCodes.AdminProfileTypeInvalid, 400,
@@ -558,7 +558,7 @@ internal sealed partial class AdminAccountService(
         var code = new AccountCode
         {
             Id = Guid.NewGuid(),
-            UserId = user.Id,
+            CreateBy = user.Id,
             Purpose = AccountCodePurpose.PasswordReset,
             Code = VerificationCodeGenerator.Generate(),
             CreatedAt = now,
@@ -877,7 +877,7 @@ internal sealed partial class AdminAccountService(
         // ProfileTypeId — they were invisible to BOTH queues.
         var partnerProfileTypeIds = await appDbContext.ProfileTypes
             .AsNoTracking()
-            .Where(p => p.IsVisitor == false
+            .Where(p => p.IsForVisitor == false
                         && p.UserType == UserType.Visitor)
             .Select(p => p.Id)
             .ToListAsync(cancellationToken);

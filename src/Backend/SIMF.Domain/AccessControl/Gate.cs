@@ -1,4 +1,5 @@
 using SIMF.Common.Enums;
+using SIMF.Domain.Common;
 
 namespace SIMF.Domain.AccessControl;
 
@@ -9,9 +10,8 @@ namespace SIMF.Domain.AccessControl;
 /// of assigned operators via <see cref="GateAssignment"/>. The constraint engine
 /// in <c>GateOperatorService</c> applies these to every scan.
 /// </summary>
-public class Gate
+public class Gate : BaseAuditEntity
 {
-    public Guid Id { get; set; }
 
     /// <summary>Short stable code (2–16 chars; case-insensitive unique;
     /// uppercase-normalised by the service).</summary>
@@ -35,23 +35,17 @@ public class Gate
     /// step 10).</summary>
     public DirectionMode DirectionMode { get; set; } = DirectionMode.Both;
 
-    /// <summary>Soft-delete flag. <c>false</c> rows still hold their
-    /// assignments + scan history but the operator console hides the
-    /// gate and POST /scans returns 503 GATE_INACTIVE.</summary>
-    public bool IsActive { get; set; } = true;
 
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
 
     /// <summary>The allowed-profile-type rows. Empty = all allowed (general
     /// gate). Non-empty = filtered through active ProfileTypes per the
     /// safe-default rule L-15 (deactivating every entry denies all scans
     /// rather than silently flipping to "everyone").</summary>
     public ICollection<GateProfileTypeAllow> AllowedProfileTypes { get; set; }
-        = new List<GateProfileTypeAllow>();
+        = [];
 
     /// <summary>The operator assignments. Active rows are the only ones
     /// the engine checks; inactive rows are kept for audit.</summary>
     public ICollection<GateAssignment> Assignments { get; set; }
-        = new List<GateAssignment>();
+        = [];
 }

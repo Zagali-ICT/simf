@@ -61,7 +61,7 @@ internal sealed class InterestService(
         }
 
         var now = timeProvider.GetUtcNow();
-        var interest = new Interest
+        var interest = new UserInterest
         {
             Id = Guid.NewGuid(),
             Name = request.Name.Trim(),

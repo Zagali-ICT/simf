@@ -1,3 +1,5 @@
+using SIMF.Domain.Common;
+
 namespace SIMF.Domain.AccessControl;
 
 /// <summary>
@@ -8,12 +10,12 @@ namespace SIMF.Domain.AccessControl;
 /// <see cref="RevokedAt"/> / <see cref="IsActive"/> pair. All UserId references
 /// are logical FKs (cross-context — DAT-001 §5.3.1).
 /// </summary>
-public class GateAssignment
+public class GateAssignment : BaseEntity
 {
-    public Guid Id { get; set; }
 
     public Guid GateId { get; set; }
     public Gate? Gate { get; set; }
+
 
     /// <summary>The assigned operator. Logical FK to <c>SimfUser</c>.</summary>
     public Guid UserId { get; set; }
@@ -22,15 +24,12 @@ public class GateAssignment
     /// engine reads only active rows.</summary>
     public bool IsActive { get; set; } = true;
 
-    public DateTimeOffset AssignedAt { get; set; }
 
-    /// <summary>The admin who created this assignment. Logical FK to
-    /// <c>SimfUser</c>.</summary>
-    public Guid AssignedByUserId { get; set; }
-
-    public DateTimeOffset? RevokedAt { get; set; }
 
     /// <summary>The admin who revoked this assignment, when applicable.
     /// Logical FK to <c>SimfUser</c>.</summary>
     public Guid? RevokedByUserId { get; set; }
+    public DateTimeOffset? RevokedAt { get; set; }
+
+    
 }

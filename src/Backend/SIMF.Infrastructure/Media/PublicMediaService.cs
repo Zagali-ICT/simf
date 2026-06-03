@@ -47,7 +47,7 @@ internal sealed class PublicMediaService(
                 item.Id,
                 item.Kind,
                 item.TitleEn,
-                item.TitleAr,
+                item.TitleArabic,
                 item.AlbumEn,
                 item.AlbumAr,
                 HasImage = item.ImageRelativePath != null,

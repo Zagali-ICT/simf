@@ -1,4 +1,4 @@
-namespace SIMF.Domain.Sponsors;
+namespace SIMF.Common.Enums;
 
 /// <summary>
 /// D-199 (Mockup page 23) — sponsorship tier a <see cref="Sponsor"/> belongs to.
@@ -11,7 +11,7 @@ namespace SIMF.Domain.Sponsors;
 /// tier appends a new value that does not collide. The gaps (10/20/30/40) leave
 /// room to insert an intermediate tier later without renumbering.
 /// </summary>
-public enum SponsorTier
+public enum SponsorTier //add translations
 {
     /// <summary>Top tier — rendered first, largest logos.</summary>
     Platinum = 10,

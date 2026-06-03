@@ -1,4 +1,5 @@
 using SIMF.Common.Enums;
+using SIMF.Domain.Profiles;
 
 namespace SIMF.Domain.AccessControl;
 
@@ -15,6 +16,9 @@ public class GateScan
     /// under high insert load.</summary>
     public long Id { get; set; }
 
+
+
+
     public Guid GateId { get; set; }
     public Gate? Gate { get; set; }
 
@@ -22,7 +26,12 @@ public class GateScan
     /// resolved to nothing (DenialReasonCode = QR_UNKNOWN). Logical FK to
     /// <c>UserProfile</c> (cross-DB — D-157).</summary>
     public Guid? UserProfileId { get; set; }
+    public UserProfile? UserProfile  { get; set; }
 
+   
+    /// <summary>The 12-character QR exactly as scanned. Preserved verbatim
+    /// even after QR rotation so the scan stays forensically traceable.</summary>
+    public string QrIdAtScan { get; set; } = string.Empty;
     /// <summary>D-157 — snapshot of the scanned visitor's display name
     /// at the moment of the scan. Lets the scan log render "Ahmad Salem"
     /// even after the linked Identity-DB row is deleted, renamed, or
@@ -35,10 +44,9 @@ public class GateScan
     /// rationale as <see cref="ScannedDisplayName"/>.</summary>
     public string? ScannedProfileTypeName { get; set; }
 
-    /// <summary>The 12-character QR exactly as scanned. Preserved verbatim
-    /// even after QR rotation so the scan stays forensically traceable.</summary>
-    public string QrIdAtScan { get; set; } = string.Empty;
 
+
+   
     /// <summary>Resolved direction. For Both-mode gates the engine infers
     /// this in step 10 from the visitor's last allowed scan at this gate.</summary>
     public ScanDirection Direction { get; set; }
@@ -49,6 +57,33 @@ public class GateScan
     /// <summary>The denial code on a denied scan; null on success.</summary>
     public DenialReasonCode? DenialReasonCode { get; set; }
 
+
+    
+   
+    /// <summary>Where the scan came from.</summary>
+    public ScanSource Source { get; set; }
+
+    /// <summary>Tie-back to the API correlation id for the request.</summary>
+    public string? CorrelationId { get; set; }
+
+    /// <summary>Caller user-agent.</summary>
+    public string? UserAgent { get; set; }
+
+    /// <summary>Caller IP — for abuse investigation.</summary>
+    public string? IpAddress { get; set; }
+
+
+
+    /// <summary>The UUIDv4 idempotency key the client sent, when present.
+    /// Replays return the original recorded outcome (design notes §5).</summary>
+    public string? IdempotencyKey { get; set; }
+
+
+   
+
+    /// <summary>The operator (or system / kiosk principal) who performed
+    /// the scan. Logical FK to <c>SimfUser</c>.</summary>
+    public Guid ScannedByUserId { get; set; }
     /// <summary>Server clock at receive. The authoritative timestamp.</summary>
     public DateTimeOffset ScannedAtUtc { get; set; }
 
@@ -57,23 +92,5 @@ public class GateScan
     /// not supply it.</summary>
     public DateTimeOffset? ClientScannedAtUtc { get; set; }
 
-    /// <summary>The operator (or system / kiosk principal) who performed
-    /// the scan. Logical FK to <c>SimfUser</c>.</summary>
-    public Guid ScannedByUserId { get; set; }
 
-    /// <summary>Where the scan came from.</summary>
-    public ScanSource Source { get; set; }
-
-    /// <summary>Tie-back to the API correlation id for the request.</summary>
-    public string? CorrelationId { get; set; }
-
-    /// <summary>Caller IP — for abuse investigation.</summary>
-    public string? IpAddress { get; set; }
-
-    /// <summary>Caller user-agent.</summary>
-    public string? UserAgent { get; set; }
-
-    /// <summary>The UUIDv4 idempotency key the client sent, when present.
-    /// Replays return the original recorded outcome (design notes §5).</summary>
-    public string? IdempotencyKey { get; set; }
 }

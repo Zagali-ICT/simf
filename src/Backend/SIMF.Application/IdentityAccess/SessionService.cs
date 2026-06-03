@@ -52,19 +52,19 @@ public sealed class SessionService(
         if (presented.RevokedAt is not null)
         {
             await refreshTokenRepository.RevokeAllForUserAsync(
-                presented.UserId, now, cancellationToken);
-            var compromised = await accounts.FindByIdAsync(presented.UserId, cancellationToken);
+                presented.CreateBy, now, cancellationToken);
+            var compromised = await accounts.FindByIdAsync(presented.CreateBy, cancellationToken);
             if (compromised is not null)
             {
                 await accounts.UpdateSecurityStampAsync(compromised);
             }
 
             await AuditAsync(AuditEvents.RefreshTokenReused, AuditOutcome.Failure,
-                compromised?.Email, presented.UserId, ErrorCodes.AuthRefreshTokenInvalid,
+                compromised?.Email, presented.CreateBy, ErrorCodes.AuthRefreshTokenInvalid,
                 $"reused token {presented.Id}", cancellationToken);
             logger.LogWarning(
                 "Refresh-token reuse detected for user {UserId}; every session was revoked.",
-                presented.UserId);
+                presented.CreateBy);
             throw new ApiException(ErrorCodes.AuthRefreshTokenInvalid, 401,
                 "The refresh token is not valid.",
                 "رمز التحديث غير صالح.");
@@ -73,14 +73,14 @@ public sealed class SessionService(
         if (now >= presented.ExpiresAt)
         {
             await AuditAsync(AuditEvents.RefreshTokenRejected, AuditOutcome.Failure,
-                null, presented.UserId, ErrorCodes.AuthRefreshTokenExpired, "token expired",
+                null, presented.CreateBy, ErrorCodes.AuthRefreshTokenExpired, "token expired",
                 cancellationToken);
             throw new ApiException(ErrorCodes.AuthRefreshTokenExpired, 401,
                 "The refresh token has expired. Sign in again.",
                 "انتهت صلاحية رمز التحديث. سجّل الدخول مرة أخرى.");
         }
 
-        var user = await accounts.FindByIdAsync(presented.UserId, cancellationToken)
+        var user = await accounts.FindByIdAsync(presented.CreateBy, cancellationToken)
             ?? throw new ApiException(ErrorCodes.AuthRefreshTokenInvalid, 401,
                 "The refresh token is not valid.",
                 "رمز التحديث غير صالح.");
@@ -129,7 +129,7 @@ public sealed class SessionService(
                     new RefreshToken
                     {
                         Id = Guid.NewGuid(),
-                        UserId = user.Id,
+                        CreateBy = user.Id,
                         TokenHash = OpaqueToken.Hash(refreshValue),
                         CreatedAt = now,
                         ExpiresAt = now.Add(RefreshTokenLifetime),

@@ -41,7 +41,7 @@ internal sealed class AdminMediaService(
             var term = query.Search.Trim();
             rows = rows.Where(item =>
                 (item.TitleEn != null && EF.Functions.Like(item.TitleEn, $"%{term}%"))
-                || (item.TitleAr != null && EF.Functions.Like(item.TitleAr, $"%{term}%"))
+                || (item.TitleArabic != null && EF.Functions.Like(item.TitleArabic, $"%{term}%"))
                 || (item.AlbumEn != null && EF.Functions.Like(item.AlbumEn, $"%{term}%"))
                 || (item.AlbumAr != null && EF.Functions.Like(item.AlbumAr, $"%{term}%")));
         }
@@ -57,7 +57,7 @@ internal sealed class AdminMediaService(
                     rows = rows.Where(item => item.TitleEn != null && item.TitleEn.Contains(v));
                     break;
                 case "titlear":
-                    rows = rows.Where(item => item.TitleAr != null && item.TitleAr.Contains(v));
+                    rows = rows.Where(item => item.TitleArabic != null && item.TitleArabic.Contains(v));
                     break;
                 case "albumen":
                     rows = rows.Where(item => item.AlbumEn != null && item.AlbumEn.Contains(v));
@@ -97,7 +97,7 @@ internal sealed class AdminMediaService(
                 item.Id,
                 item.Kind,
                 item.TitleEn,
-                item.TitleAr,
+                item.TitleArabic,
                 item.AlbumEn,
                 item.AlbumAr,
                 item.ImageRelativePath != null,
@@ -134,7 +134,7 @@ internal sealed class AdminMediaService(
             Id = Guid.NewGuid(),
             Kind = request.Kind,
             TitleEn = NullIfBlank(request.TitleEn),
-            TitleAr = NullIfBlank(request.TitleAr),
+            TitleArabic = NullIfBlank(request.TitleAr),
             AlbumEn = NullIfBlank(request.AlbumEn),
             AlbumAr = NullIfBlank(request.AlbumAr),
             Url = NullIfBlank(request.Url),
@@ -178,7 +178,7 @@ internal sealed class AdminMediaService(
 
         item.Kind = request.Kind;
         item.TitleEn = NullIfBlank(request.TitleEn);
-        item.TitleAr = NullIfBlank(request.TitleAr);
+        item.TitleArabic = NullIfBlank(request.TitleAr);
         item.AlbumEn = NullIfBlank(request.AlbumEn);
         item.AlbumAr = NullIfBlank(request.AlbumAr);
         item.Url = NullIfBlank(request.Url);
@@ -313,7 +313,7 @@ internal sealed class AdminMediaService(
         new(item.Id,
             item.Kind,
             item.TitleEn,
-            item.TitleAr,
+            item.TitleArabic,
             item.AlbumEn,
             item.AlbumAr,
             item.ImageRelativePath != null,

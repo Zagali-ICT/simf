@@ -156,8 +156,8 @@ internal sealed class AdminGateService(
                 GateId = gate.Id,
                 UserId = userId,
                 IsActive = true,
-                AssignedAt = now,
-                AssignedByUserId = actorUserId,
+                CreatedAt = now,
+                CreateBy = actorUserId,
             });
         }
 
@@ -268,7 +268,7 @@ internal sealed class AdminGateService(
     {
         var assignments = await appDbContext.GateAssignments.AsNoTracking()
             .Where(a => a.GateId == gateId && a.IsActive)
-            .OrderBy(a => a.AssignedAt)
+            .OrderBy(a => a.CreatedAt)
             .ToListAsync(cancellationToken);
 
         if (assignments.Count == 0) { return Array.Empty<AdminGateAssignmentRow>(); }
@@ -283,7 +283,7 @@ internal sealed class AdminGateService(
             .Select(a => new AdminGateAssignmentRow(
                 a.Id, a.UserId,
                 operatorNames.TryGetValue(a.UserId, out var name) ? name : string.Empty,
-                a.AssignedAt, a.AssignedByUserId))
+                a.CreatedAt, a.CreateBy))
             .ToList();
     }
 
@@ -381,7 +381,7 @@ internal sealed class AdminGateService(
             {
                 profile.Id,
                 profile.UserId,
-                profile.ArabicName,
+                profile.NameArabic,
                 profile.ProfileTypeId,
                 ProfileType = profile.ProfileType,
             })
@@ -550,8 +550,8 @@ internal sealed class AdminGateService(
                     GateId = gate.Id,
                     UserId = userId,
                     IsActive = true,
-                    AssignedAt = now,
-                    AssignedByUserId = actorUserId,
+                    CreatedAt = now,
+                    CreateBy = actorUserId,
                 });
             }
         }

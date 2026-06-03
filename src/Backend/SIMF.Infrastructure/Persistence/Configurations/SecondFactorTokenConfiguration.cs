@@ -14,11 +14,11 @@ internal sealed class SecondFactorTokenConfiguration : IEntityTypeConfiguration<
         builder.Property(token => token.Kind).HasConversion<string>().HasMaxLength(16);
 
         builder.HasIndex(token => token.TokenHash).IsUnique();
-        builder.HasIndex(token => token.UserId);
+        builder.HasIndex(token => token.CreateBy);
 
         builder.HasOne<SimfUser>()
             .WithMany()
-            .HasForeignKey(token => token.UserId)
+            .HasForeignKey(token => token.CreateBy)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

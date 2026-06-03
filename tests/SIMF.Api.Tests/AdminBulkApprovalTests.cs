@@ -130,8 +130,8 @@ public sealed class AdminBulkApprovalTests : IClassFixture<SimfApiFactory>
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
-            ArabicName = "زائر تجريبي",
-            EnglishName = "Bulk Test Visitor",
+            NameArabic = "زائر تجريبي",
+            Name = "Bulk Test Visitor",
             NationalityId = 682,
             CreatedAt = DateTimeOffset.UtcNow,
         });

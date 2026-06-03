@@ -14,8 +14,8 @@ internal sealed class FaqGroupConfiguration : IEntityTypeConfiguration<FaqGroup>
         builder.ToTable("FaqGroups");
         builder.HasKey(g => g.Id);
 
-        builder.Property(g => g.NameEn).HasMaxLength(128).IsRequired();
-        builder.Property(g => g.NameAr).HasMaxLength(128).IsRequired();
+        builder.Property(g => g.Name).HasMaxLength(128).IsRequired();
+        builder.Property(g => g.NameArabic).HasMaxLength(128).IsRequired();
 
         builder.HasIndex(g => new { g.IsActive, g.DisplayOrder });
 

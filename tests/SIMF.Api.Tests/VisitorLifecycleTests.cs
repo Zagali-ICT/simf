@@ -193,7 +193,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var interest = new Interest
+        var interest = new UserInterest
         {
             Id = Guid.NewGuid(),
             Name = $"Lifecycle interest {Guid.NewGuid():N}",

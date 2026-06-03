@@ -29,7 +29,7 @@ internal sealed class RefreshTokenRepository(SimfIdentityDbContext dbContext) : 
         DateTimeOffset revokedAt,
         CancellationToken cancellationToken = default) =>
         dbContext.RefreshTokens
-            .Where(token => token.UserId == userId && token.RevokedAt == null)
+            .Where(token => token.CreateBy == userId && token.RevokedAt == null)
             .ExecuteUpdateAsync(
                 setters => setters.SetProperty(token => token.RevokedAt, revokedAt),
                 cancellationToken);

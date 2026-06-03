@@ -200,14 +200,14 @@ public sealed class MobileAppRoleTests : IClassFixture<SimfApiFactory>
         var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
 
-        var profileType = new ProfileType
+        var profileType = new UserProfileType
         {
             Id = Guid.NewGuid(),
             Name = $"Partner {Guid.NewGuid():N}",
             NameArabic = "شريك",
             PageColor = "#244A77",
             UserType = UserType.Visitor,
-            IsVisitor = false,
+            IsForVisitor = false,
             MobileAppRole = role,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
@@ -232,8 +232,8 @@ public sealed class MobileAppRoleTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             UserId = user.Id,
             ProfileTypeId = profileType.Id,
-            EnglishName = "Partner User",
-            ArabicName = "مستخدم شريك",
+            Name = "Partner User",
+            NameArabic = "مستخدم شريك",
             PlaceOfBirth = "Riyadh",
             NationalityId = 0,
             CreatedAt = DateTimeOffset.UtcNow,

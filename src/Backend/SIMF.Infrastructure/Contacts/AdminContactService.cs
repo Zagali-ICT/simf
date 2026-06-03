@@ -38,8 +38,8 @@ internal sealed class AdminContactService(
         {
             var term = query.Search.Trim();
             rows = rows.Where(contact =>
-                EF.Functions.Like(contact.NameAr, $"%{term}%")
-                || (contact.NameEn != null && EF.Functions.Like(contact.NameEn, $"%{term}%"))
+                EF.Functions.Like(contact.NameArabic, $"%{term}%")
+                || (contact.Name != null && EF.Functions.Like(contact.Name, $"%{term}%"))
                 || (contact.Email != null && EF.Functions.Like(contact.Email, $"%{term}%"))
                 || (contact.PhonePrimary != null && EF.Functions.Like(contact.PhonePrimary, $"%{term}%")));
         }
@@ -51,10 +51,10 @@ internal sealed class AdminContactService(
             switch (column.ToLowerInvariant())
             {
                 case "name":
-                    rows = rows.Where(contact => contact.NameAr.Contains(v));
+                    rows = rows.Where(contact => contact.NameArabic.Contains(v));
                     break;
                 case "nameen":
-                    rows = rows.Where(contact => contact.NameEn != null && contact.NameEn.Contains(v));
+                    rows = rows.Where(contact => contact.Name != null && contact.Name.Contains(v));
                     break;
                 case "email":
                     rows = rows.Where(contact => contact.Email != null && contact.Email.Contains(v));
@@ -70,11 +70,11 @@ internal sealed class AdminContactService(
 
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("name", true) => rows.OrderByDescending(contact => contact.NameAr),
-            ("name", false) => rows.OrderBy(contact => contact.NameAr),
+            ("name", true) => rows.OrderByDescending(contact => contact.NameArabic),
+            ("name", false) => rows.OrderBy(contact => contact.NameArabic),
             ("isactive", true) => rows.OrderByDescending(contact => contact.IsActive),
             ("isactive", false) => rows.OrderBy(contact => contact.IsActive),
-            _ => rows.OrderBy(contact => contact.NameAr),
+            _ => rows.OrderBy(contact => contact.NameArabic),
         };
 
         var total = await rows.CountAsync(ct);
@@ -92,8 +92,8 @@ internal sealed class AdminContactService(
                 var (countryEn, countryAr) = LookupCountry(countryNames, contact.CountryId);
                 return new AdminContactSummary(
                     contact.Id,
-                    contact.NameAr,
-                    contact.NameEn,
+                    contact.NameArabic,
+                    contact.Name,
                     contact.PhonePrimary,
                     contact.Email,
                     contact.CountryId,
@@ -132,8 +132,8 @@ internal sealed class AdminContactService(
         var contact = new Contact
         {
             Id = Guid.NewGuid(),
-            NameAr = v.NameAr,
-            NameEn = v.NameEn,
+            NameArabic = v.NameAr,
+            Name = v.NameEn,
             LogoRelativePath = v.LogoRelativePath,
             PhonePrimary = v.PhonePrimary,
             PhoneSecondary = v.PhoneSecondary,
@@ -194,8 +194,8 @@ internal sealed class AdminContactService(
             throw ReferencedConflict();
         }
 
-        contact.NameAr = v.NameAr;
-        contact.NameEn = v.NameEn;
+        contact.NameArabic = v.NameAr;
+        contact.Name = v.NameEn;
         contact.LogoRelativePath = v.LogoRelativePath;
         contact.PhonePrimary = v.PhonePrimary;
         contact.PhoneSecondary = v.PhoneSecondary;
@@ -253,7 +253,7 @@ internal sealed class AdminContactService(
             EventType = AuditEvents.ContactDeactivated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={contact.Id}; nameAr={contact.NameAr}",
+            Detail = $"id={contact.Id}; nameAr={contact.NameArabic}",
         }, ct);
     }
 
@@ -267,15 +267,15 @@ internal sealed class AdminContactService(
         {
             var term = search.Trim();
             rows = rows.Where(contact =>
-                EF.Functions.Like(contact.NameAr, $"%{term}%")
-                || (contact.NameEn != null && EF.Functions.Like(contact.NameEn, $"%{term}%")));
+                EF.Functions.Like(contact.NameArabic, $"%{term}%")
+                || (contact.Name != null && EF.Functions.Like(contact.Name, $"%{term}%")));
         }
 
         return await rows
-            .OrderBy(contact => contact.NameAr)
+            .OrderBy(contact => contact.NameArabic)
             .Take(take)
             .Select(contact => new ContactPickerItem(
-                contact.Id, contact.NameAr, contact.NameEn, contact.LogoRelativePath))
+                contact.Id, contact.NameArabic, contact.Name, contact.LogoRelativePath))
             .ToListAsync(ct);
     }
 
@@ -319,8 +319,8 @@ internal sealed class AdminContactService(
         var (countryEn, countryAr) = LookupCountry(names, c.CountryId);
         return new AdminContactDetail(
             c.Id,
-            c.NameAr,
-            c.NameEn,
+            c.NameArabic,
+            c.Name,
             c.LogoRelativePath,
             c.PhonePrimary,
             c.PhoneSecondary,

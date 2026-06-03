@@ -60,7 +60,7 @@ internal sealed class UserProfileRepository(
         appDbContext.UserProfiles
             .AsNoTracking()
             .Where(p => p.UserId == userId && p.ProfileType != null)
-            .Select(p => new ProfileTypeRole(p.ProfileType!.IsVisitor, p.ProfileType.MobileAppRole))
+            .Select(p => new ProfileTypeRole(p.ProfileType!.IsForVisitor, p.ProfileType.MobileAppRole))
             .FirstOrDefaultAsync(cancellationToken);
 
     public Task<ProfileTypeFacts?> FindProfileTypeAsync(
@@ -79,7 +79,7 @@ internal sealed class UserProfileRepository(
             .Select(interest => interest.Id)
             .ToListAsync(cancellationToken);
 
-    public async Task<IReadOnlyList<Interest>> GetInterestsByIdsAsync(
+    public async Task<IReadOnlyList<UserInterest>> GetInterestsByIdsAsync(
         IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default) =>
         await appDbContext.Interests
             .Where(interest => ids.Contains(interest.Id))

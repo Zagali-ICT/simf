@@ -54,7 +54,7 @@ public sealed class AdminInvitationsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(profile.Id, detail.SentToUserProfileId);
         Assert.Equal(InvitationState.Pending, detail.State);
         Assert.Equal("Please join the gala dinner.", detail.Notes);
-        Assert.Equal(profile.EnglishName, detail.RecipientEnglishName);
+        Assert.Equal(profile.Name, detail.RecipientEnglishName);
     }
 
     [Fact]
@@ -268,7 +268,7 @@ public sealed class AdminInvitationsTests : IClassFixture<SimfApiFactory>
                 pt.Name == profileTypeName && pt.UserType == UserType.Visitor);
         if (profileType is null)
         {
-            profileType = new ProfileType
+            profileType = new UserProfileType
             {
                 Id = Guid.NewGuid(),
                 Name = profileTypeName,
@@ -288,8 +288,8 @@ public sealed class AdminInvitationsTests : IClassFixture<SimfApiFactory>
             Id = Guid.NewGuid(),
             UserId = user.Id,
             ProfileTypeId = profileType.Id,
-            EnglishName = $"VIP Person {Guid.NewGuid():N}".Substring(0, 24),
-            ArabicName = "ضيف كبير",
+            Name = $"VIP Person {Guid.NewGuid():N}".Substring(0, 24),
+            NameArabic = "ضيف كبير",
             PlaceOfBirth = "Riyadh",
             IsSaudi = true,
             NationalId = "1234567890",

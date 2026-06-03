@@ -13,7 +13,6 @@ using SIMF.Domain.Exhibition;
 using SIMF.Domain.Faq;
 using SIMF.Domain.Feedback;
 using SIMF.Domain.Media;
-using SIMF.Domain.MeetingRequests;
 using SIMF.Domain.Networking;
 using SIMF.Domain.Operations;
 using SIMF.Domain.Organisations;
@@ -105,10 +104,10 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
 
     /// <summary>D-167 — admin-managed lookup of profile subtypes
     /// (Visitor tiers + Other partner kinds).</summary>
-    public DbSet<ProfileType> ProfileTypes => Set<ProfileType>();
+    public DbSet<UserProfileType> ProfileTypes => Set<UserProfileType>();
 
     /// <summary>D-167 — admin-managed lookup of visitor interests.</summary>
-    public DbSet<Interest> Interests => Set<Interest>();
+    public DbSet<UserInterest> Interests => Set<UserInterest>();
 
     /// <summary>D-168 (gap doc G5, PDF §2.7.3) — public-relations invitations.</summary>
     public DbSet<Invitation> Invitations => Set<Invitation>();

@@ -1,12 +1,13 @@
+using SIMF.Domain.Common;
+
 namespace SIMF.Domain.Faq;
 
 /// <summary>
 /// P2.1 (D-211) — one question/answer pair inside a <see cref="FaqGroup"/>.
 /// Bilingual, orderable within its group, soft-deletable.
 /// </summary>
-public sealed class FaqEntry
-{
-    public Guid Id { get; set; }
+public sealed class FaqEntry:BaseAuditEntity
+{ 
 
     /// <summary>Owning group (real DB FK — same DbContext).</summary>
     public Guid FaqGroupId { get; set; }
@@ -27,9 +28,5 @@ public sealed class FaqEntry
     /// <summary>Sort key within the owning group (ascending).</summary>
     public int DisplayOrder { get; set; }
 
-    /// <summary>Soft-delete flag.</summary>
-    public bool IsActive { get; set; } = true;
-
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
+    
 }

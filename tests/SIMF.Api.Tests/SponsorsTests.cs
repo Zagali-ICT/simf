@@ -10,7 +10,6 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Sponsors;
 using SIMF.Domain.IdentityAccess;
-using SIMF.Domain.Sponsors;
 using Xunit;
 
 namespace SIMF.Api.Tests;
