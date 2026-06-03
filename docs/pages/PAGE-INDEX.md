@@ -169,6 +169,7 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | #15 `venueMap` | 📄 Doc | Guest | [App/Page_015](../App/Page_015/README.md) | — |
 | #16 `agenda` (`GET /app/programme/sessions`) | ✅ API built | Guest+ | [App/Page_016](../App/Page_016/README.md) | [e2e/mobile-agenda.md](../tests/e2e/mobile-agenda.md) |
 | #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats`) | ✅ API built (reuse, D-265) | Guest+ (seat card: Visitor) | [App/Page_017](../App/Page_017/README.md) | [e2e/mobile-session-detail.md](../tests/e2e/mobile-session-detail.md) |
+| #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | ✅ API built (reuse, D-267) | Visitor (login-only) | [App/Page_018](../App/Page_018/README.md) | [e2e/mobile-my-seat.md](../tests/e2e/mobile-my-seat.md) |
 
 ---
 

@@ -260,6 +260,54 @@ public sealed class SeatReservationsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Unauthorized, anon.StatusCode);
     }
 
+    [Fact]
+    public async Task Seat_map_returns_the_layout_and_blocked_row_to_a_viewer()
+    {
+        // Page_018 (My Seat map) — the grid is drawn from RowLabels + SeatsPerRow,
+        // and an admin-blocked row + another visitor's seat must both come back as
+        // reserved cells (with the right Kind) so the grid colours them محجوز.
+        var (session, _) = await SeedSessionWithLayoutAsync(new[] { "A", "B" }, seatsPerRow: 5);
+        var admin = await CreateAdministratorAndSignInAsync();
+        var booker = await SignInApprovedVisitorAsync();
+        var viewer = await SignInApprovedVisitorAsync();
+
+        var block = await PostAuthAsync(
+            $"/api/v1/admin/sessions/{session.Id}/seats/reserve-row",
+            new AdminReserveRowRequest { RowLabel = "A" }, admin);
+        Assert.Equal(HttpStatusCode.OK, block.StatusCode);
+
+        var pick = await PostAuthAsync(
+            $"/api/v1/app/sessions/{session.Id}/seats/reserve",
+            new ReserveSeatRequest { RowLabel = "B", SeatNumber = 4 }, booker);
+        Assert.Equal(HttpStatusCode.OK, pick.StatusCode);
+
+        var map = await GetAuthAsync($"/api/v1/app/sessions/{session.Id}/seats", viewer);
+        Assert.Equal(HttpStatusCode.OK, map.StatusCode);
+        var seatMap = (await map.Content
+            .ReadFromJsonAsync<ApiResult<SessionSeatMap>>())!.Data!;
+
+        // Grid dimensions the app draws from.
+        Assert.Equal(new[] { "A", "B" }, seatMap.RowLabels);
+        Assert.Equal(5, seatMap.SeatsPerRow);
+
+        // The whole blocked row A is materialised as AdminReservedRow cells.
+        for (var seat = 1; seat <= 5; seat++)
+        {
+            Assert.Contains(seatMap.ReservedCells, c =>
+                c.RowLabel == "A" && c.SeatNumber == seat
+                && c.Kind == SeatReservationKind.AdminReservedRow);
+        }
+
+        // The other visitor's seat is a reserved UserBooking cell.
+        Assert.Contains(seatMap.ReservedCells, c =>
+            c.RowLabel == "B" && c.SeatNumber == 4
+            && c.Kind == SeatReservationKind.UserBooking);
+
+        // 5 blocked + 1 booked; the viewer holds none.
+        Assert.Equal(6, seatMap.ActiveReservedCount);
+        Assert.Null(seatMap.MyCell);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private async Task<(Session Session, Hall Hall)> SeedSessionWithLayoutAsync(

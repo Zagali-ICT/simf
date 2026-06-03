@@ -1,0 +1,177 @@
+# E2E test catalogue — `My Seat map` (`my-seat`)
+
+> **Authority:** SIMF E2E test catalogue template (D-133). Mobile catalogue — the
+> page reuses the already-built per-session seat surface (D-175): the seat-map
+> grid `GET /app/sessions/{id}/seats` and the reserve/release endpoints. API
+> implementation lives in `tests/SIMF.Api.Tests/SeatReservationsTests.cs`.
+
+| | |
+|--|--|
+| **Page** | [`Page_018`](../../App/Page_018/README.md) (App page docs) |
+| **Route** | `GET /api/v1/app/sessions/{id}/seats` (grid, approved) · `POST …/seats/reserve` · `…/reserve-random` · `DELETE …/seats/mine` · app screen #18 `/agenda/:sessionId/my-seat` (auth-gated) |
+| **Surface** | Mobile (Flutter) + App API |
+| **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
+| **Auth setup** | An **approved Visitor** token (the page is login-only); an **Admin** token only to seed the session, the seat layout and a blocked row. **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
+| **Last reviewed** | 2026-06-03 |
+
+## Coverage matrix
+
+| ID | Scenario | Type | Priority | Status |
+|----|----------|------|----------|--------|
+| E2E-MOB018-001 | Logged-in viewer gets the full grid (`rowLabels` + `seatsPerRow` + `reservedCells`) | happy | P0 | authored ✓ (`Seat_map_returns_the_layout_and_blocked_row_to_a_viewer`) |
+| E2E-MOB018-002 | My seat is highlighted + the banner shows row/seat (`myCell`) | happy | P0 | authored ✓ (`Seat_map_returns_my_cell_for_the_reserver`) |
+| E2E-MOB018-003 | An admin-blocked row renders as reserved (`AdminReservedRow`) | edge | P1 | authored ✓ (`Seat_map_returns_the_layout_and_blocked_row_to_a_viewer`) |
+| E2E-MOB018-004 | A seat not in `reservedCells` renders available (status derivation) | happy | P1 | authored (screen) |
+| E2E-MOB018-005 | No reservation → `myCell` null → no highlight, "no seat yet" banner | edge | P1 | authored ✓ (`Seat_map_my_cell_is_null_for_a_caller_without_a_reservation`) |
+| E2E-MOB018-006 | Guest / unauthenticated → 401, screen gated out | auth | P0 | authored ✓ (`Seat_map_requires_an_approved_account`) |
+| E2E-MOB018-007 | `إرشادي إلى مقعدي` → Map (15) | happy | P1 | authored (screen) |
+| E2E-MOB018-008 | `مشاركة الموقع` → native share sheet | happy | P2 | authored (screen) |
+| E2E-MOB018-009 | Picker: tap a free seat → reserve → grid repaints with `myCell` | happy | P1 | authored ✓ (`Visitor_can_self_pick_then_release_their_seat`) |
+| E2E-MOB018-010 | Picker: release my seat → `DELETE …/mine` → seat freed | happy | P2 | authored ✓ (`Visitor_can_self_pick_then_release_their_seat`) |
+| E2E-MOB018-011 | Hall with no layout → empty grid → "seat map not available" | edge | P2 | authored (screen) |
+| E2E-MOB018-012 | RTL render; stage stays top; row/seat are LTR | i18n | P1 | authored (screen) |
+
+## Scenarios
+
+### E2E-MOB018-001 — Full grid to a logged-in viewer
+
+```gherkin
+Feature: My Seat map (seat grid)
+  As an approved, signed-in visitor
+  I want to see the whole hall with every seat's status
+  So that I can find my seat
+
+Scenario: The seat map returns the layout and the occupied seats
+  Given a session in a hall whose layout is rows A,B with 5 seats each
+  And an admin has blocked row "A" and another visitor holds seat B/4
+  When the viewer calls GET /api/v1/app/sessions/{id}/seats with an approved token
+  Then the response is 200
+  And rowLabels is ["A","B"] and seatsPerRow is 5
+  And reservedCells contains every A-row seat with kind "AdminReservedRow"
+  And reservedCells contains B/4
+```
+
+**Evidence:** `SeatReservationsTests.Seat_map_returns_the_layout_and_blocked_row_to_a_viewer` (green).
+
+### E2E-MOB018-002 — My seat highlighted
+
+```gherkin
+Scenario: The viewer's own seat is returned as myCell
+  Given the viewer has reserved seat "B" / 4
+  When they call GET /api/v1/app/sessions/{id}/seats
+  Then myCell.rowLabel is "B" and myCell.seatNumber is 4
+  And the banner shows "صف B · مقعد 4" and the cell is highlighted in brass
+```
+
+**Evidence:** `SeatReservationsTests.Seat_map_returns_my_cell_for_the_reserver` (green).
+
+### E2E-MOB018-003 — Admin-blocked row is reserved
+
+```gherkin
+Scenario: A blocked row reads as reserved, not available
+  Given an admin has blocked row "A"
+  When the seat map is fetched
+  Then every "A" cell appears in reservedCells with kind "AdminReservedRow"
+  And the grid renders those cells as محجوز (taken), not متاح (available)
+```
+
+**Evidence:** `SeatReservationsTests.Seat_map_returns_the_layout_and_blocked_row_to_a_viewer` (green).
+
+### E2E-MOB018-004 — Available derivation
+
+```gherkin
+Scenario: A free seat renders as available
+  Given seat C/3 is not in reservedCells and is within rowLabels × seatsPerRow
+  When the grid renders
+  Then C/3 is shown as متاح (available)
+```
+
+### E2E-MOB018-005 — No reservation
+
+```gherkin
+Scenario: A viewer with no booking sees no highlight
+  Given another visitor holds a seat but the viewer holds none
+  When the viewer fetches the seat map
+  Then myCell is null
+  And the grid renders with no highlighted cell and a "no seat yet" banner
+```
+
+**Evidence:** `SeatReservationsTests.Seat_map_my_cell_is_null_for_a_caller_without_a_reservation` (green).
+
+### E2E-MOB018-006 — Auth gate
+
+```gherkin
+Scenario: An unauthenticated caller cannot read the seat map
+  When an anonymous client calls GET /api/v1/app/sessions/{id}/seats with no token
+  Then the response is 401
+  And the screen is not reachable (the route is auth-gated)
+```
+
+**Evidence:** `SeatReservationsTests.Seat_map_requires_an_approved_account` (green).
+
+### E2E-MOB018-007 — Navigate to the map
+
+```gherkin
+Scenario: Guide me to my seat opens the venue map
+  Given the seat map is shown
+  When the user taps "إرشادي إلى مقعدي"
+  Then the Venue Map (15) opens
+```
+
+### E2E-MOB018-008 — Share
+
+```gherkin
+Scenario: Share location opens the native share sheet
+  When the user taps "مشاركة الموقع"
+  Then the native share sheet opens
+  And no network request is made
+```
+
+### E2E-MOB018-009 — Picker: reserve a free seat
+
+```gherkin
+Scenario: Tapping a free seat books it and repaints the grid
+  Given the viewer holds no seat and seat A/3 is free
+  When the app calls POST /api/v1/app/sessions/{id}/seats/reserve with row A seat 3
+  Then the response is 200 and the reservation is returned (held Pending)
+  And re-reading the seat map shows myCell = A/3
+```
+
+**Evidence:** `SeatReservationsTests.Visitor_can_self_pick_then_release_their_seat` (green).
+
+### E2E-MOB018-010 — Picker: release my seat
+
+```gherkin
+Scenario: Releasing frees the seat for re-booking
+  Given the viewer holds seat A/3
+  When the app calls DELETE /api/v1/app/sessions/{id}/seats/mine
+  Then the response is 200
+  And the seat A/3 becomes bookable again
+```
+
+**Evidence:** `SeatReservationsTests.Visitor_can_self_pick_then_release_their_seat` (green).
+
+### E2E-MOB018-011 — No layout
+
+```gherkin
+Scenario: A hall with no seat layout shows a placeholder
+  Given the session's hall has no seat layout configured
+  When the seat map is fetched
+  Then rowLabels is empty and seatsPerRow is 0
+  And the screen shows a "seat map not available yet" placeholder
+```
+
+### E2E-MOB018-012 — RTL render
+
+```gherkin
+Scenario: The seat map renders right-to-left in Arabic
+  Given the device locale is Arabic
+  When the seat map renders
+  Then the layout and back chevron are right-to-left
+  And the stage stays at the top of the hall plan
+  And the row letters and seat numbers render left-to-right inside the Arabic labels
+```
+
+---
+
+_Last reviewed:_ `2026-06-03` by `SIMF Team`.

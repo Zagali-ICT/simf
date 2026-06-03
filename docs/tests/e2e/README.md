@@ -173,6 +173,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #14 `myArea` (`GET /app/account/dashboard` + `.ics` + `.vcf`) | [`mobile-my-area.md`](mobile-my-area.md) | E2E-MOB014-001..008 |
 | #16 `agenda` (`GET /app/programme/sessions`) | [`mobile-agenda.md`](mobile-agenda.md) | E2E-MOB016-001..009 |
 | #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats`) | [`mobile-session-detail.md`](mobile-session-detail.md) | E2E-MOB017-001..011 |
+| #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..012 |
 
 ## How to add a new catalogue file
 
