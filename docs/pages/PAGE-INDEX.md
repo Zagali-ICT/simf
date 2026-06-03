@@ -165,6 +165,7 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | #13 `home` (`GET /app/bootstrap`) | ✅ API built | Guest+ | [App/Page_013](../App/Page_013/README.md) | [e2e/mobile-home.md](../tests/e2e/mobile-home.md) |
 | #14 `myArea` (`GET /app/account/dashboard` + `.ics`/`.vcf`) | ✅ API built | Visitor | [App/Page_014](../App/Page_014/README.md) | [e2e/mobile-my-area.md](../tests/e2e/mobile-my-area.md) |
 | #15 `venueMap` | 📄 Doc | Guest | [App/Page_015](../App/Page_015/README.md) | — |
+| #16 `agenda` (`GET /app/programme/sessions`) | ✅ API built | Guest+ | [App/Page_016](../App/Page_016/README.md) | [e2e/mobile-agenda.md](../tests/e2e/mobile-agenda.md) |
 
 ---
 

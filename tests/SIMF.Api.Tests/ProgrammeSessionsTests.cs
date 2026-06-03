@@ -54,6 +54,35 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Public_list_item_carries_the_body_and_speaker_cards()
+    {
+        // D-252 (Mockup screen 16/17): the cached agenda payload also drives the
+        // session detail/preview, so each list row now carries the body + the
+        // ordered speaker cards (previously detail-only).
+        var admin = await CreateAdminAsync();
+        var hallId = await CreateHallAsync(admin);
+        var speakerId = await CreateSpeakerAsync(admin);
+        var themeId = await CreateThemeAsync(admin);
+        var start = DateTimeOffset.UtcNow.AddDays(6).Date.AddHours(9);
+
+        var created = await CreateSessionAsync(admin, hallId, speakerId,
+            new[] { themeId }, start, start.AddHours(1));
+
+        var list = await _client.GetAsync("/api/v1/app/programme/sessions");
+        var body = (await list.Content
+            .ReadFromJsonAsync<ApiResult<PublicSessions>>())!.Data!;
+        var item = Assert.Single(body.Items, i => i.Id == created.Id);
+
+        Assert.Equal("Welcome address.", item.Description);
+        Assert.Equal("كلمة ترحيبية.", item.DescriptionArabic);
+
+        Assert.NotNull(item.Speakers);
+        var speaker = Assert.Single(item.Speakers!);
+        Assert.Equal("Dr. Amal Badawi", speaker.Name);
+        Assert.Equal("Chief Scientist", speaker.Title);
+    }
+
+    [Fact]
     public async Task Public_list_is_ordered_by_start_time()
     {
         var admin = await CreateAdminAsync();

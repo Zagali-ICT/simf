@@ -28,7 +28,15 @@ public sealed record PublicSessionListItem(
     string? CategoryNameArabic = null,
     // P3.2 — D-231: broadcast lifecycle status (appended; lets the agenda
     // chip a "Recorded"/"Published" badge). Default preserves the wire.
-    SessionStatus Status = SessionStatus.Scheduled);
+    SessionStatus Status = SessionStatus.Scheduled,
+    // D-252 (Mockup screen 16 "Agenda" + 17 "Session detail"): the agenda payload
+    // is fetched once and CACHED, then the UI filters inline (Upcoming/Forum pills,
+    // day strip, search) and previews a session without a second fetch — so the
+    // list carries the body + the ordered speaker cards too (the category already
+    // carries the "main session"/type tag). Appended (D-219 append-only).
+    string? Description = null,
+    string? DescriptionArabic = null,
+    IReadOnlyList<PublicSessionSpeaker>? Speakers = null);
 
 /// <summary>D-199 — envelope for the public agenda list.</summary>
 public sealed record PublicSessions(IReadOnlyList<PublicSessionListItem> Items);

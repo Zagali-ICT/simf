@@ -67,6 +67,11 @@ internal sealed class ProgrammeSessionService(
                 session.CategoryId,
                 CategoryName = session.Category != null ? session.Category.NameEn : null,
                 CategoryNameArabic = session.Category != null ? session.Category.NameAr : null,
+                // D-252 (Mockup screen 16/17): the body + ordered speaker cards, so
+                // the cached agenda payload also drives the session detail/preview
+                // without a second fetch.
+                session.Description,
+                session.DescriptionArabic,
                 Themes = session.Themes
                     .Where(link => link.Theme!.IsActive)
                     .Select(link => new
@@ -75,6 +80,18 @@ internal sealed class ProgrammeSessionService(
                         link.Theme!.NameArabic,
                         link.Theme!.PageColor,
                         link.Theme!.DisplayOrder,
+                    })
+                    .ToList(),
+                Speakers = session.Speakers
+                    .Where(link => link.Speaker!.IsActive)
+                    .Select(link => new
+                    {
+                        link.Speaker!.Id,
+                        link.Speaker!.Name,
+                        link.Speaker!.NameArabic,
+                        link.Speaker!.Rank,
+                        link.DisplayOrder,
+                        link.Role,
                     })
                     .ToList(),
             })
@@ -88,6 +105,16 @@ internal sealed class ProgrammeSessionService(
                     .OrderBy(theme => theme.DisplayOrder)
                     .ThenBy(theme => theme.Name)
                     .FirstOrDefault();
+                var speakers = row.Speakers
+                    .OrderBy(speaker => speaker.DisplayOrder)
+                    .Select(speaker => new PublicSessionSpeaker(
+                        speaker.Id,
+                        speaker.Name,
+                        speaker.NameArabic,
+                        speaker.Rank,
+                        speaker.DisplayOrder,
+                        speaker.Role))
+                    .ToList();
                 return new PublicSessionListItem(
                     row.Id,
                     row.Code,
@@ -104,7 +131,10 @@ internal sealed class ProgrammeSessionService(
                     row.CategoryId,
                     row.CategoryName,
                     row.CategoryNameArabic,
-                    row.Status);
+                    row.Status,
+                    row.Description,
+                    row.DescriptionArabic,
+                    speakers);
             })
             .ToList();
 
