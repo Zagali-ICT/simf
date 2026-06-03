@@ -58,7 +58,7 @@ internal sealed class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
             .WithMany()
             .HasForeignKey(speaker => speaker.UserProfileId)
             .OnDelete(DeleteBehavior.Restrict);
-        // SIMF-FDS-014 — D-254: optional shared Contact link. Restrict (a Contact
+        // SIMF-FDS-014 — D-260: optional shared Contact link. Restrict (a Contact
         // is soft-deleted, never hard-deleted under a referrer). HasForeignKey
         // creates the FK index.
         builder.HasOne<Contact>()

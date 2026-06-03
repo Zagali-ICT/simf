@@ -12,8 +12,8 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     [DbContext(typeof(SimfAppDbContext))]
-    [Migration("20260603114501_D254_AddContact")]
-    partial class D254_AddContact
+    [Migration("20260603114501_D260_AddContact")]
+    partial class D260_AddContact
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

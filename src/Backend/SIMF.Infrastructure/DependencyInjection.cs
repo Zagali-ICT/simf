@@ -315,7 +315,7 @@ public static class DependencyInjection
             SIMF.Infrastructure.Organisations.PublicOrganisationService>();
         services.AddScoped<SIMF.Application.Organisations.Abstractions.IOrganisationExcelReader,
             SIMF.Infrastructure.Excel.ClosedXmlOrganisationReader>();
-        // SIMF-FDS-014 (D-255) — shared Contact directory admin CRUD.
+        // SIMF-FDS-014 (D-261) — shared Contact directory admin CRUD.
         services.AddScoped<SIMF.Application.Contacts.Abstractions.IAdminContactService,
             SIMF.Infrastructure.Contacts.AdminContactService>();
         services.AddScoped<SIMF.Application.Sponsors.Abstractions.IPublicSponsorService,

@@ -47,7 +47,7 @@ public class Booth
     /// <summary>B1 — D-222: booth-officer email (≤ 320 chars). Optional.</summary>
     public string? OfficerEmail { get; set; }
 
-    /// <summary>SIMF-FDS-014 (D-254 / OI-1) — optional link to the shared
+    /// <summary>SIMF-FDS-014 (D-260 / OI-1) — optional link to the shared
     /// <c>Contact</c> directory record for the booth <b>officer</b> (a person,
     /// distinct from the exhibitor company, which is linked via
     /// <see cref="CompanyId"/>). Null until linked; multiple entities may

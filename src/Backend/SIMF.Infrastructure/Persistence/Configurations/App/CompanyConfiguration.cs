@@ -29,7 +29,7 @@ internal sealed class CompanyConfiguration : IEntityTypeConfiguration<Company>
         builder.Property(company => company.ContactPhone).HasMaxLength(32);
         builder.Property(company => company.Website).HasMaxLength(512);
 
-        // SIMF-FDS-014 — D-254: optional shared Contact link. Restrict (a Contact
+        // SIMF-FDS-014 — D-260: optional shared Contact link. Restrict (a Contact
         // is soft-deleted, never hard-deleted under a referrer). HasForeignKey
         // creates the FK index.
         builder.HasOne<Contact>()

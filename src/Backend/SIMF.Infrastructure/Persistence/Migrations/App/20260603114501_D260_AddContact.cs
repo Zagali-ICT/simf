@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SIMF.Infrastructure.Persistence.Migrations.App
 {
     /// <inheritdoc />
-    public partial class D254_AddContact : Migration
+    public partial class D260_AddContact : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

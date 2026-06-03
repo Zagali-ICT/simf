@@ -58,7 +58,7 @@ internal sealed class BoothConfiguration : IEntityTypeConfiguration<Booth>
             .HasForeignKey(booth => booth.CompanyId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // SIMF-FDS-014 — D-254 (OI-1): optional shared Contact link for the booth
+        // SIMF-FDS-014 — D-260 (OI-1): optional shared Contact link for the booth
         // officer. Restrict (a Contact is soft-deleted, never hard-deleted under a
         // referrer). HasForeignKey creates the FK index.
         builder.HasOne<Contact>()

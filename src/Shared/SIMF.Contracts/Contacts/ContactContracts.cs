@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Contacts;
 
-// SIMF-FDS-014 (D-255) — admin CRUD contracts for the shared, de-duplicated
+// SIMF-FDS-014 (D-261) — admin CRUD contracts for the shared, de-duplicated
 // Contact directory (logo / bilingual name / phones / social / website /
 // map lat-long / country). One Contact may be reused across roles (Company,
 // Sponsor, MediaPartner, Speaker, Booth officer). Country names are projected

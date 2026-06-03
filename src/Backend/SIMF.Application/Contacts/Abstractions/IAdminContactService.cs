@@ -4,7 +4,7 @@ using SIMF.Contracts.Contacts;
 namespace SIMF.Application.Contacts.Abstractions;
 
 /// <summary>Admin CRUD over the shared <c>Contact</c> directory (SIMF-FDS-014,
-/// D-255). One Contact may be reused across roles; a Contact still referenced by
+/// D-261). One Contact may be reused across roles; a Contact still referenced by
 /// an active entity cannot be deactivated. Mirrors IAdminOrganisationService.</summary>
 public interface IAdminContactService
 {

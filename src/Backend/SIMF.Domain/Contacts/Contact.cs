@@ -1,7 +1,7 @@
 namespace SIMF.Domain.Contacts;
 
 /// <summary>
-/// SIMF-FDS-014 (D-254) — a shared, de-duplicated contact / party directory
+/// SIMF-FDS-014 (D-260) — a shared, de-duplicated contact / party directory
 /// record. The "identity-card" cluster (logo, bilingual name, phones, social
 /// links, website, map location, country) is extracted into one row that the
 /// org-facing entities (Company, Sponsor, MediaPartner, Speaker, and the Booth

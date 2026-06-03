@@ -161,7 +161,7 @@ public static class PermissionCatalog
         public const string Import = "Organisations.Import";
     }
 
-    /// <summary>SIMF-FDS-014 (D-255) — the shared, de-duplicated contact
+    /// <summary>SIMF-FDS-014 (D-261) — the shared, de-duplicated contact
     /// directory (logo / name / phones / social / website / location / country)
     /// referenced by Company / Sponsor / MediaPartner / Speaker / Booth. Edit
     /// gates create / update / soft-delete.</summary>
@@ -591,7 +591,7 @@ public static class PermissionCatalog
         new(Organisations.Delete, "Organisations", "Delete", "Delete organisations", AdminOnly),
         new(Organisations.Import, "Organisations", "Import", "Import organisations from Excel", AdminOnly),
 
-        // SIMF-FDS-014 — D-255: shared contact directory.
+        // SIMF-FDS-014 — D-261: shared contact directory.
         new(Contacts.View, "Contacts", "View", "View contacts", AdminOnly),
         new(Contacts.Edit, "Contacts", "Edit", "Create / edit / delete contacts", AdminOnly),
 

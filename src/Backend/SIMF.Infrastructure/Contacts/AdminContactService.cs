@@ -12,7 +12,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Infrastructure.Contacts;
 
 /// <summary>
-/// Shared <see cref="Contact"/> directory — admin CRUD (SIMF-FDS-014, D-255).
+/// Shared <see cref="Contact"/> directory — admin CRUD (SIMF-FDS-014, D-261).
 /// Built on <see cref="SimfAppDbContext"/>. Mirrors <c>AdminOrganisationService</c>:
 /// bilingual (NameAr / NameEn), soft-delete (IsActive), audited via
 /// <see cref="IAuditLog"/>. <c>CountryId</c> is a same-DB FK to <c>Country</c>,

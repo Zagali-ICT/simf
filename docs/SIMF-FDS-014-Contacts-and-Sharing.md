@@ -300,20 +300,20 @@ reference docs), per the project DoD.
 
 Build proceeds slice-by-slice, each its **own commit** (no push unless asked), each
 carrying its docs (PAGE-INDEX + per-page) + unit/integration tests + E2E catalogue per
-the DoD. Anchor decision **D-254** (next free; slices may take D-254..D-258).
+the DoD. Anchor decision **D-260** (next free; slices may take D-260..D-264).
 
 **Track 1 — org `Contact` directory**
-- **Slice A (D-254)** — Domain `Contact` + nullable `ContactId` on the five entities;
+- **Slice A (D-260)** — Domain `Contact` + nullable `ContactId` on the five entities;
   EF configs; one additive migration; (no new enum).
-- **Slice B (D-255)** — `IContactService` + admin API (CRUD + link/create + referenced-
+- **Slice B (D-261)** — `IContactService` + admin API (CRUD + link/create + referenced-
   delete guard); `Contacts.View/Edit` permissions; contracts; tests.
-- **Slice C (D-256)** — shared CP Contact picker/editor component wired into the five
+- **Slice C (D-262)** — shared CP Contact picker/editor component wired into the five
   admin forms; public read projections flatten `Contact` into existing DTO field names
   (wire contract preserved); CP E2E + docs.
-- **Slice D (D-257)** — shared read-only contact-card component for Website + mobile.
+- **Slice D (D-263)** — shared read-only contact-card component for Website + mobile.
 
 **Track 2 — visitor sharing**
-- **Slice E (D-258)** — `VisitorShareToken` + `SavedContact` (App); app API (§5.7);
+- **Slice E (D-264)** — `VisitorShareToken` + `SavedContact` (App); app API (§5.7);
   vCard projection; mobile *Share my contact* + *Scan* + *My Contacts*; app-side tests
   + `mobile-my-contacts.md` E2E.
 

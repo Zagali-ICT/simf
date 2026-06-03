@@ -5,7 +5,7 @@ using SIMF.Domain.Contacts;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
-/// <summary>SIMF-FDS-014 — D-254: shared Contact directory EF config. Bilingual
+/// <summary>SIMF-FDS-014 — D-260: shared Contact directory EF config. Bilingual
 /// name, relative logo path, fixed social columns, map lat/long, and a real
 /// same-DB FK to <c>Country</c> (Restrict — countries are soft-deleted, never
 /// hard-deleted under a contact), mirroring the Speaker→Country FK. The composite

@@ -29,7 +29,7 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
         builder.Property(sponsor => sponsor.LogoRelativePath).HasMaxLength(256);
         builder.Property(sponsor => sponsor.Url).HasMaxLength(512);
 
-        // SIMF-FDS-014 — D-254: optional shared Contact link. Restrict (a Contact
+        // SIMF-FDS-014 — D-260: optional shared Contact link. Restrict (a Contact
         // is soft-deleted, never hard-deleted under a referrer). HasForeignKey
         // creates the FK index.
         builder.HasOne<Contact>()

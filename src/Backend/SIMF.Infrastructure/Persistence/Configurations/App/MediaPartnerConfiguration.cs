@@ -21,7 +21,7 @@ internal sealed class MediaPartnerConfiguration : IEntityTypeConfiguration<Media
         builder.Property(m => m.LogoRelativePath).HasMaxLength(512);
         builder.Property(m => m.Url).HasMaxLength(512);
 
-        // SIMF-FDS-014 — D-254: optional shared Contact link. Restrict (a Contact
+        // SIMF-FDS-014 — D-260: optional shared Contact link. Restrict (a Contact
         // is soft-deleted, never hard-deleted under a referrer). HasForeignKey
         // creates the FK index.
         builder.HasOne<Contact>()

@@ -178,7 +178,7 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     // sheet; the visitor الجهة (UserProfile.OrganisationId) picker reads from it.
     public DbSet<Organisation> Organisations => Set<Organisation>();
 
-    // SIMF-FDS-014 — D-254: shared, de-duplicated contact directory referenced by
+    // SIMF-FDS-014 — D-260: shared, de-duplicated contact directory referenced by
     // Company / Sponsor / MediaPartner / Speaker / Booth (nullable ContactId FK).
     public DbSet<Contact> Contacts => Set<Contact>();
 

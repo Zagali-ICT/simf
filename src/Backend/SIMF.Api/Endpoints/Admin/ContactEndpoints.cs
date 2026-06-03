@@ -7,7 +7,7 @@ using SIMF.Contracts.Contacts;
 
 namespace SIMF.Api.Endpoints.Admin;
 
-// SIMF-FDS-014 (D-255) — shared Contact directory admin CRUD + the CP
+// SIMF-FDS-014 (D-261) — shared Contact directory admin CRUD + the CP
 // "link existing contact" picker. Validation lives in the service (mirrors
 // AdminOrganisationService); endpoints just gate + bind + delegate.
 //

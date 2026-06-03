@@ -288,7 +288,7 @@ public static class AuditEvents
     public const string BusinessMeetingScheduled = "BusinessMeeting.Scheduled";
     public const string BusinessMeetingCancelled = "BusinessMeeting.Cancelled";
 
-    // Shared contact directory (SIMF-FDS-014 / D-255).
+    // Shared contact directory (SIMF-FDS-014 / D-261).
     public const string ContactCreated = "Contact.Created";
     public const string ContactUpdated = "Contact.Updated";
     public const string ContactDeactivated = "Contact.Deactivated";
