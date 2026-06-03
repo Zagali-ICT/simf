@@ -1,0 +1,135 @@
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_auth_pkg/simf_auth_pkg.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import '../../app/route_names.dart';
+import '../../app/route_resume.dart';
+import '../../core/startup/app_update_checker.dart';
+
+/// Minimum time the logo is shown so the splash never flickers (Page_001 Logic
+/// L-1). Boot work that finishes sooner waits for this. Exposed as a provider
+/// so widget/unit tests can collapse it to [Duration.zero].
+final minSplashDurationProvider = Provider<Duration>((ref) {
+  return const Duration(milliseconds: 1200);
+});
+
+/// What the splash should do once boot work resolves.
+sealed class SplashState {
+  const SplashState();
+}
+
+/// Boot work is still running — show the logo (+ optional spinner).
+class SplashLoading extends SplashState {
+  const SplashLoading();
+}
+
+/// A mandatory store update gates entry (Page_001 Logic L-2). Non-dismissible:
+/// the only path forward is the store listing.
+class SplashUpdateRequired extends SplashState {
+  const SplashUpdateRequired();
+}
+
+/// Boot resolved — route out (Page_001 Logic L-5). Exactly one of [routeName]
+/// (a [RouteNames] value → `goNamed`) or [location] (a resumed path → `go`) is
+/// set. When [softUpdate] is true the widget shows a dismissible update prompt
+/// first, then continues to the destination.
+class SplashReady extends SplashState {
+  const SplashReady({this.routeName, this.location, this.softUpdate = false})
+      : assert(
+          routeName != null || location != null,
+          'A ready splash must carry a route name or a location.',
+        );
+
+  final String? routeName;
+  final String? location;
+  final bool softUpdate;
+}
+
+/// Orchestrates the launch sequence behind the splash logo (Page_001 Logic
+/// L-1..L-6): runs the store-update check and the minimum-display timer
+/// concurrently, waits for the auth cold-start restore to resolve, then emits
+/// the route-out decision. The widget reacts to the emitted [SplashState].
+class SplashController extends Notifier<SplashState> {
+  @override
+  SplashState build() {
+    // Touch the auth controller so its cold-start restore is running.
+    ref.read(authControllerProvider);
+    unawaited(_run());
+    return const SplashLoading();
+  }
+
+  Future<void> _run() async {
+    final checker = ref.read(appUpdateCheckerProvider);
+    final minDisplay = ref.read(minSplashDurationProvider);
+
+    final results = await Future.wait(<Future<Object?>>[
+      Future<void>.delayed(minDisplay),
+      checker.check(),
+    ]);
+    final updateStatus = results[1] as AppUpdateStatus;
+
+    if (updateStatus == AppUpdateStatus.forced) {
+      state = const SplashUpdateRequired();
+      return;
+    }
+
+    await _waitForAuthResolved();
+
+    state = _readyFor(softUpdate: updateStatus == AppUpdateStatus.optional);
+  }
+
+  /// Completes once the auth state machine has left its [AuthStateInitial]
+  /// cold-start phase (Page_001 Logic L-4).
+  Future<void> _waitForAuthResolved() async {
+    if (ref.read(authControllerProvider) is! AuthStateInitial) {
+      return;
+    }
+    final completer = Completer<void>();
+    final sub = ref.listen<AuthState>(
+      authControllerProvider,
+      (_, next) {
+        if (next is! AuthStateInitial && !completer.isCompleted) {
+          completer.complete();
+        }
+      },
+    );
+    try {
+      await completer.future;
+    } finally {
+      sub.close();
+    }
+  }
+
+  /// The route-out decision (Page_001 Logic L-5).
+  SplashReady _readyFor({required bool softUpdate}) {
+    final auth = ref.read(authControllerProvider);
+    final prefs = ref.read(simfPrefsStorageProvider);
+
+    if (auth is AuthStateSignedIn) {
+      final saved = prefs.getString(StorageKeys.lastRoute);
+      if (saved != null && isResumableLocation(saved)) {
+        return SplashReady(location: saved, softUpdate: softUpdate);
+      }
+      return SplashReady(routeName: RouteNames.home, softUpdate: softUpdate);
+    }
+
+    if (auth is AuthStateAwaitingTotp) {
+      return SplashReady(
+        routeName: RouteNames.verifyTotp,
+        softUpdate: softUpdate,
+      );
+    }
+
+    // Signed out: first run → onboarding; otherwise the sign-in entry.
+    final onboarded = prefs.getBool(StorageKeys.onboardingCompleted) ?? false;
+    return SplashReady(
+      routeName: onboarded ? RouteNames.signIn : RouteNames.onboarding,
+      softUpdate: softUpdate,
+    );
+  }
+}
+
+final splashControllerProvider =
+    NotifierProvider<SplashController, SplashState>(SplashController.new);

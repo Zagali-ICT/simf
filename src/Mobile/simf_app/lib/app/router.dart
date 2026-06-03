@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../core/widgets/coming_soon_screen.dart';
+import '../features/splash/splash_screen.dart';
 import 'route_names.dart';
+import 'route_resume.dart';
 
 /// Holds the route metadata for one screen: the path, the route name, the
 /// mockup screen number, and the Arabic + English label used by the
@@ -108,15 +113,35 @@ const Set<int> _authenticatedRoutes = <int>{
 /// Builds the go_router instance.
 ///
 /// The redirect logic implements the auth gate (SIMF-MAA-001 §8): a request
-/// for a protected route while signed out gets redirected to sign-in.
+/// for a protected route while signed out gets redirected to sign-in. The
+/// router refreshes on every auth-state change ([refreshListenable]) so the
+/// gate re-runs when the cold-start restore resolves or the session ends.
 GoRouter buildRouter(Ref ref) {
+  final prefs = ref.read(simfPrefsStorageProvider);
+  final authRefresh = _AuthRefreshNotifier(ref);
+  // The last location written to prefs, so the same value is not rewritten on
+  // every redirect pass.
+  String? lastRecorded;
+
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: '/splash',
+    refreshListenable: authRefresh,
     redirect: (context, state) {
       final authState = ref.read(authControllerProvider);
       final goingTo = state.matchedLocation;
+      final isSignedIn = authState is AuthStateSignedIn;
 
-      // While the cold-start restore is still running, hold on the splash.
+      // Remember the last signed-in content location so the next cold start can
+      // resume to it (Page_001 Logic L-5). The splash owns the read.
+      if (isSignedIn &&
+          isResumableLocation(goingTo) &&
+          goingTo != lastRecorded) {
+        lastRecorded = goingTo;
+        unawaited(prefs.setString(StorageKeys.lastRoute, goingTo));
+      }
+
+      // While the cold-start restore is still running, hold on the splash; the
+      // splash itself routes out once auth resolves (Page_001 Logic L-5).
       if (authState is AuthStateInitial && goingTo != '/splash') {
         return '/splash';
       }
@@ -125,15 +150,13 @@ GoRouter buildRouter(Ref ref) {
       final needsAuth = routeNumber != null &&
           _authenticatedRoutes.contains(routeNumber);
 
-      final isSignedIn = authState is AuthStateSignedIn;
-
       if (needsAuth && !isSignedIn) {
         return '/sign-in';
       }
 
-      // If the user is signed in and lands on the splash or sign-in, push
-      // them to home.
-      if (isSignedIn && (goingTo == '/splash' || goingTo == '/sign-in')) {
+      // A signed-in user has no business on the sign-in screen. (The splash is
+      // left to route itself out, so a resume target is never clobbered here.)
+      if (isSignedIn && goingTo == '/sign-in') {
         return '/';
       }
 
@@ -145,12 +168,13 @@ GoRouter buildRouter(Ref ref) {
           name: r.name,
           path: r.path,
           builder: (context, state) {
-            // Auth screens become real Phase 2 widgets in the next commit;
-            // for now everything renders the ComingSoonScreen, which
-            // satisfies the §12.1 "structure + state wiring + API
-            // integration with placeholder visuals" rule (the state and
-            // API are wired through the packages, and the visuals are
-            // explicitly a placeholder).
+            // Page 001 (splash) is a real screen; every other route still
+            // renders the ComingSoonScreen placeholder until it is built. The
+            // state + API are wired through the packages; the visuals are
+            // explicitly a placeholder (SIMF-MAA-001 §12.1).
+            if (r.name == RouteNames.splash) {
+              return const SplashScreen();
+            }
             return ComingSoonScreen(
               screenNumber: r.number,
               screenLabelAr: r.labelAr,
@@ -170,6 +194,18 @@ GoRouter buildRouter(Ref ref) {
         ),
     ],
   );
+}
+
+/// Bridges the Riverpod auth state to go_router's [Listenable]-based refresh:
+/// every change to [authControllerProvider] re-runs the router's redirect, so
+/// the cold-start restore resolving (and a later sign-out) is reflected in the
+/// gate without a manual navigation.
+class _AuthRefreshNotifier extends ChangeNotifier {
+  _AuthRefreshNotifier(Ref ref) {
+    ref.listen<AuthState>(authControllerProvider, (_, __) {
+      notifyListeners();
+    });
+  }
 }
 
 int? _numberFor(String location) {

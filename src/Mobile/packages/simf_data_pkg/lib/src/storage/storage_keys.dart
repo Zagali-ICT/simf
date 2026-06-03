@@ -18,6 +18,10 @@ class StorageKeys {
   static const String preferredThemeMode = 'simf.prefs.preferred_theme_mode';
   static const String onboardingCompleted = 'simf.prefs.onboarding_completed';
   static const String hasAcceptedTerms = 'simf.prefs.has_accepted_terms';
+
+  /// The last resumable signed-in location, persisted as the user navigates so
+  /// the splash can resume to it on the next cold start (Page_001 Logic L-5).
+  static const String lastRoute = 'simf.prefs.last_route';
   static const String lastSeenNotificationsAt =
       'simf.prefs.last_seen_notifications_at_iso';
   static const String accessibilityFontScale =

@@ -19,7 +19,7 @@ bottom nav, back button, or input on the splash itself.
 |---|---|
 | Logo appears | Minimum display timer starts (Logic L-1) |
 | (behind logo) | Store-native update check (Logic L-2) + local DB first-run/resume probe (L-3) |
-| (behind logo) | Stored-session load → `POST /app/auth/refresh` (E1) → `GET /app/account/profile` (E2) |
+| (behind logo) | Stored-session load → `POST /app/auth/refresh` (E1) → `GET /app/users/me` (E2) |
 | Logo fades out | Route-out to last saved screen / entry (Logic L-5) |
 
 ## Actions & navigation

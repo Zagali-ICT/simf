@@ -18,7 +18,7 @@ Per-page documentation folder. Everything about this app page lives here.
 | Section | 0 — Bootstrap / launch |
 | Nature | **Splash / bootstrap** (logo + version check + session load + route to last screen) |
 | App privilege | **None** — runs before any privilege is known (Guest/Visitor/Moderator/Staff resolved here) |
-| Status | API spec **reuses shipped endpoints** (no new endpoint); design **drafted** |
+| Status | **Built** (Flutter splash + boot route-out + privilege hydration); API spec **reuses shipped endpoints** (no new endpoint) |
 
 ## Sources of truth
 `Mockup.html` (visual, Screen 1) · `SIMF_Screen_Guide_and_User_Journey` (narrative, Screen 1 — boot/sign-in flow) ·
@@ -27,4 +27,4 @@ SIMF-MOB-API-001 (shared API conventions + auth) · SIMF-MAA-001 (mobile archite
 > Owner reference: **Page 001** (mockup Screen #1, "splash"). This is the app's first
 > screen on every cold launch. It does **not** introduce a new SIMF endpoint — the
 > store-update check is **store-native** (not a SIMF API) and the session/identity
-> reads reuse the already-shipped `POST /app/auth/refresh` and `GET /app/account/profile`.
+> reads reuse the already-shipped `POST /app/auth/refresh` and `GET /app/users/me`.

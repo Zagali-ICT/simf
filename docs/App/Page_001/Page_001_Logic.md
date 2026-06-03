@@ -37,7 +37,7 @@ Load the persisted session/tokens from **secure** local storage.
 - **No stored session** → treat as signed-out; destination is the signed-out entry (L-5).
 - **Stored session present** → attempt a **silent refresh** via `POST /app/auth/refresh`
   (Page_001_API E1) to obtain fresh tokens, then resolve identity via
-  `GET /app/account/profile` (Page_001_API E2) to derive the app privilege.
+  `GET /app/users/me` (Page_001_API E2) to derive the app privilege.
   - Refresh **succeeds** → signed-in; carry the refreshed tokens + privilege to the destination.
   - Refresh **fails** (expired/revoked refresh token, 401) → clear the stored session and route
     to the signed-out entry; do not loop.
@@ -69,7 +69,8 @@ before privilege is known.
 
 ## L-7 Dependencies
 - **`POST /app/auth/refresh`** — shipped; silent session refresh (Page_001_API E1).
-- **`GET /app/account/profile`** — shipped; identity + roles to derive privilege (Page_001_API E2).
+- **`GET /app/users/me`** — shipped (D-249); identity + `appRole` + registration status
+  to derive privilege (Page_001_API E2). The token payload's `AuthUser` omits these.
 - **Store-native in-app-update API** — platform SDK, not SIMF; no backend dependency.
 - **Local DB** — the app's offline store for the first-run flag, last-saved-screen, and cached
   identity (mobile-architecture local-DB allowance).

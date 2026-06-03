@@ -146,13 +146,15 @@ These rows track the **App API** (`/api/v1/app/*`) and the per-page documentatio
 (D-249). The Flutter screens themselves are still a **mockup** for API + UX
 testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 
+- 🟢 **Screen built** — the real Flutter screen + state + live `/app/*` calls are
+  implemented (UI is an interim placeholder per SIMF-VID-001); E2E catalogue authored.
 - ✅ **API built** — the backing endpoint is built + tested this wave (E2E linked).
 - 📄 **Doc** — per-page doc authored; the backing API pre-exists or the screen has
   none; the Flutter screen is a mockup (E2E lands as the screen is built).
 
 | Screen (route) | Status | Audience | Doc | Test |
 |----------------|--------|----------|-----|------|
-| #1 `splash` | 📄 Doc | Guest | [App/Page_001](../App/Page_001/README.md) | — |
+| #1 `splash` | 🟢 Screen built | Guest | [App/Page_001](../App/Page_001/README.md) | [e2e/mobile-splash.md](../tests/e2e/mobile-splash.md) |
 | #2 `onboarding` | 📄 Doc | Guest | [App/Page_002](../App/Page_002/README.md) | — |
 | #3 `signIn` | 📄 Doc | Guest | [App/Page_003](../App/Page_003/README.md) | — |
 | #4 `signUpType` | 📄 Doc | Guest | [App/Page_004](../App/Page_004/README.md) | — |

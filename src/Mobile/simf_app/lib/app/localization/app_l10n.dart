@@ -47,6 +47,20 @@ class AppL10n {
         'تعذر الاتصال بالخادم. تحقق من الاتصال بالإنترنت وحاول مرة أخرى.',
         'Could not reach the server. Check your internet connection and try again.',
       );
+
+  // Splash / store-update dialog (Page 001 — Logic L-2).
+  String get updateRequiredTitle => _t('تحديث مطلوب', 'Update required');
+  String get updateRequiredBody => _t(
+        'يتوفر إصدار جديد من التطبيق ويجب تثبيته للمتابعة.',
+        'A new version of the app is available and must be installed to continue.',
+      );
+  String get updateOptionalTitle => _t('يتوفر تحديث', 'Update available');
+  String get updateOptionalBody => _t(
+        'يتوفر إصدار جديد من التطبيق. ننصح بالتحديث للحصول على أحدث التحسينات.',
+        'A new version of the app is available. We recommend updating for the latest improvements.',
+      );
+  String get updateNowLabel => _t('تحديث الآن', 'Update now');
+  String get updateLaterLabel => _t('لاحقاً', 'Later');
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

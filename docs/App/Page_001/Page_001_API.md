@@ -11,7 +11,7 @@ in [Page_001_Logic.md](Page_001_Logic.md).
 >
 > **Path-prefix note:** App routes are under **`/api/v1/app/*`** (App↔CP split shipped,
 > D-247) — so the routes below are `POST /api/v1/app/auth/refresh` and
-> `GET /api/v1/app/account/profile`.
+> `GET /api/v1/app/users/me`.
 
 ## Version / update check — store-native (NO SIMF API)
 There is **no** SIMF endpoint for the launch update check. The app queries the **native
@@ -51,33 +51,40 @@ add a SIMF version endpoint; the store is the source of truth.
 On failure (expired/revoked/invalid refresh token) the envelope is `success: false` with
 an error code below; the app clears the stored session and routes to the signed-out entry.
 
-## E2 — `GET /app/account/profile`  (identity → derive privilege)
+## E2 — `GET /app/users/me`  (identity → derive privilege)
 | | |
 |---|---|
-| Route | `GET /api/v1/app/account/profile` |
+| Route | `GET /api/v1/app/users/me` |
 | Access | Authenticated with the **access token** from E1 (own `sub`). No new permission code. |
-| App privilege | Resolved **from** this response (roles → Guest/Visitor/Moderator/Staff) |
-| Status | **Exists (shipped).** |
-| Returns | `ApiResult<AccountProfile>` |
+| App privilege | Resolved **from** this response (`appRole` → Guest/Visitor/Moderator/Staff) |
+| Status | **Exists (shipped, D-249).** |
+| Returns | `ApiResult<CurrentUserResponse>` |
 
 ```jsonc
-// ApiResult<AccountProfile>  (success) — shape per the shipped endpoint
+// ApiResult<CurrentUserResponse>  (success) — the shape the app's CurrentUserDto decodes
 {
   "success": true,
   "data": {
-    "userId":      "guid",
-    "displayName": "string",
-    "email":       "string",
-    "accountState":"string",   // e.g. Approved / Pending — gates effective privilege
-    "roles":       ["string"]  // maps to the app privilege used for route-out (L-5)
+    "id":                 "guid",
+    "email":              "string",
+    "displayName":        "string",
+    "appRole":            "Visitor",     // Guest/Visitor/Moderator/Staff — drives route-out (L-5)
+    "preferredLanguage":  "ar",
+    "registrationStatus": "Pending",     // Pending/Approved/Rejected — gates effective access
+    "avatarUrl":          "string|null"
   },
   "error": null
 }
 ```
 
-> The exact field set is owned by the shipped endpoint; the splash only needs
-> `accountState` + `roles` to derive privilege. If the shape differs from the above,
-> the shipped contract wins — this page does not change it.
+> **Why this read, and not the token payload.** The `POST /app/auth/refresh` (E1)
+> response embeds only `AuthUser` (`id` + `email` + `displayName`) — it carries
+> **no** app-role or registration status. So after the silent refresh the splash
+> calls `GET /app/users/me` (the full `CurrentUserResponse`) to derive the
+> **authoritative** privilege before route-out; without it an approved
+> Visitor/Moderator/Staff would default to Guest/Pending. (Earlier drafts named
+> `GET /app/account/profile` here; the app standardised on `/app/users/me`, the
+> privilege-bearing read built for the mobile app in D-249.)
 
 ## Error codes
 Standard envelope errors apply (see SIMF-API-001 error model). The splash treats them as:
