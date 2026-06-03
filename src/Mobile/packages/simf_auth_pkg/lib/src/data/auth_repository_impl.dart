@@ -5,6 +5,8 @@ import '../domain/current_user.dart';
 import '../domain/session.dart';
 import '../domain_iface/auth_repository.dart';
 import 'auth_api.dart';
+import 'device_key_client.dart';
+import 'dto/device_key_dtos.dart';
 import 'dto/sign_in_request.dart';
 import 'dto/sign_in_response.dart';
 import 'dto/sign_up_request.dart';
@@ -133,6 +135,49 @@ class AuthRepositoryImpl implements AuthRepository {
         ),
       ),
     );
+  }
+
+  @override
+  Future<String> registerDeviceKey({
+    required String publicKeySpki,
+    required String label,
+  }) async {
+    final entry = await _guard(
+      () => _api.registerDeviceKey(
+        RegisterDeviceKeyRequest(
+          publicKey: publicKeySpki,
+          algorithm: DeviceKeyClient.algorithm,
+          label: label,
+        ),
+      ),
+    );
+    return entry.id;
+  }
+
+  @override
+  Future<String> issueDeviceKeyChallenge(String deviceKeyId) async {
+    final challenge = await _guard(
+      () => _api.issueDeviceKeyChallenge(deviceKeyId),
+    );
+    return challenge.challenge;
+  }
+
+  @override
+  Future<Session> signInWithDeviceKey({
+    required String deviceKeyId,
+    required String challenge,
+    required String signature,
+  }) async {
+    final payload = await _guard(
+      () => _api.signInWithDeviceKey(
+        SignInWithDeviceKeyRequest(
+          deviceKeyId: deviceKeyId,
+          challenge: challenge,
+          signature: signature,
+        ),
+      ),
+    );
+    return payload.toSession(issuedAt: _now());
   }
 
   /// Runs [call]. If it throws an [ApiFailure], rethrows the corresponding

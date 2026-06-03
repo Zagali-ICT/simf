@@ -13,6 +13,11 @@ class StorageKeys {
       'simf.auth.access_token_expires_at_iso';
   static const String currentUserJson = 'simf.auth.current_user_json';
 
+  // Device-key (biometric) — survives sign-out so a re-open can use it. NOT
+  // cleared by clearAuthValues; cleared only when the device key is revoked.
+  static const String deviceKeyId = 'simf.auth.device_key_id';
+  static const String deviceKeyPrivate = 'simf.auth.device_key_private';
+
   // Preferences — non-sensitive app configuration.
   static const String preferredLanguage = 'simf.prefs.preferred_language';
   static const String preferredThemeMode = 'simf.prefs.preferred_theme_mode';

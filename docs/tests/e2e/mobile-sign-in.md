@@ -32,7 +32,7 @@
 | E2E-MOB003-009 | Pending/rejected account → routed by registration status (Page 11) | edge | P1 | authored (status drives routing) |
 | E2E-MOB003-010 | Network / 500 → non-blocking error; fields preserved; no token mutation | resilience | P1 | authored (error surface) |
 | E2E-MOB003-011 | RTL render (Arabic) — fields, errors, links mirror; email stays LTR | i18n | P1 | authored (screen) |
-| E2E-MOB003-012 | Biometric (device-key) re-open | happy | P0 | **pending — next commit (device-key client + local_auth)** |
+| E2E-MOB003-012 | Biometric (device-key) re-open | happy | P0 | authored ✓ (Dart client + controller tests; on-device prompt + .NET interop → simf-run) |
 
 ## Scenarios
 
@@ -131,9 +131,13 @@ Scenario: Face/biometric re-open within the window
   And mints fresh tokens with no typed password
 ```
 
-> **Status: pending** — the Dart ES256 device-key client + `local_auth` gate land
-> in the next commit; the `local_auth` native config + secure-enclave hardening
-> are the simf-run/native follow-up (the android/ios folders are not in this tree).
+> **Built (Dart):** the ES256 device-key client (P-256 / SPKI / IEEE-P1363) + the
+> register/challenge/sign-in-with-device-key wiring + the `local_auth`-gated
+> biometric button are implemented and unit-tested in Dart
+> (`device_key_client_test.dart`, `auth_controller_device_key_test.dart`).
+> **simf-run follow-up:** the `local_auth` native config (manifest / Info.plist /
+> MainActivity) + a secure-enclave key + the **.NET crypto interop** (round-trip
+> against the running backend) are verified in simf-run, where android/ios exist.
 
 ---
 

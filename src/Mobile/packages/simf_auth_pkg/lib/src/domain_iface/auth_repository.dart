@@ -64,6 +64,24 @@ abstract class AuthRepository {
     required String newPassword,
     required String confirmPassword,
   });
+
+  /// Register a device key (public SPKI) for biometric sign-in; returns the
+  /// server-assigned device-key id. Requires a signed-in approved caller.
+  Future<String> registerDeviceKey({
+    required String publicKeySpki,
+    required String label,
+  });
+
+  /// Ask the server for a fresh challenge for [deviceKeyId]; returns the
+  /// base64 challenge to sign.
+  Future<String> issueDeviceKeyChallenge(String deviceKeyId);
+
+  /// Complete a biometric sign-in with the signed challenge.
+  Future<Session> signInWithDeviceKey({
+    required String deviceKeyId,
+    required String challenge,
+    required String signature,
+  });
 }
 
 /// A successful sign-in either yields a [Session] outright, or an email-OTP

@@ -1,6 +1,7 @@
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import 'dto/current_user_dto.dart';
+import 'dto/device_key_dtos.dart';
 import 'dto/sign_in_request.dart';
 import 'dto/sign_in_response.dart';
 import 'dto/sign_up_request.dart';
@@ -95,6 +96,46 @@ class AuthApi {
         }
         return CurrentUserDto.fromJson(data);
       },
+    );
+  }
+
+  // Device-key (biometric) sign-in — backend D-172.
+  Future<DeviceKeyEntryDto> registerDeviceKey(RegisterDeviceKeyRequest request) {
+    return _client.post<DeviceKeyEntryDto>(
+      '/app/auth/device-keys',
+      body: request.toJson(),
+      decodeData: (data) {
+        if (data is! Map<String, dynamic>) {
+          throw const FormatException(
+            'device-key registration response was not an object.',
+          );
+        }
+        return DeviceKeyEntryDto.fromJson(data);
+      },
+    );
+  }
+
+  Future<DeviceKeyChallengeDto> issueDeviceKeyChallenge(String deviceKeyId) {
+    return _client.post<DeviceKeyChallengeDto>(
+      '/app/auth/device-keys/$deviceKeyId/challenge',
+      decodeData: (data) {
+        if (data is! Map<String, dynamic>) {
+          throw const FormatException(
+            'device-key challenge response was not an object.',
+          );
+        }
+        return DeviceKeyChallengeDto.fromJson(data);
+      },
+    );
+  }
+
+  Future<TokenPayloadDto> signInWithDeviceKey(
+    SignInWithDeviceKeyRequest request,
+  ) {
+    return _client.post<TokenPayloadDto>(
+      '/app/auth/sign-in-with-device-key',
+      body: request.toJson(),
+      decodeData: _decodeTokenPayload,
     );
   }
 

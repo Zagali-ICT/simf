@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -27,8 +28,10 @@ class SignInScreen extends ConsumerStatefulWidget {
 class _SignInScreenState extends ConsumerState<SignInScreen> {
   final TextEditingController _email = TextEditingController();
   final TextEditingController _password = TextEditingController();
+  final LocalAuthentication _localAuth = LocalAuthentication();
   bool _obscure = true;
   bool _busy = false;
+  bool _biometricAvailable = false;
   String? _error;
 
   @override
@@ -39,6 +42,27 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         .getString(StorageKeys.lastEmail);
     if (last != null && last.isNotEmpty) {
       _email.text = last;
+    }
+    unawaited(_checkBiometric());
+  }
+
+  /// Offers the biometric button only when a device key is enrolled AND the
+  /// device supports biometrics. Any failure (e.g. no native plugin in this
+  /// tree) silently leaves it hidden — the password path is always available.
+  Future<void> _checkBiometric() async {
+    try {
+      final enrolled = await ref
+          .read(authControllerProvider.notifier)
+          .hasEnrolledDeviceKey();
+      if (!enrolled) {
+        return;
+      }
+      final supported = await _localAuth.isDeviceSupported();
+      if (mounted) {
+        setState(() => _biometricAvailable = supported);
+      }
+    } catch (_) {
+      // local_auth unavailable — keep the biometric button hidden.
     }
   }
 
@@ -77,7 +101,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (state is AuthStateAwaitingOtp) {
         context.goNamed(RouteNames.verifyOtp);
       } else if (state is AuthStateSignedIn) {
-        context.go('/');
+        _onSignedIn();
       }
     } on AuthFailure catch (failure) {
       if (!mounted) {
@@ -89,6 +113,70 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
             : failure.source.message;
         _password.clear();
       });
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  void _onSignedIn() {
+    // Best-effort enrolment for future biometric sign-in; uses the
+    // container-level controller so it survives this screen's disposal.
+    unawaited(
+      _maybeEnrolBiometric(ref.read(authControllerProvider.notifier)),
+    );
+    context.go('/');
+  }
+
+  Future<void> _maybeEnrolBiometric(AuthController notifier) async {
+    try {
+      if (await notifier.hasEnrolledDeviceKey()) {
+        return;
+      }
+      if (!await _localAuth.isDeviceSupported()) {
+        return;
+      }
+      await notifier.enrolDeviceKey();
+    } catch (_) {
+      // Enrolment is best-effort; never block sign-in on it.
+    }
+  }
+
+  Future<void> _biometricSignIn() async {
+    final l10n = AppL10n.of(context);
+    try {
+      final ok = await _localAuth.authenticate(
+        localizedReason: l10n.biometricSignInTooltip,
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+        ),
+      );
+      if (!ok || !mounted) {
+        return;
+      }
+      setState(() {
+        _busy = true;
+        _error = null;
+      });
+      await ref.read(authControllerProvider.notifier).signInWithDeviceKey();
+      if (!mounted) {
+        return;
+      }
+      if (ref.read(authControllerProvider) is AuthStateSignedIn) {
+        context.go('/');
+      }
+    } on AuthFailure catch (failure) {
+      if (mounted) {
+        setState(() {
+          _error = failure is NetworkUnavailable
+              ? l10n.networkErrorBody
+              : failure.source.message;
+        });
+      }
+    } catch (_) {
+      // Biometric / plugin failure — fall back to the password path silently.
     } finally {
       if (mounted) {
         setState(() => _busy = false);
@@ -168,6 +256,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       )
                     : Text(l10n.signInButton),
               ),
+              if (_biometricAvailable) ...<Widget>[
+                const SizedBox(height: SimfTokens.space3),
+                OutlinedButton.icon(
+                  onPressed:
+                      _busy ? null : () => unawaited(_biometricSignIn()),
+                  icon: const Icon(Icons.fingerprint),
+                  label: Text(l10n.biometricSignInTooltip),
+                ),
+              ],
               const SizedBox(height: SimfTokens.space2),
               TextButton(
                 onPressed: _busy

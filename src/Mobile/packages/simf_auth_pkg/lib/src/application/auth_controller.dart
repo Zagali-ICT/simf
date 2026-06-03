@@ -6,6 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../data/auth_api.dart';
 import '../data/auth_repository_impl.dart';
+import '../data/device_key_client.dart';
 import '../domain/app_role.dart';
 import '../domain/auth_failure.dart';
 import '../domain/current_user.dart';
@@ -59,6 +60,8 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
   // access token synchronously. Both are kept in sync with secure storage.
   String? _accessToken;
   String? _refreshToken;
+
+  final DeviceKeyClient _deviceKeyClient = const DeviceKeyClient();
 
   @override
   AuthState build() {
@@ -177,6 +180,59 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
       // Leave the existing session in place; the next protected call will
       // surface the failure through the refresh interceptor.
     }
+  }
+
+  // ----- device key (biometric, D-172) -------------------------------------
+
+  /// Enrols a device key for biometric sign-in (opt-in, after a password
+  /// sign-in): generates a P-256 key pair, registers the public key with the
+  /// server, and stores the private key + id in secure storage. No-op unless
+  /// signed in (registration requires the bearer token).
+  Future<void> enrolDeviceKey({String label = 'SIMF mobile'}) async {
+    if (state is! AuthStateSignedIn) {
+      return;
+    }
+    final pair = _deviceKeyClient.generateKeyPair();
+    final id = await _repository.registerDeviceKey(
+      publicKeySpki: pair.publicKeySpkiBase64,
+      label: label,
+    );
+    await _secureStorage.write(StorageKeys.deviceKeyId, id);
+    await _secureStorage.write(
+      StorageKeys.deviceKeyPrivate,
+      pair.privateKeyBase64,
+    );
+  }
+
+  /// Whether a device key is enrolled on this device — the sign-in screen only
+  /// offers the biometric button when this is true.
+  Future<bool> hasEnrolledDeviceKey() async {
+    final id = await _secureStorage.read(StorageKeys.deviceKeyId);
+    return id != null && id.isNotEmpty;
+  }
+
+  /// Biometric re-open (Page_003 L-2): challenge → sign → sign-in-with-device-key
+  /// → tokens. The caller gates this behind a successful on-device biometric
+  /// prompt (local_auth). No-op if no device key is enrolled.
+  Future<void> signInWithDeviceKey() async {
+    final id = await _secureStorage.read(StorageKeys.deviceKeyId);
+    final privateKey = await _secureStorage.read(StorageKeys.deviceKeyPrivate);
+    if (id == null || id.isEmpty || privateKey == null || privateKey.isEmpty) {
+      return;
+    }
+    final challenge = await _repository.issueDeviceKeyChallenge(id);
+    final signature = _deviceKeyClient.sign(
+      privateKeyBase64: privateKey,
+      challengeBase64: challenge,
+    );
+    final session = await _repository.signInWithDeviceKey(
+      deviceKeyId: id,
+      challenge: challenge,
+      signature: signature,
+    );
+    await _persistSession(session);
+    _setSignedIn(session);
+    await reloadCurrentUser();
   }
 
   // ----- internals ---------------------------------------------------------

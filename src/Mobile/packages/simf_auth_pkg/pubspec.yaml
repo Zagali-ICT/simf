@@ -12,6 +12,8 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^2.6.1
   meta: ^1.16.0
+  # ES256 (ECDSA P-256) device-key crypto for biometric sign-in (D-172).
+  pointycastle: ^3.9.1
   simf_data_pkg:
     path: ../simf_data_pkg
 
