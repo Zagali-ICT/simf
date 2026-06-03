@@ -75,24 +75,28 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       case SplashLoading():
         return;
       case SplashUpdateRequired():
+        // A forced update blocks boot: a non-dismissible dialog, no route-out.
         _handled = true;
-        unawaited(_showUpdateDialog(hard: true, onContinue: null));
+        unawaited(_showUpdateDialog(hard: true));
       case SplashReady(:final routeName, :final location, :final softUpdate):
         _handled = true;
         if (softUpdate) {
-          unawaited(
-            _showUpdateDialog(
-              hard: false,
-              onContinue: () => _routeOut(
-                routeName: routeName,
-                location: location,
-              ),
-            ),
-          );
+          unawaited(_softUpdateThenRouteOut(routeName, location));
         } else {
           _routeOut(routeName: routeName, location: location);
         }
     }
+  }
+
+  /// Shows the dismissible soft-update prompt, then routes out **however** the
+  /// dialog was closed (Later, "Update now" → store, or scrim) so the user is
+  /// never stranded on the splash (Page_001 Logic L-6).
+  Future<void> _softUpdateThenRouteOut(
+    String? routeName,
+    String? location,
+  ) async {
+    await _showUpdateDialog(hard: false);
+    _routeOut(routeName: routeName, location: location);
   }
 
   void _routeOut({String? routeName, String? location}) {
@@ -107,10 +111,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     }
   }
 
-  Future<void> _showUpdateDialog({
-    required bool hard,
-    required VoidCallback? onContinue,
-  }) async {
+  Future<void> _showUpdateDialog({required bool hard}) async {
     final l10n = AppL10n.of(context);
     await showDialog<void>(
       context: context,
@@ -127,10 +128,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           actions: <Widget>[
             if (!hard)
               TextButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                  onContinue?.call();
-                },
+                onPressed: () => Navigator.of(dialogContext).pop(),
                 child: Text(l10n.updateLaterLabel),
               ),
             FilledButton(

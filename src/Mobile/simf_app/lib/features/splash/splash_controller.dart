@@ -66,7 +66,11 @@ class SplashController extends Notifier<SplashState> {
 
     final results = await Future.wait(<Future<Object?>>[
       Future<void>.delayed(minDisplay),
-      checker.check(),
+      // Hard cap (Logic L-6): a hung store check never blocks boot.
+      checker.check().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => AppUpdateStatus.upToDate,
+      ),
     ]);
     final updateStatus = results[1] as AppUpdateStatus;
 
@@ -96,7 +100,11 @@ class SplashController extends Notifier<SplashState> {
       },
     );
     try {
-      await completer.future;
+      // Hard cap (Logic L-6): never wait forever on the cold-start restore; on
+      // timeout, fall through and route out on whatever state is current.
+      await completer.future.timeout(const Duration(seconds: 8));
+    } on TimeoutException {
+      // Intentionally swallowed — the splash advances rather than hanging.
     } finally {
       sub.close();
     }

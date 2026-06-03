@@ -211,5 +211,46 @@ void main() {
       final state = await _waitFor(container, (s) => s is AuthStateSignedOut);
       expect(state, isA<AuthStateSignedOut>());
     });
+
+    test('a throwing secure-storage read does not strand the splash (L-6)',
+        () async {
+      final repo = _MockAuthRepository();
+      final secure = _MockSecureStorage();
+      // Async throw, like real flutter_secure_storage on a corrupt keystore
+      // (a synchronous throw would land inside build() before it returns).
+      when(() => secure.read(any()))
+          .thenAnswer((_) async => throw Exception('corrupt keystore'));
+
+      final container = _container(repo, secure);
+      addTearDown(container.dispose);
+
+      final state = await _waitFor(container, (s) => s is AuthStateSignedOut);
+      expect(state, isA<AuthStateSignedOut>());
+    });
+
+    test('an offline refresh with no cached identity signs out', () async {
+      final repo = _MockAuthRepository();
+      final secure = _MockSecureStorage();
+      when(() => secure.read(StorageKeys.accessToken))
+          .thenAnswer((_) async => null);
+      when(() => secure.read(StorageKeys.refreshToken))
+          .thenAnswer((_) async => 'R');
+      when(() => secure.read(StorageKeys.accessTokenExpiresAtIso))
+          .thenAnswer((_) async => null);
+      when(() => secure.read(StorageKeys.currentUserJson))
+          .thenAnswer((_) async => null);
+      when(() => repo.refresh(refreshToken: any(named: 'refreshToken')))
+          .thenThrow(
+        const NetworkUnavailable(
+          ApiFailure(code: ApiErrorCodes.clientNetwork, message: 'offline'),
+        ),
+      );
+
+      final container = _container(repo, secure);
+      addTearDown(container.dispose);
+
+      final state = await _waitFor(container, (s) => s is AuthStateSignedOut);
+      expect(state, isA<AuthStateSignedOut>());
+    });
   });
 }

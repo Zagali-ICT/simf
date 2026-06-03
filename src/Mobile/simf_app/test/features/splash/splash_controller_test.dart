@@ -227,5 +227,16 @@ void main() {
       final state = await _resolve(container);
       expect((state as SplashReady).softUpdate, isTrue);
     });
+
+    test('an awaiting-TOTP state routes to verify-TOTP', () async {
+      final container = _container(
+        auth: const AuthStateAwaitingTotp('mfa-token'),
+        update: AppUpdateStatus.upToDate,
+      );
+      addTearDown(container.dispose);
+
+      final state = await _resolve(container);
+      expect((state as SplashReady).routeName, equals(RouteNames.verifyTotp));
+    });
   });
 }

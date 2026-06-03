@@ -174,89 +174,95 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
   }
 
   Future<void> _restoreFromStorage() async {
-    final access = await _secureStorage.read(StorageKeys.accessToken);
-    final refresh = await _secureStorage.read(StorageKeys.refreshToken);
-    final expiresIso = await _secureStorage.read(
-      StorageKeys.accessTokenExpiresAtIso,
-    );
-    final userJson = await _secureStorage.read(StorageKeys.currentUserJson);
-
-    if (refresh == null || refresh.isEmpty) {
-      state = const AuthStateSignedOut();
-      return;
-    }
-
-    DateTime? expiresAt;
-    if (expiresIso != null) {
-      expiresAt = DateTime.tryParse(expiresIso);
-    }
-    CurrentUser? cachedUser;
-    if (userJson != null) {
-      try {
-        final raw = jsonDecode(userJson);
-        if (raw is Map<String, dynamic>) {
-          cachedUser = _restoreCurrentUserFromMap(raw);
-        }
-      } catch (_) {
-        cachedUser = null;
-      }
-    }
-
-    if (access != null &&
-        access.isNotEmpty &&
-        expiresAt != null &&
-        cachedUser != null &&
-        expiresAt.isAfter(DateTime.now())) {
-      _setSignedIn(
-        Session(
-          accessToken: access,
-          refreshToken: refresh,
-          accessTokenExpiresAt: expiresAt,
-          user: cachedUser,
-        ),
-      );
-      // The cached privilege may be stale (or defaulted) — re-read the
-      // authoritative app-role + registration status from GET /app/users/me
-      // before route-out (Page_001 Logic L-4). Best-effort: a network error is
-      // swallowed by reloadCurrentUser, keeping the cached session (L-6).
-      await reloadCurrentUser();
-      return;
-    }
-
-    // The access token is missing or expired — silently refresh (Page_001
-    // Logic L-4). This path uses the repository directly (not the
-    // AuthTokenSource refresh used by the 401 interceptor) so it can tell an
-    // offline failure from an expired-session failure.
-    _refreshToken = refresh;
     try {
-      final session = await _repository.refresh(refreshToken: refresh);
-      await _persistSession(session);
-      _setSignedIn(session);
-      // The token payload's user (AuthUser) carries only id/email/displayName,
-      // so the privilege would default to Guest — hydrate the real app-role +
-      // registration status from GET /app/users/me before route-out (L-4).
-      await reloadCurrentUser();
-    } on NetworkUnavailable {
-      // Offline / server unreachable (Logic L-6): resume on the cached
-      // identity in a degraded state rather than stranding the user. With no
-      // cached identity there is nothing to resume to — sign out.
-      if (cachedUser != null && access != null && access.isNotEmpty) {
-        _setSignedIn(
-          Session(
-            accessToken: access,
-            refreshToken: refresh,
-            accessTokenExpiresAt: expiresAt ?? DateTime.now(),
-            user: cachedUser,
-          ),
-        );
-      } else {
+      final access = await _secureStorage.read(StorageKeys.accessToken);
+      final refresh = await _secureStorage.read(StorageKeys.refreshToken);
+      final expiresIso = await _secureStorage.read(
+        StorageKeys.accessTokenExpiresAtIso,
+      );
+      final userJson = await _secureStorage.read(StorageKeys.currentUserJson);
+
+      if (refresh == null || refresh.isEmpty) {
+        state = const AuthStateSignedOut();
+        return;
+      }
+
+      DateTime? expiresAt;
+      if (expiresIso != null) {
+        expiresAt = DateTime.tryParse(expiresIso);
+      }
+      CurrentUser? cachedUser;
+      if (userJson != null) {
+        try {
+          final raw = jsonDecode(userJson);
+          if (raw is Map<String, dynamic>) {
+            cachedUser = _restoreCurrentUserFromMap(raw);
+          }
+        } catch (_) {
+          cachedUser = null;
+        }
+      }
+
+      // The signed-in session we can rebuild from cache alone — used by both
+      // the valid-token fast path and the offline-degraded resume (L-4/L-6).
+      final cachedSession =
+          (cachedUser != null && access != null && access.isNotEmpty)
+              ? Session(
+                  accessToken: access,
+                  refreshToken: refresh,
+                  accessTokenExpiresAt: expiresAt ?? DateTime.now(),
+                  user: cachedUser,
+                )
+              : null;
+
+      // Fast path: a still-valid access token → restore immediately, then
+      // re-read the authoritative privilege from GET /app/users/me before
+      // route-out (Page_001 Logic L-4). The cached privilege may be stale or
+      // defaulted; a network error is swallowed by reloadCurrentUser, keeping
+      // the cached session (L-6).
+      if (cachedSession != null &&
+          expiresAt != null &&
+          expiresAt.isAfter(DateTime.now())) {
+        _setSignedIn(cachedSession);
+        await reloadCurrentUser();
+        return;
+      }
+
+      // The access token is missing or expired — silently refresh (Page_001
+      // Logic L-4). This path uses the repository directly (not the
+      // AuthTokenSource refresh used by the 401 interceptor) so it can tell an
+      // offline failure from an expired-session failure.
+      _refreshToken = refresh;
+      try {
+        final session = await _repository.refresh(refreshToken: refresh);
+        await _persistSession(session);
+        _setSignedIn(session);
+        // The token payload's user (AuthUser) carries only id/email/displayName,
+        // so the privilege would default to Guest — hydrate the real app-role +
+        // registration status from GET /app/users/me before route-out (L-4).
+        await reloadCurrentUser();
+      } on NetworkUnavailable {
+        // Offline / server unreachable (Logic L-6): resume on the cached
+        // identity in a degraded state rather than stranding the user. With no
+        // cached identity there is nothing to resume to — sign out.
+        if (cachedSession != null) {
+          _setSignedIn(cachedSession);
+        } else {
+          _refreshToken = null;
+          state = const AuthStateSignedOut();
+        }
+      } on AuthFailure {
+        // Expired / revoked / invalid refresh token (Logic L-4): clear and sign
+        // out; do not loop.
+        await _clearSessionStorage();
+        _accessToken = null;
         _refreshToken = null;
         state = const AuthStateSignedOut();
       }
-    } on AuthFailure {
-      // Expired / revoked / invalid refresh token (Logic L-4): clear and sign
-      // out; do not loop.
-      await _clearSessionStorage();
+    } catch (_) {
+      // Any unexpected failure (e.g. secure-storage throwing on a corrupt
+      // keystore) must never strand the app on the splash (Logic L-6): fall
+      // back to the signed-out entry.
       _accessToken = null;
       _refreshToken = null;
       state = const AuthStateSignedOut();
