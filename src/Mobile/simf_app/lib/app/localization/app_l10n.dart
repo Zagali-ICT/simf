@@ -150,6 +150,26 @@ class AppL10n {
         'إن كان البريد مسجلاً فستصلك رسالة بالرمز.',
         'If that email is registered, a code is on its way.',
       );
+
+  // Splash branding (Page 001) — matches the mockup brand lockup.
+  String get splashTagline => 'SAUDI · MOD · RSNF';
+  String get splashTitle => _t(
+        'الملتقى البحري السعودي الدولي',
+        'Saudi International Maritime Forum',
+      );
+  String get splashEventLine => _t(
+        'النسخة الرابعة · ٢٣–٢٥ نوفمبر ٢٠٢٦ · الرياض',
+        '4th Edition · 23–25 Nov 2026 · Riyadh',
+      );
+
+  // Onboarding intro videos (Page 002 — interim placeholder frames; the real
+  // YouTube clips introd_001..003 land with SIMF-VID-001).
+  String get onboardingVideoLabel => _t('مقطع تعريفي', 'Intro video');
+  String get onboardingMutedTooltip => _t('الصوت مكتوم', 'Sound muted');
+
+  // Login header controls (Page 003) — buttons only for now (no wiring yet).
+  String get themeToggleTooltip => _t('المظهر · ليلي/نهاري', 'Light / dark mode');
+  String get languageToggleLabel => 'العربية · English';
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

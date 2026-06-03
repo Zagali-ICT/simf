@@ -39,29 +39,46 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     return Scaffold(
       backgroundColor: SimfTokens.navy,
       body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const _LogoMark(),
-            const SizedBox(height: SimfTokens.space5),
-            Text(
-              l10n.appName,
-              style: const TextStyle(
-                color: SimfTokens.surface,
-                fontSize: SimfTokens.textHero,
-                fontWeight: FontWeight.w700,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const _LogoMark(),
+              const SizedBox(height: SimfTokens.space5),
+              Text(
+                l10n.splashTagline,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: SimfTokens.surface.withValues(alpha: 0.7),
+                  fontSize: SimfTokens.textXs,
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const SizedBox(height: SimfTokens.space8),
-            const SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                valueColor: AlwaysStoppedAnimation<Color>(SimfTokens.accent),
+              const SizedBox(height: SimfTokens.space3),
+              Text(
+                l10n.splashTitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: SimfTokens.surface,
+                  fontSize: SimfTokens.textXl,
+                  fontWeight: FontWeight.w700,
+                  height: 1.4,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: SimfTokens.space2),
+              Text(
+                l10n.splashEventLine,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: SimfTokens.surface.withValues(alpha: 0.66),
+                  fontSize: SimfTokens.textSm,
+                  height: 1.7,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

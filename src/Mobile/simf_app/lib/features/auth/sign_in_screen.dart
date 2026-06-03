@@ -188,7 +188,25 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.signInTitle)),
+      appBar: AppBar(
+        title: Text(l10n.signInTitle),
+        // Placeholder controls — buttons only, no wiring yet (owner: "for lang
+        // and dark mode only add btn — no fun"). Theme switching + language
+        // switching are wired in a later increment.
+        actions: <Widget>[
+          IconButton(
+            tooltip: l10n.themeToggleTooltip,
+            icon: const Icon(Icons.dark_mode_outlined),
+            onPressed: () {},
+          ),
+          TextButton(
+            onPressed: () {},
+            style: TextButton.styleFrom(foregroundColor: SimfTokens.accent),
+            child: Text(l10n.languageToggleLabel),
+          ),
+          const SizedBox(width: SimfTokens.space2),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(SimfTokens.space6),

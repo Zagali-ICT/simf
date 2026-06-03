@@ -63,10 +63,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    final slides = <(String, String)>[
-      (l10n.onboardingTitle1, l10n.onboardingBody1),
-      (l10n.onboardingTitle2, l10n.onboardingBody2),
-      (l10n.onboardingTitle3, l10n.onboardingBody3),
+    final titles = <String>[
+      l10n.onboardingTitle1,
+      l10n.onboardingTitle2,
+      l10n.onboardingTitle3,
     ];
     final isLast = _index == _slideCount - 1;
 
@@ -83,10 +83,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   controller: _pageController,
                   itemCount: _slideCount,
                   onPageChanged: (i) => setState(() => _index = i),
-                  itemBuilder: (context, i) {
-                    final (title, body) = slides[i];
-                    return _OnboardingSlide(title: title, body: body);
-                  },
+                  itemBuilder: (context, i) => _IntroVideoSlide(
+                    index: i,
+                    title: titles[i],
+                    videoName: 'introd_00${i + 1}',
+                  ),
                 ),
               ),
               Row(
@@ -143,34 +144,98 @@ class _ProgressSegments extends StatelessWidget {
   }
 }
 
-class _OnboardingSlide extends StatelessWidget {
-  const _OnboardingSlide({required this.title, required this.body});
+/// One intro-video slide. The video player is an **interim placeholder frame**
+/// (Page_002 FE-1..4): the real source is YouTube (`introd_001..003`) with a
+/// bundled fallback, wired with SIMF-VID-001 — the clips are not delivered yet,
+/// so this renders a play/mute frame standing in for the embedded player.
+class _IntroVideoSlide extends StatelessWidget {
+  const _IntroVideoSlide({
+    required this.index,
+    required this.title,
+    required this.videoName,
+  });
 
+  final int index;
   final String title;
-  final String body;
+  final String videoName;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        Container(
-          width: 84,
-          height: 84,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: SimfTokens.surface.withValues(alpha: 0.24),
+        SizedBox(
+          height: 188,
+          width: 300,
+          child: Container(
+            decoration: BoxDecoration(
+              color: SimfTokens.navyDeep,
+              borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
+              border: Border.all(
+                color: SimfTokens.surface.withValues(alpha: 0.12),
+              ),
+            ),
+            child: Stack(
+              children: <Widget>[
+                Center(
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: SimfTokens.accent.withValues(alpha: 0.18),
+                      border: Border.all(color: SimfTokens.accent),
+                    ),
+                    child: const Icon(
+                      Icons.play_arrow_rounded,
+                      color: SimfTokens.accent,
+                      size: 30,
+                    ),
+                  ),
+                ),
+                PositionedDirectional(
+                  top: SimfTokens.space2,
+                  start: SimfTokens.space3,
+                  child: Text(
+                    'YouTube',
+                    style: TextStyle(
+                      color: SimfTokens.surface.withValues(alpha: 0.6),
+                      fontSize: SimfTokens.textXs,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+                PositionedDirectional(
+                  bottom: SimfTokens.space2,
+                  end: SimfTokens.space3,
+                  child: Text(
+                    videoName,
+                    textDirection: TextDirection.ltr,
+                    style: TextStyle(
+                      color: SimfTokens.surface.withValues(alpha: 0.6),
+                      fontSize: SimfTokens.textXs,
+                    ),
+                  ),
+                ),
+                PositionedDirectional(
+                  bottom: SimfTokens.space1,
+                  start: SimfTokens.space1,
+                  child: IconButton(
+                    tooltip: l10n.onboardingMutedTooltip,
+                    onPressed: () {},
+                    icon: Icon(
+                      Icons.volume_off_outlined,
+                      color: SimfTokens.surface.withValues(alpha: 0.7),
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          alignment: Alignment.center,
-          child: const Icon(
-            Icons.public_outlined,
-            color: SimfTokens.accent,
-            size: 38,
-          ),
         ),
-        const SizedBox(height: SimfTokens.space6),
+        const SizedBox(height: SimfTokens.space5),
         Text(
           title,
           textAlign: TextAlign.center,
@@ -178,16 +243,16 @@ class _OnboardingSlide extends StatelessWidget {
             color: SimfTokens.surface,
             fontSize: SimfTokens.textXl,
             fontWeight: FontWeight.w700,
+            height: 1.4,
           ),
         ),
-        const SizedBox(height: SimfTokens.space3),
+        const SizedBox(height: SimfTokens.space2),
         Text(
-          body,
+          '${l10n.onboardingVideoLabel} ${index + 1} / 3',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: SimfTokens.surface.withValues(alpha: 0.78),
-            fontSize: SimfTokens.textMd,
-            height: 1.7,
+            color: SimfTokens.surface.withValues(alpha: 0.66),
+            fontSize: SimfTokens.textSm,
           ),
         ),
       ],
