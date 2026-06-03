@@ -39,9 +39,26 @@ internal sealed class AdminMediaPartnerService(
                 || EF.Functions.Like(partner.NameAr, $"%{term}%"));
         }
 
-        if (query.Filters.TryGetValue("isActive", out var activeFilter) && bool.TryParse(activeFilter, out var isActive))
+        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        foreach (var (column, raw) in query.Filters)
         {
-            rows = rows.Where(partner => partner.IsActive == isActive);
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "nameen":
+                    rows = rows.Where(partner => partner.NameEn.Contains(v));
+                    break;
+                case "namear":
+                    rows = rows.Where(partner => partner.NameAr.Contains(v));
+                    break;
+                case "isactive":
+                    if (bool.TryParse(v, out var isActive))
+                    {
+                        rows = rows.Where(partner => partner.IsActive == isActive);
+                    }
+                    break;
+            }
         }
 
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch

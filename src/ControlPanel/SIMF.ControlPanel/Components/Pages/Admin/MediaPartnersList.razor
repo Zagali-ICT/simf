@@ -20,63 +20,76 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        <div class="simf-form__actions">
-            <SimfButton Type="button" OnClick="OnAdd">
-                @L["Admin.MediaPartners.New"]
-            </SimfButton>
-        </div>
-
-        @if (_loading)
-        {
-            <p>@L["Admin.MediaPartners.Loading"]</p>
-        }
-        else if (_page.Items.Count == 0)
-        {
-            <SimfEmptyState Title="@L["Admin.MediaPartners.None"]" />
-        }
-        else
-        {
-            <table class="simf-table">
-                <thead>
-                    <tr>
-                        <th>@L["Admin.MediaPartners.Col.NameEn"]</th>
-                        <th>@L["Admin.MediaPartners.Col.NameAr"]</th>
-                        <th>@L["Admin.MediaPartners.Col.Logo"]</th>
-                        <th>@L["Admin.MediaPartners.Col.Url"]</th>
-                        <th>@L["Admin.MediaPartners.Col.DisplayOrder"]</th>
-                        <th>@L["Admin.MediaPartners.Col.Active"]</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _page.Items)
-                    {
-                        <tr>
-                            <td>@row.NameEn</td>
-                            <td>@row.NameAr</td>
-                            <td>@(string.IsNullOrWhiteSpace(row.LogoRelativePath) ? "—" : row.LogoRelativePath)</td>
-                            <td>@(string.IsNullOrWhiteSpace(row.Url) ? "—" : row.Url)</td>
-                            <td>@row.DisplayOrder</td>
-                            <td>@(row.IsActive ? "✓" : "—")</td>
-                            <td>
-                                <SimfButton Type="button" Disabled="_busy"
-                                            OnClick="@(() => OnEdit(row))">
-                                    @L["Admin.MediaPartners.Edit"]
-                                </SimfButton>
-                                <SimfButton Type="button" Disabled="_busy"
-                                            OnClick="@(() => OnDeleteAsync(row))">
-                                    @L["Admin.MediaPartners.Delete"]
-                                </SimfButton>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="simf-table__summary">
-                @(string.Format(L["Admin.MediaPartners.Summary"],
-                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
-            </p>
-        }
+        <SimfDataGrid TItem="AdminMediaPartnerSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.NameEn)"
+                      Caption="@L["Admin.MediaPartners.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnAdd="OnAdd"
+                      OnEditOne="OnEdit"
+                      OnDeleteOne="OnDeleteAsync"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.MediaPartners.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]"
+                      EditLabel="@L["Grid.Edit"]"
+                      DeleteLabel="@L["Grid.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminMediaPartnerSummary" Key="nameen"
+                                    Header="@L["Admin.MediaPartners.Col.NameEn"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.NameEn</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMediaPartnerSummary" Key="namear"
+                                    Header="@L["Admin.MediaPartners.Col.NameAr"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.NameAr</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMediaPartnerSummary" Key="logo"
+                                    Header="@L["Admin.MediaPartners.Col.Logo"]">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.LogoRelativePath) ? "—" : context.LogoRelativePath)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMediaPartnerSummary" Key="url"
+                                    Header="@L["Admin.MediaPartners.Col.Url"]">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.Url) ? "—" : context.Url)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMediaPartnerSummary" Key="displayorder"
+                                    Header="@L["Admin.MediaPartners.Col.DisplayOrder"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.DisplayOrder</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMediaPartnerSummary" Key="isActive"
+                                    Header="@L["Admin.MediaPartners.Col.Active"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.MediaPartners.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
     </div>
 </div>
 
@@ -149,7 +162,7 @@
         public bool IsActive { get; set; } = true;
     }
 
-    private GridQuery _query = new() { Top = 50 };
+    private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminMediaPartnerSummary> _page = new();
     private bool _loading;
     private bool _busy;
@@ -164,6 +177,18 @@
     {
         await LoadAsync();
     }
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
 
     private async Task LoadAsync()
     {

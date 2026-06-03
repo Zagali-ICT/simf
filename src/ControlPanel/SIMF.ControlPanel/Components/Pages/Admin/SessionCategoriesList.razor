@@ -1,7 +1,8 @@
 @* B9b (D-226) — CP management for the dynamic session-category lookup
    (SIMF-FDS-004 §5.4). Admin CRUD over a small bilingual lookup; the table
    ships empty and is seeded by the team once the client confirms the list
-   (open item OI-2). Mirrors BoothsList. *@
+   (open item OI-2). Migrated to the canonical SimfDataGrid (owner-mandated
+   standard) — server-paged grid + numbered pager + per-column filter/sort. *@
 @page "/admin/session-categories"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.SessionCategories.View)]
@@ -20,65 +21,69 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        <div class="simf-form__actions">
-            <AuthorizedAction Permission="@PermissionCatalog.SessionCategories.Create">
-                <SimfButton Type="button" OnClick="OnAdd">
-                    @L["Admin.SessionCategories.New"]
-                </SimfButton>
-            </AuthorizedAction>
-        </div>
-
-        @if (_loading)
-        {
-            <p>@L["Admin.SessionCategories.Loading"]</p>
-        }
-        else if (_page.Items.Count == 0)
-        {
-            <SimfEmptyState Title="@L["Admin.SessionCategories.None"]" />
-        }
-        else
-        {
-            <table class="simf-table">
-                <thead>
-                    <tr>
-                        <th>@L["Admin.SessionCategories.Col.NameEn"]</th>
-                        <th>@L["Admin.SessionCategories.Col.NameAr"]</th>
-                        <th>@L["Admin.SessionCategories.Col.Order"]</th>
-                        <th>@L["Admin.SessionCategories.Col.Active"]</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _page.Items)
-                    {
-                        <tr>
-                            <td>@row.NameEn</td>
-                            <td>@row.NameAr</td>
-                            <td>@row.DisplayOrder</td>
-                            <td>@(row.IsActive ? "✓" : "—")</td>
-                            <td>
-                                <AuthorizedAction Permission="@PermissionCatalog.SessionCategories.Edit">
-                                    <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => OnEdit(row))">
-                                        @L["Admin.SessionCategories.Edit"]
-                                    </SimfButton>
-                                </AuthorizedAction>
-                                <AuthorizedAction Permission="@PermissionCatalog.SessionCategories.Delete">
-                                    <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => OnDeleteAsync(row))">
-                                        @L["Admin.SessionCategories.Delete"]
-                                    </SimfButton>
-                                </AuthorizedAction>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="simf-table__summary">
-                @(string.Format(L["Admin.SessionCategories.Summary"],
-                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
-            </p>
-        }
+        <SimfDataGrid TItem="AdminSessionCategorySummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.NameEn)"
+                      Caption="@L["Admin.SessionCategories.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnAdd="OnAdd"
+                      OnEditOne="OnEdit"
+                      OnDeleteOne="OnDeleteAsync"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.SessionCategories.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]"
+                      EditLabel="@L["Grid.Edit"]"
+                      DeleteLabel="@L["Grid.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminSessionCategorySummary" Key="nameEn"
+                                    Header="@L["Admin.SessionCategories.Col.NameEn"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.NameEn</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionCategorySummary" Key="nameAr"
+                                    Header="@L["Admin.SessionCategories.Col.NameAr"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.NameAr</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionCategorySummary" Key="order"
+                                    Header="@L["Admin.SessionCategories.Col.Order"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.DisplayOrder</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionCategorySummary" Key="isActive"
+                                    Header="@L["Admin.SessionCategories.Col.Active"]"
+                                    Sortable="true">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.SessionCategories.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
     </div>
 </div>
 
@@ -137,7 +142,7 @@
         public bool IsActive { get; set; } = true;
     }
 
-    private GridQuery _query = new() { Top = 100 };
+    private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminSessionCategorySummary> _page = new();
     private bool _loading;
     private bool _busy;
@@ -149,6 +154,18 @@
     private FormModel _form = new();
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
 
     private async Task LoadAsync()
     {

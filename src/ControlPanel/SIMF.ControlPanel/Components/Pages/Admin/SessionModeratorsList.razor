@@ -19,55 +19,65 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        <div class="simf-form__actions">
-            <SimfButton Type="button" OnClick="OnAdd">
-                @L["Admin.SessionModerators.New"]
-            </SimfButton>
-        </div>
-
-        @if (_loading)
-        {
-            <p>@L["Admin.SessionModerators.Loading"]</p>
-        }
-        else if (_page.Items.Count == 0)
-        {
-            <SimfEmptyState Title="@L["Admin.SessionModerators.None"]" />
-        }
-        else
-        {
-            <table class="simf-table">
-                <thead>
-                    <tr>
-                        <th>@L["Admin.SessionModerators.Col.Session"]</th>
-                        <th>@L["Admin.SessionModerators.Col.Moderator"]</th>
-                        <th>@L["Admin.SessionModerators.Col.AssignedBy"]</th>
-                        <th>@L["Admin.SessionModerators.Col.AssignedAt"]</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _page.Items)
-                    {
-                        <tr>
-                            <td>@SessionLabel(row)</td>
-                            <td>@row.ModeratorDisplayName <small>(@(row.ModeratorEmail ?? "—"))</small></td>
-                            <td>@row.AssignedByDisplayName</td>
-                            <td>@row.AssignedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</td>
-                            <td>
-                                <SimfButton Type="button"
-                                            OnClick="@(() => RevokeAsync(row))">
-                                    @L["Admin.SessionModerators.Revoke"]
-                                </SimfButton>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="simf-table__summary">
-                @(string.Format(L["Admin.SessionModerators.Summary"],
-                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
-            </p>
-        }
+        <SimfDataGrid TItem="AdminSessionModeratorRow"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => $"{r.SessionId}/{r.UserId}")"
+                      RowLabel="@(r => r.ModeratorDisplayName)"
+                      Caption="@L["Admin.SessionModerators.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnAdd="OnAdd"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.SessionModerators.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]"
+                      EditLabel="@L["Grid.Edit"]"
+                      DeleteLabel="@L["Grid.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminSessionModeratorRow" Key="session"
+                                    Header="@L["Admin.SessionModerators.Col.Session"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@SessionLabel(context)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionModeratorRow" Key="moderator"
+                                    Header="@L["Admin.SessionModerators.Col.Moderator"]">
+                    <CellTemplate>
+                        @context.ModeratorDisplayName <small>(@(context.ModeratorEmail ?? "—"))</small>
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionModeratorRow" Key="assignedBy"
+                                    Header="@L["Admin.SessionModerators.Col.AssignedBy"]">
+                    <CellTemplate>@context.AssignedByDisplayName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionModeratorRow" Key="assignedAt"
+                                    Header="@L["Admin.SessionModerators.Col.AssignedAt"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.AssignedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions>
+                @* Page-specific quiet action: revoke this moderator grant. *@
+                <AuthorizedAction Permission="@PermissionCatalog.SessionModerators.Revoke">
+                    <SimfToolbarButton Icon="link-off" Title="@L["Admin.SessionModerators.Revoke"]"
+                                       OnClick="@(() => RevokeAsync(context))" />
+                </AuthorizedAction>
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.SessionModerators.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
     </div>
 </div>
 
@@ -103,7 +113,7 @@
 @code {
     private record Toast(string Variant, string Message);
 
-    private GridQuery _query = new() { Top = 25 };
+    private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminSessionModeratorRow> _page = new();
     private bool _loading;
     private bool _busy;
@@ -114,6 +124,18 @@
     private string _newUserId = string.Empty;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
 
     private async Task LoadAsync()
     {

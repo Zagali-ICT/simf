@@ -117,6 +117,20 @@ internal sealed class RatingService(
         var rows = dbContext.Ratings.AsNoTracking()
             .Where(rating => rating.IsActive);
 
+        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        foreach (var (column, raw) in query.Filters)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "comment":
+                    rows = rows.Where(rating =>
+                        rating.Comment != null && rating.Comment.Contains(v));
+                    break;
+            }
+        }
+
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var term = query.Search.Trim();

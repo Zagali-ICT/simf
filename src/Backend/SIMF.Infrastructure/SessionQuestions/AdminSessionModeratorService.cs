@@ -29,25 +29,56 @@ internal sealed class AdminSessionModeratorService(
         var skip = Math.Max(0, query.Skip);
         var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
 
-        var grants = appDbContext.SessionModerators.AsNoTracking().AsQueryable();
-        if (query.Filters.TryGetValue("sessionId", out var sidRaw)
-            && Guid.TryParse(sidRaw, out var sessionFilter))
-        {
-            grants = grants.Where(g => g.SessionId == sessionFilter);
-        }
-        grants = grants.OrderByDescending(g => g.AssignedAt);
-
-        var total = await grants.CountAsync(cancellationToken);
-        var pageRows = await grants
-            .Skip(skip)
-            .Take(top)
+        // Join the session up front so the grid can filter / sort on the
+        // session code/title (D-255). The moderator + assigner names live in
+        // the Identity DB and are resolved on read below (D-157: no cross-DB
+        // JOIN), so those columns are not server-filterable.
+        var joined = appDbContext.SessionModerators.AsNoTracking()
             .Join(appDbContext.Sessions,
                 g => g.SessionId, s => s.Id,
                 (g, s) => new
                 {
                     g.SessionId, g.UserId, g.AssignedByUserId, g.AssignedAt,
                     s.Code, s.Title, s.TitleArabic,
-                })
+                });
+
+        // Legacy single-session filter (kept for back-compat callers).
+        if (query.Filters.TryGetValue("sessionId", out var sidRaw)
+            && Guid.TryParse(sidRaw, out var sessionFilter))
+        {
+            joined = joined.Where(r => r.SessionId == sessionFilter);
+        }
+
+        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        foreach (var (column, raw) in query.Filters)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "session":
+                    joined = joined.Where(r =>
+                        r.Code.Contains(v)
+                        || r.Title.Contains(v)
+                        || r.TitleArabic.Contains(v));
+                    break;
+            }
+        }
+
+        // CP grid sortable columns (D-255). Default: most-recently assigned.
+        joined = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
+        {
+            ("session", false) => joined.OrderBy(r => r.Code).ThenBy(r => r.Title),
+            ("session", true) => joined.OrderByDescending(r => r.Code).ThenByDescending(r => r.Title),
+            ("assignedat", false) => joined.OrderBy(r => r.AssignedAt),
+            ("assignedat", true) => joined.OrderByDescending(r => r.AssignedAt),
+            _ => joined.OrderByDescending(r => r.AssignedAt),
+        };
+
+        var total = await joined.CountAsync(cancellationToken);
+        var pageRows = await joined
+            .Skip(skip)
+            .Take(top)
             .ToListAsync(cancellationToken);
 
         if (pageRows.Count == 0)

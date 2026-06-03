@@ -1,7 +1,7 @@
 @* D-199 (Mockup screen 40 "Rate the Forum") — read-only admin view of the
    attendee forum ratings. Shows the average-stars + count headline and a
-   table of individual ratings (stars, comment, date). No create / edit /
-   delete — ratings are owned by the attendees who submit them. *@
+   SimfDataGrid of individual ratings (stars, comment, active, date). No create
+   / edit / delete — ratings are owned by the attendees who submit them. *@
 @page "/admin/ratings"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Ratings.View)]
@@ -20,62 +20,87 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        @if (_loading)
-        {
-            <p>@L["Admin.Ratings.Loading"]</p>
-        }
-        else
-        {
-            @* Reuse the existing .simf-form__actions flex-row layout to lay the
-               two headline stat cards side by side — there is no dedicated
-               stat-row class in the component CSS this wave. *@
-            <div class="simf-form__actions">
-                <SimfStatCard Title="@L["Admin.Ratings.Stat.Average"]"
-                              Value="@_averageStars.ToString("0.0", CultureInfo.InvariantCulture)" />
-                <SimfStatCard Title="@L["Admin.Ratings.Stat.Count"]"
-                              Value="@_ratingCount.ToString(CultureInfo.InvariantCulture)" />
-            </div>
+        @* Reuse the existing .simf-form__actions flex-row layout to lay the
+           two headline stat cards side by side — there is no dedicated
+           stat-row class in the component CSS this wave. *@
+        <div class="simf-form__actions">
+            <SimfStatCard Title="@L["Admin.Ratings.Stat.Average"]"
+                          Value="@_averageStars.ToString("0.0", CultureInfo.InvariantCulture)" />
+            <SimfStatCard Title="@L["Admin.Ratings.Stat.Count"]"
+                          Value="@_ratingCount.ToString(CultureInfo.InvariantCulture)" />
+        </div>
 
-            @if (_page.Items.Count == 0)
-            {
-                <SimfEmptyState Title="@L["Admin.Ratings.None"]" />
-            }
-            else
-            {
-                <table class="simf-table">
-                    <thead>
-                        <tr>
-                            <th>@L["Admin.Ratings.Col.Stars"]</th>
-                            <th>@L["Admin.Ratings.Col.Comment"]</th>
-                            <th>@L["Admin.Ratings.Col.Active"]</th>
-                            <th>@L["Admin.Ratings.Col.CreatedAt"]</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var row in _page.Items)
+        <SimfDataGrid TItem="AdminRatingSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => $"{r.Stars}/5")"
+                      Caption="@L["Admin.Ratings.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]"
+                      EditLabel="@L["Grid.Edit"]"
+                      DetailsLabel="@L["Grid.Details"]"
+                      DeleteLabel="@L["Grid.Delete"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      LoadingLabel="@L["Admin.Ratings.Loading"]"
+                      PageFormatter="@FormatPage"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminRatingSummary" Key="stars"
+                                    Header="@L["Admin.Ratings.Col.Stars"]"
+                                    Sortable="true">
+                    <CellTemplate>@(context.Stars) / 5</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRatingSummary" Key="comment"
+                                    Header="@L["Admin.Ratings.Col.Comment"]"
+                                    Filterable="true">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Comment) ? "—" : context.Comment)
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRatingSummary" Key="isActive"
+                                    Header="@L["Admin.Ratings.Col.Active"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
                         {
-                            <tr>
-                                <td>@(row.Stars) / 5</td>
-                                <td>@(string.IsNullOrWhiteSpace(row.Comment) ? "—" : row.Comment)</td>
-                                <td>@(row.IsActive ? "✓" : "—")</td>
-                                <td>@row.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</td>
-                            </tr>
+                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
                         }
-                    </tbody>
-                </table>
-                <p class="simf-table__summary">
-                    @(string.Format(L["Admin.Ratings.Summary"],
-                        _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
-                </p>
-            }
-        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRatingSummary" Key="createdAt"
+                                    Header="@L["Admin.Ratings.Col.CreatedAt"]"
+                                    Sortable="true">
+                    <CellTemplate>
+                        @context.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Ratings.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
     </div>
 </div>
 
 @code {
     private record Toast(string Variant, string Message);
 
-    private GridQuery _query = new() { Top = 50 };
+    private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminRatingSummary> _page = new();
     private double _averageStars;
     private int _ratingCount;
@@ -83,6 +108,18 @@
     private Toast? _toast;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
 
     private async Task LoadAsync()
     {

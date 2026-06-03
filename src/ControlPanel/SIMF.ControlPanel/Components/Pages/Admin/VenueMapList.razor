@@ -22,63 +22,68 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        <div class="simf-form__actions">
-            <AuthorizedAction Permission="@PermissionCatalog.VenueMap.Create">
-                <SimfButton Type="button" OnClick="OnAdd">@L["Admin.VenueMap.New"]</SimfButton>
-            </AuthorizedAction>
-        </div>
-
-        @if (_loading)
-        {
-            <p>@L["Admin.VenueMap.Loading"]</p>
-        }
-        else if (_page.Items.Count == 0)
-        {
-            <SimfEmptyState Title="@L["Admin.VenueMap.None"]" />
-        }
-        else
-        {
-            <table class="simf-table">
-                <thead>
-                    <tr>
-                        <th>@L["Admin.VenueMap.Col.Label"]</th>
-                        <th>@L["Admin.VenueMap.Col.Kind"]</th>
-                        <th>@L["Admin.VenueMap.Col.Position"]</th>
-                        <th>@L["Admin.VenueMap.Col.Active"]</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _page.Items)
-                    {
-                        <tr>
-                            <td>@row.Label</td>
-                            <td>@row.Kind</td>
-                            <td>@row.X.ToString("0.#"), @row.Y.ToString("0.#")</td>
-                            <td>@(row.IsActive ? "✓" : "—")</td>
-                            <td>
-                                <AuthorizedAction Permission="@PermissionCatalog.VenueMap.Edit">
-                                    <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => OnEdit(row))">
-                                        @L["Admin.VenueMap.Edit"]
-                                    </SimfButton>
-                                </AuthorizedAction>
-                                <AuthorizedAction Permission="@PermissionCatalog.VenueMap.Delete">
-                                    <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => OnDeleteAsync(row))">
-                                        @L["Admin.VenueMap.Delete"]
-                                    </SimfButton>
-                                </AuthorizedAction>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-            <p class="simf-table__summary">
-                @(string.Format(L["Admin.VenueMap.Summary"],
-                    _page.Skip + 1, _page.Skip + _page.Items.Count, _page.Total))
-            </p>
-        }
+        <SimfDataGrid TItem="AdminVenueMapNodeSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.Label)"
+                      Caption="@L["Admin.VenueMap.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnAdd="OnAdd"
+                      OnEditOne="OnEdit"
+                      OnDeleteOne="OnDeleteAsync"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.VenueMap.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]"
+                      EditLabel="@L["Grid.Edit"]"
+                      DetailsLabel="@L["Grid.Details"]"
+                      DeleteLabel="@L["Grid.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminVenueMapNodeSummary" Key="label"
+                                    Header="@L["Admin.VenueMap.Col.Label"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Label</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminVenueMapNodeSummary" Key="kind"
+                                    Header="@L["Admin.VenueMap.Col.Kind"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Kind</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminVenueMapNodeSummary" Key="position"
+                                    Header="@L["Admin.VenueMap.Col.Position"]">
+                    <CellTemplate>@context.X.ToString("0.#"), @context.Y.ToString("0.#")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminVenueMapNodeSummary" Key="isActive"
+                                    Header="@L["Admin.VenueMap.Col.Active"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.VenueMap.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
     </div>
 </div>
 
@@ -174,7 +179,7 @@
         public bool IsActive { get; set; } = true;
     }
 
-    private GridQuery _query = new() { Top = 200 };
+    private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminVenueMapNodeSummary> _page = new();
     private List<AdminHallSummary> _halls = new();
     private List<AdminBoothSummary> _booths = new();
@@ -192,6 +197,18 @@
         await LoadPickersAsync();
         await LoadAsync();
     }
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
 
     private async Task LoadPickersAsync()
     {

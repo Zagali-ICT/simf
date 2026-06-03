@@ -40,16 +40,40 @@ internal sealed class AdminSessionCategoryService(
                 EF.Functions.Like(category.NameEn, $"%{term}%")
                 || EF.Functions.Like(category.NameAr, $"%{term}%"));
         }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
+
+        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        foreach (var (column, raw) in query.Filters)
         {
-            rows = rows.Where(category => category.IsActive == isActive);
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "nameen":
+                    rows = rows.Where(category => category.NameEn.Contains(v));
+                    break;
+                case "namear":
+                    rows = rows.Where(category => category.NameAr.Contains(v));
+                    break;
+                case "isactive":
+                    if (bool.TryParse(v, out var isActive))
+                    {
+                        rows = rows.Where(category => category.IsActive == isActive);
+                    }
+                    break;
+            }
         }
 
+        // CP grid sortable columns (D-255). Default: DisplayOrder, then NameEn.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("name", true) => rows.OrderByDescending(category => category.NameEn),
-            ("name", false) => rows.OrderBy(category => category.NameEn),
+            ("nameen", true) => rows.OrderByDescending(category => category.NameEn),
+            ("nameen", false) => rows.OrderBy(category => category.NameEn),
+            ("namear", true) => rows.OrderByDescending(category => category.NameAr),
+            ("namear", false) => rows.OrderBy(category => category.NameAr),
+            ("order", true) => rows.OrderByDescending(category => category.DisplayOrder),
+            ("order", false) => rows.OrderBy(category => category.DisplayOrder),
+            ("isactive", true) => rows.OrderByDescending(category => category.IsActive),
+            ("isactive", false) => rows.OrderBy(category => category.IsActive),
             _ => rows.OrderBy(category => category.DisplayOrder).ThenBy(category => category.NameEn),
         };
 

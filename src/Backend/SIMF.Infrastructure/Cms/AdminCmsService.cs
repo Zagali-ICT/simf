@@ -37,16 +37,36 @@ internal sealed class AdminCmsService(
                 || EF.Functions.Like(b.ContentEn, $"%{term}%")
                 || EF.Functions.Like(b.ContentAr, $"%{term}%"));
         }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
+
+        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        foreach (var (column, raw) in query.Filters)
         {
-            rows = rows.Where(b => b.IsActive == isActive);
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "key":
+                    rows = rows.Where(b => b.Key.Contains(v));
+                    break;
+                case "contenten":
+                    rows = rows.Where(b => b.ContentEn.Contains(v));
+                    break;
+                case "isactive":
+                    if (bool.TryParse(v, out var isActive))
+                    {
+                        rows = rows.Where(b => b.IsActive == isActive);
+                    }
+                    break;
+            }
         }
 
+        // CP grid sortable columns (D-255). Default: Key ascending.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("key", true) => rows.OrderByDescending(b => b.Key),
             ("key", false) => rows.OrderBy(b => b.Key),
+            ("contenten", true) => rows.OrderByDescending(b => b.ContentEn),
+            ("contenten", false) => rows.OrderBy(b => b.ContentEn),
             ("lastupdatedat", true) => rows.OrderByDescending(b => b.LastUpdatedAt),
             ("lastupdatedat", false) => rows.OrderBy(b => b.LastUpdatedAt),
             _ => rows.OrderBy(b => b.Key),
@@ -190,13 +210,39 @@ internal sealed class AdminCmsService(
                 EF.Functions.Like(b.TitleEn, $"%{term}%")
                 || EF.Functions.Like(b.TitleAr, $"%{term}%"));
         }
-        if (query.Filters.TryGetValue("isActive", out var activeFilter)
-            && bool.TryParse(activeFilter, out var isActive))
+        // CP grid per-column filters (D-256). Unknown columns are ignored.
+        foreach (var (column, raw) in query.Filters)
         {
-            rows = rows.Where(b => b.IsActive == isActive);
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "title":
+                    rows = rows.Where(b => b.TitleEn.Contains(v) || b.TitleAr.Contains(v));
+                    break;
+                case "isactive":
+                    if (bool.TryParse(v, out var isActive))
+                    {
+                        rows = rows.Where(b => b.IsActive == isActive);
+                    }
+                    break;
+            }
         }
 
-        rows = rows.OrderBy(b => b.DisplayOrder).ThenBy(b => b.StartUtc);
+        // CP grid sortable columns (D-256). Default: DisplayOrder, then StartUtc.
+        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
+        {
+            ("title", false) => rows.OrderBy(b => b.TitleEn),
+            ("title", true) => rows.OrderByDescending(b => b.TitleEn),
+            ("startutc", false) => rows.OrderBy(b => b.StartUtc),
+            ("startutc", true) => rows.OrderByDescending(b => b.StartUtc),
+            ("endutc", false) => rows.OrderBy(b => b.EndUtc),
+            ("endutc", true) => rows.OrderByDescending(b => b.EndUtc),
+            ("displayorder", true) => rows.OrderByDescending(b => b.DisplayOrder).ThenBy(b => b.StartUtc),
+            ("isactive", false) => rows.OrderBy(b => b.IsActive),
+            ("isactive", true) => rows.OrderByDescending(b => b.IsActive),
+            _ => rows.OrderBy(b => b.DisplayOrder).ThenBy(b => b.StartUtc),
+        };
         var total = await rows.CountAsync(cancellationToken);
         var page = await rows
             .Skip(skip).Take(top)

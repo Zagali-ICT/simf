@@ -29,6 +29,20 @@ internal sealed class VenueMapService(
         var top = Math.Clamp(query.Top is > 0 ? query.Top : 50, 1, 500);
 
         var rows = db.VenueMapNodes.AsNoTracking().AsQueryable();
+
+        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        foreach (var (column, raw) in query.Filters)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "label":
+                    rows = rows.Where(n => n.Label.Contains(v) || n.LabelArabic.Contains(v));
+                    break;
+            }
+        }
+
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var term = query.Search.Trim();
@@ -36,7 +50,15 @@ internal sealed class VenueMapService(
                 EF.Functions.Like(n.Label, $"%{term}%")
                 || EF.Functions.Like(n.LabelArabic, $"%{term}%"));
         }
-        rows = rows.OrderBy(n => n.Label);
+
+        // CP grid sortable columns (D-255). Default: Label ascending.
+        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
+        {
+            ("label", true) => rows.OrderByDescending(n => n.Label),
+            ("kind", false) => rows.OrderBy(n => n.Kind),
+            ("kind", true) => rows.OrderByDescending(n => n.Kind),
+            _ => rows.OrderBy(n => n.Label),
+        };
 
         var total = await rows.CountAsync(cancellationToken);
         var page = await rows

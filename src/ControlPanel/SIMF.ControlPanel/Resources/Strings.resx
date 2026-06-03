@@ -2410,6 +2410,8 @@
   <data name="Grid.Details" xml:space="preserve"><value>Details</value></data>
   <data name="Grid.Delete" xml:space="preserve"><value>Delete</value></data>
   <data name="Grid.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Grid.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Grid.Inactive" xml:space="preserve"><value>Inactive</value></data>
   <data name="Admin.AiPrompts.Active.Yes" xml:space="preserve"><value>Active</value></data>
   <data name="Admin.AiPrompts.Active.No" xml:space="preserve"><value>Inactive</value></data>
 </root>

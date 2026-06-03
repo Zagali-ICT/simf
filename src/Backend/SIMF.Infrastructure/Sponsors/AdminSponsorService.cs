@@ -48,10 +48,43 @@ internal sealed class AdminSponsorService(
             rows = rows.Where(sponsor => sponsor.Tier == tier);
         }
 
-        rows = rows
-            .OrderBy(sponsor => sponsor.Tier)
-            .ThenBy(sponsor => sponsor.DisplayOrder)
-            .ThenBy(sponsor => sponsor.NameAr);
+        // CP grid per-column text filters (D-255). The grid sends the column
+        // Key as the filter key; unknown columns are ignored. The isActive /
+        // tier filters above stay for API callers that pass the structured keys.
+        foreach (var (column, raw) in query.Filters)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "nameen":
+                    rows = rows.Where(sponsor => sponsor.NameEn.Contains(v));
+                    break;
+                case "namear":
+                    rows = rows.Where(sponsor => sponsor.NameAr.Contains(v));
+                    break;
+            }
+        }
+
+        // CP grid sortable columns (D-255). Default (and any unknown sort):
+        // Tier, then DisplayOrder, then NameAr — the public ordering.
+        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
+        {
+            ("nameen", false) => rows.OrderBy(sponsor => sponsor.NameEn),
+            ("nameen", true) => rows.OrderByDescending(sponsor => sponsor.NameEn),
+            ("namear", false) => rows.OrderBy(sponsor => sponsor.NameAr),
+            ("namear", true) => rows.OrderByDescending(sponsor => sponsor.NameAr),
+            ("tier", false) => rows.OrderBy(sponsor => sponsor.Tier),
+            ("tier", true) => rows.OrderByDescending(sponsor => sponsor.Tier),
+            ("displayorder", false) => rows.OrderBy(sponsor => sponsor.DisplayOrder),
+            ("displayorder", true) => rows.OrderByDescending(sponsor => sponsor.DisplayOrder),
+            ("isactive", false) => rows.OrderBy(sponsor => sponsor.IsActive),
+            ("isactive", true) => rows.OrderByDescending(sponsor => sponsor.IsActive),
+            _ => rows
+                .OrderBy(sponsor => sponsor.Tier)
+                .ThenBy(sponsor => sponsor.DisplayOrder)
+                .ThenBy(sponsor => sponsor.NameAr),
+        };
 
         var total = await rows.CountAsync(cancellationToken);
         var page = await rows
