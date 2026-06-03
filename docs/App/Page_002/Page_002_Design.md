@@ -4,6 +4,16 @@ Screen design for the Flutter app. Layout from `Mockup.html` (Screen 2);
 rules in [Page_002_Logic.md](Page_002_Logic.md); there is **no API** binding
 ([Page_002_API.md](Page_002_API.md)) — all media is bundled/external.
 
+> **As-built (interim, 2026-06-03 — `features/onboarding/onboarding_screen.dart`).**
+> The Mockup (Screen 2) renders onboarding as an informational **slide**
+> (progress segments + circular icon + title + body + Skip/Next), so the skeleton
+> ships a three-slide `PageView` carousel now as the mockup-faithful stand-in for
+> the intro **videos**. The full-bleed video-player design below is the eventual
+> target: the real YouTube/bundled player binds the stable media names
+> (`introd_001..003`, Logic L-2) into the same slide positions without a flow
+> change — no video-player dependency or bundled asset is added pre-content. The
+> first-run wiring (set `onboardingCompleted` → route to sign-in) is real today.
+
 ## Layout (top → bottom)
 1. **Full-bleed media stage** — fills the screen; hosts the loading image first, then the
    YouTube/video player for the current clip.

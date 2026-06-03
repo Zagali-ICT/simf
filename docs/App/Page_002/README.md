@@ -18,7 +18,7 @@ Per-page documentation folder. Everything about this app page lives here.
 | Section | 1 — Start & entry |
 | Nature | **First-run intro** (loading image → 3 intro videos, preferred YouTube, shown once) |
 | App privilege | **Guest / not-logged-in** (runs before any sign-in; no auth gate) |
-| Status | **No API** (owner); design **drafted**; media names stable (`introd_001..`) |
+| Status | **Built** (Flutter slide carousel + first-run gate → sign-in); **No API** (owner); intro videos are deferred media bound by stable names (`introd_001..`) |
 
 ## Sources of truth
 `Mockup.html` (visual) · `docs/App/SIMF-APP-Page-Requirements.md` Page 002 (owner capture) ·

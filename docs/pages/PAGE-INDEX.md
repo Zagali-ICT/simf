@@ -155,7 +155,7 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | Screen (route) | Status | Audience | Doc | Test |
 |----------------|--------|----------|-----|------|
 | #1 `splash` | 🟢 Screen built | Guest | [App/Page_001](../App/Page_001/README.md) | [e2e/mobile-splash.md](../tests/e2e/mobile-splash.md) |
-| #2 `onboarding` | 📄 Doc | Guest | [App/Page_002](../App/Page_002/README.md) | — |
+| #2 `onboarding` | 🟢 Screen built | Guest | [App/Page_002](../App/Page_002/README.md) | [e2e/mobile-onboarding.md](../tests/e2e/mobile-onboarding.md) |
 | #3 `signIn` | 📄 Doc | Guest | [App/Page_003](../App/Page_003/README.md) | — |
 | #4 `signUpType` | 📄 Doc | Guest | [App/Page_004](../App/Page_004/README.md) | — |
 | #5 `signUpForm` | 📄 Doc | Guest | [App/Page_005](../App/Page_005/README.md) | — |

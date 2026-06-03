@@ -7,6 +7,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../core/widgets/coming_soon_screen.dart';
+import '../features/onboarding/onboarding_screen.dart';
 import '../features/splash/splash_screen.dart';
 import 'route_names.dart';
 import 'route_resume.dart';
@@ -170,6 +171,9 @@ GoRouter buildRouter(Ref ref) {
             // explicitly a placeholder (SIMF-MAA-001 §12.1).
             if (r.name == RouteNames.splash) {
               return const SplashScreen();
+            }
+            if (r.name == RouteNames.onboarding) {
+              return const OnboardingScreen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,

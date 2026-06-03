@@ -61,6 +61,35 @@ class AppL10n {
       );
   String get updateNowLabel => _t('تحديث الآن', 'Update now');
   String get updateLaterLabel => _t('لاحقاً', 'Later');
+
+  // Onboarding (Page 002). Interim slide copy standing in for the intro videos.
+  String get onboardingSkip => _t('تخطي', 'Skip');
+  String get onboardingNext => _t('التالي', 'Next');
+  String get onboardingGetStarted => _t('ابدأ', 'Get started');
+  String get onboardingTitle1 => _t(
+        'مرحباً بك في تطبيق الملتقى',
+        'Welcome to the SIMF app',
+      );
+  String get onboardingBody1 => _t(
+        'دليلك المتكامل: الأجندة، المتحدثون، الخريطة التفاعلية، البطاقة الذكية، والبث المباشر — في تطبيق واحد.',
+        'Your complete guide: the agenda, speakers, interactive map, smart badge and live broadcast — in one app.',
+      );
+  String get onboardingTitle2 => _t(
+        'تابع الجلسات والمتحدثين',
+        'Follow the sessions and speakers',
+      );
+  String get onboardingBody2 => _t(
+        'تصفّح الأجندة، احجز مقعدك، واستكشف أجنحة المعرض والخريطة التفاعلية للمكان.',
+        'Browse the agenda, reserve your seat, and explore the exhibition booths and the interactive venue map.',
+      );
+  String get onboardingTitle3 => _t(
+        'بطاقتك الذكية وتواصلك',
+        'Your smart badge and networking',
+      );
+  String get onboardingBody3 => _t(
+        'بطاقة دخول QR، إشعارات فورية، وتواصل مع مشاركين يشاركونك الاهتمامات.',
+        'A QR entry badge, instant notifications, and connect with attendees who share your interests.',
+      );
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
