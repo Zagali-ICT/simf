@@ -19,71 +19,83 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        @if (_loading)
-        {
-            <p>@L["Admin.SessionSummaries.Loading"]</p>
-        }
-        else if (_rows.Count == 0)
-        {
-            <SimfEmptyState Title="@L["Admin.SessionSummaries.None"]" />
-        }
-        else
-        {
-            <table class="simf-table">
-                <thead>
-                    <tr>
-                        <th>@L["Admin.SessionSummaries.Col.Session"]</th>
-                        <th>@L["Admin.SessionSummaries.Col.Status"]</th>
-                        <th>@L["Admin.SessionSummaries.Col.Source"]</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var row in _rows)
+        <SimfDataGrid TItem="AdminSessionSummaryRow"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      RowKey="@(r => r.SessionId.ToString())"
+                      Caption="@L["Admin.SessionSummaries.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.SessionSummaries.Loading"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminSessionSummaryRow" Key="session"
+                                    Header="@L["Admin.SessionSummaries.Col.Session"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.SessionTitle</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionSummaryRow" Key="status"
+                                    Header="@L["Admin.SessionSummaries.Col.Status"]">
+                    <CellTemplate>
+                        @if (!context.HasSummary)
+                        {
+                            <SimfPill Variant="off">@L["Admin.SessionSummaries.Status.None"]</SimfPill>
+                        }
+                        else if (context.IsPublished)
+                        {
+                            <SimfPill Variant="on">@L["Admin.SessionSummaries.Status.Published"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="warn">@L["Admin.SessionSummaries.Status.Draft"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionSummaryRow" Key="source"
+                                    Header="@L["Admin.SessionSummaries.Col.Source"]">
+                    <CellTemplate>@SourceLabel(context)</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions>
+                @* Page-specific quiet actions: AI-generate / edit / publish-toggle. *@
+                <AuthorizedAction Permission="@PermissionCatalog.SessionSummaries.Edit">
+                    <SimfToolbarButton Icon="sparkle" Title="@L["Admin.SessionSummaries.Action.Generate"]"
+                                       Disabled="_busy" OnClick="@(() => GenerateAsync(context.SessionId))" />
+                    @if (context.HasSummary)
                     {
-                        <tr>
-                            <td>@row.SessionTitle</td>
-                            <td>@StatusLabel(row)</td>
-                            <td>@SourceLabel(row)</td>
-                            <td>
-                                <AuthorizedAction Permission="@PermissionCatalog.SessionSummaries.Edit">
-                                    <SimfButton Type="button" Disabled="_busy"
-                                                OnClick="@(() => GenerateAsync(row.SessionId))">
-                                        @L["Admin.SessionSummaries.Action.Generate"]
-                                    </SimfButton>
-                                    @if (row.HasSummary)
-                                    {
-                                        <SimfButton Type="button" Disabled="_busy"
-                                                    OnClick="@(() => OpenEditorAsync(row.SessionId))">
-                                            @L["Admin.SessionSummaries.Action.Edit"]
-                                        </SimfButton>
-                                    }
-                                </AuthorizedAction>
-                                @if (row.HasSummary)
-                                {
-                                    <AuthorizedAction Permission="@PermissionCatalog.SessionSummaries.Publish">
-                                        @if (row.IsPublished)
-                                        {
-                                            <SimfButton Type="button" Disabled="_busy"
-                                                        OnClick="@(() => SetPublishedAsync(row.SessionId, false))">
-                                                @L["Admin.SessionSummaries.Action.Unpublish"]
-                                            </SimfButton>
-                                        }
-                                        else
-                                        {
-                                            <SimfButton Type="button" Disabled="_busy"
-                                                        OnClick="@(() => SetPublishedAsync(row.SessionId, true))">
-                                                @L["Admin.SessionSummaries.Action.Publish"]
-                                            </SimfButton>
-                                        }
-                                    </AuthorizedAction>
-                                }
-                            </td>
-                        </tr>
+                        <SimfToolbarButton Icon="edit" Title="@L["Admin.SessionSummaries.Action.Edit"]"
+                                           Disabled="_busy" OnClick="@(() => OpenEditorAsync(context.SessionId))" />
                     }
-                </tbody>
-            </table>
-        }
+                </AuthorizedAction>
+                @if (context.HasSummary)
+                {
+                    <AuthorizedAction Permission="@PermissionCatalog.SessionSummaries.Publish">
+                        @if (context.IsPublished)
+                        {
+                            <SimfToolbarButton Icon="power" Title="@L["Admin.SessionSummaries.Action.Unpublish"]"
+                                               Disabled="_busy" OnClick="@(() => SetPublishedAsync(context.SessionId, false))" />
+                        }
+                        else
+                        {
+                            <SimfToolbarButton Icon="power" Title="@L["Admin.SessionSummaries.Action.Publish"]"
+                                               Disabled="_busy" OnClick="@(() => SetPublishedAsync(context.SessionId, true))" />
+                        }
+                    </AuthorizedAction>
+                }
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.SessionSummaries.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
     </div>
 </div>
 
@@ -127,6 +139,8 @@
     private record Toast(string Variant, string Message);
 
     private List<AdminSessionSummaryRow> _rows = new();
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminSessionSummaryRow> _page = new();
     private bool _loading;
     private bool _busy;
     private Toast? _toast;
@@ -138,6 +152,39 @@
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
+    private Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        BuildPage();
+        return Task.CompletedTask;
+    }
+
+    // The desk loads every active session in one read, so filter / sort / page
+    // happen client-side over the in-memory rows.
+    private void BuildPage()
+    {
+        IEnumerable<AdminSessionSummaryRow> q = _rows;
+        if (_query.Filters.TryGetValue("session", out var f) && !string.IsNullOrWhiteSpace(f))
+        {
+            q = q.Where(r => r.SessionTitle.Contains(f, StringComparison.OrdinalIgnoreCase));
+        }
+        if (string.Equals(_query.Sort, "session", StringComparison.OrdinalIgnoreCase))
+        {
+            q = _query.SortDescending
+                ? q.OrderByDescending(r => r.SessionTitle)
+                : q.OrderBy(r => r.SessionTitle);
+        }
+        var filtered = q.ToList();
+        var items = filtered.Skip(_query.Skip).Take(_query.Top).ToList();
+        _page = GridPage<AdminSessionSummaryRow>.Of(items, filtered.Count, _query);
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
+
     private async Task LoadAsync()
     {
         _loading = true;
@@ -148,6 +195,7 @@
             if (envelope is { Success: true, Data: not null })
             {
                 _rows = envelope.Data.ToList();
+                BuildPage();
             }
             else
             {
@@ -279,11 +327,6 @@
         }
         finally { _busy = false; }
     }
-
-    private string StatusLabel(AdminSessionSummaryRow row) =>
-        !row.HasSummary ? L["Admin.SessionSummaries.Status.None"]
-        : row.IsPublished ? L["Admin.SessionSummaries.Status.Published"]
-        : L["Admin.SessionSummaries.Status.Draft"];
 
     private string SourceLabel(AdminSessionSummaryRow row) =>
         !row.HasSummary ? "—"
