@@ -403,6 +403,25 @@
   flex-wrap: wrap;
 }
 
+/* Inline filter bar — fields flow in a compact wrapping row instead of
+   stacking full-width. Used by the CP filter toolbars (operation log,
+   attendees). Scoped under --inline so no other form is affected. */
+.simf-form--inline .simf-form__fields {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3) var(--space-4);
+}
+.simf-form--inline .simf-form__fields > * {
+  flex: 1 1 170px;
+  min-width: 150px;
+  max-width: 320px;
+  margin: 0;
+}
+.simf-form--inline .simf-form__actions {
+  margin-block-start: var(--space-4);
+}
+
 /* P6 — utilities used by the CP log viewer. */
 .simf-text-muted {
   color: var(--color-text-muted);
