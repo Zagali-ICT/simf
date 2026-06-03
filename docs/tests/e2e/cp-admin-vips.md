@@ -7,15 +7,21 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
-> **What this page is.** The VIP desk is a **read-only list** — it is NOT a CRUD
-> grid. The rows are the subset of `UserProfiles` whose `ProfileType.Name` is in
-> `{VVIP, VIP, Gold}` (the `VipProfileTypes.All` discriminator). The only mutating
-> action on the page is the **bulk-notify** flow: tick recipients → "Notify
-> selected (N)" → fill the bilingual title/body modal → "Send". There is no Add /
-> Edit / Details / Deactivate, no inline filter control, and no pager buttons wired
-> in the `.razor` (the toolbar exposes only the notify button). Grounding:
+> **What this page is.** The VIP desk is a **read-only `SimfDataGrid`** (D-256
+> conversion) — it is NOT a CRUD grid. The rows are the subset of `UserProfiles`
+> whose `ProfileType.Name` is in `{VVIP, VIP, Gold}` (the `VipProfileTypes.All`
+> discriminator). The only mutating action on the page is the **bulk-notify**
+> flow: tick recipients → the `CustomToolbar` "Notify selected (N)" send-icon
+> button → fill the bilingual title/body modal → "Send". There is no Add / Edit /
+> Details / Deactivate and **no per-row action icons** (no `RowActions` slot is
+> wired). The grid renders `Multiselect` checkboxes (row + Select-all) and the
+> standard `SimfDataGrid` pager (First / Prev / numbered / Next / Last + page-size
+> selector + "Showing …" summary) at `Top = 20`. **None of the four columns set
+> `Filterable="true"` or `Sortable="true"`, so the grid shows neither a per-column
+> filter row nor sortable headers** — `/list` is fetched once per page change with
+> no `Sort` / `Filters` ever set. Grounding:
 > `src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/VipsList.razor`,
 > API `src/Backend/SIMF.Api/Endpoints/Admin/VipEndpoints.cs`,
 > service `src/Backend/SIMF.Infrastructure/PublicRelations/AdminInvitationService.cs`
@@ -263,4 +269,4 @@ Scenario: Arabic toggle mirrors the page + notify modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

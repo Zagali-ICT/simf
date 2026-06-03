@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page permission:** `PermissionCatalog.Media.View` gates the page
 > (`@attribute [RequirePermission(PermissionCatalog.Media.View)]`). The mutating
@@ -37,6 +37,8 @@
 | E2E-MED-012 | Server 500 on `/list` → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-MED-013 | Delete cancelled — dismiss `confirm()` → no DELETE fires | edge | P2 | _to author_ |
 | E2E-MED-014 | RTL render — Arabic toggle mirrors page + modal | i18n | P1 | _to author_ |
+| E2E-MED-015 | Per-column filter narrows the grid (Title (English) + Album (English)) | grid | P1 | _to author_ |
+| E2E-MED-016 | Column sort toggles (Title (English) / Display order) | grid | P2 | _to author_ |
 
 ## Scenarios
 
@@ -84,7 +86,7 @@ Scenario: Create an Image item, attach its bitmap, edit it, then delete it
   And the hint changes to "An image is attached to this item."
   And after the background reload the grid row shows Image="✓"
 
-  When they click "Edit" on that row
+  When they click the row's Edit (pencil) action
   Then GET /account/api/admin/media/{id} returns 200 and the modal pre-fills the saved values
   When they change Display order to "0"
   And they click "Save"
@@ -92,7 +94,7 @@ Scenario: Create an Image item, attach its bitmap, edit it, then delete it
   And a green toast reads "Media item saved." / "تم حفظ عنصر الوسائط."
   And the grid row's Order column reads "0"
 
-  When they click "Delete" on that row
+  When they click the row's Delete (trash) action
   And they accept the browser confirm "Delete this media item? It will be removed from the public gallery."
   Then DELETE /account/api/admin/media/{id} returns 200
   And a green toast reads "Media item deleted." / "تم حذف عنصر الوسائط."
@@ -129,7 +131,7 @@ Scenario: Add a Video item with a playback URL — modal closes on create
 ```gherkin
 Scenario: Edit metadata, DisplayOrder and the Active flag of an existing item
   Given a media item "Opening Ceremony" exists in the grid
-  When the administrator clicks "Edit" on its row
+  When the administrator clicks the row's Edit (pencil) action
   Then GET /account/api/admin/media/{id} returns 200
   And the Edit modal pre-fills Type, both titles, both albums, Display order and the Active checkbox
   When they change Title (Arabic)="حفل الختام"
@@ -146,7 +148,7 @@ Scenario: Edit metadata, DisplayOrder and the Active flag of an existing item
 ```gherkin
 Scenario: Delete an item via the browser confirm dialog
   Given a media item exists in the active grid
-  When the administrator clicks "Delete" on its row
+  When the administrator clicks the row's Delete (trash) action
   Then a browser confirm appears reading "Delete this media item? It will be removed from the public gallery."
   When they accept the confirm
   Then DELETE /account/api/admin/media/{id} returns 200 with ApiResult.Data=true
@@ -250,7 +252,7 @@ Scenario: Empty or oversized image upload returns a bilingual 400
 ```gherkin
 Scenario: Editing or deleting an already-removed item returns 404
   Given a media item id that no longer exists (hard-removed out of band)
-  When the administrator clicks "Edit" on a stale row
+  When the administrator clicks the Edit (pencil) action on a stale row
   Then GET /account/api/admin/media/{id} returns HTTP 404 with Error.Code = "MEDIA_NOT_FOUND"
   And a red error toast surfaces "The media item was not found." / "لم يتم العثور على عنصر الوسائط."
   And the modal does not open
@@ -275,7 +277,7 @@ Scenario: API 500 on /list shows the fallback bilingual toast
 ```gherkin
 Scenario: Dismissing the confirm dialog cancels the delete
   Given a media item exists in the grid
-  When the administrator clicks "Delete" on its row
+  When the administrator clicks the row's Delete (trash) action
   And they DISMISS the browser confirm dialog
   Then no DELETE /account/api/admin/media/{id} request fires
   And the row stays in the grid unchanged
@@ -299,6 +301,57 @@ Scenario: Arabic toggle mirrors the page and the modal
   And the Type options read "صورة" / "فيديو"
   And the footer actions (حفظ / إلغاء) appear in reverse order
 ```
+
+### E2E-MED-015 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing into a per-column grid filter re-queries /list and narrows the rows
+  Given the grid is showing the first page of 20 media items (GridQuery.Top=20, Skip=0)
+  And several items have Title (English) starting with "Opening"
+  When the administrator clicks the column-filter control on the "Title (English)" column
+  And they type "Opening" into the per-column filter input for "Title (English)"
+  Then POST /account/api/admin/media/list fires with GridQuery.Filters["titleEn"]="Opening"
+  And GridQuery.Skip resets to 0 (back to the first page)
+  And the grid re-renders showing only rows whose Title (English) contains "Opening"
+  And the pager summary updates to the filtered Total (e.g. "Showing 1–3 of 3")
+
+  When they also type "Day 1" into the per-column filter input for "Album (English)"
+  Then the next POST /account/api/admin/media/list carries both filters
+       GridQuery.Filters["titleEn"]="Opening" and GridQuery.Filters["albumEn"]="Day 1"
+  And the grid narrows further to rows matching BOTH (server-side Contains, case-insensitive)
+
+  When they clear both per-column filter inputs
+  Then POST /account/api/admin/media/list fires with an empty GridQuery.Filters
+  And the grid returns to the full active list
+```
+
+**Notes:** the four filterable columns are `titleEn`, `titleAr`, `albumEn`,
+`albumAr` (each `Filterable="true"` on `MediaList.razor`). `AdminMediaService`
+honours these keys (plus `isActive`) and ignores any unknown column key, so a
+filter on a non-filterable column (`kind`, `hasImage`, `displayOrder`) is a
+no-op server-side.
+
+### E2E-MED-016 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable column header cycles ascending → descending
+  Given the grid is showing media items ordered by the default DisplayOrder
+  When the administrator clicks the "Title (English)" column header
+  Then POST /account/api/admin/media/list fires with GridQuery.Sort="titleEn" and SortDescending=false
+  And the grid re-orders A→Z by Title (English)
+  When they click the "Title (English)" header again
+  Then the next POST carries GridQuery.Sort="titleEn" and SortDescending=true
+  And the grid re-orders Z→A
+
+  When instead they click the "Display order" header
+  Then POST /account/api/admin/media/list fires with GridQuery.Sort="displayOrder"
+  And the grid orders by ascending DisplayOrder, then descending on a second click
+```
+
+**Notes:** the sortable columns are `kind`, `titleEn`, `displayOrder` and
+`isActive` (each `Sortable="true"`). `titleAr`, `albumEn`, `albumAr` and
+`hasImage` are NOT sortable. The default order (no Sort) is DisplayOrder
+ascending then CreatedAt descending.
 
 ---
 
@@ -334,4 +387,4 @@ Scenario: Arabic toggle mirrors the page and the modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

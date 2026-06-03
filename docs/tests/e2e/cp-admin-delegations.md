@@ -7,14 +7,24 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
+
+> **D-256 grid conversion.** This page now renders the owner-mandated `SimfDataGrid`
+> (server-paged, page size **20**, full pager) instead of the old raw `<table>`. The
+> row actions are quiet **icon** buttons in the grid's row-end cell — an Edit (pencil)
+> icon (`OnEditOne`) and a Delete/Deactivate (trash) icon (`OnDeleteOne`) — and the
+> toolbar **Add** ("+") icon opens the Create modal (`OnAdd`). The `name`, `nameArabic`
+> and `country` columns carry per-column filter inputs; every column is sortable. The
+> grid sets `Multiselect="true"` (select-all + per-row checkboxes) but **no bulk
+> toolbar action is wired** — selection is cosmetic on this page, so there is no
+> bulk-delete/approve scenario.
 
 > **Page permission:** `@attribute [RequirePermission(PermissionCatalog.Delegations.View)]`
 > (`"Delegations.View"`). The API also enforces `Delegations.Create` / `Delegations.Edit` /
 > `Delegations.Delete` per action, all baselined `AdminOnly` and seeded idempotently. The
-> CP page itself does **not** wrap the New / Edit / Deactivate buttons in
-> `<AuthorizedAction>` — a `View`-only admin therefore sees the buttons but the API will
-> reject the write with HTTP 403 (covered by E2E-DLG-009).
+> CP page itself does **not** wrap the Add / Edit / Delete grid affordances in
+> `<AuthorizedAction>` — a `View`-only admin therefore sees the icon actions but the API
+> will reject the write with HTTP 403 (covered by E2E-DLG-009).
 
 > **No uniqueness constraint.** The service (`AdminDelegationService`) does **not** check
 > name uniqueness — two delegations may share the same EN/AR name by design (a country can
@@ -40,6 +50,8 @@
 | E2E-DLG-012 | Member count / Display order numeric guards (negative → 400, large clamped by input) | error | P2 | _to author_ |
 | E2E-DLG-013 | Cancel the Add/Edit modal — no write fires | happy | P2 | _to author_ |
 | E2E-DLG-014 | RTL / Arabic render mirrors page + modal | i18n | P1 | _to author_ |
+| E2E-DLG-015 | Per-column grid filter (Name / Country) narrows the grid + resets Skip | happy | P1 | _to author_ |
+| E2E-DLG-016 | Column sort toggles (Name asc → desc) | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -62,7 +74,7 @@ Background:
 
 Scenario: Create, list, edit, then deactivate one delegation
   Given the grid currently shows N rows (or the SimfEmptyState if N = 0)
-  When the administrator clicks "New delegation"
+  When the administrator clicks the grid toolbar Add ("+") action
   Then the Create modal opens titled "Create delegation"
   And it shows the fields: Name (English), Name (Arabic), Country (select, default "(none)"),
       Member count (number, default 0), "Priority (sorted first in the public list)" checkbox,
@@ -80,7 +92,7 @@ Scenario: Create, list, edit, then deactivate one delegation
   And the grid reloads and shows N + 1 rows
   And a row exists with Name="Royal Saudi Naval Forces", Members=12, Order=0 and Active="✓"
 
-  When the administrator clicks "Edit" on that row
+  When the administrator clicks the row's Edit (pencil) icon action
   Then the Edit modal opens titled "Edit delegation" with the row values pre-filled
   And an "Active" checkbox is now visible and ticked
   When they tick "Priority (sorted first in the public list)"
@@ -91,7 +103,7 @@ Scenario: Create, list, edit, then deactivate one delegation
   And a green toast reads "Delegation saved." ("تم حفظ الوفد.")
   And the row now shows Priority="✓" and Order=5
 
-  When the administrator clicks "Deactivate" on that row
+  When the administrator clicks the row's Delete/Deactivate (trash) icon action
   Then a browser confirm() dialog appears reading
       "Deactivate this delegation? It will disappear from the public list immediately."
   When they accept the dialog
@@ -138,7 +150,7 @@ Scenario: No delegations renders the SimfEmptyState
   When the administrator opens /admin/delegations
   Then POST /account/api/admin/delegations/list returns HTTP 200 with Total = 0
   And the SimfEmptyState renders with the title "No delegations yet." ("لا توجد وفود حتى الآن.")
-  And the toolbar still shows the "New delegation" button
+  And the toolbar still shows the Add ("+") icon action
   And no error toast appears
 ```
 
@@ -166,7 +178,7 @@ Scenario: Blank English name is rejected by the API with a bilingual message
 Scenario: Editing a delegation another admin already deleted returns 404
   Given the grid shows a delegation row "Stale Delegation"
   And in another session a second admin has deactivated/removed that delegation's id
-  When the administrator clicks "Edit" on the "Stale Delegation" row
+  When the administrator clicks the "Stale Delegation" row's Edit (pencil) icon action
   And changes Display order to "9"
   And clicks "Save"
   Then the BFF forwards PUT /account/api/admin/delegations/{id}
@@ -176,7 +188,7 @@ Scenario: Editing a delegation another admin already deleted returns 404
 
 Scenario: Deactivating an already-deactivated delegation is a no-op success
   Given a delegation row exists whose underlying record is already IsActive=false
-  When the administrator confirms "Deactivate" on it
+  When the administrator clicks its Delete/Deactivate (trash) icon action and confirms
   Then the API returns HTTP 200 (DeactivateAsync early-returns when not active)
   And a green toast reads "Delegation deactivated."
 ```
@@ -186,7 +198,7 @@ Scenario: Deactivating an already-deactivated delegation is a no-op success
 ```gherkin
 Scenario: Cancelling the confirm dialog aborts the delete
   Given the grid shows a delegation "Cancel Me"
-  When the administrator clicks "Deactivate" on that row
+  When the administrator clicks that row's Delete/Deactivate (trash) icon action
   Then a confirm() dialog appears reading
       "Deactivate this delegation? It will disappear from the public list immediately."
   When they dismiss / cancel the dialog
@@ -196,7 +208,7 @@ Scenario: Cancelling the confirm dialog aborts the delete
 
 Scenario: Accepting the confirm dialog soft-deletes the row
   Given the grid shows a delegation "Delete Me"
-  When the administrator clicks "Deactivate" and accepts the confirm dialog
+  When the administrator clicks the row's Delete/Deactivate (trash) icon action and accepts the confirm dialog
   Then DELETE /account/api/admin/delegations/{id} returns HTTP 200
   And a green toast reads "Delegation deactivated."
   And the reloaded row shows Active="—"
@@ -208,7 +220,7 @@ Scenario: Accepting the confirm dialog soft-deletes the row
 Scenario: Edit pre-fills every field from the grid row
   Given a delegation row: Name="Egyptian Navy", Name (Arabic)="البحرية المصرية",
       Country="Egypt", Members=6, Priority="✓", International="✓", Order=3, Active="✓"
-  When the administrator clicks "Edit" on that row
+  When the administrator clicks that row's Edit (pencil) icon action
   Then the Edit modal opens titled "Edit delegation"
   And Name (English) shows "Egyptian Navy"
   And Name (Arabic) shows "البحرية المصرية"
@@ -240,9 +252,9 @@ Scenario: View-only admin can open the page but cannot save
   Given a signed-in admin with Delegations.View but NOT Delegations.Create/Edit
   When they open /admin/delegations
   Then the grid loads (POST /list returns 200)
-  And the "New delegation", "Edit" and "Deactivate" buttons are still rendered
-      (the page does not wrap them in <AuthorizedAction>)
-  When they click "New delegation", fill valid data and click "Save"
+  And the toolbar Add ("+") icon and the per-row Edit (pencil) / Delete (trash) icon
+      actions are still rendered (the page does not wrap them in <AuthorizedAction>)
+  When they click the Add ("+") action, fill valid data and click "Save"
   Then the BFF forwards POST /account/api/admin/delegations
   And the API returns HTTP 403 (policy PermissionCatalog.PolicyFor(Delegations.Create))
   And the modal stays open
@@ -258,7 +270,7 @@ Scenario: API 500 on /list shows the bilingual fallback toast
   Then the page first shows "Loading…" ("جارٍ التحميل…")
   And then a red toast appears reading "Could not load delegations." ("تعذّر تحميل الوفود.")
   And no grid rows render
-  And the "New delegation" button is still present
+  And the toolbar Add ("+") icon action is still present
 ```
 
 ### E2E-DLG-011 — Countries dropdown load failure
@@ -271,7 +283,7 @@ Scenario: Countries list fails to load but the page and form still work
       "Could not load countries list for the form. The country dropdown will be empty until reload."
       ("تعذّر تحميل قائمة الدول للنموذج. ستظل قائمة الدول فارغة حتى يتم إعادة التحميل.")
   And the delegations grid still loads normally (separate /list call)
-  When they click "New delegation"
+  When they click the toolbar Add ("+") icon action
   Then the Create modal opens with the Country dropdown showing only "(none)"
   And they can still create a delegation with Country = "(none)"
 ```
@@ -322,14 +334,60 @@ Scenario: Arabic toggle mirrors page + Create modal
   Then the page reloads with <html dir="rtl" lang="ar">
   And the SimfBanner title reads "الوفود"
   And the column headers read الاسم / الاسم (عربي) / الدولة / عدد الأعضاء / أولوية / دولي / الترتيب / مفعّل
-  And the "New delegation" button reads "وفد جديد"
-  And the row action buttons read "تعديل" / "تعطيل"
+  And the grid toolbar Add ("+") icon carries the title "إضافة" (Grid.Add)
+  And the per-row icon actions carry the titles "تعديل" (Grid.Edit) / "حذف" (Grid.Delete)
 
-  When they click "وفد جديد"
+  When they click the Add ("+") toolbar icon action
   Then the Create modal opens in RTL titled "إنشاء وفد"
   And the field labels are Arabic (الاسم (إنجليزي) / الاسم (عربي) / الدولة / عدد الأعضاء /
       أولوية (تظهر أولاً في القائمة العامة) / دولي / ترتيب العرض (الأصغر يظهر أولاً))
   And the footer shows "حفظ" and "إلغاء" in reverse order
+```
+
+### E2E-DLG-015 — Per-column grid filter narrows the grid
+
+```gherkin
+Scenario: Typing in the Name column filter narrows the grid and resets paging
+  Given the grid lists at least two delegations across more than one page
+      (page size 20, so Total > 20 shows a second page)
+  And the administrator has paged to page 2 (GridQuery.Skip = 20)
+  When they type "Royal" into the per-column filter input under the "Name" column
+      (input aria-label "Filter column Name")
+  Then after the 300 ms debounce the page issues
+      POST /account/api/admin/delegations/list with GridQuery.Filters["name"] = "Royal"
+  And GridQuery.Skip is reset to 0 (the filter returns to page 1)
+  And the grid reloads showing only rows whose Name contains "Royal"
+  And any prior row selection is cleared (the grid drops selection on a query change)
+
+Scenario: The Country column filter resolves through the Country navigation
+  Given the grid lists delegations linked to several countries
+  When they type "Greece" into the per-column filter under the "Country" column
+      (input aria-label "Filter column Country")
+  Then the page issues POST /account/api/admin/delegations/list with
+      GridQuery.Filters["country"] = "Greece" and Skip = 0
+  And the grid narrows to delegations whose country NameEn/NameAr contains "Greece"
+
+Scenario: Clearing the filter input restores the full grid
+  Given the Name column filter currently holds "Royal"
+  When the administrator clears the filter input
+  Then the page issues POST /account/api/admin/delegations/list with the "name"
+      key removed from GridQuery.Filters and Skip = 0
+  And the grid reloads with the unfiltered result set
+```
+
+### E2E-DLG-016 — Column sort toggles
+
+```gherkin
+Scenario: Clicking the Name header toggles ascending then descending
+  Given the grid lists several delegations (default order DisplayOrder asc, NameArabic asc)
+  When the administrator clicks the sortable "Name" column header
+  Then the page issues POST /account/api/admin/delegations/list with
+      GridQuery.Sort = "name", SortDescending = false and Skip = 0
+  And the grid re-renders ordered by Name ascending (the header shows the ▲ arrow)
+  When they click the "Name" header again
+  Then the page re-issues the list call with Sort = "name", SortDescending = true
+  And the grid re-renders ordered by Name descending (the header shows the ▼ arrow)
+  And switching to another sortable header (e.g. "Members") resets SortDescending to false
 ```
 
 ---
@@ -346,17 +404,24 @@ Scenario: Arabic toggle mirrors page + Create modal
 - **Soft-delete, no undo.** "Deactivate" sets `IsActive = false` via DELETE; there is no
   reactivate button on this page (re-enable by Edit → tick "Active"). The destructive action
   is guarded by a JS `confirm()` dialog, so the runner must handle the dialog.
-- **Sort order.** The admin grid sorts `DisplayOrder` asc then `NameArabic` asc (the public
-  list additionally sorts `IsPriority` desc first). Assert ordering only where a scenario
-  sets `DisplayOrder` explicitly.
+- **Sort order.** The admin grid's *default* order is `DisplayOrder` asc then `NameArabic`
+  asc (the public list additionally sorts `IsPriority` desc first). After D-256 every column
+  header is clickable to override that order (`GridQuery.Sort` / `SortDescending`, server-side
+  in `AdminDelegationService`) — see E2E-DLG-016. Assert default ordering only where a scenario
+  sets `DisplayOrder` explicitly and does not change the sort.
+- **Per-column grid filters (D-256).** Only the `name`, `nameArabic` and `country` columns
+  expose a per-column filter input; the service honours those three keys (plus `isActive` /
+  `isPriority` if supplied) via `GridQuery.Filters` and ignores unknown columns. Typing
+  debounces 300 ms, resets `Skip` to 0, and drops any selection — see E2E-DLG-015.
 - **Per-action API gates.** `Delegations.Create/Edit/Delete` are enforced server-side even
-  though the buttons are unconditionally rendered (no `<AuthorizedAction>` wrapper on this
-  page). E2E-DLG-009 documents the resulting 403 path; treat the missing button-level gate as
-  a known UX gap, not a security hole (the API is the enforcement boundary).
+  though the grid's Add ("+") toolbar icon and the per-row Edit (pencil) / Delete (trash)
+  icon actions are unconditionally rendered (no `<AuthorizedAction>` wrapper on this page).
+  E2E-DLG-009 documents the resulting 403 path; treat the missing action-level gate as a
+  known UX gap, not a security hole (the API is the enforcement boundary).
 - **API integration tests** at `tests/SIMF.Api.Tests/DelegationsTests.cs` cover the same
   CRUD + validation + not-found surface at a lower layer (no browser). Keep both during the
   Playwright transition.
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page in one line:** admin CRUD over the platform system-settings key/value
 > store (P2.4 / D-229, FDS-012 §5.5). Permission family `Configuration.*`
@@ -25,6 +25,13 @@
 >   (JS `confirm`), not an in-page modal.
 > - Empty-key validation is **client-side** (toast, no network call); length /
 >   duplicate validation is **server-side**.
+> - **Grid affordances (D-256 — raw table → `SimfDataGrid`):** the page now
+>   renders through `SimfDataGrid` (page size `Top=20`). Per-column filter inputs
+>   exist on **Key**, **Value** and **Description** (the **Active** column is not
+>   filterable); only **Key** is sortable. Row actions are **quiet icon buttons**
+>   in the grid's RowActions (pencil = edit, trash = delete) — not filled text
+>   buttons. `Multiselect` is on (select-all + per-row checkboxes) but there is
+>   **no bulk-action toolbar button**, so the checkboxes are cosmetic here.
 
 ## Coverage matrix
 
@@ -45,6 +52,8 @@
 | E2E-CFG-013 | Not found — edit/delete a deleted id → server 404 `SYSTEM_SETTING_NOT_FOUND` | error | P2 | _to author_ |
 | E2E-CFG-014 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-CFG-015 | RTL / Arabic render mirrors page + Add/Edit modal | i18n | P1 | _to author_ |
+| E2E-CFG-016 | Per-column filter (Key / Value) narrows the grid, resets Skip to 0 | grid | P1 | _to author_ |
+| E2E-CFG-017 | Column sort on Key toggles asc ⇄ desc | grid | P2 | _to author_ |
 
 ## Scenarios
 
@@ -83,7 +92,7 @@ Scenario: Create, edit value, deactivate via the Active checkbox, then delete on
   And a row exists with Key="event.contactEmail", Value="info@simf.test" and Active="✓"
 
   # --- Edit value + deactivate via the checkbox ---
-  When the administrator clicks "Edit" on that row
+  When the administrator clicks the row's Edit (pencil) icon action
   Then the BFF forwards GET /account/api/admin/system-settings/{id} and returns 200
   And the Edit modal opens titled "Edit setting" with the row's values pre-filled
   And the Key field is disabled (the key is immutable once created)
@@ -97,7 +106,7 @@ Scenario: Create, edit value, deactivate via the Active checkbox, then delete on
   And the row now shows Value="events@simf.test" and Active="—"
 
   # --- Delete (soft deactivate behind confirm) ---
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash) icon action
   Then a native browser confirm dialog asks "Remove this setting?" / "هل تريد إزالة هذا الإعداد؟"
   When they accept the dialog
   Then the BFF forwards DELETE /account/api/admin/system-settings/{id} and returns 200
@@ -149,7 +158,7 @@ Scenario: New setting opens an Add modal with an editable Key and no Active chec
 ```gherkin
 Scenario: Edit opens an Edit modal with a locked Key and a visible Active checkbox
   Given a setting Key="feature.networking.enabled", Value="true" exists
-  When the administrator clicks "Edit" on that row
+  When the administrator clicks the row's Edit (pencil) icon action
   Then GET /account/api/admin/system-settings/{id} returns 200
   And a SimfModal opens titled "Edit setting" / "تعديل الإعداد"
   And the Key field reads "feature.networking.enabled" and is disabled
@@ -162,7 +171,7 @@ Scenario: Edit opens an Edit modal with a locked Key and a visible Active checkb
 ```gherkin
 Scenario: Delete soft-deactivates after the confirm dialog is accepted
   Given a setting Key="archive.editions.visible", Value="true", Active="✓" exists
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash) icon action
   Then a native confirm dialog asks "Remove this setting?" / "هل تريد إزالة هذا الإعداد؟"
   When they accept the dialog
   Then DELETE /account/api/admin/system-settings/{id} returns 200
@@ -176,7 +185,7 @@ Scenario: Delete soft-deactivates after the confirm dialog is accepted
 ```gherkin
 Scenario: Cancelling the confirm dialog leaves the row untouched
   Given a setting row exists
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash) icon action
   And they dismiss / cancel the native confirm dialog
   Then no DELETE /account/api/admin/system-settings/{id} request fires
   And no toast appears
@@ -213,9 +222,9 @@ Scenario: View-only admin sees the grid but no Create/Edit/Delete buttons
   Given a signed-in admin holding Configuration.View but NOT Create/Edit/Delete
   When they open /admin/configuration
   Then the grid and its rows render
-  But the "New setting" button is hidden (wrapped in AuthorizedAction Configuration.Create)
-  And the per-row "Edit" button is hidden (AuthorizedAction Configuration.Edit)
-  And the per-row "Delete" button is hidden (AuthorizedAction Configuration.Delete)
+  But the "New setting" (grid Add) action is hidden (gated by Configuration.Create)
+  And the per-row Edit (pencil) icon action is hidden (gated by Configuration.Edit)
+  And the per-row Delete (trash) icon action is hidden (gated by Configuration.Delete)
   # Belt-and-braces: even if a button were forced, the API endpoint is gated by the
   # matching policy and would return 403 Forbidden.
 ```
@@ -310,6 +319,51 @@ Scenario: Arabic toggle mirrors the page and the Add/Edit modal
   And the footer actions "Cancel" / "Save" appear in reverse order
 ```
 
+### E2E-CFG-016 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing in a column filter input narrows the grid and resets paging
+  Given several settings exist, e.g. Key="event.contactEmail", Key="event.startDate",
+        Key="feature.networking.enabled"
+  And the administrator is on /admin/configuration with the grid loaded (Top = 20, Skip = 0)
+
+  # --- Filter on the Key column ---
+  When the administrator types "event." into the "Filter column Key" input
+  Then after the 300 ms debounce the page issues
+        POST /account/api/admin/system-settings/list
+        with GridQuery.Filters["key"] = "event." and Skip reset to 0
+  And the grid narrows to the rows whose Key contains "event."
+        (the service applies s.Key.Contains("event."))
+  And any prior row selection is cleared
+
+  # --- Filter on the Value column instead ---
+  When the administrator clears the Key filter and types "true" into the "Filter column Value" input
+  Then a new POST /account/api/admin/system-settings/list fires
+        with GridQuery.Filters["value"] = "true" (and no "key" entry) and Skip = 0
+  And the grid narrows to rows whose Value contains "true"
+  # The Description column is filterable on key "description"; the Active column is NOT filterable.
+```
+
+### E2E-CFG-017 — Column sort toggles
+
+```gherkin
+Scenario: Clicking the Key header toggles ascending ⇄ descending
+  Given the administrator is on /admin/configuration with several settings loaded
+  And the grid defaults to Key ascending (the service default is rows.OrderBy(s => s.Key))
+
+  When the administrator clicks the "Key" column header
+  Then the page issues POST /account/api/admin/system-settings/list
+        with GridQuery.Sort = "key", SortDescending = false and Skip reset to 0
+  And the rows render in ascending Key order
+  And the Key header carries aria-sort="ascending"
+
+  When the administrator clicks the "Key" column header again
+  Then a new POST fires with GridQuery.Sort = "key" and SortDescending = true
+  And the rows render in descending Key order (the service maps ("key", true) → OrderByDescending)
+  And the Key header carries aria-sort="descending"
+  # Only the Key column is Sortable; Value / Description / Active headers do not sort.
+```
+
 ---
 
 ## Implementation notes
@@ -341,4 +395,4 @@ Scenario: Arabic toggle mirrors the page and the Add/Edit modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

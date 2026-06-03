@@ -8,7 +8,7 @@
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP via the `Get-Totp` helper |
 | **Required permission** | `Bookings.View` (page); `Bookings.Approve` (Approve + bulk Approve); `Bookings.Reject` (Reject) — `PermissionCatalog.Bookings.*` |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **What this page is.** P2.2 / D-227 (SIMF-FDS-005 §5.2): the booking approval
 > queue. It lists **Pending**, still-held visitor seat bookings across all
@@ -34,6 +34,8 @@
 | E2E-BKG-008 | Conflict — approve/reject an already-decided booking → `BOOKING_NOT_PENDING` (409) | error | P1 | _to author_ |
 | E2E-BKG-009 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-BKG-010 | RTL / Arabic render — page + Reject modal mirror | i18n | P1 | _to author_ |
+| E2E-BKG-011 | Per-column grid filter (Session / Seat) narrows the queue | happy | P1 | _to author_ |
+| E2E-BKG-012 | Column sort toggles (Session / Booked) ascending ⇄ descending | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -58,7 +60,8 @@ Scenario: Approve one pending booking
   Given the queue shows a row with Session="Naval Logistics Forum", Seat="A1",
     Attendee="Layla Al-Harbi", and the "Booked (UTC)" timestamp
   And the summary line reads "Showing 1–{N} of {N}"
-  When the administrator clicks "Approve" on that row
+  When the administrator clicks the row's Approve (check-circle) quiet icon action,
+    titled "Approve" / "اعتماد"
   Then the BFF POSTs /account/api/admin/bookings/{reservationId}/approve with an empty body
   And the API returns HTTP 200 with ApiResult.Success=true
   And a green toast reads "Booking approved." / "تم اعتماد الحجز."
@@ -90,7 +93,8 @@ Background:
     Session="Naval Logistics Forum"
 
 Scenario: Reject with a reason releases the seat and notifies the attendee
-  When the administrator clicks "Reject" on that row
+  When the administrator clicks the row's Reject (close/X) quiet icon action,
+    titled "Reject" / "رفض"
   Then a SimfModal opens titled "Reject booking" / "رفض الحجز"
   And it shows one textarea labelled "Reason (sent to the attendee)" /
     "السبب (يُرسل إلى الحاضر)" with maxlength 512
@@ -214,7 +218,8 @@ Scenario: Approving or rejecting an already-decided booking returns 409
   Given a booking that has already been approved (Status != Pending) — e.g. it was
     approved in another browser tab a moment ago
   And the stale row is still visible in this tab's queue
-  When the administrator clicks "Approve" (or rejects) that row
+  When the administrator clicks the row's Approve (check-circle) icon action
+    (or rejects that row)
   Then the BFF forwards the call to the API
   And the API returns HTTP 409 with ApiResult.Error.Code = "BOOKING_NOT_PENDING"
   And a red toast surfaces the bilingual MessageForCurrentCulture()
@@ -246,15 +251,91 @@ Scenario: Arabic toggle mirrors the page and the Reject modal
   Then the page reloads with <html dir="rtl" lang="ar">
   And the SimfBanner title reads "اعتماد الحجوزات"
   And the column headers read "الجلسة", "تبدأ (UTC)", "المقعد", "الحاضر", "تاريخ الحجز (UTC)"
-  And the row action buttons read "اعتماد" (Approve) and "رفض" (Reject)
+  And each row's quiet icon actions carry the titles "اعتماد" (Approve, check-circle)
+    and "رفض" (Reject, close/X)
   And the bulk button reads "اعتماد المحدد ({0})"
   And the table + nav rail mirror to RTL
 
-  When they click "رفض" on a row
+  When they click the row's Reject (close/X) icon action titled "رفض"
   Then the Reject modal opens in RTL titled "رفض الحجز"
   And the reason label reads "السبب (يُرسل إلى الحاضر)"
   And the footer buttons read "إلغاء" and "رفض الحجز" in reverse order
 ```
+
+### E2E-BKG-011 — Per-column grid filter narrows the queue
+
+```gherkin
+Feature: Booking approvals — per-column grid filter (D-256 SimfDataGrid)
+  As an Administrator with Bookings.View
+  I want to filter the queue by a single column
+  So that I can find one session's or one seat's pending bookings fast
+
+Background:
+  Given an Administrator with Bookings.View is on /admin/bookings
+  And the queue holds Pending rows across several sessions, including
+    "Naval Logistics Forum" (seat A1) and "Maritime Cyber Defence" (seat B3)
+
+Scenario: Typing into the Session column filter narrows the grid
+  Given the grid shows the per-column filter row (the "Session" and "Seat"
+    columns each expose a quiet filter input — they are the only Filterable
+    columns; "Starts", "Attendee" and "Booked (UTC)" have no filter input)
+  And each filter input is titled "Filter column Session" / "تصفية العمود الجلسة"
+    (resp. "Filter column Seat") with placeholder "Search" / "بحث"
+  When the administrator types "Naval" into the Session column filter
+  Then the BFF POSTs /account/api/admin/bookings/list with a GridQuery whose
+    Filters["session"] = "Naval" and Skip = 0 (the offset resets to the first page)
+  And the API returns HTTP 200 and the grid re-renders showing only the
+    "Naval Logistics Forum" rows
+  And the summary line reads "Showing 1–{M} of {M}" for the narrowed total
+
+Scenario: A second column filter combines with the first
+  Given the Session filter already holds "Naval"
+  When the administrator also types "A1" into the Seat column filter
+  Then the next /list POST carries Filters["session"]="Naval" AND Filters["seat"]="A1"
+    with Skip = 0
+  And the grid narrows to the single A1 / Naval Logistics Forum row
+  When the administrator clears both filter inputs
+  Then a /list POST fires with empty Filters and the full Pending queue returns
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-bookings-filter-session.png` (Session filter = "Naval", grid narrowed)
+- Console errors: 0 expected
+- Network: each keystroke-committed filter POSTs `/account/api/admin/bookings/list`; request body shows `filters.session` / `filters.seat` and `skip: 0`
+- Note: the grid filter only sends keys the API honours; an unrecognised key is ignored server-side (the endpoint validates filter keys per `GridQuery` D-045)
+
+### E2E-BKG-012 — Column sort toggles
+
+```gherkin
+Feature: Booking approvals — column sort (D-256 SimfDataGrid)
+  As an Administrator with Bookings.View
+  I want to sort the queue by a column
+  So that I can triage by session, start time, seat, or booking time
+
+Background:
+  Given an Administrator with Bookings.View is on /admin/bookings
+  And the queue holds at least three Pending rows across different sessions
+
+Scenario: Clicking a sortable header toggles ascending then descending
+  Given the "Session", "Starts (UTC)", "Seat" and "Booked (UTC)" headers are
+    sortable (the "Attendee" column is NOT sortable — no sort affordance)
+  And the queue is in its natural newest-first order (aria-sort="none" on every header)
+  When the administrator clicks the "Session" column header
+  Then the BFF POSTs /account/api/admin/bookings/list with a GridQuery whose
+    Sort = "session", SortDescending = false and Skip = 0
+  And the header renders aria-sort="ascending" and the rows reorder A→Z by session
+  When the administrator clicks the "Session" header again
+  Then the next /list POST carries Sort = "session", SortDescending = true, Skip = 0
+  And the header renders aria-sort="descending" and the rows reorder Z→A
+  When the administrator clicks the "Booked (UTC)" header instead
+  Then a /list POST carries Sort = "bookedAt", SortDescending = false, Skip = 0
+  And the "Session" header returns to aria-sort="none"
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-bookings-sort-session.png` (Session header aria-sort="descending")
+- Console errors: 0 expected
+- Network: each header click POSTs `/account/api/admin/bookings/list` with the new `sort` / `sortDescending` and `skip: 0`
 
 ---
 
@@ -291,4 +372,4 @@ Scenario: Arabic toggle mirrors the page and the Reject modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

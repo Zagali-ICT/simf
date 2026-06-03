@@ -7,16 +7,21 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page summary.** The Banners page (D-173, gap doc G8, PDF §1) is the admin
 > CRUD over time-windowed CMS banners / announcements surfaced on the public
-> Website + Flutter app. The page is a single grid (Title, Start, End, Order,
-> Active, row actions) with one toolbar button **New banner** and one
-> **Add/Edit** modal. There is **no search box, no filter, no pager
-> control, no bulk action and no separate "Details" view** on the page itself —
-> "Edit" re-opens the same modal pre-filled and is the read-back path.
-> `RequiredPermission` = `PermissionCatalog.Banners.View`.
+> Website + Flutter app. As of **D-256** the raw `<table>` was migrated to the
+> owner-mandated **`SimfDataGrid`** (server-paged): columns Title, Start, End,
+> Order, Active, plus the grid's own **Add** toolbar button, quiet per-row
+> **Edit (pencil)** and **Delete (trash)** icon actions, and one **Add/Edit**
+> modal. The **Title** column carries a per-column filter input; **all five
+> columns are sortable**; the grid renders a full pager (page size **20**,
+> `GridQuery { Top = 20 }`). The select-all / per-row checkboxes are present
+> (`Multiselect="true"`) but there is **no bulk action** wired (no
+> `CustomToolbar`) — selection is cosmetic. There is **no separate "Details"
+> view** — the Edit icon re-opens the same modal pre-filled and is the
+> read-back path. `RequiredPermission` = `PermissionCatalog.Banners.View`.
 >
 > **Modal fields (in render order):** Title (English), Title (Arabic),
 > Body (English), Body (Arabic), Image URL, Click-through URL,
@@ -48,6 +53,8 @@
 | E2E-BNR-012 | Display-order sort: grid orders by DisplayOrder then StartUtc | happy | P2 | _to author_ |
 | E2E-BNR-013 | Server 500 on `/list` → bilingual fallback "The banners could not be loaded." | resilience | P2 | _to author_ |
 | E2E-BNR-014 | RTL / Arabic render: page + modal mirror, Arabic title column shown | i18n | P1 | _to author_ |
+| E2E-BNR-015 | Per-column filter: typing in the Title filter narrows the grid (`Filters["title"]`, Skip→0) | happy | P1 | _to author_ |
+| E2E-BNR-016 | Column sort: clicking the Title / Start headers toggles `Sort` + `SortDescending` | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -68,7 +75,7 @@ Background:
 
 Scenario: Create, read-back via Edit, toggle Active, then delete one banner
   Given the grid currently shows {N} rows
-  When the administrator clicks "New banner"
+  When the administrator clicks the grid's Add (+) toolbar action
   Then the Add modal opens titled "New banner"
   And it shows fields: Title (English), Title (Arabic), Body (English),
       Body (Arabic), Image URL, Click-through URL, Start (UTC), End (UTC),
@@ -95,7 +102,7 @@ Scenario: Create, read-back via Edit, toggle Active, then delete one banner
   And a row exists with Title="SIMF 2026 Keynote", Start="2026-06-10 08:00",
       End="2026-06-12 18:00", Order=5 and the "✓" active marker
 
-  When the administrator clicks "Edit banner" on that row
+  When the administrator clicks the row's Edit (pencil) icon action
   Then the BFF calls GET /account/api/admin/banners/{id} and returns 200
   And the Edit modal opens titled "Edit banner" with every field pre-filled
       from the detail (incl. Image URL and Click-through URL)
@@ -108,7 +115,7 @@ Scenario: Create, read-back via Edit, toggle Active, then delete one banner
   And a green toast reads "Banner saved." / "تم حفظ اللافتة."
   And the row's Order column reads "0" and the Active column shows "—"
 
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash) icon action
   Then the BFF calls DELETE /account/api/admin/banners/{id} and returns 200
   And a green toast reads "Banner deleted." / "تم حذف اللافتة."
   And the grid reloads and the row no longer appears (soft-deleted: IsActive=false,
@@ -134,9 +141,9 @@ Scenario: Empty list renders SimfEmptyState
   Given the database has no Banner rows
   When the administrator opens /admin/banners
   Then POST /account/api/admin/banners/list returns 200 with Total=0
-  And the grid body renders the SimfEmptyState component
+  And the grid body renders the SimfEmptyState component (via the grid's EmptyTemplate)
   And the empty state title reads "No banners yet." / "لا توجد لافتات بعد."
-  And the toolbar still shows the "New banner" button
+  And the grid toolbar still shows the Add (+) action
   And no error toast appears
 ```
 
@@ -235,7 +242,7 @@ Scenario: Unparseable Start/End is caught before any request fires
 ```gherkin
 Scenario: Edit re-reads the detail and pre-fills every field
   Given a banner exists with Image URL="/img/a.png" and Click-through URL="https://x.test"
-  When the administrator clicks "Edit banner" on that row
+  When the administrator clicks the row's Edit (pencil) icon action
   Then the BFF calls GET /account/api/admin/banners/{id} and returns 200
   And the Edit modal opens with Title (EN/AR), Body (EN/AR), Image URL,
       Click-through URL, Start (UTC), End (UTC), Display order and the
@@ -248,7 +255,7 @@ Scenario: Edit re-reads the detail and pre-fills every field
 ```gherkin
 Scenario: Delete removes the row from the grid
   Given an active banner row "SIMF 2026 Keynote" exists in the grid
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash) icon action
   Then the BFF calls DELETE /account/api/admin/banners/{id} and the API returns 200
   And a green toast reads "Banner deleted." / "تم حذف اللافتة."
   And the grid reloads (POST /account/api/admin/banners/list returns 200)
@@ -260,7 +267,7 @@ Scenario: Delete removes the row from the grid
 ```gherkin
 Scenario: Editing a since-deleted banner returns 404
   Given a banner row is visible but the underlying record was deleted in another tab
-  When the administrator clicks "Edit banner" on that row
+  When the administrator clicks the row's Edit (pencil) icon action
   Then the BFF calls GET /account/api/admin/banners/{id}
   And the API returns HTTP 404 with ApiResult.Error.Code = "BANNER_NOT_FOUND"
   And OnEditAsync returns early so the Edit modal does NOT open
@@ -300,14 +307,50 @@ Scenario: Arabic toggle mirrors the page and the modal
   When they switch the UI culture to Arabic ("العربية")
   Then the page reloads with <html dir="rtl" lang="ar">
   And the SimfBanner title reads "اللافتات"
-  And the toolbar button reads "لافتة جديدة"
+  And the grid's Add (+) toolbar action reads "إضافة" (Grid.Add)
   And the grid headers read "العنوان", "البداية", "النهاية", "الترتيب", "مفعّلة"
   And the Title column shows the Arabic title (TitleLabel picks TitleAr when culture is ar)
 
-  When they click "لافتة جديدة"
-  Then the Add modal opens in RTL titled "لافتة جديدة"
+  When they click the grid's Add (+) toolbar action ("إضافة")
+  Then the Add modal opens in RTL titled "لافتة جديدة" (Admin.Banners.Add.Title)
   And the field labels are Arabic ("العنوان (الإنجليزية)", "النص (العربية)", "ترتيب العرض", …)
   And the footer actions read "حفظ" (Save) and "إلغاء" (Cancel) in reversed order
+```
+
+### E2E-BNR-015 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing in the Title column filter narrows the grid to matching banners
+  Given several banners exist including "SIMF 2026 Keynote" and "Closing Ceremony"
+  And the administrator is on /admin/banners with the grid showing all rows
+  And the Title column is the only filterable column (Key="title", header "Title" / "العنوان")
+  When the administrator types "Keynote" into the per-column input "Filter column Title"
+  Then the BFF posts POST /account/api/admin/banners/list and the API returns 200
+  And the GridQuery carries Filters["title"]="Keynote" and Skip=0 (paging resets to the first page)
+  And the grid narrows to only the row(s) whose TitleEn or TitleAr contains "Keynote"
+      (server-side: TitleEn.Contains(v) || TitleAr.Contains(v))
+  And the "Closing Ceremony" row no longer renders
+  When the administrator clears the "Filter column Title" input
+  Then a fresh POST /account/api/admin/banners/list fires with Filters["title"] absent/empty
+  And the full set of banner rows renders again
+```
+
+### E2E-BNR-016 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable header toggles ascending / descending order
+  Given the administrator is on /admin/banners
+  And the grid defaults to DisplayOrder asc, then StartUtc asc (no Sort key sent)
+  When the administrator clicks the "Title" column header
+  Then the BFF posts POST /account/api/admin/banners/list and the API returns 200
+  And the GridQuery carries Sort="title" with SortDescending=false (server: OrderBy(b => b.TitleEn))
+  And the grid re-renders ordered by Title A→Z
+  When the administrator clicks the "Title" header again
+  Then a fresh POST fires with Sort="title" and SortDescending=true (server: OrderByDescending(b => b.TitleEn))
+  And the grid re-renders ordered by Title Z→A
+  When the administrator clicks the "Start" column header (Key="startUtc")
+  Then a fresh POST fires with Sort="startUtc", SortDescending=false (server: OrderBy(b => b.StartUtc))
+  And the grid re-renders by earliest StartUtc first
 ```
 
 ---
@@ -341,4 +384,4 @@ Scenario: Arabic toggle mirrors the page and the modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

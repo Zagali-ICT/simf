@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page shape (read this first).** `/admin/ratings` is a **read-only** admin view
 > of attendee forum ratings (D-199, Mockup screen 40 "Rate the Forum"). There is
@@ -17,14 +17,22 @@
 > assert:
 >
 > 1. On load, a single `POST /account/api/admin/feedback/ratings` (BFF) → API
->    `POST /api/v1/admin/feedback/ratings` with body `GridQuery { Top = 50 }`.
+>    `POST /api/v1/admin/feedback/ratings` with body `GridQuery { Top = 20 }`.
 > 2. Two headline **stat cards** — "Average rating" (`AverageStars`, formatted `0.0`,
 >    invariant) and "Total ratings" (`RatingCount`).
-> 3. A **`simf-table`** with four columns: Stars (`{n} / 5`), Comment (`—` when blank),
->    Active (`✓` / `—`), Submitted at (`yyyy-MM-dd HH:mm:ss 'UTC'`).
-> 4. A **pager summary** line: "Showing {from}–{to} of {total}".
-> 5. The **`SimfEmptyState`** ("No ratings yet.") when the active set is empty.
-> 6. A **`SimfAlert` error** banner + load-failed copy when the list call fails.
+> 3. A **`SimfDataGrid`** (D-256 raw-table→grid conversion) with four columns:
+>    Stars (`{n} / 5`, **sortable**), Comment (`—` when blank, **per-column
+>    filterable**), Active (a `SimfPill` — "Active" / "Inactive"; only ever
+>    "Active" here), Submitted at (`yyyy-MM-dd HH:mm:ss 'UTC'`, **sortable**).
+>    The grid carries the standard select-all checkbox column (`Multiselect="true"`)
+>    but **no bulk-action toolbar button and no per-row actions** — it stays
+>    read-only; the checkboxes are cosmetic.
+> 4. A **full pager** (First / Prev / numbered pages / Next / Last + page-size
+>    selector) with the summary line "Showing {from}–{to} of {total}".
+> 5. The **`SimfEmptyState`** ("No ratings yet.") in the grid's `EmptyTemplate`
+>    when the active set is empty.
+> 6. A **`SimfAlert` error** (`_toast`) at the top of the surface + load-failed
+>    copy when the list call fails.
 >
 > The "golden CRUD round-trip" therefore becomes a **golden read round-trip**: an
 > attendee submits a rating through the public API, then the admin page renders it
@@ -46,6 +54,8 @@
 | E2E-RAT-008 | Inactive ratings excluded — soft-deleted row never appears, count/average ignore it | error | P1 | _to author_ |
 | E2E-RAT-009 | Server 500 on `/ratings` → `SimfAlert` error + bilingual load-failed copy, no rows | resilience | P2 | _to author_ |
 | E2E-RAT-010 | RTL / Arabic render — page, stat cards, table headers mirror | i18n | P1 | _to author_ |
+| E2E-RAT-011 | Per-column filter (Comment) narrows the grid via `GridQuery.Filters["comment"]` | happy | P1 | _to author_ |
+| E2E-RAT-012 | Column sort toggles (Stars / Submitted at) via `Sort` + `SortDescending` | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -67,12 +77,12 @@ Scenario: An attendee rating shows up in the admin grid with a recomputed averag
   Given an approved attendee submits POST /api/v1/feedback/rate with body { "Stars": 5, "Comment": "Excellent forum" }
   And the API returns HTTP 200 with ApiResult.Data.Stars = 5 and UpdatedAt = null
   When the administrator navigates to /admin/ratings
-  Then the page issues exactly one POST /account/api/admin/feedback/ratings with body { "Top": 50 }
+  Then the page issues exactly one POST /account/api/admin/feedback/ratings with body { "Top": 20 }
   And the BFF forwards it to API POST /api/v1/admin/feedback/ratings and returns HTTP 200
   And the SimfBanner title reads "Ratings"
   And the "Average rating" stat card reflects the average of the active set (e.g. "5.0" when this is the only rating)
   And the "Total ratings" stat card equals the active rating count (e.g. "1")
-  And a table row exists with Stars="5 / 5", Comment="Excellent forum", Active="✓", and a Submitted-at value in "yyyy-MM-dd HH:mm:ss UTC" form
+  And a grid row exists with Stars="5 / 5", Comment="Excellent forum", an Active SimfPill reading "Active", and a Submitted-at value in "yyyy-MM-dd HH:mm:ss UTC" form
   And the pager summary reads "Showing 1–1 of 1"
 
   When the same attendee re-submits POST /api/v1/feedback/rate with body { "Stars": 3, "Comment": "Good on day two" }
@@ -108,25 +118,25 @@ Scenario: Average and Total stat cards compute over the active set
 ### E2E-RAT-003 — Table columns
 
 ```gherkin
-Scenario: Table renders the four columns with the documented formatting
+Scenario: Grid renders the four columns with the documented formatting
   Given the active set contains one rating of 4 stars with no comment
   When the administrator opens /admin/ratings
-  Then the table header row reads: "Stars", "Comment", "Active", "Submitted at"
+  Then the grid header row reads: "Stars", "Comment", "Active", "Submitted at"
   And the single body row shows:
     | Stars | Comment | Active | Submitted at                |
-    | 4 / 5 | —       | ✓      | <UTC timestamp yyyy-MM-dd HH:mm:ss UTC> |
+    | 4 / 5 | —       | Active | <UTC timestamp yyyy-MM-dd HH:mm:ss UTC> |
   And the Comment cell renders the em-dash placeholder "—" because the comment is blank
-  And the Active cell renders "✓" because the page only ever lists active ratings
+  And the Active cell renders a SimfPill with Variant="on" reading "Active" because the page only ever lists active ratings
 ```
 
 ### E2E-RAT-004 — Pager summary
 
 ```gherkin
 Scenario: Pager summary line reflects skip/window/total
-  Given the active set contains 3 ratings and the query Top = 50
+  Given the active set contains 3 ratings and the query Top = 20
   When the administrator opens /admin/ratings
-  Then the summary line beneath the table reads "Showing 1–3 of 3"
-  And it is rendered from L["Admin.Ratings.Summary"] = "Showing {0}–{1} of {2}"
+  Then the summary line beneath the grid reads "Showing 1–3 of 3"
+  And it is rendered from L["Grid.Summary"] = "Showing {0}–{1} of {2}"
     with {0}=Skip+1, {1}=Skip+Items.Count, {2}=Total
 ```
 
@@ -137,8 +147,9 @@ Scenario: The page exposes no write controls
   Given the administrator is on /admin/ratings with at least one rating visible
   When the page has finished loading
   Then there is no "Add rating" / "New" / toolbar create button
-  And no row exposes Edit, Delete, Deactivate, or Details actions
-  And the only interactive surfaces are the language toggle and the nav rail
+  And no grid row exposes an Edit (pencil), Delete (trash), Deactivate, or Details (info) icon action
+  And the grid has no bulk-action toolbar button (the select-all + row checkboxes are cosmetic — no handler is wired)
+  And the only read affordances are the column sort buttons (Stars / Submitted at), the Comment per-column filter input, the pager, the language toggle and the nav rail
   And no /account/api/admin/feedback/ratings PUT/POST(create)/DELETE request can be issued from this page
 ```
 
@@ -195,10 +206,10 @@ Scenario: API 500 on the ratings list shows the error banner and load-failed cop
   Given the API is configured to return 500 on /api/v1/admin/feedback/ratings (e.g. DB down)
   When the administrator opens /admin/ratings
   Then the page first shows the loading text "Loading ratings…" / "جارٍ تحميل التقييمات…"
-  And then a SimfAlert with Variant="error" renders at the top of the surface
+  And then a SimfAlert (_toast) with Variant="error" renders at the top of the surface
   And it reads the env Error.MessageForCurrentCulture(), or the fallback
     "Could not load ratings. Please try again." / "تعذّر تحميل التقييمات. يرجى المحاولة مرة أخرى."
-  And no table and no stat cards render (the page stays on the failed-load state)
+  And the stat cards read "0.0" / "0" and the grid shows the SimfEmptyState (no rating rows were loaded into _page)
 ```
 
 ### E2E-RAT-010 — RTL / Arabic render
@@ -210,10 +221,61 @@ Scenario: Arabic toggle mirrors the page, stat cards and table
   Then the page reloads with <html dir="rtl" lang="ar">
   And the SimfBanner title reads "التقييمات"
   And the stat-card titles read "متوسط التقييم" and "إجمالي التقييمات"
-  And the table headers read "النجوم", "التعليق", "مُفعّل", "تاريخ الإرسال"
+  And the grid headers read "النجوم", "التعليق", "مُفعّل", "تاريخ الإرسال"
+  And the Comment per-column filter input shows its Arabic placeholder "بحث" with aria-label "تصفية العمود التعليق"
   And the nav rail and stat-card row mirror (reverse order)
   And the average value still renders with a Latin/invariant decimal point (e.g. "5.0"),
     because it is formatted with CultureInfo.InvariantCulture regardless of UI culture
+```
+
+### E2E-RAT-011 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing into the Comment column filter narrows the grid (server-side)
+  Given the active set contains three ratings with comments
+    "Excellent forum", "Good on day two", and "Excellent venue"
+  And the administrator is on /admin/ratings showing all three rows
+    (the "Total ratings" stat card reads "3")
+  When the administrator types "Excellent" into the per-column filter input
+    under the "Comment" header (aria-label "Filter column Comment")
+  And the 300 ms debounce elapses
+  Then exactly one POST /account/api/admin/feedback/ratings fires with
+    GridQuery.Filters["comment"] = "Excellent" and Skip reset to 0
+  And the API (RatingService.ListAllAsync) applies
+    .Where(r => r.Comment != null && r.Comment.Contains("Excellent"))
+  And the grid now shows only the two matching rows
+    ("Excellent forum" and "Excellent venue")
+  And the pager summary reads "Showing 1–2 of 2"
+  And the "Average rating" / "Total ratings" stat cards recompute over the
+    filtered active set (RatingService averages and counts AFTER the filter)
+  When the administrator clears the Comment filter input
+  Then a POST fires with no "comment" key in GridQuery.Filters and Skip = 0
+  And all three rows return
+  And the Stars and Submitted-at columns expose no filter input (only the
+    Comment column is Filterable="true")
+```
+
+### E2E-RAT-012 — Column sort toggles
+
+```gherkin
+Scenario: Sorting on Stars and Submitted at toggles ascending / descending
+  Given the active set contains ratings of 2, 5 and 3 stars
+  And the administrator is on /admin/ratings
+  When the administrator clicks the "Stars" column header sort button
+  Then a POST /account/api/admin/feedback/ratings fires with
+    GridQuery.Sort = "stars", SortDescending = false and Skip reset to 0
+  And the grid orders the rows ascending by stars (2, 3, 5)
+  And the "Stars" header shows aria-sort="ascending" with the ▲ arrow
+
+  When the administrator clicks the "Stars" header again
+  Then a POST fires with Sort = "stars", SortDescending = true
+  And the grid orders the rows descending by stars (5, 3, 2)
+  And the header shows aria-sort="descending" with the ▼ arrow
+
+  When the administrator clicks the "Submitted at" column header sort button
+  Then a POST fires with Sort = "createdat", SortDescending = false (new column resets direction)
+  And RatingService orders by rating.CreatedAt ascending
+  And the "Comment" and "Active" columns have no sort button (Sortable is unset)
 ```
 
 ---
@@ -239,7 +301,8 @@ Scenario: Arabic toggle mirrors the page, stat cards and table
   `SimfAdminClient.ListRatingsAsync` → API `POST /api/v1/admin/feedback/ratings`
   (`FeedbackEndpoints.cs` `ListAdminRatingsEndpoint`). Service:
   `RatingService.ListAllAsync` (active-only filter, average guarded to `0` on empty,
-  sort by `stars`/`createdat`, optional `Search` LIKE on `Comment`). Contracts:
+  sort by `stars`/`createdat`, per-column `Filters["comment"]` `.Contains` plus the
+  legacy `Search` LIKE on `Comment`). Contracts:
   `SIMF.Contracts.Feedback.AdminRatingsPage` / `AdminRatingSummary`. Permission:
   `PermissionCatalog.Ratings.View` (`"Ratings.View"`, `AdminOnly` baseline).
 - **No write path on this page.** Any future Edit/Deactivate would need its own
@@ -251,4 +314,4 @@ Scenario: Arabic toggle mirrors the page, stat cards and table
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

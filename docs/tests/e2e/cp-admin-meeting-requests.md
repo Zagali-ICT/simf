@@ -7,24 +7,28 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page permission:** `@attribute [RequirePermission(PermissionCatalog.MeetingRequests.View)]`
 > (`"MeetingRequests.View"`). The **list** + **GetById** API endpoints enforce
 > `MeetingRequests.View`; the **respond** endpoint enforces `MeetingRequests.Manage`
 > (`"MeetingRequests.Manage"`). Both are baselined `AdminOnly` and seeded idempotently.
-> The page does **not** wrap the **Respond** button in `<AuthorizedAction>` — a
-> `View`-only admin therefore sees the button, opens the modal, but the API rejects the
-> PUT `/respond` with HTTP 403 (covered by E2E-MTR-009).
+> **D-256:** the per-row **Respond** action is now a quiet reply (↩) icon inside the
+> grid's `<RowActions>`, wrapped in `<AuthorizedAction Permission="MeetingRequests.Manage">`
+> — a `View`-only admin therefore does **not** see the icon at all (the button is hidden,
+> not just rejected on submit). The API still independently enforces `Manage` on the PUT
+> `/respond` as defence-in-depth (covered by E2E-MTR-009).
 
 > **CP is response-only — no create / edit / delete.** Meeting requests are
 > *submitted* by the authenticated audience from the live-session screen
 > (`POST /api/v1/sessions/{sessionId}/meeting-requests`, "طلب مقابلة" pill, D-174).
-> This CP page is a **review queue**: filter by status, then on a **Pending** row click
-> **Respond** to Accept or Reject with an optional note. Accepted/Rejected rows show no
-> action button (the modal opens only for `MeetingRequestStatus.Pending`). The classic
-> "Add → Edit → Delete" round-trip therefore does **not** apply; the golden path is
-> **filter → Respond (Accept) → row flips to Accepted**.
+> This CP page is a **review queue** rendered with the owner-mandated **SimfDataGrid**
+> (server-paged, per-column filter + sort, full pager; **page size Top = 20**). Filter by
+> status (now a filterable grid column, not a custom select), then on a **Pending** row
+> click the **Respond** (reply icon) action to Accept or Reject with an optional note.
+> Accepted/Rejected rows show no action icon (the modal opens only for
+> `MeetingRequestStatus.Pending`). The classic "Add → Edit → Delete" round-trip therefore
+> does **not** apply; the golden path is **filter → Respond (Accept) → row flips to Accepted**.
 
 > **No uniqueness / duplicate surface.** There is no name or code to collide on. The real
 > conflict surface is a **stale Pending row** that another admin (or the same admin in a
@@ -46,15 +50,17 @@
 |----|----------|------|----------|--------|
 | E2E-MTR-001 | Golden path — filter Pending → Respond (Accept) → row flips to Accepted | happy | P0 | _to author_ |
 | E2E-MTR-002 | Respond (Reject) with a response note → row flips to Rejected | happy | P1 | _to author_ |
-| E2E-MTR-003 | Status filter cycles All / Pending / Accepted / Rejected, resets paging | happy | P1 | _to author_ |
+| E2E-MTR-003 | Status column filter cycles Pending / Accepted / Rejected / cleared, resets paging | happy | P1 | _to author_ |
 | E2E-MTR-004 | Respond modal fetches detail (requester email) on open; Cancel discards | happy | P1 | _to author_ |
 | E2E-MTR-005 | Conflict: stale Pending row already responded → `MEETING_REQUEST_STATUS_INVALID` / `NOT_FOUND` | error | P1 | _to author_ |
 | E2E-MTR-006 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-MTR-007 | RTL render: Arabic toggle mirrors page + Respond modal | i18n | P1 | _to author_ |
 | E2E-MTR-008 | Empty state renders `SimfEmptyState` ("No meeting requests yet.") | happy | P1 | _to author_ |
-| E2E-MTR-009 | Auth gate — `View`-only admin can open modal but PUT `/respond` → 403 | auth | P0 | _to author_ |
+| E2E-MTR-009 | Auth gate — `View`-only admin sees no Respond icon; PUT `/respond` → 403 | auth | P0 | _to author_ |
 | E2E-MTR-010 | Auth gate — admin lacking `MeetingRequests.View` → `/not-permitted` | auth | P0 | _to author_ |
-| E2E-MTR-011 | Only Pending rows show the Respond button; resolved rows show none | happy | P2 | _to author_ |
+| E2E-MTR-011 | Only Pending rows show the Respond icon; resolved rows show none | happy | P2 | _to author_ |
+| E2E-MTR-012 | Per-column grid filter (Requester / Subject) narrows the grid, resets paging | happy | P1 | _to author_ |
+| E2E-MTR-013 | Column sort (Requester / Status) toggles `Sort` + `SortDescending` | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -74,14 +80,14 @@ Background:
   And they have landed on /admin/meeting-requests
 
 Scenario: Accept a pending meeting request
-  Given the "Status filter" select is set to "All"
-  When the administrator selects "Pending" in the "Status filter" select
-  Then POST /account/api/admin/meeting-requests/list fires with Filters["status"]="Pending"
+  Given the grid is showing rows of every status (no filter applied)
+  When the administrator types "Pending" into the "Status" column filter input
+  Then POST /account/api/admin/meeting-requests/list fires with Filters["status"]="Pending" and Skip=0
   And the grid shows only rows with the amber "Pending" pill
-  And each row shows the columns: Session ("{Code} — {Title}"), Requester, Subject, Status, Submitted (UTC), Responded ("—"), Actions
-  And the summary line reads "Showing 1–{n} of {total}"
+  And each row shows the columns: Session ("{Code} — {Title}"), Requester, Subject, Status, Submitted (UTC), Responded ("—"), and a quiet Actions column
+  And the summary line reads "Showing 1–{n} of {total}" (page size Top=20)
 
-  When the administrator clicks "Respond" on the first Pending row
+  When the administrator clicks the row's Respond (reply ↩ icon) action on the first Pending row
   Then GET /account/api/admin/meeting-requests/{id} fires (the detail fetch)
   And the "Respond to meeting request" modal opens
   And the modal shows a description list: Session, Requester (with "Loading contact details…" then the requester email), Subject
@@ -96,9 +102,9 @@ Scenario: Accept a pending meeting request
   And the modal closes
   And a green toast reads "Response sent." / "تم إرسال الردّ."
   And the list reloads
-  And (with the filter still on "Pending") the responded row no longer appears
-  When the administrator switches the "Status filter" to "Accepted"
-  Then the row appears with the green "Accepted" pill, a populated "Responded" UTC timestamp, and no Respond button
+  And (with the "Status" column filter still "Pending") the responded row no longer appears
+  When the administrator changes the "Status" column filter to "Accepted"
+  Then the row appears with the green "Accepted" pill, a populated "Responded" UTC timestamp, and no Respond icon
 ```
 
 **Evidence captured:**
@@ -114,7 +120,7 @@ Scenario: Accept a pending meeting request
 ```gherkin
 Scenario: Reject a pending meeting request with a response note
   Given a Pending meeting request is visible
-  When the administrator clicks "Respond" on that row
+  When the administrator clicks the row's Respond (reply ↩ icon) action on that row
   And the modal opens
   And they change the "Decision" select to "Reject"
   And they type "Speaker is unavailable for 1:1s this edition." into the Response note
@@ -122,25 +128,28 @@ Scenario: Reject a pending meeting request with a response note
   Then PUT /admin/meeting-requests/{id}/respond fires with Status=Rejected
   And the API returns HTTP 200
   And a green toast reads "Response sent." / "تم إرسال الردّ."
-  And under the "Rejected" filter the row shows the grey "Rejected" pill and the Responded UTC timestamp
+  And under the "Status" column filter set to "Rejected" the row shows the grey "Rejected" pill and the Responded UTC timestamp
 ```
 
-### E2E-MTR-003 — Status filter cycles and resets paging
+### E2E-MTR-003 — Status column filter cycles and resets paging
 
 ```gherkin
-Scenario: Status filter drives the list query and resets Skip to 0
-  Given the administrator is on /admin/meeting-requests with the filter on "All"
-  When they select "Pending"
+Scenario: The Status column filter drives the list query and resets Skip to 0
+  # D-256: status is now a filterable SimfDataGrid column (Key="status"),
+  # not a standalone <select>. Typing a status value into the column filter
+  # input sends GridQuery.Filters["status"] and the grid resets paging.
+  Given the administrator is on /admin/meeting-requests with no filter applied
+  When they enter "Pending" into the "Status" column filter
   Then a list call fires with Filters["status"]="Pending" and Skip=0
   And only Pending rows render
-  When they select "Accepted"
+  When they change the "Status" column filter to "Accepted"
   Then a list call fires with Filters["status"]="Accepted" and Skip=0
   And only Accepted rows render
-  When they select "Rejected"
+  When they change the "Status" column filter to "Rejected"
   Then only Rejected rows render
-  When they select "All"
+  When they clear the "Status" column filter
   Then the filter clears (empty Filters dictionary) and rows of every status render
-  And any prior error toast is cleared on each filter change
+  And any prior error toast is cleared on each list reload
 ```
 
 ### E2E-MTR-004 — Detail fetch on modal open + Cancel discards
@@ -148,7 +157,7 @@ Scenario: Status filter drives the list query and resets Skip to 0
 ```gherkin
 Scenario: Modal lazily fetches the requester email, Cancel makes no write
   Given a Pending meeting request whose requester has a known email
-  When the administrator clicks "Respond"
+  When the administrator clicks the row's Respond (reply ↩ icon) action
   Then the modal opens immediately showing the requester name and "Loading contact details…"
   And GET /account/api/admin/meeting-requests/{id} fires
   When the detail response (HTTP 200, with RequesterEmail) arrives
@@ -165,7 +174,7 @@ Scenario: Modal lazily fetches the requester email, Cancel makes no write
 Scenario: Two admins race the same Pending row
   Given Admin A and Admin B both see the same Pending meeting request {id}
   And Admin A accepts {id} (it is now Accepted server-side)
-  When Admin B clicks "Respond" on their still-stale row and submits a decision
+  When Admin B clicks the Respond (reply ↩ icon) action on their still-stale row and submits a decision
   Then PUT /admin/meeting-requests/{id}/respond returns a 4xx
   And the modal stays open
   And a red error toast surfaces the bilingual MessageForCurrentCulture()
@@ -198,11 +207,11 @@ Scenario: Arabic toggle mirrors page + Respond modal
   When they switch the language to العربية
   Then the page reloads with <html dir="rtl" lang="ar">
   And the SimfBanner title reads "طلبات المقابلات"
-  And the "Status filter" label reads "تصفية الحالة" with options الكل / قيد الانتظار / مقبول / مرفوض
-  And the table headers read الجلسة / مقدّم الطلب / الموضوع / الحالة / تاريخ الطلب / تاريخ الردّ / الإجراءات
+  And the SimfDataGrid column headers read الجلسة / مقدّم الطلب / الموضوع / الحالة / تاريخ الطلب / تاريخ الردّ / الإجراءات, mirrored for RTL
+  And the per-column filter inputs (مقدّم الطلب / الموضوع / الحالة) sit under their headers and accept Arabic input
   And the status pills read قيد الانتظار / مقبول / مرفوض
 
-  When they click "الردّ" on a Pending row
+  When they click the Respond (reply ↩ icon, title "الردّ") action on a Pending row
   Then the modal title reads "الردّ على طلب المقابلة"
   And the Decision label reads "القرار" with options قبول / رفض
   And the note label reads "ملاحظة الردّ (اختيارية، حتى 2000 محرف)"
@@ -215,24 +224,28 @@ Scenario: Arabic toggle mirrors page + Respond modal
 Scenario: Empty queue renders SimfEmptyState
   Given the database has no MeetingRequest rows (or none match the active filter)
   When the administrator opens /admin/meeting-requests
-  Then the grid body renders the SimfEmptyState component
+  Then the grid body renders the SimfEmptyState component (the grid's EmptyTemplate)
   And it shows the bilingual copy "No meeting requests yet." / "لا توجد طلبات مقابلات حتى الآن."
-  And the "Status filter" select remains usable
+  And the per-column filter inputs (Requester / Subject / Status) remain usable
   And no error toast appears
 ```
 
-### E2E-MTR-009 — Auth gate (View-only admin → respond 403)
+### E2E-MTR-009 — Auth gate (View-only admin sees no Respond icon; API 403 as backstop)
 
 ```gherkin
 Scenario: A View-only admin can read the queue but cannot respond
+  # D-256: the Respond icon is wrapped in
+  # <AuthorizedAction Permission="MeetingRequests.Manage">, so a View-only
+  # admin never sees it — the gate is now UI-side as well as API-side.
   Given a signed-in admin whose role grants MeetingRequests.View but NOT MeetingRequests.Manage
   When they open /admin/meeting-requests
   Then the page loads and the grid renders (GET /list returns 200 — View is enough)
-  And the "Respond" button is visible on Pending rows (no <AuthorizedAction> wrap)
-  When they click "Respond" and submit a decision
-  Then PUT /account/api/admin/meeting-requests/{id}/respond returns HTTP 403
-  And the modal stays open
-  And a red error toast surfaces the forbidden error
+  And NO Respond (reply ↩ icon) action is shown on any Pending row (AuthorizedAction hides it)
+  And no other write affordance is present
+  # Defence-in-depth: even if the PUT is replayed directly (scripted client),
+  # the API independently enforces Manage:
+  When the PUT /account/api/admin/meeting-requests/{id}/respond is issued directly
+  Then the API returns HTTP 403
   And the row stays Pending
 ```
 
@@ -251,14 +264,57 @@ Scenario: An admin lacking MeetingRequests.View is denied the page
 ### E2E-MTR-011 — Only Pending rows expose Respond
 
 ```gherkin
-Scenario: Resolved rows show no action button
-  Given the filter is set to "All"
+Scenario: Resolved rows show no action icon
+  Given no status filter is applied
   And the queue contains a mix of Pending, Accepted, and Rejected rows
   When the grid renders
-  Then each Pending row shows a "Respond" button in the Actions column
-  And each Accepted row shows an empty Actions cell (no button)
-  And each Rejected row shows an empty Actions cell (no button)
+  Then each Pending row shows the Respond (reply ↩ icon) action in the grid's RowActions
+  And each Accepted row shows an empty RowActions cell (no icon)
+  And each Rejected row shows an empty RowActions cell (no icon)
   And Accepted / Rejected rows show a populated "Responded" UTC timestamp while Pending rows show "—"
+```
+
+### E2E-MTR-012 — Per-column grid filter narrows the grid
+
+```gherkin
+Scenario: Typing into a column filter sends Filters[key] and resets paging
+  # D-256: the SimfDataGrid exposes per-column filter inputs for the
+  # Filterable columns — Requester (Key="requesterName"),
+  # Subject (Key="subject"), and Status (Key="status"). The backend
+  # honours requesterName/subject as Contains filters and status as an
+  # enum-parse filter (MeetingRequestService.ListAllAsync). The Session
+  # column is NOT filterable (code/title are joined after paging).
+  Given the administrator is on /admin/meeting-requests with multiple Pending rows
+  And the grid is on page 2 (Skip=20)
+  When they type "Khalid" into the "Requester" column filter
+  Then POST /account/api/admin/meeting-requests/list fires with Filters["requesterName"]="Khalid" and Skip=0
+  And the grid narrows to rows whose Requester contains "Khalid"
+  And the summary line re-counts as "Showing 1–{n} of {total}"
+
+  When they additionally type "interview" into the "Subject" column filter
+  Then a list call fires carrying BOTH Filters["requesterName"]="Khalid" and Filters["subject"]="interview"
+  And the grid narrows further to rows matching both
+  When they clear both column filters
+  Then a list call fires with an empty Filters dictionary and the full queue returns
+```
+
+### E2E-MTR-013 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable header toggles Sort and SortDescending
+  # D-256: Sortable columns are requesterName, subject, status, createdAt,
+  # respondedAt (Session is not sortable). Default order is CreatedAt
+  # descending (newest first) when no Sort is set.
+  Given the administrator is on /admin/meeting-requests with the default order (newest first)
+  When they click the "Requester" column header
+  Then POST /account/api/admin/meeting-requests/list fires with Sort="requesterName" and SortDescending=false
+  And the rows render in ascending Requester order
+  When they click the "Requester" header again
+  Then a list call fires with Sort="requesterName" and SortDescending=true
+  And the rows render in descending Requester order
+  When they click the "Status" column header
+  Then a list call fires with Sort="status" and SortDescending=false
+  And the rows group by status order (Pending, Accepted, Rejected by enum value)
 ```
 
 ---
@@ -300,4 +356,4 @@ Scenario: Resolved rows show no action button
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

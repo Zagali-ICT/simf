@@ -7,9 +7,9 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
-> **Page facts (grounded in `InvitationsList.razor` @ commit `aafe769`):**
+> **Page facts (grounded in `InvitationsList.razor`, post D-256 SimfDataGrid migration):**
 > - Page permission gate: `@attribute [RequirePermission(PermissionCatalog.Invitations.View)]` (`"Invitations.View"`).
 >   Baseline grant = **PublicRelations** role (and Administrator via the `"*"` wildcard).
 > - Write endpoints (`POST`/`PUT`/`DELETE`) are gated by `PermissionCatalog.Invitations.Manage` (`"Invitations.Manage"`)
@@ -24,11 +24,17 @@
 >   GUID — `_newRecipientId`) and **Notes** (`_newNotes`). The page parses the GUID **client-side** before posting.
 > - The **Edit** modal ("Edit invitation") collects a **State** dropdown (`Pending` / `Confirmed` / `Declined`, from
 >   the `InvitationState` enum) and **Notes**. It is opened by re-fetching the row via `GET .../{id}` first.
-> - Each grid row has an **Edit invitation** button and — when `IsActive` — a **Cancel invitation** button
->   (soft delete; no confirm dialog is wired — `DeactivateConfirm` resx exists but `OnDeactivateAsync` does not prompt).
-> - Grid columns: Recipient, Profile type, State, Sent (`yyyy-MM-dd HH:mm 'UTC'`), Sent by, actions.
-> - **There is no state/active filter control and no pager button rendered on the page** today — the service
->   supports `state` / `isActive` filters and paging, but the `.razor` exposes neither. Do not assert UI that is not there.
+> - Each grid row carries quiet **icon** actions inside the grid's `RowActions`: an **Edit** (pencil) action
+>   (`OnEditOne` → `OnEditAsync`) and a **Delete / Cancel invitation** (trash) action (`OnDeleteOne` →
+>   `OnDeleteOneAsync`, soft delete; no confirm dialog is wired). They are no longer filled text buttons.
+> - Grid columns (`SimfDataGrid`): Recipient (`recipient`), Profile type (`profileType`), State (`state`),
+>   Sent (`createdat`, `yyyy-MM-dd HH:mm 'UTC'`), Sent by (`sentBy`), Active (`active`), plus the row-actions column.
+> - **Grid now renders per-column filter + sort + pager** (post D-256). `Filterable="true"` is set on **State**
+>   (`state`) only; `Sortable="true"` is set on **State** (`state`) and **Sent** (`createdat`). The grid pages at
+>   `Top = 20` (`_query = new() { Top = 20 }`) with Prev/Next/First/Last + page-size controls and a summary line.
+>   The backend (`AdminInvitationService.ListAllAsync`) honours `Filters["state"]` (parsed as `InvitationState`,
+>   case-insensitive) and `Sort` keys `state` / `createdat` with `SortDescending`. Add (`OnAdd`) is the grid
+>   toolbar's "New invitation" button. The `isActive` filter is honoured by the service but no UI control drives it.
 > - Server error codes (from `AdminInvitationService` / `InvitationEndpoints`):
 >   - `INVITATION_TARGET_NOT_FOUND` (400) — recipient `UserProfile` id does not exist
 >   - `INVITATION_NOT_FOUND` (404) — invitation id does not exist (GET / PUT / DELETE)
@@ -44,7 +50,7 @@
 | E2E-INV-001 | Full round-trip — Send → Edit/confirm state → Cancel invitation | happy | P0 | _to author_ |
 | E2E-INV-002 | Send invitation (Add modal) with a valid recipient + notes | happy | P1 | _to author_ |
 | E2E-INV-003 | Edit invitation — change State Pending → Confirmed via the Edit modal | happy | P1 | _to author_ |
-| E2E-INV-004 | Cancel invitation (soft delete) hides the Cancel button on the row | happy | P1 | _to author_ |
+| E2E-INV-004 | Cancel invitation (soft delete) flips the row's Active column to Inactive | happy | P1 | _to author_ |
 | E2E-INV-005 | Empty list renders `SimfEmptyState` | happy | P1 | _to author_ |
 | E2E-INV-006 | Auth gate — signed-in admin lacking `Invitations.View` → `/not-permitted` | auth | P0 | _to author_ |
 | E2E-INV-007 | Validation — non-GUID recipient id is rejected client-side (no POST fires) | error | P1 | _to author_ |
@@ -53,6 +59,8 @@
 | E2E-INV-010 | Notes too long (>1000 chars) → 400 `INVITATION_INVALID` | error | P2 | _to author_ |
 | E2E-INV-011 | Server 500 on `/list` → bilingual fallback toast, no rows render | resilience | P2 | _to author_ |
 | E2E-INV-012 | RTL / Arabic render mirrors page + Add modal | i18n | P1 | _to author_ |
+| E2E-INV-013 | Per-column filter (State) narrows the grid | grid | P1 | _to author_ |
+| E2E-INV-014 | Column sort toggles (State / Sent) | grid | P2 | _to author_ |
 
 ## Scenarios
 
@@ -87,7 +95,7 @@ Scenario: Send, confirm, then cancel one invitation
   And a row exists with Recipient="Capt. Faisal Al-Harbi", Profile type="VIP", State="Pending",
     Sent by=the signed-in admin's display name, and a "Sent" timestamp in "yyyy-MM-dd HH:mm UTC" form
 
-  When the administrator clicks "Edit invitation" on that row
+  When the administrator clicks the row's Edit (pencil) action
   Then a GET /account/api/admin/invitations/{id} fires and the "Edit invitation" modal opens
   And the State dropdown is pre-selected to "Pending"
   And the Notes field is pre-filled with "VIP keynote — front-row seating requested"
@@ -98,10 +106,10 @@ Scenario: Send, confirm, then cancel one invitation
   And a green toast reads "Invitation updated." / "تم تحديث الدعوة."
   And the row's State column now reads "Confirmed"
 
-  When the administrator clicks "Cancel invitation" on that row
+  When the administrator clicks the row's Delete / Cancel invitation (trash) action
   Then the BFF sends DELETE /account/api/admin/invitations/{id} and the API returns 200
   And a green toast reads "Invitation cancelled." / "تم إلغاء الدعوة."
-  And the row's "Cancel invitation" button disappears (the row is now inactive)
+  And after the list reloads the row's Active column flips to "Inactive"
 ```
 
 **Evidence captured:**
@@ -134,7 +142,7 @@ Scenario: Send a new invitation with valid recipient + notes
 ```gherkin
 Scenario: Confirm a pending invitation
   Given a Pending invitation exists for "Capt. Faisal Al-Harbi"
-  When the administrator clicks "Edit invitation" on that row
+  When the administrator clicks the row's Edit (pencil) action
   Then GET /account/api/admin/invitations/{id} returns 200 and the modal pre-fills State="Pending"
   When they select State="Confirmed" in the dropdown
   And they click "Save changes"
@@ -148,12 +156,12 @@ Scenario: Confirm a pending invitation
 
 ```gherkin
 Scenario: Cancel an active invitation
-  Given an active invitation row is visible with both "Edit invitation" and "Cancel invitation" buttons
-  When the administrator clicks "Cancel invitation"
+  Given an active invitation row is visible with the Edit (pencil) and Delete / Cancel invitation (trash) icon actions
+  When the administrator clicks the row's Delete / Cancel invitation (trash) action
   Then DELETE /account/api/admin/invitations/{id} returns 200 (ApiResult<bool>.Ok(true))
   And a green toast reads "Invitation cancelled." / "تم إلغاء الدعوة."
-  And after the list reloads the row still appears but no longer renders the "Cancel invitation" button
-  And clicking "Cancel invitation" again on an already-cancelled row would be a server no-op (idempotent)
+  And after the list reloads the row still appears but its Active column now reads "Inactive"
+  And clicking the trash action again on an already-cancelled row would be a server no-op (idempotent)
 ```
 
 ### E2E-INV-005 — Empty list
@@ -215,7 +223,7 @@ Scenario: A well-formed GUID with no matching profile returns 400 INVITATION_TAR
 ```gherkin
 Scenario: Moving a Confirmed invitation back to Pending is rejected
   Given an invitation exists in State="Confirmed"
-  When the administrator clicks "Edit invitation" on that row
+  When the administrator clicks the row's Edit (pencil) action
   And they select State="Pending" in the dropdown
   And they click "Save changes"
   Then PUT /account/api/admin/invitations/{id} forwards to the API
@@ -259,14 +267,53 @@ Scenario: Arabic toggle mirrors the page + Send modal
   When they switch the UI to Arabic from the header language switcher
   Then the page reloads with <html dir="rtl" lang="ar">
   And the SimfBanner title reads "الدعوات"
-  And the grid headers read "المستلم" / "نوع الملف" / "الحالة" / "تاريخ الإرسال" / "المُرسِل"
-  And the action buttons read "تعديل الدعوة" and "إلغاء الدعوة"
+  And the grid headers read "المستلم" / "نوع الملف" / "الحالة" / "تاريخ الإرسال" / "المُرسِل" / "مُفعّل"
+  And the row's quiet icon actions carry the Arabic labels "تعديل" (Edit) and "إلغاء الدعوة" (Cancel invitation)
   And the recipient column renders the row's Arabic name (RecipientLabel picks ArabicName when culture is "ar")
 
   When they click "دعوة جديدة"
   Then the "إرسال دعوة" modal opens in RTL
   And the field labels read "المستلم (معرّف الملف)" and "الملاحظات"
   And the footer buttons read "إرسال" and "إلغاء" in reverse order
+```
+
+### E2E-INV-013 — Per-column filter (State) narrows the grid
+
+```gherkin
+Scenario: Typing into the State column filter posts a GridQuery filter and narrows the grid
+  Given the administrator is on /admin/invitations
+  And the grid shows a mix of Pending, Confirmed and Declined invitations
+  And the only Filterable="true" column is State (Key "state") — Recipient / Profile type / Sent / Sent by / Active have no filter input
+  When the administrator types "Confirmed" into the "Filter column State" input
+  Then POST /account/api/admin/invitations/list fires with GridQuery.Filters["state"]="Confirmed"
+    and GridQuery.Skip reset to 0 (page returns to the first page)
+  And the API returns 200 and the grid re-renders showing only rows whose State pill reads "Confirmed"
+  And the summary line recounts to the filtered total
+  When the administrator clears the State filter input
+  Then POST /account/api/admin/invitations/list fires again with Filters["state"] absent
+  And the full, unfiltered set of rows returns
+```
+
+**Notes:** the backend (`AdminInvitationService.ListAllAsync`) parses `Filters["state"]` as `InvitationState`
+case-insensitively, so "confirmed" and "Confirmed" both match; an unparseable value is ignored (no filter applied).
+The `isActive` filter the service also supports is NOT reachable from the grid — there is no filter input on the
+Active column — so do not author a UI filter scenario for it.
+
+### E2E-INV-014 — Column sort toggles (State / Sent)
+
+```gherkin
+Scenario: Clicking a sortable column header cycles ascending → descending
+  Given the administrator is on /admin/invitations
+  And Sortable="true" is set on State (Key "state") and Sent (Key "createdat") only
+  When the administrator clicks the "Sent" column header
+  Then POST /account/api/admin/invitations/list fires with GridQuery.Sort="createdat" and SortDescending=false
+  And the grid re-renders ordered by Sent ascending (oldest first)
+  When the administrator clicks the "Sent" column header again
+  Then POST /account/api/admin/invitations/list fires with Sort="createdat" and SortDescending=true
+  And the grid re-renders ordered by Sent descending (newest first — the service default order)
+  When the administrator clicks the "State" column header
+  Then POST /account/api/admin/invitations/list fires with Sort="state" and SortDescending=false
+  And the grid re-renders ordered by State
 ```
 
 ---
@@ -291,12 +338,13 @@ Scenario: Arabic toggle mirrors the page + Send modal
   item `Module.Invitations` carries `RequiredPermission = PermissionCatalog.Invitations.View`, and
   `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs` fails the build if any admin endpoint is ungated —
   these back E2E-INV-006 statically.
-- **No filter / pager UI today.** The service supports `state` + `isActive` filters and `Skip`/`Top` paging,
-  but `InvitationsList.razor` renders neither a filter control nor pager buttons (only a summary line). Do not
-  author scenarios that drive a filter dropdown or pager until the page grows that UI.
+- **Grid filter + sort + pager (post D-256).** `InvitationsList.razor` now renders `SimfDataGrid` with a
+  per-column filter input on **State** (`state`), sortable **State** (`state`) + **Sent** (`createdat`) headers,
+  and a Prev/Next/First/Last + page-size pager (`Top = 20`). The service still also honours an `isActive` filter,
+  but no UI control drives it — do not author a scenario that filters by Active until the page grows that control.
 - **Page reference doc gap.** `docs/pages/cp/admin-invitations.md` does not exist yet; the linked path is a
   placeholder for when the per-page reference doc is authored.
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

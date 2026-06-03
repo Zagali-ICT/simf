@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Permission gate.** The page carries `@attribute [RequirePermission(PermissionCatalog.Companies.View)]`
 > (`"Companies.View"`). Each API action is gated independently:
@@ -16,16 +16,28 @@
 > `CpNavigation` item `Module.Companies` → `/admin/companies` requires
 > `Companies.View`. `Administrator = "*"` satisfies all four.
 >
-> **Surface map (grounded in `CompaniesList.razor`).** Toolbar: one **Add company**
-> button. Grid columns: Name (English), Name (Arabic), Type, Accounts, Active,
-> actions. Each row carries three buttons: **Edit**, **Accounts**, **Delete**.
-> The **Add/Edit modal** has fields NameEn, NameAr, Type (`<select>`:
+> **Surface map (grounded in `CompaniesList.razor`).** The page is a
+> **`SimfDataGrid`** (D-256 raw-table→grid conversion). Toolbar: the grid's
+> built-in **Add** button (`OnAdd`). Grid columns: Name (English) `nameEn`,
+> Name (Arabic) `nameAr`, Type `type`, Accounts `accountCount`, Active
+> `isActive`, plus an actions column. **Per-column filter inputs** are rendered
+> for the two `Filterable="true"` columns only — `nameEn` and `nameAr`;
+> `type`, `accountCount` and `isActive` have **no** filter box. **Sortable**
+> columns are `nameEn`, `nameAr`, `type` and `isActive` (`accountCount` is a
+> computed sub-query and is **not** sortable). The **Active** column renders a
+> `SimfPill` ("Active" / "Inactive"), not a ✓/— glyph. Row actions are **quiet
+> icon buttons** in the grid's `RowActions`: the built-in **Edit** (pencil,
+> `OnEditOne`) and **Delete** (trash, `OnDeleteOne`), plus a page-specific
+> **Accounts** quiet icon (`Icon="user"`, gated by `Companies.Edit`). Grid
+> `Multiselect="true"` shows a select-all + per-row checkbox, **but there is no
+> bulk-action toolbar button** (the selection is cosmetic on this page). The
+> **Add/Edit modal** has fields NameEn, NameAr, Type (`<select>`:
 > Exhibitor=0 / Sponsor=1), Contact email, Contact phone, Website, plus an
 > **Active** checkbox shown on edit only. The **Accounts modal** lists provisioned
 > accounts (Contact name, Email, Role, Active) and has a "Provision an account"
-> sub-form (Contact name, Email, Role label). There is **no search box, no
-> filters, and no pager controls on the page itself** — `_query` is fixed at
-> `Top = 50` and the grid simply shows a `Showing {0}–{1} of {2}` summary line.
+> sub-form (Contact name, Email, Role label). The grid `_query` is fixed at
+> `Top = 20` (page size) and shows a `Showing {0}–{1} of {2}` summary line plus
+> the standard pager.
 
 ## Coverage matrix
 
@@ -45,6 +57,8 @@
 | E2E-CMP-012 | Provision on inactive company → `COMPANY_INACTIVE` 409 | error | P1 | _to author_ |
 | E2E-CMP-013 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-CMP-014 | RTL / Arabic render — page + both modals mirror | i18n | P1 | _to author_ |
+| E2E-CMP-015 | Per-column filter narrows the grid (Name English / Name Arabic) | grid | P1 | _to author_ |
+| E2E-CMP-016 | Column sort toggles (Name English asc → desc) | grid | P2 | _to author_ |
 
 ## Scenarios
 
@@ -65,7 +79,7 @@ Background:
 
 Scenario: Create, edit, then soft-delete one company
   Given the grid currently shows {N} companies (or the SimfEmptyState if {N}=0)
-  When the administrator clicks "Add company"
+  When the administrator clicks the grid's Add (toolbar) action
   Then a modal titled "Add company" opens
   And it shows fields: Name (English), Name (Arabic), Type (defaulting to "Exhibitor"),
       Contact email, Contact phone, Website
@@ -83,9 +97,9 @@ Scenario: Create, edit, then soft-delete one company
   And a green SimfAlert reads "Company saved." / "تم حفظ الشركة."
   And the grid reloads (a fresh POST /account/api/admin/companies/list fires)
   And a row exists with Name (English)="Lockheed Maritime Systems", Type="Sponsor",
-      Accounts="0", and the Active column shows "✓"
+      Accounts="0", and the Active column shows the "Active" SimfPill
 
-  When the administrator clicks "Edit" on that row
+  When the administrator clicks the row's Edit (pencil) action
   Then the BFF issues GET /account/api/admin/companies/{id} (full detail fetch) returning HTTP 200
   And a modal titled "Edit company" opens with every field pre-filled from the detail
   And the "Active" checkbox is now visible and ticked
@@ -96,13 +110,13 @@ Scenario: Create, edit, then soft-delete one company
   And a green SimfAlert reads "Company saved." / "تم حفظ الشركة."
   And the row's Name (English) column now reads "Lockheed Maritime Systems Intl"
 
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash) action
   Then a browser confirm() dialog asks
       "Delete this company? It will be removed from the public exhibitor / sponsor list immediately."
   When they accept the dialog
   Then the BFF forwards DELETE /account/api/admin/companies/{id} returning HTTP 200
   And a green SimfAlert reads "Company deleted." / "تم حذف الشركة."
-  And the grid reloads; the row's Active column now shows "—" (soft-delete, IsActive=false)
+  And the grid reloads; the row's Active column now shows the "Inactive" SimfPill (soft-delete, IsActive=false)
 ```
 
 **Evidence captured:**
@@ -118,7 +132,7 @@ Scenario: Create, edit, then soft-delete one company
 ```gherkin
 Scenario: Provision a least-privilege account tagged to a company
   Given an active company "Lockheed Maritime Systems Intl" exists with Accounts="0"
-  When the administrator clicks "Accounts" on that row
+  When the administrator clicks the row's Accounts (person/user) quiet icon action
   Then a modal titled "Accounts — Lockheed Maritime Systems Intl" opens
   And the BFF issues GET /account/api/admin/companies/{id}/accounts returning HTTP 200
   And an info SimfAlert reads
@@ -152,7 +166,7 @@ Scenario: Provision a least-privilege account tagged to a company
 
 ```gherkin
 Scenario: Add company modal opens with empty defaults
-  When the administrator clicks "Add company"
+  When the administrator clicks the grid's Add (toolbar) action
   Then the modal title reads "Add company"
   And Name (English) and Name (Arabic) are empty
   And the Type <select> defaults to "Exhibitor" (value 0)
@@ -168,7 +182,7 @@ Scenario: Add company modal opens with empty defaults
 ```gherkin
 Scenario: Edit fetches full detail before opening
   Given an active Exhibitor company "Saab Maritime" exists
-  When the administrator clicks "Edit" on its row
+  When the administrator clicks the row's Edit (pencil) action
   Then a GET /account/api/admin/companies/{id} request fires and returns HTTP 200
   And the "Edit company" modal opens with NameEn, NameAr, Type, Contact email,
       Contact phone, Website all populated from the AdminCompanyDetail response
@@ -177,7 +191,7 @@ Scenario: Edit fetches full detail before opening
   And they click "Save"
   Then PUT /account/api/admin/companies/{id} fires with IsActive=false and returns HTTP 200
   And a green "Company saved." toast appears
-  And the row's Active column now shows "—"
+  And the row's Active column now shows the "Inactive" SimfPill
 ```
 
 ### E2E-CMP-005 — Delete confirm cancel path
@@ -185,12 +199,12 @@ Scenario: Edit fetches full detail before opening
 ```gherkin
 Scenario: Cancelling the delete confirm() fires no request
   Given an active company row is visible
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash) action
   Then a browser confirm() dialog appears with the bilingual delete-confirm text
   When they dismiss / cancel the dialog
   Then NO DELETE /account/api/admin/companies/{id} request fires
   And no toast appears
-  And the row stays unchanged (Active still "✓")
+  And the row stays unchanged (Active still shows the "Active" SimfPill)
 ```
 
 ### E2E-CMP-006 — Accounts list + empty state
@@ -198,13 +212,13 @@ Scenario: Cancelling the delete confirm() fires no request
 ```gherkin
 Scenario: Accounts modal shows existing accounts or its empty state
   Given a company with zero provisioned accounts
-  When the administrator clicks "Accounts" on its row
+  When the administrator clicks the row's Accounts (person/user) quiet icon action
   Then the Accounts modal opens and the accounts area renders the SimfEmptyState
   And the empty state reads "No accounts provisioned yet." / "لم يتم إنشاء أي حسابات بعد."
   And the "Provision an account" sub-form is still shown beneath it
 
   Given a company with two provisioned accounts
-  When the administrator clicks "Accounts" on its row
+  When the administrator clicks the row's Accounts (person/user) quiet icon action
   Then the accounts table renders both rows with Contact name, Email, Role, Active columns
   And a missing Role label renders as "—"
 ```
@@ -218,7 +232,7 @@ Scenario: Empty company list renders SimfEmptyState
   Then POST /account/api/admin/companies/list returns Total=0
   And the grid body renders the SimfEmptyState component
   And the empty state reads "No companies yet." / "لا توجد شركات بعد."
-  And the "Add company" toolbar button is still shown
+  And the grid's Add (toolbar) action is still shown
   And no error toast appears
 ```
 
@@ -316,11 +330,12 @@ Scenario: Arabic toggle mirrors the page and both modals
   When they switch the UI to Arabic via the header language toggle
   Then the page reloads with <html dir="rtl" lang="ar">
   And the SimfBanner title reads "الشركات"
-  And the "Add company" button reads "إضافة شركة"
+  And the grid's Add (toolbar) action carries the Arabic label "إضافة شركة"
   And the grid headers read الاسم (بالإنجليزية) / الاسم (بالعربية) / النوع / الحسابات / نشط
-  And the row action buttons read تعديل / الحسابات / حذف
+  And the row's quiet icon actions carry the Arabic titles/tooltips تعديل (pencil) / الحسابات (person) / حذف (trash)
+  And the per-column filter inputs under الاسم (بالإنجليزية) and الاسم (بالعربية) sit on the right (RTL)
 
-  When they click "إضافة شركة"
+  When they click the grid's Add (toolbar) action
   Then the Add modal opens in RTL with Arabic field labels
   And the Type <select> options read "عارض" (Exhibitor) and "راعٍ" (Sponsor)
   And the footer buttons read إلغاء / حفظ in reverse order
@@ -330,6 +345,63 @@ Scenario: Arabic toggle mirrors the page and both modals
   And the provision sub-form labels read اسم جهة الاتصال / البريد الإلكتروني / مسمى الدور
   And the submit button reads "إنشاء الحساب"
 ```
+
+### E2E-CMP-015 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing into a per-column filter narrows the grid (server round-trip)
+  Given the grid has rendered with the page-size of Top=20
+  And at least one company "Lockheed Maritime Systems Intl" and one "Saab Maritime" are visible
+  # Only the nameEn + nameAr columns are Filterable="true"; Type / Accounts /
+  # Active expose NO filter box.
+  When the administrator types "Lockheed" into the filter input under the
+      "Name (English)" column header
+  Then after the grid's 300 ms debounce a fresh
+      POST /account/api/admin/companies/list fires
+  And the request body's GridQuery carries Filters["nameEn"]="Lockheed"
+  And Skip is reset to 0 (filtering always returns to the first page)
+  And any prior grid selection is cleared
+  And the grid now shows only the "Lockheed Maritime Systems Intl" row
+  And the "Showing 1–{n} of {m}" summary reflects the narrowed total
+
+  When they clear the "Name (English)" filter input
+  And they type "بحرية" into the filter input under the "Name (Arabic)" column header
+  Then a POST .../list fires carrying Filters["nameAr"]="بحرية" (Filters["nameEn"] removed)
+  And Skip is again 0
+  And the grid narrows to companies whose Arabic name contains "بحرية"
+  # The backend AdminCompanyService honours nameen / namear (case-insensitive);
+  # the Type / Accounts / Active columns have no filter box and so never appear
+  # in Filters from this page.
+```
+
+**Evidence captured:**
+- Screenshots: `docs/screenshots/cp-admin-companies-filter-{nameEn,nameAr}.png`
+- Network: each filter keystroke (post-debounce) issues one `POST /list` with the
+  expected `Filters[...]` entry and `Skip=0`
+- Console errors: 0 expected
+
+### E2E-CMP-016 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable column header toggles ascending / descending
+  Given the grid has rendered with its default order (Type, then Name (Arabic))
+  When the administrator clicks the "Name (English)" column header
+  Then a POST /account/api/admin/companies/list fires carrying
+      GridQuery.Sort="nameEn" and SortDescending=false (ascending)
+  And Skip is reset to 0
+  And the grid re-renders in ascending NameEn order
+
+  When they click the "Name (English)" column header again
+  Then a POST .../list fires carrying Sort="nameEn" and SortDescending=true
+  And the grid re-renders in descending NameEn order
+  # nameEn / nameAr / type / isActive are Sortable="true"; accountCount is a
+  # computed sub-query and exposes no sort affordance.
+```
+
+**Evidence captured:**
+- Screenshots: `docs/screenshots/cp-admin-companies-sort-{asc,desc}.png`
+- Network: two `POST /list` calls with `Sort="nameEn"` toggling `SortDescending`
+- Console errors: 0 expected
 
 ---
 
@@ -342,12 +414,16 @@ Scenario: Arabic toggle mirrors the page and both modals
 - **Convert to Playwright** later by copying each Gherkin scenario into a `.feature`
   file under `tests/SIMF.E2E.Tests/` (project to be created) plus a step-definition
   class. The Gherkin shape is already runner-agnostic.
-- **No search / filter / pager on the page.** `CompaniesList.razor` fixes `_query`
-  at `Top = 50` with no UI to change `Skip`, `Search`, or `Filters`. The service
-  (`AdminCompanyService.ListAllAsync`) *supports* `search`, `isActive`, and `type`
-  filters, but they are not wired to any control on this page — so there are no
-  search/filter/pager scenarios to author. If a search box is added later, add a
-  matching `E2E-CMP` row.
+- **Grid filter / sort / pager (D-256).** `CompaniesList.razor` is now a
+  `SimfDataGrid` with `_query = new() { Top = 20 }`. The grid exposes per-column
+  filter inputs for the `nameEn` + `nameAr` columns only (CMP-015), header sort on
+  `nameEn` / `nameAr` / `type` / `isActive` (CMP-016), and the standard pager.
+  `AdminCompanyService.ListAllAsync` honours `Filters["nameEn"]` / `["nameAr"]` /
+  `["isActive"]` / `["type"]` plus `Sort` on the same keys; the page only renders
+  filter boxes for `nameEn` / `nameAr`, so only those two ever reach `Filters` from
+  the UI. There is **no free-text search box** wired on this page (the service's
+  `Search` term is unused here) and **no bulk-action toolbar button** — the grid's
+  select-all / row checkboxes (`Multiselect="true"`) are cosmetic on this page.
 - **API-layer coverage gap.** `CompanyEndpoints.cs` and `AdminCompanyService.cs`
   both carry a `// Tests: SIMF.Api.Tests/CompaniesTests.cs` header, but **that test
   file does not exist** in `tests/SIMF.Api.Tests/` as of 2026-06-02 — the only
@@ -365,4 +441,4 @@ Scenario: Arabic toggle mirrors the page and both modals
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

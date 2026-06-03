@@ -7,15 +7,29 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **What this page is.** P3.3 / D-234 — the Scientific-Committee central Q&A
 > queue (stage 2). It lists `Pending` questions across **all** sessions and lets
 > the committee **Approve** (→ flows to the per-session moderator desk, stage 3),
 > **Hide** (drops off the pipeline), or **Escalate** to a role. It is a
-> **read-only triage table** — there is no Add / Edit / Details / inline-edit on
-> this page. Page permission is `Questions.View`; Approve + Hide are gated by
+> **read-only triage grid** — there is no Add / Edit / Details / inline-edit on
+> this page; the three actions are quiet per-row **icon** buttons in the grid's
+> `RowActions` slot (Approve = check-circle, Hide = eye-off, Escalate = share).
+> Page permission is `Questions.View`; Approve + Hide are gated by
 > `Questions.Moderate`; Escalate by `Questions.Escalate`.
+>
+> **Grid note (D-261).** The page was migrated from the raw `<table>` to the
+> canonical `SimfDataGrid` (`Top = 20`, page-size options 10/20/50/100). The
+> backend read (`GET /account/api/admin/questions/queue`) is **non-paged** — it
+> returns the whole Pending queue once (oldest-first, capped at 200) and the grid
+> **pages / filters / sorts that in memory**. So a filter or sort gesture
+> **re-projects the already-fetched list with no extra round-trip** (unlike the
+> server-paged CP grids). Filterable columns: Session, Question, Submitter, AI
+> verdict. Sortable columns: Session, Question, Submitter, Phase. `Multiselect`
+> renders select-all + per-row checkboxes, but there is **no bulk toolbar
+> action** on this page — the checkboxes are cosmetic, so there is no bulk
+> scenario.
 
 ## Coverage matrix
 
@@ -33,6 +47,8 @@
 | E2E-QQU-010 | Server 500 on `/queue` load → bilingual fallback toast, no rows render | resilience | P2 | _to author_ |
 | E2E-QQU-011 | RTL / Arabic render — page + columns + escalate modal mirror | i18n | P1 | _to author_ |
 | E2E-QQU-012 | AI-verdict + Phase rendering — verdict shows or em-dash; Phase localised Pre/Live | happy | P2 | _to author_ |
+| E2E-QQU-013 | Per-column filter narrows the grid — type into the Question / Submitter filter input → in-memory re-projection, Skip → 0, no round-trip | happy | P1 | _to author_ |
+| E2E-QQU-014 | Column sort toggles — click the Session header → asc → desc → in-memory re-order, Skip → 0 | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -53,10 +69,10 @@ Background:
 
 Scenario: Approve one pending question
   Given the page issued GET /account/api/admin/questions/queue and it returned 200
-  And the table shows columns: Session, Question, Submitter, Phase, AI verdict
+  And the grid shows columns: Session, Question, Submitter, Phase, AI verdict
   And a row exists with Question text "When will the naval drone demo run?"
     and Submitter "Visitor One" and Phase "Live"
-  When the administrator clicks "Approve" on that row
+  When the administrator clicks the row's Approve (check-circle) icon action — tooltip "Approve"
   Then a PUT /account/api/admin/questions/{id}/approve fires with an empty body
   And it returns ApiResult.Success = true
   And a green SimfAlert reads "Question approved." (toast variant=success)
@@ -79,7 +95,7 @@ Scenario: Approve one pending question
 ```gherkin
 Scenario: Hide one pending question
   Given the queue shows a Pending row with Question "off-topic spam text"
-  When the administrator clicks "Hide" on that row
+  When the administrator clicks the row's Hide (eye-off) icon action — tooltip "Hide"
   Then a PUT /account/api/admin/questions/{id}/hide fires with an empty body
   And it returns ApiResult.Success = true
   And a green SimfAlert reads "Question hidden."
@@ -93,7 +109,7 @@ Scenario: Hide one pending question
 ```gherkin
 Scenario: Escalate a question to a role
   Given the queue shows a Pending row with Question "Technical detail for the engineers?"
-  When the administrator clicks "Escalate" on that row
+  When the administrator clicks the row's Escalate (share) icon action — tooltip "Escalate"
   Then the Escalate modal opens titled "Escalate to a role"
   And it shows a single text field "Role" and the "Escalate" / "Cancel" buttons
   When they fill Role = "ScientificCommittee"
@@ -150,13 +166,13 @@ Scenario: Signed-in admin without Questions.View is denied
 ### E2E-QQU-007 — Action gate (Moderate / Escalate)
 
 ```gherkin
-Scenario: View-only committee member sees no row action buttons
+Scenario: View-only committee member sees no row action icons
   Given a signed-in user granted Questions.View but NOT Questions.Moderate or Questions.Escalate
   When they open /admin/question-queue with at least one Pending row
-  Then the queue table renders normally
-  But the "Approve" and "Hide" buttons are absent (AuthorizedAction Permission=Questions.Moderate)
-  And the "Escalate" button is absent (AuthorizedAction Permission=Questions.Escalate)
-  And the actions cell is empty for every row
+  Then the queue grid renders normally
+  But the Approve (check-circle) and Hide (eye-off) icon actions are absent (AuthorizedAction Permission=Questions.Moderate)
+  And the Escalate (share) icon action is absent (AuthorizedAction Permission=Questions.Escalate)
+  And the grid's RowActions cell is empty for every row
 ```
 
 ### E2E-QQU-008 — Escalate validation
@@ -181,7 +197,7 @@ Scenario: Invalid escalation role is rejected with a bilingual error
 Scenario: Approving an already-actioned question returns 404
   Given a row is shown in the queue (loaded snapshot)
   And that same question was approved/hidden by another committee member meanwhile
-  When the administrator clicks "Approve" on the now-stale row
+  When the administrator clicks the Approve (check-circle) icon action on the now-stale row
   Then PUT /account/api/admin/questions/{id}/approve is forwarded
   And if the question id no longer resolves the API returns HTTP 404
     with ApiResult.Error.Code = "SessionQuestionNotFound"
@@ -214,10 +230,10 @@ Scenario: Arabic toggle mirrors the page, columns and escalate modal
   Then the page reloads with <html dir="rtl" lang="ar">
   And the SimfBanner title reads "قائمة الأسئلة"
   And the column headers read الجلسة / السؤال / مقدّم السؤال / المرحلة / حكم الذكاء الاصطناعي
-  And the row action buttons read اعتماد / إخفاء / تصعيد
+  And the per-row icon actions carry the tooltips اعتماد / إخفاء / تصعيد (check-circle / eye-off / share)
   And the Phase cell renders "قبل" (Pre) or "مباشر" (Live)
 
-  When they click "تصعيد" on a row
+  When they click the Escalate (share) icon action (tooltip "تصعيد") on a row
   Then the Escalate modal opens in RTL titled "التصعيد إلى دور"
   And the field label reads "الدور"
   And the footer buttons read "تصعيد" / "إلغاء" in reverse order
@@ -235,6 +251,67 @@ Scenario: AI verdict and Phase columns render the projected values
   And a row with Phase = Live renders the localised "Live" / "مباشر"
 ```
 
+### E2E-QQU-013 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing into a column filter narrows the in-memory queue
+  Given the queue loaded 12 Pending rows via GET /account/api/admin/questions/queue
+  And the grid shows the per-column filter row under the headers
+    (a <input type="search"> under Session, Question, Submitter and AI verdict —
+     Phase has no filter input)
+  When the administrator types "drone" into the Question filter input
+    (aria-label "Filter column Question", placeholder "Search")
+  Then after the 300 ms debounce the grid re-projects the already-fetched list
+    in memory — GridQuery.Filters["question"] = "drone" and GridQuery.Skip resets to 0
+  And NO new network request fires (the whole queue was fetched once in LoadAsync;
+    BuildPage filters/sorts/pages the in-memory _rows — there is no server /list call)
+  And only rows whose Question contains "drone" (case-insensitive Contains) remain
+  And the pager summary updates to the narrowed total (e.g. "Showing 1–2 of 2")
+
+  When they additionally type "Visitor One" into the Submitter filter input
+    (aria-label "Filter column Submitter")
+  Then GridQuery.Filters now carries both ["question"]="drone" and ["submitter"]="Visitor One"
+  And the grid shows only rows matching BOTH filters (filters are AND-combined)
+
+  When they clear the Question filter input
+  Then GridQuery.Filters["question"] is removed and the grid widens back to the
+    Submitter-only match
+```
+
+**Evidence captured:**
+- The filter row only renders inputs for Filterable columns — Session, Question,
+  Submitter, AI verdict carry a search box; **Phase does not** (Phase is sortable
+  but not filterable).
+- No `/account/api/admin/questions/...` request is logged during filtering — assert
+  the network panel stays quiet (this is the client-side-projection contract, the
+  key difference from the server-paged CP grids).
+
+### E2E-QQU-014 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable header toggles ascending / descending in memory
+  Given the queue loaded with its default order (oldest-first by CreatedAt)
+  When the administrator clicks the "Session" column header (a sortable header button)
+  Then GridQuery.Sort = "session", GridQuery.SortDescending = false, GridQuery.Skip = 0
+  And the grid re-orders the in-memory rows by SessionTitle ascending (no round-trip)
+  And the header's sort arrow shows ▲ (aria-sort="ascending")
+
+  When they click the "Session" header again
+  Then GridQuery.SortDescending flips to true
+  And the rows re-order by SessionTitle descending and the arrow shows ▼ (aria-sort="descending")
+
+  When they click the "Submitter" header
+  Then GridQuery.Sort moves to "submitter", SortDescending resets to false, Skip = 0
+  And the rows re-order by SubmittedByDisplayName ascending
+  And the previous "Session" header returns to the neutral ↕ arrow (aria-sort="none")
+```
+
+**Evidence captured:**
+- Sortable headers: Session, Question, Submitter, Phase. **AI verdict is NOT
+  sortable** — it renders as a plain header span with no sort button.
+- As with the filter, sorting re-projects `_rows` in memory via `BuildPage()`; no
+  GET /queue is re-issued.
+
 ---
 
 ## Implementation notes
@@ -244,6 +321,16 @@ Scenario: AI verdict and Phase columns render the projected values
   single PUT against a question id (`approve`, `hide`, `escalate`) plus the GET
   `/queue` load. Scenarios are scoped to exactly those actions — do not invent
   create/delete UI.
+- **SimfDataGrid, but client-side projection (D-261).** The page renders the
+  canonical `SimfDataGrid` (`Top = 20`), yet — unlike the server-paged CP grids —
+  its `OnQueryChanged` handler does NOT round-trip. `LoadAsync` fetches the whole
+  Pending queue once (oldest-first, capped at 200); `BuildPage()` then filters
+  (case-insensitive `Contains`), sorts and pages that in-memory `_rows` list.
+  Filter keys honoured: `session`, `question`, `submitter`, `ai`. Sort keys:
+  `session`, `question`, `submitter`, `phase`. **No bulk toolbar action** — the
+  grid sets `Multiselect="true"` (select-all + checkboxes) but wires no
+  `OnApproveSelected`/`OnDeleteSelected`/`CustomToolbar`, so the checkboxes are
+  cosmetic; do not author a bulk scenario.
 - **Two-stage pipeline.** Approve here only changes `Status` Pending → Approved;
   the approved question then surfaces on the **per-session moderator desk**
   (`SessionModerationDesk.razor`, stage 3) where push/reorder/hide happen. Escalate
@@ -265,4 +352,4 @@ Scenario: AI verdict and Phase columns render the projected values
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

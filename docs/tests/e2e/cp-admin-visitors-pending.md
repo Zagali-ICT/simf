@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page permission:** the page itself is gated by
 > `[RequirePermission(PermissionCatalog.Visitors.View)]` (`"Visitors.View"`).
@@ -34,6 +34,8 @@
 | E2E-VPN-012 | Scope guard — approving a partner/admin id via the visitors URL → 404 `AdminUserNotFound` | error | P2 | _to author_ |
 | E2E-VPN-013 | Server 500 on `/pending/list` → empty grid, no crash | resilience | P2 | _to author_ |
 | E2E-VPN-014 | RTL / Arabic render mirrors page + Reject modal | i18n | P1 | _to author_ |
+| E2E-VPN-015 | Per-column filter (Email / Display name) narrows the grid | happy | P1 | _to author_ |
+| E2E-VPN-016 | Column sort toggles on Email / Display name | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -303,6 +305,52 @@ Scenario: Arabic toggle mirrors the page and the Reject modal
   And the submit button reads "رفض" and footer actions are reverse-ordered
 ```
 
+### E2E-VPN-015 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Filter the queue by Email and by Display name
+  Given the grid shows several pending rows including visitor.e2e@example.com
+  And the Email and Display name columns each expose a per-column filter input
+      ("Filter column Email" / "Filter column Display name", placeholder "Search")
+  When the administrator types "visitor.e2e" into the Email column filter
+  Then POST /account/api/admin/visitors/pending/list fires with
+      GridQuery.Filters["email"] = "visitor.e2e" and Skip reset to 0 (page 1)
+  And the backend applies a case-insensitive LIKE %visitor.e2e% over Email
+  And the grid narrows to the matching row(s) and the pager total updates
+  When the administrator clears that input and types "Al-" into the Display name filter
+  Then the next /pending/list fires with GridQuery.Filters["displayName"] = "Al-"
+      (and no "email" key) and Skip = 0
+  And the grid narrows to rows whose Display name contains "Al-"
+  When the administrator clears the Display name filter
+  Then /pending/list fires with empty Filters and the full queue returns
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-visitors-pending-filter.png`
+- Network: `POST /account/api/admin/visitors/pending/list` → 200 with
+  `Filters["email"]`, then with `Filters["displayName"]`, then with no filter keys
+- Note: the `created` column is display-only — it exposes no filter input
+  (only `email` + `displayName` are `Filterable`). The backend honours the same
+  two keys in `ListPendingAsync` (`AdminAccountService.cs`).
+
+### E2E-VPN-016 — Column sort toggles
+
+```gherkin
+Scenario: Sort the queue by Email then Display name, toggling direction
+  Given the grid shows several pending rows
+  When the administrator clicks the "Email" column header
+  Then POST /account/api/admin/visitors/pending/list fires with
+      GridQuery.Sort = "email" and SortDescending = false (ascending)
+  And the rows reorder ascending by Email
+  When the administrator clicks the "Email" header again
+  Then /pending/list fires with Sort = "email" and SortDescending = true
+  And the rows reorder descending by Email
+  When the administrator clicks the "Display name" column header
+  Then /pending/list fires with Sort = "displayName" and SortDescending = false
+  And the rows reorder ascending by Display name
+  And the "created" column header is not sortable (no sort call fires when clicked)
+```
+
 ---
 
 ## Implementation notes
@@ -336,4 +384,4 @@ Scenario: Arabic toggle mirrors the page and the Reject modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

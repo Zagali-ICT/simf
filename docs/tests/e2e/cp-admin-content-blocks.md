@@ -7,22 +7,29 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page summary.** The Content blocks page (D-173, gap doc G8, PDF §1, §2.1)
 > is the dynamic-CMS admin surface: editable key/value text blocks (welcome
 > message, page copy, labels, the `cyber.*` policy text the Flutter app reads)
-> surfaced on the public Website + mobile app. The page is a **single grid**
-> (columns: Key, English preview, Last updated, Active) with **one toolbar
-> button "New block"** and **one shared Add/Edit modal** carrying four fields:
-> `Key`, `Content (English)`, `Content (Arabic)` and an `Active` checkbox.
-> Each grid row has two row-action buttons: **Edit content block** and
-> **Delete**.
+> surfaced on the public Website + mobile app. The page is the **standard
+> `SimfDataGrid`** (D-255/D-256 — migrated from a raw table) with columns
+> Key, English (preview), Last updated and Active, a toolbar **Add ("New
+> block")** action, **one shared Add/Edit modal** carrying four fields
+> (`Key`, `Content (English)`, `Content (Arabic)` and an `Active` checkbox),
+> and quiet per-row **icon** actions: **Edit** (pencil) and **Delete** (trash).
+> The grid loads `new GridQuery { Top = 20 }`, so it shows up to **20 rows per
+> page** with the standard prev/next/first/last pager.
 >
-> There is **no search box, no filter control, no pager control, no bulk
-> action and no separate read-only "Details" view** on the page — "Edit"
-> re-opens the same modal pre-filled and is the read-back path. The grid is
-> capped at the first 25 rows (`GridQuery { Top = 25 }`, no page-2 control).
+> The grid carries the standard **per-column filter inputs** on the
+> `Filterable` columns — **Key** (`key`) and **English** (`contentEn`) — and is
+> **sortable** on Key (`key`), English (`contentEn`) and Last updated
+> (`lastUpdatedAt`). The list endpoint honours these as `GridQuery.Filters`
+> entries and `GridQuery.Sort` (see `AdminCmsService.ListContentBlocksAsync`).
+> The grid shows select-all / per-row checkboxes (`Multiselect="true"`), but
+> there is **no `CustomToolbar` bulk action** wired — selection is cosmetic, so
+> there is no bulk scenario here. There is **no separate read-only "Details"
+> view** — "Edit" re-opens the same modal pre-filled and is the read-back path.
 >
 > **Upsert is keyed, not id-based.** The same `PUT /admin/content-blocks`
 > serves both create and edit; the server normalises the key (`Trim()` +
@@ -52,6 +59,8 @@
 | E2E-CNT-010 | Delete a missing/already-removed key → `CONTENT_BLOCK_NOT_FOUND` / idempotent | error | P2 | _to author_ |
 | E2E-CNT-011 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-CNT-012 | RTL / Arabic render: page + Add modal mirror | i18n | P1 | _to author_ |
+| E2E-CNT-013 | Per-column filter narrows the grid (Key / English) | happy | P1 | _to author_ |
+| E2E-CNT-014 | Column sort toggles (Key ascending ⇄ descending) | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -89,7 +98,7 @@ Scenario: Create, read back via Edit, change in place, then delete one block
   And a row exists with Key="home.welcome.title", an English preview starting "Welcome to SIMF 2027",
       a "Last updated" timestamp of "now" in "yyyy-MM-dd HH:mm UTC" format, and Active = "✓"
 
-  When the administrator clicks "Edit content block" on that row
+  When the administrator clicks the row's Edit (pencil) action
   Then the Edit modal re-opens with the row's values pre-filled
   And the "Key" field is DISABLED and reads "home.welcome.title"
   And "Content (English)" reads "Welcome to SIMF 2027"
@@ -102,7 +111,7 @@ Scenario: Create, read back via Edit, change in place, then delete one block
   And the same row (no new row added) now previews "Welcome back to SIMF 2027"
   And the row id is unchanged (in-place update, not a second row)
 
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash) action
   Then a green SimfAlert reads "Content block deleted."
   And the row's Active column flips from "✓" to "—"
   And the row remains visible (delete is a soft deactivate, not a hard remove)
@@ -137,7 +146,7 @@ Scenario: Create one content block from the New block button
 ```gherkin
 Scenario: Edit pre-fills the row and disables the key
   Given a content block with Key="home.welcome.title" exists
-  When the administrator clicks "Edit content block" on that row
+  When the administrator clicks the row's Edit (pencil) action
   Then the Edit modal opens with Key, Content (English), Content (Arabic) and Active pre-filled
   And the "Key" input is rendered disabled (cannot be changed on the edit path)
   When they untick the "Active" checkbox
@@ -152,7 +161,7 @@ Scenario: Edit pre-fills the row and disables the key
 ```gherkin
 Scenario: Delete deactivates the row rather than hard-deleting it
   Given an active content block with Key="promo.banner" exists (Active = "✓")
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash) action
   Then the BFF forwards DELETE /account/api/admin/content-blocks/promo.banner
   And the API returns HTTP 200 with ApiResult.Data = true
   And a green SimfAlert reads "Content block deleted."
@@ -235,14 +244,14 @@ Scenario: Content longer than 8000 characters is rejected
 ```gherkin
 Scenario: Deleting a key that no longer exists returns CONTENT_BLOCK_NOT_FOUND
   Given a content block with Key="stale.key" was already hard-removed from the DB out of band
-  When the administrator clicks "Delete" on a row whose Key="stale.key"
+  When the administrator clicks the row's Delete (trash) action on a row whose Key="stale.key"
   Then the BFF forwards DELETE /account/api/admin/content-blocks/stale.key
   And the API returns HTTP 404 with ApiResult.Error.Code = "CONTENT_BLOCK_NOT_FOUND"
   And a red SimfAlert surfaces "Content block not found." / "لم يتم العثور على المحتوى."
 
 Scenario: Deleting an already-inactive block is idempotent (no error)
   Given a content block with Key="promo.banner" exists but is already inactive (Active = "—")
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash) action
   Then the API returns HTTP 200 with ApiResult.Data = true (the deactivate is a no-op)
   And a green SimfAlert reads "Content block deleted."
 ```
@@ -277,6 +286,48 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   And the field labels read "المفتاح (مثلاً home.welcome.title)", "المحتوى (الإنجليزية)",
       "المحتوى (العربية)" and the checkbox label "مفعّل"
   And the footer actions read "إلغاء" and "حفظ" in reverse order
+```
+
+### E2E-CNT-013 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing in a column filter narrows the grid and resets paging
+  Given the grid on /admin/content-blocks has loaded its first page (GridQuery { Top = 20 })
+  And it currently shows more than 20 rows across multiple pages
+  And rows exist with Key="home.welcome.title" and Key="footer.copyright"
+  When the administrator types "home" into the "Filter column Key" input on the Key column
+  Then a POST /account/api/admin/content-blocks/list fires with
+      GridQuery.Filters["key"]="home" and GridQuery.Skip reset to 0 (back to page 1)
+  And the grid re-renders showing only rows whose Key contains "home"
+      (e.g. "home.welcome.title" stays, "footer.copyright" is gone)
+  And the summary line counts only the narrowed total
+
+  When the administrator clears the Key filter
+  And types "Welcome" into the "Filter column English" input on the English column
+  Then a POST .../list fires with GridQuery.Filters["contentEn"]="Welcome" and Skip=0
+  And the grid shows only rows whose English content contains "Welcome"
+  And clearing the filter restores the full first page
+
+  # Grounding: AdminCmsService.ListContentBlocksAsync honours Filters["key"] and
+  # Filters["contentEn"] (case-insensitive Contains); unknown columns are ignored.
+```
+
+### E2E-CNT-014 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable header toggles ascending / descending
+  Given the grid on /admin/content-blocks has loaded (default order is Key ascending)
+  When the administrator clicks the "Key" column header
+  Then a POST /account/api/admin/content-blocks/list fires with
+      GridQuery.Sort="key" and GridQuery.SortDescending=false
+  And the rows render in ascending Key order
+  When they click the "Key" header again
+  Then a POST .../list fires with GridQuery.Sort="key" and GridQuery.SortDescending=true
+  And the rows render in descending Key order
+  And sorting the "Last updated" column instead posts GridQuery.Sort="lastUpdatedAt"
+
+  # Grounding: only Key (key), English (contentEn) and Last updated (lastUpdatedAt)
+  # are Sortable; the Active column is not sortable.
 ```
 
 ---
@@ -319,4 +370,4 @@ Scenario: Arabic toggle mirrors the page and the Add modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page permission:** `@attribute [RequirePermission(PermissionCatalog.AiPrompts.View)]`.
 > Each row action is gated by its own permission at the API:
@@ -33,10 +33,12 @@
 | E2E-AIP-008 | Edit: `Key` field disabled (immutable), pre-filled values, toggle `Active` off | happy | P1 | _to author_ |
 | E2E-AIP-009 | Test (Echo provider): `key=value` inputs → output + latency + tokens | happy | P0 | _to author_ |
 | E2E-AIP-010 | Test (OpenAi provider, no key) → 503 `AI_PROVIDER_NOT_CONFIGURED` toast | resilience | P2 | _to author_ |
-| E2E-AIP-011 | Deactivate ("Delete" button) → soft-deactivate, row pill flips to "—" | happy | P1 | _to author_ |
+| E2E-AIP-011 | Delete (trash) row action → soft-deactivate, row pill flips to "—" | happy | P1 | _to author_ |
 | E2E-AIP-012 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-AIP-013 | RTL render: Arabic toggle mirrors page + Add/Test modals | i18n | P1 | _to author_ |
 | E2E-AIP-014 | Pager summary line reads "Showing X–Y of Z" | happy | P2 | _to author_ |
+| E2E-AIP-015 | Per-column filter (Key / Name) narrows the grid via `Filters[key]` | grid | P1 | _to author_ |
+| E2E-AIP-016 | Column sort toggles ascending → descending → off (`Sort` + `SortDescending`) | grid | P2 | _to author_ |
 
 ## Scenarios
 
@@ -84,7 +86,7 @@ Scenario: Create, edit, test and deactivate one prompt
       Name="Welcome greeting", Provider="Echo", Model="echo", Version="v1",
       and the Active column shows "✓"
 
-  When the administrator clicks "Edit" on that row
+  When the administrator clicks the row's Edit (pencil) action in the grid RowActions
   Then GET /account/api/admin/ai/prompts/{id} returns 200
   And the Edit modal opens titled "Edit AI prompt" with values pre-filled
   And the "Key" field is now disabled (Key is immutable once written)
@@ -94,7 +96,7 @@ Scenario: Create, edit, test and deactivate one prompt
   And a green SimfAlert reads "Prompt saved."
   And the row's Version column now reads "v2"
 
-  When the administrator clicks "Test" on that row
+  When the administrator clicks the row's Test (flask) action in the grid RowActions
   Then the Test modal opens titled "Test prompt" showing the key "welcome-greeting"
   When they type inputs (one per line) "name=Captain Ahmad"
   And they click "Run test"
@@ -104,7 +106,8 @@ Scenario: Create, edit, test and deactivate one prompt
   When they click "Cancel"
   Then the Test modal closes
 
-  When the administrator clicks "Deactivate" on that row
+  When the administrator clicks the row's Delete (trash) action in the grid RowActions
+      (the soft-deactivate action — DELETE on the API)
   Then DELETE /account/api/admin/ai/prompts/{id} returns 200
   And a green SimfAlert reads "Prompt deactivated."
   And the grid reloads and the row's Active column now shows "—"
@@ -217,7 +220,7 @@ Scenario: Duplicate Key returns 409 AI_PROMPT_KEY_DUPLICATE
 ```gherkin
 Scenario: Edit pre-fills values, disables Key, and toggles Active off
   Given an active prompt "welcome-greeting" exists in the grid
-  When the administrator clicks "Edit" on its row
+  When the administrator clicks the row's Edit (pencil) action in the grid RowActions
   Then GET /account/api/admin/ai/prompts/{id} returns 200
   And the Edit modal opens with every field pre-filled from the detail payload
   And the "Key" field is disabled (immutable; the update request has no Key field)
@@ -234,7 +237,7 @@ Scenario: Edit pre-fills values, disables Key, and toggles Active off
 ```gherkin
 Scenario: Dry-run an Echo prompt returns a deterministic output
   Given an active prompt "welcome-greeting" with Provider="Echo" exists
-  When the administrator clicks "Test" on its row
+  When the administrator clicks the row's Test (flask) action in the grid RowActions
   Then the Test modal opens titled "Test prompt" and shows the key "welcome-greeting"
   And the inputs textarea label reads "Inputs (one per line: key=value)"
   When they type "name=Captain Ahmad"
@@ -252,7 +255,7 @@ Scenario: Dry-run an Echo prompt returns a deterministic output
 Scenario: Testing an OpenAi prompt with no API key returns 503
   Given an active prompt "live-assist" with Provider="OpenAi" exists
   And the API has no OpenAi key configured (default dev posture)
-  When the administrator clicks "Test" on its row, enters any inputs, and clicks "Run test"
+  When the administrator clicks the row's Test (flask) action, enters any inputs, and clicks "Run test"
   Then POST /account/api/admin/ai/prompts/{id}/test returns HTTP 503
   And ApiResult.Error.Code = "AI_PROVIDER_NOT_CONFIGURED"
   And a red error toast surfaces the bilingual MessageForCurrentCulture()
@@ -262,14 +265,14 @@ Scenario: Testing an OpenAi prompt with no API key returns 503
 ### E2E-AIP-011 — Deactivate is a soft delete
 
 ```gherkin
-Scenario: "Deactivate" soft-deactivates and is idempotent
+Scenario: Delete (trash) soft-deactivates and is idempotent
   Given an active prompt "welcome-greeting" exists in the grid
-  When the administrator clicks "Deactivate" on its row
+  When the administrator clicks the row's Delete (trash) action in the grid RowActions
   Then DELETE /account/api/admin/ai/prompts/{id} returns 200 (ApiResult<bool> = true)
   And a green SimfAlert reads "Prompt deactivated." / "تمّ تعطيل المحفّز."
   And the grid reloads and the row's Active column shows "—" (row not removed)
   And an audit row 'AiPrompt.Deactivated' is written with the actor id
-  When the administrator clicks "Deactivate" again on the now-inactive row
+  When the administrator clicks the Delete (trash) action again on the now-inactive row
   Then the API returns 200 with no further audit row (the service early-returns
       when IsActive is already false)
 ```
@@ -315,11 +318,56 @@ Scenario: Arabic toggle mirrors the page, Create modal and Test modal
 
 ```gherkin
 Scenario: Summary line reflects the current page window
-  Given the database has more than 25 active prompts (Top defaults to 25)
+  Given the database has more than 20 active prompts (Top defaults to 20)
   When the administrator opens /admin/ai/prompts
-  Then POST /account/api/admin/ai/prompts/list returns Skip=0, the first 25 items, Total=Z
-  And the summary line under the table reads "Showing 1–25 of {Z}" /
-      "عرض 1–25 من {Z}"
+  Then POST /account/api/admin/ai/prompts/list returns Skip=0, the first 20 items, Total=Z
+  And the summary line under the table reads "Showing 1–20 of {Z}" /
+      "عرض 1–20 من {Z}"
+```
+
+### E2E-AIP-015 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing into a column filter input reloads the grid with Filters[key]
+  Given the grid is rendered with rows whose Key/Feature/Name span several values
+  And the grid shows a filter row under the headers with a search input under the
+      Key, Feature and Name columns (only those three columns are Filterable;
+      Provider, Model, Version and Active have no filter input)
+  When the administrator types "welcome" into the filter input under the "Key" column
+      (aria-label "Filter column Key")
+  Then after the 300ms debounce the page issues POST
+      /account/api/admin/ai/prompts/list with GridQuery.Filters["key"]="welcome",
+      Skip reset to 0, and any prior row selection cleared
+  And the grid narrows to only the rows whose Key contains "welcome"
+  And the summary line recomputes against the filtered Total
+
+  When the administrator also types "Assistance" into the "Feature" column filter
+      (aria-label "Filter column Feature")
+  Then the next POST /list carries BOTH GridQuery.Filters["key"]="welcome" AND
+      GridQuery.Filters["feature"]="Assistance" with Skip=0
+
+  When the administrator clears the "Key" filter input
+  Then the next POST /list drops the "key" entry from GridQuery.Filters
+      (only Filters["feature"]="Assistance" remains) and the grid widens accordingly
+```
+
+### E2E-AIP-016 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable header cycles ascending → descending → ascending
+  Given the grid is rendered and the Key, Feature, Name, Provider and Version
+      column headers are sortable buttons (Model and Active are not sortable)
+  When the administrator clicks the "Key" column header
+  Then the page issues POST /account/api/admin/ai/prompts/list with
+      GridQuery.Sort="key", SortDescending=false and Skip reset to 0
+  And the header shows the ascending (▲) arrow and aria-sort="ascending"
+  When the administrator clicks the "Key" header again
+  Then the next POST /list carries GridQuery.Sort="key", SortDescending=true
+  And the header shows the descending (▼) arrow and aria-sort="descending"
+  When the administrator clicks the "Version" column header
+  Then the next POST /list carries GridQuery.Sort="version", SortDescending=false
+      (switching columns starts a fresh ascending sort) and the "Key" header
+      returns to its neutral (↕) state
 ```
 
 ---
@@ -350,4 +398,4 @@ Scenario: Summary line reflects the current page window
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

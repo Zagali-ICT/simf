@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **What this page does (grounded in `SessionSummariesList.razor`).** This is the
 > Scientific-Committee AI session-summary / محضر desk (P4.1 / D-238, Mockup screen
@@ -28,6 +28,16 @@
 > **RequiredPermission for the page (`@attribute [RequirePermission]`):**
 > `PermissionCatalog.SessionSummaries.View` (`"SessionSummaries.View"`). Nav item
 > `Module.SessionSummaries` carries the same `RequiredPermission`.
+>
+> **Grid affordances (D-256 — `SimfDataGrid`).** The desk renders through
+> `SimfDataGrid` over the in-memory rows (one read loads every active session, then
+> filter / sort / page run **client-side** in `BuildPage()`). The page size is
+> `Top = 20`. Only the **Session** column (`Key="session"`) is `Filterable` and
+> `Sortable`; **Status** and **Source** are display-only. The three row actions are
+> **quiet icon buttons** in `<RowActions>` (tooltip on hover), not filled text
+> buttons: Generate = sparkle icon, Edit = pencil icon (only when `HasSummary`),
+> Publish/Unpublish = power icon (only when `HasSummary`). There is **no bulk
+> action** — no select-all / multiselect toolbar on this desk.
 
 ## Coverage matrix
 
@@ -48,6 +58,8 @@
 | E2E-SUM-013 | Missing session — generate against a deleted/unknown session → 404 `SESSION_NOT_FOUND` | error | P2 | _to author_ |
 | E2E-SUM-014 | Server 500 on list → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-SUM-015 | RTL / Arabic render — page + editor modal mirror | i18n | P1 | _to author_ |
+| E2E-SUM-016 | Per-column filter on Session narrows the grid (client-side, Skip→0) | happy | P1 | _to author_ |
+| E2E-SUM-017 | Column sort on Session toggles ascending / descending | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -71,7 +83,7 @@ Scenario: AI-draft → edit → publish → unpublish one session summary
   Given the row for "Naval Propulsion Futures" shows Status="No summary" and Source="—"
   And GET /account/api/admin/session-summaries returned 200 with that row
 
-  When the administrator clicks "AI draft" on that row
+  When the administrator clicks the row's AI-draft (sparkle) action
   Then POST /account/api/admin/session-summaries/{sessionId}/generate returns 200
   And a green toast reads "AI draft generated." / "تم توليد مسودة بالذكاء الاصطناعي."
   And the editor modal opens titled with the session title
@@ -87,17 +99,17 @@ Scenario: AI-draft → edit → publish → unpublish one session summary
   And the modal closes
   And a green toast reads "Summary saved." / "تم حفظ الملخص."
 
-  When the administrator clicks "Publish" on that row
+  When the administrator clicks the row's Publish (power) action
   Then PUT /account/api/admin/session-summaries/{sessionId}/publish returns 200
   And a green toast reads "Summary published." / "تم نشر الملخص."
   And the row Status changes to "Published"
-  And the row action now offers "Unpublish" instead of "Publish"
+  And the power icon now carries the "Unpublish" tooltip instead of "Publish"
 
-  When the administrator clicks "Unpublish" on that row
+  When the administrator clicks the row's Unpublish (power) action
   Then PUT /account/api/admin/session-summaries/{sessionId}/unpublish returns 200
   And a green toast reads "Summary unpublished." / "تم إلغاء نشر الملخص."
   And the row Status returns to "Draft"
-  And the row action offers "Publish" again
+  And the power icon carries the "Publish" tooltip again
 ```
 
 **Evidence captured:**
@@ -117,11 +129,11 @@ Scenario: The desk lists every active session with its summary state
   When the administrator opens /admin/session-summaries
   Then GET /account/api/admin/session-summaries returns 200 with 3 rows
   And the rows are ordered newest session first (by StartUtc descending)
-  And the table shows columns "Session", "Status", "Source", and an action column
+  And the grid shows columns "Session", "Status", "Source", and a row-actions column
   And the published row shows Status="Published"
   And the AI-draft row shows Status="Draft" and Source="AI-drafted"
   And the no-summary row shows Status="No summary" and Source="—"
-  And the no-summary row offers only "AI draft" (no Edit / Publish until a summary exists)
+  And the no-summary row offers only the AI-draft (sparkle) action (no Edit / Publish icon until a summary exists)
 ```
 
 ### E2E-SUM-003 — AI draft (Generate) creates an Arabic draft
@@ -129,7 +141,7 @@ Scenario: The desk lists every active session with its summary state
 ```gherkin
 Scenario: AI draft on a session with no summary fills Arabic full-text only
   Given the row for session "S-202" shows Status="No summary"
-  When the administrator clicks "AI draft" on that row
+  When the administrator clicks the row's AI-draft (sparkle) action
   Then POST /account/api/admin/session-summaries/{sessionId}/generate returns 200
   And the editor opens with the AI banner SimfAlert visible
   And the "Full text (Arabic)" textarea contains the Echo provider output
@@ -144,7 +156,7 @@ Scenario: AI draft on a session with no summary fills Arabic full-text only
 ```gherkin
 Scenario: Edit opens the editor pre-filled and Save persists the change
   Given session "S-101" already has a summary (HasSummary = true)
-  When the administrator clicks "Edit" on that row
+  When the administrator clicks the row's Edit (pencil) action
   Then GET /account/api/admin/session-summaries/{sessionId} returns 200
   And the editor modal opens with all 8 textareas pre-filled from the stored summary
   When they change "Recommendations (English)" to "Adopt the standard fleet-wide"
@@ -160,11 +172,11 @@ Scenario: Edit opens the editor pre-filled and Save persists the change
 ```gherkin
 Scenario: Publishing flips Status to Published
   Given session "S-101" has a draft summary (Status="Draft")
-  When the administrator clicks "Publish" on that row
+  When the administrator clicks the row's Publish (power) action
   Then PUT /account/api/admin/session-summaries/{sessionId}/publish returns 200
   And a green toast reads "Summary published." / "تم نشر الملخص."
   And the row Status reads "Published"
-  And the row action now shows "Unpublish"
+  And the power icon now carries the "Unpublish" tooltip
   And the public read (GET /programme/sessions/{id}/summary) now returns the summary
 ```
 
@@ -173,11 +185,11 @@ Scenario: Publishing flips Status to Published
 ```gherkin
 Scenario: Unpublishing takes a summary offline
   Given session "S-101" has a published summary (Status="Published")
-  When the administrator clicks "Unpublish" on that row
+  When the administrator clicks the row's Unpublish (power) action
   Then PUT /account/api/admin/session-summaries/{sessionId}/unpublish returns 200
   And a green toast reads "Summary unpublished." / "تم إلغاء نشر الملخص."
   And the row Status returns to "Draft"
-  And the row action shows "Publish" again
+  And the power icon carries the "Publish" tooltip again
   And the public read no longer returns the summary
 ```
 
@@ -226,9 +238,9 @@ Scenario: View-only admin sees no Generate / Edit / Publish buttons
   Given a signed-in administrator who holds SessionSummaries.View but NOT .Edit and NOT .Publish
   When they open /admin/session-summaries
   Then the page loads and the rows render (View is satisfied)
-  And the <AuthorizedAction Permission="SessionSummaries.Edit"> block hides "AI draft" and "Edit"
-  And the <AuthorizedAction Permission="SessionSummaries.Publish"> block hides "Publish" / "Unpublish"
-  And the action column shows no buttons for this user
+  And the <AuthorizedAction Permission="SessionSummaries.Edit"> block hides the AI-draft (sparkle) and Edit (pencil) icons
+  And the <AuthorizedAction Permission="SessionSummaries.Publish"> block hides the Publish / Unpublish (power) icon
+  And the row-actions column shows no icons for this user
   And even if forged, POST /generate and PUT /publish return 403 at the API (policy SessionSummaries.Edit/.Publish)
 ```
 
@@ -297,13 +309,47 @@ Scenario: Arabic toggle mirrors the page and the editor modal
   And the column headers read "الجلسة", "الحالة", "المصدر"
   And the Status labels render as "لا يوجد ملخص" / "مسودة" / "منشور"
   And the Source labels render as "مُولّد بالذكاء الاصطناعي" / "مُدخل يدويًا"
-  And the action buttons read "توليد بالذكاء الاصطناعي", "تعديل", "نشر", "إلغاء النشر"
+  And the row-action icon tooltips read "توليد بالذكاء الاصطناعي", "تعديل", "نشر", "إلغاء النشر"
 
   When the administrator opens the editor (Edit on a row with a summary)
   Then the modal renders RTL
   And the AI banner (if present) reads "تم توليد هذه المسودة بالذكاء الاصطناعي — راجعها وعدّلها قبل النشر."
   And the field labels are Arabic ("أبرز النقاط (العربية) — نقطة في كل سطر", "التوصيات (العربية)", …)
   And the footer buttons read "حفظ" and "إلغاء" in reverse order
+```
+
+### E2E-SUM-016 — Per-column filter on Session narrows the grid
+
+```gherkin
+Scenario: Typing into the Session column filter narrows the grid client-side
+  Given at least 3 active sessions are listed, including "Naval Propulsion Futures"
+  And GET /account/api/admin/session-summaries returned 200 with every row loaded once
+  When the administrator types "Naval" into the per-column filter for "Session"
+  Then the grid query carries GridQuery.Filters["session"]="Naval"
+  And Skip resets to 0 (the grid returns to the first page)
+  And only rows whose title contains "Naval" (case-insensitive) remain visible
+  And no new GET /account/api/admin/session-summaries request fires
+  # The desk loads every session in one read; BuildPage() filters in memory,
+  # so the per-column filter is purely client-side. Only the Session column is
+  # Filterable — Status and Source have no filter input.
+  When the administrator clears the "Session" filter
+  Then GridQuery.Filters["session"] is empty
+  And all active-session rows are visible again
+```
+
+### E2E-SUM-017 — Column sort on Session toggles ascending / descending
+
+```gherkin
+Scenario: Sorting the Session column toggles ascending then descending
+  Given the grid lists every active session (default order newest-session-first)
+  When the administrator clicks the "Session" column sort
+  Then the grid query carries Sort="session" with SortDescending=false
+  And the rows reorder by SessionTitle ascending (A→Z), in memory
+  When the administrator clicks the "Session" column sort again
+  Then SortDescending=true
+  And the rows reorder by SessionTitle descending (Z→A)
+  # Only the Session column is Sortable; Status and Source are display-only.
+  And no new GET /account/api/admin/session-summaries request fires
 ```
 
 ---
@@ -339,4 +385,4 @@ Scenario: Arabic toggle mirrors the page and the editor modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

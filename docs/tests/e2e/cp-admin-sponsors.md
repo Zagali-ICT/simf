@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page permission:** the page is gated by `@attribute [RequirePermission(PermissionCatalog.Sponsors.View)]`.
 > The action buttons (Add / Edit / Delete) are **not** wrapped in `<AuthorizedAction>` on
@@ -35,6 +35,8 @@
 | E2E-SPN-013 | Server 500 on `/list` → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-SPN-014 | Modal Cancel discards edits | happy | P2 | _to author_ |
 | E2E-SPN-015 | RTL/Arabic render — page + modal mirror | i18n | P1 | _to author_ |
+| E2E-SPN-016 | Per-column filter narrows the grid (Name (English) / Name (Arabic)) | happy | P1 | _to author_ |
+| E2E-SPN-017 | Column sort toggles (Tier asc → desc) | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -56,7 +58,7 @@ Background:
 
 Scenario: Create, edit, then delete one sponsor
   Given the grid currently shows {N} rows
-  When the administrator clicks "Add sponsor"
+  When the administrator clicks the grid toolbar "Add" action
   Then the "Add sponsor" modal opens with fields:
        Name (English), Name (Arabic), Tier (select), Link, Logo path,
        Display order (number), and an "Active" checkbox (ticked)
@@ -75,7 +77,7 @@ Scenario: Create, edit, then delete one sponsor
       Link = "https://www.lockheedmartin.com", Display order = 10, Active = "✓"
   And the grid summary reads "Showing 1–{N+1} of {N+1}"
 
-  When the administrator clicks "Edit" on that row
+  When the administrator clicks the row's Edit (pencil) action
   Then the "Edit sponsor" modal opens with the row's values pre-filled
   And the "Active" checkbox is visible and ticked
   When they change Display order to "20"
@@ -85,7 +87,7 @@ Scenario: Create, edit, then delete one sponsor
   And a green toast reads "Sponsor saved." / "تم حفظ الراعي."
   And the row's Display order column now reads "20"
 
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash) action
   Then a native browser confirm dialog appears reading
        "Delete this sponsor? It will be removed from the public list immediately."
        / "هل تريد حذف هذا الراعي؟ سيُزال من القائمة العامة فورًا."
@@ -135,7 +137,7 @@ Scenario: Create a sponsor with every field populated
 ```gherkin
 Scenario: Re-tier and deactivate via the Edit modal
   Given a sponsor "Saab" exists in tier "Gold" and is Active
-  When the administrator clicks "Edit" on the "Saab" row
+  When the administrator clicks the "Saab" row's Edit (pencil) action
   Then the modal is titled "Edit sponsor" and the fields are pre-filled
   When they change Tier = "Silver"
   And they untick the "Active" checkbox
@@ -151,7 +153,7 @@ Scenario: Re-tier and deactivate via the Edit modal
 ```gherkin
 Scenario: Delete a sponsor and accept the confirm dialog
   Given a sponsor "Saab" exists and is Active
-  When the administrator clicks "Delete" on the "Saab" row
+  When the administrator clicks the "Saab" row's Delete (trash) action
   Then a native confirm dialog appears with the bilingual delete-confirm copy
   When they accept the dialog
   Then DELETE /account/api/admin/sponsors/{id} returns HTTP 200
@@ -165,7 +167,7 @@ Scenario: Delete a sponsor and accept the confirm dialog
 ```gherkin
 Scenario: Dismiss the delete confirm dialog
   Given a sponsor "Saab" exists and is Active
-  When the administrator clicks "Delete" on the "Saab" row
+  When the administrator clicks the "Saab" row's Delete (trash) action
   And they dismiss (cancel) the native confirm dialog
   Then no DELETE request fires
   And no toast appears
@@ -193,7 +195,7 @@ Scenario: Empty list renders SimfEmptyState
   When the administrator opens /admin/sponsors
   Then the grid body renders the SimfEmptyState component
   And the empty state title reads "No sponsors yet." / "لا يوجد رعاة بعد."
-  And the toolbar still shows the "Add sponsor" button
+  And the grid toolbar still shows the "Add" action
   And no error toast appears
 ```
 
@@ -305,16 +307,60 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   When they switch the UI language to Arabic ("العربية")
   Then the page reloads with <html dir="rtl" lang="ar">
   And the SimfBanner title reads "الرعاة"
-  And the table headers read
+  And the grid column headers read
       "الاسم (إنجليزي)", "الاسم (عربي)", "الفئة", "مسار الشعار",
       "الرابط", "ترتيب العرض", "نشط"
-  And the toolbar button reads "إضافة راعٍ"
+  And the grid toolbar "Add" action is shown (label from the shared Grid.Add resx key)
 
-  When they click "إضافة راعٍ"
+  When they click the grid toolbar "Add" action
   Then the Add modal opens in RTL with title "إضافة راعٍ"
   And the field labels read "الاسم (إنجليزي)", "الاسم (عربي)", "الفئة",
       "الرابط", "مسار الشعار", "ترتيب العرض", "نشط"
   And the footer buttons read "إلغاء" (Cancel) and "حفظ" (Save)
+```
+
+### E2E-SPN-016 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing into a per-column grid filter narrows the rows
+  Given sponsors exist with varied names, e.g. "Saab", "Lockheed Martin" and "Naval Group"
+  And the administrator is on /admin/sponsors with the grid rendered
+  When they open the column-filter control for the "Name (English)" column
+  And they type "Saab" into the "Filter column Name (English)" input
+  Then a POST /account/api/admin/sponsors/list fires carrying
+       GridQuery.Filters["nameEn"] = "Saab"
+  And GridQuery.Skip is reset to 0 (paging returns to the first page)
+  And the grid re-renders showing only rows whose Name (English) contains "Saab"
+  And the grid summary updates to the narrowed total
+
+  When they clear the "Name (English)" filter
+  And instead type "ساب" into the "Filter column Name (Arabic)" input
+  Then a POST /account/api/admin/sponsors/list fires carrying
+       GridQuery.Filters["nameAr"] = "ساب"
+  And GridQuery.Skip is reset to 0
+  And the grid shows only rows whose Name (Arabic) contains "ساب"
+  And only the "Name (English)" and "Name (Arabic)" columns expose a per-column
+      filter input (Tier, Logo path, Link, Display order and Active are not Filterable)
+```
+
+### E2E-SPN-017 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable column header toggles ascending/descending
+  Given sponsors exist across more than one tier
+  And the administrator is on /admin/sponsors with the grid rendered
+       (default order: Tier asc, then Display order asc, then Name (Arabic) asc)
+  When they click the "Tier" column header
+  Then a POST /account/api/admin/sponsors/list fires carrying
+       GridQuery.Sort = "tier" and GridQuery.SortDescending = false
+  And the grid re-renders ordered by Tier ascending (Platinum→Gold→Silver→Bronze)
+
+  When they click the "Tier" column header again
+  Then a POST /account/api/admin/sponsors/list fires carrying
+       GridQuery.Sort = "tier" and GridQuery.SortDescending = true
+  And the grid re-renders ordered by Tier descending (Bronze→Silver→Gold→Platinum)
+  And the sortable columns are exactly: Name (English), Name (Arabic), Tier,
+      Display order and Active (Logo path and Link are not Sortable)
 ```
 
 ---
@@ -357,4 +403,4 @@ Scenario: Arabic toggle mirrors the page and the Add modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

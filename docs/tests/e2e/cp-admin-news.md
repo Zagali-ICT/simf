@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page permission:** `[RequirePermission(PermissionCatalog.News.View)]` (`"News.View"`).
 > The mutating actions hit endpoints gated by `News.Create` / `News.Edit` /
@@ -32,6 +32,8 @@
 | E2E-NWS-011 | Reactivate a soft-deleted article via Edit → Active checkbox | crud | P2 | _to author_ |
 | E2E-NWS-012 | Server 500 on `/admin/news/list` → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-NWS-013 | RTL render: Arabic toggle mirrors page + Add modal | i18n | P1 | _to author_ |
+| E2E-NWS-014 | Per-column grid filter (Title/Category EN) narrows the grid, Skip resets to 0 | crud | P1 | _to author_ |
+| E2E-NWS-015 | Column sort (Title EN / Publish date / Display order) toggles asc↔desc | crud | P2 | _to author_ |
 
 ## Scenarios
 
@@ -75,7 +77,7 @@ Scenario: Create, edit (toggle Active), then delete one article
   And the grid shows a row with Title (EN)="SIMF 2026 opens registration",
       Category (EN)="Announcements", Published="2026-06-10", Order=10, and Active="✓"
 
-  When the administrator clicks "Edit" on that row
+  When the administrator clicks the row's Edit (pencil) icon action
   Then a GET /account/api/admin/news/{id} fires (the grid summary omits body/excerpt/image)
   And the modal titled "Edit news article" opens with every field pre-filled
   And an "Active" checkbox is now visible and ticked
@@ -85,7 +87,7 @@ Scenario: Create, edit (toggle Active), then delete one article
   And the modal closes and the toast reads "News article saved." / "تم حفظ الخبر."
   And the row's Order column now reads "0"
 
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash) icon action
   And the browser confirm() dialog reads "Delete this news article? It will be removed from the public feed immediately."
   And they accept the dialog
   Then a DELETE /account/api/admin/news/{id} fires and returns HTTP 200
@@ -150,7 +152,7 @@ Scenario: Add modal exposes the full author form without the Active toggle
 ```gherkin
 Scenario: Edit fetches the full detail and surfaces the Active checkbox
   Given at least one News article exists
-  When the administrator clicks "Edit" on its grid row
+  When the administrator clicks the row's Edit (pencil) icon action
   Then a GET /account/api/admin/news/{id} returns 200 with the full AdminNewsDetail
   And the modal titled "Edit news article" opens
   And Title (English), Title (Arabic), Category (English), Category (Arabic),
@@ -165,7 +167,7 @@ Scenario: Edit fetches the full detail and surfaces the Active checkbox
 ```gherkin
 Scenario: Cancelling the confirm dialog aborts the soft-delete
   Given a News article row is visible
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash) icon action
   Then a browser confirm() dialog appears reading
       "Delete this news article? It will be removed from the public feed immediately."
       / "هل تريد حذف هذا الخبر؟ ستتم إزالته من الواجهة العامة فورًا."
@@ -232,7 +234,7 @@ Scenario: Date and number inputs round-trip cleanly
   And sets Display order="42" via the <input type="number">
   And clicks "Save" (HTTP 200)
   Then the new grid row shows Published="2026-12-01" and Order=42
-  When they re-open the row via "Edit"
+  When they re-open the row via its Edit (pencil) icon action
   Then Publish date reads "2026-12-01" and Display order reads "42"
       (PublishedAt is parsed AssumeUniversal/AdjustToUniversal; the date text mirror holds)
 ```
@@ -242,7 +244,7 @@ Scenario: Date and number inputs round-trip cleanly
 ```gherkin
 Scenario: A deleted article is recovered by re-ticking Active in Edit
   Given a News article that was soft-deleted (its Active column reads "—")
-  When the administrator clicks "Edit" on that row
+  When the administrator clicks the row's Edit (pencil) icon action
   Then the modal opens with the "Active" checkbox unticked
   When they tick "Active"
   And click "Save"
@@ -283,6 +285,59 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   And the footer buttons read "إلغاء" and "حفظ" in reverse order
 ```
 
+### E2E-NWS-014 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing into a per-column filter input narrows the grid and resets paging
+  Given the administrator is on /admin/news with several articles loaded
+      (the SimfDataGrid renders a per-column filter row under the headers,
+       with a search input under each Filterable column:
+       Title (English), Title (Arabic), Category (English), Category (Arabic))
+  When the administrator types "registration" into the filter input
+      labelled "Filter Title (English)" (the "titleen" column)
+  Then after the 300 ms debounce a POST /account/api/admin/news/list fires
+  And the GridQuery carries Filters["titleen"]="registration" with Skip reset to 0
+  And the grid re-renders showing only rows whose English title contains "registration"
+  And the pager summary updates to "Showing 1–{matched} of {matched}"
+
+  When the administrator also types "Announcements" into the filter input
+      labelled "Filter Category (English)" (the "categoryen" column)
+  Then a further POST /account/api/admin/news/list fires
+  And the GridQuery carries both Filters["titleen"]="registration"
+      and Filters["categoryen"]="Announcements" (filters combine, AND-style)
+  And Skip stays 0
+
+  When the administrator clears the Title (English) filter input
+  Then a POST /account/api/admin/news/list fires with Filters no longer
+      containing "titleen" (only "categoryen" remains) and Skip = 0
+  And the publishedat / displayorder / isactive columns expose no filter input
+      (they are not Filterable)
+```
+
+### E2E-NWS-015 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable header toggles ascending then descending
+  Given the administrator is on /admin/news with several articles loaded
+      (the sortable headers are Title (English) "titleen", Publish date
+       "publishedat" and Display order "displayorder"; Title/Category Arabic
+       and Active are not sortable)
+  When the administrator clicks the "Publish date" column header
+  Then a POST /account/api/admin/news/list fires with
+      GridQuery.Sort="publishedat", SortDescending=false and Skip reset to 0
+  And the header shows the ascending arrow (▲) and aria-sort="ascending"
+  And the rows order by PublishedAt ascending
+
+  When the administrator clicks the "Publish date" header again
+  Then a POST /account/api/admin/news/list fires with
+      Sort="publishedat", SortDescending=true (the same key flips direction)
+  And the header shows the descending arrow (▼) and aria-sort="descending"
+
+  When the administrator clicks the "Title (English)" header
+  Then Sort switches to "titleen" with SortDescending=false (a new key starts ascending)
+  And the previous "publishedat" header returns to the neutral (↕) state
+```
+
 ---
 
 ## Implementation notes
@@ -307,4 +362,4 @@ Scenario: Arabic toggle mirrors the page and the Add modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

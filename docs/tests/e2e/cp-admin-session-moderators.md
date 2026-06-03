@@ -7,14 +7,17 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **What this page does.** D-169 (gap doc G6, PDF §2.7.2) admin desk for
 > per-session moderator **grants**. It is *not* the moderator's own live
 > Q&A desk (`/sessions/{id}/moderate`) and the grant is distinct from the
-> mobile `MobileAppRole.Moderator`. The page is a single grid of existing
-> grants plus an **Assign moderator** modal (raw `SessionId` + `UserId`
-> GUID text fields) and a per-row **Revoke** button.
+> mobile `MobileAppRole.Moderator`. The page is a single **`SimfDataGrid`**
+> of existing grants (D-256 raw-table→grid conversion) plus an **Assign
+> moderator** modal (raw `SessionId` + `UserId` GUID text fields) and a
+> per-row **Revoke** quiet icon action. After the conversion the **Session**
+> column is per-column **filterable**, the **Session** and **Assigned**
+> columns are **sortable**, and the grid page size is `Top = 20`.
 > `RequiredPermission = PermissionCatalog.SessionModerators.View`; assign
 > needs `SessionModerators.Assign`, revoke needs `SessionModerators.Revoke`.
 
@@ -35,8 +38,10 @@
 | E2E-SMD-011 | Conflict / duplicate — already a moderator → `SESSION_MODERATOR_ALREADY_ASSIGNED` (409) | error | P1 | _to author_ |
 | E2E-SMD-012 | Revoke is idempotent — re-revoking a gone grant still succeeds | function | P2 | _to author_ |
 | E2E-SMD-013 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
-| E2E-SMD-014 | Pager summary — "Showing 1–N of T" reflects grid + Top=25 page size | function | P2 | _to author_ |
+| E2E-SMD-014 | Pager summary — "Showing 1–N of T" reflects grid + Top=20 page size | function | P2 | _to author_ |
 | E2E-SMD-015 | RTL / Arabic render mirrors page + Assign modal | i18n | P1 | _to author_ |
+| E2E-SMD-016 | Per-column filter — typing in "Filter column Session" narrows the grid | function | P1 | _to author_ |
+| E2E-SMD-017 | Column sort — Session / Assigned headers toggle asc↔desc | function | P2 | _to author_ |
 
 ## Scenarios
 
@@ -75,7 +80,8 @@ Scenario: Assign a moderator, see the new row, then revoke it
       "Assigned by"=the acting admin's display name,
       and an "Assigned" timestamp in "yyyy-MM-dd HH:mm UTC" format
 
-  When the administrator clicks "Revoke" on that new row
+  When the administrator clicks that row's Revoke (link-off icon) action
+       in the grid's RowActions column
   Then the BFF forwards DELETE /account/api/admin/session-moderators/{sessionId}/{userId}
   And the API returns HTTP 200 with ApiResult.Success = true
   And a green toast reads "Moderator grant revoked." / "تم إلغاء تعيين المشرف."
@@ -232,7 +238,7 @@ Scenario: Re-assigning the same user to the same session returns 409
 Scenario: Revoking a grant that no longer exists still succeeds
   Given a grant row for Session="S-01 — Opening Plenary" / Moderator="Sara Q." is visible
   And that grant has already been removed out-of-band (e.g. a second admin revoked it)
-  When the administrator clicks "Revoke" on the stale row
+  When the administrator clicks the stale row's Revoke (link-off icon) action
   Then the BFF forwards DELETE /account/api/admin/session-moderators/{sessionId}/{userId}
   And the API returns HTTP 200 with ApiResult.Success = true (the service is idempotent)
   And a green toast reads "Moderator grant revoked." / "تم إلغاء تعيين المشرف."
@@ -255,7 +261,7 @@ Scenario: API 500 on /list shows the bilingual fallback toast
 
 ```gherkin
 Scenario: The grid footer summary reflects the page window
-  Given more than one grant exists (Top page size is 25, ordered by AssignedAt desc)
+  Given more than one grant exists (Top page size is 20, ordered by AssignedAt desc)
   When the administrator opens /admin/session-moderators
   Then the footer reads "Showing 1–{count} of {total}" /
       "عرض 1–{count} من {total}"
@@ -272,13 +278,59 @@ Scenario: Arabic toggle mirrors the page and the Assign modal
   Then the page reloads with <html dir="rtl" lang="ar">
   And the SimfBanner title reads "مشرفو الجلسات"
   And the column headers read "الجلسة", "المشرف", "من قام بالتعيين", "تاريخ التعيين"
-  And the toolbar button reads "تعيين مشرف"
-  And the per-row action reads "إلغاء التعيين"
+  And the grid's Add toolbar button reads "تعيين مشرف"
+  And the per-row Revoke (link-off icon) action carries the title "إلغاء التعيين"
 
   When they click "تعيين مشرف"
   Then the Assign modal opens in RTL titled "تعيين مشرف للجلسة"
   And the field labels read "معرّف الجلسة" and "معرّف المستخدم المشرف"
   And the footer buttons read "إلغاء" and "تعيين" in reverse order
+```
+
+### E2E-SMD-016 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing a value in the Session column filter narrows the grid
+  Given the administrator is on /admin/session-moderators
+  And several grants exist across sessions Code="S-01"/"S-02"/"S-03"
+  And the grid is showing the first page (Skip = 0) of all grants
+  When they open the "Filter column" picker on the Session column
+  And they type "S-01" into the "Filter column Session" input
+  Then the BFF forwards POST /account/api/admin/session-moderators/list
+       carrying GridQuery.Filters["session"] = "S-01"
+  And the request resets GridQuery.Skip to 0
+  And the API matches the value against the session Code / Title / TitleArabic
+      (server-side Contains)
+  And the grid re-renders showing only the S-01 grant rows
+  And the footer summary "Showing 1–{count} of {total}" reflects the
+      narrowed total
+  And clearing the filter input re-fires /list with no "session" key and
+      restores the full list
+```
+
+### E2E-SMD-017 — Column sort toggles
+
+```gherkin
+Scenario: Sorting the Session column toggles ascending then descending
+  Given the administrator is on /admin/session-moderators with more than one grant
+  And the grid is in its default order (most-recently AssignedAt first)
+  When they click the sortable "Session" column header
+  Then the BFF forwards POST /account/api/admin/session-moderators/list
+       carrying GridQuery.Sort = "session" and GridQuery.SortDescending = false
+  And the rows re-order ascending by session Code then Title
+  When they click the "Session" header again
+  Then /list re-fires with GridQuery.Sort = "session" and
+       GridQuery.SortDescending = true
+  And the rows re-order descending
+
+Scenario: The Assigned column is also sortable
+  Given the administrator is on /admin/session-moderators
+  When they click the sortable "Assigned" column header
+  Then /list re-fires with GridQuery.Sort = "assignedAt" and
+       GridQuery.SortDescending = false
+  And the rows re-order oldest-assigned first
+  And the Moderator and "Assigned by" columns are NOT sortable
+      (Identity-DB names are resolved on read, not server-sortable — D-157)
 ```
 
 ---
@@ -311,4 +363,4 @@ Scenario: Arabic toggle mirrors the page and the Assign modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

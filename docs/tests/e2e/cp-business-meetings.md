@@ -33,6 +33,8 @@
 | E2E-BMT-011 | Capacity — participants over table capacity | error | P1 | authored |
 | E2E-BMT-012 | Auth gate (non-admin → /not-permitted) | auth | P0 | authored |
 | E2E-BMT-013 | RTL render (Arabic) | i18n | P1 | authored |
+| E2E-BMT-014 | Per-column filter narrows the grid | happy | P1 | _to author_ |
+| E2E-BMT-015 | Column sort toggles | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -95,7 +97,7 @@ Scenario: Schedule a group meeting within table capacity
 ```gherkin
 Scenario: View a meeting's detail
   Given a confirmed meeting exists
-  When the admin clicks "View" on its row
+  When the admin clicks the row's Details (view) action in the grid
   Then the detail modal lists each participant's display name and kind
   And shows the hall, table, type, start and end
 ```
@@ -105,7 +107,7 @@ Scenario: View a meeting's detail
 ```gherkin
 Scenario: Cancel a confirmed meeting with a reason
   Given a confirmed meeting exists
-  When the admin clicks "Cancel", enters reason "Rescheduled by organiser." and confirms
+  When the admin clicks the row's Cancel (quiet close-icon) action, enters reason "Rescheduled by organiser." and confirms
   Then a success toast "Meeting cancelled." appears
   And the row shows status Cancelled
   And the table/slot is free again (a new meeting can be scheduled on it)
@@ -127,7 +129,7 @@ Scenario: Empty state renders SimfEmptyState
 ```gherkin
 Scenario: Filter by status
   Given confirmed and cancelled meetings exist
-  When the admin selects "Cancelled" in the status filter
+  When the admin opens the Status column's grid filter and enters "Cancelled"
   Then only Cancelled rows are listed
 ```
 
@@ -187,6 +189,44 @@ Scenario: Arabic UI renders right-to-left
   And the schedule modal labels are Arabic
 ```
 
+### E2E-BMT-014 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing into a per-column grid filter narrows the meetings list (D-255/D-256)
+  Given confirmed meetings exist in halls "Majlis A" and "Majlis B"
+  When the admin opens the Hall column's "Filter column Hall" input and types "Majlis A"
+  Then a POST /api/v1/admin/business-meetings/list fires
+    with GridQuery.Filters["hall"] = "Majlis A" and Skip reset to 0
+  And the grid narrows to rows whose hall contains "Majlis A"
+  When the admin also opens the Status column's "Filter column Status" input and types "Cancelled"
+  Then the request carries GridQuery.Filters["status"] = "Cancelled" (parsed to the BusinessMeetingStatus enum)
+  And only Cancelled rows in "Majlis A" remain
+  And clearing both filter inputs re-issues the list with no Filters and restores the full grid
+```
+
+**Evidence captured:**
+- Filterable columns are Hall (`hall`), Table (`table`) and Status (`status`); the
+  per-column filter inputs read "Filter column {Header}" / Arabic "تصفية العمود".
+- Network: each keystroke-commit posts `/business-meetings/list` with `Skip = 0`.
+
+### E2E-BMT-015 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable column header toggles ascending/descending (D-256)
+  Given several confirmed meetings exist across different start times
+  When the admin clicks the "Start" column header
+  Then a POST /api/v1/admin/business-meetings/list fires
+    with GridQuery.Sort = "start" and SortDescending = false
+  And the rows are ordered by start time ascending
+  When the admin clicks the "Start" header again
+  Then the request carries Sort = "start" and SortDescending = true
+  And the rows reverse to descending order
+```
+
+**Evidence captured:**
+- Sortable columns are Hall, Table, Type, Start, End, Status (the Parties count
+  column is not sortable). The default (no Sort) order is StartUtc descending.
+
 ---
 
-_Last reviewed:_ 2026-06-03 by the SIMF engineering team.
+_Last reviewed:_ 2026-06-03 by the SIMF engineering team (D-256/D-257 grid affordances reconciled).

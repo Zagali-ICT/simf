@@ -7,24 +7,32 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page shape (read this first).** This page is the **D-176 / G12
 > append-only AI invocations log** — a **read-only** SOC + product
 > regression view. There is **NO create / edit / delete / details
-> modal** on this page. The complete interactive surface is:
+> modal** on this page, and no per-row actions (the grid has no
+> `<RowActions>`). As of **D-256** the page was migrated from the raw
+> `simf-table` to the canonical **`SimfDataGrid`** (owner-mandated). The
+> complete interactive surface is now:
 >
-> 1. one **"Errors only"** filter checkbox (`SimfCheckbox`), and
-> 2. a paginated 8-column `simf-table` (Time, Prompt key, Feature,
->    Provider, Caller, Latency, Tokens (in/out), Error) with a
->    `SimfEmptyState` when empty and a one-line summary footer.
+> 1. one **"Errors only"** filter checkbox (`SimfCheckbox`), kept as a
+>    `<CustomToolbar>` control on the grid, and
+> 2. an 8-column `SimfDataGrid` (Time, Prompt key, Feature, Provider,
+>    Caller, Latency, Tokens (in/out), Error) with **per-column sort**
+>    on Time/Prompt key/Feature/Provider/Caller/Latency, **per-column
+>    filter** on **Prompt key** (`promptKey`) and **Caller** (`callerKind`),
+>    a full numbered **pager**, a `SimfEmptyState` when empty (via
+>    `<EmptyTemplate>`) and a one-line summary footer.
 >
 > The page loads on init via a single BFF call —
 > `POST /account/api/admin/ai/invocations/list` (forwarded by the CP
-> BFF to the API `POST /admin/ai/invocations/list`) — with a fixed
-> page size of `Top = 50`. There is **no in-page pager control**:
-> `GridQuery.Skip` stays at 0, so the page always shows the newest
-> 50 rows (`ORDER BY CreatedAt DESC`). The error column renders a
+> BFF to the API `POST /admin/ai/invocations/list`) — with a page size
+> of `Top = 20` (`new GridQuery { Top = 20 }`). The grid **does** have a
+> numbered pager, so `GridQuery.Skip` advances per page; the default
+> order is newest-first (`ORDER BY CreatedAt DESC`) until the user sorts
+> a column. The error column renders a
 > red `SimfPill Variant="off"` carrying the row's `ErrorCode`.
 > A per-row SOC drill-down endpoint (`GET /admin/ai/invocations/{id}`,
 > audit event `AiInvocation.Viewed`) exists at the API layer but is
@@ -43,10 +51,12 @@
 | E2E-AIV-004 | Empty list renders `SimfEmptyState` | happy | P1 | _to author_ |
 | E2E-AIV-005 | Filter result empty → empty state, no error toast | happy | P1 | _to author_ |
 | E2E-AIV-006 | Auth gate — admin lacking `AiInvocations.View` → `/not-permitted` | auth | P0 | _to author_ |
-| E2E-AIV-007 | Page size cap — newest 50 rows, summary reads `1–50 of {Total}` | boundary | P2 | _to author_ |
+| E2E-AIV-007 | Page size — 20 rows per page, pager advances Skip, summary `1–20 of {Total}` | boundary | P2 | _to author_ |
 | E2E-AIV-008 | Read-only surface — no Add/Edit/Delete controls present | happy | P1 | _to author_ |
 | E2E-AIV-009 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-AIV-010 | RTL / Arabic render — banner, columns, checkbox mirror | i18n | P1 | _to author_ |
+| E2E-AIV-011 | Per-column grid filter (Prompt key / Caller) narrows the grid | happy | P1 | _to author_ |
+| E2E-AIV-012 | Column sort toggles (Time / Prompt key) ascending ↔ descending | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -68,10 +78,10 @@ Background:
 Scenario: Open the log and read the newest invocations
   When the page initialises
   Then exactly one POST /account/api/admin/ai/invocations/list call fires
-  And the request body is { "skip": 0, "top": 50, "filters": {} }
+  And the request body is { "skip": 0, "top": 20, "filters": {} }
   And the call returns HTTP 200 with ApiResult.success = true
-  And the "Loading…" text is replaced by the simf-table
-  And the table header shows exactly these 8 columns in order:
+  And the "Loading…" text is replaced by the SimfDataGrid
+  And the grid header shows exactly these 8 columns in order:
     | Time | Prompt key | Feature | Provider | Caller | Latency | Tokens (in/out) | Error |
   And rows are ordered newest-first by Time (CreatedAt descending)
   And the first row's Time renders as "yyyy-MM-dd HH:mm:ss UTC"
@@ -133,8 +143,8 @@ Scenario: No invocations recorded yet renders SimfEmptyState
   Given the AiInvocations table is empty (a fresh environment that has made no AI calls)
   When the administrator opens /admin/ai/invocations
   Then the POST /account/api/admin/ai/invocations/list call returns 200 with an empty Items array and Total = 0
-  And the simf-table does NOT render
-  And the page shows the SimfEmptyState component
+  And the grid renders no data rows
+  And the page shows the SimfEmptyState component (via the grid's EmptyTemplate)
   And the empty-state title reads "No invocations recorded yet." / "لا توجد استدعاءات حتى الآن."
   And no error toast (SimfAlert) appears
   And the "Errors only" checkbox is still present and interactive
@@ -172,18 +182,23 @@ Scenario: A signed-in admin lacking AiInvocations.View is denied
 - Network: zero `/account/api/admin/ai/invocations/*` calls
 - Covered at the API layer by `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs` (a request to `POST /admin/ai/invocations/list` without the policy returns 403).
 
-### E2E-AIV-007 — Page-size cap (newest 50)
+### E2E-AIV-007 — Page-size cap (20 per page) + pager
 
 ```gherkin
-Scenario: The page shows at most the newest 50 rows
-  Given the AiInvocations table holds more than 50 rows (e.g. 137)
+Scenario: The page shows 20 rows per page and pages through the rest
+  Given the AiInvocations table holds more than 20 rows (e.g. 137)
   When the administrator opens /admin/ai/invocations
-  Then the request body sends "top": 50 and "skip": 0
-  And the table renders exactly 50 rows
-  And those 50 rows are the most recent by CreatedAt (descending)
-  And the summary footer reads "Showing 1–50 of 137"
-  And there is NO in-page pager control to fetch rows 51+
-    # The page has no pager; Skip stays 0. Older rows are queryable only via the API directly.
+  Then the request body sends "top": 20 and "skip": 0
+  And the grid renders exactly 20 rows
+  And those 20 rows are the most recent by CreatedAt (descending)
+  And the summary footer reads "Showing 1–20 of 137"
+
+  When they click the grid's Next page control
+  Then a new POST /account/api/admin/ai/invocations/list fires with "skip": 20 and "top": 20
+  And the grid renders the next 20 rows
+  And the summary footer reads "Showing 21–40 of 137"
+    # The SimfDataGrid carries a full numbered pager (Prev / Next / First / Last + page size);
+    # older rows are reachable in-page, no longer only via the API directly.
 ```
 
 ### E2E-AIV-008 — Read-only surface guard
@@ -192,8 +207,8 @@ Scenario: The page shows at most the newest 50 rows
 Scenario: The page exposes no mutation controls
   Given the administrator is on /admin/ai/invocations with rows shown
   Then there is NO "Add" / "New invocation" button anywhere on the page
-  And there is NO "Edit", "Delete", "Deactivate" or "Details" action on any row
-  And the only interactive control besides the nav rail is the "Errors only" checkbox
+  And the grid renders NO Actions column and NO per-row icon actions (no Edit pencil, no Delete trash, no Details)
+  And the only mutation-free interactive controls are the "Errors only" checkbox, the per-column sort/filter affordances and the pager
   And no row is clickable (the row-level detail drill-down is an API-only endpoint, not wired here)
 ```
 
@@ -207,7 +222,7 @@ Scenario: API 500 on /list shows the bilingual fallback toast
   And then a SimfAlert with Variant="error" appears at the top of the surface
   And it reads either the server's MessageForCurrentCulture() or the fallback
       "Could not load invocations." / "تعذّر تحميل سجلّ الاستدعاءات."
-  And the simf-table does NOT render
+  And the grid renders no data rows
   And no rows appear
 ```
 
@@ -235,16 +250,85 @@ Scenario: Arabic toggle mirrors the page and column headers
 - Screenshot: `docs/screenshots/cp-admin-ai-invocations-rtl.png`
 - Console errors: 0 expected
 
+### E2E-AIV-011 — Per-column grid filter narrows the grid
+
+```gherkin
+Scenario: Typing in a column filter input narrows the grid and resets paging
+  Given the administrator is on /admin/ai/invocations with the full list shown
+  And the log contains rows for several Prompt keys (e.g. "session-summary", "question-filter")
+  And the SimfDataGrid exposes per-column filter inputs only on "Prompt key" and "Caller"
+  When they type "session-summary" into the "Filter column Prompt key" input
+  Then a new POST /account/api/admin/ai/invocations/list fires
+  And the request body filters carry "promptKey": "session-summary"
+  And the request body sends "skip": 0 (paging resets to the first page)
+  And the call returns HTTP 200
+  And every visible row's Prompt key cell contains "session-summary"
+  And the summary footer total reflects only the matching rows
+
+  When they clear the "Prompt key" filter and type "Admin" into the "Filter column Caller" input
+  Then a new POST .../list fires with filters carrying "callerKind": "Admin" and "skip": 0
+  And every visible row's Caller cell contains "Admin"
+  # Only Prompt key (promptKey) and Caller (callerKind) are Filterable; Time, Feature,
+  # Provider, Latency, Tokens and Error expose NO per-column filter input.
+```
+
+```gherkin
+Scenario: The per-column filter coexists with the "Errors only" toolbar toggle
+  Given the administrator has ticked the "Errors only" checkbox so the grid shows only error rows
+  When they additionally type "Admin" into the "Filter column Caller" input
+  Then the POST .../list request body filters carry BOTH "errorOnly": "true" AND "callerKind": "Admin"
+  And the "Errors only" toggle is re-applied on every grid query change (it is not lost by the filter)
+  And the grid shows only error rows whose Caller contains "Admin"
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-ai-invocations-col-filter.png`
+- Network: the filtered `/list` call carries `filters.promptKey` (or `filters.callerKind`) and `skip = 0`
+- Console errors: 0 expected
+- Note: the backend `AdminAiPromptService` honours `promptkey` / `callerkind` (case-insensitive substring) and `erroronly` together; unknown columns are ignored.
+
+### E2E-AIV-012 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable column header toggles ascending and descending
+  Given the administrator is on /admin/ai/invocations with rows shown
+  And the grid defaults to newest-first (Sort unset → CreatedAt descending)
+  When they click the "Prompt key" column header
+  Then a new POST /account/api/admin/ai/invocations/list fires
+  And the request body carries "sort": "promptKey" with "sortDescending": false
+  And the rows render ordered by Prompt key A→Z
+
+  When they click the "Prompt key" column header again
+  Then a new POST .../list fires with "sort": "promptKey" and "sortDescending": true
+  And the rows render ordered by Prompt key Z→A
+
+  When they click the "Time" column header
+  Then a new POST .../list fires with "sort": "createdAt"
+  And the rows re-order by CreatedAt
+  # Sortable columns: Time (createdAt), Prompt key (promptKey), Feature (feature),
+  # Provider (provider), Caller (callerKind), Latency (latencyMs).
+  # Tokens and Error are NOT sortable.
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-ai-invocations-sort.png`
+- Network: each header click fires one `/list` call carrying the `sort` key and the toggled `sortDescending`
+- Console errors: 0 expected
+
 ---
 
 ## Implementation notes
 
-- **Read-only by design (D-176 / D-179).** The page is deliberately an
-  append-only viewer: no create/edit/delete, fixed `Top = 50`, no pager,
-  ordered `CreatedAt DESC`. The `errorOnly` filter is the only server-side
-  query knob the UI exposes (the service also honours `feature` and
-  `promptKey` filters, but this page does not surface them). Do not author
-  CRUD scenarios — the surface has none.
+- **Read-only by design (D-176 / D-179), grid since D-256.** The page is
+  deliberately an append-only viewer: no create/edit/delete, no per-row
+  actions. Since the D-256 `SimfDataGrid` migration it paginates with
+  `Top = 20` and a full numbered pager, defaulting to `CreatedAt DESC`
+  until the user sorts. The UI now surfaces three server-side query knobs:
+  the `errorOnly` toolbar toggle, plus per-column filters on `promptKey`
+  and `callerKind`, and per-column sort on
+  `createdAt`/`promptKey`/`feature`/`provider`/`callerKind`/`latencyMs`.
+  The service also honours a `feature` filter, but no column surfaces it.
+  Do not author CRUD scenarios — the surface has none.
 - **No audit write on this page.** Listing the grid performs no audit
   write. The `AiInvocation.Viewed` audit event (`AuditEvents.AiInvocationViewed`)
   is emitted only by the per-row detail endpoint
@@ -267,4 +351,4 @@ Scenario: Arabic toggle mirrors the page and column headers
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

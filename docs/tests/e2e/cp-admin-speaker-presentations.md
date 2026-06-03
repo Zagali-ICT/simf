@@ -7,16 +7,30 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
-> **Page shape (read from `SpeakerPresentationsList.razor`, D-228 / FR-407, SIMF-FDS-004 §5.3).**
+> **Page shape (read from `SpeakerPresentationsList.razor`, D-228 / FR-407, SIMF-FDS-004 §5.3;
+> converted raw table → `SimfDataGrid` by D-256).**
 > This is a master-detail upload page, not a grid-with-modals CRUD page. It has:
 > a **Speaker** `<select>` (always visible); and — once a speaker is picked and only
 > for a user holding `Speakers.Edit` — a **Session** `<select>`, a **Presentation file**
 > `<input type="file" id="presentation-file-input">`, and an **Upload** button. Below
-> that sits the presentation table (`File`, `Session`, `Size`, actions) with a per-row
-> **Download** link (`target="_blank"`) and, again behind `Speakers.Edit`, a **Delete**
-> button that fires a native `confirm()` before calling the API.
+> that sits a **`SimfDataGrid`** of the speaker's presentations with columns
+> **File** (`fileName`, sortable + per-column filter), **Session** (`sessionTitle`,
+> sortable + per-column filter) and **Size** (`sizeBytes`, sortable only). Each row
+> exposes **quiet icon actions** in the grid's `RowActions`: a **Download** (download
+> icon) shown for `Speakers.View` that `window.open(...)`s the file endpoint, and —
+> behind `Speakers.Edit` — a **Delete** (trash icon, `Danger`) that fires a native
+> `confirm()` before calling the API.
+>
+> **Grid behaviour is client-side.** The list endpoint
+> (`GET /admin/speakers/{id}/presentations`) returns the speaker's full, non-paged
+> set in one call; `_allRows` holds it and the grid's filter/sort/page are applied
+> **in memory** by `BuildPage()` (no server round-trip on filter, sort or paging).
+> The grid is `Multiselect="true"` (select-all + per-row checkbox) but there is **no**
+> `CustomToolbar` and **no** bulk action wired — selection is cosmetic here. Page
+> size is **`Top = 20`** (`new() { Top = 20 }`), reset to 20 whenever the speaker
+> changes. Only the honoured filter keys are `fileName` and `sessionTitle`.
 >
 > **Permissions:** the page itself is gated by `PermissionCatalog.Speakers.View`
 > (`@attribute [RequirePermission(PermissionCatalog.Speakers.View)]`). Upload, the
@@ -42,6 +56,8 @@
 | E2E-SPP-012 | Delete is idempotent — second delete of the same id still returns success | resilience | P2 | _to author_ |
 | E2E-SPP-013 | Server 500 on `/presentations` list → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-SPP-014 | RTL render — Arabic toggle mirrors page, labels, table, buttons | i18n | P1 | _to author_ |
+| E2E-SPP-015 | Per-column filter — typing in the File / Session column filter narrows the grid (client-side, Skip→0) | happy | P1 | _to author_ |
+| E2E-SPP-016 | Column sort toggles — clicking the File column header sorts asc then desc (client-side) | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -77,12 +93,12 @@ Scenario: Pick speaker, pick session, upload, download, delete
   And a green toast reads "Presentation uploaded." / "تم رفع العرض."
   And the table refreshes and shows a row with File="deck.pdf", Session="Keynote", Size formatted (e.g. "8 B")
 
-  When the administrator clicks the "Download" link on that row
-  Then a new tab opens GET /account/api/admin/speaker-presentations/{rowId}/file
+  When the administrator clicks the row's Download (download icon) action
+  Then window.open fires GET /account/api/admin/speaker-presentations/{rowId}/file in a new tab
   And the response is HTTP 200 with Content-Disposition: attachment; filename="deck.pdf"
   And the downloaded bytes equal the uploaded payload
 
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash icon) action
   And confirms the native dialog "Remove this presentation file?"
   Then the BFF forwards DELETE /account/api/admin/speaker-presentations/{rowId}
   And the API returns HTTP 200 with ApiResult.Data = true
@@ -118,7 +134,7 @@ Scenario: Speaker with no presentations renders SimfEmptyState
   Given a speaker "Dr. Speaker" exists with zero active presentation files
   When the administrator selects that speaker
   Then GET /account/api/admin/speakers/{speakerId}/presentations returns 200 with an empty list
-  And the table is not rendered
+  And the grid renders its EmptyTemplate (no data rows)
   And the SimfEmptyState shows the bilingual copy
     "This speaker has no presentation files yet." / "لا توجد ملفات عروض لهذا المتحدث بعد."
   And no error toast appears
@@ -141,9 +157,9 @@ Scenario: User without Speakers.View is denied the page
 Scenario: Read-only admin can browse but cannot upload or delete
   Given a signed-in admin whose role grants Speakers.View but NOT Speakers.Edit
   When they navigate to /admin/speaker-presentations and select a speaker
-  Then the presentation table and Download links render
+  Then the presentation grid and per-row Download (download icon) actions render
   But the Session dropdown, the "Presentation file" input and the "Upload" button are NOT rendered
-  And the per-row "Delete" button is NOT rendered
+  And the per-row Delete (trash icon) action is NOT rendered
   And the GET /account/api/admin/speakers/{speakerId}/presentations call still returns 200
 ```
 
@@ -200,10 +216,10 @@ Scenario: Upload referencing a session that does not exist (or is deactivated) r
 ### E2E-SPP-010 — Download opens the stored file
 
 ```gherkin
-Scenario: Download link streams the original file as an attachment
+Scenario: Download action streams the original file as an attachment
   Given a presentation row "deck.pdf" exists for the selected speaker
-  When the administrator clicks the row's "Download" link (target="_blank")
-  Then a GET /account/api/admin/speaker-presentations/{rowId}/file is made
+  When the administrator clicks the row's Download (download icon) action
+  Then window.open opens GET /account/api/admin/speaker-presentations/{rowId}/file in a new tab
   And the API returns HTTP 200
   And the Content-Disposition header is attachment; filename="deck.pdf"
   And the body bytes equal the originally uploaded payload
@@ -214,7 +230,7 @@ Scenario: Download link streams the original file as an attachment
 ```gherkin
 Scenario: Cancelling the native confirm() makes no delete call
   Given a presentation row exists for the selected speaker
-  When the administrator clicks "Delete"
+  When the administrator clicks the row's Delete (trash icon) action
   And dismisses the native dialog "Remove this presentation file?" / "هل تريد إزالة ملف العرض هذا؟"
   Then NO DELETE /account/api/admin/speaker-presentations/{rowId} request fires
   And the row remains in the table
@@ -253,9 +269,45 @@ Scenario: Arabic toggle mirrors the whole page
   And the SimfBanner title reads "عروض المتحدثين"
   And the Speaker label reads "المتحدث" with placeholder "— اختر متحدثاً —"
   And after picking a speaker the Session label reads "الجلسة", the file label "ملف العرض", the button "رفع"
-  And the table headers read "الملف", "الجلسة", "الحجم"
-  And the per-row actions read "تنزيل" (Download) and "حذف" (Delete)
-  And the nav rail mirrors and the controls appear in reverse order
+  And the grid column headers read "الملف", "الجلسة", "الحجم"
+  And the per-row icon actions carry the titles "تنزيل" (Download) and "حذف" (Delete)
+  And the nav rail mirrors and the grid + controls appear in reverse order
+```
+
+### E2E-SPP-015 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing a value in a column filter input filters the grid in memory
+  Given the administrator has selected a speaker with several presentation rows
+  And the grid lists rows spanning more than one File name and Session
+  And the grid shows the per-column "Filter column" inputs (placeholder "Search")
+  When the administrator types "deck" into the File column filter input
+  Then OnQueryChanged fires with GridQuery.Filters["fileName"] = "deck"
+  And GridQuery.Skip is reset to 0 (first page)
+  And NO /account/api/admin/speakers/{speakerId}/presentations request fires
+    (BuildPage filters the already-loaded _allRows in memory, case-insensitive Contains)
+  And the grid shows only rows whose File contains "deck"
+  And the summary updates to "Showing 1–{n} of {n}" for the narrowed count
+  When the administrator clears the File filter and types "Keynote" into the Session column filter
+  Then OnQueryChanged fires with GridQuery.Filters["sessionTitle"] = "Keynote"
+  And the grid shows only rows whose Session contains "Keynote"
+  And still no list call is made (the Size column has no filter input — sizeBytes is sort-only)
+```
+
+### E2E-SPP-016 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable column header toggles ascending / descending in memory
+  Given the administrator has selected a speaker with several presentation rows
+  And no explicit sort is applied (rows default to newest-first by CreatedAt)
+  When the administrator clicks the "File" column header
+  Then OnQueryChanged fires with GridQuery.Sort = "fileName" and SortDescending = false
+  And NO list request fires (BuildPage re-orders _allRows in memory)
+  And the rows are ordered A→Z by File name
+  When the administrator clicks the "File" column header again
+  Then OnQueryChanged fires with GridQuery.Sort = "fileName" and SortDescending = true
+  And the rows are ordered Z→A by File name
+  And sorting on "Size" instead applies Sort = "sizeBytes" (smallest → largest, then toggled)
 ```
 
 ---
@@ -296,4 +348,4 @@ Scenario: Arabic toggle mirrors the whole page
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

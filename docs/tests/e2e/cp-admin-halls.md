@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Permission gate:** the page is `@attribute [RequirePermission(PermissionCatalog.Halls.View)]`
 > (`Halls.View`). Add (`Halls.Create`), Edit (`Halls.Edit`) and Deactivate
@@ -34,6 +34,7 @@
 | E2E-HAL-013 | Grid: pager (page size, first/last/prev/next) round-trip | happy | P2 | _to author_ |
 | E2E-HAL-014 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-HAL-015 | RTL render: Arabic toggle mirrors page + Add modal | i18n | P1 | _to author_ |
+| E2E-HAL-016 | Grid: per-column filter (code/name/nameArabic/floor) narrows the list | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -318,6 +319,29 @@ Scenario: Arabic toggle mirrors page + Add modal
   And the form actions ("Create hall" / "Cancel") appear in reverse order
 ```
 
+### E2E-HAL-016 — Per-column grid filter narrows the list
+
+```gherkin
+Scenario: Typing into a per-column filter input re-queries the list endpoint
+  Given the SimfDataGrid shows several halls (Top=20)
+  And the Code, Name, Name (Arabic) and Floor columns each expose a filter input
+      (those four columns are Filterable; Capacity and Active are not)
+  When the administrator types "Main" into the "Filter column Name" input
+  Then a POST /account/api/admin/halls/list fires carrying
+      GridQuery.Filters["name"]="Main" with Skip reset to 0
+  And only halls whose Name contains "Main" remain in the grid
+  And the summary recomputes to "Showing 1–{matched} of {matched}"
+
+  When they clear the Name filter and type "Ground" into the "Filter column Floor" input
+  Then a POST /account/api/admin/halls/list fires carrying
+      GridQuery.Filters["floor"]="Ground" with Skip reset to 0
+  And only halls on the "Ground" floor remain (rows with a null Floor are excluded)
+
+  When they additionally type "H" into the "Filter column Code" input
+  Then the list re-queries with both Filters["floor"]="Ground" and Filters["code"]="H"
+      combined (AND), narrowing the grid further
+```
+
 ---
 
 ## Implementation notes
@@ -354,4 +378,4 @@ Scenario: Arabic toggle mirrors page + Add modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

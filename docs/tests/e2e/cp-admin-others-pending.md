@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page permission:** `@attribute [RequirePermission(PermissionCatalog.Others.View)]`.
 > The `CpNavigation` item `Module.AdminOthersPending` sets the same `RequiredPermission: PermissionCatalog.Others.View`.
@@ -34,6 +34,8 @@
 | E2E-OPN-012 | Server 500 on `/others/pending/list` → empty grid, no crash | resilience | P2 | _to author_ |
 | E2E-OPN-013 | Bulk partial — bulk-approve over a mix of valid + stale ids → "Approved N. Skipped M." warning | resilience | P2 | _to author_ |
 | E2E-OPN-014 | RTL / Arabic render — page + reject modal mirror to RTL | i18n | P1 | _to author_ |
+| E2E-OPN-015 | Per-column filter narrows the grid (`Filters["email"]` / `Filters["displayName"]`, Skip reset, debounced) | happy | P1 | _to author_ |
+| E2E-OPN-016 | Column sort toggles (`Sort`/`SortDescending` on email + displayName; Created not sortable) | happy | P2 | _to author_ |
 
 **Server-side permission map (asserted by E2E-OPN-008 / the `PermissionEnforcementTests`):**
 
@@ -173,9 +175,11 @@ Scenario: Page through the queue and filter by email
   And the pager summary updates (e.g. "21–40 of 57")
   When they click "First page"
   Then the grid returns to rows 1–20
-  When they type "exhibitor" into the filter box
-  Then the list request carries the filter term
-  And only rows whose Email / Display name match remain
+  When they type "exhibitor" into the per-column "Filter column Email" input
+  Then the list request carries GridQuery.Filters["email"] = "exhibitor" with Skip reset to 0
+  And only rows whose Email matches remain
+  # NB: the page has NO single free-text search box — filtering is per column
+  #     (Email + Display name). The full filter behaviour is E2E-OPN-015.
 ```
 
 ### E2E-OPN-007 — Empty queue
@@ -285,6 +289,50 @@ Scenario: Arabic toggle mirrors the page and the reject modal
   Then the toast reads "تمّ رفض {email}."
 ```
 
+### E2E-OPN-015 — Per-column filter narrows the grid (D-257)
+
+```gherkin
+Scenario: Typing in the Email column filter input narrows the queue
+  Given the administrator is on /admin/others/pending with more than one page of pending Other rows
+  And the grid header carries a per-column filter row under the sortable headers
+  And the Email and Display name columns each render a "search" filter input
+      (aria-label "Filter column Email" / "Filter column Display name", placeholder "Search")
+  When they type "exhibitor" into the "Filter column Email" input
+  Then after the 300 ms debounce a POST /account/api/admin/others/pending/list fires
+  And the request body carries GridQuery.Filters["email"] = "exhibitor" with Skip reset to 0
+  And only rows whose Email matches (server-side EF Like %exhibitor%) remain
+  And the pager summary recomputes for the filtered total
+  When they additionally type "Maritime" into the "Filter column Display name" input
+  Then the next list request carries BOTH Filters["email"] = "exhibitor"
+      and Filters["displayName"] = "Maritime" (the filters compose)
+  When they clear the Email filter input
+  Then the list request drops the "email" key and keeps Filters["displayName"] = "Maritime"
+```
+
+**Notes:** the only Filterable columns are `email` and `displayName`; the `created`
+column has no filter input. Filter keys are case-sensitive (`email` / `displayName`)
+and honoured server-side in `GetPendingPageAsync` (`AdminAccountService.cs` — the
+"Per-column filters (CP grid Filterable columns: email, displayName)" block).
+
+### E2E-OPN-016 — Column sort toggles (D-256)
+
+```gherkin
+Scenario: Clicking a sortable header cycles ascending then descending
+  Given the administrator is on /admin/others/pending
+  And the queue lists rows in the natural order (newest first by Created)
+  When they click the "Email" column header
+  Then a POST /account/api/admin/others/pending/list fires with Sort = "email",
+      SortDescending = false, Skip reset to 0
+  And the rows reorder ascending by Email and the header shows the ascending (▲) arrow
+  When they click the "Email" header again
+  Then the next list request carries Sort = "email", SortDescending = true
+  And the rows reorder descending and the header shows the descending (▼) arrow
+  When they click the "Display name" header instead
+  Then the request carries Sort = "displayName", SortDescending = false
+      (switching column resets to ascending)
+  And the "Created" column header is NOT sortable (no sort button, no arrow)
+```
+
 ---
 
 ## Implementation notes
@@ -321,4 +369,4 @@ Scenario: Arabic toggle mirrors the page and the reject modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

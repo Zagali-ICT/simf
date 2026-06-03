@@ -7,25 +7,29 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Surface map (verified against source).** Page:
 > `src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BoothsList.razor`
 > (`@page "/admin/booths"`, `@attribute [RequirePermission(PermissionCatalog.Booths.View)]`).
 > Required permission to load: **`Booths.View`**; the grid is roles-only gated and
 > `Administrator = "*"` (wildcard) always passes. The page is a single
-> list + one Add/Edit modal (no Details modal, no client paging controls — the
-> grid loads a single `Top=50` page). BFF passthroughs live in
+> `SimfDataGrid` + one Add/Edit modal (no Details modal). The grid (D-256 raw-
+> table→grid conversion) carries per-column filter inputs, sortable headers,
+> select-all/row checkboxes (`Multiselect="true"`, cosmetic — there is **no**
+> bulk-action toolbar), quiet icon row-actions (Edit pencil / Delete trash via
+> `OnEditOne`/`OnDeleteOne`), and a pager loading `Top=20` rows per page. BFF
+> passthroughs live in
 > `AccountEndpoints.cs` lines 2089–2122; the API lives in
 > `src/Backend/SIMF.Api/Endpoints/Admin/BoothEndpoints.cs`; the service +
 > validation in `src/Backend/SIMF.Infrastructure/Exhibition/AdminBoothService.cs`.
 >
 > **Every action on the page (from the `.razor`):**
-> 1. `Add booth` toolbar button → opens the empty Add modal (`OnAdd`).
-> 2. Per-row `Edit` button → GETs the full detail, opens the pre-filled Edit
->    modal (`OnEdit` → `GET /account/api/admin/booths/{id}`).
-> 3. Per-row `Delete` button → JS `confirm()` then soft-delete
->    (`OnDeleteAsync` → `DELETE /account/api/admin/booths/{id}`).
+> 1. `Add booth` grid toolbar button → opens the empty Add modal (`OnAdd`).
+> 2. Per-row Edit (pencil) icon action → GETs the full detail, opens the
+>    pre-filled Edit modal (`OnEditOne` → `GET /account/api/admin/booths/{id}`).
+> 3. Per-row Delete (trash) icon action → JS `confirm()` then soft-delete
+>    (`OnDeleteOne` → `DELETE /account/api/admin/booths/{id}`).
 > 4. Modal `Save` → `SaveAsync`: client guard on Code/NameEn/NameAr, then
 >    `POST /account/api/admin/booths` (create) or `PUT .../{id}` (edit).
 > 5. Modal `Cancel` / close → discards the form (`_editOpen = false`).
@@ -67,6 +71,8 @@
 | E2E-BTH-013 | Not found — edit a deleted booth id → 404 `BOOTH_NOT_FOUND` | error | P2 | _to author_ |
 | E2E-BTH-014 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-BTH-015 | RTL / Arabic render mirrors page + Add modal | i18n | P1 | _to author_ |
+| E2E-BTH-016 | Per-column filter narrows the grid (Code / Sector EN) | happy | P1 | _to author_ |
+| E2E-BTH-017 | Column sort toggles (Code header) | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -113,7 +119,7 @@ Scenario: Create, edit, then deactivate one booth
   And the grid reloads via POST /account/api/admin/booths/list and shows {N + 1} rows
   And a row exists with Code="A-12" (stored upper-cased) and Name (English)="Naval Systems Pavilion" and the Active column shows "✓"
 
-  When the administrator clicks "Edit" on the "A-12" row
+  When the administrator clicks the "A-12" row's Edit (pencil) icon action
   Then the BFF forwards GET /account/api/admin/booths/{id} and returns HTTP 200
   And the Edit modal opens titled "Edit booth" with every field pre-filled (Code, both names, company, officer, sector, map X/Y, Active ticked)
   When they change Sector (English) to "Maritime Logistics"
@@ -122,7 +128,7 @@ Scenario: Create, edit, then deactivate one booth
   And the modal closes and the toast reads "Booth saved." / "تم حفظ الجناح."
   And reopening Edit shows Sector (English)="Maritime Logistics"
 
-  When the administrator clicks "Delete" on the "A-12" row
+  When the administrator clicks the "A-12" row's Delete (trash) icon action
   Then a browser confirm() dialog appears reading "Delete this booth? It will be removed from the public exhibition list and the venue map immediately."
   When they accept the dialog
   Then the BFF forwards DELETE /account/api/admin/booths/{id} and returns HTTP 200
@@ -183,7 +189,7 @@ Scenario: Add a fully-populated booth
 ```gherkin
 Scenario: Edit pre-fills from the detail endpoint and persists a change
   Given a booth with Code="C-01" exists
-  When the administrator clicks "Edit" on the "C-01" row
+  When the administrator clicks the "C-01" row's Edit (pencil) icon action
   Then the BFF forwards GET /account/api/admin/booths/{id}
   And the Edit modal opens with Code, Name (English), Name (Arabic), Exhibitor company,
       Booth officer fields, Sector, Description, Hall, Map X/Y, and the Active checkbox pre-filled from AdminBoothDetail
@@ -200,12 +206,12 @@ Scenario: Edit pre-fills from the detail endpoint and persists a change
 ```gherkin
 Scenario: Deleting a booth requires confirmation then soft-deletes it
   Given a booth with Code="D-09" exists in the grid
-  When the administrator clicks "Delete" on the "D-09" row
+  When the administrator clicks the "D-09" row's Delete (trash) icon action
   Then a confirm() dialog appears with the bilingual delete-confirm copy
   When they cancel the dialog
   Then no DELETE request fires and the row stays in the grid
 
-  When they click "Delete" again and accept the dialog
+  When they click the "D-09" row's Delete (trash) icon action again and accept the dialog
   Then DELETE /account/api/admin/booths/{id} is sent and returns HTTP 200
   And the toast reads "Booth deleted." / "تم حذف الجناح."
   And the grid reloads and the "D-09" row is gone
@@ -315,7 +321,7 @@ Scenario: A duplicate booth Code returns 409 with a bilingual server message
 ```gherkin
 Scenario: Editing a booth that was deleted in another session returns 404
   Given the grid shows a booth row whose id was just hard-removed server-side
-  When the administrator clicks "Edit" on that row
+  When the administrator clicks that row's Edit (pencil) icon action
   Then GET /account/api/admin/booths/{id} returns HTTP 404 with ApiResult.Error.Code = "BOOTH_NOT_FOUND"
   And the modal does NOT open
   And a red toast surfaces the bilingual message
@@ -352,6 +358,38 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   And the Save / Cancel actions read "حفظ" / "إلغاء" and appear in reversed order
 ```
 
+### E2E-BTH-016 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing in a per-column filter narrows the grid via the list endpoint
+  Given the grid lists several booths including Code="A-12" (Sector (English)="Naval Defence")
+    and Code="B-07" (Sector (English)="Maritime Logistics")
+  When the administrator types "A-12" into the "Filter column Code" input on the Code column
+  Then a POST /account/api/admin/booths/list fires with GridQuery.Filters["code"]="A-12" and Skip reset to 0
+  And the grid narrows to only the rows whose Code contains "A-12"
+  And the "Showing {0}–{1} of {2}" summary updates to the filtered count
+
+  When they clear the Code filter and type "Maritime" into the "Filter column Sector (English)" input
+  Then a POST /account/api/admin/booths/list fires with GridQuery.Filters["sectorEn"]="Maritime" and Skip reset to 0
+  And only the "B-07" row (Sector (English)="Maritime Logistics") remains
+  And the Company and Hall columns expose NO filter input (they are client-resolved, not server-filterable)
+```
+
+### E2E-BTH-017 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable header toggles ascending / descending order
+  Given the grid lists booths Code="A-12", "B-07", "C-01" (default order is Code ascending)
+  When the administrator clicks the Code column header
+  Then a POST /account/api/admin/booths/list fires with GridQuery.Sort="code" and SortDescending=false
+  And the rows render in ascending Code order (A-12, B-07, C-01)
+
+  When they click the Code header again
+  Then a POST /account/api/admin/booths/list fires with GridQuery.Sort="code" and SortDescending=true
+  And the rows render in descending Code order (C-01, B-07, A-12)
+  And the Company and Hall columns expose NO sort affordance (client-resolved, not server-sortable)
+```
+
 ---
 
 ## Implementation notes
@@ -376,11 +414,14 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   (`Booths.View`/`Create`/`Edit`/`Delete`). `tests/SIMF.ControlPanel.Tests/CpNavigationPermissionTests.cs`
   and `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs` fail the build if a gate
   is missing.
-- **No Details modal / no client paging.** Unlike `/admin/interests`, this page has
-  no read-only Details modal and no pager — the grid loads a single `Top=50` page and
-  shows the "Showing {0}–{1} of {2}" summary line. Do not author scenarios for UI
-  that does not exist.
+- **No Details modal.** Unlike `/admin/interests`, this page has no read-only
+  Details modal — only the Add/Edit modal. The grid (D-256) loads `Top=20` rows
+  per page with a pager (Prev/Next/First/Last) and the "Showing {0}–{1} of {2}"
+  summary line. Do not author scenarios for UI that does not exist.
+- **No bulk action.** The grid is `Multiselect="true"` (select-all + per-row
+  checkboxes) but has no `<CustomToolbar>` bulk-action button — the checkboxes are
+  cosmetic here. Do not author a bulk-action scenario.
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

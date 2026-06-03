@@ -7,16 +7,24 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **What this page is.** A session-scoped moderation desk (D-199, Mockup page 28
 > — "Audience comments" / تعليقات الجمهور). The admin picks one live session from
-> a `<select>` dropdown, then sees every active comment (Pending / Approved /
-> Hidden) for that session in a `simf-table`, each row showing Author (+ email),
-> Comment body, Status, the AI filter verdict, and the submitted time. Three
-> per-row actions: **Approve**, **Hide**, **Delete** (soft-delete). There is no
-> Add/Create — comments originate from the public app. There are no modals: status
-> changes are inline buttons; Delete fires a native `confirm()` dialog.
+> a `<select>` dropdown (which sits **above** the grid — it is not a grid column),
+> then sees every active comment (Pending / Approved / Hidden) for that session in
+> the canonical **`SimfDataGrid`** (D-256 raw-table→grid conversion), each row
+> showing Author (+ email), Comment body, Status, the AI filter verdict, and the
+> submitted time. The grid pages at **`Top = 20`**, exposes a **per-column filter
+> on the Comment column** (the only `Filterable` column) and a **sort on the
+> Submitted column** (the only `Sortable` column). Three per-row actions, rendered
+> as quiet **icon** affordances in the grid's `RowActions` / `OnDeleteOne` (no
+> filled text buttons): **Approve** (check-circle icon), **Hide** (eye-off icon),
+> and **Delete** (trash, soft-delete). The grid carries select-all + per-row
+> checkboxes (`Multiselect="true"`) but there is **no bulk-action toolbar** — the
+> checkboxes are cosmetic here. There is no Add/Create — comments originate from
+> the public app. There are no modals: status changes are inline icon actions;
+> Delete fires a native `confirm()` dialog.
 
 > **Permission split — read this before authoring the auth-gate.** The page is
 > gated by `[RequirePermission(PermissionCatalog.Comments.View)]` (`Comments.View`),
@@ -45,7 +53,9 @@
 | E2E-CMT-012 | Not-found — moderate a comment deleted in another tab → 404 `SESSION_COMMENT_NOT_FOUND` | error | P1 | _to author_ |
 | E2E-CMT-013 | Server 500 on `/comments/list` → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-CMT-014 | Server 500 / sessions load failure → bilingual sessions toast | resilience | P2 | _to author_ |
-| E2E-CMT-015 | RTL render — Arabic toggle mirrors banner, picker, table, action buttons | i18n | P1 | _to author_ |
+| E2E-CMT-015 | RTL render — Arabic toggle mirrors banner, picker, grid, icon actions | i18n | P1 | _to author_ |
+| E2E-CMT-016 | Per-column filter — typing in the Comment filter narrows the grid (maps to `Search`, Skip→0) | happy | P1 | _to author_ |
+| E2E-CMT-017 | Column sort — clicking the Submitted header toggles `Sort="created"` asc↔desc | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -70,26 +80,26 @@ Scenario: Approve, then hide, then delete one comment
   And the "Session" <select> lists "S-01 — Opening Keynote"
   When the administrator selects "S-01 — Opening Keynote"
   Then a POST /account/api/admin/sessions/{sessionId}/comments/list fires and returns 200
-  And the simf-table shows a row with Author "Sara Al-Otaibi", Comment "Great session!",
+  And the SimfDataGrid shows a row with Author "Sara Al-Otaibi", Comment "Great session!",
       Status "Pending", and a "Submitted" timestamp
-  And that row shows an "Approve", a "Hide" and a "Delete" button
-  And the table summary reads "Showing 1–1 of 1"
+  And that row shows quiet icon actions: Approve (check-circle), Hide (eye-off) and Delete (trash)
+  And the grid summary reads "Showing 1–1 of 1"
 
-  When the administrator clicks "Approve" on that row
+  When the administrator clicks the row's Approve (check-circle) icon action
   Then a PUT /account/api/admin/sessions/{sessionId}/comments/{commentId}/status fires
       with body { "status": 1 } and returns 200
   And a green toast reads "Comment status updated."
   And the grid reloads and the row's Status reads "Approved"
-  And the "Approve" button is no longer rendered on that row (only "Hide" + "Delete" remain)
+  And the Approve icon action is no longer rendered on that row (only Hide + Delete remain)
 
-  When the administrator clicks "Hide" on that row
+  When the administrator clicks the row's Hide (eye-off) icon action
   Then a PUT .../status fires with body { "status": 2 } and returns 200
   And a green toast reads "Comment status updated."
   And the row's Status reads "Hidden"
-  And the "Hide" button is no longer rendered (only "Approve" + "Delete" remain)
+  And the Hide icon action is no longer rendered (only Approve + Delete remain)
   And the comment no longer appears on the public app feed for that session
 
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash) icon action
   Then a native confirm() dialog appears reading
       "Delete this comment? It will be removed from the public feed immediately."
   When the administrator accepts the dialog
@@ -119,7 +129,7 @@ Scenario: Switching session reloads the grid and clears the stale toast
   When they change the "Session" <select> to "S-02 — Naval Logistics"
   Then the stale toast is cleared (the message from S-01 does not follow to S-02)
   And a POST .../sessions/{S-02 id}/comments/list fires and returns 200
-  And the simf-table shows S-02's comments only
+  And the SimfDataGrid shows S-02's comments only
   When they change the <select> back to "— Select a session —" (the empty option)
   Then the grid is cleared and neither the table nor an empty-state for comments renders
 ```
@@ -143,9 +153,9 @@ Scenario: Selected session with no comments renders SimfEmptyState
   Given an active session "S-03 — Cyber at Sea" exists with zero active comments
   When the administrator selects "S-03 — Cyber at Sea"
   Then a POST .../comments/list fires and returns 200 with an empty Items array
-  And the SimfEmptyState renders with the bilingual title
+  And the SimfDataGrid's EmptyTemplate renders the SimfEmptyState with the bilingual title
       "No comments for this session." / "لا توجد تعليقات لهذه الجلسة."
-  And no simf-table is rendered
+  And no comment rows are rendered
 ```
 
 ### E2E-CMT-005 — Approve action
@@ -153,11 +163,11 @@ Scenario: Selected session with no comments renders SimfEmptyState
 ```gherkin
 Scenario: Approving a Pending comment promotes it and hides the Approve button
   Given the administrator has selected a session with a "Pending" comment
-  When they click "Approve" on that row
+  When they click the row's Approve (check-circle) icon action
   Then a PUT .../comments/{commentId}/status fires with { "status": 1 } and returns 200
   And the green toast "Comment status updated." appears
   And after the reload the row's Status reads "Approved"
-  And the "Approve" button is no longer rendered on that row
+  And the Approve icon action is no longer rendered on that row
   And the comment now appears on the public app feed for that session
 ```
 
@@ -166,11 +176,11 @@ Scenario: Approving a Pending comment promotes it and hides the Approve button
 ```gherkin
 Scenario: Hiding an Approved comment removes it from the public feed
   Given the administrator has selected a session with an "Approved" comment visible on the public feed
-  When they click "Hide" on that row
+  When they click the row's Hide (eye-off) icon action
   Then a PUT .../comments/{commentId}/status fires with { "status": 2 } and returns 200
   And the green toast "Comment status updated." appears
   And after the reload the row's Status reads "Hidden"
-  And the "Hide" button is no longer rendered on that row
+  And the Hide icon action is no longer rendered on that row
   And the comment is gone from the public app feed (the feed returns only Approved + active)
 ```
 
@@ -179,7 +189,7 @@ Scenario: Hiding an Approved comment removes it from the public feed
 ```gherkin
 Scenario: Deleting a comment after confirming removes it from the desk
   Given the administrator has selected a session with at least one comment row
-  When they click "Delete" on a row
+  When they click the row's Delete (trash) icon action
   Then a native confirm() dialog appears reading
       "Delete this comment? It will be removed from the public feed immediately."
   When they accept the dialog
@@ -194,10 +204,10 @@ Scenario: Deleting a comment after confirming removes it from the desk
 ```gherkin
 Scenario: Dismissing the confirm dialog leaves the comment untouched
   Given the administrator has selected a session with a comment row
-  When they click "Delete" on the row
+  When they click the row's Delete (trash) icon action
   And they dismiss the native confirm() dialog (Cancel)
   Then NO DELETE request fires
-  And the row remains in the simf-table with its status unchanged
+  And the row remains in the SimfDataGrid with its status unchanged
   And no toast appears
 ```
 
@@ -233,7 +243,10 @@ Scenario: Comments.View without Comments.Moderate can read but not act
   Given a signed-in user whose role grants "Comments.View" but NOT "Comments.Moderate"
   When they open /admin/comments-moderation and select a session
   Then the page loads and the comment grid renders (the list endpoint requires only Comments.View)
-  When they click "Approve" (or "Hide", or accept the Delete confirm)
+  # Note: the Approve / Hide icon actions are wrapped in <AuthorizedAction
+  #   Permission="Comments.Moderate">, so a View-only admin may not even SEE them;
+  #   if a stale JWT still renders them, the API gate below is the backstop.
+  When they click the row's Approve (or Hide) icon action, or accept the Delete confirm
   Then the BFF forwards to the API and the API returns HTTP 403 Forbidden
       (the status + delete endpoints require Comments.Moderate)
   And a red error toast surfaces the bilingual error message
@@ -246,7 +259,7 @@ Scenario: Comments.View without Comments.Moderate can read but not act
 Scenario: Acting on a comment already removed elsewhere returns 404
   Given the administrator has the moderation grid open with a comment row
   And that comment was soft-deleted in another session (IsActive = false)
-  When the administrator clicks "Approve" (or "Hide", or "Delete") on the stale row
+  When the administrator clicks the row's Approve / Hide / Delete icon action on the stale row
   Then the PUT/DELETE fires and the API returns HTTP 404
       with ApiResult.Error.Code = "SESSION_COMMENT_NOT_FOUND"
   And a red error toast surfaces the bilingual message
@@ -263,7 +276,7 @@ Scenario: API 500 on /comments/list shows the fallback bilingual toast
   Then the loading text "Loading…" / "جارٍ التحميل…" shows briefly
   And then a red toast appears reading
       "Could not load comments. Please try again." / "تعذر تحميل التعليقات. حاول مرة أخرى."
-  And no simf-table rows render
+  And no SimfDataGrid rows render
 ```
 
 ### E2E-CMT-014 — Sessions load failure
@@ -288,11 +301,47 @@ Scenario: Arabic toggle mirrors the page
   And the hint reads "اختر جلسة لإدارة تعليقات الجمهور الخاصة بها."
   And the session field label reads "الجلسة" with placeholder "— اختر جلسة —"
   When a session with comments is selected
-  Then the table headers read "الكاتب", "التعليق", "الحالة", "تقييم الذكاء الاصطناعي",
-      "تاريخ الإرسال", "الإجراءات" (mirrored right-to-left)
-  And the action buttons read "اعتماد" (Approve), "إخفاء" (Hide), "حذف" (Delete)
-  And the status labels render as "قيد الانتظار" / "معتمد" / "مخفي"
-  And the table summary reads "عرض 1–1 من 1"
+  Then the SimfDataGrid column headers read "الكاتب", "التعليق", "الحالة",
+      "تقييم الذكاء الاصطناعي", "تاريخ الإرسال", "الإجراءات" (mirrored right-to-left)
+  And the "التعليق" (Comment) column shows a per-column filter input placeholder "بحث"
+  And the "تاريخ الإرسال" (Submitted) header is a sortable button
+  And the per-row icon actions carry the tooltips "اعتماد" (Approve), "إخفاء" (Hide), "حذف" (Delete)
+  And the status pills render as "قيد الانتظار" / "معتمد" / "مخفي"
+  And the grid summary reads "عرض 1–1 من 1"
+```
+
+### E2E-CMT-016 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing in the Comment column filter narrows the grid (maps to the Search field)
+  Given the administrator has selected session "S-01 — Opening Keynote"
+  And that session has three active comments, one of whose body contains "logistics"
+  And the SimfDataGrid renders all three rows (summary "Showing 1–3 of 3")
+  # "Comment" is the only Filterable column on this grid; its filter input carries
+  #   aria-label "Filter column Comment". There is no per-column filter on Author,
+  #   Status, AI verdict or Submitted.
+  When the administrator types "logistics" into the "Filter column Comment" input
+  Then after the input debounce a POST .../sessions/{S-01 id}/comments/list fires and returns 200
+  And the request body carries Skip = 0 (the page resets) with the typed text mapped to
+      the backend "Search" field (the page maps GridQuery.Filters["body"] → ListSessionCommentsBody.Search)
+  And the grid narrows to just the row whose Comment contains "logistics" (summary "Showing 1–1 of 1")
+  And clearing the filter input fires another list call with Search = null and restores all three rows
+```
+
+### E2E-CMT-017 — Column sort toggles
+
+```gherkin
+Scenario: Clicking the Submitted header toggles ascending/descending sort
+  Given the administrator has selected a session with several comments
+  # "Submitted" (Key "created") is the only Sortable column — and the only
+  #   server-honoured sort key. Author / Comment / Status / AI verdict are not sortable.
+  When the administrator clicks the "Submitted" column header (sortable button)
+  Then a POST .../comments/list fires with Sort = "created" and SortDescending = false (ascending)
+  And the rows re-order oldest-submitted first and the header shows the ascending arrow (▲)
+  And Skip resets to 0 and any row selection is cleared
+  When the administrator clicks the "Submitted" header again
+  Then a POST .../comments/list fires with Sort = "created" and SortDescending = true (descending)
+  And the rows re-order newest-submitted first and the header shows the descending arrow (▼)
 ```
 
 ---
@@ -329,4 +378,4 @@ Scenario: Arabic toggle mirrors the page
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

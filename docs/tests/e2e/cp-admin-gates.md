@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page facts (read from source, do not invent):**
 > - Page: `src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/GatesList.razor`
@@ -52,6 +52,7 @@
 | E2E-GAT-012 | Duplicate code — `GATE_CODE_DUPLICATE` (409) surfaced bilingually | error | P1 | _to author_ |
 | E2E-GAT-013 | Server 500 / list failure → bilingual load-failed toast | resilience | P2 | _to author_ |
 | E2E-GAT-014 | RTL / Arabic render mirrors page + modal | i18n | P1 | _to author_ |
+| E2E-GAT-015 | Per-column filter narrows the grid (Code / Name / Name (Arabic)) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -169,16 +170,18 @@ Examples:
   | DIR-BO  | Both Gate | بوابة مزدوجة | Both (inferred direction) | Both   |
 ```
 
-### E2E-GAT-004 — Search / filter the grid
+### E2E-GAT-004 — Filter the grid by code
 
 ```gherkin
-Scenario: Filtering by code or name narrows the grid
+Scenario: Filtering by code narrows the grid
   Given gates "G-MAIN-1" (Main Gate) and "VIP-1" (VIP Lounge) exist
-  When the administrator types "VIP" into the grid search box
-  Then a POST /account/api/admin/gates/list fires with Search="VIP"
+  When the administrator types "VIP" into the per-column "Filter column Code" input
+    in the grid filter row
+  Then a POST /account/api/admin/gates/list fires with Filters["code"]="VIP" and Skip=0
   And the grid shows only the "VIP-1" row
-  When they clear the search box
-  Then the grid shows all rows again (server matches Code, Name and Name (Arabic), case-insensitive LIKE)
+  When they clear the "Filter column Code" input
+  Then the grid shows all rows again (server substring-matches gate.Code; the
+    Name and Name (Arabic) columns have their own filter inputs — see E2E-GAT-015)
 ```
 
 ### E2E-GAT-005 — Sort the grid
@@ -330,6 +333,43 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   And the form actions appear in reverse order
 ```
 
+### E2E-GAT-015 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing into a per-column grid filter narrows the grid server-side
+  Given gates "G-MAIN-1" (Main Gate / المدخل الرئيسي) and
+    "VIP-1" (VIP Lounge / صالة كبار الزوار) exist
+  And the grid filter row is shown (the page has Filterable columns:
+    Code, Name, Name (Arabic))
+  When the administrator types "VIP" into the "Filter column Code" input
+  Then a POST /account/api/admin/gates/list fires with Filters["code"]="VIP"
+    and Skip reset to 0
+  And the grid narrows to the single "VIP-1" row
+  And the summary updates to "Showing 1–1 of 1"
+
+  When they clear the "Filter column Code" input
+  And they type "Lounge" into the "Filter column Name" input
+  Then a POST /account/api/admin/gates/list fires with Filters["name"]="Lounge"
+    and Skip=0
+  And the grid narrows to the single "VIP Lounge" row
+
+  When they clear the "Filter column Name" input
+  And they type "المدخل" into the "Filter column Name (Arabic)" input
+  Then a POST /account/api/admin/gates/list fires with Filters["nameArabic"]="المدخل"
+    and Skip=0
+  And the grid narrows to the single "المدخل الرئيسي" row
+  And the Direction / Allowed types / Operators / Status columns have no filter input
+    (those columns are not Filterable)
+```
+
+**Evidence captured:**
+- Screenshot of the narrowed grid → `docs/screenshots/cp-admin-gates-column-filter.png`
+- Network: each keystroke (debounced) issues one `POST /account/api/admin/gates/list`
+  carrying the typed value under `Filters["code"|"name"|"nameArabic"]` with `Skip=0`.
+- Server: `AdminGateService` substring-matches `gate.Code` / `gate.Name` /
+  `gate.NameArabic` for keys `code` / `name` / `namearabic` (case-insensitive key);
+  unknown filter keys are ignored.
+
 ---
 
 ## Implementation notes
@@ -355,4 +395,4 @@ Scenario: Arabic toggle mirrors the page and the Add modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

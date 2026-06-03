@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Permission gate.** The page carries `@attribute [RequirePermission(PermissionCatalog.Archive.View)]`
 > (`"Archive.View"`). The backing API endpoints are gated per action:
@@ -15,11 +15,22 @@
 > `Archive.Delete` (DELETE). `Administrator = "*"` satisfies all four. The CP
 > nav item `Module.PreviousEditions` is gated by `Archive.View`.
 >
-> **"Delete" is a soft-delete.** The grid "Delete" button calls the BFF
-> `DELETE /account/api/admin/archive/{id}` which maps to the API
+> **"Delete" is a soft-delete.** The grid row's Delete (trash) action calls the
+> BFF `DELETE /account/api/admin/archive/{id}` which maps to the API
 > `DeactivateAsync` — it flips `IsActive = false` (pulls the edition from the
 > public `/archive` list) but never hard-deletes the row. The row therefore
-> stays in the admin grid afterwards with `Active = "—"`.
+> stays in the admin grid afterwards with the `Active` pill flipped to
+> "Inactive".
+>
+> **Grid affordances (D-256/D-257).** The page renders a `SimfDataGrid`
+> (`Top = 20` page size, `Multiselect` select-all checkboxes — cosmetic, there
+> is no bulk toolbar action). Row actions are quiet **icon** buttons in the
+> grid's `RowActions` (Edit = pencil, Delete = trash), not filled text buttons.
+> Per-column filter inputs exist on **Title (English)** (`titleEn`) and
+> **Title (Arabic)** (`titleAr`); column sort is available on **Year** (`year`)
+> and **Title (English)** (`titleEn`). The backend honours `Filters["titleEn"]`
+> / `Filters["titleAr"]` (case-insensitive `Contains`) and `Sort` =
+> `year` | `titleEn`.
 
 ## Coverage matrix
 
@@ -36,6 +47,8 @@
 | E2E-ARC-009 | Delete confirm dialog: cancel keeps the edition active | happy | P1 | _to author_ |
 | E2E-ARC-010 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-ARC-011 | RTL / Arabic render mirrors page + Add modal | i18n | P1 | _to author_ |
+| E2E-ARC-012 | Per-column filter narrows the grid (titleEn / titleAr) | happy | P1 | _to author_ |
+| E2E-ARC-013 | Column sort toggles (year / titleEn ascending↔descending) | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -75,9 +88,9 @@ Scenario: Create, list, edit, then deactivate one archive edition
   And a green SimfAlert toast reads "Edition saved."
   And the grid reloads (POST /account/api/admin/archive/list) and shows {N + 1} rows
   And a row exists with Year=2019, Title (English)="SIMF 2019 — Inaugural Forum",
-      Attendees=1200, Sessions=18, Speakers=42 and Active="✓"
+      Attendees=1200, Sessions=18, Speakers=42 and an "Active" pill
 
-  When the administrator clicks "Edit" on the 2019 row
+  When the administrator clicks the 2019 row's Edit (pencil) action
   Then the "Edit edition" modal opens with every field pre-filled from the row
   And the IsActive checkbox is ticked
   When they change Attendees to "1350"
@@ -87,14 +100,14 @@ Scenario: Create, list, edit, then deactivate one archive edition
   And a green toast reads "Edition saved."
   And the 2019 row's Attendees column now reads "1350"
 
-  When the administrator clicks "Delete" on the 2019 row
+  When the administrator clicks the 2019 row's Delete (trash) action
   Then a native confirm() dialog appears reading
       "Delete this edition? It will be removed from the public archive immediately."
   When they accept the dialog
   Then the BFF forwards DELETE /account/api/admin/archive/{id} and the API returns HTTP 200
   And a green toast reads "Edition deleted."
   And the grid reloads
-  And the 2019 row is still present but its Active column now reads "—"
+  And the 2019 row is still present but its Active pill now reads "Inactive"
 ```
 
 **Evidence captured:**
@@ -200,7 +213,7 @@ Scenario: A second edition for an existing year returns 409
 ```gherkin
 Scenario: Edit pre-fills the row and can toggle public visibility off
   Given an active ArchiveEdition for Year=2021 exists with Attendees=900
-  When the administrator clicks "Edit" on the 2021 row
+  When the administrator clicks the 2021 row's Edit (pencil) action
   Then the "Edit edition" modal opens (title "Edit edition")
   And every field is pre-filled from the row (Year=2021, both titles, both summaries,
       Attendees=900, Sessions, Speakers, Cover image path)
@@ -211,20 +224,20 @@ Scenario: Edit pre-fills the row and can toggle public visibility off
   Then the BFF forwards PUT /account/api/admin/archive/{id} and the API returns HTTP 200
   And a green toast reads "Edition saved."
   And the 2021 row's Attendees column reads "950"
-  And the 2021 row's Active column reads "—"
+  And the 2021 row's Active pill reads "Inactive"
 ```
 
 ### E2E-ARC-009 — Delete confirm dialog cancel path
 
 ```gherkin
 Scenario: Dismissing the delete confirm keeps the edition active
-  Given an active ArchiveEdition for Year=2019 exists (Active="✓")
-  When the administrator clicks "Delete" on the 2019 row
+  Given an active ArchiveEdition for Year=2019 exists (Active pill = "Active")
+  When the administrator clicks the 2019 row's Delete (trash) action
   Then a native confirm() dialog appears reading
       "Delete this edition? It will be removed from the public archive immediately."
   When they dismiss / cancel the dialog
   Then NO DELETE /account/api/admin/archive/{id} request fires
-  And the 2019 row stays in the grid with Active="✓"
+  And the 2019 row stays in the grid with its Active pill still reading "Active"
   And no toast appears
 ```
 
@@ -260,6 +273,54 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   And the footer "Cancel"/"Save" buttons appear in reverse order
 ```
 
+### E2E-ARC-012 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing into the Title (English) column filter narrows the grid
+  Given the grid shows editions for 2019, 2020 and 2021
+  And the 2019 edition's Title (English) is "SIMF 2019 — Inaugural Forum"
+  When the administrator opens the filter for column "Filter column Title (English)"
+  And types "Inaugural"
+  Then the grid issues POST /account/api/admin/archive/list with
+      GridQuery.Filters["titleEn"]="Inaugural" and GridQuery.Skip reset to 0
+  And the API returns only the 2019 row (case-insensitive Contains match on TitleEn)
+  And the grid renders just that one row
+  And the pager summary reflects the narrowed Total
+
+  When they additionally type "2020" into "Filter column Title (Arabic)"
+  Then the list call now carries both Filters["titleEn"]="Inaugural"
+      and Filters["titleAr"]="2020"
+  And the two per-column filters AND together (no matching row) so the grid
+      renders the SimfEmptyState
+
+  When they clear both column filters
+  Then a fresh list call fires with empty Filters and the full grid returns
+```
+
+### E2E-ARC-013 — Column sort toggles
+
+```gherkin
+Scenario: Sorting by Year, then by Title (English), toggles ascending/descending
+  Given the grid shows several editions across multiple years
+  And the default order is Year descending (newest first)
+  When the administrator clicks the "Year" column header
+  Then the grid issues POST /account/api/admin/archive/list with
+      GridQuery.Sort="year" and GridQuery.SortDescending=false
+  And the rows reorder oldest-year-first
+  When they click the "Year" header again
+  Then the list call carries Sort="year" and SortDescending=true
+  And the rows reorder newest-year-first
+
+  When the administrator clicks the "Title (English)" column header
+  Then the list call carries Sort="titleEn" and SortDescending=false
+  And the rows reorder A→Z by English title
+  When they click the "Title (English)" header again
+  Then the list call carries Sort="titleEn" and SortDescending=true
+  And the rows reorder Z→A
+  And the "Title (Arabic)", Attendees, Sessions, Speakers and Active columns
+      stay unsortable (no sort affordance, no Sort key sent for them)
+```
+
 ---
 
 ## Implementation notes
@@ -285,4 +346,4 @@ Scenario: Arabic toggle mirrors the page and the Add modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

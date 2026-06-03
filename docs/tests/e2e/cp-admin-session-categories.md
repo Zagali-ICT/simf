@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page background.** B9b (D-226) — CP management for the dynamic session-category
 > lookup (SIMF-FDS-004 §5.4). A small bilingual lookup (NameEn / NameAr / display
@@ -17,6 +17,16 @@
 > `BoothsList` / the Organisation lookup. **RequiredPermission:** the page is gated
 > by `PermissionCatalog.SessionCategories.View`; the toolbar/row actions are gated
 > by `.Create` / `.Edit` / `.Delete` (all `AdminOnly` baseline).
+>
+> **Grid (D-256).** The page now renders the canonical `SimfDataGrid` (raw-table →
+> grid migration, owner-mandated standard) — server-paged with a numbered pager
+> (`GridQuery { Top = 20 }`), per-column filter inputs on **Name (English)** and
+> **Name (Arabic)** (`nameEn` / `nameAr`), and column sort on all four columns
+> (`nameEn` / `nameAr` / `order` / `isActive`). The toolbar **Add** action and the
+> per-row **Edit** (pencil) / **Delete** (trash) actions are quiet grid affordances
+> (`OnAdd` / `OnEditOne` / `OnDeleteOne`), not filled text buttons. `Multiselect`
+> renders select-all / per-row checkboxes, but there is **no bulk-action toolbar
+> button** on this page (selection is cosmetic here — no bulk endpoint).
 
 ## Coverage matrix
 
@@ -36,6 +46,8 @@
 | E2E-SCT-012 | Action-level permission gating (Create/Edit/Delete buttons hidden) | auth | P1 | _to author_ |
 | E2E-SCT-013 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-SCT-014 | RTL render: Arabic toggle mirrors page + Add modal | i18n | P1 | _to author_ |
+| E2E-SCT-015 | Per-column filter narrows the grid (Name (English) / Name (Arabic)) | function | P1 | _to author_ |
+| E2E-SCT-016 | Column sort toggles (Name (English) / Order) | function | P2 | _to author_ |
 
 ## Scenarios
 
@@ -56,7 +68,7 @@ Background:
 
 Scenario: Create, edit (toggle Active off), then delete one category
   Given the grid currently shows {N} rows (or the SimfEmptyState when N = 0)
-  When the administrator clicks "New category"
+  When the administrator clicks the grid toolbar's "Add" action
   Then the Add modal opens titled "Add category"
   And it shows four fields: Name (English), Name (Arabic), Display order, and an "Active" checkbox
   When they fill Name (English)="Keynote"
@@ -69,7 +81,7 @@ Scenario: Create, edit (toggle Active off), then delete one category
   And the grid shows {N + 1} rows
   And a row exists with Name (English)="Keynote", Name (Arabic)="الكلمة الرئيسية", Order=10, Active="✓"
 
-  When the administrator clicks "Edit" on the "Keynote" row
+  When the administrator clicks the "Keynote" row's Edit (pencil) action
   Then a GET /account/api/admin/session-categories/{id} fires and returns 200
   And the Edit modal opens titled "Edit category" with the row's values pre-filled
   And the "Active" checkbox is ticked
@@ -81,7 +93,7 @@ Scenario: Create, edit (toggle Active off), then delete one category
   And a green toast reads "Category saved." / "تم حفظ التصنيف."
   And the "Keynote" row now reads Order=5 and Active="—"
 
-  When the administrator clicks "Delete" on the "Keynote" row
+  When the administrator clicks the "Keynote" row's Delete (trash) action
   And accepts the browser confirm dialog "Delete this category?" / "حذف هذا التصنيف؟"
   Then a DELETE /account/api/admin/session-categories/{id} fires and returns 200
   And a green toast reads "Category deleted." / "تم حذف التصنيف."
@@ -106,7 +118,7 @@ Scenario: Empty list renders SimfEmptyState
   Then the POST /account/api/admin/session-categories/list returns 200 with Total = 0
   And the grid body renders the SimfEmptyState component
   And the empty state title reads "No session categories yet." / "لا توجد تصنيفات جلسات بعد."
-  And the "New category" button is still visible above the empty state
+  And the grid toolbar's "Add" action is still visible above the empty state
   And no error toast appears
 ```
 
@@ -126,7 +138,7 @@ Scenario: Signed-in admin without SessionCategories.View is denied
 ```gherkin
 Scenario: New category opens an empty Add modal
   Given the administrator is on /admin/session-categories
-  When they click "New category"
+  When they click the grid toolbar's "Add" action
   Then the modal opens titled "Add category"
   And Name (English) and Name (Arabic) are empty
   And Display order shows 0
@@ -139,7 +151,7 @@ Scenario: New category opens an empty Add modal
 ```gherkin
 Scenario: Edit fetches the row detail and pre-fills the modal
   Given at least one session category "Workshop" exists
-  When the administrator clicks "Edit" on the "Workshop" row
+  When the administrator clicks the "Workshop" row's Edit (pencil) action
   Then a GET /account/api/admin/session-categories/{id} fires and returns 200
   And the modal opens titled "Edit category"
   And Name (English), Name (Arabic), Display order are pre-filled from the detail response
@@ -152,7 +164,7 @@ Scenario: Edit fetches the row detail and pre-fills the modal
 ```gherkin
 Scenario: Delete confirms then soft-deletes the row
   Given an active session category "Panel" exists with Active="✓"
-  When the administrator clicks "Delete" on the "Panel" row
+  When the administrator clicks the "Panel" row's Delete (trash) action
   Then a browser confirm dialog appears reading "Delete this category?" / "حذف هذا التصنيف؟"
   When they accept the dialog
   Then a DELETE /account/api/admin/session-categories/{id} fires and returns 200
@@ -166,7 +178,7 @@ Scenario: Delete confirms then soft-deletes the row
 ```gherkin
 Scenario: Dismissing the confirm dialog makes no change
   Given an active session category "Roundtable" exists
-  When the administrator clicks "Delete" on the "Roundtable" row
+  When the administrator clicks the "Roundtable" row's Delete (trash) action
   And they dismiss the browser confirm dialog
   Then no DELETE request fires
   And the "Roundtable" row is unchanged (Active still "✓")
@@ -232,9 +244,9 @@ Scenario: View-only admin sees the grid but no mutating actions
   Given a user signed in with PermissionCatalog.SessionCategories.View but NOT Create/Edit/Delete
   When they open /admin/session-categories
   Then the grid and rows render
-  And the "New category" button is hidden (AuthorizedAction Create)
-  And the per-row "Edit" button is hidden (AuthorizedAction Edit)
-  And the per-row "Delete" button is hidden (AuthorizedAction Delete)
+  And the grid toolbar's "Add" action is hidden (AuthorizedAction Create)
+  And the per-row Edit (pencil) action is hidden (AuthorizedAction Edit)
+  And the per-row Delete (trash) action is hidden (AuthorizedAction Delete)
   And a direct POST /account/api/admin/session-categories from that user is rejected by the API policy
 ```
 
@@ -260,10 +272,51 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   And the column headers read "الاسم (إنجليزي)", "الاسم (عربي)", "الترتيب", "نشط"
   And the nav rail and toolbar mirror (Arabic labels, reversed order)
 
-  When they click "تصنيف جديد"
+  When they click the grid toolbar's "إضافة" (Add) action
   Then the Add modal opens in RTL titled "إضافة تصنيف"
   And the field labels read "الاسم (إنجليزي)", "الاسم (عربي)", "ترتيب العرض", "نشط"
   And the footer buttons read "إلغاء" and "حفظ" in reversed order
+```
+
+### E2E-SCT-015 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing into a per-column filter input narrows the grid server-side
+  Given the administrator is on /admin/session-categories
+  And the grid shows several categories including "Keynote" and "Workshop"
+  When they type "key" into the filter input under the "Name (English)" column
+  Then a POST /account/api/admin/session-categories/list fires
+  And its GridQuery carries Filters["nameEn"]="key" with Skip reset to 0
+  And the grid narrows to rows whose English name contains "key" (e.g. "Keynote")
+  And the pager summary updates to the filtered Total
+
+  When they clear the "Name (English)" filter
+  And they type "ورشة" into the filter input under the "Name (Arabic)" column
+  Then a POST /account/api/admin/session-categories/list fires
+  And its GridQuery carries Filters["nameAr"]="ورشة" with Skip reset to 0
+  And the grid narrows to rows whose Arabic name contains "ورشة"
+  And only the "Name (English)" and "Name (Arabic)" columns expose a filter input
+      (the "Order" and "Active" columns are not Filterable)
+```
+
+### E2E-SCT-016 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable column header toggles ascending/descending
+  Given the administrator is on /admin/session-categories
+  And the grid shows several categories
+  When they click the "Name (English)" column header
+  Then a POST /account/api/admin/session-categories/list fires
+  And its GridQuery carries Sort="nameEn" with SortDescending=false (A→Z)
+  And the rows reorder ascending by English name
+  When they click the "Name (English)" column header again
+  Then a POST .../list fires with Sort="nameEn" and SortDescending=true (Z→A)
+  And the rows reorder descending by English name
+
+  When they click the "Order" column header
+  Then a POST .../list fires with Sort="order" and SortDescending=false
+  And the rows reorder ascending by Display order
+  And the default (unsorted) order is DisplayOrder then NameEn
 ```
 
 ---
@@ -278,10 +331,12 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   calls the browser `confirm` dialog with "Delete this category?" before the
   `DELETE`; the service runs `category.Deactivate()` (sets `IsActive = false`) and
   is idempotent on already-inactive rows. The list endpoint applies **no default
-  active filter** (the page sends `GridQuery { Top = 100 }`), so a deleted row
-  stays visible with Active="—" rather than disappearing — assert that, not row
-  removal. When driving via Chrome DevTools MCP, pre-arm the dialog handler
-  (`handle_dialog`) before clicking Delete.
+  active filter** (the page sends `GridQuery { Top = 20 }`), so a deleted row
+  stays visible — its Active column flips from the on pill ("Active") to the off
+  pill ("Inactive") rather than disappearing — assert that, not row removal. (The
+  older "✓"/"—" glyphs in the scenarios above are the pre-grid representation; the
+  post-D-256 grid renders a `SimfPill` on/off badge.) When driving via Chrome
+  DevTools MCP, pre-arm the dialog handler (`handle_dialog`) before clicking Delete.
 - **Two distinct validation layers.** "Both names are required." is a **client**
   guard in `SaveAsync` (no request fires). The 1–128 length bound is enforced
   **server-side** and returns `SESSION_CATEGORY_INVALID` (HTTP 400) with the
@@ -293,10 +348,19 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   permission policy at the API layer (no browser). The E2E catalogue layers the
   CP-driven UI behaviour (modals, toasts, confirm dialog, action-button gating,
   RTL) on top of that lower-layer coverage.
+- **Grid filter / sort keys (D-255/D-256).** The UI exposes a per-column filter
+  input only on **Name (English)** (`nameEn`) and **Name (Arabic)** (`nameAr`) —
+  the only columns marked `Filterable="true"`. The backend
+  (`AdminSessionCategoryService.ListAsync`) honours those two filter keys (plus an
+  `isActive` key the UI does not surface) and the sort keys `nameEn` / `nameAr` /
+  `order` / `isActive`; all four columns are `Sortable="true"`. Unknown filter
+  columns are ignored. Default order is `DisplayOrder` then `NameEn`. `Multiselect`
+  shows select-all / per-row checkboxes, but there is **no `CustomToolbar`
+  bulk-action button** on this page, so no bulk scenario is catalogued.
 - **Audit keys:** `SessionCategory.Created`, `SessionCategory.Updated`,
   `SessionCategory.Deactivated` (`AuditEvents`), one row per mutation with the
   actor id.
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

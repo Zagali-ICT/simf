@@ -7,16 +7,26 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page contract (grounded in source).** Read-only viewer over the durable
 > `OperationLogEntry` audit table (D-134 Sprint A). No create / edit / delete —
 > the audit log is append-only. Surface affordances are exactly:
-> a **filter row** (Event type contains, Subject email contains, Outcome
-> Any/Success/Failure, From date, To date) with **Apply filters** + **Clear**
-> buttons; an **Export** button (gated by `OperationLog.Export`, separate from
-> View); a sortable, paged, multiselect **grid** (Timestamp / Event / Outcome
-> pill / Subject email / Source IP); and a per-row **Details** modal.
+> a **custom toolbar filter form** (Event type contains, Subject email contains,
+> Outcome Any/Success/Failure, From date, To date) with **Apply filters** +
+> **Clear** buttons; an **Export** button (gated by `OperationLog.Export`,
+> separate from View); a sortable, paged, multiselect **grid** (Timestamp /
+> Event / Outcome pill / Subject email / Source IP); and a per-row **Details**
+> modal opened by the row's quiet **Details (info icon)** action.
+> - **Grid per-column filter (D-257):** the converted `SimfDataGrid` renders a
+>   per-column filter input on the **Source IP** column ONLY (`Key="sourceIp"`,
+>   `Filterable="true"`). `eventType`, `subjectEmail`, `timestampUtc` and
+>   `outcome` are NOT grid-filterable — those stay on the toolbar form. The
+>   grid filter input (`aria-label="Filter Source IP"`) debounces 300 ms, posts
+>   `GridQuery.Filters["sourceIp"]`, resets `Skip` to 0, and **coexists** with
+>   the toolbar form (the page re-applies the toolbar filters on every load).
+> - **Sortable grid columns:** Timestamp (`timestampUtc`), Event (`eventType`),
+>   Outcome (`outcome`), Source IP (`sourceIp`). Subject email is not sortable.
 > - **RequiredPermission (page + list/detail API):** `OperationLog.View`
 >   (`@attribute [RequirePermission(PermissionCatalog.OperationLog.View)]`;
 >   API `Policies(PolicyFor(OperationLog.View), RequireApprovedAccount)`).
@@ -57,6 +67,7 @@
 | E2E-OPL-015 | Details on a deleted / unknown id → 404 NotFound, bilingual fallback | error | P2 | _to author_ |
 | E2E-OPL-016 | Server 500 on `/list` → bilingual load-failed toast | resilience | P2 | _to author_ |
 | E2E-OPL-017 | RTL / Arabic render mirrors page + Details modal | i18n | P1 | _to author_ |
+| E2E-OPL-018 | Per-column grid filter on Source IP narrows the grid (coexists with toolbar form) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -91,7 +102,7 @@ Scenario: Default render, filter, open one entry, then clear
   And the grid shows only rows whose Event contains "SignIn"
   And the pager total drops to the filtered count
 
-  When the administrator clicks the "Details" action on the top row
+  When the administrator clicks the top row's Details (info icon) action
   Then a GET /account/api/admin/operation-log/{id} fires and returns 200
   And a read-only "Audit entry" modal opens
   And it lists When (local), Event, Outcome, Subject email, Subject user id,
@@ -217,7 +228,7 @@ Scenario: Pager page-size and navigation
 ```gherkin
 Scenario: Details modal renders the complete audit record
   Given a failed sign-in entry exists (it carries an ErrorCode and Detail)
-  When the administrator clicks "Details" on that row
+  When the administrator clicks that row's Details (info icon) action
   Then a GET /account/api/admin/operation-log/{id} fires and returns 200
   And the "Audit entry" modal shows a description list with:
     | Field            | Source                         |
@@ -360,6 +371,34 @@ Scenario: Arabic toggle mirrors the page and the Details modal
   And the "إغلاق" (Close) button dismisses it
 ```
 
+### E2E-OPL-018 — Per-column grid filter on Source IP
+
+```gherkin
+Scenario: Typing in the Source IP column filter narrows the grid and coexists with the toolbar form
+  Given the converted SimfDataGrid renders a per-column filter input under
+      the "Source IP" header (the only Filterable="true" column — eventType,
+      subjectEmail, timestampUtc and outcome have no grid filter input)
+  And the grid shows rows from several distinct source IPs
+  When the administrator types "127.0.0.1" into the "Filter Source IP" input
+  Then after the 300 ms debounce a POST .../operation-log/list fires with
+      Filters.sourceIp="127.0.0.1" and Skip reset to 0
+  And only rows whose Source IP matches render
+  And any current row selection is dropped (the grid never carries a stale
+      selection across a query change)
+
+  When the administrator additionally types "SignIn" into the toolbar
+      "Event type contains" field and clicks "Apply filters"
+  Then the next POST .../operation-log/list carries BOTH
+      Filters.sourceIp="127.0.0.1" (from the grid column) and
+      Filters.eventType="SignIn" (from the toolbar form)
+  And the grid filter and the toolbar form do not disturb each other
+      (the page re-applies the toolbar filter values on every load)
+
+  When the administrator clears the "Filter Source IP" input
+  Then a POST .../operation-log/list fires with the sourceIp key removed
+  And the eventType toolbar filter still applies
+```
+
 ---
 
 ## Implementation notes
@@ -391,4 +430,4 @@ Scenario: Arabic toggle mirrors the page and the Details modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

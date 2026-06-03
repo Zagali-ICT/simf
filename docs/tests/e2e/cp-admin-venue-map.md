@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page background.** P2.5 (D-230) — CP editor for the 2D venue map
 > (SIMF-FDS-006 §5.3/§7, FR-605). Each row is a **node**: a bilingual label
@@ -42,6 +42,8 @@
 | E2E-VMP-014 | Not found: edit a node deleted by another admin → 404 `VENUE_MAP_NODE_NOT_FOUND` | error | P2 | _to author_ |
 | E2E-VMP-015 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-VMP-016 | RTL render: Arabic toggle mirrors page + Add modal | i18n | P1 | _to author_ |
+| E2E-VMP-017 | Per-column filter on Label narrows the grid (`Filters["label"]`, Skip→0) | happy | P1 | _to author_ |
+| E2E-VMP-018 | Column sort toggles on Label / Kind (`Sort` + `SortDescending`) | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -80,7 +82,7 @@ Scenario: Create, edit (move + deactivate), then delete one node
   And the grid reloads via POST /account/api/admin/venue-map/list
   And a row exists with Label="Main Entrance", Kind="PointOfInterest", Position="120.5, 88" and Active="✓"
 
-  When the administrator clicks "Edit" on that row
+  When the administrator clicks the row's Edit (pencil) action
   Then GET /account/api/admin/venue-map/{id} fires and returns 200
   And the modal opens titled "Edit venue-map node" with every field pre-filled
   And the "Active" checkbox is now visible and ticked
@@ -93,7 +95,7 @@ Scenario: Create, edit (move + deactivate), then delete one node
   And a green toast reads "Node saved." / "تم حفظ العقدة."
   And the row's Position column reads "200, 150.4" and the Active column reads "—"
 
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash) action
   Then a browser confirm() dialog reads "Remove this venue-map node?" / "هل تريد إزالة عقدة الخريطة هذه؟"
   When they accept the dialog
   Then DELETE /account/api/admin/venue-map/{id} fires and returns 200
@@ -170,7 +172,7 @@ Scenario: The Kind dropdown offers all four VenueMapNodeKind values
 ```gherkin
 Scenario: Edit fetches the detail and pre-fills the modal
   Given a node "Registration Desk" exists
-  When the administrator clicks "Edit" on its row
+  When the administrator clicks the row's Edit (pencil) action
   Then GET /account/api/admin/venue-map/{id} returns 200
   And the modal title is "Edit venue-map node"
   And Label (English), Label (Arabic), Kind, X position, Y position, Linked hall, Linked booth are pre-filled from the detail
@@ -193,7 +195,7 @@ Scenario: Cancel closes the modal without saving
 ```gherkin
 Scenario: Declining the confirm dialog leaves the node intact
   Given a node "Keep Me" exists in the grid
-  When the administrator clicks "Delete" on its row
+  When the administrator clicks the row's Delete (trash) action
   Then a confirm() dialog reads "Remove this venue-map node?"
   When they dismiss the dialog
   Then NO DELETE /account/api/admin/venue-map/{id} request fires
@@ -231,9 +233,9 @@ Scenario: A view-only admin sees the grid but no action buttons
   Given a signed-in admin whose role grants VenueMap.View but NOT Create/Edit/Delete
   When they open /admin/venue-map
   Then the grid renders with its rows
-  And the "New node" toolbar button is NOT rendered (AuthorizedAction VenueMap.Create)
-  And no row shows an "Edit" button (AuthorizedAction VenueMap.Edit)
-  And no row shows a "Delete" button (AuthorizedAction VenueMap.Delete)
+  And the grid's Add ("New node") toolbar affordance is NOT rendered (AuthorizedAction VenueMap.Create)
+  And no row shows the Edit (pencil) action (AuthorizedAction VenueMap.Edit)
+  And no row shows the Delete (trash) action (AuthorizedAction VenueMap.Delete)
 ```
 
 ### E2E-VMP-012 — Client-side validation
@@ -267,7 +269,7 @@ Scenario: A stale/unknown Hall or Booth link returns 400
 ```gherkin
 Scenario: Editing a node another admin just deleted returns 404
   Given a node was visible in the grid but has since been deactivated/removed by another admin
-  When the administrator clicks "Edit" on the stale row
+  When the administrator clicks the stale row's Edit (pencil) action
   Then GET /account/api/admin/venue-map/{id} returns HTTP 404
   And ApiResult.Error.Code = "VENUE_MAP_NODE_NOT_FOUND"
   And a red toast surfaces the bilingual message
@@ -306,6 +308,48 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   And the footer buttons read حفظ (Save) / إلغاء (Cancel) in reverse order
 ```
 
+### E2E-VMP-017 — Per-column filter on Label narrows the grid
+
+```gherkin
+Scenario: Typing into the Label column filter narrows the grid server-side
+  Given the grid has more than one page of nodes (e.g. "Main Entrance",
+    "Registration Desk", "Prayer Room" all present)
+  And the administrator is on page 2 (POST /list previously sent Skip=20)
+  When the administrator types "Entrance" into the per-column filter input
+    under the "Label" column header (the input labelled "Filter column Label")
+  Then POST /account/api/admin/venue-map/list fires with
+    GridQuery.Filters["label"]="Entrance" and Skip reset to 0
+  And it returns 200
+  And the grid narrows to only rows whose Label contains "Entrance"
+    (e.g. "Main Entrance")
+  And the pager summary reflects the smaller Total
+  When the administrator clears the "Label" filter input
+  Then POST /account/api/admin/venue-map/list fires again with
+    Filters["label"] absent/empty and Skip=0
+  And the full first page (Top=20) returns
+```
+
+### E2E-VMP-018 — Column sort toggles on Label / Kind
+
+```gherkin
+Scenario: Clicking a sortable header cycles ascending then descending
+  Given the grid shows several nodes in natural order
+  When the administrator clicks the sortable "Label" column header
+  Then POST /account/api/admin/venue-map/list fires with
+    GridQuery.Sort="label", SortDescending=false and Skip reset to 0
+  And the rows render ascending by Label, header aria-sort="ascending"
+  When they click the "Label" header again
+  Then POST /account/api/admin/venue-map/list fires with
+    Sort="label", SortDescending=true and Skip=0
+  And the rows render descending, header aria-sort="descending"
+  When they click the sortable "Kind" column header instead
+  Then POST /account/api/admin/venue-map/list fires with
+    Sort="kind", SortDescending=false and Skip=0
+  And the previous Label sort indicator clears
+  # Note: only the "Label" and "Kind" columns are Sortable; "Position" and the
+  # Active column have no sort affordance.
+```
+
 ---
 
 ## Implementation notes
@@ -340,4 +384,4 @@ Scenario: Arabic toggle mirrors the page and the Add modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

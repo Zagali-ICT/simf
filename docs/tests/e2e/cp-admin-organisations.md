@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page permission:** the page is gated by `@attribute [RequirePermission(PermissionCatalog.Organisations.View)]`.
 > The toolbar / row actions are individually gated by `Organisations.Create`,
@@ -34,6 +34,8 @@
 | E2E-ORG-011 | Import rejects a non-`.xlsx` / bad-magic file → bilingual import-failed toast | error | P2 | _to author_ |
 | E2E-ORG-012 | Server 500 on `/list` → bilingual `LoadFailed` toast, no rows | resilience | P2 | _to author_ |
 | E2E-ORG-013 | RTL / Arabic render mirrors page, grid, both modals | i18n | P1 | _to author_ |
+| E2E-ORG-014 | Per-column filter narrows the grid (`GridQuery.Filters`) | function | P1 | _to author_ |
+| E2E-ORG-015 | Column sort toggles (`Sort` + `SortDescending`) | function | P2 | _to author_ |
 
 ## Scenarios
 
@@ -78,7 +80,7 @@ Scenario: Create, search, edit, deactivate one organisation
   Then POST /account/api/admin/organisations/list fires with Search="1010567890" and Skip=0
   And the grid shows only the matching row
 
-  When the administrator clicks "Edit" on that row
+  When the administrator clicks the row's Edit (pencil) action in the grid
   Then GET /account/api/admin/organisations/{id} fires (the summary omits Phone/Email/Website)
   And the Edit modal opens titled "Edit organisation" with every field pre-filled,
       including Phone="+966112345678", Email="info@navalsystems.sa", Website="https://navalsystems.sa"
@@ -89,7 +91,7 @@ Scenario: Create, search, edit, deactivate one organisation
   And a green toast reads "Organisation saved." / "تم حفظ الجهة."
   And the row's City column reads "Jeddah"
 
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks the row's Delete (trash) action in the grid
   Then a browser confirm() appears reading
       "Deactivate this organisation? It will be removed from the public lookup."
   When they accept the confirm
@@ -185,7 +187,8 @@ Scenario: Admin with View but not Create cannot add
   Then the grid loads normally
   But the "New organisation" button is not rendered (AuthorizedAction hides it)
   And if Organisations.Import is also missing, the "Import Excel" button is hidden
-  And if Organisations.Edit / .Delete are missing, the per-row Edit / Delete buttons are hidden
+  And if Organisations.Edit / .Delete are missing, the per-row Edit (pencil) /
+      Delete (trash) icon actions in the grid are hidden
 ```
 
 ### E2E-ORG-007 — Client validation (blank Arabic name)
@@ -240,7 +243,7 @@ Scenario: Duplicate commercial registration returns 409 ORGANISATION_INVALID
 ```gherkin
 Scenario: Cancelling the confirm does not deactivate
   Given the grid shows at least one organisation
-  When the administrator clicks "Delete" on a row
+  When the administrator clicks the row's Delete (trash) action in the grid
   And dismisses the browser confirm() dialog
   Then no DELETE /account/api/admin/organisations/{id} request fires
   And the row remains unchanged and active
@@ -299,6 +302,52 @@ Scenario: Arabic toggle mirrors the page, grid and both modals
   Then the Import modal opens in RTL with the Arabic hint and "رفع" upload button
 ```
 
+### E2E-ORG-014 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing into a per-column filter input reloads the grid server-side
+  Given the grid shows multiple organisations
+  And every data column except "Active" carries a per-column filter input
+      (the columns "Name (Arabic)", "Name (English)", "CR", "Sector" and "City"
+       are Filterable; "Active" is not)
+  When the administrator types "Riyadh" into the "Filter column City" input
+  Then after the ~300 ms debounce POST /account/api/admin/organisations/list fires
+      with GridQuery.Filters["city"]="Riyadh" and Skip reset to 0
+  And the grid narrows to only the rows whose City matches "Riyadh"
+  And the row-selection (select-all / row checkboxes) is cleared
+
+  When they also type "Defence" into the "Filter column Sector" input
+  Then the next /list request carries both Filters["city"]="Riyadh"
+      and Filters["sector"]="Defence" (the filters accumulate)
+  When they clear the "Filter column City" input
+  Then the request fires again with Filters no longer carrying the "city" key
+      and the broader result set returns
+```
+
+> Note: these per-column filter inputs are independent of the toolbar Search box —
+> Search drives `GridQuery.Search` (LIKE across name / CR / sector / city), while a
+> column filter drives `GridQuery.Filters["{key}"]` for that one column. Both reset
+> `Skip` to 0.
+
+### E2E-ORG-015 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable header toggles ascending / descending
+  Given the grid shows multiple organisations
+  And the "Name (Arabic)", "City" and "Active" headers are sortable
+      (the "Name (English)", "CR" and "Sector" headers are not)
+  When the administrator clicks the "City" column header
+  Then POST /account/api/admin/organisations/list fires with Sort="city",
+      SortDescending=false and Skip reset to 0
+  And the header renders aria-sort="ascending"
+  When they click the "City" header again
+  Then the request fires with Sort="city", SortDescending=true
+      and the header renders aria-sort="descending"
+  When they instead click the "Name (Arabic)" header
+  Then the request fires with Sort="name", SortDescending=false
+      (switching column resets the direction to ascending)
+```
+
 ---
 
 ## Implementation notes
@@ -326,4 +375,4 @@ Scenario: Arabic toggle mirrors the page, grid and both modals
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

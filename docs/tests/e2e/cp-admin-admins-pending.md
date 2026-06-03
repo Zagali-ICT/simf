@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page-required permission:** `PermissionCatalog.Admins.View`
 > (the page carries `@attribute [RequirePermission(PermissionCatalog.Admins.View)]`).
@@ -32,6 +32,8 @@
 | E2E-APN-011 | Conflict — approve an already-approved row → 409 `AdminUserNotPending` | error | P1 | _to author_ |
 | E2E-APN-012 | Server 500 on `/pending/list` → degrades to empty state, no rows | resilience | P2 | _to author_ |
 | E2E-APN-013 | RTL / Arabic render mirrors page + reject modal | i18n | P1 | _to author_ |
+| E2E-APN-014 | Per-column filter narrows the grid (email / Display name) | happy | P1 | _to author_ |
+| E2E-APN-015 | Column sort toggles (Email / Display name) | happy | P2 | _to author_ |
 
 ## Scenarios
 
@@ -273,6 +275,62 @@ Scenario: Arabic toggle mirrors the page and the reject modal
   And the footer actions appear in reverse order
 ```
 
+### E2E-APN-014 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing in a per-column filter input refetches the page
+  Given the administrator is on /admin/admins/pending
+  And the queue has at least 12 pending admins so a filter visibly narrows the grid
+  And the SimfDataGrid shows a filter row under the header with a search input
+    under the "Email" column and the "Display name" column
+    (only the email + displayName columns carry Filterable="true"; "Created" has no filter input)
+  When the administrator types "pending.admin" into the input labelled "Filter column Email"
+  Then after the 300 ms debounce a POST /account/api/admin/admins/pending/list fires
+  And the request body carries GridQuery.Filters["email"]="pending.admin" with Skip reset to 0
+  And the grid reloads showing only rows whose Email contains "pending.admin"
+    (backend applies EF.Functions.Like(Email, "%pending.admin%"))
+  When the administrator clears the Email input and types "Pending" into the input
+    labelled "Filter column Display name"
+  Then a POST /pending/list fires with GridQuery.Filters["displayName"]="Pending" and Skip=0
+  And the grid reloads showing only rows whose Display name contains "Pending"
+  And the pager summary recomputes to "{from}-{to} of {filtered-total}"
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-admins-pending-014-column-filter.png`
+- Network: each keystroke after the debounce fires exactly one `/pending/list` POST;
+  rapid typing collapses to a single request (the grid debounces 300 ms and cancels
+  the prior token).
+- Note: clearing the input removes the key from `Filters` (the grid drops a
+  whitespace-only value), so the next `/pending/list` carries no `email`/`displayName`
+  filter and the full queue returns.
+
+### E2E-APN-015 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable header toggles ascending / descending
+  Given the administrator is on /admin/admins/pending
+  And the queue has more than one page of pending admins
+  And the "Email" and "Display name" headers are sortable (render a sort button + arrow);
+    the "Created" header is plain text (Created carries no Sortable flag)
+  When the administrator clicks the "Email" column header
+  Then a POST /account/api/admin/admins/pending/list fires with
+    GridQuery.Sort="email", SortDescending=false and Skip reset to 0
+  And the grid reorders ascending by Email and the header arrow shows ▲ (aria-sort="ascending")
+  When the administrator clicks the "Email" header again
+  Then a POST /pending/list fires with Sort="email", SortDescending=true
+  And the grid reorders descending and the arrow shows ▼ (aria-sort="descending")
+  When the administrator clicks the "Display name" header
+  Then a POST /pending/list fires with Sort="displayName", SortDescending=false
+  And sorting switches to Display name ascending (Email returns to the neutral ↕ arrow)
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-admins-pending-015-column-sort.png`
+- Note: the backend honours `email` / `displayName` sort keys (case-insensitive);
+  any other key falls back to the natural newest-first order. A sort change also
+  resets `Skip` to 0 and clears the current selection.
+
 ---
 
 ## Implementation notes
@@ -307,4 +365,4 @@ Scenario: Arabic toggle mirrors the page and the reject modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

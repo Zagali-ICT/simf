@@ -7,15 +7,27 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-03 |
 
 > **Page facts grounded in source** (`Components/Pages/Admin/MediaPartnersList.razor`,
 > `Endpoints/PublicRelations/MediaPartnerEndpoints.cs`,
 > `Infrastructure/PublicRelations/AdminMediaPartnerService.cs`):
 > - Required permission: `PermissionCatalog.MediaPartners.View` (`MediaPartners.View`).
 > - Toolbar action: **Add media partner** (`Admin.MediaPartners.New`).
-> - Grid columns: Name (English), Name (Arabic), Logo path, Link, Display order,
->   Active (`✓`/`—`), plus per-row **Edit** + **Delete** buttons.
+> - Surface is a `SimfDataGrid` (D-256 raw-table→grid conversion): per-page size
+>   `Top = 20`, `Multiselect="true"` (select-all + per-row checkboxes are present
+>   but there is **no bulk-action toolbar button** — selection is cosmetic here).
+> - Grid columns: Name (English) `nameen`, Name (Arabic) `namear`, Logo path
+>   `logo`, Link `url`, Display order `displayorder`, Active `isActive` (rendered
+>   as a `SimfPill` — "Active" on / "Inactive" off, not `✓`/`—`).
+> - **Per-column grid filters** (`Filterable="true"`): **Name (English)** `nameen`
+>   and **Name (Arabic)** `namear` only. Sortable columns: `nameen`, `namear`,
+>   `displayorder`. The backend (`AdminMediaPartnerService.ListAllAsync`) honours
+>   `GridQuery.Filters["nameen"]`/`["namear"]` (case-sensitive `Contains`) and
+>   `Sort=nameen|namear|displayorder` with `SortDescending`.
+> - Row actions are quiet **icon** buttons inside the grid's `RowActions` — Edit
+>   (pencil, `OnEditOne`) and Delete (trash, `OnDeleteOne`) — not filled text
+>   buttons.
 > - Add/Edit modal fields: NameEn (max 256), NameAr (max 256), Logo path
 >   (max 512), Link (max 512), Display order (number, min 0 max 99999),
 >   **Active** checkbox (`SimfCheckbox`). The Active checkbox is shown for both
@@ -50,6 +62,8 @@
 | E2E-MPR-009 | Conflict: duplicate English name → 409 + bilingual message | error | P1 | _to author_ |
 | E2E-MPR-010 | Server 500 on `/list` → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-MPR-011 | RTL/Arabic render: page + modal mirror | i18n | P1 | _to author_ |
+| E2E-MPR-012 | Per-column filter narrows the grid (`nameen`/`namear`) | grid | P1 | _to author_ |
+| E2E-MPR-013 | Column sort toggles (`displayorder`/`nameen`) | grid | P2 | _to author_ |
 
 ## Scenarios
 
@@ -81,9 +95,9 @@ Scenario: Create, edit, then deactivate one media partner
   And the modal closes
   And a green toast reads "Media partner saved." / "تم حفظ الشريك الإعلامي."
   And the grid reloads and shows {N + 1} rows
-  And a row exists with Name (English)="Naval Times", Display order=100, and Active="✓"
+  And a row exists with Name (English)="Naval Times", Display order=100, and the Active pill reads "Active"
 
-  When the administrator clicks "Edit" on the "Naval Times" row
+  When the administrator clicks the "Naval Times" row's Edit (pencil) action
   Then the Edit modal opens titled "Edit media partner" with the row's values pre-filled
   And the "Active" checkbox is ticked
   When they change Display order to "5"
@@ -94,12 +108,12 @@ Scenario: Create, edit, then deactivate one media partner
   And a green toast reads "Media partner saved." / "تم حفظ الشريك الإعلامي."
   And the "Naval Times" row now shows Display order=5 and Link="https://navaltimes.example"
 
-  When the administrator clicks "Delete" on the "Naval Times" row
+  When the administrator clicks the "Naval Times" row's Delete (trash) action
   Then a browser confirm dialog appears reading "Delete this media partner? It will be removed from the public list immediately."
   When they accept the confirm dialog
   Then a DELETE /account/api/admin/media-partners/{id} returns 200
   And a green toast reads "Media partner deleted." / "تم حذف الشريك الإعلامي."
-  And the "Naval Times" row remains in the admin grid but its Active column now reads "—"
+  And the "Naval Times" row remains in the admin grid but its Active pill now reads "Inactive"
 ```
 
 **Evidence captured:**
@@ -131,17 +145,17 @@ Scenario: Logo path and Link are persisted when supplied
 ### E2E-MPR-003 — Toggle Active off then on
 
 ```gherkin
-Scenario: Editing the Active checkbox flips the row's Active column
-  Given a media partner "Gulf Maritime Press" exists with Active="✓"
-  When the administrator clicks "Edit" on that row
+Scenario: Editing the Active checkbox flips the row's Active pill
+  Given a media partner "Gulf Maritime Press" exists with its Active pill reading "Active"
+  When the administrator clicks that row's Edit (pencil) action
   And unticks the "Active" checkbox
   And clicks "Save"
   Then a PUT /account/api/admin/media-partners/{id} returns 200
-  And the row's Active column now reads "—"
-  When the administrator clicks "Edit" again
+  And the row's Active pill now reads "Inactive"
+  When the administrator clicks that row's Edit (pencil) action again
   And ticks the "Active" checkbox
   And clicks "Save"
-  Then the row's Active column reads "✓" again
+  Then the row's Active pill reads "Active" again
 ```
 
 ### E2E-MPR-004 — Delete confirm cancelled
@@ -149,11 +163,11 @@ Scenario: Editing the Active checkbox flips the row's Active column
 ```gherkin
 Scenario: Cancelling the confirm dialog makes no API call
   Given a media partner "Gulf Maritime Press" exists in the grid
-  When the administrator clicks "Delete" on that row
+  When the administrator clicks that row's Delete (trash) action
   Then a browser confirm dialog appears
   When they dismiss/cancel the confirm dialog
   Then no DELETE /account/api/admin/media-partners/{id} request fires
-  And the row is unchanged (Active column still reads "✓")
+  And the row is unchanged (its Active pill still reads "Active")
   And no toast appears
 ```
 
@@ -261,6 +275,48 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   And the footer buttons read "إلغاء" (Cancel) and "حفظ" (Save) in reverse order
 ```
 
+### E2E-MPR-012 — Per-column filter narrows the grid
+
+```gherkin
+Scenario: Typing into a column filter input narrows the grid via GridQuery.Filters
+  Given the grid shows several media partners including "Naval Times" and "Gulf Maritime Press"
+  When the administrator types "Naval" into the "Filter column Name (English)" input
+  Then a POST /account/api/admin/media-partners/list fires
+  And its GridQuery body carries Filters["nameen"]="Naval" with Skip reset to 0
+  And the grid narrows to only rows whose English name contains "Naval" (e.g. "Naval Times")
+  And "Gulf Maritime Press" is no longer shown
+
+  When the administrator clears the "Name (English)" filter
+  And types "الخليج" into the "Filter column Name (Arabic)" input
+  Then a POST /account/api/admin/media-partners/list fires with Filters["namear"]="الخليج" and Skip=0
+  And the grid narrows to rows whose Arabic name contains "الخليج" (e.g. "صحافة الخليج البحرية")
+```
+
+> Note: only **Name (English)** (`nameen`) and **Name (Arabic)** (`namear`) carry
+> `Filterable="true"`; Logo path, Link, Display order and Active have no per-column
+> filter input. The backend `AdminMediaPartnerService.ListAllAsync` matches these
+> with a case-sensitive `Contains`, so the filter value casing must match the data.
+
+### E2E-MPR-013 — Column sort toggles
+
+```gherkin
+Scenario: Clicking a sortable header toggles ascending/descending
+  Given the grid is loaded with the default order (Display order asc, then Name (Arabic) asc)
+  When the administrator clicks the "Display order" column header
+  Then a POST /account/api/admin/media-partners/list fires with Sort="displayorder" and SortDescending=false
+  And the rows are ordered by Display order ascending
+  When the administrator clicks the "Display order" header again
+  Then a POST fires with Sort="displayorder" and SortDescending=true
+  And the rows are ordered by Display order descending
+
+  When the administrator clicks the "Name (English)" column header
+  Then a POST fires with Sort="nameen" and SortDescending=false
+  And the rows are ordered by English name A→Z
+```
+
+> Note: only `nameen`, `namear` and `displayorder` are `Sortable="true"`; the Logo,
+> Link and Active columns are not sortable.
+
 ---
 
 ## Implementation notes
@@ -284,4 +340,4 @@ Scenario: Arabic toggle mirrors the page and the Add modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
