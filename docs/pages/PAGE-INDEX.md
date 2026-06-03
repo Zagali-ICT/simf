@@ -157,7 +157,7 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | #1 `splash` | 🟢 Screen built | Guest | [App/Page_001](../App/Page_001/README.md) | [e2e/mobile-splash.md](../tests/e2e/mobile-splash.md) |
 | #2 `onboarding` | 🟢 Screen built | Guest | [App/Page_002](../App/Page_002/README.md) | [e2e/mobile-onboarding.md](../tests/e2e/mobile-onboarding.md) |
 | #3 `signIn` (+ verify-otp / forgot / reset) | 🟢 Screen built | Guest | [App/Page_003](../App/Page_003/README.md) | [e2e/mobile-sign-in.md](../tests/e2e/mobile-sign-in.md) |
-| #4 `signUpType` | 📄 Doc | Guest | [App/Page_004](../App/Page_004/README.md) | — |
+| #4 `signUpType` | 🟢 Screen built | Guest | [App/Page_004](../App/Page_004/README.md) | [e2e/mobile-sign-up-type.md](../tests/e2e/mobile-sign-up-type.md) |
 | #5 `signUpForm` | 📄 Doc | Guest | [App/Page_005](../App/Page_005/README.md) | — |
 | #6 `emailOtp` | 📄 Doc | Guest | [App/Page_006](../App/Page_006/README.md) | — |
 | #7 `signUpVisitor` | 📄 Doc | Visitor | [App/Page_007](../App/Page_007/README.md) | — |

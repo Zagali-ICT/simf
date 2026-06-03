@@ -91,6 +91,24 @@ class AppL10n {
         'A QR entry badge, instant notifications, and connect with attendees who share your interests.',
       );
 
+  // Sign up — type (Page 004). Client-only account-type chooser (no API).
+  String get signUpTypeTitle => _t('إنشاء حساب — النوع', 'Sign up — type');
+  String get signUpTypeLead =>
+      _t('اختر نوع الحساب', 'Choose your account type');
+  String get signUpTypeVisitor => _t('زائر', 'Visitor');
+  String get signUpTypeVisitorHelper => _t(
+        'حساب لحضور الفعالية والتفاعل معها',
+        'Account to attend and interact with the event',
+      );
+  String get signUpTypeExhibitor => _t('عارض', 'Exhibitor');
+  String get signUpTypeSponsor => _t('راعٍ', 'Sponsor');
+  String get signUpCpOnlyNote => _t(
+        'تُدار حسابات العارضين والرعاة من لوحة التحكم',
+        'Exhibitor & sponsor accounts are managed from the Control Panel',
+      );
+  String get haveAccountQuestion =>
+      _t('لديك حساب؟', 'Have an account?');
+
   // Sign in (Page 003).
   String get signInTitle => _t('تسجيل الدخول', 'Sign in');
   String get emailLabel => _t('البريد الإلكتروني', 'Email');
