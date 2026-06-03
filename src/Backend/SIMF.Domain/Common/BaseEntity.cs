@@ -12,16 +12,22 @@ public abstract class BaseEntity
     /// <see cref="SimfUser.Id"/> (same Identity DbContext).</summary>/
     public Guid CreateBy { get; set; }
 
-    /// <summary>When the token was created (UTC).</summary>
-    public DateTimeOffset CreatedAt { get; set; } = DateTime.Now;
+    /// <summary>When the row was created (UTC). Defaulted at construction in
+    /// UTC (fixes the prior local-time <c>DateTime.Now</c> default).</summary>
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 
 public abstract class BaseAuditEntity
 {
     public Guid Id { get; set; }
 
-    //
-    public DateTimeOffset CreatedAt { get; set; } = DateTime.Now;
+    /// <summary>When the row was created (UTC) — stamped by the audit
+    /// SaveChanges interceptor from the shared TimeProvider when left unset.</summary>
+    public DateTimeOffset CreatedAt { get; set; }
+
+    /// <summary>The signed-in user who created the row (JWT <c>sub</c>); stamped
+    /// by the audit interceptor when unset. <c>Guid.Empty</c> for seeder / system
+    /// writes with no bound actor.</summary>
     public Guid CreatedBy { get; set; }
 
     //

@@ -32,7 +32,7 @@ internal sealed class SponsorConfiguration : IEntityTypeConfiguration<Sponsor>
         // SIMF-FDS-014 — D-260: optional shared Contact link. Restrict (a Contact
         // is soft-deleted, never hard-deleted under a referrer). HasForeignKey
         // creates the FK index.
-        builder.HasOne<Contact>()
+        builder.HasOne(sponsor => sponsor.Contact)
             .WithMany()
             .HasForeignKey(sponsor => sponsor.ContactId)
             .OnDelete(DeleteBehavior.Restrict);

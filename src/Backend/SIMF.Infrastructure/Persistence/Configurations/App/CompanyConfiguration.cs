@@ -32,7 +32,7 @@ internal sealed class CompanyConfiguration : IEntityTypeConfiguration<Company>
         // SIMF-FDS-014 — D-260: optional shared Contact link. Restrict (a Contact
         // is soft-deleted, never hard-deleted under a referrer). HasForeignKey
         // creates the FK index.
-        builder.HasOne<Contact>()
+        builder.HasOne(company => company.Contact)
             .WithMany()
             .HasForeignKey(company => company.ContactId)
             .OnDelete(DeleteBehavior.Restrict);

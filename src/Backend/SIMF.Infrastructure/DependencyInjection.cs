@@ -57,6 +57,11 @@ public static class DependencyInjection
         // Scoped so each request gets the right IRequestContext (actor user id +
         // correlation id) injected.
         services.AddScoped<RowAuditingSaveChangesInterceptor>();
+        // Stamps CreatedBy/CreatedAt + UpdatedBy/UpdatedAt on every audited App
+        // entity (BaseAuditEntity) from the signed-in actor. Scoped so it sees
+        // the per-request IRequestContext. Registered BEFORE the row-audit
+        // interceptor below so the stamped values land in the audit trail.
+        services.AddScoped<AuditStampingSaveChangesInterceptor>();
 
         // EnableRetryOnFailure covers the transient SQL errors of an Always On
         // failover (SIMF-SAD-001 §9).
@@ -72,7 +77,9 @@ public static class DependencyInjection
             {
                 sql.MigrationsHistoryTable("__EFMigrationsHistory_App");
                 sql.EnableRetryOnFailure();
-            }).AddInterceptors(sp.GetRequiredService<RowAuditingSaveChangesInterceptor>()));
+            }).AddInterceptors(
+                sp.GetRequiredService<AuditStampingSaveChangesInterceptor>(),
+                sp.GetRequiredService<RowAuditingSaveChangesInterceptor>()));
 
         // ASP.NET Core Identity — UserManager / RoleManager over the EF stores.
         // Identity enforces the SIMF-API-001 §12.5 baseline (length and a digit)
