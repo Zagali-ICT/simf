@@ -28,18 +28,54 @@ internal sealed class AdminAiPromptService(
         var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
 
         var rows = appDbContext.AiPrompts.AsNoTracking().AsQueryable();
-        if (query.Filters.TryGetValue("feature", out var featureRaw)
-            && Enum.TryParse<AiFeature>(featureRaw, ignoreCase: true, out var feature))
+
+        // CP grid per-column filters (D-255). Unknown columns are ignored.
+        foreach (var (column, raw) in query.Filters)
         {
-            rows = rows.Where(p => p.Feature == feature);
+            if (string.IsNullOrWhiteSpace(raw)) { continue; }
+            var v = raw.Trim();
+            switch (column.ToLowerInvariant())
+            {
+                case "key":
+                    rows = rows.Where(p => p.Key.Contains(v));
+                    break;
+                case "displayname":
+                    rows = rows.Where(p => p.DisplayName.Contains(v) || p.DisplayNameArabic.Contains(v));
+                    break;
+                case "feature":
+                    if (Enum.TryParse<AiFeature>(v, ignoreCase: true, out var feature))
+                    {
+                        rows = rows.Where(p => p.Feature == feature);
+                    }
+                    break;
+            }
         }
+
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var s = query.Search;
             rows = rows.Where(p => p.Key.Contains(s)
                 || p.DisplayName.Contains(s) || p.DisplayNameArabic.Contains(s));
         }
-        rows = rows.OrderBy(p => p.Feature).ThenBy(p => p.Key);
+
+        // CP grid sortable columns (D-255). Default: Feature, then Key.
+        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
+        {
+            ("key", false) => rows.OrderBy(p => p.Key),
+            ("key", true) => rows.OrderByDescending(p => p.Key),
+            ("displayname", false) => rows.OrderBy(p => p.DisplayName),
+            ("displayname", true) => rows.OrderByDescending(p => p.DisplayName),
+            ("provider", false) => rows.OrderBy(p => p.Provider),
+            ("provider", true) => rows.OrderByDescending(p => p.Provider),
+            ("model", false) => rows.OrderBy(p => p.Model),
+            ("model", true) => rows.OrderByDescending(p => p.Model),
+            ("version", false) => rows.OrderBy(p => p.Version),
+            ("version", true) => rows.OrderByDescending(p => p.Version),
+            ("isactive", false) => rows.OrderBy(p => p.IsActive),
+            ("isactive", true) => rows.OrderByDescending(p => p.IsActive),
+            ("feature", true) => rows.OrderByDescending(p => p.Feature).ThenByDescending(p => p.Key),
+            _ => rows.OrderBy(p => p.Feature).ThenBy(p => p.Key),
+        };
 
         var total = await rows.CountAsync(cancellationToken);
         var items = await rows.Skip(skip).Take(top)

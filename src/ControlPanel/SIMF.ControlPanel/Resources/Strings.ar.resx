@@ -2383,4 +2383,26 @@
   <data name="Admin.MeetingTables.Validation.Code" xml:space="preserve"><value>رمز الطاولة مطلوب.</value></data>
   <data name="Admin.MeetingTables.Validation.Slot" xml:space="preserve"><value>أدخل وقت بداية ونهاية صالحين (النهاية بعد البداية).</value></data>
   <data name="Admin.MeetingTables.Validation.Allocation" xml:space="preserve"><value>التخصيص العشوائي يحتاج إلى عدد؛ تخصيص الصف/العمود يحتاج إلى مخطط.</value></data>
+  <!-- Shared SimfDataGrid chrome labels (CP list-page standard, D-255) -->
+  <data name="Grid.SelectAll" xml:space="preserve"><value>تحديد الكل</value></data>
+  <data name="Grid.SelectRow" xml:space="preserve"><value>تحديد الصف</value></data>
+  <data name="Grid.Actions" xml:space="preserve"><value>إجراءات</value></data>
+  <data name="Grid.FilterColumn" xml:space="preserve"><value>تصفية العمود</value></data>
+  <data name="Grid.FilterPlaceholder" xml:space="preserve"><value>بحث</value></data>
+  <data name="Grid.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
+  <data name="Grid.Empty" xml:space="preserve"><value>لا توجد سجلات بعد.</value></data>
+  <data name="Grid.Prev" xml:space="preserve"><value>السابق</value></data>
+  <data name="Grid.Next" xml:space="preserve"><value>التالي</value></data>
+  <data name="Grid.First" xml:space="preserve"><value>الصفحة الأولى</value></data>
+  <data name="Grid.Last" xml:space="preserve"><value>الصفحة الأخيرة</value></data>
+  <data name="Grid.PageSize" xml:space="preserve"><value>عرض</value></data>
+  <data name="Grid.Page" xml:space="preserve"><value>صفحة {0} من {1}</value></data>
+  <data name="Grid.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Grid.Add" xml:space="preserve"><value>إضافة</value></data>
+  <data name="Grid.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Grid.Details" xml:space="preserve"><value>تفاصيل</value></data>
+  <data name="Grid.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Grid.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.AiPrompts.Active.Yes" xml:space="preserve"><value>مُفعّل</value></data>
+  <data name="Admin.AiPrompts.Active.No" xml:space="preserve"><value>غير مُفعّل</value></data>
 </root>

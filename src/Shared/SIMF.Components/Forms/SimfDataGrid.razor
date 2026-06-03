@@ -547,10 +547,11 @@
     /// <summary>The page-size options shown in the pager. D-117.</summary>
     [Parameter] public IReadOnlyList<int> PageSizeOptions { get; set; } = new[] { 10, 20, 50, 100 };
 
-    /// <summary>The pager summary template — receives (from, to, total). Defaults
-    /// to "{from}-{to} of {total}".</summary>
+    /// <summary>The pager summary template — receives (skip, taken, total); the
+    /// page computes the 1-based range as skip+1 .. skip+taken. Defaults to
+    /// "{skip+1}-{skip+taken} of {total}".</summary>
     [Parameter] public Func<int, int, int, string> SummaryFormatter { get; set; } =
-        (from, to, total) => $"{from}-{to} of {total}";
+        (skip, taken, total) => $"{skip + 1}-{skip + taken} of {total}";
 
     /// <summary>The pager "Page X of Y" formatter — receives (current, total). D-117.</summary>
     [Parameter] public Func<int, int, string> PageFormatter { get; set; } =
@@ -707,9 +708,10 @@
     {
         if (Query is null || Page is null) return string.Empty;
         if (Page.Total == 0) return SummaryFormatter(0, 0, 0);
-        var from = Query.Skip + 1;
-        var to = Query.Skip + Page.Items.Count;
-        return SummaryFormatter(from, to, Page.Total);
+        // D-255: pass (skip, taken, total) — the page formatters compute the
+        // 1-based range themselves (skip+1 .. skip+taken). Passing a
+        // pre-incremented `from` here double-counted ("Showing 2–8 of 7").
+        return SummaryFormatter(Query.Skip, Page.Items.Count, Page.Total);
     }
 
     private async Task ToggleSortAsync(string key)
