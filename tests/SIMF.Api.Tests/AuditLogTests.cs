@@ -136,7 +136,7 @@ public sealed class AuditLogTests : IClassFixture<SimfApiFactory>
         var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var user = database.Users.Single(candidate => candidate.Email == email);
         return database.AccountCodes
-            .Where(code => code.CreateBy == user.Id
+            .Where(code => code.UserId == user.Id
                 && code.Purpose == AccountCodePurpose.EmailVerification
                 && code.ConsumedAt == null)
             .OrderByDescending(code => code.CreatedAt)

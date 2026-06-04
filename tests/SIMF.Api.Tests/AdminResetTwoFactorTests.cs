@@ -57,7 +57,7 @@ public sealed class AdminResetTwoFactorTests : IClassFixture<SimfApiFactory>
         Assert.Null(await users.GetAuthenticatorKeyAsync(target));
 
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
-        var remaining = await db.TotpRecoveryCodes.CountAsync(c => c.CreateBy == targetUserId);
+        var remaining = await db.TotpRecoveryCodes.CountAsync(c => c.UserId == targetUserId);
         Assert.Equal(0, remaining);
     }
 

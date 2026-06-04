@@ -164,7 +164,7 @@ public sealed class RecoveryCodesTests : IClassFixture<SimfApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var user = db.Users.Single(u => u.Email == enrolled.Email);
-        var remaining = await db.TotpRecoveryCodes.CountAsync(c => c.CreateBy == user.Id);
+        var remaining = await db.TotpRecoveryCodes.CountAsync(c => c.UserId == user.Id);
         Assert.Equal(0, remaining);
     }
 

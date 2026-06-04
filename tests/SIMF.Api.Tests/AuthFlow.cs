@@ -111,7 +111,7 @@ internal static class AuthFlow
         var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var user = database.Users.Single(candidate => candidate.Email == email);
         return database.AccountCodes
-            .Where(code => code.CreateBy == user.Id
+            .Where(code => code.UserId == user.Id
                 && code.Purpose == purpose
                 && code.ConsumedAt == null)
             .OrderByDescending(code => code.CreatedAt)
@@ -145,6 +145,6 @@ internal static class AuthFlow
         var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var user = database.Users.Single(candidate => candidate.Email == email);
         return database.AccountCodes.Count(
-            code => code.CreateBy == user.Id && code.Purpose == purpose);
+            code => code.UserId == user.Id && code.Purpose == purpose);
     }
 }
