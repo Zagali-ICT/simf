@@ -7,6 +7,12 @@ using SIMF.Web.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Production secrets/config arrive as SIMF_-prefixed Machine-scope environment
+// variables (deploy/set-env-*.ps1, SIMF-OPS-001 section 6). This source strips
+// the prefix, so SIMF_Api__BaseUrl binds to Api:BaseUrl. ASPNETCORE_ENVIRONMENT
+// stays un-prefixed (the host reads it before configuration sources load).
+builder.Configuration.AddEnvironmentVariables("SIMF_");
+
 // P6 — per-project log files under {Storage:LogDirectory}/SIMF.Web/log-{Date}.log.
 builder.Host.UseSerilog((context, configuration) =>
 {
