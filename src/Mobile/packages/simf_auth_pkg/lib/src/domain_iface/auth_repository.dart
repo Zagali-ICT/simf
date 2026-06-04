@@ -38,8 +38,9 @@ abstract class AuthRepository {
     required String code,
   });
 
-  /// Re-issue a verification code for a pending account.
-  Future<void> resendCode({required String email});
+  /// Re-issue a verification code for a pending account; returns the new code's
+  /// lifetime in seconds (`codeExpiresInSeconds`) to drive the resend cooldown.
+  Future<int> resendCode({required String email});
 
   /// Refresh the access token. Returns the new session. The auth-refresh
   /// dio interceptor calls this on a 401 (via the `AuthTokenSource`

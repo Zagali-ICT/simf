@@ -166,6 +166,22 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     );
   }
 
+  /// Sign-up step 2 (Page 006): verify the emailed 6-digit code. Moves the
+  /// account Registered → EmailVerified; issues **no** session (anonymous flow).
+  /// Throws [AuthFailure] on a wrong/expired/capped code for the caller to map.
+  Future<void> verifyEmail({
+    required String email,
+    required String code,
+  }) async {
+    await _repository.verifyEmail(email: email, code: code);
+  }
+
+  /// Re-issue the sign-up verification code (Page 006). Returns the new code's
+  /// lifetime in seconds for the resend cooldown. No session / [AuthState] change.
+  Future<int> resendCode({required String email}) {
+    return _repository.resendCode(email: email);
+  }
+
   Future<void> signOut() async {
     final refreshToken = _refreshToken;
     if (refreshToken != null && refreshToken.isNotEmpty) {

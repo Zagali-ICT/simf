@@ -86,8 +86,11 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> resendCode({required String email}) async {
-    await _guard(() => _api.resendCode(ResendCodeRequest(email: email)));
+  Future<int> resendCode({required String email}) async {
+    final data = await _guard(
+      () => _api.resendCode(ResendCodeRequest(email: email)),
+    );
+    return (data['codeExpiresInSeconds'] as num?)?.toInt() ?? 0;
   }
 
   @override

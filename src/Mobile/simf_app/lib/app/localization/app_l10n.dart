@@ -117,6 +117,15 @@ class AppL10n {
   String get signUpCheckEmail =>
       _t('تحقق من بريدك الإلكتروني', 'Check your email');
 
+  // Sign-up email verification (Page 006).
+  String get emailVerifyTitle => _t('التحقق بالبريد', 'Email verification');
+  String get emailVerifySentTo =>
+      _t('أرسلنا رمزًا من 6 أرقام إلى', 'We sent a 6-digit code to');
+  String get emailVerifiedToast => _t('تم التحقق من البريد', 'Email verified');
+  String get resendCodeButton => _t('إعادة إرسال الرمز', 'Resend code');
+  String resendCooldownText(int seconds) =>
+      _t('إعادة الإرسال خلال $seconds ث', 'Resend in ${seconds}s');
+
   String get haveAccountQuestion =>
       _t('لديك حساب؟', 'Have an account?');
 

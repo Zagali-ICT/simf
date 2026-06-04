@@ -17,6 +17,9 @@ void main() {
       const VerifyEmailRequest(email: '', code: ''),
     );
     registerFallbackValue(
+      const ResendCodeRequest(email: ''),
+    );
+    registerFallbackValue(
       const RefreshRequest(refreshToken: ''),
     );
   });
@@ -156,6 +159,36 @@ void main() {
         ),
         throwsA(isA<EmailAlreadyRegistered>()),
       );
+    });
+  });
+
+  group('AuthRepositoryImpl.verifyEmail / resendCode', () {
+    test('verifyEmail passes email + code through to the API', () async {
+      final api = _MockAuthApi();
+      when(() => api.verifyEmail(any())).thenAnswer((_) async => const {});
+
+      final repo = AuthRepositoryImpl(api: api);
+      await repo.verifyEmail(email: 'new@example.sa', code: '123456');
+
+      final captured = verify(() => api.verifyEmail(captureAny())).captured;
+      final request = captured.single as VerifyEmailRequest;
+      expect(request.email, equals('new@example.sa'));
+      expect(request.code, equals('123456'));
+    });
+
+    test('resendCode returns codeExpiresInSeconds from the response', () async {
+      final api = _MockAuthApi();
+      when(() => api.resendCode(any())).thenAnswer(
+        (_) async => const <String, dynamic>{
+          'email': 'new@example.sa',
+          'codeExpiresInSeconds': 600,
+        },
+      );
+
+      final repo = AuthRepositoryImpl(api: api);
+      final seconds = await repo.resendCode(email: 'new@example.sa');
+
+      expect(seconds, equals(600));
     });
   });
 }

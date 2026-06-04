@@ -11,6 +11,7 @@ import '../features/auth/email_otp_verify_screen.dart';
 import '../features/auth/forgot_password_screen.dart';
 import '../features/auth/reset_password_screen.dart';
 import '../features/auth/sign_in_screen.dart';
+import '../features/auth/sign_up_email_verify_screen.dart';
 import '../features/auth/sign_up_form_screen.dart';
 import '../features/auth/sign_up_type_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
@@ -188,6 +189,11 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.signUpForm) {
               return const SignUpFormScreen();
+            }
+            if (r.name == RouteNames.emailOtp) {
+              return SignUpEmailVerifyScreen(
+                email: state.uri.queryParameters['email'] ?? '',
+              );
             }
             return ComingSoonScreen(
               screenNumber: r.number,

@@ -17,14 +17,14 @@ sign-up journey. It exposes a 6-box OTP entry, a **Resend code** action and a
 ## Identity
 | | |
 |---|---|
-| Mockup page | **6** (`Mockup.html`) — owner page 006 |
+| Mockup page | **4-01** (`Mockup.html`, footnote "التحقق بالبريد · OTP") — owner page 006 (mockup slot 06 is the separate photo-verify screen) |
 | Screen key | `emailOtp` |
 | Route | `RouteNames.emailOtp` → `/sign-up/otp` |
 | Titles | AR **التحقق بالبريد** · EN **Email verification** |
 | Section | 1 — Authentication / sign-up |
 | Nature | **OTP verification step** (6-digit emailed code) |
 | App privilege | **Anonymous** (mid sign-up, no token yet) |
-| Status | API **built** (`POST /app/auth/verify-email`, `POST /app/auth/resend-code`); design **drafted** |
+| Status | **Built** — Flutter `SignUpEmailVerifyScreen` wired to `verify-email` + `resend-code` (6-digit verify, resend cooldown from `codeExpiresInSeconds`, verified → sign-in); API **built**; UI is an interim placeholder (final design SIMF-VID-001) |
 
 ## Sources of truth
 `Mockup.html` (visual) · `SIMF_Screen_Guide_and_User_Journey` (narrative, Screen 6) ·
