@@ -163,6 +163,8 @@
                                ValueExpression="@(() => _form.OfficerEmail)"
                                MaxLength="320"
                                Disabled="_busy" />
+                @* SIMF-FDS-014 (D-283) — optional link to a shared Contact directory record (the booth officer). *@
+                <ContactPicker Value="_form.ContactId" ValueChanged="@(v => _form.ContactId = v)" Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Booths.Field.SectorEn"]"
                                Value="@_form.Sector"
                                ValueChanged="@(v => _form.Sector = v)"
@@ -246,6 +248,7 @@
         public string OfficerName { get; set; } = string.Empty;
         public string OfficerPhone { get; set; } = string.Empty;
         public string OfficerEmail { get; set; } = string.Empty;
+        public Guid? ContactId { get; set; }
         public string Sector { get; set; } = string.Empty;
         public string SectorArabic { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -415,6 +418,7 @@
                     OfficerName = d.OfficerName ?? string.Empty,
                     OfficerPhone = d.OfficerPhone ?? string.Empty,
                     OfficerEmail = d.OfficerEmail ?? string.Empty,
+                    ContactId = d.ContactId,
                     Sector = d.Sector ?? string.Empty,
                     SectorArabic = d.SectorArabic ?? string.Empty,
                     Description = d.Description ?? string.Empty,
@@ -475,6 +479,7 @@
                         HallId = _form.HallId,
                         MapX = _form.MapX,
                         MapY = _form.MapY,
+                        ContactId = _form.ContactId,
                         IsActive = _form.IsActive,
                     });
             }
@@ -499,6 +504,7 @@
                         HallId = _form.HallId,
                         MapX = _form.MapX,
                         MapY = _form.MapY,
+                        ContactId = _form.ContactId,
                     });
             }
             if (env is { Success: true })

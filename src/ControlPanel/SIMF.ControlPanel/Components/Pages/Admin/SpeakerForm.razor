@@ -89,6 +89,9 @@
                        MaxLength="256"
                        @bind-Value="_model.XUrl" Disabled="_busy" />
 
+        @* SIMF-FDS-014 (D-283) — optional link to a shared Contact directory record. *@
+        <ContactPicker Value="_contactId" ValueChanged="@(v => _contactId = v)" Disabled="_busy" />
+
         <SimfTextField Label="@L["Admin.Speakers.Field.DisplayOrder"]"
                        Type="number"
                        Value="@_displayOrderInput"
@@ -122,6 +125,7 @@
     private readonly Model _model = new();
     private string _displayOrderInput = "0";
     private string _countryIdInput = string.Empty;
+    private Guid? _contactId;
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
@@ -156,6 +160,7 @@
             _model.FacebookUrl = Initial.FacebookUrl ?? string.Empty;
             _model.LinkedInUrl = Initial.LinkedInUrl ?? string.Empty;
             _model.XUrl = Initial.XUrl ?? string.Empty;
+            _contactId = Initial.ContactId;
             _model.IsActive = Initial.IsActive;
             _displayOrderInput = Initial.DisplayOrder.ToString();
         }
@@ -256,6 +261,7 @@
                         FacebookUrl = NullIfBlank(_model.FacebookUrl),
                         LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
                         XUrl = NullIfBlank(_model.XUrl),
+                        ContactId = _contactId,
                         DisplayOrder = order,
                     });
             }
@@ -284,6 +290,7 @@
                         FacebookUrl = NullIfBlank(_model.FacebookUrl),
                         LinkedInUrl = NullIfBlank(_model.LinkedInUrl),
                         XUrl = NullIfBlank(_model.XUrl),
+                        ContactId = _contactId,
                         DisplayOrder = order,
                         IsActive = _model.IsActive,
                     });

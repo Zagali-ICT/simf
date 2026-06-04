@@ -124,6 +124,8 @@
                                ValueExpression="@(() => _form.Url)"
                                MaxLength="512"
                                Disabled="_busy" />
+                @* SIMF-FDS-014 (D-283) — optional link to a shared Contact directory record. *@
+                <ContactPicker Value="_form.ContactId" ValueChanged="@(v => _form.ContactId = v)" Disabled="_busy" />
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.MediaPartners.Field.DisplayOrder"]</span>
                     <input class="simf-field__input" type="number" min="0" max="99999"
@@ -159,6 +161,7 @@
         public string LogoRelativePath { get; set; } = string.Empty;
         public string Url { get; set; } = string.Empty;
         public int DisplayOrder { get; set; }
+        public Guid? ContactId { get; set; }
         public bool IsActive { get; set; } = true;
     }
 
@@ -221,21 +224,42 @@
         _toast = null;
     }
 
-    private void OnEdit(AdminMediaPartnerSummary row)
+    private async Task OnEdit(AdminMediaPartnerSummary row)
     {
-        _editOpen = true;
-        _isEdit = true;
-        _editingId = row.Id;
-        _form = new FormModel
-        {
-            Name = row.Name,
-            NameArabic = row.NameArabic,
-            LogoRelativePath = row.LogoRelativePath ?? string.Empty,
-            Url = row.Url ?? string.Empty,
-            DisplayOrder = row.DisplayOrder,
-            IsActive = row.IsActive,
-        };
+        // SIMF-FDS-014 (D-283) — fetch the full detail so the contact picker can
+        // pre-load the linked ContactId (the grid summary omits it; saving from a
+        // summary-only form would otherwise wipe an existing link).
+        if (_busy) return;
+        _busy = true;
         _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminMediaPartnerDetail>>(
+                "simfAccount.getJson", $"/account/api/admin/media-partners/{row.Id}");
+            if (env is { Success: true, Data: not null })
+            {
+                var d = env.Data;
+                _editingId = d.Id;
+                _form = new FormModel
+                {
+                    Name = d.Name,
+                    NameArabic = d.NameArabic,
+                    LogoRelativePath = d.LogoRelativePath ?? string.Empty,
+                    Url = d.Url ?? string.Empty,
+                    DisplayOrder = d.DisplayOrder,
+                    ContactId = d.ContactId,
+                    IsActive = d.IsActive,
+                };
+                _isEdit = true;
+                _editOpen = true;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.MediaPartners.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
     }
 
     private async Task SaveAsync()
@@ -264,6 +288,7 @@
                             ? null : _form.LogoRelativePath,
                         Url = string.IsNullOrWhiteSpace(_form.Url) ? null : _form.Url,
                         DisplayOrder = _form.DisplayOrder,
+                        ContactId = _form.ContactId,
                         IsActive = _form.IsActive,
                     });
             }
@@ -278,7 +303,8 @@
                         string.IsNullOrWhiteSpace(_form.LogoRelativePath)
                             ? null : _form.LogoRelativePath,
                         string.IsNullOrWhiteSpace(_form.Url) ? null : _form.Url,
-                        _form.DisplayOrder));
+                        _form.DisplayOrder,
+                        _form.ContactId));
             }
             if (env is { Success: true })
             {

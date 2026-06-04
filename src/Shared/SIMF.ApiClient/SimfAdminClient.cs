@@ -2116,6 +2116,24 @@ public sealed class SimfAdminClient(HttpClient http)
             $"contacts/picker?search={Uri.EscapeDataString(search ?? string.Empty)}",
             content: null, accessToken, cancellationToken);
 
+    // SIMF-FDS-014 (D-283/C2b) — single-row detail fetch so the Sponsor /
+    // MediaPartner edit modals can pre-load the linked ContactId for the picker
+    // (their backend GET endpoints already exist; only these client + BFF
+    // passthroughs were missing). Mirrors GetOrganisationAsync.
+    public Task<ApiCallResult<AdminSponsorDetail>> GetSponsorAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminSponsorDetail>(
+            HttpMethod.Get, $"sponsors/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<AdminMediaPartnerDetail>> GetMediaPartnerAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminMediaPartnerDetail>(
+            HttpMethod.Get, $"media-partners/{id}", content: null,
+            accessToken, cancellationToken);
+
     // -- B9b (D-226) — Session-category dynamic lookup admin CRUD
     //    (SIMF.Contracts.Admin) ---------------------------------------------
 

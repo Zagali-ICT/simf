@@ -2425,4 +2425,12 @@
   <data name="Admin.Contacts.Field.LatLongPair" xml:space="preserve"><value>Set both latitude and longitude, or leave both blank.</value></data>
   <data name="Admin.Contacts.Field.LatLongInvalid" xml:space="preserve"><value>Latitude must be between -90 and 90, longitude between -180 and 180.</value></data>
   <data name="Admin.Contacts.Field.IsActive" xml:space="preserve"><value>Active</value></data>
+  <data name="Admin.Contacts.Picker.Label" xml:space="preserve"><value>Linked contact</value></data>
+  <data name="Admin.Contacts.Picker.Hint" xml:space="preserve"><value>Link an existing contact from the directory (optional)</value></data>
+  <data name="Admin.Contacts.Picker.Search" xml:space="preserve"><value>Search contacts</value></data>
+  <data name="Admin.Contacts.Picker.SearchApply" xml:space="preserve"><value>Find</value></data>
+  <data name="Admin.Contacts.Picker.None" xml:space="preserve"><value>No matching contacts</value></data>
+  <data name="Admin.Contacts.Picker.Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="Admin.Contacts.Picker.Linked" xml:space="preserve"><value>Linked: {0}</value></data>
+  <data name="Admin.Contacts.Picker.NotLinked" xml:space="preserve"><value>No contact linked</value></data>
 </root>

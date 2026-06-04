@@ -2163,6 +2163,24 @@ internal static class AccountEndpoints
             return Forward(await api.DeactivateContactAsync(id, token));
         });
 
+        // SIMF-FDS-014 (D-283/C2b) — single-row GET passthroughs the Sponsor /
+        // MediaPartner edit modals use to pre-load the linked ContactId for the
+        // contact picker (the list/create/update/delete proxies already exist).
+        group.MapGet("/admin/sponsors/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetSponsorAsync(id, token));
+        });
+        group.MapGet("/admin/media-partners/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetMediaPartnerAsync(id, token));
+        });
+
         // B9b (D-226) — session-category dynamic lookup admin CRUD passthroughs.
         group.MapPost("/admin/session-categories/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

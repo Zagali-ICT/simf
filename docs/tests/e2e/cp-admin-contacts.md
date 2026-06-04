@@ -30,6 +30,8 @@
 | E2E-CON-010 | Conflict — deactivate a referenced contact (409) | error | P0 | authored |
 | E2E-CON-011 | Server 500 surfaces an error toast | resilience | P2 | authored |
 | E2E-CON-012 | RTL render (Arabic UI) | i18n | P1 | authored |
+| E2E-CON-013 | ContactPicker — link an existing contact on an admin form | happy | P0 | authored |
+| E2E-CON-014 | ContactPicker — edit pre-loads the link; clear unlinks (no wipe) | happy | P0 | authored |
 
 ## Scenarios
 
@@ -183,6 +185,52 @@ Scenario: The page renders right-to-left in Arabic
   And the Country dropdown shows Arabic country names
 ```
 
+### E2E-CON-013 — ContactPicker: link an existing contact on an admin form
+
+```gherkin
+Feature: Link a shared Contact from an org-facing admin form (Slice C2b)
+  The same ContactPicker is wired into the Sponsor / Exhibitor / MediaPartner /
+  Speaker / Booth-officer admin forms. It is link-existing only (manage the
+  directory at /admin/contacts).
+
+Background:
+  Given an Administrator is signed in
+  And a contact "علم البحرية / Naval Tech Co." exists in the directory
+
+Scenario: Link a contact while creating a sponsor
+  Given the administrator opens "/admin/sponsors" and clicks "Add"
+  And fills the sponsor's required name + tier
+  When in the "Linked contact" picker they type "Naval" and click "Find"
+  Then the result "علم البحرية · Naval Tech Co." is listed
+  When they click that result
+  Then the picker shows "Linked: علم البحرية · Naval Tech Co." with a "Clear" button
+  When they click "Save"
+  Then the sponsor is created with ContactId set
+  And re-opening the sponsor shows the picker pre-loaded with that contact
+  And the public sponsors list flattens the contact's name/logo/website (E2E-CON via API)
+```
+
+### E2E-CON-014 — ContactPicker: edit pre-loads the link; clear unlinks (no wipe)
+
+```gherkin
+Scenario: Editing a linked entity pre-loads the picker and never silently wipes the link
+  Given a Sponsor already linked to a contact
+  When the administrator opens the sponsor's edit modal
+  Then the form fetches the full detail (GET /admin/sponsors/{id}) and the picker
+       shows "Linked: <contact name>" — NOT empty
+  When the administrator changes an unrelated field and saves
+  Then the existing ContactId is preserved (not nulled)
+  When instead the administrator clicks "Clear" in the picker and saves
+  Then the link is removed (ContactId = null) and the public card falls back to the
+       entity's own inline name/logo
+```
+
+**Evidence captured (CON-013/014):**
+- The same flow applies to Exhibitor / MediaPartner / Speaker / Booth-officer forms
+  (Booth's picker is the booth *officer*). Sponsor + MediaPartner edit fetch the
+  detail via the C2b GET passthroughs; Exhibitor + Booth already fetched detail;
+  Speaker uses its detail-backed form.
+
 ## Implementation notes
 
 - API-layer coverage lives in `tests/SIMF.Api.Tests/ContactsTests.cs` (22 cases:
@@ -191,9 +239,10 @@ Scenario: The page renders right-to-left in Arabic
 - The page is gated by `Contacts.View`; `POST/PUT/DELETE /api/v1/admin/contacts`
   enforce `Contacts.Edit` server-side (the grid's Add/Edit/Delete actions follow
   the Organisation directory pattern — page View-gated, writes Edit-gated).
-- The Contact **link picker** that wires `ContactId` onto the Sponsor /
-  Exhibitor / MediaPartner / Speaker / Booth forms is catalogued with those
-  pages (Slice C2b).
+- The Contact **link picker** (Slice C2b, `ContactPicker.razor`) that wires
+  `ContactId` onto the Sponsor / Exhibitor / MediaPartner / Speaker / Booth-officer
+  forms is catalogued centrally here as **E2E-CON-013/014** (the component is
+  identical across all five forms); each form's own catalogue cross-references it.
 
 ---
 

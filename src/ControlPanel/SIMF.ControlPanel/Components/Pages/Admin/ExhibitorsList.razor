@@ -132,6 +132,8 @@
                                ValueExpression="@(() => _form.Website)"
                                MaxLength="512"
                                Disabled="_busy" />
+                @* SIMF-FDS-014 (D-283) — optional link to a shared Contact directory record. *@
+                <ContactPicker Value="_form.ContactId" ValueChanged="@(v => _form.ContactId = v)" Disabled="_busy" />
                 @if (_isEdit)
                 {
                     <SimfCheckbox Value="_form.IsActive"
@@ -237,6 +239,7 @@
         public string ContactEmail { get; set; } = string.Empty;
         public string ContactPhone { get; set; } = string.Empty;
         public string Website { get; set; } = string.Empty;
+        public Guid? ContactId { get; set; }
         public bool IsActive { get; set; } = true;
     }
 
@@ -334,6 +337,7 @@
                     ContactEmail = d.ContactEmail ?? string.Empty,
                     ContactPhone = d.ContactPhone ?? string.Empty,
                     Website = d.Website ?? string.Empty,
+                    ContactId = d.ContactId,
                     IsActive = d.IsActive,
                 };
                 _isEdit = true;
@@ -379,6 +383,7 @@
                         ContactEmail = NullIfBlank(_form.ContactEmail),
                         ContactPhone = NullIfBlank(_form.ContactPhone),
                         Website = NullIfBlank(_form.Website),
+                        ContactId = _form.ContactId,
                         IsActive = _form.IsActive,
                     });
             }
@@ -394,6 +399,7 @@
                         ContactEmail = NullIfBlank(_form.ContactEmail),
                         ContactPhone = NullIfBlank(_form.ContactPhone),
                         Website = NullIfBlank(_form.Website),
+                        ContactId = _form.ContactId,
                     });
             }
             if (env is { Success: true })
