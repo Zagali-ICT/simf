@@ -1,3 +1,5 @@
+using SIMF.Domain.Common;
+
 namespace SIMF.Domain.Programme;
 
 /// <summary>
@@ -10,10 +12,8 @@ namespace SIMF.Domain.Programme;
 /// programme team uses in print materials (e.g. "DEF", "TECH"); the
 /// bilingual Name pair is what visitors see.</para>
 /// </summary>
-public class Theme
+public class Theme : BaseAuditEntity
 {
-    public Guid Id { get; set; }
-
     /// <summary>Short stable code for cross-reference (e.g. "DEF", "TECH").
     /// Unique, 2–16 chars. Programme team's choice — printable.</summary>
     public string Code { get; set; } = string.Empty;
@@ -37,15 +37,4 @@ public class Theme
     /// <summary>The theme's accent colour. Free text (hex, CSS variable,
     /// etc.) — mirrors the D-115 ProfileType.PageColor contract.</summary>
     public string PageColor { get; set; } = string.Empty;
-
-    /// <summary>Soft-delete flag (SIMF-SES-001 §7). False rows stay in
-    /// the DB but vanish from the CP picker + the visitor agenda.</summary>
-    public bool IsActive { get; set; } = true;
-
-    /// <summary>When the row was created (UTC).</summary>
-    public DateTimeOffset CreatedAt { get; set; }
-
-    /// <summary>When the row was last updated (UTC), or null if untouched
-    /// since creation.</summary>
-    public DateTimeOffset? UpdatedAt { get; set; }
 }

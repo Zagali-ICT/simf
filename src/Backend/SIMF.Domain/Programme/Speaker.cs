@@ -1,3 +1,5 @@
+using SIMF.Domain.Common;
+
 namespace SIMF.Domain.Programme;
 
 /// <summary>
@@ -12,9 +14,8 @@ namespace SIMF.Domain.Programme;
 /// that drive what the public speaker page is allowed to surface; and
 /// three social-profile URLs the speaker has opted to publish.
 /// </summary>
-public class Speaker
+public class Speaker : BaseAuditEntity
 {
-    public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string NameArabic { get; set; } = string.Empty;
@@ -74,7 +75,4 @@ public class Speaker
     public Guid? ContactId { get; set; }
 
     public int DisplayOrder { get; set; }
-    public bool IsActive { get; set; } = true;
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
 }

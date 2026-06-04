@@ -1,4 +1,5 @@
 using SIMF.Common.Enums;
+using SIMF.Domain.Common;
 
 namespace SIMF.Domain.Programme;
 
@@ -20,10 +21,8 @@ namespace SIMF.Domain.Programme;
 /// optional <see cref="CapacityOverride"/> column captures the
 /// per-session value. Null means "use the hall default".</para>
 /// </summary>
-public class Session
+public class Session : BaseAuditEntity
 {
-    public Guid Id { get; set; }
-
     /// <summary>Stable admin code (2–16 chars; unique across all
     /// sessions). Used by the booking module + the URL of the public
     /// session page.</summary>
@@ -64,13 +63,6 @@ public class Session
     /// the hall default" — most sessions inherit; only the
     /// reconfigured rooms override.</summary>
     public int? CapacityOverride { get; set; }
-
-    /// <summary>Soft-delete flag — hides the session from public
-    /// agenda views without losing the row.</summary>
-    public bool IsActive { get; set; } = true;
-
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
 
     /// <summary>P1.7 (D-217 freeze-lift) — set by the automated reminder
     /// worker once it has dispatched the "starting soon" notifications for

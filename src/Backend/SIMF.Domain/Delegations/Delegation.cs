@@ -9,10 +9,8 @@ namespace SIMF.Domain.Delegations;
 /// <see cref="IsPriority"/> (أولوية قصوى) with chip filters for "All",
 /// "Priority" (ذو أولوية), and "International" (دولي).
 /// </summary>
-public sealed class Delegation
+public sealed class Delegation : BaseAuditEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-
     /// <summary>English display name.</summary>
     public string Name { get; set; } = string.Empty;
 
@@ -41,10 +39,4 @@ public sealed class Delegation
     /// <summary>Sort key on the public list — ascending. Tie-broken
     /// by <see cref="NameArabic"/>.</summary>
     public int DisplayOrder { get; set; }
-
-    public bool IsActive { get; set; } = true;
-
-    public DateTimeOffset CreatedAt { get; set; }
-
-    public DateTimeOffset? UpdatedAt { get; set; }
 }

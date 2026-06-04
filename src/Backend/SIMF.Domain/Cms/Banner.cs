@@ -1,3 +1,5 @@
+using SIMF.Domain.Common;
+
 namespace SIMF.Domain.Cms;
 
 /// <summary>
@@ -11,10 +13,8 @@ namespace SIMF.Domain.Cms;
 /// display order; folding them into a key/value content block would
 /// lose those columns to a stringified JSON blob.</para>
 /// </summary>
-public sealed class Banner
+public sealed class Banner : BaseAuditEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-
     public string TitleEn { get; set; } = string.Empty;
     public string TitleAr { get; set; } = string.Empty;
 
@@ -37,10 +37,4 @@ public sealed class Banner
     /// <summary>Display order — 0 = top. Tie-broken by
     /// <see cref="StartUtc"/>.</summary>
     public int DisplayOrder { get; set; }
-
-    public bool IsActive { get; set; } = true;
-
-    public DateTimeOffset CreatedAt { get; set; }
-
-    public DateTimeOffset? UpdatedAt { get; set; }
 }

@@ -1,4 +1,5 @@
 using SIMF.Common.Enums;
+using SIMF.Domain.Common;
 
 namespace SIMF.Domain.Networking;
 
@@ -12,10 +13,8 @@ namespace SIMF.Domain.Networking;
 /// surface, so it carries no permission code (matches SessionComment submit /
 /// MeetPeopleLikeYou).
 /// </summary>
-public sealed class Connection
+public sealed class Connection : BaseAuditEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-
     /// <summary>The user who sent the request. Logical FK to SimfUser.Id.</summary>
     public Guid RequesterUserId { get; set; }
 
@@ -25,16 +24,6 @@ public sealed class Connection
     /// <summary>Lifecycle state — Pending → Accepted / Declined.</summary>
     public ConnectionState State { get; set; } = ConnectionState.Pending;
 
-    /// <summary>When the request was created (UTC).</summary>
-    public DateTimeOffset CreatedAt { get; set; }
-
     /// <summary>When the target accepted / declined; null while Pending.</summary>
     public DateTimeOffset? RespondedAt { get; set; }
-
-    /// <summary>Soft-delete flag — a removed / declined connection is excluded
-    /// from every list but the row is retained.</summary>
-    public bool IsActive { get; set; } = true;
-
-    /// <summary>Soft-delete transition (CLAUDE.md §7).</summary>
-    public void Deactivate() => IsActive = false;
 }

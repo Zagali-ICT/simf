@@ -1,3 +1,5 @@
+using SIMF.Domain.Common;
+
 namespace SIMF.Domain.Programme;
 
 /// <summary>P2.3 — D-228 (SIMF-FDS-004 §5.3 + §7, FR-407): one presentation
@@ -5,10 +7,8 @@ namespace SIMF.Domain.Programme;
 /// live OUTSIDE the row (decision D-90, same policy as media images / avatars)
 /// via <c>ISpeakerPresentationStorage</c>; this row keeps only the metadata +
 /// the storage key. Soft-deleted via <see cref="IsActive"/>.</summary>
-public sealed class SpeakerPresentation
+public sealed class SpeakerPresentation : BaseAuditEntity
 {
-    public Guid Id { get; set; }
-
     /// <summary>The presenting speaker. Real FK (same DbContext), cascade.</summary>
     public Guid SpeakerId { get; set; }
     public Speaker? Speaker { get; set; }
@@ -34,9 +34,4 @@ public sealed class SpeakerPresentation
     /// <summary>The admin (logical FK to SimfUser on the Identity DB) who
     /// uploaded the file.</summary>
     public Guid UploadedByUserId { get; set; }
-
-    public bool IsActive { get; set; } = true;
-    public DateTimeOffset CreatedAt { get; set; }
-
-    public void Deactivate() => IsActive = false;
 }

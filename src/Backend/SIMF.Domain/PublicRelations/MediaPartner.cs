@@ -1,3 +1,5 @@
+using SIMF.Domain.Common;
+
 namespace SIMF.Domain.PublicRelations;
 
 /// <summary>
@@ -7,10 +9,8 @@ namespace SIMF.Domain.PublicRelations;
 /// partner's site (<see cref="Url"/>). The public list is ordered by
 /// <see cref="DisplayOrder"/> ascending, tie-broken by <see cref="NameAr"/>.
 /// </summary>
-public sealed class MediaPartner
+public sealed class MediaPartner : BaseAuditEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-
     /// <summary>English display name (1–256 chars).</summary>
     public string NameEn { get; set; } = string.Empty;
 
@@ -39,10 +39,4 @@ public sealed class MediaPartner
     /// Contact. The public projection prefers the Contact when set.</summary>
     public Guid? ContactId { get; set; }
 
-    /// <summary>Soft-delete flag. Inactive rows never appear on the public
-    /// list and are filtered out of every active query.</summary>
-    public bool IsActive { get; set; } = true;
-
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
 }

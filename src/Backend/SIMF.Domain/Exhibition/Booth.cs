@@ -1,3 +1,5 @@
+using SIMF.Domain.Common;
+
 namespace SIMF.Domain.Exhibition;
 
 /// <summary>
@@ -20,10 +22,8 @@ namespace SIMF.Domain.Exhibition;
 
 //Add exibtor as company and sponser
 //then exibtorBooth
-public class Booth
+public class Booth : BaseAuditEntity
 {
-    public Guid Id { get; set; }
-
     /// <summary>Short booth code shown in the card header (e.g. "A-12").
     /// Unique across active and inactive booths.</summary>
     public string Code { get; set; } = string.Empty;
@@ -93,14 +93,4 @@ public class Booth
     /// <summary>D-199 — booth Y position on the 2D venue map. Optional until
     /// the booth is placed.</summary>
     public double? MapY { get; set; }
-
-    /// <summary>Soft-delete flag. List/read endpoints filter on this.</summary>
-    public bool IsActive { get; set; } = true;
-
-    /// <summary>Reverts <see cref="IsActive"/> to false — the soft-delete
-    /// operation used by the admin DELETE endpoint.</summary>
-    public void Deactivate() => IsActive = false;
-
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
 }

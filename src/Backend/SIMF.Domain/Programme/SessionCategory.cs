@@ -1,3 +1,5 @@
+using SIMF.Domain.Common;
+
 namespace SIMF.Domain.Programme;
 
 /// <summary>
@@ -9,10 +11,8 @@ namespace SIMF.Domain.Programme;
 /// item OI-2) — the table ships empty and the team seeds it, exactly like the
 /// Organisation lookup; nothing is invented here.
 /// </summary>
-public sealed class SessionCategory
+public sealed class SessionCategory : BaseAuditEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-
     /// <summary>English category name (1–128 chars).</summary>
     public string NameEn { get; set; } = string.Empty;
 
@@ -21,13 +21,4 @@ public sealed class SessionCategory
 
     /// <summary>Sort order in the picker / admin grid (ascending).</summary>
     public int DisplayOrder { get; set; }
-
-    /// <summary>Soft-delete flag. List/picker reads filter on this.</summary>
-    public bool IsActive { get; set; } = true;
-
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
-
-    /// <summary>Soft-delete transition (CLAUDE.md §7).</summary>
-    public void Deactivate() => IsActive = false;
 }

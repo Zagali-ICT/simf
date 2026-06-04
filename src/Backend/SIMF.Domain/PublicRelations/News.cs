@@ -1,3 +1,5 @@
+using SIMF.Domain.Common;
+
 namespace SIMF.Domain.PublicRelations;
 
 /// <summary>
@@ -21,10 +23,8 @@ namespace SIMF.Domain.PublicRelations;
 /// service via <c>TimeProvider</c>.
 /// </para>
 /// </summary>
-public class News
+public class News : BaseAuditEntity
 {
-    public Guid Id { get; set; }
-
     public string TitleEn { get; set; } = string.Empty;
     public string TitleAr { get; set; } = string.Empty;
 
@@ -58,11 +58,4 @@ public class News
 
     /// <summary>Tie-breaker for items sharing a publish instant (ascending).</summary>
     public int DisplayOrder { get; set; }
-
-    /// <summary>Soft-delete flag. The admin service sets this false on delete
-    /// and the public reads filter on it — matching Delegation / Country.</summary>
-    public bool IsActive { get; set; } = true;
-
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
 }

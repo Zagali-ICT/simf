@@ -1,4 +1,5 @@
 using SIMF.Common.Enums;
+using SIMF.Domain.Common;
 
 namespace SIMF.Domain.Programme;
 
@@ -9,10 +10,8 @@ namespace SIMF.Domain.Programme;
 /// team uses ("H1", "A201"); bilingual <see cref="Name"/>/<see cref="NameArabic"/>
 /// are what visitors see in the agenda.
 /// </summary>
-public class Hall
+public class Hall : BaseAuditEntity
 {
-    public Guid Id { get; set; }
-
     /// <summary>Short stable code (2–16 chars; unique; uppercased).</summary>
     public string Code { get; set; } = string.Empty;
 
@@ -32,9 +31,6 @@ public class Hall
     /// <summary>Optional free-text notes on equipment + accessibility
     /// (≤ 1024 chars).</summary>
     public string? EquipmentNotes { get; set; }
-
-    /// <summary>Soft-delete flag.</summary>
-    public bool IsActive { get; set; } = true;
 
     /// <summary>SIMF-FDS-013 — D-248: what the hall is designated for. Defaults to
     /// <see cref="HallPurpose.General"/> (value 0) — every pre-existing hall keeps
@@ -61,7 +57,4 @@ public class Hall
     /// whose reported GPS point is within this radius of the centre is treated as
     /// arrived at the hall (<c>Method = Geofence</c>).</summary>
     public double? GeofenceRadiusMeters { get; set; }
-
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
 }

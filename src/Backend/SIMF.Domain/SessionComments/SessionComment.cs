@@ -1,4 +1,5 @@
 using SIMF.Common.Enums;
+using SIMF.Domain.Common;
 using SIMF.Domain.Programme;
 
 namespace SIMF.Domain.SessionComments;
@@ -28,10 +29,8 @@ namespace SIMF.Domain.SessionComments;
 /// the same interface, so the service layer does not change when it
 /// lands.</para>
 /// </summary>
-public sealed class SessionComment
+public sealed class SessionComment : BaseAuditEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-
     /// <summary>Real FK to <see cref="Session"/> on the App DB.</summary>
     public Guid SessionId { get; set; }
     public Session? Session { get; set; }
@@ -63,16 +62,6 @@ public sealed class SessionComment
     /// hot feed read never needs a COUNT subquery. Never negative.</summary>
     public int LikeCount { get; set; }
 
-    /// <summary>Soft-delete flag (CLAUDE.md §7). A deactivated comment
-    /// is excluded from every list (public and admin) but the row is
-    /// retained. Distinct from <see cref="SessionCommentStatus.Hidden"/>:
-    /// Hidden is a moderation decision that still shows in the admin
-    /// moderation list; <see cref="IsActive"/> = false is a delete.</summary>
-    public bool IsActive { get; set; } = true;
-
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset? UpdatedAt { get; set; }
-
     /// <summary>The moderator/admin who last changed <see cref="Status"/>.
     /// Logical FK to <c>SimfUser.Id</c>; null until first moderated.</summary>
     public Guid? ModeratedByUserId { get; set; }
@@ -80,11 +69,4 @@ public sealed class SessionComment
     /// <summary>When <see cref="Status"/> was last changed by a
     /// moderator; null while still in its AI-filter landing state.</summary>
     public DateTimeOffset? ModeratedAt { get; set; }
-
-    /// <summary>Soft-delete transition — sets <see cref="IsActive"/>
-    /// false (CLAUDE.md §7 <c>Deactivate()</c> convention).</summary>
-    public void Deactivate()
-    {
-        IsActive = false;
-    }
 }

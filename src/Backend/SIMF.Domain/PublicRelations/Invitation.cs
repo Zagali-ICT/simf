@@ -1,4 +1,5 @@
 using SIMF.Common.Enums;
+using SIMF.Domain.Common;
 
 namespace SIMF.Domain.PublicRelations;
 
@@ -10,10 +11,8 @@ namespace SIMF.Domain.PublicRelations;
 /// Sender is identified by the PR rep's <c>SimfUser</c> id (Identity-side;
 /// logical FK because cross-database FKs are not supported by SQL Server).
 /// </summary>
-public sealed class Invitation
+public sealed class Invitation : BaseAuditEntity
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-
     /// <summary>The PR rep / admin who created the invitation. Logical FK
     /// to <c>SimfUser.Id</c> on the Identity DB — enforced at write time
     /// by the service layer.</summary>
@@ -33,17 +32,8 @@ public sealed class Invitation
     /// dietary notes, …). Up to 1000 characters; null when empty.</summary>
     public string? Notes { get; set; }
 
-    /// <summary>When the row was created (UTC).</summary>
-    public DateTimeOffset CreatedAt { get; set; }
-
     /// <summary>When the recipient or admin last moved
     /// <see cref="State"/> off <see cref="InvitationState.Pending"/>.
     /// Null while still pending.</summary>
     public DateTimeOffset? RespondedAt { get; set; }
-
-    /// <summary>When the row was last edited (UTC); null on first save.</summary>
-    public DateTimeOffset? UpdatedAt { get; set; }
-
-    /// <summary>Soft-delete flag — false hides the row from lists.</summary>
-    public bool IsActive { get; set; } = true;
 }
