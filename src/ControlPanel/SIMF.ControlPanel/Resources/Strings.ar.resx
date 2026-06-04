@@ -2375,4 +2375,47 @@
   <data name="Grid.Inactive" xml:space="preserve"><value>غير مُفعّل</value></data>
   <data name="Admin.AiPrompts.Active.Yes" xml:space="preserve"><value>مُفعّل</value></data>
   <data name="Admin.AiPrompts.Active.No" xml:space="preserve"><value>غير مُفعّل</value></data>
+  <!-- SIMF-FDS-014 (D-281/C2) — shared Contact directory -->
+  <data name="Module.Contacts" xml:space="preserve"><value>جهات الاتصال</value></data>
+  <data name="Admin.Contacts.Title" xml:space="preserve"><value>جهات الاتصال</value></data>
+  <data name="Admin.Contacts.Search" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Contacts.Search.Placeholder" xml:space="preserve"><value>ابحث بالاسم أو الهاتف أو البريد</value></data>
+  <data name="Admin.Contacts.Search.Apply" xml:space="preserve"><value>بحث</value></data>
+  <data name="Admin.Contacts.Loading" xml:space="preserve"><value>جارٍ تحميل جهات الاتصال…</value></data>
+  <data name="Admin.Contacts.None" xml:space="preserve"><value>لا توجد جهات اتصال بعد</value></data>
+  <data name="Admin.Contacts.LoadFailed" xml:space="preserve"><value>حدث خطأ ما. حاول مرة أخرى.</value></data>
+  <data name="Admin.Contacts.Required" xml:space="preserve"><value>الاسم بالعربية مطلوب.</value></data>
+  <data name="Admin.Contacts.Saved" xml:space="preserve"><value>تم حفظ جهة الاتصال.</value></data>
+  <data name="Admin.Contacts.Deleted" xml:space="preserve"><value>تم إلغاء تفعيل جهة الاتصال.</value></data>
+  <data name="Admin.Contacts.Col.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Contacts.Col.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.Contacts.Col.Phone" xml:space="preserve"><value>الهاتف</value></data>
+  <data name="Admin.Contacts.Col.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Contacts.Col.Country" xml:space="preserve"><value>الدولة</value></data>
+  <data name="Admin.Contacts.Col.Active" xml:space="preserve"><value>الحالة</value></data>
+  <data name="Admin.Contacts.Add.Title" xml:space="preserve"><value>إضافة جهة اتصال</value></data>
+  <data name="Admin.Contacts.Edit.Title" xml:space="preserve"><value>تعديل جهة اتصال</value></data>
+  <data name="Admin.Contacts.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Contacts.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.Contacts.Delete.Confirm" xml:space="preserve"><value>إلغاء تفعيل جهة الاتصال هذه؟</value></data>
+  <data name="Admin.Contacts.Field.NameAr" xml:space="preserve"><value>الاسم (عربي)</value></data>
+  <data name="Admin.Contacts.Field.NameEn" xml:space="preserve"><value>الاسم (إنجليزي)</value></data>
+  <data name="Admin.Contacts.Field.LogoRelativePath" xml:space="preserve"><value>مسار الشعار</value></data>
+  <data name="Admin.Contacts.Field.LogoHint" xml:space="preserve"><value>مسار نسبي للأصل، مثل contacts/acme.png</value></data>
+  <data name="Admin.Contacts.Field.PhonePrimary" xml:space="preserve"><value>الهاتف الأساسي</value></data>
+  <data name="Admin.Contacts.Field.PhoneSecondary" xml:space="preserve"><value>الهاتف الثانوي</value></data>
+  <data name="Admin.Contacts.Field.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Contacts.Field.Website" xml:space="preserve"><value>الموقع الإلكتروني</value></data>
+  <data name="Admin.Contacts.Field.FacebookUrl" xml:space="preserve"><value>رابط فيسبوك</value></data>
+  <data name="Admin.Contacts.Field.XUrl" xml:space="preserve"><value>رابط إكس (تويتر)</value></data>
+  <data name="Admin.Contacts.Field.LinkedInUrl" xml:space="preserve"><value>رابط لينكدإن</value></data>
+  <data name="Admin.Contacts.Field.InstagramUrl" xml:space="preserve"><value>رابط إنستغرام</value></data>
+  <data name="Admin.Contacts.Field.Country" xml:space="preserve"><value>الدولة</value></data>
+  <data name="Admin.Contacts.Field.CountryPlaceholder" xml:space="preserve"><value>اختر الدولة</value></data>
+  <data name="Admin.Contacts.Field.Latitude" xml:space="preserve"><value>خط العرض</value></data>
+  <data name="Admin.Contacts.Field.Longitude" xml:space="preserve"><value>خط الطول</value></data>
+  <data name="Admin.Contacts.Field.LatLongHint" xml:space="preserve"><value>موقع اختياري على الخريطة (أدخل كليهما أو اتركهما فارغين)</value></data>
+  <data name="Admin.Contacts.Field.LatLongPair" xml:space="preserve"><value>أدخل خط العرض وخط الطول معاً، أو اتركهما فارغين.</value></data>
+  <data name="Admin.Contacts.Field.LatLongInvalid" xml:space="preserve"><value>يجب أن يكون خط العرض بين -90 و90، وخط الطول بين -180 و180.</value></data>
+  <data name="Admin.Contacts.Field.IsActive" xml:space="preserve"><value>مُفعّل</value></data>
 </root>

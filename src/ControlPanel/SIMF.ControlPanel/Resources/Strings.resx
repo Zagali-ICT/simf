@@ -2382,4 +2382,47 @@
   <data name="Grid.Inactive" xml:space="preserve"><value>Inactive</value></data>
   <data name="Admin.AiPrompts.Active.Yes" xml:space="preserve"><value>Active</value></data>
   <data name="Admin.AiPrompts.Active.No" xml:space="preserve"><value>Inactive</value></data>
+  <!-- SIMF-FDS-014 (D-281/C2) — shared Contact directory -->
+  <data name="Module.Contacts" xml:space="preserve"><value>Contacts</value></data>
+  <data name="Admin.Contacts.Title" xml:space="preserve"><value>Contacts</value></data>
+  <data name="Admin.Contacts.Search" xml:space="preserve"><value>Search</value></data>
+  <data name="Admin.Contacts.Search.Placeholder" xml:space="preserve"><value>Search by name, phone or email</value></data>
+  <data name="Admin.Contacts.Search.Apply" xml:space="preserve"><value>Search</value></data>
+  <data name="Admin.Contacts.Loading" xml:space="preserve"><value>Loading contacts…</value></data>
+  <data name="Admin.Contacts.None" xml:space="preserve"><value>No contacts yet</value></data>
+  <data name="Admin.Contacts.LoadFailed" xml:space="preserve"><value>Something went wrong. Please try again.</value></data>
+  <data name="Admin.Contacts.Required" xml:space="preserve"><value>The Arabic name is required.</value></data>
+  <data name="Admin.Contacts.Saved" xml:space="preserve"><value>Contact saved.</value></data>
+  <data name="Admin.Contacts.Deleted" xml:space="preserve"><value>Contact deactivated.</value></data>
+  <data name="Admin.Contacts.Col.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Contacts.Col.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Contacts.Col.Phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="Admin.Contacts.Col.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Admin.Contacts.Col.Country" xml:space="preserve"><value>Country</value></data>
+  <data name="Admin.Contacts.Col.Active" xml:space="preserve"><value>Status</value></data>
+  <data name="Admin.Contacts.Add.Title" xml:space="preserve"><value>Add contact</value></data>
+  <data name="Admin.Contacts.Edit.Title" xml:space="preserve"><value>Edit contact</value></data>
+  <data name="Admin.Contacts.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Admin.Contacts.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Admin.Contacts.Delete.Confirm" xml:space="preserve"><value>Deactivate this contact?</value></data>
+  <data name="Admin.Contacts.Field.NameAr" xml:space="preserve"><value>Name (Arabic)</value></data>
+  <data name="Admin.Contacts.Field.NameEn" xml:space="preserve"><value>Name (English)</value></data>
+  <data name="Admin.Contacts.Field.LogoRelativePath" xml:space="preserve"><value>Logo path</value></data>
+  <data name="Admin.Contacts.Field.LogoHint" xml:space="preserve"><value>Relative asset path, e.g. contacts/acme.png</value></data>
+  <data name="Admin.Contacts.Field.PhonePrimary" xml:space="preserve"><value>Primary phone</value></data>
+  <data name="Admin.Contacts.Field.PhoneSecondary" xml:space="preserve"><value>Secondary phone</value></data>
+  <data name="Admin.Contacts.Field.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Admin.Contacts.Field.Website" xml:space="preserve"><value>Website</value></data>
+  <data name="Admin.Contacts.Field.FacebookUrl" xml:space="preserve"><value>Facebook URL</value></data>
+  <data name="Admin.Contacts.Field.XUrl" xml:space="preserve"><value>X (Twitter) URL</value></data>
+  <data name="Admin.Contacts.Field.LinkedInUrl" xml:space="preserve"><value>LinkedIn URL</value></data>
+  <data name="Admin.Contacts.Field.InstagramUrl" xml:space="preserve"><value>Instagram URL</value></data>
+  <data name="Admin.Contacts.Field.Country" xml:space="preserve"><value>Country</value></data>
+  <data name="Admin.Contacts.Field.CountryPlaceholder" xml:space="preserve"><value>Select a country</value></data>
+  <data name="Admin.Contacts.Field.Latitude" xml:space="preserve"><value>Latitude</value></data>
+  <data name="Admin.Contacts.Field.Longitude" xml:space="preserve"><value>Longitude</value></data>
+  <data name="Admin.Contacts.Field.LatLongHint" xml:space="preserve"><value>Optional map location (set both, or leave both blank)</value></data>
+  <data name="Admin.Contacts.Field.LatLongPair" xml:space="preserve"><value>Set both latitude and longitude, or leave both blank.</value></data>
+  <data name="Admin.Contacts.Field.LatLongInvalid" xml:space="preserve"><value>Latitude must be between -90 and 90, longitude between -180 and 180.</value></data>
+  <data name="Admin.Contacts.Field.IsActive" xml:space="preserve"><value>Active</value></data>
 </root>

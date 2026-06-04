@@ -11,6 +11,7 @@ using SIMF.Contracts.Exhibitors;
 using SIMF.Contracts.Exhibition;
 using SIMF.Contracts.Faq;
 using SIMF.Contracts.Organisations;
+using SIMF.Contracts.Contacts;
 using SIMF.Contracts.Logs;
 using SIMF.Contracts.Media;
 using SIMF.Contracts.Programme;
@@ -2115,6 +2116,51 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.DeactivateOrganisationAsync(id, token));
+        });
+
+        // SIMF-FDS-014 (D-281/C2) — shared Contact directory admin CRUD + picker
+        // passthroughs (backend /api/v1/admin/contacts/*; gated Contacts.View/Edit).
+        group.MapPost("/admin/contacts/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListContactsAsync(body, token));
+        });
+        group.MapGet("/admin/contacts/picker",
+            async (string? search, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.PickerContactsAsync(search, token));
+        });
+        group.MapGet("/admin/contacts/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetContactAsync(id, token));
+        });
+        group.MapPost("/admin/contacts",
+            async (CreateContactRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateContactAsync(body, token));
+        });
+        group.MapPut("/admin/contacts/{id:guid}",
+            async (Guid id, UpdateContactRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateContactAsync(id, body, token));
+        });
+        group.MapDelete("/admin/contacts/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateContactAsync(id, token));
         });
 
         // B9b (D-226) — session-category dynamic lookup admin CRUD passthroughs.
