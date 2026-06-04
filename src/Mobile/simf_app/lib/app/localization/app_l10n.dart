@@ -129,6 +129,88 @@ class AppL10n {
   String get haveAccountQuestion =>
       _t('لديك حساب؟', 'Have an account?');
 
+  // Sign up — visitor profile completion (Page 007).
+  String get signUpVisitorTitle =>
+      _t('إنشاء حساب · زائر', 'Sign up — visitor');
+  String get profileSectionPersonal => _t('البيانات الشخصية', 'Personal');
+  String get profileSectionAffiliation =>
+      _t('الجهة والتصنيف', 'Affiliation');
+  String get profileSectionInterests => _t('الاهتمامات', 'Interests');
+  String get profileLoadError =>
+      _t('تعذر تحميل النموذج.', 'Could not load the form.');
+  String get arabicNameLabel => _t('الاسم الكامل (بالعربية)', 'Full name (Arabic)');
+  String get englishNameLabel =>
+      _t('الاسم الكامل (بالإنجليزية)', 'Full name (English)');
+  String get jobTitleLabel => _t('المسمى الوظيفي (اختياري)', 'Job title (optional)');
+  String get nationalityLabel => _t('الجنسية', 'Nationality');
+  String get isSaudiLabel => _t('سعودي الجنسية', 'Saudi national');
+  String get nationalIdLabel => _t('رقم الهوية الوطنية', 'National ID');
+  String get documentTypeLabel => _t('نوع الوثيقة', 'Document type');
+  String get iqamaSegment => _t('الإقامة', 'Iqama');
+  String get passportSegment => _t('جواز السفر', 'Passport');
+  String get iqamaNumberLabel => _t('رقم الإقامة', 'Iqama number');
+  String get passportNumberLabel => _t('رقم جواز السفر', 'Passport number');
+  String get saudiMobileLabel => _t('رقم الجوال (اختياري)', 'Mobile (optional)');
+  String get internationalMobileLabel =>
+      _t('رقم الجوال الدولي (اختياري)', 'International mobile (optional)');
+  String get dateOfBirthLabel => _t('تاريخ الميلاد', 'Date of birth');
+  String get placeOfBirthLabel => _t('مكان الميلاد (اختياري)', 'Place of birth (optional)');
+  String get genderLabel => _t('الجنس', 'Gender');
+  String get genderUnspecified => _t('غير محدد', 'Prefer not to say');
+  String get genderMale => _t('ذكر', 'Male');
+  String get genderFemale => _t('أنثى', 'Female');
+  String get organisationLabel => _t('الجهة / المنظمة', 'Organisation');
+  String get organisationSearchHint =>
+      _t('ابحث عن جهتك (اختياري)', 'Search your organisation (optional)');
+  String get organisationEmpty =>
+      _t('لا توجد جهات مطابقة', 'No organisations found');
+  String get organisationSelected => _t('الجهة محددة', 'Organisation selected');
+  String get profileTypeLabel => _t('التصنيف', 'Profile type');
+  String get interestsHelper =>
+      _t('اختر من 1 إلى 10 اهتمامات', 'Pick 1 to 10 interests');
+  String interestsCounter(int count) =>
+      _t('$count / 10 مُختارة', '$count / 10 selected');
+  String get interestsEmpty => _t('لا توجد اهتمامات', 'No interests available');
+  String get attachIdImageLabel => _t('إرفاق صورة الهوية', 'Attach ID image');
+  String get idImageAttachedLabel => _t('تم إرفاق الصورة', 'Image attached');
+  String get removeLabel => _t('إزالة', 'Remove');
+  String get clearLabel => _t('مسح', 'Clear');
+  String get saveLabel => _t('حفظ', 'Save');
+  String get profileSavedToast => _t('تم حفظ الملف الشخصي', 'Profile saved');
+  String get idImageUploadFailed => _t(
+        'تم حفظ الملف الشخصي، لكن تعذر رفع الصورة. حاول لاحقًا.',
+        'Profile saved, but the image upload failed. Try again later.',
+      );
+  String get requiredField => _t('هذا الحقل مطلوب', 'This field is required');
+  String get nationalityRequired => _t('الجنسية مطلوبة', 'Nationality is required');
+  String get nationalIdInvalid => _t(
+        'رقم الهوية الوطنية غير صحيح (10 أرقام تبدأ بـ 1)',
+        'Invalid national ID (10 digits starting with 1)',
+      );
+  String get iqamaInvalid => _t(
+        'رقم الإقامة غير صحيح (10 أرقام تبدأ بـ 2)',
+        'Invalid Iqama number (10 digits starting with 2)',
+      );
+  String get passportInvalid => _t(
+        'رقم جواز السفر غير صحيح (6–9 أحرف أو أرقام)',
+        'Invalid passport number (6–9 letters or digits)',
+      );
+  String get documentRequired => _t(
+        'يجب إدخال رقم الإقامة أو جواز السفر',
+        'An Iqama or passport number is required',
+      );
+  String get phoneInvalid => _t('رقم الجوال غير صالح', 'Invalid phone number');
+  String get dateOfBirthRequired =>
+      _t('تاريخ الميلاد مطلوب', 'Date of birth is required');
+  String get ageRequirement => _t(
+        'يجب أن يكون عمرك 18 عامًا على الأقل',
+        'You must be at least 18 years old',
+      );
+  String get interestsRequired =>
+      _t('اختر اهتمامًا واحدًا على الأقل', 'Pick at least one interest');
+  String get interestsMaxReached =>
+      _t('الحد الأقصى 10 اهتمامات', 'You can pick at most 10 interests');
+
   // Sign in (Page 003).
   String get signInTitle => _t('تسجيل الدخول', 'Sign in');
   String get emailLabel => _t('البريد الإلكتروني', 'Email');

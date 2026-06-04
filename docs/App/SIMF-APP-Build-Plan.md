@@ -120,6 +120,35 @@ following the matching `Page_NNN/` Function/Logic/Design docs.
   confirmed business meetings (D-248/D-250). See [Page_014](Page_014/README.md).
 - ✅ `GET /app/bootstrap` (Screen 13 on-login bundle) — current user + unread
   count + server time, composed from existing reads (D-251).
+- ✅ **FDS-014 Contact sharing (D-281 → D-287)** — the org `Contact` directory
+  (CP `/admin/contacts` + picker in the five admin forms) and the visitor
+  contact-sharing **app API** are live; public Sponsor/MediaPartner cards carry
+  the additive contact cluster (D-287). The **Flutter screens are not built yet**
+  (see the to-do below).
+
+**Flutter to-do — FDS-014 Contact UI (API ready; screens pending):** the
+server side is shipped and tested; these screens bind to the live `/app/*`
+endpoints and are ready to build in the app **page-by-page workflow**. Add the
+routes only when `router.dart` is clean — do not collide with in-flight mobile
+edits.
+
+1. **Shared read-only contact-card widget** (FDS-014 Slice D) — reused by the
+   org screens and by the scan-preview.
+2. **Share my contact** — mint/show the QR (`GET /app/account/share-token`,
+   `POST /app/account/share-token/rotate`) + OS share-intent vCard (client
+   builds from the card DTO, or `GET /app/contacts/{id}/vcard`).
+3. **Scan QR** → `POST /app/contacts/resolve` → preview the card →
+   `POST /app/contacts/save`.
+4. **My Contacts** list — `GET /app/contacts`, remove via
+   `DELETE /app/contacts/{id}`.
+
+- Privilege: **Visitor**; app audience; **no permission code** (matches
+  `Connection` — `RequireApprovedAccount` + app token).
+- Wire contract is **append-only** (D-219); decode tolerantly.
+- E2E catalogue already authored:
+  [`mobile-my-contacts.md`](../tests/e2e/mobile-my-contacts.md) (E2E-MMC-001..011).
+- The **Website** read-only contact-card stays deferred until the Website has
+  public org pages to host it (FDS-014 §13; not Flutter work).
 
 **No App-API builds remain open for the owner's page batch.** The remaining
 items are the explicitly **deferred** ones below.

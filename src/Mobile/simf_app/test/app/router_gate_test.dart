@@ -15,6 +15,8 @@ void main() {
     });
 
     test('the explicitly gated screens require auth', () {
+      // Page_007 L-1 — visitor profile completion is AUTH-only.
+      expect(routePathRequiresAuth('/sign-up/visitor'), isTrue);
       expect(routePathRequiresAuth('/my-area'), isTrue);
       expect(routePathRequiresAuth('/badge'), isTrue);
       expect(routePathRequiresAuth('/notifications'), isTrue);

@@ -26,7 +26,8 @@ updated, the account is marked **profile-complete**, and the user is routed to t
 | 3 | Nationality | **country lookup** | `GET /app/account/user-profile/countries` |
 | 4 | Is-Saudi toggle + national id / iqama / passport | conditional | shape enforced by validator |
 | 5 | Saudi mobile / international mobile | text | conditional on is-Saudi |
-| 6 | Date / place of birth | date + text | optional |
+| 6 | Date of birth | date picker | **required**, registrant must be ≥ 18 (D-197) |
+| 6b | Place of birth | text | optional (max 128) |
 | 7 | الجهة (Organisation) | **organisation lookup** (typeahead) | `GET /app/organisations?search=&top=` — COMPANY dropped (D6) |
 | 8 | Gender | enum picker | optional (D-221) |
 | 9 | Profile type | **profile-type lookup** (cards) | `GET /app/account/profile-types`; optional self-pick (D-190) |
@@ -52,5 +53,6 @@ updated, the account is marked **profile-complete**, and the user is routed to t
 - The screen renders only for a signed-in account; an anonymous open is impossible.
 - All four lookups populate their pickers; an empty lookup shows the empty state, not an error.
 - Save is blocked until **1–10** interests are picked and the required fields are valid.
+- **Date of birth is required** and the registrant must be **at least 18** (D-197): the date picker's selectable range ends at *today − 18 years*, and the server re-validates.
 - A successful save returns the upserted profile and the account becomes profile-complete and awaits approval.
 - The body never carries a user id / email — the actor comes from the token (D7).

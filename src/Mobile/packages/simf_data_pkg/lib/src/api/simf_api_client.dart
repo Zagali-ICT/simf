@@ -162,18 +162,30 @@ class SimfApiClient {
   /// Multipart upload — posts [bytes] as a single file field plus optional
   /// [fields]. Keeps all dio/multipart knowledge inside this package
   /// (SIMF-MAA-001 §9.1). Used for the self-service ID-image upload (Page 007).
+  ///
+  /// [contentType] is the MIME of the file part (e.g. `image/jpeg`). It MUST be
+  /// set for endpoints that gate on the part's content-type — the SIMF ID-image
+  /// endpoint checks `image/jpeg|png|webp` (+ magic bytes), so without it dio
+  /// would default to `application/octet-stream` and the upload would be rejected.
   Future<T> upload<T>(
     String path, {
     required List<int> bytes,
     required String filename,
-    String fileField = 'File',
-    Map<String, dynamic>? fields,
     required T Function(Object? data) decodeData,
+    String fileField = 'File',
+    String? contentType,
+    Map<String, dynamic>? fields,
     CancelToken? cancelToken,
   }) {
     final form = FormData.fromMap(<String, dynamic>{
       ...?fields,
-      fileField: MultipartFile.fromBytes(bytes, filename: filename),
+      fileField: MultipartFile.fromBytes(
+        bytes,
+        filename: filename,
+        contentType: contentType == null
+            ? null
+            : DioMediaType.parse(contentType),
+      ),
     });
     return _send<T>(
       (options) => _dio.post<dynamic>(

@@ -18,7 +18,23 @@ Per-page documentation folder. Everything about this app page lives here.
 | Section | 1 — Onboarding / account |
 | Nature | **Profile completion** (lookups + the interests sub-step → mark complete → wait for approval) |
 | App privilege | **AUTH-only** — any signed-in account; **no role / no permission code** (D7) |
-| Status | API **built** (profile upsert + four lookups); design **drafted** |
+| Status | **🟢 Screen built** (D-288) — API (profile upsert + four lookups + id-image) built; Flutter `SignUpVisitorScreen` wired |
+
+## As built (Flutter, D-288)
+`SignUpVisitorScreen` (route `signUpVisitor` → `/sign-up/visitor`, now in the auth
+gate so an anonymous open is impossible — L-1) loads the existing profile + the
+four lookups concurrently, pre-fills, and renders the richer form: names, job
+title, nationality dropdown, **is-Saudi toggle → National-ID vs Iqama/Passport**
+(client mirrors the `^1\d{9}$`/`^2\d{9}$` + Luhn and passport rules), optional
+mobiles, **date-of-birth picker (≥ 18, D-197)**, place of birth, gender, the
+organisation **typeahead** (debounced `?search=&top=20`), profile-type chips, and
+the inline **interests** multi-select (1–10 with an `n/10` counter, D12). Save
+sends one `POST /app/account/user-profile`; the optional **ID-document image** is
+picked with `image_picker` and uploaded (multipart, content-type set so the
+server's MIME + magic-byte gate accepts it) **after** the profile row exists. On
+success the app routes to the **registration-status** (wait-for-approval) screen.
+The visuals are the interim placeholder design (SIMF-VID-001 swaps them later);
+the API + validation behaviour is real.
 
 ## Owner reference note
 The interests picker (cards, min 1 / max 10) is a **sub-step of this screen**, not a

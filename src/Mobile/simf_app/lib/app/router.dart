@@ -15,6 +15,7 @@ import '../features/auth/sign_up_email_verify_screen.dart';
 import '../features/auth/sign_up_form_screen.dart';
 import '../features/auth/sign_up_type_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
+import '../features/profile/sign_up_visitor_screen.dart';
 import '../features/splash/splash_screen.dart';
 import 'route_names.dart';
 import 'route_resume.dart';
@@ -109,6 +110,7 @@ const List<_Route> _auxRoutes = <_Route>[
 /// SIMF-RPM-001 closes (SIMF-MAA-001 OI-3) this list is conservative —
 /// Phase 1 only gates the few obvious cases. Phase 2 / Phase 3 may extend.
 const Set<int> _authenticatedRoutes = <int>{
+  7, // Sign up — visitor (profile completion; AUTH-only, Page_007 L-1)
   14, // My area
   18, // My seat
   26, // Send question
@@ -194,6 +196,9 @@ GoRouter buildRouter(Ref ref) {
               return SignUpEmailVerifyScreen(
                 email: state.uri.queryParameters['email'] ?? '',
               );
+            }
+            if (r.name == RouteNames.signUpVisitor) {
+              return const SignUpVisitorScreen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,

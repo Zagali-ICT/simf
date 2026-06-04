@@ -30,10 +30,12 @@ distinct, all active.
 
 ## L-4 — Validation (client mirrors server)
 Server rules (`UpsertUserProfileRequestValidator`) the client mirrors:
+- **Names:** Arabic + English name required (≤ 256). **Nationality** required (2-letter ISO code from the lookup).
+- **Date of birth:** **required**, registrant must be **≥ 18** (D-197 — leap-safe `today − 18y`). Place of birth optional (≤ 128); job title optional (≤ 128).
 - **Interests:** required, **1–10**, no duplicates, no unknown / deactivated ids.
 - **Organisation:** optional; if present must be a valid, active organisation id.
 - **Profile type:** optional self-pick; rejects unknown / inactive / Admin-scope rows. Admin pre-pick wins over the user self-pick (`UserProfileService.UpsertMineAsync`).
-- **Identity-doc shape:** national id / iqama / passport consistency keyed off the is-Saudi flag.
+- **Identity-doc shape:** keyed off the is-Saudi flag — Saudi → national id required, `^1\d{9}$` + Luhn; non-Saudi → an Iqama (`^2\d{9}$` + Luhn) **or** a passport (`^[A-Za-z0-9]{6,9}$`) is required. Mobiles optional, permissive `+CC` shape.
 
 The client blocks **Save** until the required fields and the 1–10 interests rule
 pass; the server re-validates as defence-in-depth and returns a field error on

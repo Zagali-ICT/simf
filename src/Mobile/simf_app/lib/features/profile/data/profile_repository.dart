@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -77,8 +78,9 @@ class ProfileRepository {
   }
 
   /// Self-service ID-image upload (multipart) — `POST /app/account/user-profile/id-image`.
-  /// 5 MB / jpeg|png|webp guards are server-side (magic-byte verified). Returns
-  /// true on success.
+  /// 5 MB / jpeg|png|webp guards are server-side (content-type + magic-byte
+  /// verified), so the MIME is derived from [filename] and sent on the file part.
+  /// Returns true on success.
   Future<bool> uploadIdImage({
     required List<int> bytes,
     required String filename,
@@ -87,8 +89,27 @@ class ProfileRepository {
       '/app/account/user-profile/id-image',
       bytes: bytes,
       filename: filename,
+      contentType: mimeForFilename(filename),
       decodeData: (data) => data is bool ? data : true,
     );
+  }
+
+  /// Maps a filename extension to the MIME the server's gate accepts
+  /// (jpeg / png / webp). Null for an unknown extension — the picker only yields
+  /// these three, so a null would be a programming error, not a user path.
+  @visibleForTesting
+  static String? mimeForFilename(String filename) {
+    final lower = filename.toLowerCase();
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+      return 'image/jpeg';
+    }
+    if (lower.endsWith('.png')) {
+      return 'image/png';
+    }
+    if (lower.endsWith('.webp')) {
+      return 'image/webp';
+    }
+    return null;
   }
 
   static Map<String, dynamic> _asMap(Object? data) =>
