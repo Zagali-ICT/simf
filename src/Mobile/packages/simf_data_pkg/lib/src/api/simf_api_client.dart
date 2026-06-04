@@ -159,6 +159,33 @@ class SimfApiClient {
     );
   }
 
+  /// Multipart upload — posts [bytes] as a single file field plus optional
+  /// [fields]. Keeps all dio/multipart knowledge inside this package
+  /// (SIMF-MAA-001 §9.1). Used for the self-service ID-image upload (Page 007).
+  Future<T> upload<T>(
+    String path, {
+    required List<int> bytes,
+    required String filename,
+    String fileField = 'File',
+    Map<String, dynamic>? fields,
+    required T Function(Object? data) decodeData,
+    CancelToken? cancelToken,
+  }) {
+    final form = FormData.fromMap(<String, dynamic>{
+      ...?fields,
+      fileField: MultipartFile.fromBytes(bytes, filename: filename),
+    });
+    return _send<T>(
+      (options) => _dio.post<dynamic>(
+        path,
+        data: form,
+        cancelToken: cancelToken,
+        options: options,
+      ),
+      decodeData,
+    );
+  }
+
   Future<T> _send<T>(
     Future<Response<dynamic>> Function(Options? options) call,
     T Function(Object? data) decodeData,

@@ -76,6 +76,21 @@ class ProfileRepository {
     );
   }
 
+  /// Self-service ID-image upload (multipart) — `POST /app/account/user-profile/id-image`.
+  /// 5 MB / jpeg|png|webp guards are server-side (magic-byte verified). Returns
+  /// true on success.
+  Future<bool> uploadIdImage({
+    required List<int> bytes,
+    required String filename,
+  }) {
+    return _client.upload<bool>(
+      '/app/account/user-profile/id-image',
+      bytes: bytes,
+      filename: filename,
+      decodeData: (data) => data is bool ? data : true,
+    );
+  }
+
   static Map<String, dynamic> _asMap(Object? data) =>
       (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
 
