@@ -101,6 +101,7 @@ public sealed class UpdateSponsorRequest
     public string? LogoRelativePath { get; set; }
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
+    public Guid? ContactId { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
@@ -133,6 +134,7 @@ public sealed class UpdateSponsorEndpoint(IAdminSponsorService service)
                     LogoRelativePath = req.LogoRelativePath,
                     Url = req.Url,
                     DisplayOrder = req.DisplayOrder,
+                    ContactId = req.ContactId,
                     IsActive = req.IsActive,
                 }, ct)), ct);
     }

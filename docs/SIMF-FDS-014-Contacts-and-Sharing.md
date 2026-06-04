@@ -309,14 +309,25 @@ next-free number (re-verified at each commit).
   entities; EF configs; additive migration `D260_AddContact`.
 - **Slice B (D-261)** ✅ shipped — `IAdminContactService` + admin API (CRUD + picker +
   referenced-delete guard); `Contacts.View/Edit` permissions; contracts; 17 tests.
-- **Slice C (D-263)** — Contacts CP directory page (SimfDataGrid list + create/edit form)
-  + shared CP Contact picker/editor wired into the five admin forms; public read
-  projections flatten `Contact` into the existing DTO field names (wire contract
-  preserved); CP E2E + per-page docs.
-- **Slice D (D-264)** — shared read-only contact-card component for Website + mobile.
+- **Slice C** — split in two at build time:
+  - **C1 (D-281)** ✅ shipped — optional `ContactId` threaded through the five
+    entities' admin request/detail contracts + endpoints + services (with a
+    per-service `EnsureContactIsValidAsync` 400 guard); public read projections
+    for **Sponsor + MediaPartner** flatten the linked active `Contact` into the
+    existing DTO field names (wire contract preserved, D-219); Speaker/Booth/
+    Exhibitor store-link only. No schema change (columns shipped in D-260) → no
+    migration. +5 tests in `ContactsTests`.
+  - **C2 (next-free at commit)** — Contacts CP directory page (SimfDataGrid list
+    + create/edit form) + shared CP Contact picker wired into the five admin
+    forms + nav + EN/AR resx; CP E2E + per-page docs.
+- **Slice D** — shared read-only contact-card component for Website + mobile.
+
+> Forward slice numbers above (and the original D-263/264/265 labels) are
+> superseded by **live next-free numbering re-verified at each commit** — the
+> owner consumes D-numbers concurrently (Slice C1 renumbered D-279 → D-281).
 
 **Track 2 — visitor sharing**
-- **Slice E (D-265)** — `VisitorShareToken` + `SavedContact` (App); app API (§5.7);
+- **Slice E** — `VisitorShareToken` + `SavedContact` (App); app API (§5.7);
   vCard projection; mobile *Share my contact* + *Scan* + *My Contacts*; app-side tests
   + `mobile-my-contacts.md` E2E.
 

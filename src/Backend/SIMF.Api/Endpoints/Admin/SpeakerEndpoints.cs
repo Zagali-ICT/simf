@@ -96,6 +96,7 @@ public sealed class UpdateSpeakerRequest
     public string? LinkedInUrl { get; set; }
     public string? XUrl { get; set; }
     public int DisplayOrder { get; set; }
+    public Guid? ContactId { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
@@ -142,6 +143,7 @@ public sealed class UpdateSpeakerEndpoint(IAdminSpeakerService service)
                     LinkedInUrl = req.LinkedInUrl,
                     XUrl = req.XUrl,
                     DisplayOrder = req.DisplayOrder,
+                    ContactId = req.ContactId,
                     IsActive = req.IsActive,
                 }, ct)), ct);
     }

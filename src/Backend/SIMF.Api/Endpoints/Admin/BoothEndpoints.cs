@@ -83,6 +83,7 @@ public sealed class UpdateBoothRequest
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
+    public Guid? ContactId { get; set; }
     public string? Sector { get; set; }
     public string? SectorArabic { get; set; }
     public string? Description { get; set; }
@@ -123,6 +124,7 @@ public sealed class UpdateBoothEndpoint(IAdminBoothService service)
                     OfficerName = req.OfficerName,
                     OfficerPhone = req.OfficerPhone,
                     OfficerEmail = req.OfficerEmail,
+                    ContactId = req.ContactId,
                     Sector = req.Sector,
                     SectorArabic = req.SectorArabic,
                     Description = req.Description,

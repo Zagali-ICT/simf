@@ -48,7 +48,8 @@ public sealed record AdminSpeakerDetail(
     int DisplayOrder,
     bool IsActive,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTimeOffset? UpdatedAt,
+    Guid? ContactId);
 
 public sealed class AdminCreateSpeakerRequest
 {
@@ -77,6 +78,10 @@ public sealed class AdminCreateSpeakerRequest
     public string? LinkedInUrl { get; set; }
     public string? XUrl { get; set; }
     public int DisplayOrder { get; set; }
+
+    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
+    /// directory record. Must reference an existing active contact.</summary>
+    public Guid? ContactId { get; set; }
 }
 
 public sealed class AdminUpdateSpeakerRequest
@@ -101,5 +106,10 @@ public sealed class AdminUpdateSpeakerRequest
     public string? LinkedInUrl { get; set; }
     public string? XUrl { get; set; }
     public int DisplayOrder { get; set; }
+
+    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
+    /// directory record. Must reference an existing active contact.</summary>
+    public Guid? ContactId { get; set; }
+
     public bool IsActive { get; set; } = true;
 }

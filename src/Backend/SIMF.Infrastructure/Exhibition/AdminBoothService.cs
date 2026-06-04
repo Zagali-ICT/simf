@@ -125,6 +125,7 @@ internal sealed class AdminBoothService(
             request.Description, request.DescriptionArabic);
         await EnsureHallIsValidAsync(request.HallId, cancellationToken);
         await EnsureExhibitorIsValidAsync(request.ExhibitorId, cancellationToken);
+        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
 
         var clash = await dbContext.Booths
             .AsNoTracking()
@@ -148,6 +149,7 @@ internal sealed class AdminBoothService(
             OfficerName = v.OfficerName,
             OfficerPhone = v.OfficerPhone,
             OfficerEmail = v.OfficerEmail,
+            ContactId = request.ContactId,
             Sector = v.Sector,
             SectorArabic = v.SectorArabic,
             Description = v.Description,
@@ -196,6 +198,7 @@ internal sealed class AdminBoothService(
             request.Description, request.DescriptionArabic);
         await EnsureHallIsValidAsync(request.HallId, cancellationToken);
         await EnsureExhibitorIsValidAsync(request.ExhibitorId, cancellationToken);
+        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
 
         if (!string.Equals(booth.Code, v.Code, StringComparison.OrdinalIgnoreCase))
         {
@@ -218,6 +221,7 @@ internal sealed class AdminBoothService(
         booth.OfficerName = v.OfficerName;
         booth.OfficerPhone = v.OfficerPhone;
         booth.OfficerEmail = v.OfficerEmail;
+        booth.ContactId = request.ContactId;
         booth.Sector = v.Sector;
         booth.SectorArabic = v.SectorArabic;
         booth.Description = v.Description;
@@ -388,6 +392,24 @@ internal sealed class AdminBoothService(
         }
     }
 
+    // SIMF-FDS-014 (D-281 / OI-1) — the optional booth-officer Contact link must
+    // point at an existing active Contact (mirrors EnsureExhibitorIsValidAsync).
+    private async Task EnsureContactIsValidAsync(
+        Guid? contactId, CancellationToken cancellationToken)
+    {
+        if (contactId is null) { return; }
+        var exists = await dbContext.Contacts
+            .AsNoTracking()
+            .AnyAsync(contact => contact.Id == contactId.Value && contact.IsActive, cancellationToken);
+        if (!exists)
+        {
+            throw new ApiException(
+                ErrorCodes.BoothInvalid, 400,
+                $"Contact id '{contactId}' does not exist or is inactive.",
+                $"جهة الاتصال '{contactId}' غير موجودة أو غير مفعّلة.");
+        }
+    }
+
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
@@ -401,6 +423,7 @@ internal sealed class AdminBoothService(
         OfficerName = b.OfficerName,
         OfficerPhone = b.OfficerPhone,
         OfficerEmail = b.OfficerEmail,
+        ContactId = b.ContactId,
         Sector = b.Sector,
         SectorArabic = b.SectorArabic,
         Description = b.Description,

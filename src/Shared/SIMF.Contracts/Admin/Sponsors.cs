@@ -27,7 +27,8 @@ public sealed record AdminSponsorDetail(
     int DisplayOrder,
     bool IsActive,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTimeOffset? UpdatedAt,
+    Guid? ContactId);
 
 /// <summary>Create payload for a sponsor. <c>Tier</c> is the int enum value
 /// (10=Platinum, 20=Gold, 30=Silver, 40=Bronze).</summary>
@@ -39,6 +40,10 @@ public sealed class AdminCreateSponsorRequest
     public string? LogoRelativePath { get; set; }
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
+
+    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
+    /// directory record. Must reference an existing active contact.</summary>
+    public Guid? ContactId { get; set; }
 }
 
 /// <summary>Update payload (adds IsActive to the create shape).</summary>
@@ -50,5 +55,10 @@ public sealed class AdminUpdateSponsorRequest
     public string? LogoRelativePath { get; set; }
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
+
+    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
+    /// directory record. Must reference an existing active contact.</summary>
+    public Guid? ContactId { get; set; }
+
     public bool IsActive { get; set; } = true;
 }

@@ -9,9 +9,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Contracts.Admin;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Contacts;
+using SIMF.Contracts.Exhibitors;
+using SIMF.Contracts.PublicRelations;
+using SIMF.Contracts.Sponsors;
 using SIMF.Domain.IdentityAccess;
+using SIMF.Domain.PublicRelations;
 using SIMF.Domain.Sponsors;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
@@ -271,6 +276,116 @@ public sealed class ContactsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    // -- SIMF-FDS-014 (D-281) link + public flatten ---------------------------
+
+    [Fact]
+    public async Task Sponsor_create_with_contact_link_echoes_in_detail()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var contact = await CreateContactCardAsync(token, "راعٍ مرتبط " + Guid.NewGuid().ToString("N")[..6]);
+
+        var create = await PostAuthAsync("/api/v1/admin/sponsors", new AdminCreateSponsorRequest
+        {
+            NameEn = "Linked Sponsor " + Guid.NewGuid().ToString("N")[..6],
+            NameAr = "راعٍ " + Guid.NewGuid().ToString("N")[..6],
+            Tier = (int)SponsorTier.Gold,
+            ContactId = contact.Id,
+        }, token);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+        var created = (await create.Content.ReadFromJsonAsync<ApiResult<AdminSponsorDetail>>())!.Data!;
+        Assert.Equal(contact.Id, created.ContactId);
+
+        var get = await GetAuthAsync($"/api/v1/admin/sponsors/{created.Id}", token);
+        var got = (await get.Content.ReadFromJsonAsync<ApiResult<AdminSponsorDetail>>())!.Data!;
+        Assert.Equal(contact.Id, got.ContactId);
+    }
+
+    [Fact]
+    public async Task Sponsor_create_with_unknown_contact_is_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+
+        var response = await PostAuthAsync("/api/v1/admin/sponsors", new AdminCreateSponsorRequest
+        {
+            NameEn = "Bad Link " + Guid.NewGuid().ToString("N")[..6],
+            NameAr = "خطأ " + Guid.NewGuid().ToString("N")[..6],
+            Tier = (int)SponsorTier.Bronze,
+            ContactId = Guid.NewGuid(),
+        }, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SponsorInvalid, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Public_sponsors_flatten_linked_contact()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var contact = await CreateContactCardAsync(token, "علم البحرية " + Guid.NewGuid().ToString("N")[..6]);
+        var sponsorId = await SeedSponsorWithContactAsync(contact.Id);
+
+        var list = await _client.GetAsync("/api/v1/app/sponsors");
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        var data = (await list.Content.ReadFromJsonAsync<ApiResult<PublicSponsors>>())!.Data!;
+        var sponsor = data.Groups.SelectMany(group => group.Sponsors).Single(s => s.Id == sponsorId);
+
+        // The seeded sponsor's own inline name is "راعٍ" — flatten must replace it
+        // with the linked Contact's card fields (wire field names unchanged).
+        Assert.Equal(contact.NameAr, sponsor.NameAr);
+        Assert.Equal(contact.NameEn, sponsor.NameEn);
+        Assert.Equal(contact.LogoRelativePath, sponsor.LogoRelativePath);
+        Assert.Equal(contact.Website, sponsor.Url);
+    }
+
+    [Fact]
+    public async Task Public_media_partners_flatten_linked_contact()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var contact = await CreateContactCardAsync(token, "شريك إعلامي " + Guid.NewGuid().ToString("N")[..6]);
+        var partnerId = await SeedMediaPartnerWithContactAsync(contact.Id);
+
+        var list = await _client.GetAsync("/api/v1/app/media-partners");
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        var data = (await list.Content.ReadFromJsonAsync<ApiResult<PublicMediaPartners>>())!.Data!;
+        var partner = data.Items.Single(item => item.Id == partnerId);
+
+        Assert.Equal(contact.NameAr, partner.NameArabic);
+        Assert.Equal(contact.NameEn, partner.Name);
+        Assert.Equal(contact.LogoRelativePath, partner.LogoRelativePath);
+        Assert.Equal(contact.Website, partner.Url);
+    }
+
+    [Fact]
+    public async Task Contact_linked_to_sponsor_and_exhibitor_is_shared()
+    {
+        // T-01 — one Contact row reused across roles; both referrers carry the
+        // same FK (de-duplicated shared directory).
+        var token = await CreateAdministratorAndSignInAsync();
+        var contact = await CreateContactCardAsync(token, "جهة مشتركة " + Guid.NewGuid().ToString("N")[..6]);
+
+        var sponsor = await PostAuthAsync("/api/v1/admin/sponsors", new AdminCreateSponsorRequest
+        {
+            NameEn = "Shared S " + Guid.NewGuid().ToString("N")[..6],
+            NameAr = "راعٍ " + Guid.NewGuid().ToString("N")[..6],
+            Tier = (int)SponsorTier.Silver,
+            ContactId = contact.Id,
+        }, token);
+        Assert.Equal(HttpStatusCode.OK, sponsor.StatusCode);
+        var sponsorDetail = (await sponsor.Content.ReadFromJsonAsync<ApiResult<AdminSponsorDetail>>())!.Data!;
+
+        var exhibitor = await PostAuthAsync("/api/v1/admin/exhibitors", new CreateExhibitorRequest
+        {
+            NameEn = "Shared E " + Guid.NewGuid().ToString("N")[..6],
+            NameAr = "عارض " + Guid.NewGuid().ToString("N")[..6],
+            ContactId = contact.Id,
+        }, token);
+        Assert.Equal(HttpStatusCode.OK, exhibitor.StatusCode);
+        var exhibitorDetail = (await exhibitor.Content.ReadFromJsonAsync<ApiResult<AdminExhibitorDetail>>())!.Data!;
+
+        Assert.Equal(contact.Id, sponsorDetail.ContactId);
+        Assert.Equal(contact.Id, exhibitorDetail.ContactId);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private async Task<Guid> CreateContactAsync(string token, string nameAr)
@@ -292,13 +407,14 @@ public sealed class ContactsTests : IClassFixture<SimfApiFactory>
             .FirstAsync();
     }
 
-    private async Task SeedSponsorWithContactAsync(Guid contactId)
+    private async Task<Guid> SeedSponsorWithContactAsync(Guid contactId)
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var id = Guid.NewGuid();
         appDb.Sponsors.Add(new Sponsor
         {
-            Id = Guid.NewGuid(),
+            Id = id,
             Name = $"Sponsor {Guid.NewGuid():N}",
             NameArabic = "راعٍ",
             Tier = SponsorTier.Bronze,
@@ -307,6 +423,41 @@ public sealed class ContactsTests : IClassFixture<SimfApiFactory>
             CreatedAt = DateTimeOffset.UtcNow,
         });
         await appDb.SaveChangesAsync();
+        return id;
+    }
+
+    private async Task<Guid> SeedMediaPartnerWithContactAsync(Guid contactId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var id = Guid.NewGuid();
+        appDb.MediaPartners.Add(new MediaPartner
+        {
+            Id = id,
+            Name = $"Partner {Guid.NewGuid():N}",
+            NameArabic = "شريك",
+            LogoRelativePath = "media-partners/inline.png",
+            Url = "https://inline.test",
+            DisplayOrder = 0,
+            ContactId = contactId,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await appDb.SaveChangesAsync();
+        return id;
+    }
+
+    private async Task<AdminContactDetail> CreateContactCardAsync(string token, string nameAr)
+    {
+        var create = await PostAuthAsync("/api/v1/admin/contacts", new CreateContactRequest
+        {
+            NameAr = nameAr,
+            NameEn = "Acme " + Guid.NewGuid().ToString("N")[..6],
+            LogoRelativePath = "contacts/acme.png",
+            Website = "https://acme.test",
+        }, token);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+        return (await create.Content.ReadFromJsonAsync<ApiResult<AdminContactDetail>>())!.Data!;
     }
 
     private async Task<string> CreateAdministratorAndSignInAsync()

@@ -96,7 +96,7 @@ internal sealed class AdminExhibitorService(
             .Select(c => new AdminExhibitorDetail(
                 c.Id, c.Name, c.NameArabic,
                 c.ContactEmail, c.ContactPhone, c.Website,
-                c.IsActive, c.CreatedAt, c.UpdatedAt))
+                c.IsActive, c.CreatedAt, c.UpdatedAt, c.ContactId))
             .SingleOrDefaultAsync(cancellationToken);
     }
 
@@ -106,6 +106,7 @@ internal sealed class AdminExhibitorService(
     {
         Validate(request.NameEn, request.NameAr, request.ContactEmail,
             request.ContactPhone, request.Website);
+        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
         var now = timeProvider.GetUtcNow();
         var exhibitor = new Exhibitor
         {
@@ -115,6 +116,7 @@ internal sealed class AdminExhibitorService(
             ContactEmail = NormaliseOptional(request.ContactEmail),
             ContactPhone = NormaliseOptional(request.ContactPhone),
             Website = NormaliseOptional(request.Website),
+            ContactId = request.ContactId,
             IsActive = true,
             CreatedAt = now,
         };
@@ -138,6 +140,7 @@ internal sealed class AdminExhibitorService(
     {
         Validate(request.NameEn, request.NameAr, request.ContactEmail,
             request.ContactPhone, request.Website);
+        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
         var exhibitor = await appDbContext.Exhibitors
             .SingleOrDefaultAsync(c => c.Id == id, cancellationToken)
             ?? throw new ApiException(
@@ -150,6 +153,7 @@ internal sealed class AdminExhibitorService(
         exhibitor.ContactEmail = NormaliseOptional(request.ContactEmail);
         exhibitor.ContactPhone = NormaliseOptional(request.ContactPhone);
         exhibitor.Website = NormaliseOptional(request.Website);
+        exhibitor.ContactId = request.ContactId;
         exhibitor.IsActive = request.IsActive;
         exhibitor.UpdatedAt = timeProvider.GetUtcNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
@@ -361,6 +365,26 @@ internal sealed class AdminExhibitorService(
                 ErrorCodes.ExhibitorInvalid, 400,
                 "Website must be 512 characters or fewer.",
                 "يجب ألا يتجاوز الموقع الإلكتروني 512 حرفاً.");
+        }
+    }
+
+    // SIMF-FDS-014 (D-281) — the optional shared-Contact link must point at an
+    // existing active Contact (mirrors EnsureExhibitorIsValidAsync on the booth
+    // service). Turns a bad/inactive FK into a clean 400 rather than a DB-level
+    // FK-violation 500.
+    private async Task EnsureContactIsValidAsync(
+        Guid? contactId, CancellationToken cancellationToken)
+    {
+        if (contactId is null) { return; }
+        var exists = await appDbContext.Contacts
+            .AsNoTracking()
+            .AnyAsync(contact => contact.Id == contactId.Value && contact.IsActive, cancellationToken);
+        if (!exists)
+        {
+            throw new ApiException(
+                ErrorCodes.ExhibitorInvalid, 400,
+                $"Contact id '{contactId}' does not exist or is inactive.",
+                $"جهة الاتصال '{contactId}' غير موجودة أو غير مفعّلة.");
         }
     }
 

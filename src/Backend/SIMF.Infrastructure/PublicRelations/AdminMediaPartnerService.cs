@@ -95,6 +95,7 @@ internal sealed class AdminMediaPartnerService(
         var (name, nameArabic, logoRelativePath, url, displayOrder) = Validate(
             request.Name, request.NameArabic, request.LogoRelativePath,
             request.Url, request.DisplayOrder);
+        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
 
         var nameClash = await appDbContext.MediaPartners.AsNoTracking()
             .AnyAsync(p => p.Name == name, cancellationToken);
@@ -113,6 +114,7 @@ internal sealed class AdminMediaPartnerService(
             LogoRelativePath = logoRelativePath,
             Url = url,
             DisplayOrder = displayOrder,
+            ContactId = request.ContactId,
             IsActive = true,
             CreatedAt = now,
         };
@@ -146,6 +148,7 @@ internal sealed class AdminMediaPartnerService(
         var (name, nameArabic, logoRelativePath, url, displayOrder) = Validate(
             request.Name, request.NameArabic, request.LogoRelativePath,
             request.Url, request.DisplayOrder);
+        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
 
         if (!string.Equals(partner.Name, name, StringComparison.OrdinalIgnoreCase))
         {
@@ -164,6 +167,7 @@ internal sealed class AdminMediaPartnerService(
         partner.LogoRelativePath = logoRelativePath;
         partner.Url = url;
         partner.DisplayOrder = displayOrder;
+        partner.ContactId = request.ContactId;
         partner.IsActive = request.IsActive;
         partner.UpdatedAt = timeProvider.GetUtcNow();
 
@@ -244,8 +248,26 @@ internal sealed class AdminMediaPartnerService(
         return (name, nameArabic, logoRelativePath, url, displayOrderRaw);
     }
 
+    // SIMF-FDS-014 (D-281) — the optional shared-Contact link must point at an
+    // existing active Contact. Clean 400 instead of a DB FK-violation 500.
+    private async Task EnsureContactIsValidAsync(
+        Guid? contactId, CancellationToken cancellationToken)
+    {
+        if (contactId is null) { return; }
+        var exists = await appDbContext.Contacts
+            .AsNoTracking()
+            .AnyAsync(contact => contact.Id == contactId.Value && contact.IsActive, cancellationToken);
+        if (!exists)
+        {
+            throw new ApiException(ErrorCodes.ValidationFailed, 400,
+                $"Contact id '{contactId}' does not exist or is inactive.",
+                $"جهة الاتصال '{contactId}' غير موجودة أو غير مفعّلة.");
+        }
+    }
+
     private static AdminMediaPartnerDetail ToDetail(MediaPartner partner) =>
         new(partner.Id, partner.Name, partner.NameArabic,
             partner.LogoRelativePath, partner.Url, partner.DisplayOrder,
-            partner.IsActive, partner.CreatedAt, partner.UpdatedAt);
+            partner.IsActive, partner.CreatedAt, partner.UpdatedAt,
+            partner.ContactId);
 }

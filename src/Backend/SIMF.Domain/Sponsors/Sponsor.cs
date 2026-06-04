@@ -33,8 +33,9 @@ public sealed class Sponsor: BaseAuditEntity
 
     /// <summary>Relative path to the sponsor's logo asset (≤256 chars), resolved
     /// against the static asset root. Optional — never an absolute URL. Retained
-    /// per SIMF-FDS-014 (D-260): the entity keeps its own logo; the linked
-    /// <see cref="Contact"/> is the fallback when this is null.</summary>
+    /// per SIMF-FDS-014 (D-260): the entity keeps its own inline logo as the
+    /// fallback; when a <see cref="Contact"/> is linked the public projection
+    /// prefers the Contact's logo (D-281).</summary>
     public string? LogoRelativePath { get; set; }
 
     /// <summary>Optional outbound link to the sponsor's website (≤512 chars).</summary>

@@ -24,7 +24,8 @@ public sealed record AdminExhibitorDetail(
     string? Website,
     bool IsActive,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTimeOffset? UpdatedAt,
+    Guid? ContactId);
 
 /// <summary>
 /// D-199 #3 — body of <c>POST /api/v1/admin/exhibitors</c>. Creates the exhibitor
@@ -47,6 +48,10 @@ public sealed class CreateExhibitorRequest
 
     /// <summary>Optional website (≤512 chars).</summary>
     public string? Website { get; init; }
+
+    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
+    /// directory record. Must reference an existing active contact.</summary>
+    public Guid? ContactId { get; init; }
 }
 
 /// <summary>D-199 #3 — body of <c>PUT /api/v1/admin/exhibitors/{id}</c>.
@@ -67,6 +72,10 @@ public class UpdateExhibitorRequest
 
     /// <summary>Optional website (≤512 chars).</summary>
     public string? Website { get; init; }
+
+    /// <summary>SIMF-FDS-014 (D-281) — optional link to a shared <c>Contact</c>
+    /// directory record. Must reference an existing active contact.</summary>
+    public Guid? ContactId { get; init; }
 
     /// <summary>Soft-delete / restore flag.</summary>
     public bool IsActive { get; init; } = true;

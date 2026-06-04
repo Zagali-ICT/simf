@@ -137,6 +137,7 @@ internal sealed class AdminSpeakerService(
         }
         ValidateSocialUrls(request.FacebookUrl, request.LinkedInUrl, request.XUrl);
         await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
+        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
 
         var clash = await dbContext.Speakers
             .AsNoTracking()
@@ -172,6 +173,7 @@ internal sealed class AdminSpeakerService(
             FacebookUrl = NullIfBlank(request.FacebookUrl),
             LinkedInUrl = NullIfBlank(request.LinkedInUrl),
             XUrl = NullIfBlank(request.XUrl),
+            ContactId = request.ContactId,
             DisplayOrder = request.DisplayOrder,
             IsActive = true,
             CreatedAt = now,
@@ -219,6 +221,7 @@ internal sealed class AdminSpeakerService(
         }
         ValidateSocialUrls(request.FacebookUrl, request.LinkedInUrl, request.XUrl);
         await EnsureCountryIsValidAsync(request.CountryId, cancellationToken);
+        await EnsureContactIsValidAsync(request.ContactId, cancellationToken);
 
         if (!string.Equals(speaker.Code, code, StringComparison.OrdinalIgnoreCase))
         {
@@ -253,6 +256,7 @@ internal sealed class AdminSpeakerService(
         speaker.FacebookUrl = NullIfBlank(request.FacebookUrl);
         speaker.LinkedInUrl = NullIfBlank(request.LinkedInUrl);
         speaker.XUrl = NullIfBlank(request.XUrl);
+        speaker.ContactId = request.ContactId;
         speaker.DisplayOrder = request.DisplayOrder;
         speaker.IsActive = request.IsActive;
         speaker.UpdatedAt = timeProvider.GetUtcNow();
@@ -360,6 +364,25 @@ internal sealed class AdminSpeakerService(
         }
     }
 
+    // SIMF-FDS-014 (D-281) — the optional shared-Contact link must point at an
+    // existing active Contact (mirrors EnsureCountryIsValidAsync). Clean 400
+    // instead of a DB FK-violation 500.
+    private async Task EnsureContactIsValidAsync(
+        Guid? contactId, CancellationToken cancellationToken)
+    {
+        if (contactId is null) { return; }
+        var exists = await dbContext.Contacts
+            .AsNoTracking()
+            .AnyAsync(contact => contact.Id == contactId.Value && contact.IsActive, cancellationToken);
+        if (!exists)
+        {
+            throw new ApiException(
+                ErrorCodes.SpeakerInvalid, 400,
+                $"Contact id '{contactId}' does not exist or is inactive.",
+                $"جهة الاتصال '{contactId}' غير موجودة أو غير مفعّلة.");
+        }
+    }
+
     private async Task<(string? en, string? ar)> ResolveCountryAsync(
         int? countryId, CancellationToken cancellationToken)
     {
@@ -389,5 +412,6 @@ internal sealed class AdminSpeakerService(
             speaker.FacebookUrl, speaker.LinkedInUrl, speaker.XUrl,
             speaker.PhotoRelativePath,
             speaker.DisplayOrder, speaker.IsActive,
-            speaker.CreatedAt, speaker.UpdatedAt);
+            speaker.CreatedAt, speaker.UpdatedAt,
+            speaker.ContactId);
 }
