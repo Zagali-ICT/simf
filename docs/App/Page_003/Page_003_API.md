@@ -19,7 +19,7 @@ biometric and OTP rules are in [Page_003_Logic.md](Page_003_Logic.md).
 | Route | `POST /api/v1/app/auth/sign-in` |
 | Access | **Anonymous** (sign-in entry point) |
 | App privilege | Guest |
-| Returns | `ApiResult<SignInResult>` |
+| Returns | `ApiResult<SignInResponse>` |
 
 ```jsonc
 // Request — SignInRequest
@@ -28,43 +28,69 @@ biometric and OTP rules are in [Page_003_Logic.md](Page_003_Logic.md).
   "password": "string"    // server ≤128
 }
 ```
+> The app sends only `email` + `password`. `SignInRequest` also carries an
+> optional `audience` (`Web` | `Cp` | `App`) that defaults to `Web` server-side
+> when omitted; the app does not send it.
+
 ```jsonc
-// Response — ApiResult<SignInResult>.data
+// Response — ApiResult<SignInResponse>.data
 {
-  "requiresTwoFactor": false,        // true ⇒ 2FA email-OTP branch (Logic L-5)
-  "twoFactorToken":    "string?",    // present when requiresTwoFactor; passed to verify-otp
-  "accessToken":       "string?",    // present when NOT requiresTwoFactor
-  "refreshToken":      "string?",    // present when NOT requiresTwoFactor
-  "expiresInSeconds":  0             // access-token lifetime
+  "mfaRequired": false,           // true ⇒ a second factor is required before tokens are issued (Logic L-5)
+  "mfaToken":    null,            // string when set — Control-Panel TOTP accounts only (the app ignores it)
+  "otpToken":    null,            // string when set — visitor email-OTP; pass to verify-otp (E2)
+  "tokens": {                     // null until sign-in is complete (mfaRequired = false)
+    "accessToken":  "string",
+    "refreshToken": "string",
+    "tokenType":    "Bearer",
+    "accessTokenExpiresInSeconds": 0,
+    "user": { "id": "guid", "email": "string", "displayName": "string" }
+  },
+  "accountState": null,           // non-null ONLY when the account is NOT Approved (D-051):
+                                  //   { state, rejectionReason, rejectionReasonArabic, stateChangedAt }
+  "passwordChangeToken": null     // string on a forced CP password change (D-206); null for the app
 }
 ```
 | Error code | When |
 |---|---|
-| `AUTH_INVALID_CREDENTIALS` | Wrong email/password. |
-| `AUTH_ACCOUNT_NOT_APPROVED` | Account exists but not approved. |
-| `AUTH_ACCOUNT_LOCKED` | Account locked / disabled. |
-| `VALIDATION_ERROR` | Missing/invalid email or password (server limits). |
+| `AUTH_INVALID_CREDENTIALS` | Wrong email/password (401). |
+| `AUTH_ACCOUNT_LOCKED` | Lockout after repeated failures (423). |
+| `AUTH_EMAIL_NOT_VERIFIED` | Account exists but its email is not verified. |
+| `AUTH_ACCOUNT_DISABLED` | Account disabled. |
+| `AUTH_WRONG_SURFACE_WEB` / `AUTH_WRONG_SURFACE_CP` | Account not allowed on this sign-in surface (audience gate, P2). |
+| `AUTH_PASSWORD_CHANGE_REQUIRED` | Forced password change pending (403) — CP accounts (D-206). |
+| `VALIDATION_FAILED` | Missing/invalid email or password. |
+
+> A not-yet-approved account is **not** an error: sign-in returns `200` with
+> `accountState` populated (`Pending` / `Rejected`) and `tokens` still issued, and
+> the app routes to the registration-status screen (Page 011).
 
 ## E2 — `POST /app/auth/verify-otp`  (2FA email-OTP branch — Logic D3/L-5)
 | | |
 |---|---|
 | Route | `POST /api/v1/app/auth/verify-otp` |
-| Access | **Anonymous** (carries the `twoFactorToken` from E1) |
-| Returns | `ApiResult<SignInResult>` (now with tokens) |
+| Access | **Anonymous** (carries the `otpToken` from E1) |
+| Returns | `ApiResult<AuthTokens>` (the issued tokens) |
 
 ```jsonc
 // Request — VerifyOtpRequest
 {
-  "twoFactorToken": "string",  // from E1
-  "otp":            "string"   // code delivered by email
+  "otpToken": "string",  // the otpToken from the E1 sign-in response
+  "code":     "string"   // the 6-digit code delivered by email
 }
 ```
 ```jsonc
-// Response — ApiResult<SignInResult>.data
-{ "accessToken": "string", "refreshToken": "string", "expiresInSeconds": 0 }
+// Response — ApiResult<AuthTokens>.data
+{
+  "accessToken":  "string",
+  "refreshToken": "string",
+  "tokenType":    "Bearer",
+  "accessTokenExpiresInSeconds": 0,
+  "user": { "id": "guid", "email": "string", "displayName": "string" }
+}
 ```
 | Error code | When |
 |---|---|
+| `AUTH_OTP_TOKEN_INVALID` | The `otpToken` is unknown / malformed / already used. |
 | `AUTH_OTP_INVALID` | Wrong code. |
 | `AUTH_OTP_EXPIRED` | Code expired / consumed. |
 
@@ -73,55 +99,71 @@ biometric and OTP rules are in [Page_003_Logic.md](Page_003_Logic.md).
 |---|---|
 | Route | `POST /api/v1/app/auth/refresh` |
 | Access | **Anonymous** (carries the refresh token) |
-| Returns | `ApiResult<SignInResult>` (rotated tokens) |
+| Returns | `ApiResult<AuthTokens>` (rotated tokens) |
 
 ```jsonc
 // Request — RefreshRequest
 { "refreshToken": "string" }
 ```
 ```jsonc
-// Response — ApiResult<SignInResult>.data
-{ "accessToken": "string", "refreshToken": "string", "expiresInSeconds": 0 }
+// Response — ApiResult<AuthTokens>.data  (same shape as E2)
+{
+  "accessToken":  "string",
+  "refreshToken": "string",
+  "tokenType":    "Bearer",
+  "accessTokenExpiresInSeconds": 0,
+  "user": { "id": "guid", "email": "string", "displayName": "string" }
+}
 ```
 | Error code | When |
 |---|---|
-| `AUTH_REFRESH_INVALID` | Refresh token unknown / revoked. |
-| `AUTH_REFRESH_EXPIRED` | Refresh token past its lifetime. |
+| `AUTH_REFRESH_TOKEN_INVALID` | Refresh token unknown / revoked. |
+| `AUTH_REFRESH_TOKEN_EXPIRED` | Refresh token past its lifetime. |
 
 ## E4 — `POST /app/auth/forgot-password`  (emails an OTP — Logic L-6)
 | | |
 |---|---|
 | Route | `POST /api/v1/app/auth/forgot-password` |
 | Access | **Anonymous** |
-| Returns | `ApiResult<object>` — always success-shaped (no account enumeration) |
+| Returns | `ApiResult<ForgotPasswordResponse>` — always success-shaped (no account enumeration) |
 
 ```jsonc
 // Request — ForgotPasswordRequest
 { "email": "string" }
 ```
-Server emails a one-time code to the address if it exists. Response carries no data
-beyond success; the app proceeds to the reset step regardless.
+```jsonc
+// Response — ApiResult<ForgotPasswordResponse>.data
+{ "codeExpiresInSeconds": 0 }   // a constant lifetime, returned whether or not the account exists
+```
+Server emails a one-time code to the address if it exists. The constant
+`codeExpiresInSeconds` never reveals whether the account exists; the app proceeds
+to the reset step regardless.
 
 ## E5 — `POST /app/auth/reset-password`  (OTP + new password — Logic L-6)
 | | |
 |---|---|
 | Route | `POST /api/v1/app/auth/reset-password` |
-| Access | **Anonymous** (carries the OTP from E4) |
-| Returns | `ApiResult<object>` |
+| Access | **Anonymous** (carries the reset code from E4) |
+| Returns | `ApiResult<ResetPasswordResponse>` |
 
 ```jsonc
 // Request — ResetPasswordRequest
 {
-  "email":       "string",
-  "otp":         "string",
-  "newPassword": "string"   // server ≤128
+  "email":           "string",
+  "code":            "string",   // the reset code emailed by E4
+  "newPassword":     "string",   // server ≤128
+  "confirmPassword": "string"    // must equal newPassword
 }
+```
+```jsonc
+// Response — ApiResult<ResetPasswordResponse>.data
+{ "passwordReset": true }
 ```
 | Error code | When |
 |---|---|
-| `AUTH_OTP_INVALID` | Wrong reset code. |
-| `AUTH_OTP_EXPIRED` | Reset code expired. |
-| `VALIDATION_ERROR` | New password fails server policy. |
+| `AUTH_RESET_CODE_INVALID` | Wrong reset code, or email/code mismatch. |
+| `AUTH_RESET_CODE_EXPIRED` | Reset code expired. |
+| `AUTH_PASSWORD_POLICY` / `VALIDATION_FAILED` | New password fails server policy, or `confirmPassword` mismatch. |
 
 ## E6 — Device-key (biometric) endpoints (backend D-172, Logic L-2)
 | | |
@@ -171,7 +213,10 @@ device (secure storage; a secure-enclave key is the simf-run hardening follow-up
 - **Nafath** national-identity sign-in is **not** part of this screen (Logic D4) — no endpoint.
 
 ## Notes
-- All six endpoints return the standard `ApiResult<T>` envelope (`success`, `data`,
-  `errors[]`, `traceId`) per SIMF-API-001.
+- Every endpoint returns the standard `ApiResult<T>` envelope — `success`, `data`,
+  `error`, `meta` (SIMF-API-001). On failure `error` is a **single** object
+  `{ code, message, messageArabic, details: [ { field, message, messageArabic } ] }`;
+  field-level reasons live in `details[]`. There is **no** top-level `errors[]`
+  array and **no** `traceId`.
 - Anonymous access here is the documented exception for SignIn / ForgotPassword / reset /
   refresh / OTP-verify (auth bootstrap) — every other App endpoint requires a valid token.
