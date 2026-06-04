@@ -46,15 +46,28 @@ These are **placeholders** — set them to the real SIMF server values:
    `Deploy to IIS` step. The IIS sites + app pools must already exist on the
    server (this script deploys files; it does not create sites).
 
-## Out of scope here (handled elsewhere)
+## Secrets / production config — the `set-env-*.ps1` templates
 
-- **Secrets / production config.** Per SIMF-OPS-001 §6 and §B.1, production
-  overrides and every secret (`ConnectionStrings__SimfIdentityDb`,
-  `ConnectionStrings__SimfAppDb`, `Jwt__SigningKey`, SMTP, `SuperAdmin__*`,
-  `Storage__*`, `Ai__*`, `ReverseProxy__KnownProxies`, …) are **Machine-scope
-  environment variables** set on the server by a per-service
-  `set-env-<service>.ps1`. They are **not** part of this pipeline and are never
-  committed. Author those scripts as a separate step before go-live.
+Per SIMF-OPS-001 §6, production overrides and every secret are applied as
+**Machine-scope environment variables** on the server by a per-service script —
+**not** baked into the pipeline or committed with real values. The committed
+templates here carry **empty values**; fill them on the server, run **as
+Administrator**, then **restart the IIS app pool** so `w3wp` picks them up:
+
+| Script | Service | Key groups |
+|--------|---------|-----------|
+| [set-env-api.ps1](set-env-api.ps1) | SimfAPI | `ConnectionStrings__*`, `Jwt__SigningKey`, `Email__*`, `SuperAdmin__*`, `Storage__*`, `Ai__*`, `ReverseProxy__KnownProxies__n`, `RateLimit__*`, media/presentation/recording roots, `ASPNETCORE_ENVIRONMENT` |
+| [set-env-cp.ps1](set-env-cp.ps1) | SimfCP | `Api__BaseUrl`, `Storage__LogDirectory`, `ASPNETCORE_ENVIRONMENT` |
+| [set-env-web.ps1](set-env-web.ps1) | SimfWeb | `Api__BaseUrl`, `Storage__LogDirectory`, `ASPNETCORE_ENVIRONMENT` |
+
+Naming uses the ASP.NET Core **no-prefix** double-underscore convention
+(`Section__Key`) — the apps use the default host config, so there is **no
+`SIMF_` prefix**. Each script skips empty values (so an unedited run never sets
+blanks) and lists which keys are `[REQUIRED]` / `[SECRET]`. Generate the secret
+keys per SIMF-OPS-001 §B.3. Machine-scope variables are shared across all apps
+on the box (so `Api__BaseUrl` / `ASPNETCORE_ENVIRONMENT` are common to CP + Web).
+
+## Out of scope here (handled elsewhere)
 - **Database migrations.** Applied **in-process at API startup** — `Program.cs`
   runs `SimfAppDbContext` then `SimfIdentityDbContext` `MigrateAsync` (App before
   Identity, SIMF-OPS-001 §B.2). No EF step in the pipeline.
