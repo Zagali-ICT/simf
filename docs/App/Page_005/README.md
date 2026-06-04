@@ -21,13 +21,13 @@ generic 201** — no `409` is ever returned — so the app always shows the same
 | | |
 |---|---|
 | Mockup page | **5** (`Mockup.html`) — owner page 005 |
-| Route | `RouteNames.signUp` → `/sign-up` |
+| Route | `RouteNames.signUpForm` → `/sign-up` |
 | Titles | AR **إنشاء حساب** · EN **Sign up** |
 | Section | 1 — Authentication |
 | Nature | **Form** (sign-up step 1 — email + password + confirm) |
 | App privilege | **Guest** (unauthenticated; the screen creates the account) |
 | Outcome | New **Visitor**, no privilege, under review, profile incomplete; **6-digit OTP** emailed |
-| Status | API **exists** (`POST /app/auth/sign-up`); design **drafted** |
+| Status | **Built** — Flutter `SignUpFormScreen` wired to `POST /app/auth/sign-up` via `AuthController.signUp` (client validation → generic 201 → email-OTP screen, D-198/D-270); API **built**; UI is an interim placeholder (final design SIMF-VID-001) |
 
 ## Sources of truth
 `Mockup.html` (visual, screen 5) · `SIMF_Screen_Guide_and_User_Journey` (narrative, Screen 5) ·

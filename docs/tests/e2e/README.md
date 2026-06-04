@@ -7,6 +7,7 @@
 | **Purpose** | After a batch of fixes, an agent reads **every** case here and drives each page — enters real data, performs each CRUD action, asserts each expected outcome — as a full regression pass that proves the system is **production-ready with no bugs**. |
 | **Coverage gate** | every ✅ Real page in [`docs/pages/PAGE-INDEX.md`](../../pages/PAGE-INDEX.md) has a per-page catalogue file here with ≥1 P0 scenario |
 | **Companion** | [`Test-Guide.md`](../../manuals/Test-Guide.md) (how to run + how to extend) |
+| **Execution plan** | [`E2E-TEST-PLAN.md`](E2E-TEST-PLAN.md) — how / when / who / pass-fail for running this catalogue (subordinate to `SIMF-TST-001`) |
 
 ## HARD RULE — build one-by-one as the system grows
 
@@ -169,6 +170,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #2 `onboarding` (no API) | [`mobile-onboarding.md`](mobile-onboarding.md) | E2E-MOB002-001..008 |
 | #3 `signIn` (+ verify-otp / forgot / reset) | [`mobile-sign-in.md`](mobile-sign-in.md) | E2E-MOB003-001..012 |
 | #4 `signUpType` (no API — client-only gate) | [`mobile-sign-up-type.md`](mobile-sign-up-type.md) | E2E-MOB004-001..007 |
+| #5 `signUpForm` (`POST /app/auth/sign-up`) | [`mobile-sign-up-form.md`](mobile-sign-up-form.md) | E2E-MOB005-001..008 |
 | #11 `registrationStatus` (`GET /app/users/me`) | [`mobile-registration-status.md`](mobile-registration-status.md) | E2E-MOB011-001..007 |
 | #13 `home` (`GET /app/bootstrap`) | [`mobile-home.md`](mobile-home.md) | E2E-MOB013-001..007 |
 | #14 `myArea` (`GET /app/account/dashboard` + `.ics` + `.vcf`) | [`mobile-my-area.md`](mobile-my-area.md) | E2E-MOB014-001..008 |

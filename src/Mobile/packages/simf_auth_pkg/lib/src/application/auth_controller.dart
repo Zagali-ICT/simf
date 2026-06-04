@@ -149,6 +149,23 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     await reloadCurrentUser();
   }
 
+  /// Sign-up step 1 (Page 005). Creates a Visitor account (no privilege,
+  /// under review, profile incomplete) and triggers the email-OTP — it does
+  /// **not** sign the user in and does **not** change [AuthState]. The success
+  /// is enumeration-resistant: identical for a new and an already-registered
+  /// email (D-198). Throws [AuthFailure] on a wire error for the caller to map.
+  Future<void> signUp({
+    required String email,
+    required String password,
+    required String confirmPassword,
+  }) async {
+    await _repository.signUp(
+      email: email,
+      password: password,
+      confirmPassword: confirmPassword,
+    );
+  }
+
   Future<void> signOut() async {
     final refreshToken = _refreshToken;
     if (refreshToken != null && refreshToken.isNotEmpty) {

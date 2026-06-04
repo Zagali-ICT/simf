@@ -11,6 +11,9 @@ void main() {
       const SignInRequest(email: '', password: ''),
     );
     registerFallbackValue(
+      const SignUpRequest(email: '', password: '', confirmPassword: ''),
+    );
+    registerFallbackValue(
       const VerifyEmailRequest(email: '', code: ''),
     );
     registerFallbackValue(

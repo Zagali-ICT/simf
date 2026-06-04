@@ -106,6 +106,17 @@ class AppL10n {
         'تُدار حسابات العارضين والرعاة من لوحة التحكم',
         'Exhibitor & sponsor accounts are managed from the Control Panel',
       );
+  // Sign up — form (Page 005).
+  String get signUpTitle => _t('إنشاء حساب', 'Sign up');
+  String get signUpButton => _t('إنشاء حساب', 'Create account');
+  String get invalidEmail => _t('بريد إلكتروني غير صالح', 'Invalid email');
+  String get passwordPolicyError => _t(
+        'كلمة المرور لا تستوفي الشروط',
+        'Password does not meet the requirements',
+      );
+  String get signUpCheckEmail =>
+      _t('تحقق من بريدك الإلكتروني', 'Check your email');
+
   String get haveAccountQuestion =>
       _t('لديك حساب؟', 'Have an account?');
 
