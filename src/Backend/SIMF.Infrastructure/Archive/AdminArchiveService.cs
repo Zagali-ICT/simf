@@ -99,7 +99,9 @@ internal sealed class AdminArchiveService(
         var v = Validate(request.Year, request.TitleEn, request.TitleAr,
             request.SummaryEn, request.SummaryAr,
             request.Attendees, request.Sessions, request.Speakers,
-            request.CoverImageRelativePath);
+            request.CoverImageRelativePath,
+            request.LocationEn, request.LocationAr,
+            request.DateLabelEn, request.DateLabelAr);
 
         var yearClash = await appDbContext.ArchiveEditions.AsNoTracking()
             .AnyAsync(e => e.Year == v.Year, cancellationToken);
@@ -124,10 +126,10 @@ internal sealed class AdminArchiveService(
             Speakers = v.Speakers,
             CoverImageRelativePath = v.CoverImageRelativePath,
             // §9 (screen 24-01) — optional place + date label.
-            LocationEn = request.LocationEn?.Trim(),
-            LocationAr = request.LocationAr?.Trim(),
-            DateLabelEn = request.DateLabelEn?.Trim(),
-            DateLabelAr = request.DateLabelAr?.Trim(),
+            LocationEn = v.LocationEn,
+            LocationAr = v.LocationAr,
+            DateLabelEn = v.DateLabelEn,
+            DateLabelAr = v.DateLabelAr,
             IsActive = true,
             CreatedAt = now,
         };
@@ -163,7 +165,9 @@ internal sealed class AdminArchiveService(
         var v = Validate(request.Year, request.TitleEn, request.TitleAr,
             request.SummaryEn, request.SummaryAr,
             request.Attendees, request.Sessions, request.Speakers,
-            request.CoverImageRelativePath);
+            request.CoverImageRelativePath,
+            request.LocationEn, request.LocationAr,
+            request.DateLabelEn, request.DateLabelAr);
 
         if (edition.Year != v.Year)
         {
@@ -187,10 +191,10 @@ internal sealed class AdminArchiveService(
         edition.Speakers = v.Speakers;
         edition.CoverImageRelativePath = v.CoverImageRelativePath;
         // §9 (screen 24-01) — optional place + date label.
-        edition.LocationEn = request.LocationEn?.Trim();
-        edition.LocationAr = request.LocationAr?.Trim();
-        edition.DateLabelEn = request.DateLabelEn?.Trim();
-        edition.DateLabelAr = request.DateLabelAr?.Trim();
+        edition.LocationEn = v.LocationEn;
+        edition.LocationAr = v.LocationAr;
+        edition.DateLabelEn = v.DateLabelEn;
+        edition.DateLabelAr = v.DateLabelAr;
         edition.IsActive = request.IsActive;
         edition.UpdatedAt = timeProvider.GetUtcNow();
 
@@ -234,11 +238,15 @@ internal sealed class AdminArchiveService(
     private static (int Year, string TitleEn, string TitleAr,
         string? SummaryEn, string? SummaryAr,
         int Attendees, int Sessions, int Speakers,
-        string? CoverImageRelativePath) Validate(
+        string? CoverImageRelativePath,
+        string? LocationEn, string? LocationAr,
+        string? DateLabelEn, string? DateLabelAr) Validate(
             int yearRaw, string titleEnRaw, string titleArRaw,
             string? summaryEnRaw, string? summaryArRaw,
             int attendeesRaw, int sessionsRaw, int speakersRaw,
-            string? coverRaw)
+            string? coverRaw,
+            string? locationEnRaw, string? locationArRaw,
+            string? dateLabelEnRaw, string? dateLabelArRaw)
     {
         if (yearRaw is < MinYear or > MaxYear)
         {
@@ -296,8 +304,30 @@ internal sealed class AdminArchiveService(
                 "يجب ألا يتجاوز مسار صورة الغلاف 512 حرفاً.");
         }
 
+        // §9 (screen 24-01) — optional place + date label, length-checked here
+        // too so the service mirrors the FluentValidation + EF limits (256 / 128)
+        // for every persisted string field.
+        var locationEn = string.IsNullOrWhiteSpace(locationEnRaw) ? null : locationEnRaw.Trim();
+        var locationAr = string.IsNullOrWhiteSpace(locationArRaw) ? null : locationArRaw.Trim();
+        if (locationEn is { Length: > 256 } || locationAr is { Length: > 256 })
+        {
+            throw new ApiException(ErrorCodes.ArchiveEditionInvalid, 400,
+                "Location must be 256 characters or fewer.",
+                "يجب ألا يتجاوز المكان 256 حرفاً.");
+        }
+
+        var dateLabelEn = string.IsNullOrWhiteSpace(dateLabelEnRaw) ? null : dateLabelEnRaw.Trim();
+        var dateLabelAr = string.IsNullOrWhiteSpace(dateLabelArRaw) ? null : dateLabelArRaw.Trim();
+        if (dateLabelEn is { Length: > 128 } || dateLabelAr is { Length: > 128 })
+        {
+            throw new ApiException(ErrorCodes.ArchiveEditionInvalid, 400,
+                "Date label must be 128 characters or fewer.",
+                "يجب ألا يتجاوز وصف التاريخ 128 حرفاً.");
+        }
+
         return (yearRaw, titleEn, titleAr, summaryEn, summaryAr,
-            attendeesRaw, sessionsRaw, speakersRaw, cover);
+            attendeesRaw, sessionsRaw, speakersRaw, cover,
+            locationEn, locationAr, dateLabelEn, dateLabelAr);
     }
 
     private static AdminArchiveEditionDetail ToDetail(ArchiveEdition edition) =>

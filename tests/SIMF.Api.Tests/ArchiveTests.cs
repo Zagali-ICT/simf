@@ -192,6 +192,36 @@ public sealed class ArchiveTests : IClassFixture<SimfApiFactory>
         }
     }
 
+    [Fact]
+    public async Task Public_detail_is_404_for_a_soft_deleted_edition()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        await PutAuthAsync("/api/v1/admin/archive/visibility",
+            new UpdateArchiveVisibilityRequest { IsVisible = true }, admin);
+
+        var create = await PostAuthAsync("/api/v1/admin/archive",
+            new CreateArchiveEditionRequest
+            {
+                Year = 2012,
+                TitleEn = "SIMF 2012",
+                TitleAr = "سيمف 2012",
+                Attendees = 200,
+                Sessions = 8,
+                Speakers = 10,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminArchiveEditionDetail>>())!.Data!;
+
+        // Soft-delete (Deactivate → IsActive=false); the archive stays visible,
+        // so the 404 is due to the inactive edition, not the visibility gate.
+        var delete = await DeleteAuthAsync($"/api/v1/admin/archive/{created.Id}", admin);
+        Assert.Equal(HttpStatusCode.OK, delete.StatusCode);
+
+        var get = await _client.GetAsync($"/api/v1/app/archive/{created.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, get.StatusCode);
+    }
+
     // -- helpers --
 
     private async Task<string> CreateAdministratorAndSignInAsync()
@@ -244,6 +274,13 @@ public sealed class ArchiveTests : IClassFixture<SimfApiFactory>
         {
             Content = JsonContent.Create(body),
         };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> DeleteAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return _client.SendAsync(request);
     }

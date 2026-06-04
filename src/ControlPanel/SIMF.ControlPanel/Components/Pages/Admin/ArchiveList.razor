@@ -161,26 +161,31 @@
                                ValueChanged="@(v => _form.CoverImageRelativePath = v)"
                                ValueExpression="@(() => _form.CoverImageRelativePath)"
                                Disabled="_busy" />
-                @* §9 (screen 24-01) — place + date label for the edition detail. *@
+                @* §9 (screen 24-01) — place + date label for the edition detail.
+                   MaxLength mirrors EF HasMaxLength + FluentValidation (256/128). *@
                 <SimfTextField Label="@L["Admin.Archive.Field.LocationEn"]"
                                Value="@_form.LocationEn"
                                ValueChanged="@(v => _form.LocationEn = v)"
                                ValueExpression="@(() => _form.LocationEn)"
+                               MaxLength="256"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Archive.Field.LocationAr"]"
                                Value="@_form.LocationAr"
                                ValueChanged="@(v => _form.LocationAr = v)"
                                ValueExpression="@(() => _form.LocationAr)"
+                               MaxLength="256"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Archive.Field.DateLabelEn"]"
                                Value="@_form.DateLabelEn"
                                ValueChanged="@(v => _form.DateLabelEn = v)"
                                ValueExpression="@(() => _form.DateLabelEn)"
+                               MaxLength="128"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Archive.Field.DateLabelAr"]"
                                Value="@_form.DateLabelAr"
                                ValueChanged="@(v => _form.DateLabelAr = v)"
                                ValueExpression="@(() => _form.DateLabelAr)"
+                               MaxLength="128"
                                Disabled="_busy" />
                 <SimfCheckbox Value="_form.IsActive"
                               ValueChanged="@(v => _form.IsActive = v)"

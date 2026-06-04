@@ -9,7 +9,7 @@
 | | |
 |--|--|
 | **Page** | [`Page_024-01`](../../App/Page_024-01/README.md) (App page docs) |
-| **Route** | `GET /api/v1/app/archive/{id}` (anonymous) · app screen #24-01 `/archive/:editionId` (public) |
+| **Route** | `GET /api/v1/app/archive/{id}` (anonymous) · app screen #24-01 `/archive/:editionId` *(planned — not yet in `route_names.dart`)* (public) |
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | **None for the read** — the detail is anonymous/public. An **Admin** token (admin TOTP via the `Get-Totp` helper, **no literal secrets**) only to seed an edition and to flip the archive-visibility toggle. |
@@ -24,7 +24,7 @@
 | E2E-MOB024D-003 | Anonymous caller (no token) can read the detail (public) | auth | P0 | authored ✓ (`Public_detail_returns_edition_with_location_and_date_when_visible`) |
 | E2E-MOB024D-004 | Unknown edition id → 404 `archive_edition_not_found` | edge | P0 | authored ✓ (`Public_detail_returns_404_for_an_unknown_id`) |
 | E2E-MOB024D-005 | Archive visibility OFF → detail 404 (single surface, no leak) | edge | P0 | authored ✓ (`Public_detail_is_404_when_archive_visibility_is_off`) |
-| E2E-MOB024D-006 | Soft-deleted (`IsActive == false`) edition → 404 | edge | P1 | authored (covered by the inactive filter in `PublicArchiveService.GetAsync`) |
+| E2E-MOB024D-006 | Soft-deleted (`IsActive == false`) edition → 404 | edge | P1 | authored ✓ (`Public_detail_is_404_for_a_soft_deleted_edition`) |
 | E2E-MOB024D-007 | Null optional scalars (summary / location / date / cover) → boxes hidden, gradient fallback | edge | P1 | authored (screen) |
 | E2E-MOB024D-008 | Deferred sections (gallery / session titles / past speakers) show "coming soon" | edge | P2 | authored (screen) |
 | E2E-MOB024D-009 | RTL render; year + counter numbers LTR | i18n | P1 | authored (screen) |
@@ -109,6 +109,8 @@ Scenario: A deactivated edition is not found
   When its detail is fetched while the archive is visible
   Then the response is 404 archive_edition_not_found
 ```
+
+**Evidence:** `ArchiveTests.Public_detail_is_404_for_a_soft_deleted_edition` (create → DELETE → GET → 404).
 
 ### E2E-MOB024D-007 — Null optionals
 

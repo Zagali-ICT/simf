@@ -13,7 +13,7 @@ Per-page documentation folder. Everything about this app page lives here.
 | | |
 |---|---|
 | Mockup page | **24-01** (`Mockup.html`, line ~1678 — `تفاصيل النسخة`) |
-| Route | `RouteNames.archiveDetail` → `/archive/:editionId` (**anonymous** — public) — *Flutter wiring deferred, todo #9* |
+| Route | `RouteNames.archiveDetail` *(planned)* → `/archive/:editionId` *(planned)* (**anonymous** — public). The constant/path do **not** exist in `route_names.dart` yet — *Flutter wiring deferred, todo #9* |
 | Titles | AR **تفاصيل النسخة** (app bar shows the edition, e.g. **أرشيف 2024**) · EN **Past-edition detail** |
 | Section | 3 — المحتوى والفعاليات (Content & events): Booths (22) · Sponsors (23) · Archive (24) · **Archive Detail (24-01)** |
 | Nature | **Read-only public detail** of one past forum edition |
