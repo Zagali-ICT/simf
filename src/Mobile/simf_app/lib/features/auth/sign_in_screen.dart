@@ -10,6 +10,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../profile/data/profile_repository.dart';
 
 /// Page 003 — تسجيل الدخول · Sign in (Page_003 docs).
 ///
@@ -101,7 +102,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (state is AuthStateAwaitingOtp) {
         context.goNamed(RouteNames.verifyOtp);
       } else if (state is AuthStateSignedIn) {
-        _onSignedIn();
+        await _onSignedIn();
       }
     } on AuthFailure catch (failure) {
       if (!mounted) {
@@ -120,13 +121,36 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
-  void _onSignedIn() {
+  Future<void> _onSignedIn() async {
     // Best-effort enrolment for future biometric sign-in; uses the
     // container-level controller so it survives this screen's disposal.
     unawaited(
       _maybeEnrolBiometric(ref.read(authControllerProvider.notifier)),
     );
-    context.go('/');
+    await _routeAfterSignIn();
+  }
+
+  /// After a successful sign-in, route a profile-incomplete visitor to the
+  /// profile-completion screen (Page_007); everyone else goes home. The profile
+  /// probe must never block sign-in, so any failure falls back to home
+  /// (Page_007 auto-route, D-288 Slice 3).
+  Future<void> _routeAfterSignIn() async {
+    try {
+      final profile =
+          await ref.read(profileRepositoryProvider).getMyProfile();
+      if (!mounted) {
+        return;
+      }
+      if (!profile.isComplete) {
+        context.goNamed(RouteNames.signUpVisitor);
+        return;
+      }
+    } catch (_) {
+      // Never block sign-in on the profile probe — fall through to home.
+    }
+    if (mounted) {
+      context.go('/');
+    }
   }
 
   Future<void> _maybeEnrolBiometric(AuthController notifier) async {
@@ -165,7 +189,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         return;
       }
       if (ref.read(authControllerProvider) is AuthStateSignedIn) {
-        context.go('/');
+        await _routeAfterSignIn();
       }
     } on AuthFailure catch (failure) {
       if (mounted) {

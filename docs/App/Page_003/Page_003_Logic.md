@@ -30,6 +30,15 @@ the sign-in screen. The endpoint contracts are in [Page_003_API.md](Page_003_API
 - When the session window has **expired** (not on a fresh install / explicit sign-out), pre-fill the email field from that store so the user only re-types the password.
 - Explicit sign-out clears the store; the field is then empty.
 
+### L-3b — Post-sign-in routing (profile-completion gate, D-288)
+- On a signed-in result (password **or** device-key), the app probes
+  `GET /app/account/user-profile` once. If the profile is **incomplete**
+  (no Arabic/English name or no interests — `UserProfileResponse.isComplete`),
+  it routes to the **visitor profile-completion** screen (Page_007,
+  `/sign-up/visitor`); otherwise it routes **home**.
+- The probe must **never block** sign-in: any failure (network / 5xx) falls back
+  to home. This is the entry point of the Page_007 auto-route.
+
 ### L-4 — Validation (client caps, D2)
 | Field | Client rule |
 |---|---|

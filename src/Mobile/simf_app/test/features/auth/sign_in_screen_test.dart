@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/auth/sign_in_screen.dart';
+import 'package:simf_app/features/profile/data/profile_models.dart';
+import 'package:simf_app/features/profile/data/profile_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -88,11 +90,54 @@ class _FakePrefs implements SimfPrefsStorage {
   }
 }
 
+/// Fake profile repo for the post-sign-in completeness probe (Slice 3). Only
+/// `getMyProfile` is exercised by the sign-in route; the rest are unused.
+class _FakeProfileRepository implements ProfileRepository {
+  _FakeProfileRepository({required this.complete});
+
+  final bool complete;
+
+  @override
+  Future<UserProfileResponse> getMyProfile() async => UserProfileResponse(
+        interestIds: complete ? const <String>['i1'] : const <String>[],
+        arabicName: complete ? 'راكان' : '',
+        englishName: complete ? 'Rakan' : '',
+        nationalityCode: complete ? 'SA' : '',
+        placeOfBirth: '',
+        isSaudi: true,
+        gender: AppGender.unspecified,
+        hasIdImage: false,
+      );
+
+  @override
+  Future<UserProfileResponse> upsertMyProfile(UpsertUserProfileRequest r) =>
+      throw UnimplementedError();
+  @override
+  Future<List<CountryItem>> getCountries() => throw UnimplementedError();
+  @override
+  Future<List<ProfileTypeItem>> getProfileTypes() => throw UnimplementedError();
+  @override
+  Future<List<InterestItem>> getInterests() => throw UnimplementedError();
+  @override
+  Future<List<OrganisationItem>> searchOrganisations({
+    String? search,
+    int top = 20,
+  }) =>
+      throw UnimplementedError();
+  @override
+  Future<bool> uploadIdImage({
+    required List<int> bytes,
+    required String filename,
+  }) =>
+      throw UnimplementedError();
+}
+
 Future<void> _pump(
   WidgetTester tester,
   _Outcome outcome,
-  _FakePrefs prefs,
-) async {
+  _FakePrefs prefs, {
+  bool profileComplete = true,
+}) async {
   final router = GoRouter(
     initialLocation: '/sign-in',
     routes: <RouteBase>[
@@ -121,6 +166,11 @@ Future<void> _pump(
         path: '/sign-up',
         builder: (c, s) => const Scaffold(body: Text('SIGN-UP')),
       ),
+      GoRoute(
+        name: RouteNames.signUpVisitor,
+        path: '/sign-up/visitor',
+        builder: (c, s) => const Scaffold(body: Text('PROFILE')),
+      ),
     ],
   );
 
@@ -129,6 +179,9 @@ Future<void> _pump(
       overrides: <Override>[
         simfPrefsStorageProvider.overrideWithValue(prefs),
         authControllerProvider.overrideWith(() => _FakeAuthController(outcome)),
+        profileRepositoryProvider.overrideWithValue(
+          _FakeProfileRepository(complete: profileComplete),
+        ),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -154,8 +207,8 @@ Future<void> _enterCreds(WidgetTester tester) async {
 
 void main() {
   group('SignInScreen (Page 003)', () {
-    testWidgets('successful sign-in routes home and stores the email',
-        (tester) async {
+    testWidgets('successful sign-in with a complete profile routes home and '
+        'stores the email', (tester) async {
       final prefs = _FakePrefs();
       await _pump(tester, _Outcome.success, prefs);
 
@@ -164,6 +217,21 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('HOME'), findsOneWidget);
+      expect(prefs.getString(StorageKeys.lastEmail), equals('visitor@example.sa'));
+    });
+
+    testWidgets('successful sign-in with an incomplete profile routes to the '
+        'visitor profile screen (Page_007 auto-route)', (tester) async {
+      final prefs = _FakePrefs();
+      await _pump(tester, _Outcome.success, prefs, profileComplete: false);
+
+      await _enterCreds(tester);
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('PROFILE'), findsOneWidget);
+      expect(find.text('HOME'), findsNothing);
+      // The email is still recorded for the next cold start.
       expect(prefs.getString(StorageKeys.lastEmail), equals('visitor@example.sa'));
     });
 

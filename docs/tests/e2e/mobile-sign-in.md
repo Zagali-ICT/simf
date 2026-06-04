@@ -33,6 +33,7 @@
 | E2E-MOB003-010 | Network / 500 → non-blocking error; fields preserved; no token mutation | resilience | P1 | authored (error surface) |
 | E2E-MOB003-011 | RTL render (Arabic) — fields, errors, links mirror; email stays LTR | i18n | P1 | authored (screen) |
 | E2E-MOB003-012 | Biometric (device-key) re-open | happy | P0 | authored ✓ (Dart client + controller tests; **.NET↔Dart interop proven by backend golden-vector test, D-266**; on-device prompt → simf-run) |
+| E2E-MOB003-013 | Signed-in → profile-incomplete routes to Page_007 (`/sign-up/visitor`); complete → Home; probe failure → Home | happy | P0 | authored ✓ (widget test) |
 
 ## Scenarios
 
@@ -144,6 +145,22 @@ Scenario: Face/biometric re-open within the window
 > Info.plist / MainActivity) + a secure-enclave key — the on-device biometric
 > prompt — land in simf-run, where android/ios exist.
 
+### E2E-MOB003-013 — Profile-completion auto-route (D-288)
+
+```gherkin
+Scenario: A signed-in visitor with an incomplete profile is sent to complete it
+  Given a visitor signs in successfully (password or device-key)
+  When the app probes GET /app/account/user-profile once
+  Then if the profile is incomplete (no Arabic/English name or no interests) it
+       routes to the visitor profile-completion screen (Page_007, /sign-up/visitor)
+  And if the profile is complete it routes Home (#13)
+  And if the probe fails (network / 5xx) it falls back Home — sign-in is never blocked
+```
+
+**Evidence:** `sign_in_screen_test` — "successful sign-in with a complete profile
+routes home and stores the email" + "successful sign-in with an incomplete profile
+routes to the visitor profile screen (Page_007 auto-route)".
+
 ---
 
-_Last reviewed:_ `2026-06-03` by `SIMF Team`.
+_Last reviewed:_ `2026-06-05` by `SIMF Team`.
