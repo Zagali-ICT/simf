@@ -20,6 +20,7 @@ flow is in [Page_011_Function.md](Page_011_Function.md); the rules are in
 | Hero / illustration | Status icon or illustration matching the current state |
 | Headline | Bilingual status title for the current state |
 | Message | One short explanatory line per state |
+| Stages tracker (المراحل · Stages) | Static four-step progress tracker — 1) إرسال البيانات (Data submitted) · 2) تأكيد البريد الإلكتروني (Email confirmed) · 3) مراجعة فريق SIMF (SIMF team review) · 4) تفعيل الحساب (Account activation). Reflects the registration stages; the current step is driven by `registrationStatus` (step 3 review is current while `Pending`, all four complete on `Approved`). |
 | Reference block | Approval **reference number + date** — **decoration only (D11)**, static |
 | Primary action | State-dependent button: **Re-check** (pending) / **Continue** (approved) |
 | Footer | Sign-out link |
@@ -33,6 +34,7 @@ inline styles or hardcoded colors — use the app theme tokens.
 | Status illustration/icon | One per state (pending / approved / rejected / error) |
 | Headline text | Localized title, bound to current state |
 | Body text | Localized message, bound to current state |
+| Stages tracker (المراحل · Stages) | Static four-row progress tracker for the registration stages (Data submitted · Email confirmed · SIMF team review · Account activation), bilingual; the current step follows `registrationStatus` (review while Pending, all complete on Approved) |
 | Primary button | Re-check (pending) or Continue (approved) |
 | Loading indicator | Shown during the `GET /app/users/me` call |
 | Retry affordance | Shown in the Error state |

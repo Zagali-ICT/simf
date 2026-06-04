@@ -17,17 +17,15 @@ rules are in [Page_009_Logic.md](Page_009_Logic.md).
 | Full route | `GET /api/v1/app/content/terms` (the `terms` content-key convention — L-1) |
 | Access | **Anonymous allowed** (public content read; Guest and above). No permission code. |
 | App privilege | Guest and above |
-| Returns | `ApiResult<AppContent>` |
+| Returns | `ApiResult<PublicContentBlock>` |
 
 ```jsonc
-// AppContent  (shape served by the existing GET /app/content/{key})
+// PublicContentBlock  (shape served by the existing GET /app/content/{key})
 {
-  "key":        "terms",        // the requested content key
-  "titleAr":    "string",       // "الشروط والأحكام"
-  "titleEn":    "string",       // "Terms & conditions"
-  "bodyAr":     "string",       // rendered terms body (HTML/markdown) — Arabic
-  "bodyEn":     "string",       // rendered terms body (HTML/markdown) — English
-  "updatedUtc": "2026-09-01T00:00:00Z" // last-updated; null when not tracked
+  "key":           "terms",     // the requested content key
+  "content":       "string",    // rendered terms body (HTML/markdown) — English
+  "contentArabic": "string",    // rendered terms body (HTML/markdown) — Arabic
+  "lastUpdatedAt": "2026-09-01T00:00:00Z" // last-updated; always present
 }
 ```
 

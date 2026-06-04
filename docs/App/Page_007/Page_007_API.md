@@ -89,7 +89,7 @@ interests sub-step persists **here** — there is no separate interests write.
 
 ```jsonc
 // CountryListResponse
-{ "countries": [ { "code": "SA", "nameEn": "Saudi Arabia", "nameAr": "السعودية" } ] }
+{ "countries": [ { "code": "SA", "name": "Saudi Arabia", "nameArabic": "السعودية" } ] }
 ```
 
 ## E4 — `GET /app/account/profile-types`  (profile-type lookup)

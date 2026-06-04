@@ -53,7 +53,7 @@ then emails a **6-digit OTP** to the address so the next screen can verify it.
 
 ## Acceptance criteria
 - Submit is blocked until email, password, and confirm are all locally valid.
-- Confirm-password mismatch is caught client-side and never sent.
+- Confirm-password mismatch is caught client-side for instant feedback; `confirmPassword` is still sent and re-validated server-side (`confirmPassword == password`; D-270).
 - A successful sign-up always lands on the **generic OTP / check-your-email**
   screen, identically for a new and an already-registered email (D-198).
 - The created account is a **Visitor**, no privilege, **under review**, profile

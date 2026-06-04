@@ -22,7 +22,7 @@ nothing for the server to decide here — the only valid outcome is `type = Visi
 which is forwarded **in memory** to the next screen.
 
 ## Where the visitor path goes next
-On **Continue** the App navigates to **Page 005 (`/sign-up/form`)** carrying
+On **Continue** the App navigates to **Page 005 (`/sign-up`)** carrying
 `type = Visitor`. The **actual account creation** (the first and only backend call of
 the sign-up flow) happens **on Page 005**, not here.
 

@@ -5,7 +5,7 @@ Screen design for the Flutter app. Layout from `Mockup.html` (screen #9); data b
 
 ## Layout (top → bottom)
 1. **App bar** — back ‹, centered title الشروط والأحكام.
-2. **Last-updated line** — "آخر تحديث · Last updated {date}" (only when `updatedUtc` present).
+2. **Last-updated line** — "آخر تحديث · Last updated {date}" (from `lastUpdatedAt`, always present).
 3. **Terms body** — a scrollable rendered-content area (HTML/markdown) filling the page;
    long content scrolls independently.
 4. **Accept gate** (in-flow mode only, pinned to the bottom):
@@ -28,9 +28,9 @@ In standalone read mode the accept gate (4) is **hidden** and the body fills to 
 ## Data binding — `GET /app/content/terms`
 | UI element | API field |
 |---|---|
-| Title | `titleAr` / `titleEn` (per active locale) |
-| Body | `bodyAr` / `bodyEn` (per active locale) |
-| Last-updated line | `updatedUtc` |
+| Title | **fixed UI string** (الشروط والأحكام / Terms & conditions per active locale) — not a response field |
+| Body | `content` / `contentArabic` (per active locale) |
+| Last-updated line | `lastUpdatedAt` |
 
 The accept gate binds to **no API** — acceptance is **client-side only** (D8).
 

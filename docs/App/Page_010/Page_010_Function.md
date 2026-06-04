@@ -27,21 +27,19 @@ The screen is pushed as a **replacement** (not stacked) — the back button must
 | Title | تم التسجيل بنجاح | Registration success | Page heading |
 | Success illustration / check | — | — | Visual confirmation (check-mark / illustration) |
 | Body message | تم استلام طلبك وهو قيد المراجعة من قبل الإدارة | Your request was received and is under admin review | Explains the pending-approval wait |
-| Primary action | الذهاب إلى تسجيل الدخول | Go to sign in | Returns to the sign-in screen |
-| Secondary (optional) | تحديث الحالة | Refresh status | Only if the status poll is wired (see Logic / API) |
+| Primary action | حالة التسجيل | Registration status | Navigates to Page 011 (registrationStatus) |
+| Secondary (ghost) | الانتقال للرئيسية | Go to home | Navigates to the home screen |
 
 ## User actions
 1. **Read the confirmation** — no input required.
-2. **Go to sign in** — primary button takes the user to the sign-in screen
-   (Page 005). They can attempt to sign in; until approved they remain limited /
-   blocked per the account-state rules.
-3. **Refresh status (optional)** — if the status poll is enabled, re-checks
-   whether the account moved from *pending* to *Approved* and routes forward when
-   it has.
+2. **Registration status** — primary button takes the user to Page 011
+   (registrationStatus), where they can watch their `registrationStatus` move
+   from *pending* to *Approved*.
+3. **Go to home** — ghost/secondary button takes the user to the home screen.
 
 ## Privilege / auth gate
 - The user is **signed in but pending approval** — the account exists, the
-  session/token may be issued, but `AccountState` is **not yet Approved**.
+  session/token may be issued, but `registrationStatus` is **not yet Approved**.
 - No admin permission code applies (this is an App onboarding screen, not a
   Control Panel page).
 - The screen itself requires no special permission; it is shown to the just-
@@ -51,6 +49,6 @@ The screen is pushed as a **replacement** (not stacked) — the back button must
 - [ ] Reached only after a successful Page 009 submit.
 - [ ] Back navigation does **not** re-open the sign-up form.
 - [ ] Title and body render correctly in **both AR and EN** with full RTL.
-- [ ] Primary "Go to sign in" routes to the sign-in screen.
+- [ ] Primary "Registration status" routes to Page 011 (registrationStatus); ghost "Go to home" routes to the home screen.
 - [ ] If the status poll is wired, a transition to *Approved* routes the user
       forward without forcing a re-sign-in (see Logic L-3).

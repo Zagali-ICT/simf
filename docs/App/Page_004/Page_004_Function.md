@@ -32,7 +32,7 @@ everything else is informational. No network call happens on this screen.
 |--------|--------|
 | Tap **Visitor** | Selects the only enabled option; **Continue** becomes enabled. |
 | Tap **Exhibitor** / **Sponsor** | No selection; shows the CP-only note (a `SnackBar` / inline hint). Not selectable. |
-| Tap **Continue** (Visitor selected) | Navigates to **Page 005** `/sign-up/form` carrying `type = Visitor`. No API call. |
+| Tap **Continue** (Visitor selected) | Navigates to **Page 005** `/sign-up` carrying `type = Visitor`. No API call. |
 | Tap **Continue** (nothing selected) | Inline validation hint "اختر نوع الحساب / Choose an account type"; stays on page. |
 | Tap **Back** | Returns to the previous screen (Page 003 / welcome). Nothing persisted. |
 | Tap **Sign in** link | Navigates to **Page 003** `/sign-in`. |
@@ -40,7 +40,7 @@ everything else is informational. No network call happens on this screen.
 ## Navigation map
 ```
 Page 003 (Sign in) ──"Create account"──▶ Page 004 (Sign up — type)
-Page 004 ──Visitor + Continue──▶ Page 005 (/sign-up/form, type=Visitor)
+Page 004 ──Visitor + Continue──▶ Page 005 (/sign-up, type=Visitor)
 Page 004 ──Back──▶ Page 003 / welcome
 Page 004 ──"Sign in" link──▶ Page 003 (/sign-in)
 ```

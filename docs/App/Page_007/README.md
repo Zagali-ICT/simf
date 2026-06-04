@@ -12,7 +12,7 @@ Per-page documentation folder. Everything about this app page lives here.
 ## Identity
 | | |
 |---|---|
-| Mockup page | **7** (`Mockup.html`) — owner page **007** |
+| Mockup page | **05 (+ 5-01 interests + 06 ID photo)** (`Mockup.html`) — owner page **007** (mockup screen **07** is a different, seat/media-row screen) |
 | Route | `RouteNames.signUpVisitor` → `/sign-up/visitor` |
 | Titles | AR **إنشاء حساب · زائر** · EN **Sign up — visitor** |
 | Section | 1 — Onboarding / account |
@@ -30,7 +30,7 @@ separate write; the app supplies the actor from the cached sign-in (userId / ema
 so the body carries **no** user id (**D7**).
 
 ## Sources of truth
-`Mockup.html` (visual) · `SIMF_Screen_Guide_and_User_Journey` (narrative, Screen 7) ·
+`Mockup.html` (visual) · `SIMF_Screen_Guide_and_User_Journey` (narrative, Screen 05 + 5-01 interests + 06 ID photo) ·
 SIMF-MOB-API-001 (shared API conventions + auth) · SIMF-MAA-001 (mobile architecture) ·
 DECISIONS_LOG D-046/D-049/D-050/D-186/D-190/D-220/D-221.
 

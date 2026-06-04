@@ -45,9 +45,9 @@ The client + server logic is in [Page_006_Logic.md](Page_006_Logic.md).
 **Errors**
 | HTTP | `error.code` | When |
 |---|---|---|
-| 404 | `auth.account_not_found` | No account exists for `email`. |
-| 400 | `auth.code_invalid` | Account already verified (not `Registered`) · no outstanding code · attempt cap reached · submitted code is wrong (consumes one attempt). |
-| 400 | `auth.code_expired` | The code is past `ExpiresAt`. |
+| 404 | `AUTH_ACCOUNT_NOT_FOUND` | No account exists for `email`. |
+| 400 | `AUTH_CODE_INVALID` | Account already verified (not `Registered`) · no outstanding code · attempt cap reached · submitted code is wrong (consumes one attempt). |
+| 400 | `AUTH_CODE_EXPIRED` | The code is past `ExpiresAt`. |
 | 400 | (validation) | `email` / `code` fail `VerifyEmailRequestValidator` (empty, bad email, not 6 digits) — bilingual field messages. |
 | 429 | (throttle) | `auth` rate limit exceeded. |
 
@@ -82,9 +82,9 @@ The client + server logic is in [Page_006_Logic.md](Page_006_Logic.md).
 **Errors**
 | HTTP | `error.code` | When |
 |---|---|---|
-| 404 | `auth.account_not_found` | No account exists for `email`. |
-| 400 | `auth.code_invalid` | Account already verified (not `Registered`). |
-| 400 | (cap) | Account-scoped resend cap reached — bilingual cap message. |
+| 404 | `AUTH_ACCOUNT_NOT_FOUND` | No account exists for `email`. |
+| 400 | `AUTH_CODE_INVALID` | Account already verified (not `Registered`). |
+| 429 | `RATE_LIMIT_EXCEEDED` | Account-scoped resend cap reached — bilingual cap message. Same wire signature as the per-IP throttle below. |
 | 400 | (validation) | `email` fails `ResendCodeRequestValidator`. |
 | 429 | (throttle) | `auth` rate limit exceeded. |
 

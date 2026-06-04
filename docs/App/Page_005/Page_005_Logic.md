@@ -11,12 +11,15 @@ The wire contract is in [Page_005_API.md](Page_005_API.md).
 | Password | Required; meets the password policy from SIMF-MOB-API-001 (length + complexity) | "كلمة المرور لا تستوفي الشروط" / "Password does not meet the requirements" |
 | Confirm password | Required; **must equal** Password | "كلمتا المرور غير متطابقتين" / "Passwords do not match" |
 
-The confirm-password check is **client-only** — only `email` + `password` are
-sent. If any rule fails, the call is not made and the field error is shown.
+The confirm-password check runs **client-side** for instant feedback **and**
+`confirmPassword` is included in the request body — `email` + `password` +
+`confirmPassword` are sent, and the server re-validates `confirmPassword == password`
+(`SignUpRequestValidator`; D-270). If any rule fails, the call is not made and the
+field error is shown.
 
 ## L-2 — Submit logic (client)
 1. Disable the Submit button and show an inline busy state.
-2. POST `email` + `password` to `/app/auth/sign-up`.
+2. POST `{ email, password, confirmPassword }` to `/app/auth/sign-up`.
 3. On the generic **201**, navigate to the OTP / "check your email" screen.
 4. On network / 5xx, re-enable Submit and show a generic retry toast.
 

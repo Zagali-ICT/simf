@@ -23,6 +23,7 @@ owns that gating; this page only renders the current status it is given.
 | Status illustration / icon | Visual cue per state — pending (hourglass), approved (check), rejected (cross) |
 | Status headline | Bilingual title for the current state (e.g. "حالتك قيد المراجعة" / "Your account is under review") |
 | Status message | One short explanatory line per state |
+| Stages tracker (المراحل · Stages) | Static four-step progress tracker reflecting the registration stages — 1) إرسال البيانات (Data submitted) · 2) تأكيد البريد الإلكتروني (Email confirmed) · 3) مراجعة فريق SIMF (SIMF team review) · 4) تفعيل الحساب (Account activation). The current step is driven by `registrationStatus`: steps 1–2 complete throughout, step 3 (review) is current while `Pending`, and all four show complete on `Approved`. |
 | Approval reference + date | **Decoration only (D11)** — not backed by the API; shown as static layout if present |
 | Re-check / refresh button | Pending state: re-calls `GET /app/users/me` to pull the latest status |
 | Continue button | Approved state: proceeds into the app |

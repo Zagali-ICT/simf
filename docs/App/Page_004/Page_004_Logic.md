@@ -65,6 +65,6 @@ Business rules for the account-type chooser. Function/elements are in
   chevrons flip side; text aligns right.
 
 ## Dependencies
-- **Page 005** (`/sign-up/form`) — the only forward destination; receives `type = Visitor`.
+- **Page 005** (`/sign-up`) — the only forward destination; receives `type = Visitor`.
 - **Page 003** (`/sign-in`) — back/return destination.
 - Decision **D-199** — exhibitor/sponsor are CP-only (the rule this screen enforces visually).

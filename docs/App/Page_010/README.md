@@ -18,7 +18,7 @@ Per-page documentation folder. Everything about this app page lives here.
 | Section | 1 — Onboarding / sign-up |
 | Nature | **Transitional confirmation** (terminal step of the 4-step sign-up; "wait for approval") |
 | App privilege | **Signed-in, pending approval** (account just created, not yet Approved) |
-| Status | Screen **drafted**; transitional only — no own write API. Status poll endpoint **(TO BUILD)** |
+| Status | Screen **drafted**; transitional only — no own write API. Status poll endpoint **(BUILT — `CurrentUserEndpoint`, D-249)** |
 
 ## Sources of truth
 `Mockup.html` (visual) · `SIMF_Screen_Guide_and_User_Journey` (narrative, Screen 10) ·

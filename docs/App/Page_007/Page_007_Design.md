@@ -39,7 +39,7 @@ A single scrollable form screen with an inline **interests sub-step**:
 | Component | Bound to | Notes |
 |-----------|----------|-------|
 | Text fields | name / job title / mobiles / id numbers | AR field hints + EN labels |
-| Country dropdown | E3 `countries[]` | shows `nameAr` (primary) + `nameEn`; value = `code` |
+| Country dropdown | E3 `countries[]` | shows `nameArabic` (primary) + `name`; value = `code` |
 | Organisation typeahead | E6 `OrganisationPickerItem[]` | debounced search → `?search=&top=20`; value = `id`; subtitle = `city` |
 | Profile-type cards | E4 `items[]` | each card tinted with `pageColor`; value = `id`; optional |
 | Gender picker | `Gender` enum | Unspecified default |

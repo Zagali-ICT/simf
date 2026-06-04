@@ -32,17 +32,17 @@ After the transition the server dispatches an in-app + email **welcome** notific
 ## L-4 — Server guards (verify-email), in order
 | # | Condition | Result |
 |---|---|---|
-| 1 | No account for `email` | `404 auth.account_not_found` |
-| 2 | Account not in `Registered` (already verified) | `400 auth.code_invalid` — "This account's email address is already verified." |
-| 3 | No outstanding unconsumed `EmailVerification` code | `400 auth.code_invalid` — "No verification code is outstanding. Request a new one." |
-| 4 | `now >= code.ExpiresAt` | `400 auth.code_expired` |
-| 5 | `code.AttemptCount >= MaxCodeAttempts` | `400 auth.code_invalid` — "Too many incorrect attempts. Request a new code." |
-| 6 | Submitted code ≠ stored code | `AttemptCount++`, `400 auth.code_invalid` — "The verification code is not correct." |
+| 1 | No account for `email` | `404 AUTH_ACCOUNT_NOT_FOUND` |
+| 2 | Account not in `Registered` (already verified) | `400 AUTH_CODE_INVALID` — "This account's email address is already verified." |
+| 3 | No outstanding unconsumed `EmailVerification` code | `400 AUTH_CODE_INVALID` — "No verification code is outstanding. Request a new one." |
+| 4 | `now >= code.ExpiresAt` | `400 AUTH_CODE_EXPIRED` |
+| 5 | `code.AttemptCount >= MaxCodeAttempts` | `400 AUTH_CODE_INVALID` — "Too many incorrect attempts. Request a new code." |
+| 6 | Submitted code ≠ stored code | `AttemptCount++`, `400 AUTH_CODE_INVALID` — "The verification code is not correct." |
 | ✓ | All pass | Consume code, flip state, return success. |
 
 ## L-5 — Server guards (resend-code)
 - Same account-existence (1) and `Registered`-only (2) guards as above.
-- Then an **account-scoped resend cap** (`EnsureVerificationCodeCapNotReachedAsync`) — independent of the per-IP `auth` rate limiter; resend abuse is keyed on the email. If reached, a bilingual cap error is thrown.
+- Then an **account-scoped resend cap** (`EnsureVerificationCodeCapNotReachedAsync`) — keyed on the email rather than the per-IP `auth` rate limiter, but it surfaces the **same `429 / RATE_LIMIT_EXCEEDED`** wire signature as the per-IP limiter, so the client cannot distinguish the two. If reached, a bilingual cap error is thrown.
 - On success: issue a fresh `EmailVerification` code (invalidating the prior one), enqueue the verification email, return `{ email, codeExpiresInSeconds }`.
 
 ## L-6 — Validation (shared client/server)
