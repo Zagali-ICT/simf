@@ -343,6 +343,9 @@ public static class DependencyInjection
         // B6 — D-224: visitor-to-visitor networking connections (app-facing).
         services.AddScoped<SIMF.Application.Networking.Abstractions.INetworkingService,
             SIMF.Infrastructure.Networking.NetworkingService>();
+        // SIMF-FDS-014 — D-284 (Track 2): visitor-to-visitor contact sharing.
+        services.AddScoped<SIMF.Application.Contacts.Abstractions.IVisitorShareService,
+            SIMF.Infrastructure.Contacts.VisitorShareService>();
         // B9b — D-226: dynamic session-category lookup (FDS-004 §5.4).
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSessionCategoryService,
             SIMF.Infrastructure.Programme.AdminSessionCategoryService>();

@@ -179,6 +179,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     // Company / Sponsor / MediaPartner / Speaker / Booth (nullable ContactId FK).
     public DbSet<Contact> Contacts => Set<Contact>();
 
+    // SIMF-FDS-014 — D-284 (Track 2): visitor-to-visitor contact sharing. Both
+    // tables hold bare-Guid logical FKs to SimfUser.Id (Identity DB) — no DB FK.
+    public DbSet<VisitorShareToken> VisitorShareTokens => Set<VisitorShareToken>();
+    public DbSet<SavedContact> SavedContacts => Set<SavedContact>();
+
     // P2.1 (D-211) — two-level FAQ: groups own ordered question/answer entries.
     public DbSet<FaqGroup> FaqGroups => Set<FaqGroup>();
     public DbSet<FaqEntry> FaqEntries => Set<FaqEntry>();

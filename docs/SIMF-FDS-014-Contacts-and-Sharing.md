@@ -327,7 +327,12 @@ next-free number (re-verified at each commit).
 > owner consumes D-numbers concurrently (Slice C1 renumbered D-279 → D-281).
 
 **Track 2 — visitor sharing**
-- **Slice E** — `VisitorShareToken` + `SavedContact` (App); app API (§5.7);
+- **Slice E (backend = D-286)** ✅ shipped — `VisitorShareToken` + `SavedContact`
+  (additive migration `D286_AddVisitorContactSharing`), `VisitorShareService` +
+  the app API (§5.7) + vCard projection + contracts; 9 tests; `mobile-my-contacts.md`
+  E2E (E2E-MMC-001..011). The **mobile screens** (Share my contact / Scan / My
+  Contacts) bind to this API when built in the app page-by-page workflow.
+- **Slice E (original scope)** — `VisitorShareToken` + `SavedContact` (App); app API (§5.7);
   vCard projection; mobile *Share my contact* + *Scan* + *My Contacts*; app-side tests
   + `mobile-my-contacts.md` E2E.
 
