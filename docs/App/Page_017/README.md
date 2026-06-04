@@ -13,7 +13,7 @@ Per-page documentation folder. Everything about this app page lives here.
 | | |
 |---|---|
 | Mockup page | **17** (`Mockup.html`, line ~1230) |
-| Route | `RouteNames.sessionDetail` → `/agenda/:sessionId` |
+| Route | `RouteNames.sessionDetail` → `/sessions/:sessionId` |
 | Titles | AR **تفاصيل الجلسة** · EN **Session detail** |
 | Section | 2 — Core screens |
 | Nature | **Full detail for one session** + my-seat card + add-to-calendar / reminder |

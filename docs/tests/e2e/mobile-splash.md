@@ -120,9 +120,9 @@ Scenario: The refresh payload's user does not decide privilege
 ```gherkin
 Scenario: A signed-in user resumes where they left off
   Given a valid cached session
-  And the last saved location is "/agenda"
+  And the last saved location is "/sessions"
   When the app cold-starts
-  Then the app routes to "/agenda"
+  Then the app routes to "/sessions"
 ```
 
 **Evidence:** `splash_controller_test` — "a signed-in user resumes the last saved content route".

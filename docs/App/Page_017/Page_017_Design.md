@@ -34,7 +34,7 @@ Arabic-primary.
 - **مقعدي card** binds to `SessionSeatMap.myCell` (E3): `rowLabel` → `الصف …`,
   `seatNumber` → `مقعد …`. **Render the card only when `myCell != null`** (and the
   caller is an approved signed-in account). The `عرض ←` link routes to
-  `/agenda/:sessionId/my-seat`, reusing the same seat-map payload.
+  `/sessions/:sessionId/my-seat`, reusing the same seat-map payload.
 - **Category pill** renders only when `categoryName` is present (the "main
   session" / type tag).
 - **Speaker card** binds to the cached `speakers[]`: **avatar** ←

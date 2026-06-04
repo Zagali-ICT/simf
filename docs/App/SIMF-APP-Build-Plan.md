@@ -60,7 +60,7 @@ Status legend: ✅ **ready** (endpoint shipped under `/app/*`) · 🟡 **to buil
 | 5 | `signUpForm` | Guest | ✅ `POST /app/auth/sign-up` (D-198 enumeration-resistant; generic 201) | [Page_005](Page_005/README.md) |
 | 6 | `emailOtp` | Guest | ✅ `POST /app/auth/verify-email` + `resend-code` | [Page_006](Page_006/README.md) |
 | 7 | `signUpVisitor` | Visitor | ✅ user-profile upsert + countries + profile-types + interests + `GET /app/organisations` (interests picker is a sub-step here) | [Page_007](Page_007/README.md) |
-| 8 | `signUpExhibitor` | — | — (exhibitor/sponsor are CP concepts; out of app scope) | _n/a_ |
+| 8 | ~~`signUpExhibitor`~~ | — | **removed from the app (D-276)** — exhibitor/sponsor are CP concepts (D-199) | _n/a_ |
 | 9 | `terms` | Guest | ✅ `GET /app/content/{key}` (`terms`; accept is client-side, D8 consent record deferred) | [Page_009](Page_009/README.md) |
 | 10 | `registrationSuccess` | Visitor (pending) | ✅ `GET /app/users/me` (status poll) | [Page_010](Page_010/README.md) |
 | 11 | `registrationStatus` | Visitor (pending) | ✅ **`GET /app/users/me`** (built this wave, D-249) | [Page_011](Page_011/README.md) |
@@ -73,7 +73,7 @@ Status legend: ✅ **ready** (endpoint shipped under `/app/*`) · 🟡 **to buil
 | 13 | `home` | Guest+ | ✅ `GET /app/account/notifications` (count) · ✅ **`GET /app/bootstrap`** (D-251) · live banner deferred (D10) | [Page_013](Page_013/README.md) |
 | 14 | `myArea` | Visitor | ✅ **BUILT (D-249)** `GET /app/account/dashboard` + `calendar.ics` + `contact-card.vcf` — unions held bookings + speaker meetings + confirmed business meetings | [Page_014](Page_014/README.md) |
 | 15 | `venueMap` | Guest | ✅ `GET /app/venue-map` (D-230) + `GET /app/booths` | [Page_015](Page_015/README.md) |
-| 16–20 | `agenda`, `sessionDetail`, `mySeat`, `speakers`, `speakerProfile` | Guest/Visitor | ⏳ existing `Endpoints/Programme/*`, `Endpoints/Sessions/SeatReservation*`, `Endpoints/Public/PublicSpeaker*` (later wave) | — |
+| 16–20 | `sessions` (renamed from `agenda`, D-276), `sessionDetail`, `mySeat`, `speakers`, `speakerProfile` | Guest/Visitor | ⏳ existing `Endpoints/Programme/*`, `Endpoints/Sessions/SeatReservation*`, `Endpoints/Public/PublicSpeaker*` (later wave) | — |
 
 ### Sections 3–8 — content, live, media, badge, smart, settings (21–41)
 

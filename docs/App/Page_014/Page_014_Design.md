@@ -30,7 +30,7 @@ data binds to [Page_014_API.md](Page_014_API.md); rules in [Page_014_Logic.md](P
 | Trigger | Behaviour |
 |---|---|
 | Share / مشاركة جهة اتصال / مشاركة ملفي | `GET /account/contact-card.vcf` → native share intent (vCard); and/or `GET /account/calendar.ics` for calendar. |
-| Schedule row tap | `kind == Session` → Session detail (17, `/agenda/{sessionId}`); `kind == Meeting` → meeting detail (TBD). |
+| Schedule row tap | `kind == Session` → Session detail (17, `/sessions/{sessionId}`); `kind == Meeting` → meeting detail (TBD). |
 | بطاقتي الذكية | → Badge QR (32); QR rendered client-side from `qrId`. |
 | إعدادات الحساب | → More / settings (41). |
 

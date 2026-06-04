@@ -3,7 +3,7 @@ import 'package:simf_app/app/route_names.dart';
 
 void main() {
   group('RouteNames', () {
-    test('declares the 41 numbered routes + 3 auxiliary auth routes', () {
+    test('declares the 39 numbered routes + 3 auxiliary auth routes', () {
       // Sanity check on the public constants — guards against accidental
       // removal during Phase 2 / Phase 3.
       const allNumbered = <String>[
@@ -14,7 +14,6 @@ void main() {
         RouteNames.signUpForm,
         RouteNames.emailOtp,
         RouteNames.signUpVisitor,
-        RouteNames.signUpExhibitor,
         RouteNames.terms,
         RouteNames.registrationSuccess,
         RouteNames.registrationStatus,
@@ -22,7 +21,7 @@ void main() {
         RouteNames.home,
         RouteNames.myArea,
         RouteNames.venueMap,
-        RouteNames.agenda,
+        RouteNames.sessions,
         RouteNames.sessionDetail,
         RouteNames.mySeat,
         RouteNames.speakers,
@@ -45,14 +44,16 @@ void main() {
         RouteNames.chatbot,
         RouteNames.aboutForum,
         RouteNames.accessibility,
-        RouteNames.cybersecurity,
         RouteNames.rate,
         RouteNames.more,
       ];
 
-      expect(allNumbered.length, equals(41));
-      expect(allNumbered.toSet().length, equals(41),
-          reason: 'No two route names should collide.');
+      expect(allNumbered.length, equals(39));
+      expect(
+        allNumbered.toSet().length,
+        equals(39),
+        reason: 'No two route names should collide.',
+      );
     });
 
     test('auxiliary auth routes are declared', () {

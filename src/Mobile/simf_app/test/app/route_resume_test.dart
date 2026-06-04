@@ -5,8 +5,8 @@ void main() {
   group('isResumableLocation (Page_001 Logic L-5)', () {
     test('content routes are resumable', () {
       expect(isResumableLocation('/'), isTrue);
-      expect(isResumableLocation('/agenda'), isTrue);
-      expect(isResumableLocation('/agenda/123'), isTrue);
+      expect(isResumableLocation('/sessions'), isTrue);
+      expect(isResumableLocation('/sessions/123'), isTrue);
       expect(isResumableLocation('/my-area'), isTrue);
       expect(isResumableLocation('/map'), isTrue);
       expect(isResumableLocation('/speakers/7'), isTrue);

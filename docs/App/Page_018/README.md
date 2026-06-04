@@ -13,7 +13,7 @@ Per-page documentation folder. Everything about this app page lives here.
 | | |
 |---|---|
 | Mockup page | **18** (`Mockup.html`, line ~1284) |
-| Route | `RouteNames.mySeat` → `/agenda/:sessionId/my-seat` (**auth-gated**) |
+| Route | `RouteNames.mySeat` → `/sessions/:sessionId/my-seat` (**auth-gated**) |
 | Titles | AR **مقعدي · خريطة الجلوس** · EN **My Seat map** |
 | Section | 2 — Core screens |
 | Nature | **Visual hall seat-map** — all seats + status + my seat highlighted; navigate + share |

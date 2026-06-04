@@ -8,7 +8,7 @@
 | | |
 |--|--|
 | **Page** | [`Page_018`](../../App/Page_018/README.md) (App page docs) |
-| **Route** | `GET /api/v1/app/sessions/{id}/seats` (grid, approved) · `POST …/seats/reserve` · `…/reserve-random` · `DELETE …/seats/mine` · app screen #18 `/agenda/:sessionId/my-seat` (auth-gated) |
+| **Route** | `GET /api/v1/app/sessions/{id}/seats` (grid, approved) · `POST …/seats/reserve` · `…/reserve-random` · `DELETE …/seats/mine` · app screen #18 `/sessions/:sessionId/my-seat` (auth-gated) |
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | An **approved Visitor** token (the page is login-only); an **Admin** token only to seed the session, the seat layout and a blocked row. **No literal secrets** (admin TOTP via the `Get-Totp` helper). |

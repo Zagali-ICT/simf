@@ -196,12 +196,12 @@ void main() {
       final container = _container(
         auth: AuthStateSignedIn(_signedInSession()),
         update: AppUpdateStatus.upToDate,
-        prefs: <String, Object>{StorageKeys.lastRoute: '/agenda'},
+        prefs: <String, Object>{StorageKeys.lastRoute: '/sessions'},
       );
       addTearDown(container.dispose);
 
       final state = await _resolve(container);
-      expect((state as SplashReady).location, equals('/agenda'));
+      expect((state as SplashReady).location, equals('/sessions'));
     });
 
     test('a non-resumable saved route is ignored in favour of home', () async {

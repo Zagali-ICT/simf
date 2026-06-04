@@ -2,12 +2,13 @@
 
 Per-page documentation folder. Everything about this app page lives here.
 
-> **Rename (D-271):** this screen was previously titled **الأجندة · Agenda**. It is
-> renamed to **الجلسات · Sessions** — the title, the bottom-nav label, and the two
-> filter pills (now **الجلسات القادمة** / **جلسات الفعالية**). The **API route is
-> unchanged** (`/app/programme/sessions`); only the on-screen identity changes. The
-> Flutter `RouteNames.agenda` → `/agenda` route rename is a **coordinated
-> follow-up** (a later pass renames the route + nav constant in step with the app).
+> **Rename (D-271 → completed D-276):** this screen was previously titled
+> **الأجندة · Agenda**. It is renamed to **الجلسات · Sessions** — the title, the
+> bottom-nav label, and the two filter pills (now **الجلسات القادمة** /
+> **جلسات الفعالية**). The **API route is unchanged** (`/app/programme/sessions`).
+> The Flutter route + nav-constant rename **is now done** (D-276):
+> `RouteNames.agenda` → `RouteNames.sessions`, and the path `/agenda` → `/sessions`
+> (the session-detail + my-seat sub-routes follow: `/sessions/:sessionId[/my-seat]`).
 
 | Aspect | Document | What it holds |
 |--------|----------|---------------|
@@ -20,7 +21,7 @@ Per-page documentation folder. Everything about this app page lives here.
 | | |
 |---|---|
 | Mockup page | **16** (`Mockup.html`, line ~1193) |
-| Route | `RouteNames.agenda` → `/agenda` (route constant rename deferred — D-271 coordinated follow-up) |
+| Route | `RouteNames.sessions` → `/sessions` (renamed from `agenda` / `/agenda`, D-276) |
 | Titles | AR **الجلسات** · EN **Sessions** *(renamed from الأجندة · Agenda, D-271)* |
 | Section | 2 — Core screens |
 | Nature | **Filterable schedule of all sessions** (day selector + search) |

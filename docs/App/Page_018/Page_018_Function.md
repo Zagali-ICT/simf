@@ -6,7 +6,7 @@ the user's assigned seat is, with one seat highlighted in brass").
 
 ## Privilege / auth gate
 **Visitor (approved) — login-only.** The seat-map endpoint requires an approved
-account (`RequireApprovedAccount`) and the route `/agenda/:sessionId/my-seat` is
+account (`RequireApprovedAccount`) and the route `/sessions/:sessionId/my-seat` is
 auth-gated (D-254). A guest / pending account cannot open this screen.
 
 ## Elements (top → bottom, from the mockup)

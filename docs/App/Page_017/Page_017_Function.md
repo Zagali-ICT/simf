@@ -7,7 +7,7 @@ Users can read the full description and add the session to their calendar").
 ## Privilege / auth gate
 - **The session detail is anonymous — Guest and above.** A not-logged-in guest
   who taps a session in the agenda can read it (Screen Guide Journey C/E). The
-  route `/agenda/:sessionId` is **not** auth-gated.
+  route `/sessions/:sessionId` is **not** auth-gated.
 - **The `مقعدي` (my-seat) card is login-only.** It renders **only** for an
   approved account that has an **active reservation** for this session — the
   seat data comes from an endpoint that requires an approved account. A guest,
@@ -35,7 +35,7 @@ Users can read the full description and add the session to their calendar").
 2. **Open a speaker** → tap a speaker card → **Speaker profile (screen 20,
    Page_020)** (`/speakers/:speakerId`).
 3. **View my seat** → tap `عرض ←` on the my-seat card → **My Seat map (screen 18,
-   Page_018)** (`/agenda/:sessionId/my-seat`) — the visual hall plan with the
+   Page_018)** (`/sessions/:sessionId/my-seat`) — the visual hall plan with the
    assigned seat highlighted.
 4. **Add to calendar** → `أضف إلى تقويمي` → the app builds a calendar event for
    this session and hands it to the **device calendar** (Screen Guide: "→ device

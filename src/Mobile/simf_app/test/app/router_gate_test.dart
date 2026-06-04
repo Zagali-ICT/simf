@@ -3,15 +3,15 @@ import 'package:simf_app/app/router.dart';
 
 void main() {
   group('routePathRequiresAuth (auth gate, SIMF-MAA-001 §8)', () {
-    test('the My-seat sub-route requires auth (not shadowed by agenda detail)',
+    test('the My-seat sub-route requires auth (not shadowed by session detail)',
         () {
       // Regression: the old loose prefix match resolved this pattern to the
-      // un-gated agenda-detail (#17), leaving My-seat (#18) reachable signed-out.
-      expect(routePathRequiresAuth('/agenda/:sessionId/my-seat'), isTrue);
+      // un-gated session-detail (#17), leaving My-seat (#18) reachable signed-out.
+      expect(routePathRequiresAuth('/sessions/:sessionId/my-seat'), isTrue);
     });
 
-    test('the agenda detail itself is open (Guest)', () {
-      expect(routePathRequiresAuth('/agenda/:sessionId'), isFalse);
+    test('the session detail itself is open (Guest)', () {
+      expect(routePathRequiresAuth('/sessions/:sessionId'), isFalse);
     });
 
     test('the explicitly gated screens require auth', () {
@@ -26,7 +26,7 @@ void main() {
     test('guest-accessible content is not gated', () {
       expect(routePathRequiresAuth('/'), isFalse);
       expect(routePathRequiresAuth('/map'), isFalse);
-      expect(routePathRequiresAuth('/agenda'), isFalse);
+      expect(routePathRequiresAuth('/sessions'), isFalse);
       expect(routePathRequiresAuth('/speakers/:speakerId'), isFalse);
     });
 
@@ -36,11 +36,11 @@ void main() {
     });
 
     test('routeNumberForPath matches the pattern exactly', () {
-      expect(routeNumberForPath('/agenda/:sessionId/my-seat'), equals(18));
-      expect(routeNumberForPath('/agenda/:sessionId'), equals(17));
+      expect(routeNumberForPath('/sessions/:sessionId/my-seat'), equals(18));
+      expect(routeNumberForPath('/sessions/:sessionId'), equals(17));
       expect(routeNumberForPath('/'), equals(13));
       expect(
-        routeNumberForPath('/agenda/123/my-seat'),
+        routeNumberForPath('/sessions/123/my-seat'),
         isNull,
         reason: 'A concrete location is not a route pattern.',
       );

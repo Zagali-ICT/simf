@@ -9,7 +9,7 @@
 | | |
 |--|--|
 | **Page** | [`Page_017`](../../App/Page_017/README.md) (App page docs) |
-| **Route** | `GET /api/v1/app/programme/sessions/{id}` (detail, anon) · `GET /api/v1/app/sessions/{id}/seats` (my-seat, approved) · app screen #17 `/agenda/:sessionId` |
+| **Route** | `GET /api/v1/app/programme/sessions/{id}` (detail, anon) · `GET /api/v1/app/sessions/{id}/seats` (my-seat, approved) · app screen #17 `/sessions/:sessionId` |
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | **Anonymous** for the detail. An **approved Visitor** token (seeded + a held reservation) for the my-seat card; an **Admin** token only to seed the session + seat layout. **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
@@ -109,7 +109,7 @@ Scenario: An unauthenticated caller cannot read the seat map
 Scenario: عرض ← opens the seat map screen from the same payload
   Given the مقعدي card is shown (myCell present)
   When the user taps "عرض ←"
-  Then My Seat map (18) opens at /agenda/{sessionId}/my-seat
+  Then My Seat map (18) opens at /sessions/{sessionId}/my-seat
   And it renders the hall grid from the same SessionSeatMap (rowLabels, seatsPerRow, reservedCells, myCell)
   And no second seat-map fetch is required
 ```

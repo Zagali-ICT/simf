@@ -102,6 +102,6 @@ The screen identity is renamed from **الأجندة · Agenda** to **الجلس
   still filter the cached list client-side (L-1).
 - The **API is unchanged**: the read stays `GET /app/programme/sessions` — the
   rename is **UI-only**, no contract change.
-- The Flutter **route + nav constant** (`RouteNames.agenda` / `/agenda`) rename is a
-  **coordinated follow-up** (a later pass), so existing deep links keep working
-  until that pass lands.
+- The Flutter **route + nav constant** rename is **done** (D-276):
+  `RouteNames.agenda` → `RouteNames.sessions`, and the path `/agenda` → `/sessions`
+  (with the `/sessions/:sessionId[/my-seat]` sub-routes).

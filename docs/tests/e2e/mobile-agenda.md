@@ -1,4 +1,4 @@
-# E2E test catalogue — `Agenda` (`agenda`)
+# E2E test catalogue — `Sessions` (`sessions`, renamed from `agenda` — D-276)
 
 > **Authority:** SIMF E2E test catalogue template (D-133 slice 7). Mobile
 > catalogue — the public programme API is built (D-199) + enriched (D-252); the
@@ -7,7 +7,7 @@
 | | |
 |--|--|
 | **Page** | [`Page_016`](../../App/Page_016/README.md) (App page docs) |
-| **Route** | `GET /api/v1/app/programme/sessions` (+`?day=`) · `GET /api/v1/app/programme/sessions/{id}` · app screen #16 `/agenda` |
+| **Route** | `GET /api/v1/app/programme/sessions` (+`?day=`) · `GET /api/v1/app/programme/sessions/{id}` · app screen #16 `/sessions` |
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | **Anonymous** for the public reads (no token). Admin token only to seed sessions/speakers/themes. **No literal secrets.** |

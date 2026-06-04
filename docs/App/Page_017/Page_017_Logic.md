@@ -46,7 +46,7 @@ a column coordinate.
 
 ## L-4 `عرض ←` → My Seat map (18) reuses the same payload
 The `عرض ←` link opens **My Seat map (screen 18)** at
-`/agenda/:sessionId/my-seat`. Screen 18 renders the **full hall grid** from the
+`/sessions/:sessionId/my-seat`. Screen 18 renders the **full hall grid** from the
 **same** `SessionSeatMap` (`RowLabels`, `SeatsPerRow`, `ReservedCells`, `MyCell`).
 So one `GET …/seats` call serves both: screen 17's one-line card (`MyCell`) and
 screen 18's grid. The app caches the seat map across the 17 → 18 hop.

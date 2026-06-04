@@ -35,9 +35,10 @@ class _Route {
   final String labelEn;
 }
 
-/// The 41 mockup screens declared once.
+/// The mockup screens declared once (39 exposed in-app; mockup screen 08
+/// exhibitor sign-up + 39 cybersecurity are CP-only / removed — §9 / D-276).
 const List<_Route> _routes = <_Route>[
-  // Section 1 — Start & entry (12 screens)
+  // Section 1 — Start & entry (11 screens; 08 exhibitor sign-up removed)
   _Route(number: 1, name: RouteNames.splash, path: '/splash', labelAr: 'البداية', labelEn: 'Splash'),
   _Route(number: 2, name: RouteNames.onboarding, path: '/onboarding', labelAr: 'التهيئة', labelEn: 'Onboarding'),
   _Route(number: 3, name: RouteNames.signIn, path: '/sign-in', labelAr: 'تسجيل الدخول', labelEn: 'Sign in'),
@@ -45,7 +46,7 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 5, name: RouteNames.signUpForm, path: '/sign-up', labelAr: 'إنشاء حساب', labelEn: 'Sign up'),
   _Route(number: 6, name: RouteNames.emailOtp, path: '/sign-up/otp', labelAr: 'التحقق بالبريد', labelEn: 'Email verification'),
   _Route(number: 7, name: RouteNames.signUpVisitor, path: '/sign-up/visitor', labelAr: 'إنشاء حساب · زائر', labelEn: 'Sign up — visitor'),
-  _Route(number: 8, name: RouteNames.signUpExhibitor, path: '/sign-up/exhibitor', labelAr: 'إنشاء حساب · جهة عارضة', labelEn: 'Sign up — exhibitor'),
+  // Screen 08 (exhibitor self-sign-up) removed — exhibitors are CP-only (D-199 / §9).
   _Route(number: 9, name: RouteNames.terms, path: '/terms', labelAr: 'الشروط والأحكام', labelEn: 'Terms & conditions'),
   _Route(number: 10, name: RouteNames.registrationSuccess, path: '/registration/success', labelAr: 'تم التسجيل بنجاح', labelEn: 'Registration success'),
   _Route(number: 11, name: RouteNames.registrationStatus, path: '/registration/status', labelAr: 'حالة التسجيل', labelEn: 'Registration status'),
@@ -55,9 +56,10 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 13, name: RouteNames.home, path: '/', labelAr: 'الرئيسية', labelEn: 'Home'),
   _Route(number: 14, name: RouteNames.myArea, path: '/my-area', labelAr: 'منطقتي', labelEn: 'My area'),
   _Route(number: 15, name: RouteNames.venueMap, path: '/map', labelAr: 'الخريطة', labelEn: 'Venue map'),
-  _Route(number: 16, name: RouteNames.agenda, path: '/agenda', labelAr: 'الأجندة', labelEn: 'Agenda'),
-  _Route(number: 17, name: RouteNames.sessionDetail, path: '/agenda/:sessionId', labelAr: 'تفاصيل الجلسة', labelEn: 'Session detail'),
-  _Route(number: 18, name: RouteNames.mySeat, path: '/agenda/:sessionId/my-seat', labelAr: 'مقعدي', labelEn: 'My seat'),
+  // §9 (D-276) — mockup screen 16 renamed Agenda → Sessions (route + path + label).
+  _Route(number: 16, name: RouteNames.sessions, path: '/sessions', labelAr: 'الجلسات', labelEn: 'Sessions'),
+  _Route(number: 17, name: RouteNames.sessionDetail, path: '/sessions/:sessionId', labelAr: 'تفاصيل الجلسة', labelEn: 'Session detail'),
+  _Route(number: 18, name: RouteNames.mySeat, path: '/sessions/:sessionId/my-seat', labelAr: 'مقعدي', labelEn: 'My seat'),
   _Route(number: 19, name: RouteNames.speakers, path: '/speakers', labelAr: 'المتحدثون', labelEn: 'Speakers'),
   _Route(number: 20, name: RouteNames.speakerProfile, path: '/speakers/:speakerId', labelAr: 'القبطان البحري', labelEn: 'Speaker profile'),
 
@@ -88,9 +90,9 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 36, name: RouteNames.chatbot, path: '/chatbot', labelAr: 'المساعد الذكي', labelEn: 'AI chatbot'),
   _Route(number: 37, name: RouteNames.aboutForum, path: '/about', labelAr: 'عن الملتقى — المحاور', labelEn: 'About the forum'),
 
-  // Section 8 — Settings & legal (4 screens)
+  // Section 8 — Settings & legal (3 screens; 39 cybersecurity removed)
   _Route(number: 38, name: RouteNames.accessibility, path: '/settings/accessibility', labelAr: 'إمكانية الوصول', labelEn: 'Accessibility'),
-  _Route(number: 39, name: RouteNames.cybersecurity, path: '/legal/cybersecurity', labelAr: 'الأمن السيبراني', labelEn: 'Cybersecurity policy'),
+  // Screen 39 (cybersecurity policy) removed from the app — §9 / D-276.
   _Route(number: 40, name: RouteNames.rate, path: '/rate', labelAr: 'تقييم', labelEn: 'Rate'),
   _Route(number: 41, name: RouteNames.more, path: '/more', labelAr: 'المزيد', labelEn: 'More'),
 ];
@@ -233,10 +235,10 @@ class _AuthRefreshNotifier extends ChangeNotifier {
 }
 
 /// The mockup screen number for a matched route **pattern** — go_router's
-/// `state.fullPath` (e.g. `/agenda/:sessionId/my-seat`), or null. Matching the
+/// `state.fullPath` (e.g. `/sessions/:sessionId/my-seat`), or null. Matching the
 /// pattern exactly (not a prefix of the concrete location) is what stops a
 /// sub-route like My-seat (#18) from being shadowed by its parent
-/// `/agenda/:sessionId` (#17) and silently losing its auth gate.
+/// `/sessions/:sessionId` (#17) and silently losing its auth gate.
 int? routeNumberForPath(String? fullPath) {
   if (fullPath == null) {
     return null;

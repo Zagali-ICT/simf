@@ -1,12 +1,18 @@
-/// The 41 mockup screens as named go_router routes.
+/// The mockup screens as named go_router routes.
 ///
 /// Names are stable — the router declares them once here; widgets and the
 /// Phase 3 `mkp_*` screens reference [RouteNames.xxx] rather than literal
 /// strings. The mapping screen-number → route-name follows `Mockup.html`.
+///
+/// §9 (D-276): mockup screens 08 (exhibitor self-sign-up) and 39 (cybersecurity
+/// policy) are NOT exposed in the app — exhibitors are a Control-Panel concept
+/// (D-199), so the app declares 39 numbered routes (the screen numbers keep
+/// their mockup values; 08 and 39 are simply absent). Mockup screen 16 was
+/// renamed Agenda → Sessions.
 class RouteNames {
   RouteNames._();
 
-  // Section 1 — Start & entry (12 screens)
+  // Section 1 — Start & entry (11 screens; 08 exhibitor sign-up removed)
   static const String splash = 'splash';
   static const String onboarding = 'onboarding';
   static const String signIn = 'signIn';
@@ -14,7 +20,6 @@ class RouteNames {
   static const String signUpForm = 'signUpForm';
   static const String emailOtp = 'emailOtp';
   static const String signUpVisitor = 'signUpVisitor';
-  static const String signUpExhibitor = 'signUpExhibitor';
   static const String terms = 'terms';
   static const String registrationSuccess = 'registrationSuccess';
   static const String registrationStatus = 'registrationStatus';
@@ -24,7 +29,8 @@ class RouteNames {
   static const String home = 'home';
   static const String myArea = 'myArea';
   static const String venueMap = 'venueMap';
-  static const String agenda = 'agenda';
+  // §9 (D-276) — mockup screen 16 renamed Agenda → Sessions.
+  static const String sessions = 'sessions';
   static const String sessionDetail = 'sessionDetail';
   static const String mySeat = 'mySeat';
   static const String speakers = 'speakers';
@@ -57,9 +63,8 @@ class RouteNames {
   static const String chatbot = 'chatbot';
   static const String aboutForum = 'aboutForum';
 
-  // Section 8 — Settings & legal (4 screens)
+  // Section 8 — Settings & legal (3 screens; 39 cybersecurity removed)
   static const String accessibility = 'accessibility';
-  static const String cybersecurity = 'cybersecurity';
   static const String rate = 'rate';
   static const String more = 'more';
 
