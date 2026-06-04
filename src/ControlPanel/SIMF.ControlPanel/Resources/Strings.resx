@@ -69,7 +69,6 @@
   <data name="Module.SpeakerPresentations" xml:space="preserve"><value>Speaker presentations</value></data>
   <data name="Module.Exhibitors" xml:space="preserve"><value>Exhibitors</value></data>
   <data name="Module.Booths" xml:space="preserve"><value>Booths</value></data>
-  <data name="Module.Exhibitors" xml:space="preserve"><value>Exhibitors</value></data>
   <data name="Module.Sponsors" xml:space="preserve"><value>Sponsors</value></data>
   <data name="Module.VenueMap" xml:space="preserve"><value>Venue map</value></data>
   <data name="Module.LiveSessions" xml:space="preserve"><value>Live sessions</value></data>

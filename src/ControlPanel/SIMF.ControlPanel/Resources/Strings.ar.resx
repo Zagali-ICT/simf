@@ -69,7 +69,6 @@
   <data name="Module.SpeakerPresentations" xml:space="preserve"><value>عروض المتحدثين</value></data>
   <data name="Module.Exhibitors" xml:space="preserve"><value>العارضون</value></data>
   <data name="Module.Booths" xml:space="preserve"><value>الأجنحة</value></data>
-  <data name="Module.Exhibitors" xml:space="preserve"><value>العارضون</value></data>
   <data name="Module.Sponsors" xml:space="preserve"><value>الرعاة</value></data>
   <data name="Module.VenueMap" xml:space="preserve"><value>خريطة الموقع</value></data>
   <data name="Module.LiveSessions" xml:space="preserve"><value>الجلسات المباشرة</value></data>
