@@ -26,7 +26,6 @@ void main() {
         RouteNames.mySeat,
         RouteNames.speakers,
         RouteNames.speakerProfile,
-        RouteNames.delegations,
         RouteNames.booths,
         RouteNames.sponsors,
         RouteNames.archive,
@@ -48,10 +47,10 @@ void main() {
         RouteNames.more,
       ];
 
-      expect(allNumbered.length, equals(39));
+      expect(allNumbered.length, equals(38));
       expect(
         allNumbered.toSet().length,
-        equals(39),
+        equals(38),
         reason: 'No two route names should collide.',
       );
     });

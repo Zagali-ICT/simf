@@ -108,7 +108,6 @@ Administrator can grant any code to any custom role at runtime.
 | `Halls.*` | Halls · View/Create/Edit/Delete | `/admin/halls`; `/admin/halls*` |
 | `SeatLayouts.View/Edit` | SeatLayouts · View/Edit | `/admin/halls/seat-layouts` |
 | `SeatPlans.View/Edit` | SeatPlans · View/Edit | `/admin/sessions/seat-plans`; seat-reservation admin |
-| `Delegations.*` | Delegations · View/Create/Edit/Delete | `/admin/delegations` |
 | `MeetingRequests.View/Manage` | MeetingRequests · View/Manage | `/admin/meeting-requests` |
 | `Speakers.*` | Speakers · View/Create/Edit/Delete | `/admin/speakers` |
 | `SessionModerators.View/Assign/Revoke` | SessionModerators | `/admin/session-moderators` |

@@ -36,8 +36,7 @@ class RouteNames {
   static const String speakers = 'speakers';
   static const String speakerProfile = 'speakerProfile';
 
-  // Section 3 — Content & activities (4 screens)
-  static const String delegations = 'delegations';
+  // Section 3 — Content & activities (3 screens; 21 delegations removed — D-277)
   static const String booths = 'booths';
   static const String sponsors = 'sponsors';
   static const String archive = 'archive';

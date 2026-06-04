@@ -49,7 +49,6 @@ public sealed class SiemRulesShapeTests
         "s-001-seat-bulk-release.yml",
         "s-001b-seat-bulk-release-burst.yml",
         "s-002-meeting-reject-burst.yml",
-        "s-003-delegation-deactivate-burst.yml",
         // D-185 — meeting-request PII audit-event consumers
         "m-001-meeting-request-bulk-view.yml",
         "m-002-meeting-request-list-scrape.yml",

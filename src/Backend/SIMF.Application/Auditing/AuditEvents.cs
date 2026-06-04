@@ -247,10 +247,7 @@ public static class AuditEvents
     public const string BannerUpdated = "Banner.Updated";
     public const string BannerDeactivated = "Banner.Deactivated";
 
-    // Delegations + MeetingRequests (D-174, gap doc G11 — Mockup pages 21 + 27)
-    public const string DelegationCreated = "Delegation.Created";
-    public const string DelegationUpdated = "Delegation.Updated";
-    public const string DelegationDeactivated = "Delegation.Deactivated";
+    // MeetingRequests (D-174, gap doc G11 — Mockup page 27)
     public const string MeetingRequestSubmitted = "MeetingRequest.Submitted";
     public const string MeetingRequestResponded = "MeetingRequest.Responded";
     // D-185 — security carry-over from D-184: admin queries the queue.

@@ -44,9 +44,7 @@ public sealed class CpNavigationTests
     // routes (the same shape that bit D-180) trips a real test.
     [InlineData("/admin/halls/seat-layouts", "Module.HallSeatLayouts")]
     [InlineData("/admin/sessions/seat-plans", "Module.SessionSeatPlans")]
-    // D-183 (CP UI for D-174 delegations + meeting requests) — two more
-    // entries under Nav.Programme.
-    [InlineData("/admin/delegations", "Module.Delegations")]
+    // D-183 (CP UI for D-174 meeting requests) — entry under Nav.Programme.
     [InlineData("/admin/meeting-requests", "Module.MeetingRequests")]
     public void LabelKeyForHref_resolves_a_known_route(string href, string expectedKey)
     {

@@ -59,7 +59,6 @@
   <data name="Module.Halls" xml:space="preserve"><value>Halls &amp; seating</value></data>
   <data name="Module.HallSeatLayouts" xml:space="preserve"><value>Hall seat layouts</value></data>
   <data name="Module.SessionSeatPlans" xml:space="preserve"><value>Session seat plans</value></data>
-  <data name="Module.Delegations" xml:space="preserve"><value>Delegations</value></data>
   <data name="Module.MeetingRequests" xml:space="preserve"><value>Meeting requests</value></data>
   <data name="Module.SpeakerMeetingRequests" xml:space="preserve"><value>Speaker meeting requests</value></data>
   <data name="Module.Gates" xml:space="preserve"><value>Gates</value></data>
@@ -1785,40 +1784,6 @@
   <data name="Admin.SessionSeatPlans.Release" xml:space="preserve"><value>Release</value></data>
   <data name="Admin.SessionSeatPlans.Released" xml:space="preserve"><value>Reservation released.</value></data>
   <data name="Admin.SessionSeatPlans.Summary" xml:space="preserve"><value>{0} active reservation(s)</value></data>
-  <!-- D-183 (CP UI for D-174 delegations) -->
-  <data name="Admin.Delegations.Title" xml:space="preserve"><value>Delegations</value></data>
-  <data name="Admin.Delegations.New" xml:space="preserve"><value>New delegation</value></data>
-  <data name="Admin.Delegations.None" xml:space="preserve"><value>No delegations yet.</value></data>
-  <data name="Admin.Delegations.Loading" xml:space="preserve"><value>Loading…</value></data>
-  <data name="Admin.Delegations.LoadFailed" xml:space="preserve"><value>Could not load delegations.</value></data>
-  <data name="Admin.Delegations.CountriesLoadFailed" xml:space="preserve"><value>Could not load countries list for the form. The country dropdown will be empty until reload.</value></data>
-  <data name="Admin.Delegations.Saved" xml:space="preserve"><value>Delegation saved.</value></data>
-  <data name="Admin.Delegations.Deleted" xml:space="preserve"><value>Delegation deactivated.</value></data>
-  <data name="Admin.Delegations.Delete.Confirm" xml:space="preserve"><value>Deactivate this delegation? It will disappear from the public list immediately.</value></data>
-  <data name="Admin.Delegations.Cancel" xml:space="preserve"><value>Cancel</value></data>
-  <data name="Admin.Delegations.Save" xml:space="preserve"><value>Save</value></data>
-  <data name="Admin.Delegations.Edit" xml:space="preserve"><value>Edit</value></data>
-  <data name="Admin.Delegations.Delete" xml:space="preserve"><value>Deactivate</value></data>
-  <data name="Admin.Delegations.Add.Title" xml:space="preserve"><value>Create delegation</value></data>
-  <data name="Admin.Delegations.Edit.Title" xml:space="preserve"><value>Edit delegation</value></data>
-  <data name="Admin.Delegations.Col.Name" xml:space="preserve"><value>Name</value></data>
-  <data name="Admin.Delegations.Col.NameArabic" xml:space="preserve"><value>Name (Arabic)</value></data>
-  <data name="Admin.Delegations.Col.Country" xml:space="preserve"><value>Country</value></data>
-  <data name="Admin.Delegations.Col.MemberCount" xml:space="preserve"><value>Members</value></data>
-  <data name="Admin.Delegations.Col.Priority" xml:space="preserve"><value>Priority</value></data>
-  <data name="Admin.Delegations.Col.International" xml:space="preserve"><value>International</value></data>
-  <data name="Admin.Delegations.Col.DisplayOrder" xml:space="preserve"><value>Order</value></data>
-  <data name="Admin.Delegations.Col.Active" xml:space="preserve"><value>Active</value></data>
-  <data name="Admin.Delegations.Field.Name" xml:space="preserve"><value>Name (English)</value></data>
-  <data name="Admin.Delegations.Field.NameArabic" xml:space="preserve"><value>Name (Arabic)</value></data>
-  <data name="Admin.Delegations.Field.CountryId" xml:space="preserve"><value>Country</value></data>
-  <data name="Admin.Delegations.Field.CountryNone" xml:space="preserve"><value>(none)</value></data>
-  <data name="Admin.Delegations.Field.MemberCount" xml:space="preserve"><value>Member count</value></data>
-  <data name="Admin.Delegations.Field.IsPriority" xml:space="preserve"><value>Priority (sorted first in the public list)</value></data>
-  <data name="Admin.Delegations.Field.IsInternational" xml:space="preserve"><value>International</value></data>
-  <data name="Admin.Delegations.Field.DisplayOrder" xml:space="preserve"><value>Display order (lower = earlier)</value></data>
-  <data name="Admin.Delegations.Field.IsActive" xml:space="preserve"><value>Active</value></data>
-  <data name="Admin.Delegations.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
   <!-- D-183 (CP UI for D-174 meeting requests) -->
   <data name="Admin.MeetingRequests.Title" xml:space="preserve"><value>Meeting requests</value></data>
   <data name="Admin.MeetingRequests.None" xml:space="preserve"><value>No meeting requests yet.</value></data>
@@ -2166,7 +2131,6 @@
   <data name="Admin.Statistics.Stat.Sponsors" xml:space="preserve"><value>Sponsors</value></data>
   <data name="Admin.Statistics.Stat.NewsArticles" xml:space="preserve"><value>News articles</value></data>
   <data name="Admin.Statistics.Stat.MediaItems" xml:space="preserve"><value>Media items</value></data>
-  <data name="Admin.Statistics.Stat.Delegations" xml:space="preserve"><value>Delegations</value></data>
   <data name="Admin.Statistics.Stat.CommentsApproved" xml:space="preserve"><value>Comments approved</value></data>
   <data name="Admin.Statistics.Stat.CommentsPending" xml:space="preserve"><value>Comments pending</value></data>
   <data name="Admin.Statistics.Stat.RatingsCount" xml:space="preserve"><value>Total ratings</value></data>

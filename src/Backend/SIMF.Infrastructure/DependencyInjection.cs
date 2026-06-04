@@ -266,12 +266,7 @@ public static class DependencyInjection
             SIMF.Infrastructure.Cms.AdminCmsService>();
         services.AddScoped<SIMF.Application.Cms.Abstractions.IPublicCmsService,
             SIMF.Infrastructure.Cms.PublicCmsService>();
-        // D-174 (gap doc G11, Mockup pages 21 + 27) — Delegations admin
-        // CRUD + public list + MeetingRequest service.
-        services.AddScoped<SIMF.Application.Delegations.Abstractions.IAdminDelegationService,
-            SIMF.Infrastructure.Delegations.AdminDelegationService>();
-        services.AddScoped<SIMF.Application.Delegations.Abstractions.IPublicDelegationService,
-            SIMF.Infrastructure.Delegations.PublicDelegationService>();
+        // D-174 (gap doc G11, Mockup page 27) — MeetingRequest service.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IMeetingRequestService,
             SIMF.Infrastructure.MeetingRequests.MeetingRequestService>();
         // D-269 (Mockup page 20) — attendee meeting requests to a speaker.

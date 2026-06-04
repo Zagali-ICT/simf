@@ -7,7 +7,6 @@ using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Cms;
 using SIMF.Domain.Common;
 using SIMF.Domain.Contacts;
-using SIMF.Domain.Delegations;
 using SIMF.Domain.Exhibition;
 using SIMF.Domain.Exhibitors;
 using SIMF.Domain.Faq;
@@ -125,9 +124,6 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     /// <summary>D-173 (gap doc G8, PDF §1) — time-windowed banners /
     /// announcements.</summary>
     public DbSet<Banner> Banners => Set<Banner>();
-
-    /// <summary>D-174 (gap doc G11, Mockup page 21) — forum delegations.</summary>
-    public DbSet<Delegation> Delegations => Set<Delegation>();
 
     /// <summary>D-174 (gap doc G11, Mockup page 27) — audience meeting requests.</summary>
     public DbSet<MeetingRequest> MeetingRequests => Set<MeetingRequest>();

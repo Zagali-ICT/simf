@@ -78,7 +78,7 @@ Status legend: ✅ **ready** (endpoint shipped under `/app/*`) · 🟡 **to buil
 ### Sections 3–8 — content, live, media, badge, smart, settings (21–41)
 
 ⏳ **Later waves.** The backend families already exist under `/app/*` for most of
-these (delegations, booths, sponsors, archive, live Q&A, audience comments, news,
+these (booths, sponsors, archive, live Q&A, audience comments, news,
 media gallery, media partners, badge/QR, notifications, AI summary, meet-people,
 chatbot, about, accessibility, cybersecurity, rate/feedback). They are catalogued
 at the index level in [`SIMF-MOB-API-001`](../SIMF-MOB-API-001-Mobile-API-Requirements.md)

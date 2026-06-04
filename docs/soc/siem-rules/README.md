@@ -100,7 +100,6 @@ ingestion field-extracts via `parse_json(Detail)`).
 | S-001 | Admin bulk release of active seat reservations (≥10/1m) | Medium | D-182 |
 | S-001b | Seat bulk release — burst variant (≥3/10s) | High | D-182, D-185 |
 | S-002 | Meeting-request reject burst (≥10/5m) | Medium | D-183 |
-| S-003 | Delegation deactivation burst (≥5/10m) | Medium | D-183 |
 | M-001 | Meeting-request bulk-view (≥20 distinct meetingRequestIds / 10m) | High | D-185 |
 | M-002 | Meeting-requests bulk-list scrape (count≥100 + empty filters) | High | D-185 |
 | M-002b | Meeting-requests list repeat scrape (≥5 list calls / 10m) | Medium | D-185 |

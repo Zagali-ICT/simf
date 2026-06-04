@@ -62,9 +62,6 @@ internal sealed class StatisticsService(
         var mediaItems = await appDbContext.MediaItems.AsNoTracking()
             .CountAsync(m => m.IsActive, cancellationToken);
 
-        var delegations = await appDbContext.Delegations.AsNoTracking()
-            .CountAsync(d => d.IsActive, cancellationToken);
-
         var commentsApproved = await appDbContext.SessionComments.AsNoTracking()
             .CountAsync(
                 c => c.IsActive && c.Status == SessionCommentStatus.Approved,
@@ -95,7 +92,6 @@ internal sealed class StatisticsService(
             sponsors,
             newsArticles,
             mediaItems,
-            delegations,
             commentsApproved,
             commentsPending,
             ratingsCount,

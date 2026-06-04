@@ -24,7 +24,6 @@ public sealed record StatisticsDashboard(
     int Sponsors,
     int NewsArticles,
     int MediaItems,
-    int Delegations,
     int CommentsApproved,
     int CommentsPending,
     int RatingsCount,

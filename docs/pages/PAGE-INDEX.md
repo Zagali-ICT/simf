@@ -44,7 +44,6 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/profile-types/other` | ✅ Real | Administrator | [cp/admin-profile-types-other.md](cp/admin-profile-types-other.md) | [e2e/cp-admin-profile-types-other.md](../tests/e2e/cp-admin-profile-types-other.md) |
 | `/admin/organisations` | ✅ Real (D-220) | Administrator | — | [e2e/cp-admin-organisations.md](../tests/e2e/cp-admin-organisations.md) |
 | `/admin/countries` | ✅ Real | Administrator | — | [e2e/cp-admin-countries.md](../tests/e2e/cp-admin-countries.md) |
-| `/admin/delegations` | ✅ Real | Administrator | — | [e2e/cp-admin-delegations.md](../tests/e2e/cp-admin-delegations.md) |
 | `/admin/vips` | ✅ Real | Administrator | — | [e2e/cp-admin-vips.md](../tests/e2e/cp-admin-vips.md) |
 | `/admin/invitations` | ✅ Real | Administrator | — | [e2e/cp-admin-invitations.md](../tests/e2e/cp-admin-invitations.md) |
 | `/admin/reset-2fa` | ✅ Real | Administrator | [cp/admin-reset-2fa.md](cp/admin-reset-2fa.md) | [e2e/cp-admin-reset-2fa.md](../tests/e2e/cp-admin-reset-2fa.md) |

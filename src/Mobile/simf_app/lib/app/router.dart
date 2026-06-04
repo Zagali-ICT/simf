@@ -63,8 +63,7 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 19, name: RouteNames.speakers, path: '/speakers', labelAr: 'المتحدثون', labelEn: 'Speakers'),
   _Route(number: 20, name: RouteNames.speakerProfile, path: '/speakers/:speakerId', labelAr: 'القبطان البحري', labelEn: 'Speaker profile'),
 
-  // Section 3 — Content & activities (4 screens)
-  _Route(number: 21, name: RouteNames.delegations, path: '/delegations', labelAr: 'الوفود', labelEn: 'Delegations'),
+  // Section 3 — Content & activities (3 screens; 21 delegations removed — D-277)
   _Route(number: 22, name: RouteNames.booths, path: '/booths', labelAr: 'الأجنحة', labelEn: 'Booths'),
   _Route(number: 23, name: RouteNames.sponsors, path: '/sponsors', labelAr: 'الرعاة', labelEn: 'Sponsors'),
   _Route(number: 24, name: RouteNames.archive, path: '/archive', labelAr: 'الأرشيف', labelEn: 'Archive'),
