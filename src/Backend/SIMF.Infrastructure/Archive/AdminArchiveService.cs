@@ -3,8 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Archive.Abstractions;
 using SIMF.Application.Auditing;
+using SIMF.Application.Operations.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
+using SIMF.Contracts.Admin;
 using SIMF.Contracts.Archive;
 using SIMF.Domain.Archive;
 using SIMF.Infrastructure.Persistence;
@@ -19,6 +21,7 @@ internal sealed class AdminArchiveService(
     SimfAppDbContext appDbContext,
     IAuditLog auditLog,
     TimeProvider timeProvider,
+    IOperationsToggleService operationsToggleService,
     ILogger<AdminArchiveService> logger) : IAdminArchiveService
 {
     private const int MinYear = 2000;
@@ -233,6 +236,57 @@ internal sealed class AdminArchiveService(
             ActorUserId = actorUserId,
             Detail = $"id={id}; year={edition.Year}",
         }, cancellationToken);
+    }
+
+    public async Task<AdminArchiveEditionDetail> SnapshotCurrentAsync(
+        Guid actorUserId, SnapshotCurrentEditionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        // §9 (D-275) — fully automatic: the year + bilingual title are generated
+        // and the three counters are computed from live App data (no client input).
+        var year = timeProvider.GetUtcNow().Year;
+
+        var sessions = await appDbContext.Sessions.AsNoTracking()
+            .CountAsync(session => session.IsActive, cancellationToken);
+        var speakers = await appDbContext.Speakers.AsNoTracking()
+            .CountAsync(speaker => speaker.IsActive, cancellationToken);
+        // Attendees = distinct people who physically arrived: an allowed CheckIn
+        // gate scan with a resolved profile (owner's "gate-scan arrivals", D-275).
+        var attendees = await appDbContext.GateScans.AsNoTracking()
+            .Where(scan => scan.Outcome == ScanOutcome.Allowed
+                        && scan.Direction == ScanDirection.CheckIn
+                        && scan.UserProfileId != null)
+            .Select(scan => scan.UserProfileId!.Value)
+            .Distinct()
+            .CountAsync(cancellationToken);
+
+        // Reuse CreateAsync: it enforces the one-edition-per-year 409 and writes
+        // the ArchiveEditionCreated audit. The snapshot is a create with computed
+        // counters + a generated title.
+        var detail = await CreateAsync(actorUserId, new CreateArchiveEditionRequest
+        {
+            Year = year,
+            TitleEn = $"SIMF {year}",
+            TitleAr = $"سيمف {year}",
+            Attendees = attendees,
+            Sessions = sessions,
+            Speakers = speakers,
+        }, cancellationToken);
+
+        logger.LogInformation(
+            "Admin {ActorId} snapshotted the current event into ArchiveEdition {Year} "
+            + "(attendees {Attendees}, sessions {Sessions}, speakers {Speakers}; makeVisible {MakeVisible})",
+            actorUserId, year, attendees, sessions, speakers, request.MakeVisible);
+
+        if (request.MakeVisible)
+        {
+            await operationsToggleService.UpdateArchiveVisibilityAsync(
+                actorUserId,
+                new UpdateArchiveVisibilityRequest { IsVisible = true },
+                cancellationToken);
+        }
+
+        return detail;
     }
 
     private static (int Year, string TitleEn, string TitleAr,

@@ -20,6 +20,16 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
+        @* D-275 (§9) — one-click "make this year history" snapshot. *@
+        <div class="simf-toolbar">
+            <AuthorizedAction Permission="@PermissionCatalog.Archive.Snapshot">
+                <SimfButton Type="button" Variant="secondary" Disabled="_busy"
+                            OnClick="OnSnapshotOpen">
+                    @L["Admin.Archive.Snapshot.Button"]
+                </SimfButton>
+            </AuthorizedAction>
+        </div>
+
         <SimfDataGrid TItem="AdminArchiveEditionSummary"
                       Query="_query"
                       Page="_page"
@@ -205,6 +215,33 @@
     </SimfModal>
 }
 
+@* D-275 (§9) — "make this year history" confirm dialog (counts auto-computed). *@
+@if (_snapshotOpen)
+{
+    <SimfModal Open="true"
+               Title="@L["Admin.Archive.Snapshot.Title"]"
+               OnClose="@(() => _snapshotOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <p>@L["Admin.Archive.Snapshot.Intro"]</p>
+                <SimfCheckbox Value="_snapshotMakeVisible"
+                              ValueChanged="@(v => _snapshotMakeVisible = v)"
+                              Disabled="_busy">
+                    @L["Admin.Archive.Snapshot.MakeVisible"]
+                </SimfCheckbox>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _snapshotOpen = false)">
+                @L["Admin.Archive.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SnapshotConfirmAsync" Loading="_busy">
+                @L["Admin.Archive.Snapshot.Confirm"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
 @code {
     private record Toast(string Variant, string Message);
 
@@ -237,6 +274,9 @@
     private bool _isEdit;
     private Guid _editingId;
     private FormModel _form = new();
+
+    private bool _snapshotOpen;
+    private bool _snapshotMakeVisible = true;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -281,6 +321,41 @@
         _editingId = Guid.Empty;
         _form = new FormModel { Year = DateTime.UtcNow.Year };
         _toast = null;
+    }
+
+    private void OnSnapshotOpen()
+    {
+        _snapshotOpen = true;
+        _snapshotMakeVisible = true;
+        _toast = null;
+    }
+
+    private async Task SnapshotConfirmAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminArchiveEditionDetail>>(
+                "simfAccount.postJson",
+                "/account/api/admin/archive/snapshot-current",
+                new SnapshotCurrentEditionRequest { MakeVisible = _snapshotMakeVisible });
+            if (env is { Success: true, Data: not null })
+            {
+                _snapshotOpen = false;
+                _toast = new Toast("success",
+                    string.Format(L["Admin.Archive.Snapshot.Done"], env.Data.Year));
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Archive.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
     }
 
     private void OnEdit(AdminArchiveEditionSummary row)

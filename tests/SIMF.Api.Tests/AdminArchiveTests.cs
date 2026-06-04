@@ -165,6 +165,49 @@ public sealed class AdminArchiveTests : IClassFixture<SimfApiFactory>
         Assert.Equal("أكتوبر 2013 · يومان", detail.DateLabelAr);
     }
 
+    // D-275 (§9) — "make this year history" one-click snapshot.
+    [Fact]
+    public async Task Snapshot_creates_current_year_edition_and_duplicate_409()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+
+        var snap = await PostAuthAsync("/api/v1/admin/archive/snapshot-current",
+            new SnapshotCurrentEditionRequest { MakeVisible = true }, admin);
+        Assert.Equal(HttpStatusCode.OK, snap.StatusCode);
+        var created = (await snap.Content
+            .ReadFromJsonAsync<ApiResult<AdminArchiveEditionDetail>>())!.Data!;
+
+        // Year + bilingual title are generated; the three counters are computed.
+        Assert.True(created.Year >= 2000);
+        Assert.Equal($"SIMF {created.Year}", created.TitleEn);
+        Assert.Equal($"سيمف {created.Year}", created.TitleAr);
+        Assert.True(created.Attendees >= 0);
+        Assert.True(created.Sessions >= 0);
+        Assert.True(created.Speakers >= 0);
+
+        // The snapshot is a real edition — present in the admin list (not gated).
+        var list = await PostAuthAsync("/api/v1/admin/archive/list",
+            new GridQuery { Top = 500 }, admin);
+        var page = (await list.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminArchiveEditionSummary>>>())!.Data!;
+        Assert.Contains(page.Items, e => e.Year == created.Year);
+
+        // One edition per year — a second snapshot of the same year is a 409.
+        var again = await PostAuthAsync("/api/v1/admin/archive/snapshot-current",
+            new SnapshotCurrentEditionRequest { MakeVisible = false }, admin);
+        Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
+    }
+
+    [Fact]
+    public async Task Snapshot_is_forbidden_for_a_non_admin()
+    {
+        var visitor = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
+        var response = await PostAuthAsync("/api/v1/admin/archive/snapshot-current",
+            new SnapshotCurrentEditionRequest { MakeVisible = false },
+            visitor.AccessToken);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     // -- helpers --
 
     private async Task<string> CreateAdministratorAndSignInAsync()

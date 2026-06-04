@@ -109,7 +109,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 |------|------|-----------|
 | `/admin/news` | [`cp-admin-news.md`](cp-admin-news.md) | E2E-NWS-001..015 |
 | `/admin/media` | [`cp-admin-media.md`](cp-admin-media.md) | E2E-MED-001..016 |
-| `/admin/archive` | [`cp-admin-archive.md`](cp-admin-archive.md) | E2E-ARC-001..013 |
+| `/admin/archive` | [`cp-admin-archive.md`](cp-admin-archive.md) | E2E-ARC-001..017 |
 | `/admin/banners` | [`cp-admin-banners.md`](cp-admin-banners.md) | E2E-BNR-001..016 |
 | `/admin/content-blocks` | [`cp-admin-content-blocks.md`](cp-admin-content-blocks.md) | E2E-CNT-001..014 |
 

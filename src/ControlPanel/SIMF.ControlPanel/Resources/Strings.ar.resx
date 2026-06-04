@@ -2071,6 +2071,12 @@
   <data name="Admin.Archive.Save" xml:space="preserve"><value>حفظ</value></data>
   <data name="Admin.Archive.Saved" xml:space="preserve"><value>تم حفظ النسخة.</value></data>
   <data name="Admin.Archive.Deleted" xml:space="preserve"><value>تم حذف النسخة.</value></data>
+  <data name="Admin.Archive.Snapshot.Button" xml:space="preserve"><value>اجعل هذه السنة أرشيفاً</value></data>
+  <data name="Admin.Archive.Snapshot.Title" xml:space="preserve"><value>أرشفة الفعالية الحالية</value></data>
+  <data name="Admin.Archive.Snapshot.Intro" xml:space="preserve"><value>يؤدي هذا إلى إنشاء نسخة أرشيفية للسنة الحالية. يُحتسب الحضور (الوافدون عبر البوابات) والجلسات والمتحدثون تلقائياً من البيانات الحية.</value></data>
+  <data name="Admin.Archive.Snapshot.MakeVisible" xml:space="preserve"><value>إظهارها في الأرشيف الآن</value></data>
+  <data name="Admin.Archive.Snapshot.Confirm" xml:space="preserve"><value>إنشاء النسخة</value></data>
+  <data name="Admin.Archive.Snapshot.Done" xml:space="preserve"><value>تمت أرشفة الفعالية الحالية كـ {0}.</value></data>
   <data name="Admin.Archive.LoadFailed" xml:space="preserve"><value>تعذّر تحميل النسخ المؤرشفة. يرجى المحاولة مرة أخرى.</value></data>
   <data name="Admin.Archive.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
   <data name="Admin.Archive.Add.Title" xml:space="preserve"><value>إضافة نسخة</value></data>

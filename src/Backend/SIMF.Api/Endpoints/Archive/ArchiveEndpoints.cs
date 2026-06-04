@@ -175,3 +175,33 @@ public sealed class DeleteArchiveEditionEndpoint(IAdminArchiveService service)
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
     }
 }
+
+/// <summary>D-275 (§9) — "make this year history": one-click snapshot of the
+/// current live event into a new archive edition. Year + bilingual title are
+/// generated, and the counters (attendees = distinct gate-scan arrivals,
+/// sessions, speakers) are computed server-side. The optional
+/// <c>MakeVisible</c> flips the archive-visibility toggle (D-166) on.</summary>
+public sealed class SnapshotCurrentArchiveEndpoint(IAdminArchiveService service)
+    : Endpoint<SnapshotCurrentEditionRequest, ApiResult<AdminArchiveEditionDetail>>
+{
+    public override void Configure()
+    {
+        Post("/admin/archive/snapshot-current");
+        Policies(PermissionCatalog.PolicyFor(PermissionCatalog.Archive.Snapshot),
+                 nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Options(rb => rb.RequireRateLimiting("auth"));
+        Tags("Admin");
+    }
+
+    public override async Task HandleAsync(
+        SnapshotCurrentEditionRequest req, CancellationToken ct)
+    {
+        if (!Guid.TryParse(User.FindFirstValue("sub"), out var actorId))
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+        await Send.OkAsync(ApiResult<AdminArchiveEditionDetail>.Ok(
+            await service.SnapshotCurrentAsync(actorId, req, ct)), ct);
+    }
+}

@@ -120,3 +120,16 @@ public record UpdateArchiveEditionRequest
     public string? DateLabelAr { get; set; }
     public bool IsActive { get; set; } = true;
 }
+
+/// <summary>D-275 (§9) — "make this year history": snapshot the current live
+/// event into a new ArchiveEdition. Year + bilingual title are generated
+/// server-side (current UTC year, "SIMF {year}" / "سيمف {year}") and the three
+/// counters (attendees = distinct gate-scan arrivals, sessions, speakers) are
+/// computed from live data — none are client-supplied. The only input is whether
+/// to reveal the archive immediately.</summary>
+public sealed record SnapshotCurrentEditionRequest
+{
+    /// <summary>When true, flip the archive-visibility toggle (D-166) on after
+    /// creating the snapshot so the new edition shows on the public Archive.</summary>
+    public bool MakeVisible { get; set; }
+}

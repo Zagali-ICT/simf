@@ -457,6 +457,7 @@ public static class PermissionCatalog
         public const string Create = "Archive.Create";
         public const string Edit = "Archive.Edit";
         public const string Delete = "Archive.Delete";
+        public const string Snapshot = "Archive.Snapshot";
     }
 
     // ── System & operations ──────────────────────────────────────────────
@@ -757,6 +758,7 @@ public static class PermissionCatalog
         new(Archive.Create, "Archive", "Create", "Create archive editions", AdminOnly),
         new(Archive.Edit, "Archive", "Edit", "Edit archive editions", AdminOnly),
         new(Archive.Delete, "Archive", "Delete", "Delete archive editions", AdminOnly),
+        new(Archive.Snapshot, "Archive", "Snapshot", "Snapshot the current event into a past edition", AdminOnly),
 
         // System & operations
         new(Statistics.View, "Statistics", "View", "View the statistics dashboard", AdminOnly),

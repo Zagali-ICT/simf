@@ -2388,6 +2388,14 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"archive/{id}", content: null,
             accessToken, cancellationToken);
 
+    public Task<ApiCallResult<AdminArchiveEditionDetail>> SnapshotCurrentArchiveEditionAsync(
+        SnapshotCurrentEditionRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<AdminArchiveEditionDetail>(
+            HttpMethod.Post, "archive/snapshot-current",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     // -- D-199 — Ratings admin read (SIMF.Contracts.Feedback) ---------------
 
     public Task<ApiCallResult<AdminRatingsPage>> ListRatingsAsync(

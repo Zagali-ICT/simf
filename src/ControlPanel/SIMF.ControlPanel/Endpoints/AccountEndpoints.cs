@@ -2391,6 +2391,14 @@ internal static class AccountEndpoints
             if (token is null) return Results.Unauthorized();
             return Forward(await api.DeleteArchiveEditionAsync(id, token));
         });
+        // D-275 — "make this year history" snapshot.
+        group.MapPost("/admin/archive/snapshot-current",
+            async (SnapshotCurrentEditionRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.SnapshotCurrentArchiveEditionAsync(body, token));
+        });
 
         // D-199 — Ratings admin read BFF passthrough.
         group.MapPost("/admin/feedback/ratings",

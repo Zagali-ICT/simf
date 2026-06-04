@@ -1,0 +1,10 @@
+/* D-275 (§9) — Archive admin toolbar (the "make this year history" action).
+   Tokens only, no hardcoded values, per the CSS rules. */
+
+.simf-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--space-3);
+    margin: var(--space-4) 0 var(--space-2);
+}

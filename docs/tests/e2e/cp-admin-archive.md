@@ -12,8 +12,21 @@
 > **Permission gate.** The page carries `@attribute [RequirePermission(PermissionCatalog.Archive.View)]`
 > (`"Archive.View"`). The backing API endpoints are gated per action:
 > `Archive.View` (list + get), `Archive.Create` (POST), `Archive.Edit` (PUT),
-> `Archive.Delete` (DELETE). `Administrator = "*"` satisfies all four. The CP
-> nav item `Module.PreviousEditions` is gated by `Archive.View`.
+> `Archive.Delete` (DELETE), `Archive.Snapshot` (POST `snapshot-current` — the
+> "make this year history" action, D-275). `Administrator = "*"` satisfies all
+> five. The CP nav item `Module.PreviousEditions` is gated by `Archive.View`.
+>
+> **"Make this year history" (D-275).** A toolbar button above the grid (gated by
+> `Archive.Snapshot`, wrapped in `<AuthorizedAction>`) opens a confirm dialog with
+> a single "Show in the archive now" checkbox and POSTs
+> `/account/api/admin/archive/snapshot-current`. The API **generates** the year
+> (current UTC year) + bilingual title ("SIMF {year}" / "سيمف {year}") and
+> **computes** the three counters from live data — **attendees = distinct
+> gate-scan arrivals** (allowed `CheckIn` scans with a resolved profile),
+> sessions = active sessions, speakers = active speakers — then reuses the create
+> path, so a second snapshot of the same year returns
+> `archive_edition_year_duplicate` 409. The optional checkbox flips the
+> `ArchiveVisibility` toggle (D-166) on.
 >
 > **"Delete" is a soft-delete.** The grid row's Delete (trash) action calls the
 > BFF `DELETE /account/api/admin/archive/{id}` which maps to the API
@@ -49,6 +62,10 @@
 | E2E-ARC-011 | RTL / Arabic render mirrors page + Add modal | i18n | P1 | _to author_ |
 | E2E-ARC-012 | Per-column filter narrows the grid (titleEn / titleAr) | happy | P1 | _to author_ |
 | E2E-ARC-013 | Column sort toggles (year / titleEn ascending↔descending) | happy | P2 | _to author_ |
+| E2E-ARC-014 | Make this year history → snapshot creates "SIMF {year}" with computed counts | happy | P0 | authored ✓ (`Snapshot_creates_current_year_edition_and_duplicate_409`) |
+| E2E-ARC-015 | Second snapshot of the same year → `archive_edition_year_duplicate` 409 | error | P1 | authored ✓ (`Snapshot_creates_current_year_edition_and_duplicate_409`) |
+| E2E-ARC-016 | Snapshot forbidden without `Archive.Snapshot` (non-admin → 403) | auth | P0 | authored ✓ (`Snapshot_is_forbidden_for_a_non_admin`) |
+| E2E-ARC-017 | "Show in archive now" checkbox flips `ArchiveVisibility` on | happy | P1 | authored (screen) |
 
 ## Scenarios
 
@@ -321,6 +338,69 @@ Scenario: Sorting by Year, then by Title (English), toggles ascending/descending
       stay unsortable (no sort affordance, no Sort key sent for them)
 ```
 
+### E2E-ARC-014 — Make this year history (snapshot, golden path)
+
+```gherkin
+Scenario: One-click snapshot creates the current-year edition with computed counts
+  Given the administrator is on /admin/archive
+  And the live event has some active sessions, active speakers, and gate CheckIn scans
+  And no archive edition exists yet for the current UTC year
+  When the administrator clicks "Make this year history"
+  Then a confirm dialog opens titled "Archive the current event"
+  And it shows the intro about auto-counted attendees/sessions/speakers
+  And a single "Show in the archive now" checkbox (ticked by default)
+  When they click "Create snapshot"
+  Then the BFF forwards POST /account/api/admin/archive/snapshot-current and the API returns HTTP 200
+  And the new edition's Year equals the current UTC year
+  And its Title (English) is "SIMF {year}" and Title (Arabic) is "سيمف {year}"
+  And its Attendees equals the distinct count of allowed CheckIn gate scans
+  And its Sessions equals the active-session count and Speakers the active-speaker count
+  And the dialog closes
+  And a green toast reads "Archived the current event as {year}."
+  And the grid reloads and shows the new "SIMF {year}" row with an "Active" pill
+```
+
+**Evidence:** `AdminArchiveTests.Snapshot_creates_current_year_edition_and_duplicate_409` (green).
+
+### E2E-ARC-015 — Snapshot duplicate-year conflict
+
+```gherkin
+Scenario: A second snapshot of the same year is rejected
+  Given an archive edition already exists for the current UTC year (a prior snapshot)
+  When the administrator clicks "Make this year history" and confirms
+  Then the API returns HTTP 409 with ApiResult.Error.Code = "archive_edition_year_duplicate"
+  And the dialog stays open
+  And the error toast surfaces "An archive edition for year {year} already exists."
+      (Arabic: "توجد نسخة أرشيف للعام {year} بالفعل.")
+```
+
+**Evidence:** `AdminArchiveTests.Snapshot_creates_current_year_edition_and_duplicate_409` (the second call asserts 409) (green).
+
+### E2E-ARC-016 — Snapshot permission gate
+
+```gherkin
+Scenario: Snapshot is forbidden without Archive.Snapshot
+  Given a signed-in account that is not an Administrator and lacks "Archive.Snapshot"
+  When it calls POST /api/v1/admin/archive/snapshot-current
+  Then the API returns HTTP 403
+  And in the Control Panel the "Make this year history" button is not rendered for that account
+      (the <AuthorizedAction> hides it)
+```
+
+**Evidence:** `AdminArchiveTests.Snapshot_is_forbidden_for_a_non_admin` (green).
+
+### E2E-ARC-017 — "Show in archive now" flips visibility
+
+```gherkin
+Scenario: The optional checkbox reveals the archive after the snapshot
+  Given the archive-visibility toggle is currently off
+  When the administrator runs "Make this year history" with "Show in the archive now" ticked
+  Then after the 200 the archive-visibility toggle (D-166) is on
+  And the public GET /api/v1/app/archive list now includes the new edition
+  When instead the checkbox is unticked
+  Then the snapshot still creates the edition but the visibility toggle is left unchanged
+```
+
 ---
 
 ## Implementation notes
@@ -335,7 +415,11 @@ Scenario: Sorting by Year, then by Title (English), toggles ascending/descending
 - **API integration tests** at `tests/SIMF.Api.Tests/AdminArchiveTests.cs`
   cover the same surface at a lower layer (no browser):
   `Admin_create_then_get_roundtrips`, `Admin_create_and_list_contains_edition`,
-  `Create_duplicate_year_returns_409`, and `Non_admin_caller_is_forbidden_on_create`.
+  `Create_duplicate_year_returns_409`, `Non_admin_caller_is_forbidden_on_create`,
+  `Admin_create_roundtrips_location_and_date_label` (D-273), and — for the
+  "make this year history" action (D-275) —
+  `Snapshot_creates_current_year_edition_and_duplicate_409` +
+  `Snapshot_is_forbidden_for_a_non_admin`.
   `tests/SIMF.Api.Tests/ArchiveTests.cs` covers the public anonymous
   `GET /archive` projection. When an E2E scenario reliably covers one of these,
   the lower-layer case can be retired — but keep both during the transition.
@@ -346,4 +430,4 @@ Scenario: Sorting by Year, then by Title (English), toggles ascending/descending
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-04 by SIMF Team (D-275 "make this year history" snapshot action added: E2E-ARC-014..017).
