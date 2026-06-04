@@ -211,6 +211,18 @@ class AppL10n {
   String get interestsMaxReached =>
       _t('الحد الأقصى 10 اهتمامات', 'You can pick at most 10 interests');
 
+  // Terms & conditions (Page 009).
+  String get termsTitle => _t('الشروط والأحكام', 'Terms & conditions');
+  String termsLastUpdated(String date) =>
+      _t('آخر تحديث · $date', 'Last updated · $date');
+  String get termsEmpty => _t('لا يوجد محتوى', 'No content');
+  String get termsAcceptCheckbox => _t(
+        'أوافق على الشروط والأحكام',
+        'I accept the terms and conditions',
+      );
+  String get termsAcceptButton => _t('موافقة ومتابعة', 'Accept & continue');
+  String get declineLabel => _t('رفض', 'Decline');
+
   // Sign in (Page 003).
   String get signInTitle => _t('تسجيل الدخول', 'Sign in');
   String get emailLabel => _t('البريد الإلكتروني', 'Email');

@@ -23,9 +23,23 @@ accept is **client-side only** for now — no backend write, no new endpoint.
 | Titles | AR **الشروط والأحكام** · EN **Terms & conditions** |
 | Nature | **Content + accept gate** (display published terms, optionally capture consent) |
 | App privilege | **Guest** and above (readable by anyone; the accept gate appears only inside a consent-requiring flow) |
-| Status | Content endpoint **exists**; accept record **deferred (D8)** — client-side only |
+| Status | **🟢 Screen built** (D-290) — Flutter `TermsScreen` wired to `GET /app/content/terms`; accept record **deferred (D8)** — client-side only |
 
-## Owner reference
+## As built (Flutter, D-290)
+`TermsScreen` (route `terms` → `/terms`, anonymous — Guest and above, not in the
+auth gate) loads `GET /app/content/terms` (the `terms` content key) and renders the
+localized body (AR primary / EN fallback) + an optional `Last updated · {date}`
+line. **Two modes** (Page_009 L-2), chosen by the caller via the `?consent=1` query
+flag: **standalone read** (body only) and **in-flow consent** (a bottom accept gate
+— checkbox + Accept enabled only once ticked + Decline; acceptance is **client-side
+only**, D8, and hands control back via `pop`). A **404** renders the empty state
+("No content"); a transport/5xx failure renders the error message + retry (L-6). The
+body is shown as plain **selectable text** in this interim UI — rich HTML/markdown
+rendering lands with the final design (SIMF-VID-001), to avoid adding a renderer
+package now. New app-local content layer (`ContentBlock` + `ContentRepository` over
+the shared `simfApiClient`) — the first CMS-read consumer in the app. No caller wires
+the `?consent=1` step yet (the current sign-up flow does not route through terms); the
+gate is implemented and dormant until a flow needs it.
 Owner **page 009**. Visual source `Mockup.html` (screen #9, الشروط والأحكام).
 
 ## Sources of truth

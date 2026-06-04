@@ -14,6 +14,7 @@ import '../features/auth/sign_in_screen.dart';
 import '../features/auth/sign_up_email_verify_screen.dart';
 import '../features/auth/sign_up_form_screen.dart';
 import '../features/auth/sign_up_type_screen.dart';
+import '../features/content/terms_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/profile/sign_up_visitor_screen.dart';
 import '../features/splash/splash_screen.dart';
@@ -199,6 +200,13 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.signUpVisitor) {
               return const SignUpVisitorScreen();
+            }
+            if (r.name == RouteNames.terms) {
+              // `?consent=1` shows the in-flow accept gate; standalone reads omit it.
+              return TermsScreen(
+                requireConsent:
+                    state.uri.queryParameters['consent'] == '1',
+              );
             }
             return ComingSoonScreen(
               screenNumber: r.number,
