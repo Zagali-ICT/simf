@@ -43,8 +43,8 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             new UpsertContentBlockRequest
             {
                 Key = key,
-                ContentEn = "Welcome",
-                ContentAr = "أهلاً",
+                Content = "Welcome",
+                ContentArabic = "أهلاً",
                 IsActive = true,
             }, admin);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
@@ -57,14 +57,14 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             new UpsertContentBlockRequest
             {
                 Key = key,
-                ContentEn = "Welcome back",
-                ContentAr = "أهلاً بعودتك",
+                Content = "Welcome back",
+                ContentArabic = "أهلاً بعودتك",
                 IsActive = true,
             }, admin);
         var second = (await update.Content
             .ReadFromJsonAsync<ApiResult<AdminContentBlockSummary>>())!.Data!;
         Assert.Equal(first.Id, second.Id);
-        Assert.Equal("Welcome back", second.ContentEn);
+        Assert.Equal("Welcome back", second.Content);
     }
 
     [Fact]
@@ -76,15 +76,15 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/content-blocks",
             new UpsertContentBlockRequest
             {
-                Key = key, ContentEn = "Hello", ContentAr = "مرحباً", IsActive = true,
+                Key = key, Content = "Hello", ContentArabic = "مرحباً", IsActive = true,
             }, admin);
 
         var response = await _client.GetAsync($"/api/v1/app/content/{key}");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<PublicContentBlock>>())!.Data!;
-        Assert.Equal("Hello", body.ContentEn);
-        Assert.Equal("مرحباً", body.ContentAr);
+        Assert.Equal("Hello", body.Content);
+        Assert.Equal("مرحباً", body.ContentArabic);
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/content-blocks",
             new UpsertContentBlockRequest
             {
-                Key = key, ContentEn = "x", ContentAr = "س", IsActive = false,
+                Key = key, Content = "x", ContentArabic = "س", IsActive = false,
             }, admin);
 
         var response = await _client.GetAsync($"/api/v1/app/content/{key}");
@@ -112,7 +112,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/content-blocks",
             new UpsertContentBlockRequest
             {
-                Key = key, ContentEn = "v1", ContentAr = "س1", IsActive = true,
+                Key = key, Content = "v1", ContentArabic = "س1", IsActive = true,
             }, admin);
 
         // First fetch — get the Last-Modified.
@@ -136,9 +136,9 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
         var k1 = "batch1." + Guid.NewGuid().ToString("N");
         var k2 = "batch2." + Guid.NewGuid().ToString("N");
         await PutAuthAsync("/api/v1/admin/content-blocks",
-            new UpsertContentBlockRequest { Key = k1, ContentEn = "a", ContentAr = "أ", IsActive = true }, admin);
+            new UpsertContentBlockRequest { Key = k1, Content = "a", ContentArabic = "أ", IsActive = true }, admin);
         await PutAuthAsync("/api/v1/admin/content-blocks",
-            new UpsertContentBlockRequest { Key = k2, ContentEn = "b", ContentAr = "ب", IsActive = true }, admin);
+            new UpsertContentBlockRequest { Key = k2, Content = "b", ContentArabic = "ب", IsActive = true }, admin);
 
         var response = await _client.PostAsJsonAsync(
             "/api/v1/app/content/batch",
@@ -165,8 +165,8 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/banners",
             new CreateBannerRequest
             {
-                TitleEn = "Live Banner", TitleAr = "بانر مباشر",
-                BodyEn = "Body", BodyAr = "النص",
+                Title = "Live Banner", TitleArabic = "بانر مباشر",
+                Body = "Body", BodyArabic = "النص",
                 StartUtc = now.AddDays(-1), EndUtc = now.AddDays(1),
                 DisplayOrder = 0,
             }, admin);
@@ -178,8 +178,8 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/banners",
             new CreateBannerRequest
             {
-                TitleEn = "Future Banner", TitleAr = "بانر مستقبلي",
-                BodyEn = "Body", BodyAr = "النص",
+                Title = "Future Banner", TitleArabic = "بانر مستقبلي",
+                Body = "Body", BodyArabic = "النص",
                 StartUtc = now.AddDays(1), EndUtc = now.AddDays(2),
                 DisplayOrder = 1,
             }, admin);
@@ -189,7 +189,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
         var body = (await publicList.Content
             .ReadFromJsonAsync<ApiResult<PublicBanners>>())!.Data!;
         Assert.Contains(body.Items, b => b.Id == live.Id);
-        Assert.DoesNotContain(body.Items, b => b.TitleEn == "Future Banner");
+        Assert.DoesNotContain(body.Items, b => b.Title == "Future Banner");
     }
 
     [Fact]
@@ -201,8 +201,8 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/banners",
             new CreateBannerRequest
             {
-                TitleEn = "Bad", TitleAr = "سيء",
-                BodyEn = "b", BodyAr = "ب",
+                Title = "Bad", TitleArabic = "سيء",
+                Body = "b", BodyArabic = "ب",
                 StartUtc = now.AddDays(1), EndUtc = now,
                 DisplayOrder = 0,
             }, admin);
@@ -219,7 +219,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/content-blocks",
             new UpsertContentBlockRequest
             {
-                Key = "x", ContentEn = "y", ContentAr = "ص", IsActive = true,
+                Key = "x", Content = "y", ContentArabic = "ص", IsActive = true,
             }, visitor.AccessToken);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -248,8 +248,8 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var body = (await response.Content
                 .ReadFromJsonAsync<ApiResult<PublicContentBlock>>())!.Data!;
-            Assert.False(string.IsNullOrEmpty(body.ContentEn), $"EN content missing for {key}");
-            Assert.False(string.IsNullOrEmpty(body.ContentAr), $"AR content missing for {key}");
+            Assert.False(string.IsNullOrEmpty(body.Content), $"EN content missing for {key}");
+            Assert.False(string.IsNullOrEmpty(body.ContentArabic), $"AR content missing for {key}");
         }
     }
 
@@ -262,7 +262,7 @@ public sealed class CmsTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/content-blocks",
             new UpsertContentBlockRequest
             {
-                Key = key, ContentEn = "x", ContentAr = "س", IsActive = true,
+                Key = key, Content = "x", ContentArabic = "س", IsActive = true,
             }, admin);
 
         var del = await DeleteAuthAsync(

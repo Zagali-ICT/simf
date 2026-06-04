@@ -29,7 +29,7 @@
                       OnQueryChanged="OnQueryChangedAsync"
                       Multiselect="true"
                       RowKey="@(r => r.Id.ToString())"
-                      RowLabel="@(r => r.TitleEn)"
+                      RowLabel="@(r => r.Title)"
                       Caption="@L["Admin.News.Title"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       OnAdd="OnAdd"
@@ -51,25 +51,25 @@
                       DeleteLabel="@L["Grid.Delete"]"
                       SummaryFormatter="@FormatSummary">
             <Columns>
-                <SimfDataGridColumn TItem="AdminNewsSummary" Key="titleen"
+                <SimfDataGridColumn TItem="AdminNewsSummary" Key="title"
                                     Header="@L["Admin.News.Col.TitleEn"]"
                                     Sortable="true" Filterable="true">
-                    <CellTemplate>@context.TitleEn</CellTemplate>
+                    <CellTemplate>@context.Title</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminNewsSummary" Key="titlear"
+                <SimfDataGridColumn TItem="AdminNewsSummary" Key="titlearabic"
                                     Header="@L["Admin.News.Col.TitleAr"]"
                                     Filterable="true">
-                    <CellTemplate>@context.TitleAr</CellTemplate>
+                    <CellTemplate>@context.TitleArabic</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminNewsSummary" Key="categoryen"
+                <SimfDataGridColumn TItem="AdminNewsSummary" Key="category"
                                     Header="@L["Admin.News.Col.CategoryEn"]"
                                     Filterable="true">
-                    <CellTemplate>@context.CategoryEn</CellTemplate>
+                    <CellTemplate>@context.Category</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminNewsSummary" Key="categoryar"
+                <SimfDataGridColumn TItem="AdminNewsSummary" Key="categoryarabic"
                                     Header="@L["Admin.News.Col.CategoryAr"]"
                                     Filterable="true">
-                    <CellTemplate>@context.CategoryAr</CellTemplate>
+                    <CellTemplate>@context.CategoryArabic</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminNewsSummary" Key="publishedat"
                                     Header="@L["Admin.News.Col.PublishedAt"]"
@@ -110,50 +110,50 @@
         <ChildContent>
             <div class="simf-form__fields">
                 <SimfTextField Label="@L["Admin.News.Field.TitleEn"]"
-                               Value="@_form.TitleEn"
-                               ValueChanged="@(v => _form.TitleEn = v)"
-                               ValueExpression="@(() => _form.TitleEn)"
+                               Value="@_form.Title"
+                               ValueChanged="@(v => _form.Title = v)"
+                               ValueExpression="@(() => _form.Title)"
                                MaxLength="200"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.News.Field.TitleAr"]"
-                               Value="@_form.TitleAr"
-                               ValueChanged="@(v => _form.TitleAr = v)"
-                               ValueExpression="@(() => _form.TitleAr)"
+                               Value="@_form.TitleArabic"
+                               ValueChanged="@(v => _form.TitleArabic = v)"
+                               ValueExpression="@(() => _form.TitleArabic)"
                                MaxLength="200"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.News.Field.CategoryEn"]"
-                               Value="@_form.CategoryEn"
-                               ValueChanged="@(v => _form.CategoryEn = v)"
-                               ValueExpression="@(() => _form.CategoryEn)"
+                               Value="@_form.Category"
+                               ValueChanged="@(v => _form.Category = v)"
+                               ValueExpression="@(() => _form.Category)"
                                MaxLength="100"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.News.Field.CategoryAr"]"
-                               Value="@_form.CategoryAr"
-                               ValueChanged="@(v => _form.CategoryAr = v)"
-                               ValueExpression="@(() => _form.CategoryAr)"
+                               Value="@_form.CategoryArabic"
+                               ValueChanged="@(v => _form.CategoryArabic = v)"
+                               ValueExpression="@(() => _form.CategoryArabic)"
                                MaxLength="100"
                                Disabled="_busy" />
                 <SimfTextarea Label="@L["Admin.News.Field.ExcerptEn"]"
-                              Value="@_form.ExcerptEn"
-                              ValueChanged="@(v => _form.ExcerptEn = v)"
+                              Value="@_form.Excerpt"
+                              ValueChanged="@(v => _form.Excerpt = v)"
                               Rows="2"
                               MaxLength="500"
                               Disabled="_busy" />
                 <SimfTextarea Label="@L["Admin.News.Field.ExcerptAr"]"
-                              Value="@_form.ExcerptAr"
-                              ValueChanged="@(v => _form.ExcerptAr = v)"
+                              Value="@_form.ExcerptArabic"
+                              ValueChanged="@(v => _form.ExcerptArabic = v)"
                               Rows="2"
                               MaxLength="500"
                               Disabled="_busy" />
                 <SimfTextarea Label="@L["Admin.News.Field.BodyEn"]"
-                              Value="@_form.BodyEn"
-                              ValueChanged="@(v => _form.BodyEn = v)"
+                              Value="@_form.Body"
+                              ValueChanged="@(v => _form.Body = v)"
                               Rows="6"
                               MaxLength="8000"
                               Disabled="_busy" />
                 <SimfTextarea Label="@L["Admin.News.Field.BodyAr"]"
-                              Value="@_form.BodyAr"
-                              ValueChanged="@(v => _form.BodyAr = v)"
+                              Value="@_form.BodyArabic"
+                              ValueChanged="@(v => _form.BodyArabic = v)"
                               Rows="6"
                               MaxLength="8000"
                               Disabled="_busy" />
@@ -203,14 +203,14 @@
 
     private sealed class FormModel
     {
-        public string TitleEn { get; set; } = string.Empty;
-        public string TitleAr { get; set; } = string.Empty;
-        public string ExcerptEn { get; set; } = string.Empty;
-        public string ExcerptAr { get; set; } = string.Empty;
-        public string BodyEn { get; set; } = string.Empty;
-        public string BodyAr { get; set; } = string.Empty;
-        public string CategoryEn { get; set; } = string.Empty;
-        public string CategoryAr { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string TitleArabic { get; set; } = string.Empty;
+        public string Excerpt { get; set; } = string.Empty;
+        public string ExcerptArabic { get; set; } = string.Empty;
+        public string Body { get; set; } = string.Empty;
+        public string BodyArabic { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string CategoryArabic { get; set; } = string.Empty;
         public string ImageRelativePath { get; set; } = string.Empty;
         public DateTimeOffset PublishedAt { get; set; } = DateTimeOffset.UtcNow;
         public int DisplayOrder { get; set; }
@@ -301,14 +301,14 @@
                 _editingId = d.Id;
                 _form = new FormModel
                 {
-                    TitleEn = d.TitleEn,
-                    TitleAr = d.TitleAr,
-                    ExcerptEn = d.ExcerptEn ?? string.Empty,
-                    ExcerptAr = d.ExcerptAr ?? string.Empty,
-                    BodyEn = d.BodyEn,
-                    BodyAr = d.BodyAr,
-                    CategoryEn = d.CategoryEn,
-                    CategoryAr = d.CategoryAr,
+                    Title = d.Title,
+                    TitleArabic = d.TitleArabic,
+                    Excerpt = d.Excerpt ?? string.Empty,
+                    ExcerptArabic = d.ExcerptArabic ?? string.Empty,
+                    Body = d.Body,
+                    BodyArabic = d.BodyArabic,
+                    Category = d.Category,
+                    CategoryArabic = d.CategoryArabic,
                     ImageRelativePath = d.ImageRelativePath ?? string.Empty,
                     PublishedAt = d.PublishedAt,
                     DisplayOrder = d.DisplayOrder,
@@ -334,12 +334,12 @@
 
         // Required-field client guards (the server validator is authoritative;
         // these stop a no-op round-trip and give an immediate message).
-        if (string.IsNullOrWhiteSpace(_form.TitleEn)
-            || string.IsNullOrWhiteSpace(_form.TitleAr)
-            || string.IsNullOrWhiteSpace(_form.BodyEn)
-            || string.IsNullOrWhiteSpace(_form.BodyAr)
-            || string.IsNullOrWhiteSpace(_form.CategoryEn)
-            || string.IsNullOrWhiteSpace(_form.CategoryAr))
+        if (string.IsNullOrWhiteSpace(_form.Title)
+            || string.IsNullOrWhiteSpace(_form.TitleArabic)
+            || string.IsNullOrWhiteSpace(_form.Body)
+            || string.IsNullOrWhiteSpace(_form.BodyArabic)
+            || string.IsNullOrWhiteSpace(_form.Category)
+            || string.IsNullOrWhiteSpace(_form.CategoryArabic))
         {
             _toast = new Toast("error", L["Admin.News.RequiredFields"]);
             return;
@@ -357,14 +357,14 @@
                     $"/account/api/admin/news/{_editingId}",
                     new UpdateNewsRequest
                     {
-                        TitleEn = _form.TitleEn,
-                        TitleAr = _form.TitleAr,
-                        ExcerptEn = NullIfBlank(_form.ExcerptEn),
-                        ExcerptAr = NullIfBlank(_form.ExcerptAr),
-                        BodyEn = _form.BodyEn,
-                        BodyAr = _form.BodyAr,
-                        CategoryEn = _form.CategoryEn,
-                        CategoryAr = _form.CategoryAr,
+                        Title = _form.Title,
+                        TitleArabic = _form.TitleArabic,
+                        Excerpt = NullIfBlank(_form.Excerpt),
+                        ExcerptArabic = NullIfBlank(_form.ExcerptArabic),
+                        Body = _form.Body,
+                        BodyArabic = _form.BodyArabic,
+                        Category = _form.Category,
+                        CategoryArabic = _form.CategoryArabic,
                         ImageRelativePath = NullIfBlank(_form.ImageRelativePath),
                         PublishedAt = _form.PublishedAt,
                         DisplayOrder = _form.DisplayOrder,
@@ -378,14 +378,14 @@
                     "/account/api/admin/news",
                     new CreateNewsRequest
                     {
-                        TitleEn = _form.TitleEn,
-                        TitleAr = _form.TitleAr,
-                        ExcerptEn = NullIfBlank(_form.ExcerptEn),
-                        ExcerptAr = NullIfBlank(_form.ExcerptAr),
-                        BodyEn = _form.BodyEn,
-                        BodyAr = _form.BodyAr,
-                        CategoryEn = _form.CategoryEn,
-                        CategoryAr = _form.CategoryAr,
+                        Title = _form.Title,
+                        TitleArabic = _form.TitleArabic,
+                        Excerpt = NullIfBlank(_form.Excerpt),
+                        ExcerptArabic = NullIfBlank(_form.ExcerptArabic),
+                        Body = _form.Body,
+                        BodyArabic = _form.BodyArabic,
+                        Category = _form.Category,
+                        CategoryArabic = _form.CategoryArabic,
                         ImageRelativePath = NullIfBlank(_form.ImageRelativePath),
                         PublishedAt = _form.PublishedAt,
                         DisplayOrder = _form.DisplayOrder,

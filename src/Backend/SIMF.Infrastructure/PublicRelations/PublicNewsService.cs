@@ -39,12 +39,12 @@ internal sealed class PublicNewsService(
             .Take(pageSize)
             .Select(news => new PublicNewsListItem(
                 news.Id,
-                news.TitleEn,
-                news.TitleAr,
-                news.ExcerptEn,
-                news.ExcerptAr,
-                news.CategoryEn,
-                news.CategoryAr,
+                news.Title,
+                news.TitleArabic,
+                news.Excerpt,
+                news.ExcerptArabic,
+                news.Category,
+                news.CategoryArabic,
                 news.ImageRelativePath,
                 news.PublishedAt))
             .ToListAsync(cancellationToken);
@@ -62,12 +62,12 @@ internal sealed class PublicNewsService(
             .Where(news => news.Id == id && news.IsActive && news.PublishedAt <= now)
             .Select(news => new PublicNewsArticle(
                 news.Id,
-                news.TitleEn,
-                news.TitleAr,
-                news.BodyEn,
-                news.BodyAr,
-                news.CategoryEn,
-                news.CategoryAr,
+                news.Title,
+                news.TitleArabic,
+                news.Body,
+                news.BodyArabic,
+                news.Category,
+                news.CategoryArabic,
                 news.ImageRelativePath,
                 news.PublishedAt))
             .SingleOrDefaultAsync(cancellationToken);

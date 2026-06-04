@@ -116,8 +116,8 @@
                         @foreach (var e in _entries)
                         {
                             <tr>
-                                <td>@e.QuestionEn</td>
-                                <td>@e.QuestionAr</td>
+                                <td>@e.Question</td>
+                                <td>@e.QuestionArabic</td>
                                 <td>@e.DisplayOrder</td>
                                 <td>
                                     @if (e.IsActive)
@@ -385,10 +385,10 @@
     private void OpenEditEntry(AdminFaqEntrySummary e)
     {
         _entryEditId = e.Id;
-        _entryQuestionEn = e.QuestionEn;
-        _entryQuestionAr = e.QuestionAr;
-        _entryAnswerEn = e.AnswerEn;
-        _entryAnswerAr = e.AnswerAr;
+        _entryQuestionEn = e.Question;
+        _entryQuestionAr = e.QuestionArabic;
+        _entryAnswerEn = e.Answer;
+        _entryAnswerAr = e.AnswerArabic;
         _entryOrder = e.DisplayOrder.ToString();
         _entryActive = e.IsActive;
         _entryModalOpen = true;
@@ -412,8 +412,8 @@
                     new CreateFaqEntryRequest
                     {
                         FaqGroupId = _selectedGroup.Id,
-                        QuestionEn = _entryQuestionEn, QuestionAr = _entryQuestionAr,
-                        AnswerEn = _entryAnswerEn, AnswerAr = _entryAnswerAr,
+                        Question = _entryQuestionEn, QuestionArabic = _entryQuestionAr,
+                        Answer = _entryAnswerEn, AnswerArabic = _entryAnswerAr,
                         DisplayOrder = order,
                     });
             }
@@ -423,8 +423,8 @@
                     "simfAccount.putJson", $"/account/api/admin/faq/entries/{_entryEditId}",
                     new UpdateFaqEntryRequest
                     {
-                        QuestionEn = _entryQuestionEn, QuestionAr = _entryQuestionAr,
-                        AnswerEn = _entryAnswerEn, AnswerAr = _entryAnswerAr,
+                        Question = _entryQuestionEn, QuestionArabic = _entryQuestionAr,
+                        Answer = _entryAnswerEn, AnswerArabic = _entryAnswerAr,
                         DisplayOrder = order, IsActive = _entryActive,
                     });
             }

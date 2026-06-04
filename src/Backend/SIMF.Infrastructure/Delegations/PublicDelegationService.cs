@@ -20,8 +20,8 @@ internal sealed class PublicDelegationService(SimfAppDbContext appDbContext)
             .ThenBy(d => d.NameArabic)
             .Select(d => new PublicDelegation(
                 d.Id, d.Name, d.NameArabic,
-                d.Country != null ? d.Country.NameEn : null,
-                d.Country != null ? d.Country.NameAr : null,
+                d.Country != null ? d.Country.Name : null,
+                d.Country != null ? d.Country.NameArabic : null,
                 d.MemberCount, d.IsPriority, d.IsInternational,
                 d.DisplayOrder))
             .ToListAsync(cancellationToken);

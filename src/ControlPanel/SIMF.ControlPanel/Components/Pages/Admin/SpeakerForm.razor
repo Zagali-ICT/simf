@@ -175,7 +175,7 @@
                 _countriesById = envelope.Data.Items.ToDictionary(c => c.Id.ToString(), c => c);
                 _countryIds = envelope.Data.Items
                     .OrderBy(c => c.DisplayOrder)
-                    .ThenBy(c => c.NameEn)
+                    .ThenBy(c => c.Name)
                     .Select(c => c.Id.ToString())
                     .ToArray();
                 StateHasChanged();
@@ -192,8 +192,8 @@
         if (!_countriesById.TryGetValue(id, out var country)) return id;
         var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
         return isArabic
-            ? $"{country.NameAr} ({country.Code})"
-            : $"{country.NameEn} ({country.Code})";
+            ? $"{country.NameArabic} ({country.Code})"
+            : $"{country.Name} ({country.Code})";
     }
 
     private async Task HandleSubmitAsync()

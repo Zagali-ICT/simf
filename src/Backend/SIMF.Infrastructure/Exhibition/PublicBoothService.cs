@@ -20,21 +20,21 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
             {
                 Id = b.Id,
                 Code = b.Code,
-                NameEn = b.NameEn,
-                NameAr = b.NameAr,
+                Name = b.Name,
+                NameArabic = b.NameArabic,
                 // B1 — D-222: the exhibitor name comes from the linked Exhibitor
                 // when set (the curated source of truth), falling back to the
-                // legacy free-text. The wire field names are unchanged (D-219).
-                ExhibitorNameEn = b.ExhibitorId == null
-                    ? b.ExhibitorNameEn
+                // legacy free-text.
+                ExhibitorName = b.ExhibitorId == null
+                    ? b.ExhibitorName
                     : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
                         .Select(c => c.Name).FirstOrDefault(),
-                ExhibitorNameAr = b.ExhibitorId == null
-                    ? b.ExhibitorNameAr
+                ExhibitorNameArabic = b.ExhibitorId == null
+                    ? b.ExhibitorNameArabic
                     : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
                         .Select(c => c.NameArabic).FirstOrDefault(),
-                SectorEn = b.SectorEn,
-                SectorAr = b.SectorAr,
+                Sector = b.Sector,
+                SectorArabic = b.SectorArabic,
                 HallId = b.HallId,
                 MapX = b.MapX,
                 MapY = b.MapY,
@@ -49,22 +49,22 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
             {
                 Id = b.Id,
                 Code = b.Code,
-                NameEn = b.NameEn,
-                NameAr = b.NameAr,
+                Name = b.Name,
+                NameArabic = b.NameArabic,
                 // B1 — D-222: exhibitor name from the linked Exhibitor when set,
-                // else the legacy free-text (wire field names unchanged).
-                ExhibitorNameEn = b.ExhibitorId == null
-                    ? b.ExhibitorNameEn
+                // else the legacy free-text.
+                ExhibitorName = b.ExhibitorId == null
+                    ? b.ExhibitorName
                     : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
                         .Select(c => c.Name).FirstOrDefault(),
-                ExhibitorNameAr = b.ExhibitorId == null
-                    ? b.ExhibitorNameAr
+                ExhibitorNameArabic = b.ExhibitorId == null
+                    ? b.ExhibitorNameArabic
                     : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
                         .Select(c => c.NameArabic).FirstOrDefault(),
-                SectorEn = b.SectorEn,
-                SectorAr = b.SectorAr,
-                DescriptionEn = b.DescriptionEn,
-                DescriptionAr = b.DescriptionAr,
+                Sector = b.Sector,
+                SectorArabic = b.SectorArabic,
+                Description = b.Description,
+                DescriptionArabic = b.DescriptionArabic,
                 HallId = b.HallId,
                 MapX = b.MapX,
                 MapY = b.MapY,

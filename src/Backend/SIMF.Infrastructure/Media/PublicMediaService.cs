@@ -31,7 +31,7 @@ internal sealed class PublicMediaService(
         if (!string.IsNullOrWhiteSpace(album))
         {
             var albumTerm = album.Trim();
-            rows = rows.Where(item => item.AlbumEn == albumTerm || item.AlbumAr == albumTerm);
+            rows = rows.Where(item => item.Album == albumTerm || item.AlbumArabic == albumTerm);
         }
 
         var ordered = rows
@@ -46,10 +46,10 @@ internal sealed class PublicMediaService(
             {
                 item.Id,
                 item.Kind,
-                item.TitleEn,
+                item.Title,
                 item.TitleArabic,
-                item.AlbumEn,
-                item.AlbumAr,
+                item.Album,
+                item.AlbumArabic,
                 HasImage = item.ImageRelativePath != null,
                 HasThumbnail = item.ThumbnailRelativePath != null,
                 item.Url,
@@ -61,10 +61,10 @@ internal sealed class PublicMediaService(
             .Select(row => new PublicMediaItem(
                 row.Id,
                 row.Kind,
-                row.TitleEn,
+                row.Title,
                 row.TitleArabic,
-                row.AlbumEn,
-                row.AlbumAr,
+                row.Album,
+                row.AlbumArabic,
                 row.HasImage ? $"/media/{row.Id}/image" : null,
                 row.HasThumbnail ? $"/media/{row.Id}/thumbnail" : null,
                 row.Url,

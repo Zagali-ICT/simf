@@ -47,7 +47,7 @@ public sealed class AdminMediaPartnersTests : IClassFixture<SimfApiFactory>
 
         var created = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminMediaPartnerDetail>>())!.Data!;
-        Assert.Equal("Roundtrip News", created.NameEn);
+        Assert.Equal("Roundtrip News", created.Name);
         Assert.True(created.IsActive);
         Assert.NotEqual(Guid.Empty, created.Id);
 
@@ -79,7 +79,7 @@ public sealed class AdminMediaPartnersTests : IClassFixture<SimfApiFactory>
         var detail = (await getResponse.Content
             .ReadFromJsonAsync<ApiResult<AdminMediaPartnerDetail>>())!.Data!;
         Assert.Equal(id, detail.Id);
-        Assert.Equal("وسائط قابلة للجلب", detail.NameAr);
+        Assert.Equal("وسائط قابلة للجلب", detail.NameArabic);
     }
 
     [Fact]
@@ -122,8 +122,8 @@ public sealed class AdminMediaPartnersTests : IClassFixture<SimfApiFactory>
             $"/api/v1/admin/media-partners/{id}",
             new AdminUpdateMediaPartnerRequest
             {
-                NameEn = editedName,
-                NameAr = "قناة معدّلة",
+                Name = editedName,
+                NameArabic = "قناة معدّلة",
                 LogoRelativePath = "media-partners/edited.png",
                 Url = "https://edited.example",
                 DisplayOrder = 4750,
@@ -135,7 +135,7 @@ public sealed class AdminMediaPartnersTests : IClassFixture<SimfApiFactory>
         var getResponse = await GetAuthAsync($"/api/v1/admin/media-partners/{id}", token);
         var detail = (await getResponse.Content
             .ReadFromJsonAsync<ApiResult<AdminMediaPartnerDetail>>())!.Data!;
-        Assert.Equal(editedName, detail.NameEn);
+        Assert.Equal(editedName, detail.Name);
         Assert.Equal("https://edited.example", detail.Url);
         Assert.Equal(4750, detail.DisplayOrder);
     }

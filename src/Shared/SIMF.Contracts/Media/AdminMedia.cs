@@ -6,10 +6,10 @@ namespace SIMF.Contracts.Media;
 public sealed record AdminMediaSummary(
     Guid Id,
     MediaKind Kind,
-    string? TitleEn,
-    string? TitleAr,
-    string? AlbumEn,
-    string? AlbumAr,
+    string? Title,
+    string? TitleArabic,
+    string? Album,
+    string? AlbumArabic,
     bool HasImage,
     string? Url,
     int DisplayOrder,
@@ -23,10 +23,10 @@ public sealed record AdminMediaSummary(
 public sealed record AdminMediaDetail(
     Guid Id,
     MediaKind Kind,
-    string? TitleEn,
-    string? TitleAr,
-    string? AlbumEn,
-    string? AlbumAr,
+    string? Title,
+    string? TitleArabic,
+    string? Album,
+    string? AlbumArabic,
     bool HasImage,
     bool HasThumbnail,
     string? Url,
@@ -41,10 +41,10 @@ public sealed record AdminMediaDetail(
 public sealed class AdminCreateMediaRequest
 {
     public MediaKind Kind { get; set; }
-    public string? TitleEn { get; set; }
-    public string? TitleAr { get; set; }
-    public string? AlbumEn { get; set; }
-    public string? AlbumAr { get; set; }
+    public string? Title { get; set; }
+    public string? TitleArabic { get; set; }
+    public string? Album { get; set; }
+    public string? AlbumArabic { get; set; }
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
 }
@@ -54,10 +54,10 @@ public sealed class AdminCreateMediaRequest
 public class AdminUpdateMediaRequest
 {
     public MediaKind Kind { get; set; }
-    public string? TitleEn { get; set; }
-    public string? TitleAr { get; set; }
-    public string? AlbumEn { get; set; }
-    public string? AlbumAr { get; set; }
+    public string? Title { get; set; }
+    public string? TitleArabic { get; set; }
+    public string? Album { get; set; }
+    public string? AlbumArabic { get; set; }
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;

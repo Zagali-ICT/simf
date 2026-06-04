@@ -41,14 +41,14 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
             new AdminCreateBoothRequest
             {
                 Code = code,
-                NameEn = "Advanced Naval Technologies",
-                NameAr = "تقنيات بحرية متقدمة",
+                Name = "Advanced Naval Technologies",
+                NameArabic = "تقنيات بحرية متقدمة",
                 ExhibitorId = exhibitorId,
                 OfficerName = "Capt. Khalid",
                 OfficerPhone = "+966500000000",
                 OfficerEmail = "khalid@booth.test",
-                SectorEn = "Defense Systems",
-                DescriptionEn = "Cutting-edge naval defense systems.",
+                Sector = "Defense Systems",
+                Description = "Cutting-edge naval defense systems.",
                 MapX = 12.5,
                 MapY = 8.0,
             },
@@ -68,7 +68,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
             .ReadFromJsonAsync<ApiResult<AdminBoothDetail>>())!.Data!;
         Assert.Equal(created.Id, fetched.Id);
         Assert.Equal(exhibitorId, fetched.ExhibitorId);
-        Assert.Equal("Defense Systems", fetched.SectorEn);
+        Assert.Equal("Defense Systems", fetched.Sector);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/booths",
             new AdminCreateBoothRequest
             {
-                Code = NewCode(), NameEn = "X", NameAr = "س",
+                Code = NewCode(), Name = "X", NameArabic = "س",
                 ExhibitorId = Guid.NewGuid(),   // never seeded
             },
             token);
@@ -97,7 +97,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/booths",
             new AdminCreateBoothRequest
             {
-                Code = NewCode(), NameEn = "X", NameAr = "س", ExhibitorId = dormant,
+                Code = NewCode(), Name = "X", NameArabic = "س", ExhibitorId = dormant,
             },
             token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -111,7 +111,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/booths",
             new AdminCreateBoothRequest
             {
-                Code = NewCode(), NameEn = "X", NameAr = "س",
+                Code = NewCode(), Name = "X", NameArabic = "س",
                 OfficerEmail = "not-an-email",
             },
             token);
@@ -128,7 +128,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/booths",
             new AdminCreateBoothRequest
             {
-                Code = NewCode(), NameEn = "Hull 7", NameAr = "بدن 7", ExhibitorId = exhibitorId,
+                Code = NewCode(), Name = "Hull 7", NameArabic = "بدن 7", ExhibitorId = exhibitorId,
             },
             token);
         var created = (await create.Content
@@ -138,8 +138,8 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
         var list = (await publicList.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<PublicBoothSummary>>>())!.Data!;
         var row = Assert.Single(list, b => b.Id == created.Id);
-        // The wire field ExhibitorNameEn is now populated from the Exhibitor.
-        Assert.Equal($"{marker} Industries", row.ExhibitorNameEn);
+        // The wire field ExhibitorName is now populated from the Exhibitor.
+        Assert.Equal($"{marker} Industries", row.ExhibitorName);
     }
 
     [Fact]
@@ -149,13 +149,13 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
         var code = NewCode();
         var first = await PostAuthAsync(
             "/api/v1/admin/booths",
-            new AdminCreateBoothRequest { Code = code, NameEn = "A", NameAr = "أ" },
+            new AdminCreateBoothRequest { Code = code, Name = "A", NameArabic = "أ" },
             token);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
 
         var second = await PostAuthAsync(
             "/api/v1/admin/booths",
-            new AdminCreateBoothRequest { Code = code, NameEn = "B", NameAr = "ب" },
+            new AdminCreateBoothRequest { Code = code, Name = "B", NameArabic = "ب" },
             token);
         Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
         var body = (await second.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -178,7 +178,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
         var code = NewCode();
         var create = await PostAuthAsync(
             "/api/v1/admin/booths",
-            new AdminCreateBoothRequest { Code = code, NameEn = "D", NameAr = "د" },
+            new AdminCreateBoothRequest { Code = code, Name = "D", NameArabic = "د" },
             token);
         var created = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminBoothDetail>>())!.Data!;
@@ -202,7 +202,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
         var response = await PostAuthAsync(
             "/api/v1/admin/booths",
-            new AdminCreateBoothRequest { Code = NewCode(), NameEn = "F", NameAr = "ف" },
+            new AdminCreateBoothRequest { Code = NewCode(), Name = "F", NameArabic = "ف" },
             tokens.AccessToken);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }

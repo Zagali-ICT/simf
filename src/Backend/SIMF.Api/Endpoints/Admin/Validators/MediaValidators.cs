@@ -12,13 +12,13 @@ public sealed class CreateMediaRequestValidator : Validator<AdminCreateMediaRequ
 {
     public CreateMediaRequestValidator()
     {
-        RuleFor(x => x.TitleEn).MaximumLength(200)
+        RuleFor(x => x.Title).MaximumLength(200)
             .WithMessage("English title must be 200 characters or less.");
-        RuleFor(x => x.TitleAr).MaximumLength(200)
+        RuleFor(x => x.TitleArabic).MaximumLength(200)
             .WithMessage("Arabic title must be 200 characters or less.");
-        RuleFor(x => x.AlbumEn).MaximumLength(200)
+        RuleFor(x => x.Album).MaximumLength(200)
             .WithMessage("English album must be 200 characters or less.");
-        RuleFor(x => x.AlbumAr).MaximumLength(200)
+        RuleFor(x => x.AlbumArabic).MaximumLength(200)
             .WithMessage("Arabic album must be 200 characters or less.");
         RuleFor(x => x.Url).MaximumLength(2048)
             .WithMessage("URL must be 2048 characters or less.");
@@ -31,13 +31,13 @@ public sealed class UpdateMediaRequestValidator : Validator<UpdateMediaRoute>
 {
     public UpdateMediaRequestValidator()
     {
-        RuleFor(x => x.TitleEn).MaximumLength(200)
+        RuleFor(x => x.Title).MaximumLength(200)
             .WithMessage("English title must be 200 characters or less.");
-        RuleFor(x => x.TitleAr).MaximumLength(200)
+        RuleFor(x => x.TitleArabic).MaximumLength(200)
             .WithMessage("Arabic title must be 200 characters or less.");
-        RuleFor(x => x.AlbumEn).MaximumLength(200)
+        RuleFor(x => x.Album).MaximumLength(200)
             .WithMessage("English album must be 200 characters or less.");
-        RuleFor(x => x.AlbumAr).MaximumLength(200)
+        RuleFor(x => x.AlbumArabic).MaximumLength(200)
             .WithMessage("Arabic album must be 200 characters or less.");
         RuleFor(x => x.Url).MaximumLength(2048)
             .WithMessage("URL must be 2048 characters or less.");

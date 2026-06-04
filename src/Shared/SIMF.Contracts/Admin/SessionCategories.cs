@@ -8,16 +8,16 @@ namespace SIMF.Contracts.Admin;
 /// <summary>One session-category row in the admin grid.</summary>
 public sealed record AdminSessionCategorySummary(
     Guid Id,
-    string NameEn,
-    string NameAr,
+    string Name,
+    string NameArabic,
     int DisplayOrder,
     bool IsActive);
 
 /// <summary>Full session-category detail for the admin view/edit form.</summary>
 public sealed record AdminSessionCategoryDetail(
     Guid Id,
-    string NameEn,
-    string NameAr,
+    string Name,
+    string NameArabic,
     int DisplayOrder,
     bool IsActive,
     DateTimeOffset CreatedAt,
@@ -26,16 +26,16 @@ public sealed record AdminSessionCategoryDetail(
 /// <summary>Admin create payload.</summary>
 public sealed class AdminCreateSessionCategoryRequest
 {
-    public string NameEn { get; set; } = string.Empty;
-    public string NameAr { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
     public int DisplayOrder { get; set; }
 }
 
 /// <summary>Admin update payload.</summary>
 public sealed class AdminUpdateSessionCategoryRequest
 {
-    public string NameEn { get; set; } = string.Empty;
-    public string NameAr { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
 }

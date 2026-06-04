@@ -33,8 +33,8 @@ internal sealed class AdminCountryService(
             var term = query.Search.Trim();
             rows = rows.Where(country =>
                 EF.Functions.Like(country.Code, $"%{term}%")
-                || EF.Functions.Like(country.NameEn, $"%{term}%")
-                || EF.Functions.Like(country.NameAr, $"%{term}%"));
+                || EF.Functions.Like(country.Name, $"%{term}%")
+                || EF.Functions.Like(country.NameArabic, $"%{term}%"));
         }
 
         if (query.Filters.TryGetValue("isActive", out var activeFilter) && bool.TryParse(activeFilter, out var isActive))
@@ -48,17 +48,17 @@ internal sealed class AdminCountryService(
             ("id", false) => rows.OrderBy(country => country.Id),
             ("code", true) => rows.OrderByDescending(country => country.Code),
             ("code", false) => rows.OrderBy(country => country.Code),
-            ("nameen", true) => rows.OrderByDescending(country => country.NameEn),
-            ("nameen", false) => rows.OrderBy(country => country.NameEn),
+            ("name", true) => rows.OrderByDescending(country => country.Name),
+            ("name", false) => rows.OrderBy(country => country.Name),
             ("displayorder", true) => rows.OrderByDescending(country => country.DisplayOrder),
             _ => rows.OrderBy(country => country.DisplayOrder)
-                     .ThenBy(country => country.NameEn),
+                     .ThenBy(country => country.Name),
         };
 
         var total = await rows.CountAsync(cancellationToken);
         var page = await rows.Skip(skip).Take(top)
             .Select(country => new AdminCountrySummary(
-                country.Id, country.Code, country.NameEn, country.NameAr,
+                country.Id, country.Code, country.Name, country.NameArabic,
                 country.PhonePrefix, country.DisplayOrder,
                 country.IsActive, country.CreatedAt))
             .ToListAsync(cancellationToken);
@@ -75,8 +75,8 @@ internal sealed class AdminCountryService(
 
     public async Task<AdminCountryDetail> CreateAsync(Guid actorUserId, AdminCreateCountryRequest request, CancellationToken cancellationToken = default)
     {
-        var (id, code, nameEn, nameAr, phonePrefix, displayOrder) = Validate(
-            request.Id, request.Code, request.NameEn, request.NameAr,
+        var (id, code, name, nameArabic, phonePrefix, displayOrder) = Validate(
+            request.Id, request.Code, request.Name, request.NameArabic,
             request.PhonePrefix, request.DisplayOrder);
 
         var idClash = await appDbContext.Countries.AsNoTracking().AnyAsync(c => c.Id == id, cancellationToken);
@@ -100,8 +100,8 @@ internal sealed class AdminCountryService(
         {
             Id = id,
             Code = code,
-            NameEn = nameEn,
-            NameAr = nameAr,
+            Name = name,
+            NameArabic = nameArabic,
             PhonePrefix = phonePrefix,
             DisplayOrder = displayOrder,
             IsActive = true,
@@ -116,7 +116,7 @@ internal sealed class AdminCountryService(
             EventType = AuditEvents.CountryCreated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={id}; code={code}; nameEn={nameEn}",
+            Detail = $"id={id}; code={code}; name={name}",
         }, cancellationToken);
 
         logger.LogInformation(
@@ -134,7 +134,7 @@ internal sealed class AdminCountryService(
                 "The country was not found.",
                 "لم يتم العثور على البلد.");
 
-        var (_, code, nameEn, nameAr, phonePrefix, displayOrder) = Validate(id, request.Code, request.NameEn, request.NameAr, request.PhonePrefix, request.DisplayOrder);
+        var (_, code, name, nameArabic, phonePrefix, displayOrder) = Validate(id, request.Code, request.Name, request.NameArabic, request.PhonePrefix, request.DisplayOrder);
 
         if (!string.Equals(country.Code, code, StringComparison.OrdinalIgnoreCase))
         {
@@ -148,8 +148,8 @@ internal sealed class AdminCountryService(
         }
 
         country.Code = code;
-        country.NameEn = nameEn;
-        country.NameAr = nameAr;
+        country.Name = name;
+        country.NameArabic = nameArabic;
         country.PhonePrefix = phonePrefix;
         country.DisplayOrder = displayOrder;
         country.IsActive = request.IsActive;
@@ -191,7 +191,7 @@ internal sealed class AdminCountryService(
         }, cancellationToken);
     }
 
-    private static (int id, string code, string nameEn, string nameAr, string? phonePrefix, int displayOrder) Validate(int idRaw, string codeRaw, string nameEnRaw, string nameArRaw, string? phonePrefixRaw, int displayOrderRaw)
+    private static (int id, string code, string name, string nameArabic, string? phonePrefix, int displayOrder) Validate(int idRaw, string codeRaw, string nameRaw, string nameArabicRaw, string? phonePrefixRaw, int displayOrderRaw)
     {
         if (idRaw <= 0)
         {
@@ -206,15 +206,15 @@ internal sealed class AdminCountryService(
                 "Country code must be exactly 2 characters (ISO 3166-1 alpha-2).",
                 "يجب أن يتكون رمز البلد من حرفين بالضبط (ISO 3166-1 alpha-2).");
         }
-        var nameEn = (nameEnRaw ?? string.Empty).Trim();
-        if (nameEn.Length is < 1 or > 128)
+        var name = (nameRaw ?? string.Empty).Trim();
+        if (name.Length is < 1 or > 128)
         {
             throw new ApiException(ErrorCodes.CountryInvalid, 400,
                 "Country English name must be between 1 and 128 characters.",
                 "يجب أن يتراوح الاسم الإنجليزي للبلد بين 1 و 128 حرفاً.");
         }
-        var nameAr = (nameArRaw ?? string.Empty).Trim();
-        if (nameAr.Length is < 1 or > 128)
+        var nameArabic = (nameArabicRaw ?? string.Empty).Trim();
+        if (nameArabic.Length is < 1 or > 128)
         {
             throw new ApiException(ErrorCodes.CountryInvalid, 400,
                 "Country Arabic name must be between 1 and 128 characters.",
@@ -234,11 +234,11 @@ internal sealed class AdminCountryService(
                 "Display order must be zero or a positive integer.",
                 "يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.");
         }
-        return (idRaw, code, nameEn, nameAr, phonePrefix, displayOrderRaw);
+        return (idRaw, code, name, nameArabic, phonePrefix, displayOrderRaw);
     }
 
     private static AdminCountryDetail ToDetail(Country country) =>
-        new(country.Id, country.Code, country.NameEn, country.NameAr,
+        new(country.Id, country.Code, country.Name, country.NameArabic,
             country.PhonePrefix, country.DisplayOrder,
             country.IsActive, country.CreatedAt, country.UpdatedAt);
 }

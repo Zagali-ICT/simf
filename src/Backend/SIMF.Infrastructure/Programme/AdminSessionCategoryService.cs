@@ -15,7 +15,7 @@ namespace SIMF.Infrastructure.Programme;
 /// <summary>
 /// B9b — D-226: admin CRUD over the dynamic <see cref="SessionCategory"/>
 /// lookup (FDS-004 §5.4). Built on <see cref="SimfAppDbContext"/>. Mirrors
-/// <c>AdminOrganisationService</c>: bilingual (NameEn / NameAr), soft-delete
+/// <c>AdminOrganisationService</c>: bilingual (Name / NameArabic), soft-delete
 /// (IsActive), in-service validation, one audit row per mutation. Ships empty;
 /// the team seeds categories once the client confirms the list (OI-2).
 /// </summary>
@@ -37,8 +37,8 @@ internal sealed class AdminSessionCategoryService(
         {
             var term = query.Search.Trim();
             rows = rows.Where(category =>
-                EF.Functions.Like(category.NameEn, $"%{term}%")
-                || EF.Functions.Like(category.NameAr, $"%{term}%"));
+                EF.Functions.Like(category.Name, $"%{term}%")
+                || EF.Functions.Like(category.NameArabic, $"%{term}%"));
         }
 
         // CP grid per-column filters (D-255). Unknown columns are ignored.
@@ -48,11 +48,11 @@ internal sealed class AdminSessionCategoryService(
             var v = raw.Trim();
             switch (column.ToLowerInvariant())
             {
-                case "nameen":
-                    rows = rows.Where(category => category.NameEn.Contains(v));
+                case "name":
+                    rows = rows.Where(category => category.Name.Contains(v));
                     break;
-                case "namear":
-                    rows = rows.Where(category => category.NameAr.Contains(v));
+                case "namearabic":
+                    rows = rows.Where(category => category.NameArabic.Contains(v));
                     break;
                 case "isactive":
                     if (bool.TryParse(v, out var isActive))
@@ -63,18 +63,18 @@ internal sealed class AdminSessionCategoryService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default: DisplayOrder, then NameEn.
+        // CP grid sortable columns (D-255). Default: DisplayOrder, then Name.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("nameen", true) => rows.OrderByDescending(category => category.NameEn),
-            ("nameen", false) => rows.OrderBy(category => category.NameEn),
-            ("namear", true) => rows.OrderByDescending(category => category.NameAr),
-            ("namear", false) => rows.OrderBy(category => category.NameAr),
+            ("name", true) => rows.OrderByDescending(category => category.Name),
+            ("name", false) => rows.OrderBy(category => category.Name),
+            ("namearabic", true) => rows.OrderByDescending(category => category.NameArabic),
+            ("namearabic", false) => rows.OrderBy(category => category.NameArabic),
             ("order", true) => rows.OrderByDescending(category => category.DisplayOrder),
             ("order", false) => rows.OrderBy(category => category.DisplayOrder),
             ("isactive", true) => rows.OrderByDescending(category => category.IsActive),
             ("isactive", false) => rows.OrderBy(category => category.IsActive),
-            _ => rows.OrderBy(category => category.DisplayOrder).ThenBy(category => category.NameEn),
+            _ => rows.OrderBy(category => category.DisplayOrder).ThenBy(category => category.Name),
         };
 
         var total = await rows.CountAsync(cancellationToken);
@@ -83,8 +83,8 @@ internal sealed class AdminSessionCategoryService(
             .Take(top)
             .Select(category => new AdminSessionCategorySummary(
                 category.Id,
-                category.NameEn,
-                category.NameAr,
+                category.Name,
+                category.NameArabic,
                 category.DisplayOrder,
                 category.IsActive))
             .ToListAsync(cancellationToken);
@@ -107,14 +107,14 @@ internal sealed class AdminSessionCategoryService(
         AdminCreateSessionCategoryRequest request,
         CancellationToken cancellationToken = default)
     {
-        var (nameEn, nameAr) = ValidateAndNormalise(request.NameEn, request.NameAr);
+        var (name, nameArabic) = ValidateAndNormalise(request.Name, request.NameArabic);
 
         var now = timeProvider.GetUtcNow();
         var category = new SessionCategory
         {
             Id = Guid.NewGuid(),
-            NameEn = nameEn,
-            NameAr = nameAr,
+            Name = name,
+            NameArabic = nameArabic,
             DisplayOrder = request.DisplayOrder,
             IsActive = true,
             CreatedAt = now,
@@ -127,12 +127,12 @@ internal sealed class AdminSessionCategoryService(
             EventType = AuditEvents.SessionCategoryCreated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={category.Id}; nameEn={nameEn}",
+            Detail = $"id={category.Id}; name={name}",
         }, cancellationToken);
 
         logger.LogInformation(
-            "Admin {ActorId} created SessionCategory {NameEn} ({Id})",
-            actorUserId, nameEn, category.Id);
+            "Admin {ActorId} created SessionCategory {Name} ({Id})",
+            actorUserId, name, category.Id);
 
         return ToDetail(category);
     }
@@ -147,10 +147,10 @@ internal sealed class AdminSessionCategoryService(
             .SingleOrDefaultAsync(row => row.Id == id, cancellationToken)
             ?? throw NotFound();
 
-        var (nameEn, nameAr) = ValidateAndNormalise(request.NameEn, request.NameAr);
+        var (name, nameArabic) = ValidateAndNormalise(request.Name, request.NameArabic);
 
-        category.NameEn = nameEn;
-        category.NameAr = nameAr;
+        category.Name = name;
+        category.NameArabic = nameArabic;
         category.DisplayOrder = request.DisplayOrder;
         category.IsActive = request.IsActive;
         category.UpdatedAt = timeProvider.GetUtcNow();
@@ -161,7 +161,7 @@ internal sealed class AdminSessionCategoryService(
             EventType = AuditEvents.SessionCategoryUpdated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={category.Id}; nameEn={nameEn}; active={category.IsActive}",
+            Detail = $"id={category.Id}; name={name}; active={category.IsActive}",
         }, cancellationToken);
 
         return ToDetail(category);
@@ -190,30 +190,30 @@ internal sealed class AdminSessionCategoryService(
             EventType = AuditEvents.SessionCategoryDeactivated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={category.Id}; nameEn={category.NameEn}",
+            Detail = $"id={category.Id}; name={category.Name}",
         }, cancellationToken);
     }
 
-    private static (string NameEn, string NameAr) ValidateAndNormalise(
-        string nameEnRaw, string nameArRaw)
+    private static (string Name, string NameArabic) ValidateAndNormalise(
+        string nameRaw, string nameArabicRaw)
     {
-        var nameEn = (nameEnRaw ?? string.Empty).Trim();
-        if (nameEn.Length is < 1 or > 128)
+        var name = (nameRaw ?? string.Empty).Trim();
+        if (name.Length is < 1 or > 128)
         {
             throw new ApiException(
                 ErrorCodes.SessionCategoryInvalid, 400,
                 "Session category English name must be between 1 and 128 characters.",
                 "يجب أن يتراوح طول الاسم الإنجليزي للتصنيف بين 1 و 128 حرفاً.");
         }
-        var nameAr = (nameArRaw ?? string.Empty).Trim();
-        if (nameAr.Length is < 1 or > 128)
+        var nameArabic = (nameArabicRaw ?? string.Empty).Trim();
+        if (nameArabic.Length is < 1 or > 128)
         {
             throw new ApiException(
                 ErrorCodes.SessionCategoryInvalid, 400,
                 "Session category Arabic name must be between 1 and 128 characters.",
                 "يجب أن يتراوح طول الاسم العربي للتصنيف بين 1 و 128 حرفاً.");
         }
-        return (nameEn, nameAr);
+        return (name, nameArabic);
     }
 
     private static ApiException NotFound() =>
@@ -224,8 +224,8 @@ internal sealed class AdminSessionCategoryService(
 
     private static AdminSessionCategoryDetail ToDetail(SessionCategory c) => new(
         c.Id,
-        c.NameEn,
-        c.NameAr,
+        c.Name,
+        c.NameArabic,
         c.DisplayOrder,
         c.IsActive,
         c.CreatedAt,

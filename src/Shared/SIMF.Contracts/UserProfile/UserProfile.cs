@@ -100,7 +100,7 @@ public sealed class UpsertUserProfileRequest
 }
 
 /// <summary>One country entry surfaced to the client picker.</summary>
-public sealed record CountryDto(string Code, string NameEn, string NameAr);
+public sealed record CountryDto(string Code, string Name, string NameArabic);
 
 /// <summary>The body of <c>GET /api/v1/account/profile/countries</c>.</summary>
 public sealed record CountryListResponse(IReadOnlyList<CountryDto> Countries);

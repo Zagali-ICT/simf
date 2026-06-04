@@ -77,16 +77,16 @@ public sealed class UpdateBoothRequest
 {
     public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
-    public string NameEn { get; set; } = string.Empty;
-    public string NameAr { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
     public Guid? ExhibitorId { get; set; }
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
-    public string? SectorEn { get; set; }
-    public string? SectorAr { get; set; }
-    public string? DescriptionEn { get; set; }
-    public string? DescriptionAr { get; set; }
+    public string? Sector { get; set; }
+    public string? SectorArabic { get; set; }
+    public string? Description { get; set; }
+    public string? DescriptionArabic { get; set; }
     public Guid? HallId { get; set; }
     public double? MapX { get; set; }
     public double? MapY { get; set; }
@@ -117,16 +117,16 @@ public sealed class UpdateBoothEndpoint(IAdminBoothService service)
                 new AdminUpdateBoothRequest
                 {
                     Code = req.Code,
-                    NameEn = req.NameEn,
-                    NameAr = req.NameAr,
+                    Name = req.Name,
+                    NameArabic = req.NameArabic,
                     ExhibitorId = req.ExhibitorId,
                     OfficerName = req.OfficerName,
                     OfficerPhone = req.OfficerPhone,
                     OfficerEmail = req.OfficerEmail,
-                    SectorEn = req.SectorEn,
-                    SectorAr = req.SectorAr,
-                    DescriptionEn = req.DescriptionEn,
-                    DescriptionAr = req.DescriptionAr,
+                    Sector = req.Sector,
+                    SectorArabic = req.SectorArabic,
+                    Description = req.Description,
+                    DescriptionArabic = req.DescriptionArabic,
                     HallId = req.HallId,
                     MapX = req.MapX,
                     MapY = req.MapY,

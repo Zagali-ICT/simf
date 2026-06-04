@@ -49,9 +49,9 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
             new AdminCreateBoothRequest
             {
                 Code = code,
-                NameEn = "Maritime Security Solutions",
-                NameAr = "حلول الأمن البحري",
-                SectorEn = "Defense Systems",
+                Name = "Maritime Security Solutions",
+                NameArabic = "حلول الأمن البحري",
+                Sector = "Defense Systems",
                 MapX = 3.0,
                 MapY = 4.0,
             },
@@ -86,7 +86,7 @@ public sealed class PublicBoothsTests : IClassFixture<SimfApiFactory>
         var code = NewCode();
         var create = await PostAuthAsync(
             "/api/v1/admin/booths",
-            new AdminCreateBoothRequest { Code = code, NameEn = "Hidden", NameAr = "مخفي" },
+            new AdminCreateBoothRequest { Code = code, Name = "Hidden", NameArabic = "مخفي" },
             token);
         var created = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminBoothDetail>>())!.Data!;

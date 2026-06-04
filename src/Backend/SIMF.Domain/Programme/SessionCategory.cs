@@ -14,10 +14,10 @@ namespace SIMF.Domain.Programme;
 public sealed class SessionCategory : BaseAuditEntity
 {
     /// <summary>English category name (1–128 chars).</summary>
-    public string NameEn { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>Arabic category name (1–128 chars).</summary>
-    public string NameAr { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
 
     /// <summary>Sort order in the picker / admin grid (ascending).</summary>
     public int DisplayOrder { get; set; }

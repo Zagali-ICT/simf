@@ -107,7 +107,7 @@ public sealed class ProgrammeSessionsTests : IClassFixture<SimfApiFactory>
                 db.Countries.Add(new Country
                 {
                     Id = 682, Code = "SA",
-                    NameEn = "Saudi Arabia", NameAr = "السعودية", DisplayOrder = 0,
+                    Name = "Saudi Arabia", NameArabic = "السعودية", DisplayOrder = 0,
                 });
             }
             var speaker = await db.Speakers.SingleAsync(s => s.Id == speakerId);

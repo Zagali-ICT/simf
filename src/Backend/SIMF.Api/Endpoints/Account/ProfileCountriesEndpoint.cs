@@ -37,8 +37,8 @@ public sealed class ProfileCountriesEndpoint(SimfAppDbContext appDb)
             .AsNoTracking()
             .Where(country => country.IsActive)
             .OrderBy(country => country.DisplayOrder)
-            .ThenBy(country => country.NameEn)
-            .Select(country => new CountryDto(country.Code, country.NameEn, country.NameAr))
+            .ThenBy(country => country.Name)
+            .Select(country => new CountryDto(country.Code, country.Name, country.NameArabic))
             .ToArrayAsync(ct);
         await Send.OkAsync(
             ApiResult<CountryListResponse>.Ok(new CountryListResponse(countries)), ct);

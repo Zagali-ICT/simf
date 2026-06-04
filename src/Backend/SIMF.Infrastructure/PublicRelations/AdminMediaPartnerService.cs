@@ -35,8 +35,8 @@ internal sealed class AdminMediaPartnerService(
         {
             var term = query.Search.Trim();
             rows = rows.Where(partner =>
-                EF.Functions.Like(partner.NameEn, $"%{term}%")
-                || EF.Functions.Like(partner.NameAr, $"%{term}%"));
+                EF.Functions.Like(partner.Name, $"%{term}%")
+                || EF.Functions.Like(partner.NameArabic, $"%{term}%"));
         }
 
         // CP grid per-column filters (D-255). Unknown columns are ignored.
@@ -46,11 +46,11 @@ internal sealed class AdminMediaPartnerService(
             var v = raw.Trim();
             switch (column.ToLowerInvariant())
             {
-                case "nameen":
-                    rows = rows.Where(partner => partner.NameEn.Contains(v));
+                case "name":
+                    rows = rows.Where(partner => partner.Name.Contains(v));
                     break;
-                case "namear":
-                    rows = rows.Where(partner => partner.NameAr.Contains(v));
+                case "namearabic":
+                    rows = rows.Where(partner => partner.NameArabic.Contains(v));
                     break;
                 case "isactive":
                     if (bool.TryParse(v, out var isActive))
@@ -63,19 +63,19 @@ internal sealed class AdminMediaPartnerService(
 
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("nameen", true) => rows.OrderByDescending(partner => partner.NameEn),
-            ("nameen", false) => rows.OrderBy(partner => partner.NameEn),
-            ("namear", true) => rows.OrderByDescending(partner => partner.NameAr),
-            ("namear", false) => rows.OrderBy(partner => partner.NameAr),
+            ("name", true) => rows.OrderByDescending(partner => partner.Name),
+            ("name", false) => rows.OrderBy(partner => partner.Name),
+            ("namearabic", true) => rows.OrderByDescending(partner => partner.NameArabic),
+            ("namearabic", false) => rows.OrderBy(partner => partner.NameArabic),
             ("displayorder", true) => rows.OrderByDescending(partner => partner.DisplayOrder),
             _ => rows.OrderBy(partner => partner.DisplayOrder)
-                     .ThenBy(partner => partner.NameAr),
+                     .ThenBy(partner => partner.NameArabic),
         };
 
         var total = await rows.CountAsync(cancellationToken);
         var page = await rows.Skip(skip).Take(top)
             .Select(partner => new AdminMediaPartnerSummary(
-                partner.Id, partner.NameEn, partner.NameAr,
+                partner.Id, partner.Name, partner.NameArabic,
                 partner.LogoRelativePath, partner.Url, partner.DisplayOrder,
                 partner.IsActive, partner.CreatedAt))
             .ToListAsync(cancellationToken);
@@ -92,24 +92,24 @@ internal sealed class AdminMediaPartnerService(
 
     public async Task<AdminMediaPartnerDetail> CreateAsync(Guid actorUserId, AdminCreateMediaPartnerRequest request, CancellationToken cancellationToken = default)
     {
-        var (nameEn, nameAr, logoRelativePath, url, displayOrder) = Validate(
-            request.NameEn, request.NameAr, request.LogoRelativePath,
+        var (name, nameArabic, logoRelativePath, url, displayOrder) = Validate(
+            request.Name, request.NameArabic, request.LogoRelativePath,
             request.Url, request.DisplayOrder);
 
         var nameClash = await appDbContext.MediaPartners.AsNoTracking()
-            .AnyAsync(p => p.NameEn == nameEn, cancellationToken);
+            .AnyAsync(p => p.Name == name, cancellationToken);
         if (nameClash)
         {
             throw new ApiException(ErrorCodes.MediaPartnerNameDuplicate, 409,
-                $"A media partner named '{nameEn}' already exists.",
-                $"يوجد شريك إعلامي بالاسم '{nameEn}' بالفعل.");
+                $"A media partner named '{name}' already exists.",
+                $"يوجد شريك إعلامي بالاسم '{name}' بالفعل.");
         }
 
         var now = timeProvider.GetUtcNow();
         var partner = new MediaPartner
         {
-            NameEn = nameEn,
-            NameAr = nameAr,
+            Name = name,
+            NameArabic = nameArabic,
             LogoRelativePath = logoRelativePath,
             Url = url,
             DisplayOrder = displayOrder,
@@ -125,12 +125,12 @@ internal sealed class AdminMediaPartnerService(
             EventType = AuditEvents.MediaPartnerCreated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={partner.Id}; nameEn={nameEn}",
+            Detail = $"id={partner.Id}; name={name}",
         }, cancellationToken);
 
         logger.LogInformation(
-            "Admin {ActorId} created MediaPartner {NameEn} (id {Id})",
-            actorUserId, nameEn, partner.Id);
+            "Admin {ActorId} created MediaPartner {Name} (id {Id})",
+            actorUserId, name, partner.Id);
 
         return ToDetail(partner);
     }
@@ -143,24 +143,24 @@ internal sealed class AdminMediaPartnerService(
                 "The media partner was not found.",
                 "لم يتم العثور على الشريك الإعلامي.");
 
-        var (nameEn, nameAr, logoRelativePath, url, displayOrder) = Validate(
-            request.NameEn, request.NameAr, request.LogoRelativePath,
+        var (name, nameArabic, logoRelativePath, url, displayOrder) = Validate(
+            request.Name, request.NameArabic, request.LogoRelativePath,
             request.Url, request.DisplayOrder);
 
-        if (!string.Equals(partner.NameEn, nameEn, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(partner.Name, name, StringComparison.OrdinalIgnoreCase))
         {
             var clash = await appDbContext.MediaPartners.AsNoTracking()
-                .AnyAsync(p => p.Id != id && p.NameEn == nameEn, cancellationToken);
+                .AnyAsync(p => p.Id != id && p.Name == name, cancellationToken);
             if (clash)
             {
                 throw new ApiException(ErrorCodes.MediaPartnerNameDuplicate, 409,
-                    $"A media partner named '{nameEn}' already exists.",
-                    $"يوجد شريك إعلامي بالاسم '{nameEn}' بالفعل.");
+                    $"A media partner named '{name}' already exists.",
+                    $"يوجد شريك إعلامي بالاسم '{name}' بالفعل.");
             }
         }
 
-        partner.NameEn = nameEn;
-        partner.NameAr = nameAr;
+        partner.Name = name;
+        partner.NameArabic = nameArabic;
         partner.LogoRelativePath = logoRelativePath;
         partner.Url = url;
         partner.DisplayOrder = displayOrder;
@@ -174,7 +174,7 @@ internal sealed class AdminMediaPartnerService(
             EventType = AuditEvents.MediaPartnerUpdated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={id}; nameEn={nameEn}; active={partner.IsActive}",
+            Detail = $"id={id}; name={name}; active={partner.IsActive}",
         }, cancellationToken);
 
         return ToDetail(partner);
@@ -199,22 +199,22 @@ internal sealed class AdminMediaPartnerService(
             EventType = AuditEvents.MediaPartnerDeactivated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={id}; nameEn={partner.NameEn}",
+            Detail = $"id={id}; name={partner.Name}",
         }, cancellationToken);
     }
 
-    private static (string nameEn, string nameAr, string? logoRelativePath, string? url, int displayOrder) Validate(
-        string nameEnRaw, string nameArRaw, string? logoRelativePathRaw, string? urlRaw, int displayOrderRaw)
+    private static (string name, string nameArabic, string? logoRelativePath, string? url, int displayOrder) Validate(
+        string nameRaw, string nameArabicRaw, string? logoRelativePathRaw, string? urlRaw, int displayOrderRaw)
     {
-        var nameEn = (nameEnRaw ?? string.Empty).Trim();
-        if (nameEn.Length is < 1 or > 256)
+        var name = (nameRaw ?? string.Empty).Trim();
+        if (name.Length is < 1 or > 256)
         {
             throw new ApiException(ErrorCodes.ValidationFailed, 400,
                 "Media partner English name must be between 1 and 256 characters.",
                 "يجب أن يتراوح الاسم الإنجليزي للشريك الإعلامي بين 1 و 256 حرفاً.");
         }
-        var nameAr = (nameArRaw ?? string.Empty).Trim();
-        if (nameAr.Length is < 1 or > 256)
+        var nameArabic = (nameArabicRaw ?? string.Empty).Trim();
+        if (nameArabic.Length is < 1 or > 256)
         {
             throw new ApiException(ErrorCodes.ValidationFailed, 400,
                 "Media partner Arabic name must be between 1 and 256 characters.",
@@ -241,11 +241,11 @@ internal sealed class AdminMediaPartnerService(
                 "Display order must be zero or a positive integer.",
                 "يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.");
         }
-        return (nameEn, nameAr, logoRelativePath, url, displayOrderRaw);
+        return (name, nameArabic, logoRelativePath, url, displayOrderRaw);
     }
 
     private static AdminMediaPartnerDetail ToDetail(MediaPartner partner) =>
-        new(partner.Id, partner.NameEn, partner.NameAr,
+        new(partner.Id, partner.Name, partner.NameArabic,
             partner.LogoRelativePath, partner.Url, partner.DisplayOrder,
             partner.IsActive, partner.CreatedAt, partner.UpdatedAt);
 }

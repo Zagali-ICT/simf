@@ -40,10 +40,10 @@ internal sealed class AdminMediaService(
         {
             var term = query.Search.Trim();
             rows = rows.Where(item =>
-                (item.TitleEn != null && EF.Functions.Like(item.TitleEn, $"%{term}%"))
+                (item.Title != null && EF.Functions.Like(item.Title, $"%{term}%"))
                 || (item.TitleArabic != null && EF.Functions.Like(item.TitleArabic, $"%{term}%"))
-                || (item.AlbumEn != null && EF.Functions.Like(item.AlbumEn, $"%{term}%"))
-                || (item.AlbumAr != null && EF.Functions.Like(item.AlbumAr, $"%{term}%")));
+                || (item.Album != null && EF.Functions.Like(item.Album, $"%{term}%"))
+                || (item.AlbumArabic != null && EF.Functions.Like(item.AlbumArabic, $"%{term}%")));
         }
         // CP grid per-column filters (D-256). Keys match the SimfDataGrid
         // column Key values on MediaList.razor; unknown columns are ignored.
@@ -53,17 +53,17 @@ internal sealed class AdminMediaService(
             var v = raw.Trim();
             switch (column.ToLowerInvariant())
             {
-                case "titleen":
-                    rows = rows.Where(item => item.TitleEn != null && item.TitleEn.Contains(v));
+                case "title":
+                    rows = rows.Where(item => item.Title != null && item.Title.Contains(v));
                     break;
-                case "titlear":
+                case "titlearabic":
                     rows = rows.Where(item => item.TitleArabic != null && item.TitleArabic.Contains(v));
                     break;
-                case "albumen":
-                    rows = rows.Where(item => item.AlbumEn != null && item.AlbumEn.Contains(v));
+                case "album":
+                    rows = rows.Where(item => item.Album != null && item.Album.Contains(v));
                     break;
-                case "albumar":
-                    rows = rows.Where(item => item.AlbumAr != null && item.AlbumAr.Contains(v));
+                case "albumarabic":
+                    rows = rows.Where(item => item.AlbumArabic != null && item.AlbumArabic.Contains(v));
                     break;
                 case "isactive":
                     if (bool.TryParse(v, out var isActive))
@@ -80,8 +80,8 @@ internal sealed class AdminMediaService(
         {
             ("kind", true) => rows.OrderByDescending(item => item.Kind),
             ("kind", false) => rows.OrderBy(item => item.Kind),
-            ("titleen", true) => rows.OrderByDescending(item => item.TitleEn),
-            ("titleen", false) => rows.OrderBy(item => item.TitleEn),
+            ("title", true) => rows.OrderByDescending(item => item.Title),
+            ("title", false) => rows.OrderBy(item => item.Title),
             ("isactive", true) => rows.OrderByDescending(item => item.IsActive),
             ("isactive", false) => rows.OrderBy(item => item.IsActive),
             ("displayorder", true) => rows.OrderByDescending(item => item.DisplayOrder),
@@ -96,10 +96,10 @@ internal sealed class AdminMediaService(
             .Select(item => new AdminMediaSummary(
                 item.Id,
                 item.Kind,
-                item.TitleEn,
+                item.Title,
                 item.TitleArabic,
-                item.AlbumEn,
-                item.AlbumAr,
+                item.Album,
+                item.AlbumArabic,
                 item.ImageRelativePath != null,
                 item.Url,
                 item.DisplayOrder,
@@ -125,18 +125,18 @@ internal sealed class AdminMediaService(
         AdminCreateMediaRequest request,
         CancellationToken cancellationToken = default)
     {
-        Validate(request.Kind, request.TitleEn, request.TitleAr,
-            request.AlbumEn, request.AlbumAr, request.Url, request.DisplayOrder);
+        Validate(request.Kind, request.Title, request.TitleArabic,
+            request.Album, request.AlbumArabic, request.Url, request.DisplayOrder);
 
         var now = timeProvider.GetUtcNow();
         var item = new MediaItem
         {
             Id = Guid.NewGuid(),
             Kind = request.Kind,
-            TitleEn = NullIfBlank(request.TitleEn),
-            TitleArabic = NullIfBlank(request.TitleAr),
-            AlbumEn = NullIfBlank(request.AlbumEn),
-            AlbumAr = NullIfBlank(request.AlbumAr),
+            Title = NullIfBlank(request.Title),
+            TitleArabic = NullIfBlank(request.TitleArabic),
+            Album = NullIfBlank(request.Album),
+            AlbumArabic = NullIfBlank(request.AlbumArabic),
             Url = NullIfBlank(request.Url),
             DisplayOrder = request.DisplayOrder,
             IsActive = true,
@@ -173,14 +173,14 @@ internal sealed class AdminMediaService(
                 "The media item was not found.",
                 "لم يتم العثور على عنصر الوسائط.");
 
-        Validate(request.Kind, request.TitleEn, request.TitleAr,
-            request.AlbumEn, request.AlbumAr, request.Url, request.DisplayOrder);
+        Validate(request.Kind, request.Title, request.TitleArabic,
+            request.Album, request.AlbumArabic, request.Url, request.DisplayOrder);
 
         item.Kind = request.Kind;
-        item.TitleEn = NullIfBlank(request.TitleEn);
-        item.TitleArabic = NullIfBlank(request.TitleAr);
-        item.AlbumEn = NullIfBlank(request.AlbumEn);
-        item.AlbumAr = NullIfBlank(request.AlbumAr);
+        item.Title = NullIfBlank(request.Title);
+        item.TitleArabic = NullIfBlank(request.TitleArabic);
+        item.Album = NullIfBlank(request.Album);
+        item.AlbumArabic = NullIfBlank(request.AlbumArabic);
         item.Url = NullIfBlank(request.Url);
         item.DisplayOrder = request.DisplayOrder;
         item.IsActive = request.IsActive;
@@ -260,8 +260,8 @@ internal sealed class AdminMediaService(
     }
 
     private static void Validate(
-        MediaKind kind, string? titleEn, string? titleAr,
-        string? albumEn, string? albumAr, string? url, int displayOrder)
+        MediaKind kind, string? title, string? titleArabic,
+        string? album, string? albumArabic, string? url, int displayOrder)
     {
         if (!Enum.IsDefined(kind))
         {
@@ -278,10 +278,10 @@ internal sealed class AdminMediaService(
                 "يجب أن يكون ترتيب العرض صفراً أو عدداً صحيحاً موجباً.");
         }
         // Lengths mirror MediaItemConfiguration HasMaxLength values.
-        EnsureMaxLength(titleEn, 200, "Title (English)", "العنوان (الإنجليزي)");
-        EnsureMaxLength(titleAr, 200, "Title (Arabic)", "العنوان (العربي)");
-        EnsureMaxLength(albumEn, 200, "Album (English)", "الألبوم (الإنجليزي)");
-        EnsureMaxLength(albumAr, 200, "Album (Arabic)", "الألبوم (العربي)");
+        EnsureMaxLength(title, 200, "Title (English)", "العنوان (الإنجليزي)");
+        EnsureMaxLength(titleArabic, 200, "Title (Arabic)", "العنوان (العربي)");
+        EnsureMaxLength(album, 200, "Album (English)", "الألبوم (الإنجليزي)");
+        EnsureMaxLength(albumArabic, 200, "Album (Arabic)", "الألبوم (العربي)");
         EnsureMaxLength(url, 2048, "URL", "الرابط");
 
         // A video tile is only useful with a playback URL; an image tile gets
@@ -312,10 +312,10 @@ internal sealed class AdminMediaService(
     private static AdminMediaDetail ToDetail(MediaItem item) =>
         new(item.Id,
             item.Kind,
-            item.TitleEn,
+            item.Title,
             item.TitleArabic,
-            item.AlbumEn,
-            item.AlbumAr,
+            item.Album,
+            item.AlbumArabic,
             item.ImageRelativePath != null,
             item.ThumbnailRelativePath != null,
             item.Url,

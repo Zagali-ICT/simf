@@ -25,7 +25,7 @@ public class MediaItem:BaseAuditEntity
      /// <summary>image | video (Mockup page 30 mixes both in one grid).</summary>
     public MediaKind Kind { get; set; }
 
-    public string? TitleEn { get; set; }
+    public string? Title { get; set; }
     public string? TitleArabic { get; set; }
 
     /// <summary>D-90 — relative path of the uploaded image's bytes within the
@@ -42,8 +42,8 @@ public class MediaItem:BaseAuditEntity
     /// <see cref="ImageRelativePath"/> directly.</summary>
     public string? ThumbnailRelativePath { get; set; }
 
-    public string? AlbumEn { get; set; }//fix
-    public string? AlbumAr { get; set; }
+    public string? Album { get; set; }
+    public string? AlbumArabic { get; set; }
 
     public int DisplayOrder { get; set; }
  }

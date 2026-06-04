@@ -27,19 +27,19 @@ internal sealed class BoothConfiguration : IEntityTypeConfiguration<Booth>
         builder.HasKey(booth => booth.Id);
 
         builder.Property(booth => booth.Code).HasMaxLength(16).IsRequired();
-        builder.Property(booth => booth.NameEn).HasMaxLength(128).IsRequired();
-        builder.Property(booth => booth.NameAr).HasMaxLength(128).IsRequired();
+        builder.Property(booth => booth.Name).HasMaxLength(128).IsRequired();
+        builder.Property(booth => booth.NameArabic).HasMaxLength(128).IsRequired();
 
-        builder.Property(booth => booth.ExhibitorNameEn).HasMaxLength(256);
-        builder.Property(booth => booth.ExhibitorNameAr).HasMaxLength(256);
+        builder.Property(booth => booth.ExhibitorName).HasMaxLength(256);
+        builder.Property(booth => booth.ExhibitorNameArabic).HasMaxLength(256);
         // B1 — D-222: booth-officer contact.
         builder.Property(booth => booth.OfficerName).HasMaxLength(256);
         builder.Property(booth => booth.OfficerPhone).HasMaxLength(32);
         builder.Property(booth => booth.OfficerEmail).HasMaxLength(320);
-        builder.Property(booth => booth.SectorEn).HasMaxLength(128);
-        builder.Property(booth => booth.SectorAr).HasMaxLength(128);
-        builder.Property(booth => booth.DescriptionEn).HasMaxLength(2048);
-        builder.Property(booth => booth.DescriptionAr).HasMaxLength(2048);
+        builder.Property(booth => booth.Sector).HasMaxLength(128);
+        builder.Property(booth => booth.SectorArabic).HasMaxLength(128);
+        builder.Property(booth => booth.Description).HasMaxLength(2048);
+        builder.Property(booth => booth.DescriptionArabic).HasMaxLength(2048);
 
         builder.HasIndex(booth => booth.Code).IsUnique();
 

@@ -25,7 +25,7 @@
                       OnQueryChanged="OnQueryChangedAsync"
                       Multiselect="true"
                       RowKey="@(r => r.Id.ToString())"
-                      RowLabel="@(r => r.NameEn)"
+                      RowLabel="@(r => r.Name)"
                       Caption="@L["Admin.Countries.Title"]"
                       FilterColumnLabel="@L["Admin.Countries.FilterColumn"]"
                       OnAdd="OnAddAsync"
@@ -59,14 +59,14 @@
                                     Sortable="true" Filterable="true">
                     <CellTemplate>@context.Code</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminCountrySummary" Key="nameEn"
+                <SimfDataGridColumn TItem="AdminCountrySummary" Key="name"
                                     Header="@L["Admin.Countries.Column.NameEn"]"
                                     Sortable="true">
-                    <CellTemplate>@context.NameEn</CellTemplate>
+                    <CellTemplate>@context.Name</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminCountrySummary" Key="nameAr"
+                <SimfDataGridColumn TItem="AdminCountrySummary" Key="namearabic"
                                     Header="@L["Admin.Countries.Column.NameAr"]">
-                    <CellTemplate>@context.NameAr</CellTemplate>
+                    <CellTemplate>@context.NameArabic</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminCountrySummary" Key="phonePrefix"
                                     Header="@L["Admin.Countries.Column.PhonePrefix"]">
@@ -132,9 +132,9 @@
                 <dt>@L["Admin.Countries.Column.Code"]</dt>
                 <dd>@_detailsTarget.Code</dd>
                 <dt>@L["Admin.Countries.Column.NameEn"]</dt>
-                <dd>@_detailsTarget.NameEn</dd>
+                <dd>@_detailsTarget.Name</dd>
                 <dt>@L["Admin.Countries.Column.NameAr"]</dt>
-                <dd>@_detailsTarget.NameAr</dd>
+                <dd>@_detailsTarget.NameArabic</dd>
                 <dt>@L["Admin.Countries.Column.PhonePrefix"]</dt>
                 <dd>@(_detailsTarget.PhonePrefix ?? "—")</dd>
                 <dt>@L["Admin.Countries.Column.DisplayOrder"]</dt>
@@ -201,7 +201,7 @@
     private async Task OnAddSucceededAsync(AdminCountryDetail created)
     {
         _addOpen = false;
-        _toast = new Toast("success", string.Format(L["Admin.Countries.Created"], created.NameEn));
+        _toast = new Toast("success", string.Format(L["Admin.Countries.Created"], created.Name));
         await LoadAsync();
     }
 
@@ -224,7 +224,7 @@
     private async Task OnEditSucceededAsync(AdminCountryDetail updated)
     {
         _editTarget = null;
-        _toast = new Toast("success", string.Format(L["Admin.Countries.Updated"], updated.NameEn));
+        _toast = new Toast("success", string.Format(L["Admin.Countries.Updated"], updated.Name));
         await LoadAsync();
     }
 
@@ -246,7 +246,7 @@
         if (envelope is { Success: true })
         {
             _toast = new Toast("success",
-                string.Format(L["Admin.Countries.Deactivated"], row.NameEn));
+                string.Format(L["Admin.Countries.Deactivated"], row.Name));
             await LoadAsync();
         }
         else

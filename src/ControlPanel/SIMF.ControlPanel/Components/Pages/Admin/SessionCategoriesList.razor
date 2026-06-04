@@ -28,7 +28,7 @@
                       OnQueryChanged="OnQueryChangedAsync"
                       Multiselect="true"
                       RowKey="@(r => r.Id.ToString())"
-                      RowLabel="@(r => r.NameEn)"
+                      RowLabel="@(r => r.Name)"
                       Caption="@L["Admin.SessionCategories.Title"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       OnAdd="OnAdd"
@@ -50,15 +50,15 @@
                       DeleteLabel="@L["Grid.Delete"]"
                       SummaryFormatter="@FormatSummary">
             <Columns>
-                <SimfDataGridColumn TItem="AdminSessionCategorySummary" Key="nameEn"
+                <SimfDataGridColumn TItem="AdminSessionCategorySummary" Key="name"
                                     Header="@L["Admin.SessionCategories.Col.NameEn"]"
                                     Sortable="true" Filterable="true">
-                    <CellTemplate>@context.NameEn</CellTemplate>
+                    <CellTemplate>@context.Name</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminSessionCategorySummary" Key="nameAr"
+                <SimfDataGridColumn TItem="AdminSessionCategorySummary" Key="namearabic"
                                     Header="@L["Admin.SessionCategories.Col.NameAr"]"
                                     Sortable="true" Filterable="true">
-                    <CellTemplate>@context.NameAr</CellTemplate>
+                    <CellTemplate>@context.NameArabic</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminSessionCategorySummary" Key="order"
                                     Header="@L["Admin.SessionCategories.Col.Order"]"
@@ -95,15 +95,15 @@
         <ChildContent>
             <div class="simf-form__fields">
                 <SimfTextField Label="@L["Admin.SessionCategories.Field.NameEn"]"
-                               Value="@_form.NameEn"
-                               ValueChanged="@(v => _form.NameEn = v)"
-                               ValueExpression="@(() => _form.NameEn)"
+                               Value="@_form.Name"
+                               ValueChanged="@(v => _form.Name = v)"
+                               ValueExpression="@(() => _form.Name)"
                                MaxLength="128"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.SessionCategories.Field.NameAr"]"
-                               Value="@_form.NameAr"
-                               ValueChanged="@(v => _form.NameAr = v)"
-                               ValueExpression="@(() => _form.NameAr)"
+                               Value="@_form.NameArabic"
+                               ValueChanged="@(v => _form.NameArabic = v)"
+                               ValueExpression="@(() => _form.NameArabic)"
                                MaxLength="128"
                                Disabled="_busy" />
                 <label class="simf-field">
@@ -136,8 +136,8 @@
 
     private sealed class FormModel
     {
-        public string NameEn { get; set; } = string.Empty;
-        public string NameAr { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string NameArabic { get; set; } = string.Empty;
         public int DisplayOrder { get; set; }
         public bool IsActive { get; set; } = true;
     }
@@ -214,8 +214,8 @@
                 _editingId = d.Id;
                 _form = new FormModel
                 {
-                    NameEn = d.NameEn,
-                    NameAr = d.NameAr,
+                    Name = d.Name,
+                    NameArabic = d.NameArabic,
                     DisplayOrder = d.DisplayOrder,
                     IsActive = d.IsActive,
                 };
@@ -235,8 +235,8 @@
     private async Task SaveAsync()
     {
         if (_busy) return;
-        if (string.IsNullOrWhiteSpace(_form.NameEn)
-            || string.IsNullOrWhiteSpace(_form.NameAr))
+        if (string.IsNullOrWhiteSpace(_form.Name)
+            || string.IsNullOrWhiteSpace(_form.NameArabic))
         {
             _toast = new Toast("error", L["Admin.SessionCategories.Required"]);
             return;
@@ -253,8 +253,8 @@
                     $"/account/api/admin/session-categories/{_editingId}",
                     new AdminUpdateSessionCategoryRequest
                     {
-                        NameEn = _form.NameEn,
-                        NameAr = _form.NameAr,
+                        Name = _form.Name,
+                        NameArabic = _form.NameArabic,
                         DisplayOrder = _form.DisplayOrder,
                         IsActive = _form.IsActive,
                     });
@@ -266,8 +266,8 @@
                     "/account/api/admin/session-categories",
                     new AdminCreateSessionCategoryRequest
                     {
-                        NameEn = _form.NameEn,
-                        NameAr = _form.NameAr,
+                        Name = _form.Name,
+                        NameArabic = _form.NameArabic,
                         DisplayOrder = _form.DisplayOrder,
                     });
             }

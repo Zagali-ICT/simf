@@ -27,7 +27,7 @@ internal sealed class PublicCmsService(
             .AsNoTracking()
             .Where(b => b.Key == normalised && b.IsActive)
             .Select(b => new PublicContentBlock(
-                b.Key, b.ContentEn, b.ContentAr, b.LastUpdatedAt))
+                b.Key, b.Content, b.ContentArabic, b.LastUpdatedAt))
             .SingleOrDefaultAsync(cancellationToken);
     }
 
@@ -48,7 +48,7 @@ internal sealed class PublicCmsService(
             .AsNoTracking()
             .Where(b => normalised.Contains(b.Key) && b.IsActive)
             .Select(b => new PublicContentBlock(
-                b.Key, b.ContentEn, b.ContentAr, b.LastUpdatedAt))
+                b.Key, b.Content, b.ContentArabic, b.LastUpdatedAt))
             .ToListAsync(cancellationToken);
         return new PublicContentBlockBatch(
             rows.ToDictionary(r => r.Key));
@@ -63,7 +63,7 @@ internal sealed class PublicCmsService(
             .Where(b => b.IsActive && b.StartUtc <= now && b.EndUtc >= now)
             .OrderBy(b => b.DisplayOrder).ThenBy(b => b.StartUtc)
             .Select(b => new PublicBanner(
-                b.Id, b.TitleEn, b.TitleAr, b.BodyEn, b.BodyAr,
+                b.Id, b.Title, b.TitleArabic, b.Body, b.BodyArabic,
                 b.ImageUrl, b.LinkUrl, b.StartUtc, b.EndUtc, b.DisplayOrder))
             .ToListAsync(cancellationToken);
         return new PublicBanners(rows);

@@ -167,8 +167,8 @@ internal sealed class AdminFaqService(
         {
             var term = query.Search.Trim();
             rows = rows.Where(e =>
-                EF.Functions.Like(e.QuestionEn, $"%{term}%")
-                || EF.Functions.Like(e.QuestionAr, $"%{term}%"));
+                EF.Functions.Like(e.Question, $"%{term}%")
+                || EF.Functions.Like(e.QuestionArabic, $"%{term}%"));
         }
         if (query.Filters.TryGetValue("isActive", out var activeFilter)
             && bool.TryParse(activeFilter, out var isActive))
@@ -178,10 +178,10 @@ internal sealed class AdminFaqService(
 
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("questionen", true) => rows.OrderByDescending(e => e.QuestionEn),
-            ("questionen", false) => rows.OrderBy(e => e.QuestionEn),
+            ("question", true) => rows.OrderByDescending(e => e.Question),
+            ("question", false) => rows.OrderBy(e => e.Question),
             ("displayorder", true) => rows.OrderByDescending(e => e.DisplayOrder),
-            _ => rows.OrderBy(e => e.DisplayOrder).ThenBy(e => e.QuestionEn),
+            _ => rows.OrderBy(e => e.DisplayOrder).ThenBy(e => e.Question),
         };
 
         var total = await rows.CountAsync(cancellationToken);
@@ -214,10 +214,10 @@ internal sealed class AdminFaqService(
         {
             Id = Guid.NewGuid(),
             FaqGroupId = request.FaqGroupId,
-            QuestionEn = RequireText(request.QuestionEn, QuestionMaxLength, "English question", "السؤال الإنجليزي"),
-            QuestionAr = RequireText(request.QuestionAr, QuestionMaxLength, "Arabic question", "السؤال العربي"),
-            AnswerEn = RequireText(request.AnswerEn, AnswerMaxLength, "English answer", "الإجابة الإنجليزية"),
-            AnswerAr = RequireText(request.AnswerAr, AnswerMaxLength, "Arabic answer", "الإجابة العربية"),
+            Question = RequireText(request.Question, QuestionMaxLength, "English question", "السؤال الإنجليزي"),
+            QuestionArabic = RequireText(request.QuestionArabic, QuestionMaxLength, "Arabic question", "السؤال العربي"),
+            Answer = RequireText(request.Answer, AnswerMaxLength, "English answer", "الإجابة الإنجليزية"),
+            AnswerArabic = RequireText(request.AnswerArabic, AnswerMaxLength, "Arabic answer", "الإجابة العربية"),
             DisplayOrder = request.DisplayOrder,
             IsActive = true,
             CreatedAt = timeProvider.GetUtcNow(),
@@ -239,10 +239,10 @@ internal sealed class AdminFaqService(
             .SingleOrDefaultAsync(e => e.Id == id, cancellationToken)
             ?? throw EntryNotFound();
 
-        entry.QuestionEn = RequireText(request.QuestionEn, QuestionMaxLength, "English question", "السؤال الإنجليزي");
-        entry.QuestionAr = RequireText(request.QuestionAr, QuestionMaxLength, "Arabic question", "السؤال العربي");
-        entry.AnswerEn = RequireText(request.AnswerEn, AnswerMaxLength, "English answer", "الإجابة الإنجليزية");
-        entry.AnswerAr = RequireText(request.AnswerAr, AnswerMaxLength, "Arabic answer", "الإجابة العربية");
+        entry.Question = RequireText(request.Question, QuestionMaxLength, "English question", "السؤال الإنجليزي");
+        entry.QuestionArabic = RequireText(request.QuestionArabic, QuestionMaxLength, "Arabic question", "السؤال العربي");
+        entry.Answer = RequireText(request.Answer, AnswerMaxLength, "English answer", "الإجابة الإنجليزية");
+        entry.AnswerArabic = RequireText(request.AnswerArabic, AnswerMaxLength, "Arabic answer", "الإجابة العربية");
         RequireNonNegative(request.DisplayOrder);
         entry.DisplayOrder = request.DisplayOrder;
         entry.IsActive = request.IsActive;
@@ -287,12 +287,12 @@ internal sealed class AdminFaqService(
         new(g.Id, g.Name, g.NameArabic, g.DisplayOrder, g.IsActive, entryCount, g.CreatedAt);
 
     private static AdminFaqEntrySummary ToEntrySummary(FaqEntry e) =>
-        new(e.Id, e.FaqGroupId, e.QuestionEn, e.QuestionAr, e.AnswerEn, e.AnswerAr,
+        new(e.Id, e.FaqGroupId, e.Question, e.QuestionArabic, e.Answer, e.AnswerArabic,
             e.DisplayOrder, e.IsActive, e.CreatedAt);
 
     private static System.Linq.Expressions.Expression<Func<FaqEntry, AdminFaqEntrySummary>> ToEntrySummaryExpr =>
         e => new AdminFaqEntrySummary(
-            e.Id, e.FaqGroupId, e.QuestionEn, e.QuestionAr, e.AnswerEn, e.AnswerAr,
+            e.Id, e.FaqGroupId, e.Question, e.QuestionArabic, e.Answer, e.AnswerArabic,
             e.DisplayOrder, e.IsActive, e.CreatedAt);
 
     private static ApiException GroupNotFound() => new(

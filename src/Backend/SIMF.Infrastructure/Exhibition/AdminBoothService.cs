@@ -14,7 +14,7 @@ namespace SIMF.Infrastructure.Exhibition;
 /// <summary>
 /// D-199 — admin CRUD over <see cref="Booth"/> (Exhibition module, Mockup
 /// page 22 + the 2D venue map). Built on <see cref="SimfAppDbContext"/>.
-/// Mirrors <c>AdminSpeakerService</c>: bilingual (NameEn/NameAr), unique
+/// Mirrors <c>AdminSpeakerService</c>: bilingual (Name/NameArabic), unique
 /// Code (409 on duplicate), soft-delete (IsActive), audited via
 /// <see cref="IAuditLog"/>. <c>HallId</c> is validated against the live
 /// <c>Halls</c> table (same context) when supplied.
@@ -38,8 +38,8 @@ internal sealed class AdminBoothService(
             var term = query.Search.Trim();
             rows = rows.Where(booth =>
                 EF.Functions.Like(booth.Code, $"%{term}%")
-                || EF.Functions.Like(booth.NameEn, $"%{term}%")
-                || EF.Functions.Like(booth.NameAr, $"%{term}%"));
+                || EF.Functions.Like(booth.Name, $"%{term}%")
+                || EF.Functions.Like(booth.NameArabic, $"%{term}%"));
         }
 
         // CP grid per-column filters (D-255). Unknown columns are ignored.
@@ -55,14 +55,14 @@ internal sealed class AdminBoothService(
                 case "code":
                     rows = rows.Where(booth => booth.Code.Contains(v));
                     break;
-                case "nameen":
-                    rows = rows.Where(booth => booth.NameEn.Contains(v));
+                case "name":
+                    rows = rows.Where(booth => booth.Name.Contains(v));
                     break;
-                case "namear":
-                    rows = rows.Where(booth => booth.NameAr.Contains(v));
+                case "namearabic":
+                    rows = rows.Where(booth => booth.NameArabic.Contains(v));
                     break;
-                case "sectoren":
-                    rows = rows.Where(booth => booth.SectorEn != null && booth.SectorEn.Contains(v));
+                case "sector":
+                    rows = rows.Where(booth => booth.Sector != null && booth.Sector.Contains(v));
                     break;
             }
         }
@@ -74,10 +74,10 @@ internal sealed class AdminBoothService(
         {
             ("code", true) => rows.OrderByDescending(booth => booth.Code),
             ("code", false) => rows.OrderBy(booth => booth.Code),
-            ("nameen", true) => rows.OrderByDescending(booth => booth.NameEn),
-            ("nameen", false) => rows.OrderBy(booth => booth.NameEn),
-            ("sectoren", true) => rows.OrderByDescending(booth => booth.SectorEn),
-            ("sectoren", false) => rows.OrderBy(booth => booth.SectorEn),
+            ("name", true) => rows.OrderByDescending(booth => booth.Name),
+            ("name", false) => rows.OrderBy(booth => booth.Name),
+            ("sector", true) => rows.OrderByDescending(booth => booth.Sector),
+            ("sector", false) => rows.OrderBy(booth => booth.Sector),
             ("isactive", true) => rows.OrderByDescending(booth => booth.IsActive),
             ("isactive", false) => rows.OrderBy(booth => booth.IsActive),
             _ => rows.OrderBy(booth => booth.Code),
@@ -91,10 +91,10 @@ internal sealed class AdminBoothService(
             {
                 Id = booth.Id,
                 Code = booth.Code,
-                NameEn = booth.NameEn,
-                NameAr = booth.NameAr,
+                Name = booth.Name,
+                NameArabic = booth.NameArabic,
                 ExhibitorId = booth.ExhibitorId,
-                SectorEn = booth.SectorEn,
+                Sector = booth.Sector,
                 HallId = booth.HallId,
                 IsActive = booth.IsActive,
             })
@@ -119,10 +119,10 @@ internal sealed class AdminBoothService(
         CancellationToken cancellationToken = default)
     {
         var v = ValidateAndNormalise(
-            request.Code, request.NameEn, request.NameAr,
+            request.Code, request.Name, request.NameArabic,
             request.OfficerName, request.OfficerPhone, request.OfficerEmail,
-            request.SectorEn, request.SectorAr,
-            request.DescriptionEn, request.DescriptionAr);
+            request.Sector, request.SectorArabic,
+            request.Description, request.DescriptionArabic);
         await EnsureHallIsValidAsync(request.HallId, cancellationToken);
         await EnsureExhibitorIsValidAsync(request.ExhibitorId, cancellationToken);
 
@@ -142,16 +142,16 @@ internal sealed class AdminBoothService(
         {
             Id = Guid.NewGuid(),
             Code = v.Code,
-            NameEn = v.NameEn,
-            NameAr = v.NameAr,
+            Name = v.Name,
+            NameArabic = v.NameArabic,
             ExhibitorId = request.ExhibitorId,
             OfficerName = v.OfficerName,
             OfficerPhone = v.OfficerPhone,
             OfficerEmail = v.OfficerEmail,
-            SectorEn = v.SectorEn,
-            SectorAr = v.SectorAr,
-            DescriptionEn = v.DescriptionEn,
-            DescriptionAr = v.DescriptionAr,
+            Sector = v.Sector,
+            SectorArabic = v.SectorArabic,
+            Description = v.Description,
+            DescriptionArabic = v.DescriptionArabic,
             HallId = request.HallId,
             MapX = request.MapX,
             MapY = request.MapY,
@@ -166,7 +166,7 @@ internal sealed class AdminBoothService(
             EventType = AuditEvents.BoothCreated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={booth.Id}; code={v.Code}; nameEn={v.NameEn}",
+            Detail = $"id={booth.Id}; code={v.Code}; name={v.Name}",
         }, cancellationToken);
 
         logger.LogInformation(
@@ -190,10 +190,10 @@ internal sealed class AdminBoothService(
                 "لم يتم العثور على الجناح.");
 
         var v = ValidateAndNormalise(
-            request.Code, request.NameEn, request.NameAr,
+            request.Code, request.Name, request.NameArabic,
             request.OfficerName, request.OfficerPhone, request.OfficerEmail,
-            request.SectorEn, request.SectorAr,
-            request.DescriptionEn, request.DescriptionAr);
+            request.Sector, request.SectorArabic,
+            request.Description, request.DescriptionArabic);
         await EnsureHallIsValidAsync(request.HallId, cancellationToken);
         await EnsureExhibitorIsValidAsync(request.ExhibitorId, cancellationToken);
 
@@ -212,16 +212,16 @@ internal sealed class AdminBoothService(
         }
 
         booth.Code = v.Code;
-        booth.NameEn = v.NameEn;
-        booth.NameAr = v.NameAr;
+        booth.Name = v.Name;
+        booth.NameArabic = v.NameArabic;
         booth.ExhibitorId = request.ExhibitorId;
         booth.OfficerName = v.OfficerName;
         booth.OfficerPhone = v.OfficerPhone;
         booth.OfficerEmail = v.OfficerEmail;
-        booth.SectorEn = v.SectorEn;
-        booth.SectorAr = v.SectorAr;
-        booth.DescriptionEn = v.DescriptionEn;
-        booth.DescriptionAr = v.DescriptionAr;
+        booth.Sector = v.Sector;
+        booth.SectorArabic = v.SectorArabic;
+        booth.Description = v.Description;
+        booth.DescriptionArabic = v.DescriptionArabic;
         booth.HallId = request.HallId;
         booth.MapX = request.MapX;
         booth.MapY = request.MapY;
@@ -271,16 +271,16 @@ internal sealed class AdminBoothService(
     }
 
     private sealed record BoothDraft(
-        string Code, string NameEn, string NameAr,
+        string Code, string Name, string NameArabic,
         string? OfficerName, string? OfficerPhone, string? OfficerEmail,
-        string? SectorEn, string? SectorAr,
-        string? DescriptionEn, string? DescriptionAr);
+        string? Sector, string? SectorArabic,
+        string? Description, string? DescriptionArabic);
 
     private static BoothDraft ValidateAndNormalise(
-        string codeRaw, string nameEnRaw, string nameArRaw,
+        string codeRaw, string nameRaw, string nameArabicRaw,
         string? officerNameRaw, string? officerPhoneRaw, string? officerEmailRaw,
-        string? sectorEnRaw, string? sectorArRaw,
-        string? descriptionEnRaw, string? descriptionArRaw)
+        string? sectorRaw, string? sectorArabicRaw,
+        string? descriptionRaw, string? descriptionArabicRaw)
     {
         var code = (codeRaw ?? string.Empty).Trim().ToUpperInvariant();
         if (code.Length is < 2 or > 16)
@@ -290,16 +290,16 @@ internal sealed class AdminBoothService(
                 "Booth code must be between 2 and 16 characters.",
                 "يجب أن يتراوح طول رمز الجناح بين 2 و 16 حرفاً.");
         }
-        var nameEn = (nameEnRaw ?? string.Empty).Trim();
-        if (nameEn.Length is < 1 or > 128)
+        var name = (nameRaw ?? string.Empty).Trim();
+        if (name.Length is < 1 or > 128)
         {
             throw new ApiException(
                 ErrorCodes.BoothInvalid, 400,
                 "Booth English name must be between 1 and 128 characters.",
                 "يجب أن يتراوح طول الاسم الإنجليزي للجناح بين 1 و 128 حرفاً.");
         }
-        var nameAr = (nameArRaw ?? string.Empty).Trim();
-        if (nameAr.Length is < 1 or > 128)
+        var nameArabic = (nameArabicRaw ?? string.Empty).Trim();
+        if (nameArabic.Length is < 1 or > 128)
         {
             throw new ApiException(
                 ErrorCodes.BoothInvalid, 400,
@@ -323,20 +323,20 @@ internal sealed class AdminBoothService(
                 "Booth officer email is not a valid email address.",
                 "بريد مسؤول الجناح غير صالح.");
         }
-        var sectorEn = OptionalText(
-            sectorEnRaw, 128, "Booth English sector", "قطاع الجناح الإنجليزي");
-        var sectorAr = OptionalText(
-            sectorArRaw, 128, "Booth Arabic sector", "قطاع الجناح العربي");
-        var descriptionEn = OptionalText(
-            descriptionEnRaw, 2048, "Booth English description", "وصف الجناح الإنجليزي");
-        var descriptionAr = OptionalText(
-            descriptionArRaw, 2048, "Booth Arabic description", "وصف الجناح العربي");
+        var sector = OptionalText(
+            sectorRaw, 128, "Booth English sector", "قطاع الجناح الإنجليزي");
+        var sectorArabic = OptionalText(
+            sectorArabicRaw, 128, "Booth Arabic sector", "قطاع الجناح العربي");
+        var description = OptionalText(
+            descriptionRaw, 2048, "Booth English description", "وصف الجناح الإنجليزي");
+        var descriptionArabic = OptionalText(
+            descriptionArabicRaw, 2048, "Booth Arabic description", "وصف الجناح العربي");
 
         return new BoothDraft(
-            code, nameEn, nameAr,
+            code, name, nameArabic,
             officerName, officerPhone, officerEmail,
-            sectorEn, sectorAr,
-            descriptionEn, descriptionAr);
+            sector, sectorArabic,
+            description, descriptionArabic);
     }
 
     private static string? OptionalText(string? raw, int maxLength, string fieldEn, string fieldAr)
@@ -395,16 +395,16 @@ internal sealed class AdminBoothService(
     {
         Id = b.Id,
         Code = b.Code,
-        NameEn = b.NameEn,
-        NameAr = b.NameAr,
+        Name = b.Name,
+        NameArabic = b.NameArabic,
         ExhibitorId = b.ExhibitorId,
         OfficerName = b.OfficerName,
         OfficerPhone = b.OfficerPhone,
         OfficerEmail = b.OfficerEmail,
-        SectorEn = b.SectorEn,
-        SectorAr = b.SectorAr,
-        DescriptionEn = b.DescriptionEn,
-        DescriptionAr = b.DescriptionAr,
+        Sector = b.Sector,
+        SectorArabic = b.SectorArabic,
+        Description = b.Description,
+        DescriptionArabic = b.DescriptionArabic,
         HallId = b.HallId,
         MapX = b.MapX,
         MapY = b.MapY,

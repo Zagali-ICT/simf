@@ -24,10 +24,10 @@
                        @bind-Value="_model.Code" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Countries.Field.NameEn"]"
                        MaxLength="128"
-                       @bind-Value="_model.NameEn" Disabled="_busy" />
+                       @bind-Value="_model.Name" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Countries.Field.NameAr"]"
                        MaxLength="128"
-                       @bind-Value="_model.NameAr" Disabled="_busy" />
+                       @bind-Value="_model.NameArabic" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Countries.Field.PhonePrefix"]"
                        Helper="@L["Admin.Countries.Field.PhonePrefixHint"]"
                        MaxLength="8"
@@ -79,8 +79,8 @@
         if (Initial is not null)
         {
             _model.Code = Initial.Code;
-            _model.NameEn = Initial.NameEn;
-            _model.NameAr = Initial.NameAr;
+            _model.Name = Initial.Name;
+            _model.NameArabic = Initial.NameArabic;
             _model.PhonePrefix = Initial.PhonePrefix ?? string.Empty;
             _model.IsActive = Initial.IsActive;
             _displayOrderInput = Initial.DisplayOrder.ToString();
@@ -107,11 +107,11 @@
         {
             _error = L["Admin.Countries.Field.CodeInvalid"]; return;
         }
-        if (string.IsNullOrWhiteSpace(_model.NameEn) || _model.NameEn.Length > 128)
+        if (string.IsNullOrWhiteSpace(_model.Name) || _model.Name.Length > 128)
         {
             _error = L["Admin.Countries.Field.NameEnInvalid"]; return;
         }
-        if (string.IsNullOrWhiteSpace(_model.NameAr) || _model.NameAr.Length > 128)
+        if (string.IsNullOrWhiteSpace(_model.NameArabic) || _model.NameArabic.Length > 128)
         {
             _error = L["Admin.Countries.Field.NameArInvalid"]; return;
         }
@@ -132,8 +132,8 @@
                     {
                         Id = countryId,
                         Code = _model.Code.Trim().ToUpperInvariant(),
-                        NameEn = _model.NameEn.Trim(),
-                        NameAr = _model.NameAr.Trim(),
+                        Name = _model.Name.Trim(),
+                        NameArabic = _model.NameArabic.Trim(),
                         PhonePrefix = NullIfBlank(_model.PhonePrefix),
                         DisplayOrder = order,
                     });
@@ -145,8 +145,8 @@
                     new AdminUpdateCountryRequest
                     {
                         Code = _model.Code.Trim().ToUpperInvariant(),
-                        NameEn = _model.NameEn.Trim(),
-                        NameAr = _model.NameAr.Trim(),
+                        Name = _model.Name.Trim(),
+                        NameArabic = _model.NameArabic.Trim(),
                         PhonePrefix = NullIfBlank(_model.PhonePrefix),
                         DisplayOrder = order,
                         IsActive = _model.IsActive,
@@ -176,8 +176,8 @@
     private sealed class Model
     {
         public string Code { get; set; } = string.Empty;
-        public string NameEn { get; set; } = string.Empty;
-        public string NameAr { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string NameArabic { get; set; } = string.Empty;
         public string PhonePrefix { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
     }

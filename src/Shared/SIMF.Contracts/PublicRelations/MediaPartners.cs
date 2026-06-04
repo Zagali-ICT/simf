@@ -5,14 +5,14 @@ namespace SIMF.Contracts.PublicRelations;
 /// <summary>D-199 (Mockup page 31) — one item in the public media-partner list.</summary>
 public sealed record PublicMediaPartnerItem(
     Guid Id,
-    string NameEn,
-    string NameAr,
+    string Name,
+    string NameArabic,
     string? LogoRelativePath,
     string? Url,
     int DisplayOrder);
 
 /// <summary>D-199 (Mockup page 31) — the public media-partner list payload
-/// (active rows only, ordered by DisplayOrder then NameAr).</summary>
+/// (active rows only, ordered by DisplayOrder then NameArabic).</summary>
 public sealed record PublicMediaPartners(IReadOnlyList<PublicMediaPartnerItem> Items);
 
 // -- Admin CRUD projections --
@@ -20,8 +20,8 @@ public sealed record PublicMediaPartners(IReadOnlyList<PublicMediaPartnerItem> I
 /// <summary>D-199 — admin list-row projection of a media partner.</summary>
 public sealed record AdminMediaPartnerSummary(
     Guid Id,
-    string NameEn,
-    string NameAr,
+    string Name,
+    string NameArabic,
     string? LogoRelativePath,
     string? Url,
     int DisplayOrder,
@@ -31,8 +31,8 @@ public sealed record AdminMediaPartnerSummary(
 /// <summary>D-199 — admin detail projection of a media partner.</summary>
 public sealed record AdminMediaPartnerDetail(
     Guid Id,
-    string NameEn,
-    string NameAr,
+    string Name,
+    string NameArabic,
     string? LogoRelativePath,
     string? Url,
     int DisplayOrder,
@@ -42,8 +42,8 @@ public sealed record AdminMediaPartnerDetail(
 
 /// <summary>D-199 — create payload (Id is server-assigned).</summary>
 public sealed record AdminCreateMediaPartnerRequest(
-    string NameEn,
-    string NameAr,
+    string Name,
+    string NameArabic,
     string? LogoRelativePath,
     string? Url,
     int DisplayOrder);
@@ -51,8 +51,8 @@ public sealed record AdminCreateMediaPartnerRequest(
 /// <summary>D-199 — update payload (Id travels in the route).</summary>
 public sealed record AdminUpdateMediaPartnerRequest
 {
-    public string NameEn { get; set; } = string.Empty;
-    public string NameAr { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
     public string? LogoRelativePath { get; set; }
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }

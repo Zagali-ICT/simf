@@ -37,7 +37,7 @@ public sealed class AdminCountriesTests : IClassFixture<SimfApiFactory>
         var detail = (await response.Content
             .ReadFromJsonAsync<ApiResult<AdminCountryDetail>>())!.Data!;
         Assert.Equal("SA", detail.Code);
-        Assert.Equal("Saudi Arabia", detail.NameEn);
+        Assert.Equal("Saudi Arabia", detail.Name);
         Assert.Equal("+966", detail.PhonePrefix);
     }
 
@@ -66,8 +66,8 @@ public sealed class AdminCountriesTests : IClassFixture<SimfApiFactory>
             {
                 Id = newId,
                 Code = "ZZ",
-                NameEn = "Test Country",
-                NameAr = "بلد اختبار",
+                Name = "Test Country",
+                NameArabic = "بلد اختبار",
                 PhonePrefix = "+999",
                 DisplayOrder = 9999,
             },
@@ -89,8 +89,8 @@ public sealed class AdminCountriesTests : IClassFixture<SimfApiFactory>
             {
                 Id = 682, // Saudi Arabia — already seeded
                 Code = "XA",
-                NameEn = "Duplicate",
-                NameAr = "مكرر",
+                Name = "Duplicate",
+                NameArabic = "مكرر",
                 PhonePrefix = "+999",
             },
             adminToken);
@@ -109,8 +109,8 @@ public sealed class AdminCountriesTests : IClassFixture<SimfApiFactory>
             {
                 Id = Random.Shared.Next(900, 998),
                 Code = "SA", // already seeded
-                NameEn = "Duplicate Code",
-                NameAr = "رمز مكرر",
+                Name = "Duplicate Code",
+                NameArabic = "رمز مكرر",
                 PhonePrefix = "+999",
             },
             adminToken);
@@ -129,8 +129,8 @@ public sealed class AdminCountriesTests : IClassFixture<SimfApiFactory>
             {
                 Id = Random.Shared.Next(900, 998),
                 Code = "TOO_LONG", // not 2 chars
-                NameEn = "Bad",
-                NameAr = "سيء",
+                Name = "Bad",
+                NameArabic = "سيء",
             },
             adminToken);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -156,8 +156,8 @@ public sealed class AdminCountriesTests : IClassFixture<SimfApiFactory>
             {
                 Id = Random.Shared.Next(900, 998),
                 Code = "ZX",
-                NameEn = "Forbidden",
-                NameAr = "ممنوع",
+                Name = "Forbidden",
+                NameArabic = "ممنوع",
             },
             tokens.AccessToken);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);

@@ -71,8 +71,8 @@ public sealed class UpdateCountryRequest
 {
     public int Id { get; set; }
     public string Code { get; set; } = string.Empty;
-    public string NameEn { get; set; } = string.Empty;
-    public string NameAr { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
     public string? PhonePrefix { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
@@ -101,8 +101,8 @@ public sealed class UpdateCountryEndpoint(IAdminCountryService service)
                 new AdminUpdateCountryRequest
                 {
                     Code = req.Code,
-                    NameEn = req.NameEn,
-                    NameAr = req.NameAr,
+                    Name = req.Name,
+                    NameArabic = req.NameArabic,
                     PhonePrefix = req.PhonePrefix,
                     DisplayOrder = req.DisplayOrder,
                     IsActive = req.IsActive,

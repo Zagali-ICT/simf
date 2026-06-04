@@ -53,10 +53,10 @@
                                     Sortable="true" Filterable="true">
                     <CellTemplate><code>@context.Key</code></CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminContentBlockSummary" Key="contentEn"
+                <SimfDataGridColumn TItem="AdminContentBlockSummary" Key="content"
                                     Header="@L["Admin.ContentBlocks.Col.ContentEn"]"
                                     Sortable="true" Filterable="true">
-                    <CellTemplate>@TruncatePreview(context.ContentEn)</CellTemplate>
+                    <CellTemplate>@TruncatePreview(context.Content)</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminContentBlockSummary" Key="lastUpdatedAt"
                                     Header="@L["Admin.ContentBlocks.Col.LastUpdatedAt"]"
@@ -187,8 +187,8 @@
         _editOpen = true;
         _isEdit = true;
         _editKey = row.Key;
-        _editContentEn = row.ContentEn;
-        _editContentAr = row.ContentAr;
+        _editContentEn = row.Content;
+        _editContentAr = row.ContentArabic;
         _editIsActive = row.IsActive;
     }
 
@@ -204,8 +204,8 @@
                 new UpsertContentBlockRequest
                 {
                     Key = _editKey,
-                    ContentEn = _editContentEn,
-                    ContentAr = _editContentAr,
+                    Content = _editContentEn,
+                    ContentArabic = _editContentAr,
                     IsActive = _editIsActive,
                 });
             if (env is { Success: true })

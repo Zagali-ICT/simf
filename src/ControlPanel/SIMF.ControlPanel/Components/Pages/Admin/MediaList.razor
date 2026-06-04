@@ -58,25 +58,25 @@
                                     Sortable="true">
                     <CellTemplate>@KindLabel(context.Kind)</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminMediaSummary" Key="titleEn"
+                <SimfDataGridColumn TItem="AdminMediaSummary" Key="title"
                                     Header="@L["Admin.Media.Col.TitleEn"]"
                                     Sortable="true" Filterable="true">
-                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.TitleEn) ? "—" : context.TitleEn)</CellTemplate>
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.Title) ? "—" : context.Title)</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminMediaSummary" Key="titleAr"
+                <SimfDataGridColumn TItem="AdminMediaSummary" Key="titlearabic"
                                     Header="@L["Admin.Media.Col.TitleAr"]"
                                     Filterable="true">
-                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.TitleAr) ? "—" : context.TitleAr)</CellTemplate>
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.TitleArabic) ? "—" : context.TitleArabic)</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminMediaSummary" Key="albumEn"
+                <SimfDataGridColumn TItem="AdminMediaSummary" Key="album"
                                     Header="@L["Admin.Media.Col.AlbumEn"]"
                                     Filterable="true">
-                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.AlbumEn) ? "—" : context.AlbumEn)</CellTemplate>
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.Album) ? "—" : context.Album)</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminMediaSummary" Key="albumAr"
+                <SimfDataGridColumn TItem="AdminMediaSummary" Key="albumarabic"
                                     Header="@L["Admin.Media.Col.AlbumAr"]"
                                     Filterable="true">
-                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.AlbumAr) ? "—" : context.AlbumAr)</CellTemplate>
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.AlbumArabic) ? "—" : context.AlbumArabic)</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminMediaSummary" Key="hasImage"
                                     Header="@L["Admin.Media.Col.HasImage"]">
@@ -136,24 +136,24 @@
                     </select>
                 </label>
                 <SimfTextField Label="@L["Admin.Media.Field.TitleEn"]"
-                               Value="@_form.TitleEn"
-                               ValueChanged="@(v => _form.TitleEn = v)"
-                               ValueExpression="@(() => _form.TitleEn)"
+                               Value="@_form.Title"
+                               ValueChanged="@(v => _form.Title = v)"
+                               ValueExpression="@(() => _form.Title)"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Media.Field.TitleAr"]"
-                               Value="@_form.TitleAr"
-                               ValueChanged="@(v => _form.TitleAr = v)"
-                               ValueExpression="@(() => _form.TitleAr)"
+                               Value="@_form.TitleArabic"
+                               ValueChanged="@(v => _form.TitleArabic = v)"
+                               ValueExpression="@(() => _form.TitleArabic)"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Media.Field.AlbumEn"]"
-                               Value="@_form.AlbumEn"
-                               ValueChanged="@(v => _form.AlbumEn = v)"
-                               ValueExpression="@(() => _form.AlbumEn)"
+                               Value="@_form.Album"
+                               ValueChanged="@(v => _form.Album = v)"
+                               ValueExpression="@(() => _form.Album)"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Media.Field.AlbumAr"]"
-                               Value="@_form.AlbumAr"
-                               ValueChanged="@(v => _form.AlbumAr = v)"
-                               ValueExpression="@(() => _form.AlbumAr)"
+                               Value="@_form.AlbumArabic"
+                               ValueChanged="@(v => _form.AlbumArabic = v)"
+                               ValueExpression="@(() => _form.AlbumArabic)"
                                Disabled="_busy" />
                 @if (_form.Kind == MediaKind.Video)
                 {
@@ -223,10 +223,10 @@
     private sealed class FormModel
     {
         public MediaKind Kind { get; set; } = MediaKind.Image;
-        public string TitleEn { get; set; } = string.Empty;
-        public string TitleAr { get; set; } = string.Empty;
-        public string AlbumEn { get; set; } = string.Empty;
-        public string AlbumAr { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string TitleArabic { get; set; } = string.Empty;
+        public string Album { get; set; } = string.Empty;
+        public string AlbumArabic { get; set; } = string.Empty;
         public string Url { get; set; } = string.Empty;
         public int DisplayOrder { get; set; }
         public bool IsActive { get; set; } = true;
@@ -317,10 +317,10 @@
             _form = new FormModel
             {
                 Kind = d.Kind,
-                TitleEn = d.TitleEn ?? string.Empty,
-                TitleAr = d.TitleAr ?? string.Empty,
-                AlbumEn = d.AlbumEn ?? string.Empty,
-                AlbumAr = d.AlbumAr ?? string.Empty,
+                Title = d.Title ?? string.Empty,
+                TitleArabic = d.TitleArabic ?? string.Empty,
+                Album = d.Album ?? string.Empty,
+                AlbumArabic = d.AlbumArabic ?? string.Empty,
                 Url = d.Url ?? string.Empty,
                 DisplayOrder = d.DisplayOrder,
                 IsActive = d.IsActive,
@@ -356,10 +356,10 @@
                     new AdminUpdateMediaRequest
                     {
                         Kind = _form.Kind,
-                        TitleEn = NullIfBlank(_form.TitleEn),
-                        TitleAr = NullIfBlank(_form.TitleAr),
-                        AlbumEn = NullIfBlank(_form.AlbumEn),
-                        AlbumAr = NullIfBlank(_form.AlbumAr),
+                        Title = NullIfBlank(_form.Title),
+                        TitleArabic = NullIfBlank(_form.TitleArabic),
+                        Album = NullIfBlank(_form.Album),
+                        AlbumArabic = NullIfBlank(_form.AlbumArabic),
                         Url = NullIfBlank(_form.Url),
                         DisplayOrder = _form.DisplayOrder,
                         IsActive = _form.IsActive,
@@ -385,10 +385,10 @@
                     new AdminCreateMediaRequest
                     {
                         Kind = _form.Kind,
-                        TitleEn = NullIfBlank(_form.TitleEn),
-                        TitleAr = NullIfBlank(_form.TitleAr),
-                        AlbumEn = NullIfBlank(_form.AlbumEn),
-                        AlbumAr = NullIfBlank(_form.AlbumAr),
+                        Title = NullIfBlank(_form.Title),
+                        TitleArabic = NullIfBlank(_form.TitleArabic),
+                        Album = NullIfBlank(_form.Album),
+                        AlbumArabic = NullIfBlank(_form.AlbumArabic),
                         Url = NullIfBlank(_form.Url),
                         DisplayOrder = _form.DisplayOrder,
                     });
@@ -511,8 +511,8 @@
     // Per-row accessible label for the selection checkbox — the English title,
     // else the Arabic title, else the kind so a screen reader gets something.
     private string RowLabel(AdminMediaSummary row) =>
-        !string.IsNullOrWhiteSpace(row.TitleEn) ? row.TitleEn
-        : !string.IsNullOrWhiteSpace(row.TitleAr) ? row.TitleAr
+        !string.IsNullOrWhiteSpace(row.Title) ? row.Title
+        : !string.IsNullOrWhiteSpace(row.TitleArabic) ? row.TitleArabic
         : KindLabel(row.Kind);
 
     private static string? NullIfBlank(string value) =>

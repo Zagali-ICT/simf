@@ -21,17 +21,17 @@ internal sealed class NewsConfiguration : IEntityTypeConfiguration<News>
         builder.ToTable("News");
         builder.HasKey(news => news.Id);
 
-        builder.Property(news => news.TitleEn).HasMaxLength(200).IsRequired();
-        builder.Property(news => news.TitleAr).HasMaxLength(200).IsRequired();
+        builder.Property(news => news.Title).HasMaxLength(200).IsRequired();
+        builder.Property(news => news.TitleArabic).HasMaxLength(200).IsRequired();
 
-        builder.Property(news => news.ExcerptEn).HasMaxLength(500);
-        builder.Property(news => news.ExcerptAr).HasMaxLength(500);
+        builder.Property(news => news.Excerpt).HasMaxLength(500);
+        builder.Property(news => news.ExcerptArabic).HasMaxLength(500);
 
-        builder.Property(news => news.BodyEn).HasMaxLength(8000).IsRequired();
-        builder.Property(news => news.BodyAr).HasMaxLength(8000).IsRequired();
+        builder.Property(news => news.Body).HasMaxLength(8000).IsRequired();
+        builder.Property(news => news.BodyArabic).HasMaxLength(8000).IsRequired();
 
-        builder.Property(news => news.CategoryEn).HasMaxLength(100).IsRequired();
-        builder.Property(news => news.CategoryAr).HasMaxLength(100).IsRequired();
+        builder.Property(news => news.Category).HasMaxLength(100).IsRequired();
+        builder.Property(news => news.CategoryArabic).HasMaxLength(100).IsRequired();
 
         builder.Property(news => news.ImageRelativePath).HasMaxLength(512);
 

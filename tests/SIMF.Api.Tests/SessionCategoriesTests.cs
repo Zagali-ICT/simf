@@ -38,15 +38,15 @@ public sealed class SessionCategoriesTests : IClassFixture<SimfApiFactory>
             "/api/v1/admin/session-categories",
             new AdminCreateSessionCategoryRequest
             {
-                NameEn = "Main Session",
-                NameAr = "الجلسة الرئيسية",
+                Name = "Main Session",
+                NameArabic = "الجلسة الرئيسية",
                 DisplayOrder = 1,
             },
             token);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
         var created = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminSessionCategoryDetail>>())!.Data!;
-        Assert.Equal("Main Session", created.NameEn);
+        Assert.Equal("Main Session", created.Name);
         Assert.True(created.IsActive);
 
         var get = await GetAuthAsync($"/api/v1/admin/session-categories/{created.Id}", token);
@@ -74,7 +74,7 @@ public sealed class SessionCategoriesTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var response = await PostAuthAsync(
             "/api/v1/admin/session-categories",
-            new AdminCreateSessionCategoryRequest { NameEn = "   ", NameAr = "" },
+            new AdminCreateSessionCategoryRequest { Name = "   ", NameArabic = "" },
             token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
@@ -87,7 +87,7 @@ public sealed class SessionCategoriesTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var create = await PostAuthAsync(
             "/api/v1/admin/session-categories",
-            new AdminCreateSessionCategoryRequest { NameEn = "To remove", NameAr = "للحذف" },
+            new AdminCreateSessionCategoryRequest { Name = "To remove", NameArabic = "للحذف" },
             token);
         var created = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminSessionCategoryDetail>>())!.Data!;
@@ -107,7 +107,7 @@ public sealed class SessionCategoriesTests : IClassFixture<SimfApiFactory>
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
         var response = await PostAuthAsync(
             "/api/v1/admin/session-categories",
-            new AdminCreateSessionCategoryRequest { NameEn = "Nope", NameAr = "لا" },
+            new AdminCreateSessionCategoryRequest { Name = "Nope", NameArabic = "لا" },
             tokens.AccessToken);
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -120,7 +120,7 @@ public sealed class SessionCategoriesTests : IClassFixture<SimfApiFactory>
 
         var categoryCreate = await PostAuthAsync(
             "/api/v1/admin/session-categories",
-            new AdminCreateSessionCategoryRequest { NameEn = "Keynote", NameAr = "كلمة رئيسية" },
+            new AdminCreateSessionCategoryRequest { Name = "Keynote", NameArabic = "كلمة رئيسية" },
             token);
         var categoryId = (await categoryCreate.Content
             .ReadFromJsonAsync<ApiResult<AdminSessionCategoryDetail>>())!.Data!.Id;

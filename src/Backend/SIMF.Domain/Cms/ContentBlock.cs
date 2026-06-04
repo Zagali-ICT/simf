@@ -24,11 +24,11 @@ public sealed class ContentBlock
     /// <summary>English content (markdown allowed). Up to 8000 chars
     /// so a long body / article body fits without a separate
     /// "long-form" table.</summary>
-    public string ContentEn { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
 
     /// <summary>Arabic content (markdown allowed). Same shape as
-    /// <see cref="ContentEn"/>.</summary>
-    public string ContentAr { get; set; } = string.Empty;
+    /// <see cref="Content"/>.</summary>
+    public string ContentArabic { get; set; } = string.Empty;
 
     /// <summary>Soft-delete flag — hides the row from the public read
     /// endpoint without losing the editor's text.</summary>

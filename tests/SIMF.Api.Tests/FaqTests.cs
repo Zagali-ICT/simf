@@ -61,10 +61,10 @@ public sealed class FaqTests : IClassFixture<SimfApiFactory>
             new CreateFaqEntryRequest
             {
                 FaqGroupId = groupId,
-                QuestionEn = "How do I register?",
-                QuestionAr = "كيف أسجل؟",
-                AnswerEn = "Use the sign-up page.",
-                AnswerAr = "استخدم صفحة التسجيل.",
+                Question = "How do I register?",
+                QuestionArabic = "كيف أسجل؟",
+                Answer = "Use the sign-up page.",
+                AnswerArabic = "استخدم صفحة التسجيل.",
                 DisplayOrder = 1,
             }, token);
         Assert.Equal(HttpStatusCode.OK, addEntry.StatusCode);
@@ -73,7 +73,7 @@ public sealed class FaqTests : IClassFixture<SimfApiFactory>
             new GridQuery { Top = 200 }, token);
         var page = (await list.Content.ReadFromJsonAsync<ApiResult<GridPage<AdminFaqEntrySummary>>>())!.Data!;
         Assert.Single(page.Items);
-        Assert.Equal("How do I register?", page.Items[0].QuestionEn);
+        Assert.Equal("How do I register?", page.Items[0].Question);
 
         // The group's live entry count now reflects the entry.
         var get = await GetAuthAsync($"/api/v1/admin/faq/groups/{groupId}", token);
@@ -103,8 +103,8 @@ public sealed class FaqTests : IClassFixture<SimfApiFactory>
             new CreateFaqEntryRequest
             {
                 FaqGroupId = Guid.NewGuid(),
-                QuestionEn = "Q", QuestionAr = "س",
-                AnswerEn = "A", AnswerAr = "ج", DisplayOrder = 0,
+                Question = "Q", QuestionArabic = "س",
+                Answer = "A", AnswerArabic = "ج", DisplayOrder = 0,
             }, token);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }

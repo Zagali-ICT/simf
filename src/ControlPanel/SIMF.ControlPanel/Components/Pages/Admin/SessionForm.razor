@@ -308,7 +308,7 @@
             {
                 _categoriesById = envelope.Data.Items.ToDictionary(c => c.Id.ToString(), c => c);
                 _categoryIds = envelope.Data.Items
-                    .OrderBy(c => c.DisplayOrder).ThenBy(c => c.NameEn)
+                    .OrderBy(c => c.DisplayOrder).ThenBy(c => c.Name)
                     .Select(c => c.Id.ToString())
                     .ToArray();
             }
@@ -320,8 +320,8 @@
     {
         if (!_categoriesById.TryGetValue(id, out var c)) return id;
         return CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
-            ? c.NameAr
-            : c.NameEn;
+            ? c.NameArabic
+            : c.Name;
     }
 
     private void RefreshSpeakerOptions()

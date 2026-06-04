@@ -20,10 +20,10 @@ public class Country
     public string Code { get; set; } = string.Empty;
 
     /// <summary>English country name (1–128 chars).</summary>
-    public string NameEn { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>Arabic country name (1–128 chars).</summary>
-    public string NameAr { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
 
     /// <summary>E.164 country dial code with the leading "+" (≤ 8 chars,
     /// e.g. "+966", "+971"). Optional — some non-state territories don't

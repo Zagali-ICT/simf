@@ -411,8 +411,8 @@
 
     private static string CountryLabel(CountryDto c) =>
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
-            ? $"{c.NameAr} ({c.Code})"
-            : $"{c.NameEn} ({c.Code})";
+            ? $"{c.NameArabic} ({c.Code})"
+            : $"{c.Name} ({c.Code})";
 
     private static string InterestLabel(InterestDto i) =>
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar" ? i.NameArabic : i.Name;

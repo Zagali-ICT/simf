@@ -441,8 +441,8 @@ public sealed class IdentitySeeder(
             {
                 Id = Guid.NewGuid(),
                 Key = key,
-                ContentEn = en,
-                ContentAr = ar,
+                Content = en,
+                ContentArabic = ar,
                 IsActive = true,
                 LastUpdatedByUserId = actorUserId,
                 CreatedAt = now,

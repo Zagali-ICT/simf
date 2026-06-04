@@ -34,8 +34,8 @@ internal sealed class AdminCmsService(
             var term = query.Search.Trim();
             rows = rows.Where(b =>
                 EF.Functions.Like(b.Key, $"%{term}%")
-                || EF.Functions.Like(b.ContentEn, $"%{term}%")
-                || EF.Functions.Like(b.ContentAr, $"%{term}%"));
+                || EF.Functions.Like(b.Content, $"%{term}%")
+                || EF.Functions.Like(b.ContentArabic, $"%{term}%"));
         }
 
         // CP grid per-column filters (D-255). Unknown columns are ignored.
@@ -48,8 +48,8 @@ internal sealed class AdminCmsService(
                 case "key":
                     rows = rows.Where(b => b.Key.Contains(v));
                     break;
-                case "contenten":
-                    rows = rows.Where(b => b.ContentEn.Contains(v));
+                case "content":
+                    rows = rows.Where(b => b.Content.Contains(v));
                     break;
                 case "isactive":
                     if (bool.TryParse(v, out var isActive))
@@ -65,8 +65,8 @@ internal sealed class AdminCmsService(
         {
             ("key", true) => rows.OrderByDescending(b => b.Key),
             ("key", false) => rows.OrderBy(b => b.Key),
-            ("contenten", true) => rows.OrderByDescending(b => b.ContentEn),
-            ("contenten", false) => rows.OrderBy(b => b.ContentEn),
+            ("content", true) => rows.OrderByDescending(b => b.Content),
+            ("content", false) => rows.OrderBy(b => b.Content),
             ("lastupdatedat", true) => rows.OrderByDescending(b => b.LastUpdatedAt),
             ("lastupdatedat", false) => rows.OrderBy(b => b.LastUpdatedAt),
             _ => rows.OrderBy(b => b.Key),
@@ -76,7 +76,7 @@ internal sealed class AdminCmsService(
         var page = await rows
             .Skip(skip).Take(top)
             .Select(b => new AdminContentBlockSummary(
-                b.Id, b.Key, b.ContentEn, b.ContentAr, b.IsActive,
+                b.Id, b.Key, b.Content, b.ContentArabic, b.IsActive,
                 b.LastUpdatedAt, b.LastUpdatedByUserId))
             .ToListAsync(cancellationToken);
 
@@ -94,7 +94,7 @@ internal sealed class AdminCmsService(
         return row is null
             ? null
             : new AdminContentBlockSummary(
-                row.Id, row.Key, row.ContentEn, row.ContentAr, row.IsActive,
+                row.Id, row.Key, row.Content, row.ContentArabic, row.IsActive,
                 row.LastUpdatedAt, row.LastUpdatedByUserId);
     }
 
@@ -104,8 +104,8 @@ internal sealed class AdminCmsService(
         CancellationToken cancellationToken = default)
     {
         var key = NormaliseKey(request.Key);
-        var contentEn = (request.ContentEn ?? string.Empty);
-        var contentAr = (request.ContentAr ?? string.Empty);
+        var content = (request.Content ?? string.Empty);
+        var contentArabic = (request.ContentArabic ?? string.Empty);
 
         if (key.Length is < 2 or > 128)
         {
@@ -114,7 +114,7 @@ internal sealed class AdminCmsService(
                 "Content block key must be between 2 and 128 characters.",
                 "يجب أن يتراوح طول مفتاح المحتوى بين 2 و 128 حرفاً.");
         }
-        if (contentEn.Length > 8000 || contentAr.Length > 8000)
+        if (content.Length > 8000 || contentArabic.Length > 8000)
         {
             throw new ApiException(
                 ErrorCodes.ContentBlockInvalid, 400,
@@ -132,8 +132,8 @@ internal sealed class AdminCmsService(
             {
                 Id = Guid.NewGuid(),
                 Key = key,
-                ContentEn = contentEn,
-                ContentAr = contentAr,
+                Content = content,
+                ContentArabic = contentArabic,
                 IsActive = request.IsActive,
                 CreatedAt = now,
                 LastUpdatedAt = now,
@@ -143,8 +143,8 @@ internal sealed class AdminCmsService(
         }
         else
         {
-            existing.ContentEn = contentEn;
-            existing.ContentAr = contentAr;
+            existing.Content = content;
+            existing.ContentArabic = contentArabic;
             existing.IsActive = request.IsActive;
             existing.LastUpdatedAt = now;
             existing.LastUpdatedByUserId = actorUserId;
@@ -163,7 +163,7 @@ internal sealed class AdminCmsService(
             "Admin {Actor} upserted content block {Key}", actorUserId, key);
 
         return new AdminContentBlockSummary(
-            existing.Id, existing.Key, existing.ContentEn, existing.ContentAr,
+            existing.Id, existing.Key, existing.Content, existing.ContentArabic,
             existing.IsActive, existing.LastUpdatedAt, existing.LastUpdatedByUserId);
     }
 
@@ -207,8 +207,8 @@ internal sealed class AdminCmsService(
         {
             var term = query.Search.Trim();
             rows = rows.Where(b =>
-                EF.Functions.Like(b.TitleEn, $"%{term}%")
-                || EF.Functions.Like(b.TitleAr, $"%{term}%"));
+                EF.Functions.Like(b.Title, $"%{term}%")
+                || EF.Functions.Like(b.TitleArabic, $"%{term}%"));
         }
         // CP grid per-column filters (D-256). Unknown columns are ignored.
         foreach (var (column, raw) in query.Filters)
@@ -218,7 +218,7 @@ internal sealed class AdminCmsService(
             switch (column.ToLowerInvariant())
             {
                 case "title":
-                    rows = rows.Where(b => b.TitleEn.Contains(v) || b.TitleAr.Contains(v));
+                    rows = rows.Where(b => b.Title.Contains(v) || b.TitleArabic.Contains(v));
                     break;
                 case "isactive":
                     if (bool.TryParse(v, out var isActive))
@@ -232,8 +232,8 @@ internal sealed class AdminCmsService(
         // CP grid sortable columns (D-256). Default: DisplayOrder, then StartUtc.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("title", false) => rows.OrderBy(b => b.TitleEn),
-            ("title", true) => rows.OrderByDescending(b => b.TitleEn),
+            ("title", false) => rows.OrderBy(b => b.Title),
+            ("title", true) => rows.OrderByDescending(b => b.Title),
             ("startutc", false) => rows.OrderBy(b => b.StartUtc),
             ("startutc", true) => rows.OrderByDescending(b => b.StartUtc),
             ("endutc", false) => rows.OrderBy(b => b.EndUtc),
@@ -247,7 +247,7 @@ internal sealed class AdminCmsService(
         var page = await rows
             .Skip(skip).Take(top)
             .Select(b => new AdminBannerSummary(
-                b.Id, b.TitleEn, b.TitleAr,
+                b.Id, b.Title, b.TitleArabic,
                 b.StartUtc, b.EndUtc, b.DisplayOrder, b.IsActive, b.CreatedAt))
             .ToListAsync(cancellationToken);
 
@@ -269,18 +269,18 @@ internal sealed class AdminCmsService(
         CreateBannerRequest request,
         CancellationToken cancellationToken = default)
     {
-        ValidateBanner(request.TitleEn, request.TitleAr,
-            request.BodyEn, request.BodyAr, request.StartUtc, request.EndUtc,
+        ValidateBanner(request.Title, request.TitleArabic,
+            request.Body, request.BodyArabic, request.StartUtc, request.EndUtc,
             request.DisplayOrder);
 
         var now = timeProvider.GetUtcNow();
         var banner = new Banner
         {
             Id = Guid.NewGuid(),
-            TitleEn = request.TitleEn.Trim(),
-            TitleAr = request.TitleAr.Trim(),
-            BodyEn = request.BodyEn.Trim(),
-            BodyAr = request.BodyAr.Trim(),
+            Title = request.Title.Trim(),
+            TitleArabic = request.TitleArabic.Trim(),
+            Body = request.Body.Trim(),
+            BodyArabic = request.BodyArabic.Trim(),
             ImageUrl = NullIfBlank(request.ImageUrl),
             LinkUrl = NullIfBlank(request.LinkUrl),
             StartUtc = request.StartUtc,
@@ -307,8 +307,8 @@ internal sealed class AdminCmsService(
         Guid actorUserId, Guid id, UpdateBannerRequest request,
         CancellationToken cancellationToken = default)
     {
-        ValidateBanner(request.TitleEn, request.TitleAr,
-            request.BodyEn, request.BodyAr, request.StartUtc, request.EndUtc,
+        ValidateBanner(request.Title, request.TitleArabic,
+            request.Body, request.BodyArabic, request.StartUtc, request.EndUtc,
             request.DisplayOrder);
 
         var banner = await appDbContext.Banners
@@ -318,10 +318,10 @@ internal sealed class AdminCmsService(
                 "Banner not found.",
                 "لم يتم العثور على البانر.");
 
-        banner.TitleEn = request.TitleEn.Trim();
-        banner.TitleAr = request.TitleAr.Trim();
-        banner.BodyEn = request.BodyEn.Trim();
-        banner.BodyAr = request.BodyAr.Trim();
+        banner.Title = request.Title.Trim();
+        banner.TitleArabic = request.TitleArabic.Trim();
+        banner.Body = request.Body.Trim();
+        banner.BodyArabic = request.BodyArabic.Trim();
         banner.ImageUrl = NullIfBlank(request.ImageUrl);
         banner.LinkUrl = NullIfBlank(request.LinkUrl);
         banner.StartUtc = request.StartUtc;
@@ -378,19 +378,19 @@ internal sealed class AdminCmsService(
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private static void ValidateBanner(
-        string titleEn, string titleAr, string bodyEn, string bodyAr,
+        string title, string titleArabic, string body, string bodyArabic,
         DateTimeOffset startUtc, DateTimeOffset endUtc, int displayOrder)
     {
-        if (string.IsNullOrWhiteSpace(titleEn) || titleEn.Length > 256
-            || string.IsNullOrWhiteSpace(titleAr) || titleAr.Length > 256)
+        if (string.IsNullOrWhiteSpace(title) || title.Length > 256
+            || string.IsNullOrWhiteSpace(titleArabic) || titleArabic.Length > 256)
         {
             throw new ApiException(
                 ErrorCodes.BannerInvalid, 400,
                 "Banner title (EN + AR) must be between 1 and 256 characters.",
                 "يجب أن يتراوح طول العنوان (إنجليزي + عربي) بين 1 و 256 حرفاً.");
         }
-        if (string.IsNullOrWhiteSpace(bodyEn) || bodyEn.Length > 2000
-            || string.IsNullOrWhiteSpace(bodyAr) || bodyAr.Length > 2000)
+        if (string.IsNullOrWhiteSpace(body) || body.Length > 2000
+            || string.IsNullOrWhiteSpace(bodyArabic) || bodyArabic.Length > 2000)
         {
             throw new ApiException(
                 ErrorCodes.BannerInvalid, 400,
@@ -414,7 +414,7 @@ internal sealed class AdminCmsService(
     }
 
     private static AdminBannerDetail ToBannerDetail(Banner banner) =>
-        new(banner.Id, banner.TitleEn, banner.TitleAr, banner.BodyEn, banner.BodyAr,
+        new(banner.Id, banner.Title, banner.TitleArabic, banner.Body, banner.BodyArabic,
             banner.ImageUrl, banner.LinkUrl, banner.StartUtc, banner.EndUtc,
             banner.DisplayOrder, banner.IsActive, banner.CreatedAt, banner.UpdatedAt);
 }

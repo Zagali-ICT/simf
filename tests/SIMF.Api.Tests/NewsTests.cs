@@ -34,14 +34,14 @@ public sealed class NewsTests : IClassFixture<SimfApiFactory>
 
     private static CreateNewsRequest SampleCreate(string titleEn, DateTimeOffset? publishedAt = null) => new()
     {
-        TitleEn = titleEn,
-        TitleAr = "خبر",
-        ExcerptEn = "Short teaser.",
-        ExcerptAr = "مقتطف قصير.",
-        BodyEn = "Full article body text goes here.",
-        BodyAr = "نص الخبر الكامل هنا.",
-        CategoryEn = "NAVAL",
-        CategoryAr = "بحرية",
+        Title = titleEn,
+        TitleArabic = "خبر",
+        Excerpt = "Short teaser.",
+        ExcerptArabic = "مقتطف قصير.",
+        Body = "Full article body text goes here.",
+        BodyArabic = "نص الخبر الكامل هنا.",
+        Category = "NAVAL",
+        CategoryArabic = "بحرية",
         ImageRelativePath = "news/feature.jpg",
         PublishedAt = publishedAt ?? DateTimeOffset.UtcNow.AddMinutes(-5),
         DisplayOrder = 1,
@@ -58,13 +58,13 @@ public sealed class NewsTests : IClassFixture<SimfApiFactory>
 
         var created = await create.Content.ReadFromJsonAsync<ApiResult<AdminNewsDetail>>();
         created!.Success.Should().BeTrue();
-        created.Data!.TitleEn.Should().Be("RSNF commissions new frigate");
+        created.Data!.Title.Should().Be("RSNF commissions new frigate");
 
         var get = await GetAuthAsync($"/api/v1/admin/news/{created.Data.Id}", token);
         get.StatusCode.Should().Be(HttpStatusCode.OK);
         var fetched = await get.Content.ReadFromJsonAsync<ApiResult<AdminNewsDetail>>();
-        fetched!.Data!.BodyEn.Should().Be("Full article body text goes here.");
-        fetched.Data.ExcerptEn.Should().Be("Short teaser.");
+        fetched!.Data!.Body.Should().Be("Full article body text goes here.");
+        fetched.Data.Excerpt.Should().Be("Short teaser.");
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public sealed class NewsTests : IClassFixture<SimfApiFactory>
 
         var page = await list.Content.ReadFromJsonAsync<ApiResult<PublicNewsPage>>();
         page!.Success.Should().BeTrue();
-        page.Data!.Items.Should().Contain(i => i.TitleEn == "Speaker line-up announced");
+        page.Data!.Items.Should().Contain(i => i.Title == "Speaker line-up announced");
     }
 
     [Fact]
@@ -125,7 +125,7 @@ public sealed class NewsTests : IClassFixture<SimfApiFactory>
 
         var list = await _client.GetAsync("/api/v1/app/news");
         var page = await list.Content.ReadFromJsonAsync<ApiResult<PublicNewsPage>>();
-        page!.Data!.Items.Should().NotContain(i => i.TitleEn == "Embargoed announcement");
+        page!.Data!.Items.Should().NotContain(i => i.Title == "Embargoed announcement");
 
         // The public detail endpoint hides the not-yet-published article too.
         var detail = await _client.GetAsync($"/api/v1/app/news/{created!.Data!.Id}");
@@ -145,7 +145,7 @@ public sealed class NewsTests : IClassFixture<SimfApiFactory>
 
         var list = await _client.GetAsync("/api/v1/app/news");
         var page = await list.Content.ReadFromJsonAsync<ApiResult<PublicNewsPage>>();
-        page!.Data!.Items.Should().NotContain(i => i.TitleEn == "Press accreditation now open");
+        page!.Data!.Items.Should().NotContain(i => i.Title == "Press accreditation now open");
     }
 
     [Fact]

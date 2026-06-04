@@ -33,10 +33,10 @@ internal sealed class FaqEntryConfiguration : IEntityTypeConfiguration<FaqEntry>
         builder.ToTable("FaqEntries");
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.QuestionEn).HasMaxLength(512).IsRequired();
-        builder.Property(e => e.QuestionAr).HasMaxLength(512).IsRequired();
-        builder.Property(e => e.AnswerEn).HasMaxLength(4000).IsRequired();
-        builder.Property(e => e.AnswerAr).HasMaxLength(4000).IsRequired();
+        builder.Property(e => e.Question).HasMaxLength(512).IsRequired();
+        builder.Property(e => e.QuestionArabic).HasMaxLength(512).IsRequired();
+        builder.Property(e => e.Answer).HasMaxLength(4000).IsRequired();
+        builder.Property(e => e.AnswerArabic).HasMaxLength(4000).IsRequired();
 
         builder.HasIndex(e => new { e.FaqGroupId, e.IsActive, e.DisplayOrder });
     }

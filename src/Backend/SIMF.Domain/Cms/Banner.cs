@@ -15,11 +15,11 @@ namespace SIMF.Domain.Cms;
 /// </summary>
 public sealed class Banner : BaseAuditEntity
 {
-    public string TitleEn { get; set; } = string.Empty;
-    public string TitleAr { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string TitleArabic { get; set; } = string.Empty;
 
-    public string BodyEn { get; set; } = string.Empty;
-    public string BodyAr { get; set; } = string.Empty;
+    public string Body { get; set; } = string.Empty;
+    public string BodyArabic { get; set; } = string.Empty;
 
     /// <summary>Optional banner image URL. Free text — the editor
     /// can paste an absolute URL or a relative content path served

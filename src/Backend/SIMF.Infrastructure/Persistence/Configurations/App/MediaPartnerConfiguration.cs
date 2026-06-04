@@ -16,8 +16,8 @@ internal sealed class MediaPartnerConfiguration : IEntityTypeConfiguration<Media
         builder.ToTable("MediaPartners");
         builder.HasKey(m => m.Id);
 
-        builder.Property(m => m.NameEn).HasMaxLength(256).IsRequired();
-        builder.Property(m => m.NameAr).HasMaxLength(256).IsRequired();
+        builder.Property(m => m.Name).HasMaxLength(256).IsRequired();
+        builder.Property(m => m.NameArabic).HasMaxLength(256).IsRequired();
         builder.Property(m => m.LogoRelativePath).HasMaxLength(512);
         builder.Property(m => m.Url).HasMaxLength(512);
 

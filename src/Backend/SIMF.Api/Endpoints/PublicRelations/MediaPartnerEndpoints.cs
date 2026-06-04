@@ -95,8 +95,8 @@ public sealed class CreateMediaPartnerEndpoint(IAdminMediaPartnerService service
 public sealed class UpdateMediaPartnerRequest
 {
     public Guid Id { get; set; }
-    public string NameEn { get; set; } = string.Empty;
-    public string NameAr { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
     public string? LogoRelativePath { get; set; }
     public string? Url { get; set; }
     public int DisplayOrder { get; set; }
@@ -126,8 +126,8 @@ public sealed class UpdateMediaPartnerEndpoint(IAdminMediaPartnerService service
             await service.UpdateAsync(actorId, req.Id,
                 new AdminUpdateMediaPartnerRequest
                 {
-                    NameEn = req.NameEn,
-                    NameAr = req.NameAr,
+                    Name = req.Name,
+                    NameArabic = req.NameArabic,
                     LogoRelativePath = req.LogoRelativePath,
                     Url = req.Url,
                     DisplayOrder = req.DisplayOrder,

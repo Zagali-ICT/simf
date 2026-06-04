@@ -25,25 +25,25 @@ namespace SIMF.Domain.PublicRelations;
 /// </summary>
 public class News : BaseAuditEntity
 {
-    public string TitleEn { get; set; } = string.Empty;
-    public string TitleAr { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string TitleArabic { get; set; } = string.Empty;
 
     /// <summary>Optional short teaser shown on the news card (Mockup screen 29
     /// "news-excerpt"). Null when the editor leaves it blank; the app can then
     /// derive a teaser from the body.</summary>
-    public string? ExcerptEn { get; set; }
-    public string? ExcerptAr { get; set; }
+    public string? Excerpt { get; set; }
+    public string? ExcerptArabic { get; set; }
 
-    public string BodyEn { get; set; } = string.Empty;
-    public string BodyAr { get; set; } = string.Empty;
+    public string Body { get; set; } = string.Empty;
+    public string BodyArabic { get; set; } = string.Empty;
 
     /// <summary>Bilingual category kicker shown above the title
     /// (e.g. "NAVAL" / "EVENTS" in the mockup). Kept as inline text rather
     /// than a lookup FK to stay within the single-table D-199 scope; it can be
     /// promoted to a reference table later without changing the public payload
     /// shape.</summary>
-    public string CategoryEn { get; set; } = string.Empty;
-    public string CategoryAr { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public string CategoryArabic { get; set; } = string.Empty;
 
     /// <summary>Optional hero / card image, stored as a relative path under the
     /// configured media root (same convention as

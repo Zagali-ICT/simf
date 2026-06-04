@@ -60,8 +60,8 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
                 if (row.CountryId.HasValue
                     && countriesById.TryGetValue(row.CountryId.Value, out var country))
                 {
-                    en = country.NameEn;
-                    ar = country.NameAr;
+                    en = country.Name;
+                    ar = country.NameArabic;
                 }
                 return new PublicSpeakerSummary(
                     row.Id, row.Name, row.NameArabic, row.Rank,
@@ -115,10 +115,10 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
             var country = await dbContext.Countries
                 .AsNoTracking()
                 .Where(c => c.Id == countryId)
-                .Select(c => new { c.NameEn, c.NameAr })
+                .Select(c => new { c.Name, c.NameArabic })
                 .SingleOrDefaultAsync(cancellationToken);
-            countryNameEn = country?.NameEn;
-            countryNameAr = country?.NameAr;
+            countryNameEn = country?.Name;
+            countryNameAr = country?.NameArabic;
         }
 
         // The speaker's active sessions, via the SessionSpeaker join.
@@ -171,7 +171,7 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
             sessions);
     }
 
-    private async Task<IReadOnlyDictionary<int, (string NameEn, string NameAr)>>
+    private async Task<IReadOnlyDictionary<int, (string Name, string NameArabic)>>
         ResolveCountriesAsync(
             IEnumerable<int> countryIds, CancellationToken cancellationToken)
     {
@@ -183,10 +183,10 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
         return await dbContext.Countries
             .AsNoTracking()
             .Where(country => ids.Contains(country.Id))
-            .Select(country => new { country.Id, country.NameEn, country.NameAr })
+            .Select(country => new { country.Id, country.Name, country.NameArabic })
             .ToDictionaryAsync(
                 country => country.Id,
-                country => (country.NameEn, country.NameAr),
+                country => (country.Name, country.NameArabic),
                 cancellationToken);
     }
 }

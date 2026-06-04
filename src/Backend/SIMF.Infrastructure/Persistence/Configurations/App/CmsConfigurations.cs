@@ -15,8 +15,8 @@ internal sealed class ContentBlockConfiguration : IEntityTypeConfiguration<Conte
         builder.HasKey(b => b.Id);
 
         builder.Property(b => b.Key).HasMaxLength(128).IsRequired();
-        builder.Property(b => b.ContentEn).HasMaxLength(8000).IsRequired();
-        builder.Property(b => b.ContentAr).HasMaxLength(8000).IsRequired();
+        builder.Property(b => b.Content).HasMaxLength(8000).IsRequired();
+        builder.Property(b => b.ContentArabic).HasMaxLength(8000).IsRequired();
 
         builder.HasIndex(b => b.Key).IsUnique();
         builder.HasIndex(b => new { b.IsActive, b.LastUpdatedAt });
@@ -32,10 +32,10 @@ internal sealed class BannerConfiguration : IEntityTypeConfiguration<Banner>
         builder.ToTable("Banners");
         builder.HasKey(b => b.Id);
 
-        builder.Property(b => b.TitleEn).HasMaxLength(256).IsRequired();
-        builder.Property(b => b.TitleAr).HasMaxLength(256).IsRequired();
-        builder.Property(b => b.BodyEn).HasMaxLength(2000).IsRequired();
-        builder.Property(b => b.BodyAr).HasMaxLength(2000).IsRequired();
+        builder.Property(b => b.Title).HasMaxLength(256).IsRequired();
+        builder.Property(b => b.TitleArabic).HasMaxLength(256).IsRequired();
+        builder.Property(b => b.Body).HasMaxLength(2000).IsRequired();
+        builder.Property(b => b.BodyArabic).HasMaxLength(2000).IsRequired();
         builder.Property(b => b.ImageUrl).HasMaxLength(1024);
         builder.Property(b => b.LinkUrl).HasMaxLength(1024);
 

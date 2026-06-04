@@ -4,8 +4,8 @@ namespace SIMF.Contracts.Admin;
 public sealed record AdminContentBlockSummary(
     Guid Id,
     string Key,
-    string ContentEn,
-    string ContentAr,
+    string Content,
+    string ContentArabic,
     bool IsActive,
     DateTimeOffset LastUpdatedAt,
     Guid LastUpdatedByUserId);
@@ -15,16 +15,16 @@ public sealed record AdminContentBlockSummary(
 public sealed class UpsertContentBlockRequest
 {
     public string Key { get; set; } = string.Empty;
-    public string ContentEn { get; set; } = string.Empty;
-    public string ContentAr { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public string ContentArabic { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
 }
 
 /// <summary>D-173 — admin grid row over Banners.</summary>
 public sealed record AdminBannerSummary(
     Guid Id,
-    string TitleEn,
-    string TitleAr,
+    string Title,
+    string TitleArabic,
     DateTimeOffset StartUtc,
     DateTimeOffset EndUtc,
     int DisplayOrder,
@@ -33,10 +33,10 @@ public sealed record AdminBannerSummary(
 
 public sealed record AdminBannerDetail(
     Guid Id,
-    string TitleEn,
-    string TitleAr,
-    string BodyEn,
-    string BodyAr,
+    string Title,
+    string TitleArabic,
+    string Body,
+    string BodyArabic,
     string? ImageUrl,
     string? LinkUrl,
     DateTimeOffset StartUtc,
@@ -48,10 +48,10 @@ public sealed record AdminBannerDetail(
 
 public sealed class CreateBannerRequest
 {
-    public string TitleEn { get; set; } = string.Empty;
-    public string TitleAr { get; set; } = string.Empty;
-    public string BodyEn { get; set; } = string.Empty;
-    public string BodyAr { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string TitleArabic { get; set; } = string.Empty;
+    public string Body { get; set; } = string.Empty;
+    public string BodyArabic { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
     public string? LinkUrl { get; set; }
     public DateTimeOffset StartUtc { get; set; }
@@ -63,10 +63,10 @@ public sealed class CreateBannerRequest
 /// can carry an <c>Id</c> field (matches the D-168 pattern).</summary>
 public class UpdateBannerRequest
 {
-    public string TitleEn { get; set; } = string.Empty;
-    public string TitleAr { get; set; } = string.Empty;
-    public string BodyEn { get; set; } = string.Empty;
-    public string BodyAr { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string TitleArabic { get; set; } = string.Empty;
+    public string Body { get; set; } = string.Empty;
+    public string BodyArabic { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
     public string? LinkUrl { get; set; }
     public DateTimeOffset StartUtc { get; set; }

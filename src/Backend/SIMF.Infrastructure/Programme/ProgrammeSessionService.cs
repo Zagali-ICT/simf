@@ -65,8 +65,8 @@ internal sealed class ProgrammeSessionService(
                 session.Status,
                 // B9b — D-226: the session's category (dynamic lookup), if set.
                 session.CategoryId,
-                CategoryName = session.Category != null ? session.Category.NameEn : null,
-                CategoryNameArabic = session.Category != null ? session.Category.NameAr : null,
+                CategoryName = session.Category != null ? session.Category.Name : null,
+                CategoryNameArabic = session.Category != null ? session.Category.NameArabic : null,
                 // D-252 (Mockup screen 16/17): the body + ordered speaker cards, so
                 // the cached agenda payload also drives the session detail/preview
                 // without a second fetch.
@@ -125,8 +125,8 @@ internal sealed class ProgrammeSessionService(
                         if (speaker.CountryId.HasValue
                             && countriesById.TryGetValue(speaker.CountryId.Value, out var country))
                         {
-                            countryEn = country.NameEn;
-                            countryAr = country.NameAr;
+                            countryEn = country.Name;
+                            countryAr = country.NameArabic;
                         }
                         return new PublicSessionSpeaker(
                             speaker.Id,
@@ -221,8 +221,8 @@ internal sealed class ProgrammeSessionService(
                 if (link.Speaker!.CountryId is { } countryId
                     && detailCountries.TryGetValue(countryId, out var country))
                 {
-                    countryEn = country.NameEn;
-                    countryAr = country.NameAr;
+                    countryEn = country.Name;
+                    countryAr = country.NameArabic;
                 }
                 return new PublicSessionSpeaker(
                     link.Speaker!.Id,
@@ -259,8 +259,8 @@ internal sealed class ProgrammeSessionService(
             speakers,
             seats,
             session.CategoryId,
-            session.Category?.NameEn,
-            session.Category?.NameAr,
+            session.Category?.Name,
+            session.Category?.NameArabic,
             session.Status,
             session.PublishedAt,
             // P3.2b — D-232: the app shows a player only for a published
@@ -386,7 +386,7 @@ internal sealed class ProgrammeSessionService(
     // Speaker carries a CountryId FK but no Country navigation, so the
     // projection cannot dot through to the country in SQL (mirrors
     // PublicSpeakerService.ResolveCountriesAsync).
-    private async Task<IReadOnlyDictionary<int, (string NameEn, string NameAr)>>
+    private async Task<IReadOnlyDictionary<int, (string Name, string NameArabic)>>
         ResolveCountriesAsync(
             IEnumerable<int> countryIds, CancellationToken cancellationToken)
     {
@@ -398,10 +398,10 @@ internal sealed class ProgrammeSessionService(
         return await dbContext.Countries
             .AsNoTracking()
             .Where(country => ids.Contains(country.Id))
-            .Select(country => new { country.Id, country.NameEn, country.NameAr })
+            .Select(country => new { country.Id, country.Name, country.NameArabic })
             .ToDictionaryAsync(
                 country => country.Id,
-                country => (country.NameEn, country.NameAr),
+                country => (country.Name, country.NameArabic),
                 cancellationToken);
     }
 }

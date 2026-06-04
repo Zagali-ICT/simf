@@ -151,7 +151,7 @@
                         <option value="">@L["Admin.Delegations.Field.CountryNone"]</option>
                         @foreach (var country in _countries)
                         {
-                            <option value="@country.Id">@country.NameEn — @country.NameAr</option>
+                            <option value="@country.Id">@country.Name — @country.NameArabic</option>
                         }
                     </select>
                 </label>
@@ -246,7 +246,7 @@
         if (env is { Success: true, Data: not null })
         {
             _countries = env.Data.Items.Where(c => c.IsActive)
-                .OrderBy(c => c.DisplayOrder).ThenBy(c => c.NameEn).ToList();
+                .OrderBy(c => c.DisplayOrder).ThenBy(c => c.Name).ToList();
         }
         else
         {

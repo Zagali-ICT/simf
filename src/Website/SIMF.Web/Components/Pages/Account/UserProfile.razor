@@ -417,7 +417,7 @@
     {
         if (!_countriesByCode.TryGetValue(code, out var country)) return code;
         var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
-        return isArabic ? country.NameAr : country.NameEn;
+        return isArabic ? country.NameArabic : country.Name;
     }
 
     private static string InterestLabel(InterestDto interest)

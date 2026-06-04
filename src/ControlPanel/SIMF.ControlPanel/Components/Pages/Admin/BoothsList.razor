@@ -29,7 +29,7 @@
                       OnQueryChanged="OnQueryChangedAsync"
                       Multiselect="true"
                       RowKey="@(r => r.Id.ToString())"
-                      RowLabel="@(r => $"{r.Code} — {r.NameEn}")"
+                      RowLabel="@(r => $"{r.Code} — {r.Name}")"
                       Caption="@L["Admin.Booths.Title"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       OnAdd="OnAdd"
@@ -56,15 +56,15 @@
                                     Sortable="true" Filterable="true">
                     <CellTemplate>@context.Code</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminBoothSummary" Key="nameEn"
+                <SimfDataGridColumn TItem="AdminBoothSummary" Key="name"
                                     Header="@L["Admin.Booths.Col.NameEn"]"
                                     Sortable="true" Filterable="true">
-                    <CellTemplate>@context.NameEn</CellTemplate>
+                    <CellTemplate>@context.Name</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminBoothSummary" Key="nameAr"
+                <SimfDataGridColumn TItem="AdminBoothSummary" Key="nameArabic"
                                     Header="@L["Admin.Booths.Col.NameAr"]"
                                     Filterable="true">
-                    <CellTemplate>@context.NameAr</CellTemplate>
+                    <CellTemplate>@context.NameArabic</CellTemplate>
                 </SimfDataGridColumn>
                 @* Exhibitor is resolved client-side from the cached exhibitor
                    list (the summary carries only ExhibitorId), so this column
@@ -73,10 +73,10 @@
                                     Header="@L["Admin.Booths.Col.Exhibitor"]">
                     <CellTemplate>@ExhibitorName(context.ExhibitorId)</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminBoothSummary" Key="sectorEn"
+                <SimfDataGridColumn TItem="AdminBoothSummary" Key="sector"
                                     Header="@L["Admin.Booths.Col.SectorEn"]"
                                     Sortable="true" Filterable="true">
-                    <CellTemplate>@(context.SectorEn ?? "—")</CellTemplate>
+                    <CellTemplate>@(context.Sector ?? "—")</CellTemplate>
                 </SimfDataGridColumn>
                 @* Hall is resolved client-side from the cached hall list (the
                    summary carries only HallId), so this column is neither
@@ -121,15 +121,15 @@
                                MaxLength="16"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Booths.Field.NameEn"]"
-                               Value="@_form.NameEn"
-                               ValueChanged="@(v => _form.NameEn = v)"
-                               ValueExpression="@(() => _form.NameEn)"
+                               Value="@_form.Name"
+                               ValueChanged="@(v => _form.Name = v)"
+                               ValueExpression="@(() => _form.Name)"
                                MaxLength="128"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Booths.Field.NameAr"]"
-                               Value="@_form.NameAr"
-                               ValueChanged="@(v => _form.NameAr = v)"
-                               ValueExpression="@(() => _form.NameAr)"
+                               Value="@_form.NameArabic"
+                               ValueChanged="@(v => _form.NameArabic = v)"
+                               ValueExpression="@(() => _form.NameArabic)"
                                MaxLength="128"
                                Disabled="_busy" />
                 <label class="simf-field">
@@ -164,28 +164,28 @@
                                MaxLength="320"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Booths.Field.SectorEn"]"
-                               Value="@_form.SectorEn"
-                               ValueChanged="@(v => _form.SectorEn = v)"
-                               ValueExpression="@(() => _form.SectorEn)"
+                               Value="@_form.Sector"
+                               ValueChanged="@(v => _form.Sector = v)"
+                               ValueExpression="@(() => _form.Sector)"
                                MaxLength="128"
                                Disabled="_busy" />
                 <SimfTextField Label="@L["Admin.Booths.Field.SectorAr"]"
-                               Value="@_form.SectorAr"
-                               ValueChanged="@(v => _form.SectorAr = v)"
-                               ValueExpression="@(() => _form.SectorAr)"
+                               Value="@_form.SectorArabic"
+                               ValueChanged="@(v => _form.SectorArabic = v)"
+                               ValueExpression="@(() => _form.SectorArabic)"
                                MaxLength="128"
                                Disabled="_busy" />
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.Booths.Field.DescriptionEn"]</span>
                     <textarea class="simf-field__input" rows="3" maxlength="2048"
-                              value="@_form.DescriptionEn"
+                              value="@_form.Description"
                               @onchange="OnDescriptionEnChanged"
                               disabled="@_busy"></textarea>
                 </label>
                 <label class="simf-field">
                     <span class="simf-field__label">@L["Admin.Booths.Field.DescriptionAr"]</span>
                     <textarea class="simf-field__input" rows="3" maxlength="2048"
-                              value="@_form.DescriptionAr"
+                              value="@_form.DescriptionArabic"
                               @onchange="OnDescriptionArChanged"
                               disabled="@_busy"></textarea>
                 </label>
@@ -240,16 +240,16 @@
     private sealed class FormModel
     {
         public string Code { get; set; } = string.Empty;
-        public string NameEn { get; set; } = string.Empty;
-        public string NameAr { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string NameArabic { get; set; } = string.Empty;
         public Guid? ExhibitorId { get; set; }
         public string OfficerName { get; set; } = string.Empty;
         public string OfficerPhone { get; set; } = string.Empty;
         public string OfficerEmail { get; set; } = string.Empty;
-        public string SectorEn { get; set; } = string.Empty;
-        public string SectorAr { get; set; } = string.Empty;
-        public string DescriptionEn { get; set; } = string.Empty;
-        public string DescriptionAr { get; set; } = string.Empty;
+        public string Sector { get; set; } = string.Empty;
+        public string SectorArabic { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string DescriptionArabic { get; set; } = string.Empty;
         public Guid? HallId { get; set; }
         public double? MapX { get; set; }
         public double? MapY { get; set; }
@@ -409,16 +409,16 @@
                 _form = new FormModel
                 {
                     Code = d.Code,
-                    NameEn = d.NameEn,
-                    NameAr = d.NameAr,
+                    Name = d.Name,
+                    NameArabic = d.NameArabic,
                     ExhibitorId = d.ExhibitorId,
                     OfficerName = d.OfficerName ?? string.Empty,
                     OfficerPhone = d.OfficerPhone ?? string.Empty,
                     OfficerEmail = d.OfficerEmail ?? string.Empty,
-                    SectorEn = d.SectorEn ?? string.Empty,
-                    SectorAr = d.SectorAr ?? string.Empty,
-                    DescriptionEn = d.DescriptionEn ?? string.Empty,
-                    DescriptionAr = d.DescriptionAr ?? string.Empty,
+                    Sector = d.Sector ?? string.Empty,
+                    SectorArabic = d.SectorArabic ?? string.Empty,
+                    Description = d.Description ?? string.Empty,
+                    DescriptionArabic = d.DescriptionArabic ?? string.Empty,
                     HallId = d.HallId,
                     MapX = d.MapX,
                     MapY = d.MapY,
@@ -443,8 +443,8 @@
         // Required text guards (server-side FluentValidation is the source of
         // truth; this stops an obviously-empty submit round-trip).
         if (string.IsNullOrWhiteSpace(_form.Code)
-            || string.IsNullOrWhiteSpace(_form.NameEn)
-            || string.IsNullOrWhiteSpace(_form.NameAr))
+            || string.IsNullOrWhiteSpace(_form.Name)
+            || string.IsNullOrWhiteSpace(_form.NameArabic))
         {
             _toast = new Toast("error", L["Admin.Booths.Required"]);
             return;
@@ -462,16 +462,16 @@
                     new AdminUpdateBoothRequest
                     {
                         Code = _form.Code,
-                        NameEn = _form.NameEn,
-                        NameAr = _form.NameAr,
+                        Name = _form.Name,
+                        NameArabic = _form.NameArabic,
                         ExhibitorId = _form.ExhibitorId,
                         OfficerName = Trimmed(_form.OfficerName),
                         OfficerPhone = Trimmed(_form.OfficerPhone),
                         OfficerEmail = Trimmed(_form.OfficerEmail),
-                        SectorEn = Trimmed(_form.SectorEn),
-                        SectorAr = Trimmed(_form.SectorAr),
-                        DescriptionEn = Trimmed(_form.DescriptionEn),
-                        DescriptionAr = Trimmed(_form.DescriptionAr),
+                        Sector = Trimmed(_form.Sector),
+                        SectorArabic = Trimmed(_form.SectorArabic),
+                        Description = Trimmed(_form.Description),
+                        DescriptionArabic = Trimmed(_form.DescriptionArabic),
                         HallId = _form.HallId,
                         MapX = _form.MapX,
                         MapY = _form.MapY,
@@ -486,16 +486,16 @@
                     new AdminCreateBoothRequest
                     {
                         Code = _form.Code,
-                        NameEn = _form.NameEn,
-                        NameAr = _form.NameAr,
+                        Name = _form.Name,
+                        NameArabic = _form.NameArabic,
                         ExhibitorId = _form.ExhibitorId,
                         OfficerName = Trimmed(_form.OfficerName),
                         OfficerPhone = Trimmed(_form.OfficerPhone),
                         OfficerEmail = Trimmed(_form.OfficerEmail),
-                        SectorEn = Trimmed(_form.SectorEn),
-                        SectorAr = Trimmed(_form.SectorAr),
-                        DescriptionEn = Trimmed(_form.DescriptionEn),
-                        DescriptionAr = Trimmed(_form.DescriptionAr),
+                        Sector = Trimmed(_form.Sector),
+                        SectorArabic = Trimmed(_form.SectorArabic),
+                        Description = Trimmed(_form.Description),
+                        DescriptionArabic = Trimmed(_form.DescriptionArabic),
                         HallId = _form.HallId,
                         MapX = _form.MapX,
                         MapY = _form.MapY,
@@ -552,10 +552,10 @@
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private void OnDescriptionEnChanged(ChangeEventArgs e) =>
-        _form.DescriptionEn = e.Value?.ToString() ?? string.Empty;
+        _form.Description = e.Value?.ToString() ?? string.Empty;
 
     private void OnDescriptionArChanged(ChangeEventArgs e) =>
-        _form.DescriptionAr = e.Value?.ToString() ?? string.Empty;
+        _form.DescriptionArabic = e.Value?.ToString() ?? string.Empty;
 
     private void OnHallIdChanged(ChangeEventArgs e)
     {

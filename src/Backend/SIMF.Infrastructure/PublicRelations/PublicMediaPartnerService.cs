@@ -8,7 +8,7 @@ namespace SIMF.Infrastructure.PublicRelations;
 
 /// <summary>D-199 (Mockup page 31) — read-only public projection of active
 /// media partners for the mobile app + website. The service just returns
-/// active rows ordered by (DisplayOrder asc, NameAr asc). Mirrors
+/// active rows ordered by (DisplayOrder asc, NameArabic asc). Mirrors
 /// <c>PublicDelegationService</c>.</summary>
 internal sealed class PublicMediaPartnerService(SimfAppDbContext appDbContext)
     : IPublicMediaPartnerService
@@ -18,11 +18,11 @@ internal sealed class PublicMediaPartnerService(SimfAppDbContext appDbContext)
         var items = await appDbContext.MediaPartners.AsNoTracking()
             .Where(m => m.IsActive)
             .OrderBy(m => m.DisplayOrder)
-            .ThenBy(m => m.NameAr)
+            .ThenBy(m => m.NameArabic)
             .Select(m => new PublicMediaPartnerItem(
                 m.Id,
-                m.NameEn,
-                m.NameAr,
+                m.Name,
+                m.NameArabic,
                 m.LogoRelativePath,
                 m.Url,
                 m.DisplayOrder))

@@ -36,10 +36,10 @@ public sealed class AdminMediaTests : IClassFixture<SimfApiFactory>
             new AdminCreateMediaRequest
             {
                 Kind = MediaKind.Image,
-                TitleEn = "Opening ceremony",
-                TitleAr = "حفل الافتتاح",
-                AlbumEn = "Day 1",
-                AlbumAr = "اليوم الأول",
+                Title = "Opening ceremony",
+                TitleArabic = "حفل الافتتاح",
+                Album = "Day 1",
+                AlbumArabic = "اليوم الأول",
                 DisplayOrder = 5,
             },
             token);
@@ -53,8 +53,8 @@ public sealed class AdminMediaTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, get.StatusCode);
         var fetched = (await get.Content
             .ReadFromJsonAsync<ApiResult<AdminMediaDetail>>())!.Data!;
-        Assert.Equal("Opening ceremony", fetched.TitleEn);
-        Assert.Equal("Day 1", fetched.AlbumEn);
+        Assert.Equal("Opening ceremony", fetched.Title);
+        Assert.Equal("Day 1", fetched.Album);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class AdminMediaTests : IClassFixture<SimfApiFactory>
             new AdminCreateMediaRequest
             {
                 Kind = MediaKind.Video,
-                TitleEn = "Highlights",
+                Title = "Highlights",
                 DisplayOrder = 1,
             },
             token);
@@ -85,9 +85,9 @@ public sealed class AdminMediaTests : IClassFixture<SimfApiFactory>
             new AdminCreateMediaRequest
             {
                 Kind = MediaKind.Video,
-                TitleEn = "Panel",
+                Title = "Panel",
                 Url = "https://example.com/panel.mp4",
-                AlbumEn = album,
+                Album = album,
                 DisplayOrder = 3,
             },
             token);
@@ -99,9 +99,9 @@ public sealed class AdminMediaTests : IClassFixture<SimfApiFactory>
             new AdminUpdateMediaRequest
             {
                 Kind = MediaKind.Video,
-                TitleEn = "Panel (edited)",
+                Title = "Panel (edited)",
                 Url = "https://example.com/panel.mp4",
-                AlbumEn = album,
+                Album = album,
                 DisplayOrder = 4,
                 IsActive = true,
             },
@@ -125,7 +125,7 @@ public sealed class AdminMediaTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var create = await PostAuthAsync(
             "/api/v1/admin/media",
-            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "I", DisplayOrder = 1 },
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, Title = "I", DisplayOrder = 1 },
             token);
         var id = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminMediaDetail>>())!.Data!.Id;
@@ -146,9 +146,9 @@ public sealed class AdminMediaTests : IClassFixture<SimfApiFactory>
     {
         var token = await CreateAdministratorAndSignInAsync();
         await PostAuthAsync("/api/v1/admin/media",
-            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "A", DisplayOrder = 20 }, token);
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, Title = "A", DisplayOrder = 20 }, token);
         await PostAuthAsync("/api/v1/admin/media",
-            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "B", DisplayOrder = 10 }, token);
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, Title = "B", DisplayOrder = 10 }, token);
 
         var list = await PostAuthAsync("/api/v1/admin/media/list",
             new GridQuery { Top = 100 }, token);
@@ -165,7 +165,7 @@ public sealed class AdminMediaTests : IClassFixture<SimfApiFactory>
         var album = $"Img-{Guid.NewGuid():N}";
         var create = await PostAuthAsync(
             "/api/v1/admin/media",
-            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "withbytes", AlbumEn = album, DisplayOrder = 1 },
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, Title = "withbytes", Album = album, DisplayOrder = 1 },
             token);
         var id = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminMediaDetail>>())!.Data!.Id;
@@ -206,7 +206,7 @@ public sealed class AdminMediaTests : IClassFixture<SimfApiFactory>
     {
         var resp = await _client.PostAsJsonAsync(
             "/api/v1/admin/media",
-            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "X", DisplayOrder = 1 });
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, Title = "X", DisplayOrder = 1 });
         Assert.Equal(HttpStatusCode.Unauthorized, resp.StatusCode);
     }
 
@@ -216,7 +216,7 @@ public sealed class AdminMediaTests : IClassFixture<SimfApiFactory>
         var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
         var resp = await PostAuthAsync(
             "/api/v1/admin/media",
-            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "Y", DisplayOrder = 1 },
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, Title = "Y", DisplayOrder = 1 },
             tokens.AccessToken);
         Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
     }

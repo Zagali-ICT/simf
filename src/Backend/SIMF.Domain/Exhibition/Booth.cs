@@ -5,7 +5,7 @@ namespace SIMF.Domain.Exhibition;
 /// <summary>
 /// D-199 — one exhibition booth shown on Mockup page 22 (Booths) and fed
 /// into the 2D venue map. Bilingual like <c>Hall</c> / <c>Country</c>
-/// (NameEn / NameAr), soft-deleted via <see cref="IsActive"/>, and audited
+/// (Name / NameArabic), soft-deleted via <see cref="IsActive"/>, and audited
 /// through the row-audit trail by the admin service.
 ///
 /// <para><see cref="MapX"/> / <see cref="MapY"/> are the booth's normalised
@@ -30,15 +30,15 @@ public class Booth : BaseAuditEntity
 
     /// <summary>English booth name (1–128 chars), e.g. "Advanced Naval
     /// Technologies".</summary>
-    public string NameEn { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>Arabic booth name (1–128 chars).</summary>
-    public string NameAr { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
 
     /// <summary>B1 — D-222: the curated exhibitor, a real FK to
     /// <c>Exhibitor.Id</c> (same App DB). This is the source of truth for the
-    /// exhibitor; the public projection fills <see cref="ExhibitorNameEn"/> /
-    /// <see cref="ExhibitorNameAr"/> from the linked exhibitor when set.
+    /// exhibitor; the public projection fills <see cref="ExhibitorName"/> /
+    /// <see cref="ExhibitorNameArabic"/> from the linked exhibitor when set.
     /// Nullable — a booth may exist before its exhibitor is provisioned.</summary>
     public Guid? ExhibitorId { get; set; }
 
@@ -62,24 +62,24 @@ public class Booth : BaseAuditEntity
     /// fallback retained for the public wire contract (D-219) and pre-D-222
     /// rows; new booths source the exhibitor from <see cref="ExhibitorId"/>. Not
     /// settable from the admin write surface any more.</summary>
-    public string? ExhibitorNameEn { get; set; }
+    public string? ExhibitorName { get; set; }
 
     /// <summary>Arabic exhibitor / company name (≤ 256 chars). Legacy free-text
-    /// fallback — see <see cref="ExhibitorNameEn"/>.</summary>
-    public string? ExhibitorNameAr { get; set; }
+    /// fallback — see <see cref="ExhibitorName"/>.</summary>
+    public string? ExhibitorNameArabic { get; set; }
 
     /// <summary>English sector tag shown in the card header (≤ 128 chars),
     /// e.g. "Defense Systems". Optional.</summary>
-    public string? SectorEn { get; set; }
+    public string? Sector { get; set; }
 
     /// <summary>Arabic sector tag (≤ 128 chars). Optional.</summary>
-    public string? SectorAr { get; set; }
+    public string? SectorArabic { get; set; }
 
     /// <summary>English booth description paragraph (≤ 2048 chars). Optional.</summary>
-    public string? DescriptionEn { get; set; }
+    public string? Description { get; set; }
 
     /// <summary>Arabic booth description paragraph (≤ 2048 chars). Optional.</summary>
-    public string? DescriptionAr { get; set; }
+    public string? DescriptionArabic { get; set; }
 
     /// <summary>D-199 — optional real FK to <c>Hall.Id</c> (same App DB).
     /// Null when the booth has not yet been placed in a hall/zone.</summary>

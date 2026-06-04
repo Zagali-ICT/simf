@@ -7,16 +7,16 @@ namespace SIMF.Domain.PublicRelations;
 /// partner shown in the mobile app's media-partner grid. Each card renders a
 /// logo (<see cref="LogoRelativePath"/>) and, optionally, links out to the
 /// partner's site (<see cref="Url"/>). The public list is ordered by
-/// <see cref="DisplayOrder"/> ascending, tie-broken by <see cref="NameAr"/>.
+/// <see cref="DisplayOrder"/> ascending, tie-broken by <see cref="NameArabic"/>.
 /// </summary>
 public sealed class MediaPartner : BaseAuditEntity
 {
     /// <summary>English display name (1–256 chars).</summary>
-    public string NameEn { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>Arabic display name — the primary surface on the mobile app
     /// (1–256 chars).</summary>
-    public string NameAr { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
 
     /// <summary>Relative path to the partner's logo asset (e.g.
     /// "media-partners/cnn.png"), resolved against the app's static asset
@@ -30,7 +30,7 @@ public sealed class MediaPartner : BaseAuditEntity
     public string? Url { get; set; }
 
     /// <summary>Sort key on the public list — ascending. Tie-broken by
-    /// <see cref="NameAr"/>. (≥ 0.)</summary>
+    /// <see cref="NameArabic"/>. (≥ 0.)</summary>
     public int DisplayOrder { get; set; }
 
     /// <summary>SIMF-FDS-014 (D-260) — optional link to the shared <c>Contact</c>

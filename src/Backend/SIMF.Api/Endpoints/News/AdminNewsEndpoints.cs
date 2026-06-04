@@ -134,14 +134,14 @@ public sealed class CreateNewsValidator : Validator<CreateNewsRequest>
 {
     public CreateNewsValidator()
     {
-        RuleFor(x => x.TitleEn).NotEmpty().MaximumLength(200);
-        RuleFor(x => x.TitleAr).NotEmpty().MaximumLength(200);
-        RuleFor(x => x.ExcerptEn).MaximumLength(500);
-        RuleFor(x => x.ExcerptAr).MaximumLength(500);
-        RuleFor(x => x.BodyEn).NotEmpty().MaximumLength(8000);
-        RuleFor(x => x.BodyAr).NotEmpty().MaximumLength(8000);
-        RuleFor(x => x.CategoryEn).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.CategoryAr).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.TitleArabic).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Excerpt).MaximumLength(500);
+        RuleFor(x => x.ExcerptArabic).MaximumLength(500);
+        RuleFor(x => x.Body).NotEmpty().MaximumLength(8000);
+        RuleFor(x => x.BodyArabic).NotEmpty().MaximumLength(8000);
+        RuleFor(x => x.Category).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.CategoryArabic).NotEmpty().MaximumLength(100);
         RuleFor(x => x.ImageRelativePath).MaximumLength(512);
         RuleFor(x => x.DisplayOrder).GreaterThanOrEqualTo(0);
     }
@@ -151,14 +151,14 @@ public sealed class UpdateNewsValidator : Validator<UpdateNewsRoute>
 {
     public UpdateNewsValidator()
     {
-        RuleFor(x => x.TitleEn).NotEmpty().MaximumLength(200);
-        RuleFor(x => x.TitleAr).NotEmpty().MaximumLength(200);
-        RuleFor(x => x.ExcerptEn).MaximumLength(500);
-        RuleFor(x => x.ExcerptAr).MaximumLength(500);
-        RuleFor(x => x.BodyEn).NotEmpty().MaximumLength(8000);
-        RuleFor(x => x.BodyAr).NotEmpty().MaximumLength(8000);
-        RuleFor(x => x.CategoryEn).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.CategoryAr).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.TitleArabic).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Excerpt).MaximumLength(500);
+        RuleFor(x => x.ExcerptArabic).MaximumLength(500);
+        RuleFor(x => x.Body).NotEmpty().MaximumLength(8000);
+        RuleFor(x => x.BodyArabic).NotEmpty().MaximumLength(8000);
+        RuleFor(x => x.Category).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.CategoryArabic).NotEmpty().MaximumLength(100);
         RuleFor(x => x.ImageRelativePath).MaximumLength(512);
         RuleFor(x => x.DisplayOrder).GreaterThanOrEqualTo(0);
     }

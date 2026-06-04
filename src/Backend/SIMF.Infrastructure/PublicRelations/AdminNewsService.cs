@@ -41,10 +41,10 @@ internal sealed class AdminNewsService(
         {
             var term = query.Search.Trim();
             rows = rows.Where(news =>
-                EF.Functions.Like(news.TitleEn, $"%{term}%")
-                || EF.Functions.Like(news.TitleAr, $"%{term}%")
-                || EF.Functions.Like(news.CategoryEn, $"%{term}%")
-                || EF.Functions.Like(news.CategoryAr, $"%{term}%"));
+                EF.Functions.Like(news.Title, $"%{term}%")
+                || EF.Functions.Like(news.TitleArabic, $"%{term}%")
+                || EF.Functions.Like(news.Category, $"%{term}%")
+                || EF.Functions.Like(news.CategoryArabic, $"%{term}%"));
         }
 
         // CP grid per-column filters (D-255). Unknown columns are ignored.
@@ -55,17 +55,17 @@ internal sealed class AdminNewsService(
             var v = raw.Trim();
             switch (column.ToLowerInvariant())
             {
-                case "titleen":
-                    rows = rows.Where(news => news.TitleEn.Contains(v));
+                case "title":
+                    rows = rows.Where(news => news.Title.Contains(v));
                     break;
-                case "titlear":
-                    rows = rows.Where(news => news.TitleAr.Contains(v));
+                case "titlearabic":
+                    rows = rows.Where(news => news.TitleArabic.Contains(v));
                     break;
-                case "categoryen":
-                    rows = rows.Where(news => news.CategoryEn.Contains(v));
+                case "category":
+                    rows = rows.Where(news => news.Category.Contains(v));
                     break;
-                case "categoryar":
-                    rows = rows.Where(news => news.CategoryAr.Contains(v));
+                case "categoryarabic":
+                    rows = rows.Where(news => news.CategoryArabic.Contains(v));
                     break;
                 case "isactive":
                     if (bool.TryParse(v, out var isActive))
@@ -78,8 +78,8 @@ internal sealed class AdminNewsService(
 
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("titleen", true) => rows.OrderByDescending(news => news.TitleEn),
-            ("titleen", false) => rows.OrderBy(news => news.TitleEn),
+            ("title", true) => rows.OrderByDescending(news => news.Title),
+            ("title", false) => rows.OrderBy(news => news.Title),
             ("displayorder", true) => rows.OrderByDescending(news => news.DisplayOrder),
             ("displayorder", false) => rows.OrderBy(news => news.DisplayOrder),
             ("publishedat", false) => rows.OrderBy(news => news.PublishedAt),
@@ -93,10 +93,10 @@ internal sealed class AdminNewsService(
             .Take(top)
             .Select(news => new AdminNewsSummary(
                 news.Id,
-                news.TitleEn,
-                news.TitleAr,
-                news.CategoryEn,
-                news.CategoryAr,
+                news.Title,
+                news.TitleArabic,
+                news.Category,
+                news.CategoryArabic,
                 news.PublishedAt,
                 news.DisplayOrder,
                 news.IsActive,
@@ -121,35 +121,35 @@ internal sealed class AdminNewsService(
         CancellationToken cancellationToken = default)
     {
         var draft = Validate(
-            request.TitleEn, request.TitleAr,
-            request.ExcerptEn, request.ExcerptAr,
-            request.BodyEn, request.BodyAr,
-            request.CategoryEn, request.CategoryAr,
+            request.Title, request.TitleArabic,
+            request.Excerpt, request.ExcerptArabic,
+            request.Body, request.BodyArabic,
+            request.Category, request.CategoryArabic,
             request.ImageRelativePath, request.DisplayOrder);
 
         var clash = await dbContext.News
             .AsNoTracking()
-            .AnyAsync(news => news.TitleEn == draft.TitleEn, cancellationToken);
+            .AnyAsync(news => news.Title == draft.Title, cancellationToken);
         if (clash)
         {
             throw new ApiException(
                 ErrorCodes.NewsTitleDuplicate, 409,
-                $"A news article with the English title '{draft.TitleEn}' already exists.",
-                $"يوجد خبر بالعنوان الإنجليزي '{draft.TitleEn}' بالفعل.");
+                $"A news article with the English title '{draft.Title}' already exists.",
+                $"يوجد خبر بالعنوان الإنجليزي '{draft.Title}' بالفعل.");
         }
 
         var now = timeProvider.GetUtcNow();
         var news = new News
         {
             Id = Guid.NewGuid(),
-            TitleEn = draft.TitleEn,
-            TitleAr = draft.TitleAr,
-            ExcerptEn = draft.ExcerptEn,
-            ExcerptAr = draft.ExcerptAr,
-            BodyEn = draft.BodyEn,
-            BodyAr = draft.BodyAr,
-            CategoryEn = draft.CategoryEn,
-            CategoryAr = draft.CategoryAr,
+            Title = draft.Title,
+            TitleArabic = draft.TitleArabic,
+            Excerpt = draft.Excerpt,
+            ExcerptArabic = draft.ExcerptArabic,
+            Body = draft.Body,
+            BodyArabic = draft.BodyArabic,
+            Category = draft.Category,
+            CategoryArabic = draft.CategoryArabic,
             ImageRelativePath = draft.ImageRelativePath,
             PublishedAt = request.PublishedAt,
             DisplayOrder = draft.DisplayOrder,
@@ -164,12 +164,12 @@ internal sealed class AdminNewsService(
             EventType = AuditEvents.NewsCreated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={news.Id}; titleEn={news.TitleEn}",
+            Detail = $"id={news.Id}; title={news.Title}",
         }, cancellationToken);
 
         logger.LogInformation(
-            "Admin {ActorId} created News {TitleEn} ({Id})",
-            actorUserId, news.TitleEn, news.Id);
+            "Admin {ActorId} created News {Title} ({Id})",
+            actorUserId, news.Title, news.Id);
 
         return ToDetail(news);
     }
@@ -188,34 +188,34 @@ internal sealed class AdminNewsService(
                 "لم يتم العثور على الخبر.");
 
         var draft = Validate(
-            request.TitleEn, request.TitleAr,
-            request.ExcerptEn, request.ExcerptAr,
-            request.BodyEn, request.BodyAr,
-            request.CategoryEn, request.CategoryAr,
+            request.Title, request.TitleArabic,
+            request.Excerpt, request.ExcerptArabic,
+            request.Body, request.BodyArabic,
+            request.Category, request.CategoryArabic,
             request.ImageRelativePath, request.DisplayOrder);
 
-        if (!string.Equals(news.TitleEn, draft.TitleEn, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(news.Title, draft.Title, StringComparison.OrdinalIgnoreCase))
         {
             var clash = await dbContext.News
                 .AsNoTracking()
-                .AnyAsync(row => row.Id != id && row.TitleEn == draft.TitleEn, cancellationToken);
+                .AnyAsync(row => row.Id != id && row.Title == draft.Title, cancellationToken);
             if (clash)
             {
                 throw new ApiException(
                     ErrorCodes.NewsTitleDuplicate, 409,
-                    $"A news article with the English title '{draft.TitleEn}' already exists.",
-                    $"يوجد خبر بالعنوان الإنجليزي '{draft.TitleEn}' بالفعل.");
+                    $"A news article with the English title '{draft.Title}' already exists.",
+                    $"يوجد خبر بالعنوان الإنجليزي '{draft.Title}' بالفعل.");
             }
         }
 
-        news.TitleEn = draft.TitleEn;
-        news.TitleAr = draft.TitleAr;
-        news.ExcerptEn = draft.ExcerptEn;
-        news.ExcerptAr = draft.ExcerptAr;
-        news.BodyEn = draft.BodyEn;
-        news.BodyAr = draft.BodyAr;
-        news.CategoryEn = draft.CategoryEn;
-        news.CategoryAr = draft.CategoryAr;
+        news.Title = draft.Title;
+        news.TitleArabic = draft.TitleArabic;
+        news.Excerpt = draft.Excerpt;
+        news.ExcerptArabic = draft.ExcerptArabic;
+        news.Body = draft.Body;
+        news.BodyArabic = draft.BodyArabic;
+        news.Category = draft.Category;
+        news.CategoryArabic = draft.CategoryArabic;
         news.ImageRelativePath = draft.ImageRelativePath;
         news.PublishedAt = request.PublishedAt;
         news.DisplayOrder = draft.DisplayOrder;
@@ -228,7 +228,7 @@ internal sealed class AdminNewsService(
             EventType = AuditEvents.NewsUpdated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={news.Id}; titleEn={news.TitleEn}; active={news.IsActive}",
+            Detail = $"id={news.Id}; title={news.Title}; active={news.IsActive}",
         }, cancellationToken);
 
         return ToDetail(news);
@@ -257,33 +257,33 @@ internal sealed class AdminNewsService(
             EventType = AuditEvents.NewsDeactivated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"id={news.Id}; titleEn={news.TitleEn}",
+            Detail = $"id={news.Id}; title={news.Title}",
         }, cancellationToken);
     }
 
     private sealed record NewsDraft(
-        string TitleEn, string TitleAr,
-        string? ExcerptEn, string? ExcerptAr,
-        string BodyEn, string BodyAr,
-        string CategoryEn, string CategoryAr,
+        string Title, string TitleArabic,
+        string? Excerpt, string? ExcerptArabic,
+        string Body, string BodyArabic,
+        string Category, string CategoryArabic,
         string? ImageRelativePath, int DisplayOrder);
 
     private static NewsDraft Validate(
-        string? titleEnRaw, string? titleArRaw,
-        string? excerptEnRaw, string? excerptArRaw,
-        string? bodyEnRaw, string? bodyArRaw,
-        string? categoryEnRaw, string? categoryArRaw,
+        string? titleRaw, string? titleArabicRaw,
+        string? excerptRaw, string? excerptArabicRaw,
+        string? bodyRaw, string? bodyArabicRaw,
+        string? categoryRaw, string? categoryArabicRaw,
         string? imagePathRaw, int displayOrderRaw)
     {
-        var titleEn = RequireText(titleEnRaw, TitleMaxLength, "English title", "العنوان الإنجليزي");
-        var titleAr = RequireText(titleArRaw, TitleMaxLength, "Arabic title", "العنوان العربي");
-        var bodyEn = RequireText(bodyEnRaw, BodyMaxLength, "English body", "النص الإنجليزي");
-        var bodyAr = RequireText(bodyArRaw, BodyMaxLength, "Arabic body", "النص العربي");
-        var categoryEn = RequireText(categoryEnRaw, CategoryMaxLength, "English category", "التصنيف الإنجليزي");
-        var categoryAr = RequireText(categoryArRaw, CategoryMaxLength, "Arabic category", "التصنيف العربي");
+        var title = RequireText(titleRaw, TitleMaxLength, "English title", "العنوان الإنجليزي");
+        var titleArabic = RequireText(titleArabicRaw, TitleMaxLength, "Arabic title", "العنوان العربي");
+        var body = RequireText(bodyRaw, BodyMaxLength, "English body", "النص الإنجليزي");
+        var bodyArabic = RequireText(bodyArabicRaw, BodyMaxLength, "Arabic body", "النص العربي");
+        var category = RequireText(categoryRaw, CategoryMaxLength, "English category", "التصنيف الإنجليزي");
+        var categoryArabic = RequireText(categoryArabicRaw, CategoryMaxLength, "Arabic category", "التصنيف العربي");
 
-        var excerptEn = OptionalText(excerptEnRaw, ExcerptMaxLength, "English excerpt", "المقتطف الإنجليزي");
-        var excerptAr = OptionalText(excerptArRaw, ExcerptMaxLength, "Arabic excerpt", "المقتطف العربي");
+        var excerpt = OptionalText(excerptRaw, ExcerptMaxLength, "English excerpt", "المقتطف الإنجليزي");
+        var excerptArabic = OptionalText(excerptArabicRaw, ExcerptMaxLength, "Arabic excerpt", "المقتطف العربي");
         var imagePath = OptionalText(imagePathRaw, ImagePathMaxLength, "image path", "مسار الصورة");
 
         if (displayOrderRaw < 0)
@@ -295,8 +295,8 @@ internal sealed class AdminNewsService(
         }
 
         return new NewsDraft(
-            titleEn, titleAr, excerptEn, excerptAr,
-            bodyEn, bodyAr, categoryEn, categoryAr, imagePath, displayOrderRaw);
+            title, titleArabic, excerpt, excerptArabic,
+            body, bodyArabic, category, categoryArabic, imagePath, displayOrderRaw);
     }
 
     private static string RequireText(string? raw, int maxLength, string fieldEn, string fieldAr)
@@ -335,10 +335,10 @@ internal sealed class AdminNewsService(
 
     private static AdminNewsDetail ToDetail(News news) =>
         new(news.Id,
-            news.TitleEn, news.TitleAr,
-            news.ExcerptEn, news.ExcerptAr,
-            news.BodyEn, news.BodyAr,
-            news.CategoryEn, news.CategoryAr,
+            news.Title, news.TitleArabic,
+            news.Excerpt, news.ExcerptArabic,
+            news.Body, news.BodyArabic,
+            news.Category, news.CategoryArabic,
             news.ImageRelativePath,
             news.PublishedAt, news.DisplayOrder, news.IsActive,
             news.CreatedAt, news.UpdatedAt);

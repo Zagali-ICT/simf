@@ -4,8 +4,8 @@ namespace SIMF.Contracts.Cms;
 /// content block. Served by <c>GET /api/v1/content/{key}</c>.</summary>
 public sealed record PublicContentBlock(
     string Key,
-    string ContentEn,
-    string ContentAr,
+    string Content,
+    string ContentArabic,
     DateTimeOffset LastUpdatedAt);
 
 /// <summary>D-173 — batch read response.</summary>
@@ -21,10 +21,10 @@ public sealed class PublicContentBlockBatchRequest
 /// <summary>D-173 — public banner payload (anonymous read).</summary>
 public sealed record PublicBanner(
     Guid Id,
-    string TitleEn,
-    string TitleAr,
-    string BodyEn,
-    string BodyAr,
+    string Title,
+    string TitleArabic,
+    string Body,
+    string BodyArabic,
     string? ImageUrl,
     string? LinkUrl,
     DateTimeOffset StartUtc,

@@ -6,12 +6,12 @@ public sealed class PublicBoothSummary
 {
     public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
-    public string NameEn { get; set; } = string.Empty;
-    public string NameAr { get; set; } = string.Empty;
-    public string? ExhibitorNameEn { get; set; }
-    public string? ExhibitorNameAr { get; set; }
-    public string? SectorEn { get; set; }
-    public string? SectorAr { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
+    public string? ExhibitorName { get; set; }
+    public string? ExhibitorNameArabic { get; set; }
+    public string? Sector { get; set; }
+    public string? SectorArabic { get; set; }
     public Guid? HallId { get; set; }
     public double? MapX { get; set; }
     public double? MapY { get; set; }
@@ -22,14 +22,14 @@ public sealed class PublicBoothDetail
 {
     public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
-    public string NameEn { get; set; } = string.Empty;
-    public string NameAr { get; set; } = string.Empty;
-    public string? ExhibitorNameEn { get; set; }
-    public string? ExhibitorNameAr { get; set; }
-    public string? SectorEn { get; set; }
-    public string? SectorAr { get; set; }
-    public string? DescriptionEn { get; set; }
-    public string? DescriptionAr { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
+    public string? ExhibitorName { get; set; }
+    public string? ExhibitorNameArabic { get; set; }
+    public string? Sector { get; set; }
+    public string? SectorArabic { get; set; }
+    public string? Description { get; set; }
+    public string? DescriptionArabic { get; set; }
     public Guid? HallId { get; set; }
     public double? MapX { get; set; }
     public double? MapY { get; set; }
@@ -42,10 +42,10 @@ public sealed class AdminBoothSummary
 {
     public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
-    public string NameEn { get; set; } = string.Empty;
-    public string NameAr { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
     public Guid? ExhibitorId { get; set; }
-    public string? SectorEn { get; set; }
+    public string? Sector { get; set; }
     public Guid? HallId { get; set; }
     public bool IsActive { get; set; }
 }
@@ -57,16 +57,16 @@ public sealed class AdminBoothDetail
 {
     public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
-    public string NameEn { get; set; } = string.Empty;
-    public string NameAr { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
     public Guid? ExhibitorId { get; set; }
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
-    public string? SectorEn { get; set; }
-    public string? SectorAr { get; set; }
-    public string? DescriptionEn { get; set; }
-    public string? DescriptionAr { get; set; }
+    public string? Sector { get; set; }
+    public string? SectorArabic { get; set; }
+    public string? Description { get; set; }
+    public string? DescriptionArabic { get; set; }
     public Guid? HallId { get; set; }
     public double? MapX { get; set; }
     public double? MapY { get; set; }
@@ -78,16 +78,16 @@ public sealed class AdminBoothDetail
 public sealed class AdminCreateBoothRequest
 {
     public string Code { get; set; } = string.Empty;
-    public string NameEn { get; set; } = string.Empty;
-    public string NameAr { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
     public Guid? ExhibitorId { get; set; }
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
-    public string? SectorEn { get; set; }
-    public string? SectorAr { get; set; }
-    public string? DescriptionEn { get; set; }
-    public string? DescriptionAr { get; set; }
+    public string? Sector { get; set; }
+    public string? SectorArabic { get; set; }
+    public string? Description { get; set; }
+    public string? DescriptionArabic { get; set; }
     public Guid? HallId { get; set; }
     public double? MapX { get; set; }
     public double? MapY { get; set; }
@@ -98,16 +98,16 @@ public sealed class AdminCreateBoothRequest
 public sealed class AdminUpdateBoothRequest
 {
     public string Code { get; set; } = string.Empty;
-    public string NameEn { get; set; } = string.Empty;
-    public string NameAr { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string NameArabic { get; set; } = string.Empty;
     public Guid? ExhibitorId { get; set; }
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
-    public string? SectorEn { get; set; }
-    public string? SectorAr { get; set; }
-    public string? DescriptionEn { get; set; }
-    public string? DescriptionAr { get; set; }
+    public string? Sector { get; set; }
+    public string? SectorArabic { get; set; }
+    public string? Description { get; set; }
+    public string? DescriptionArabic { get; set; }
     public Guid? HallId { get; set; }
     public double? MapX { get; set; }
     public double? MapY { get; set; }

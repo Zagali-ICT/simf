@@ -32,10 +32,10 @@ public sealed class UpdateFaqGroupRequest
 public sealed record AdminFaqEntrySummary(
     Guid Id,
     Guid FaqGroupId,
-    string QuestionEn,
-    string QuestionAr,
-    string AnswerEn,
-    string AnswerAr,
+    string Question,
+    string QuestionArabic,
+    string Answer,
+    string AnswerArabic,
     int DisplayOrder,
     bool IsActive,
     DateTimeOffset CreatedAt);
@@ -43,19 +43,19 @@ public sealed record AdminFaqEntrySummary(
 public sealed class CreateFaqEntryRequest
 {
     public Guid FaqGroupId { get; set; }
-    public string QuestionEn { get; set; } = string.Empty;
-    public string QuestionAr { get; set; } = string.Empty;
-    public string AnswerEn { get; set; } = string.Empty;
-    public string AnswerAr { get; set; } = string.Empty;
+    public string Question { get; set; } = string.Empty;
+    public string QuestionArabic { get; set; } = string.Empty;
+    public string Answer { get; set; } = string.Empty;
+    public string AnswerArabic { get; set; } = string.Empty;
     public int DisplayOrder { get; set; }
 }
 
 public sealed class UpdateFaqEntryRequest
 {
-    public string QuestionEn { get; set; } = string.Empty;
-    public string QuestionAr { get; set; } = string.Empty;
-    public string AnswerEn { get; set; } = string.Empty;
-    public string AnswerAr { get; set; } = string.Empty;
+    public string Question { get; set; } = string.Empty;
+    public string QuestionArabic { get; set; } = string.Empty;
+    public string Answer { get; set; } = string.Empty;
+    public string AnswerArabic { get; set; } = string.Empty;
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
 }

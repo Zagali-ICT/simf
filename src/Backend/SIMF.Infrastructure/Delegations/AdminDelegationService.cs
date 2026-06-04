@@ -49,7 +49,7 @@ internal sealed class AdminDelegationService(
                     break;
                 case "country":
                     rows = rows.Where(d => d.Country != null
-                        && (d.Country.NameEn.Contains(v) || d.Country.NameAr.Contains(v)));
+                        && (d.Country.Name.Contains(v) || d.Country.NameArabic.Contains(v)));
                     break;
                 case "isactive":
                     if (bool.TryParse(v, out var isActive))
@@ -74,8 +74,8 @@ internal sealed class AdminDelegationService(
             ("name", true) => rows.OrderByDescending(d => d.Name),
             ("namearabic", true) => rows.OrderByDescending(d => d.NameArabic),
             ("namearabic", false) => rows.OrderBy(d => d.NameArabic),
-            ("country", false) => rows.OrderBy(d => d.Country != null ? d.Country.NameEn : null),
-            ("country", true) => rows.OrderByDescending(d => d.Country != null ? d.Country.NameEn : null),
+            ("country", false) => rows.OrderBy(d => d.Country != null ? d.Country.Name : null),
+            ("country", true) => rows.OrderByDescending(d => d.Country != null ? d.Country.Name : null),
             ("membercount", false) => rows.OrderBy(d => d.MemberCount),
             ("membercount", true) => rows.OrderByDescending(d => d.MemberCount),
             ("ispriority", false) => rows.OrderBy(d => d.IsPriority),
@@ -92,8 +92,8 @@ internal sealed class AdminDelegationService(
             .Skip(skip).Take(top)
             .Select(d => new AdminDelegationSummary(
                 d.Id, d.Name, d.NameArabic, d.CountryId,
-                d.Country != null ? d.Country.NameEn : null,
-                d.Country != null ? d.Country.NameAr : null,
+                d.Country != null ? d.Country.Name : null,
+                d.Country != null ? d.Country.NameArabic : null,
                 d.MemberCount, d.IsPriority, d.IsInternational,
                 d.DisplayOrder, d.IsActive, d.CreatedAt))
             .ToListAsync(cancellationToken);
@@ -109,8 +109,8 @@ internal sealed class AdminDelegationService(
             .Where(d => d.Id == id)
             .Select(d => new AdminDelegationSummary(
                 d.Id, d.Name, d.NameArabic, d.CountryId,
-                d.Country != null ? d.Country.NameEn : null,
-                d.Country != null ? d.Country.NameAr : null,
+                d.Country != null ? d.Country.Name : null,
+                d.Country != null ? d.Country.NameArabic : null,
                 d.MemberCount, d.IsPriority, d.IsInternational,
                 d.DisplayOrder, d.IsActive, d.CreatedAt))
             .SingleOrDefaultAsync(cancellationToken);

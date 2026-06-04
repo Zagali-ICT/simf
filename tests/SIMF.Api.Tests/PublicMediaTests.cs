@@ -35,11 +35,11 @@ public sealed class PublicMediaTests : IClassFixture<SimfApiFactory>
         var album = $"PubAlbum-{Guid.NewGuid():N}";
 
         await PostAuthAsync("/api/v1/admin/media",
-            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "second", AlbumEn = album, DisplayOrder = 20 }, token);
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, Title = "second", Album = album, DisplayOrder = 20 }, token);
         await PostAuthAsync("/api/v1/admin/media",
-            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "first", AlbumEn = album, DisplayOrder = 10 }, token);
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, Title = "first", Album = album, DisplayOrder = 10 }, token);
         var inactive = await PostAuthAsync("/api/v1/admin/media",
-            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "hidden", AlbumEn = album, DisplayOrder = 1 }, token);
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, Title = "hidden", Album = album, DisplayOrder = 1 }, token);
         var inactiveId = (await inactive.Content
             .ReadFromJsonAsync<ApiResult<AdminMediaDetail>>())!.Data!.Id;
         var del = await DeleteAuthAsync($"/api/v1/admin/media/{inactiveId}", token);
@@ -54,8 +54,8 @@ public sealed class PublicMediaTests : IClassFixture<SimfApiFactory>
 
         Assert.Equal(2, page.Data!.Items.Count);
         Assert.DoesNotContain(page.Data.Items, i => i.Id == inactiveId);
-        Assert.Equal("first", page.Data.Items[0].TitleEn);
-        Assert.Equal("second", page.Data.Items[1].TitleEn);
+        Assert.Equal("first", page.Data.Items[0].Title);
+        Assert.Equal("second", page.Data.Items[1].Title);
     }
 
     [Fact]
@@ -66,16 +66,16 @@ public sealed class PublicMediaTests : IClassFixture<SimfApiFactory>
         var albumB = $"B-{Guid.NewGuid():N}";
 
         await PostAuthAsync("/api/v1/admin/media",
-            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "in-a", AlbumEn = albumA, DisplayOrder = 1 }, token);
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, Title = "in-a", Album = albumA, DisplayOrder = 1 }, token);
         await PostAuthAsync("/api/v1/admin/media",
-            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "in-b", AlbumEn = albumB, DisplayOrder = 1 }, token);
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, Title = "in-b", Album = albumB, DisplayOrder = 1 }, token);
 
         var resp = await _client.GetAsync($"/api/v1/app/media?album={albumA}&top=100");
         var page = (await resp.Content
             .ReadFromJsonAsync<ApiResult<PublicMediaPage>>())!.Data!;
-        Assert.All(page.Items, i => Assert.Equal(albumA, i.AlbumEn));
-        Assert.Contains(page.Items, i => i.TitleEn == "in-a");
-        Assert.DoesNotContain(page.Items, i => i.TitleEn == "in-b");
+        Assert.All(page.Items, i => Assert.Equal(albumA, i.Album));
+        Assert.Contains(page.Items, i => i.Title == "in-a");
+        Assert.DoesNotContain(page.Items, i => i.Title == "in-b");
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public sealed class PublicMediaTests : IClassFixture<SimfApiFactory>
         var token = await CreateAdministratorAndSignInAsync();
         var album = $"NoBytes-{Guid.NewGuid():N}";
         var create = await PostAuthAsync("/api/v1/admin/media",
-            new AdminCreateMediaRequest { Kind = MediaKind.Image, TitleEn = "no-bytes", AlbumEn = album, DisplayOrder = 1 }, token);
+            new AdminCreateMediaRequest { Kind = MediaKind.Image, Title = "no-bytes", Album = album, DisplayOrder = 1 }, token);
         var id = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminMediaDetail>>())!.Data!.Id;
 

@@ -299,7 +299,7 @@ internal sealed class AdminContactService(
             .Where(country => ids.Contains(country.Id))
             .ToDictionaryAsync(
                 country => country.Id,
-                country => (country.NameEn, country.NameAr),
+                country => (country.Name, country.NameArabic),
                 ct);
     }
 

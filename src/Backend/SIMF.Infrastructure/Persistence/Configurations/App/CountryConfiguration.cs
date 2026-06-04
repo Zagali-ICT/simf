@@ -19,8 +19,8 @@ internal sealed class CountryConfiguration : IEntityTypeConfiguration<Country>
         builder.Property(country => country.Id).ValueGeneratedNever();
 
         builder.Property(country => country.Code).HasMaxLength(2).IsRequired();
-        builder.Property(country => country.NameEn).HasMaxLength(128).IsRequired();
-        builder.Property(country => country.NameAr).HasMaxLength(128).IsRequired();
+        builder.Property(country => country.Name).HasMaxLength(128).IsRequired();
+        builder.Property(country => country.NameArabic).HasMaxLength(128).IsRequired();
         builder.Property(country => country.PhonePrefix).HasMaxLength(8);
 
         builder.HasIndex(country => country.Code).IsUnique();
@@ -100,14 +100,14 @@ internal sealed class CountryConfiguration : IEntityTypeConfiguration<Country>
         Seed(231, "ET", "Ethiopia",             "إثيوبيا",                "+251",  730, seedAt),
     ];
 
-    private static Country Seed(int id, string code, string nameEn,
-        string nameAr, string phonePrefix, int displayOrder, DateTimeOffset at) =>
+    private static Country Seed(int id, string code, string name,
+        string nameArabic, string phonePrefix, int displayOrder, DateTimeOffset at) =>
         new()
         {
             Id = id,
             Code = code,
-            NameEn = nameEn,
-            NameAr = nameAr,
+            Name = name,
+            NameArabic = nameArabic,
             PhonePrefix = phonePrefix,
             DisplayOrder = displayOrder,
             IsActive = true,

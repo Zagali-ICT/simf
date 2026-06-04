@@ -86,7 +86,7 @@ internal sealed class AdminSpeakerService(
         var countriesById = await dbContext.Countries
             .AsNoTracking()
             .Where(country => countryIds.Contains(country.Id))
-            .Select(country => new { country.Id, country.NameEn, country.NameAr })
+            .Select(country => new { country.Id, country.Name, country.NameArabic })
             .ToDictionaryAsync(country => country.Id, cancellationToken);
 
         var page = pageRaw
@@ -96,8 +96,8 @@ internal sealed class AdminSpeakerService(
                 if (row.CountryId.HasValue
                     && countriesById.TryGetValue(row.CountryId.Value, out var country))
                 {
-                    en = country.NameEn;
-                    ar = country.NameAr;
+                    en = country.Name;
+                    ar = country.NameArabic;
                 }
                 return new AdminSpeakerSummary(
                     row.Id, row.Code, row.Name, row.NameArabic, row.Rank,
@@ -367,9 +367,9 @@ internal sealed class AdminSpeakerService(
         var row = await dbContext.Countries
             .AsNoTracking()
             .Where(country => country.Id == countryId.Value)
-            .Select(country => new { country.NameEn, country.NameAr })
+            .Select(country => new { country.Name, country.NameArabic })
             .SingleOrDefaultAsync(cancellationToken);
-        return (row?.NameEn, row?.NameAr);
+        return (row?.Name, row?.NameArabic);
     }
 
     private static string? NullIfBlank(string? value) =>

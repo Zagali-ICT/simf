@@ -14,16 +14,16 @@ public sealed class FaqEntry:BaseAuditEntity
     public FaqGroup? Group { get; set; }
 
     /// <summary>English question.</summary>
-    public string QuestionEn { get; set; } = string.Empty;
+    public string Question { get; set; } = string.Empty;
 
-    /// <summary>Arabic question — paired with <see cref="QuestionEn"/>.</summary>
-    public string QuestionAr { get; set; } = string.Empty;
+    /// <summary>Arabic question — paired with <see cref="Question"/>.</summary>
+    public string QuestionArabic { get; set; } = string.Empty;
 
     /// <summary>English answer (long text).</summary>
-    public string AnswerEn { get; set; } = string.Empty;
+    public string Answer { get; set; } = string.Empty;
 
-    /// <summary>Arabic answer — paired with <see cref="AnswerEn"/>.</summary>
-    public string AnswerAr { get; set; } = string.Empty;
+    /// <summary>Arabic answer — paired with <see cref="Answer"/>.</summary>
+    public string AnswerArabic { get; set; } = string.Empty;
 
     /// <summary>Sort key within the owning group (ascending).</summary>
     public int DisplayOrder { get; set; }

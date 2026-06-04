@@ -244,10 +244,10 @@
         _editOpen = true;
         _isEdit = true;
         _editId = detail.Id;
-        _titleEn = detail.TitleEn;
-        _titleAr = detail.TitleAr;
-        _bodyEn = detail.BodyEn;
-        _bodyAr = detail.BodyAr;
+        _titleEn = detail.Title;
+        _titleAr = detail.TitleArabic;
+        _bodyEn = detail.Body;
+        _bodyAr = detail.BodyArabic;
         _imageUrl = detail.ImageUrl ?? string.Empty;
         _linkUrl = detail.LinkUrl ?? string.Empty;
         _startUtc = detail.StartUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm");
@@ -279,8 +279,8 @@
             {
                 body = new UpdateBannerRequest
                 {
-                    TitleEn = _titleEn, TitleAr = _titleAr,
-                    BodyEn = _bodyEn, BodyAr = _bodyAr,
+                    Title = _titleEn, TitleArabic = _titleAr,
+                    Body = _bodyEn, BodyArabic = _bodyAr,
                     ImageUrl = string.IsNullOrWhiteSpace(_imageUrl) ? null : _imageUrl,
                     LinkUrl = string.IsNullOrWhiteSpace(_linkUrl) ? null : _linkUrl,
                     StartUtc = startUtc, EndUtc = endUtc,
@@ -293,8 +293,8 @@
             {
                 body = new CreateBannerRequest
                 {
-                    TitleEn = _titleEn, TitleAr = _titleAr,
-                    BodyEn = _bodyEn, BodyAr = _bodyAr,
+                    Title = _titleEn, TitleArabic = _titleAr,
+                    Body = _bodyEn, BodyArabic = _bodyAr,
                     ImageUrl = string.IsNullOrWhiteSpace(_imageUrl) ? null : _imageUrl,
                     LinkUrl = string.IsNullOrWhiteSpace(_linkUrl) ? null : _linkUrl,
                     StartUtc = startUtc, EndUtc = endUtc,
@@ -345,6 +345,6 @@
 
     private static string TitleLabel(AdminBannerSummary row) =>
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
-            ? row.TitleAr
-            : row.TitleEn;
+            ? row.TitleArabic
+            : row.Title;
 }
