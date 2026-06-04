@@ -355,11 +355,11 @@ public static class AuditEvents
     // the only SOC visibility into the probe pattern.
     public const string AdminApprovalScopeMismatch = "Admin.ApprovalScopeMismatch";
 
-    // Companies + exhibitor/sponsor account provisioning (D-202 — D-199 #3).
-    public const string CompanyCreated = "Company.Created";
-    public const string CompanyUpdated = "Company.Updated";
-    public const string CompanyDeactivated = "Company.Deactivated";
-    public const string CompanyAccountProvisioned = "Company.AccountProvisioned";
+    // Exhibitors + account provisioning (D-202 — D-199 #3).
+    public const string ExhibitorCreated = "Exhibitor.Created";
+    public const string ExhibitorUpdated = "Exhibitor.Updated";
+    public const string ExhibitorDeactivated = "Exhibitor.Deactivated";
+    public const string ExhibitorAccountProvisioned = "Exhibitor.AccountProvisioned";
 
     // News (D-199 — PR / marketing news. Promoted from AdminNewsService
     // module-local consts; string values are the audit contract and must

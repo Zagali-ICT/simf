@@ -6,7 +6,7 @@ namespace SIMF.Infrastructure.Persistence.Configurations.App;
 
 /// <summary>SIMF-FDS-013 — D-248: BusinessMeetingParticipant EF config. The
 /// parent meeting FK is configured on <see cref="BusinessMeetingConfiguration"/>
-/// (cascade). <c>CompanyId</c> is an optional real FK to Company (Restrict);
+/// (cascade). <c>ExhibitorId</c> is an optional real FK to Exhibitor (Restrict);
 /// <c>VisitorUserId</c> is a bare logical Guid to the Identity DB — no navigation,
 /// no FK (D-157 / D-246). Lookup indexes back the participant-overlap check.</summary>
 internal sealed class BusinessMeetingParticipantConfiguration
@@ -19,14 +19,14 @@ internal sealed class BusinessMeetingParticipantConfiguration
 
         builder.Property(p => p.DisplayNameSnapshot).HasMaxLength(256).IsRequired();
 
-        builder.HasOne(p => p.Company)
+        builder.HasOne(p => p.Exhibitor)
             .WithMany()
-            .HasForeignKey(p => p.CompanyId)
+            .HasForeignKey(p => p.ExhibitorId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(p => p.BusinessMeetingId);
-        builder.HasIndex(p => p.CompanyId);
+        builder.HasIndex(p => p.ExhibitorId);
         builder.HasIndex(p => p.VisitorUserId);
     }
 }

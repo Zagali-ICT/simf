@@ -36,12 +36,11 @@ public class Booth : BaseAuditEntity
     public string NameAr { get; set; } = string.Empty;
 
     /// <summary>B1 — D-222: the curated exhibitor, a real FK to
-    /// <c>Company.Id</c> (same App DB; only <c>CompanyType.Exhibitor</c>
-    /// companies are valid). This is the source of truth for the exhibitor;
-    /// the public projection fills <see cref="ExhibitorNameEn"/> /
-    /// <see cref="ExhibitorNameAr"/> from the linked company when set.
-    /// Nullable — a booth may exist before its company is provisioned.</summary>
-    public Guid? CompanyId { get; set; }
+    /// <c>Exhibitor.Id</c> (same App DB). This is the source of truth for the
+    /// exhibitor; the public projection fills <see cref="ExhibitorNameEn"/> /
+    /// <see cref="ExhibitorNameAr"/> from the linked exhibitor when set.
+    /// Nullable — a booth may exist before its exhibitor is provisioned.</summary>
+    public Guid? ExhibitorId { get; set; }
 
     /// <summary>B1 — D-222: booth-officer contact name (≤ 256 chars). Optional.</summary>
     public string? OfficerName { get; set; }
@@ -54,14 +53,14 @@ public class Booth : BaseAuditEntity
 
     /// <summary>SIMF-FDS-014 (D-260 / OI-1) — optional link to the shared
     /// <c>Contact</c> directory record for the booth <b>officer</b> (a person,
-    /// distinct from the exhibitor company, which is linked via
-    /// <see cref="CompanyId"/>). Null until linked; multiple entities may
+    /// distinct from the exhibitor, which is linked via
+    /// <see cref="ExhibitorId"/>). Null until linked; multiple entities may
     /// reference the same Contact.</summary>
     public Guid? ContactId { get; set; }
 
     /// <summary>English exhibitor / company name (≤ 256 chars). Legacy free-text
     /// fallback retained for the public wire contract (D-219) and pre-D-222
-    /// rows; new booths source the exhibitor from <see cref="CompanyId"/>. Not
+    /// rows; new booths source the exhibitor from <see cref="ExhibitorId"/>. Not
     /// settable from the admin write surface any more.</summary>
     public string? ExhibitorNameEn { get; set; }
 

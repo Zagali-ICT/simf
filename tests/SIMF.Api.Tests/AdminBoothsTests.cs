@@ -9,7 +9,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Exhibition;
-using SIMF.Domain.Companies;
+using SIMF.Domain.Exhibitors;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Infrastructure.Persistence;
 using Xunit;
@@ -34,7 +34,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
     public async Task Create_then_get_returns_the_booth()
     {
         var token = await CreateAdministratorAndSignInAsync();
-        var companyId = await SeedCompanyAsync();
+        var exhibitorId = await SeedExhibitorAsync();
         var code = NewCode();
         var create = await PostAuthAsync(
             "/api/v1/admin/booths",
@@ -43,7 +43,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
                 Code = code,
                 NameEn = "Advanced Naval Technologies",
                 NameAr = "تقنيات بحرية متقدمة",
-                CompanyId = companyId,
+                ExhibitorId = exhibitorId,
                 OfficerName = "Capt. Khalid",
                 OfficerPhone = "+966500000000",
                 OfficerEmail = "khalid@booth.test",
@@ -57,7 +57,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
         var created = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminBoothDetail>>())!.Data!;
         Assert.Equal(code, created.Code);
-        Assert.Equal(companyId, created.CompanyId);
+        Assert.Equal(exhibitorId, created.ExhibitorId);
         Assert.Equal("Capt. Khalid", created.OfficerName);
         Assert.Equal(12.5, created.MapX);
         Assert.True(created.IsActive);
@@ -67,12 +67,12 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
         var fetched = (await get.Content
             .ReadFromJsonAsync<ApiResult<AdminBoothDetail>>())!.Data!;
         Assert.Equal(created.Id, fetched.Id);
-        Assert.Equal(companyId, fetched.CompanyId);
+        Assert.Equal(exhibitorId, fetched.ExhibitorId);
         Assert.Equal("Defense Systems", fetched.SectorEn);
     }
 
     [Fact]
-    public async Task Create_with_an_unknown_company_is_a_400_BOOTH_INVALID()
+    public async Task Create_with_an_unknown_exhibitor_is_a_400_BOOTH_INVALID()
     {
         var token = await CreateAdministratorAndSignInAsync();
         var response = await PostAuthAsync(
@@ -80,7 +80,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
             new AdminCreateBoothRequest
             {
                 Code = NewCode(), NameEn = "X", NameAr = "س",
-                CompanyId = Guid.NewGuid(),   // never seeded
+                ExhibitorId = Guid.NewGuid(),   // never seeded
             },
             token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -89,31 +89,15 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Create_with_an_inactive_company_is_a_400()
+    public async Task Create_with_an_inactive_exhibitor_is_a_400()
     {
         var token = await CreateAdministratorAndSignInAsync();
-        var dormant = await SeedCompanyAsync(isActive: false);
+        var dormant = await SeedExhibitorAsync(isActive: false);
         var response = await PostAuthAsync(
             "/api/v1/admin/booths",
             new AdminCreateBoothRequest
             {
-                Code = NewCode(), NameEn = "X", NameAr = "س", CompanyId = dormant,
-            },
-            token);
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task Create_with_a_sponsor_company_is_a_400()
-    {
-        // Only Exhibitor companies may staff a booth.
-        var token = await CreateAdministratorAndSignInAsync();
-        var sponsor = await SeedCompanyAsync(type: CompanyType.Sponsor);
-        var response = await PostAuthAsync(
-            "/api/v1/admin/booths",
-            new AdminCreateBoothRequest
-            {
-                Code = NewCode(), NameEn = "X", NameAr = "س", CompanyId = sponsor,
+                Code = NewCode(), NameEn = "X", NameAr = "س", ExhibitorId = dormant,
             },
             token);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -135,16 +119,16 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
-    public async Task Public_booth_sources_its_exhibitor_name_from_the_linked_company()
+    public async Task Public_booth_sources_its_exhibitor_name_from_the_linked_exhibitor()
     {
         var token = await CreateAdministratorAndSignInAsync();
         var marker = $"Co{Guid.NewGuid():N}"[..8];
-        var companyId = await SeedCompanyAsync(nameEn: $"{marker} Industries");
+        var exhibitorId = await SeedExhibitorAsync(nameEn: $"{marker} Industries");
         var create = await PostAuthAsync(
             "/api/v1/admin/booths",
             new AdminCreateBoothRequest
             {
-                Code = NewCode(), NameEn = "Hull 7", NameAr = "بدن 7", CompanyId = companyId,
+                Code = NewCode(), NameEn = "Hull 7", NameAr = "بدن 7", ExhibitorId = exhibitorId,
             },
             token);
         var created = (await create.Content
@@ -154,7 +138,7 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
         var list = (await publicList.Content
             .ReadFromJsonAsync<ApiResult<IReadOnlyList<PublicBoothSummary>>>())!.Data!;
         var row = Assert.Single(list, b => b.Id == created.Id);
-        // The wire field ExhibitorNameEn is now populated from the Company.
+        // The wire field ExhibitorNameEn is now populated from the Exhibitor.
         Assert.Equal($"{marker} Industries", row.ExhibitorNameEn);
     }
 
@@ -227,27 +211,25 @@ public sealed class AdminBoothsTests : IClassFixture<SimfApiFactory>
 
     private static string NewCode() => "B-" + Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
 
-    // B1 — D-222: seed a company so a booth can reference it. Defaults to an
-    // active Exhibitor (the only kind valid for a booth).
-    private async Task<Guid> SeedCompanyAsync(
+    // B1 — D-222: seed an exhibitor so a booth can reference it. Defaults to an
+    // active exhibitor.
+    private async Task<Guid> SeedExhibitorAsync(
         bool isActive = true,
-        CompanyType type = CompanyType.Exhibitor,
         string? nameEn = null)
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var company = new Company
+        var exhibitor = new Exhibitor
         {
             Id = Guid.NewGuid(),
             Name = nameEn ?? $"Exhibitor {Guid.NewGuid():N}",
             NameArabic = "شركة عارضة",
-            Type = type,
             IsActive = isActive,
             CreatedAt = DateTimeOffset.UtcNow,
         };
-        appDb.Companies.Add(company);
+        appDb.Exhibitors.Add(exhibitor);
         await appDb.SaveChangesAsync();
-        return company.Id;
+        return exhibitor.Id;
     }
 
     private async Task<string> CreateAdministratorAndSignInAsync()

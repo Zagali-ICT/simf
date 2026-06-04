@@ -36,22 +36,22 @@ public sealed class PublicBoothDetail
 }
 
 /// <summary>D-199 — admin grid row. B1 — D-222: the exhibitor is now the
-/// <see cref="CompanyId"/> relation (the CP resolves the name client-side from
-/// the loaded company list, mirroring <see cref="HallId"/>).</summary>
+/// <see cref="ExhibitorId"/> relation (the CP resolves the name client-side from
+/// the loaded exhibitor list, mirroring <see cref="HallId"/>).</summary>
 public sealed class AdminBoothSummary
 {
     public Guid Id { get; set; }
     public string Code { get; set; } = string.Empty;
     public string NameEn { get; set; } = string.Empty;
     public string NameAr { get; set; } = string.Empty;
-    public Guid? CompanyId { get; set; }
+    public Guid? ExhibitorId { get; set; }
     public string? SectorEn { get; set; }
     public Guid? HallId { get; set; }
     public bool IsActive { get; set; }
 }
 
 /// <summary>D-199 — admin full detail (every column incl. map position).
-/// B1 — D-222: exhibitor = <see cref="CompanyId"/> relation + booth-officer
+/// B1 — D-222: exhibitor = <see cref="ExhibitorId"/> relation + booth-officer
 /// contact.</summary>
 public sealed class AdminBoothDetail
 {
@@ -59,7 +59,7 @@ public sealed class AdminBoothDetail
     public string Code { get; set; } = string.Empty;
     public string NameEn { get; set; } = string.Empty;
     public string NameAr { get; set; } = string.Empty;
-    public Guid? CompanyId { get; set; }
+    public Guid? ExhibitorId { get; set; }
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
@@ -74,13 +74,13 @@ public sealed class AdminBoothDetail
 }
 
 /// <summary>D-199 — admin create payload. B1 — D-222: exhibitor =
-/// <see cref="CompanyId"/> relation + booth-officer contact.</summary>
+/// <see cref="ExhibitorId"/> relation + booth-officer contact.</summary>
 public sealed class AdminCreateBoothRequest
 {
     public string Code { get; set; } = string.Empty;
     public string NameEn { get; set; } = string.Empty;
     public string NameAr { get; set; } = string.Empty;
-    public Guid? CompanyId { get; set; }
+    public Guid? ExhibitorId { get; set; }
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
@@ -94,13 +94,13 @@ public sealed class AdminCreateBoothRequest
 }
 
 /// <summary>D-199 — admin update payload. B1 — D-222: exhibitor =
-/// <see cref="CompanyId"/> relation + booth-officer contact.</summary>
+/// <see cref="ExhibitorId"/> relation + booth-officer contact.</summary>
 public sealed class AdminUpdateBoothRequest
 {
     public string Code { get; set; } = string.Empty;
     public string NameEn { get; set; } = string.Empty;
     public string NameAr { get; set; } = string.Empty;
-    public Guid? CompanyId { get; set; }
+    public Guid? ExhibitorId { get; set; }
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }

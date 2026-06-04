@@ -469,7 +469,7 @@ internal sealed class BusinessMeetingService(
 
         var participants = meeting.Participants
             .Select(p => new MeetingParticipantDto(
-                p.Kind, p.CompanyId, p.VisitorUserId, p.DisplayNameSnapshot))
+                p.Kind, p.ExhibitorId, p.VisitorUserId, p.DisplayNameSnapshot))
             .ToList();
 
         return new BusinessMeetingDetail(
@@ -554,7 +554,7 @@ internal sealed class BusinessMeetingService(
 
         // Participant conflict — a party is already in a Confirmed overlapping meeting.
         var partyClash = await appDbContext.BusinessMeetingParticipants.AsNoTracking()
-            .Where(p => (p.CompanyId != null && companyIds.Contains(p.CompanyId.Value))
+            .Where(p => (p.ExhibitorId != null && companyIds.Contains(p.ExhibitorId.Value))
                 || (p.VisitorUserId != null && visitorIds.Contains(p.VisitorUserId.Value)))
             .Join(appDbContext.BusinessMeetings.AsNoTracking()
                     .Where(m => m.Status == BusinessMeetingStatus.Confirmed),
@@ -585,7 +585,7 @@ internal sealed class BusinessMeetingService(
             {
                 Id = Guid.NewGuid(),
                 Kind = p.Kind,
-                CompanyId = p.CompanyId,
+                ExhibitorId = p.CompanyId,
                 VisitorUserId = p.VisitorUserId,
                 DisplayNameSnapshot = names.TryGetValue(p.Key, out var n) ? n : string.Empty,
                 CreatedAt = now,
@@ -691,15 +691,15 @@ internal sealed class BusinessMeetingService(
 
         if (companyIds.Count > 0)
         {
-            var companies = await appDbContext.Companies.AsNoTracking()
+            var companies = await appDbContext.Exhibitors.AsNoTracking()
                 .Where(c => companyIds.Contains(c.Id) && c.IsActive)
                 .Select(c => new { c.Id, c.NameArabic, c.Name })
                 .ToListAsync(cancellationToken);
             if (companies.Count != companyIds.Distinct().Count())
             {
                 throw Invalid(ErrorCodes.MeetingParticipantInvalid,
-                    "One or more companies were not found.",
-                    "تعذر العثور على شركة واحدة أو أكثر.");
+                    "One or more exhibitors were not found.",
+                    "تعذر العثور على عارض واحد أو أكثر.");
             }
             foreach (var c in companies)
             {
@@ -735,7 +735,7 @@ internal sealed class BusinessMeetingService(
     }
 
     /// <summary>Notify every participant — visitors directly, company parties via
-    /// each active CompanyMembership account. Notification failure never rolls back
+    /// each active ExhibitorMembership account. Notification failure never rolls back
     /// the meeting (swallow-and-log).</summary>
     private async Task NotifyParticipantsAsync(
         BusinessMeeting meeting, NotificationKind kind,
@@ -752,12 +752,12 @@ internal sealed class BusinessMeetingService(
                 }
             }
             var companyIds = meeting.Participants
-                .Where(p => p.Kind == MeetingPartyKind.Company && p.CompanyId != null)
-                .Select(p => p.CompanyId!.Value).Distinct().ToList();
+                .Where(p => p.Kind == MeetingPartyKind.Company && p.ExhibitorId != null)
+                .Select(p => p.ExhibitorId!.Value).Distinct().ToList();
             if (companyIds.Count > 0)
             {
-                var memberUserIds = await appDbContext.CompanyMemberships.AsNoTracking()
-                    .Where(m => companyIds.Contains(m.CompanyId) && m.IsActive)
+                var memberUserIds = await appDbContext.ExhibitorMemberships.AsNoTracking()
+                    .Where(m => companyIds.Contains(m.ExhibitorId) && m.IsActive)
                     .Select(m => m.UserId)
                     .ToListAsync(cancellationToken);
                 foreach (var uid in memberUserIds) recipients.Add(uid);

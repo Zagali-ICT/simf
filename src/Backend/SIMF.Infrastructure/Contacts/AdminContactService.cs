@@ -428,7 +428,7 @@ internal sealed class AdminContactService(
     /// Sponsor / MediaPartner / Speaker / Booth. The OR short-circuits, so a hit
     /// on an early referrer skips the rest.</summary>
     private async Task<bool> IsReferencedByActiveEntityAsync(Guid id, CancellationToken ct) =>
-        await db.Companies.AsNoTracking().AnyAsync(c => c.IsActive && c.ContactId == id, ct)
+        await db.Exhibitors.AsNoTracking().AnyAsync(c => c.IsActive && c.ContactId == id, ct)
         || await db.Sponsors.AsNoTracking().AnyAsync(s => s.IsActive && s.ContactId == id, ct)
         || await db.MediaPartners.AsNoTracking().AnyAsync(m => m.IsActive && m.ContactId == id, ct)
         || await db.Speakers.AsNoTracking().AnyAsync(sp => sp.IsActive && sp.ContactId == id, ct)

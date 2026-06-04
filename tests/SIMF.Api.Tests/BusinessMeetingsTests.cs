@@ -10,7 +10,7 @@ using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.BusinessMeetings;
-using SIMF.Domain.Companies;
+using SIMF.Domain.Exhibitors;
 using SIMF.Domain.IdentityAccess;
 using SIMF.Domain.Programme;
 using SIMF.Infrastructure.Persistence;
@@ -808,18 +808,17 @@ public sealed class BusinessMeetingsTests : IClassFixture<SimfApiFactory>
     {
         using var scope = _factory.Services.CreateScope();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
-        var company = new Company
+        var exhibitor = new Exhibitor
         {
             Id = Guid.NewGuid(),
             Name = $"Co {Guid.NewGuid():N}",
             NameArabic = "شركة",
-            Type = CompanyType.Exhibitor,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
         };
-        appDb.Companies.Add(company);
+        appDb.Exhibitors.Add(exhibitor);
         await appDb.SaveChangesAsync();
-        return company.Id;
+        return exhibitor.Id;
     }
 
     private async Task<Guid> SeedVisitorAsync()

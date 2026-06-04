@@ -43,7 +43,7 @@ internal sealed class AdminBoothService(
         }
 
         // CP grid per-column filters (D-255). Unknown columns are ignored.
-        // The Company + Hall columns are resolved client-side from cached
+        // The Exhibitor + Hall columns are resolved client-side from cached
         // lookups (the summary carries only the ids), so they are NOT
         // server-filterable and are intentionally absent here.
         foreach (var (column, raw) in query.Filters)
@@ -67,7 +67,7 @@ internal sealed class AdminBoothService(
             }
         }
 
-        // CP grid sortable columns (D-255). Default: Code. The Company + Hall
+        // CP grid sortable columns (D-255). Default: Code. The Exhibitor + Hall
         // columns sort on a client-resolved value, so they are not server-
         // sortable and are absent here.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
@@ -93,7 +93,7 @@ internal sealed class AdminBoothService(
                 Code = booth.Code,
                 NameEn = booth.NameEn,
                 NameAr = booth.NameAr,
-                CompanyId = booth.CompanyId,
+                ExhibitorId = booth.ExhibitorId,
                 SectorEn = booth.SectorEn,
                 HallId = booth.HallId,
                 IsActive = booth.IsActive,
@@ -124,7 +124,7 @@ internal sealed class AdminBoothService(
             request.SectorEn, request.SectorAr,
             request.DescriptionEn, request.DescriptionAr);
         await EnsureHallIsValidAsync(request.HallId, cancellationToken);
-        await EnsureCompanyIsValidAsync(request.CompanyId, cancellationToken);
+        await EnsureExhibitorIsValidAsync(request.ExhibitorId, cancellationToken);
 
         var clash = await dbContext.Booths
             .AsNoTracking()
@@ -144,7 +144,7 @@ internal sealed class AdminBoothService(
             Code = v.Code,
             NameEn = v.NameEn,
             NameAr = v.NameAr,
-            CompanyId = request.CompanyId,
+            ExhibitorId = request.ExhibitorId,
             OfficerName = v.OfficerName,
             OfficerPhone = v.OfficerPhone,
             OfficerEmail = v.OfficerEmail,
@@ -195,7 +195,7 @@ internal sealed class AdminBoothService(
             request.SectorEn, request.SectorAr,
             request.DescriptionEn, request.DescriptionAr);
         await EnsureHallIsValidAsync(request.HallId, cancellationToken);
-        await EnsureCompanyIsValidAsync(request.CompanyId, cancellationToken);
+        await EnsureExhibitorIsValidAsync(request.ExhibitorId, cancellationToken);
 
         if (!string.Equals(booth.Code, v.Code, StringComparison.OrdinalIgnoreCase))
         {
@@ -214,7 +214,7 @@ internal sealed class AdminBoothService(
         booth.Code = v.Code;
         booth.NameEn = v.NameEn;
         booth.NameAr = v.NameAr;
-        booth.CompanyId = request.CompanyId;
+        booth.ExhibitorId = request.ExhibitorId;
         booth.OfficerName = v.OfficerName;
         booth.OfficerPhone = v.OfficerPhone;
         booth.OfficerEmail = v.OfficerEmail;
@@ -368,24 +368,23 @@ internal sealed class AdminBoothService(
         }
     }
 
-    // B1 — D-222: the exhibitor must be an active company of kind Exhibitor.
-    // Mirrors EnsureHallIsValidAsync. Sponsor / inactive companies are
-    // rejected so a booth never points at a non-exhibitor row.
-    private async Task EnsureCompanyIsValidAsync(
-        Guid? companyId, CancellationToken cancellationToken)
+    // B1 — D-222: the exhibitor must be an active Exhibitor row. Mirrors
+    // EnsureHallIsValidAsync. Inactive exhibitors are rejected so a booth never
+    // points at a soft-deleted row.
+    private async Task EnsureExhibitorIsValidAsync(
+        Guid? exhibitorId, CancellationToken cancellationToken)
     {
-        if (companyId is null) { return; }
-        var exists = await dbContext.Companies
+        if (exhibitorId is null) { return; }
+        var exists = await dbContext.Exhibitors
             .AsNoTracking()
-            .AnyAsync(company => company.Id == companyId.Value
-                && company.IsActive
-                && company.Type == CompanyType.Exhibitor, cancellationToken);
+            .AnyAsync(exhibitor => exhibitor.Id == exhibitorId.Value
+                && exhibitor.IsActive, cancellationToken);
         if (!exists)
         {
             throw new ApiException(
                 ErrorCodes.BoothInvalid, 400,
-                $"Company id '{companyId}' is not an active exhibitor company.",
-                $"معرّف الشركة '{companyId}' ليس شركة عارضة مفعّلة.");
+                $"Exhibitor id '{exhibitorId}' is not an active exhibitor.",
+                $"معرّف العارض '{exhibitorId}' ليس عارضاً مفعّلاً.");
         }
     }
 
@@ -398,7 +397,7 @@ internal sealed class AdminBoothService(
         Code = b.Code,
         NameEn = b.NameEn,
         NameAr = b.NameAr,
-        CompanyId = b.CompanyId,
+        ExhibitorId = b.ExhibitorId,
         OfficerName = b.OfficerName,
         OfficerPhone = b.OfficerPhone,
         OfficerEmail = b.OfficerEmail,

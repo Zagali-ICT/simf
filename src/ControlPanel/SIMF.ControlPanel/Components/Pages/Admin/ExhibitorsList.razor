@@ -1,18 +1,18 @@
-@* D-202 Track-2 (CP UI for the D-202 companies module) — admin CRUD over
-   the exhibitor / sponsor companies plus a per-company account-provisioning
-   sub-flow. Companies are created CP-side only (D-199 #3). A provisioned
-   account is a Visitor login tagged to the company, created in the
-   pending-approval state through the existing admin provisioning pipeline. *@
-@page "/admin/companies"
+@* D-202 Track-2 (CP UI for the D-202 exhibitors module) — admin CRUD over
+   the exhibitors plus a per-exhibitor account-provisioning sub-flow.
+   Exhibitors are created CP-side only (D-199 #3). A provisioned account is a
+   Visitor login tagged to the exhibitor, created in the pending-approval
+   state through the existing admin provisioning pipeline. *@
+@page "/admin/exhibitors"
 @layout CpShellLayout
-@attribute [RequirePermission(PermissionCatalog.Companies.View)]
-@using SIMF.Contracts.Companies
+@attribute [RequirePermission(PermissionCatalog.Exhibitors.View)]
+@using SIMF.Contracts.Exhibitors
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 
-<PageTitle>@L["Admin.Companies.Title"] · SIMF</PageTitle>
+<PageTitle>@L["Admin.Exhibitors.Title"] · SIMF</PageTitle>
 
-<SimfBanner Title="@L["Admin.Companies.Title"]" />
+<SimfBanner Title="@L["Admin.Exhibitors.Title"]" />
 
 <div class="simf-page-wide">
     <div class="simf-surface">
@@ -21,7 +21,7 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        <SimfDataGrid TItem="AdminCompanySummary"
+        <SimfDataGrid TItem="AdminExhibitorSummary"
                       Query="_query"
                       Page="_page"
                       Loading="_loading"
@@ -29,7 +29,7 @@
                       Multiselect="true"
                       RowKey="@(r => r.Id.ToString())"
                       RowLabel="@(r => r.NameEn)"
-                      Caption="@L["Admin.Companies.Title"]"
+                      Caption="@L["Admin.Exhibitors.Title"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       OnAdd="OnAdd"
                       OnEditOne="OnEditAsync"
@@ -40,7 +40,7 @@
                       LastLabel="@L["Grid.Last"]"
                       PageSizeLabel="@L["Grid.PageSize"]"
                       PageFormatter="@FormatPage"
-                      LoadingLabel="@L["Admin.Companies.Loading"]"
+                      LoadingLabel="@L["Admin.Exhibitors.Loading"]"
                       FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
                       ActionsHeader="@L["Grid.Actions"]"
                       SelectAllLabel="@L["Grid.SelectAll"]"
@@ -50,27 +50,22 @@
                       DeleteLabel="@L["Grid.Delete"]"
                       SummaryFormatter="@FormatSummary">
             <Columns>
-                <SimfDataGridColumn TItem="AdminCompanySummary" Key="nameEn"
-                                    Header="@L["Admin.Companies.Col.NameEn"]"
+                <SimfDataGridColumn TItem="AdminExhibitorSummary" Key="nameEn"
+                                    Header="@L["Admin.Exhibitors.Col.NameEn"]"
                                     Sortable="true" Filterable="true">
                     <CellTemplate>@context.NameEn</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminCompanySummary" Key="nameAr"
-                                    Header="@L["Admin.Companies.Col.NameAr"]"
+                <SimfDataGridColumn TItem="AdminExhibitorSummary" Key="nameAr"
+                                    Header="@L["Admin.Exhibitors.Col.NameAr"]"
                                     Sortable="true" Filterable="true">
                     <CellTemplate>@context.NameAr</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminCompanySummary" Key="type"
-                                    Header="@L["Admin.Companies.Col.Type"]"
-                                    Sortable="true">
-                    <CellTemplate>@TypeLabel(context.Type)</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminCompanySummary" Key="accountCount"
-                                    Header="@L["Admin.Companies.Col.AccountCount"]">
+                <SimfDataGridColumn TItem="AdminExhibitorSummary" Key="accountCount"
+                                    Header="@L["Admin.Exhibitors.Col.AccountCount"]">
                     <CellTemplate>@context.AccountCount</CellTemplate>
                 </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminCompanySummary" Key="isActive"
-                                    Header="@L["Admin.Companies.Col.Active"]"
+                <SimfDataGridColumn TItem="AdminExhibitorSummary" Key="isActive"
+                                    Header="@L["Admin.Exhibitors.Col.Active"]"
                                     Sortable="true">
                     <CellTemplate>
                         @if (context.IsActive)
@@ -85,16 +80,16 @@
                 </SimfDataGridColumn>
             </Columns>
             <RowActions>
-                @* Page-specific quiet action: open the per-company account
-                   provisioning sub-flow. Gated by Companies.Edit (no dedicated
+                @* Page-specific quiet action: open the per-exhibitor account
+                   provisioning sub-flow. Gated by Exhibitors.Edit (no dedicated
                    provisioning permission exists in the catalogue). *@
-                <AuthorizedAction Permission="@PermissionCatalog.Companies.Edit">
-                    <SimfToolbarButton Icon="user" Title="@L["Admin.Companies.Accounts"]"
+                <AuthorizedAction Permission="@PermissionCatalog.Exhibitors.Edit">
+                    <SimfToolbarButton Icon="user" Title="@L["Admin.Exhibitors.Accounts"]"
                                        OnClick="@(() => OnAccountsAsync(context))" />
                 </AuthorizedAction>
             </RowActions>
             <EmptyTemplate>
-                <SimfEmptyState Title="@L["Admin.Companies.None"]" />
+                <SimfEmptyState Title="@L["Admin.Exhibitors.None"]" />
             </EmptyTemplate>
         </SimfDataGrid>
     </div>
@@ -103,45 +98,35 @@
 @if (_editOpen)
 {
     <SimfModal Open="true"
-               Title="@(_isEdit ? L["Admin.Companies.Edit.Title"] : L["Admin.Companies.Add.Title"])"
+               Title="@(_isEdit ? L["Admin.Exhibitors.Edit.Title"] : L["Admin.Exhibitors.Add.Title"])"
                OnClose="@(() => _editOpen = false)">
         <ChildContent>
             <div class="simf-form__fields">
-                <SimfTextField Label="@L["Admin.Companies.Field.NameEn"]"
+                <SimfTextField Label="@L["Admin.Exhibitors.Field.NameEn"]"
                                Value="@_form.NameEn"
                                ValueChanged="@(v => _form.NameEn = v)"
                                ValueExpression="@(() => _form.NameEn)"
                                MaxLength="256"
                                Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.Companies.Field.NameAr"]"
+                <SimfTextField Label="@L["Admin.Exhibitors.Field.NameAr"]"
                                Value="@_form.NameAr"
                                ValueChanged="@(v => _form.NameAr = v)"
                                ValueExpression="@(() => _form.NameAr)"
                                MaxLength="256"
                                Disabled="_busy" />
-                <label class="simf-field">
-                    <span class="simf-field__label">@L["Admin.Companies.Field.Type"]</span>
-                    <select class="simf-field__input"
-                            value="@_form.Type.ToString()"
-                            @onchange="OnTypeChanged"
-                            disabled="@_busy">
-                        <option value="@((int)CompanyType.Exhibitor)">@L["Admin.Companies.Type.Exhibitor"]</option>
-                        <option value="@((int)CompanyType.Sponsor)">@L["Admin.Companies.Type.Sponsor"]</option>
-                    </select>
-                </label>
-                <SimfTextField Label="@L["Admin.Companies.Field.ContactEmail"]"
+                <SimfTextField Label="@L["Admin.Exhibitors.Field.ContactEmail"]"
                                Value="@_form.ContactEmail"
                                ValueChanged="@(v => _form.ContactEmail = v)"
                                ValueExpression="@(() => _form.ContactEmail)"
                                MaxLength="320"
                                Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.Companies.Field.ContactPhone"]"
+                <SimfTextField Label="@L["Admin.Exhibitors.Field.ContactPhone"]"
                                Value="@_form.ContactPhone"
                                ValueChanged="@(v => _form.ContactPhone = v)"
                                ValueExpression="@(() => _form.ContactPhone)"
                                MaxLength="32"
                                Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.Companies.Field.Website"]"
+                <SimfTextField Label="@L["Admin.Exhibitors.Field.Website"]"
                                Value="@_form.Website"
                                ValueChanged="@(v => _form.Website = v)"
                                ValueExpression="@(() => _form.Website)"
@@ -152,17 +137,17 @@
                     <SimfCheckbox Value="_form.IsActive"
                                   ValueChanged="@(v => _form.IsActive = v)"
                                   Disabled="_busy">
-                        @L["Admin.Companies.Field.IsActive"]
+                        @L["Admin.Exhibitors.Field.IsActive"]
                     </SimfCheckbox>
                 }
             </div>
         </ChildContent>
         <Footer>
             <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _editOpen = false)">
-                @L["Admin.Companies.Cancel"]
+                @L["Admin.Exhibitors.Cancel"]
             </SimfButton>
             <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
-                @L["Admin.Companies.Save"]
+                @L["Admin.Exhibitors.Save"]
             </SimfButton>
         </Footer>
     </SimfModal>
@@ -171,28 +156,28 @@
 @if (_accountsOpen)
 {
     <SimfModal Open="true"
-               Title="@string.Format(L["Admin.Companies.Accounts.Title"], _accountsCompanyName)"
+               Title="@string.Format(L["Admin.Exhibitors.Accounts.Title"], _accountsExhibitorName)"
                OnClose="@(() => _accountsOpen = false)">
         <ChildContent>
-            <SimfAlert Variant="info">@L["Admin.Companies.Accounts.Hint"]</SimfAlert>
+            <SimfAlert Variant="info">@L["Admin.Exhibitors.Accounts.Hint"]</SimfAlert>
 
             @if (_accountsLoading)
             {
-                <p>@L["Admin.Companies.Accounts.Loading"]</p>
+                <p>@L["Admin.Exhibitors.Accounts.Loading"]</p>
             }
             else if (_accounts.Count == 0)
             {
-                <SimfEmptyState Title="@L["Admin.Companies.Accounts.None"]" />
+                <SimfEmptyState Title="@L["Admin.Exhibitors.Accounts.None"]" />
             }
             else
             {
                 <table class="simf-table">
                     <thead>
                         <tr>
-                            <th>@L["Admin.Companies.Accounts.Col.ContactName"]</th>
-                            <th>@L["Admin.Companies.Accounts.Col.Email"]</th>
-                            <th>@L["Admin.Companies.Accounts.Col.RoleLabel"]</th>
-                            <th>@L["Admin.Companies.Accounts.Col.Active"]</th>
+                            <th>@L["Admin.Exhibitors.Accounts.Col.ContactName"]</th>
+                            <th>@L["Admin.Exhibitors.Accounts.Col.Email"]</th>
+                            <th>@L["Admin.Exhibitors.Accounts.Col.RoleLabel"]</th>
+                            <th>@L["Admin.Exhibitors.Accounts.Col.Active"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -209,21 +194,21 @@
                 </table>
             }
 
-            <h3 class="simf-field__label">@L["Admin.Companies.Provision.Heading"]</h3>
+            <h3 class="simf-field__label">@L["Admin.Exhibitors.Provision.Heading"]</h3>
             <div class="simf-form__fields">
-                <SimfTextField Label="@L["Admin.Companies.Provision.ContactName"]"
+                <SimfTextField Label="@L["Admin.Exhibitors.Provision.ContactName"]"
                                Value="@_provision.ContactName"
                                ValueChanged="@(v => _provision.ContactName = v)"
                                ValueExpression="@(() => _provision.ContactName)"
                                MaxLength="256"
                                Disabled="_provisionBusy" />
-                <SimfTextField Label="@L["Admin.Companies.Provision.Email"]"
+                <SimfTextField Label="@L["Admin.Exhibitors.Provision.Email"]"
                                Value="@_provision.Email"
                                ValueChanged="@(v => _provision.Email = v)"
                                ValueExpression="@(() => _provision.Email)"
                                MaxLength="320"
                                Disabled="_provisionBusy" />
-                <SimfTextField Label="@L["Admin.Companies.Provision.RoleLabel"]"
+                <SimfTextField Label="@L["Admin.Exhibitors.Provision.RoleLabel"]"
                                Value="@_provision.RoleLabel"
                                ValueChanged="@(v => _provision.RoleLabel = v)"
                                ValueExpression="@(() => _provision.RoleLabel)"
@@ -233,10 +218,10 @@
         </ChildContent>
         <Footer>
             <SimfButton Type="button" Variant="secondary" Disabled="_provisionBusy" OnClick="@(() => _accountsOpen = false)">
-                @L["Admin.Companies.Accounts.Close"]
+                @L["Admin.Exhibitors.Accounts.Close"]
             </SimfButton>
             <SimfButton Type="button" OnClick="ProvisionAsync" Loading="_provisionBusy">
-                @L["Admin.Companies.Provision.Submit"]
+                @L["Admin.Exhibitors.Provision.Submit"]
             </SimfButton>
         </Footer>
     </SimfModal>
@@ -249,7 +234,6 @@
     {
         public string NameEn { get; set; } = string.Empty;
         public string NameAr { get; set; } = string.Empty;
-        public int Type { get; set; } = (int)CompanyType.Exhibitor;
         public string ContactEmail { get; set; } = string.Empty;
         public string ContactPhone { get; set; } = string.Empty;
         public string Website { get; set; } = string.Empty;
@@ -264,7 +248,7 @@
     }
 
     private GridQuery _query = new() { Top = 20 };
-    private GridPage<AdminCompanySummary> _page = new();
+    private GridPage<AdminExhibitorSummary> _page = new();
     private bool _loading;
     private bool _busy;
     private Toast? _toast;
@@ -276,9 +260,9 @@
 
     private bool _accountsOpen;
     private bool _accountsLoading;
-    private Guid _accountsCompanyId;
-    private string _accountsCompanyName = string.Empty;
-    private List<CompanyAccountSummary> _accounts = new();
+    private Guid _accountsExhibitorId;
+    private string _accountsExhibitorName = string.Empty;
+    private List<ExhibitorAccountSummary> _accounts = new();
     private bool _provisionBusy;
     private ProvisionModel _provision = new();
 
@@ -301,9 +285,9 @@
         _loading = true;
         try
         {
-            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminCompanySummary>>>(
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminExhibitorSummary>>>(
                 "simfAccount.postJson",
-                "/account/api/admin/companies/list", _query);
+                "/account/api/admin/exhibitors/list", _query);
             if (env is { Success: true, Data: not null })
             {
                 _page = env.Data;
@@ -312,7 +296,7 @@
             {
                 _toast = new Toast("error",
                     env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Companies.LoadFailed"]);
+                    ?? L["Admin.Exhibitors.LoadFailed"]);
             }
         }
         finally { _loading = false; }
@@ -327,7 +311,7 @@
         _toast = null;
     }
 
-    private async Task OnEditAsync(AdminCompanySummary row)
+    private async Task OnEditAsync(AdminExhibitorSummary row)
     {
         if (_busy) return;
         _busy = true;
@@ -336,9 +320,9 @@
         {
             // The grid summary omits UpdatedAt etc., so load the full detail
             // before opening the edit modal (mirrors the NewsList detail fetch).
-            var env = await JS.InvokeAsync<ApiResult<AdminCompanyDetail>>(
+            var env = await JS.InvokeAsync<ApiResult<AdminExhibitorDetail>>(
                 "simfAccount.getJson",
-                $"/account/api/admin/companies/{row.Id}");
+                $"/account/api/admin/exhibitors/{row.Id}");
             if (env is { Success: true, Data: not null })
             {
                 var d = env.Data;
@@ -347,7 +331,6 @@
                 {
                     NameEn = d.NameEn,
                     NameAr = d.NameAr,
-                    Type = d.Type,
                     ContactEmail = d.ContactEmail ?? string.Empty,
                     ContactPhone = d.ContactPhone ?? string.Empty,
                     Website = d.Website ?? string.Empty,
@@ -360,7 +343,7 @@
             {
                 _toast = new Toast("error",
                     env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Companies.LoadFailed"]);
+                    ?? L["Admin.Exhibitors.LoadFailed"]);
             }
         }
         finally { _busy = false; }
@@ -375,7 +358,7 @@
         if (string.IsNullOrWhiteSpace(_form.NameEn)
             || string.IsNullOrWhiteSpace(_form.NameAr))
         {
-            _toast = new Toast("error", L["Admin.Companies.NameRequired"]);
+            _toast = new Toast("error", L["Admin.Exhibitors.NameRequired"]);
             return;
         }
 
@@ -383,17 +366,16 @@
         _toast = null;
         try
         {
-            ApiResult<AdminCompanyDetail>? env;
+            ApiResult<AdminExhibitorDetail>? env;
             if (_isEdit)
             {
-                env = await JS.InvokeAsync<ApiResult<AdminCompanyDetail>>(
+                env = await JS.InvokeAsync<ApiResult<AdminExhibitorDetail>>(
                     "simfAccount.putJson",
-                    $"/account/api/admin/companies/{_editingId}",
-                    new UpdateCompanyRequest
+                    $"/account/api/admin/exhibitors/{_editingId}",
+                    new UpdateExhibitorRequest
                     {
                         NameEn = _form.NameEn,
                         NameAr = _form.NameAr,
-                        Type = _form.Type,
                         ContactEmail = NullIfBlank(_form.ContactEmail),
                         ContactPhone = NullIfBlank(_form.ContactPhone),
                         Website = NullIfBlank(_form.Website),
@@ -402,14 +384,13 @@
             }
             else
             {
-                env = await JS.InvokeAsync<ApiResult<AdminCompanyDetail>>(
+                env = await JS.InvokeAsync<ApiResult<AdminExhibitorDetail>>(
                     "simfAccount.postJson",
-                    "/account/api/admin/companies",
-                    new CreateCompanyRequest
+                    "/account/api/admin/exhibitors",
+                    new CreateExhibitorRequest
                     {
                         NameEn = _form.NameEn,
                         NameAr = _form.NameAr,
-                        Type = _form.Type,
                         ContactEmail = NullIfBlank(_form.ContactEmail),
                         ContactPhone = NullIfBlank(_form.ContactPhone),
                         Website = NullIfBlank(_form.Website),
@@ -418,55 +399,55 @@
             if (env is { Success: true })
             {
                 _editOpen = false;
-                _toast = new Toast("success", L["Admin.Companies.Saved"]);
+                _toast = new Toast("success", L["Admin.Exhibitors.Saved"]);
                 await LoadAsync();
             }
             else
             {
                 _toast = new Toast("error",
                     env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Companies.LoadFailed"]);
+                    ?? L["Admin.Exhibitors.LoadFailed"]);
             }
         }
         finally { _busy = false; }
     }
 
-    private async Task OnDeleteAsync(AdminCompanySummary row)
+    private async Task OnDeleteAsync(AdminExhibitorSummary row)
     {
         if (_busy) return;
-        // Confirm destructive actions: deactivating drops the company from the
-        // public exhibitor / sponsor surface immediately, and recovery requires
-        // the admin to reactivate by hand (no undo button today).
+        // Confirm destructive actions: deactivating drops the exhibitor from the
+        // public exhibition surface immediately, and recovery requires the admin
+        // to reactivate by hand (no undo button today).
         var confirmed = await JS.InvokeAsync<bool>(
-            "confirm", L["Admin.Companies.Delete.Confirm"].Value);
+            "confirm", L["Admin.Exhibitors.Delete.Confirm"].Value);
         if (!confirmed) return;
         _busy = true;
         try
         {
             var env = await JS.InvokeAsync<ApiResult<bool>>(
                 "simfAccount.deleteJson",
-                $"/account/api/admin/companies/{row.Id}");
+                $"/account/api/admin/exhibitors/{row.Id}");
             if (env is { Success: true })
             {
-                _toast = new Toast("success", L["Admin.Companies.Deleted"]);
+                _toast = new Toast("success", L["Admin.Exhibitors.Deleted"]);
                 await LoadAsync();
             }
             else
             {
                 _toast = new Toast("error",
                     env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Companies.LoadFailed"]);
+                    ?? L["Admin.Exhibitors.LoadFailed"]);
             }
         }
         finally { _busy = false; }
     }
 
-    private async Task OnAccountsAsync(AdminCompanySummary row)
+    private async Task OnAccountsAsync(AdminExhibitorSummary row)
     {
         if (_busy) return;
         _accountsOpen = true;
-        _accountsCompanyId = row.Id;
-        _accountsCompanyName = row.NameEn;
+        _accountsExhibitorId = row.Id;
+        _accountsExhibitorName = row.NameEn;
         _provision = new ProvisionModel();
         _toast = null;
         await LoadAccountsAsync();
@@ -477,9 +458,9 @@
         _accountsLoading = true;
         try
         {
-            var env = await JS.InvokeAsync<ApiResult<IReadOnlyList<CompanyAccountSummary>>>(
+            var env = await JS.InvokeAsync<ApiResult<IReadOnlyList<ExhibitorAccountSummary>>>(
                 "simfAccount.getJson",
-                $"/account/api/admin/companies/{_accountsCompanyId}/accounts");
+                $"/account/api/admin/exhibitors/{_accountsExhibitorId}/accounts");
             if (env is { Success: true, Data: not null })
             {
                 _accounts = env.Data.ToList();
@@ -488,7 +469,7 @@
             {
                 _toast = new Toast("error",
                     env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Companies.Accounts.LoadFailed"]);
+                    ?? L["Admin.Exhibitors.Accounts.LoadFailed"]);
             }
         }
         finally { _accountsLoading = false; }
@@ -500,17 +481,17 @@
         if (string.IsNullOrWhiteSpace(_provision.ContactName)
             || string.IsNullOrWhiteSpace(_provision.Email))
         {
-            _toast = new Toast("error", L["Admin.Companies.Provision.Required"]);
+            _toast = new Toast("error", L["Admin.Exhibitors.Provision.Required"]);
             return;
         }
         _provisionBusy = true;
         _toast = null;
         try
         {
-            var env = await JS.InvokeAsync<ApiResult<CompanyAccountSummary>>(
+            var env = await JS.InvokeAsync<ApiResult<ExhibitorAccountSummary>>(
                 "simfAccount.postJson",
-                $"/account/api/admin/companies/{_accountsCompanyId}/accounts",
-                new ProvisionCompanyAccountRequest
+                $"/account/api/admin/exhibitors/{_accountsExhibitorId}/accounts",
+                new ProvisionExhibitorAccountRequest
                 {
                     ContactName = _provision.ContactName,
                     Email = _provision.Email,
@@ -519,7 +500,7 @@
             if (env is { Success: true })
             {
                 _provision = new ProvisionModel();
-                _toast = new Toast("success", L["Admin.Companies.Provision.Done"]);
+                _toast = new Toast("success", L["Admin.Exhibitors.Provision.Done"]);
                 await LoadAccountsAsync();
                 // Refresh the grid so the AccountCount column reflects the new account.
                 await LoadAsync();
@@ -528,21 +509,11 @@
             {
                 _toast = new Toast("error",
                     env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Companies.Provision.Failed"]);
+                    ?? L["Admin.Exhibitors.Provision.Failed"]);
             }
         }
         finally { _provisionBusy = false; }
     }
-
-    private void OnTypeChanged(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out var n)) _form.Type = n;
-    }
-
-    private string TypeLabel(int type) =>
-        type == (int)CompanyType.Sponsor
-            ? L["Admin.Companies.Type.Sponsor"]
-            : L["Admin.Companies.Type.Exhibitor"];
 
     private static string? NullIfBlank(string value) =>
         string.IsNullOrWhiteSpace(value) ? null : value;

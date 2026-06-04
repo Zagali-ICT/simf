@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using SIMF.Domain.Companies;
 using SIMF.Domain.Contacts;
 using SIMF.Domain.Exhibition;
+using SIMF.Domain.Exhibitors;
 using SIMF.Domain.Programme;
 
 namespace SIMF.Infrastructure.Persistence.Configurations.App;
@@ -50,12 +50,12 @@ internal sealed class BoothConfiguration : IEntityTypeConfiguration<Booth>
             .HasForeignKey(booth => booth.HallId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // B1 — D-222: real same-DB FK to the exhibitor Company. Restrict
-        // (admins soft-delete companies via IsActive, never hard-delete a row
+        // B1 — D-222: real same-DB FK to the Exhibitor. Restrict
+        // (admins soft-delete exhibitors via IsActive, never hard-delete a row
         // a booth points at). HasForeignKey creates the FK index automatically.
-        builder.HasOne<Company>()
+        builder.HasOne<Exhibitor>()
             .WithMany()
-            .HasForeignKey(booth => booth.CompanyId)
+            .HasForeignKey(booth => booth.ExhibitorId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // SIMF-FDS-014 — D-260 (OI-1): optional shared Contact link for the booth

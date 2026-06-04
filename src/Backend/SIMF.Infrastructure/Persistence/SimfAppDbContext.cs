@@ -6,10 +6,10 @@ using SIMF.Domain.Auditing;
 using SIMF.Domain.BusinessMeetings;
 using SIMF.Domain.Cms;
 using SIMF.Domain.Common;
-using SIMF.Domain.Companies;
 using SIMF.Domain.Contacts;
 using SIMF.Domain.Delegations;
 using SIMF.Domain.Exhibition;
+using SIMF.Domain.Exhibitors;
 using SIMF.Domain.Faq;
 using SIMF.Domain.Feedback;
 using SIMF.Domain.Media;
@@ -172,11 +172,11 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     public DbSet<SessionCommentLike> SessionCommentLikes => Set<SessionCommentLike>();
     public DbSet<Rating> Ratings => Set<Rating>();
 
-    // D-202 — exhibitor/sponsor companies + the accounts provisioned under
-    // them (additive tables; account link is a logical Guid FK to SimfUser
-    // on the Identity DB — no cross-DB navigation).
-    public DbSet<Company> Companies => Set<Company>();
-    public DbSet<CompanyMembership> CompanyMemberships => Set<CompanyMembership>();
+    // D-202 — exhibitors + the accounts provisioned under them (additive
+    // tables; account link is a logical Guid FK to SimfUser on the Identity DB
+    // — no cross-DB navigation).
+    public DbSet<Exhibitor> Exhibitors => Set<Exhibitor>();
+    public DbSet<ExhibitorMembership> ExhibitorMemberships => Set<ExhibitorMembership>();
 
     // B3 (D-220) — Saudi-companies lookup, bulk-loaded from a government Excel
     // sheet; the visitor الجهة (UserProfile.OrganisationId) picker reads from it.

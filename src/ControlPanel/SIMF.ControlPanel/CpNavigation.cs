@@ -92,12 +92,12 @@ public static class CpNavigation
         ]),
         new("Nav.Exhibition",
         [
-            // P1.1 (D-214) — the "Exhibitors" stub was removed: exhibitor/sponsor
-            // onboarding is delivered by the real Companies page (CP-only company
-            // + account provisioning, D-202) plus Booths and Sponsors; in-app
-            // exhibitor self-signup was permanently descoped (D-199/D-202).
-            // D-202 Track-2 — exhibitor / sponsor company CRUD + account provisioning.
-            new("Module.Companies", "/admin/companies", RequiredPermission: PermissionCatalog.Companies.View),
+            // P1.1 (D-214) — the "Exhibitors" stub was removed: exhibitor
+            // onboarding is delivered by the real Exhibitors page (CP-only
+            // exhibitor + account provisioning, D-202) plus Booths and Sponsors;
+            // in-app exhibitor self-signup was permanently descoped (D-199/D-202).
+            // D-202 Track-2 — exhibitor CRUD + account provisioning.
+            new("Module.Exhibitors", "/admin/exhibitors", RequiredPermission: PermissionCatalog.Exhibitors.View),
             // D-199 — Exhibition booths admin CRUD (Mockup page 22).
             new("Module.Booths", "/admin/booths", RequiredPermission: PermissionCatalog.Booths.View),
             // D-199 — sponsors admin CRUD (Mockup page 23).

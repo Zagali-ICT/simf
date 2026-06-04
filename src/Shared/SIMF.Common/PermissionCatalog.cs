@@ -336,12 +336,12 @@ public static class PermissionCatalog
 
     // ── Exhibition ───────────────────────────────────────────────────────
 
-    public static class Companies
+    public static class Exhibitors
     {
-        public const string View = "Companies.View";
-        public const string Create = "Companies.Create";
-        public const string Edit = "Companies.Edit";
-        public const string Delete = "Companies.Delete";
+        public const string View = "Exhibitors.View";
+        public const string Create = "Exhibitors.Create";
+        public const string Edit = "Exhibitors.Edit";
+        public const string Delete = "Exhibitors.Delete";
     }
 
     public static class Booths
@@ -684,10 +684,10 @@ public static class PermissionCatalog
         new(HallArrivals.Record, "HallArrivals", "Record", "Record a hall arrival by badge scan", AdminOnly),
 
         // Exhibition
-        new(Companies.View, "Companies", "View", "View companies", AdminOnly),
-        new(Companies.Create, "Companies", "Create", "Create companies", AdminOnly),
-        new(Companies.Edit, "Companies", "Edit", "Edit companies", AdminOnly),
-        new(Companies.Delete, "Companies", "Delete", "Delete companies", AdminOnly),
+        new(Exhibitors.View, "Exhibitors", "View", "View exhibitors", AdminOnly),
+        new(Exhibitors.Create, "Exhibitors", "Create", "Create exhibitors", AdminOnly),
+        new(Exhibitors.Edit, "Exhibitors", "Edit", "Edit exhibitors", AdminOnly),
+        new(Exhibitors.Delete, "Exhibitors", "Delete", "Delete exhibitors", AdminOnly),
 
         new(Booths.View, "Booths", "View", "View booths", AdminOnly),
         new(Booths.Create, "Booths", "Create", "Create booths", AdminOnly),

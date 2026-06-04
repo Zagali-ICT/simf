@@ -7,7 +7,7 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.Ai;
 using SIMF.Contracts.Archive;
 using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Companies;
+using SIMF.Contracts.Exhibitors;
 using SIMF.Contracts.Exhibition;
 using SIMF.Contracts.Faq;
 using SIMF.Contracts.Organisations;
@@ -2437,56 +2437,56 @@ internal static class AccountEndpoints
             return Forward(await api.GetStatisticsAsync(token));
         });
 
-        // D-202 Track-2 — Company admin CRUD + account-provisioning BFF passthroughs.
-        group.MapPost("/admin/companies/list",
+        // D-202 Track-2 — Exhibitor admin CRUD + account-provisioning BFF passthroughs.
+        group.MapPost("/admin/exhibitors/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.ListCompaniesAsync(body, token));
+            return Forward(await api.ListExhibitorsAsync(body, token));
         });
-        group.MapGet("/admin/companies/{id:guid}",
+        group.MapGet("/admin/exhibitors/{id:guid}",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.GetCompanyAsync(id, token));
+            return Forward(await api.GetExhibitorAsync(id, token));
         });
-        group.MapPost("/admin/companies",
-            async (CreateCompanyRequest body, HttpContext http, SimfAdminClient api) =>
+        group.MapPost("/admin/exhibitors",
+            async (CreateExhibitorRequest body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.CreateCompanyAsync(body, token));
+            return Forward(await api.CreateExhibitorAsync(body, token));
         });
-        group.MapPut("/admin/companies/{id:guid}",
-            async (Guid id, UpdateCompanyRequest body, HttpContext http, SimfAdminClient api) =>
+        group.MapPut("/admin/exhibitors/{id:guid}",
+            async (Guid id, UpdateExhibitorRequest body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.UpdateCompanyAsync(id, body, token));
+            return Forward(await api.UpdateExhibitorAsync(id, body, token));
         });
-        group.MapDelete("/admin/companies/{id:guid}",
+        group.MapDelete("/admin/exhibitors/{id:guid}",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.DeactivateCompanyAsync(id, token));
+            return Forward(await api.DeactivateExhibitorAsync(id, token));
         });
-        group.MapGet("/admin/companies/{id:guid}/accounts",
+        group.MapGet("/admin/exhibitors/{id:guid}/accounts",
             async (Guid id, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.ListCompanyAccountsAsync(id, token));
+            return Forward(await api.ListExhibitorAccountsAsync(id, token));
         });
-        group.MapPost("/admin/companies/{id:guid}/accounts",
-            async (Guid id, ProvisionCompanyAccountRequest body,
+        group.MapPost("/admin/exhibitors/{id:guid}/accounts",
+            async (Guid id, ProvisionExhibitorAccountRequest body,
                    HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.ProvisionCompanyAccountAsync(id, body, token));
+            return Forward(await api.ProvisionExhibitorAccountAsync(id, body, token));
         });
     }
 

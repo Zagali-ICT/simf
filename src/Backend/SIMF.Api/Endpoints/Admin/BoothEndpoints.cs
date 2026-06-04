@@ -79,7 +79,7 @@ public sealed class UpdateBoothRequest
     public string Code { get; set; } = string.Empty;
     public string NameEn { get; set; } = string.Empty;
     public string NameAr { get; set; } = string.Empty;
-    public Guid? CompanyId { get; set; }
+    public Guid? ExhibitorId { get; set; }
     public string? OfficerName { get; set; }
     public string? OfficerPhone { get; set; }
     public string? OfficerEmail { get; set; }
@@ -119,7 +119,7 @@ public sealed class UpdateBoothEndpoint(IAdminBoothService service)
                     Code = req.Code,
                     NameEn = req.NameEn,
                     NameAr = req.NameAr,
-                    CompanyId = req.CompanyId,
+                    ExhibitorId = req.ExhibitorId,
                     OfficerName = req.OfficerName,
                     OfficerPhone = req.OfficerPhone,
                     OfficerEmail = req.OfficerEmail,

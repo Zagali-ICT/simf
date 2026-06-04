@@ -1,37 +1,37 @@
-// Tests: SIMF.Api.Tests/CompaniesTests.cs
+// Tests: SIMF.Api.Tests/ExhibitorsTests.cs
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Auditing;
-using SIMF.Application.Companies.Abstractions;
+using SIMF.Application.Exhibitors.Abstractions;
 using SIMF.Application.IdentityAccess.Abstractions;
 using SIMF.Common;
 using SIMF.Common.Enums;
 using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Companies;
-using SIMF.Domain.Companies;
+using SIMF.Contracts.Exhibitors;
+using SIMF.Domain.Exhibitors;
 using SIMF.Infrastructure.Persistence;
 
-namespace SIMF.Infrastructure.Companies;
+namespace SIMF.Infrastructure.Exhibitors;
 
-/// <summary>D-199 #3 — admin CRUD over exhibitor / sponsor companies plus
-/// account provisioning. Mirrors AdminDelegationService for the CRUD; account
-/// provisioning reuses the existing admin provisioning pipeline
+/// <summary>D-199 #3 — admin CRUD over exhibitors plus account provisioning.
+/// Mirrors AdminDelegationService for the CRUD; account provisioning reuses the
+/// existing admin provisioning pipeline
 /// (<see cref="IAdminUserProvisioningService.CreateVisitorAsync"/>) so we never
 /// hand-roll UserManager — the provisioned account is a least-privilege
-/// Visitor tagged to the company via a CompanyMembership row.</summary>
-internal sealed class AdminCompanyService(
+/// Visitor tagged to the exhibitor via an ExhibitorMembership row.</summary>
+internal sealed class AdminExhibitorService(
     SimfAppDbContext appDbContext,
     IAuditLog auditLog,
     TimeProvider timeProvider,
     IAdminUserProvisioningService provisioning,
-    SimfIdentityDbContext identityDbContext) : IAdminCompanyService
+    SimfIdentityDbContext identityDbContext) : IAdminExhibitorService
 {
-    public async Task<GridPage<AdminCompanySummary>> ListAllAsync(
+    public async Task<GridPage<AdminExhibitorSummary>> ListAllAsync(
         GridQuery query, CancellationToken cancellationToken = default)
     {
         var skip = Math.Max(0, query.Skip);
         var top = Math.Clamp(query.Top is > 0 ? query.Top : 25, 1, 200);
 
-        var rows = appDbContext.Companies.AsNoTracking().AsQueryable();
+        var rows = appDbContext.Exhibitors.AsNoTracking().AsQueryable();
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var term = query.Search.Trim();
@@ -60,166 +60,154 @@ internal sealed class AdminCompanyService(
                         rows = rows.Where(c => c.IsActive == isActive);
                     }
                     break;
-                case "type":
-                    if (Enum.TryParse<CompanyType>(v, ignoreCase: true, out var parsedType))
-                    {
-                        rows = rows.Where(c => c.Type == parsedType);
-                    }
-                    break;
             }
         }
 
-        // CP grid sortable columns (D-256). Default: Type, then NameAr.
+        // CP grid sortable columns (D-256). Default: NameAr.
         rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
             ("nameen", false) => rows.OrderBy(c => c.Name),
             ("nameen", true) => rows.OrderByDescending(c => c.Name),
-            ("namear", false) => rows.OrderBy(c => c.NameArabic),
             ("namear", true) => rows.OrderByDescending(c => c.NameArabic),
             ("isactive", false) => rows.OrderBy(c => c.IsActive),
             ("isactive", true) => rows.OrderByDescending(c => c.IsActive),
-            ("type", true) => rows.OrderByDescending(c => c.Type).ThenBy(c => c.NameArabic),
-            _ => rows.OrderBy(c => c.Type).ThenBy(c => c.NameArabic),
+            _ => rows.OrderBy(c => c.NameArabic),
         };
         var total = await rows.CountAsync(cancellationToken);
         var page = await rows
             .Skip(skip).Take(top)
-            .Select(c => new AdminCompanySummary(
-                c.Id, c.Name, c.NameArabic, (int)c.Type,
+            .Select(c => new AdminExhibitorSummary(
+                c.Id, c.Name, c.NameArabic,
                 c.ContactEmail, c.ContactPhone, c.Website,
-                appDbContext.Set<CompanyMembership>()
-                    .Count(m => m.CompanyId == c.Id && m.IsActive),
+                appDbContext.Set<ExhibitorMembership>()
+                    .Count(m => m.ExhibitorId == c.Id && m.IsActive),
                 c.IsActive, c.CreatedAt))
             .ToListAsync(cancellationToken);
 
-        return GridPage<AdminCompanySummary>.Of(page, total,
+        return GridPage<AdminExhibitorSummary>.Of(page, total,
             new GridQuery { Skip = skip, Top = top });
     }
 
-    public async Task<AdminCompanyDetail?> GetAsync(
+    public async Task<AdminExhibitorDetail?> GetAsync(
         Guid id, CancellationToken cancellationToken = default)
     {
-        return await appDbContext.Companies.AsNoTracking()
+        return await appDbContext.Exhibitors.AsNoTracking()
             .Where(c => c.Id == id)
-            .Select(c => new AdminCompanyDetail(
-                c.Id, c.Name, c.NameArabic, (int)c.Type,
+            .Select(c => new AdminExhibitorDetail(
+                c.Id, c.Name, c.NameArabic,
                 c.ContactEmail, c.ContactPhone, c.Website,
                 c.IsActive, c.CreatedAt, c.UpdatedAt))
             .SingleOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<AdminCompanyDetail> CreateAsync(
-        Guid actorUserId, CreateCompanyRequest request,
+    public async Task<AdminExhibitorDetail> CreateAsync(
+        Guid actorUserId, CreateExhibitorRequest request,
         CancellationToken cancellationToken = default)
     {
-        var type = ParseType(request.Type);
         Validate(request.NameEn, request.NameAr, request.ContactEmail,
             request.ContactPhone, request.Website);
         var now = timeProvider.GetUtcNow();
-        var company = new Company
+        var exhibitor = new Exhibitor
         {
             Id = Guid.NewGuid(),
             Name = request.NameEn.Trim(),
             NameArabic = request.NameAr.Trim(),
-            Type = type,
             ContactEmail = NormaliseOptional(request.ContactEmail),
             ContactPhone = NormaliseOptional(request.ContactPhone),
             Website = NormaliseOptional(request.Website),
             IsActive = true,
             CreatedAt = now,
         };
-        appDbContext.Companies.Add(company);
+        appDbContext.Exhibitors.Add(exhibitor);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = AuditEvents.CompanyCreated,
+            EventType = AuditEvents.ExhibitorCreated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"companyId={company.Id}; type={company.Type}; name={company.NameArabic}",
+            Detail = $"exhibitorId={exhibitor.Id}; name={exhibitor.NameArabic}",
         }, cancellationToken);
 
-        return (await GetAsync(company.Id, cancellationToken))!;
+        return (await GetAsync(exhibitor.Id, cancellationToken))!;
     }
 
-    public async Task<AdminCompanyDetail> UpdateAsync(
-        Guid actorUserId, Guid id, UpdateCompanyRequest request,
+    public async Task<AdminExhibitorDetail> UpdateAsync(
+        Guid actorUserId, Guid id, UpdateExhibitorRequest request,
         CancellationToken cancellationToken = default)
     {
-        var type = ParseType(request.Type);
         Validate(request.NameEn, request.NameAr, request.ContactEmail,
             request.ContactPhone, request.Website);
-        var company = await appDbContext.Companies
+        var exhibitor = await appDbContext.Exhibitors
             .SingleOrDefaultAsync(c => c.Id == id, cancellationToken)
             ?? throw new ApiException(
-                ErrorCodes.CompanyNotFound, 404,
-                "Company not found.",
-                "لم يتم العثور على الشركة.");
+                ErrorCodes.ExhibitorNotFound, 404,
+                "Exhibitor not found.",
+                "لم يتم العثور على العارض.");
 
-        company.Name = request.NameEn.Trim();
-        company.NameArabic = request.NameAr.Trim();
-        company.Type = type;
-        company.ContactEmail = NormaliseOptional(request.ContactEmail);
-        company.ContactPhone = NormaliseOptional(request.ContactPhone);
-        company.Website = NormaliseOptional(request.Website);
-        company.IsActive = request.IsActive;
-        company.UpdatedAt = timeProvider.GetUtcNow();
+        exhibitor.Name = request.NameEn.Trim();
+        exhibitor.NameArabic = request.NameAr.Trim();
+        exhibitor.ContactEmail = NormaliseOptional(request.ContactEmail);
+        exhibitor.ContactPhone = NormaliseOptional(request.ContactPhone);
+        exhibitor.Website = NormaliseOptional(request.Website);
+        exhibitor.IsActive = request.IsActive;
+        exhibitor.UpdatedAt = timeProvider.GetUtcNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = AuditEvents.CompanyUpdated,
+            EventType = AuditEvents.ExhibitorUpdated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"companyId={company.Id}; active={company.IsActive}",
+            Detail = $"exhibitorId={exhibitor.Id}; active={exhibitor.IsActive}",
         }, cancellationToken);
 
-        return (await GetAsync(company.Id, cancellationToken))!;
+        return (await GetAsync(exhibitor.Id, cancellationToken))!;
     }
 
     public async Task DeactivateAsync(
         Guid actorUserId, Guid id,
         CancellationToken cancellationToken = default)
     {
-        var company = await appDbContext.Companies
+        var exhibitor = await appDbContext.Exhibitors
             .SingleOrDefaultAsync(c => c.Id == id, cancellationToken)
             ?? throw new ApiException(
-                ErrorCodes.CompanyNotFound, 404,
-                "Company not found.",
-                "لم يتم العثور على الشركة.");
-        if (!company.IsActive) { return; }
-        company.IsActive = false;
-        company.UpdatedAt = timeProvider.GetUtcNow();
+                ErrorCodes.ExhibitorNotFound, 404,
+                "Exhibitor not found.",
+                "لم يتم العثور على العارض.");
+        if (!exhibitor.IsActive) { return; }
+        exhibitor.IsActive = false;
+        exhibitor.UpdatedAt = timeProvider.GetUtcNow();
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = AuditEvents.CompanyDeactivated,
+            EventType = AuditEvents.ExhibitorDeactivated,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
-            Detail = $"companyId={company.Id}",
+            Detail = $"exhibitorId={exhibitor.Id}",
         }, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<CompanyAccountSummary>> ListAccountsAsync(
-        Guid companyId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ExhibitorAccountSummary>> ListAccountsAsync(
+        Guid exhibitorId, CancellationToken cancellationToken = default)
     {
-        // Confirm the company exists so a stranger id 404s instead of
+        // Confirm the exhibitor exists so a stranger id 404s instead of
         // silently returning an empty list.
-        var exists = await appDbContext.Companies
+        var exists = await appDbContext.Exhibitors
             .AsNoTracking()
-            .AnyAsync(c => c.Id == companyId, cancellationToken);
+            .AnyAsync(c => c.Id == exhibitorId, cancellationToken);
         if (!exists)
         {
             throw new ApiException(
-                ErrorCodes.CompanyNotFound, 404,
-                "Company not found.",
-                "لم يتم العثور على الشركة.");
+                ErrorCodes.ExhibitorNotFound, 404,
+                "Exhibitor not found.",
+                "لم يتم العثور على العارض.");
         }
 
-        var memberships = await appDbContext.Set<CompanyMembership>()
+        var memberships = await appDbContext.Set<ExhibitorMembership>()
             .AsNoTracking()
-            .Where(m => m.CompanyId == companyId && m.IsActive)
+            .Where(m => m.ExhibitorId == exhibitorId && m.IsActive)
             .OrderBy(m => m.CreatedAt)
             .Select(m => new
             {
@@ -233,7 +221,7 @@ internal sealed class AdminCompanyService(
             .ToListAsync(cancellationToken);
         if (memberships.Count == 0)
         {
-            return Array.Empty<CompanyAccountSummary>();
+            return Array.Empty<ExhibitorAccountSummary>();
         }
 
         // Resolve the account emails cross-context (UserId is a logical FK to
@@ -247,7 +235,7 @@ internal sealed class AdminCompanyService(
             .ToDictionaryAsync(u => u.Id, u => u.Email, cancellationToken);
 
         return memberships
-            .Select(m => new CompanyAccountSummary(
+            .Select(m => new ExhibitorAccountSummary(
                 m.Id,
                 m.UserId,
                 m.ContactName,
@@ -258,22 +246,22 @@ internal sealed class AdminCompanyService(
             .ToList();
     }
 
-    public async Task<CompanyAccountSummary> ProvisionAccountAsync(
-        Guid actorUserId, Guid companyId, ProvisionCompanyAccountRequest request,
+    public async Task<ExhibitorAccountSummary> ProvisionAccountAsync(
+        Guid actorUserId, Guid exhibitorId, ProvisionExhibitorAccountRequest request,
         CancellationToken cancellationToken = default)
     {
-        var company = await appDbContext.Companies
-            .SingleOrDefaultAsync(c => c.Id == companyId, cancellationToken)
+        var exhibitor = await appDbContext.Exhibitors
+            .SingleOrDefaultAsync(c => c.Id == exhibitorId, cancellationToken)
             ?? throw new ApiException(
-                ErrorCodes.CompanyNotFound, 404,
-                "Company not found.",
-                "لم يتم العثور على الشركة.");
-        if (!company.IsActive)
+                ErrorCodes.ExhibitorNotFound, 404,
+                "Exhibitor not found.",
+                "لم يتم العثور على العارض.");
+        if (!exhibitor.IsActive)
         {
             throw new ApiException(
-                ErrorCodes.CompanyInactive, 409,
-                "The company is not active; reactivate it before adding accounts.",
-                "الشركة غير نشطة؛ يرجى إعادة تفعيلها قبل إضافة الحسابات.");
+                ErrorCodes.ExhibitorInactive, 409,
+                "The exhibitor is not active; reactivate it before adding accounts.",
+                "العارض غير نشط؛ يرجى إعادة تفعيله قبل إضافة الحسابات.");
         }
 
         var contactName = (request.ContactName ?? string.Empty).Trim();
@@ -281,7 +269,7 @@ internal sealed class AdminCompanyService(
         if (contactName.Length is 0 or > 256 || email.Length is 0 or > 320)
         {
             throw new ApiException(
-                ErrorCodes.CompanyAccountInvalid, 400,
+                ErrorCodes.ExhibitorAccountInvalid, 400,
                 "Contact name (1-256) and email (1-320) are required.",
                 "اسم جهة الاتصال (1-256) والبريد الإلكتروني (1-320) مطلوبان.");
         }
@@ -289,7 +277,7 @@ internal sealed class AdminCompanyService(
         if (roleLabel is { Length: > 128 })
         {
             throw new ApiException(
-                ErrorCodes.CompanyAccountInvalid, 400,
+                ErrorCodes.ExhibitorAccountInvalid, 400,
                 "Role label must be 128 characters or fewer.",
                 "يجب ألا يتجاوز المسمى الوظيفي 128 حرفاً.");
         }
@@ -308,30 +296,30 @@ internal sealed class AdminCompanyService(
             cancellationToken);
 
         var now = timeProvider.GetUtcNow();
-        var membership = new CompanyMembership
+        var membership = new ExhibitorMembership
         {
             Id = Guid.NewGuid(),
-            CompanyId = company.Id,
+            ExhibitorId = exhibitor.Id,
             UserId = created.UserId,
             ContactName = contactName,
             RoleLabel = roleLabel,
             IsActive = true,
             CreatedAt = now,
         };
-        appDbContext.Set<CompanyMembership>().Add(membership);
+        appDbContext.Set<ExhibitorMembership>().Add(membership);
         await appDbContext.SaveChangesAsync(cancellationToken);
 
         await auditLog.WriteAsync(new AuditEntry
         {
-            EventType = AuditEvents.CompanyAccountProvisioned,
+            EventType = AuditEvents.ExhibitorAccountProvisioned,
             Outcome = AuditOutcome.Success,
             ActorUserId = actorUserId,
             SubjectUserId = created.UserId,
             SubjectEmail = created.Email,
-            Detail = $"companyId={company.Id}; membershipId={membership.Id}",
+            Detail = $"exhibitorId={exhibitor.Id}; membershipId={membership.Id}",
         }, cancellationToken);
 
-        return new CompanyAccountSummary(
+        return new ExhibitorAccountSummary(
             membership.Id,
             membership.UserId,
             membership.ContactName,
@@ -339,18 +327,6 @@ internal sealed class AdminCompanyService(
             membership.RoleLabel,
             membership.IsActive,
             membership.CreatedAt);
-    }
-
-    private static CompanyType ParseType(int type)
-    {
-        if (!Enum.IsDefined(typeof(CompanyType), type))
-        {
-            throw new ApiException(
-                ErrorCodes.CompanyInvalid, 400,
-                "Company type is not valid.",
-                "نوع الشركة غير صالح.");
-        }
-        return (CompanyType)type;
     }
 
     private static void Validate(
@@ -361,28 +337,28 @@ internal sealed class AdminCompanyService(
             || string.IsNullOrWhiteSpace(nameAr) || nameAr.Length > 256)
         {
             throw new ApiException(
-                ErrorCodes.CompanyInvalid, 400,
-                "Company name (EN + AR) must be between 1 and 256 characters.",
-                "يجب أن يتراوح طول اسم الشركة (إنجليزي + عربي) بين 1 و 256 حرفاً.");
+                ErrorCodes.ExhibitorInvalid, 400,
+                "Exhibitor name (EN + AR) must be between 1 and 256 characters.",
+                "يجب أن يتراوح طول اسم العارض (إنجليزي + عربي) بين 1 و 256 حرفاً.");
         }
         if (contactEmail is { Length: > 320 })
         {
             throw new ApiException(
-                ErrorCodes.CompanyInvalid, 400,
+                ErrorCodes.ExhibitorInvalid, 400,
                 "Contact email must be 320 characters or fewer.",
                 "يجب ألا يتجاوز البريد الإلكتروني 320 حرفاً.");
         }
         if (contactPhone is { Length: > 32 })
         {
             throw new ApiException(
-                ErrorCodes.CompanyInvalid, 400,
+                ErrorCodes.ExhibitorInvalid, 400,
                 "Contact phone must be 32 characters or fewer.",
                 "يجب ألا يتجاوز رقم الهاتف 32 حرفاً.");
         }
         if (website is { Length: > 512 })
         {
             throw new ApiException(
-                ErrorCodes.CompanyInvalid, 400,
+                ErrorCodes.ExhibitorInvalid, 400,
                 "Website must be 512 characters or fewer.",
                 "يجب ألا يتجاوز الموقع الإلكتروني 512 حرفاً.");
         }

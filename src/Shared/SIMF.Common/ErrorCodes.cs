@@ -332,11 +332,11 @@ public static class ErrorCodes
     public const string IdempotencyKeyConflict = "IDEMPOTENCY_KEY_CONFLICT";
     public const string GateFailureCircuitOpen = "GATE_FAILURE_CIRCUIT_OPEN";
 
-    // Companies + exhibitor/sponsor account provisioning (D-202 — D-199 #3).
-    public const string CompanyInvalid = "COMPANY_INVALID";
-    public const string CompanyNotFound = "COMPANY_NOT_FOUND";
-    public const string CompanyInactive = "COMPANY_INACTIVE";
-    public const string CompanyAccountInvalid = "COMPANY_ACCOUNT_INVALID";
+    // Exhibitors + account provisioning (D-202 — D-199 #3).
+    public const string ExhibitorInvalid = "EXHIBITOR_INVALID";
+    public const string ExhibitorNotFound = "EXHIBITOR_NOT_FOUND";
+    public const string ExhibitorInactive = "EXHIBITOR_INACTIVE";
+    public const string ExhibitorAccountInvalid = "EXHIBITOR_ACCOUNT_INVALID";
 
     // Organisations (B3 / D-220 — Saudi-companies lookup, government Excel
     // bulk-import; the visitor الجهة picker reads from this table).

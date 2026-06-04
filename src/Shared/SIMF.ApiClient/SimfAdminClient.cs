@@ -7,8 +7,8 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.Ai;
 using SIMF.Contracts.Archive;
 using SIMF.Contracts.Authentication;
-using SIMF.Contracts.Companies;
 using SIMF.Contracts.Exhibition;
+using SIMF.Contracts.Exhibitors;
 using SIMF.Contracts.Faq;
 using SIMF.Contracts.Organisations;
 using SIMF.Contracts.Feedback;
@@ -2434,59 +2434,59 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Get, "statistics", content: null,
             accessToken, cancellationToken);
 
-    // -- D-202 Track-2 — Company admin CRUD + account provisioning ----------
-    // (SIMF.Contracts.Companies)
+    // -- D-202 Track-2 — Exhibitor admin CRUD + account provisioning --------
+    // (SIMF.Contracts.Exhibitors)
 
-    public Task<ApiCallResult<GridPage<AdminCompanySummary>>> ListCompaniesAsync(
+    public Task<ApiCallResult<GridPage<AdminExhibitorSummary>>> ListExhibitorsAsync(
         GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<GridPage<AdminCompanySummary>>(
-            HttpMethod.Post, "companies/list",
+        SendAsync<GridPage<AdminExhibitorSummary>>(
+            HttpMethod.Post, "exhibitors/list",
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
-    public Task<ApiCallResult<AdminCompanyDetail>> GetCompanyAsync(
+    public Task<ApiCallResult<AdminExhibitorDetail>> GetExhibitorAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<AdminCompanyDetail>(
-            HttpMethod.Get, $"companies/{id}", content: null,
+        SendAsync<AdminExhibitorDetail>(
+            HttpMethod.Get, $"exhibitors/{id}", content: null,
             accessToken, cancellationToken);
 
-    public Task<ApiCallResult<AdminCompanyDetail>> CreateCompanyAsync(
-        CreateCompanyRequest request, string accessToken,
+    public Task<ApiCallResult<AdminExhibitorDetail>> CreateExhibitorAsync(
+        CreateExhibitorRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<AdminCompanyDetail>(
-            HttpMethod.Post, "companies",
+        SendAsync<AdminExhibitorDetail>(
+            HttpMethod.Post, "exhibitors",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    public Task<ApiCallResult<AdminCompanyDetail>> UpdateCompanyAsync(
-        Guid id, UpdateCompanyRequest request, string accessToken,
+    public Task<ApiCallResult<AdminExhibitorDetail>> UpdateExhibitorAsync(
+        Guid id, UpdateExhibitorRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<AdminCompanyDetail>(
-            HttpMethod.Put, $"companies/{id}",
+        SendAsync<AdminExhibitorDetail>(
+            HttpMethod.Put, $"exhibitors/{id}",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    public Task<ApiCallResult<bool>> DeactivateCompanyAsync(
+    public Task<ApiCallResult<bool>> DeactivateExhibitorAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>
         SendAsync<bool>(
-            HttpMethod.Delete, $"companies/{id}", content: null,
+            HttpMethod.Delete, $"exhibitors/{id}", content: null,
             accessToken, cancellationToken);
 
-    public Task<ApiCallResult<IReadOnlyList<CompanyAccountSummary>>> ListCompanyAccountsAsync(
+    public Task<ApiCallResult<IReadOnlyList<ExhibitorAccountSummary>>> ListExhibitorAccountsAsync(
         Guid id, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<IReadOnlyList<CompanyAccountSummary>>(
-            HttpMethod.Get, $"companies/{id}/accounts", content: null,
+        SendAsync<IReadOnlyList<ExhibitorAccountSummary>>(
+            HttpMethod.Get, $"exhibitors/{id}/accounts", content: null,
             accessToken, cancellationToken);
 
-    public Task<ApiCallResult<CompanyAccountSummary>> ProvisionCompanyAccountAsync(
-        Guid id, ProvisionCompanyAccountRequest request, string accessToken,
+    public Task<ApiCallResult<ExhibitorAccountSummary>> ProvisionExhibitorAccountAsync(
+        Guid id, ProvisionExhibitorAccountRequest request, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<CompanyAccountSummary>(
-            HttpMethod.Post, $"companies/{id}/accounts",
+        SendAsync<ExhibitorAccountSummary>(
+            HttpMethod.Post, $"exhibitors/{id}/accounts",
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 

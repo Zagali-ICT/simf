@@ -22,16 +22,16 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 Code = b.Code,
                 NameEn = b.NameEn,
                 NameAr = b.NameAr,
-                // B1 — D-222: the exhibitor name comes from the linked Company
+                // B1 — D-222: the exhibitor name comes from the linked Exhibitor
                 // when set (the curated source of truth), falling back to the
                 // legacy free-text. The wire field names are unchanged (D-219).
-                ExhibitorNameEn = b.CompanyId == null
+                ExhibitorNameEn = b.ExhibitorId == null
                     ? b.ExhibitorNameEn
-                    : db.Companies.Where(c => c.Id == b.CompanyId)
+                    : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
                         .Select(c => c.Name).FirstOrDefault(),
-                ExhibitorNameAr = b.CompanyId == null
+                ExhibitorNameAr = b.ExhibitorId == null
                     ? b.ExhibitorNameAr
-                    : db.Companies.Where(c => c.Id == b.CompanyId)
+                    : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
                         .Select(c => c.NameArabic).FirstOrDefault(),
                 SectorEn = b.SectorEn,
                 SectorAr = b.SectorAr,
@@ -51,15 +51,15 @@ internal sealed class PublicBoothService(SimfAppDbContext db) : IPublicBoothServ
                 Code = b.Code,
                 NameEn = b.NameEn,
                 NameAr = b.NameAr,
-                // B1 — D-222: exhibitor name from the linked Company when set,
+                // B1 — D-222: exhibitor name from the linked Exhibitor when set,
                 // else the legacy free-text (wire field names unchanged).
-                ExhibitorNameEn = b.CompanyId == null
+                ExhibitorNameEn = b.ExhibitorId == null
                     ? b.ExhibitorNameEn
-                    : db.Companies.Where(c => c.Id == b.CompanyId)
+                    : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
                         .Select(c => c.Name).FirstOrDefault(),
-                ExhibitorNameAr = b.CompanyId == null
+                ExhibitorNameAr = b.ExhibitorId == null
                     ? b.ExhibitorNameAr
-                    : db.Companies.Where(c => c.Id == b.CompanyId)
+                    : db.Exhibitors.Where(c => c.Id == b.ExhibitorId)
                         .Select(c => c.NameArabic).FirstOrDefault(),
                 SectorEn = b.SectorEn,
                 SectorAr = b.SectorAr,

@@ -6,7 +6,7 @@
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Booths.View)]
 @using SIMF.Contracts.Exhibition
-@using SIMF.Contracts.Companies
+@using SIMF.Contracts.Exhibitors
 @using SIMF.Common.Enums
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
@@ -66,12 +66,12 @@
                                     Filterable="true">
                     <CellTemplate>@context.NameAr</CellTemplate>
                 </SimfDataGridColumn>
-                @* Company is resolved client-side from the cached exhibitor
-                   list (the summary carries only CompanyId), so this column
+                @* Exhibitor is resolved client-side from the cached exhibitor
+                   list (the summary carries only ExhibitorId), so this column
                    is neither server-sortable nor server-filterable. *@
-                <SimfDataGridColumn TItem="AdminBoothSummary" Key="company"
-                                    Header="@L["Admin.Booths.Col.Company"]">
-                    <CellTemplate>@CompanyName(context.CompanyId)</CellTemplate>
+                <SimfDataGridColumn TItem="AdminBoothSummary" Key="exhibitor"
+                                    Header="@L["Admin.Booths.Col.Exhibitor"]">
+                    <CellTemplate>@ExhibitorName(context.ExhibitorId)</CellTemplate>
                 </SimfDataGridColumn>
                 <SimfDataGridColumn TItem="AdminBoothSummary" Key="sectorEn"
                                     Header="@L["Admin.Booths.Col.SectorEn"]"
@@ -133,15 +133,15 @@
                                MaxLength="128"
                                Disabled="_busy" />
                 <label class="simf-field">
-                    <span class="simf-field__label">@L["Admin.Booths.Field.Company"]</span>
+                    <span class="simf-field__label">@L["Admin.Booths.Field.Exhibitor"]</span>
                     <select class="simf-field__input"
-                            value="@(_form.CompanyId?.ToString() ?? string.Empty)"
-                            @onchange="OnCompanyIdChanged"
+                            value="@(_form.ExhibitorId?.ToString() ?? string.Empty)"
+                            @onchange="OnExhibitorIdChanged"
                             disabled="@_busy">
-                        <option value="">@L["Admin.Booths.Field.CompanyNone"]</option>
-                        @foreach (var company in _companies)
+                        <option value="">@L["Admin.Booths.Field.ExhibitorNone"]</option>
+                        @foreach (var exhibitor in _exhibitors)
                         {
-                            <option value="@company.Id">@company.NameEn — @company.NameAr</option>
+                            <option value="@exhibitor.Id">@exhibitor.NameEn — @exhibitor.NameAr</option>
                         }
                     </select>
                 </label>
@@ -242,7 +242,7 @@
         public string Code { get; set; } = string.Empty;
         public string NameEn { get; set; } = string.Empty;
         public string NameAr { get; set; } = string.Empty;
-        public Guid? CompanyId { get; set; }
+        public Guid? ExhibitorId { get; set; }
         public string OfficerName { get; set; } = string.Empty;
         public string OfficerPhone { get; set; } = string.Empty;
         public string OfficerEmail { get; set; } = string.Empty;
@@ -265,11 +265,11 @@
     // round-trip on every Add/Edit modal open. The same list also resolves
     // the Hall column in the grid (HallName).
     private List<AdminHallSummary> _halls = new();
-    // B1 — D-222: active exhibitor companies cached at mount so the form's
-    // Company dropdown is ready on first open and the grid's Company column
-    // can resolve a name (mirrors the Hall pattern). Bounded → one Top=500
+    // B1 — D-222: active exhibitors cached at mount so the form's Exhibitor
+    // dropdown is ready on first open and the grid's Exhibitor column can
+    // resolve a name (mirrors the Hall pattern). Bounded → one Top=500
     // round-trip is fine.
-    private List<AdminCompanySummary> _companies = new();
+    private List<AdminExhibitorSummary> _exhibitors = new();
 
     private bool _editOpen;
     private bool _isEdit;
@@ -279,42 +279,42 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadHallsAsync();
-        await LoadCompaniesAsync();
+        await LoadExhibitorsAsync();
         await LoadAsync();
     }
 
-    private async Task LoadCompaniesAsync()
+    private async Task LoadExhibitorsAsync()
     {
-        var env = await JS.InvokeAsync<ApiResult<GridPage<AdminCompanySummary>>>(
-            "simfAccount.postJson", "/account/api/admin/companies/list",
+        var env = await JS.InvokeAsync<ApiResult<GridPage<AdminExhibitorSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/exhibitors/list",
             new GridQuery { Top = 500 });
         if (env is { Success: true, Data: not null })
         {
-            // Only active exhibitor companies can staff a booth — the server
-            // enforces the same rule.
-            _companies = env.Data.Items
-                .Where(c => c.IsActive && c.Type == (int)CompanyType.Exhibitor)
+            // Only active exhibitors can staff a booth — the server enforces
+            // the same rule.
+            _exhibitors = env.Data.Items
+                .Where(c => c.IsActive)
                 .OrderBy(c => c.NameEn).ToList();
         }
         else
         {
             _toast = new Toast("error",
                 env?.Error?.MessageForCurrentCulture()
-                ?? L["Admin.Booths.CompaniesLoadFailed"]);
+                ?? L["Admin.Booths.ExhibitorsLoadFailed"]);
         }
     }
 
-    private string CompanyName(Guid? companyId)
+    private string ExhibitorName(Guid? exhibitorId)
     {
-        if (companyId is null) return "—";
-        var company = _companies.FirstOrDefault(c => c.Id == companyId.Value);
-        return company is null ? "—" : company.NameEn;
+        if (exhibitorId is null) return "—";
+        var exhibitor = _exhibitors.FirstOrDefault(c => c.Id == exhibitorId.Value);
+        return exhibitor is null ? "—" : exhibitor.NameEn;
     }
 
-    private void OnCompanyIdChanged(ChangeEventArgs e)
+    private void OnExhibitorIdChanged(ChangeEventArgs e)
     {
         var raw = e.Value?.ToString();
-        _form.CompanyId = string.IsNullOrWhiteSpace(raw) ? null
+        _form.ExhibitorId = string.IsNullOrWhiteSpace(raw) ? null
             : (Guid.TryParse(raw, out var g) ? g : (Guid?)null);
     }
 
@@ -411,7 +411,7 @@
                     Code = d.Code,
                     NameEn = d.NameEn,
                     NameAr = d.NameAr,
-                    CompanyId = d.CompanyId,
+                    ExhibitorId = d.ExhibitorId,
                     OfficerName = d.OfficerName ?? string.Empty,
                     OfficerPhone = d.OfficerPhone ?? string.Empty,
                     OfficerEmail = d.OfficerEmail ?? string.Empty,
@@ -464,7 +464,7 @@
                         Code = _form.Code,
                         NameEn = _form.NameEn,
                         NameAr = _form.NameAr,
-                        CompanyId = _form.CompanyId,
+                        ExhibitorId = _form.ExhibitorId,
                         OfficerName = Trimmed(_form.OfficerName),
                         OfficerPhone = Trimmed(_form.OfficerPhone),
                         OfficerEmail = Trimmed(_form.OfficerEmail),
@@ -488,7 +488,7 @@
                         Code = _form.Code,
                         NameEn = _form.NameEn,
                         NameAr = _form.NameAr,
-                        CompanyId = _form.CompanyId,
+                        ExhibitorId = _form.ExhibitorId,
                         OfficerName = Trimmed(_form.OfficerName),
                         OfficerPhone = Trimmed(_form.OfficerPhone),
                         OfficerEmail = Trimmed(_form.OfficerEmail),

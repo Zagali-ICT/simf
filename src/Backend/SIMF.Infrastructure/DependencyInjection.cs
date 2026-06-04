@@ -355,11 +355,11 @@ public static class DependencyInjection
         services.AddScoped<SIMF.Application.Programme.Abstractions.IAdminSessionCategoryService,
             SIMF.Infrastructure.Programme.AdminSessionCategoryService>();
         // D-202 — Track-2: Statistics dashboard (read-only aggregate) +
-        // Company/exhibitor-sponsor provisioning.
+        // Exhibitor provisioning.
         services.AddScoped<SIMF.Application.Statistics.Abstractions.IStatisticsService,
             SIMF.Infrastructure.Statistics.StatisticsService>();
-        services.AddScoped<SIMF.Application.Companies.Abstractions.IAdminCompanyService,
-            SIMF.Infrastructure.Companies.AdminCompanyService>();
+        services.AddScoped<SIMF.Application.Exhibitors.Abstractions.IAdminExhibitorService,
+            SIMF.Infrastructure.Exhibitors.AdminExhibitorService>();
         // D-176 (gap doc G12) — centralised AI module: prompt
         // catalogue + invocation log + Echo (offline) + OpenAI HTTP.
         // HttpClient registered as a singleton (no AddHttpClient since

@@ -69,7 +69,7 @@
   <data name="Module.SpeakerPresentations" xml:space="preserve"><value>عروض المتحدثين</value></data>
   <data name="Module.Exhibitors" xml:space="preserve"><value>العارضون</value></data>
   <data name="Module.Booths" xml:space="preserve"><value>الأجنحة</value></data>
-  <data name="Module.Companies" xml:space="preserve"><value>الشركات</value></data>
+  <data name="Module.Exhibitors" xml:space="preserve"><value>العارضون</value></data>
   <data name="Module.Sponsors" xml:space="preserve"><value>الرعاة</value></data>
   <data name="Module.VenueMap" xml:space="preserve"><value>خريطة الموقع</value></data>
   <data name="Module.LiveSessions" xml:space="preserve"><value>الجلسات المباشرة</value></data>
@@ -2042,13 +2042,13 @@
   <data name="Admin.Booths.Field.DescriptionAr" xml:space="preserve"><value>الوصف (عربي)</value></data>
   <data name="Admin.Booths.Field.HallId" xml:space="preserve"><value>القاعة</value></data>
   <data name="Admin.Booths.Field.HallNone" xml:space="preserve"><value>— بدون قاعة —</value></data>
-  <data name="Admin.Booths.Col.Company" xml:space="preserve"><value>الشركة</value></data>
-  <data name="Admin.Booths.Field.Company" xml:space="preserve"><value>الشركة العارضة</value></data>
-  <data name="Admin.Booths.Field.CompanyNone" xml:space="preserve"><value>— بدون شركة —</value></data>
+  <data name="Admin.Booths.Col.Exhibitor" xml:space="preserve"><value>العارض</value></data>
+  <data name="Admin.Booths.Field.Exhibitor" xml:space="preserve"><value>العارض</value></data>
+  <data name="Admin.Booths.Field.ExhibitorNone" xml:space="preserve"><value>— بدون عارض —</value></data>
   <data name="Admin.Booths.Field.OfficerName" xml:space="preserve"><value>اسم مسؤول الجناح</value></data>
   <data name="Admin.Booths.Field.OfficerPhone" xml:space="preserve"><value>هاتف مسؤول الجناح</value></data>
   <data name="Admin.Booths.Field.OfficerEmail" xml:space="preserve"><value>بريد مسؤول الجناح</value></data>
-  <data name="Admin.Booths.CompaniesLoadFailed" xml:space="preserve"><value>تعذّر تحميل قائمة الشركات.</value></data>
+  <data name="Admin.Booths.ExhibitorsLoadFailed" xml:space="preserve"><value>تعذّر تحميل قائمة العارضين.</value></data>
   <data name="Admin.Booths.Field.MapX" xml:space="preserve"><value>موضع الخريطة س</value></data>
   <data name="Admin.Booths.Field.MapY" xml:space="preserve"><value>موضع الخريطة ص</value></data>
   <data name="Admin.Booths.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
@@ -2160,56 +2160,52 @@
   <data name="Admin.Statistics.Stat.RatingsCount" xml:space="preserve"><value>إجمالي التقييمات</value></data>
   <data name="Admin.Statistics.Stat.AverageRating" xml:space="preserve"><value>متوسط التقييم</value></data>
 
-  <!-- D-202 Track-2 — Companies admin CRUD + account provisioning. -->
-  <data name="Admin.Companies.Title" xml:space="preserve"><value>الشركات</value></data>
-  <data name="Admin.Companies.New" xml:space="preserve"><value>إضافة شركة</value></data>
-  <data name="Admin.Companies.Loading" xml:space="preserve"><value>جارٍ تحميل الشركات…</value></data>
-  <data name="Admin.Companies.None" xml:space="preserve"><value>لا توجد شركات بعد.</value></data>
-  <data name="Admin.Companies.Col.NameEn" xml:space="preserve"><value>الاسم (بالإنجليزية)</value></data>
-  <data name="Admin.Companies.Col.NameAr" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
-  <data name="Admin.Companies.Col.Type" xml:space="preserve"><value>النوع</value></data>
-  <data name="Admin.Companies.Col.AccountCount" xml:space="preserve"><value>الحسابات</value></data>
-  <data name="Admin.Companies.Col.Active" xml:space="preserve"><value>نشط</value></data>
-  <data name="Admin.Companies.Edit" xml:space="preserve"><value>تعديل</value></data>
-  <data name="Admin.Companies.Accounts" xml:space="preserve"><value>الحسابات</value></data>
-  <data name="Admin.Companies.Delete" xml:space="preserve"><value>حذف</value></data>
-  <data name="Admin.Companies.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
-  <data name="Admin.Companies.Type.Exhibitor" xml:space="preserve"><value>عارض</value></data>
-  <data name="Admin.Companies.Type.Sponsor" xml:space="preserve"><value>راعٍ</value></data>
-  <data name="Admin.Companies.Add.Title" xml:space="preserve"><value>إضافة شركة</value></data>
-  <data name="Admin.Companies.Edit.Title" xml:space="preserve"><value>تعديل شركة</value></data>
-  <data name="Admin.Companies.Field.NameEn" xml:space="preserve"><value>الاسم (بالإنجليزية)</value></data>
-  <data name="Admin.Companies.Field.NameAr" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
-  <data name="Admin.Companies.Field.Type" xml:space="preserve"><value>النوع</value></data>
-  <data name="Admin.Companies.Field.ContactEmail" xml:space="preserve"><value>البريد الإلكتروني للتواصل</value></data>
-  <data name="Admin.Companies.Field.ContactPhone" xml:space="preserve"><value>هاتف التواصل</value></data>
-  <data name="Admin.Companies.Field.Website" xml:space="preserve"><value>الموقع الإلكتروني</value></data>
-  <data name="Admin.Companies.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
-  <data name="Admin.Companies.Cancel" xml:space="preserve"><value>إلغاء</value></data>
-  <data name="Admin.Companies.Save" xml:space="preserve"><value>حفظ</value></data>
-  <data name="Admin.Companies.Saved" xml:space="preserve"><value>تم حفظ الشركة.</value></data>
-  <data name="Admin.Companies.Deleted" xml:space="preserve"><value>تم حذف الشركة.</value></data>
-  <data name="Admin.Companies.NameRequired" xml:space="preserve"><value>الاسم بالإنجليزية والعربية كلاهما مطلوب.</value></data>
-  <data name="Admin.Companies.Delete.Confirm" xml:space="preserve"><value>هل تريد حذف هذه الشركة؟ ستُزال من قائمة العارضين / الرعاة العامة فورًا.</value></data>
-  <data name="Admin.Companies.LoadFailed" xml:space="preserve"><value>تعذر تحميل الشركات. حاول مرة أخرى.</value></data>
-  <data name="Admin.Companies.Accounts.Title" xml:space="preserve"><value>الحسابات — {0}</value></data>
-  <data name="Admin.Companies.Accounts.Hint" xml:space="preserve"><value>الحساب المُنشأ هو تسجيل دخول للتطبيق قيد الموافقة مرتبط بهذه الشركة.</value></data>
-  <data name="Admin.Companies.Accounts.Loading" xml:space="preserve"><value>جارٍ تحميل الحسابات…</value></data>
-  <data name="Admin.Companies.Accounts.None" xml:space="preserve"><value>لم يتم إنشاء أي حسابات بعد.</value></data>
-  <data name="Admin.Companies.Accounts.Col.ContactName" xml:space="preserve"><value>اسم جهة الاتصال</value></data>
-  <data name="Admin.Companies.Accounts.Col.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
-  <data name="Admin.Companies.Accounts.Col.RoleLabel" xml:space="preserve"><value>الدور</value></data>
-  <data name="Admin.Companies.Accounts.Col.Active" xml:space="preserve"><value>نشط</value></data>
-  <data name="Admin.Companies.Accounts.Close" xml:space="preserve"><value>إغلاق</value></data>
-  <data name="Admin.Companies.Accounts.LoadFailed" xml:space="preserve"><value>تعذر تحميل حسابات الشركة. حاول مرة أخرى.</value></data>
-  <data name="Admin.Companies.Provision.Heading" xml:space="preserve"><value>إنشاء حساب</value></data>
-  <data name="Admin.Companies.Provision.ContactName" xml:space="preserve"><value>اسم جهة الاتصال</value></data>
-  <data name="Admin.Companies.Provision.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
-  <data name="Admin.Companies.Provision.RoleLabel" xml:space="preserve"><value>مسمى الدور</value></data>
-  <data name="Admin.Companies.Provision.Submit" xml:space="preserve"><value>إنشاء الحساب</value></data>
-  <data name="Admin.Companies.Provision.Done" xml:space="preserve"><value>تم إنشاء الحساب. وهو قيد الموافقة.</value></data>
-  <data name="Admin.Companies.Provision.Required" xml:space="preserve"><value>اسم جهة الاتصال والبريد الإلكتروني كلاهما مطلوب.</value></data>
-  <data name="Admin.Companies.Provision.Failed" xml:space="preserve"><value>تعذر إنشاء الحساب. حاول مرة أخرى.</value></data>
+  <!-- D-202 Track-2 — Exhibitors admin CRUD + account provisioning. -->
+  <data name="Admin.Exhibitors.Title" xml:space="preserve"><value>العارضون</value></data>
+  <data name="Admin.Exhibitors.New" xml:space="preserve"><value>إضافة عارض</value></data>
+  <data name="Admin.Exhibitors.Loading" xml:space="preserve"><value>جارٍ تحميل العارضين…</value></data>
+  <data name="Admin.Exhibitors.None" xml:space="preserve"><value>لا يوجد عارضون بعد.</value></data>
+  <data name="Admin.Exhibitors.Col.NameEn" xml:space="preserve"><value>الاسم (بالإنجليزية)</value></data>
+  <data name="Admin.Exhibitors.Col.NameAr" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
+  <data name="Admin.Exhibitors.Col.AccountCount" xml:space="preserve"><value>الحسابات</value></data>
+  <data name="Admin.Exhibitors.Col.Active" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.Exhibitors.Edit" xml:space="preserve"><value>تعديل</value></data>
+  <data name="Admin.Exhibitors.Accounts" xml:space="preserve"><value>الحسابات</value></data>
+  <data name="Admin.Exhibitors.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Exhibitors.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <data name="Admin.Exhibitors.Add.Title" xml:space="preserve"><value>إضافة عارض</value></data>
+  <data name="Admin.Exhibitors.Edit.Title" xml:space="preserve"><value>تعديل عارض</value></data>
+  <data name="Admin.Exhibitors.Field.NameEn" xml:space="preserve"><value>الاسم (بالإنجليزية)</value></data>
+  <data name="Admin.Exhibitors.Field.NameAr" xml:space="preserve"><value>الاسم (بالعربية)</value></data>
+  <data name="Admin.Exhibitors.Field.ContactEmail" xml:space="preserve"><value>البريد الإلكتروني للتواصل</value></data>
+  <data name="Admin.Exhibitors.Field.ContactPhone" xml:space="preserve"><value>هاتف التواصل</value></data>
+  <data name="Admin.Exhibitors.Field.Website" xml:space="preserve"><value>الموقع الإلكتروني</value></data>
+  <data name="Admin.Exhibitors.Field.IsActive" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.Exhibitors.Cancel" xml:space="preserve"><value>إلغاء</value></data>
+  <data name="Admin.Exhibitors.Save" xml:space="preserve"><value>حفظ</value></data>
+  <data name="Admin.Exhibitors.Saved" xml:space="preserve"><value>تم حفظ العارض.</value></data>
+  <data name="Admin.Exhibitors.Deleted" xml:space="preserve"><value>تم حذف العارض.</value></data>
+  <data name="Admin.Exhibitors.NameRequired" xml:space="preserve"><value>الاسم بالإنجليزية والعربية كلاهما مطلوب.</value></data>
+  <data name="Admin.Exhibitors.Delete.Confirm" xml:space="preserve"><value>هل تريد حذف هذا العارض؟ سيُزال من قائمة العارضين العامة فورًا.</value></data>
+  <data name="Admin.Exhibitors.LoadFailed" xml:space="preserve"><value>تعذر تحميل العارضين. حاول مرة أخرى.</value></data>
+  <data name="Admin.Exhibitors.Accounts.Title" xml:space="preserve"><value>الحسابات — {0}</value></data>
+  <data name="Admin.Exhibitors.Accounts.Hint" xml:space="preserve"><value>الحساب المُنشأ هو تسجيل دخول للتطبيق قيد الموافقة مرتبط بهذا العارض.</value></data>
+  <data name="Admin.Exhibitors.Accounts.Loading" xml:space="preserve"><value>جارٍ تحميل الحسابات…</value></data>
+  <data name="Admin.Exhibitors.Accounts.None" xml:space="preserve"><value>لم يتم إنشاء أي حسابات بعد.</value></data>
+  <data name="Admin.Exhibitors.Accounts.Col.ContactName" xml:space="preserve"><value>اسم جهة الاتصال</value></data>
+  <data name="Admin.Exhibitors.Accounts.Col.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Exhibitors.Accounts.Col.RoleLabel" xml:space="preserve"><value>الدور</value></data>
+  <data name="Admin.Exhibitors.Accounts.Col.Active" xml:space="preserve"><value>نشط</value></data>
+  <data name="Admin.Exhibitors.Accounts.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Exhibitors.Accounts.LoadFailed" xml:space="preserve"><value>تعذر تحميل حسابات العارض. حاول مرة أخرى.</value></data>
+  <data name="Admin.Exhibitors.Provision.Heading" xml:space="preserve"><value>إنشاء حساب</value></data>
+  <data name="Admin.Exhibitors.Provision.ContactName" xml:space="preserve"><value>اسم جهة الاتصال</value></data>
+  <data name="Admin.Exhibitors.Provision.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Exhibitors.Provision.RoleLabel" xml:space="preserve"><value>مسمى الدور</value></data>
+  <data name="Admin.Exhibitors.Provision.Submit" xml:space="preserve"><value>إنشاء الحساب</value></data>
+  <data name="Admin.Exhibitors.Provision.Done" xml:space="preserve"><value>تم إنشاء الحساب. وهو قيد الموافقة.</value></data>
+  <data name="Admin.Exhibitors.Provision.Required" xml:space="preserve"><value>اسم جهة الاتصال والبريد الإلكتروني كلاهما مطلوب.</value></data>
+  <data name="Admin.Exhibitors.Provision.Failed" xml:space="preserve"><value>تعذر إنشاء الحساب. حاول مرة أخرى.</value></data>
 
   <!-- Gates operations dashboard (read-only live overview). -->
   <data name="Module.GatesDashboard" xml:space="preserve"><value>لوحة البوابات</value></data>

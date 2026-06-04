@@ -6,7 +6,7 @@
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.BusinessMeetings.View)]
 @using SIMF.Contracts.BusinessMeetings
-@using SIMF.Contracts.Companies
+@using SIMF.Contracts.Exhibitors
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 
@@ -308,7 +308,7 @@
 
     // Cached pickers (bounded Top=500, mirrors BoothsList).
     private List<AdminHallSummary> _meetingHalls = new();
-    private List<AdminCompanySummary> _companies = new();
+    private List<AdminExhibitorSummary> _companies = new();
     private List<AdminAttendeeSummary> _visitors = new();
 
     // Schedule modal state.
@@ -352,8 +352,8 @@
                 .OrderBy(h => h.Name).ToList();
         }
 
-        var companiesEnv = await JS.InvokeAsync<ApiResult<GridPage<AdminCompanySummary>>>(
-            "simfAccount.postJson", "/account/api/admin/companies/list", new GridQuery { Top = 500 });
+        var companiesEnv = await JS.InvokeAsync<ApiResult<GridPage<AdminExhibitorSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/exhibitors/list", new GridQuery { Top = 500 });
         if (companiesEnv is { Success: true, Data: not null })
         {
             _companies = companiesEnv.Data.Items.Where(c => c.IsActive)

@@ -1,30 +1,24 @@
-using SIMF.Common.Enums;
 using SIMF.Domain.Common;
 using SIMF.Domain.Contacts;
 
-namespace SIMF.Domain.Companies;
+namespace SIMF.Domain.Exhibitors;
 
 /// <summary>
-/// D-199 #3 (additive schema) — an exhibitor / sponsor company managed from the
-/// Control Panel. The owner model is "create the COMPANY NAME first, then create
-/// the login ACCOUNTS under it"; the accounts are tracked as
-/// <see cref="CompanyMembership"/> rows. Exhibitor / sponsor companies are
-/// CP-created only. Soft-deleted via <see cref="IsActive"/> — admin grids and
-/// pickers filter <c>IsActive == true</c>.
+/// D-199 #3 (additive schema) — an exhibitor managed from the Control Panel.
+/// The owner model is "create the EXHIBITOR NAME first, then create the login
+/// ACCOUNTS under it"; the accounts are tracked as
+/// <see cref="ExhibitorMembership"/> rows. Exhibitors are CP-created only.
+/// Soft-deleted via <see cref="IsActive"/> — admin grids and pickers filter
+/// <c>IsActive == true</c>.
 /// </summary>
-public sealed class Company : BaseAuditEntity
-{ 
+public sealed class Exhibitor : BaseAuditEntity
+{
 
     /// <summary>English display name (1–256 chars).</summary>
     public string Name { get; set; } = string.Empty;
 
     /// <summary>Arabic display name (1–256 chars) — the primary surface.</summary>
     public string NameArabic { get; set; } = string.Empty;
-
-
-
-    /// <summary>Whether the company is an exhibitor or a sponsor.</summary>
-    public CompanyType Type { get; set; } = CompanyType.Exhibitor;
 
     /// <summary>Optional primary contact email (≤320 chars). Retained per
     /// SIMF-FDS-014 (D-260): the entity keeps its own inline contact; the linked
@@ -34,7 +28,7 @@ public sealed class Company : BaseAuditEntity
     /// <summary>Optional primary contact phone (≤32 chars).</summary>
     public string? ContactPhone { get; set; }
 
-    /// <summary>Optional company website (≤512 chars).</summary>
+    /// <summary>Optional website (≤512 chars).</summary>
     public string? Website { get; set; }
 
     /// <summary>SIMF-FDS-014 (D-260) — optional link to the shared <c>Contact</c>
@@ -42,6 +36,6 @@ public sealed class Company : BaseAuditEntity
     /// country). Null until linked; multiple entities may reference the same
     /// Contact. The public projection prefers the Contact when set.</summary>
     public Guid? ContactId { get; set; }
-    public Contact? Contact { get; set; }//Add FK 
-     
+    public Contact? Contact { get; set; }//Add FK
+
 }
