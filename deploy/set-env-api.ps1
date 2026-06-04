@@ -7,16 +7,18 @@
 # secret values. Fill the values on the server, run as Administrator, then
 # restart the IIS app pool so w3wp picks them up.
 #
-# Naming: ASP.NET Core no-prefix double-underscore convention (Section__Key).
-# The API uses the default host configuration (WebApplication.CreateBuilder), so
-# there is NO custom env-var prefix - do not prefix names with "SIMF_".
+# Naming: SIMF_ + ASP.NET Core double-underscore convention (SIMF_Section__Key).
+# The apps register AddEnvironmentVariables("SIMF_"), which strips the prefix, so
+# SIMF_ConnectionStrings__SimfAppDb binds to ConnectionStrings:SimfAppDb.
+# EXCEPTION: ASPNETCORE_ENVIRONMENT is read by the host before configuration
+# sources load, so it stays UN-prefixed.
 #
-# Array values bind by index: ReverseProxy__KnownProxies__0, __1, __2, ...
+# Array values bind by index: SIMF_ReverseProxy__KnownProxies__0, __1, __2, ...
 #
 # Secret generation (SIMF-OPS-001 section B.3):
-#   Jwt__SigningKey                      : openssl rand -base64 48
-#   Storage__UserIdDocumentEncryptionKey : openssl rand -base64 32
-#   Ai__PromptHash__Secret               : openssl rand -base64 32
+#   SIMF_Jwt__SigningKey                      : openssl rand -base64 48
+#   SIMF_Storage__UserIdDocumentEncryptionKey : openssl rand -base64 32
+#   SIMF_Ai__PromptHash__Secret               : openssl rand -base64 32
 # =============================================================================
 
 #Requires -RunAsAdministrator
@@ -26,55 +28,55 @@ $ErrorActionPreference = "Stop"
 # name -> value. An empty value is SKIPPED (warned), so running the unedited
 # template never clobbers a required secret with an empty string.
 $vars = [ordered]@{
-    "ASPNETCORE_ENVIRONMENT"                  = "Production"  # [REQUIRED]
+    "ASPNETCORE_ENVIRONMENT"                       = "Production"  # [REQUIRED] host-level - NOT prefixed
 
     # --- Databases (SIMF-OPS-001 B.1) ---
-    "ConnectionStrings__SimfIdentityDb"       = ""  # [REQUIRED][SECRET] Identity DB
-    "ConnectionStrings__SimfAppDb"            = ""  # [REQUIRED][SECRET] App DB
+    "SIMF_ConnectionStrings__SimfIdentityDb"       = ""  # [REQUIRED][SECRET] Identity DB
+    "SIMF_ConnectionStrings__SimfAppDb"            = ""  # [REQUIRED][SECRET] App DB
 
     # --- JWT ---
-    "Jwt__SigningKey"                         = ""  # [REQUIRED][SECRET] openssl rand -base64 48
-    # Jwt__Issuer / Jwt__Audience / Jwt__AccessTokenMinutes / Jwt__StreamAudience
-    # / Jwt__StreamTokenMinutes have appsettings defaults - override only if needed.
+    "SIMF_Jwt__SigningKey"                         = ""  # [REQUIRED][SECRET] openssl rand -base64 48
+    # SIMF_Jwt__Issuer / __Audience / __AccessTokenMinutes / __StreamAudience /
+    # __StreamTokenMinutes have appsettings defaults - override only if needed.
 
     # --- Email / SMTP ---
-    "Email__Host"                             = ""  # [REQUIRED]
-    "Email__Port"                             = ""  # optional (default 587)
-    "Email__User"                             = ""  # [REQUIRED]
-    "Email__Password"                         = ""  # [REQUIRED][SECRET]
-    "Email__FromAddress"                      = ""  # optional (default no-reply@simf.example)
-    "Email__FromName"                         = ""  # optional (default SIMF)
+    "SIMF_Email__Host"                             = ""  # [REQUIRED]
+    "SIMF_Email__Port"                             = ""  # optional (default 587)
+    "SIMF_Email__User"                             = ""  # [REQUIRED]
+    "SIMF_Email__Password"                         = ""  # [REQUIRED][SECRET]
+    "SIMF_Email__FromAddress"                      = ""  # optional (default no-reply@simf.example)
+    "SIMF_Email__FromName"                         = ""  # optional (default SIMF)
 
     # --- Bootstrap super-admin (rotate post first login - SIMF-OPS-001 B.6) ---
-    "SuperAdmin__Email"                       = ""  # [REQUIRED]
-    "SuperAdmin__TempPassword"                = ""  # [REQUIRED][SECRET]
-    "SuperAdmin__TotpSecret"                  = ""  # [REQUIRED][SECRET]
+    "SIMF_SuperAdmin__Email"                       = ""  # [REQUIRED]
+    "SIMF_SuperAdmin__TempPassword"                = ""  # [REQUIRED][SECRET]
+    "SIMF_SuperAdmin__TotpSecret"                  = ""  # [REQUIRED][SECRET]
 
     # --- Filesystem storage ---
-    "Storage__AvatarBase"                     = ""  # [REQUIRED] validated at startup
-    "Storage__UserIdDocumentBase"             = ""  # [REQUIRED] encrypted ID-image store
-    "Storage__UserIdDocumentEncryptionKey"    = ""  # [REQUIRED][SECRET] openssl rand -base64 32
-    "Storage__LogDirectory"                   = ""  # optional (default logs)
+    "SIMF_Storage__AvatarBase"                     = ""  # [REQUIRED] validated at startup
+    "SIMF_Storage__UserIdDocumentBase"             = ""  # [REQUIRED] encrypted ID-image store
+    "SIMF_Storage__UserIdDocumentEncryptionKey"    = ""  # [REQUIRED][SECRET] openssl rand -base64 32
+    "SIMF_Storage__LogDirectory"                   = ""  # optional (default logs)
 
     # --- AI provider ---
-    "Ai__DefaultProvider"                     = ""  # optional (default Echo; production should set OpenAi)
-    "Ai__OpenAi__ApiKey"                      = ""  # [SECRET] required if any prompt uses OpenAi
-    "Ai__OpenAi__BaseUrl"                     = ""  # optional (default https://api.openai.com/v1)
-    "Ai__OpenAi__DefaultModel"                = ""  # optional (default gpt-4o-mini)
-    "Ai__PromptHash__Secret"                  = ""  # [REQUIRED for prod][SECRET] openssl rand -base64 32
+    "SIMF_Ai__DefaultProvider"                     = ""  # optional (default Echo; production should set OpenAi)
+    "SIMF_Ai__OpenAi__ApiKey"                      = ""  # [SECRET] required if any prompt uses OpenAi
+    "SIMF_Ai__OpenAi__BaseUrl"                     = ""  # optional (default https://api.openai.com/v1)
+    "SIMF_Ai__OpenAi__DefaultModel"                = ""  # optional (default gpt-4o-mini)
+    "SIMF_Ai__PromptHash__Secret"                  = ""  # [REQUIRED for prod][SECRET] openssl rand -base64 32
 
     # --- Reverse proxy (trusted hops for X-Forwarded-For) ---
-    "ReverseProxy__KnownProxies__0"           = ""  # [REQUIRED for prod] first trusted proxy IP; add __1, __2 ...
+    "SIMF_ReverseProxy__KnownProxies__0"           = ""  # [REQUIRED for prod] first trusted proxy IP; add __1, __2 ...
 
     # --- Rate limits (defaults exist; tighten for a public-facing deploy) ---
-    "RateLimit__PermitLimit"                  = ""  # optional (default 20)
-    "RateLimit__WindowSeconds"                = ""  # optional (default 60)
+    "SIMF_RateLimit__PermitLimit"                  = ""  # optional (default 20)
+    "SIMF_RateLimit__WindowSeconds"                = ""  # optional (default 60)
 
     # --- Media / presentation / recording storage roots ---
-    "MediaImageStorage__RootPath"             = ""  # optional (default App_Data/media)
-    "SpeakerPresentationStorage__RootPath"    = ""  # optional (default App_Data/presentations)
-    "SessionRecordingStorage__RootPath"       = ""  # optional (default App_Data/recordings)
-    "SessionRecordingStorage__MaxUploadBytes" = ""  # optional (default 1073741824)
+    "SIMF_MediaImageStorage__RootPath"             = ""  # optional (default App_Data/media)
+    "SIMF_SpeakerPresentationStorage__RootPath"    = ""  # optional (default App_Data/presentations)
+    "SIMF_SessionRecordingStorage__RootPath"       = ""  # optional (default App_Data/recordings)
+    "SIMF_SessionRecordingStorage__MaxUploadBytes" = ""  # optional (default 1073741824)
 }
 
 $set = 0

@@ -56,16 +56,20 @@ Administrator**, then **restart the IIS app pool** so `w3wp` picks them up:
 
 | Script | Service | Key groups |
 |--------|---------|-----------|
-| [set-env-api.ps1](set-env-api.ps1) | SimfAPI | `ConnectionStrings__*`, `Jwt__SigningKey`, `Email__*`, `SuperAdmin__*`, `Storage__*`, `Ai__*`, `ReverseProxy__KnownProxies__n`, `RateLimit__*`, media/presentation/recording roots, `ASPNETCORE_ENVIRONMENT` |
-| [set-env-cp.ps1](set-env-cp.ps1) | SimfCP | `Api__BaseUrl`, `Storage__LogDirectory`, `ASPNETCORE_ENVIRONMENT` |
-| [set-env-web.ps1](set-env-web.ps1) | SimfWeb | `Api__BaseUrl`, `Storage__LogDirectory`, `ASPNETCORE_ENVIRONMENT` |
+| [set-env-api.ps1](set-env-api.ps1) | SimfAPI | `SIMF_ConnectionStrings__*`, `SIMF_Jwt__SigningKey`, `SIMF_Email__*`, `SIMF_SuperAdmin__*`, `SIMF_Storage__*`, `SIMF_Ai__*`, `SIMF_ReverseProxy__KnownProxies__n`, `SIMF_RateLimit__*`, media/presentation/recording roots, `ASPNETCORE_ENVIRONMENT` |
+| [set-env-cp.ps1](set-env-cp.ps1) | SimfCP | `SIMF_Api__BaseUrl`, `SIMF_Storage__LogDirectory`, `ASPNETCORE_ENVIRONMENT` |
+| [set-env-web.ps1](set-env-web.ps1) | SimfWeb | `SIMF_Api__BaseUrl`, `SIMF_Storage__LogDirectory`, `ASPNETCORE_ENVIRONMENT` |
 
-Naming uses the ASP.NET Core **no-prefix** double-underscore convention
-(`Section__Key`) — the apps use the default host config, so there is **no
-`SIMF_` prefix**. Each script skips empty values (so an unedited run never sets
-blanks) and lists which keys are `[REQUIRED]` / `[SECRET]`. Generate the secret
-keys per SIMF-OPS-001 §B.3. Machine-scope variables are shared across all apps
-on the box (so `Api__BaseUrl` / `ASPNETCORE_ENVIRONMENT` are common to CP + Web).
+Naming uses the **`SIMF_` project prefix** + the ASP.NET Core double-underscore
+convention (`SIMF_Section__Key`). Each app registers
+`AddEnvironmentVariables("SIMF_")` (branch `feature/env-var-prefix`), which
+strips the prefix, so `SIMF_ConnectionStrings__SimfAppDb` binds to
+`ConnectionStrings:SimfAppDb`. **Exception:** `ASPNETCORE_ENVIRONMENT` is
+host-level (read before configuration sources load) and stays **un-prefixed**.
+Each script skips empty values (so an unedited run never sets blanks) and lists
+which keys are `[REQUIRED]` / `[SECRET]`. Generate the secret keys per
+SIMF-OPS-001 §B.3. Machine-scope variables are shared across all apps on the box
+(so `SIMF_Api__BaseUrl` / `ASPNETCORE_ENVIRONMENT` are common to CP + Web).
 
 ## Out of scope here (handled elsewhere)
 - **Database migrations.** Applied **in-process at API startup** — `Program.cs`
