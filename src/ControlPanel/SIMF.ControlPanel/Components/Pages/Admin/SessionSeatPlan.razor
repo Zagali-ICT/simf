@@ -1,0 +1,333 @@
+@* D-182 (CP UI for D-175 seat reservations) — admin picks a session,
+   sees active seat reservations, can paint a row as admin-reserved
+   (blocks visitor self-pick of that row) or release individual
+   reservations. The hall layout determines which rows are valid;
+   the backend validates against `HallSeatLayout.RowLabels`. *@
+@page "/admin/sessions/seat-plans"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.SeatPlans.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.SessionSeatPlans.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.SessionSeatPlans.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+        <p class="simf-hint">@L["Admin.SessionSeatPlans.Hint"]</p>
+
+        @if (_sessions.Count == 0 && !_loading)
+        {
+            <SimfEmptyState Title="@L["Admin.SessionSeatPlans.None"]" />
+        }
+        else
+        {
+            <label class="simf-field">
+                <span class="simf-field__label">@L["Admin.SessionSeatPlans.Pick"]</span>
+                <select class="simf-field__input"
+                        value="@(_selectedSessionId?.ToString() ?? string.Empty)"
+                        @onchange="OnSessionChangedAsync" disabled="@_loading">
+                    <option value=""></option>
+                    @foreach (var session in _sessions)
+                    {
+                        <option value="@session.Id">@session.Code — @session.Title</option>
+                    }
+                </select>
+            </label>
+        }
+
+        @if (_loading)
+        {
+            <p>@L["Admin.SessionSeatPlans.Loading"]</p>
+        }
+        else if (_selectedSessionId is not null)
+        {
+            <div class="simf-form__fields">
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.SessionSeatPlans.ReserveRow.Label"]</span>
+                    <input class="simf-field__input" type="text"
+                           value="@_reserveRowLabel"
+                           @onchange="OnReserveRowChanged"
+                           disabled="@_busy" />
+                </label>
+                <div class="simf-form__actions">
+                    <SimfButton Type="button" OnClick="ReserveRowAsync" Loading="_busy">
+                        @L["Admin.SessionSeatPlans.ReserveRow.Action"]
+                    </SimfButton>
+                </div>
+            </div>
+
+            @* P1.4 (D-215) — visual seat grid: render the hall layout when it
+               is available, overlaying each reservation by (row, seat). A
+               reserved seat is clickable to release it. *@
+            @if (_layout is not null && _layout.RowLabels.Count > 0)
+            {
+                <div class="seatgrid">
+                    @foreach (var rowLabel in _layout.RowLabels)
+                    {
+                        <div class="seatgrid__row">
+                            <span class="seatgrid__row-label">@rowLabel</span>
+                            @for (var seat = 1; seat <= _layout.SeatsPerRow; seat++)
+                            {
+                                var cell = FindReservation(rowLabel, seat);
+                                var seatNumber = seat;
+                                <button type="button"
+                                        class="seatgrid__seat @SeatStateClass(cell)"
+                                        disabled="@(_busy || cell is null)"
+                                        title="@SeatTitle(rowLabel, seatNumber, cell)"
+                                        @onclick="@(() => cell is not null ? ReleaseAsync(cell) : Task.CompletedTask)">
+                                    @seatNumber
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="seatgrid__legend">
+                    <span class="seatgrid__legend-item">
+                        <span class="seatgrid__swatch seatgrid__swatch--free"></span>@L["Admin.SessionSeatPlans.Legend.Free"]
+                    </span>
+                    <span class="seatgrid__legend-item">
+                        <span class="seatgrid__swatch seatgrid__swatch--user"></span>@L["Admin.SessionSeatPlans.Legend.User"]
+                    </span>
+                    <span class="seatgrid__legend-item">
+                        <span class="seatgrid__swatch seatgrid__swatch--admin"></span>@L["Admin.SessionSeatPlans.Legend.Admin"]
+                    </span>
+                    <span class="seatgrid__legend-item">
+                        <span class="seatgrid__swatch seatgrid__swatch--random"></span>@L["Admin.SessionSeatPlans.Legend.Random"]
+                    </span>
+                </div>
+                <p class="simf-table__summary">
+                    @(string.Format(L["Admin.SessionSeatPlans.Summary"], _reservations.Count))
+                </p>
+            }
+            else if (_reservations.Count == 0)
+            {
+                <SimfEmptyState Title="@L["Admin.SessionSeatPlans.NoReservations"]" />
+            }
+            else
+            {
+                @* Fallback: no hall layout defined yet — list the reservations. *@
+                <table class="simf-table">
+                    <thead>
+                        <tr>
+                            <th>@L["Admin.SessionSeatPlans.Col.Row"]</th>
+                            <th>@L["Admin.SessionSeatPlans.Col.Seat"]</th>
+                            <th>@L["Admin.SessionSeatPlans.Col.Kind"]</th>
+                            <th>@L["Admin.SessionSeatPlans.Col.Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _reservations)
+                        {
+                            <tr>
+                                <td>@row.RowLabel</td>
+                                <td>@row.SeatNumber</td>
+                                <td>@row.Kind</td>
+                                <td>
+                                    <SimfButton Type="button"
+                                                OnClick="@(() => ReleaseAsync(row))"
+                                                Disabled="_busy">
+                                        @L["Admin.SessionSeatPlans.Release"]
+                                    </SimfButton>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <p class="simf-table__summary">
+                    @(string.Format(L["Admin.SessionSeatPlans.Summary"], _reservations.Count))
+                </p>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private List<AdminSessionSummary> _sessions = new();
+    private Guid? _selectedSessionId;
+    private List<SessionSeatCell> _reservations = new();
+    // P1.4 (D-215) — the hall layout for the selected session's hall, used to
+    // paint the full grid (free + reserved). Null when the hall has no layout.
+    private HallSeatLayoutSnapshot? _layout;
+    private string _reserveRowLabel = string.Empty;
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    // P1.4 — fast (row,seat) -> reservation lookup so the grid renders O(1) per seat.
+    private SessionSeatCell? FindReservation(string rowLabel, int seatNumber) =>
+        _reservations.FirstOrDefault(r =>
+            string.Equals(r.RowLabel, rowLabel, StringComparison.OrdinalIgnoreCase)
+            && r.SeatNumber == seatNumber);
+
+    private static string SeatStateClass(SessionSeatCell? cell) => cell?.Kind switch
+    {
+        SeatReservationKind.UserBooking => "seatgrid__seat--user seatgrid__seat--reserved",
+        SeatReservationKind.AdminReservedRow => "seatgrid__seat--admin seatgrid__seat--reserved",
+        SeatReservationKind.RandomAssignment => "seatgrid__seat--random seatgrid__seat--reserved",
+        _ => string.Empty,
+    };
+
+    private string SeatTitle(string rowLabel, int seatNumber, SessionSeatCell? cell)
+    {
+        var coords = $"{rowLabel}{seatNumber}";
+        return cell is null
+            ? coords
+            : string.Format(L["Admin.SessionSeatPlans.Seat.ReservedTitle"], coords, cell.Kind);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSessionsAsync();
+    }
+
+    private async Task LoadSessionsAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminSessionSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/sessions/list",
+                new GridQuery { Top = 200 });
+            if (env is { Success: true, Data: not null })
+            {
+                _sessions = env.Data.Items.Where(s => s.IsActive)
+                    .OrderBy(s => s.Code).ToList();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionSeatPlans.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task OnSessionChangedAsync(ChangeEventArgs e)
+    {
+        // Clear any stale toast so a "Released" / "ReserveRow.Done"
+        // message from session A doesn't follow the admin to session B.
+        _toast = null;
+        if (Guid.TryParse(e.Value?.ToString(), out var id))
+        {
+            _selectedSessionId = id;
+            await LoadReservationsAsync();
+        }
+        else
+        {
+            _selectedSessionId = null;
+            _reservations.Clear();
+            _layout = null;
+        }
+    }
+
+    private async Task LoadReservationsAsync()
+    {
+        if (_selectedSessionId is null) return;
+        _loading = true;
+        try
+        {
+            await LoadLayoutForSelectedSessionAsync();
+            var env = await JS.InvokeAsync<ApiResult<GridPage<SessionSeatCell>>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/sessions/{_selectedSessionId}/seats/list",
+                new GridQuery { Top = 500 });
+            if (env is { Success: true, Data: not null })
+            {
+                _reservations = env.Data.Items.ToList();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionSeatPlans.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    // P1.4 (D-215) — fetch the hall layout for the selected session's hall so
+    // the grid can show free seats too. A missing layout (404) is not an error;
+    // the page falls back to the reservation list.
+    private async Task LoadLayoutForSelectedSessionAsync()
+    {
+        _layout = null;
+        var session = _sessions.FirstOrDefault(s => s.Id == _selectedSessionId);
+        if (session is null) return;
+        var env = await JS.InvokeAsync<ApiResult<HallSeatLayoutSnapshot>>(
+            "simfAccount.getJson",
+            $"/account/api/admin/halls/{session.HallId}/seat-layout");
+        if (env is { Success: true, Data: not null })
+        {
+            _layout = env.Data;
+        }
+    }
+
+    private void OnReserveRowChanged(ChangeEventArgs e) =>
+        _reserveRowLabel = (e.Value?.ToString() ?? string.Empty).Trim();
+
+    private async Task ReserveRowAsync()
+    {
+        if (_selectedSessionId is null || _busy
+            || string.IsNullOrWhiteSpace(_reserveRowLabel))
+        {
+            return;
+        }
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/sessions/{_selectedSessionId}/seats/reserve-row",
+                new AdminReserveRowRequest { RowLabel = _reserveRowLabel });
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.SessionSeatPlans.ReserveRow.Done"]);
+                _reserveRowLabel = string.Empty;
+                await LoadReservationsAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionSeatPlans.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task ReleaseAsync(SessionSeatCell row)
+    {
+        if (_selectedSessionId is null || _busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/sessions/{_selectedSessionId}/seats/{row.ReservationId}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.SessionSeatPlans.Released"]);
+                await LoadReservationsAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionSeatPlans.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+}

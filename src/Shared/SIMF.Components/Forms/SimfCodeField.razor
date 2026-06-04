@@ -1,0 +1,35 @@
+@* SimfCodeField — the 6-digit verification-code input used by the second-factor
+   and reset-password screens. One input, entered left-to-right regardless of
+   the page language, bound to the form's EditContext. *@
+@inherits SimfFieldBase
+
+<div class="simf-field simf-code @(HasError ? "simf-code--error" : null)">
+    <label class="simf-field__label" for="@FieldElementId">@Label</label>
+    <InputText id="@FieldElementId" class="simf-code__input"
+               Value="@Value" ValueChanged="@ValueChanged" ValueExpression="@ValueExpression"
+               type="text" inputmode="numeric" autocomplete="one-time-code"
+               maxlength="6" disabled="@Disabled"
+               aria-invalid="@(HasError ? "true" : null)"
+               aria-describedby="@DescribedBy" />
+    @if (HasError)
+    {
+        <div class="simf-field__error" id="@ErrorElementId" role="alert">
+            <SimfIcon Name="alert" Size="14" Class="simf-field__error-icon" />
+            <span>@ErrorMessage</span>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Helper))
+    {
+        <div class="simf-field__helper" id="@HelperElementId">@Helper</div>
+    }
+</div>
+
+@code {
+    /// <summary>Helper text shown below the input, e.g. "Enter the 6-digit code".</summary>
+    [Parameter] public string? Helper { get; set; }
+
+    private string? DescribedBy =>
+        HasError ? ErrorElementId
+        : !string.IsNullOrEmpty(Helper) ? HelperElementId
+        : null;
+}

@@ -1,0 +1,105 @@
+@* D-202 Track-2 (CP UI for the D-202 statistics dashboard) — a read-only
+   overview of live event counts aggregated across both DbContexts. Calls
+   GET /account/api/admin/statistics → ApiResult<StatisticsDashboard> and
+   renders each metric as a stat card. No create / edit / delete — every
+   value is a live aggregate read computed on demand by the backend. *@
+@page "/admin/statistics"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Statistics.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Statistics.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Statistics.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        @if (_loading)
+        {
+            <p>@L["Admin.Statistics.Loading"]</p>
+        }
+        else if (_dashboard is null)
+        {
+            <SimfEmptyState Title="@L["Admin.Statistics.None"]" />
+        }
+        else
+        {
+            @* Reuse the existing .simf-form__actions flex-row layout so the
+               cards wrap into a responsive grid — there is no dedicated
+               stat-grid class in the component CSS this wave (same approach
+               as RatingsList). *@
+            <div class="simf-form__actions">
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.TotalAttendees"]"
+                              Value="@Count(_dashboard.TotalAttendees)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.ApprovedAttendees"]"
+                              Value="@Count(_dashboard.ApprovedAttendees)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.PendingApprovals"]"
+                              Value="@Count(_dashboard.PendingApprovals)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.Sessions"]"
+                              Value="@Count(_dashboard.Sessions)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.Speakers"]"
+                              Value="@Count(_dashboard.Speakers)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.Booths"]"
+                              Value="@Count(_dashboard.Booths)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.Sponsors"]"
+                              Value="@Count(_dashboard.Sponsors)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.NewsArticles"]"
+                              Value="@Count(_dashboard.NewsArticles)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.MediaItems"]"
+                              Value="@Count(_dashboard.MediaItems)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.CommentsApproved"]"
+                              Value="@Count(_dashboard.CommentsApproved)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.CommentsPending"]"
+                              Value="@Count(_dashboard.CommentsPending)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.RatingsCount"]"
+                              Value="@Count(_dashboard.RatingsCount)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.AverageRating"]"
+                              Value="@_dashboard.AverageRating.ToString("0.0", CultureInfo.InvariantCulture)" />
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    // Fully-qualified: this component's generated class is also named
+    // StatisticsDashboard, so the bare contract name would bind to the
+    // component instead of SIMF.Contracts.Statistics.StatisticsDashboard.
+    private SIMF.Contracts.Statistics.StatisticsDashboard? _dashboard;
+    private bool _loading;
+    private Toast? _toast;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<SIMF.Contracts.Statistics.StatisticsDashboard>>(
+                "simfAccount.getJson",
+                "/account/api/admin/statistics");
+            if (env is { Success: true, Data: not null })
+            {
+                _dashboard = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Statistics.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private static string Count(int value) =>
+        value.ToString(CultureInfo.InvariantCulture);
+}

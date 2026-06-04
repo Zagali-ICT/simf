@@ -1,0 +1,32 @@
+@* SimfContextMenuItem — one entry in a SimfContextMenu (decision D-044 b).
+   A button with an optional icon, a label, an optional danger styling for
+   destructive actions, and a disabled state. *@
+@namespace SIMF.Components.Forms
+
+<button type="button" role="menuitem"
+        class="simf-ctxmenu__item @(Danger ? "simf-ctxmenu__item--danger" : null)"
+        disabled="@Disabled"
+        @onclick="OnClick">
+    @if (!string.IsNullOrEmpty(Icon))
+    {
+        <SimfIcon Name="@Icon" Size="14" Class="simf-ctxmenu__icon" />
+    }
+    <span class="simf-ctxmenu__label">@ChildContent</span>
+</button>
+
+@code {
+    /// <summary>The icon name (optional).</summary>
+    [Parameter] public string? Icon { get; set; }
+
+    /// <summary>True to style the item as destructive (red).</summary>
+    [Parameter] public bool Danger { get; set; }
+
+    /// <summary>True to disable the item (e.g. when the action is unavailable).</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>The label text or markup.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The click handler.</summary>
+    [Parameter] public EventCallback OnClick { get; set; }
+}

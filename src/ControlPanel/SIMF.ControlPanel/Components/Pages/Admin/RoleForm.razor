@@ -1,0 +1,107 @@
+@* D-134 Sprint A — reusable Role Add/Edit form. Hosted in the modal
+   opened from RolesList.razor. Mirrors the InterestForm extraction
+   pattern (D-132): Initial=null → Create mode; Initial=row → Edit
+   mode. Edit only renames (the MVP doesn't expose IsBaseline editing —
+   that flag is set at seed-time by IdentitySeeder). *@
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        <SimfTextField Label="@L["Admin.Roles.Field.Name"]"
+                       Helper="@L["Admin.Roles.Field.NameHint"]"
+                       MaxLength="64"
+                       @bind-Value="_model.Name" Disabled="_busy" />
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy"
+                    LoadingLabel="@(Initial is null ? L["Admin.Roles.New.Submitting"] : L["Admin.Roles.Edit.Submitting"])">
+            @(Initial is null ? L["Admin.Roles.New.Submit"] : L["Admin.Roles.Edit.Submit"])
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy" OnClick="OnCancel">
+                @L["Admin.Roles.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private readonly Model _model = new();
+    private EditContext _editContext = default!;
+    private bool _busy;
+    private string? _error;
+
+    /// <summary>Edit mode when set; Create mode when null.</summary>
+    [Parameter] public AdminRoleSummary? Initial { get; set; }
+
+    [Parameter] public EventCallback<AdminRoleSummary> OnSuccess { get; set; }
+
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Initial is not null)
+        {
+            _model.Name = Initial.Name;
+        }
+        _editContext = new EditContext(_model);
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _error = null;
+
+        var name = (_model.Name ?? string.Empty).Trim();
+        if (name.Length is < 1 or > 64)
+        {
+            _error = L["Admin.Roles.Field.NameInvalid"]; return;
+        }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminRoleSummary>? envelope;
+            if (Initial is null)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminRoleSummary>>(
+                    "simfAccount.postJson", "/account/api/admin/roles",
+                    new AdminCreateRoleRequest { Name = name });
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminRoleSummary>>(
+                    "simfAccount.putJson", $"/account/api/admin/roles/{Initial.Id}",
+                    new AdminUpdateRoleRequest { Name = name });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Roles.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.Roles.Fallback"];
+        }
+        finally { _busy = false; }
+    }
+
+    private sealed class Model
+    {
+        public string Name { get; set; } = string.Empty;
+    }
+}

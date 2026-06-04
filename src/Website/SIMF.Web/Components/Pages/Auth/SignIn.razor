@@ -1,0 +1,156 @@
+@* Website — sign-in (the password step). A visitor account completes with a
+   code emailed to the account — unless TwoFactorEnabled is false on the
+   account, in which case the API returns the tokens directly. *@
+@page "/login"
+@rendermode AppRenderMode.InteractiveServerNoPrerender
+@inject IStringLocalizer<Strings> L
+@inject SimfAuthClient Api
+@inject SimfAuthSession Session
+@inject SignInTicketStore Tickets
+@inject NavigationManager Nav
+
+<PageTitle>@L["Auth.PageTitle.SignIn"]</PageTitle>
+
+<SimfAuthLayout>
+    <Brand>
+        <SimfBrandPanel AltText="@L["Brand.LogoAlt"]" Subtitle="@L["Brand.Subtitle"]" Caption="@L["Brand.Caption"]" />
+    </Brand>
+    <ChildContent>
+        <SimfAuthCard Title="@L["Auth.SignIn.Title"]" SupportingText="@L["Auth.SignIn.Supporting"]" Wide="true">
+            <TopControls>
+                <SimfLanguageSwitch Href="@CultureHref" Label="@L["Auth.LanguageSwitch"]" />
+                <SimfThemeToggle />
+            </TopControls>
+            <ChildContent>
+                <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+                    @if (_error is not null)
+                    {
+                        <SimfAlert Variant="error">@_error</SimfAlert>
+                    }
+                    <div class="simf-form__fields">
+                        <SimfTextField Label="@L["Auth.SignIn.Email"]" @bind-Value="_model.Email"
+                                       Type="email" Icon="mail" InputMode="email"
+                                       Autocomplete="username" Disabled="_loading" />
+                        <SimfPasswordField Label="@L["Auth.SignIn.Password"]" @bind-Value="_model.Password"
+                                           Autocomplete="current-password" Disabled="_loading" />
+                    </div>
+                    <SimfLink Href="/forgot-password" Block="true">@L["Auth.SignIn.ForgotLink"]</SimfLink>
+                    <div class="simf-form__actions">
+                        <SimfButton Block="true" Loading="_loading" LoadingLabel="@L["Auth.SignIn.Submitting"]">
+                            @L["Auth.SignIn.Submit"]
+                        </SimfButton>
+                    </div>
+                </EditForm>
+            </ChildContent>
+            <Footer>@L["Auth.Footer"]</Footer>
+        </SimfAuthCard>
+    </ChildContent>
+</SimfAuthLayout>
+
+@code {
+    private readonly SignInModel _model = new();
+    private EditContext _editContext = default!;
+    private ValidationMessageStore _messages = default!;
+    private bool _loading;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        _editContext = new EditContext(_model);
+        _messages = new ValidationMessageStore(_editContext);
+        _editContext.OnFieldChanged += ClearFieldError;
+    }
+
+    // A field the user is correcting clears its own error straight away.
+    private void ClearFieldError(object? sender, FieldChangedEventArgs e)
+    {
+        _messages.Clear(e.FieldIdentifier);
+        _editContext.NotifyValidationStateChanged();
+    }
+
+    private string CultureHref
+    {
+        get
+        {
+            var next = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar" ? "en" : "ar";
+            return $"/culture?culture={next}&redirectUri={Uri.EscapeDataString("/login")}";
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_loading)
+        {
+            return;
+        }
+
+        _loading = true;
+        _error = null;
+        try
+        {
+            _messages.Clear();
+
+            if (string.IsNullOrWhiteSpace(_model.Email))
+            {
+                _messages.Add(_editContext.Field(nameof(SignInModel.Email)), L["Auth.SignIn.EmailRequired"]);
+            }
+            else if (!_model.Email.Contains('@', StringComparison.Ordinal))
+            {
+                _messages.Add(_editContext.Field(nameof(SignInModel.Email)), L["Auth.SignIn.EmailInvalid"]);
+            }
+
+            if (string.IsNullOrEmpty(_model.Password))
+            {
+                _messages.Add(_editContext.Field(nameof(SignInModel.Password)), L["Auth.SignIn.PasswordRequired"]);
+            }
+
+            _editContext.NotifyValidationStateChanged();
+            if (_editContext.GetValidationMessages().Any())
+            {
+                return;
+            }
+
+            var result = await Api.SignInAsync(
+                new SignInRequest
+                {
+                    Email = _model.Email,
+                    Password = _model.Password,
+                    Audience = SignInAudience.Web,  // P2 — visitor surface (also the default)
+                });
+
+            if (!result.Success || result.Data is null)
+            {
+                _error = result.Error?.MessageForCurrentCulture() ?? L["Auth.SignIn.Fallback"];
+                return;
+            }
+
+            // Skip the second factor when the account has TwoFactorEnabled=false
+            // (myComment #34). The API answers with tokens immediately. Hand
+            // off to the cookie-writing /auth/complete endpoint via a
+            // one-time ticket (D-046 c). P11 — D-052: stash the optional
+            // AccountStateInfo so the cookie carries the rejection
+            // reason for the state-banner page.
+            if (result.Data.OtpToken is null && result.Data.Tokens is not null)
+            {
+                var reference = Tickets.Stash(result.Data.Tokens, result.Data.AccountState);
+                Nav.NavigateTo($"/auth/complete?reference={reference}", forceLoad: true);
+                return;
+            }
+
+            // The usual visitor path — a code is emailed to the account.
+            Session.PendingEmail = _model.Email;
+            Session.PendingOtpToken = result.Data.OtpToken;
+            Nav.NavigateTo("/login/verify");
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private sealed class SignInModel
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}

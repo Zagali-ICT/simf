@@ -1,0 +1,67 @@
+title: Admin approval-scope probe burst
+id: m-004-approval-scope-probe
+status: experimental
+description: >
+  Detects an actor systematically probing the audience-vs-partner
+  boundary by submitting subject ids to the wrong-scope approval URL
+  (audience id to `/admin/others/{id}/approve` or partner id to
+  `/admin/visitors/{id}/approve`). The endpoint returns 404 to the
+  caller (same shape as not-found) but D-186 review-pass added the
+  `Admin.ApprovalScopeMismatch` audit event so SOC has visibility.
+
+  Each event names the expected scope and the subject id; a sustained
+  burst from one actor leaks the partner / audience boundary.
+references:
+  - SIMF DECISIONS_LOG.md D-186
+tags:
+  - attack.discovery
+  - attack.t1087.003
+author: SIMF security review
+date: 2026-05-30
+logsource:
+  product: simf
+  service: audit
+detection:
+  selection:
+    EventType: 'Admin.ApprovalScopeMismatch'
+    Outcome: 'Failure'
+  condition: selection
+fields:
+  - ActorUserId
+  - SubjectUserId
+  - Detail.expectedScope
+  - Detail.expectedIsVisitor
+falsepositives:
+  - A genuinely mis-clicked single admin (one event) is benign — the
+    correlation rule below pages only on repeated probes.
+level: informational
+---
+title: Admin approval-scope probe burst (correlation)
+id: m-004b-approval-scope-probe-burst
+status: experimental
+description: >
+  Correlation on `m-004-approval-scope-probe` events — pages when one
+  actor produces >= 10 distinct scope-mismatch attempts within 10
+  minutes. Sized below scripted-enumeration cadence and above
+  human-misclick cadence.
+references:
+  - SIMF DECISIONS_LOG.md D-186
+tags:
+  - attack.discovery
+  - attack.t1087.003
+author: SIMF security review
+date: 2026-05-30
+correlation:
+  type: event_count
+  rules:
+    - m-004-approval-scope-probe
+  group-by:
+    - ActorUserId
+  timespan: 10m
+  condition:
+    gte: 10
+falsepositives:
+  - Operational migration / cleanup task where an admin runs through
+    a list of recently-reassigned ProfileTypes. Allowlist by ticket-
+    correlated time window.
+level: high

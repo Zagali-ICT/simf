@@ -1,0 +1,17 @@
+@* Control Panel — the Dashboard (the Overview landing). A placeholder until
+   the statistics and live-attendance modules are built. *@
+@page "/"
+@layout CpShellLayout
+@attribute [Authorize]
+@inject IStringLocalizer<Strings> L
+
+<PageTitle>@L["Dashboard.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title='@L["Dashboard.Title"]' />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        <h2 class="simf-panel__title">@L["Dashboard.Welcome"]</h2>
+        <p class="simf-panel__text">@L["Dashboard.Intro"]</p>
+    </div>
+</div>

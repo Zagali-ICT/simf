@@ -1,0 +1,602 @@
+@* SIMF-FDS-013 (D-248) — admin-arranged B2B/B2C business meetings. The admin
+   schedules a meeting between two or more parties (companies + visitors) at a
+   meeting table for a from–to time-slot; meetings are confirmed on save and can
+   be cancelled. Mirrors BoothsList / SessionCategoriesList. *@
+@page "/admin/business-meetings"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.BusinessMeetings.View)]
+@using SIMF.Contracts.BusinessMeetings
+@using SIMF.Contracts.Exhibitors
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.BusinessMeetings.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.BusinessMeetings.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="BusinessMeetingRow"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => $"{r.HallName} · {r.TableCode}")"
+                      Caption="@L["Admin.BusinessMeetings.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnAdd="OnAddAsync"
+                      OnDetailsOne="OnViewAsync"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.BusinessMeetings.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Admin.BusinessMeetings.New"]"
+                      DetailsLabel="@L["Admin.BusinessMeetings.View"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="BusinessMeetingRow" Key="hall"
+                                    Header="@L["Admin.BusinessMeetings.Col.Hall"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.HallName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="BusinessMeetingRow" Key="table"
+                                    Header="@L["Admin.BusinessMeetings.Col.Table"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.TableCode</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="BusinessMeetingRow" Key="type"
+                                    Header="@L["Admin.BusinessMeetings.Col.Type"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.MeetingType</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="BusinessMeetingRow" Key="start"
+                                    Header="@L["Admin.BusinessMeetings.Col.Start"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="BusinessMeetingRow" Key="end"
+                                    Header="@L["Admin.BusinessMeetings.Col.End"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="BusinessMeetingRow" Key="parties"
+                                    Header="@L["Admin.BusinessMeetings.Col.Parties"]">
+                    <CellTemplate>@context.ParticipantCount</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="BusinessMeetingRow" Key="status"
+                                    Header="@L["Admin.BusinessMeetings.Col.Status"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>
+                        @switch (context.Status)
+                        {
+                            case BusinessMeetingStatus.Confirmed:
+                                <SimfPill Variant="on">@L["Admin.BusinessMeetings.Filter.Confirmed"]</SimfPill>
+                                break;
+                            case BusinessMeetingStatus.Cancelled:
+                                <SimfPill Variant="off">@L["Admin.BusinessMeetings.Filter.Cancelled"]</SimfPill>
+                                break;
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions>
+                @* Page-specific quiet action: cancel a still-confirmed meeting. *@
+                @if (context.Status == BusinessMeetingStatus.Confirmed)
+                {
+                    <AuthorizedAction Permission="@PermissionCatalog.BusinessMeetings.Cancel">
+                        <SimfToolbarButton Icon="close" Title="@L["Admin.BusinessMeetings.Cancel"]"
+                                           OnClick="@(() => OnCancel(context))" />
+                    </AuthorizedAction>
+                }
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.BusinessMeetings.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_scheduleOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.BusinessMeetings.Schedule.Title"]"
+               OnClose="@(() => _scheduleOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.BusinessMeetings.Field.Hall"]</span>
+                    <select class="simf-field__input" value="@(_hallId?.ToString() ?? string.Empty)"
+                            @onchange="OnHallChangedAsync" disabled="@_busy">
+                        <option value="">@L["Admin.BusinessMeetings.Field.HallChoose"]</option>
+                        @foreach (var hall in _meetingHalls)
+                        {
+                            <option value="@hall.Id">@hall.Name — @hall.NameArabic</option>
+                        }
+                    </select>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.BusinessMeetings.Field.Table"]</span>
+                    <select class="simf-field__input" value="@(_form.MeetingTableId == Guid.Empty ? string.Empty : _form.MeetingTableId.ToString())"
+                            @onchange="OnTableChanged" disabled="@(_busy || _hallId is null)">
+                        <option value="">@L["Admin.BusinessMeetings.Field.TableChoose"]</option>
+                        @foreach (var t in _tables)
+                        {
+                            <option value="@t.Id">@t.Code (@t.Capacity)</option>
+                        }
+                    </select>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.BusinessMeetings.Field.Type"]</span>
+                    <select class="simf-field__input" value="@((int)_form.MeetingType)"
+                            @onchange="OnTypeChanged" disabled="@_busy">
+                        <option value="@((int)BusinessMeetingType.B2B)">B2B</option>
+                        <option value="@((int)BusinessMeetingType.B2C)">B2C</option>
+                    </select>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.BusinessMeetings.Field.Start"]</span>
+                    <input class="simf-field__input" type="datetime-local"
+                           value="@_startText" @onchange="OnStartChanged" disabled="@_busy" />
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.BusinessMeetings.Field.End"]</span>
+                    <input class="simf-field__input" type="datetime-local"
+                           value="@_endText" @onchange="OnEndChanged" disabled="@_busy" />
+                </label>
+
+                <fieldset class="simf-field">
+                    <span class="simf-field__label">@L["Admin.BusinessMeetings.Field.Participants"]</span>
+                    @if (_participants.Count > 0)
+                    {
+                        <ul class="simf-list">
+                            @foreach (var p in _participants)
+                            {
+                                <li>
+                                    @p.Name (@(p.Kind == MeetingPartyKind.Company
+                                        ? L["Admin.BusinessMeetings.Party.Company"]
+                                        : L["Admin.BusinessMeetings.Party.Visitor"]))
+                                    <SimfButton Type="button" Disabled="_busy"
+                                                OnClick="@(() => RemoveParticipant(p))">
+                                        @L["Admin.BusinessMeetings.Party.Remove"]
+                                    </SimfButton>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    <div class="simf-form__inline">
+                        <select class="simf-field__input" value="@((int)_addKind)"
+                                @onchange="OnAddKindChanged" disabled="@_busy">
+                            <option value="@((int)MeetingPartyKind.Company)">@L["Admin.BusinessMeetings.Party.Company"]</option>
+                            <option value="@((int)MeetingPartyKind.Visitor)">@L["Admin.BusinessMeetings.Party.Visitor"]</option>
+                        </select>
+                        @if (_addKind == MeetingPartyKind.Company)
+                        {
+                            <select class="simf-field__input" value="@(_addCompanyId?.ToString() ?? string.Empty)"
+                                    @onchange="OnAddCompanyChanged" disabled="@_busy">
+                                <option value="">@L["Admin.BusinessMeetings.Party.ChooseCompany"]</option>
+                                @foreach (var c in _companies)
+                                {
+                                    <option value="@c.Id">@c.NameEn — @c.NameAr</option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <select class="simf-field__input" value="@(_addVisitorId?.ToString() ?? string.Empty)"
+                                    @onchange="OnAddVisitorChanged" disabled="@_busy">
+                                <option value="">@L["Admin.BusinessMeetings.Party.ChooseVisitor"]</option>
+                                @foreach (var v in _visitors)
+                                {
+                                    <option value="@v.UserId">@v.DisplayName</option>
+                                }
+                            </select>
+                        }
+                        <SimfButton Type="button" Disabled="_busy" OnClick="AddParticipant">
+                            @L["Admin.BusinessMeetings.Party.Add"]
+                        </SimfButton>
+                    </div>
+                </fieldset>
+
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.BusinessMeetings.Field.Notes"]</span>
+                    <textarea class="simf-field__input" rows="2" maxlength="1024"
+                              value="@_form.Notes" @onchange="OnNotesChanged" disabled="@_busy"></textarea>
+                </label>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _scheduleOpen = false)">
+                @L["Admin.BusinessMeetings.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+                @L["Admin.BusinessMeetings.Schedule.Submit"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@if (_cancelOpen && _cancelTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.BusinessMeetings.Cancel.Title"]"
+               OnClose="@(() => _cancelOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <p>@string.Format(L["Admin.BusinessMeetings.Cancel.Prompt"],
+                    _cancelTarget.HallName, _cancelTarget.TableCode)</p>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.BusinessMeetings.Cancel.Reason"]</span>
+                    <textarea class="simf-field__input" rows="3" maxlength="512"
+                              value="@_cancelReason" @onchange="OnCancelReasonChanged"
+                              disabled="@_busy"></textarea>
+                </label>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _cancelOpen = false)">
+                @L["Admin.BusinessMeetings.Cancel.Keep"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="ConfirmCancelAsync" Loading="_busy">
+                @L["Admin.BusinessMeetings.Cancel.Confirm"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@if (_detailOpen && _detail is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.BusinessMeetings.Detail.Title"]"
+               OnClose="@(() => _detailOpen = false)">
+        <ChildContent>
+            <dl class="simf-dl">
+                <dt>@L["Admin.BusinessMeetings.Col.Hall"]</dt><dd>@_detail.HallName</dd>
+                <dt>@L["Admin.BusinessMeetings.Col.Table"]</dt><dd>@_detail.TableCode</dd>
+                <dt>@L["Admin.BusinessMeetings.Col.Type"]</dt><dd>@_detail.MeetingType</dd>
+                <dt>@L["Admin.BusinessMeetings.Col.Start"]</dt><dd>@_detail.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+                <dt>@L["Admin.BusinessMeetings.Col.End"]</dt><dd>@_detail.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+                <dt>@L["Admin.BusinessMeetings.Col.Parties"]</dt>
+                <dd>
+                    <ul class="simf-list">
+                        @foreach (var p in _detail.Participants)
+                        {
+                            <li>@p.DisplayName (@(p.Kind == MeetingPartyKind.Company
+                                ? L["Admin.BusinessMeetings.Party.Company"]
+                                : L["Admin.BusinessMeetings.Party.Visitor"]))</li>
+                        }
+                    </ul>
+                </dd>
+                @if (!string.IsNullOrWhiteSpace(_detail.Notes))
+                {
+                    <dt>@L["Admin.BusinessMeetings.Field.Notes"]</dt><dd>@_detail.Notes</dd>
+                }
+                @if (_detail.Status == BusinessMeetingStatus.Cancelled
+                    && !string.IsNullOrWhiteSpace(_detail.CancellationReason))
+                {
+                    <dt>@L["Admin.BusinessMeetings.Cancel.Reason"]</dt><dd>@_detail.CancellationReason</dd>
+                }
+            </dl>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _detailOpen = false)">
+                @L["Admin.BusinessMeetings.Detail.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+    private sealed record PendingParty(MeetingPartyKind Kind, Guid Id, string Name);
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<BusinessMeetingRow> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    // Cached pickers (bounded Top=500, mirrors BoothsList).
+    private List<AdminHallSummary> _meetingHalls = new();
+    private List<AdminExhibitorSummary> _companies = new();
+    private List<AdminAttendeeSummary> _visitors = new();
+
+    // Schedule modal state.
+    private bool _scheduleOpen;
+    private Guid? _hallId;
+    private List<MeetingTableRow> _tables = new();
+    private ScheduleMeetingRequest _form = new();
+    private string _startText = string.Empty;
+    private string _endText = string.Empty;
+    private readonly List<PendingParty> _participants = new();
+    private MeetingPartyKind _addKind = MeetingPartyKind.Company;
+    private Guid? _addCompanyId;
+    private Guid? _addVisitorId;
+
+    // Cancel modal state.
+    private bool _cancelOpen;
+    private BusinessMeetingRow? _cancelTarget;
+    private string _cancelReason = string.Empty;
+
+    // Detail modal state.
+    private bool _detailOpen;
+    private BusinessMeetingDetail? _detail;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPickersAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadPickersAsync()
+    {
+        var hallsEnv = await JS.InvokeAsync<ApiResult<GridPage<AdminHallSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/halls/list", new GridQuery { Top = 500 });
+        if (hallsEnv is { Success: true, Data: not null })
+        {
+            // Meeting tables live in Meeting or General halls (AdminHallSummary.Purpose
+            // is the int wire value; compare via the enum so a reorder can't drift).
+            _meetingHalls = hallsEnv.Data.Items
+                .Where(h => h.IsActive
+                    && ((HallPurpose)h.Purpose) is HallPurpose.Meeting or HallPurpose.General)
+                .OrderBy(h => h.Name).ToList();
+        }
+
+        var companiesEnv = await JS.InvokeAsync<ApiResult<GridPage<AdminExhibitorSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/exhibitors/list", new GridQuery { Top = 500 });
+        if (companiesEnv is { Success: true, Data: not null })
+        {
+            _companies = companiesEnv.Data.Items.Where(c => c.IsActive)
+                .OrderBy(c => c.NameEn).ToList();
+        }
+
+        var visitorsEnv = await JS.InvokeAsync<ApiResult<GridPage<AdminAttendeeSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/attendees/list", new GridQuery { Top = 500 });
+        if (visitorsEnv is { Success: true, Data: not null })
+        {
+            _visitors = visitorsEnv.Data.Items.OrderBy(v => v.DisplayName).ToList();
+        }
+    }
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<BusinessMeetingRow>>>(
+                "simfAccount.postJson", "/account/api/admin/business-meetings/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.BusinessMeetings.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnAddAsync()
+    {
+        _scheduleOpen = true;
+        _toast = null;
+        _hallId = null;
+        _tables = new();
+        _form = new ScheduleMeetingRequest { MeetingType = BusinessMeetingType.B2B };
+        _startText = string.Empty;
+        _endText = string.Empty;
+        _participants.Clear();
+        _addKind = MeetingPartyKind.Company;
+        _addCompanyId = null;
+        _addVisitorId = null;
+    }
+
+    private async Task OnHallChangedAsync(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        _hallId = Guid.TryParse(raw, out var g) ? g : null;
+        _form.MeetingTableId = Guid.Empty;
+        _tables = new();
+        if (_hallId is { } hid)
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<MeetingTableRow>>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/halls/{hid}/meeting-tables/list",
+                new { Skip = 0, Top = 500 });
+            if (env is { Success: true, Data: not null })
+            {
+                _tables = env.Data.Items.ToList();
+            }
+        }
+    }
+
+    private void OnTableChanged(ChangeEventArgs e) =>
+        _form.MeetingTableId = Guid.TryParse(e.Value?.ToString(), out var g) ? g : Guid.Empty;
+
+    private void OnTypeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var v)) _form.MeetingType = (BusinessMeetingType)v;
+    }
+
+    private void OnStartChanged(ChangeEventArgs e) => _startText = e.Value?.ToString() ?? string.Empty;
+    private void OnEndChanged(ChangeEventArgs e) => _endText = e.Value?.ToString() ?? string.Empty;
+    private void OnNotesChanged(ChangeEventArgs e) => _form.Notes = e.Value?.ToString();
+
+    private void OnAddKindChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var v)) _addKind = (MeetingPartyKind)v;
+    }
+
+    private void OnAddCompanyChanged(ChangeEventArgs e) =>
+        _addCompanyId = Guid.TryParse(e.Value?.ToString(), out var g) ? g : null;
+
+    private void OnAddVisitorChanged(ChangeEventArgs e) =>
+        _addVisitorId = Guid.TryParse(e.Value?.ToString(), out var g) ? g : null;
+
+    private void AddParticipant()
+    {
+        if (_addKind == MeetingPartyKind.Company && _addCompanyId is { } cid)
+        {
+            if (_participants.Any(p => p.Kind == MeetingPartyKind.Company && p.Id == cid)) return;
+            var c = _companies.FirstOrDefault(x => x.Id == cid);
+            _participants.Add(new PendingParty(MeetingPartyKind.Company, cid, c?.NameEn ?? cid.ToString()));
+            _addCompanyId = null;
+        }
+        else if (_addKind == MeetingPartyKind.Visitor && _addVisitorId is { } vid)
+        {
+            if (_participants.Any(p => p.Kind == MeetingPartyKind.Visitor && p.Id == vid)) return;
+            var v = _visitors.FirstOrDefault(x => x.UserId == vid);
+            _participants.Add(new PendingParty(MeetingPartyKind.Visitor, vid, v?.DisplayName ?? vid.ToString()));
+            _addVisitorId = null;
+        }
+    }
+
+    private void RemoveParticipant(PendingParty p) => _participants.Remove(p);
+
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+        if (_form.MeetingTableId == Guid.Empty)
+        {
+            _toast = new Toast("error", L["Admin.BusinessMeetings.Validation.Table"]);
+            return;
+        }
+        if (!TryParseUtc(_startText, out var start) || !TryParseUtc(_endText, out var end) || end <= start)
+        {
+            _toast = new Toast("error", L["Admin.BusinessMeetings.Validation.Slot"]);
+            return;
+        }
+        if (_participants.Count < 2)
+        {
+            _toast = new Toast("error", L["Admin.BusinessMeetings.Validation.Participants"]);
+            return;
+        }
+        _busy = true;
+        _toast = null;
+        try
+        {
+            _form.StartUtc = start;
+            _form.EndUtc = end;
+            _form.Participants = _participants.Select(p => new ScheduleMeetingParticipant
+            {
+                Kind = p.Kind,
+                CompanyId = p.Kind == MeetingPartyKind.Company ? p.Id : null,
+                VisitorUserId = p.Kind == MeetingPartyKind.Visitor ? p.Id : null,
+            }).ToList();
+
+            var env = await JS.InvokeAsync<ApiResult<BusinessMeetingScheduled>>(
+                "simfAccount.postJson", "/account/api/admin/business-meetings", _form);
+            if (env is { Success: true })
+            {
+                _scheduleOpen = false;
+                _toast = new Toast("success", L["Admin.BusinessMeetings.Scheduled"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.BusinessMeetings.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnViewAsync(BusinessMeetingRow row)
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<BusinessMeetingDetail>>(
+                "simfAccount.getJson", $"/account/api/admin/business-meetings/{row.Id}");
+            if (env is { Success: true, Data: not null })
+            {
+                _detail = env.Data;
+                _detailOpen = true;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.BusinessMeetings.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnCancel(BusinessMeetingRow row)
+    {
+        _cancelTarget = row;
+        _cancelReason = string.Empty;
+        _cancelOpen = true;
+        _toast = null;
+    }
+
+    private void OnCancelReasonChanged(ChangeEventArgs e) =>
+        _cancelReason = e.Value?.ToString() ?? string.Empty;
+
+    private async Task ConfirmCancelAsync()
+    {
+        if (_busy || _cancelTarget is null) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/business-meetings/{_cancelTarget.Id}/cancel",
+                new CancelMeetingRequest
+                {
+                    Reason = string.IsNullOrWhiteSpace(_cancelReason) ? null : _cancelReason.Trim(),
+                });
+            if (env is { Success: true })
+            {
+                _cancelOpen = false;
+                _toast = new Toast("success", L["Admin.BusinessMeetings.Cancelled"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.BusinessMeetings.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    // datetime-local has no timezone; treat the entered wall-clock as UTC.
+    private static bool TryParseUtc(string text, out DateTimeOffset value)
+    {
+        value = default;
+        if (DateTime.TryParse(text, CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dt))
+        {
+            value = new DateTimeOffset(DateTime.SpecifyKind(dt, DateTimeKind.Utc));
+            return true;
+        }
+        return false;
+    }
+}

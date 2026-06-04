@@ -1,0 +1,30 @@
+@* Control Panel — create a new visitor account (P3; refactored in D-114 to
+   host the reusable CreateVisitorForm so the visitors list page can show the
+   same form inside an Add modal). The URL /admin/visitors/new stays as a
+   deep-link fallback per Q-D. *@
+@page "/admin/visitors/new"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Visitors.Create)]
+@inject IStringLocalizer<Strings> L
+@inject NavigationManager Nav
+
+<PageTitle>@L["Admin.CreateVisitor.Title"] · SIMF</PageTitle>
+
+<SimfPageHeader Title="@L["Admin.CreateVisitor.Title"]" />
+
+<section class="simf-card simf-page-card">
+    <p>@L["Admin.CreateVisitor.Supporting"]</p>
+
+    <CreateVisitorForm OnSuccess="OnCreatedAsync"
+                       OnCancel="OnBackToListAsync" />
+</section>
+
+@code {
+    private Task OnCreatedAsync(AdminCreateUserResponse _) => Task.CompletedTask;
+
+    private Task OnBackToListAsync()
+    {
+        Nav.NavigateTo("/admin/visitors");
+        return Task.CompletedTask;
+    }
+}

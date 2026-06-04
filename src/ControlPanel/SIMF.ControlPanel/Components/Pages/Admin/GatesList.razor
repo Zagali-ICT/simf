@@ -1,0 +1,228 @@
+@* D-148 — Gate Module CRUD list. SIMF-FDS-003 §5.6 / SIMF-API-GATES-001 §6.
+   Mirrors HallsList; adds DirectionMode column + operator-count + allow-count. *@
+@page "/admin/gates"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Gates.Manage)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Gates.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Gates.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="AdminGateSummary"
+                      Query="_query" Page="_page" Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.Name)"
+                      Caption="@L["Admin.Gates.Title"]"
+                      OnAdd="OnAddAsync"
+                      OnEditOne="OnEditAsync"
+                      OnDetailsOne="OnDetailsAsync"
+                      OnDeleteOne="OnDeactivateAsync"
+                      PrevLabel="@L["Admin.Gates.Prev"]"
+                      NextLabel="@L["Admin.Gates.Next"]"
+                      FirstLabel="@L["Admin.Gates.Pager.First"]"
+                      LastLabel="@L["Admin.Gates.Pager.Last"]"
+                      PageSizeLabel="@L["Admin.Gates.Pager.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Gates.Loading"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Admin.Gates.Column.Actions"]"
+                      SelectAllLabel="@L["Admin.Gates.Action.SelectAll"]"
+                      SelectRowLabel="@L["Admin.Gates.Action.SelectRow"]"
+                      AddLabel="@L["Admin.Gates.Action.Add"]"
+                      EditLabel="@L["Admin.Gates.Action.Edit"]"
+                      DetailsLabel="@L["Admin.Gates.Action.Details"]"
+                      DeleteLabel="@L["Admin.Gates.Action.Deactivate"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminGateSummary" Key="code"
+                                    Header="@L["Admin.Gates.Column.Code"]" Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Code</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminGateSummary" Key="name"
+                                    Header="@L["Admin.Gates.Column.Name"]" Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Name</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminGateSummary" Key="nameArabic"
+                                    Header="@L["Admin.Gates.Column.NameArabic"]" Sortable="true" Filterable="true">
+                    <CellTemplate>@context.NameArabic</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminGateSummary" Key="directionMode"
+                                    Header="@L["Admin.Gates.Column.DirectionMode"]" Sortable="true">
+                    <CellTemplate>@context.DirectionMode</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminGateSummary" Key="allowCount"
+                                    Header="@L["Admin.Gates.Column.AllowCount"]">
+                    <CellTemplate>@(context.AllowedProfileTypeCount == 0 ? L["Admin.Gates.AllowAll"] : context.AllowedProfileTypeCount.ToString())</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminGateSummary" Key="operatorCount"
+                                    Header="@L["Admin.Gates.Column.OperatorCount"]">
+                    <CellTemplate>@context.AssignedOperatorCount</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminGateSummary" Key="isActive"
+                                    Header="@L["Admin.Gates.Column.Active"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        { <SimfPill Variant="on">@L["Admin.Gates.Active.Yes"]</SimfPill> }
+                        else
+                        { <SimfPill Variant="off">@L["Admin.Gates.Active.No"]</SimfPill> }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Gates.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_addOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.Gates.Add.Title"]"
+               OnClose="@(() => _addOpen = false)">
+        <ChildContent>
+            <GateForm OnSuccess="OnAddSucceededAsync"
+                      OnCancel="@(() => _addOpen = false)" />
+        </ChildContent>
+    </SimfModal>
+}
+
+@if (_editTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.Gates.Edit.Title"]"
+               OnClose="@(() => _editTarget = null)">
+        <ChildContent>
+            <GateForm Initial="_editTarget"
+                      OnSuccess="OnEditSucceededAsync"
+                      OnCancel="@(() => _editTarget = null)" />
+        </ChildContent>
+    </SimfModal>
+}
+
+@if (_detailsTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.Gates.Details.Title"]"
+               OnClose="@(() => _detailsTarget = null)">
+        <ChildContent>
+            <dl class="simf-dl">
+                <dt>@L["Admin.Gates.Column.Code"]</dt> <dd>@_detailsTarget.Code</dd>
+                <dt>@L["Admin.Gates.Column.Name"]</dt> <dd>@_detailsTarget.Name</dd>
+                <dt>@L["Admin.Gates.Column.NameArabic"]</dt> <dd>@_detailsTarget.NameArabic</dd>
+                <dt>@L["Admin.Gates.Column.DirectionMode"]</dt> <dd>@_detailsTarget.DirectionMode</dd>
+                <dt>@L["Admin.Gates.Column.AllowCount"]</dt>
+                <dd>@(_detailsTarget.AllowedProfileTypeIds.Count == 0 ? L["Admin.Gates.AllowAll"] : _detailsTarget.AllowedProfileTypeIds.Count.ToString())</dd>
+                <dt>@L["Admin.Gates.Column.OperatorCount"]</dt>
+                <dd>@_detailsTarget.AssignedOperatorUserIds.Count</dd>
+                <dt>@L["Admin.Gates.Column.Active"]</dt>
+                <dd>@(_detailsTarget.IsActive ? L["Admin.Gates.Active.Yes"] : L["Admin.Gates.Active.No"])</dd>
+            </dl>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _detailsTarget = null)">
+                @L["Admin.Gates.Details.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminGateSummary> _page = new();
+    private bool _loading;
+    private Toast? _toast;
+
+    private bool _addOpen;
+    private AdminGateDetail? _editTarget;
+    private AdminGateDetail? _detailsTarget;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminGateSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/gates/list", _query);
+            if (envelope is { Success: true, Data: not null }) { _page = envelope.Data; }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture() ?? L["Admin.Gates.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private Task OnAddAsync() { _addOpen = true; return Task.CompletedTask; }
+
+    private async Task OnAddSucceededAsync(AdminGateDetail created)
+    {
+        _addOpen = false;
+        _toast = new Toast("success", string.Format(L["Admin.Gates.Created"], created.Name));
+        await LoadAsync();
+    }
+
+    private async Task OnEditAsync(AdminGateSummary row)
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<AdminGateDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/gates/{row.Id}");
+        if (envelope is { Success: true, Data: not null }) { _editTarget = envelope.Data; }
+    }
+
+    private async Task OnEditSucceededAsync(AdminGateDetail updated)
+    {
+        _editTarget = null;
+        _toast = new Toast("success", string.Format(L["Admin.Gates.Updated"], updated.Name));
+        await LoadAsync();
+    }
+
+    private async Task OnDetailsAsync(AdminGateSummary row)
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<AdminGateDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/gates/{row.Id}");
+        if (envelope is { Success: true, Data: not null }) { _detailsTarget = envelope.Data; }
+    }
+
+    private async Task OnDeactivateAsync(AdminGateSummary row)
+    {
+        _toast = null;
+        var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+            "simfAccount.deleteJson", $"/account/api/admin/gates/{row.Id}");
+        if (envelope is { Success: true })
+        {
+            _toast = new Toast("success", string.Format(L["Admin.Gates.Deactivated"], row.Name));
+            await LoadAsync();
+        }
+        else
+        {
+            _toast = new Toast("error",
+                envelope?.Error?.MessageForCurrentCulture() ?? L["Admin.Gates.Fallback"]);
+        }
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Admin.Gates.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Admin.Gates.Pager.Page"], current, total);
+}

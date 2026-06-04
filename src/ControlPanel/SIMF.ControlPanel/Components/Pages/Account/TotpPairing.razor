@@ -1,0 +1,157 @@
+@* D-096 — CP TOTP re-pairing page. Renders the QR + otpauth URI for the
+   caller's CURRENT authenticator secret without rotating it. Used by an
+   admin (typically the seeded super-admin) whose authenticator device
+   was lost or whose initial pairing failed — re-scanning here does NOT
+   reset the secret, so existing recovery codes survive and the sign-in
+   flow continues to verify against the same key.
+
+   D-102 — the Verify section below confirms the scan worked without
+   mutating state (no replay-guard update), so the user can immediately
+   use the same code (or the next one) to sign in. *@
+@page "/account/totp-pairing"
+@layout CpShellLayout
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>@L["TotpPairing.Title"]</PageTitle>
+
+<SimfPageHeader Title="@L["TotpPairing.Title"]" />
+
+<div class="simf-card simf-page-card">
+    @if (_loading)
+    {
+        <p>@L["TotpPairing.Loading"]</p>
+    }
+    else if (_loadError is not null)
+    {
+        <SimfAlert Variant="error">@_loadError</SimfAlert>
+    }
+    else if (_pairing is null)
+    {
+        <SimfAlert Variant="warning">@L["TotpPairing.NoSecret"]</SimfAlert>
+        <div class="simf-form__actions">
+            <SimfButton Type="button" Variant="secondary"
+                        OnClick="@(() => Nav.NavigateTo("/account/profile"))">
+                @L["TotpPairing.GoToProfile"]
+            </SimfButton>
+        </div>
+    }
+    else
+    {
+        <p>@L["TotpPairing.Instruction"]</p>
+        <div class="simf-qr">
+            @((MarkupString)_pairing.QrCodeSvg)
+        </div>
+        <p class="simf-form__helper">@L["TotpPairing.SecretHint"]</p>
+        <code class="simf-totp-secret">@_pairing.Secret</code>
+
+        <hr />
+
+        <h2 class="simf-card__title">@L["TotpPairing.VerifyHeading"]</h2>
+        @if (_verifyOk is not null)
+        {
+            <SimfAlert Variant="success">@_verifyOk</SimfAlert>
+        }
+        @if (_verifyError is not null)
+        {
+            <SimfAlert Variant="error">@_verifyError</SimfAlert>
+        }
+        <p>@L["TotpPairing.VerifyInstruction"]</p>
+        <EditForm Model="_codeModel" OnSubmit="VerifyAsync" class="simf-form">
+            <div class="simf-form__fields">
+                <SimfCodeField Label="@L["TotpPairing.CodeLabel"]"
+                               @bind-Value="_codeModel.Code"
+                               Disabled="_verifying" />
+            </div>
+            <div class="simf-form__actions">
+                <SimfButton Loading="_verifying" LoadingLabel="@L["TotpPairing.Verify"]">
+                    @L["TotpPairing.Verify"]
+                </SimfButton>
+            </div>
+        </EditForm>
+    }
+</div>
+
+@code {
+    private bool _loading = true;
+    private bool _verifying;
+    private TotpSetupResponse? _pairing;
+    private string? _loadError;
+    private string? _verifyOk;
+    private string? _verifyError;
+    private readonly CodeFormModel _codeModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<TotpSetupResponse>>(
+                "simfAccount.getJson", "/account/api/totp/pairing");
+            if (envelope is { Success: true, Data: not null })
+            {
+                _pairing = envelope.Data;
+            }
+            else if (envelope?.Error is null || envelope.Error.Code == ErrorCodes.NotFound)
+            {
+                // 404 from the API arrives as a failed envelope with no Data
+                // and no specific error code; treat as "no secret" and route
+                // the user to the Profile page to enrol.
+                _pairing = null;
+            }
+            else
+            {
+                _loadError = envelope.Error.MessageForCurrentCulture()
+                    ?? L["TotpPairing.LoadError"];
+            }
+        }
+        catch
+        {
+            _loadError = L["TotpPairing.LoadError"];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task VerifyAsync()
+    {
+        _verifyOk = null;
+        _verifyError = null;
+        _verifying = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<TotpPairingVerifyResponse>>(
+                "simfAccount.postJson", "/account/api/totp/pairing/verify",
+                new TotpConfirmRequest { Code = _codeModel.Code });
+            if (envelope is { Success: true, Data: { Valid: true } })
+            {
+                _verifyOk = L["TotpPairing.VerifySuccess"];
+                _codeModel.Code = string.Empty;
+            }
+            else if (envelope?.Error is not null)
+            {
+                _verifyError = envelope.Error.MessageForCurrentCulture()
+                    ?? L["TotpPairing.VerifyError"];
+            }
+            else
+            {
+                _verifyError = L["TotpPairing.VerifyError"];
+            }
+        }
+        catch
+        {
+            _verifyError = L["TotpPairing.VerifyError"];
+        }
+        finally
+        {
+            _verifying = false;
+        }
+    }
+
+    private sealed class CodeFormModel
+    {
+        public string Code { get; set; } = string.Empty;
+    }
+}

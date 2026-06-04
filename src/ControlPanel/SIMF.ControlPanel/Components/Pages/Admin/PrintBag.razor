@@ -1,0 +1,157 @@
+@* D-130 — Print-bag station. Standalone page for badge re-printing.
+   Staff at the printing desk scans (or hand-types) a 12-character QR id
+   into the input; the page calls the D-130 lookup endpoint and renders
+   the same badge markup the walk-in success modal uses. A Print button
+   triggers window.print() with the existing @media print CSS that
+   isolates the badge. A Reset button clears + refocuses for the next
+   scan. *@
+@page "/admin/print-bag"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Attendees.PrintBag)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.PrintBag.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.PrintBag.Title"]" Subtitle="@L["Admin.PrintBag.Supporting"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface simf-print-bag">
+        <form class="simf-form" @onsubmit="OnSearchAsync" @onsubmit:preventDefault="true">
+            <div class="simf-print-bag__search">
+                <SimfTextField Label="@L["Admin.PrintBag.Field.QrId"]"
+                               Helper="@L["Admin.PrintBag.Field.QrId.Hint"]"
+                               MaxLength="32"
+                               Autocomplete="off"
+                               @bind-Value="_qrId" />
+                <SimfButton Loading="_busy" LoadingLabel="@L["Admin.PrintBag.Searching"]">
+                    @L["Admin.PrintBag.Search"]
+                </SimfButton>
+                @if (_result is not null)
+                {
+                    <SimfButton Type="button" Variant="secondary" OnClick="OnResetAsync">
+                        @L["Admin.PrintBag.Reset"]
+                    </SimfButton>
+                }
+            </div>
+        </form>
+
+        @if (_error is not null)
+        {
+            <SimfAlert Variant="error">@_error</SimfAlert>
+        }
+
+        @if (_result is not null)
+        {
+            <div class="simf-walkin-badge"
+                 style="@($"--simf-badge-color: {_result.ProfileTypeColor}")">
+                <div class="simf-walkin-badge__header">
+                    <span class="simf-walkin-badge__type">@TypeLabel</span>
+                </div>
+                <div class="simf-walkin-badge__name">@_result.DisplayName</div>
+                <div class="simf-walkin-badge__email">@EmailLabel</div>
+                <div class="simf-walkin-badge__qr">@((MarkupString)_qrSvg)</div>
+                <div class="simf-walkin-badge__qrid">@_result.QrId</div>
+            </div>
+            <div class="simf-form__actions">
+                <SimfButton Type="button" Variant="primary" OnClick="OnPrintAsync">
+                    @L["Admin.WalkIn.Success.Print"]
+                </SimfButton>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private string _qrId = string.Empty;
+    private bool _busy;
+    private string? _error;
+    private AdminWalkInRegistrationResponse? _result;
+    private string _qrSvg = string.Empty;
+
+    private string TypeLabel
+    {
+        get
+        {
+            if (_result is null) { return string.Empty; }
+            return CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+                ? _result.ProfileTypeNameArabic
+                : _result.ProfileTypeName;
+        }
+    }
+
+    private string EmailLabel
+    {
+        get
+        {
+            if (_result is null) { return string.Empty; }
+            if (_result.Email.EndsWith("@simf.local", StringComparison.OrdinalIgnoreCase))
+            {
+                return L["Admin.WalkIn.Success.NoEmail"];
+            }
+            return _result.Email;
+        }
+    }
+
+    private async Task OnSearchAsync()
+    {
+        if (_busy) return;
+        var query = (_qrId ?? string.Empty).Trim();
+        _error = null;
+        _result = null;
+        _qrSvg = string.Empty;
+        if (query.Length == 0)
+        {
+            _error = L["Admin.PrintBag.Error.Required"];
+            return;
+        }
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminWalkInRegistrationResponse>>(
+                "simfAccount.getJson",
+                $"/account/api/admin/qr-lookup/{Uri.EscapeDataString(query)}");
+            if (envelope is { Success: true, Data: not null })
+            {
+                _result = envelope.Data;
+                _qrSvg = BuildQrSvg(_result.QrId);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.PrintBag.Error.NotFound"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.PrintBag.Error.NotFound"];
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnPrintAsync() =>
+        await JS.InvokeVoidAsync("window.print");
+
+    private async Task OnResetAsync()
+    {
+        _result = null;
+        _qrSvg = string.Empty;
+        _error = null;
+        _qrId = string.Empty;
+        // The Search field auto-focuses on next render so the desk can
+        // immediately scan the next QR.
+        await Task.Yield();
+        StateHasChanged();
+    }
+
+    private static string BuildQrSvg(string qrId)
+    {
+        using var generator = new QRCoder.QRCodeGenerator();
+        using var data = generator.CreateQrCode(qrId, QRCoder.QRCodeGenerator.ECCLevel.Q);
+        return new QRCoder.SvgQRCode(data).GetGraphic(
+            pixelsPerModule: 6,
+            darkColorHex: "#0B2545",
+            lightColorHex: "#FFFFFF",
+            drawQuietZones: true);
+    }
+}

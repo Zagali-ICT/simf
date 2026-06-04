@@ -1,0 +1,142 @@
+@* SIMF-FDS-014 (D-283/C2b) — reusable "link an existing Contact" picker for the
+   Sponsor / Exhibitor / MediaPartner / Speaker / Booth admin forms. Link-existing
+   only (no create-new — manage the directory at /admin/contacts). Binds a
+   nullable ContactId via two-way Value/ValueChanged. Data comes from the CP BFF
+   (/account/api/admin/contacts/picker for search, /{id} to resolve the current
+   selection's name on edit), so this component is CP-scoped rather than a
+   presentational SIMF.Components control. *@
+@using SIMF.Contracts.Contacts
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<div class="simf-field">
+    <span class="simf-field__label">@L["Admin.Contacts.Picker.Label"]</span>
+    <p class="simf-field__helper">@L["Admin.Contacts.Picker.Hint"]</p>
+
+    @if (_selected is not null)
+    {
+        <div class="simf-pill-row">
+            <SimfPill Variant="on">@string.Format(L["Admin.Contacts.Picker.Linked"], SelectedLabel(_selected))</SimfPill>
+            <SimfButton Type="button" Variant="secondary" Disabled="Disabled" OnClick="ClearAsync">
+                @L["Admin.Contacts.Picker.Clear"]
+            </SimfButton>
+        </div>
+    }
+    else
+    {
+        <span class="simf-field__helper">@L["Admin.Contacts.Picker.NotLinked"]</span>
+    }
+
+    <div class="simf-toolbar__search">
+        <SimfTextField Label="@L["Admin.Contacts.Picker.Search"]"
+                       Value="@_search"
+                       ValueChanged="@(v => _search = v)"
+                       ValueExpression="@(() => _search)"
+                       Disabled="@(Disabled || _searching)" />
+        <SimfButton Type="button" Disabled="@(Disabled || _searching)" OnClick="SearchAsync">
+            @L["Admin.Contacts.Picker.SearchApply"]
+        </SimfButton>
+    </div>
+
+    @if (_searched)
+    {
+        @if (_results.Count == 0)
+        {
+            <p class="simf-field__helper">@L["Admin.Contacts.Picker.None"]</p>
+        }
+        else
+        {
+            <ul class="simf-picker-results">
+                @foreach (var item in _results)
+                {
+                    <li>
+                        <SimfButton Type="button" Variant="secondary" Disabled="Disabled"
+                                    OnClick="@(() => SelectAsync(item))">
+                            @ItemLabel(item)
+                        </SimfButton>
+                    </li>
+                }
+            </ul>
+        }
+    }
+</div>
+
+@code {
+    private sealed record Selection(Guid Id, string NameAr, string? NameEn);
+
+    [Parameter] public Guid? Value { get; set; }
+    [Parameter] public EventCallback<Guid?> ValueChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private string _search = string.Empty;
+    private bool _searching;
+    private bool _searched;
+    private List<ContactPickerItem> _results = new();
+    private Selection? _selected;
+    private Guid? _resolvedFor;
+
+    // Resolve the current selection's name when the form opens with a ContactId
+    // already set (edit). Guarded so it only fetches when Value actually changes.
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Value == _resolvedFor) { return; }
+        _resolvedFor = Value;
+        if (Value is null)
+        {
+            _selected = null;
+            return;
+        }
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminContactDetail>>(
+                "simfAccount.getJson", $"/account/api/admin/contacts/{Value}");
+            _selected = env is { Success: true, Data: not null }
+                ? new Selection(env.Data.Id, env.Data.NameAr, env.Data.NameEn)
+                : null;
+        }
+        catch
+        {
+            _selected = null;
+        }
+    }
+
+    private async Task SearchAsync()
+    {
+        if (_searching) { return; }
+        _searching = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<IReadOnlyList<ContactPickerItem>>>(
+                "simfAccount.getJson",
+                $"/account/api/admin/contacts/picker?search={Uri.EscapeDataString(_search ?? string.Empty)}");
+            _results = env is { Success: true, Data: not null }
+                ? env.Data.ToList()
+                : new List<ContactPickerItem>();
+            _searched = true;
+        }
+        finally { _searching = false; }
+    }
+
+    private async Task SelectAsync(ContactPickerItem item)
+    {
+        _selected = new Selection(item.Id, item.NameAr, item.NameEn);
+        _resolvedFor = item.Id;
+        _results = new List<ContactPickerItem>();
+        _searched = false;
+        _search = string.Empty;
+        await ValueChanged.InvokeAsync(item.Id);
+    }
+
+    private async Task ClearAsync()
+    {
+        _selected = null;
+        _resolvedFor = null;
+        await ValueChanged.InvokeAsync(null);
+    }
+
+    private static string SelectedLabel(Selection s) =>
+        string.IsNullOrWhiteSpace(s.NameEn) ? s.NameAr : $"{s.NameAr} · {s.NameEn}";
+
+    private static string ItemLabel(ContactPickerItem item) =>
+        string.IsNullOrWhiteSpace(item.NameEn) ? item.NameAr : $"{item.NameAr} · {item.NameEn}";
+}

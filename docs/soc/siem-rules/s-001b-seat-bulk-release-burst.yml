@@ -1,0 +1,29 @@
+title: Seat reservation released - burst variant
+id: s-001b-seat-bulk-release-burst
+status: experimental
+description: >
+  Detects a scripted-abuse pattern that escapes S-001's 1-minute
+  window: >=3 seat-release events within a 10-second sliding window
+  for the same actor. The S-001 main rule's >=10/1m threshold misses
+  micro-bursts; the burst variant catches automated tooling running
+  through an admin session. Source: D-185 threat-detection review.
+references:
+  - SIMF DECISIONS_LOG.md D-182, D-185
+tags:
+  - attack.impact
+  - attack.t1531
+author: SIMF security review
+date: 2026-05-30
+correlation:
+  type: event_count
+  rules:
+    - s-001-base-seat-released
+  group-by:
+    - ActorUserId
+  timespan: 10s
+  condition:
+    gte: 3
+falsepositives:
+  - Unlikely under human CP usage — even a fast clicker rarely hits
+    3 releases in 10 seconds across distinct rows. Treat as page-out.
+level: high

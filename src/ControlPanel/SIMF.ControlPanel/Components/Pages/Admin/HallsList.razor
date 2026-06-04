@@ -1,0 +1,226 @@
+@* D-134 Sprint B — Halls CRUD. SIMF-FDS-004 §5.2. Mirrors ThemesList. *@
+@page "/admin/halls"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Halls.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Halls.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Halls.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="AdminHallSummary"
+                      Query="_query" Page="_page" Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.Name)"
+                      Caption="@L["Admin.Halls.Title"]"
+                      OnAdd="OnAddAsync"
+                      OnEditOne="OnEditAsync"
+                      OnDetailsOne="OnDetailsAsync"
+                      OnDeleteOne="OnDeactivateAsync"
+                      PrevLabel="@L["Admin.Halls.Prev"]"
+                      NextLabel="@L["Admin.Halls.Next"]"
+                      FirstLabel="@L["Admin.Halls.Pager.First"]"
+                      LastLabel="@L["Admin.Halls.Pager.Last"]"
+                      PageSizeLabel="@L["Admin.Halls.Pager.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Halls.Loading"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Admin.Halls.Column.Actions"]"
+                      SelectAllLabel="@L["Admin.Halls.Action.SelectAll"]"
+                      SelectRowLabel="@L["Admin.Halls.Action.SelectRow"]"
+                      AddLabel="@L["Admin.Halls.Action.Add"]"
+                      EditLabel="@L["Admin.Halls.Action.Edit"]"
+                      DetailsLabel="@L["Admin.Halls.Action.Details"]"
+                      DeleteLabel="@L["Admin.Halls.Action.Deactivate"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminHallSummary" Key="code"
+                                    Header="@L["Admin.Halls.Column.Code"]" Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Code</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminHallSummary" Key="name"
+                                    Header="@L["Admin.Halls.Column.Name"]" Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Name</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminHallSummary" Key="nameArabic"
+                                    Header="@L["Admin.Halls.Column.NameArabic"]" Sortable="true" Filterable="true">
+                    <CellTemplate>@context.NameArabic</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminHallSummary" Key="capacity"
+                                    Header="@L["Admin.Halls.Column.Capacity"]" Sortable="true">
+                    <CellTemplate>@context.Capacity</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminHallSummary" Key="floor"
+                                    Header="@L["Admin.Halls.Column.Floor"]" Filterable="true">
+                    <CellTemplate>@(context.Floor ?? "—")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminHallSummary" Key="isActive"
+                                    Header="@L["Admin.Halls.Column.Active"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        { <SimfPill Variant="on">@L["Admin.Halls.Active.Yes"]</SimfPill> }
+                        else
+                        { <SimfPill Variant="off">@L["Admin.Halls.Active.No"]</SimfPill> }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Halls.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_addOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.Halls.Add.Title"]"
+               OnClose="@(() => _addOpen = false)">
+        <ChildContent>
+            <HallForm OnSuccess="OnAddSucceededAsync"
+                      OnCancel="@(() => _addOpen = false)" />
+        </ChildContent>
+    </SimfModal>
+}
+
+@if (_editTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.Halls.Edit.Title"]"
+               OnClose="@(() => _editTarget = null)">
+        <ChildContent>
+            <HallForm Initial="_editTarget"
+                      OnSuccess="OnEditSucceededAsync"
+                      OnCancel="@(() => _editTarget = null)" />
+        </ChildContent>
+    </SimfModal>
+}
+
+@if (_detailsTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.Halls.Details.Title"]"
+               OnClose="@(() => _detailsTarget = null)">
+        <ChildContent>
+            <dl class="simf-dl">
+                <dt>@L["Admin.Halls.Column.Code"]</dt> <dd>@_detailsTarget.Code</dd>
+                <dt>@L["Admin.Halls.Column.Name"]</dt> <dd>@_detailsTarget.Name</dd>
+                <dt>@L["Admin.Halls.Column.NameArabic"]</dt> <dd>@_detailsTarget.NameArabic</dd>
+                <dt>@L["Admin.Halls.Column.Capacity"]</dt> <dd>@_detailsTarget.Capacity</dd>
+                <dt>@L["Admin.Halls.Column.Floor"]</dt> <dd>@(_detailsTarget.Floor ?? "—")</dd>
+                <dt>@L["Admin.Halls.Field.EquipmentNotes"]</dt> <dd>@(_detailsTarget.EquipmentNotes ?? "—")</dd>
+                <dt>@L["Admin.Halls.Column.Active"]</dt>
+                <dd>@(_detailsTarget.IsActive ? L["Admin.Halls.Active.Yes"] : L["Admin.Halls.Active.No"])</dd>
+            </dl>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _detailsTarget = null)">
+                @L["Admin.Halls.Details.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminHallSummary> _page = new();
+    private bool _loading;
+    private Toast? _toast;
+
+    private bool _addOpen;
+    private AdminHallDetail? _editTarget;
+    private AdminHallDetail? _detailsTarget;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminHallSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/halls/list", _query);
+            if (envelope is { Success: true, Data: not null })
+            {
+                _page = envelope.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Halls.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private Task OnAddAsync() { _addOpen = true; return Task.CompletedTask; }
+
+    private async Task OnAddSucceededAsync(AdminHallDetail created)
+    {
+        _addOpen = false;
+        _toast = new Toast("success", string.Format(L["Admin.Halls.Created"], created.Name));
+        await LoadAsync();
+    }
+
+    private async Task OnEditAsync(AdminHallSummary row)
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<AdminHallDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/halls/{row.Id}");
+        if (envelope is { Success: true, Data: not null }) _editTarget = envelope.Data;
+    }
+
+    private async Task OnEditSucceededAsync(AdminHallDetail updated)
+    {
+        _editTarget = null;
+        _toast = new Toast("success", string.Format(L["Admin.Halls.Updated"], updated.Name));
+        await LoadAsync();
+    }
+
+    private async Task OnDetailsAsync(AdminHallSummary row)
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<AdminHallDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/halls/{row.Id}");
+        if (envelope is { Success: true, Data: not null }) _detailsTarget = envelope.Data;
+    }
+
+    private async Task OnDeactivateAsync(AdminHallSummary row)
+    {
+        _toast = null;
+        var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+            "simfAccount.deleteJson", $"/account/api/admin/halls/{row.Id}");
+        if (envelope is { Success: true })
+        {
+            _toast = new Toast("success",
+                string.Format(L["Admin.Halls.Deactivated"], row.Name));
+            await LoadAsync();
+        }
+        else
+        {
+            _toast = new Toast("error",
+                envelope?.Error?.MessageForCurrentCulture() ?? L["Admin.Halls.Fallback"]);
+        }
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Admin.Halls.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Admin.Halls.Pager.Page"], current, total);
+}

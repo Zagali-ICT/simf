@@ -1,0 +1,139 @@
+# E2E test catalogue — `Onboarding` (`onboarding`)
+
+> **Authority:** SIMF E2E catalogue (D-133 / D-245). Mobile screen #2, the
+> first-run intro. Spec: [`Page_002`](../../App/Page_002/README.md). **No SIMF
+> API** — client-side only (Page_002_API.md). Runner-agnostic Gherkin. The flag +
+> route-out are widget-tested in
+> `src/Mobile/simf_app/test/features/onboarding/onboarding_screen_test.dart`; the
+> first-run gate is covered by the splash catalogue (E2E-MOB001-001).
+
+| | |
+|--|--|
+| **Page** | [`Page_002`](../../App/Page_002/README.md) (App page docs) |
+| **Route** | app screen #2 `/onboarding` · **no API** |
+| **Surface** | Mobile (Flutter) — first-run intro carousel (interim stand-in for the intro videos) |
+| **Test runner** | Flutter widget test (flag + navigation) · device/emulator drive for the visual + RTL |
+| **Auth setup** | None — runs at **Guest**, before sign-in. State driven by the local `onboardingCompleted` flag. **No token, no SIMF call.** |
+| **Last reviewed** | 2026-06-03 |
+
+## Coverage matrix
+
+| ID | Scenario | Type | Priority | Status |
+|----|----------|------|----------|--------|
+| E2E-MOB002-001 | First run (flag unset) → onboarding is shown | happy | P0 | authored ✓ (splash gate, E2E-MOB001-001) |
+| E2E-MOB002-002 | Next advances through the 3 slides; last shows "Get started" | happy | P0 | authored ✓ (widget test) |
+| E2E-MOB002-003 | Finishing the last slide sets the flag + routes to sign-in | happy | P0 | authored ✓ (widget test) |
+| E2E-MOB002-004 | Skip (any slide) sets the flag + routes to sign-in | happy | P0 | authored ✓ (widget test) |
+| E2E-MOB002-005 | A returning user never sees onboarding (splash skips it) | edge | P0 | authored ✓ (splash test: onboarded → sign-in) |
+| E2E-MOB002-006 | The screen makes no SIMF API call | resilience | P1 | authored (no client) |
+| E2E-MOB002-007 | RTL render (Arabic) — progress + controls mirror | i18n | P1 | authored (screen) |
+| E2E-MOB002-008 | App killed mid-sequence → replays next launch (flag only set on completion) | edge | P2 | authored (flag semantics) |
+
+## Scenarios
+
+### E2E-MOB002-001 — First run shows onboarding
+
+```gherkin
+Feature: First-run onboarding
+  As a first-time user
+  I want a short intro before signing in
+  So that I understand what the app offers
+
+Scenario: A first launch lands on onboarding
+  Given the onboardingCompleted flag is not set
+  And no session is stored
+  When the app cold-starts
+  Then the splash routes to Onboarding (#2 /onboarding)
+```
+
+**Evidence:** `splash_controller_test` — "a signed-out first run routes to onboarding".
+
+### E2E-MOB002-002 — Next advances the slides
+
+```gherkin
+Scenario: Stepping through the three slides
+  Given the onboarding screen is shown on slide 1
+  When the user taps Next
+  Then slide 2 is shown and the second progress segment is active
+  When the user taps Next again
+  Then slide 3 is shown
+  And the primary button now reads "Get started" (ابدأ)
+```
+
+**Evidence:** `onboarding_screen_test` — "finishing the last slide completes onboarding".
+
+### E2E-MOB002-003 — Finish completes onboarding
+
+```gherkin
+Scenario: Get started finishes the sequence
+  Given the onboarding screen is on the last slide
+  When the user taps "Get started"
+  Then onboardingCompleted is set to true in local storage
+  And the app replace-navigates to Sign-in (#3 /sign-in)
+  And Back does not return to onboarding
+```
+
+**Evidence:** `onboarding_screen_test` — asserts the flag is set + the sign-in screen renders.
+
+### E2E-MOB002-004 — Skip completes onboarding
+
+```gherkin
+Scenario: Skip from any slide
+  Given the onboarding screen is shown
+  When the user taps Skip
+  Then onboardingCompleted is set to true
+  And the app routes to Sign-in (#3)
+```
+
+**Evidence:** `onboarding_screen_test` — "Skip sets the first-run flag and routes to sign-in".
+
+### E2E-MOB002-005 — Returning user skips onboarding
+
+```gherkin
+Scenario: A returning user never sees onboarding
+  Given onboardingCompleted is true
+  And no session is stored
+  When the app cold-starts
+  Then the splash routes straight to Sign-in (#3), not onboarding
+```
+
+**Evidence:** `splash_controller_test` — "a signed-out returning user routes to sign-in".
+
+### E2E-MOB002-006 — No SIMF API call
+
+```gherkin
+Scenario: Onboarding is fully client-side
+  When onboarding is shown and the user finishes or skips
+  Then no request is made to any /api/v1/app/* endpoint
+  And no Authorization header is sent
+```
+
+> The interim build issues no network call at all; the eventual video player's
+> only network dependency is the external YouTube player (Page_002_Logic L-4),
+> never a SIMF endpoint.
+
+### E2E-MOB002-007 — RTL render
+
+```gherkin
+Scenario: Arabic onboarding mirrors
+  Given the device locale is Arabic
+  When the onboarding screen renders
+  Then the slide title/body read in Arabic and centered
+  And the progress segments + Skip/Next controls mirror right-to-left
+```
+
+### E2E-MOB002-008 — Killed mid-sequence replays
+
+```gherkin
+Scenario: The flag is only set on completion
+  Given a first launch reaches onboarding slide 2
+  And the user force-kills the app without finishing or skipping
+  When the app is relaunched
+  Then onboarding is shown again (onboardingCompleted was never set)
+```
+
+> Acceptable per Page_002_Logic L-5 — the flag is set only on finish/skip.
+
+---
+
+_Last reviewed:_ `2026-06-03` by `SIMF Team`.

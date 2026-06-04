@@ -1,0 +1,50 @@
+@* SimfThemeToggle — switches the light / dark theme. The theme is applied and
+   persisted by the simf-theme.js helper, which also sets it before first
+   paint so there is no flash. *@
+@namespace SIMF.Components.Controls
+@inject IJSRuntime JS
+
+@* H22 — D-081: aria-pressed turns this from a "button that does something"
+   into the ARIA toggle-button pattern — AT announces "pressed" / "not
+   pressed" on state change. The visible text already swaps between
+   LightLabel/DarkLabel but screen readers cannot see the icon swap
+   (it's aria-hidden by SimfIcon) and the text change happens silently
+   from the AT perspective without the toggle-state role attribute. *@
+<button type="button" class="simf-control" @onclick="ToggleAsync"
+        aria-label="@AriaLabel"
+        aria-pressed="@_isDark.ToString().ToLowerInvariant()">
+    <SimfIcon Name="@(_isDark ? "sun" : "moon")" Class="simf-control__icon" />
+    <span>@(_isDark ? LightLabel : DarkLabel)</span>
+</button>
+
+@code {
+    /// <summary>The label shown when the next action switches to the light theme.</summary>
+    [Parameter] public string LightLabel { get; set; } = "Light";
+
+    /// <summary>The label shown when the next action switches to the dark theme.</summary>
+    [Parameter] public string DarkLabel { get; set; } = "Dark";
+
+    /// <summary>The accessible label for the control.</summary>
+    [Parameter] public string AriaLabel { get; set; } = "Switch theme";
+
+    private bool _isDark;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isDark = await JS.InvokeAsync<bool>("simfTheme.isDark");
+            StateHasChanged();
+        }
+    }
+
+    // simfTheme.toggle returns the new theme NAME (a string — like setNamed /
+    // current), not a bool. Read it as a string and derive the dark state;
+    // InvokeAsync<bool> here threw a JSException (and tore down the circuit)
+    // trying to deserialise "light"/"dark" into a bool.
+    private async Task ToggleAsync()
+    {
+        var theme = await JS.InvokeAsync<string>("simfTheme.toggle");
+        _isDark = theme == "dark";
+    }
+}

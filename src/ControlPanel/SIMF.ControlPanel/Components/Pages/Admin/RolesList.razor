@@ -1,0 +1,268 @@
+@* D-134 Sprint A — Roles CRUD. Built on the existing SimfRole +
+   Permission + RolePermission entities. **No schema change** — pure
+   Path 2. Follows the canonical D-117/D-132 CRUD pattern set in
+   InterestsList.razor (the migrated reference). MVP scope: list +
+   create-custom + rename-custom + delete-custom (with the IsBaseline
+   and UserCount guards). Permission-grant editor + assign-to-user
+   flows are deferred to a follow-up. *@
+@page "/admin/roles"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Roles.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>@L["Admin.Roles.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Roles.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="AdminRoleSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.Name)"
+                      Caption="@L["Admin.Roles.Title"]"
+                      FilterColumnLabel="@L["Admin.Roles.FilterColumn"]"
+                      OnAdd="OnAddAsync"
+                      OnEditOne="OnEditAsync"
+                      OnDetailsOne="OnDetailsAsync"
+                      OnDeleteOne="OnDeleteAsync"
+                      PrevLabel="@L["Admin.Roles.Prev"]"
+                      NextLabel="@L["Admin.Roles.Next"]"
+                      FirstLabel="@L["Admin.Roles.Pager.First"]"
+                      LastLabel="@L["Admin.Roles.Pager.Last"]"
+                      PageSizeLabel="@L["Admin.Roles.Pager.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Roles.Loading"]"
+                      FilterPlaceholder="@L["Admin.Roles.FilterPlaceholder"]"
+                      ActionsHeader="@L["Admin.Roles.Column.Actions"]"
+                      SelectAllLabel="@L["Admin.Roles.Action.SelectAll"]"
+                      SelectRowLabel="@L["Admin.Roles.Action.SelectRow"]"
+                      AddLabel="@L["Admin.Roles.Action.Add"]"
+                      EditLabel="@L["Admin.Roles.Action.Edit"]"
+                      DetailsLabel="@L["Admin.Roles.Action.Details"]"
+                      DeleteLabel="@L["Admin.Roles.Action.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminRoleSummary" Key="name"
+                                    Header="@L["Admin.Roles.Column.Name"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Name</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRoleSummary" Key="baseline"
+                                    Header="@L["Admin.Roles.Column.Baseline"]"
+                                    Sortable="true">
+                    <CellTemplate>
+                        @if (context.IsBaseline)
+                        {
+                            <SimfPill Variant="admin">@L["Admin.Roles.Baseline.Yes"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill>@L["Admin.Roles.Baseline.No"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRoleSummary" Key="userCount"
+                                    Header="@L["Admin.Roles.Column.UserCount"]">
+                    <CellTemplate>@context.UserCount</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminRoleSummary" Key="permissionCount"
+                                    Header="@L["Admin.Roles.Column.PermissionCount"]">
+                    <CellTemplate>@context.PermissionCount</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions Context="role">
+                <AuthorizedAction Permission="@PermissionCatalog.Roles.AssignPermissions">
+                    <SimfLink Href="@($"/admin/roles/{role.Id}/permissions")">
+                        @L["Admin.Roles.Action.Permissions"]
+                    </SimfLink>
+                </AuthorizedAction>
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Roles.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_addOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.Roles.Add.Title"]"
+               OnClose="@(() => _addOpen = false)">
+        <ChildContent>
+            <RoleForm OnSuccess="OnAddSucceededAsync"
+                      OnCancel="@(() => _addOpen = false)" />
+        </ChildContent>
+    </SimfModal>
+}
+
+@if (_editTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.Roles.Edit.Title"]"
+               OnClose="@(() => _editTarget = null)">
+        <ChildContent>
+            @if (_editTarget.IsBaseline)
+            {
+                <SimfAlert Variant="info">@L["Admin.Roles.Edit.BaselineNotice"]</SimfAlert>
+                <div class="simf-form__actions">
+                    <SimfButton Type="button" OnClick="@(() => _editTarget = null)">
+                        @L["Admin.Roles.Edit.Close"]
+                    </SimfButton>
+                </div>
+            }
+            else
+            {
+                <RoleForm Initial="_editTarget"
+                          OnSuccess="OnEditSucceededAsync"
+                          OnCancel="@(() => _editTarget = null)" />
+            }
+        </ChildContent>
+    </SimfModal>
+}
+
+@if (_detailsTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.Roles.Details.Title"]"
+               OnClose="@(() => _detailsTarget = null)">
+        <ChildContent>
+            <dl class="simf-dl">
+                <dt>@L["Admin.Roles.Column.Name"]</dt>
+                <dd>@_detailsTarget.Name</dd>
+                <dt>@L["Admin.Roles.Column.Baseline"]</dt>
+                <dd>@(_detailsTarget.IsBaseline
+                    ? L["Admin.Roles.Baseline.Yes"]
+                    : L["Admin.Roles.Baseline.No"])</dd>
+                <dt>@L["Admin.Roles.Column.UserCount"]</dt>
+                <dd>@_detailsTarget.UserCount</dd>
+                <dt>@L["Admin.Roles.Column.PermissionCount"]</dt>
+                <dd>@_detailsTarget.PermissionCount</dd>
+            </dl>
+        </ChildContent>
+        <Footer>
+            <AuthorizedAction Permission="@PermissionCatalog.Roles.AssignPermissions">
+                <SimfButton Type="button" Variant="primary"
+                            OnClick="@(() => OpenPermissionEditor(_detailsTarget))">
+                    @L["Admin.Roles.Details.EditPermissions"]
+                </SimfButton>
+            </AuthorizedAction>
+            <SimfButton Type="button" Variant="secondary"
+                        OnClick="@(() => _detailsTarget = null)">
+                @L["Admin.Roles.Details.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminRoleSummary> _page = new();
+    private bool _loading;
+    private Toast? _toast;
+
+    private bool _addOpen;
+    private AdminRoleSummary? _editTarget;
+    private AdminRoleSummary? _detailsTarget;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminRoleSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/roles/list", _query);
+            if (envelope is { Success: true, Data: not null })
+            {
+                _page = envelope.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Roles.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private Task OnAddAsync()
+    {
+        _addOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnAddSucceededAsync(AdminRoleSummary created)
+    {
+        _addOpen = false;
+        _toast = new Toast("success", string.Format(L["Admin.Roles.Created"], created.Name));
+        await LoadAsync();
+    }
+
+    private Task OnEditAsync(AdminRoleSummary row)
+    {
+        _editTarget = row;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnEditSucceededAsync(AdminRoleSummary updated)
+    {
+        _editTarget = null;
+        _toast = new Toast("success", string.Format(L["Admin.Roles.Updated"], updated.Name));
+        await LoadAsync();
+    }
+
+    private Task OnDetailsAsync(AdminRoleSummary row)
+    {
+        _detailsTarget = row;
+        return Task.CompletedTask;
+    }
+
+    // Issue-1 — open the per-role permission editor page.
+    private void OpenPermissionEditor(AdminRoleSummary row) =>
+        Nav.NavigateTo($"/admin/roles/{row.Id}/permissions");
+
+    private async Task OnDeleteAsync(AdminRoleSummary row)
+    {
+        _toast = null;
+        var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+            "simfAccount.deleteJson", $"/account/api/admin/roles/{row.Id}");
+        if (envelope is { Success: true })
+        {
+            _toast = new Toast("success",
+                string.Format(L["Admin.Roles.Deleted"], row.Name));
+            await LoadAsync();
+        }
+        else
+        {
+            _toast = new Toast("error",
+                envelope?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.Roles.Fallback"]);
+        }
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Admin.Roles.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Admin.Roles.Pager.Page"], current, total);
+}

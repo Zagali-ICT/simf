@@ -1,0 +1,985 @@
+@* SimfDataGrid v2 — the SIMF server-paged data grid (decision D-044, full
+   spec from myComment #16). One grid component used by every list page.
+
+   v1 (D-044 a): server-paged + sortable column headers + per-column filter
+   inputs + per-row actions slot + empty state.
+
+   v2 (D-044 b): adds the row right-click context menu (Copy/Delete/Edit),
+   per-row fixed action buttons at the row end (Copy/Delete/Edit), a top
+   action toolbar (Select All / Add / Edit / Delete / Copy / Paste /
+   Duplicate / Import / Export), per-row selection via a checkbox column,
+   and Excel I/O wired through page-level callbacks.
+
+   Selection: callers wire RowKey: Func<TItem, string> and Multiselect=true.
+   The grid maintains the selected keys; SelectedItems is computed from the
+   current page (so a select-all crosses pages by re-selecting on the next
+   load — by design, since the grid never holds rows it didn't ask for).
+
+   Action callbacks: each toolbar button is rendered only when its callback
+   is wired. Pages opt in to the actions they actually support.
+
+   Usage:
+     <SimfDataGrid TItem="UserRow"
+                   Query="@_query" Page="@_page" Loading="@_loading"
+                   OnQueryChanged="LoadAsync"
+                   Multiselect RowKey="@(r => r.Id.ToString())"
+                   OnAdd="OnAddAsync" OnEditOne="OnEditAsync"
+                   OnDeleteSelected="OnDeleteAsync" OnExport="OnExportAsync"
+                   OnImport="OnImportAsync" OnDuplicateOne="OnDuplicateAsync">
+        <Columns> ... </Columns>
+        <EmptyTemplate> ... </EmptyTemplate>
+     </SimfDataGrid>
+*@
+@namespace SIMF.Components.Forms
+@typeparam TItem
+@inject IJSRuntime JS
+@implements IDisposable
+
+<CascadingValue Value="this" IsFixed="true">
+    @* The column declarations register themselves and render nothing
+       themselves. *@
+    @Columns
+</CascadingValue>
+
+<div class="simf-grid @(Loading ? "simf-grid--loading" : null)"
+     @oncontextmenu="OnGridContextMenuAsync" @oncontextmenu:preventDefault="@_anyContextHandlerWired">
+    @if (HasToolbar)
+    {
+        <div class="simf-grid__toolbar">
+            <div class="simf-grid__toolbar-group">
+                @if (Multiselect && Page is not null && Page.Items.Count > 0)
+                {
+                    <SimfToolbarButton Icon="check" Title="@SelectAllLabel"
+                                       OnClick="ToggleSelectAllAsync">
+                        @SelectAllLabel
+                    </SimfToolbarButton>
+                }
+                @if (OnAdd.HasDelegate)
+                {
+                    <SimfToolbarButton Icon="plus" Title="@AddLabel"
+                                       OnClick="OnAdd">
+                        @AddLabel
+                    </SimfToolbarButton>
+                }
+                @if (OnEditOne.HasDelegate)
+                {
+                    <SimfToolbarButton Icon="edit" Title="@EditLabel"
+                                       Disabled="@(SelectedCount != 1)"
+                                       OnClick="EditSingleSelectedAsync">
+                        @EditLabel
+                    </SimfToolbarButton>
+                }
+                @if (OnDeleteSelected.HasDelegate)
+                {
+                    <SimfToolbarButton Icon="trash" Title="@DeleteLabel"
+                                       Danger="true"
+                                       Disabled="@(SelectedOnPageCount == 0)"
+                                       OnClick="@(() => OnDeleteSelected.InvokeAsync(SelectedItemsOnPage()))">
+                        @DeleteLabel
+                    </SimfToolbarButton>
+                }
+                @* D-164 (gap doc G2) — bulk approve. Label is parent-supplied
+                   (`ApproveSelectedLabel`) so the same grid can host both the
+                   pending-visitor and pending-other lists with localised copy. *@
+                @if (OnApproveSelected.HasDelegate)
+                {
+                    <SimfToolbarButton Icon="check" Title="@ApproveSelectedLabel"
+                                       Disabled="@(SelectedOnPageCount == 0)"
+                                       OnClick="@(() => OnApproveSelected.InvokeAsync(SelectedItemsOnPage()))">
+                        @ApproveSelectedLabel
+                    </SimfToolbarButton>
+                }
+                @* D-209 — bulk reject. Mirrors bulk approve; the parent opens a
+                   shared-reason modal before calling the API. *@
+                @if (OnRejectSelected.HasDelegate)
+                {
+                    <SimfToolbarButton Icon="close" Title="@RejectSelectedLabel"
+                                       Danger="true"
+                                       Disabled="@(SelectedOnPageCount == 0)"
+                                       OnClick="@(() => OnRejectSelected.InvokeAsync(SelectedItemsOnPage()))">
+                        @RejectSelectedLabel
+                    </SimfToolbarButton>
+                }
+                @if (OnCopySelected.HasDelegate)
+                {
+                    <SimfToolbarButton Icon="copy" Title="@CopyLabel"
+                                       Disabled="@(SelectedOnPageCount == 0)"
+                                       OnClick="OnCopyToClipboardAsync">
+                        @CopyLabel
+                    </SimfToolbarButton>
+                }
+                @if (OnPaste.HasDelegate)
+                {
+                    <SimfToolbarButton Icon="copy" Title="@PasteLabel"
+                                       OnClick="OnPasteFromClipboardAsync">
+                        @PasteLabel
+                    </SimfToolbarButton>
+                }
+                @if (OnDuplicateOne.HasDelegate)
+                {
+                    <SimfToolbarButton Icon="copy" Title="@DuplicateLabel"
+                                       Disabled="@(SelectedCount != 1)"
+                                       OnClick="DuplicateSingleSelectedAsync">
+                        @DuplicateLabel
+                    </SimfToolbarButton>
+                }
+            </div>
+            <div class="simf-grid__toolbar-group">
+                @if (OnImport.HasDelegate)
+                {
+                    <SimfToolbarButton Icon="upload" Title="@ImportLabel"
+                                       OnClick="OnImport">
+                        @ImportLabel
+                    </SimfToolbarButton>
+                }
+                @if (OnExport.HasDelegate)
+                {
+                    <SimfToolbarButton Icon="download" Title="@ExportLabel"
+                                       OnClick="@(() => OnExport.InvokeAsync(SelectedItemsOnPage()))">
+                        @ExportLabel
+                    </SimfToolbarButton>
+                }
+                @CustomToolbar
+            </div>
+        </div>
+    }
+
+    <div class="simf-grid__scroll">
+        <table class="simf-grid__table">
+            @if (!string.IsNullOrEmpty(Caption))
+            {
+                <caption class="simf-visually-hidden">@Caption</caption>
+            }
+            <colgroup>
+                @if (Multiselect)
+                {
+                    <col class="simf-grid__col-select" />
+                }
+                @foreach (var column in _columns)
+                {
+                    <col style="@(column.Width is null ? null : $"width: {column.Width};")" />
+                }
+                @if (HasRowEndCell)
+                {
+                    <col class="simf-grid__col-actions" />
+                }
+            </colgroup>
+            <thead>
+                <tr class="simf-grid__head-row">
+                    @if (Multiselect)
+                    {
+                        <th class="simf-grid__th simf-grid__th--select">
+                            <input type="checkbox" class="simf-grid__select-all"
+                                   checked="@AllOnPageSelected"
+                                   aria-label="@SelectAllLabel"
+                                   @onchange="ToggleSelectAllAsync" />
+                        </th>
+                    }
+                    @foreach (var column in _columns)
+                    {
+                        var key = column.Key;
+                        var isSorted = string.Equals(Query?.Sort, key, StringComparison.OrdinalIgnoreCase);
+                        var dir = isSorted ? (Query!.SortDescending ? "desc" : "asc") : null;
+                        <th class="simf-grid__th @(column.Sortable ? "simf-grid__th--sortable" : null)"
+                            aria-sort="@(isSorted ? (Query!.SortDescending ? "descending" : "ascending") : "none")">
+                            @if (column.Sortable)
+                            {
+                                <button type="button" class="simf-grid__sort"
+                                        @onclick="@(() => ToggleSortAsync(key))">
+                                    <span>@column.Header</span>
+                                    <span class="simf-grid__sort-arrow simf-grid__sort-arrow--@(dir ?? "none")"
+                                          aria-hidden="true">@(dir switch { "asc" => "▲", "desc" => "▼", _ => "↕" })</span>
+                                </button>
+                            }
+                            else
+                            {
+                                <span>@column.Header</span>
+                            }
+                        </th>
+                    }
+                    @if (HasRowEndCell)
+                    {
+                        <th class="simf-grid__th simf-grid__th--actions">@ActionsHeader</th>
+                    }
+                </tr>
+                @if (HasAnyFilterableColumn)
+                {
+                    <tr class="simf-grid__filter-row">
+                        @if (Multiselect)
+                        {
+                            <td class="simf-grid__filter-cell"></td>
+                        }
+                        @foreach (var column in _columns)
+                        {
+                            <td class="simf-grid__filter-cell">
+                                @if (column.Filterable)
+                                {
+                                    Query!.Filters.TryGetValue(column.Key, out var current);
+                                    <input type="search" class="simf-grid__filter-input"
+                                           placeholder="@(column.FilterPlaceholder ?? FilterPlaceholder)"
+                                           aria-label="@($"{FilterColumnLabel} {column.Header}")"
+                                           value="@current"
+                                           @oninput="@(e => OnFilterInputAsync(column.Key, e.Value?.ToString()))" />
+                                }
+                            </td>
+                        }
+                        @if (HasRowEndCell)
+                        {
+                            <td class="simf-grid__filter-cell"></td>
+                        }
+                    </tr>
+                }
+            </thead>
+            <tbody>
+                @if (Page is null || Page.Items.Count == 0)
+                {
+                    <tr>
+                        <td class="simf-grid__empty"
+                            colspan="@(_columns.Count + (Multiselect ? 1 : 0) + (HasRowEndCell ? 1 : 0))">
+                            @if (EmptyTemplate is not null)
+                            {
+                                @EmptyTemplate
+                            }
+                            else
+                            {
+                                @EmptyLabel
+                            }
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in Page.Items)
+                    {
+                        var key = RowKey is null ? null : RowKey(row);
+                        var selected = key is not null && _selectedKeys.Contains(key);
+                        <tr class="simf-grid__row @(selected ? "simf-grid__row--selected" : null)"
+                            @oncontextmenu="@(e => OnRowContextMenuAsync(e, row))"
+                            @oncontextmenu:preventDefault="@_anyContextHandlerWired"
+                            @oncontextmenu:stopPropagation>
+                            @if (Multiselect)
+                            {
+                                <td class="simf-grid__td simf-grid__td--select">
+                                    <input type="checkbox"
+                                           checked="@selected"
+                                           aria-label="@RowSelectionLabel(row)"
+                                           @onchange="@(() => ToggleRowSelection(key))" />
+                                </td>
+                            }
+                            @foreach (var column in _columns)
+                            {
+                                <td class="simf-grid__td">@column.CellTemplate?.Invoke(row)</td>
+                            }
+                            @if (HasRowEndCell)
+                            {
+                                <td class="simf-grid__td simf-grid__td--actions">
+                                    @if (RowActions is not null)
+                                    {
+                                        @RowActions(row)
+                                    }
+                                    @if (OnDetailsOne.HasDelegate)
+                                    {
+                                        <SimfToolbarButton Icon="info" Title="@DetailsLabel"
+                                                           OnClick="@(() => OnDetailsOne.InvokeAsync(row))" />
+                                    }
+                                    @if (OnEditOne.HasDelegate)
+                                    {
+                                        <SimfToolbarButton Icon="edit" Title="@EditLabel"
+                                                           OnClick="@(() => OnEditOne.InvokeAsync(row))" />
+                                    }
+                                    @if (OnCopyOne.HasDelegate)
+                                    {
+                                        <SimfToolbarButton Icon="copy" Title="@CopyLabel"
+                                                           OnClick="@(() => OnCopyOne.InvokeAsync(row))" />
+                                    }
+                                    @if (OnDeleteOne.HasDelegate)
+                                    {
+                                        <SimfToolbarButton Icon="trash" Title="@DeleteLabel"
+                                                           Danger="true"
+                                                           OnClick="@(() => OnDeleteOne.InvokeAsync(row))" />
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+        @if (Loading)
+        {
+            <div class="simf-grid__overlay" aria-busy="true">
+                <SimfSpinner Label="@LoadingLabel" />
+            </div>
+        }
+
+        @if (_contextMenuOpen && _contextRow is not null)
+        {
+            <SimfContextMenu Open="true" X="_contextX" Y="_contextY">
+                @if (OnDetailsOne.HasDelegate)
+                {
+                    <SimfContextMenuItem Icon="info"
+                                         OnClick="@(() => ContextActionAsync(OnDetailsOne))">
+                        @DetailsLabel
+                    </SimfContextMenuItem>
+                }
+                @if (OnEditOne.HasDelegate)
+                {
+                    <SimfContextMenuItem Icon="edit"
+                                         OnClick="@(() => ContextActionAsync(OnEditOne))">
+                        @EditLabel
+                    </SimfContextMenuItem>
+                }
+                @if (OnCopyOne.HasDelegate)
+                {
+                    <SimfContextMenuItem Icon="copy"
+                                         OnClick="@(() => ContextActionAsync(OnCopyOne))">
+                        @CopyLabel
+                    </SimfContextMenuItem>
+                }
+                @if (OnDuplicateOne.HasDelegate)
+                {
+                    <SimfContextMenuItem Icon="copy"
+                                         OnClick="@(() => ContextActionAsync(OnDuplicateOne))">
+                        @DuplicateLabel
+                    </SimfContextMenuItem>
+                }
+                @if (OnDeleteOne.HasDelegate)
+                {
+                    <SimfContextMenuItem Icon="trash" Danger="true"
+                                         OnClick="@(() => ContextActionAsync(OnDeleteOne))">
+                        @DeleteLabel
+                    </SimfContextMenuItem>
+                }
+            </SimfContextMenu>
+        }
+    </div>
+
+    @if (_contextMenuOpen)
+    {
+        @* A transparent backdrop captures the click that closes the menu.
+           Pointer-events: auto so it actually catches clicks; sits on top. *@
+        <div class="simf-ctxmenu__backdrop" @onclick="CloseContextMenu"
+             @onmousedown="CloseContextMenu" @oncontextmenu="CloseContextMenu"
+             @oncontextmenu:preventDefault></div>
+    }
+
+    @* D-117 — full pager: First / Prev / numbered pages / Next / Last + page-size selector + "Page X of Y" summary. *@
+    <div class="simf-grid__pager">
+        <span class="simf-grid__pager-summary">@RenderSummary()</span>
+        <div class="simf-grid__pager-page">@RenderPageLabel()</div>
+        <div class="simf-grid__pager-controls">
+            <SimfToolbarButton Icon="chevron-first" Title="@FirstLabel"
+                               Disabled="@(IsFirstPage || Loading)"
+                               OnClick="GoFirstAsync" />
+            <SimfToolbarButton Icon="chevron-left" Title="@PrevLabel"
+                               Disabled="@(IsFirstPage || Loading)"
+                               OnClick="GoPrevAsync" />
+            <div class="simf-grid__pager-pages">
+                @foreach (var pageNumber in PageNumbersToShow())
+                {
+                    var n = pageNumber;
+                    var isCurrent = n == CurrentPage;
+                    <button type="button"
+                            class="simf-grid__pager-page-btn @(isCurrent ? "simf-grid__pager-page-btn--active" : null)"
+                            disabled="@(isCurrent || Loading)"
+                            aria-current="@(isCurrent ? "page" : null)"
+                            @onclick="@(() => GoToPageAsync(n))">@n</button>
+                }
+            </div>
+            <SimfToolbarButton Icon="chevron-right" Title="@NextLabel"
+                               Disabled="@(IsLastPage || Loading)"
+                               OnClick="GoNextAsync" />
+            <SimfToolbarButton Icon="chevron-last" Title="@LastLabel"
+                               Disabled="@(IsLastPage || Loading)"
+                               OnClick="GoLastAsync" />
+        </div>
+        <label class="simf-grid__pager-size">
+            <span class="simf-grid__pager-size-label">@PageSizeLabel</span>
+            <select class="simf-grid__pager-size-select" disabled="@Loading"
+                    value="@(Query?.Top ?? 20)"
+                    @onchange="OnPageSizeChangedAsync">
+                @foreach (var size in PageSizeOptions)
+                {
+                    <option value="@size">@size</option>
+                }
+            </select>
+        </label>
+    </div>
+</div>
+
+@code {
+    private readonly List<SimfDataGridColumn<TItem>> _columns = new();
+    private readonly HashSet<string> _selectedKeys = new(StringComparer.Ordinal);
+    private CancellationTokenSource? _filterDebounce;
+
+    private bool _contextMenuOpen;
+    private double _contextX;
+    private double _contextY;
+    private TItem? _contextRow;
+
+    // -- Parameters: data + paging --------------------------------------------
+
+    /// <summary>The current query — the parent owns this and passes it in.</summary>
+    [Parameter, EditorRequired] public GridQuery? Query { get; set; }
+
+    /// <summary>The current page — the parent fetches this and passes it in.</summary>
+    [Parameter] public GridPage<TItem>? Page { get; set; }
+
+    /// <summary>True while the parent is fetching a page.</summary>
+    [Parameter] public bool Loading { get; set; }
+
+    /// <summary>Raised whenever the user changes sort / filter / page —
+    /// the parent should refetch and update <see cref="Page"/>.</summary>
+    [Parameter] public EventCallback<GridQuery> OnQueryChanged { get; set; }
+
+    /// <summary>The column declarations.</summary>
+    [Parameter] public RenderFragment? Columns { get; set; }
+
+    /// <summary>Per-row custom actions, rendered before the built-in row-end buttons.</summary>
+    [Parameter] public RenderFragment<TItem>? RowActions { get; set; }
+
+    /// <summary>Custom toolbar content appended after the built-in toolbar buttons.</summary>
+    [Parameter] public RenderFragment? CustomToolbar { get; set; }
+
+    /// <summary>The body shown when the page is empty.</summary>
+    [Parameter] public RenderFragment? EmptyTemplate { get; set; }
+
+    // -- Parameters: selection -------------------------------------------------
+
+    /// <summary>True to render the row checkboxes + Select All button.</summary>
+    [Parameter] public bool Multiselect { get; set; }
+
+    /// <summary>Produces the row key for selection tracking. Required when <see cref="Multiselect"/> is true.</summary>
+    [Parameter] public Func<TItem, string>? RowKey { get; set; }
+
+    /// <summary>Produces a per-row label used for the selection checkbox's
+    /// <c>aria-label</c> (D-045 H2). Defaults to the row key, so a screen
+    /// reader gets a useful per-row name instead of "Select row" repeated.</summary>
+    [Parameter] public Func<TItem, string>? RowLabel { get; set; }
+
+    /// <summary>Optional visually-hidden caption announced by screen readers
+    /// when the table receives focus (D-045 H2).</summary>
+    [Parameter] public string? Caption { get; set; }
+
+    /// <summary>The string prefix used to label per-column filter inputs
+    /// (e.g. "Filter") — combined with the column header for the
+    /// <c>aria-label</c> on each input (D-045 H2).</summary>
+    [Parameter] public string FilterColumnLabel { get; set; } = "Filter";
+
+    /// <summary>Raised when the selection changes — receives every key currently selected.</summary>
+    [Parameter] public EventCallback<IReadOnlySet<string>> OnSelectionChanged { get; set; }
+
+    // -- Parameters: toolbar actions ------------------------------------------
+
+    /// <summary>Add a new row.</summary>
+    [Parameter] public EventCallback OnAdd { get; set; }
+
+    /// <summary>Edit one row (enabled only when exactly one is selected; also wires the per-row Edit button and the context menu Edit entry).</summary>
+    [Parameter] public EventCallback<TItem> OnEditOne { get; set; }
+
+    /// <summary>Delete the selected rows in bulk.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<TItem>> OnDeleteSelected { get; set; }
+
+    /// <summary>D-164 (gap doc G2) — approve the selected rows in bulk
+    /// ("Select All" affordance for the security team's pending-visitor
+    /// list). When the parent supplies this handler, an "Approve selected"
+    /// toolbar button appears alongside Delete, enabled only when ≥ 1
+    /// row on the current page is selected.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<TItem>> OnApproveSelected { get; set; }
+
+    /// <summary>D-209 — bulk reject the selected rows. When set, a "Reject
+    /// selected" toolbar button appears alongside Approve, enabled only when
+    /// ≥ 1 row on the current page is selected. The parent collects the
+    /// shared reason before calling the API.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<TItem>> OnRejectSelected { get; set; }
+
+    /// <summary>Delete one row (per-row button + context menu).</summary>
+    [Parameter] public EventCallback<TItem> OnDeleteOne { get; set; }
+
+    /// <summary>Show read-only details for one row (per-row button + context menu). D-117.</summary>
+    [Parameter] public EventCallback<TItem> OnDetailsOne { get; set; }
+
+    /// <summary>Copy the selected rows (writes to the system clipboard as JSON).</summary>
+    [Parameter] public EventCallback<IReadOnlyList<TItem>> OnCopySelected { get; set; }
+
+    /// <summary>Copy one row (per-row button + context menu).</summary>
+    [Parameter] public EventCallback<TItem> OnCopyOne { get; set; }
+
+    /// <summary>Paste from the clipboard (the parent receives the JSON string).</summary>
+    [Parameter] public EventCallback<string> OnPaste { get; set; }
+
+    /// <summary>Duplicate one row (enabled only when exactly one is selected).</summary>
+    [Parameter] public EventCallback<TItem> OnDuplicateOne { get; set; }
+
+    /// <summary>Import from Excel — the parent triggers its file input.</summary>
+    [Parameter] public EventCallback OnImport { get; set; }
+
+    /// <summary>Export the selected rows (or, if none selected, the whole result set).</summary>
+    [Parameter] public EventCallback<IReadOnlyList<TItem>> OnExport { get; set; }
+
+    // -- Parameters: labels ---------------------------------------------------
+
+    [Parameter] public string ActionsHeader { get; set; } = "Actions";
+    [Parameter] public string EmptyLabel { get; set; } = "No records";
+    [Parameter] public string FilterPlaceholder { get; set; } = "filter…";
+    [Parameter] public string LoadingLabel { get; set; } = "Loading";
+    [Parameter] public string PrevLabel { get; set; } = "Previous";
+    [Parameter] public string NextLabel { get; set; } = "Next";
+    [Parameter] public string FirstLabel { get; set; } = "First";
+    [Parameter] public string LastLabel { get; set; } = "Last";
+    [Parameter] public string PageSizeLabel { get; set; } = "Show";
+    [Parameter] public string SelectAllLabel { get; set; } = "Select all";
+    [Parameter] public string SelectRowLabel { get; set; } = "Select row";
+    [Parameter] public string AddLabel { get; set; } = "Add";
+    [Parameter] public string EditLabel { get; set; } = "Edit";
+    [Parameter] public string DetailsLabel { get; set; } = "Details";
+    [Parameter] public string DeleteLabel { get; set; } = "Delete";
+    /// <summary>D-164 — label for the bulk-approve toolbar button.</summary>
+    [Parameter] public string ApproveSelectedLabel { get; set; } = "Approve selected";
+    /// <summary>D-209 — label for the bulk-reject toolbar button.</summary>
+    [Parameter] public string RejectSelectedLabel { get; set; } = "Reject selected";
+    [Parameter] public string CopyLabel { get; set; } = "Copy";
+    [Parameter] public string PasteLabel { get; set; } = "Paste";
+    [Parameter] public string DuplicateLabel { get; set; } = "Duplicate";
+    [Parameter] public string ImportLabel { get; set; } = "Import";
+    [Parameter] public string ExportLabel { get; set; } = "Export";
+
+    /// <summary>The page-size options shown in the pager. D-117.</summary>
+    [Parameter] public IReadOnlyList<int> PageSizeOptions { get; set; } = new[] { 10, 20, 50, 100 };
+
+    /// <summary>The pager summary template — receives (skip, taken, total); the
+    /// page computes the 1-based range as skip+1 .. skip+taken. Defaults to
+    /// "{skip+1}-{skip+taken} of {total}".</summary>
+    [Parameter] public Func<int, int, int, string> SummaryFormatter { get; set; } =
+        (skip, taken, total) => $"{skip + 1}-{skip + taken} of {total}";
+
+    /// <summary>The pager "Page X of Y" formatter — receives (current, total). D-117.</summary>
+    [Parameter] public Func<int, int, string> PageFormatter { get; set; } =
+        (current, total) => $"Page {current} of {total}";
+
+    // -- Column registration (called by SimfDataGridColumn) --------------------
+
+    internal void RegisterColumn(SimfDataGridColumn<TItem> column)
+    {
+        if (_columns.Contains(column)) return;
+        _columns.Add(column);
+        StateHasChanged();
+    }
+
+    internal void UnregisterColumn(SimfDataGridColumn<TItem> column)
+    {
+        if (_columns.Remove(column))
+        {
+            StateHasChanged();
+        }
+    }
+
+    // -- Derived flags ---------------------------------------------------------
+
+    private bool HasToolbar =>
+        Multiselect
+        || OnAdd.HasDelegate || OnEditOne.HasDelegate || OnDeleteSelected.HasDelegate
+        || OnCopySelected.HasDelegate || OnPaste.HasDelegate || OnDuplicateOne.HasDelegate
+        || OnImport.HasDelegate || OnExport.HasDelegate || CustomToolbar is not null;
+
+    private bool HasRowEndCell =>
+        RowActions is not null
+        || OnDetailsOne.HasDelegate
+        || OnEditOne.HasDelegate || OnCopyOne.HasDelegate || OnDeleteOne.HasDelegate;
+
+    private bool AnyContextHandlerWired =>
+        OnDetailsOne.HasDelegate
+        || OnEditOne.HasDelegate || OnCopyOne.HasDelegate
+        || OnDeleteOne.HasDelegate || OnDuplicateOne.HasDelegate;
+
+    /// <summary>Back-compat alias retained because the Razor markup binds to
+    /// this name on conditional <c>@oncontextmenu</c> attributes (D-045 H1).</summary>
+    private bool _anyContextHandlerWired => AnyContextHandlerWired;
+
+    private bool HasAnyFilterableColumn => _columns.Any(c => c.Filterable);
+
+    private bool IsFirstPage =>
+        Query is null || Query.Skip <= 0;
+
+    private bool IsLastPage =>
+        Page is null || Query is null
+        || Query.Skip + Page.Items.Count >= Page.Total;
+
+    // -- Selection helpers -----------------------------------------------------
+
+    /// <summary>Total selected keys across every page.</summary>
+    private int SelectedCount => _selectedKeys.Count;
+
+    /// <summary>Selected rows on the current page only — D-045 H1: every
+    /// toolbar Disabled state now reads this rather than <see cref="SelectedCount"/>
+    /// so the act-on-selection buttons disable correctly when the user has
+    /// paged away from their selection.</summary>
+    private int SelectedOnPageCount
+    {
+        get
+        {
+            if (Page is null || RowKey is null) return 0;
+            var count = 0;
+            foreach (var row in Page.Items)
+            {
+                if (_selectedKeys.Contains(RowKey(row))) count++;
+            }
+            return count;
+        }
+    }
+
+    private bool AllOnPageSelected
+    {
+        get
+        {
+            if (Page is null || Page.Items.Count == 0 || RowKey is null) return false;
+            foreach (var row in Page.Items)
+            {
+                if (!_selectedKeys.Contains(RowKey(row))) return false;
+            }
+            return true;
+        }
+    }
+
+    private TItem? FirstSelectedOrDefault()
+    {
+        if (Page is null || RowKey is null) return default;
+        foreach (var row in Page.Items)
+        {
+            if (_selectedKeys.Contains(RowKey(row))) return row;
+        }
+        return default;
+    }
+
+    private IReadOnlyList<TItem> SelectedItemsOnPage()
+    {
+        if (Page is null || RowKey is null) return Array.Empty<TItem>();
+        var result = new List<TItem>();
+        foreach (var row in Page.Items)
+        {
+            if (_selectedKeys.Contains(RowKey(row))) result.Add(row);
+        }
+        return result;
+    }
+
+    private async Task ToggleRowSelection(string? key)
+    {
+        if (key is null) return;
+        if (!_selectedKeys.Add(key))
+        {
+            _selectedKeys.Remove(key);
+        }
+        await OnSelectionChanged.InvokeAsync(_selectedKeys);
+    }
+
+    private string RowSelectionLabel(TItem row)
+    {
+        // D-045 H2: every row checkbox gets a distinct accessible name —
+        // by default the row key, but the caller can supply a richer label
+        // (e.g. the user's email for the admin grid).
+        if (RowLabel is not null) return $"{SelectRowLabel} {RowLabel(row)}";
+        if (RowKey is not null) return $"{SelectRowLabel} {RowKey(row)}";
+        return SelectRowLabel;
+    }
+
+    private async Task ToggleSelectAllAsync()
+    {
+        if (Page is null || RowKey is null) return;
+        if (AllOnPageSelected)
+        {
+            foreach (var row in Page.Items)
+            {
+                _selectedKeys.Remove(RowKey(row));
+            }
+        }
+        else
+        {
+            foreach (var row in Page.Items)
+            {
+                _selectedKeys.Add(RowKey(row));
+            }
+        }
+        await OnSelectionChanged.InvokeAsync(_selectedKeys);
+    }
+
+    // -- Sort / filter / page handlers -----------------------------------------
+
+    private string RenderSummary()
+    {
+        if (Query is null || Page is null) return string.Empty;
+        if (Page.Total == 0) return SummaryFormatter(0, 0, 0);
+        // D-255: pass (skip, taken, total) — the page formatters compute the
+        // 1-based range themselves (skip+1 .. skip+taken). Passing a
+        // pre-incremented `from` here double-counted ("Showing 2–8 of 7").
+        return SummaryFormatter(Query.Skip, Page.Items.Count, Page.Total);
+    }
+
+    private async Task ToggleSortAsync(string key)
+    {
+        if (Query is null) return;
+        // D-045 H1: a sort/filter/page change drops the selection. The grid
+        // never holds rows it didn't ask for; carrying stale keys across a
+        // query change leads to silent partial deletes when the user clicks
+        // a toolbar action with a now-invisible selection.
+        ClearSelection();
+        var next = CopyQuery(Query);
+        next.Skip = 0;
+        next.Sort = key;
+        next.SortDescending =
+            string.Equals(Query.Sort, key, StringComparison.OrdinalIgnoreCase)
+                ? !Query.SortDescending
+                : false;
+        await OnQueryChanged.InvokeAsync(next);
+    }
+
+    private async Task OnFilterInputAsync(string key, string? value)
+    {
+        _filterDebounce?.Cancel();
+        _filterDebounce = new CancellationTokenSource();
+        var token = _filterDebounce.Token;
+        try
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(300), token);
+        }
+        catch (TaskCanceledException) { return; }
+        if (Query is null || token.IsCancellationRequested) return;
+
+        var filters = new Dictionary<string, string>(Query.Filters);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            filters.Remove(key);
+        }
+        else
+        {
+            filters[key] = value.Trim();
+        }
+        ClearSelection();
+        var next = CopyQuery(Query);
+        next.Skip = 0;
+        next.Filters = filters;
+        await OnQueryChanged.InvokeAsync(next);
+    }
+
+    private async Task GoPrevAsync()
+    {
+        if (Query is null) return;
+        ClearSelection();
+        var next = CopyQuery(Query);
+        next.Skip = Math.Max(0, Query.Skip - Query.Top);
+        await OnQueryChanged.InvokeAsync(next);
+    }
+
+    private async Task GoNextAsync()
+    {
+        if (Query is null) return;
+        ClearSelection();
+        var next = CopyQuery(Query);
+        next.Skip = Query.Skip + Query.Top;
+        await OnQueryChanged.InvokeAsync(next);
+    }
+
+    // -- Full pager (D-117) ----------------------------------------------------
+
+    private int CurrentPage
+    {
+        get
+        {
+            if (Query is null || Query.Top <= 0) return 1;
+            return (Query.Skip / Query.Top) + 1;
+        }
+    }
+
+    private int TotalPages
+    {
+        get
+        {
+            if (Page is null || Query is null || Query.Top <= 0) return 1;
+            if (Page.Total <= 0) return 1;
+            return (int)Math.Ceiling((double)Page.Total / Query.Top);
+        }
+    }
+
+    private string RenderPageLabel() => PageFormatter(CurrentPage, TotalPages);
+
+    /// <summary>The numbered-page buttons to render around the current page —
+    /// up to 5 entries, centred on the current page, clamped to [1..TotalPages].</summary>
+    private IEnumerable<int> PageNumbersToShow()
+    {
+        const int window = 5;
+        var total = TotalPages;
+        if (total <= window)
+        {
+            for (var i = 1; i <= total; i++) yield return i;
+            yield break;
+        }
+        var current = CurrentPage;
+        var start = Math.Max(1, current - window / 2);
+        var end = Math.Min(total, start + window - 1);
+        start = Math.Max(1, end - window + 1);
+        for (var i = start; i <= end; i++) yield return i;
+    }
+
+    private async Task GoFirstAsync()
+    {
+        if (Query is null || IsFirstPage) return;
+        ClearSelection();
+        var next = CopyQuery(Query);
+        next.Skip = 0;
+        await OnQueryChanged.InvokeAsync(next);
+    }
+
+    private async Task GoLastAsync()
+    {
+        if (Query is null || IsLastPage) return;
+        ClearSelection();
+        var next = CopyQuery(Query);
+        next.Skip = Math.Max(0, (TotalPages - 1) * Query.Top);
+        await OnQueryChanged.InvokeAsync(next);
+    }
+
+    private async Task GoToPageAsync(int pageNumber)
+    {
+        if (Query is null || pageNumber < 1 || pageNumber > TotalPages) return;
+        if (pageNumber == CurrentPage) return;
+        ClearSelection();
+        var next = CopyQuery(Query);
+        next.Skip = (pageNumber - 1) * Query.Top;
+        await OnQueryChanged.InvokeAsync(next);
+    }
+
+    private async Task OnPageSizeChangedAsync(ChangeEventArgs args)
+    {
+        if (Query is null) return;
+        if (!int.TryParse(args.Value?.ToString(), out var newSize) || newSize <= 0) return;
+        if (newSize == Query.Top) return;
+        ClearSelection();
+        var next = CopyQuery(Query);
+        next.Top = newSize;
+        next.Skip = 0;
+        await OnQueryChanged.InvokeAsync(next);
+    }
+
+    private void ClearSelection()
+    {
+        if (_selectedKeys.Count == 0) return;
+        _selectedKeys.Clear();
+        // Don't fire OnSelectionChanged for an implicit clear — that would
+        // ping every consumer on every page change.
+    }
+
+    private static GridQuery CopyQuery(GridQuery q) => new()
+    {
+        Skip = q.Skip,
+        Top = q.Top,
+        Search = q.Search,
+        Sort = q.Sort,
+        SortDescending = q.SortDescending,
+        Filters = new Dictionary<string, string>(q.Filters),
+    };
+
+    // -- Context menu ----------------------------------------------------------
+
+    private async Task OnRowContextMenuAsync(MouseEventArgs e, TItem row)
+    {
+        if (!_anyContextHandlerWired) return;
+        _contextRow = row;
+        // D-045 H2 — RTL fix: SimfContextMenu uses `inset-inline-start`,
+        // which resolves to the RIGHT edge in RTL. The mouse client X is
+        // measured from the viewport's LEFT edge regardless of direction,
+        // so in RTL we must mirror the value before passing it in.
+        var isRtl = await JS.InvokeAsync<bool>("eval",
+            "document.documentElement.getAttribute('dir') === 'rtl'");
+        if (isRtl)
+        {
+            var viewportWidth = await JS.InvokeAsync<double>("eval", "window.innerWidth");
+            _contextX = viewportWidth - e.ClientX;
+        }
+        else
+        {
+            _contextX = e.ClientX;
+        }
+        _contextY = e.ClientY;
+        _contextMenuOpen = true;
+    }
+
+    private void OnGridContextMenuAsync() { /* swallowed by row handler */ }
+
+    private void CloseContextMenu()
+    {
+        _contextMenuOpen = false;
+        _contextRow = default;
+    }
+
+    private async Task ContextActionAsync(EventCallback<TItem> callback)
+    {
+        var row = _contextRow;
+        CloseContextMenu();
+        if (row is not null && callback.HasDelegate)
+        {
+            await callback.InvokeAsync(row);
+        }
+    }
+
+    private async Task EditSingleSelectedAsync()
+    {
+        var row = FirstSelectedOrDefault();
+        if (row is not null && OnEditOne.HasDelegate)
+        {
+            await OnEditOne.InvokeAsync(row);
+        }
+    }
+
+    private async Task DuplicateSingleSelectedAsync()
+    {
+        var row = FirstSelectedOrDefault();
+        if (row is not null && OnDuplicateOne.HasDelegate)
+        {
+            await OnDuplicateOne.InvokeAsync(row);
+        }
+    }
+
+    // -- Clipboard helpers (Copy / Paste toolbar actions) ----------------------
+
+    private async Task OnCopyToClipboardAsync()
+    {
+        if (!OnCopySelected.HasDelegate) return;
+        var rows = SelectedItemsOnPage();
+        if (rows.Count == 0) return;
+
+        try
+        {
+            var json = System.Text.Json.JsonSerializer.Serialize(rows);
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", json);
+        }
+        catch { /* clipboard may be unavailable (insecure context) */ }
+
+        await OnCopySelected.InvokeAsync(rows);
+    }
+
+    private async Task OnPasteFromClipboardAsync()
+    {
+        if (!OnPaste.HasDelegate) return;
+        string clipboard;
+        try
+        {
+            clipboard = await JS.InvokeAsync<string>("navigator.clipboard.readText");
+        }
+        catch
+        {
+            clipboard = string.Empty;
+        }
+        await OnPaste.InvokeAsync(clipboard);
+    }
+
+    // -- Disposal --------------------------------------------------------------
+    // D-045 H1: dispose the filter-debounce CTS so its OS handle is reclaimed
+    // when the grid leaves the page. Without this, sustained typing in the
+    // filter input leaks a CTS per keystroke until GC notices.
+
+    public void Dispose()
+    {
+        try { _filterDebounce?.Cancel(); } catch { /* already disposed */ }
+        _filterDebounce?.Dispose();
+        _filterDebounce = null;
+    }
+}

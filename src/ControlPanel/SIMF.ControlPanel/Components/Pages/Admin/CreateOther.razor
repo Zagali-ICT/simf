@@ -1,0 +1,29 @@
+@* Control Panel — admin creates a new Other-typed user (P7e — D-055;
+   refactored in D-114 to host the reusable CreateOtherForm). The URL
+   /admin/others/new stays as a deep-link fallback per Q-D. *@
+@page "/admin/others/new"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Others.Create)]
+@inject IStringLocalizer<Strings> L
+@inject NavigationManager Nav
+
+<PageTitle>@L["Admin.Others.New.Title"] · SIMF</PageTitle>
+
+<SimfPageHeader Title="@L["Admin.Others.New.Title"]" />
+
+<section class="simf-card simf-page-card">
+    <p>@L["Admin.Others.New.Supporting"]</p>
+
+    <CreateOtherForm OnSuccess="OnCreatedAsync"
+                     OnCancel="OnBackToListAsync" />
+</section>
+
+@code {
+    private Task OnCreatedAsync(AdminCreateUserResponse _) => Task.CompletedTask;
+
+    private Task OnBackToListAsync()
+    {
+        Nav.NavigateTo("/admin/others");
+        return Task.CompletedTask;
+    }
+}

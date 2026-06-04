@@ -4,8 +4,8 @@
 |-------|-------|
 | Document ID | SIMF-SAD-001 |
 | Title | Software Architecture Document |
-| Version | 1.0 |
-| Status | Draft |
+| Version | 1.1 |
+| Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
 | Owner | Solution Architect |
@@ -18,6 +18,7 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. High-level architecture; low-level detail follows once requirement gates D1–D6 close. |
+| 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): a caching layer; resilience patterns for external dependencies; the event-day production scale-out recorded as a deferred decision; the token-revocation security stamp. |
 
 ---
 
@@ -573,6 +574,57 @@ close. They map to the decision gates in SIMF-PGP-001.
 | OI-6 | D7 — AI provider, live-broadcast platform, WhatsApp provider | Integration adapters in section 9 |
 | OI-7 | Map/location service selection | Section 9.4 |
 | OI-8 | Confirm document classification with the owner | Control block |
+
+---
+
+## Amendment A — Architecture review (2026-05-21)
+
+The two architecture reviews of 2026-05-21 amend this document.
+
+### A.1 Caching — amends §11 and §12
+A caching layer is added. Read-mostly data — the agenda, sessions, speakers,
+themes, booths, sponsors, the venue map, and the `ContentBlock` / `Category`
+configuration — is cached **in-memory per API node**, invalidated when the
+Control Panel edits the underlying data. This preserves the
+configuration-as-data rule (AD-009) while removing a database hit on every page
+render. Per decision O-3 no Redis is adopted now; a shared cache for a
+multi-node production deployment is part of the deferred scale-out in A.3.
+
+### A.2 Resilience for external dependencies — amends §9
+Every external-service adapter (email, SMS, WhatsApp, the cognitive-AI
+provider, the live-broadcast platform, the maps service) is reached with an
+explicit connection and request timeout, a bounded retry with backoff, and a
+circuit breaker. Notification sending is **asynchronous** — a request raises an
+event and a background worker drains the channel send, so a slow gateway never
+blocks a user request. The system degrades gracefully when a dependency is
+down: the AI filter down → comments still queue for admin review; the broadcast
+platform down → a clear in-app notice; the maps service down → the agenda still
+works.
+
+### A.3 Event-day production scale-out — deferred decision; amends §10 and §12
+The single-server topology in §10.1 is the **development and test** topology
+and is correct for that. The **event-day production topology** must carry the
+registration surge and tens of thousands of concurrent live-session
+connections, which the single server cannot. The production scale-out is
+recorded here as an explicit decision **deferred to closer to the event**:
+- a **load-balanced, multi-instance API tier** (the API is stateless — a
+  deployment change, not a redesign);
+- for SignalR across nodes, a **backplane** — the on-prem options are a SQL
+  Server backplane or Redis, chosen at that time (per O-3, no Redis now);
+- **SQL Server high availability** (a Standard-edition basic availability group
+  or failover clustering);
+- the reverse proxy configured for tens of thousands of long-lived WebSocket
+  connections.
+Until then the system is built **scale-ready** — a stateless API, no
+in-process session state, externalised configuration — so the scale-out is a
+deployment and configuration change. The SQL Server edition is **Standard**
+(O-3); high availability is not used in development or test.
+
+### A.4 Token-revocation window — amends §8
+The 30-minute access token carries a per-user security stamp; sensitive Control
+Panel endpoints validate it server-side, so disabling an account or revoking a
+Control Panel role takes effect immediately rather than after the token
+expires.
 
 ---
 

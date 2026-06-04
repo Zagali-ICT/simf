@@ -1,0 +1,22 @@
+/* P2.1 (D-211) — FAQ manager layout. Tokens only (no hardcoded values),
+   per the CSS rules; mirrors the scoped-CSS approach of SessionSeatPlan. */
+
+.simf-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin: var(--space-4) 0 var(--space-2);
+}
+
+.simf-section__title {
+    font-size: 1.1rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    margin: var(--space-5) 0 var(--space-2);
+}
+
+/* The group whose entries are currently shown below. */
+.simf-table tr.is-selected {
+    background: var(--color-surface-sunken);
+}

@@ -1,0 +1,181 @@
+@* D-169 (gap doc G6) — moderator's live Q&A desk for one session.
+   Routed by session id; the API enforces the per-session permission
+   grant (or Administrator bypass). *@
+@page "/sessions/{SessionId:guid}/moderate"
+@layout CpShellLayout
+@attribute [Authorize]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.SessionModeration.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.SessionModeration.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form__actions">
+            <SimfButton Type="button" OnClick="LoadAsync" Disabled="_loading">
+                @L["Admin.SessionModeration.Refresh"]
+            </SimfButton>
+        </div>
+
+        @if (_loading)
+        {
+            <p>@L["Admin.SessionModeration.Loading"]</p>
+        }
+        else if (_rows.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.SessionModeration.None"]" />
+        }
+        else
+        {
+            <table class="simf-table">
+                <thead>
+                    <tr>
+                        <th>@L["Admin.SessionModeration.Col.Order"]</th>
+                        <th>@L["Admin.SessionModeration.Col.Submitter"]</th>
+                        <th>@L["Admin.SessionModeration.Col.Question"]</th>
+                        <th>@L["Admin.SessionModeration.Col.State"]</th>
+                        <th>@L["Admin.SessionModeration.Col.Actions"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _rows)
+                    {
+                        <tr>
+                            <td>@row.Order</td>
+                            <td>@row.SubmittedByDisplayName <small>(@(row.SubmittedByEmail ?? "—"))</small></td>
+                            <td>@row.QuestionText</td>
+                            <td>
+                                @if (row.IsHidden)
+                                {
+                                    <span>@L["Admin.SessionModeration.State.Hidden"]</span>
+                                }
+                                else if (row.IsPushed)
+                                {
+                                    <span>@L["Admin.SessionModeration.Pushed"]</span>
+                                }
+                                else
+                                {
+                                    <span>@L["Admin.SessionModeration.State.Queued"]</span>
+                                }
+                            </td>
+                            <td>
+                                @if (!row.IsHidden)
+                                {
+                                    <SimfButton Type="button"
+                                                OnClick="@(() => SetHiddenAsync(row, true))">
+                                        @L["Admin.SessionModeration.Hide"]
+                                    </SimfButton>
+                                }
+                                else
+                                {
+                                    <SimfButton Type="button"
+                                                OnClick="@(() => SetHiddenAsync(row, false))">
+                                        @L["Admin.SessionModeration.Unhide"]
+                                    </SimfButton>
+                                }
+                                @if (!row.IsPushed && !row.IsHidden)
+                                {
+                                    <SimfButton Type="button"
+                                                OnClick="@(() => PushAsync(row))">
+                                        @L["Admin.SessionModeration.Push"]
+                                    </SimfButton>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid SessionId { get; set; }
+
+    private record Toast(string Variant, string Message);
+
+    private IReadOnlyList<SessionQuestionModeratorRow> _rows =
+        Array.Empty<SessionQuestionModeratorRow>();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<IReadOnlyList<SessionQuestionModeratorRow>>>(
+                "simfAccount.getJson",
+                $"/account/api/sessions/{SessionId}/questions/moderate");
+            if (env is { Success: true, Data: not null })
+            {
+                _rows = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionModeration.Loading"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task SetHiddenAsync(SessionQuestionModeratorRow row, bool isHidden)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<SessionQuestionModeratorRow>>(
+                "simfAccount.putJson",
+                $"/account/api/sessions/{SessionId}/questions/{row.Id}/hide",
+                new SetQuestionHiddenRequest { IsHidden = isHidden });
+            if (env is { Success: true })
+            {
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionModeration.Loading"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task PushAsync(SessionQuestionModeratorRow row)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<SessionQuestionModeratorRow>>(
+                "simfAccount.putJson",
+                $"/account/api/sessions/{SessionId}/questions/{row.Id}/push",
+                new { });
+            if (env is { Success: true })
+            {
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionModeration.Loading"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+}

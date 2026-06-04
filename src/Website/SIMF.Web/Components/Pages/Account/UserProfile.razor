@@ -1,0 +1,445 @@
+@* User self-service profile — assembles the D-044(c) Simf* primitives
+   on top of the D-046(b) backend, renamed in P8 (D-049) from
+   /account/visitor-profile to /account/profile. Closes myComment #18
+   end-to-end: the user signs in, lands here, fills the form, uploads
+   their ID, sees the QR code their account was minted with on Approval
+   (D-046 a). The legacy "I am attending as" radio (Visitor / Exhibitor
+   / Press) is gone in P8 — the profile-type now flows through
+   ProfileTypeId, admin-assigned. *@
+@page "/account/profile"
+@rendermode AppRenderMode.InteractiveServerNoPrerender
+@attribute [Authorize]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthState
+
+<PageTitle>@L["Account.Profile.Title"]</PageTitle>
+
+<div class="simf-account-page">
+    <header class="simf-account-page__head">
+        <h1 class="simf-account-page__title">@L["Account.Profile.Title"]</h1>
+        @* D-132 — surface a link to the notifications inbox so the page
+           is reachable from the main post-login surface (it was orphan
+           — reachable only by typing the URL). *@
+        <div class="simf-account-page__actions">
+            <a class="simf-button simf-button--secondary"
+               href="/account/notifications">@L["Account.Notifications.Title"]</a>
+            <SimfButton Type="button" Variant="secondary"
+                        OnClick="SignOutAsync">@L["Account.Profile.SignOut"]</SimfButton>
+        </div>
+    </header>
+
+    @if (_loadError is not null)
+    {
+        <SimfAlert Variant="error">@_loadError</SimfAlert>
+    }
+    else if (_response is null)
+    {
+        <SimfAlert Variant="info">@L["Account.Profile.Loading"]</SimfAlert>
+    }
+    else
+    {
+        @* Saved-state notice. *@
+        @if (_saveSuccess)
+        {
+            <SimfAlert Variant="success">@L["Account.Profile.Saved"]</SimfAlert>
+        }
+        @if (_saveError is not null)
+        {
+            <SimfAlert Variant="error">@_saveError</SimfAlert>
+        }
+
+        @* QR card. *@
+        <section class="simf-card simf-page-card simf-qr-card">
+            <h2 class="simf-card__title">@L["Account.Profile.QrTitle"]</h2>
+            @if (!string.IsNullOrEmpty(_response.QrId))
+            {
+                <p class="simf-card__supporting">@L["Account.Profile.QrSupporting"]</p>
+                <div class="simf-qr">@((MarkupString)_qrSvg)</div>
+                <p class="simf-totp-secret">@_response.QrId</p>
+            }
+            else
+            {
+                <SimfAlert Variant="info">@L["Account.Profile.QrPending"]</SimfAlert>
+            }
+        </section>
+
+        @* Form. *@
+        <section class="simf-card simf-page-card">
+            <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+                <div class="simf-form__fields">
+                    <SimfTextField Label="@L["Account.Profile.ArabicName"]"
+                                   @bind-Value="_model.ArabicName"
+                                   Disabled="_saving" />
+
+                    <SimfTextField Label="@L["Account.Profile.EnglishName"]"
+                                   @bind-Value="_model.EnglishName"
+                                   Helper="@L["Account.Profile.EnglishNameHint"]"
+                                   Disabled="_saving" />
+
+                    @* D-163 (PDF §2.6) — optional job title. *@
+                    <SimfTextField Label="@L["Account.Profile.JobTitle"]"
+                                   Helper="@L["Account.Profile.JobTitleHint"]"
+                                   MaxLength="128"
+                                   Value="@(_model.JobTitle ?? string.Empty)"
+                                   ValueChanged="@(v => _model.JobTitle = string.IsNullOrWhiteSpace(v) ? null : v)"
+                                   ValueExpression="@(() => _model.JobTitle)"
+                                   Disabled="_saving" />
+
+                    <SimfSelect TValue="string"
+                                Label="@L["Account.Profile.Nationality"]"
+                                Placeholder="@L["Account.Profile.NationalityPlaceholder"]"
+                                Items="_countryCodes"
+                                ValueFor="@(code => code)"
+                                LabelFor="@(code => CountryLabel(code))"
+                                Value="@_model.NationalityCode"
+                                ValueChanged="@(v => _model.NationalityCode = v ?? string.Empty)"
+                                Disabled="_saving" />
+
+                    <SimfDatePicker Label="@L["Account.Profile.DateOfBirth"]"
+                                    Value="@(_model.DateOfBirth?.ToString("yyyy-MM-dd") ?? string.Empty)"
+                                    ValueChanged="OnDateOfBirthChangedAsync"
+                                    Disabled="_saving" />
+
+                    <SimfTextField Label="@L["Account.Profile.PlaceOfBirth"]"
+                                   @bind-Value="_model.PlaceOfBirth"
+                                   Disabled="_saving" />
+
+                    <SimfRadioGroup TValue="bool"
+                                    Label="@L["Account.Profile.IsSaudi"]"
+                                    Inline="true"
+                                    Items="@(new[] { true, false })"
+                                    ValueFor="@(b => b ? "true" : "false")"
+                                    LabelFor="@(b => b ? L["Account.Profile.IsSaudi.Yes"] : L["Account.Profile.IsSaudi.No"])"
+                                    Value="@_model.IsSaudi"
+                                    ValueChanged="@(v => _model.IsSaudi = v)" />
+
+                    @if (_model.IsSaudi)
+                    {
+                        <SimfTextField Label="@L["Account.Profile.NationalId"]"
+                                       @bind-Value="_nationalIdInput"
+                                       Helper="@L["Account.Profile.NationalIdHint"]"
+                                       Disabled="_saving" />
+                    }
+                    else
+                    {
+                        <SimfTextField Label="@L["Account.Profile.Iqama"]"
+                                       @bind-Value="_iqamaInput"
+                                       Helper="@L["Account.Profile.IqamaHint"]"
+                                       Disabled="_saving" />
+                        <SimfTextField Label="@L["Account.Profile.Passport"]"
+                                       @bind-Value="_passportInput"
+                                       Helper="@L["Account.Profile.PassportHint"]"
+                                       Disabled="_saving" />
+                    }
+
+                    <SimfPhoneInput Label="@L["Account.Profile.SaudiMobile"]"
+                                    Value="@(_model.SaudiMobile ?? string.Empty)"
+                                    ValueChanged="@(v => _model.SaudiMobile = string.IsNullOrWhiteSpace(v) ? null : v)"
+                                    Disabled="_saving" />
+
+                    <SimfPhoneInput Label="@L["Account.Profile.IntlMobile"]"
+                                    Value="@(_model.InternationalMobile ?? string.Empty)"
+                                    ValueChanged="@(v => _model.InternationalMobile = string.IsNullOrWhiteSpace(v) ? null : v)"
+                                    Disabled="_saving" />
+
+                    @* P9 — Interests (الاهتمامات): 1-10 picked from the
+                       admin-managed lookup. The Save button validates the
+                       count server-side; the helper text tells the user. *@
+                    @if (_interests.Length == 0)
+                    {
+                        <SimfAlert Variant="info">@L["Account.Profile.Interests.Empty"]</SimfAlert>
+                    }
+                    else
+                    {
+                        <SimfCheckList TItem="InterestDto"
+                                       Label="@L["Account.Profile.Interests.Title"]"
+                                       Helper="@L["Account.Profile.Interests.Hint"]"
+                                       Inline="true"
+                                       Items="_interests"
+                                       ValueFor="@(item => item.Id.ToString())"
+                                       LabelFor="@(item => InterestLabel(item))"
+                                       Values="_selectedInterests"
+                                       ValuesChanged="OnInterestsChanged"
+                                       Disabled="_saving" />
+                    }
+                </div>
+
+                <div class="simf-form__actions">
+                    <SimfButton Loading="_saving"
+                                LoadingLabel="@L["Account.Profile.Submitting"]">
+                        @L["Account.Profile.Submit"]
+                    </SimfButton>
+                </div>
+            </EditForm>
+        </section>
+
+        @* ID image card. *@
+        <section class="simf-card simf-page-card">
+            <h2 class="simf-card__title">@L["Account.Profile.IdImageTitle"]</h2>
+            <p class="simf-card__supporting">@L["Account.Profile.IdImageSupporting"]</p>
+
+            @if (_response.HasIdImage)
+            {
+                <SimfAlert Variant="success">@L["Account.Profile.IdImageOnFile"]</SimfAlert>
+            }
+            @if (_idImageError is not null)
+            {
+                <SimfAlert Variant="error">@_idImageError</SimfAlert>
+            }
+            @if (_idImageSuccess)
+            {
+                <SimfAlert Variant="success">@L["Account.Profile.IdImageUpdated"]</SimfAlert>
+            }
+
+            <SimfFileUpload Label="@L["Account.Profile.IdImagePicker"]"
+                            Helper="@L["Account.Profile.IdImageHint"]"
+                            Accept="image/png,image/jpeg,image/webp"
+                            Disabled="_uploadingIdImage"
+                            @ref="_idImagePicker" />
+            <div class="simf-form__actions">
+                <SimfButton Type="button"
+                            Loading="_uploadingIdImage"
+                            LoadingLabel="@L["Account.Profile.IdImageUploading"]"
+                            OnClick="UploadIdImageAsync">
+                    @L["Account.Profile.IdImageUpload"]
+                </SimfButton>
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    private UserProfileResponse? _response;
+    private string _qrSvg = string.Empty;
+    private string[] _countryCodes = Array.Empty<string>();
+    private Dictionary<string, CountryDto> _countriesByCode = new();
+
+    // P9 — interests picker.
+    private InterestDto[] _interests = Array.Empty<InterestDto>();
+    private List<InterestDto> _selectedInterests = new();
+
+    private readonly UpsertUserProfileRequest _model = new();
+    private string _nationalIdInput = string.Empty;
+    private string _iqamaInput = string.Empty;
+    private string _passportInput = string.Empty;
+
+    private EditContext _editContext = default!;
+    private ValidationMessageStore _messages = default!;
+    private bool _saving;
+    private bool _saveSuccess;
+    private string? _saveError;
+    private string? _loadError;
+
+    private SimfFileUpload? _idImagePicker;
+    private bool _uploadingIdImage;
+    private bool _idImageSuccess;
+    private string? _idImageError;
+
+    protected override void OnInitialized()
+    {
+        _editContext = new EditContext(_model);
+        _messages = new ValidationMessageStore(_editContext);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // P11 — D-052 guard: a non-Approved visitor belongs on the
+        // matching state-banner page. The /auth/complete endpoint also
+        // routes non-Approved users on first sign-in; this guard catches
+        // any case where the cookie state has drifted (e.g. admin
+        // rejected the visitor in another tab).
+        var auth = await AuthState.GetAuthenticationStateAsync();
+        var state = auth.User.FindFirst("account_state")?.Value;
+        if (string.Equals(state, "PendingApproval", StringComparison.Ordinal))
+        {
+            Nav.NavigateTo("/account/pending", forceLoad: false);
+        }
+        else if (string.Equals(state, "Rejected", StringComparison.Ordinal))
+        {
+            Nav.NavigateTo("/account/rejected", forceLoad: false);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            // Three parallel fetches — the page can't render without all of them.
+            var profileTask = JS.InvokeAsync<ApiResult<UserProfileResponse>>(
+                "simfAccount.getJson", "/account/api/user-profile").AsTask();
+            var countriesTask = JS.InvokeAsync<ApiResult<CountryListResponse>>(
+                "simfAccount.getJson", "/account/api/user-profile/countries").AsTask();
+            var interestsTask = JS.InvokeAsync<ApiResult<InterestListResponse>>(
+                "simfAccount.getJson", "/account/api/interests").AsTask();
+            await Task.WhenAll(profileTask, countriesTask, interestsTask);
+
+            var profileEnvelope = await profileTask;
+            var countriesEnvelope = await countriesTask;
+            var interestsEnvelope = await interestsTask;
+
+            if (profileEnvelope is null || !profileEnvelope.Success || profileEnvelope.Data is null
+                || countriesEnvelope is null || !countriesEnvelope.Success || countriesEnvelope.Data is null
+                || interestsEnvelope is null || !interestsEnvelope.Success || interestsEnvelope.Data is null)
+            {
+                _loadError = profileEnvelope?.Error?.MessageForCurrentCulture()
+                    ?? countriesEnvelope?.Error?.MessageForCurrentCulture()
+                    ?? interestsEnvelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Account.Profile.LoadFailed"];
+                StateHasChanged();
+                return;
+            }
+
+            _response = profileEnvelope.Data;
+            _countriesByCode = countriesEnvelope.Data.Countries.ToDictionary(c => c.Code);
+            _countryCodes = countriesEnvelope.Data.Countries.Select(c => c.Code).ToArray();
+            _interests = interestsEnvelope.Data.Interests.ToArray();
+            _selectedInterests = _interests
+                .Where(interest => _response.InterestIds.Contains(interest.Id))
+                .ToList();
+            _model.InterestIds = _selectedInterests.Select(interest => interest.Id).ToList();
+
+            _model.ArabicName = _response.ArabicName;
+            _model.EnglishName = _response.EnglishName;
+            _model.JobTitle = _response.JobTitle;
+            _model.NationalityCode = _response.NationalityCode;
+            _model.DateOfBirth = _response.DateOfBirth;
+            _model.PlaceOfBirth = _response.PlaceOfBirth;
+            _model.IsSaudi = _response.IsSaudi;
+            _nationalIdInput = _response.NationalId ?? string.Empty;
+            _iqamaInput = _response.IqamaNumber ?? string.Empty;
+            _passportInput = _response.PassportNumber ?? string.Empty;
+            _model.SaudiMobile = _response.SaudiMobile;
+            _model.InternationalMobile = _response.InternationalMobile;
+
+            if (!string.IsNullOrEmpty(_response.QrId))
+            {
+                _qrSvg = BuildQrSvg(_response.QrId);
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _loadError = $"{L["Account.Profile.LoadFailed"]} ({ex.Message})";
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_saving) return;
+        _messages.Clear();
+        _saveSuccess = false;
+        _saveError = null;
+
+        // Map the conditional ID fields back into the request shape — the
+        // API normalises NationalId / Iqama / Passport against IsSaudi but
+        // sending the right field upfront keeps the audit-log detail clean.
+        _model.NationalId = _model.IsSaudi
+            ? (string.IsNullOrWhiteSpace(_nationalIdInput) ? null : _nationalIdInput.Trim())
+            : null;
+        _model.IqamaNumber = !_model.IsSaudi
+            ? (string.IsNullOrWhiteSpace(_iqamaInput) ? null : _iqamaInput.Trim())
+            : null;
+        _model.PassportNumber = !_model.IsSaudi
+            ? (string.IsNullOrWhiteSpace(_passportInput) ? null : _passportInput.Trim())
+            : null;
+
+        _saving = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<UserProfileResponse>>(
+                "simfAccount.postJson", "/account/api/user-profile", _model);
+            if (envelope is { Success: true, Data: not null })
+            {
+                _response = envelope.Data;
+                _saveSuccess = true;
+                if (!string.IsNullOrEmpty(envelope.Data.QrId))
+                {
+                    _qrSvg = BuildQrSvg(envelope.Data.QrId);
+                }
+            }
+            else
+            {
+                _saveError = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Account.Profile.Fallback"];
+            }
+        }
+        finally { _saving = false; }
+    }
+
+    private Task OnDateOfBirthChangedAsync(string value)
+    {
+        _model.DateOfBirth = DateOnly.TryParse(value, out var parsed) ? parsed : null;
+        return Task.CompletedTask;
+    }
+
+    private async Task UploadIdImageAsync()
+    {
+        if (_uploadingIdImage || _idImagePicker is null) return;
+        _idImageError = null;
+        _idImageSuccess = false;
+        _uploadingIdImage = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.uploadFile",
+                "/account/api/user-profile/id-image",
+                _idImagePicker.ElementId);
+            if (envelope is { Success: true })
+            {
+                _idImageSuccess = true;
+                if (_response is not null)
+                {
+                    _response.HasIdImage = true;
+                }
+            }
+            else
+            {
+                _idImageError = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Account.Profile.IdImageFallback"];
+            }
+        }
+        finally { _uploadingIdImage = false; }
+    }
+
+    private async Task SignOutAsync() =>
+        await JS.InvokeVoidAsync("simfAccount.signOut");
+
+    private string CountryLabel(string code)
+    {
+        if (!_countriesByCode.TryGetValue(code, out var country)) return code;
+        var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+        return isArabic ? country.NameArabic : country.Name;
+    }
+
+    private static string InterestLabel(InterestDto interest)
+    {
+        var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+        return isArabic ? interest.NameArabic : interest.Name;
+    }
+
+    private Task OnInterestsChanged(IReadOnlyList<InterestDto> selected)
+    {
+        _selectedInterests = selected.ToList();
+        _model.InterestIds = _selectedInterests.Select(interest => interest.Id).ToList();
+        return Task.CompletedTask;
+    }
+
+    private static string BuildQrSvg(string qrId)
+    {
+        // Server-side SVG QR via QRCoder — no client dependency, ships in
+        // the SignalR diff as plain markup.
+        using var generator = new QRCoder.QRCodeGenerator();
+        using var data = generator.CreateQrCode(qrId, QRCoder.QRCodeGenerator.ECCLevel.Q);
+        var svg = new QRCoder.SvgQRCode(data);
+        return svg.GetGraphic(4);
+    }
+}

@@ -1,0 +1,60 @@
+@* D-127 — Walk-in Other (exhibitor / booth-staff / vendor / …) registration
+   host. Same component as CreateVisitorForm with Kind=Other; the interests
+   section is hidden inside the wizard for the Other kind. *@
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<WalkInRegistrationForm @ref="_form"
+                        Kind="Other"
+                        OnSuccess="OnRegistrationSuccessAsync"
+                        OnCancel="OnCancelInternal"
+                        @key="_formKey" />
+
+<WalkInSuccessModal Response="_lastResponse"
+                    OnClose="OnSuccessModalClose"
+                    OnPrint="OnPrintAsync"
+                    OnRegisterAnother="OnRegisterAnother" />
+
+@code {
+    private WalkInRegistrationForm? _form;
+    private AdminWalkInRegistrationResponse? _lastResponse;
+    private Guid _formKey = Guid.NewGuid();
+
+    [Parameter] public EventCallback<AdminCreateUserResponse> OnSuccess { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public string? CancelLabel { get; set; }
+
+    private void OnRegistrationSuccessAsync(AdminWalkInRegistrationResponse response)
+    {
+        _lastResponse = response;
+    }
+
+    private async Task OnSuccessModalClose()
+    {
+        var response = _lastResponse;
+        _lastResponse = null;
+        if (response is not null)
+        {
+            await OnSuccess.InvokeAsync(new AdminCreateUserResponse(
+                response.UserId, response.Email, 0));
+        }
+    }
+
+    private async Task OnPrintAsync() =>
+        await JS.InvokeVoidAsync("window.print");
+
+    private async Task OnRegisterAnother()
+    {
+        var previous = _lastResponse;
+        _lastResponse = null;
+        if (previous is not null)
+        {
+            await OnSuccess.InvokeAsync(new AdminCreateUserResponse(
+                previous.UserId, previous.Email, 0));
+        }
+        _formKey = Guid.NewGuid();
+        StateHasChanged();
+    }
+
+    private Task OnCancelInternal() => OnCancel.InvokeAsync();
+}

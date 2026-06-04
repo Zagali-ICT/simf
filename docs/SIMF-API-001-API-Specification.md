@@ -4,8 +4,8 @@
 |-------|-------|
 | Document ID | SIMF-API-001 |
 | Title | API Specification |
-| Version | 1.0 |
-| Status | Draft |
+| Version | 1.3 |
+| Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
 | Owner | Solution Architect |
@@ -18,6 +18,9 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. API conventions and the authentication surface. Feature endpoints follow as their requirements close. |
+| 1.1 | 2026-05-20 | Engineering & Architecture Team | Specified the password-reset flow in §12.7 (forgot-password / reset-password, six-digit email OTP on ASP.NET Core Identity; reset-password revokes the account's refresh tokens); added AUTH_RESET_CODE_INVALID and AUTH_RESET_CODE_EXPIRED to §12.6; closed open item OI-3. |
+| 1.2 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): added the `verify-otp` and `change-password` endpoints; added `AUTH_ACCOUNT_LOCKED`, `AUTH_OTP_INVALID`, `AUTH_OTP_EXPIRED`, `AUTH_OTP_TOKEN_INVALID`, `AUTH_PASSWORD_CHANGE_REQUIRED`; scoped `X-Anti-Forgery` to the Blazor cookie surfaces. |
+| 1.3 | 2026-06-03 | Engineering & Architecture Team | **App/CP route split (D-247).** The single API is segmented by audience into two route groups: the App + public surface under `/api/v1/app/*` and the Control-Panel/admin surface under `/api/v1/admin/*`. Two OpenAPI documents are now emitted (`SIMF App API`, `SIMF CP API`). §3 (principles 2 & 5), §4, and §13 amended accordingly. The split is structural only — one deployable API, one envelope, one error model, one header set; no contract bodies changed. |
 
 ---
 
@@ -43,12 +46,19 @@ conventions, as each feature's requirements close.
 1. One predictable response shape for everything. A client parses success and
    failure the same way every time.
 2. The API is the only door. The website, the Control Panel and the mobile app
-   all go through it. No client gets a private side channel.
+   all go through it. No client gets a private side channel. The one API is
+   segmented by audience into two route groups — the App + public surface under
+   `/api/v1/app/*` and the Control-Panel/admin surface under `/api/v1/admin/*`
+   (§4, D-247) — each with its own OpenAPI document (§13). It remains one
+   deployable API behind one base path.
 3. Endpoints are explicit about authorisation. An endpoint states what it needs;
    nothing is open by default.
 4. The contract is stable. A breaking change means a new API version, not a
    quiet change to an existing one.
-5. The API is the same for every client. Device differences are carried in a
+5. The API separates **audiences** by route, not **devices**. The App + public
+   surface (`/api/v1/app/*`) and the Control-Panel surface (`/api/v1/admin/*`)
+   are distinct route groups (§4, D-247). Within a surface, device differences
+   (for example web versus mobile on the App surface) are still carried in a
    header, not in separate endpoints.
 
 ## 4. Base URL and versioning
@@ -63,6 +73,20 @@ The version in the path is the major version. A breaking change to a contract
 introduces `/api/v2`; `/api/v1` keeps working until its clients have moved.
 Non-breaking additions — a new optional field, a new endpoint — do not change
 the version.
+
+Within the version, the API is split into two audience route groups (D-247):
+
+```
+/api/v1/app/      App + public surface — mobile app, website public reads,
+                  authentication, account, sessions, gates-operator, etc.
+/api/v1/admin/    Control-Panel / administrative surface
+```
+
+Each group is published as its own OpenAPI document (§13). The split is
+structural only: one deployable API, one `ApiResult<T>` envelope, one error
+model, one standard header set. An App developer works the `/app/*` surface
+without seeing admin endpoints, and the two surfaces can be extracted into
+separate projects later without changing any client contract.
 
 ## 5. Standard request headers
 
@@ -289,6 +313,10 @@ header) except sign-out and the TOTP step, as noted.
 Starts account creation. Creates an account in a pending, email-unverified
 state and sends a six-digit verification code to the email.
 
+Sign-up is **enumeration-resistant** (D-198): it never reveals whether an email
+is already registered. The response shape is identical in all three cases below,
+so a duplicate email returns the same 201 a new one does.
+
 Request:
 
 ```json
@@ -301,9 +329,21 @@ Request:
 
 Rules:
 
-- `email` is required, is a valid email address, and is not already registered.
+- `email` is required and is a valid email address.
 - `password` is required and meets the password policy in section 12.5.
 - `confirmPassword` is required and equals `password`.
+
+Behaviour for an existing email (D-198):
+
+- **No account exists** — a new pending account is created and a code emailed.
+- **Account exists but is still email-unverified** — registration restarts: the
+  newly supplied password replaces the old one, the previous code is invalidated,
+  and a fresh code is emailed. The user continues as if signing up for the first
+  time.
+- **Account exists and is already verified** — the account is left untouched (the
+  supplied password is ignored and no verification code is issued); a security
+  heads-up email is sent to the account owner pointing them to sign-in /
+  password-reset.
 
 Success — 201:
 
@@ -316,7 +356,9 @@ Success — 201:
 }
 ```
 
-Failure: `VALIDATION_FAILED` (400); `AUTH_EMAIL_ALREADY_REGISTERED` (409).
+Failure: `VALIDATION_FAILED` (400); `RATE_LIMIT_EXCEEDED` (429) when the
+per-account verification-code cap is reached on a restart. A duplicate email is
+**not** an error — see the behaviour list above.
 
 #### POST /auth/verify-email
 
@@ -470,6 +512,8 @@ item OI-2.
 | `AUTH_ACCOUNT_NOT_FOUND` | 404 | No account for the given email. |
 | `AUTH_CODE_INVALID` | 400 | The email verification code is wrong. |
 | `AUTH_CODE_EXPIRED` | 400 | The email verification code has expired. |
+| `AUTH_RESET_CODE_INVALID` | 400 | The password-reset code is wrong, or the email has no account. |
+| `AUTH_RESET_CODE_EXPIRED` | 400 | The password-reset code has expired. |
 | `AUTH_INVALID_CREDENTIALS` | 401 | The email or password is incorrect. |
 | `AUTH_EMAIL_NOT_VERIFIED` | 403 | Sign-in attempted before the email was verified. |
 | `AUTH_ACCOUNT_NOT_APPROVED` | 403 | The registration is awaiting approval. |
@@ -483,21 +527,111 @@ item OI-2.
 
 ### 12.7 Password reset
 
-A password-reset flow (request a reset, receive a code by email, set a new
-password) is a standard need and the project's security rules already treat
-"forgot password" as an allowed anonymous area. The 2026-05-20 meeting did not
-describe it explicitly, so its endpoints are not specified here. They are added
-once the requirement is confirmed — open item OI-3.
+A user who has forgotten their password recovers it with a two-step,
+email-code flow built on ASP.NET Core Identity. The flow mirrors email
+verification (section 12.4): a six-digit numeric code, sent to the email, with
+the same expiry and the same tighter rate limiting as `resend-code`.
+
+Neither step reveals whether an email address has an account.
+`forgot-password` always reports success, and `reset-password` returns the same
+error for an unknown email as for a wrong code. This prevents account
+enumeration.
+
+Both endpoints are anonymous — they sit on the short, approved anonymous list
+with sign-in and sign-up.
+
+#### POST /auth/forgot-password
+
+Starts a password reset. If the email belongs to an account, a six-digit reset
+code is sent to it and any previous reset code for that account is invalidated.
+If the email has no account, nothing is sent. Either way the response is the
+same. Rate-limited more tightly than other endpoints.
+
+Request:
+
+```json
+{ "email": "r.alsalem@example.sa" }
+```
+
+Rules:
+
+- `email` is required and is a valid email address.
+
+Success — 200:
+
+```json
+{
+  "success": true,
+  "data": { "codeExpiresInSeconds": 600 },
+  "error": null,
+  "meta": null
+}
+```
+
+The response carries no field whose value depends on whether the account
+exists.
+
+Failure: `VALIDATION_FAILED` (400); `RATE_LIMIT_EXCEEDED` (429).
+
+#### POST /auth/reset-password
+
+Completes a password reset. Verifies the six-digit code and sets the new
+password.
+
+Request:
+
+```json
+{
+  "email": "r.alsalem@example.sa",
+  "code": "618402",
+  "newPassword": "<password>",
+  "confirmPassword": "<password>"
+}
+```
+
+Rules:
+
+- `email` is required and is a valid email address.
+- `code` is required, is six digits, matches the code issued to the account,
+  and has not expired.
+- `newPassword` is required and meets the password policy in section 12.5.
+- `confirmPassword` is required and equals `newPassword`.
+
+On success the reset code is consumed and cannot be used again, and any other
+unexpired reset code for the account is invalidated. The account's refresh
+tokens are revoked as well, so every existing session ends; the user signs in
+again with the new password.
+
+Success — 200:
+
+```json
+{
+  "success": true,
+  "data": { "passwordReset": true },
+  "error": null,
+  "meta": null
+}
+```
+
+Failure: `VALIDATION_FAILED` (400); `AUTH_RESET_CODE_INVALID` (400);
+`AUTH_RESET_CODE_EXPIRED` (400); `RATE_LIMIT_EXCEEDED` (429).
+
+A wrong code and an email with no account both return
+`AUTH_RESET_CODE_INVALID`, so the response does not reveal whether the email is
+registered.
 
 ## 13. OpenAPI
 
-FastEndpoints generates an OpenAPI (Swagger) description of the API. The
-generated description is the live, machine-readable contract; this document is
-the human explanation of the conventions and the intent behind it. The two are
-kept in step: an endpoint change updates both.
+FastEndpoints generates the OpenAPI (Swagger) description of the API. Following
+the audience split (§4, D-247) it emits **two** documents — `SIMF App API`
+(the `/api/v1/app/*` surface) and `SIMF CP API` (the `/api/v1/admin/*`
+surface) — each the live, machine-readable contract for its audience, filtered
+by route group. This document is the human explanation of the conventions
+behind both. They are kept in step: an endpoint change updates the document for
+its surface.
 
-In non-production environments the Swagger UI is available for developers and
-testers. In production it is disabled.
+In non-production environments the Swagger UI exposes both documents for
+developers and testers. In production it is disabled.
 
 ## 14. Conventions for future endpoints
 
@@ -513,9 +647,262 @@ A new feature does not invent a new response shape or a new error style.
 |----|------|-----------|
 | OI-1 | Feature endpoint contracts (registration completion, sessions, badges, engagement, and the rest) depend on requirement gates D1–D6 | Sections beyond 12 |
 | OI-2 | Final password policy from the owner's security policy | Section 12.5 |
-| OI-3 | Confirm whether a password-reset flow is in scope, and its rules | Section 12.7 |
 | OI-4 | Whether a not-yet-approved user may sign in, and with what access | `AUTH_ACCOUNT_NOT_APPROVED`, gate D1 |
 | OI-5 | Confirm document classification with the owner | Control block |
+
+---
+
+## Amendment A — Architecture review (2026-05-21)
+
+The authentication design review of 2026-05-21 amends this specification. The
+changes below are authoritative and read together with the sections they cite.
+
+### A.1 New endpoint — visitor email-OTP second factor
+
+`POST /api/v1/auth/verify-otp` completes a **visitor** sign-in. A visitor's
+password step at `/auth/sign-in` returns `mfaRequired: true` with a short-lived
+`otpToken` and emails a six-digit code; the client submits the token and code
+here.
+
+- Request: `{ "otpToken": "<opaque>", "code": "493018" }`
+- Success — 200: the standard token payload (access token, refresh token, user).
+- Failure: `AUTH_OTP_INVALID` (400), `AUTH_OTP_EXPIRED` (400),
+  `AUTH_OTP_TOKEN_INVALID` (400), `RATE_LIMIT_EXCEEDED` (429).
+
+`/auth/sign-in` now has two second-factor branches: `mfaRequired` with an
+`mfaToken` for an admin (TOTP, §12.4) and `mfaRequired` with an `otpToken` for a
+visitor (email OTP, here).
+
+### A.2 New endpoint — change password
+
+`POST /api/v1/auth/change-password` — requires a valid `Authorization` header.
+
+- Request: `{ "currentPassword": "<...>", "newPassword": "<...>", "confirmPassword": "<...>" }`
+- Rules: the current password is correct; the new password meets §12.5 and
+  equals its confirmation. On success every refresh token for the account is
+  revoked.
+- Success — 200: `{ "passwordChanged": true }`.
+- Failure: `VALIDATION_FAILED` (400), `AUTH_INVALID_CREDENTIALS` (401).
+
+A user in the **password-change-required** state holds a seeded or
+admin-rotated temporary password that must be replaced before any session is
+minted. The behaviour depends on the sign-in audience (D-206):
+
+- **Control Panel (`audience = "Cp"`):** after the password is verified, the
+  sign-in response returns a single-use `passwordChangeToken` (and no session —
+  `mfaRequired = false`, `tokens = null`) instead of the 403. The operator sets
+  a new password via the dedicated endpoint below and then signs in normally.
+- **Every other audience (web / mobile):** sign-in returns
+  `AUTH_PASSWORD_CHANGE_REQUIRED` (403), unchanged.
+
+The forced-change gate is still enforced at every token-mint path (TOTP /
+recovery / email-OTP verification and refresh), so no session is issued until
+the password is actually changed.
+
+### A.2.1 New endpoint — complete a forced password change (D-206)
+
+`POST /api/v1/auth/complete-password-change` — anonymous; authorised by the
+single-use `passwordChangeToken` the sign-in step issued (same posture as
+`/auth/verify-totp`). The current password is **not** re-collected — the token
+already proves it was verified at sign-in.
+
+- Request: `{ "passwordChangeToken": "<opaque>", "newPassword": "<...>", "confirmPassword": "<...>" }`
+- Rules: the token is valid, unconsumed and unexpired; the new password meets
+  §12.5 and equals its confirmation. On success the temporary-password flag is
+  cleared and every refresh token for the account is revoked. No tokens are
+  issued — the user signs in again with the new password.
+- Success — 200: `{ "passwordChanged": true }`.
+- Failure: `VALIDATION_FAILED` (400), `AUTH_MFA_TOKEN_INVALID` (400),
+  `AUTH_MFA_TOKEN_EXPIRED` (400).
+
+### A.3 Second-factor tokens
+
+`mfaToken` (admin TOTP), `otpToken` (visitor email OTP) and the D-206
+`passwordChangeToken` (forced password change) are short-lived (2–5 minutes),
+**single-use**, stored **hashed**, invalidated after a small number of failed
+attempts, and bound to the originating sign-in.
+
+### A.4 Account lockout
+
+`/auth/sign-in` and the code-verification endpoints are protected by ASP.NET
+Core Identity lockout and a per-code attempt cap. A locked account returns
+`AUTH_ACCOUNT_LOCKED`.
+
+### A.5 New error codes — added to §12.6
+
+| Code | HTTP | Meaning |
+|------|------|---------|
+| `AUTH_ACCOUNT_LOCKED` | 423 | The account is locked after too many failed attempts. |
+| `AUTH_OTP_INVALID` | 400 | The email-OTP code is wrong. |
+| `AUTH_OTP_EXPIRED` | 400 | The email-OTP code has expired. |
+| `AUTH_OTP_TOKEN_INVALID` | 400 | The `otpToken` is not valid or has expired. |
+| `AUTH_PASSWORD_CHANGE_REQUIRED` | 403 | The account must change its password before any other action. |
+
+### A.6 Anti-forgery scope — amends §5
+
+`X-Anti-Forgery` is **not** required by the bearer-token `/api/v1` API: a
+bearer-token API carries no browser-attached ambient credential and is not
+CSRF-exposed. The `X-Anti-Forgery` requirement in §5 is **scoped to the Blazor
+cookie-authenticated surfaces** (the website and Control Panel) only.
+
+---
+
+## Amendment B — Server-paged grids (2026-05-23)
+
+Decision **D-044(a)** / **D-045** introduces a second pagination shape for
+**parameter-rich admin and operational lists** that need structured
+per-column filters and a search-text payload of unbounded length. The §9
+shape remains the rule for **read-mostly public lists** (agenda, sessions,
+news, booths) where a GET-with-querystring is browser-, CDN- and
+reverse-proxy-cacheable.
+
+### B.1 When to use which shape
+
+| List shape | When | Method |
+|------------|------|--------|
+| **§9 GET + querystring** | Read-mostly, anonymous or cookie-cached, low-cardinality filter set. Examples: `/programme/sessions`, `/news`, `/exhibitors`. | `GET /…?page=&pageSize=&sort=&search=` |
+| **B GridQuery POST + body** | Admin / operational lists with structured per-column filters, multi-column sort, large search strings. Examples: `/admin/users/list`, future `/admin/audit-log/list`. | `POST /…/list` with the JSON body below |
+
+### B.2 The GridQuery body
+
+```json
+{
+  "skip": 0,
+  "top": 20,
+  "search": "ahmed",
+  "sort": "email",
+  "sortDescending": false,
+  "filters": { "state": "Approved", "twoFactor": "true" }
+}
+```
+
+- `top` is clamped at the endpoint (today: 200 default cap; the export
+  endpoint takes a 5 000 row cap; the import endpoint a 5 000 row cap and
+  a 5 MB upload cap).
+- `filters` is a string-to-string map; the endpoint validates keys against
+  its own allow-list and ignores unknown keys (with structured logging).
+  Unknown values inside a known key fall through (e.g. an unparseable
+  `AccountState` becomes "no filter on state").
+
+### B.3 The GridPage<T> response
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [ … ],
+    "total": 137,
+    "skip": 0,
+    "top": 20
+  },
+  "error": null,
+  "meta": null
+}
+```
+
+Paging information lives in `data` for the GridPage shape (because the
+client always parses the items and paging together, and the typed client
+binds to one DTO). The standard §9 shape continues to use `meta` for the
+same purpose; both shapes are correct, used in different places.
+
+### B.4 Excel I/O on Grid endpoints
+
+A list endpoint that supports bulk export accepts a sibling endpoint
+`POST /…/export` with body `{ "ids": [], "query": GridQuery }`. When
+`ids` is empty, the export applies the query and is bounded at 5 000
+rows. The response is an XLSX workbook (MIME
+`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`) with
+a `Content-Disposition: attachment` header. Every string cell that would
+begin with `=`, `+`, `-`, `@`, TAB or CR is prefixed with an apostrophe
+so Excel does not auto-execute the value (OWASP CWE-1236).
+
+A list endpoint that supports bulk import accepts a sibling endpoint
+`POST /…/import` as multipart with a single `file` field. The endpoint
+validates the file size (5 MB cap), ZIP magic bytes (`50 4B 03 04`) and
+the worksheet name before parsing. Per-row errors are reported in the
+response body, never thrown.
+
+### B.5 Bulk action audit shape
+
+A bulk-action endpoint (delete / approve / archive) writes **one audit
+row per subject**, not one summary row per request. The summary in the
+response gives the admin a count; the per-subject rows give SOC the
+trail it needs to reconstruct who-did-what-to-whom.
+
+---
+
+## Amendment C — Mobile sign-up ProfileType picker (D-190, 2026-05-30)
+
+D-186 collapsed `UserType` to (Visitor, Admin) and moved the
+audience-vs-partner distinction onto `ProfileType.IsVisitor`. D-190
+unblocks the mobile sign-up Screen 2 ProfileType dropdown.
+
+### C.1 New endpoint — public profile-type picker
+
+`GET /api/v1/account/profile-types`
+
+Authentication: **required** (standard bearer). **Not** admin-only;
+**not** approval-gated — the caller is mid-registration (account state
+typically `EmailVerified` or `PendingApproval`) so a `RequireApprovedAccount`
+floor would lock them out of the picker. Rate-limited via the
+`auth` bucket.
+
+Query parameters (optional):
+
+| Name | Type | Effect |
+|------|------|--------|
+| `isVisitor` | bool? | `true` → audience profile types only; `false` → partner profile types only; omitted → all active rows |
+
+Response (`ApiResult<ProfileTypePickerListResponse>`):
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      { "id": "uuid", "name": "VIP", "nameArabic": "كبار", "pageColor": "#FFD700", "isVisitor": true },
+      { "id": "uuid", "name": "Sponsor", "nameArabic": "راعي", "pageColor": "#8B5CF6", "isVisitor": false }
+    ]
+  }
+}
+```
+
+The DTO deliberately omits `MobileAppRole` — that's admin-curated
+authority that flows on the JWT `mobile_app_role` claim only. The
+picker never returns it.
+
+Filter floor: every returned row has `IsActive = true` AND
+`UserType = Visitor`. Admin-scope profile types (if any) are never
+surfaced — a self-registering user cannot pick into the admin pool.
+Rows are ordered by `Name` ascending.
+
+### C.2 Amended request shape — `UpsertUserProfileRequest`
+
+`POST /api/v1/account/user-profile` now accepts an optional
+`profileTypeId` field carrying the user's self-pick from the picker
+endpoint above. Existing callers that omit it see no behavioural
+change.
+
+Validation:
+
+- When non-null, must resolve to an active `ProfileType` with
+  `UserType = Visitor`. Unknown id / inactive row / Admin-scope row
+  → 400 `AdminProfileTypeInvalid`.
+- Empty Guid is rejected at the shape-level validator.
+
+Precedence rule (admin wins): when the existing `UserProfile.ProfileTypeId`
+is already set (because an admin pre-assigned it via
+`/admin/visitors` or `/admin/others`), the user's self-pick on the
+upsert is **silently ignored**. The admin's assignment survives. The
+user-pick path fills the column only when the admin has not chosen
+yet. Admin overrides anywhere require a separate admin endpoint.
+
+`UserProfileResponse` already carried `profileTypeId`; D-190 makes
+the field meaningful from the user-write side.
+
+Audit Detail on `UserProfile.Saved` now carries the resolved
+`profileTypeId` (or the literal `none`) so the CP pending-profile
+review surface shows what the user picked.
 
 ---
 

@@ -1,0 +1,150 @@
+@* CpShellLayout — the Control Panel application shell: top bar, side
+   navigation and content region. Used by every signed-in Control Panel page. *@
+@inherits LayoutComponentBase
+@layout MainLayout
+@implements IDisposable
+@inject IStringLocalizer<Strings> L
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject SimfUserChrome UserChrome
+@inject AuthenticationStateProvider AuthState
+
+<SimfAppShell ToggleNavLabel='@L["Shell.ToggleNav"]'
+              NavLabel='@L["Shell.AppName"]'
+              SkipNavLabel='@L["Shell.SkipToMain"]'>
+    <Brand>
+        <SimfWordmark />
+    </Brand>
+    <Controls>
+        <SimfLanguageSwitch Href="@CultureHref" Label='@L["Shell.SwitchLanguage"]' />
+        <SimfThemeToggle LightLabel='@L["Shell.ThemeLight"]' DarkLabel='@L["Shell.ThemeDark"]' />
+        <AuthorizeView>
+            <SimfNotificationBell
+                AriaLabel='@L["Shell.Notifications"]'
+                UnreadSuffixLabel='@L["Account.Notifications.UnreadSuffix"]'
+                DropdownTitle='@L["Shell.Notifications"]'
+                MarkAllReadLabel='@L["Account.Notifications.MarkAllRead"]'
+                EmptyLabel='@L["Account.Notifications.Empty"]'
+                ViewAllLabel='@L["Account.Notifications.ViewAll"]'
+                ViewAllHref="/account/notifications"
+                UseArabic="@(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar")" />
+            <a class="simf-user" href="/account/profile" title="@L["Shell.MyProfile"]">
+                @if (!string.IsNullOrEmpty(UserChrome.AvatarUrl))
+                {
+                    <img class="simf-user__avatar" src="@UserChrome.AvatarUrl" alt="" />
+                }
+                else
+                {
+                    <SimfIcon Name="user" Class="simf-user__icon" Size="18" />
+                }
+                <span>@context.User.Identity?.Name</span>
+            </a>
+        </AuthorizeView>
+        <form method="post" action="/auth/sign-out" data-enhance="false">
+            <button type="submit" class="simf-button simf-button--secondary">@L["Shell.SignOut"]</button>
+        </form>
+    </Controls>
+    <SideNav>
+        @foreach (var group in CpNavigation.Groups)
+        {
+            var visibleItems = group.Items.Where(CanSee).ToList();
+            if (visibleItems.Count > 0)
+            {
+                <SimfNavGroup Label='@L[group.LabelKey]'>
+                    @foreach (var item in visibleItems)
+                    {
+                        <SimfNavItem Href="@item.Href"
+                                     Label='@L[item.LabelKey]'
+                                     BadgeLabel='@(item.IsStub ? L["Nav.Soon"].Value : null)' />
+                    }
+                </SimfNavGroup>
+            }
+        }
+    </SideNav>
+    <ChildContent>
+        @Body
+    </ChildContent>
+</SimfAppShell>
+
+@code {
+    // Switches to the other language and returns to the current page.
+    private string CultureHref
+    {
+        get
+        {
+            var next = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar" ? "en" : "ar";
+            var path = "/" + Nav.ToBaseRelativePath(Nav.Uri);
+            return $"/culture?culture={next}&redirectUri={Uri.EscapeDataString(path)}";
+        }
+    }
+
+    // Issue-1 — the signed-in user's permission codes (copied from the JWT into
+    // the cookie at sign-in). The side menu hides items the user lacks; an
+    // Administrator carries the wildcard "*" and sees everything. Defaults to
+    // an empty set so the brief pre-auth render is fail-closed.
+    private HashSet<string> _permissions = new(StringComparer.Ordinal);
+    private bool _hasAllPermissions;
+
+    // True when the user may see a nav item: ungated items (RequiredPermission
+    // null — the dashboard + not-yet-built stubs) are always shown; otherwise
+    // the user must hold the code (or the Administrator wildcard).
+    private bool CanSee(CpNavigation.NavItem item) =>
+        item.RequiredPermission is null
+        || _hasAllPermissions
+        || _permissions.Contains(item.RequiredPermission);
+
+    protected override async Task OnInitializedAsync()
+    {
+        // P11 — D-052: guard every CP shell page. A non-Approved user is
+        // routed to the matching state-banner page before any module
+        // content renders. The pending / rejected pages use MainLayout
+        // (not this layout), so they don't trigger this guard themselves.
+        var auth = await AuthState.GetAuthenticationStateAsync();
+
+        // Issue-1 — snapshot the permission claims for the side-menu filter.
+        _permissions = auth.User.FindAll(PermissionCatalog.ClaimType)
+            .Select(claim => claim.Value)
+            .ToHashSet(StringComparer.Ordinal);
+        _hasAllPermissions = _permissions.Contains(PermissionCatalog.Wildcard);
+
+        var state = auth.User.FindFirst("account_state")?.Value;
+        if (string.Equals(state, "PendingApproval", StringComparison.Ordinal))
+        {
+            Nav.NavigateTo("/auth/pending", forceLoad: false);
+            return;
+        }
+        if (string.Equals(state, "Rejected", StringComparison.Ordinal))
+        {
+            Nav.NavigateTo("/auth/rejected", forceLoad: false);
+            return;
+        }
+
+        // Re-render whenever the profile page (or anyone else) updates the
+        // user chrome so the top-bar avatar tracks the profile in real time.
+        UserChrome.Changed += OnChromeChanged;
+
+        // Lazy-load the avatar on the first time a signed-in circuit boots —
+        // the profile page would do it on /account/profile, but a user who
+        // never opens that page should still see their avatar in the top bar.
+        if (UserChrome.AvatarUrl is null)
+        {
+            try
+            {
+                var envelope = await JS.InvokeAsync<ApiResult<ProfileResponse>>(
+                    "simfAccount.getJson", "/account/api/profile");
+                if (envelope is { Success: true, Data: not null })
+                {
+                    UserChrome.SetAvatar(envelope.Data.AvatarUrl);
+                }
+            }
+            catch (JSException)
+            {
+                // Best-effort — a failed prefetch leaves the placeholder icon.
+            }
+        }
+    }
+
+    private void OnChromeChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => UserChrome.Changed -= OnChromeChanged;
+}

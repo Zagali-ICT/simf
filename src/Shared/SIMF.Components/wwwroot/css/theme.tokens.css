@@ -1,0 +1,251 @@
+/* ============================================================================
+   SIMF — Design Tokens
+   ----------------------------------------------------------------------------
+   The single source of truth for every colour, font, size, space, radius and
+   shadow used across the SIMF Control Panel and public Website
+   (SIMF-VID-001 section 9, SIMF-CPD-001 section 8.2).
+
+   No SIMF stylesheet, component or page declares a raw colour or font name.
+   It uses a token from this file.
+
+   Layers:
+     1. Brand tokens      — fixed brand constants (SIMF-VID-001 section 9.1).
+     2. Scale tokens      — typography, spacing, radius (theme-independent).
+     3. Functional tokens — :root holds the light theme; [data-theme="dark"]
+                            overrides only the values that change.
+   ========================================================================= */
+
+:root {
+  /* -- 1. Brand tokens — SIMF-VID-001 section 9.1 (fixed; never theme-varied) -- */
+  --color-primary: #244A77;        /* Deep navy   — primary structural colour  */
+  --color-secondary: #498FBD;      /* Mid blue    — secondary elements         */
+  --color-accent-blue: #007CD8;    /* Bright blue — links, focus               */
+  --color-accent-gold: #E8C060;    /* Gold        — small highlights, rare      */
+  --color-neutral: #F1F2F2;        /* Light neutral — background surfaces      */
+
+  /* -- 2a. Typography — SIMF-VID-001 section 9.2, SIMF-CPD-001 section 9 ------
+     FS Albert Arabic is the brand typeface (Arabic + English). The font files
+     are pending delivery (SIMF-VID-001 OI-1); until they arrive the stack
+     falls back to system fonts that cover both scripts — the typeface is not
+     substituted, only fallen back. @font-face is added when the files land. */
+  --font-family-base: "FS Albert Arabic", "Segoe UI", "Tahoma", "Arial", sans-serif;
+  --font-weight-light: 300;
+  --font-weight-body: 400;
+  --font-weight-heading: 700;
+  --font-weight-emphasis: 800;
+
+  /* Type scale — SIMF-CPD-001 section 9 (size / line-height pairs). */
+  --font-size-title: 1.5rem;       /* 24px — screen / page title */
+  --line-height-title: 2rem;       /* 32px */
+  --font-size-subtitle: 1.125rem;  /* 18px — section / brand-panel heading */
+  --line-height-subtitle: 1.625rem;/* 26px */
+  --font-size-body: 0.875rem;      /* 14px — body, labels, fields, buttons */
+  --line-height-body: 1.375rem;    /* 22px */
+  --font-size-caption: 0.75rem;    /* 12px — caption, helper, error text */
+  --line-height-caption: 1.125rem; /* 18px */
+
+  /* -- 2b. Spacing scale — 4px base unit (s1..s10) -- */
+  --space-1: 0.25rem;   /*  4px */
+  --space-2: 0.5rem;    /*  8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-7: 2rem;      /* 32px */
+  --space-8: 2.5rem;    /* 40px */
+  --space-9: 3rem;      /* 48px */
+  --space-10: 4rem;     /* 64px */
+
+  /* -- 2c. Radius — modest, per the "minimal, calm" brand brief -- */
+  --radius-field: 6px;  /* inputs, buttons, code cells */
+  --radius-card: 10px;  /* the auth card */
+
+  /* -- 2d. Border + motion -- */
+  --border-width: 1px;
+  --border-width-focus: 2px;
+  --transition-fast: 120ms cubic-bezier(0.2, 0, 0, 1);
+  --transition-base: 180ms cubic-bezier(0.2, 0, 0, 1);
+
+  /* -- 3a. Functional tokens — LIGHT theme (default).
+        Derived from the brand palette; proposed for review (SIMF-CPD-001
+        section 8.4, SIMF-VID-001 OI-3). -------------------------------------- */
+  --color-background: #F1F2F2;       /* Page background — brand neutral        */
+  --color-surface: #FFFFFF;          /* Cards, fields                          */
+  --color-surface-sunken: #F7F8F8;   /* Insets                                 */
+  --color-text: #1A2433;             /* Body text + headings — near-black navy */
+  --color-text-muted: #5A6573;       /* Secondary text, captions, helper       */
+  --color-text-on-primary: #FFFFFF;  /* Text on a navy / action surface        */
+  --color-border: #E2E5E9;           /* Field + card borders, dividers         */
+  --color-field-background: #FFFFFF; /* Input fill                             */
+
+  --color-action: #244A77;           /* Primary action — navy                  */
+  --color-action-hover: #1D3D63;     /* Primary action, hover  (navy -10% L)   */
+  --color-action-active: #172F4D;    /* Primary action, pressed (navy -20% L)  */
+  --color-link: #007CD8;             /* Links — brand bright blue              */
+  --color-link-hover: #1D3D63;
+  --color-wordmark: #244A77;         /* The "SIMF" wordmark on a light surface */
+
+  --color-success: #2E7D5B;          /* Success states                         */
+  --color-warning: #C9912F;          /* Warning states (never the brand gold)  */
+  --color-error: #B3261E;            /* Error and destructive states           */
+  --color-success-surface: #E7F1EC;
+  --color-warning-surface: #F8EFDD;
+  --color-error-surface: #F7E5E4;
+  --color-info-surface: #E4F1FB;
+
+  /* Keyboard focus ring — applied as a box-shadow on top of the border. */
+  --focus-ring: 0 0 0 3px rgba(0, 124, 216, 0.18);
+  --focus-ring-error: 0 0 0 3px rgba(179, 38, 30, 0.16);
+
+  /* -- Brand panel — the navy sign-in panel; constant across themes -- */
+  --color-brand-panel: #244A77;
+  --color-brand-panel-text: #FFFFFF;
+  --color-brand-panel-text-muted: rgba(255, 255, 255, 0.62);
+  --color-brand-panel-divider: rgba(255, 255, 255, 0.20);
+
+  /* -- Shadow — one token; only the auth card is elevated (design spec §0.1) -- */
+  --shadow-card: 0 1px 2px rgba(26, 36, 51, 0.04),
+                 0 4px 12px rgba(26, 36, 51, 0.06);
+
+  /* -- The compass-and-anchor brand pattern: low opacity
+        (SIMF-VID-001 section 8: 10%-30%). -- */
+  --pattern-opacity: 0.12;
+
+  /* ------------------------------------------------------------------------
+     Extended scale + alias tokens.
+     The component stylesheet (simf-components.css) and the seat-plan page
+     reference these names; they are defined HERE so theme.tokens.css stays the
+     single source of truth (these were previously undefined, so the rules that
+     used them silently broke — dead focus rings, uncoloured seats, missing
+     shadows). Alias tokens point at an existing functional token with var(),
+     so they inherit every theme override automatically — one value, one source.
+     ---------------------------------------------------------------------- */
+
+  /* Radius scale (sm/md/lg) alongside the semantic field/card radii. */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-input: var(--radius-field);   /* inputs, code cells, user chip */
+  --radius-3: var(--radius-md);          /* log / code block */
+
+  /* Small body size — between body (14px) and caption (12px). */
+  --font-size-body-small: 0.8125rem;     /* 13px */
+  --font-weight-bold: var(--font-weight-heading);  /* 700 */
+
+  /* Monospace stack — log viewer, code cells (one canonical name + alias). */
+  --font-family-mono: ui-monospace, "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+  --font-mono: var(--font-family-mono);
+
+  /* Surface / border / focus aliases used by the component sheet. */
+  --color-surface-2: var(--color-surface-sunken);   /* hover insets (e.g. the bell) */
+  --color-border-subtle: var(--color-border);
+  --color-focus: var(--color-accent-blue);
+
+  /* Strong (terminal-style) surface for the log / diagnostics block —
+     intentionally kept dark across all themes. */
+  --color-surface-strong: #0F1115;
+  --color-text-on-strong: #E6E6E6;
+
+  /* Danger aliases — map onto the existing error tokens (SimfButton danger,
+     notification-bell badge + error item). */
+  --color-danger: var(--color-error);
+  --color-on-danger: var(--color-text-on-primary);
+
+  /* Small + elevated shadows alongside the card shadow. */
+  --shadow-sm: 0 1px 3px rgba(26, 36, 51, 0.12);
+  --shadow-2: var(--shadow-card);
+
+  /* Seat-plan states (SessionSeatPlan). free / free-border alias the theme
+     surfaces so they adapt to light / dark / grey; user + admin are brand
+     tokens; random is a brand-distinct constant; contrast is the label colour
+     on a filled seat. */
+  --color-seat-free: var(--color-surface-sunken);
+  --color-seat-free-border: var(--color-border);
+  --color-seat-user: var(--color-secondary);
+  --color-seat-admin: var(--color-primary);
+  --color-seat-random: #6C5CB0;
+  --color-seat-contrast: #FFFFFF;
+}
+
+/* ----------------------------------------------------------------------------
+   3b. Functional tokens — DARK theme.
+   Navy-derived dark surface set with light text, per SIMF-CPD-001 section 8.5.
+   These values are PROPOSED for client review — SIMF-CPD-001 OI-1 / decisions
+   log D-020. Only functional tokens change; brand and scale tokens do not.
+   ------------------------------------------------------------------------- */
+[data-theme="dark"] {
+  --color-background: #0E1826;
+  --color-surface: #16233A;
+  --color-surface-sunken: #101D30;
+  --color-text: #E8EBEF;
+  --color-text-muted: #97A3B4;
+  --color-text-on-primary: #FFFFFF;
+  --color-border: #2B3D57;
+  --color-field-background: #1C2C46;
+
+  --color-action: #498FBD;           /* Mid blue — readable on the dark surface */
+  --color-action-hover: #5B9EC9;
+  --color-action-active: #3E7FA8;
+  --color-link: #5BA9E0;
+  --color-link-hover: #84C2EC;
+  --color-wordmark: #7FB6DA;         /* The wordmark, lightened for dark surfaces */
+
+  --color-success: #4FA37D;
+  --color-warning: #D9A648;
+  --color-error: #E0685F;
+  --color-success-surface: #15301F;
+  --color-warning-surface: #332815;
+  --color-error-surface: #361D1B;
+  --color-info-surface: #14283D;
+
+  --focus-ring: 0 0 0 3px rgba(91, 169, 224, 0.30);
+  --focus-ring-error: 0 0 0 3px rgba(224, 104, 95, 0.28);
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.30),
+                 0 8px 24px rgba(0, 0, 0, 0.40);
+
+  --pattern-opacity: 0.18;
+}
+
+/* ----------------------------------------------------------------------------
+   3c. Functional tokens — GREY theme (D-098).
+   A neutral mid-grey surface set positioned between the light and dark
+   themes — for offices where the bright-white light theme is fatiguing
+   but the navy-derived dark theme reads "after-hours". Surfaces are
+   warm-neutral greys (no chromatic bias); text stays on the navy-text
+   ramp so the wordmark sits comfortably. Only functional tokens change;
+   brand and scale tokens do not.
+   ------------------------------------------------------------------------- */
+[data-theme="grey"] {
+  --color-background: #DCDDDE;
+  --color-surface: #E9EAEB;
+  --color-surface-sunken: #D2D4D6;
+  --color-text: #1F2731;
+  --color-text-muted: #5C6573;
+  --color-text-on-primary: #FFFFFF;
+  --color-border: #B7BABF;
+  --color-field-background: #F1F2F3;
+
+  --color-action: #244A77;
+  --color-action-hover: #1D3D63;
+  --color-action-active: #172F4D;
+  --color-link: #1E5A99;
+  --color-link-hover: #163E6B;
+  --color-wordmark: #244A77;
+
+  --color-success: #2E7D5B;
+  --color-warning: #B57E1E;
+  --color-error: #A32018;
+  --color-success-surface: #C9DACF;
+  --color-warning-surface: #DFD0B4;
+  --color-error-surface: #DBC4C2;
+  --color-info-surface: #C8D5DF;
+
+  --focus-ring: 0 0 0 3px rgba(36, 74, 119, 0.24);
+  --focus-ring-error: 0 0 0 3px rgba(163, 32, 24, 0.22);
+
+  --shadow-card: 0 1px 2px rgba(31, 39, 49, 0.10),
+                 0 4px 14px rgba(31, 39, 49, 0.10);
+
+  --pattern-opacity: 0.14;
+}

@@ -1,0 +1,519 @@
+@* Control Panel — the signed-in user's profile (myComment item #11). Four
+   sections: two-factor authentication enrolment, change password, my roles,
+   my avatar. Every action goes through CP-side proxy endpoints
+   (/account/api/…) so the access token never reaches the page. *@
+@page "/account/profile"
+@layout CpShellLayout
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@inject SimfUserChrome UserChrome
+
+<PageTitle>@L["Profile.Title"]</PageTitle>
+
+<SimfPageHeader Title="@L["Profile.Title"]" />
+
+@if (_profile is null)
+{
+    <div class="simf-card simf-page-card">
+        <p>@L["Profile.Loading"]</p>
+    </div>
+}
+else
+{
+    <div class="simf-profile">
+        @* -- Two-factor authentication ----------------------------------------- *@
+        <section class="simf-card simf-page-card">
+            <h2 class="simf-card__title">@L["Profile.TwoFactor.Title"]</h2>
+            @if (_flashOk is not null)
+            {
+                <SimfAlert Variant="success">@_flashOk</SimfAlert>
+            }
+            @if (_flashError is not null)
+            {
+                <SimfAlert Variant="error">@_flashError</SimfAlert>
+            }
+
+            @if (_setup is null)
+            {
+                <p>@(_profile.TwoFactorEnabled ? L["Profile.TwoFactor.StatusOn"] : L["Profile.TwoFactor.StatusOff"])</p>
+                <div class="simf-form__actions">
+                    @if (_profile.TwoFactorEnabled)
+                    {
+                        <SimfButton Type="button" OnClick="StartDisableAsync">@L["Profile.TwoFactor.Disable"]</SimfButton>
+                        <SimfButton Type="button" Variant="secondary" OnClick="StartSetupAsync">@L["Profile.TwoFactor.Reenrol"]</SimfButton>
+                    }
+                    else
+                    {
+                        <SimfButton Type="button" OnClick="StartSetupAsync">@L["Profile.TwoFactor.Enable"]</SimfButton>
+                    }
+                </div>
+            }
+            else
+            {
+                <p>@L["Profile.TwoFactor.ScanInstruction"]</p>
+                <div class="simf-qr">
+                    @((MarkupString)_setup.QrCodeSvg)
+                </div>
+                <p class="simf-form__helper">@L["Profile.TwoFactor.SecretHint"]</p>
+                <code class="simf-totp-secret">@_setup.Secret</code>
+                <EditForm Model="_codeModel" OnSubmit="ConfirmSetupAsync" class="simf-form">
+                    <div class="simf-form__fields">
+                        <SimfCodeField Label="@L["Profile.TwoFactor.CodeLabel"]"
+                                       @bind-Value="_codeModel.Code" Disabled="_busy" />
+                    </div>
+                    <div class="simf-form__actions">
+                        <SimfButton Loading="_busy" LoadingLabel="@L["Profile.TwoFactor.Confirm"]">
+                            @L["Profile.TwoFactor.Confirm"]
+                        </SimfButton>
+                        <SimfButton Type="button" Variant="secondary"
+                                    OnClick="CancelSetup">@L["Profile.TwoFactor.Cancel"]</SimfButton>
+                    </div>
+                </EditForm>
+            }
+
+            @if (_disablePrompt)
+            {
+                <EditForm Model="_disableModel" OnSubmit="ConfirmDisableAsync" class="simf-form">
+                    <div class="simf-form__fields">
+                        <SimfCodeField Label="@L["Profile.TwoFactor.CodeLabel"]"
+                                       @bind-Value="_disableModel.Code" Disabled="_busy" />
+                    </div>
+                    <div class="simf-form__actions">
+                        <SimfButton Loading="_busy" LoadingLabel="@L["Profile.TwoFactor.Confirm"]">
+                            @L["Profile.TwoFactor.Confirm"]
+                        </SimfButton>
+                        <SimfButton Type="button" Variant="secondary"
+                                    OnClick="CancelDisable">@L["Profile.TwoFactor.Cancel"]</SimfButton>
+                    </div>
+                </EditForm>
+            }
+        </section>
+
+        @* -- Recovery codes ------------------------------------------------------ *@
+        @if (_profile.TwoFactorEnabled)
+        {
+            <section class="simf-card simf-page-card">
+                <h2 class="simf-card__title">@L["Profile.RecoveryCodes.Title"]</h2>
+
+                @if (_recoveryCodes is not null)
+                {
+                    <SimfAlert Variant="success">@L["Profile.RecoveryCodes.ShowOnce"]</SimfAlert>
+                    <ol class="simf-recovery-codes">
+                        @foreach (var recoveryCode in _recoveryCodes)
+                        {
+                            <li><code>@recoveryCode</code></li>
+                        }
+                    </ol>
+                    <div class="simf-form__actions">
+                        <SimfButton Type="button" Variant="secondary"
+                                    OnClick="DismissRecoveryCodes">
+                            @L["Profile.RecoveryCodes.Done"]
+                        </SimfButton>
+                    </div>
+                }
+                else
+                {
+                    @if (_profile.RecoveryCodesRemaining == 0)
+                    {
+                        <SimfAlert Variant="error">@L["Profile.RecoveryCodes.None"]</SimfAlert>
+                    }
+                    else
+                    {
+                        <p>@string.Format(L["Profile.RecoveryCodes.Status"], _profile.RecoveryCodesRemaining)</p>
+                        @if (_profile.RecoveryCodesRemaining <= 3)
+                        {
+                            <SimfAlert Variant="info">@L["Profile.RecoveryCodes.LowWarning"]</SimfAlert>
+                        }
+                    }
+                    <div class="simf-form__actions">
+                        <SimfButton Type="button" Loading="_busy"
+                                    LoadingLabel="@L["Profile.RecoveryCodes.Regenerate"]"
+                                    OnClick="RegenerateRecoveryCodesAsync">
+                            @(_profile.RecoveryCodesRemaining == 0
+                                ? L["Profile.RecoveryCodes.Generate"]
+                                : L["Profile.RecoveryCodes.Regenerate"])
+                        </SimfButton>
+                    </div>
+                }
+            </section>
+        }
+
+        @* -- Change password ----------------------------------------------------- *@
+        <section class="simf-card simf-page-card">
+            <h2 class="simf-card__title">@L["Profile.Password.Title"]</h2>
+            @* No success banner — a successful change rolls the security stamp
+               and signs the user out, so the page navigates away. D-206: the
+               form is the shared ChangePasswordCard (also used by the
+               forced-change sign-in popup). *@
+            <ChangePasswordCard ShowCurrentField="true" Busy="_busy"
+                                ErrorMessage="@_passwordError" OnSubmit="ChangePasswordAsync" />
+        </section>
+
+        @* -- My roles ------------------------------------------------------------ *@
+        <section class="simf-card simf-page-card">
+            <h2 class="simf-card__title">@L["Profile.Roles.Title"]</h2>
+            @if (_profile.Roles.Count == 0)
+            {
+                <p>@L["Profile.Roles.None"]</p>
+            }
+            else
+            {
+                <ul class="simf-role-list">
+                    @foreach (var role in _profile.Roles)
+                    {
+                        <li>@role</li>
+                    }
+                </ul>
+            }
+        </section>
+
+        @* -- My avatar ----------------------------------------------------------- *@
+        <section class="simf-card simf-page-card">
+            <h2 class="simf-card__title">@L["Profile.Avatar.Title"]</h2>
+            @if (_avatarError is not null)
+            {
+                <SimfAlert Variant="error">@_avatarError</SimfAlert>
+            }
+            else if (_avatarOk is not null)
+            {
+                <SimfAlert Variant="success">@_avatarOk</SimfAlert>
+            }
+            <div class="simf-avatar">
+                @if (!string.IsNullOrEmpty(_profile.AvatarUrl))
+                {
+                    <img class="simf-avatar__image" src="@_profile.AvatarUrl" alt="" />
+                }
+                else
+                {
+                    <div class="simf-avatar__placeholder" aria-hidden="true">
+                        <SimfIcon Name="user" Size="48" />
+                    </div>
+                }
+            </div>
+            <p id="avatar-input-hint" class="simf-form__helper">@L["Profile.Avatar.SizeHint"]</p>
+            @* D-119 — picking a file opens the cropper modal directly.
+               The explicit Upload button is gone; the cropper has its own
+               Save action. Picking a new file resets the input so the same
+               file fires the change event again on re-pick. *@
+            <label for="avatar-input" class="simf-field__label">@L["Profile.Avatar.Picker"]</label>
+            <input type="file" id="avatar-input" accept="image/png,image/jpeg,image/webp"
+                   class="simf-file"
+                   aria-describedby="avatar-input-hint"
+                   disabled="@(_busy ? "disabled" : null)"
+                   @onchange="OnAvatarFilePickedAsync" />
+            <div class="simf-form__actions">
+                @if (!string.IsNullOrEmpty(_profile.AvatarUrl))
+                {
+                    <SimfButton Type="button" Variant="secondary" OnClick="RemoveAvatarAsync"
+                                Disabled="_busy">@L["Profile.Avatar.Remove"]</SimfButton>
+                }
+            </div>
+        </section>
+    </div>
+}
+
+@* D-119 — Avatar cropper modal (first SimfImageCropperModal consumer).
+   Opens when the user picks a file; on confirm the cropped 400×400 PNG
+   is uploaded via the existing /account/api/avatar multipart endpoint
+   (no backend change). On cancel the picked file is discarded. *@
+<SimfImageCropperModal Open="_cropperOpen"
+                       ImageUrl="@_cropperImageUrl"
+                       Title="@L["Profile.Avatar.Crop.Title"]"
+                       OnCropped="OnAvatarCroppedAsync"
+                       OnCancel="OnAvatarCropCancelAsync" />
+
+@code {
+    private ProfileResponse? _profile;
+    private TotpSetupResponse? _setup;
+    private bool _disablePrompt;
+    private bool _busy;
+    private string? _flashOk;
+    private string? _flashError;
+    private string? _passwordError;
+    private string? _avatarError;
+    private string? _avatarOk;
+    // D-119 — cropper flow state.
+    private bool _cropperOpen;
+    private string _cropperImageUrl = string.Empty;
+    private string _cropperFileName = "avatar.png";
+    private IReadOnlyList<string>? _recoveryCodes;
+    private readonly CodeModel _codeModel = new();
+    private readonly CodeModel _disableModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProfileAsync();
+    }
+
+    private async Task LoadProfileAsync()
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<ProfileResponse>>(
+            "simfAccount.getJson", "/account/api/profile");
+        if (envelope is { Success: true, Data: not null })
+        {
+            _profile = envelope.Data;
+            // Push the avatar into the shared chrome so the top-bar avatar
+            // re-renders immediately when the user uploads or removes one.
+            UserChrome.SetAvatar(_profile.AvatarUrl);
+        }
+    }
+
+    // -- 2FA enrolment --------------------------------------------------------
+
+    private async Task StartSetupAsync()
+    {
+        ClearFlash();
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<TotpSetupResponse>>(
+                "simfAccount.postJson", "/account/api/totp/setup", (object?)null);
+            if (envelope is { Success: true, Data: not null })
+            {
+                _setup = envelope.Data;
+                _codeModel.Code = string.Empty;
+            }
+            else
+            {
+                _flashError = envelope?.Error?.MessageForCurrentCulture();
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task ConfirmSetupAsync()
+    {
+        ClearFlash();
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<TotpConfirmResponse>>(
+                "simfAccount.postJson", "/account/api/totp/confirm",
+                new TotpConfirmRequest { Code = _codeModel.Code });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _setup = null;
+                _flashOk = L["Profile.TwoFactor.ConfirmEnabled"];
+                // Surface the fresh recovery-code batch returned by confirm
+                // (D-040) — they're plaintext exactly once.
+                _recoveryCodes = envelope.Data.RecoveryCodes;
+                await LoadProfileAsync();
+            }
+            else
+            {
+                _flashError = envelope?.Error?.MessageForCurrentCulture();
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task RegenerateRecoveryCodesAsync()
+    {
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<RecoveryCodesResponse>>(
+                "simfAccount.postJson",
+                "/account/api/recovery-codes/regenerate",
+                (object?)null);
+            if (envelope is { Success: true, Data: not null })
+            {
+                _recoveryCodes = envelope.Data.RecoveryCodes;
+                await LoadProfileAsync();
+            }
+            else
+            {
+                _flashError = envelope?.Error?.MessageForCurrentCulture();
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void DismissRecoveryCodes() => _recoveryCodes = null;
+
+    private void CancelSetup()
+    {
+        _setup = null;
+        _codeModel.Code = string.Empty;
+        ClearFlash();
+    }
+
+    private void StartDisableAsync()
+    {
+        _disablePrompt = true;
+        _disableModel.Code = string.Empty;
+        ClearFlash();
+    }
+
+    private void CancelDisable()
+    {
+        _disablePrompt = false;
+        ClearFlash();
+    }
+
+    private async Task ConfirmDisableAsync()
+    {
+        ClearFlash();
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<TotpDisableResponse>>(
+                "simfAccount.postJson", "/account/api/totp/disable",
+                new TotpDisableRequest { Code = _disableModel.Code });
+            if (envelope is { Success: true })
+            {
+                _disablePrompt = false;
+                _flashOk = L["Profile.TwoFactor.ConfirmDisabled"];
+                await LoadProfileAsync();
+            }
+            else
+            {
+                _flashError = envelope?.Error?.MessageForCurrentCulture();
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    // -- Change password ------------------------------------------------------
+
+    private async Task ChangePasswordAsync(ChangePasswordCard.Model model)
+    {
+        _passwordError = null;
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<ChangePasswordResponse>>(
+                "simfAccount.postJson", "/account/api/change-password",
+                new ChangePasswordRequest
+                {
+                    CurrentPassword = model.CurrentPassword,
+                    NewPassword = model.NewPassword,
+                    ConfirmPassword = model.ConfirmPassword,
+                });
+            if (envelope is { Success: true })
+            {
+                // Changing the password rolls the security stamp and revokes
+                // every session, so the next API call from this circuit would
+                // fail. Submit the hidden sign-out form — /auth/sign-out is
+                // POST-only, a GET via NavigateTo would 404 and leave the
+                // cookie alive.
+                await JS.InvokeVoidAsync("simfAccount.signOut");
+            }
+            else
+            {
+                _passwordError = envelope?.Error?.MessageForCurrentCulture();
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    // -- Avatar ---------------------------------------------------------------
+
+    // D-119 — file pick handler. Reads the file as a base64 data URL and
+    // opens the cropper modal. No upload happens yet; the cropper's
+    // OnCropped is what actually POSTs to the API.
+    private async Task OnAvatarFilePickedAsync()
+    {
+        _avatarError = null;
+        _avatarOk = null;
+        try
+        {
+            var read = await JS.InvokeAsync<FileReadResult?>(
+                "simfAccount.readFileAsDataUrl", "avatar-input");
+            if (read is null || !read.Ok || string.IsNullOrEmpty(read.DataUrl))
+            {
+                _avatarError = L["Profile.Avatar.PickFailed"];
+                return;
+            }
+            _cropperImageUrl = read.DataUrl;
+            _cropperFileName = string.IsNullOrEmpty(read.FileName) ? "avatar.png" : read.FileName;
+            _cropperOpen = true;
+        }
+        catch
+        {
+            _avatarError = L["Profile.Avatar.PickFailed"];
+        }
+    }
+
+    // D-119 — cropper confirm handler. Receives the cropped 400×400 PNG as
+    // a base64 data URL and uploads it via the existing avatar endpoint.
+    private async Task OnAvatarCroppedAsync(string croppedDataUrl)
+    {
+        _cropperOpen = false;
+        _avatarError = null;
+        _avatarOk = null;
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AvatarResponse>>(
+                "simfAccount.uploadDataUrl", "/account/api/avatar",
+                croppedDataUrl, _cropperFileName);
+            if (envelope is { Success: true, Data: not null })
+            {
+                await LoadProfileAsync();
+                _avatarOk = L["Profile.Avatar.Updated"];
+            }
+            else
+            {
+                _avatarError = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Profile.Avatar.UploadFailed"];
+            }
+        }
+        finally
+        {
+            _busy = false;
+            _cropperImageUrl = string.Empty;
+            // D-119 — clear the file input so picking the same file fires
+            // the change event again. Uses clearFileInput (no click) — calling
+            // triggerFileInput here would re-open the OS picker.
+            await JS.InvokeVoidAsync("simfAccount.clearFileInput", "avatar-input");
+        }
+    }
+
+    private Task OnAvatarCropCancelAsync()
+    {
+        _cropperOpen = false;
+        _cropperImageUrl = string.Empty;
+        return Task.CompletedTask;
+    }
+
+    // D-119 — shape of simfAccount.readFileAsDataUrl's JSON response.
+    private sealed record FileReadResult(bool Ok, string? DataUrl, string? FileName, string? MimeType, string? Reason);
+
+    private async Task RemoveAvatarAsync()
+    {
+        _avatarError = null;
+        _avatarOk = null;
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AvatarResponse>>(
+                "simfAccount.deleteJson", "/account/api/avatar");
+            if (envelope is { Success: true })
+            {
+                await LoadProfileAsync();
+                _avatarOk = L["Profile.Avatar.Removed"];
+            }
+            else
+            {
+                _avatarError = envelope?.Error?.MessageForCurrentCulture();
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    // -- Misc -----------------------------------------------------------------
+
+    private void ClearFlash()
+    {
+        _flashOk = null;
+        _flashError = null;
+    }
+
+    private sealed class CodeModel
+    {
+        public string Code { get; set; } = string.Empty;
+    }
+
+}

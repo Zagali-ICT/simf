@@ -1,0 +1,80 @@
+namespace SIMF.Contracts.Programme;
+
+/// <summary>D-199 (Mockup page 19 "Speakers") — one row in the public
+/// speakers list. Only the fields the visitor-facing list card shows: the
+/// avatar (resolved from <see cref="PhotoRelativePath"/> by the client),
+/// the rank line, and the bilingual name. <see cref="DisplayOrder"/> is
+/// carried so the client can keep a stable order if it re-sorts locally.
+/// Served by <c>GET /api/v1/speakers</c>. Mirrors the
+/// <c>PublicBoothSummary</c> public-read shape (D-199).</summary>
+public sealed record PublicSpeakerSummary(
+    Guid Id,
+    string Name,
+    string NameArabic,
+    string? Rank,
+    int? CountryId,
+    string? CountryNameEn,
+    string? CountryNameAr,
+    string? PhotoRelativePath,
+    int DisplayOrder);
+
+/// <summary>D-199 — envelope for the public speakers list.</summary>
+public sealed record PublicSpeakers(IReadOnlyList<PublicSpeakerSummary> Items);
+
+/// <summary>D-199 (Mockup page 20 "Speaker profile") — full public view of
+/// one speaker: the bilingual name + rank, nationality, the four
+/// bilingual rich-text tabs (Bio / Qualifications / Training experience /
+/// Awards — the four tabs on the mockup profile screen), the consent
+/// toggle the client uses to show/hide the "Request meeting" affordance,
+/// the opted-in social URLs, and the speaker's sessions.
+///
+/// <para>Privacy: only the consent-gated fields the speaker has opted to
+/// publish are surfaced. The social URLs are returned only when
+/// <see cref="AllowsDataSharing"/> is true; the
+/// <see cref="AllowsMeetingRequests"/> flag drives the client's meeting
+/// affordance. The <c>UserProfileId</c> account link is deliberately NOT
+/// surfaced on the public projection.</para>
+///
+/// Served by <c>GET /api/v1/speakers/{id}</c>.</summary>
+public sealed record PublicSpeakerDetail(
+    Guid Id,
+    string Name,
+    string NameArabic,
+    string? Rank,
+    int? CountryId,
+    string? CountryNameEn,
+    string? CountryNameAr,
+    string? Bio,
+    string? BioArabic,
+    string? Qualifications,
+    string? QualificationsArabic,
+    string? TrainingExperience,
+    string? TrainingExperienceArabic,
+    string? Awards,
+    string? AwardsArabic,
+    bool AllowsMeetingRequests,
+    bool AllowsDataSharing,
+    string? FacebookUrl,
+    string? LinkedInUrl,
+    string? XUrl,
+    string? PhotoRelativePath,
+    int DisplayOrder,
+    IReadOnlyList<PublicSpeakerSession> Sessions);
+
+/// <summary>D-199 — one of the speaker's scheduled sessions, shown on the
+/// speaker profile. A deliberately lean line (bilingual title + hall +
+/// time window) — the speaker profile does not need the theme chip or the
+/// seat summary that the full agenda session detail
+/// (<see cref="PublicSessionDetail"/>) carries, so it is not coupled to
+/// that contract. Ordered by <see cref="StartUtc"/>. Times are UTC; the
+/// Flutter client renders local time per the device tz.</summary>
+public sealed record PublicSpeakerSession(
+    Guid Id,
+    string Code,
+    string Title,
+    string TitleArabic,
+    Guid HallId,
+    string HallName,
+    string HallNameArabic,
+    DateTimeOffset StartUtc,
+    DateTimeOffset EndUtc);

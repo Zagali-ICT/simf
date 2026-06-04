@@ -1,0 +1,48 @@
+using SIMF.Common;
+using SIMF.Contracts.Ai;
+
+namespace SIMF.Application.Ai.Abstractions;
+
+/// <summary>D-176 (gap doc G12) — admin CRUD over <c>AiPrompt</c>.
+/// All writes audit + bump <c>Version</c>.</summary>
+public interface IAdminAiPromptService
+{
+    Task<GridPage<AdminAiPromptSummary>> ListAsync(
+        GridQuery query, CancellationToken cancellationToken = default);
+
+    Task<AdminAiPromptDetail?> GetAsync(
+        Guid id, CancellationToken cancellationToken = default);
+
+    Task<AdminAiPromptDetail> CreateAsync(
+        Guid actorUserId, CreateAiPromptRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<AdminAiPromptDetail> UpdateAsync(
+        Guid actorUserId, Guid id, UpdateAiPromptRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task DeactivateAsync(
+        Guid actorUserId, Guid id,
+        CancellationToken cancellationToken = default);
+
+    Task<AiCallResult> TestAsync(
+        Guid actorUserId, Guid id, TestAiPromptRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<GridPage<AdminAiInvocationRow>> ListInvocationsAsync(
+        GridQuery query, CancellationToken cancellationToken = default);
+
+    /// <summary>D-179 — full payload (InputJson + OutputText) for SOC
+    /// drill-down. The grid row deliberately omits these for the
+    /// admin grid; this method is the audit-trail read.</summary>
+    Task<AdminAiInvocationDetail?> GetInvocationAsync(
+        Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>D-188 — append-only snapshot history for the given
+    /// AiPrompt id. Newest-first. Empty list when the prompt has
+    /// never been updated past v1. Returns an empty list for an
+    /// unknown id (no 404 — the caller already does the existence
+    /// check via <see cref="GetAsync"/> when needed).</summary>
+    Task<IReadOnlyList<AdminAiPromptHistoryEntry>> GetHistoryAsync(
+        Guid promptId, CancellationToken cancellationToken = default);
+}

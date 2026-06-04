@@ -1,0 +1,27 @@
+@* SimfNavItem — one navigation link. NavLink marks the current location.
+   D-132: optional BadgeLabel renders a small tag next to the label (used
+   by the CP shell to mark stub modules with "Soon"). *@
+@namespace SIMF.Components.Layout
+
+<li class="simf-nav-item">
+    <NavLink class="simf-nav-item__link" ActiveClass="simf-nav-item__link--active"
+             href="@Href" Match="NavLinkMatch.All">
+        <span class="simf-nav-item__label">@Label</span>
+        @if (!string.IsNullOrWhiteSpace(BadgeLabel))
+        {
+            <span class="simf-nav-item__badge">@BadgeLabel</span>
+        }
+    </NavLink>
+</li>
+
+@code {
+    /// <summary>The route this item links to.</summary>
+    [Parameter, EditorRequired] public string Href { get; set; } = string.Empty;
+
+    /// <summary>The item label.</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    /// <summary>Optional small badge rendered after the label
+    /// (e.g. "Soon" for stub modules — D-132).</summary>
+    [Parameter] public string? BadgeLabel { get; set; }
+}

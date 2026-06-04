@@ -1,0 +1,59 @@
+@* SimfAppShell — the Control Panel layout: a top bar, a side navigation and
+   the content region. The side navigation shows and hides from the top-bar
+   toggle. Layout is direction-aware (LTR / RTL) through CSS logical
+   properties. *@
+@namespace SIMF.Components.Layout
+
+<div class="simf-shell @(_navHidden ? "simf-shell--nav-hidden" : null)">
+    @* H9 — D-064: WCAG 2.4.1 Bypass Blocks. A keyboard user pressing Tab
+       lands on this link first and can skip the ~30-item side navigation
+       in one keystroke. The link is visually hidden by default and
+       slides in only on :focus-visible. *@
+    <a class="simf-skip-link" href="#simf-main">@SkipNavLabel</a>
+    <header class="simf-shell__topbar">
+        <button type="button" class="simf-shell__nav-toggle"
+                @onclick="ToggleNav" aria-label="@ToggleNavLabel" aria-expanded="@((!_navHidden).ToString().ToLowerInvariant())">
+            <SimfIcon Name="menu" Size="20" />
+        </button>
+        <div class="simf-shell__brand">@Brand</div>
+        <div class="simf-shell__spacer"></div>
+        <div class="simf-shell__controls">@Controls</div>
+    </header>
+    <div class="simf-shell__body">
+        <nav class="simf-shell__nav" aria-label="@NavLabel">
+            @SideNav
+        </nav>
+        <main id="simf-main" class="simf-shell__content" tabindex="-1">
+            @ChildContent
+        </main>
+    </div>
+</div>
+
+@code {
+    /// <summary>The leading brand area of the top bar (logo, app name).</summary>
+    [Parameter] public RenderFragment? Brand { get; set; }
+
+    /// <summary>The trailing controls of the top bar (language, theme, user).</summary>
+    [Parameter] public RenderFragment? Controls { get; set; }
+
+    /// <summary>The side-navigation content — normally a set of nav groups.</summary>
+    [Parameter] public RenderFragment? SideNav { get; set; }
+
+    /// <summary>The page content shown in the content region.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The accessible label for the navigation toggle.</summary>
+    [Parameter] public string ToggleNavLabel { get; set; } = "Toggle navigation";
+
+    /// <summary>The accessible label for the navigation region.</summary>
+    [Parameter] public string NavLabel { get; set; } = "Main";
+
+    /// <summary>The text of the skip-to-main-content link (H9 — D-064).
+    /// English fallback so callers that don't localise still get a
+    /// working WCAG 2.4.1 affordance.</summary>
+    [Parameter] public string SkipNavLabel { get; set; } = "Skip to main content";
+
+    private bool _navHidden;
+
+    private void ToggleNav() => _navHidden = !_navHidden;
+}

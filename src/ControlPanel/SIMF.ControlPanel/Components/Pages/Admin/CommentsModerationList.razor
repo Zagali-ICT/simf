@@ -1,0 +1,316 @@
+@* D-199 (Mockup page 28 — "Audience comments" / تعليقات الجمهور) — admin
+   moderation desk over a session's audience comments. The admin picks a
+   live session, then sees every comment (Pending / Approved / Hidden) with
+   the AI filter verdict, and can Approve, Hide, or Delete (soft-delete)
+   each row. Session-scoped, mirroring the existing SessionModerationDesk
+   pattern but over comments rather than live Q&A questions.
+
+   Converted from a raw <table> to the canonical SimfDataGrid (owner-mandated).
+   The session picker stays above the grid — comments are session-scoped and
+   the picker is not a grid concern. Per-row Approve / Hide are page-specific
+   quiet actions in <RowActions>; Delete maps to the grid's OnDeleteOne. *@
+@page "/admin/comments-moderation"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Comments.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Comments.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Comments.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+        <p class="simf-hint">@L["Admin.Comments.Hint"]</p>
+
+        @if (_sessions.Count == 0 && !_loading)
+        {
+            <SimfEmptyState Title="@L["Admin.Comments.NoSessions"]" />
+        }
+        else
+        {
+            <label class="simf-field">
+                <span class="simf-field__label">@L["Admin.Comments.Pick"]</span>
+                <select class="simf-field__input"
+                        value="@(_selectedSessionId?.ToString() ?? string.Empty)"
+                        @onchange="OnSessionChangedAsync" disabled="@_loading">
+                    <option value="">@L["Admin.Comments.PickNone"]</option>
+                    @foreach (var session in _sessions)
+                    {
+                        <option value="@session.Id">@session.Code — @session.Title</option>
+                    }
+                </select>
+            </label>
+        }
+
+        @if (_selectedSessionId is not null)
+        {
+            <SimfDataGrid TItem="SessionCommentModerationRow"
+                          Query="_query"
+                          Page="_page"
+                          Loading="_loading"
+                          OnQueryChanged="OnQueryChangedAsync"
+                          Multiselect="true"
+                          RowKey="@(r => r.Id.ToString())"
+                          RowLabel="@(r => r.AuthorDisplayName)"
+                          Caption="@L["Admin.Comments.Title"]"
+                          FilterColumnLabel="@L["Grid.FilterColumn"]"
+                          OnDeleteOne="OnDeleteAsync"
+                          PrevLabel="@L["Grid.Prev"]"
+                          NextLabel="@L["Grid.Next"]"
+                          FirstLabel="@L["Grid.First"]"
+                          LastLabel="@L["Grid.Last"]"
+                          PageSizeLabel="@L["Grid.PageSize"]"
+                          PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Admin.Comments.Loading"]"
+                          FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                          ActionsHeader="@L["Grid.Actions"]"
+                          SelectAllLabel="@L["Grid.SelectAll"]"
+                          SelectRowLabel="@L["Grid.SelectRow"]"
+                          DeleteLabel="@L["Admin.Comments.Delete"]"
+                          SummaryFormatter="@FormatSummary">
+                <Columns>
+                    <SimfDataGridColumn TItem="SessionCommentModerationRow" Key="author"
+                                        Header="@L["Admin.Comments.Col.Author"]">
+                        <CellTemplate>
+                            @context.AuthorDisplayName
+                            <small>(@(context.AuthorEmail ?? "—"))</small>
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="SessionCommentModerationRow" Key="body"
+                                        Header="@L["Admin.Comments.Col.Body"]"
+                                        Filterable="true">
+                        <CellTemplate>@context.Body</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="SessionCommentModerationRow" Key="status"
+                                        Header="@L["Admin.Comments.Col.Status"]">
+                        <CellTemplate>
+                            @switch (context.Status)
+                            {
+                                case SessionCommentStatus.Approved:
+                                    <SimfPill Variant="on">@L["Admin.Comments.Status.Approved"]</SimfPill>
+                                    break;
+                                case SessionCommentStatus.Hidden:
+                                    <SimfPill Variant="off">@L["Admin.Comments.Status.Hidden"]</SimfPill>
+                                    break;
+                                default:
+                                    <SimfPill Variant="admin">@L["Admin.Comments.Status.Pending"]</SimfPill>
+                                    break;
+                            }
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="SessionCommentModerationRow" Key="aiVerdict"
+                                        Header="@L["Admin.Comments.Col.AiVerdict"]">
+                        <CellTemplate>@(context.AiFilterVerdict ?? "—")</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="SessionCommentModerationRow" Key="created"
+                                        Header="@L["Admin.Comments.Col.Created"]"
+                                        Sortable="true">
+                        <CellTemplate>@context.CreatedAt.ToLocalTime().ToString("g")</CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <RowActions>
+                    @* Page-specific quiet moderation actions — approve / hide.
+                       Each is hidden when the comment already holds that status,
+                       mirroring the original table's conditional buttons. *@
+                    <AuthorizedAction Permission="@PermissionCatalog.Comments.Moderate">
+                        @if (context.Status != SessionCommentStatus.Approved)
+                        {
+                            <SimfToolbarButton Icon="check-circle" Title="@L["Admin.Comments.Approve"]"
+                                               OnClick="@(() => SetStatusAsync(context, SessionCommentStatus.Approved))" />
+                        }
+                        @if (context.Status != SessionCommentStatus.Hidden)
+                        {
+                            <SimfToolbarButton Icon="eye-off" Title="@L["Admin.Comments.Hide"]"
+                                               OnClick="@(() => SetStatusAsync(context, SessionCommentStatus.Hidden))" />
+                        }
+                    </AuthorizedAction>
+                </RowActions>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.Comments.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
+        }
+    </div>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private List<AdminSessionSummary> _sessions = new();
+    private Guid? _selectedSessionId;
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<SessionCommentModerationRow> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    protected override async Task OnInitializedAsync() => await LoadSessionsAsync();
+
+    private async Task LoadSessionsAsync()
+    {
+        // The session picker is populated from the already-existing admin
+        // sessions BFF passthrough. The list is bounded (one event's
+        // worth of sessions) so a single Top=200 round-trip is fine.
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminSessionSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/sessions/list",
+                new GridQuery { Top = 200 });
+            if (env is { Success: true, Data: not null })
+            {
+                _sessions = env.Data.Items.Where(s => s.IsActive)
+                    .OrderBy(s => s.Code).ToList();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Comments.SessionsLoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task OnSessionChangedAsync(ChangeEventArgs e)
+    {
+        // Clear any stale toast so a message from session A does not
+        // follow the admin to session B.
+        _toast = null;
+        if (Guid.TryParse(e.Value?.ToString(), out var id))
+        {
+            _selectedSessionId = id;
+            // Reset paging/sort/filter when switching sessions.
+            _query = new GridQuery { Top = 20 };
+            await LoadCommentsAsync();
+        }
+        else
+        {
+            _selectedSessionId = null;
+            _page = new GridPage<SessionCommentModerationRow>();
+        }
+    }
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadCommentsAsync();
+    }
+
+    private async Task LoadCommentsAsync()
+    {
+        if (_selectedSessionId is null) return;
+        _loading = true;
+        try
+        {
+            // The grid surfaces a per-column filter on the comment body; the
+            // backend route filters the body through its free-text `Search`
+            // field (`query.Search`), so the body filter is mapped there. The
+            // `created` column is the only server-honoured sort key.
+            _query.Filters.TryGetValue("body", out var bodyFilter);
+            var env = await JS.InvokeAsync<ApiResult<GridPage<SessionCommentModerationRow>>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/sessions/{_selectedSessionId}/comments/list",
+                new ListSessionCommentsBody
+                {
+                    Skip = _query.Skip,
+                    Top = _query.Top,
+                    Search = string.IsNullOrWhiteSpace(bodyFilter) ? null : bodyFilter,
+                    Sort = _query.Sort,
+                    SortDescending = _query.SortDescending,
+                });
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Comments.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task SetStatusAsync(SessionCommentModerationRow row, SessionCommentStatus status)
+    {
+        if (_busy || _selectedSessionId is null) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<SessionCommentModerationRow>>(
+                "simfAccount.putJson",
+                $"/account/api/admin/sessions/{_selectedSessionId}/comments/{row.Id}/status",
+                new SetSessionCommentStatusRequest { Status = status });
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.Comments.StatusSaved"]);
+                await LoadCommentsAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Comments.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteAsync(SessionCommentModerationRow row)
+    {
+        if (_busy || _selectedSessionId is null) return;
+        // Confirm destructive actions — a soft-delete pulls the comment
+        // from the moderation desk and the public feed immediately, and
+        // there is no undo button today.
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", L["Admin.Comments.Delete.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/sessions/{_selectedSessionId}/comments/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.Comments.Deleted"]);
+                await LoadCommentsAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Comments.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Admin.Comments.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
+
+    // The comments-list route carries the paging fields in the body
+    // (the backend route composes Skip/Top/Search/Sort itself rather
+    // than binding GridQuery, which is sealed). This mirrors those names.
+    private sealed class ListSessionCommentsBody
+    {
+        public SessionCommentStatus? Status { get; set; }
+        public int Skip { get; set; }
+        public int Top { get; set; } = 25;
+        public string? Search { get; set; }
+        public string? Sort { get; set; }
+        public bool SortDescending { get; set; } = true;
+    }
+}

@@ -1,0 +1,520 @@
+@* D-199 (CP UI for D-199 Media gallery, Mockup page 30) — admin CRUD
+   over the public media gallery. An item is either an Image (its bitmap
+   is uploaded out-of-row via POST /admin/media/{id}/image) or a Video
+   (an external playback Url). Image bytes can only be attached once the
+   item row exists, so the upload control lives in the Edit modal.
+   D-256 — migrated from the raw <table> to the owner-mandated
+   SimfDataGrid (server-paged, sortable + filterable, full pager). *@
+@page "/admin/media"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Media.View)]
+@using SIMF.Common.Enums
+@using SIMF.Contracts.Media
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Media.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Media.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="AdminMediaSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => RowLabel(r))"
+                      Caption="@L["Admin.Media.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnAdd="OnAdd"
+                      OnEditOne="OnEditAsync"
+                      OnDeleteOne="OnDeleteAsync"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Media.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]"
+                      EditLabel="@L["Grid.Edit"]"
+                      DeleteLabel="@L["Grid.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminMediaSummary" Key="kind"
+                                    Header="@L["Admin.Media.Col.Kind"]"
+                                    Sortable="true">
+                    <CellTemplate>@KindLabel(context.Kind)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMediaSummary" Key="title"
+                                    Header="@L["Admin.Media.Col.TitleEn"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.Title) ? "—" : context.Title)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMediaSummary" Key="titlearabic"
+                                    Header="@L["Admin.Media.Col.TitleAr"]"
+                                    Filterable="true">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.TitleArabic) ? "—" : context.TitleArabic)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMediaSummary" Key="album"
+                                    Header="@L["Admin.Media.Col.AlbumEn"]"
+                                    Filterable="true">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.Album) ? "—" : context.Album)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMediaSummary" Key="albumarabic"
+                                    Header="@L["Admin.Media.Col.AlbumAr"]"
+                                    Filterable="true">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.AlbumArabic) ? "—" : context.AlbumArabic)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMediaSummary" Key="hasImage"
+                                    Header="@L["Admin.Media.Col.HasImage"]">
+                    <CellTemplate>
+                        @if (context.HasImage)
+                        {
+                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMediaSummary" Key="displayOrder"
+                                    Header="@L["Admin.Media.Col.DisplayOrder"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.DisplayOrder</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminMediaSummary" Key="isActive"
+                                    Header="@L["Admin.Media.Col.Active"]"
+                                    Sortable="true">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Media.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_editOpen)
+{
+    <SimfModal Open="true"
+               Title="@(_isEdit ? L["Admin.Media.Edit.Title"] : L["Admin.Media.Add.Title"])"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Media.Field.Kind"]</span>
+                    <select class="simf-field__input"
+                            value="@_form.Kind.ToString()"
+                            @onchange="OnKindChanged"
+                            disabled="@_busy">
+                        <option value="@nameof(MediaKind.Image)">@L["Admin.Media.Kind.Image"]</option>
+                        <option value="@nameof(MediaKind.Video)">@L["Admin.Media.Kind.Video"]</option>
+                    </select>
+                </label>
+                <SimfTextField Label="@L["Admin.Media.Field.TitleEn"]"
+                               Value="@_form.Title"
+                               ValueChanged="@(v => _form.Title = v)"
+                               ValueExpression="@(() => _form.Title)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Media.Field.TitleAr"]"
+                               Value="@_form.TitleArabic"
+                               ValueChanged="@(v => _form.TitleArabic = v)"
+                               ValueExpression="@(() => _form.TitleArabic)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Media.Field.AlbumEn"]"
+                               Value="@_form.Album"
+                               ValueChanged="@(v => _form.Album = v)"
+                               ValueExpression="@(() => _form.Album)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Media.Field.AlbumAr"]"
+                               Value="@_form.AlbumArabic"
+                               ValueChanged="@(v => _form.AlbumArabic = v)"
+                               ValueExpression="@(() => _form.AlbumArabic)"
+                               Disabled="_busy" />
+                @if (_form.Kind == MediaKind.Video)
+                {
+                    <SimfTextField Label="@L["Admin.Media.Field.VideoUrl"]"
+                                   Value="@_form.Url"
+                                   ValueChanged="@(v => _form.Url = v)"
+                                   ValueExpression="@(() => _form.Url)"
+                                   Disabled="_busy" />
+                }
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Media.Field.DisplayOrder"]</span>
+                    <input class="simf-field__input" type="number" min="0" max="99999"
+                           value="@_form.DisplayOrder"
+                           @onchange="OnDisplayOrderChanged"
+                           disabled="@_busy" />
+                </label>
+                <SimfCheckbox Value="_form.IsActive"
+                              ValueChanged="@(v => _form.IsActive = v)"
+                              Disabled="_busy">
+                    @L["Admin.Media.Field.IsActive"]
+                </SimfCheckbox>
+
+                @if (_isEdit && _form.Kind == MediaKind.Image)
+                {
+                    <div class="simf-field">
+                        <span class="simf-field__label">@L["Admin.Media.Field.Image"]</span>
+                        <p class="simf-walkin__hint">
+                            @(_hasImage ? L["Admin.Media.Image.Present"] : L["Admin.Media.Image.None"])
+                        </p>
+                        <input id="media-image-input" type="file" class="simf-field__input"
+                               accept="image/png,image/jpeg,image/webp"
+                               @onchange="OnImageSelected"
+                               disabled="@_busy" />
+                        @if (!string.IsNullOrEmpty(_imageName))
+                        {
+                            <p class="simf-walkin__hint">@_imageName</p>
+                        }
+                        <div class="simf-form__actions">
+                            <SimfButton Type="button" Loading="_uploadingImage"
+                                        Disabled="@(_busy || string.IsNullOrEmpty(_imageName))"
+                                        OnClick="UploadImageAsync">
+                                @L["Admin.Media.Image.Upload"]
+                            </SimfButton>
+                        </div>
+                    </div>
+                }
+                else if (!_isEdit && _form.Kind == MediaKind.Image)
+                {
+                    <p class="simf-walkin__hint">@L["Admin.Media.Image.SaveFirst"]</p>
+                }
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _editOpen = false)">
+                @L["Admin.Media.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+                @L["Admin.Media.Save"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private sealed class FormModel
+    {
+        public MediaKind Kind { get; set; } = MediaKind.Image;
+        public string Title { get; set; } = string.Empty;
+        public string TitleArabic { get; set; } = string.Empty;
+        public string Album { get; set; } = string.Empty;
+        public string AlbumArabic { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;
+        public int DisplayOrder { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminMediaSummary> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private bool _editOpen;
+    private bool _isEdit;
+    private Guid _editingId;
+    private FormModel _form = new();
+
+    // Image-upload state (Image-kind items only). _hasImage tracks whether
+    // bytes already exist server-side; _imageName is the picked file name.
+    private bool _hasImage;
+    private string? _imageName;
+    private bool _uploadingImage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminMediaSummary>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/media/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Media.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnAdd()
+    {
+        _editOpen = true;
+        _isEdit = false;
+        _editingId = Guid.Empty;
+        _form = new FormModel();
+        _hasImage = false;
+        _imageName = null;
+        _toast = null;
+    }
+
+    private async Task OnEditAsync(AdminMediaSummary row)
+    {
+        _toast = null;
+        _imageName = null;
+        // Pull the full detail so the modal opens with the latest image
+        // state (HasImage) and metadata, not just the grid summary.
+        var env = await JS.InvokeAsync<ApiResult<AdminMediaDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/media/{row.Id}");
+        if (env is { Success: true, Data: not null })
+        {
+            var d = env.Data;
+            _editOpen = true;
+            _isEdit = true;
+            _editingId = d.Id;
+            _hasImage = d.HasImage;
+            _form = new FormModel
+            {
+                Kind = d.Kind,
+                Title = d.Title ?? string.Empty,
+                TitleArabic = d.TitleArabic ?? string.Empty,
+                Album = d.Album ?? string.Empty,
+                AlbumArabic = d.AlbumArabic ?? string.Empty,
+                Url = d.Url ?? string.Empty,
+                DisplayOrder = d.DisplayOrder,
+                IsActive = d.IsActive,
+            };
+        }
+        else
+        {
+            _toast = new Toast("error",
+                env?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.Media.LoadFailed"]);
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+        // Video items must carry an external playback URL; an Image item's
+        // bitmap is attached separately so it has no required text here.
+        if (_form.Kind == MediaKind.Video && string.IsNullOrWhiteSpace(_form.Url))
+        {
+            _toast = new Toast("error", L["Admin.Media.VideoUrlRequired"]);
+            return;
+        }
+        _busy = true;
+        _toast = null;
+        try
+        {
+            if (_isEdit)
+            {
+                var env = await JS.InvokeAsync<ApiResult<AdminMediaDetail>>(
+                    "simfAccount.putJson",
+                    $"/account/api/admin/media/{_editingId}",
+                    new AdminUpdateMediaRequest
+                    {
+                        Kind = _form.Kind,
+                        Title = NullIfBlank(_form.Title),
+                        TitleArabic = NullIfBlank(_form.TitleArabic),
+                        Album = NullIfBlank(_form.Album),
+                        AlbumArabic = NullIfBlank(_form.AlbumArabic),
+                        Url = NullIfBlank(_form.Url),
+                        DisplayOrder = _form.DisplayOrder,
+                        IsActive = _form.IsActive,
+                    });
+                if (env is { Success: true, Data: not null })
+                {
+                    _hasImage = env.Data.HasImage;
+                    _toast = new Toast("success", L["Admin.Media.Saved"]);
+                    await LoadAsync();
+                }
+                else
+                {
+                    _toast = new Toast("error",
+                        env?.Error?.MessageForCurrentCulture()
+                        ?? L["Admin.Media.LoadFailed"]);
+                }
+            }
+            else
+            {
+                var env = await JS.InvokeAsync<ApiResult<AdminMediaDetail>>(
+                    "simfAccount.postJson",
+                    "/account/api/admin/media",
+                    new AdminCreateMediaRequest
+                    {
+                        Kind = _form.Kind,
+                        Title = NullIfBlank(_form.Title),
+                        TitleArabic = NullIfBlank(_form.TitleArabic),
+                        Album = NullIfBlank(_form.Album),
+                        AlbumArabic = NullIfBlank(_form.AlbumArabic),
+                        Url = NullIfBlank(_form.Url),
+                        DisplayOrder = _form.DisplayOrder,
+                    });
+                if (env is { Success: true, Data: not null })
+                {
+                    // Image items have no bytes yet — keep the modal open in
+                    // edit mode so the admin can attach the bitmap now. Video
+                    // items are complete on create, so the modal closes.
+                    await LoadAsync();
+                    if (_form.Kind == MediaKind.Image)
+                    {
+                        var d = env.Data;
+                        _isEdit = true;
+                        _editingId = d.Id;
+                        _hasImage = d.HasImage;
+                        _imageName = null;
+                        _form.DisplayOrder = d.DisplayOrder;
+                        _form.IsActive = d.IsActive;
+                        _toast = new Toast("success", L["Admin.Media.SavedUploadNext"]);
+                    }
+                    else
+                    {
+                        _editOpen = false;
+                        _toast = new Toast("success", L["Admin.Media.Saved"]);
+                    }
+                }
+                else
+                {
+                    _toast = new Toast("error",
+                        env?.Error?.MessageForCurrentCulture()
+                        ?? L["Admin.Media.LoadFailed"]);
+                }
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnImageSelected(ChangeEventArgs _)
+    {
+        // Capture the picked file name so the Upload button can enable;
+        // the bytes ride the hidden <input> via simfAccount.uploadFile.
+        var name = await JS.InvokeAsync<string?>(
+            "eval", "document.getElementById('media-image-input')?.files?.[0]?.name ?? null");
+        _imageName = name;
+    }
+
+    private async Task UploadImageAsync()
+    {
+        if (_busy || _uploadingImage || string.IsNullOrEmpty(_imageName)) return;
+        _uploadingImage = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminMediaDetail>>(
+                "simfAccount.uploadFile",
+                $"/account/api/admin/media/{_editingId}/image",
+                "media-image-input");
+            if (env is { Success: true, Data: not null })
+            {
+                _hasImage = env.Data.HasImage;
+                _imageName = null;
+                _toast = new Toast("success", L["Admin.Media.Image.Uploaded"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Media.Image.UploadFailed"]);
+            }
+        }
+        finally { _uploadingImage = false; }
+    }
+
+    private async Task OnDeleteAsync(AdminMediaSummary row)
+    {
+        if (_busy) return;
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", L["Admin.Media.Delete.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/media/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.Media.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Media.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnKindChanged(ChangeEventArgs e)
+    {
+        _form.Kind = Enum.TryParse<MediaKind>(e.Value?.ToString(), out var k)
+            ? k : MediaKind.Image;
+    }
+
+    private void OnDisplayOrderChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _form.DisplayOrder = n;
+    }
+
+    private string KindLabel(MediaKind kind) => kind switch
+    {
+        MediaKind.Image => L["Admin.Media.Kind.Image"],
+        MediaKind.Video => L["Admin.Media.Kind.Video"],
+        _ => kind.ToString(),
+    };
+
+    // Per-row accessible label for the selection checkbox — the English title,
+    // else the Arabic title, else the kind so a screen reader gets something.
+    private string RowLabel(AdminMediaSummary row) =>
+        !string.IsNullOrWhiteSpace(row.Title) ? row.Title
+        : !string.IsNullOrWhiteSpace(row.TitleArabic) ? row.TitleArabic
+        : KindLabel(row.Kind);
+
+    private static string? NullIfBlank(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+}

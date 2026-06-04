@@ -1,0 +1,538 @@
+@* SIMF-FDS-014 (D-281/C2) — shared Contact directory (CP UI). Admin CRUD over
+   the de-duplicated contact/party records (logo, bilingual name, two phones,
+   email, website, four social links, map lat/long, country) reused by Sponsors /
+   Exhibitors / MediaPartners / Speakers / Booth officers via a nullable ContactId
+   FK. A search box reloads the grid server-side via GridQuery.Search. Mirrors the
+   owner-mandated SimfDataGrid pattern from OrganisationsList. The page is gated by
+   Contacts.View; the write endpoints enforce Contacts.Edit server-side. *@
+@page "/admin/contacts"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Contacts.View)]
+@using SIMF.Contracts.Contacts
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Contacts.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Contacts.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-toolbar">
+            <div class="simf-toolbar__search">
+                <SimfTextField Label="@L["Admin.Contacts.Search"]"
+                               Placeholder="@L["Admin.Contacts.Search.Placeholder"]"
+                               Value="@_search"
+                               ValueChanged="@(v => _search = v)"
+                               ValueExpression="@(() => _search)"
+                               Disabled="_busy" />
+                <SimfButton Type="button" Disabled="_busy" OnClick="ApplySearchAsync">
+                    @L["Admin.Contacts.Search.Apply"]
+                </SimfButton>
+            </div>
+        </div>
+
+        <SimfDataGrid TItem="AdminContactSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.NameAr)"
+                      Caption="@L["Admin.Contacts.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnAdd="OnAdd"
+                      OnEditOne="OnEditAsync"
+                      OnDeleteOne="OnDeleteAsync"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Contacts.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]"
+                      EditLabel="@L["Grid.Edit"]"
+                      DeleteLabel="@L["Grid.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminContactSummary" Key="nameAr"
+                                    Header="@L["Admin.Contacts.Col.NameAr"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.NameAr</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminContactSummary" Key="nameEn"
+                                    Header="@L["Admin.Contacts.Col.NameEn"]"
+                                    Filterable="true">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.NameEn) ? "—" : context.NameEn)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminContactSummary" Key="phonePrimary"
+                                    Header="@L["Admin.Contacts.Col.Phone"]">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.PhonePrimary) ? "—" : context.PhonePrimary)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminContactSummary" Key="email"
+                                    Header="@L["Admin.Contacts.Col.Email"]">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.Email) ? "—" : context.Email)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminContactSummary" Key="country"
+                                    Header="@L["Admin.Contacts.Col.Country"]">
+                    <CellTemplate>@(CountryCell(context))</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminContactSummary" Key="isActive"
+                                    Header="@L["Admin.Contacts.Col.Active"]"
+                                    Sortable="true">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Contacts.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_editOpen)
+{
+    <SimfModal Open="true"
+               Title="@(_isEdit ? L["Admin.Contacts.Edit.Title"] : L["Admin.Contacts.Add.Title"])"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.Contacts.Field.NameAr"]"
+                               Value="@_form.NameAr"
+                               ValueChanged="@(v => _form.NameAr = v)"
+                               ValueExpression="@(() => _form.NameAr)"
+                               MaxLength="256" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Contacts.Field.NameEn"]"
+                               Value="@_form.NameEn"
+                               ValueChanged="@(v => _form.NameEn = v)"
+                               ValueExpression="@(() => _form.NameEn)"
+                               MaxLength="256" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Contacts.Field.LogoRelativePath"]"
+                               Helper="@L["Admin.Contacts.Field.LogoHint"]"
+                               Value="@_form.LogoRelativePath"
+                               ValueChanged="@(v => _form.LogoRelativePath = v)"
+                               ValueExpression="@(() => _form.LogoRelativePath)"
+                               MaxLength="512" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Contacts.Field.PhonePrimary"]"
+                               Value="@_form.PhonePrimary"
+                               ValueChanged="@(v => _form.PhonePrimary = v)"
+                               ValueExpression="@(() => _form.PhonePrimary)"
+                               MaxLength="32" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Contacts.Field.PhoneSecondary"]"
+                               Value="@_form.PhoneSecondary"
+                               ValueChanged="@(v => _form.PhoneSecondary = v)"
+                               ValueExpression="@(() => _form.PhoneSecondary)"
+                               MaxLength="32" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Contacts.Field.Email"]"
+                               Value="@_form.Email"
+                               ValueChanged="@(v => _form.Email = v)"
+                               ValueExpression="@(() => _form.Email)"
+                               MaxLength="320" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Contacts.Field.Website"]"
+                               Value="@_form.Website"
+                               ValueChanged="@(v => _form.Website = v)"
+                               ValueExpression="@(() => _form.Website)"
+                               MaxLength="512" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Contacts.Field.FacebookUrl"]"
+                               Value="@_form.FacebookUrl"
+                               ValueChanged="@(v => _form.FacebookUrl = v)"
+                               ValueExpression="@(() => _form.FacebookUrl)"
+                               MaxLength="256" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Contacts.Field.XUrl"]"
+                               Value="@_form.XUrl"
+                               ValueChanged="@(v => _form.XUrl = v)"
+                               ValueExpression="@(() => _form.XUrl)"
+                               MaxLength="256" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Contacts.Field.LinkedInUrl"]"
+                               Value="@_form.LinkedInUrl"
+                               ValueChanged="@(v => _form.LinkedInUrl = v)"
+                               ValueExpression="@(() => _form.LinkedInUrl)"
+                               MaxLength="256" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Contacts.Field.InstagramUrl"]"
+                               Value="@_form.InstagramUrl"
+                               ValueChanged="@(v => _form.InstagramUrl = v)"
+                               ValueExpression="@(() => _form.InstagramUrl)"
+                               MaxLength="256" Disabled="_busy" />
+                <SimfSelect TValue="string"
+                            Label="@L["Admin.Contacts.Field.Country"]"
+                            Placeholder="@L["Admin.Contacts.Field.CountryPlaceholder"]"
+                            Items="_countryIds"
+                            ValueFor="@(id => id)"
+                            LabelFor="@(id => CountryLabel(id))"
+                            Value="@_form.CountryId"
+                            ValueChanged="@(v => _form.CountryId = v ?? string.Empty)"
+                            Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Contacts.Field.Latitude"]"
+                               Helper="@L["Admin.Contacts.Field.LatLongHint"]"
+                               Type="number"
+                               Value="@_form.Latitude"
+                               ValueChanged="@(v => _form.Latitude = v)"
+                               ValueExpression="@(() => _form.Latitude)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Contacts.Field.Longitude"]"
+                               Type="number"
+                               Value="@_form.Longitude"
+                               ValueChanged="@(v => _form.Longitude = v)"
+                               ValueExpression="@(() => _form.Longitude)"
+                               Disabled="_busy" />
+                @if (_isEdit)
+                {
+                    <SimfCheckbox Value="_form.IsActive"
+                                  ValueChanged="@(v => _form.IsActive = v)"
+                                  Disabled="_busy">
+                        @L["Admin.Contacts.Field.IsActive"]
+                    </SimfCheckbox>
+                }
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _editOpen = false)">
+                @L["Admin.Contacts.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+                @L["Admin.Contacts.Save"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private sealed class FormModel
+    {
+        public string NameAr { get; set; } = string.Empty;
+        public string NameEn { get; set; } = string.Empty;
+        public string LogoRelativePath { get; set; } = string.Empty;
+        public string PhonePrimary { get; set; } = string.Empty;
+        public string PhoneSecondary { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Website { get; set; } = string.Empty;
+        public string FacebookUrl { get; set; } = string.Empty;
+        public string XUrl { get; set; } = string.Empty;
+        public string LinkedInUrl { get; set; } = string.Empty;
+        public string InstagramUrl { get; set; } = string.Empty;
+        public string CountryId { get; set; } = string.Empty;
+        public string Latitude { get; set; } = string.Empty;
+        public string Longitude { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminContactSummary> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+    private string _search = string.Empty;
+
+    private bool _editOpen;
+    private bool _isEdit;
+    private Guid _editingId;
+    private FormModel _form = new();
+
+    // Country picker — loaded once on first render (active rows only).
+    private string[] _countryIds = Array.Empty<string>();
+    private Dictionary<string, AdminCountrySummary> _countriesById = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminCountrySummary>>>(
+                "simfAccount.postJson", "/account/api/admin/countries/list",
+                new GridQuery { Top = 500, Filters = new Dictionary<string, string> { ["isActive"] = "true" } });
+            if (env is { Success: true, Data: not null })
+            {
+                _countriesById = env.Data.Items.ToDictionary(c => c.Id.ToString(), c => c);
+                _countryIds = env.Data.Items
+                    .OrderBy(c => c.DisplayOrder)
+                    .ThenBy(c => c.Name)
+                    .Select(c => c.Id.ToString())
+                    .ToArray();
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // Picker stays empty; admin can still save with no country.
+        }
+    }
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
+
+    // The grid summary already carries the resolved country names (server-side),
+    // so the cell needs no second lookup.
+    private static string CountryCell(AdminContactSummary row)
+    {
+        var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+        var name = isArabic ? row.CountryNameAr : row.CountryNameEn;
+        return string.IsNullOrWhiteSpace(name) ? "—" : name;
+    }
+
+    private string CountryLabel(string id)
+    {
+        if (!_countriesById.TryGetValue(id, out var country)) return id;
+        var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+        return isArabic
+            ? $"{country.NameArabic} ({country.Code})"
+            : $"{country.Name} ({country.Code})";
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminContactSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/contacts/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Contacts.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task ApplySearchAsync()
+    {
+        _query.Skip = 0;
+        _query.Search = string.IsNullOrWhiteSpace(_search) ? null : _search.Trim();
+        await LoadAsync();
+    }
+
+    private void OnAdd()
+    {
+        _editOpen = true;
+        _isEdit = false;
+        _editingId = Guid.Empty;
+        _form = new FormModel();
+        _toast = null;
+    }
+
+    private async Task OnEditAsync(AdminContactSummary row)
+    {
+        // The grid summary omits the logo / social / map fields, so fetch the
+        // full detail before populating the form (GET /admin/contacts/{id}).
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminContactDetail>>(
+                "simfAccount.getJson", $"/account/api/admin/contacts/{row.Id}");
+            if (env is { Success: true, Data: not null })
+            {
+                var d = env.Data;
+                _editingId = d.Id;
+                _form = new FormModel
+                {
+                    NameAr = d.NameAr,
+                    NameEn = d.NameEn ?? string.Empty,
+                    LogoRelativePath = d.LogoRelativePath ?? string.Empty,
+                    PhonePrimary = d.PhonePrimary ?? string.Empty,
+                    PhoneSecondary = d.PhoneSecondary ?? string.Empty,
+                    Email = d.Email ?? string.Empty,
+                    Website = d.Website ?? string.Empty,
+                    FacebookUrl = d.FacebookUrl ?? string.Empty,
+                    XUrl = d.XUrl ?? string.Empty,
+                    LinkedInUrl = d.LinkedInUrl ?? string.Empty,
+                    InstagramUrl = d.InstagramUrl ?? string.Empty,
+                    CountryId = d.CountryId?.ToString() ?? string.Empty,
+                    Latitude = d.Latitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+                    Longitude = d.Longitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+                    IsActive = d.IsActive,
+                };
+                _isEdit = true;
+                _editOpen = true;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Contacts.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+        // Arabic name is the only required field; server-side validation is the
+        // source of truth (this stops an obviously-empty submit).
+        if (string.IsNullOrWhiteSpace(_form.NameAr))
+        {
+            _toast = new Toast("error", L["Admin.Contacts.Required"]);
+            return;
+        }
+        // Lat/long are an all-or-nothing pair (mirrors the server ContactInvalid rule).
+        if (!TryParseLatLong(out var lat, out var lng, out var pairError))
+        {
+            _toast = new Toast("error", pairError!);
+            return;
+        }
+        int? countryId = null;
+        if (!string.IsNullOrWhiteSpace(_form.CountryId)
+            && int.TryParse(_form.CountryId, out var parsedCountry) && parsedCountry > 0)
+        {
+            countryId = parsedCountry;
+        }
+
+        _busy = true;
+        _toast = null;
+        try
+        {
+            ApiResult<AdminContactDetail>? env;
+            if (_isEdit)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminContactDetail>>(
+                    "simfAccount.putJson", $"/account/api/admin/contacts/{_editingId}",
+                    new UpdateContactRequest
+                    {
+                        NameAr = _form.NameAr.Trim(),
+                        NameEn = NullIfBlank(_form.NameEn),
+                        LogoRelativePath = NullIfBlank(_form.LogoRelativePath),
+                        PhonePrimary = NullIfBlank(_form.PhonePrimary),
+                        PhoneSecondary = NullIfBlank(_form.PhoneSecondary),
+                        Email = NullIfBlank(_form.Email),
+                        Website = NullIfBlank(_form.Website),
+                        FacebookUrl = NullIfBlank(_form.FacebookUrl),
+                        XUrl = NullIfBlank(_form.XUrl),
+                        LinkedInUrl = NullIfBlank(_form.LinkedInUrl),
+                        InstagramUrl = NullIfBlank(_form.InstagramUrl),
+                        Latitude = lat,
+                        Longitude = lng,
+                        CountryId = countryId,
+                        IsActive = _form.IsActive,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminContactDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/contacts",
+                    new CreateContactRequest
+                    {
+                        NameAr = _form.NameAr.Trim(),
+                        NameEn = NullIfBlank(_form.NameEn),
+                        LogoRelativePath = NullIfBlank(_form.LogoRelativePath),
+                        PhonePrimary = NullIfBlank(_form.PhonePrimary),
+                        PhoneSecondary = NullIfBlank(_form.PhoneSecondary),
+                        Email = NullIfBlank(_form.Email),
+                        Website = NullIfBlank(_form.Website),
+                        FacebookUrl = NullIfBlank(_form.FacebookUrl),
+                        XUrl = NullIfBlank(_form.XUrl),
+                        LinkedInUrl = NullIfBlank(_form.LinkedInUrl),
+                        InstagramUrl = NullIfBlank(_form.InstagramUrl),
+                        Latitude = lat,
+                        Longitude = lng,
+                        CountryId = countryId,
+                    });
+            }
+            if (env is { Success: true })
+            {
+                _editOpen = false;
+                _toast = new Toast("success", L["Admin.Contacts.Saved"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Contacts.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteAsync(AdminContactSummary row)
+    {
+        if (_busy) return;
+        // Confirm destructive actions. A contact still referenced by an active
+        // entity is blocked server-side (409 CONTACT_IN_USE); we surface that.
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", L["Admin.Contacts.Delete.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/contacts/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.Contacts.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Contacts.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    // Lat/long must be supplied together (or both blank). Returns parsed doubles
+    // or an error message — mirrors the server's ContactInvalid pairing rule.
+    private bool TryParseLatLong(out double? lat, out double? lng, out string? error)
+    {
+        lat = null; lng = null; error = null;
+        var hasLat = !string.IsNullOrWhiteSpace(_form.Latitude);
+        var hasLng = !string.IsNullOrWhiteSpace(_form.Longitude);
+        if (!hasLat && !hasLng) return true;
+        if (hasLat != hasLng)
+        {
+            error = L["Admin.Contacts.Field.LatLongPair"];
+            return false;
+        }
+        if (!double.TryParse(_form.Latitude, NumberStyles.Float, CultureInfo.InvariantCulture, out var latV)
+            || latV is < -90 or > 90
+            || !double.TryParse(_form.Longitude, NumberStyles.Float, CultureInfo.InvariantCulture, out var lngV)
+            || lngV is < -180 or > 180)
+        {
+            error = L["Admin.Contacts.Field.LatLongInvalid"];
+            return false;
+        }
+        lat = latV; lng = lngV;
+        return true;
+    }
+
+    private static string? NullIfBlank(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+}

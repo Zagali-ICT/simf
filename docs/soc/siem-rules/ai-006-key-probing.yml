@@ -1,0 +1,57 @@
+title: AI invocation failed with PROMPT_NOT_FOUND (base)
+id: ai-006-base-prompt-not-found
+status: experimental
+description: >
+  Base rule — failed AI invocation with `Detail.errorCode` set to
+  `AI_PROMPT_NOT_FOUND`. Each event names the attempted promptKey.
+references:
+  - SIMF DECISIONS_LOG.md D-179, D-185
+tags:
+  - attack.discovery
+  - attack.t1592
+author: SIMF security review
+date: 2026-05-30
+logsource:
+  product: simf
+  service: audit
+detection:
+  selection:
+    EventType: 'AiInvocation.Failed'
+    Detail.errorCode: 'AI_PROMPT_NOT_FOUND'
+  condition: selection
+fields:
+  - ActorUserId
+  - Detail.callerKind
+  - Detail.promptKey
+falsepositives:
+  - One typo / one bad client deploy guess. Informational alone.
+level: informational
+---
+title: AI prompt-key probing / enumeration
+id: ai-006-key-probing
+status: experimental
+description: >
+  Detects an actor calling AI feature endpoints with distinct unknown
+  `promptKey` values, producing repeated `AI_PROMPT_NOT_FOUND` (404)
+  failures. Indicates enumeration of the prompt catalogue.
+references:
+  - SIMF DECISIONS_LOG.md D-179, D-185
+tags:
+  - attack.discovery
+  - attack.t1592
+author: SIMF security review
+date: 2026-05-30
+correlation:
+  type: value_count
+  rules:
+    - ai-006-base-prompt-not-found
+  group-by:
+    - ActorUserId
+  timespan: 10m
+  field: Detail.promptKey
+  condition:
+    gte: 5
+falsepositives:
+  - Buggy client deployment guessing key names; correlate with user
+    agent + recent deploys.
+level: medium

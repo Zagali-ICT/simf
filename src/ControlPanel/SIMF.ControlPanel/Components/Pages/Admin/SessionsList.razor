@@ -1,0 +1,494 @@
+@* D-165 (gap doc G3) — Sessions CRUD. SIMF-FDS-004 §5.3 + PDF §2.9.
+   Mirrors the SpeakersList canonical shape; the form modal carries the
+   Hall + Speakers + Themes pickers and the StartUtc/EndUtc window. *@
+@page "/admin/sessions"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Sessions.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Sessions.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Sessions.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="AdminSessionSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.Title)"
+                      Caption="@L["Admin.Sessions.Title"]"
+                      FilterColumnLabel="@L["Admin.Sessions.FilterColumn"]"
+                      OnAdd="OnAddAsync"
+                      OnEditOne="OnEditAsync"
+                      OnDetailsOne="OnDetailsAsync"
+                      OnDeleteOne="OnDeactivateAsync"
+                      PrevLabel="@L["Admin.Sessions.Prev"]"
+                      NextLabel="@L["Admin.Sessions.Next"]"
+                      FirstLabel="@L["Admin.Sessions.Pager.First"]"
+                      LastLabel="@L["Admin.Sessions.Pager.Last"]"
+                      PageSizeLabel="@L["Admin.Sessions.Pager.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Sessions.Loading"]"
+                      FilterPlaceholder="@L["Admin.Sessions.FilterPlaceholder"]"
+                      ActionsHeader="@L["Admin.Sessions.Column.Actions"]"
+                      SelectAllLabel="@L["Admin.Sessions.Action.SelectAll"]"
+                      SelectRowLabel="@L["Admin.Sessions.Action.SelectRow"]"
+                      AddLabel="@L["Admin.Sessions.Action.Add"]"
+                      EditLabel="@L["Admin.Sessions.Action.Edit"]"
+                      DetailsLabel="@L["Admin.Sessions.Action.Details"]"
+                      DeleteLabel="@L["Admin.Sessions.Action.Deactivate"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminSessionSummary" Key="code"
+                                    Header="@L["Admin.Sessions.Column.Code"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Code</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionSummary" Key="title"
+                                    Header="@L["Admin.Sessions.Column.Title"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Title</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionSummary" Key="titleArabic"
+                                    Header="@L["Admin.Sessions.Column.TitleArabic"]">
+                    <CellTemplate>@context.TitleArabic</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionSummary" Key="hall"
+                                    Header="@L["Admin.Sessions.Column.Hall"]">
+                    <CellTemplate>@HallLabel(context)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionSummary" Key="startUtc"
+                                    Header="@L["Admin.Sessions.Column.StartUtc"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionSummary" Key="endUtc"
+                                    Header="@L["Admin.Sessions.Column.EndUtc"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionSummary" Key="capacity"
+                                    Header="@L["Admin.Sessions.Column.Capacity"]">
+                    <CellTemplate>@context.Capacity</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionSummary" Key="isActive"
+                                    Header="@L["Admin.Sessions.Column.Active"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Admin.Sessions.Active.Yes"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Admin.Sessions.Active.No"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionSummary" Key="status"
+                                    Header="@L["Admin.Sessions.Column.Status"]">
+                    <CellTemplate>
+                        <SimfPill Variant="@StatusPillVariant(context.Status)">@StatusLabel(context.Status)</SimfPill>
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Sessions.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_addOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.Sessions.Add.Title"]"
+               OnClose="@(() => _addOpen = false)">
+        <ChildContent>
+            <SessionForm OnSuccess="OnAddSucceededAsync"
+                         OnCancel="@(() => _addOpen = false)" />
+        </ChildContent>
+    </SimfModal>
+}
+
+@if (_editTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.Sessions.Edit.Title"]"
+               OnClose="@(() => _editTarget = null)">
+        <ChildContent>
+            <SessionForm Initial="_editTarget"
+                         OnSuccess="OnEditSucceededAsync"
+                         OnCancel="@(() => _editTarget = null)" />
+        </ChildContent>
+    </SimfModal>
+}
+
+@if (_detailsTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.Sessions.Details.Title"]"
+               OnClose="@(() => _detailsTarget = null)">
+        <ChildContent>
+            <dl class="simf-dl">
+                <dt>@L["Admin.Sessions.Column.Code"]</dt>
+                <dd>@_detailsTarget.Code</dd>
+                <dt>@L["Admin.Sessions.Column.Title"]</dt>
+                <dd>@_detailsTarget.Title</dd>
+                <dt>@L["Admin.Sessions.Column.TitleArabic"]</dt>
+                <dd>@_detailsTarget.TitleArabic</dd>
+                <dt>@L["Admin.Sessions.Field.Description"]</dt>
+                <dd>@(_detailsTarget.Description ?? "—")</dd>
+                <dt>@L["Admin.Sessions.Field.DescriptionArabic"]</dt>
+                <dd>@(_detailsTarget.DescriptionArabic ?? "—")</dd>
+                <dt>@L["Admin.Sessions.Column.Hall"]</dt>
+                <dd>@HallLabelDetail(_detailsTarget)</dd>
+                <dt>@L["Admin.Sessions.Column.StartUtc"]</dt>
+                <dd>@_detailsTarget.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+                <dt>@L["Admin.Sessions.Column.EndUtc"]</dt>
+                <dd>@_detailsTarget.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+                <dt>@L["Admin.Sessions.Field.CapacityOverride"]</dt>
+                <dd>@(_detailsTarget.CapacityOverride?.ToString() ?? L["Admin.Sessions.Field.CapacityInherits"])</dd>
+                <dt>@L["Admin.Sessions.Field.EffectiveCapacity"]</dt>
+                <dd>@_detailsTarget.EffectiveCapacity</dd>
+                <dt>@L["Admin.Sessions.Field.Speakers"]</dt>
+                <dd>
+                    @if (_detailsTarget.Speakers.Count == 0)
+                    {
+                        <span>—</span>
+                    }
+                    else
+                    {
+                        <ul class="simf-dl__list">
+                            @foreach (var s in _detailsTarget.Speakers)
+                            {
+                                <li>@s.Name (@s.NameArabic)</li>
+                            }
+                        </ul>
+                    }
+                </dd>
+                <dt>@L["Admin.Sessions.Column.Active"]</dt>
+                <dd>@(_detailsTarget.IsActive ? L["Admin.Sessions.Active.Yes"] : L["Admin.Sessions.Active.No"])</dd>
+                <dt>@L["Admin.Sessions.Column.Status"]</dt>
+                <dd>
+                    <SimfPill Variant="@StatusPillVariant(_detailsTarget.Status)">
+                        @StatusLabel(_detailsTarget.Status)
+                    </SimfPill>
+                </dd>
+                @if (_detailsTarget.PublishedAt is { } published)
+                {
+                    <dt>@L["Admin.Sessions.Lifecycle.PublishedAt"]</dt>
+                    <dd>@published.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+                }
+                <dt>@L["Admin.Sessions.Recording.Label"]</dt>
+                <dd>
+                    @if (_detailsTarget.HasRecording)
+                    {
+                        <span>@_detailsTarget.RecordingFileName (@FormatBytes(_detailsTarget.RecordingSizeBytes))</span>
+                    }
+                    else
+                    {
+                        <span>@L["Admin.Sessions.Recording.None"]</span>
+                    }
+                </dd>
+            </dl>
+
+            @* P3.2b — D-232: the Committee attaches/removes the recording here,
+               gated by Sessions.Publish (same permission as the lifecycle). *@
+            <AuthorizedAction Permission="@PermissionCatalog.Sessions.Publish">
+                <div class="simf-form">
+                    <label class="simf-field">
+                        <span class="simf-field__label">@L["Admin.Sessions.Recording.File"]</span>
+                        <input class="simf-field__input" type="file" id="session-recording-input"
+                               accept="video/*" disabled="@_recordingBusy" />
+                    </label>
+                    <div class="simf-form__actions">
+                        <SimfButton Type="button" Loading="_recordingBusy"
+                                    OnClick="UploadRecordingAsync">
+                            @L["Admin.Sessions.Recording.Upload"]
+                        </SimfButton>
+                        @if (_detailsTarget.HasRecording)
+                        {
+                            <SimfButton Type="button" Loading="_recordingBusy"
+                                        OnClick="DeleteRecordingAsync">
+                                @L["Admin.Sessions.Recording.Delete"]
+                            </SimfButton>
+                        }
+                    </div>
+                </div>
+            </AuthorizedAction>
+        </ChildContent>
+        <Footer>
+            @* P3.2 — D-231: the Committee drives the broadcast lifecycle here,
+               gated by Sessions.Publish (distinct from session edit). *@
+            <AuthorizedAction Permission="@PermissionCatalog.Sessions.Publish">
+                <div class="simf-form__actions">
+                    @foreach (var move in NextTransitions(_detailsTarget.Status))
+                    {
+                        <SimfButton Type="button" Disabled="_lifecycleBusy"
+                                    OnClick="@(() => SetStatusAsync(move.Target))">
+                            @L[move.LabelKey]
+                        </SimfButton>
+                    }
+                </div>
+            </AuthorizedAction>
+            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _detailsTarget = null)">
+                @L["Admin.Sessions.Details.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminSessionSummary> _page = new();
+    private bool _loading;
+    private Toast? _toast;
+
+    private bool _addOpen;
+    private AdminSessionDetail? _editTarget;
+    private AdminSessionDetail? _detailsTarget;
+    private bool _lifecycleBusy;
+    private bool _recordingBusy;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminSessionSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/sessions/list", _query);
+            if (envelope is { Success: true, Data: not null })
+            {
+                _page = envelope.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Sessions.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private Task OnAddAsync()
+    {
+        _addOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnAddSucceededAsync(AdminSessionDetail created)
+    {
+        _addOpen = false;
+        _toast = new Toast("success", string.Format(L["Admin.Sessions.Created"], created.Title));
+        await LoadAsync();
+    }
+
+    private async Task OnEditAsync(AdminSessionSummary row)
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<AdminSessionDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/sessions/{row.Id}");
+        if (envelope is { Success: true, Data: not null })
+        {
+            _editTarget = envelope.Data;
+        }
+        else
+        {
+            _toast = new Toast("error",
+                envelope?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.Sessions.LoadFailed"]);
+        }
+    }
+
+    private async Task OnEditSucceededAsync(AdminSessionDetail updated)
+    {
+        _editTarget = null;
+        _toast = new Toast("success", string.Format(L["Admin.Sessions.Updated"], updated.Title));
+        await LoadAsync();
+    }
+
+    private async Task OnDetailsAsync(AdminSessionSummary row)
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<AdminSessionDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/sessions/{row.Id}");
+        if (envelope is { Success: true, Data: not null })
+        {
+            _detailsTarget = envelope.Data;
+        }
+    }
+
+    private async Task OnDeactivateAsync(AdminSessionSummary row)
+    {
+        _toast = null;
+        var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+            "simfAccount.deleteJson", $"/account/api/admin/sessions/{row.Id}");
+        if (envelope is { Success: true })
+        {
+            _toast = new Toast("success",
+                string.Format(L["Admin.Sessions.Deactivated"], row.Title));
+            await LoadAsync();
+        }
+        else
+        {
+            _toast = new Toast("error",
+                envelope?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.Sessions.Fallback"]);
+        }
+    }
+
+    // P3.2 — D-231: the broadcast lifecycle. The Committee moves the session
+    // along Scheduled → Held → Recorded → Published (and the reverse adjacent
+    // steps); the backend enforces the legal moves, the UI just offers them.
+    // The resx keys are 1:1 with the enum names (Admin.Sessions.Status.<Name>),
+    // so derive the key — no switch + dead fallback to keep in sync. A missing
+    // key surfaces the raw key (normal resx-miss behaviour), not a silent mislabel.
+    private string StatusLabel(SessionStatus status) =>
+        L[$"Admin.Sessions.Status.{status}"];
+
+    private static string StatusPillVariant(SessionStatus status) => status switch
+    {
+        SessionStatus.Published => "on",
+        SessionStatus.Scheduled => "neutral",
+        _ => "admin",
+    };
+
+    private static IEnumerable<(SessionStatus Target, string LabelKey)> NextTransitions(
+        SessionStatus current) => current switch
+    {
+        SessionStatus.Scheduled =>
+            [(SessionStatus.Held, "Admin.Sessions.Lifecycle.MarkHeld")],
+        SessionStatus.Held =>
+            [(SessionStatus.Scheduled, "Admin.Sessions.Lifecycle.BackToScheduled"),
+             (SessionStatus.Recorded, "Admin.Sessions.Lifecycle.MarkRecorded")],
+        SessionStatus.Recorded =>
+            [(SessionStatus.Held, "Admin.Sessions.Lifecycle.BackToHeld"),
+             (SessionStatus.Published, "Admin.Sessions.Lifecycle.Publish")],
+        SessionStatus.Published =>
+            [(SessionStatus.Recorded, "Admin.Sessions.Lifecycle.Unpublish")],
+        _ => [],
+    };
+
+    private async Task SetStatusAsync(SessionStatus target)
+    {
+        if (_detailsTarget is null) { return; }
+        _lifecycleBusy = true;
+        _toast = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminSessionDetail>>(
+                "simfAccount.putJson",
+                $"/account/api/admin/sessions/{_detailsTarget.Id}/status",
+                new SetSessionStatusRequest { Status = target });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _detailsTarget = envelope.Data;
+                _toast = new Toast("success",
+                    string.Format(L["Admin.Sessions.Lifecycle.Changed"],
+                        StatusLabel(envelope.Data.Status)));
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Sessions.Fallback"]);
+            }
+        }
+        finally { _lifecycleBusy = false; }
+    }
+
+    // P3.2b — D-232: attach / remove the session recording. Upload streams the
+    // file through the hidden <input> via simfAccount.uploadFile; the returned
+    // detail refreshes the modal so HasRecording flips immediately.
+    private async Task UploadRecordingAsync()
+    {
+        if (_detailsTarget is null) { return; }
+        _recordingBusy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminSessionDetail>>(
+                "simfAccount.uploadFile",
+                $"/account/api/admin/sessions/{_detailsTarget.Id}/recording",
+                "session-recording-input");
+            if (env is { Success: true, Data: not null })
+            {
+                _detailsTarget = env.Data;
+                _toast = new Toast("success", L["Admin.Sessions.Recording.Uploaded"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Sessions.Fallback"]);
+            }
+        }
+        finally { _recordingBusy = false; }
+    }
+
+    private async Task DeleteRecordingAsync()
+    {
+        if (_detailsTarget is null) { return; }
+        _recordingBusy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminSessionDetail>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/sessions/{_detailsTarget.Id}/recording");
+            if (env is { Success: true, Data: not null })
+            {
+                _detailsTarget = env.Data;
+                _toast = new Toast("success", L["Admin.Sessions.Recording.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Sessions.Fallback"]);
+            }
+        }
+        finally { _recordingBusy = false; }
+    }
+
+    private static string FormatBytes(long? bytes)
+    {
+        if (bytes is not { } value) { return "—"; }
+        return value >= 1_048_576
+            ? $"{value / 1_048_576.0:0.#} MB"
+            : $"{value / 1024.0:0.#} KB";
+    }
+
+    private static string HallLabel(AdminSessionSummary row) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? row.HallNameArabic
+            : row.HallName;
+
+    private static string HallLabelDetail(AdminSessionDetail row) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? row.HallNameArabic
+            : row.HallName;
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Admin.Sessions.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Admin.Sessions.Pager.Page"], current, total);
+}

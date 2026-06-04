@@ -1,0 +1,194 @@
+@* D-166 (gap doc G4) — admin page for the two operations singletons:
+   the registration gate (PDF §2.3) and the archive visibility switch
+   (PDF §2.4). Both expose a single state row + a save button. *@
+@page "/admin/operations"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Operations.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Operations.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Operations.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <h2 class="simf-section-h2">@L["Admin.Operations.RegistrationGate.Heading"]</h2>
+        <p class="simf-section-desc">@L["Admin.Operations.RegistrationGate.Desc"]</p>
+
+        @if (_gate is null)
+        {
+            <p>@L["Admin.Operations.Loading"]</p>
+        }
+        else
+        {
+            <div class="simf-form__fields">
+                <SimfCheckbox @bind-Value="_gateIsOpen" Disabled="_busy">
+                    @L["Admin.Operations.RegistrationGate.IsOpen"]
+                </SimfCheckbox>
+                <SimfTextField Label="@L["Admin.Operations.RegistrationGate.AutoCloseUtc"]"
+                               Helper="@L["Admin.Operations.RegistrationGate.AutoCloseHint"]"
+                               Type="datetime-local"
+                               Value="@_gateAutoCloseInput"
+                               ValueChanged="@(v => _gateAutoCloseInput = v)"
+                               ValueExpression="@(() => _gateAutoCloseInput)"
+                               Disabled="_busy" />
+                <dl class="simf-dl">
+                    <dt>@L["Admin.Operations.RegistrationGate.LastChangedAt"]</dt>
+                    <dd>@_gate.LastChangedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+                </dl>
+            </div>
+            <div class="simf-form__actions">
+                <SimfButton Type="button" OnClick="SaveGateAsync"
+                            Loading="_busy"
+                            LoadingLabel="@L["Admin.Operations.Saving"]">
+                    @L["Admin.Operations.Save"]
+                </SimfButton>
+            </div>
+        }
+
+        <hr class="simf-divider" />
+
+        <h2 class="simf-section-h2">@L["Admin.Operations.Archive.Heading"]</h2>
+        <p class="simf-section-desc">@L["Admin.Operations.Archive.Desc"]</p>
+
+        @if (_archive is null)
+        {
+            <p>@L["Admin.Operations.Loading"]</p>
+        }
+        else
+        {
+            <div class="simf-form__fields">
+                <SimfCheckbox @bind-Value="_archiveIsVisible" Disabled="_busy">
+                    @L["Admin.Operations.Archive.IsVisible"]
+                </SimfCheckbox>
+                <dl class="simf-dl">
+                    <dt>@L["Admin.Operations.Archive.LastChangedAt"]</dt>
+                    <dd>@_archive.LastChangedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+                </dl>
+            </div>
+            <div class="simf-form__actions">
+                <SimfButton Type="button" OnClick="SaveArchiveAsync"
+                            Loading="_busy"
+                            LoadingLabel="@L["Admin.Operations.Saving"]">
+                    @L["Admin.Operations.Save"]
+                </SimfButton>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private RegistrationGateState? _gate;
+    private ArchiveVisibilityState? _archive;
+    private bool _gateIsOpen;
+    private string _gateAutoCloseInput = string.Empty;
+    private bool _archiveIsVisible;
+    private bool _busy;
+    private Toast? _toast;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            var gateEnv = await JS.InvokeAsync<ApiResult<RegistrationGateState>>(
+                "simfAccount.getJson", "/account/api/admin/registration-gate");
+            if (gateEnv is { Success: true, Data: not null })
+            {
+                _gate = gateEnv.Data;
+                _gateIsOpen = _gate.IsOpen;
+                _gateAutoCloseInput = _gate.AutoCloseUtc?.UtcDateTime
+                    .ToString("yyyy-MM-ddTHH:mm") ?? string.Empty;
+            }
+
+            var archiveEnv = await JS.InvokeAsync<ApiResult<ArchiveVisibilityState>>(
+                "simfAccount.getJson", "/account/api/admin/archive/visibility");
+            if (archiveEnv is { Success: true, Data: not null })
+            {
+                _archive = archiveEnv.Data;
+                _archiveIsVisible = _archive.IsVisible;
+            }
+        }
+        catch
+        {
+            _toast = new Toast("error", L["Admin.Operations.LoadFailed"]);
+        }
+    }
+
+    private async Task SaveGateAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            DateTimeOffset? autoClose = null;
+            if (!string.IsNullOrWhiteSpace(_gateAutoCloseInput))
+            {
+                if (!DateTime.TryParse(_gateAutoCloseInput, out var parsed))
+                {
+                    _toast = new Toast("error", L["Admin.Operations.RegistrationGate.AutoCloseInvalid"]);
+                    return;
+                }
+                autoClose = new DateTimeOffset(
+                    DateTime.SpecifyKind(parsed, DateTimeKind.Utc));
+            }
+            var env = await JS.InvokeAsync<ApiResult<RegistrationGateState>>(
+                "simfAccount.putJson", "/account/api/admin/registration-gate",
+                new UpdateRegistrationGateRequest
+                {
+                    IsOpen = _gateIsOpen,
+                    AutoCloseUtc = autoClose,
+                });
+            if (env is { Success: true, Data: not null })
+            {
+                _gate = env.Data;
+                _toast = new Toast("success", L["Admin.Operations.RegistrationGate.Saved"]);
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Operations.SaveFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task SaveArchiveAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<ArchiveVisibilityState>>(
+                "simfAccount.putJson", "/account/api/admin/archive/visibility",
+                new UpdateArchiveVisibilityRequest { IsVisible = _archiveIsVisible });
+            if (env is { Success: true, Data: not null })
+            {
+                _archive = env.Data;
+                _toast = new Toast("success", L["Admin.Operations.Archive.Saved"]);
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Operations.SaveFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+}

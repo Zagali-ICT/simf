@@ -1,0 +1,73 @@
+title: AI prompt content edit (base)
+id: ai-001-base-prompt-content-edit
+status: experimental
+description: >
+  Base rule — successful `AiPrompt.Updated` event where the prompt's
+  user-facing content actually changed (vs metadata-only edit; see
+  AI-004 for the metadata-only twin). Source: D-178 + D-179.
+references:
+  - https://attack.mitre.org/techniques/T1565/001/
+  - SIMF DECISIONS_LOG.md D-178, D-179, D-185
+tags:
+  - attack.impact
+  - attack.t1565.001
+author: SIMF security review
+date: 2026-05-30
+logsource:
+  product: simf
+  service: audit
+detection:
+  selection:
+    EventType: 'AiPrompt.Updated'
+    Outcome: 'Success'
+    Detail.contentChanged: true
+  condition: selection
+fields:
+  - ActorUserId
+  - Detail.promptId
+  - Detail.promptKey
+  - Detail.contentHashOld
+  - Detail.contentHashNew
+falsepositives:
+  - Single legitimate content tweak by an authorised editor. The base
+    rule on its own is informational; the correlation rule below is the
+    paging signal.
+level: informational
+---
+title: AI prompt tampering burst
+id: ai-001-prompt-tampering-burst
+status: experimental
+description: >
+  Detects an actor pushing content-changing edits across multiple
+  distinct prompts in minutes — the credential-theft / prompt-injection
+  bulk-tamper pattern. D-185 threshold tuned per security review.
+references:
+  - https://attack.mitre.org/techniques/T1565/001/
+  - SIMF DECISIONS_LOG.md D-178, D-179, D-185
+tags:
+  - attack.impact
+  - attack.t1565.001
+author: SIMF security review
+date: 2026-05-30
+correlation:
+  type: value_count
+  rules:
+    - ai-001-base-prompt-content-edit
+  group-by:
+    - ActorUserId
+  timespan: 10m
+  field: Detail.promptId
+  condition:
+    gte: 4
+falsepositives:
+  - Legitimate prompt-iteration session by an authorised content editor.
+    Allowlist via maintenance-window tag or a curator-role assertion.
+level: high
+notes: |
+  Skip cross-HMAC-version compares: only fire when both hashes start
+  with the same `v1:` / `v2:` prefix. Once a key rotation lands,
+  pin the rule's `validFrom` to the cutover timestamp.
+
+  Threshold (4 distinct promptIds / 10m) calibrated 2026-05-30 by
+  security review — see D-185. Re-baseline if the volume of legitimate
+  editorial sessions trips this rule more than once per release cycle.

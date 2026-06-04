@@ -1,0 +1,17 @@
+@* Control Panel — shown when a signed-in user reaches a route their role does
+   not permit (SIMF-CPD-001 section 7). *@
+@page "/not-permitted"
+@layout CpShellLayout
+@attribute [Authorize]
+@inject IStringLocalizer<Strings> L
+
+<PageTitle>@L["NotPermitted.Title"] · SIMF</PageTitle>
+
+<SimfPageHeader Title='@L["NotPermitted.Title"]' />
+
+<div class="simf-panel">
+    <p class="simf-panel__text">@L["NotPermitted.Text"]</p>
+    <p class="simf-panel__action">
+        <SimfLink Href="/">@L["NotPermitted.Back"]</SimfLink>
+    </p>
+</div>

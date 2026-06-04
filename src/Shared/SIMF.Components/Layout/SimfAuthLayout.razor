@@ -1,0 +1,22 @@
+@* SimfAuthLayout — the two-column authentication shell: a navy brand panel
+   beside the form area. It collapses to a brand band above the form on narrow
+   viewports. Layout flips automatically for RTL through CSS logical
+   properties; the host sets dir / lang on the document. *@
+@namespace SIMF.Components.Layout
+
+<div class="simf-auth">
+    <aside class="simf-auth__brand">
+        @Brand
+    </aside>
+    <main class="simf-auth__main">
+        @ChildContent
+    </main>
+</div>
+
+@code {
+    /// <summary>The brand-panel content — normally a <see cref="SimfBrandPanel" />.</summary>
+    [Parameter] public RenderFragment? Brand { get; set; }
+
+    /// <summary>The form area content — normally a <see cref="SimfAuthCard" />.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

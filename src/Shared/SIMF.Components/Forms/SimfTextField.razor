@@ -1,0 +1,62 @@
+@* SimfTextField — a labelled single-line input bound to the form's EditContext.
+   Renders its own validation message (styled), an optional leading icon and
+   optional helper text. *@
+@inherits SimfFieldBase
+
+<div class="simf-field @(HasError ? "simf-field--error" : null) @(Disabled ? "simf-field--disabled" : null)">
+    <label class="simf-field__label" for="@FieldElementId">@Label</label>
+    <div class="simf-field__control">
+        @if (!string.IsNullOrEmpty(Icon))
+        {
+            <SimfIcon Name="@Icon" Class="simf-field__icon" />
+        }
+        <InputText id="@FieldElementId" class="simf-field__input"
+                   Value="@Value" ValueChanged="@ValueChanged" ValueExpression="@ValueExpression"
+                   type="@Type" inputmode="@InputMode" autocomplete="@Autocomplete"
+                   placeholder="@Placeholder" disabled="@Disabled"
+                   maxlength="@(MaxLength?.ToString())"
+                   aria-invalid="@(HasError ? "true" : null)"
+                   aria-describedby="@DescribedBy" />
+    </div>
+    @if (HasError)
+    {
+        <div class="simf-field__error" id="@ErrorElementId" role="alert">
+            <SimfIcon Name="alert" Size="14" Class="simf-field__error-icon" />
+            <span>@ErrorMessage</span>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Helper))
+    {
+        <div class="simf-field__helper" id="@HelperElementId">@Helper</div>
+    }
+</div>
+
+@code {
+    /// <summary>The HTML input type — <c>text</c>, <c>email</c>, etc.</summary>
+    [Parameter] public string Type { get; set; } = "text";
+
+    /// <summary>An optional leading icon name (see <see cref="SimfIcon" />).</summary>
+    [Parameter] public string? Icon { get; set; }
+
+    /// <summary>Optional helper text shown below the field when there is no error.</summary>
+    [Parameter] public string? Helper { get; set; }
+
+    /// <summary>An optional placeholder. Labels do the work; placeholders stay rare.</summary>
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>The HTML <c>autocomplete</c> hint.</summary>
+    [Parameter] public string? Autocomplete { get; set; }
+
+    /// <summary>The HTML <c>inputmode</c> hint.</summary>
+    [Parameter] public string? InputMode { get; set; }
+
+    /// <summary>The maxlength attribute — the browser stops the user typing
+    /// once they hit this many characters. Defence-in-depth alongside the
+    /// server-side FluentValidation rule.</summary>
+    [Parameter] public int? MaxLength { get; set; }
+
+    private string? DescribedBy =>
+        HasError ? ErrorElementId
+        : !string.IsNullOrEmpty(Helper) ? HelperElementId
+        : null;
+}

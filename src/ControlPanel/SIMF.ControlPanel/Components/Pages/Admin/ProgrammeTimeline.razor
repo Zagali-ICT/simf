@@ -1,0 +1,158 @@
+@* D-202 — read-only run-of-show timeline. The whole programme on one
+   screen: sessions grouped by the local calendar day of their start time,
+   each day a section, each row a session (time window, hall, code, title).
+   The editable grid lives at /admin/sessions (SessionsList); this is the
+   at-a-glance overview only — no create / edit / delete. Reads the existing
+   POST /account/api/admin/sessions/list BFF route (GridQuery Top=500). *@
+@page "/admin/programme/timeline"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.ProgrammeTimeline.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.ProgrammeTimeline.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.ProgrammeTimeline.Title"]"
+            Subtitle="@L["Admin.ProgrammeTimeline.Subtitle"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        @if (_loading)
+        {
+            <p>@L["Admin.ProgrammeTimeline.Loading"]</p>
+        }
+        else if (_days.Count == 0)
+        {
+            <SimfEmptyState Title="@L["Admin.ProgrammeTimeline.None"]" />
+        }
+        else
+        {
+            <div class="simf-form__actions">
+                <SimfStatCard Title="@L["Admin.ProgrammeTimeline.Stat.Days"]"
+                              Value="@_days.Count.ToString(CultureInfo.InvariantCulture)" />
+                <SimfStatCard Title="@L["Admin.ProgrammeTimeline.Stat.Sessions"]"
+                              Value="@_total.ToString(CultureInfo.InvariantCulture)" />
+            </div>
+
+            <label class="simf-field simf-field--inline">
+                <span class="simf-field__label">@L["Admin.ProgrammeTimeline.Filter.Day"]</span>
+                <select class="simf-field__input" value="@_selectedDayKey" @onchange="OnDayChanged">
+                    <option value="">@L["Admin.ProgrammeTimeline.Filter.AllDays"]</option>
+                    @foreach (var day in _days)
+                    {
+                        <option value="@day.Key">@day.Heading</option>
+                    }
+                </select>
+            </label>
+
+            @foreach (var day in VisibleDays())
+            {
+                <h2>@day.Heading</h2>
+                <table class="simf-table">
+                    <thead>
+                        <tr>
+                            <th>@L["Admin.ProgrammeTimeline.Col.Time"]</th>
+                            <th>@L["Admin.ProgrammeTimeline.Col.Code"]</th>
+                            <th>@L["Admin.ProgrammeTimeline.Col.Title"]</th>
+                            <th>@L["Admin.ProgrammeTimeline.Col.Hall"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in day.Sessions)
+                        {
+                            <tr>
+                                <td>@TimeWindow(s)</td>
+                                <td>@s.Code</td>
+                                <td>@SessionTitle(s)</td>
+                                <td>@HallLabel(s)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <p class="simf-text-muted">
+                    @(string.Format(L["Admin.ProgrammeTimeline.Day.Count"], day.Sessions.Count))
+                </p>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private sealed record DayGroup(
+        string Key, string Heading, IReadOnlyList<AdminSessionSummary> Sessions);
+
+    private bool _loading;
+    private Toast? _toast;
+    private int _total;
+    private List<DayGroup> _days = new();
+    private string _selectedDayKey = string.Empty;
+
+    private static bool IsArabic =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminSessionSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/sessions/list",
+                new GridQuery { Top = 500 });
+            if (env is { Success: true, Data: not null })
+            {
+                BuildDays(env.Data.Items);
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.ProgrammeTimeline.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    // Group by the local calendar day of the start time, days ascending,
+    // sessions within a day ascending by start time. StartUtc is a
+    // DateTimeOffset in UTC; .LocalDateTime projects it onto the operator's
+    // wall clock so the run-of-show reads in local event time.
+    private void BuildDays(IReadOnlyList<AdminSessionSummary> items)
+    {
+        _total = items.Count;
+        _days = items
+            .OrderBy(s => s.StartUtc)
+            .GroupBy(s => s.StartUtc.LocalDateTime.Date)
+            .OrderBy(g => g.Key)
+            .Select(g => new DayGroup(
+                g.Key.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                g.Key.ToString("dddd, d MMMM yyyy", CultureInfo.CurrentUICulture),
+                g.ToList()))
+            .ToList();
+    }
+
+    private IEnumerable<DayGroup> VisibleDays() =>
+        string.IsNullOrEmpty(_selectedDayKey)
+            ? _days
+            : _days.Where(d => d.Key == _selectedDayKey);
+
+    private void OnDayChanged(ChangeEventArgs e) =>
+        _selectedDayKey = e.Value?.ToString() ?? string.Empty;
+
+    private static string TimeWindow(AdminSessionSummary s) =>
+        $"{s.StartUtc.LocalDateTime:HH:mm} – {s.EndUtc.LocalDateTime:HH:mm}";
+
+    private static string SessionTitle(AdminSessionSummary s) =>
+        IsArabic ? s.TitleArabic : s.Title;
+
+    private static string HallLabel(AdminSessionSummary s) =>
+        IsArabic ? s.HallNameArabic : s.HallName;
+}

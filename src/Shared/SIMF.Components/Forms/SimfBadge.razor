@@ -1,0 +1,28 @@
+@* SimfBadge — a small count / dot indicator (decision D-044). Thin sibling
+   of SimfPill: SimfPill is a status chip (text), SimfBadge is a number or
+   dot. Used in the side nav for unread counts and on the grid toolbar for
+   the selected-rows count. *@
+@namespace SIMF.Components.Forms
+
+<span class="simf-badge simf-badge--@Variant @(Dot ? "simf-badge--dot" : null)"
+      aria-label="@AriaLabel">
+    @if (!Dot)
+    {
+        @ChildContent
+    }
+</span>
+
+@code {
+    /// <summary>The visual variant — <c>neutral</c>, <c>info</c>, <c>success</c>,
+    /// <c>warning</c>, <c>danger</c>.</summary>
+    [Parameter] public string Variant { get; set; } = "neutral";
+
+    /// <summary>When true, renders as a small dot — no text.</summary>
+    [Parameter] public bool Dot { get; set; }
+
+    /// <summary>The accessible label — required when <see cref="Dot"/> is true.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    /// <summary>The badge content — usually a small number.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

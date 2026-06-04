@@ -1,0 +1,553 @@
+# Deployment and Operations Document
+
+| Field | Value |
+|-------|-------|
+| Document ID | SIMF-OPS-001 |
+| Title | Deployment and Operations Document |
+| Version | 1.1 |
+| Status | Approved |
+| Classification | Confidential — to be confirmed by the owner |
+| Prepared by | Engineering & Architecture Team, STARTIME |
+| Owner | DevOps Engineer |
+| Approver | Project Owner (MoD / RSNF representative) |
+| Date issued | 2026-05-21 |
+| Related documents | SIMF-SAD-001, SIMF-SES-001, SIMF-PGP-001, SIMF-MAA-001, SIMF-TST-001 |
+
+### Revision history
+
+| Version | Date | Author | Summary of change |
+|---------|------|--------|-------------------|
+| 1.0 | 2026-05-21 | Engineering & Architecture Team | First issue. |
+| 1.1 | 2026-05-21 | Engineering & Architecture Team | Architecture-review amendment (see Amendment A): the §11 load test rewritten to peak-shaped targets; the production scale-out cross-referenced; connection-pool sizing; a real readiness `/health`. |
+
+---
+
+## 1. Purpose
+
+This document describes how SIMF is deployed and run: the environments, the
+pipeline, how a release reaches production, how the system is configured,
+backed up and monitored, and the checklist a deployment follows. It is the
+reference for the DevOps engineer and for anyone operating the system.
+
+## 2. Scope
+
+The document covers the deployment topology, the four environments, the CI/CD
+pipeline, build and release, configuration and secrets, database migrations,
+the mobile-app release, monitoring and logging, backup and rollback,
+performance testing, the security clearance gate, and the deployment checklist.
+
+It does not cover the test strategy in depth — that is SIMF-TST-001. It does
+not cover the architecture — that is SIMF-SAD-001.
+
+## 3. Deployment topology
+
+SIMF is deployed **on-premises** on Windows Server 2022, hosted with a local
+Saudi provider through STC, behind a reverse proxy that terminates TLS
+(SIMF-SAD-001 section 10).
+
+```mermaid
+flowchart TB
+    NET[Internet] --> RP[Reverse proxy / TLS]
+    RP --> WEB[Website host]
+    RP --> CP[Control Panel host]
+    RP --> API[API + SignalR host]
+    API --> DB[(SQL Server 2022)]
+    APP[Mobile app] --> RP
+```
+
+The backend is one deployable application (the modular monolith of
+SIMF-SAD-001). The website and the Control Panel are Blazor applications. The
+mobile app reaches the same API through the reverse proxy.
+
+## 4. Environments
+
+Four environments, with promotion gated by tests (SIMF-PGP-001, SIMF-SES-001).
+
+| Environment | Purpose | Notes |
+|-------------|---------|-------|
+| Development | Day-to-day development | Stood up first; the team's working environment |
+| Test | Integrated testing and QA | The continuous-testing environment |
+| Staging | The live rehearsal | Mirrors production; the live environment is ready two full weeks before publication |
+| Production | The live system | On-premises, behind the reverse proxy |
+
+Each environment has its own configuration (section 6) and its own database. A
+change is promoted Development → Test → Staging → Production; a promotion does
+not skip an environment, and a promotion gate that fails its tests does not
+proceed.
+
+## 5. CI/CD pipeline
+
+The pipeline runs in Azure DevOps — Repos, Boards, Pipelines and Test Plans.
+
+```
+Commit ──▶ Build ──▶ Test ──▶ Deploy ──▶ Monitor
+```
+
+| Stage | What happens |
+|-------|--------------|
+| Commit | A push to a feature branch; branch policy requires a reviewed pull request to merge to `main` (SIMF-SES-001 section 9) |
+| Build | Restore, compile and package. The build runs in Release and fails on any warning (SIMF-SES-001 section 13) |
+| Test | The unit and integration tests run; a failing test stops the pipeline |
+| Deploy | The package is deployed to the next environment; promotion to Staging and Production is gated by the tests passing |
+| Monitor | Logs, metrics and alerts are watched after a deployment |
+
+The pipeline builds the backend, the website and the Control Panel. The Flutter
+app has its own build and store-release path (section 8).
+
+## 6. Configuration and secrets
+
+Configuration follows SIMF-SES-001 section 4.4.
+
+- `appsettings.json` holds the non-sensitive shared settings; it carries no
+  secret.
+- `appsettings.Development.json` and `appsettings.E2E.json` hold the
+  development and end-to-end overrides.
+- **Production configuration carries no committed file.** The production
+  overrides and every secret — connection strings, the JWT signing key, the
+  channel-provider and AI-provider keys — are applied as Machine-scope
+  environment variables, set by a per-service `set-env-<service>.ps1` script.
+- The `set-env-<service>.ps1` committed to the repository is a placeholder
+  template with empty values; the real secret values are never committed.
+- Variables use the ASP.NET Core double-underscore convention
+  (`ConnectionStrings__AppData`).
+
+## 7. Database and migrations
+
+- The database is SQL Server 2022; the schema is EF Core code-first.
+- A migration is generated, **read and reviewed as code**, and committed with
+  the change that needs it (SIMF-SES-001 section 5.4).
+- A deployment applies the pending migrations to the target environment's
+  database as part of the deploy stage, before the new application version
+  serves traffic.
+- The SQL Server edition is confirmed with the host (SIMF-RDR-001 D8); the
+  schema does not depend on Enterprise-only features unless that is confirmed.
+
+## 8. Mobile app release
+
+- The Flutter app is built for Android and iOS and released to Google Play and
+  the Apple App Store.
+- Build configuration is separated by environment so the app points at the
+  right API (SIMF-MAA-001 section 13).
+- The store accounts, the signing identities and the certificates are prepared
+  **early**, because store review — Apple's in particular — is on the critical
+  path (SIMF-PGP-001 section 9).
+- Signing material and store credentials are configuration secrets; they are
+  not committed.
+
+## 9. Monitoring, logging and health
+
+- The API exposes a `/health` endpoint; the reverse proxy and the monitoring
+  use it to confirm the system is up.
+- Logging is through Serilog, structured, collected centrally (SIMF-SAD-001
+  section 11). The audit and security events feed the operation log and the
+  monitoring.
+- Metrics and alerts are watched after every deployment and through the event;
+  the three forum days are the window that matters most.
+
+## 10. Backup and rollback
+
+- The database and the application are backed up on a schedule.
+- The **last known-good published build** is retained, so a release can be
+  rolled back to it (SIMF-SES-001 section 10, the CLAUDE.md deployment rules).
+- A rollback restores the previous application version and, where a migration
+  must be reversed, follows the reverse migration; a destructive database
+  rollback is done only with explicit approval.
+
+## 11. Performance and load testing
+
+Before go-live the system is tested under load, per the technical requirements:
+
+- a **load test** that adds a new registered user roughly every 30 seconds,
+- a **traffic test** under real load before the launch, to confirm the system
+  is fit before it is switched on.
+
+The test environment is stood up from day one so this testing has somewhere to
+run well ahead of the event (SIMF-PGP-001).
+
+## 12. Security clearance before go-live
+
+The website and the app are not published until the security clearances are in
+hand (SIMF-CON-001 section 10.3, SIMF-SES-001 section 12):
+
+- a secure-code review by the MoD cyber centre before the code goes for
+  penetration testing,
+- penetration testing and a vulnerability assessment,
+- the security approval from the authorities and the NCA-accredited firms.
+
+Go-live does not proceed until these clear.
+
+## 13. The deployment checklist
+
+Every production deployment follows this checklist (the CLAUDE.md deployment
+rules):
+
+1. **Build** — a clean Release build, zero warnings.
+2. **Configuration** — the target environment's settings and secrets are in
+   place via the environment variables (section 6).
+3. **Migration** — the pending database migrations are applied and confirmed.
+4. **Health** — the `/health` endpoint reports healthy.
+5. **Smoke test** — the core paths are exercised — sign-in, a registration, the
+   Control Panel — and pass.
+6. **Monitoring** — logs, metrics and alerts are watched after the release.
+
+A deployment that fails any step does not proceed; it is rolled back
+(section 10).
+
+## 14. Roles and responsibilities
+
+- The **DevOps Engineer** owns the pipeline, the environments and the
+  deployments, and this document.
+- The **Solution Architect** approves a change to the topology or the pipeline.
+- The **QA Lead** owns the test gates the pipeline enforces (SIMF-TST-001).
+- The **Project Owner** approves a production release and go-live.
+
+## 15. Open items
+
+| ID | Item | Affects |
+|----|------|---------|
+| OI-1 | Confirm the host's specifics with STC — capacity, the reverse-proxy setup, the backup destination | Sections 3, 10 |
+| OI-2 | Confirm the SQL Server 2022 edition and licence (SIMF-RDR-001 D8) | Section 7 |
+| OI-3 | Confirm the monitoring and alerting tooling | Section 9 |
+| OI-4 | Confirm the backup schedule and the retention periods with the owner | Section 10 |
+| OI-5 | Confirm document classification with the owner | Control block |
+
+---
+
+## Amendment A — Architecture review (2026-05-21)
+
+The 150,000-user scalability review of 2026-05-21 amends this document.
+
+### A.1 Performance and load testing — rewrites §11
+The §11 load test is replaced. The "one new user every 30 seconds" figure is
+retired as a target — it tests the average, not the peak. The performance test
+uses peak-shaped scenarios, run on a Staging environment matching the intended
+production topology, each with pass/fail thresholds (p95 latency, error rate,
+connection-success rate):
+
+1. **Registration surge** — 30–50 sign-ups/minute sustained for an hour, with
+   burst spikes, the full flow including the email-code send.
+2. **Live-session concurrency** — ramp SignalR to the target concurrent
+   connection count for the busiest session, with a representative
+   question/comment rate; measure fan-out latency.
+3. **Venue-entry scan burst** — the morning rate, thousands of `VenueEntry`
+   writes in 30–60 minutes, plus concurrent hall-arrival scans.
+4. **GPS-presence write load** — the chosen device count × reporting interval,
+   sustained.
+5. **Notification fan-out** — one notification to tens of thousands of
+   recipients; measure time-to-last-delivery and database impact.
+6. **Mixed steady state** — all of the above together, as a real forum morning.
+
+### A.2 Topology — amends §3
+The §3 single-server topology is the **development and test** topology. The
+**event-day production topology** — a multi-instance API tier, a SignalR
+backplane and SQL Server high availability — is the deferred scale-out decision
+in SIMF-SAD-001 Amendment A.3, settled with the host (STC) closer to the event,
+with the reverse-proxy WebSocket connection capacity confirmed then.
+
+### A.3 Database connections — amends §6 and §7
+Each connection string sets an explicit `Max Pool Size`, sized against the SQL
+Server capacity and the node count. EF Core is async throughout, with a command
+timeout and `EnableRetryOnFailure` for transient SQL errors. The database is
+**SQL Server 2022 Standard edition** (decision O-3).
+
+### A.4 Readiness health check — amends §9
+`/health` is a real **readiness** check — it confirms the database is reachable
+and the migrations are applied — so the reverse proxy / load balancer pulls an
+unhealthy instance automatically. It is not a static 200.
+
+---
+
+## Amendment B — On-prem release runbook (D-193, 2026-05-30)
+
+This amendment is the operational consolidation of every deployment-time
+decision recorded across the DECISIONS_LOG since the Sprint-1 Login API
+ship (D-001 → D-191). It expands the §13 six-bullet checklist into a
+full release runbook covering the configuration matrix, migration
+order, secret generation, rollback plan, post-deploy smoke,
+and NCA security pre-flight.
+
+### B.1 Complete configuration matrix
+
+Every key the API reads at startup, the section that owns it, the
+required-vs-optional status, and what happens when missing. Configuration
+follows §6 (`appsettings.json` for non-secret defaults; environment
+variables for the secrets, double-underscore convention). For an
+on-prem deploy, the per-service `set-env-<service>.ps1` script must
+populate every row marked **Required**.
+
+| Section | Key | Required? | What it controls | Failure mode if missing |
+|---------|-----|-----------|------------------|-------------------------|
+| ConnectionStrings | `SimfIdentityDb` | **Required** | SQL Server connection for Identity DB (Users, RefreshTokens, DeviceKeys, OperationLog) | Startup throws on first DbContext resolve |
+| ConnectionStrings | `SimfAppDb` | **Required** | SQL Server connection for App DB (UserProfiles, ProfileTypes, AiPrompts, AiPromptHistory, Sessions, Gates, MeetingRequests, etc.) | Startup throws |
+| Jwt | `Issuer` | Optional (default `SIMF`) | JWT `iss` claim | Default OK |
+| Jwt | `Audience` | Optional (default `SIMF`) | JWT `aud` claim | Default OK |
+| Jwt | `SigningKey` | **Required** | HS256 signing key — generate with `openssl rand -base64 48` | Token issuance throws; SignIn 500s on every call |
+| Jwt | `AccessTokenMinutes` | Optional (default 30) | Access-token lifetime | Default OK |
+| Email | `Host` | **Required** | SMTP host for code/notification email | Email enqueue throws; sign-up loops in EmailVerified state |
+| Email | `Port` | Optional (default 587) | SMTP port | Default OK |
+| Email | `User` / `Password` | **Required** | SMTP auth | Email enqueue throws |
+| Email | `FromAddress` / `FromName` | Optional | Envelope From | Defaults OK |
+| Email | `FailureAlertRecipients` | Optional | Comma-separated emails for the email-enqueue-failure alert (H10) | Empty = no out-of-band alert |
+| SuperAdmin | `Email` | **Required** | The bootstrap admin email | IdentitySeeder skips super-admin creation |
+| SuperAdmin | `TempPassword` | **Required** | The bootstrap admin password — **MUST be rotated post-first-login** | Seed skipped |
+| SuperAdmin | `TotpSecret` | **Required** | TOTP secret for the bootstrap admin's MFA | Seed skipped |
+| ReverseProxy | `KnownProxies` | **Required for prod** | IPv4/v6 list of trusted reverse-proxy hops for `X-Forwarded-For` | Without it `RequireRateLimiting` keys on the proxy IP — every visitor shares one bucket |
+| RateLimit | `PermitLimit` / `WindowSeconds` | Optional (default 20 / 60s) | Per-IP `auth` bucket | Defaults OK; tighten on a public-facing deploy |
+| RateLimit | `EmailPermitLimit` / `EmailWindowSeconds` | Optional (default 5 / 60s) | Per-email bucket (H7 — D-062) | Defaults OK |
+| RateLimit | `GlobalPermitLimit` / `GlobalWindowSeconds` | Optional (default 600 / 60s) | Top-level safety cap | Defaults OK |
+| RateLimit | `AiTestPermitLimit` / `AiTestWindowSeconds` | Optional (default 20 / 3600s) | Per-admin AI dry-run quota (D-179 + D-189) | Defaults OK |
+| Storage | `AvatarBase` | **Required** | Absolute path for the avatar filesystem store (D-039) | Avatar upload throws |
+| Storage | `UserIdDocumentBase` | **Required** | Absolute path for encrypted ID-image storage (D-046 b; renamed P8) | ID-image upload throws |
+| Storage | `UserIdDocumentEncryptionKey` | **Required** | Base64-encoded 32-byte AES-GCM key — generate with `openssl rand -base64 32` | ID-image upload throws on every call (rejected at write time) |
+| Storage | `LogDirectory` | Optional (default `logs`) | Serilog file-sink directory | Default OK |
+| Ai | `DefaultProvider` | Optional (default `Echo`) | Provider override when a prompt has Echo | Default OK; production should set to `OpenAi` |
+| Ai | `OpenAi:ApiKey` | **Required if any prompt uses OpenAi** | OpenAI / Anthropic / Echo provider API key | First OpenAi-prompt invocation throws 502 |
+| Ai | `OpenAi:BaseUrl` | Optional (default `https://api.openai.com/v1`) | Provider base URL — point at an internal proxy if needed | Default OK |
+| Ai | `OpenAi:DefaultModel` | Optional (default `gpt-4o-mini`) | Fallback model when a prompt omits its own Model | Default OK |
+| Ai | `PromptHash:Secret` | **Required for prod** | HMAC key for the D-181 prompt-content drift hashes — generate with `openssl rand -base64 32` | Falls back to a deterministic per-process key + logs a startup warning. **`AiAuditDetail.IsHmacKeyDevFallback` becomes `true`; the hosting layer must refuse to start in prod** |
+| Serilog | `MinimumLevel` etc. | Optional | Log levels per source | Defaults OK |
+
+### B.2 Migration order — App before Identity
+
+Per D-187 review-pass (security H-3): `Program.cs` MUST run
+`SimfAppDbContext.MigrateAsync()` **before** `SimfIdentityDbContext.MigrateAsync()`.
+The App migration is forward-compatible with a pre-D-186 Identity DB
+(it can run against legacy `AspNetUsers.UserType='Other'` rows
+unchanged); the Identity migration is NOT forward-compatible with a
+pre-D-186 App DB (Other users folded to Visitor would orphan against
+ProfileTypes still labelled UserType='Other'). The startup code
+enforces this order; do not reverse it.
+
+Deploy-time verification: after `dotnet ef database update` (or the
+in-process MigrateAsync), confirm both contexts' `__EFMigrationsHistory`
+tables include the latest migration ids. Mismatched contexts is the
+single canonical sign of a partial-failure recovery scenario — drop
+the in-process API instance, re-run migrations, then restart.
+
+### B.3 Secret generation cheatsheet
+
+Generate the production secrets ONCE per environment; vault them
+(Azure Key Vault, AWS Secrets Manager, HashiCorp Vault) and inject
+via the env-var script. NEVER commit values.
+
+```bash
+# Jwt:SigningKey (≥384-bit HS256 key)
+openssl rand -base64 48
+
+# Storage:UserIdDocumentEncryptionKey (32-byte AES-GCM key, base64)
+openssl rand -base64 32
+
+# Ai:PromptHash:Secret (≥32-byte ASCII or base64 HMAC key)
+openssl rand -base64 32
+
+# SuperAdmin:TotpSecret (160-bit, base32 lowercased + space-grouped)
+openssl rand -base64 20 | base32 | tr 'A-Z' 'a-z' | sed 's/.\{4\}/& /g'
+```
+
+### B.4 HMAC rotation runbook (D-185 + D-188)
+
+When `Ai:PromptHash:Secret` rotates, the historical `contentHashOld` /
+`contentHashNew` values stored in the AiPrompt.Updated audit rows are
+no longer comparable against post-rotation hashes. The drift hashes
+carry a `v1:` / `v2:` prefix so SOC rules can detect cross-version
+compares (per the `docs/soc/siem-rules/README.md` HMAC rotation
+playbook).
+
+Procedure:
+
+1. Generate the new key (`openssl rand -base64 32`).
+2. Stand up the new key in the secrets store alongside the old one.
+3. Bump the version prefix in `AiAuditDetail.PromptContentHash` from
+   `v1:` to `v2:` (code change — coordinate with a regular release).
+4. Restart the API with the new env var. New prompt updates emit
+   `v2:` hashes from this point.
+5. SOC rules AI-001 / AI-004 / AI-008: pin `validFrom` to the
+   cutover UTC timestamp on the new rule version that compares
+   `v2:` hashes; keep the old `v1:` rule alive through the audit
+   retention window so historical alerts still replay.
+6. After audit retention rolls over (typically 90 days), delete the
+   `v1:` key from the secrets store and remove the legacy rule.
+
+The `AiPromptHistory` table (D-188) is unaffected — its snapshots
+already carry the version-prefixed hash, so post-rotation recovery
+of a pre-rotation prompt-text still works via the snapshot.
+
+### B.5 Rollback playbook
+
+The last known-good published folder is preserved per CLAUDE.md §10.
+Rollback is the canonical recovery path; database migrations are
+forward-only in the freeze-baseline contract, but every migration
+since D-110 has a working `Down` (D-186 migrations are best-effort
+on `Down` per their inline comments — sufficient for the emergency
+pre-deploy window only).
+
+Procedure for a failed deploy:
+
+1. **Detect** — `/health` returns 503 OR the post-deploy smoke
+   (§B.7) fails on the first canary call OR Serilog emits any
+   error at `Fatal` severity within 60s of startup.
+2. **Halt traffic** — pull the new instance from the reverse-proxy
+   pool (mark unhealthy / set its weight to 0).
+3. **Restore the binary** — `xcopy` the last-known-good published
+   folder over the deploy target; start the previous version's
+   service.
+4. **Schema rollback** — usually unnecessary. The Sprint-1 baseline
+   migrations are additive; D-186 + D-188 add columns / tables that
+   pre-D-186 / D-188 code ignores. If the rollback target predates
+   a destructive migration (extremely rare; flag in the deploy
+   plan), run `dotnet ef database update <previousMigrationId>`
+   against both contexts in reverse order (Identity first, App
+   second — opposite of the forward order).
+5. **Verify** — `/health` returns 200, smoke (§B.7) passes,
+   reverse-proxy weight back to normal.
+6. **Post-mortem** — open the incident; do not redeploy without a
+   root-cause fix.
+
+### B.6 Initial admin password rotation
+
+After the first successful deploy, the SuperAdmin bootstrap account
+(seeded by `IdentitySeeder` from `SuperAdmin:TempPassword`) is the
+single canonical breakable identity. Per SES-001 + D-073 hardening:
+
+1. Sign into the CP as the super-admin with the bootstrap password.
+2. Change the password via `/account/change-password` (enforces the
+   D-061 policy — ≥12 chars, mixed-case + digit + symbol).
+3. Re-enrol TOTP via `/account/totp/setup` (generates a NEW secret;
+   the seed TotpSecret stops working).
+4. Rotate `SuperAdmin:TempPassword` and `SuperAdmin:TotpSecret` in
+   the env file to NEW random throwaway values — the seeder is
+   idempotent and won't overwrite the now-rotated DB row, but
+   leaving the original values in the env file means "anyone with
+   prod-env-read access knows the original credentials."
+
+This step is the gate between deploy-complete and operationally-secure.
+A deploy that lands without §B.6 is exposed.
+
+### B.7 Post-deploy smoke test
+
+The §13 smoke step ("the core paths are exercised — sign-in, a
+registration, the Control Panel — and pass") is expanded into a
+deterministic 8-call sequence the on-call engineer runs against the
+new version. Every call's expected response is precise; a deviation
+is a deploy fail.
+
+```bash
+# 1. Liveness — the API process is up.
+curl -fsS https://api.simf.example/health
+# Expect: HTTP 200, body includes "status":"Healthy"
+
+# 2. Anonymous sign-up — D-072 P0 path; verifies email enqueue works.
+curl -fsS -X POST https://api.simf.example/api/v1/auth/sign-up \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"smoke-'$(date +%s)'@simf.example","password":"Smoke123!aA"}'
+# Expect: 200, ApiResult.Success=true. Then check the inbox for the
+# email — if it doesn't arrive within 60s, the SMTP path is broken.
+
+# 3. Super-admin sign-in — verifies the seeder + Identity DB.
+curl -fsS -X POST https://api.simf.example/api/v1/auth/sign-in \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"<super-admin>","password":"<password>","audience":"Cp"}'
+# Expect: 200, second-factor challenge OR tokens (depending on TOTP enrol).
+
+# 4. Admin list-visitors — verifies the App DB connection + EF query path.
+curl -fsS -X POST https://api.simf.example/api/v1/admin/visitors/list \
+    -H "Authorization: Bearer <token>" \
+    -H 'Content-Type: application/json' \
+    -d '{"top":1}'
+# Expect: 200, ApiResult<GridPage<AdminUserSummary>>.
+
+# 5. Public ProfileType picker — verifies the D-190 cross-context query.
+curl -fsS https://api.simf.example/api/v1/account/profile-types \
+    -H "Authorization: Bearer <token>"
+# Expect: 200, items array (length depends on seed).
+
+# 6. Audit-log write — verify by checking the OperationLog table after
+# step 4 — it MUST contain an `Admin.MeetingRequestsListed`-shaped row
+# (or whatever the most recent admin action produced).
+sqlcmd -S <host> -d <SimfAppDb> -Q "SELECT TOP 5 EventType, TimestampUtc FROM OperationLog ORDER BY TimestampUtc DESC"
+
+# 7. Rate-limit fires — verify the bucket bounds.
+for i in 1 2 3 4 5; do
+    curl -fsS -X POST https://api.simf.example/api/v1/auth/sign-in \
+        -H 'Content-Type: application/json' \
+        -d '{"email":"nonexistent-'$(date +%s)'@simf.example","password":"x"}'
+done
+curl -i -X POST https://api.simf.example/api/v1/auth/sign-in \
+    -H 'Content-Type: application/json' \
+    -d '{"email":"nonexistent-'$(date +%s)'@simf.example","password":"x"}'
+# Expect: 6th call returns 429 (per-email bucket exhausted) or 401
+# (auth-fail before rate-limit) — anything but 200 is acceptable.
+
+# 8. Control Panel loads — manual.
+# Open https://cp.simf.example in a browser, confirm the login page
+# renders Arabic + English, sign in, confirm the dashboard renders.
+```
+
+A failed smoke triggers §B.5 rollback within 5 minutes of the deploy
+go-live.
+
+### B.8 NCA security pre-flight
+
+SIMF carries mandatory Saudi NCA (National Cybersecurity Authority)
+compliance per the programme constraints. The following checks MUST
+pass before production go-live:
+
+1. **TLS** — every public endpoint behind HTTPS only; HSTS header on
+   every response (configured in the reverse-proxy layer); minimum
+   TLS 1.2.
+2. **Headers** — `X-Content-Type-Options: nosniff`,
+   `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` on every
+   response (already wired in the Website cookie-auth setup; verify
+   the reverse-proxy passes them through).
+3. **CSP** — Content-Security-Policy on the CP + Website; no `unsafe-inline`
+   for script.
+4. **Audit immutability** — `OperationLog` is the append-only audit
+   surface. Confirm the SQL Server account the app uses has no
+   `DELETE` / `UPDATE` grant on `dbo.OperationLog`; the table is
+   write-only from the app's perspective.
+5. **Secret-key hygiene** — confirm `Ai:PromptHash:Secret`,
+   `Jwt:SigningKey`, `Storage:UserIdDocumentEncryptionKey`, and the
+   SMTP password live in the secrets vault (not in the env-var
+   committed file). Confirm `AiAuditDetail.IsHmacKeyDevFallback`
+   returns `false` at startup.
+6. **PII redaction** — the AI invocation Detail JSON carries
+   `redactionKinds` per D-185. Run a synthetic prompt through the
+   live AI invocation path with a fake NID / IBAN / email; confirm
+   the persisted `AiInvocation.InputJson` shows the `[REDACTED_*]`
+   markers, not the raw secrets.
+7. **ID-image encryption at rest** — confirm `Storage:UserIdDocumentEncryptionKey`
+   is set (not empty). A test upload + on-disk inspection should
+   show the file is unreadable without the key.
+8. **SIEM forwarder** — confirm the OperationLog rows are being
+   shipped to the SOC platform (Sentinel / Elastic / Splunk) and
+   the D-185 / D-187 / D-191 Sigma rules are imported and active.
+9. **Backup verification** — confirm the §10 backup is running on
+   schedule AND a restore drill has been performed against a
+   non-prod environment within the last 30 days.
+10. **Rate-limit defaults** — confirm `RateLimit:PermitLimit` is
+    tightened from the dev default (20) to the production target
+    (sized against expected legitimate traffic; the §11 load test
+    informs the number).
+
+Sign-off on §B.8 is the prerequisite for the §13 production deploy.
+
+### B.9 Acceptance criteria for the deploy
+
+A deploy is accepted only when all of the following pass:
+
+- [ ] §B.1 — every Required env var set; `set-env-<service>.ps1`
+      review-passed by the DevOps engineer + the Solution Architect.
+- [ ] §B.2 — both `__EFMigrationsHistory` tables include the latest
+      migration ids in the correct order.
+- [ ] §B.6 — super-admin bootstrap credentials rotated, the seed
+      values purged from the env file.
+- [ ] §B.7 — all 8 smoke calls return the expected status.
+- [ ] §B.8 — every NCA pre-flight item green.
+- [ ] §10 — last known-good binary archived for rollback.
+- [ ] §13 — every checklist step green.
+
+A deploy that fails any line is rolled back per §B.5.
+
+---
+
+End of document.

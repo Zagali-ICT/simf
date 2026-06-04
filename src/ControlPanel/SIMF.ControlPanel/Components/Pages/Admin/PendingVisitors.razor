@@ -1,0 +1,506 @@
+@* Control Panel — pending visitor approval queue (P4b). Any CP role:
+   Administrator / Staff / Scientific / Security. Approve mints the QR
+   id so the visitor's QR badge becomes available. Reject opens a
+   reason modal (10–500 chars). *@
+@page "/admin/visitors/pending"
+@using SIMF.ControlPanel.Components.Pages.Admin.ProfileTypes
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Visitors.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>@L["Admin.Pending.Visitors.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Pending.Visitors.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        <p>@L["Admin.Pending.Supporting"]</p>
+
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toastVariant">@_toast</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="AdminPendingUserSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      OnApproveSelected="OnBulkApproveAsync"
+                      ApproveSelectedLabel="@L["Admin.Pending.Action.BulkApprove"]"
+                      OnRejectSelected="OnBulkRejectAsync"
+                      RejectSelectedLabel="@L["Admin.Pending.Action.BulkReject"]"
+                      RowKey="@(u => u.Id.ToString())"
+                      RowLabel="@(u => u.Email)"
+                      Caption="@L["Admin.Pending.Visitors.Title"]"
+                      SelectAllLabel="@L["Admin.Pending.Action.SelectAll"]"
+                      SelectRowLabel="@L["Admin.Pending.Action.SelectRow"]"
+                      PrevLabel="@L["Admin.Users.Prev"]"
+                      NextLabel="@L["Admin.Users.Next"]"
+                      FirstLabel="@L["Admin.Pending.Pager.First"]"
+                      LastLabel="@L["Admin.Pending.Pager.Last"]"
+                      PageSizeLabel="@L["Admin.Pending.Pager.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Users.Loading"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="email"
+                                    Header="@L["Admin.Users.Column.Email"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Email</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="displayName"
+                                    Header="@L["Admin.Users.Column.DisplayName"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.DisplayName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminPendingUserSummary" Key="created"
+                                    Header="@L["Admin.Pending.Column.Created"]">
+                    <CellTemplate>@context.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions Context="user">
+                @* D-128 — Approve now opens a review modal that loads the
+                   full profile first. The admin must click "Confirm
+                   and Approve" inside the modal to actually approve;
+                   that removes the "approved without looking" hazard.
+                   The View button stays for read-only inspection. *@
+                <SimfButton Type="button" Variant="secondary"
+                            Disabled="_busy"
+                            OnClick="@(() => OpenViewAsync(user, approveMode: false))">
+                    @L["Admin.Pending.Action.View"]
+                </SimfButton>
+                <SimfButton Type="button" Variant="primary"
+                            Disabled="_busy"
+                            OnClick="@(() => OpenViewAsync(user, approveMode: true))">
+                    @L["Admin.Pending.Action.Approve"]
+                </SimfButton>
+                <SimfButton Type="button" Variant="secondary"
+                            Disabled="_busy"
+                            OnClick="@(() => OpenReject(user))">
+                    @L["Admin.Pending.Action.Reject"]
+                </SimfButton>
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Pending.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_rejectTarget is not null)
+{
+    <SimfModal Open="true"
+               Title="@L["Admin.Pending.Reject.Title"]"
+               OnClose="@(() => _rejectTarget = null)">
+        <ChildContent>
+            <p>@string.Format(L["Admin.Pending.Reject.Confirm"], _rejectTarget.Email)</p>
+            <SimfTextarea Label="@L["Admin.Pending.Reject.Reason"]"
+                          Helper="@L["Admin.Pending.Reject.ReasonHint"]"
+                          Rows="3" MaxLength="500"
+                          Value="@_rejectReason"
+                          ValueChanged="@(v => _rejectReason = v)" />
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary"
+                        OnClick="@(() => _rejectTarget = null)">
+                @L["Admin.Pending.Reject.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" Variant="primary"
+                        Loading="_busy"
+                        Disabled="@(_rejectReason.Length is < 10 or > 500)"
+                        OnClick="ConfirmRejectAsync">
+                @L["Admin.Pending.Reject.Submit"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@* D-209 — bulk reject: shared-reason modal for the selected pending rows. *@
+@if (_bulkRejectSelected is not null)
+{
+    <SimfModal Open="true"
+               Title="@L["Admin.Pending.BulkReject.Title"]"
+               OnClose="@(() => _bulkRejectSelected = null)">
+        <ChildContent>
+            <p>@string.Format(L["Admin.Pending.BulkReject.Confirm"], _bulkRejectSelected.Count)</p>
+            <SimfTextarea Label="@L["Admin.Pending.Reject.Reason"]"
+                          Helper="@L["Admin.Pending.Reject.ReasonHint"]"
+                          Rows="3" MaxLength="500"
+                          Value="@_bulkRejectReason"
+                          ValueChanged="@(v => _bulkRejectReason = v)" />
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary"
+                        OnClick="@(() => _bulkRejectSelected = null)">
+                @L["Admin.Pending.Reject.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" Variant="primary"
+                        Loading="_busy"
+                        Disabled="@(_bulkRejectReason.Length is < 10 or > 500)"
+                        OnClick="ConfirmBulkRejectAsync">
+                @L["Admin.Pending.BulkReject.Submit"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@if (_viewTarget is not null)
+{
+    <SimfModal Open="true"
+               Title="@(_approveMode
+                   ? string.Format(L["Admin.Pending.ApproveReview.Title"], _viewTarget.Email)
+                   : string.Format(L["Admin.Pending.View.Title"], _viewTarget.Email))"
+               OnClose="CloseView">
+        <ChildContent>
+            @if (_viewLoading)
+            {
+                <p>@L["Admin.Pending.View.Loading"]</p>
+            }
+            else if (_viewError is not null)
+            {
+                <SimfAlert Variant="error">@_viewError</SimfAlert>
+            }
+            else if (_viewProfile is not null)
+            {
+                <dl class="simf-dl">
+                    <dt>@L["Admin.Pending.View.Field.Email"]</dt>
+                    <dd>@_viewProfile.Email</dd>
+                    <dt>@L["Admin.Pending.View.Field.DisplayName"]</dt>
+                    <dd>@_viewProfile.DisplayName</dd>
+                    <dt>@L["Admin.Pending.View.Field.UserType"]</dt>
+                    <dd>@ProfileTypeLabels.LocaliseUserType(_viewProfile.UserType)</dd>
+                    <dt>@L["Admin.Pending.View.Field.ProfileType"]</dt>
+                    <dd>@(_viewProfile.ProfileTypeName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                    <dt>@L["Admin.Pending.View.Field.Created"]</dt>
+                    <dd>@_viewProfile.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
+                </dl>
+
+                @if (HasProfileForm(_viewProfile))
+                {
+                    <dl class="simf-dl">
+                        <dt>@L["Admin.Pending.View.Field.ArabicName"]</dt>
+                        <dd>@(_viewProfile.ArabicName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.EnglishName"]</dt>
+                        <dd>@(_viewProfile.EnglishName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.Nationality"]</dt>
+                        <dd>@(_viewProfile.NationalityCode ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.DateOfBirth"]</dt>
+                        <dd>@(_viewProfile.DateOfBirth?.ToString("yyyy-MM-dd")
+                                ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.PlaceOfBirth"]</dt>
+                        <dd>@(_viewProfile.PlaceOfBirth ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.IdentityType"]</dt>
+                        <dd>@IdentityTypeLabel(_viewProfile)</dd>
+                        <dt>@L["Admin.Pending.View.Field.IdentityNumber"]</dt>
+                        <dd>@(IdentityNumber(_viewProfile) ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.SaudiMobile"]</dt>
+                        <dd>@(_viewProfile.SaudiMobile ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.InternationalMobile"]</dt>
+                        <dd>@(_viewProfile.InternationalMobile ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+                        <dt>@L["Admin.Pending.View.Field.HasIdImage"]</dt>
+                        <dd>@(_viewProfile.HasIdImage
+                                ? L["Admin.Pending.View.Yes"]
+                                : L["Admin.Pending.View.No"])</dd>
+                        <dt>@L["Admin.Pending.View.Field.InterestCount"]</dt>
+                        <dd>@_viewProfile.InterestIds.Count</dd>
+                    </dl>
+                    @if (_viewProfile.HasIdImage)
+                    {
+                        <div class="simf-walkin__id-image">
+                            <h4>@L["Admin.Pending.View.Field.IdImage"]</h4>
+                            <img src="@($"/account/api/admin/visitors/{_viewProfile.Id}/id-document?v={DateTime.UtcNow.Ticks}")"
+                                 alt="@L["Admin.Pending.View.Field.IdImage"]" />
+                        </div>
+                    }
+                }
+                else
+                {
+                    <SimfAlert Variant="info">@L["Admin.Pending.View.Empty"]</SimfAlert>
+                }
+            }
+        </ChildContent>
+        <Footer>
+            @if (_approveMode)
+            {
+                <SimfButton Type="button" Variant="secondary" OnClick="CloseView">
+                    @L["Admin.Pending.ApproveReview.Cancel"]
+                </SimfButton>
+                <SimfButton Type="button" Variant="primary"
+                            Loading="_busy"
+                            Disabled="@(_viewLoading || _viewProfile is null)"
+                            OnClick="ConfirmApproveFromReviewAsync">
+                    @L["Admin.Pending.ApproveReview.Confirm"]
+                </SimfButton>
+            }
+            else
+            {
+                <SimfButton Type="button" Variant="secondary" OnClick="CloseView">
+                    @L["Admin.Pending.View.Close"]
+                </SimfButton>
+            }
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminPendingUserSummary>? _page;
+    private bool _loading;
+    private bool _busy;
+    private AdminPendingUserSummary? _rejectTarget;
+    private string _rejectReason = string.Empty;
+    // D-209 — bulk reject (shared-reason) modal state.
+    private IReadOnlyList<AdminPendingUserSummary>? _bulkRejectSelected;
+    private string _bulkRejectReason = string.Empty;
+    private string? _toast;
+    private string _toastVariant = "success";
+
+    // D-125 — View modal state for the D-124 pending-profile preview.
+    // D-128 — _approveMode reuses the same modal for the
+    // review-before-approve confirmation flow.
+    private AdminPendingUserSummary? _viewTarget;
+    private PendingProfileResponse? _viewProfile;
+    private bool _viewLoading;
+    private string? _viewError;
+    private bool _approveMode;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminPendingUserSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/visitors/pending/list", _query);
+            _page = envelope is { Success: true, Data: not null }
+                ? envelope.Data
+                : GridPage<AdminPendingUserSummary>.Of(
+                    Array.Empty<AdminPendingUserSummary>(), 0, _query);
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task OnBulkApproveAsync(IReadOnlyList<AdminPendingUserSummary> selected)
+    {
+        if (_busy || selected.Count == 0) return;
+        _busy = true;
+        try
+        {
+            var ids = selected.Select(u => u.Id).ToList();
+            var envelope = await JS.InvokeAsync<ApiResult<AdminBulkApprovalResponse>>(
+                "simfAccount.postJson", "/account/api/admin/visitors/bulk-approve",
+                new AdminBulkApprovalRequest { Ids = ids });
+            if (envelope is { Success: true, Data: not null })
+            {
+                var result = envelope.Data;
+                _toast = string.Format(
+                    L["Admin.Pending.BulkApproved.Toast"],
+                    result.Approved, result.Skipped);
+                _toastVariant = result.Skipped == 0 ? "success" : "warning";
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Users.Fallback"];
+                _toastVariant = "error";
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task ApproveAsync(AdminPendingUserSummary user)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/visitors/{user.Id}/approve", new { });
+            if (envelope is { Success: true })
+            {
+                _toast = string.Format(L["Admin.Pending.Approved.Toast"], user.Email);
+                _toastVariant = "success";
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = envelope?.Error?.MessageForCurrentCulture() ?? L["Admin.Users.Fallback"];
+                _toastVariant = "error";
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OpenReject(AdminPendingUserSummary user)
+    {
+        _rejectTarget = user;
+        _rejectReason = string.Empty;
+        _toast = null;
+    }
+
+    private async Task ConfirmRejectAsync()
+    {
+        if (_busy || _rejectTarget is null) return;
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/visitors/{_rejectTarget.Id}/reject",
+                new AdminRejectRequest { Reason = _rejectReason });
+            if (envelope is { Success: true })
+            {
+                _toast = string.Format(L["Admin.Pending.Rejected.Toast"], _rejectTarget.Email);
+                _toastVariant = "success";
+                _rejectTarget = null;
+                _rejectReason = string.Empty;
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = envelope?.Error?.MessageForCurrentCulture() ?? L["Admin.Users.Fallback"];
+                _toastVariant = "error";
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    // D-209 — open the shared-reason modal with the selected pending rows.
+    private void OnBulkRejectAsync(IReadOnlyList<AdminPendingUserSummary> selected)
+    {
+        if (_busy || selected.Count == 0) return;
+        _bulkRejectSelected = selected;
+        _bulkRejectReason = string.Empty;
+        _toast = null;
+    }
+
+    private async Task ConfirmBulkRejectAsync()
+    {
+        if (_busy || _bulkRejectSelected is null) return;
+        _busy = true;
+        try
+        {
+            var ids = _bulkRejectSelected.Select(u => u.Id).ToList();
+            var envelope = await JS.InvokeAsync<ApiResult<AdminBulkRejectResponse>>(
+                "simfAccount.postJson", "/account/api/admin/visitors/bulk-reject",
+                new AdminBulkRejectRequest { Ids = ids, Reason = _bulkRejectReason });
+            if (envelope is { Success: true, Data: not null })
+            {
+                var result = envelope.Data;
+                _toast = string.Format(
+                    L["Admin.Pending.BulkRejected.Toast"],
+                    result.Rejected, result.Skipped);
+                _toastVariant = result.Skipped == 0 ? "success" : "warning";
+                _bulkRejectSelected = null;
+                _bulkRejectReason = string.Empty;
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Users.Fallback"];
+                _toastVariant = "error";
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private string FormatSummary(int from, int to, int total) =>
+        string.Format(L["Admin.Users.Pager.Summary"], from, to, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Admin.Pending.Pager.Page"], current, total);
+
+    private async Task OpenViewAsync(AdminPendingUserSummary user, bool approveMode = false)
+    {
+        _viewTarget = user;
+        _viewProfile = null;
+        _viewError = null;
+        _viewLoading = true;
+        _approveMode = approveMode;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<PendingProfileResponse>>(
+                "simfAccount.getJson",
+                $"/account/api/admin/visitors/{user.Id}/profile-for-approval");
+            if (envelope is { Success: true, Data: not null })
+            {
+                _viewProfile = envelope.Data;
+            }
+            else
+            {
+                _viewError = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Pending.View.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _viewError = L["Admin.Pending.View.Fallback"];
+        }
+        finally { _viewLoading = false; }
+    }
+
+    private async Task ConfirmApproveFromReviewAsync()
+    {
+        if (_viewTarget is null) return;
+        var target = _viewTarget;
+        // Close the review modal before firing the approve call so the
+        // toast that surfaces from ApproveAsync isn't covered by it.
+        CloseView();
+        await ApproveAsync(target);
+    }
+
+    private void CloseView()
+    {
+        _viewTarget = null;
+        _viewProfile = null;
+        _viewError = null;
+        _viewLoading = false;
+        _approveMode = false;
+    }
+
+    private static bool HasProfileForm(PendingProfileResponse profile) =>
+        !string.IsNullOrEmpty(profile.ArabicName)
+        || !string.IsNullOrEmpty(profile.EnglishName)
+        || !string.IsNullOrEmpty(profile.NationalityCode)
+        || profile.DateOfBirth is not null
+        || !string.IsNullOrEmpty(profile.PlaceOfBirth)
+        || !string.IsNullOrEmpty(profile.NationalId)
+        || !string.IsNullOrEmpty(profile.IqamaNumber)
+        || !string.IsNullOrEmpty(profile.PassportNumber)
+        || !string.IsNullOrEmpty(profile.SaudiMobile)
+        || !string.IsNullOrEmpty(profile.InternationalMobile)
+        || profile.HasIdImage
+        || profile.InterestIds.Count > 0;
+
+    private string IdentityTypeLabel(PendingProfileResponse profile)
+    {
+        if (!string.IsNullOrEmpty(profile.NationalId))
+            return L["Admin.Pending.View.IdentityType.National"];
+        if (!string.IsNullOrEmpty(profile.IqamaNumber))
+            return L["Admin.Pending.View.IdentityType.Iqama"];
+        if (!string.IsNullOrEmpty(profile.PassportNumber))
+            return L["Admin.Pending.View.IdentityType.Passport"];
+        return L["Admin.Pending.View.MissingValue"];
+    }
+
+    private static string? IdentityNumber(PendingProfileResponse profile) =>
+        profile.NationalId
+            ?? profile.IqamaNumber
+            ?? profile.PassportNumber;
+}

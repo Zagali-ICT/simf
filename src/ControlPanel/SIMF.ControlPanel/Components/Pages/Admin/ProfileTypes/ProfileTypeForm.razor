@@ -1,0 +1,282 @@
+@* Reusable ProfileType form (D-118). Hosted inside the Add modal and the
+   Edit modal on the VisitorProfileTypesList / OtherProfileTypesList pages.
+   UserType is hidden — set by the host page (Visitor or Other) and used
+   only on create. Edit cannot change UserType (the backend rejects it). *@
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_success is not null)
+{
+    <SimfAlert Variant="success">@_success</SimfAlert>
+}
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        @* D-125 — display the UserType so the admin sees which account-type
+           this profile-type belongs to. Edit mode is read-only because the
+           backend rejects UserType changes (the field never appears in the
+           PUT body); Create mode shows the UserType the host page passed in
+           so an admin opening "Add" on the Visitor page can confirm. *@
+        <div class="simf-field">
+            <div class="simf-field__label">@L["Admin.ProfileTypes.Field.UserType"]</div>
+            <div class="simf-field__value">@LocalisedUserType</div>
+            @if (_isEdit)
+            {
+                <div class="simf-field__helper">@L["Admin.ProfileTypes.UserType.Hint"]</div>
+            }
+        </div>
+        <SimfTextField Label="@L["Admin.ProfileTypes.Field.Name"]"
+                       Helper="@L["Admin.ProfileTypes.Field.NameHint"]"
+                       @bind-Value="_model.Name" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.ProfileTypes.Field.NameArabic"]"
+                       Helper="@L["Admin.ProfileTypes.Field.NameArabicHint"]"
+                       @bind-Value="_model.NameArabic" Disabled="_busy" />
+        @* D-120 — PageColor pairs a text input (CSS variable / 3-digit hex friendly)
+           with a native colour swatch. The text field stays the source of truth;
+           the swatch only writes #rrggbb back into it. *@
+        <div class="simf-field">
+            <label class="simf-field__label" for="profile-type-page-color">@L["Admin.ProfileTypes.Field.PageColor"]</label>
+            <div class="simf-field__control simf-field__control--with-swatch">
+                <input id="profile-type-page-color" class="simf-field__input" type="text"
+                       value="@_model.PageColor"
+                       @oninput="OnPageColorTextInput"
+                       disabled="@(_busy ? "disabled" : null)"
+                       aria-describedby="profile-type-page-color-hint" />
+                <input class="simf-field__color-swatch" type="color"
+                       value="@PageColorAsHex"
+                       @oninput="OnPageColorSwatchInput"
+                       disabled="@(_busy ? "disabled" : null)"
+                       aria-label="@L["Admin.ProfileTypes.Field.PageColorPicker"]" />
+            </div>
+            <div class="simf-field__helper" id="profile-type-page-color-hint">@L["Admin.ProfileTypes.Field.PageColorHint"]</div>
+        </div>
+        @* D-161 — MobileAppRole picker. Only renders for UserType=Other:
+           Visitor profile-types resolve to MobileAppRole.Visitor at JWT
+           issue time regardless of this column, so the field is
+           irrelevant on the Visitor list. *@
+        @if (ShowMobileAppRolePicker)
+        {
+            <SimfSelect TValue="string"
+                        Label="@L["Admin.ProfileTypes.Field.MobileAppRole"]"
+                        Helper="@L["Admin.ProfileTypes.Field.MobileAppRoleHint"]"
+                        Items="@MobileAppRoleOptions"
+                        ValueFor="@(role => role)"
+                        LabelFor="@(role => L[$"Admin.ProfileTypes.MobileAppRole.{role}"])"
+                        Value="@_model.MobileAppRole"
+                        ValueChanged="@(v => _model.MobileAppRole = string.IsNullOrEmpty(v) ? "None" : v)"
+                        Disabled="_busy" />
+        }
+        <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
+            @L["Admin.ProfileTypes.Field.IsActive"]
+        </SimfCheckbox>
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy" LoadingLabel="@L["Admin.ProfileTypes.Submitting"]">
+            @SubmitLabel
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy"
+                        OnClick="OnCancel">
+                @L["Admin.ProfileTypes.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private readonly Model _model = new();
+    private EditContext _editContext = default!;
+    private ValidationMessageStore _messages = default!;
+    private bool _busy;
+    private string? _success;
+    private string? _error;
+    private bool _isEdit;
+
+    /// <summary>Optional existing row to pre-populate the form (Edit mode).
+    /// When null, the form is in Create mode.</summary>
+    [Parameter] public AdminProfileTypeSummary? Initial { get; set; }
+
+    /// <summary>D-186: true for the partner-side host (OtherProfileTypesList),
+    /// false for the audience-side host (VisitorProfileTypesList). Drives
+    /// the IsVisitor payload on Create and the MobileAppRole picker
+    /// visibility. Ignored in Edit mode (uses Initial.IsVisitor).</summary>
+    [Parameter] public bool IsPartnerForm { get; set; }
+
+    /// <summary>Raised after a successful create or update.</summary>
+    [Parameter] public EventCallback<AdminProfileTypeSummary> OnSuccess { get; set; }
+
+    /// <summary>Raised when the user clicks Cancel. If unset, no Cancel button renders.</summary>
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    // D-161 — picker options. "Visitor" is omitted because the backend
+    // rejects it (the Visitor app role is computed from UserType, not
+    // assignable per ProfileType row).
+    private static readonly string[] MobileAppRoleOptions =
+        new[] { "None", "Staff", "Moderator" };
+
+    // D-186: the MobileAppRole picker is only meaningful on the
+    // partner side (audience profile types resolve to MobileAppRole
+    // .Visitor at JWT issue time). Edit uses the persisted IsVisitor
+    // flag; Create uses the host-provided IsPartnerForm.
+    private bool ShowMobileAppRolePicker =>
+        _isEdit ? Initial?.IsVisitor == false : IsPartnerForm;
+
+    protected override void OnInitialized()
+    {
+        _isEdit = Initial is not null;
+        if (Initial is not null)
+        {
+            _model.Name = Initial.Name;
+            _model.NameArabic = Initial.NameArabic;
+            _model.PageColor = Initial.PageColor;
+            _model.MobileAppRole = string.IsNullOrEmpty(Initial.MobileAppRole)
+                ? "None" : Initial.MobileAppRole;
+            _model.IsActive = Initial.IsActive;
+        }
+        _editContext = new EditContext(_model);
+        _messages = new ValidationMessageStore(_editContext);
+    }
+
+    private string SubmitLabel =>
+        _isEdit ? L["Admin.ProfileTypes.Submit.Update"] : L["Admin.ProfileTypes.Submit.Create"];
+
+    /// <summary>D-125 — localised display string. D-186: after the
+    /// UserType collapse, every form is under the Visitor scope; the
+    /// label now reflects the audience-vs-partner intent the host page
+    /// set (Edit reads from Initial.IsVisitor; Create reads from
+    /// IsPartnerForm).</summary>
+    private string LocalisedUserType
+    {
+        get
+        {
+            var isAudience = _isEdit ? (Initial?.IsVisitor ?? true) : !IsPartnerForm;
+            return isAudience
+                ? L["Admin.ProfileTypes.Scope.Audience"]
+                : L["Admin.ProfileTypes.Scope.Partner"];
+        }
+    }
+
+    // D-120 — only feed the native colour picker when the model value is a
+    // canonical #rrggbb hex. CSS variables and 3-digit hex shortcuts stay in
+    // the text field as-is; the picker falls back to a brand-neutral default
+    // for display purposes (no write happens until the user picks).
+    private static readonly System.Text.RegularExpressions.Regex HexSixPattern =
+        new("^#[0-9A-Fa-f]{6}$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private string PageColorAsHex =>
+        HexSixPattern.IsMatch(_model.PageColor) ? _model.PageColor : "#244A77";
+
+    private void OnPageColorTextInput(ChangeEventArgs e)
+    {
+        _model.PageColor = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private void OnPageColorSwatchInput(ChangeEventArgs e)
+    {
+        var picked = e.Value?.ToString();
+        if (!string.IsNullOrEmpty(picked))
+        {
+            _model.PageColor = picked;
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _success = null;
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_model.Name) || _model.Name.Length > 128)
+        {
+            _error = L["Admin.ProfileTypes.Field.NameInvalid"];
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_model.NameArabic) || _model.NameArabic.Length > 128)
+        {
+            _error = L["Admin.ProfileTypes.Field.NameArabicInvalid"];
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_model.PageColor) || _model.PageColor.Length > 32)
+        {
+            _error = L["Admin.ProfileTypes.Field.PageColorInvalid"];
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminProfileTypeSummary>? envelope;
+            // D-161 — only send MobileAppRole when the picker was shown
+            // (UserType=Other). Sending it for Visitor rows would be
+            // wire noise: the backend defaults to None anyway, and the
+            // claim is resolved from UserType regardless.
+            var mobileAppRolePayload = ShowMobileAppRolePicker ? _model.MobileAppRole : null;
+            if (_isEdit && Initial is not null)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminProfileTypeSummary>>(
+                    "simfAccount.putJson", $"/account/api/admin/profile-types/{Initial.Id}",
+                    new AdminUpdateProfileTypeRequest
+                    {
+                        Name = _model.Name.Trim(),
+                        NameArabic = _model.NameArabic.Trim(),
+                        PageColor = _model.PageColor.Trim(),
+                        MobileAppRole = mobileAppRolePayload,
+                        IsActive = _model.IsActive,
+                        // D-186: IsVisitor is mutable on update — keeps
+                        // the row's existing audience/partner flag
+                        // unless the host explicitly changes it.
+                        IsVisitor = Initial.IsVisitor,
+                    });
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminProfileTypeSummary>>(
+                    "simfAccount.postJson", "/account/api/admin/profile-types",
+                    new AdminCreateProfileTypeRequest
+                    {
+                        // D-186: only the Visitor scope is accepted for
+                        // non-admin profile types. The audience-vs-
+                        // partner split rides on IsVisitor.
+                        UserType = "Visitor",
+                        Name = _model.Name.Trim(),
+                        NameArabic = _model.NameArabic.Trim(),
+                        PageColor = _model.PageColor.Trim(),
+                        MobileAppRole = mobileAppRolePayload,
+                        IsActive = _model.IsActive,
+                        IsVisitor = !IsPartnerForm,
+                    });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                _success = _isEdit
+                    ? string.Format(L["Admin.ProfileTypes.Updated"], envelope.Data.Name)
+                    : string.Format(L["Admin.ProfileTypes.Created"], envelope.Data.Name);
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.ProfileTypes.Fallback"];
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private sealed class Model
+    {
+        public string Name { get; set; } = string.Empty;
+        public string NameArabic { get; set; } = string.Empty;
+        public string PageColor { get; set; } = "#244A77";
+        // D-161 — defaults to "None" (the safe baseline); admin opts in
+        // by picking Staff or Moderator.
+        public string MobileAppRole { get; set; } = "None";
+        public bool IsActive { get; set; } = true;
+    }
+}

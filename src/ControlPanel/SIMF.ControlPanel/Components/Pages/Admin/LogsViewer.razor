@@ -1,0 +1,258 @@
+@* Control Panel — real-time log viewer (P6). Lists every project's log
+   files under {Storage:LogDirectory}, tails the chosen file with a 5-second
+   poll, and offers a Download button that streams the file to disk.
+   Mirrors the IBS pattern: per-project, per-day. *@
+@page "/admin/logs"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Logs.View)]
+@implements IDisposable
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>@L["Admin.Logs.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Logs.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        <p>@L["Admin.Logs.Supporting"]</p>
+
+    @if (_loadingList)
+    {
+        <p>@L["Admin.Logs.Loading"]</p>
+    }
+    else if (_list is null || _list.Projects.Count == 0)
+    {
+        <SimfEmptyState Title="@L["Admin.Logs.Empty"]" />
+    }
+    else
+    {
+        @* D-117 — Q-E: two strict rows. Row 1 = filters (Project / File / Lines + Auto-refresh).
+           Row 2 = action buttons (Refresh / Download). Group-aligned. *@
+        <div class="simf-logs__row simf-logs__row--filters">
+            <label class="simf-field">
+                <span class="simf-field__label">@L["Admin.Logs.Project"]</span>
+                <select class="simf-field__input" value="@_selectedProject"
+                        @onchange="OnProjectChangedAsync">
+                    @foreach (var project in _list.Projects)
+                    {
+                        <option value="@project.Name">@project.Name (@project.FileCount)</option>
+                    }
+                </select>
+            </label>
+            <label class="simf-field">
+                <span class="simf-field__label">@L["Admin.Logs.File"]</span>
+                <select class="simf-field__input" value="@_selectedFile"
+                        @onchange="OnFileChangedAsync">
+                    @foreach (var entry in CurrentProjectFiles())
+                    {
+                        <option value="@entry.FileName">
+                            @entry.FileName — @FormatSize(entry.SizeBytes)
+                            (@entry.LastModifiedUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm"))
+                        </option>
+                    }
+                </select>
+            </label>
+            <label class="simf-field">
+                <span class="simf-field__label">@L["Admin.Logs.Lines"]</span>
+                <select class="simf-field__input" value="@_lineCount"
+                        @onchange="OnLineCountChangedAsync">
+                    <option value="100">100</option>
+                    <option value="500">500</option>
+                    <option value="1000">1000</option>
+                    <option value="5000">5000</option>
+                </select>
+            </label>
+            <label class="simf-field simf-field--inline simf-logs__autorefresh">
+                <input type="checkbox" checked="@_autoRefresh"
+                       @onchange="OnAutoRefreshChanged" />
+                <span>@L["Admin.Logs.AutoRefresh"]</span>
+            </label>
+        </div>
+
+        <div class="simf-logs__row simf-logs__row--actions">
+            <SimfButton Type="button" OnClick="RefreshAsync" Disabled="_loadingTail">
+                @L["Admin.Logs.Refresh"]
+            </SimfButton>
+            <SimfButton Type="button" Variant="secondary" OnClick="DownloadAsync"
+                        Disabled="@string.IsNullOrEmpty(_selectedFile)">
+                @L["Admin.Logs.Download"]
+            </SimfButton>
+        </div>
+
+        @if (_tail is not null)
+        {
+            <p class="simf-text-muted">
+                @_tail.FileName · @FormatSize(_tail.SizeBytes) · @_tail.LineCount lines
+            </p>
+            <pre class="simf-logs-viewer">@_tail.Content</pre>
+        }
+    }
+    </div>
+</div>
+
+@code {
+    private const int RefreshIntervalMs = 5_000;
+
+    private LogListResponse? _list;
+    private LogTailResponse? _tail;
+    private string _selectedProject = string.Empty;
+    private string _selectedFile = string.Empty;
+    private int _lineCount = 500;
+    private bool _autoRefresh = true;
+    private bool _loadingList;
+    private bool _loadingTail;
+    private System.Timers.Timer? _timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadListAsync();
+        ResetTimer();
+    }
+
+    private async Task LoadListAsync()
+    {
+        _loadingList = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<LogListResponse>>(
+                "simfAccount.getJson", "/account/api/admin/logs/list");
+            _list = envelope is { Success: true, Data: not null } ? envelope.Data : null;
+            if (_list is not null && _list.Projects.Count > 0)
+            {
+                _selectedProject = _list.Projects[0].Name;
+                var first = CurrentProjectFiles().FirstOrDefault();
+                _selectedFile = first?.FileName ?? string.Empty;
+                if (!string.IsNullOrEmpty(_selectedFile))
+                {
+                    await LoadTailAsync();
+                }
+            }
+        }
+        finally { _loadingList = false; }
+    }
+
+    private IReadOnlyList<LogFileEntry> CurrentProjectFiles()
+    {
+        if (_list is null) return Array.Empty<LogFileEntry>();
+        var bucket = _list.Files.FirstOrDefault(f => f.Project == _selectedProject);
+        return bucket?.Files ?? Array.Empty<LogFileEntry>();
+    }
+
+    private async Task OnProjectChangedAsync(ChangeEventArgs args)
+    {
+        _selectedProject = args.Value?.ToString() ?? string.Empty;
+        var first = CurrentProjectFiles().FirstOrDefault();
+        _selectedFile = first?.FileName ?? string.Empty;
+        if (!string.IsNullOrEmpty(_selectedFile))
+        {
+            await LoadTailAsync();
+        }
+        else
+        {
+            _tail = null;
+        }
+    }
+
+    private async Task OnFileChangedAsync(ChangeEventArgs args)
+    {
+        _selectedFile = args.Value?.ToString() ?? string.Empty;
+        if (!string.IsNullOrEmpty(_selectedFile))
+        {
+            await LoadTailAsync();
+        }
+    }
+
+    private async Task OnLineCountChangedAsync(ChangeEventArgs args)
+    {
+        if (int.TryParse(args.Value?.ToString(), out var count))
+        {
+            _lineCount = count;
+            await LoadTailAsync();
+        }
+    }
+
+    private void OnAutoRefreshChanged(ChangeEventArgs args)
+    {
+        _autoRefresh = args.Value is bool b && b;
+        ResetTimer();
+    }
+
+    private async Task RefreshAsync()
+    {
+        await LoadListAsync();
+        if (!string.IsNullOrEmpty(_selectedFile))
+        {
+            await LoadTailAsync();
+        }
+    }
+
+    private async Task LoadTailAsync()
+    {
+        if (string.IsNullOrEmpty(_selectedProject) || string.IsNullOrEmpty(_selectedFile))
+        {
+            return;
+        }
+        _loadingTail = true;
+        try
+        {
+            var url = "/account/api/admin/logs/tail"
+                + $"?project={Uri.EscapeDataString(_selectedProject)}"
+                + $"&file={Uri.EscapeDataString(_selectedFile)}"
+                + $"&lines={_lineCount}";
+            var envelope = await JS.InvokeAsync<ApiResult<LogTailResponse>>(
+                "simfAccount.getJson", url);
+            _tail = envelope is { Success: true, Data: not null } ? envelope.Data : null;
+        }
+        finally { _loadingTail = false; }
+    }
+
+    private Task DownloadAsync()
+    {
+        if (string.IsNullOrEmpty(_selectedProject) || string.IsNullOrEmpty(_selectedFile))
+        {
+            return Task.CompletedTask;
+        }
+        var url = "/account/api/admin/logs/download"
+            + $"?project={Uri.EscapeDataString(_selectedProject)}"
+            + $"&file={Uri.EscapeDataString(_selectedFile)}";
+        Nav.NavigateTo(url, forceLoad: true);
+        return Task.CompletedTask;
+    }
+
+    private void ResetTimer()
+    {
+        _timer?.Stop();
+        _timer?.Dispose();
+        _timer = null;
+        if (!_autoRefresh) return;
+        _timer = new System.Timers.Timer(RefreshIntervalMs) { AutoReset = true };
+        _timer.Elapsed += async (_, _) =>
+        {
+            await InvokeAsync(async () =>
+            {
+                if (!_loadingTail && !string.IsNullOrEmpty(_selectedFile))
+                {
+                    await LoadTailAsync();
+                    StateHasChanged();
+                }
+            });
+        };
+        _timer.Start();
+    }
+
+    private static string FormatSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        if (bytes < 1024L * 1024 * 1024) return $"{bytes / (1024.0 * 1024):F1} MB";
+        return $"{bytes / (1024.0 * 1024 * 1024):F1} GB";
+    }
+
+    public void Dispose()
+    {
+        _timer?.Stop();
+        _timer?.Dispose();
+    }
+}

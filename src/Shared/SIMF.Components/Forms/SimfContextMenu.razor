@@ -1,0 +1,79 @@
+@* SimfContextMenu — a small floating menu positioned at a mouse coordinate
+   (decision D-044 b, hardened D-045 H2). Used by SimfDataGrid's row
+   right-click; reusable wherever a contextual action set is needed.
+
+   Keyboard navigation (Arrow / Home / End / Esc) is wired by simfContextMenu
+   in simf-account.js — the first menuitem receives focus the moment the
+   menu opens, and Esc fires <see cref="OnEscPressed"/> back to the parent.
+   Direction-aware via logical properties; the parent grid mirrors the X
+   coordinate for RTL before passing it in. *@
+@namespace SIMF.Components.Forms
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+@if (Open)
+{
+    <div class="simf-ctxmenu"
+         style="@($"top: {Y}px; inset-inline-start: {X}px;")"
+         role="menu"
+         @ref="_menuRef"
+         @onmousedown:stopPropagation
+         @onclick:stopPropagation>
+        @ChildContent
+    </div>
+}
+
+@code {
+    private ElementReference _menuRef;
+    private bool _bound;
+    private DotNetObjectReference<SimfContextMenu>? _selfRef;
+
+    /// <summary>True to show the menu.</summary>
+    [Parameter] public bool Open { get; set; }
+
+    /// <summary>The viewport-relative top coordinate (px).</summary>
+    [Parameter] public double Y { get; set; }
+
+    /// <summary>The viewport-relative leading-edge coordinate (px).
+    /// In LTR this is `left`; in RTL the parent must pre-compute
+    /// `viewportWidth - clientX` so `inset-inline-start` (= right edge)
+    /// lands on the cursor.</summary>
+    [Parameter] public double X { get; set; }
+
+    /// <summary>Raised when the user presses Esc inside the menu.</summary>
+    [Parameter] public EventCallback OnEscape { get; set; }
+
+    /// <summary>The menu items — usually a stack of <c>&lt;SimfContextMenuItem&gt;</c>.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Open && !_bound)
+        {
+            _selfRef ??= DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("simfContextMenu.bind", _menuRef, _selfRef);
+            _bound = true;
+        }
+        else if (!Open && _bound)
+        {
+            await JS.InvokeVoidAsync("simfContextMenu.unbind", _menuRef);
+            _bound = false;
+        }
+    }
+
+    /// <summary>Invoked from JS when the user presses Escape.</summary>
+    [JSInvokable]
+    public Task OnEscPressed() =>
+        OnEscape.HasDelegate ? OnEscape.InvokeAsync() : Task.CompletedTask;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_bound)
+        {
+            try { await JS.InvokeVoidAsync("simfContextMenu.unbind", _menuRef); }
+            catch { /* circuit closed */ }
+            _bound = false;
+        }
+        _selfRef?.Dispose();
+    }
+}

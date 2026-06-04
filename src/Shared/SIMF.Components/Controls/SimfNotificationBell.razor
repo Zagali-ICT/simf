@@ -1,0 +1,275 @@
+@* SimfNotificationBell — top-bar bell with an unread badge and a
+   dropdown of the latest 5 unread notifications (P12 — D-053). Polls
+   the unread-count endpoint every 60 s; the caller's app provides the
+   API path prefix because the CP and Website expose the same proxy
+   under the same /account/api root. Click on the bell loads the
+   dropdown; "View all" links to /account/notifications.
+
+   H3 — D-058: accessibility hardening. The trigger advertises its
+   popup (aria-haspopup="dialog", aria-controls, aria-expanded). The
+   accessible name folds the unread count in so a screen-reader user
+   gets the same information the visual badge gives. The dropdown is a
+   focus-managed dialog: it gets focus on open, Esc closes it (from
+   trigger or dropdown), and a transparent backdrop closes on click
+   outside. *@
+@namespace SIMF.Components.Controls
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@implements IAsyncDisposable
+
+<div class="simf-bell" data-open="@_open">
+    @* H22 — D-081: switched from role="dialog" + focus-trap to the
+       disclosure pattern (aria-expanded + aria-controls only). The
+       dropdown is a flat notification list, not a modal dialog —
+       Tab naturally flows forward into the list and then onto the
+       page, which matches what the user expects from a popover.
+       aria-haspopup keeps a hint about the secondary surface
+       (value "true" rather than "dialog" — we no longer claim the
+       popup is a dialog). On close, focus is explicitly restored to
+       the trigger button via _triggerEl.FocusAsync() so a
+       keyboard-only user lands back where they invoked the popup. *@
+    <button type="button" class="simf-bell__trigger"
+            aria-label="@TriggerAccessibleName()"
+            aria-haspopup="true"
+            aria-expanded="@_open.ToString().ToLowerInvariant()"
+            aria-controls="@_dropdownId"
+            @ref="_triggerEl"
+            @onclick="ToggleAsync"
+            @onkeydown="OnTriggerKeyDown">
+        <SimfIcon Name="bell" Class="simf-bell__icon" Size="18" />
+        @if (_unread > 0)
+        {
+            <span class="simf-bell__badge" aria-hidden="true">@_unread</span>
+        }
+    </button>
+    @if (_open)
+    {
+        @* Transparent backdrop: a click anywhere outside the dropdown
+           closes it. The dropdown's own click is stopped from reaching
+           the backdrop so inner clicks do not close it. *@
+        <div class="simf-bell__backdrop" @onclick="Close"></div>
+        <div class="simf-bell__dropdown"
+             id="@_dropdownId"
+             aria-label="@AriaLabel"
+             tabindex="-1"
+             @ref="_dropdownEl"
+             @onkeydown="OnDropdownKeyDown"
+             @onclick:stopPropagation="true">
+            <header class="simf-bell__dropdown-head">
+                <strong>@DropdownTitle</strong>
+                @if (_items.Count > 0)
+                {
+                    <button type="button" class="simf-bell__link"
+                            @onclick="MarkAllReadAsync">@MarkAllReadLabel</button>
+                }
+            </header>
+            @if (_items.Count == 0)
+            {
+                <p class="simf-bell__empty">@EmptyLabel</p>
+            }
+            else
+            {
+                <ul class="simf-bell__list">
+                    @foreach (var item in _items)
+                    {
+                        <li class="simf-bell__item simf-bell__item--@item.Severity.ToLowerInvariant()">
+                            <strong>@LabelFor(item)</strong>
+                            <p>@BodyFor(item)</p>
+                            <time>@item.CreatedAt.LocalDateTime.ToShortDateString()</time>
+                        </li>
+                    }
+                </ul>
+            }
+            <footer class="simf-bell__dropdown-foot">
+                <a href="@ViewAllHref">@ViewAllLabel</a>
+            </footer>
+        </div>
+    }
+</div>
+
+@code {
+    private readonly List<NotificationView> _items = new();
+    private readonly string _dropdownId = $"simf-bell-dropdown-{Guid.NewGuid():N}";
+    private int _unread;
+    private bool _open;
+    private bool _focusOnNextRender;
+    private bool _restoreFocusToTrigger;
+    private ElementReference _dropdownEl;
+    private ElementReference _triggerEl;
+    private System.Threading.Timer? _poll;
+
+    /// <summary>Accessible name for the bell button (e.g. "Notifications").</summary>
+    [Parameter, EditorRequired] public string AriaLabel { get; set; } = "Notifications";
+
+    /// <summary>Suffix appended to the trigger's accessible name when there are unread
+    /// items — e.g. "unread" / "غير مقروءة". The caller passes the localised string;
+    /// the bell composes "{AriaLabel}, {Count} {UnreadSuffixLabel}".</summary>
+    [Parameter] public string UnreadSuffixLabel { get; set; } = "unread";
+
+    [Parameter, EditorRequired] public string DropdownTitle { get; set; } = "Notifications";
+    [Parameter, EditorRequired] public string MarkAllReadLabel { get; set; } = "Mark all read";
+    [Parameter, EditorRequired] public string EmptyLabel { get; set; } = "No notifications.";
+    [Parameter, EditorRequired] public string ViewAllLabel { get; set; } = "View all";
+    [Parameter, EditorRequired] public string ViewAllHref { get; set; } = "/account/notifications";
+
+    /// <summary>True when the current culture is Arabic — the bell uses
+    /// the Arabic title/body fields. The caller passes this in so the
+    /// primitive stays culture-agnostic itself.</summary>
+    [Parameter] public bool UseArabic { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshUnreadAsync();
+        _poll = new System.Threading.Timer(_ =>
+            InvokeAsync(async () =>
+            {
+                await RefreshUnreadAsync();
+                StateHasChanged();
+            }), null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusOnNextRender)
+        {
+            _focusOnNextRender = false;
+            try
+            {
+                await _dropdownEl.FocusAsync();
+            }
+            catch { /* element gone before the render flushed — harmless */ }
+        }
+        if (_restoreFocusToTrigger)
+        {
+            // H22 — D-081: on close, return focus to the trigger so a
+            // keyboard-only user is not stranded at the now-closed
+            // popup's position. Same try/catch shape as the open-side
+            // focus.
+            _restoreFocusToTrigger = false;
+            try
+            {
+                await _triggerEl.FocusAsync();
+            }
+            catch { /* trigger gone — harmless */ }
+        }
+    }
+
+    private string TriggerAccessibleName() =>
+        _unread > 0 ? $"{AriaLabel}, {_unread} {UnreadSuffixLabel}" : AriaLabel;
+
+    private async Task ToggleAsync()
+    {
+        _open = !_open;
+        if (_open)
+        {
+            _focusOnNextRender = true;
+            await LoadLatestAsync();
+        }
+    }
+
+    private void Close()
+    {
+        if (_open)
+        {
+            _open = false;
+            _restoreFocusToTrigger = true;
+        }
+    }
+
+    private void OnTriggerKeyDown(KeyboardEventArgs args)
+    {
+        if (_open && string.Equals(args.Key, "Escape", StringComparison.Ordinal))
+        {
+            _open = false;
+            _restoreFocusToTrigger = true;
+        }
+    }
+
+    private void OnDropdownKeyDown(KeyboardEventArgs args)
+    {
+        if (string.Equals(args.Key, "Escape", StringComparison.Ordinal))
+        {
+            _open = false;
+            _restoreFocusToTrigger = true;
+        }
+    }
+
+    private async Task RefreshUnreadAsync()
+    {
+        try
+        {
+            var envelope = await JS.InvokeAsync<UnreadCountEnvelope>(
+                "simfAccount.getJson", "/account/api/notifications/unread-count");
+            _unread = envelope?.Data?.UnreadCount ?? 0;
+        }
+        catch { /* best-effort; keep last value */ }
+    }
+
+    private async Task LoadLatestAsync()
+    {
+        try
+        {
+            var envelope = await JS.InvokeAsync<ListEnvelope>(
+                "simfAccount.postJson", "/account/api/notifications/list",
+                new { Top = 5, Skip = 0, Filters = new { unreadOnly = "true" } });
+            _items.Clear();
+            if (envelope?.Data?.Items is { } rows)
+            {
+                _items.AddRange(rows);
+            }
+        }
+        catch { /* leave empty on error */ }
+    }
+
+    private async Task MarkAllReadAsync()
+    {
+        try
+        {
+            await JS.InvokeAsync<object>("simfAccount.postJson",
+                "/account/api/notifications/read-all", null);
+            _unread = 0;
+            _items.Clear();
+        }
+        catch { }
+    }
+
+    private string LabelFor(NotificationView item) =>
+        UseArabic ? item.TitleArabic : item.Title;
+
+    private string BodyFor(NotificationView item) =>
+        UseArabic ? item.BodyArabic : item.Body;
+
+    public ValueTask DisposeAsync()
+    {
+        _poll?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+
+    public sealed class NotificationView
+    {
+        public Guid Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string TitleArabic { get; set; } = string.Empty;
+        public string Body { get; set; } = string.Empty;
+        public string BodyArabic { get; set; } = string.Empty;
+        public string Severity { get; set; } = "Info";
+        public DateTimeOffset CreatedAt { get; set; }
+    }
+
+    private sealed class UnreadCountEnvelope
+    {
+        public UnreadCountData? Data { get; set; }
+    }
+    private sealed class UnreadCountData
+    {
+        public int UnreadCount { get; set; }
+    }
+    private sealed class ListEnvelope
+    {
+        public ListData? Data { get; set; }
+    }
+    private sealed class ListData
+    {
+        public IReadOnlyList<NotificationView>? Items { get; set; }
+    }
+}

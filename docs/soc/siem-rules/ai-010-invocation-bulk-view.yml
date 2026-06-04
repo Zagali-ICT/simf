@@ -1,0 +1,62 @@
+title: AI invocation viewed (base)
+id: ai-010-base-invocation-viewed
+status: experimental
+description: >
+  Base rule — admin drilled into a single AI invocation's full
+  Detail JSON via the CP audit-log viewer. Emitted by the D-179
+  review-pass instrumentation as `AiInvocation.Viewed`.
+references:
+  - SIMF DECISIONS_LOG.md D-179, D-185
+tags:
+  - attack.collection
+  - attack.t1213
+author: SIMF security review
+date: 2026-05-30
+logsource:
+  product: simf
+  service: audit
+detection:
+  selection:
+    EventType: 'AiInvocation.Viewed'
+    Outcome: 'Success'
+  condition: selection
+fields:
+  - ActorUserId
+  - Detail.invocationId
+  - Detail.promptKey
+falsepositives:
+  - Routine ad-hoc drill-down. Informational alone.
+level: informational
+---
+title: AI invocation bulk-view (admin-on-user surveillance)
+id: ai-010-invocation-bulk-view
+status: experimental
+description: >
+  Detects an admin drilling into a large number of distinct AI
+  invocations within a short window — the "admin reads 50k
+  invocations on Sunday night" pattern. The D-184 README originally
+  flagged this rule as missing; D-185 closes the gap.
+
+  The threshold (>=50 distinct invocationIds in 30 minutes) sits
+  above routine triage volume but well below scripted-scrape volume.
+references:
+  - SIMF DECISIONS_LOG.md D-179, D-185
+tags:
+  - attack.collection
+  - attack.t1213
+author: SIMF security review
+date: 2026-05-30
+correlation:
+  type: value_count
+  rules:
+    - ai-010-base-invocation-viewed
+  group-by:
+    - ActorUserId
+  timespan: 30m
+  field: Detail.invocationId
+  condition:
+    gte: 50
+falsepositives:
+  - Genuine investigation by a designated SOC analyst in response to a
+    real incident; allowlist by the on-call rota during active incidents.
+level: high

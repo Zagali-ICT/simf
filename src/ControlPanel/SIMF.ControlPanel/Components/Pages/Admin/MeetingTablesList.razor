@@ -1,0 +1,663 @@
+@* SIMF-FDS-013 (D-248) — flexible hall configuration: set a hall's purpose,
+   define / generate meeting tables (random-by-count or by row-column), and
+   reserve hall space (whole / random-by-count / row-column) over a time-slot.
+   Mirrors BoothsList. *@
+@page "/admin/meeting-tables"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.MeetingTables.View)]
+@using SIMF.Contracts.BusinessMeetings
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.MeetingTables.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.MeetingTables.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.MeetingTables.Field.Hall"]</span>
+            <select class="simf-field__input" value="@(_hallId?.ToString() ?? string.Empty)"
+                    @onchange="OnHallChangedAsync" disabled="@_busy">
+                <option value="">@L["Admin.MeetingTables.Field.HallChoose"]</option>
+                @foreach (var hall in _halls)
+                {
+                    <option value="@hall.Id">@hall.Name — @hall.NameArabic</option>
+                }
+            </select>
+        </label>
+
+        @if (_hallId is not null)
+        {
+            <div class="simf-form__inline">
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.MeetingTables.Field.Purpose"]</span>
+                    <select class="simf-field__input" value="@_purpose" @onchange="OnPurposeChanged"
+                            disabled="@_busy">
+                        <option value="0">@L["Admin.MeetingTables.Purpose.General"]</option>
+                        <option value="1">@L["Admin.MeetingTables.Purpose.Booth"]</option>
+                        <option value="2">@L["Admin.MeetingTables.Purpose.Session"]</option>
+                        <option value="3">@L["Admin.MeetingTables.Purpose.Meeting"]</option>
+                    </select>
+                </label>
+                <AuthorizedAction Permission="@PermissionCatalog.Halls.Edit">
+                    <SimfButton Type="button" Disabled="_busy" OnClick="SavePurposeAsync">
+                        @L["Admin.MeetingTables.Purpose.Save"]
+                    </SimfButton>
+                </AuthorizedAction>
+            </div>
+
+            <h3>@L["Admin.MeetingTables.Tables.Heading"]</h3>
+            <div class="simf-form__actions">
+                <AuthorizedAction Permission="@PermissionCatalog.MeetingTables.Edit">
+                    <SimfButton Type="button" OnClick="OnAddTable">@L["Admin.MeetingTables.AddTable"]</SimfButton>
+                </AuthorizedAction>
+                <AuthorizedAction Permission="@PermissionCatalog.MeetingTables.Edit">
+                    <SimfButton Type="button" OnClick="OnGenerate">@L["Admin.MeetingTables.Generate"]</SimfButton>
+                </AuthorizedAction>
+            </div>
+            @if (_tables.Count == 0)
+            {
+                <SimfEmptyState Title="@L["Admin.MeetingTables.Tables.None"]" />
+            }
+            else
+            {
+                <table class="simf-table">
+                    <thead>
+                        <tr>
+                            <th>@L["Admin.MeetingTables.Col.Code"]</th>
+                            <th>@L["Admin.MeetingTables.Col.Row"]</th>
+                            <th>@L["Admin.MeetingTables.Col.Column"]</th>
+                            <th>@L["Admin.MeetingTables.Col.Capacity"]</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var t in _tables)
+                        {
+                            <tr>
+                                <td>@t.Code</td>
+                                <td>@(t.RowLabel ?? "—")</td>
+                                <td>@(t.ColumnNumber?.ToString() ?? "—")</td>
+                                <td>@t.Capacity</td>
+                                <td>
+                                    <AuthorizedAction Permission="@PermissionCatalog.MeetingTables.Edit">
+                                        <SimfButton Type="button" Disabled="_busy"
+                                                    OnClick="@(() => OnEditTable(t))">
+                                            @L["Admin.MeetingTables.Edit"]
+                                        </SimfButton>
+                                    </AuthorizedAction>
+                                    <AuthorizedAction Permission="@PermissionCatalog.MeetingTables.Edit">
+                                        <SimfButton Type="button" Disabled="_busy"
+                                                    OnClick="@(() => OnDeleteTableAsync(t))">
+                                            @L["Admin.MeetingTables.Delete"]
+                                        </SimfButton>
+                                    </AuthorizedAction>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+
+            <h3>@L["Admin.MeetingTables.Allocations.Heading"]</h3>
+            <div class="simf-form__actions">
+                <AuthorizedAction Permission="@PermissionCatalog.HallAllocations.Edit">
+                    <SimfButton Type="button" OnClick="OnAddAllocation">@L["Admin.MeetingTables.AddAllocation"]</SimfButton>
+                </AuthorizedAction>
+            </div>
+            @if (_allocations.Count == 0)
+            {
+                <SimfEmptyState Title="@L["Admin.MeetingTables.Allocations.None"]" />
+            }
+            else
+            {
+                <table class="simf-table">
+                    <thead>
+                        <tr>
+                            <th>@L["Admin.MeetingTables.Col.Purpose"]</th>
+                            <th>@L["Admin.MeetingTables.Col.Mode"]</th>
+                            <th>@L["Admin.MeetingTables.Col.Start"]</th>
+                            <th>@L["Admin.MeetingTables.Col.End"]</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in _allocations)
+                        {
+                            <tr>
+                                <td>@a.Purpose</td>
+                                <td>@a.Mode @(a.Mode == HallAllocationMode.RandomByCount ? $"({a.UnitCount})" : a.Mode == HallAllocationMode.RowColumn ? $"({a.RowColumnSpec})" : "")</td>
+                                <td>@a.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</td>
+                                <td>@a.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</td>
+                                <td>
+                                    <AuthorizedAction Permission="@PermissionCatalog.HallAllocations.Edit">
+                                        <SimfButton Type="button" Disabled="_busy"
+                                                    OnClick="@(() => OnReleaseAllocationAsync(a))">
+                                            @L["Admin.MeetingTables.Release"]
+                                        </SimfButton>
+                                    </AuthorizedAction>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        }
+    </div>
+</div>
+
+@if (_tableOpen)
+{
+    <SimfModal Open="true"
+               Title="@(_isEditTable ? L["Admin.MeetingTables.EditTable.Title"] : L["Admin.MeetingTables.AddTable.Title"])"
+               OnClose="@(() => _tableOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.MeetingTables.Col.Code"]"
+                               Value="@_tableForm.Code"
+                               ValueChanged="@(v => _tableForm.Code = v)"
+                               ValueExpression="@(() => _tableForm.Code)"
+                               MaxLength="16" Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.MeetingTables.Col.Row"]"
+                               Value="@_tableForm.RowLabel"
+                               ValueChanged="@(v => _tableForm.RowLabel = v)"
+                               ValueExpression="@(() => _tableForm.RowLabel)"
+                               MaxLength="8" Disabled="_busy" />
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.MeetingTables.Col.Column"]</span>
+                    <input class="simf-field__input" type="number" step="1" min="1"
+                           value="@_tableForm.ColumnNumber" @onchange="OnColumnChanged" disabled="@_busy" />
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.MeetingTables.Col.Capacity"]</span>
+                    <input class="simf-field__input" type="number" step="1" min="2" max="100"
+                           value="@_tableForm.Capacity" @onchange="OnCapacityChanged" disabled="@_busy" />
+                </label>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _tableOpen = false)">
+                @L["Admin.MeetingTables.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SaveTableAsync" Loading="_busy">
+                @L["Admin.MeetingTables.Save"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@if (_generateOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.MeetingTables.Generate.Title"]"
+               OnClose="@(() => _generateOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.MeetingTables.Col.Mode"]</span>
+                    <select class="simf-field__input" value="@((int)_genForm.Mode)"
+                            @onchange="OnGenModeChanged" disabled="@_busy">
+                        <option value="@((int)HallAllocationMode.RandomByCount)">@L["Admin.MeetingTables.Mode.RandomByCount"]</option>
+                        <option value="@((int)HallAllocationMode.RowColumn)">@L["Admin.MeetingTables.Mode.RowColumn"]</option>
+                    </select>
+                </label>
+                @if (_genForm.Mode == HallAllocationMode.RandomByCount)
+                {
+                    <label class="simf-field">
+                        <span class="simf-field__label">@L["Admin.MeetingTables.Generate.Count"]</span>
+                        <input class="simf-field__input" type="number" step="1" min="1"
+                               value="@_genForm.Count" @onchange="OnGenCountChanged" disabled="@_busy" />
+                    </label>
+                }
+                else
+                {
+                    <label class="simf-field">
+                        <span class="simf-field__label">@L["Admin.MeetingTables.Generate.Spec"]</span>
+                        <input class="simf-field__input" type="text" placeholder="A1,A2,B3"
+                               value="@_genForm.RowColumnSpec" @onchange="OnGenSpecChanged" disabled="@_busy" />
+                    </label>
+                }
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.MeetingTables.Col.Capacity"]</span>
+                    <input class="simf-field__input" type="number" step="1" min="2" max="100"
+                           value="@_genForm.Capacity" @onchange="OnGenCapacityChanged" disabled="@_busy" />
+                </label>
+                <SimfCheckbox Value="_genForm.Reset" ValueChanged="@(v => _genForm.Reset = v)" Disabled="_busy">
+                    @L["Admin.MeetingTables.Generate.Reset"]
+                </SimfCheckbox>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _generateOpen = false)">
+                @L["Admin.MeetingTables.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="GenerateAsync" Loading="_busy">
+                @L["Admin.MeetingTables.Generate.Submit"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@if (_allocOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.MeetingTables.AddAllocation.Title"]"
+               OnClose="@(() => _allocOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.MeetingTables.Col.Purpose"]</span>
+                    <select class="simf-field__input" value="@((int)_allocForm.Purpose)"
+                            @onchange="OnAllocPurposeChanged" disabled="@_busy">
+                        <option value="3">@L["Admin.MeetingTables.Purpose.Meeting"]</option>
+                        <option value="2">@L["Admin.MeetingTables.Purpose.Session"]</option>
+                        <option value="1">@L["Admin.MeetingTables.Purpose.Booth"]</option>
+                        <option value="0">@L["Admin.MeetingTables.Purpose.General"]</option>
+                    </select>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.MeetingTables.Col.Mode"]</span>
+                    <select class="simf-field__input" value="@((int)_allocForm.Mode)"
+                            @onchange="OnAllocModeChanged" disabled="@_busy">
+                        <option value="@((int)HallAllocationMode.Whole)">@L["Admin.MeetingTables.Mode.Whole"]</option>
+                        <option value="@((int)HallAllocationMode.RandomByCount)">@L["Admin.MeetingTables.Mode.RandomByCount"]</option>
+                        <option value="@((int)HallAllocationMode.RowColumn)">@L["Admin.MeetingTables.Mode.RowColumn"]</option>
+                    </select>
+                </label>
+                @if (_allocForm.Mode == HallAllocationMode.RandomByCount)
+                {
+                    <label class="simf-field">
+                        <span class="simf-field__label">@L["Admin.MeetingTables.Generate.Count"]</span>
+                        <input class="simf-field__input" type="number" step="1" min="1"
+                               value="@_allocForm.UnitCount" @onchange="OnAllocCountChanged" disabled="@_busy" />
+                    </label>
+                }
+                else if (_allocForm.Mode == HallAllocationMode.RowColumn)
+                {
+                    <label class="simf-field">
+                        <span class="simf-field__label">@L["Admin.MeetingTables.Generate.Spec"]</span>
+                        <input class="simf-field__input" type="text" placeholder="A1,A2,B3"
+                               value="@_allocForm.RowColumnSpec" @onchange="OnAllocSpecChanged" disabled="@_busy" />
+                    </label>
+                }
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.MeetingTables.Col.Start"]</span>
+                    <input class="simf-field__input" type="datetime-local"
+                           value="@_allocStartText" @onchange="OnAllocStartChanged" disabled="@_busy" />
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.MeetingTables.Col.End"]</span>
+                    <input class="simf-field__input" type="datetime-local"
+                           value="@_allocEndText" @onchange="OnAllocEndChanged" disabled="@_busy" />
+                </label>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _allocOpen = false)">
+                @L["Admin.MeetingTables.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SaveAllocationAsync" Loading="_busy">
+                @L["Admin.MeetingTables.Save"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private sealed class TableForm
+    {
+        public string Code { get; set; } = string.Empty;
+        public string RowLabel { get; set; } = string.Empty;
+        public int? ColumnNumber { get; set; }
+        public int Capacity { get; set; } = 2;
+    }
+
+    private List<AdminHallSummary> _halls = new();
+    private Guid? _hallId;
+    private int _purpose;
+    private List<MeetingTableRow> _tables = new();
+    private List<HallAllocationRow> _allocations = new();
+    private bool _busy;
+    private Toast? _toast;
+
+    private bool _tableOpen;
+    private bool _isEditTable;
+    private Guid _editingTableId;
+    private TableForm _tableForm = new();
+
+    private bool _generateOpen;
+    private GenerateMeetingTablesRequest _genForm = new();
+
+    private bool _allocOpen;
+    private CreateHallAllocationRequest _allocForm = new();
+    private string _allocStartText = string.Empty;
+    private string _allocEndText = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadHallsAsync();
+
+    private async Task LoadHallsAsync()
+    {
+        var env = await JS.InvokeAsync<ApiResult<GridPage<AdminHallSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/halls/list", new GridQuery { Top = 500 });
+        if (env is { Success: true, Data: not null })
+        {
+            _halls = env.Data.Items.Where(h => h.IsActive).OrderBy(h => h.Name).ToList();
+        }
+        else
+        {
+            _toast = new Toast("error",
+                env?.Error?.MessageForCurrentCulture() ?? L["Admin.MeetingTables.LoadFailed"]);
+        }
+    }
+
+    private async Task OnHallChangedAsync(ChangeEventArgs e)
+    {
+        _hallId = Guid.TryParse(e.Value?.ToString(), out var g) ? g : null;
+        _toast = null;
+        if (_hallId is { } hid)
+        {
+            _purpose = _halls.FirstOrDefault(h => h.Id == hid)?.Purpose ?? 0;
+            await LoadTablesAsync();
+            await LoadAllocationsAsync();
+        }
+    }
+
+    private void OnPurposeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var v)) _purpose = v;
+    }
+
+    private async Task SavePurposeAsync()
+    {
+        if (_busy || _hallId is not { } hid) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.putJson", $"/account/api/admin/halls/{hid}/purpose",
+                new SetHallPurposeRequest { Purpose = (HallPurpose)_purpose });
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.MeetingTables.Purpose.Saved"]);
+                // reflect the new purpose in the cached hall list
+                var idx = _halls.FindIndex(h => h.Id == hid);
+                if (idx >= 0) _halls[idx] = _halls[idx] with { Purpose = _purpose };
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.MeetingTables.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task LoadTablesAsync()
+    {
+        if (_hallId is not { } hid) return;
+        var env = await JS.InvokeAsync<ApiResult<GridPage<MeetingTableRow>>>(
+            "simfAccount.postJson", $"/account/api/admin/halls/{hid}/meeting-tables/list",
+            new { Skip = 0, Top = 500 });
+        if (env is { Success: true, Data: not null }) _tables = env.Data.Items.ToList();
+    }
+
+    private async Task LoadAllocationsAsync()
+    {
+        if (_hallId is not { } hid) return;
+        var env = await JS.InvokeAsync<ApiResult<GridPage<HallAllocationRow>>>(
+            "simfAccount.postJson", $"/account/api/admin/halls/{hid}/hall-allocations/list",
+            new { Skip = 0, Top = 500 });
+        if (env is { Success: true, Data: not null }) _allocations = env.Data.Items.ToList();
+    }
+
+    private void OnAddTable()
+    {
+        _isEditTable = false;
+        _editingTableId = Guid.Empty;
+        _tableForm = new TableForm();
+        _tableOpen = true;
+        _toast = null;
+    }
+
+    private void OnEditTable(MeetingTableRow row)
+    {
+        _isEditTable = true;
+        _editingTableId = row.Id;
+        _tableForm = new TableForm
+        {
+            Code = row.Code,
+            RowLabel = row.RowLabel ?? string.Empty,
+            ColumnNumber = row.ColumnNumber,
+            Capacity = row.Capacity,
+        };
+        _tableOpen = true;
+        _toast = null;
+    }
+
+    private async Task SaveTableAsync()
+    {
+        if (_busy || _hallId is not { } hid) return;
+        if (string.IsNullOrWhiteSpace(_tableForm.Code))
+        {
+            _toast = new Toast("error", L["Admin.MeetingTables.Validation.Code"]);
+            return;
+        }
+        _busy = true;
+        try
+        {
+            ApiResult<MeetingTableRow>? env;
+            if (_isEditTable)
+            {
+                env = await JS.InvokeAsync<ApiResult<MeetingTableRow>>(
+                    "simfAccount.putJson", $"/account/api/admin/meeting-tables/{_editingTableId}",
+                    new UpdateMeetingTableRequest
+                    {
+                        Code = _tableForm.Code,
+                        RowLabel = Trimmed(_tableForm.RowLabel),
+                        ColumnNumber = _tableForm.ColumnNumber,
+                        Capacity = _tableForm.Capacity,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<MeetingTableRow>>(
+                    "simfAccount.postJson", $"/account/api/admin/halls/{hid}/meeting-tables",
+                    new CreateMeetingTableRequest
+                    {
+                        Code = _tableForm.Code,
+                        RowLabel = Trimmed(_tableForm.RowLabel),
+                        ColumnNumber = _tableForm.ColumnNumber,
+                        Capacity = _tableForm.Capacity,
+                    });
+            }
+            if (env is { Success: true })
+            {
+                _tableOpen = false;
+                _toast = new Toast("success", L["Admin.MeetingTables.Saved"]);
+                await LoadTablesAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.MeetingTables.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteTableAsync(MeetingTableRow row)
+    {
+        if (_busy) return;
+        var confirmed = await JS.InvokeAsync<bool>("confirm", L["Admin.MeetingTables.Delete.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/meeting-tables/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.MeetingTables.Deleted"]);
+                await LoadTablesAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.MeetingTables.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnGenerate()
+    {
+        _genForm = new GenerateMeetingTablesRequest { Mode = HallAllocationMode.RandomByCount, Capacity = 2 };
+        _generateOpen = true;
+        _toast = null;
+    }
+
+    private async Task GenerateAsync()
+    {
+        if (_busy || _hallId is not { } hid) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<MeetingTablesGenerated>>(
+                "simfAccount.postJson", $"/account/api/admin/halls/{hid}/meeting-tables/generate", _genForm);
+            if (env is { Success: true })
+            {
+                _generateOpen = false;
+                _toast = new Toast("success", L["Admin.MeetingTables.Generated"]);
+                await LoadTablesAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.MeetingTables.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnAddAllocation()
+    {
+        _allocForm = new CreateHallAllocationRequest
+        {
+            Purpose = HallPurpose.Meeting,
+            Mode = HallAllocationMode.Whole,
+        };
+        _allocStartText = string.Empty;
+        _allocEndText = string.Empty;
+        _allocOpen = true;
+        _toast = null;
+    }
+
+    private async Task SaveAllocationAsync()
+    {
+        if (_busy || _hallId is not { } hid) return;
+        if (!TryParseUtc(_allocStartText, out var start) || !TryParseUtc(_allocEndText, out var end) || end <= start)
+        {
+            _toast = new Toast("error", L["Admin.MeetingTables.Validation.Slot"]);
+            return;
+        }
+        if ((_allocForm.Mode == HallAllocationMode.RandomByCount && _allocForm.UnitCount is not > 0)
+            || (_allocForm.Mode == HallAllocationMode.RowColumn
+                && string.IsNullOrWhiteSpace(_allocForm.RowColumnSpec)))
+        {
+            _toast = new Toast("error", L["Admin.MeetingTables.Validation.Allocation"]);
+            return;
+        }
+        _busy = true;
+        try
+        {
+            _allocForm.StartUtc = start;
+            _allocForm.EndUtc = end;
+            var env = await JS.InvokeAsync<ApiResult<HallAllocationRow>>(
+                "simfAccount.postJson", $"/account/api/admin/halls/{hid}/hall-allocations", _allocForm);
+            if (env is { Success: true })
+            {
+                _allocOpen = false;
+                _toast = new Toast("success", L["Admin.MeetingTables.Saved"]);
+                await LoadAllocationsAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.MeetingTables.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnReleaseAllocationAsync(HallAllocationRow row)
+    {
+        if (_busy) return;
+        var confirmed = await JS.InvokeAsync<bool>("confirm", L["Admin.MeetingTables.Release.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/hall-allocations/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.MeetingTables.Released"]);
+                await LoadAllocationsAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.MeetingTables.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnColumnChanged(ChangeEventArgs e) =>
+        _tableForm.ColumnNumber = int.TryParse(e.Value?.ToString(), out var n) ? n : null;
+    private void OnCapacityChanged(ChangeEventArgs e) =>
+        _tableForm.Capacity = int.TryParse(e.Value?.ToString(), out var n) ? n : 2;
+    private void OnGenModeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var v)) _genForm.Mode = (HallAllocationMode)v;
+    }
+    private void OnGenCountChanged(ChangeEventArgs e) =>
+        _genForm.Count = int.TryParse(e.Value?.ToString(), out var n) ? n : null;
+    private void OnGenSpecChanged(ChangeEventArgs e) => _genForm.RowColumnSpec = e.Value?.ToString();
+    private void OnGenCapacityChanged(ChangeEventArgs e) =>
+        _genForm.Capacity = int.TryParse(e.Value?.ToString(), out var n) ? n : 2;
+    private void OnAllocPurposeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var v)) _allocForm.Purpose = (HallPurpose)v;
+    }
+    private void OnAllocModeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var v)) _allocForm.Mode = (HallAllocationMode)v;
+    }
+    private void OnAllocCountChanged(ChangeEventArgs e) =>
+        _allocForm.UnitCount = int.TryParse(e.Value?.ToString(), out var n) ? n : null;
+    private void OnAllocSpecChanged(ChangeEventArgs e) => _allocForm.RowColumnSpec = e.Value?.ToString();
+    private void OnAllocStartChanged(ChangeEventArgs e) => _allocStartText = e.Value?.ToString() ?? string.Empty;
+    private void OnAllocEndChanged(ChangeEventArgs e) => _allocEndText = e.Value?.ToString() ?? string.Empty;
+
+    private static string? Trimmed(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static bool TryParseUtc(string text, out DateTimeOffset value)
+    {
+        value = default;
+        if (DateTime.TryParse(text, CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dt))
+        {
+            value = new DateTimeOffset(DateTime.SpecifyKind(dt, DateTimeKind.Utc));
+            return true;
+        }
+        return false;
+    }
+}

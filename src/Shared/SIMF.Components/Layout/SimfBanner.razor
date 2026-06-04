@@ -1,0 +1,30 @@
+@* SimfBanner — high-emphasis page-top banner (decision D-117). Sits beside
+   SimfPageHeader: the header is structural (content-region title); the banner
+   is a branded statement strip (tinted surface + leading accent rule).
+   Title is parameterised — no hardcoded labels. *@
+@namespace SIMF.Components.Layout
+
+<section class="simf-banner">
+    <div class="simf-banner__content">
+        <h1 class="simf-banner__title">@Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Subtitle))
+        {
+            <p class="simf-banner__subtitle">@Subtitle</p>
+        }
+    </div>
+    @if (Actions is not null)
+    {
+        <div class="simf-banner__actions">@Actions</div>
+    }
+</section>
+
+@code {
+    /// <summary>The banner title — same typography as the page-header h1.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    /// <summary>An optional supporting line under the title.</summary>
+    [Parameter] public string? Subtitle { get; set; }
+
+    /// <summary>An optional trailing action area (e.g. a primary button).</summary>
+    [Parameter] public RenderFragment? Actions { get; set; }
+}

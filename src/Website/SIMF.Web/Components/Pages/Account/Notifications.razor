@@ -1,0 +1,129 @@
+@* Website — full notification list page (P12 — D-053). The bell links
+   here via "View all". Mark-read on click, delete on the row action. *@
+@page "/account/notifications"
+@rendermode AppRenderMode.InteractiveServerNoPrerender
+@attribute [Authorize]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>@L["Account.Notifications.Title"]</PageTitle>
+
+<div class="simf-account-page">
+    <header class="simf-account-page__head">
+        <h1 class="simf-account-page__title">@L["Account.Notifications.Title"]</h1>
+    </header>
+
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="NotificationDto"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      OnDeleteOne="OnDeleteAsync"
+                      Caption="@L["Account.Notifications.Title"]"
+                      FilterColumnLabel="@L["Account.Notifications.FilterColumn"]"
+                      PrevLabel="@L["Account.Notifications.Prev"]"
+                      NextLabel="@L["Account.Notifications.Next"]"
+                      LoadingLabel="@L["Account.Notifications.Loading"]"
+                      FilterPlaceholder="@L["Account.Notifications.FilterPlaceholder"]"
+                      ActionsHeader="@L["Account.Notifications.Column.Actions"]"
+                      DeleteLabel="@L["Account.Notifications.Action.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="NotificationDto" Key="title"
+                                    Header="@L["Account.Notifications.Column.Title"]">
+                    <CellTemplate>
+                        <strong>@TitleFor(context)</strong>
+                        @if (context.ReadAt is null)
+                        {
+                            <SimfPill Variant="admin">@L["Account.Notifications.New"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="NotificationDto" Key="body"
+                                    Header="@L["Account.Notifications.Column.Body"]">
+                    <CellTemplate>@BodyFor(context)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="NotificationDto" Key="severity"
+                                    Header="@L["Account.Notifications.Column.Severity"]">
+                    <CellTemplate>@context.Severity</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="NotificationDto" Key="createdAt"
+                                    Header="@L["Account.Notifications.Column.CreatedAt"]">
+                    <CellTemplate>@context.CreatedAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm")</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+        </SimfDataGrid>
+
+        <div class="simf-form__actions">
+            <SimfButton Type="button" Variant="secondary" OnClick="MarkAllReadAsync">
+                @L["Account.Notifications.MarkAllRead"]
+            </SimfButton>
+        </div>
+    </div>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 25 };
+    private GridPage<NotificationDto> _page = new();
+    private bool _loading;
+    private Toast? _toast;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<NotificationDto>>>(
+                "simfAccount.postJson", "/account/api/notifications/list", _query);
+            if (envelope is { Success: true, Data: not null })
+            {
+                _page = envelope.Data;
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task OnDeleteAsync(NotificationDto row)
+    {
+        await JS.InvokeAsync<ApiResult<bool>>(
+            "simfAccount.deleteJson", $"/account/api/notifications/{row.Id}");
+        await LoadAsync();
+    }
+
+    private async Task MarkAllReadAsync()
+    {
+        await JS.InvokeAsync<ApiResult<bool>>(
+            "simfAccount.postJson", "/account/api/notifications/read-all", null);
+        _toast = new Toast("success", L["Account.Notifications.MarkAllReadDone"]);
+        await LoadAsync();
+    }
+
+    private string TitleFor(NotificationDto n) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? n.TitleArabic : n.Title;
+
+    private string BodyFor(NotificationDto n) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? n.BodyArabic : n.Body;
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Account.Notifications.Summary"],
+            skip + 1, skip + taken, total);
+}

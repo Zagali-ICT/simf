@@ -1,0 +1,233 @@
+@* D-169 (gap doc G6, PDF §2.7.2) — admin desk for per-session moderator
+   grants. Lists existing grants, supports assign (by SessionId +
+   UserId) and revoke. Distinct from MobileAppRole.Moderator (PDF §4.2
+   naming-collision rule). *@
+@page "/admin/session-moderators"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.SessionModerators.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.SessionModerators.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.SessionModerators.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="AdminSessionModeratorRow"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => $"{r.SessionId}/{r.UserId}")"
+                      RowLabel="@(r => r.ModeratorDisplayName)"
+                      Caption="@L["Admin.SessionModerators.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnAdd="OnAdd"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.SessionModerators.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]"
+                      EditLabel="@L["Grid.Edit"]"
+                      DeleteLabel="@L["Grid.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminSessionModeratorRow" Key="session"
+                                    Header="@L["Admin.SessionModerators.Col.Session"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@SessionLabel(context)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionModeratorRow" Key="moderator"
+                                    Header="@L["Admin.SessionModerators.Col.Moderator"]">
+                    <CellTemplate>
+                        @context.ModeratorDisplayName <small>(@(context.ModeratorEmail ?? "—"))</small>
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionModeratorRow" Key="assignedBy"
+                                    Header="@L["Admin.SessionModerators.Col.AssignedBy"]">
+                    <CellTemplate>@context.AssignedByDisplayName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminSessionModeratorRow" Key="assignedAt"
+                                    Header="@L["Admin.SessionModerators.Col.AssignedAt"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.AssignedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions>
+                @* Page-specific quiet action: revoke this moderator grant. *@
+                <AuthorizedAction Permission="@PermissionCatalog.SessionModerators.Revoke">
+                    <SimfToolbarButton Icon="link-off" Title="@L["Admin.SessionModerators.Revoke"]"
+                                       OnClick="@(() => RevokeAsync(context))" />
+                </AuthorizedAction>
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.SessionModerators.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_addOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.SessionModerators.Add.Title"]"
+               OnClose="@(() => _addOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.SessionModerators.Field.SessionId"]"
+                               Value="@_newSessionId"
+                               ValueChanged="@(v => _newSessionId = v)"
+                               ValueExpression="@(() => _newSessionId)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.SessionModerators.Field.UserId"]"
+                               Value="@_newUserId"
+                               ValueChanged="@(v => _newUserId = v)"
+                               ValueExpression="@(() => _newUserId)"
+                               Disabled="_busy" />
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _addOpen = false)">
+                @L["Admin.SessionModerators.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SubmitAssignAsync" Loading="_busy">
+                @L["Admin.SessionModerators.Submit"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminSessionModeratorRow> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private bool _addOpen;
+    private string _newSessionId = string.Empty;
+    private string _newUserId = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminSessionModeratorRow>>>(
+                "simfAccount.postJson", "/account/api/admin/session-moderators/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionModerators.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnAdd()
+    {
+        _addOpen = true;
+        _newSessionId = string.Empty;
+        _newUserId = string.Empty;
+    }
+
+    private async Task SubmitAssignAsync()
+    {
+        if (_busy) return;
+        if (!Guid.TryParse(_newSessionId, out var sessionId)
+            || !Guid.TryParse(_newUserId, out var userId))
+        {
+            _toast = new Toast("error", L["Admin.SessionModerators.LoadFailed"]);
+            return;
+        }
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminSessionModeratorRow>>(
+                "simfAccount.postJson", "/account/api/admin/session-moderators",
+                new AssignSessionModeratorRequest
+                {
+                    SessionId = sessionId,
+                    UserId = userId,
+                });
+            if (env is { Success: true })
+            {
+                _addOpen = false;
+                _toast = new Toast("success", L["Admin.SessionModerators.Assigned"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionModerators.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task RevokeAsync(AdminSessionModeratorRow row)
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/session-moderators/{row.SessionId}/{row.UserId}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.SessionModerators.Revoked"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionModerators.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private static string SessionLabel(AdminSessionModeratorRow row) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? $"{row.SessionCode} — {row.SessionTitleArabic}"
+            : $"{row.SessionCode} — {row.SessionTitle}";
+}

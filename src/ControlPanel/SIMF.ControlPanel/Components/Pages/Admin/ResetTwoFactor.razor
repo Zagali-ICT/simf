@@ -1,0 +1,144 @@
+@* Control Panel — admin-driven 2FA reset (decision D-041). The caller must
+   hold the Administrator role. Wipes the target's authenticator, recovery
+   codes and active sessions, and emails the target out of band. Layout
+   follows the CP form-card convention (D-043). *@
+@page "/admin/reset-2fa"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Admins.ResetTwoFactor)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.ResetTwoFactor.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.ResetTwoFactor.Title"]" />
+
+<section class="simf-card simf-page-card">
+    <p>@L["Admin.ResetTwoFactor.Supporting"]</p>
+
+    @if (_success)
+    {
+        <SimfAlert Variant="success">@L["Admin.ResetTwoFactor.Success"]</SimfAlert>
+    }
+    @if (_error is not null)
+    {
+        <SimfAlert Variant="error">@_error</SimfAlert>
+    }
+
+    <EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+        <div class="simf-form__fields">
+            <SimfTextField Label="@L["Admin.ResetTwoFactor.Email"]"
+                           @bind-Value="_model.Email"
+                           Type="email" Icon="mail" InputMode="email"
+                           Autocomplete="off" Disabled="_busy" />
+            <SimfTextField Label="@L["Admin.ResetTwoFactor.Reason"]"
+                           @bind-Value="_model.Reason"
+                           Helper="@L["Admin.ResetTwoFactor.ReasonHint"]"
+                           Autocomplete="off" Disabled="_busy" />
+        </div>
+        <div class="simf-form__actions">
+            <SimfButton Loading="_busy"
+                        LoadingLabel="@L["Admin.ResetTwoFactor.Submitting"]">
+                @L["Admin.ResetTwoFactor.Submit"]
+            </SimfButton>
+        </div>
+    </EditForm>
+</section>
+
+@code {
+    private readonly Model _model = new();
+    private EditContext _editContext = default!;
+    private ValidationMessageStore _messages = default!;
+    private bool _busy;
+    private bool _success;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        _editContext = new EditContext(_model);
+        _messages = new ValidationMessageStore(_editContext);
+        _editContext.OnFieldChanged += ClearFieldError;
+    }
+
+    private void ClearFieldError(object? sender, FieldChangedEventArgs e)
+    {
+        _messages.Clear(e.FieldIdentifier);
+        _success = false;
+        _editContext.NotifyValidationStateChanged();
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        _messages.Clear();
+        _success = false;
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_model.Email))
+        {
+            _messages.Add(_editContext.Field(nameof(Model.Email)),
+                L["Admin.ResetTwoFactor.EmailRequired"]);
+        }
+        else if (!_model.Email.Contains('@', StringComparison.Ordinal))
+        {
+            _messages.Add(_editContext.Field(nameof(Model.Email)),
+                L["Admin.ResetTwoFactor.EmailInvalid"]);
+        }
+
+        if (_model.Reason.Length < 10 || _model.Reason.Length > 500)
+        {
+            _messages.Add(_editContext.Field(nameof(Model.Reason)),
+                L["Admin.ResetTwoFactor.ReasonRequired"]);
+        }
+
+        _editContext.NotifyValidationStateChanged();
+        if (_editContext.GetValidationMessages().Any())
+        {
+            return;
+        }
+
+        // Last-line confirmation — the reset signs the target out of every
+        // session and wipes their codes. No way to undo.
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", (string)L["Admin.ResetTwoFactor.Confirm"]);
+        if (!confirmed)
+        {
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.postJson",
+                "/account/api/admin/reset-2fa",
+                new AdminResetTwoFactorRequest
+                {
+                    Email = _model.Email,
+                    Reason = _model.Reason,
+                });
+
+            if (envelope is { Success: true })
+            {
+                _success = true;
+                _model.Email = string.Empty;
+                _model.Reason = string.Empty;
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.ResetTwoFactor.Fallback"];
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private sealed class Model
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Reason { get; set; } = string.Empty;
+    }
+}

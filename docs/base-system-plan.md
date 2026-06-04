@@ -1,7 +1,7 @@
 # SIMF — Base System Plan
 
-> **Status:** DRAFT — base technical decisions locked. Domain understood from the
-> client document set (see `SIMF-Concept-Summary.md`); DDD architecture plan pending.
+> **Status:** Approved 2026-05-21 — part of the V1.0.0 documentation baseline.
+> Base technical decisions locked; the domain is consolidated in `SIMF-Concept-Summary.md`.
 > **Version:** V1.0.0
 > **Created:** 2026-05-20
 > **Updated:** 2026-05-20

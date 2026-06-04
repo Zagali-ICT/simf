@@ -1,0 +1,102 @@
+/* P1.4 (D-215) — visual seat-plan grid for the session seat-plan admin page.
+   Renders the hall layout (rows x seats-per-row) with each seat coloured by
+   its reservation state. Colours come from theme.tokens.css seat tokens only
+   (no hardcoded values), per the CSS rules. */
+
+.seatgrid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: var(--space-4) 0;
+    overflow-x: auto;
+}
+
+.seatgrid__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.seatgrid__row-label {
+    flex: 0 0 2.5rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+.seatgrid__seat {
+    width: 2rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    border: 1px solid var(--color-seat-free-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-seat-free);
+    color: var(--color-text);
+    cursor: default;
+    padding: 0;
+}
+
+.seatgrid__seat--user {
+    background: var(--color-seat-user);
+    border-color: var(--color-seat-user);
+    color: var(--color-seat-contrast);
+}
+
+.seatgrid__seat--admin {
+    background: var(--color-seat-admin);
+    border-color: var(--color-seat-admin);
+    color: var(--color-seat-contrast);
+}
+
+.seatgrid__seat--random {
+    background: var(--color-seat-random);
+    border-color: var(--color-seat-random);
+    color: var(--color-seat-contrast);
+}
+
+/* Reserved seats are clickable (to release); free seats are not. */
+.seatgrid__seat--reserved {
+    cursor: pointer;
+}
+
+.seatgrid__seat--reserved:hover:not(:disabled) {
+    box-shadow: var(--shadow-sm);
+    outline: 2px solid var(--color-focus);
+    outline-offset: 1px;
+}
+
+.seatgrid__seat:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+.seatgrid__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin-top: var(--space-3);
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.seatgrid__legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.seatgrid__swatch {
+    width: 1rem;
+    height: 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-seat-free-border);
+    display: inline-block;
+}
+
+.seatgrid__swatch--free { background: var(--color-seat-free); }
+.seatgrid__swatch--user { background: var(--color-seat-user); border-color: var(--color-seat-user); }
+.seatgrid__swatch--admin { background: var(--color-seat-admin); border-color: var(--color-seat-admin); }
+.seatgrid__swatch--random { background: var(--color-seat-random); border-color: var(--color-seat-random); }

@@ -1,0 +1,17 @@
+@* SimfNavGroup — one labelled group in the side navigation. *@
+@namespace SIMF.Components.Layout
+
+<div class="simf-nav-group">
+    <p class="simf-nav-group__label">@Label</p>
+    <ul class="simf-nav-group__items">
+        @ChildContent
+    </ul>
+</div>
+
+@code {
+    /// <summary>The group heading.</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    /// <summary>The group's items — normally <see cref="SimfNavItem" /> elements.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

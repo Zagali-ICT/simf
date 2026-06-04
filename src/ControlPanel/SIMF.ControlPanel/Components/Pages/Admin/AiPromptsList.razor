@@ -1,0 +1,528 @@
+@* D-176 (gap doc G12) — AI prompt catalogue: create / edit / test /
+   deactivate. The owner ask was "manage all AI in one place,
+   dynamically" — this is that one place. Same JS-interop pattern as
+   ContentBlocksList. *@
+@page "/admin/ai/prompts"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.AiPrompts.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.AiPrompts.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.AiPrompts.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="AdminAiPromptSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.Key)"
+                      Caption="@L["Admin.AiPrompts.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnAdd="OnAdd"
+                      OnEditOne="OnEditAsync"
+                      OnDeleteOne="OnDeleteAsync"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.AiPrompts.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]"
+                      EditLabel="@L["Grid.Edit"]"
+                      DeleteLabel="@L["Grid.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminAiPromptSummary" Key="key"
+                                    Header="@L["Admin.AiPrompts.Col.Key"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate><code>@context.Key</code></CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAiPromptSummary" Key="feature"
+                                    Header="@L["Admin.AiPrompts.Col.Feature"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Feature</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAiPromptSummary" Key="displayName"
+                                    Header="@L["Admin.AiPrompts.Col.DisplayName"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.DisplayName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAiPromptSummary" Key="provider"
+                                    Header="@L["Admin.AiPrompts.Col.Provider"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Provider</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAiPromptSummary" Key="model"
+                                    Header="@L["Admin.AiPrompts.Col.Model"]">
+                    <CellTemplate>@context.Model</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAiPromptSummary" Key="version"
+                                    Header="@L["Admin.AiPrompts.Col.Version"]"
+                                    Sortable="true">
+                    <CellTemplate>v@(context.Version)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAiPromptSummary" Key="isActive"
+                                    Header="@L["Admin.AiPrompts.Col.Active"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Admin.AiPrompts.Active.Yes"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Admin.AiPrompts.Active.No"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions>
+                @* Page-specific quiet action: run the prompt against test inputs. *@
+                <AuthorizedAction Permission="@PermissionCatalog.AiPrompts.Test">
+                    <SimfToolbarButton Icon="flask" Title="@L["Admin.AiPrompts.Test"]"
+                                       OnClick="@(() => OnTestAsync(context))" />
+                </AuthorizedAction>
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.AiPrompts.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_editOpen)
+{
+    <SimfModal Open="true"
+               Title="@(_isEdit ? L["Admin.AiPrompts.Edit.Title"] : L["Admin.AiPrompts.Add.Title"])"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.AiPrompts.Field.Key"]"
+                               Value="@_form.Key"
+                               ValueChanged="@(v => _form.Key = v)"
+                               ValueExpression="@(() => _form.Key)"
+                               Disabled="_busy || _isEdit" />
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.AiPrompts.Field.Feature"]</span>
+                    <select class="simf-field__input"
+                            value="@((int)_form.Feature)"
+                            @onchange="OnFeatureChanged"
+                            disabled="@_busy">
+                        @foreach (var f in Enum.GetValues<AiFeature>())
+                        {
+                            <option value="@((int)f)">@f</option>
+                        }
+                    </select>
+                </label>
+                <SimfTextField Label="@L["Admin.AiPrompts.Field.DisplayName"]"
+                               Value="@_form.DisplayName"
+                               ValueChanged="@(v => _form.DisplayName = v)"
+                               ValueExpression="@(() => _form.DisplayName)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.AiPrompts.Field.DisplayNameArabic"]"
+                               Value="@_form.DisplayNameArabic"
+                               ValueChanged="@(v => _form.DisplayNameArabic = v)"
+                               ValueExpression="@(() => _form.DisplayNameArabic)"
+                               Disabled="_busy" />
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.AiPrompts.Field.Provider"]</span>
+                    <select class="simf-field__input"
+                            value="@((int)_form.Provider)"
+                            @onchange="OnProviderChanged"
+                            disabled="@_busy">
+                        @foreach (var p in Enum.GetValues<AiProvider>())
+                        {
+                            <option value="@((int)p)">@p</option>
+                        }
+                    </select>
+                </label>
+                <SimfTextField Label="@L["Admin.AiPrompts.Field.Model"]"
+                               Value="@_form.Model"
+                               ValueChanged="@(v => _form.Model = v)"
+                               ValueExpression="@(() => _form.Model)"
+                               Disabled="_busy" />
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.AiPrompts.Field.SystemPrompt"]</span>
+                    <textarea class="simf-field__input" rows="6"
+                              value="@_form.SystemPrompt"
+                              @onchange="OnSystemPromptChanged"
+                              disabled="@_busy"></textarea>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.AiPrompts.Field.UserPromptTemplate"]</span>
+                    <textarea class="simf-field__input" rows="4"
+                              value="@_form.UserPromptTemplate"
+                              @onchange="OnUserPromptChanged"
+                              disabled="@_busy"></textarea>
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.AiPrompts.Field.Temperature"]</span>
+                    <input class="simf-field__input" type="number" step="0.1" min="0" max="2"
+                           value="@_form.Temperature.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                           @onchange="OnTemperatureEvtChanged"
+                           disabled="@_busy" />
+                </label>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.AiPrompts.Field.MaxOutputTokens"]</span>
+                    <input class="simf-field__input" type="number" min="1" max="8000"
+                           value="@_form.MaxOutputTokens"
+                           @onchange="OnMaxTokensEvtChanged"
+                           disabled="@_busy" />
+                </label>
+                <SimfCheckbox @bind-Value="_form.IsActive" Disabled="_busy">
+                    @L["Admin.AiPrompts.Field.IsActive"]
+                </SimfCheckbox>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _editOpen = false)">
+                @L["Admin.AiPrompts.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SubmitAsync" Loading="_busy">
+                @L["Admin.AiPrompts.Save"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@if (_testOpen)
+{
+    <SimfModal Open="true" Title="@L["Admin.AiPrompts.Test.Title"]"
+               OnClose="OnTestModalClose">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <p><code>@_testTargetKey</code></p>
+                <label class="simf-field">
+                    <span class="simf-field__label">@L["Admin.AiPrompts.Test.InputsLabel"]</span>
+                    <textarea class="simf-field__input" rows="5"
+                              value="@_testInputsRaw"
+                              @onchange="OnTestInputsChanged"
+                              disabled="@_busy"></textarea>
+                </label>
+                @if (_testResult is not null)
+                {
+                    <dl class="simf-dl">
+                        <dt>@L["Admin.AiPrompts.Test.Output"]</dt>
+                        <dd><pre class="simf-pre--wrap">@_testResult.OutputText</pre></dd>
+                        <dt>@L["Admin.AiPrompts.Test.Latency"]</dt>
+                        <dd>@(_testResult.LatencyMs)ms</dd>
+                        <dt>@L["Admin.AiPrompts.Test.Tokens"]</dt>
+                        <dd>@(_testResult.TokensInput?.ToString() ?? "—") / @(_testResult.TokensOutput?.ToString() ?? "—")</dd>
+                    </dl>
+                }
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="OnTestModalClose">
+                @L["Admin.AiPrompts.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="RunTestAsync" Loading="_busy">
+                @L["Admin.AiPrompts.Test.Action"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private sealed class FormModel
+    {
+        public string Key { get; set; } = string.Empty;
+        public AiFeature Feature { get; set; }
+        public string DisplayName { get; set; } = string.Empty;
+        public string DisplayNameArabic { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string? DescriptionArabic { get; set; }
+        public AiProvider Provider { get; set; } = AiProvider.Echo;
+        public string Model { get; set; } = "echo";
+        public string SystemPrompt { get; set; } = string.Empty;
+        public string UserPromptTemplate { get; set; } = string.Empty;
+        public double Temperature { get; set; } = 0.2;
+        public int MaxOutputTokens { get; set; } = 512;
+        public bool IsActive { get; set; } = true;
+    }
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminAiPromptSummary> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+
+    private bool _editOpen;
+    private bool _isEdit;
+    private Guid _editingId;
+    private FormModel _form = new();
+
+    private bool _testOpen;
+    private Guid _testTargetId;
+    private string _testTargetKey = string.Empty;
+    private string _testInputsRaw = string.Empty;
+    private AiCallResult? _testResult;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminAiPromptSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/ai/prompts/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.AiPrompts.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void OnAdd()
+    {
+        _editOpen = true;
+        _isEdit = false;
+        _editingId = Guid.Empty;
+        _form = new FormModel();
+    }
+
+    private async Task OnEditAsync(AdminAiPromptSummary row)
+    {
+        var env = await JS.InvokeAsync<ApiResult<AdminAiPromptDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/ai/prompts/{row.Id}");
+        if (env is not { Success: true, Data: not null })
+        {
+            _toast = new Toast("error",
+                env?.Error?.MessageForCurrentCulture()
+                ?? L["Admin.AiPrompts.LoadFailed"]);
+            return;
+        }
+        var d = env.Data;
+        _editOpen = true;
+        _isEdit = true;
+        _editingId = d.Id;
+        _form = new FormModel
+        {
+            Key = d.Key,
+            Feature = d.Feature,
+            DisplayName = d.DisplayName,
+            DisplayNameArabic = d.DisplayNameArabic,
+            Description = d.Description,
+            DescriptionArabic = d.DescriptionArabic,
+            Provider = d.Provider,
+            Model = d.Model,
+            SystemPrompt = d.SystemPrompt,
+            UserPromptTemplate = d.UserPromptTemplate,
+            Temperature = d.Temperature,
+            MaxOutputTokens = d.MaxOutputTokens,
+            IsActive = d.IsActive,
+        };
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            ApiResult<AdminAiPromptDetail>? env;
+            if (_isEdit)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminAiPromptDetail>>(
+                    "simfAccount.putJson",
+                    $"/account/api/admin/ai/prompts/{_editingId}",
+                    new UpdateAiPromptRequest
+                    {
+                        Feature = _form.Feature,
+                        DisplayName = _form.DisplayName,
+                        DisplayNameArabic = _form.DisplayNameArabic,
+                        Description = _form.Description,
+                        DescriptionArabic = _form.DescriptionArabic,
+                        Provider = _form.Provider,
+                        Model = _form.Model,
+                        SystemPrompt = _form.SystemPrompt,
+                        UserPromptTemplate = _form.UserPromptTemplate,
+                        Temperature = _form.Temperature,
+                        MaxOutputTokens = _form.MaxOutputTokens,
+                        IsActive = _form.IsActive,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminAiPromptDetail>>(
+                    "simfAccount.postJson",
+                    "/account/api/admin/ai/prompts",
+                    new CreateAiPromptRequest
+                    {
+                        Key = _form.Key,
+                        Feature = _form.Feature,
+                        DisplayName = _form.DisplayName,
+                        DisplayNameArabic = _form.DisplayNameArabic,
+                        Description = _form.Description,
+                        DescriptionArabic = _form.DescriptionArabic,
+                        Provider = _form.Provider,
+                        Model = _form.Model,
+                        SystemPrompt = _form.SystemPrompt,
+                        UserPromptTemplate = _form.UserPromptTemplate,
+                        Temperature = _form.Temperature,
+                        MaxOutputTokens = _form.MaxOutputTokens,
+                    });
+            }
+            if (env is { Success: true })
+            {
+                _editOpen = false;
+                _toast = new Toast("success", L["Admin.AiPrompts.Saved"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.AiPrompts.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteAsync(AdminAiPromptSummary row)
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/ai/prompts/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.AiPrompts.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.AiPrompts.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnTestAsync(AdminAiPromptSummary row)
+    {
+        _testOpen = true;
+        _testTargetId = row.Id;
+        _testTargetKey = row.Key;
+        _testInputsRaw = string.Empty;
+        _testResult = null;
+    }
+
+    private void OnTestModalClose()
+    {
+        _testOpen = false;
+        _testTargetId = Guid.Empty;
+        _testTargetKey = string.Empty;
+        _testInputsRaw = string.Empty;
+        _testResult = null;
+    }
+
+    private async Task RunTestAsync()
+    {
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var inputs = new Dictionary<string, string>();
+            foreach (var line in (_testInputsRaw ?? string.Empty)
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var eq = line.IndexOf('=');
+                if (eq <= 0) continue;
+                inputs[line[..eq].Trim()] = line[(eq + 1)..].Trim();
+            }
+            var env = await JS.InvokeAsync<ApiResult<AiCallResult>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/ai/prompts/{_testTargetId}/test",
+                new TestAiPromptRequest { Inputs = inputs });
+            if (env is { Success: true, Data: not null })
+            {
+                _testResult = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.AiPrompts.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnFeatureChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var v))
+            _form.Feature = (AiFeature)v;
+    }
+
+    private void OnProviderChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var v))
+            _form.Provider = (AiProvider)v;
+    }
+
+    private void OnSystemPromptChanged(ChangeEventArgs e) =>
+        _form.SystemPrompt = e.Value?.ToString() ?? string.Empty;
+
+    private void OnUserPromptChanged(ChangeEventArgs e) =>
+        _form.UserPromptTemplate = e.Value?.ToString() ?? string.Empty;
+
+    private void OnTemperatureEvtChanged(ChangeEventArgs e)
+    {
+        if (double.TryParse(e.Value?.ToString(),
+            System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var d))
+            _form.Temperature = d;
+    }
+
+    private void OnMaxTokensEvtChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n))
+            _form.MaxOutputTokens = n;
+    }
+
+    private void OnTestInputsChanged(ChangeEventArgs e) =>
+        _testInputsRaw = e.Value?.ToString() ?? string.Empty;
+}

@@ -1,0 +1,14 @@
+{
+  "@@locale": "en",
+  "@@x-comment": "English. Strings live in lib/app/localization/app_l10n.dart while the WS3 skeleton runs without gen-l10n; this ARB file is the long-term source of truth.",
+  "appName": "SIMF",
+  "comingSoonTitle": "Coming soon",
+  "comingSoonBody": "This screen is under construction. It will be replaced by the final UI/UX shortly.",
+  "backLabel": "Back",
+  "continueLabel": "Continue",
+  "cancelLabel": "Cancel",
+  "retryLabel": "Retry",
+  "loadingLabel": "Loading…",
+  "errorTitle": "Something went wrong",
+  "networkErrorBody": "Could not reach the server. Check your internet connection and try again."
+}

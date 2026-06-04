@@ -1,0 +1,68 @@
+# Visitor profile types — `/admin/profile-types/visitor`
+
+| | |
+|--|--|
+| **Route** | `/admin/profile-types/visitor` |
+| **Audience** | Administrator |
+| **Pattern** | D-117 + D-132 canonical CRUD (admin-managed lookup table — no deep-link fallback per D-118). |
+| **Status** | ✅ Real |
+| **Backend** | `POST /account/api/admin/profile-types?userType=Visitor` (list), `POST /admin/profile-types` (create — body carries `UserType`), `PUT /admin/profile-types/{id}`, `DELETE /admin/profile-types/{id}` |
+| **Source** | [`VisitorProfileTypesList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ProfileTypes/VisitorProfileTypesList.razor) + reusable child [`ProfileTypeForm.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/ProfileTypes/ProfileTypeForm.razor) |
+| **Last reviewed** | 2026-05-28 |
+
+## 1. Purpose
+
+Visitor profile types drive the **colour-coded tile picker** in the walk-in
+registration wizard (D-127). Each row has a bilingual name, a `PageColor`
+(hex / CSS variable; rendered as a swatch on the wizard tile), and an
+Active flag. Adding a new profile-type immediately makes it available at
+the registration desk.
+
+## 4.2 Toolbar
+
+Identical canonical D-117/D-132 shape. Add + Edit modals host
+`ProfileTypeForm.razor` (Initial=null vs Initial=row drives create vs
+update). Details + Delete (soft-delete via Deactivate) per row.
+
+## 4.5 Form fields (Add + Edit modal)
+
+| Field | Type | Required | MaxLength | Notes |
+|-------|------|----------|-----------|-------|
+| Name (English) | text | yes | 128 | unique per UserType |
+| Name (Arabic) | text | yes | 128 | |
+| PageColor | text + `<input type="color">` paired swatch (D-120) | yes | 32 | accepts `#rrggbb`, 3-digit hex, `var(--brand-blue)` CSS variables |
+| Active | checkbox | no | — | Edit-only |
+
+PageColor uses the paired text+swatch (D-120): the text is the source of
+truth (accepts the full free-text contract), the swatch is a visual
+shortcut that writes `#rrggbb` back. When the text isn't a canonical
+6-hex value, the swatch falls back to navy `#244A77` for display.
+
+## 7. Edge cases
+
+- **In-use deletion** — deactivating a profile-type that's already linked
+  to visitor profiles is allowed; existing visitors keep the link, new
+  walk-ins don't see the deactivated type in the tile picker. To delete
+  permanently, no visitor must reference it — server returns 409
+  `ProfileTypeInUse` if any do. The bilingual error surfaces verbatim.
+- **Duplicate name within the same UserType** → 409.
+- **UserType pinned** — this page filters to `UserType = Visitor`; the form
+  passes the same UserType when creating so a Visitor profile-type can't
+  smuggle into the Other pool.
+
+## 11. E2E
+
+| Scenario | ID |
+|----------|----|
+| Add → tile appears in walk-in wizard | E2E-VPT-001 |
+| Edit name + color → wizard picks up new color | E2E-VPT-002 |
+| Deactivate in-use → 409 `ProfileTypeInUse` toast (bilingual) | E2E-VPT-003 |
+| Cross-UserType id rejection | E2E-VPT-004 |
+
+## 12. Related
+
+- Sibling: [`admin-profile-types-other.md`](admin-profile-types-other.md)
+- Consumer: [`admin-visitors.md`](admin-visitors.md) walk-in wizard
+- Decisions: D-115 (backend), D-118 (CP pages), D-120 (PageColor picker).
+
+_Last reviewed:_ 2026-05-28 by Claude (D-133 slice 3).

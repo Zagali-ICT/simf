@@ -1,0 +1,153 @@
+@* Issue-1 — per-role permission editor. Lists the full catalogue grouped by
+   page (from PermissionCatalog.All) with a checkbox per action, pre-checked
+   from the role's current grants, and saves the selected set. Baseline roles
+   are read-only (Administrator is the wildcard; GateOperator / PublicRelations
+   are seeded). Gated by Roles.AssignPermissions. *@
+@page "/admin/roles/{RoleId:guid}/permissions"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Roles.AssignPermissions)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>@_pageTitle · SIMF</PageTitle>
+
+<SimfPageHeader Title="@_pageTitle" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        @if (_loading)
+        {
+            <p>@L["Admin.RolePermissions.Loading"]</p>
+        }
+        else if (_role is not null)
+        {
+            @if (_role.IsBaseline)
+            {
+                <SimfAlert Variant="info">@L["Admin.RolePermissions.BaselineNotice"]</SimfAlert>
+            }
+            else
+            {
+                <p>@L["Admin.RolePermissions.Intro"]</p>
+            }
+
+            <EditForm OnValidSubmit="SaveAsync" Model="_selected" class="simf-form">
+                @foreach (var group in _groups)
+                {
+                    <section class="simf-card">
+                        <h3>@group.Key</h3>
+                        @foreach (var permission in group)
+                        {
+                            <SimfCheckbox Value="_selected.Contains(permission.Code)"
+                                          ValueChanged="@((bool on) => Toggle(permission.Code, on))"
+                                          Disabled="_role.IsBaseline || _busy">
+                                @permission.DisplayName
+                            </SimfCheckbox>
+                        }
+                    </section>
+                }
+
+                <div class="simf-form__actions">
+                    @if (!_role.IsBaseline)
+                    {
+                        <SimfButton Loading="_busy" LoadingLabel="@L["Admin.RolePermissions.Saving"]">
+                            @L["Admin.RolePermissions.Save"]
+                        </SimfButton>
+                    }
+                    <SimfButton Type="button" Variant="secondary" Disabled="_busy"
+                                OnClick="BackToList">
+                        @L["Admin.RolePermissions.Back"]
+                    </SimfButton>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid RoleId { get; set; }
+
+    private record Toast(string Variant, string Message);
+
+    private static readonly IReadOnlyList<IGrouping<string, PermissionDef>> _groups =
+        PermissionCatalog.All.GroupBy(permission => permission.Page).ToList();
+
+    private AdminRolePermissionsResponse? _role;
+    private readonly HashSet<string> _selected = new(StringComparer.Ordinal);
+    private bool _loading = true;
+    private bool _busy;
+    private Toast? _toast;
+
+    private string _pageTitle = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _pageTitle = L["Admin.RolePermissions.Title"];
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminRolePermissionsResponse>>(
+                "simfAccount.getJson", $"/account/api/admin/roles/{RoleId}/permissions");
+            if (envelope is { Success: true, Data: not null })
+            {
+                _role = envelope.Data;
+                _selected.Clear();
+                foreach (var code in _role.GrantedCodes)
+                {
+                    _selected.Add(code);
+                }
+                _pageTitle = string.Format(L["Admin.RolePermissions.TitleFor"], _role.RoleName);
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.RolePermissions.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private void Toggle(string code, bool on)
+    {
+        if (on) { _selected.Add(code); }
+        else { _selected.Remove(code); }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy || _role is null || _role.IsBaseline) { return; }
+
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var body = new AdminSetRolePermissionsRequest { Codes = _selected.ToList() };
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.putJson", $"/account/api/admin/roles/{RoleId}/permissions", body);
+            if (envelope is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.RolePermissions.Saved"]);
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.RolePermissions.Fallback"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private void BackToList() => Nav.NavigateTo("/admin/roles");
+}

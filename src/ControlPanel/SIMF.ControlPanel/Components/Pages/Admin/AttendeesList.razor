@@ -1,0 +1,282 @@
+@* D-134 Sprint A — Attendees roster. Read-only view over SimfUser +
+   UserProfile + ProfileType — no schema change. Admins are excluded.
+   Filters: UserType (Visitor / Other / All), AccountState. *@
+@page "/admin/attendees"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Attendees.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Attendees.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Attendees.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form simf-form--inline">
+            <div class="simf-form__fields">
+                <div class="simf-field">
+                    <label class="simf-field__label" for="att-usertype">@L["Admin.Attendees.Filter.UserType"]</label>
+                    <div class="simf-field__control">
+                        <select id="att-usertype" class="simf-field__input"
+                                value="@_userTypeFilter"
+                                @onchange="@(e => _userTypeFilter = e.Value?.ToString() ?? string.Empty)">
+                            <option value="">@L["Admin.Attendees.Filter.UserTypeAll"]</option>
+                            <option value="Visitor">@L["Admin.Attendees.Filter.UserTypeVisitor"]</option>
+                            <option value="Other">@L["Admin.Attendees.Filter.UserTypeOther"]</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="simf-field">
+                    <label class="simf-field__label" for="att-state">@L["Admin.Attendees.Filter.AccountState"]</label>
+                    <div class="simf-field__control">
+                        <select id="att-state" class="simf-field__input"
+                                value="@_accountStateFilter"
+                                @onchange="@(e => _accountStateFilter = e.Value?.ToString() ?? string.Empty)">
+                            <option value="">@L["Admin.Attendees.Filter.AccountStateAll"]</option>
+                            <option value="Approved">@L["Admin.Attendees.Filter.AccountStateApproved"]</option>
+                            <option value="PendingApproval">@L["Admin.Attendees.Filter.AccountStatePending"]</option>
+                            <option value="Rejected">@L["Admin.Attendees.Filter.AccountStateRejected"]</option>
+                        </select>
+                    </div>
+                </div>
+                <SimfTextField Label="@L["Admin.Attendees.Filter.Search"]"
+                               Placeholder="@L["Admin.Attendees.Filter.SearchPlaceholder"]"
+                               Value="@_searchFilter"
+                               ValueChanged="@(v => _searchFilter = v)"
+                               ValueExpression="@(() => _searchFilter)" />
+                @* P1.6 — registration date-range filter (inclusive), on CreatedAt. *@
+                <div class="simf-field">
+                    <label class="simf-field__label" for="att-from">@L["Admin.Attendees.Filter.From"]</label>
+                    <div class="simf-field__control">
+                        <input id="att-from" type="date" class="simf-field__input"
+                               value="@_fromFilter"
+                               @onchange="@(e => _fromFilter = e.Value?.ToString() ?? string.Empty)" />
+                    </div>
+                </div>
+                <div class="simf-field">
+                    <label class="simf-field__label" for="att-to">@L["Admin.Attendees.Filter.To"]</label>
+                    <div class="simf-field__control">
+                        <input id="att-to" type="date" class="simf-field__input"
+                               value="@_toFilter"
+                               @onchange="@(e => _toFilter = e.Value?.ToString() ?? string.Empty)" />
+                    </div>
+                </div>
+            </div>
+            <div class="simf-form__actions">
+                <SimfButton Type="button" Variant="primary" OnClick="ApplyFiltersAsync">
+                    @L["Admin.Attendees.Filter.Apply"]
+                </SimfButton>
+                <SimfButton Type="button" Variant="secondary" OnClick="ClearFiltersAsync">
+                    @L["Admin.Attendees.Filter.Clear"]
+                </SimfButton>
+                @* P1.6 — export the filtered roster. Gated by the dedicated
+                   Attendees.Export permission (separate from View). *@
+                <AuthorizedAction Permission="@PermissionCatalog.Attendees.Export">
+                    <SimfButton Type="button" Variant="secondary" OnClick="OnExportAsync">
+                        @L["Admin.Attendees.Action.Export"]
+                    </SimfButton>
+                </AuthorizedAction>
+            </div>
+        </div>
+
+        <SimfDataGrid TItem="AdminAttendeeSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.UserId.ToString())"
+                      RowLabel="@(r => r.Email)"
+                      Caption="@L["Admin.Attendees.Title"]"
+                      PrevLabel="@L["Admin.Attendees.Prev"]"
+                      NextLabel="@L["Admin.Attendees.Next"]"
+                      FirstLabel="@L["Admin.Attendees.Pager.First"]"
+                      LastLabel="@L["Admin.Attendees.Pager.Last"]"
+                      PageSizeLabel="@L["Admin.Attendees.Pager.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Attendees.Loading"]"
+                      FilterPlaceholder="@L["Admin.Attendees.FilterPlaceholder"]"
+                      ActionsHeader="@L["Admin.Attendees.Column.Actions"]"
+                      SelectAllLabel="@L["Admin.Attendees.Action.SelectAll"]"
+                      SelectRowLabel="@L["Admin.Attendees.Action.SelectRow"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminAttendeeSummary" Key="email"
+                                    Header="@L["Admin.Attendees.Column.Email"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.Email</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAttendeeSummary" Key="displayName"
+                                    Header="@L["Admin.Attendees.Column.DisplayName"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.DisplayName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAttendeeSummary" Key="userType"
+                                    Header="@L["Admin.Attendees.Column.UserType"]"
+                                    Sortable="true">
+                    <CellTemplate>@LocaliseUserType(context.UserType)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAttendeeSummary" Key="profileType"
+                                    Header="@L["Admin.Attendees.Column.ProfileType"]">
+                    <CellTemplate>@(ProfileTypeLabel(context) ?? "—")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAttendeeSummary" Key="accountState"
+                                    Header="@L["Admin.Attendees.Column.AccountState"]">
+                    <CellTemplate>
+                        @switch (context.AccountState)
+                        {
+                            case "Approved":
+                                <SimfPill Variant="on">@L["Admin.Attendees.AccountState.Approved"]</SimfPill>
+                                break;
+                            case "PendingApproval":
+                                <SimfPill Variant="admin">@L["Admin.Attendees.AccountState.Pending"]</SimfPill>
+                                break;
+                            case "Rejected":
+                                <SimfPill Variant="off">@L["Admin.Attendees.AccountState.Rejected"]</SimfPill>
+                                break;
+                            default:
+                                <SimfPill>@context.AccountState</SimfPill>
+                                break;
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAttendeeSummary" Key="qrId"
+                                    Header="@L["Admin.Attendees.Column.QrId"]">
+                    <CellTemplate>@(context.QrId ?? "—")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAttendeeSummary" Key="createdAt"
+                                    Header="@L["Admin.Attendees.Column.CreatedAt"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Attendees.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 25 };
+    private GridPage<AdminAttendeeSummary> _page = new();
+    private bool _loading;
+    private Toast? _toast;
+
+    private string _userTypeFilter = string.Empty;
+    private string _accountStateFilter = string.Empty;
+    private string _searchFilter = string.Empty;
+    private string _fromFilter = string.Empty;
+    private string _toFilter = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = ApplyFilterValues(next);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminAttendeeSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/attendees/list",
+                ApplyFilterValues(_query));
+            if (envelope is { Success: true, Data: not null })
+            {
+                _page = envelope.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Attendees.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private GridQuery ApplyFilterValues(GridQuery source)
+    {
+        var filters = new Dictionary<string, string>(source.Filters,
+            StringComparer.OrdinalIgnoreCase);
+        SetOrRemove(filters, "userType", _userTypeFilter);
+        SetOrRemove(filters, "accountState", _accountStateFilter);
+        // The "to" bound is made inclusive of the whole picked day; "from"
+        // is start-of-day as the date input already gives it.
+        SetOrRemove(filters, "from", _fromFilter);
+        SetOrRemove(filters, "to",
+            string.IsNullOrWhiteSpace(_toFilter) ? string.Empty : _toFilter + "T23:59:59");
+        source.Filters = filters;
+        source.Search = string.IsNullOrWhiteSpace(_searchFilter) ? null : _searchFilter.Trim();
+        return source;
+    }
+
+    private static void SetOrRemove(IDictionary<string, string> filters,
+        string key, string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            filters.Remove(key);
+        }
+        else
+        {
+            filters[key] = value.Trim();
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _query.Skip = 0;
+        await LoadAsync();
+    }
+
+    private async Task ClearFiltersAsync()
+    {
+        _userTypeFilter = string.Empty;
+        _accountStateFilter = string.Empty;
+        _searchFilter = string.Empty;
+        _fromFilter = string.Empty;
+        _toFilter = string.Empty;
+        _query.Skip = 0;
+        _query.Search = null;
+        _query.Filters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        await LoadAsync();
+    }
+
+    // P1.6 — download the filtered roster as XLSX. The browser saves the file;
+    // the BFF streams the workbook bytes (no ApiResult envelope).
+    private async Task OnExportAsync() =>
+        await JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/attendees/export", ApplyFilterValues(_query));
+
+    private string LocaliseUserType(string raw) => raw switch
+    {
+        "Visitor" => L["Admin.Attendees.UserType.Visitor"],
+        "Other" => L["Admin.Attendees.UserType.Other"],
+        _ => raw,
+    };
+
+    private string? ProfileTypeLabel(AdminAttendeeSummary row)
+    {
+        var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+        return isArabic ? row.ProfileTypeNameArabic : row.ProfileTypeName;
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Admin.Attendees.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Admin.Attendees.Pager.Page"], current, total);
+}

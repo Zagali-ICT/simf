@@ -1,0 +1,317 @@
+@* D-134 Sprint A — Operation log viewer. Read-only over the existing
+   OperationLogEntry table (no schema change). Filter row above the
+   grid + per-row Details modal. Different from /admin/logs which is
+   the technical Serilog file viewer; this page is for business +
+   security audit events. *@
+@page "/admin/operation-log"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.OperationLog.View)]
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.OperationLog.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.OperationLog.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-form simf-form--inline">
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.OperationLog.Filter.EventType"]"
+                               Placeholder="@L["Admin.OperationLog.Filter.EventTypePlaceholder"]"
+                               Value="@_eventTypeFilter"
+                               ValueChanged="@(v => _eventTypeFilter = v)"
+                               ValueExpression="@(() => _eventTypeFilter)" />
+                <SimfTextField Label="@L["Admin.OperationLog.Filter.SubjectEmail"]"
+                               Value="@_subjectEmailFilter"
+                               ValueChanged="@(v => _subjectEmailFilter = v)"
+                               ValueExpression="@(() => _subjectEmailFilter)" />
+                <div class="simf-field">
+                    <label class="simf-field__label" for="op-outcome">@L["Admin.OperationLog.Filter.Outcome"]</label>
+                    <div class="simf-field__control">
+                        <select id="op-outcome" class="simf-field__input"
+                                value="@_outcomeFilter"
+                                @onchange="@(e => _outcomeFilter = e.Value?.ToString() ?? string.Empty)">
+                            <option value="">@L["Admin.OperationLog.Filter.OutcomeAny"]</option>
+                            <option value="Success">@L["Admin.OperationLog.Filter.OutcomeSuccess"]</option>
+                            <option value="Failure">@L["Admin.OperationLog.Filter.OutcomeFailure"]</option>
+                        </select>
+                    </div>
+                </div>
+                @* P1.6 — date-range filter (inclusive). The service filters
+                   OperationLogEntry.TimestampUtc. *@
+                <div class="simf-field">
+                    <label class="simf-field__label" for="op-from">@L["Admin.OperationLog.Filter.From"]</label>
+                    <div class="simf-field__control">
+                        <input id="op-from" type="date" class="simf-field__input"
+                               value="@_fromFilter"
+                               @onchange="@(e => _fromFilter = e.Value?.ToString() ?? string.Empty)" />
+                    </div>
+                </div>
+                <div class="simf-field">
+                    <label class="simf-field__label" for="op-to">@L["Admin.OperationLog.Filter.To"]</label>
+                    <div class="simf-field__control">
+                        <input id="op-to" type="date" class="simf-field__input"
+                               value="@_toFilter"
+                               @onchange="@(e => _toFilter = e.Value?.ToString() ?? string.Empty)" />
+                    </div>
+                </div>
+            </div>
+            <div class="simf-form__actions">
+                <SimfButton Type="button" Variant="primary" OnClick="ApplyFiltersAsync">
+                    @L["Admin.OperationLog.Filter.Apply"]
+                </SimfButton>
+                <SimfButton Type="button" Variant="secondary" OnClick="ClearFiltersAsync">
+                    @L["Admin.OperationLog.Filter.Clear"]
+                </SimfButton>
+                @* P1.6 — export the filtered result set. Gated by the dedicated
+                   OperationLog.Export permission (separate from View). *@
+                <AuthorizedAction Permission="@PermissionCatalog.OperationLog.Export">
+                    <SimfButton Type="button" Variant="secondary" OnClick="OnExportAsync">
+                        @L["Admin.OperationLog.Action.Export"]
+                    </SimfButton>
+                </AuthorizedAction>
+            </div>
+        </div>
+
+        <SimfDataGrid TItem="AdminOperationLogSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.EventType)"
+                      Caption="@L["Admin.OperationLog.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      OnDetailsOne="OnDetailsAsync"
+                      PrevLabel="@L["Admin.OperationLog.Prev"]"
+                      NextLabel="@L["Admin.OperationLog.Next"]"
+                      FirstLabel="@L["Admin.OperationLog.Pager.First"]"
+                      LastLabel="@L["Admin.OperationLog.Pager.Last"]"
+                      PageSizeLabel="@L["Admin.OperationLog.Pager.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.OperationLog.Loading"]"
+                      ActionsHeader="@L["Admin.OperationLog.Column.Actions"]"
+                      SelectAllLabel="@L["Admin.OperationLog.Action.SelectAll"]"
+                      SelectRowLabel="@L["Admin.OperationLog.Action.SelectRow"]"
+                      DetailsLabel="@L["Admin.OperationLog.Action.Details"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminOperationLogSummary" Key="timestampUtc"
+                                    Header="@L["Admin.OperationLog.Column.Timestamp"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.TimestampUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminOperationLogSummary" Key="eventType"
+                                    Header="@L["Admin.OperationLog.Column.EventType"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.EventType</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminOperationLogSummary" Key="outcome"
+                                    Header="@L["Admin.OperationLog.Column.Outcome"]"
+                                    Sortable="true">
+                    <CellTemplate>
+                        @if (string.Equals(context.Outcome, "Success", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <SimfPill Variant="on">@L["Admin.OperationLog.Outcome.Success"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Admin.OperationLog.Outcome.Failure"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminOperationLogSummary" Key="subjectEmail"
+                                    Header="@L["Admin.OperationLog.Column.SubjectEmail"]">
+                    <CellTemplate>@(context.SubjectEmail ?? "—")</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminOperationLogSummary" Key="sourceIp"
+                                    Header="@L["Admin.OperationLog.Column.SourceIp"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@(context.SourceIp ?? "—")</CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.OperationLog.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_detailsTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.OperationLog.Details.Title"]"
+               OnClose="@(() => _detailsTarget = null)">
+        <ChildContent>
+            @if (_detailsLoading)
+            {
+                <p>@L["Admin.OperationLog.Details.Loading"]</p>
+            }
+            else if (_detailsDetail is not null)
+            {
+                <dl class="simf-dl">
+                    <dt>@L["Admin.OperationLog.Column.Timestamp"]</dt>
+                    <dd>@_detailsDetail.TimestampUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</dd>
+                    <dt>@L["Admin.OperationLog.Column.EventType"]</dt>
+                    <dd>@_detailsDetail.EventType</dd>
+                    <dt>@L["Admin.OperationLog.Column.Outcome"]</dt>
+                    <dd>@_detailsDetail.Outcome</dd>
+                    <dt>@L["Admin.OperationLog.Column.SubjectEmail"]</dt>
+                    <dd>@(_detailsDetail.SubjectEmail ?? "—")</dd>
+                    <dt>@L["Admin.OperationLog.Details.Field.SubjectUserId"]</dt>
+                    <dd>@(_detailsDetail.SubjectUserId?.ToString() ?? "—")</dd>
+                    <dt>@L["Admin.OperationLog.Details.Field.ActorUserId"]</dt>
+                    <dd>@(_detailsDetail.ActorUserId?.ToString() ?? "—")</dd>
+                    <dt>@L["Admin.OperationLog.Column.SourceIp"]</dt>
+                    <dd>@(_detailsDetail.SourceIp ?? "—")</dd>
+                    <dt>@L["Admin.OperationLog.Details.Field.UserAgent"]</dt>
+                    <dd>@(_detailsDetail.UserAgent ?? "—")</dd>
+                    <dt>@L["Admin.OperationLog.Details.Field.CorrelationId"]</dt>
+                    <dd>@(_detailsDetail.CorrelationId ?? "—")</dd>
+                    <dt>@L["Admin.OperationLog.Details.Field.ErrorCode"]</dt>
+                    <dd>@(_detailsDetail.ErrorCode ?? "—")</dd>
+                    <dt>@L["Admin.OperationLog.Details.Field.Detail"]</dt>
+                    <dd>@(_detailsDetail.Detail ?? "—")</dd>
+                </dl>
+            }
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _detailsTarget = null)">
+                @L["Admin.OperationLog.Details.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 25 };
+    private GridPage<AdminOperationLogSummary> _page = new();
+    private bool _loading;
+    private Toast? _toast;
+
+    private string _eventTypeFilter = string.Empty;
+    private string _subjectEmailFilter = string.Empty;
+    private string _outcomeFilter = string.Empty;
+    private string _fromFilter = string.Empty;
+    private string _toFilter = string.Empty;
+
+    private AdminOperationLogSummary? _detailsTarget;
+    private AdminOperationLogDetail? _detailsDetail;
+    private bool _detailsLoading;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = ApplyFilterValues(next);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminOperationLogSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/operation-log/list",
+                ApplyFilterValues(_query));
+            if (envelope is { Success: true, Data: not null })
+            {
+                _page = envelope.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.OperationLog.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private GridQuery ApplyFilterValues(GridQuery source)
+    {
+        var filters = new Dictionary<string, string>(source.Filters,
+            StringComparer.OrdinalIgnoreCase);
+        SetOrRemove(filters, "eventType", _eventTypeFilter);
+        SetOrRemove(filters, "subjectEmail", _subjectEmailFilter);
+        SetOrRemove(filters, "outcome", _outcomeFilter);
+        // The "to" bound is made inclusive of the whole picked day; "from"
+        // is start-of-day as the date input already gives it.
+        SetOrRemove(filters, "from", _fromFilter);
+        SetOrRemove(filters, "to",
+            string.IsNullOrWhiteSpace(_toFilter) ? string.Empty : _toFilter + "T23:59:59");
+        source.Filters = filters;
+        return source;
+    }
+
+    private static void SetOrRemove(IDictionary<string, string> filters,
+        string key, string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            filters.Remove(key);
+        }
+        else
+        {
+            filters[key] = value.Trim();
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _query.Skip = 0;
+        await LoadAsync();
+    }
+
+    private async Task ClearFiltersAsync()
+    {
+        _eventTypeFilter = string.Empty;
+        _subjectEmailFilter = string.Empty;
+        _outcomeFilter = string.Empty;
+        _fromFilter = string.Empty;
+        _toFilter = string.Empty;
+        _query.Skip = 0;
+        _query.Filters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        await LoadAsync();
+    }
+
+    // P1.6 — download the filtered result set as XLSX. The browser saves the
+    // file; the BFF streams the workbook bytes (no ApiResult envelope).
+    private async Task OnExportAsync() =>
+        await JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/operation-log/export", ApplyFilterValues(_query));
+
+    private async Task OnDetailsAsync(AdminOperationLogSummary row)
+    {
+        _detailsTarget = row;
+        _detailsDetail = null;
+        _detailsLoading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminOperationLogDetail>>(
+                "simfAccount.getJson",
+                $"/account/api/admin/operation-log/{row.Id}");
+            if (envelope is { Success: true, Data: not null })
+            {
+                _detailsDetail = envelope.Data;
+            }
+        }
+        finally { _detailsLoading = false; }
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Admin.OperationLog.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Admin.OperationLog.Pager.Page"], current, total);
+}

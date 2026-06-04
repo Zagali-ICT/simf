@@ -1,0 +1,46 @@
+@* SimfButton — the SIMF button. One primary action per card; secondary is
+   outlined. While Loading it shows a spinner, keeps its size and goes
+   non-interactive. *@
+@namespace SIMF.Components.Forms
+
+<button type="@Type"
+        class="simf-button simf-button--@Variant @(Block ? "simf-button--block" : null)"
+        disabled="@(Disabled || Loading)"
+        aria-busy="@(Loading ? "true" : null)"
+        @onclick="OnClick">
+    @if (Loading)
+    {
+        <span class="simf-button__spinner" role="status" aria-label="@LoadingLabel"></span>
+    }
+    else
+    {
+        @ChildContent
+    }
+</button>
+
+@code {
+    /// <summary>The visual variant — <c>primary</c>, <c>secondary</c>,
+    /// <c>neutral</c> (Grey, myComment #17), or <c>danger</c>.</summary>
+    [Parameter] public string Variant { get; set; } = "primary";
+
+    /// <summary>The HTML button type — <c>submit</c> by default.</summary>
+    [Parameter] public string Type { get; set; } = "submit";
+
+    /// <summary>Stretches the button to the full width of its container.</summary>
+    [Parameter] public bool Block { get; set; }
+
+    /// <summary>Disables the button.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Shows the loading spinner and blocks interaction.</summary>
+    [Parameter] public bool Loading { get; set; }
+
+    /// <summary>The accessible label announced while loading — supplied localised.</summary>
+    [Parameter] public string LoadingLabel { get; set; } = "Working";
+
+    /// <summary>Optional click handler (for buttons that are not form submits).</summary>
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    /// <summary>The button label.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

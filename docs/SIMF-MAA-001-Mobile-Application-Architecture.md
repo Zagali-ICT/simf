@@ -4,8 +4,8 @@
 |-------|-------|
 | Document ID | SIMF-MAA-001 |
 | Title | Mobile Application Architecture |
-| Version | 1.0 |
-| Status | Draft |
+| Version | 1.1 |
+| Status | Approved |
 | Classification | Confidential — to be confirmed by the owner |
 | Prepared by | Engineering & Architecture Team, STARTIME |
 | Owner | Solution Architect |
@@ -18,6 +18,9 @@
 | Version | Date | Author | Summary of change |
 |---------|------|--------|-------------------|
 | 1.0 | 2026-05-20 | Engineering & Architecture Team | First issue. |
+| 1.1 | 2026-05-20 | Engineering & Architecture Team | Made the §10 date and digit formatting explicit (dates display as dd-MM-yyyy, digits are always Latin); added a §12 cross-reference to the Smif* shared component library. |
+| 1.2 | 2026-05-29 | Engineering & Architecture Team | D-161 — added §8.1 documenting the `mobile_app_role` JWT claim, the role enum (None / Visitor / Staff / Moderator), the per-`UserType` resolution rules, and the role-based route guard pattern. |
+| 1.3 | 2026-05-29 | Engineering & Architecture Team | D-164 — added §8.1.1 disambiguating `MobileAppRole.Moderator` (mobile-app content authority, JWT claim) from the session-question moderator (per-session permission, lands in gap-plan phase G3). |
 
 ---
 
@@ -168,6 +171,77 @@ unauthenticated user to sign-in. The guest-versus-authenticated screen split
 follows SIMF-CON-001 and is confirmed against the roles specification
 (SIMF-RPM-001).
 
+### 8.1 The mobile-app role (D-161)
+
+Beyond the guest-vs-authenticated split, four in-app roles drive which screens
+are reachable:
+
+| App role  | Source                                                                                    |
+|-----------|-------------------------------------------------------------------------------------------|
+| Guest     | The user is not signed in (no JWT). Maps to the absence of `mobile_app_role`.             |
+| Visitor   | The user signed in with `UserType=Visitor`. Always `mobile_app_role=Visitor`.             |
+| Staff     | The user signed in with `UserType=Other` and the assigned `ProfileType.MobileAppRole=Staff`.      |
+| Moderator | The user signed in with `UserType=Other` and the assigned `ProfileType.MobileAppRole=Moderator`.  |
+
+`UserType=Admin` users never reach the mobile app surface — they hit the
+Control Panel; their access tokens carry `mobile_app_role=None` so a misrouted
+admin token cannot unlock Staff / Moderator screens.
+
+The role lives on a single JWT claim, `mobile_app_role`, minted at sign-in and
+at every refresh:
+
+```text
+mobile_app_role: "None" | "Visitor" | "Staff" | "Moderator"
+```
+
+The app reads the claim once on sign-in, stores it next to the access token
+in secure storage (§9.4), and uses it to gate route entries in `app/router.dart`.
+The mapping for `UserType=Other` profile types is **admin-curated runtime
+data**, not a hardcoded list: an admin can promote a new Other-tier profile
+type to Staff or Moderator by editing the row from the Control Panel; the
+mapping takes effect on the next sign-in / refresh. The seed ships only
+`Staff (Other) → Staff`; every other operational mapping is event-curated.
+
+**D-196 — approval gate.** A partner profile type confers its `Staff` /
+`Moderator` `mobile_app_role` only once the account's `AccountState` is
+`Approved`. A self-registering user who self-picks a partner profile type
+stays `PendingApproval`, so they resolve to `Visitor` until an admin
+reviews and approves them — at which point the admin has seen (and may
+have changed) the proposed profile type. This makes the admin approval,
+not the user's self-pick, the point at which operational authority is
+granted; the mobile sign-up API alone can never mint more than `Visitor`.
+
+The Flutter app must not infer authority from `UserType` alone: a user whose
+`UserType=Other` carries `mobile_app_role=None` is treated as a Visitor for
+navigation purposes (their `ProfileType` is "Exhibitor" or "Speaker" — a
+display-side discriminator, not an authority).
+
+The wire contract for the claim is documented in SIMF-API-001 §12.2. The
+backend behaviour is captured in the SIMF Decisions Log entry D-161.
+
+#### 8.1.1 Two distinct "Moderator" concepts (D-164)
+
+The stakeholder requirements PDF (D-162 §2.7.2) names a role called
+**المحاور** — the **session-question moderator**: a person assigned to a
+specific live session who curates Q&A — viewing audience questions,
+hiding or reordering them, and pushing approved ones to the speakers.
+
+This **is not the same** as the `MobileAppRole.Moderator` claim
+documented above:
+
+| Concept | Authority | Scope | Source |
+|---|---|---|---|
+| `mobile_app_role = Moderator` (D-161) | Mobile-app content + user moderation | App-global | JWT claim, resolved from `ProfileType.MobileAppRole` |
+| Session moderator (D-164 / D-162 §2.7.2) | Q&A curation during a live session | Per-`Session.Id` | Per-session permission grant (`SessionModerate`) — landing in gap-plan phase G3 |
+
+A user can hold either authority, both, or neither. The Flutter app must
+not infer one from the other: an admin granting `SessionModerate` to a
+specific user for one specific session does not change that user's
+`mobile_app_role` claim, and vice versa. The two surfaces are gated
+independently — `mobile_app_role` for app-level navigation, the
+per-session permission for the Q&A management screen of one specific
+session.
+
 ## 9. Networking and the API layer
 
 ### 9.1 The API client
@@ -219,13 +293,24 @@ connection state rather than silently showing stale data.
   right.
 - The chosen language is stored locally and sent on every request as
   `Accept-Language`, so server messages come back in the same language.
-- Numbers, dates and times are formatted for the active locale.
+- Dates are displayed in the format `dd-MM-yyyy`.
+- Numbers — including the digits inside dates and times — are always rendered
+  in Latin (English) digits (`0`–`9`), regardless of the UI language. The app
+  does not use Arabic-Indic digits (`٠`–`٩`). This makes the formatting rule
+  explicit: it overrides any reading of "formatted for the active locale" that
+  would otherwise produce Arabic-Indic digits or a different date format. Other
+  locale-sensitive formatting, such as the wording around a time, still follows
+  the active locale.
 
 ## 11. Theming
 
 - Theme values — colours, typography, spacing, radii — are defined as tokens in
   `app/theme/`, in one place. A widget references a token, never a literal
   colour or size.
+- The brand tokens — the colour palette and the typography — come from
+  **SIMF-VID-001 (Visual Identity and Design Tokens)**. The `app/theme/` tokens
+  are populated from it, and the external designer's visual design must conform
+  to SIMF-VID-001.
 - The app supports light and dark themes from the start. The token structure
   allows more themes to be added without touching widgets.
 - When the external designer delivers the visual design system, its values are
@@ -271,8 +356,12 @@ For the handoff to apply cleanly, the design delivery needs:
 ### 12.3 How the design is applied
 
 When the design system arrives, its tokens are loaded into `app/theme/`. The
-shared components are styled to match the component library. Each screen's
-placeholder visuals are replaced with the real design. Because the structure,
+shared components are styled to match the component library. These shared
+components are the app's `Smif*` wrapper components (SIMF-SES-001 section 6.3):
+each `Smif*` component wraps the matching widget from the designer's delivered
+component library, so applying the design styles the wrappers in one place
+rather than every screen. Each screen's placeholder visuals are replaced with
+the real design. Because the structure,
 navigation, state and API integration are already built and tested, this stage
 is a visual pass, not a rebuild.
 

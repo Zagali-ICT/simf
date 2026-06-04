@@ -1,0 +1,45 @@
+@using System.Globalization
+@* H6 — D-061: lang/dir track the current culture so Arabic visitors
+   get lang="ar" + dir="rtl". Mirrors the Control Panel's App.razor
+   pattern (D-028 / D-061). Without this every Arabic Website page is
+   announced with English phonemes by AT and renders LTR. *@
+<!DOCTYPE html>
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName"
+      dir="@(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? "rtl" : "ltr")">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    @* Apply the saved theme before first paint so there is no flash. *@
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('simf-theme') === 'dark') {
+                    var de = document.documentElement;
+                    de.setAttribute('data-theme', 'dark');
+                    // color-scheme makes the browser paint a dark canvas + native
+                    // controls immediately, before the stylesheet loads — this is
+                    // what removes the white flash on reload in dark mode.
+                    de.style.colorScheme = 'dark';
+                }
+            } catch (e) { /* localStorage may be unavailable */ }
+        })();
+    </script>
+    <ResourcePreloader />
+    <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/theme.tokens.css"]" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/simf-components.css"]" />
+    <link rel="stylesheet" href="@Assets["SIMF.Web.styles.css"]" />
+    <script src="@Assets["_content/SIMF.Components/js/simf-theme.js"]"></script>
+    <ImportMap />
+    <HeadOutlet />
+</head>
+
+<body>
+    <Routes />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script src="@Assets["js/simf-account.js"]"></script>
+</body>
+
+</html>

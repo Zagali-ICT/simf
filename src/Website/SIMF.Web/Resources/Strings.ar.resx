@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <data name="Brand.Subtitle" xml:space="preserve"><value>الملتقى البحري السعودي الدولي 2026</value></data>
+  <data name="Brand.Caption" xml:space="preserve"><value>القوات البحرية الملكية السعودية</value></data>
+  <data name="Brand.LogoAlt" xml:space="preserve"><value>سيمف — الملتقى البحري السعودي الدولي</value></data>
+
+  <data name="Auth.PageTitle.SignIn" xml:space="preserve"><value>تسجيل الدخول · الملتقى البحري السعودي الدولي</value></data>
+  <data name="Auth.PageTitle.Verify" xml:space="preserve"><value>التحقق · الملتقى البحري السعودي الدولي</value></data>
+  <data name="Auth.PageTitle.Forgot" xml:space="preserve"><value>إعادة تعيين كلمة المرور · الملتقى البحري السعودي الدولي</value></data>
+  <data name="Auth.PageTitle.Reset" xml:space="preserve"><value>تعيين كلمة مرور جديدة · الملتقى البحري السعودي الدولي</value></data>
+
+  <data name="Auth.SignIn.Title" xml:space="preserve"><value>تسجيل الدخول</value></data>
+  <data name="Auth.SignIn.Supporting" xml:space="preserve"><value>سجّل الدخول إلى حسابك في الملتقى.</value></data>
+  <data name="Auth.SignIn.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Auth.SignIn.Password" xml:space="preserve"><value>كلمة المرور</value></data>
+  <data name="Auth.SignIn.ForgotLink" xml:space="preserve"><value>نسيت كلمة المرور؟</value></data>
+  <data name="Auth.SignIn.Submit" xml:space="preserve"><value>تسجيل الدخول</value></data>
+  <data name="Auth.SignIn.Submitting" xml:space="preserve"><value>جارٍ تسجيل الدخول</value></data>
+  <data name="Auth.SignIn.EmailRequired" xml:space="preserve"><value>أدخل بريدك الإلكتروني.</value></data>
+  <data name="Auth.SignIn.EmailInvalid" xml:space="preserve"><value>أدخل بريدًا إلكترونيًا صالحًا.</value></data>
+  <data name="Auth.SignIn.PasswordRequired" xml:space="preserve"><value>أدخل كلمة المرور.</value></data>
+  <data name="Auth.SignIn.Fallback" xml:space="preserve"><value>تعذّر إكمال تسجيل الدخول. حاول مرة أخرى.</value></data>
+
+  <data name="Auth.Verify.Title" xml:space="preserve"><value>التحقق</value></data>
+  <data name="Auth.Verify.Supporting" xml:space="preserve"><value>أدخل الرمز المكوّن من ستة أرقام الذي أرسلناه إلى بريدك.</value></data>
+  <data name="Auth.Verify.Code" xml:space="preserve"><value>رمز التحقق</value></data>
+  <data name="Auth.Verify.CodeFormat" xml:space="preserve"><value>يتكوّن الرمز من ستة أرقام.</value></data>
+  <data name="Auth.Verify.CodeRequired" xml:space="preserve"><value>أدخل الرمز المكوّن من ستة أرقام.</value></data>
+  <data name="Auth.Verify.Submit" xml:space="preserve"><value>تحقّق</value></data>
+  <data name="Auth.Verify.Submitting" xml:space="preserve"><value>جارٍ التحقق</value></data>
+  <data name="Auth.Verify.Fallback" xml:space="preserve"><value>تعذّر إكمال التحقق. حاول مرة أخرى.</value></data>
+  <data name="Auth.Verify.CodeSentTo" xml:space="preserve"><value>تم إرسال رمز إلى {0}.</value></data>
+  <data name="Auth.Verify.BackToSignIn" xml:space="preserve"><value>العودة إلى تسجيل الدخول</value></data>
+
+  <data name="Auth.Forgot.Title" xml:space="preserve"><value>إعادة تعيين كلمة المرور</value></data>
+  <data name="Auth.Forgot.Supporting" xml:space="preserve"><value>أدخل بريدك الإلكتروني وسنرسل لك رمزًا مكوّنًا من ستة أرقام.</value></data>
+  <data name="Auth.Forgot.Submit" xml:space="preserve"><value>إرسال الرمز</value></data>
+  <data name="Auth.Forgot.Submitting" xml:space="preserve"><value>جارٍ الإرسال</value></data>
+  <data name="Auth.Forgot.Fallback" xml:space="preserve"><value>تعذّر إكمال الطلب. حاول مرة أخرى.</value></data>
+  <data name="Auth.Forgot.BackToSignIn" xml:space="preserve"><value>العودة إلى تسجيل الدخول</value></data>
+
+  <data name="Auth.Reset.Title" xml:space="preserve"><value>تعيين كلمة مرور جديدة</value></data>
+  <data name="Auth.Reset.Supporting" xml:space="preserve"><value>أدخل الرمز الذي أرسلناه، ثم اختر كلمة مرور جديدة.</value></data>
+  <data name="Auth.Reset.Code" xml:space="preserve"><value>رمز التحقق</value></data>
+  <data name="Auth.Reset.NewPassword" xml:space="preserve"><value>كلمة المرور الجديدة</value></data>
+  <data name="Auth.Reset.ConfirmPassword" xml:space="preserve"><value>تأكيد كلمة المرور الجديدة</value></data>
+  <data name="Auth.Reset.PasswordHelper" xml:space="preserve"><value>8 أحرف على الأقل، تحتوي على حرف ورقم.</value></data>
+  <data name="Auth.Reset.Submit" xml:space="preserve"><value>تحديث كلمة المرور</value></data>
+  <data name="Auth.Reset.Submitting" xml:space="preserve"><value>جارٍ التحديث</value></data>
+  <data name="Auth.Reset.PasswordsMismatch" xml:space="preserve"><value>كلمتا المرور غير متطابقتين.</value></data>
+  <data name="Auth.Reset.PasswordTooShort" xml:space="preserve"><value>يجب أن تتكوّن كلمة المرور من 8 أحرف على الأقل.</value></data>
+  <data name="Auth.Reset.PasswordTooLong" xml:space="preserve"><value>يجب ألا تتجاوز كلمة المرور 128 حرفًا.</value></data>
+  <data name="Auth.Reset.PasswordNoDigit" xml:space="preserve"><value>يجب أن تحتوي كلمة المرور على رقم.</value></data>
+  <data name="Auth.Reset.PasswordNoLetter" xml:space="preserve"><value>يجب أن تحتوي كلمة المرور على حرف.</value></data>
+  <data name="Auth.Reset.Fallback" xml:space="preserve"><value>تعذّر إعادة تعيين كلمة المرور. حاول مرة أخرى.</value></data>
+  <data name="Auth.Reset.Done.Title" xml:space="preserve"><value>تم تحديث كلمة المرور</value></data>
+  <data name="Auth.Reset.Done.Text" xml:space="preserve"><value>يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.</value></data>
+  <data name="Auth.Reset.Done.SignIn" xml:space="preserve"><value>الانتقال إلى تسجيل الدخول</value></data>
+
+  <data name="Auth.Footer" xml:space="preserve"><value>الملتقى البحري السعودي الدولي 2026</value></data>
+  <data name="Auth.LanguageSwitch" xml:space="preserve"><value>English</value></data>
+
+  <data name="Account.Profile.Title" xml:space="preserve"><value>ملفي الشخصي</value></data>
+  <data name="Account.Profile.SignOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
+  <data name="Account.Profile.Loading" xml:space="preserve"><value>جارٍ تحميل ملفك الشخصي…</value></data>
+  <data name="Account.Profile.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الملف الشخصي. حاول مرة أخرى.</value></data>
+  <data name="Account.Profile.QrTitle" xml:space="preserve"><value>رمز QR الخاص بك للملتقى</value></data>
+  <data name="Account.Profile.QrSupporting" xml:space="preserve"><value>أبرز هذا الرمز عند مدخل الفعالية. سيقوم فريق RSNF بمسحه لتسجيل دخولك.</value></data>
+  <data name="Account.Profile.QrPending" xml:space="preserve"><value>سيظهر رمز QR هنا بعد اعتماد حسابك.</value></data>
+  <data name="Account.Profile.ArabicName" xml:space="preserve"><value>الاسم بالعربية</value></data>
+  <data name="Account.Profile.EnglishName" xml:space="preserve"><value>الاسم بالإنجليزية</value></data>
+  <data name="Account.Profile.EnglishNameHint" xml:space="preserve"><value>كما هو مكتوب في جواز السفر.</value></data>
+  <!-- D-163 -->
+  <data name="Account.Profile.JobTitle" xml:space="preserve"><value>المسمى الوظيفي (اختياري)</value></data>
+  <data name="Account.Profile.JobTitleHint" xml:space="preserve"><value>مثل "ربان" أو "مدير العمليات". حتى 128 حرفًا.</value></data>
+  <data name="Account.Profile.Nationality" xml:space="preserve"><value>الجنسية</value></data>
+  <data name="Account.Profile.NationalityPlaceholder" xml:space="preserve"><value>اختر الدولة</value></data>
+  <data name="Account.Profile.DateOfBirth" xml:space="preserve"><value>تاريخ الميلاد</value></data>
+  <data name="Account.Profile.PlaceOfBirth" xml:space="preserve"><value>مكان الميلاد</value></data>
+  <data name="Account.Profile.IsSaudi" xml:space="preserve"><value>هل تحمل الجنسية السعودية؟</value></data>
+  <data name="Account.Profile.IsSaudi.Yes" xml:space="preserve"><value>نعم</value></data>
+  <data name="Account.Profile.IsSaudi.No" xml:space="preserve"><value>لا</value></data>
+  <data name="Account.Profile.NationalId" xml:space="preserve"><value>رقم الهوية الوطنية</value></data>
+  <data name="Account.Profile.NationalIdHint" xml:space="preserve"><value>10 أرقام تبدأ بالرقم 1.</value></data>
+  <data name="Account.Profile.Iqama" xml:space="preserve"><value>رقم الإقامة</value></data>
+  <data name="Account.Profile.IqamaHint" xml:space="preserve"><value>10 أرقام تبدأ بالرقم 2 — مطلوب إذا كنت مقيمًا في المملكة.</value></data>
+  <data name="Account.Profile.Passport" xml:space="preserve"><value>رقم جواز السفر</value></data>
+  <data name="Account.Profile.PassportHint" xml:space="preserve"><value>مطلوب إذا كنت زائرًا من خارج المملكة.</value></data>
+  <data name="Account.Profile.SaudiMobile" xml:space="preserve"><value>الجوال السعودي</value></data>
+  <data name="Account.Profile.IntlMobile" xml:space="preserve"><value>الجوال الدولي</value></data>
+  <data name="Account.Profile.Submit" xml:space="preserve"><value>حفظ ملفي الشخصي</value></data>
+  <data name="Account.Profile.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Account.Profile.Saved" xml:space="preserve"><value>تم حفظ ملفك الشخصي.</value></data>
+  <data name="Account.Profile.Fallback" xml:space="preserve"><value>تعذّر حفظ الملف الشخصي. راجع البيانات ثم حاول مرة أخرى.</value></data>
+
+  <data name="Account.Profile.IdImageTitle" xml:space="preserve"><value>صورة الهوية</value></data>
+  <data name="Account.Profile.IdImageSupporting" xml:space="preserve"><value>ارفع صورة واضحة لهويتك الوطنية أو الإقامة أو جواز السفر.</value></data>
+  <data name="Account.Profile.IdImageOnFile" xml:space="preserve"><value>توجد صورة هوية محفوظة. ارفع صورة جديدة لاستبدالها.</value></data>
+  <data name="Account.Profile.IdImagePicker" xml:space="preserve"><value>اختر ملفًا</value></data>
+  <data name="Account.Profile.IdImageHint" xml:space="preserve"><value>PNG أو JPEG أو WebP — حتى 5 ميغابايت.</value></data>
+  <data name="Account.Profile.IdImageUpload" xml:space="preserve"><value>رفع</value></data>
+  <data name="Account.Profile.IdImageUploading" xml:space="preserve"><value>جارٍ الرفع</value></data>
+  <data name="Account.Profile.IdImageUpdated" xml:space="preserve"><value>تم حفظ صورة الهوية.</value></data>
+  <data name="Account.Profile.IdImageFallback" xml:space="preserve"><value>تعذّر رفع صورة الهوية.</value></data>
+
+  <data name="Account.Profile.Interests.Title" xml:space="preserve"><value>اهتماماتك</value></data>
+  <data name="Account.Profile.Interests.Hint" xml:space="preserve"><value>اختر ما بين 1 و 10 اهتمامات لمساعدتنا في اقتراح الجلسات المناسبة لك.</value></data>
+  <data name="Account.Profile.Interests.Empty" xml:space="preserve"><value>قائمة الاهتمامات لم تُنشر بعد. يُرجى المراجعة لاحقًا.</value></data>
+
+  <data name="Account.Pending.Title" xml:space="preserve"><value>حسابك بانتظار الموافقة</value></data>
+  <data name="Account.Pending.Supporting" xml:space="preserve"><value>يجب أن يوافق المسؤول على حسابك قبل استخدام SIMF. ستصلك رسالة بريد إلكتروني فور اتخاذ القرار.</value></data>
+  <data name="Account.Pending.AccountEmail" xml:space="preserve"><value>الحساب</value></data>
+  <data name="Account.Pending.SignOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
+  <data name="Account.Rejected.Title" xml:space="preserve"><value>تم رفض حسابك</value></data>
+  <data name="Account.Rejected.Reason" xml:space="preserve"><value>السبب</value></data>
+  <data name="Account.Rejected.NoReasonProvided" xml:space="preserve"><value>لم يُسجَّل سبب لهذا القرار.</value></data>
+  <data name="Account.Rejected.ContactSupport" xml:space="preserve"><value>إذا كنت تعتقد أن هذا خطأ، يُرجى التواصل مع منسّق الفعالية.</value></data>
+  <data name="Account.Rejected.SignOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
+
+  <data name="Account.Notifications.Title" xml:space="preserve"><value>الإشعارات</value></data>
+  <data name="Account.Notifications.New" xml:space="preserve"><value>جديد</value></data>
+  <data name="Account.Notifications.Empty" xml:space="preserve"><value>لا توجد إشعارات.</value></data>
+  <data name="Account.Notifications.ViewAll" xml:space="preserve"><value>عرض الكل</value></data>
+  <data name="Account.Notifications.MarkAllRead" xml:space="preserve"><value>تعليم الكل كمقروء</value></data>
+  <data name="Account.Notifications.MarkAllReadDone" xml:space="preserve"><value>تم تعليم جميع الإشعارات كمقروءة.</value></data>
+  <data name="Account.Notifications.Column.Title" xml:space="preserve"><value>العنوان</value></data>
+  <data name="Account.Notifications.Column.Body" xml:space="preserve"><value>الرسالة</value></data>
+  <data name="Account.Notifications.Column.Severity" xml:space="preserve"><value>النوع</value></data>
+  <data name="Account.Notifications.Column.CreatedAt" xml:space="preserve"><value>التاريخ</value></data>
+  <data name="Account.Notifications.Column.Actions" xml:space="preserve"><value>الإجراءات</value></data>
+  <data name="Account.Notifications.Action.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Account.Notifications.FilterColumn" xml:space="preserve"><value>تصفية العمود</value></data>
+  <data name="Account.Notifications.FilterPlaceholder" xml:space="preserve"><value>بحث</value></data>
+  <data name="Account.Notifications.Prev" xml:space="preserve"><value>السابق</value></data>
+  <data name="Account.Notifications.Next" xml:space="preserve"><value>التالي</value></data>
+  <data name="Account.Notifications.Loading" xml:space="preserve"><value>جارٍ تحميل الإشعارات…</value></data>
+  <data name="Account.Notifications.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+
+  <data name="Nav.Programme" xml:space="preserve"><value>البرنامج</value></data>
+  <data name="Nav.Visit" xml:space="preserve"><value>الزيارة</value></data>
+
+  <data name="Programme.PageTitle" xml:space="preserve"><value>البرنامج · الملتقى البحري السعودي الدولي</value></data>
+  <data name="Programme.Banner.Title" xml:space="preserve"><value>البرنامج</value></data>
+  <data name="Programme.Banner.Subtitle" xml:space="preserve"><value>الأجندة الكاملة للملتقى — الجلسات والقاعات والأوقات.</value></data>
+  <data name="Programme.Loading" xml:space="preserve"><value>جارٍ تحميل البرنامج…</value></data>
+  <data name="Programme.Error" xml:space="preserve"><value>تعذّر تحميل البرنامج. حاول مرة أخرى.</value></data>
+  <data name="Programme.Empty.Title" xml:space="preserve"><value>لا توجد جلسات بعد</value></data>
+  <data name="Programme.Empty.Text" xml:space="preserve"><value>لم يتم نشر الأجندة بعد. يُرجى التحقق لاحقًا.</value></data>
+  <data name="Programme.Speakers.Title" xml:space="preserve"><value>المتحدثون</value></data>
+
+  <data name="Visit.PageTitle" xml:space="preserve"><value>الزيارة والدخول · الملتقى البحري السعودي الدولي</value></data>
+  <data name="Visit.Banner.Title" xml:space="preserve"><value>الزيارة والدخول</value></data>
+  <data name="Visit.Banner.Subtitle" xml:space="preserve"><value>كل ما تحتاج معرفته قبل وصولك إلى الملتقى.</value></data>
+  <data name="Visit.GettingHere.Title" xml:space="preserve"><value>الوصول إلى الموقع</value></data>
+  <data name="Visit.GettingHere.Body" xml:space="preserve"><value>يُقام الملتقى في مقر الفعالية الرسمي. سيُنشر العنوان الكامل وخريطة الموقع هنا مع اقتراب موعد الفعالية. يُرجى اتباع اللافتات الإرشادية في الموقع وتوجيهات المنظمين عند الوصول.</value></data>
+  <data name="Visit.GettingHere.Transport" xml:space="preserve"><value>سيُعلن عن تفاصيل مواقف السيارات ووسائل النقل، بما في ذلك أقرب طرق الوصول، قبل يوم الافتتاح.</value></data>
+  <data name="Visit.Entry.Title" xml:space="preserve"><value>الدخول والبطاقات</value></data>
+  <data name="Visit.Entry.Badge" xml:space="preserve"><value>يتم الدخول عن طريق بطاقة رمز الاستجابة السريعة (QR). بعد اعتماد حسابك، افتح تطبيق سيمف للجوال لعرض بطاقتك الشخصية، ويقوم الموظفون بمسحها عند المدخل لتسجيل دخولك.</value></data>
+  <data name="Visit.Entry.SignUp" xml:space="preserve"><value>ليس لديك حساب بعد؟ سجّل في تطبيق سيمف قبل سفرك ليكون بطاقتك جاهزة في الوقت المناسب للدخول.</value></data>
+  <data name="Visit.Hours.Title" xml:space="preserve"><value>ساعات العمل</value></data>
+  <data name="Visit.Hours.Body" xml:space="preserve"><value>يفتح الملتقى أبوابه يوميًا خلال أيام الفعالية. سيتم تأكيد مواعيد الفتح والإغلاق الدقيقة لكل يوم هنا قبل بدء الفعالية.</value></data>
+  <data name="Visit.Accessibility.Title" xml:space="preserve"><value>إمكانية الوصول</value></data>
+  <data name="Visit.Accessibility.Body" xml:space="preserve"><value>تم تصميم الموقع ليكون متاحًا للزوار من ذوي الحركة المحدودة. إذا كانت لديك احتياجات وصول محددة، يُرجى التواصل مع منسق الفعالية مسبقًا حتى نتمكن من مساعدتك في يوم الزيارة.</value></data>
+</root>

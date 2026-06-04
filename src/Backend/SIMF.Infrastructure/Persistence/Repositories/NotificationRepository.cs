@@ -1,0 +1,89 @@
+using Microsoft.EntityFrameworkCore;
+using SIMF.Application.Notifications;
+using SIMF.Contracts.Notifications;
+using SIMF.Domain.Notifications;
+
+namespace SIMF.Infrastructure.Persistence.Repositories;
+
+/// <summary>R4 — D-095: EF-backed <see cref="INotificationRepository"/>.</summary>
+internal sealed class NotificationRepository(SimfIdentityDbContext dbContext)
+    : INotificationRepository
+{
+    public async Task AddAsync(Notification notification, CancellationToken cancellationToken = default)
+    {
+        dbContext.Notifications.Add(notification);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<(IReadOnlyList<NotificationDto> Items, int Total)> ListForUserAsync(
+        Guid userId, int skip, int top, bool unreadOnly,
+        CancellationToken cancellationToken = default)
+    {
+        var rows = dbContext.Notifications
+            .AsNoTracking()
+            .Where(row => row.UserId == userId);
+
+        if (unreadOnly)
+        {
+            rows = rows.Where(row => row.ReadAt == null);
+        }
+
+        var total = await rows.CountAsync(cancellationToken);
+        var page = await rows
+            .OrderByDescending(row => row.CreatedAt)
+            .Skip(skip)
+            .Take(top)
+            .Select(row => new NotificationDto(
+                row.Id,
+                row.Kind.ToString(),
+                row.Title,
+                row.TitleArabic,
+                row.Body,
+                row.BodyArabic,
+                row.Severity.ToString(),
+                row.ReadAt,
+                row.ReadAt != null,
+                row.CreatedAt,
+                row.RelatedEntityType,
+                row.RelatedEntityId))
+            .ToListAsync(cancellationToken);
+
+        return (page, total);
+    }
+
+    public Task<int> CountUnreadForUserAsync(
+        Guid userId, CancellationToken cancellationToken = default) =>
+        dbContext.Notifications
+            .AsNoTracking()
+            .Where(row => row.UserId == userId && row.ReadAt == null)
+            .CountAsync(cancellationToken);
+
+    public async Task MarkReadForUserAsync(
+        Guid userId, Guid notificationId, DateTimeOffset readAt,
+        CancellationToken cancellationToken = default)
+    {
+        var row = await dbContext.Notifications
+            .SingleOrDefaultAsync(
+                n => n.Id == notificationId && n.UserId == userId,
+                cancellationToken);
+        if (row is null || row.ReadAt is not null) { return; }
+        row.ReadAt = readAt;
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public Task MarkAllReadForUserAsync(
+        Guid userId, DateTimeOffset readAt,
+        CancellationToken cancellationToken = default) =>
+        dbContext.Notifications
+            .Where(row => row.UserId == userId && row.ReadAt == null)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(row => row.ReadAt, readAt),
+                cancellationToken);
+
+    public Task DeleteForUserAsync(
+        Guid userId, Guid notificationId,
+        CancellationToken cancellationToken = default) =>
+        dbContext.Notifications
+            .Where(row => row.Id == notificationId && row.UserId == userId)
+            .ExecuteDeleteAsync(cancellationToken);
+}

@@ -1,0 +1,525 @@
+@* Organisation lookup (CP UI) — admin CRUD over the bilingual Saudi-companies
+   lookup. Rows can be created/edited by hand or bulk-loaded from a government
+   Excel sheet via "Import Excel" (POST /admin/organisations/import returns an
+   OrganisationImportResult with the rows-read / inserted / updated / skipped
+   counts). A search box reloads the grid server-side via GridQuery.Search.
+   Migrated from the raw <table> to the owner-mandated SimfDataGrid
+   (server-paged, sortable + filterable, full pager). *@
+@page "/admin/organisations"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Organisations.View)]
+@using SIMF.Contracts.Organisations
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Organisations.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Organisations.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <div class="simf-toolbar">
+            <div class="simf-toolbar__search">
+                <SimfTextField Label="@L["Admin.Organisations.Search"]"
+                               Placeholder="@L["Admin.Organisations.Search.Placeholder"]"
+                               Value="@_search"
+                               ValueChanged="@(v => _search = v)"
+                               ValueExpression="@(() => _search)"
+                               Disabled="_busy" />
+                <SimfButton Type="button" Disabled="_busy" OnClick="ApplySearchAsync">
+                    @L["Admin.Organisations.Search.Apply"]
+                </SimfButton>
+            </div>
+        </div>
+
+        <SimfDataGrid TItem="AdminOrganisationSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.NameAr)"
+                      Caption="@L["Admin.Organisations.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnAdd="OnAdd"
+                      OnEditOne="OnEditAsync"
+                      OnDeleteOne="OnDeleteAsync"
+                      OnImport="OpenImport"
+                      ImportLabel="@L["Admin.Organisations.Import"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Organisations.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]"
+                      EditLabel="@L["Grid.Edit"]"
+                      DeleteLabel="@L["Grid.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="name"
+                                    Header="@L["Admin.Organisations.Col.NameAr"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.NameAr</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="nameEn"
+                                    Header="@L["Admin.Organisations.Col.NameEn"]"
+                                    Filterable="true">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.NameEn) ? "—" : context.NameEn)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="commercialRegistration"
+                                    Header="@L["Admin.Organisations.Col.CommercialRegistration"]"
+                                    Filterable="true">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.CommercialRegistration) ? "—" : context.CommercialRegistration)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="sector"
+                                    Header="@L["Admin.Organisations.Col.Sector"]"
+                                    Filterable="true">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.Sector) ? "—" : context.Sector)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="city"
+                                    Header="@L["Admin.Organisations.Col.City"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.City) ? "—" : context.City)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminOrganisationSummary" Key="isActive"
+                                    Header="@L["Admin.Organisations.Col.Active"]"
+                                    Sortable="true">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Organisations.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_editOpen)
+{
+    <SimfModal Open="true"
+               Title="@(_isEdit ? L["Admin.Organisations.Edit.Title"] : L["Admin.Organisations.Add.Title"])"
+               OnClose="@(() => _editOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <SimfTextField Label="@L["Admin.Organisations.Field.NameAr"]"
+                               Value="@_form.NameAr"
+                               ValueChanged="@(v => _form.NameAr = v)"
+                               ValueExpression="@(() => _form.NameAr)"
+                               MaxLength="256"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Organisations.Field.NameEn"]"
+                               Value="@_form.NameEn"
+                               ValueChanged="@(v => _form.NameEn = v)"
+                               ValueExpression="@(() => _form.NameEn)"
+                               MaxLength="256"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Organisations.Field.CommercialRegistration"]"
+                               Value="@_form.CommercialRegistration"
+                               ValueChanged="@(v => _form.CommercialRegistration = v)"
+                               ValueExpression="@(() => _form.CommercialRegistration)"
+                               MaxLength="32"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Organisations.Field.Sector"]"
+                               Value="@_form.Sector"
+                               ValueChanged="@(v => _form.Sector = v)"
+                               ValueExpression="@(() => _form.Sector)"
+                               MaxLength="128"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Organisations.Field.City"]"
+                               Value="@_form.City"
+                               ValueChanged="@(v => _form.City = v)"
+                               ValueExpression="@(() => _form.City)"
+                               MaxLength="128"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Organisations.Field.Phone"]"
+                               Value="@_form.Phone"
+                               ValueChanged="@(v => _form.Phone = v)"
+                               ValueExpression="@(() => _form.Phone)"
+                               MaxLength="32"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Organisations.Field.Email"]"
+                               Value="@_form.Email"
+                               ValueChanged="@(v => _form.Email = v)"
+                               ValueExpression="@(() => _form.Email)"
+                               MaxLength="320"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Organisations.Field.Website"]"
+                               Value="@_form.Website"
+                               ValueChanged="@(v => _form.Website = v)"
+                               ValueExpression="@(() => _form.Website)"
+                               MaxLength="512"
+                               Disabled="_busy" />
+                <SimfCheckbox Value="_form.IsActive"
+                              ValueChanged="@(v => _form.IsActive = v)"
+                              Disabled="_busy">
+                    @L["Admin.Organisations.Field.IsActive"]
+                </SimfCheckbox>
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _editOpen = false)">
+                @L["Admin.Organisations.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+                @L["Admin.Organisations.Save"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@if (_importOpen)
+{
+    <SimfModal Open="true"
+               Title="@L["Admin.Organisations.Import.Title"]"
+               OnClose="@(() => _importOpen = false)">
+        <ChildContent>
+            <div class="simf-form__fields">
+                <p class="simf-walkin__hint">@L["Admin.Organisations.Import.Hint"]</p>
+                <div class="simf-field">
+                    <span class="simf-field__label">@L["Admin.Organisations.Import.File"]</span>
+                    <input id="organisations-import-input" type="file" class="simf-field__input"
+                           accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                           @onchange="OnImportFileSelected"
+                           disabled="@_importing" />
+                    @if (!string.IsNullOrEmpty(_importFileName))
+                    {
+                        <p class="simf-walkin__hint">@_importFileName</p>
+                    }
+                </div>
+
+                @if (_importResult is not null)
+                {
+                    <div class="simf-import-result">
+                        <p>@(string.Format(L["Admin.Organisations.Import.Result"],
+                            _importResult.RowsRead, _importResult.Inserted,
+                            _importResult.Updated, _importResult.Skipped))</p>
+                        @if (_importResult.Errors.Count > 0)
+                        {
+                            <ul class="simf-import-result__errors">
+                                @foreach (var err in _importResult.Errors)
+                                {
+                                    <li>@err</li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                }
+            </div>
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary" Disabled="_importing" OnClick="@(() => _importOpen = false)">
+                @L["Admin.Organisations.Cancel"]
+            </SimfButton>
+            <SimfButton Type="button" OnClick="UploadImportAsync" Loading="_importing"
+                        Disabled="@(string.IsNullOrEmpty(_importFileName))">
+                @L["Admin.Organisations.Import.Upload"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private sealed class FormModel
+    {
+        public string NameAr { get; set; } = string.Empty;
+        public string NameEn { get; set; } = string.Empty;
+        public string CommercialRegistration { get; set; } = string.Empty;
+        public string Sector { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Website { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminOrganisationSummary> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+    private string _search = string.Empty;
+
+    private bool _editOpen;
+    private bool _isEdit;
+    private Guid _editingId;
+    private FormModel _form = new();
+
+    // Import-modal state. _importFileName is the picked .xlsx name; the bytes
+    // ride the hidden <input> via simfAccount.uploadFile. _importResult holds
+    // the server's row counts so they can be shown after the upload.
+    private bool _importOpen;
+    private bool _importing;
+    private string? _importFileName;
+    private OrganisationImportResult? _importResult;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminOrganisationSummary>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/organisations/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Organisations.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    // Search reloads the grid server-side via GridQuery.Search, resetting to
+    // the first page so the result set starts at the top.
+    private async Task ApplySearchAsync()
+    {
+        _query.Skip = 0;
+        _query.Search = string.IsNullOrWhiteSpace(_search) ? null : _search.Trim();
+        await LoadAsync();
+    }
+
+    private void OnAdd()
+    {
+        _editOpen = true;
+        _isEdit = false;
+        _editingId = Guid.Empty;
+        _form = new FormModel();
+        _toast = null;
+    }
+
+    private async Task OnEditAsync(AdminOrganisationSummary row)
+    {
+        // The grid summary omits Phone / Email / Website, so fetch the full
+        // detail before populating the form (mirrors GET /admin/organisations/{id}).
+        if (_busy) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminOrganisationDetail>>(
+                "simfAccount.getJson",
+                $"/account/api/admin/organisations/{row.Id}");
+            if (env is { Success: true, Data: not null })
+            {
+                var d = env.Data;
+                _editingId = d.Id;
+                _form = new FormModel
+                {
+                    NameAr = d.NameAr,
+                    NameEn = d.NameEn ?? string.Empty,
+                    CommercialRegistration = d.CommercialRegistration ?? string.Empty,
+                    Sector = d.Sector ?? string.Empty,
+                    City = d.City ?? string.Empty,
+                    Phone = d.Phone ?? string.Empty,
+                    Email = d.Email ?? string.Empty,
+                    Website = d.Website ?? string.Empty,
+                    IsActive = d.IsActive,
+                };
+                _isEdit = true;
+                _editOpen = true;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Organisations.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+        // Arabic name is the only required field (server-side FluentValidation
+        // is the source of truth; this stops an obviously-empty submit).
+        if (string.IsNullOrWhiteSpace(_form.NameAr))
+        {
+            _toast = new Toast("error", L["Admin.Organisations.Required"]);
+            return;
+        }
+        _busy = true;
+        _toast = null;
+        try
+        {
+            ApiResult<AdminOrganisationDetail>? env;
+            if (_isEdit)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminOrganisationDetail>>(
+                    "simfAccount.putJson",
+                    $"/account/api/admin/organisations/{_editingId}",
+                    new UpdateOrganisationRequest
+                    {
+                        NameAr = _form.NameAr.Trim(),
+                        NameEn = NullIfBlank(_form.NameEn),
+                        CommercialRegistration = NullIfBlank(_form.CommercialRegistration),
+                        Sector = NullIfBlank(_form.Sector),
+                        City = NullIfBlank(_form.City),
+                        Phone = NullIfBlank(_form.Phone),
+                        Email = NullIfBlank(_form.Email),
+                        Website = NullIfBlank(_form.Website),
+                        IsActive = _form.IsActive,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminOrganisationDetail>>(
+                    "simfAccount.postJson",
+                    "/account/api/admin/organisations",
+                    new CreateOrganisationRequest
+                    {
+                        NameAr = _form.NameAr.Trim(),
+                        NameEn = NullIfBlank(_form.NameEn),
+                        CommercialRegistration = NullIfBlank(_form.CommercialRegistration),
+                        Sector = NullIfBlank(_form.Sector),
+                        City = NullIfBlank(_form.City),
+                        Phone = NullIfBlank(_form.Phone),
+                        Email = NullIfBlank(_form.Email),
+                        Website = NullIfBlank(_form.Website),
+                    });
+            }
+            if (env is { Success: true })
+            {
+                _editOpen = false;
+                _toast = new Toast("success", L["Admin.Organisations.Saved"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Organisations.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task OnDeleteAsync(AdminOrganisationSummary row)
+    {
+        if (_busy) return;
+        // Confirm destructive actions: a stray click pulls the organisation
+        // from the public lookup picker immediately, with no undo today.
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", L["Admin.Organisations.Delete.Confirm"].Value);
+        if (!confirmed) return;
+        _busy = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/organisations/{row.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.Organisations.Deleted"]);
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Organisations.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    // -- Excel import --
+    private void OpenImport()
+    {
+        _importOpen = true;
+        _importing = false;
+        _importFileName = null;
+        _importResult = null;
+        _toast = null;
+    }
+
+    private async Task OnImportFileSelected(ChangeEventArgs _)
+    {
+        // Capture the picked file name so the Upload button can enable; the
+        // bytes ride the hidden <input> via simfAccount.uploadFile.
+        var name = await JS.InvokeAsync<string?>(
+            "eval", "document.getElementById('organisations-import-input')?.files?.[0]?.name ?? null");
+        _importFileName = name;
+        _importResult = null;
+    }
+
+    private async Task UploadImportAsync()
+    {
+        if (_importing || string.IsNullOrEmpty(_importFileName)) return;
+        _importing = true;
+        _toast = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<OrganisationImportResult>>(
+                "simfAccount.uploadFile",
+                "/account/api/admin/organisations/import",
+                "organisations-import-input");
+            if (env is { Success: true, Data: not null })
+            {
+                _importResult = env.Data;
+                _toast = new Toast("success",
+                    string.Format(L["Admin.Organisations.Import.Done"],
+                        _importResult.Inserted, _importResult.Updated, _importResult.Skipped));
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Organisations.Import.Failed"]);
+            }
+        }
+        finally { _importing = false; }
+    }
+
+    // Optional fields are nullable on the wire — send null rather than an empty
+    // string when the admin leaves them blank.
+    private static string? NullIfBlank(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+}

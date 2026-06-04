@@ -1,0 +1,70 @@
+using SIMF.Common.Enums;
+using SIMF.Domain.Common;
+
+namespace SIMF.Domain.Profiles;
+
+/// <summary>
+/// A dynamic subtype assigned to a <see cref="SimfUser"/>. After D-186
+/// every non-admin account is <c>UserType.Visitor</c>, and the
+/// audience-vs-partner split lives on <see cref="IsForVisitor"/>:
+/// <c>IsVisitor = true</c> for audience profile types (VVIP, VIP, Gold,
+/// Normal); <c>IsVisitor = false</c> for partner / staff profile types
+/// (Staff, Exhibitor, Sponsor, Media). Editable from the CP at runtime
+/// — adding a new subtype is a row insert, not a code change.
+///
+/// <para><see cref="UserType"/> still scopes the picker per surface
+/// (Visitor profile types vs the rare Admin-side profile type); within
+/// the Visitor scope, <see cref="IsForVisitor"/> decides whether the CP
+/// approval queue treats the account as audience or as partner. The CP
+/// keeps the two approval pages (Visitors / Others) physically
+/// separated to avoid admin confusion during approval; the filter
+/// behind each page is <c>UserType = Visitor AND
+/// ProfileType.IsVisitor = {true|false}</c>.</para>
+///
+/// <para><b>Permissions:</b> a profile type grants **no permissions**.
+/// It is metadata for display + business rules in the App (which bag,
+/// which badge colour, which approval queue). All permission checks
+/// key off <see cref="UserType"/> and the user's RBAC roles
+/// (Admin only).</para>
+/// </summary>
+public sealed class UserProfileType : BaseAuditEntity
+{
+      /// <summary>English display name — "VVIP", "Exhibitor", etc.</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Arabic display name — paired with <see cref="Name"/>.</summary>
+    public string NameArabic { get; set; } = string.Empty;
+
+    /// <summary>D-186 — audience vs partner split inside the Visitor
+    /// scope. <c>true</c> for audience profile types (VVIP, VIP, Gold,
+    /// Normal); <c>false</c> for partner / staff profile types
+    /// (Sponsor, Exhibitor, Media, Staff) that pre-D-186 lived under
+    /// <c>UserType = Other</c>. Defaults to <c>true</c> so a brand-new
+    /// profile type is assumed audience-side until an admin says
+    /// otherwise. Ignored for Admin-scope profile types (which don't
+    /// route through the visitor/other approval queues).</summary>
+    public bool IsForVisitor { get; set; } = true;
+
+    /// <summary>
+    /// A colour token used by the App (and the CP picker) — a hex
+    /// string (e.g. <c>#FFD700</c>) or a CSS variable name. The colour
+    /// is the visible bag / badge colour for the event.
+    /// </summary>
+    public string PageColor { get; set; } = string.Empty;
+
+    /// <summary>Which <see cref="UserType"/> this profile type applies to.
+    /// After D-186 this is <c>Visitor</c> for every audience or partner
+    /// profile type; reserved for future Admin-side profile types.</summary>
+    //public UserType UserType { get; set; }
+
+   
+
+    /// <summary>D-161 — the mobile-app authority any user assigned to this
+    /// profile type carries into the Flutter app (SIMF-FDS-002 §8.5).
+    /// <see cref="MobileAppRole.None"/> for Visitor-tier profile types and
+    /// for Other-tier types with no operational authority (Exhibitor,
+    /// Sponsor, Speaker, Press, …). Admin-curated at runtime — adding a
+    /// new operational profile type is a row insert + an admin checkbox,
+    /// not a code change.</summary>
+    public MobileAppRole MobileAppRole { get; set; } = MobileAppRole.None; 
+}

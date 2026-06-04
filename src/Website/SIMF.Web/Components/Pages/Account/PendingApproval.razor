@@ -1,0 +1,50 @@
+@* Website — pending-approval state-banner page (P11 — D-052). Reached
+   when an authenticated visitor's account_state cookie claim is
+   PendingApproval. Reads the claim, shows a clear message + sign-out
+   button. No API call needed. *@
+@page "/account/pending"
+@rendermode AppRenderMode.InteractiveServerNoPrerender
+@attribute [Authorize]
+@inject IStringLocalizer<Strings> L
+@inject AuthenticationStateProvider AuthState
+@inject NavigationManager Nav
+
+<PageTitle>@L["Account.Pending.Title"]</PageTitle>
+
+<section class="simf-account-page" aria-labelledby="account-pending-title">
+    <section class="simf-card simf-page-card">
+        <h1 id="account-pending-title" class="simf-card__title">@L["Account.Pending.Title"]</h1>
+        <p class="simf-card__supporting">@L["Account.Pending.Supporting"]</p>
+        @if (!string.IsNullOrEmpty(_email))
+        {
+            <p class="simf-card__supporting"><strong>@L["Account.Pending.AccountEmail"]:</strong> @_email</p>
+        }
+
+        <form method="post" action="/auth/sign-out" class="simf-form__actions">
+            <SimfButton Type="submit" Variant="primary">
+                @L["Account.Pending.SignOut"]
+            </SimfButton>
+        </form>
+    </section>
+</section>
+
+@code {
+    private string? _email;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var auth = await AuthState.GetAuthenticationStateAsync();
+        var state = auth.User.FindFirst("account_state")?.Value;
+        if (string.Equals(state, "Approved", StringComparison.Ordinal))
+        {
+            Nav.NavigateTo("/account/profile", forceLoad: true);
+            return;
+        }
+        if (string.Equals(state, "Rejected", StringComparison.Ordinal))
+        {
+            Nav.NavigateTo("/account/rejected", forceLoad: false);
+            return;
+        }
+        _email = auth.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+    }
+}

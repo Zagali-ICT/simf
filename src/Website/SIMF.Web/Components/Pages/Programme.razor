@@ -1,0 +1,153 @@
+@* Website — public programme / agenda page (D-199, Mockup page 16 "Agenda").
+   A static-SSR public read over the ANONYMOUS backend: on load it fetches the
+   published sessions and groups them by the local calendar date of StartUtc
+   into day sections. Each row shows the bilingual title, hall, the local time
+   window and — when the primary theme carries a name — a neutral theme pill.
+   An optional speakers strip is shown when GET /speakers returns rows.
+   Bilingual throughout via L[...] with the Arabic-preferred-then-English
+   fallback for the *Arabic fields. *@
+@page "/programme"
+@using SIMF.Contracts.Programme
+@inject IStringLocalizer<Strings> L
+@inject SimfPublicClient Api
+
+<PageTitle>@L["Programme.PageTitle"]</PageTitle>
+
+<div class="simf-account-page">
+    <SimfBanner Title="@L["Programme.Banner.Title"]" Subtitle="@L["Programme.Banner.Subtitle"]" />
+
+    @if (_error)
+    {
+        <SimfAlert Variant="error">@L["Programme.Error"]</SimfAlert>
+    }
+    else if (_days.Count == 0)
+    {
+        <SimfEmptyState Title="@L["Programme.Empty.Title"]"
+                        Description="@L["Programme.Empty.Text"]" />
+    }
+    else
+    {
+        @foreach (var day in _days)
+        {
+            <section class="simf-card simf-page-card" aria-label="@day.Heading">
+                <h2 class="simf-card__title">@day.Heading</h2>
+                <ul class="simf-role-list">
+                    @foreach (var session in day.Sessions)
+                    {
+                        <li>
+                            <p class="simf-card__supporting">@TimeWindow(session) — @Title(session)</p>
+                            <p class="simf-card__supporting">@Hall(session)</p>
+                            @if (!string.IsNullOrWhiteSpace(session.PrimaryThemeName)
+                                 || !string.IsNullOrWhiteSpace(session.PrimaryThemeNameArabic))
+                            {
+                                <SimfPill Variant="neutral">@ThemeName(session)</SimfPill>
+                            }
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+    }
+
+    @if (_speakers.Count > 0)
+    {
+        <section class="simf-card simf-page-card" aria-label="@L["Programme.Speakers.Title"]">
+            <h2 class="simf-card__title">@L["Programme.Speakers.Title"]</h2>
+            <ul class="simf-role-list">
+                @foreach (var speaker in _speakers)
+                {
+                    <li>
+                        <span class="simf-card__supporting">@SpeakerName(speaker)</span>
+                        @if (!string.IsNullOrWhiteSpace(speaker.Rank))
+                        {
+                            <SimfPill Variant="neutral">@speaker.Rank</SimfPill>
+                        }
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+</div>
+
+@code {
+    private bool _error;
+    private readonly List<DaySection> _days = new();
+    private IReadOnlyList<PublicSpeakerSummary> _speakers = Array.Empty<PublicSpeakerSummary>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var sessions = await Api.GetProgrammeSessionsAsync();
+        if (sessions is null)
+        {
+            _error = true;
+            return;
+        }
+
+        BuildDays(sessions.Items ?? Array.Empty<PublicSessionListItem>());
+
+        // The speakers strip is best-effort: a failure to load it must not
+        // turn the whole agenda into an error state, so a null result just
+        // leaves the strip empty.
+        var speakers = await Api.GetSpeakersAsync();
+        if (speakers is not null)
+        {
+            _speakers = speakers.Items;
+        }
+    }
+
+    // Group sessions by the local calendar date of StartUtc, ordered by day
+    // and then by start time within each day.
+    private void BuildDays(IReadOnlyList<PublicSessionListItem> items)
+    {
+        var groups = items
+            .OrderBy(s => s.StartUtc)
+            .GroupBy(s => s.StartUtc.ToLocalTime().Date)
+            .OrderBy(g => g.Key);
+
+        foreach (var group in groups)
+        {
+            _days.Add(new DaySection(
+                group.Key.ToString("dddd, d MMMM yyyy", CultureInfo.CurrentUICulture),
+                group.ToList()));
+        }
+    }
+
+    // Local time window, e.g. "09:00 – 10:30", in the current culture.
+    private static string TimeWindow(PublicSessionListItem session)
+    {
+        var start = session.StartUtc.ToLocalTime();
+        var end = session.EndUtc.ToLocalTime();
+        var pattern = "HH:mm";
+        return $"{start.ToString(pattern, CultureInfo.CurrentUICulture)} – " +
+               $"{end.ToString(pattern, CultureInfo.CurrentUICulture)}";
+    }
+
+    private static bool PreferArabic =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+
+    private static string Title(PublicSessionListItem session) =>
+        Pick(session.TitleArabic, session.Title);
+
+    private static string Hall(PublicSessionListItem session) =>
+        Pick(session.HallNameArabic, session.HallName);
+
+    private static string ThemeName(PublicSessionListItem session) =>
+        Pick(session.PrimaryThemeNameArabic, session.PrimaryThemeName);
+
+    private static string SpeakerName(PublicSpeakerSummary speaker) =>
+        Pick(speaker.NameArabic, speaker.Name);
+
+    // Arabic-preferred-then-English fallback: in an Arabic UI use the Arabic
+    // value when present, otherwise fall back to the base (English) value;
+    // a null base renders as empty.
+    private static string Pick(string? arabic, string? @base)
+    {
+        if (PreferArabic && !string.IsNullOrWhiteSpace(arabic))
+        {
+            return arabic;
+        }
+        return @base ?? string.Empty;
+    }
+
+    private sealed record DaySection(string Heading, IReadOnlyList<PublicSessionListItem> Sessions);
+}

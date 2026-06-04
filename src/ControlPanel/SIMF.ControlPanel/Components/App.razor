@@ -1,0 +1,50 @@
+@using System.Globalization
+<!DOCTYPE html>
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName"
+      dir="@(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? "rtl" : "ltr")">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    @* Apply the saved theme before first paint so there is no flash. *@
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('simf-theme') === 'dark') {
+                    var de = document.documentElement;
+                    de.setAttribute('data-theme', 'dark');
+                    // color-scheme makes the browser paint a dark canvas + native
+                    // controls immediately, before the stylesheet loads — this is
+                    // what removes the white flash on reload in dark mode.
+                    de.style.colorScheme = 'dark';
+                }
+            } catch (e) { /* localStorage may be unavailable */ }
+        })();
+    </script>
+    <ResourcePreloader />
+    <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/theme.tokens.css"]" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["_content/SIMF.Components/css/simf-components.css"]" />
+    <link rel="stylesheet" href="@Assets["SIMF.ControlPanel.styles.css"]" />
+    @* D-116: Cropper.Blazor static assets (image cropping modal). *@
+    <link rel="stylesheet" href="@Assets["_content/Cropper.Blazor/cropper.min.css"]" />
+    <script src="@Assets["_content/SIMF.Components/js/simf-theme.js"]"></script>
+    <script src="@Assets["js/simf-account.js"]"></script>
+    @* D-123: the underlying cropperjs global MUST load before the Cropper.Blazor
+       JS interop bridge — V10 ERP App.razor lines 32-33 do the same. Without
+       cropper.min.js the bridge throws "Could not find 'cropper.destroy'
+       ('cropper' was undefined)" on component dispose. *@
+    <script src="@Assets["_content/Cropper.Blazor/cropper.min.js"]"></script>
+    <script src="@Assets["_content/Cropper.Blazor/cropperJsInterop.min.js"]"></script>
+    <ImportMap />
+    <HeadOutlet @rendermode="AppRenderMode.InteractiveServerNoPrerender" />
+</head>
+
+<body>
+    <Routes @rendermode="AppRenderMode.InteractiveServerNoPrerender" />
+    <ReconnectModal />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+</body>
+
+</html>
