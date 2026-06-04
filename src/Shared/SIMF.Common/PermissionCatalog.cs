@@ -261,12 +261,6 @@ public static class PermissionCatalog
         public const string Cancel = "BusinessMeetings.Cancel";
     }
 
-    public static class MeetingRequests
-    {
-        public const string View = "MeetingRequests.View";
-        public const string Manage = "MeetingRequests.Manage";
-    }
-
     public static class SpeakerMeetingRequests
     {
         public const string View = "SpeakerMeetingRequests.View";
@@ -639,9 +633,6 @@ public static class PermissionCatalog
         new(BusinessMeetings.View, "BusinessMeetings", "View", "View business meetings", AdminOnly),
         new(BusinessMeetings.Schedule, "BusinessMeetings", "Schedule", "Schedule business meetings", AdminOnly),
         new(BusinessMeetings.Cancel, "BusinessMeetings", "Cancel", "Cancel business meetings", AdminOnly),
-
-        new(MeetingRequests.View, "MeetingRequests", "View", "View meeting requests", AdminOnly),
-        new(MeetingRequests.Manage, "MeetingRequests", "Manage", "Manage meeting requests", AdminOnly),
 
         new(SpeakerMeetingRequests.View, "SpeakerMeetingRequests", "View", "View speaker meeting requests", AdminOnly),
         new(SpeakerMeetingRequests.Manage, "SpeakerMeetingRequests", "Manage", "Manage speaker meeting requests", AdminOnly),

@@ -5,9 +5,9 @@ namespace SIMF.Application.MeetingRequests.Abstractions;
 
 /// <summary>D-269 (Mockup page 20 "Speaker profile") — attendee meeting requests
 /// TO a speaker (gated by <c>Speaker.AllowsMeetingRequests</c>). Login-required
-/// submission + admin review. Sibling of <see cref="IMeetingRequestService"/>
-/// (the session-scoped screen-27 flow), kept separate so the two request kinds
-/// never overload one model.</summary>
+/// submission + admin review. Was a sibling of the session-scoped screen-27 flow
+/// (<c>IMeetingRequestService</c>, removed in D-278), kept separate so the two
+/// request kinds never overloaded one model.</summary>
 public interface ISpeakerMeetingRequestService
 {
     Task<SpeakerMeetingRequestSubmitted> SubmitAsync(

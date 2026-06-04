@@ -41,10 +41,9 @@ class RouteNames {
   static const String sponsors = 'sponsors';
   static const String archive = 'archive';
 
-  // Section 4 — Live & Q&A (4 screens)
+  // Section 4 — Live & Q&A (3 screens; 27 request-interview removed — D-278)
   static const String liveBroadcast = 'liveBroadcast';
   static const String sendQuestion = 'sendQuestion';
-  static const String requestInterview = 'requestInterview';
   static const String audienceComments = 'audienceComments';
 
   // Section 5 — Media coverage (3 screens)

@@ -15,8 +15,8 @@ namespace SIMF.Infrastructure.MeetingRequests;
 /// <summary>D-269 (Mockup page 20 "Speaker profile") — speaker meeting-request
 /// service. Submission validates the speaker is active and opted in
 /// (<c>AllowsMeetingRequests</c>); admin response sets RespondedAt +
-/// RespondedByUserId. Mirrors <see cref="MeetingRequestService"/> (audit-only,
-/// no notification — consistent with the session-scoped flow).</summary>
+/// RespondedByUserId. Audit-only, no notification (consistent with the
+/// now-removed session-scoped flow, D-278).</summary>
 internal sealed class SpeakerMeetingRequestService(
     SimfAppDbContext appDbContext,
     SimfIdentityDbContext identityDbContext,

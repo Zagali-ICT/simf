@@ -20,7 +20,6 @@ void main() {
       expect(routePathRequiresAuth('/notifications'), isTrue);
       expect(routePathRequiresAuth('/meet'), isTrue);
       expect(routePathRequiresAuth('/live/question'), isTrue);
-      expect(routePathRequiresAuth('/live/interview'), isTrue);
     });
 
     test('guest-accessible content is not gated', () {

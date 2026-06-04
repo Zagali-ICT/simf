@@ -247,21 +247,6 @@ public static class AuditEvents
     public const string BannerUpdated = "Banner.Updated";
     public const string BannerDeactivated = "Banner.Deactivated";
 
-    // MeetingRequests (D-174, gap doc G11 — Mockup page 27)
-    public const string MeetingRequestSubmitted = "MeetingRequest.Submitted";
-    public const string MeetingRequestResponded = "MeetingRequest.Responded";
-    // D-185 — security carry-over from D-184: admin queries the queue.
-    // SOC needs to see "admin pulled the full meeting-request list at
-    // 03:00 on a weekend" because the list response carries requester
-    // names (and the per-row detail click reveals emails).
-    public const string AdminMeetingRequestsListed = "Admin.MeetingRequestsListed";
-    // D-185 — admin drilled into one meeting request (fetched the
-    // detail record, including the requester's email). Naming pinned
-    // to the Admin.* prefix matching AdminMeetingRequestsListed so SOC
-    // rule authors filtering on `EventType startswith 'Admin.'` see
-    // both events together.
-    public const string AdminMeetingRequestViewed = "Admin.MeetingRequestViewed";
-
     // Speaker meeting requests (D-269 — Mockup page 20). Same SOC rationale as
     // the session-scoped events above: the list carries requester names and the
     // per-record detail/respond reveals the requester email.

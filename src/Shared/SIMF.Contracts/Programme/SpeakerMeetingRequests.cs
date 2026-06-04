@@ -21,8 +21,8 @@ public sealed record SpeakerMeetingRequestSubmitted(
     DateTimeOffset CreatedAt);
 
 /// <summary>D-269 — one row in the admin speaker-meeting-requests grid. The
-/// speaker name is joined from the App DB (same context). Mirrors
-/// <see cref="AdminMeetingRequestRow"/>; the requester email is deliberately NOT
+/// speaker name is joined from the App DB (same context). Followed the
+/// session-scoped admin-row pattern (removed D-278); the requester email is deliberately NOT
 /// on the list row (it moves to <see cref="AdminSpeakerMeetingRequestDetail"/> so
 /// the list endpoint does not broadcast bulk PII — the D-185 pattern).</summary>
 public sealed record AdminSpeakerMeetingRequestRow(
@@ -41,8 +41,8 @@ public sealed record AdminSpeakerMeetingRequestRow(
 /// <summary>D-269 — single-record detail for the admin respond modal. Includes
 /// <c>RequesterEmail</c> (resolved on read from the Identity DB) so the admin can
 /// reach out off-modal; fetched on demand and audit-logged as
-/// <c>SpeakerMeetingRequest.Viewed</c>. Mirrors
-/// <see cref="AdminMeetingRequestDetail"/>.</summary>
+/// <c>SpeakerMeetingRequest.Viewed</c>. Followed the session-scoped detail
+/// pattern (removed D-278).</summary>
 public sealed record AdminSpeakerMeetingRequestDetail(
     Guid Id,
     Guid SpeakerId,

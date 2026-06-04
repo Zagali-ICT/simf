@@ -140,24 +140,6 @@ internal sealed class MyAreaService(
             })
             .ToListAsync(cancellationToken);
 
-        var speakerMeetings = await appDbContext.MeetingRequests.AsNoTracking()
-            .Where(m => m.RequestedByUserId == userId
-                && m.Status == MeetingRequestStatus.Accepted
-                && m.Session!.IsActive)
-            .Select(m => new
-            {
-                m.Session!.StartUtc,
-                m.Session.EndUtc,
-                m.Session.Title,
-                m.Session.TitleArabic,
-                HallEn = m.Session.Hall!.Name,
-                HallAr = m.Session.Hall.NameArabic,
-                m.Subject,
-                m.SessionId,
-                m.Id,
-            })
-            .ToListAsync(cancellationToken);
-
         var businessMeetings = await appDbContext.BusinessMeetingParticipants.AsNoTracking()
             .Where(p => p.Kind == MeetingPartyKind.Visitor
                 && p.VisitorUserId == userId
@@ -174,16 +156,11 @@ internal sealed class MyAreaService(
             .ToListAsync(cancellationToken);
 
         var items = new List<MyAreaScheduleItem>(
-            sessions.Count + speakerMeetings.Count + businessMeetings.Count);
+            sessions.Count + businessMeetings.Count);
 
         items.AddRange(sessions.Select(s => new MyAreaScheduleItem(
             KindSession, s.StartUtc, s.EndUtc, s.Title, s.TitleArabic,
             s.HallEn, s.HallAr, null, s.Status.ToString(), s.SessionId, null)));
-
-        items.AddRange(speakerMeetings.Select(m => new MyAreaScheduleItem(
-            KindMeeting, m.StartUtc, m.EndUtc, m.Title, m.TitleArabic,
-            m.HallEn, m.HallAr, m.Subject, nameof(MeetingRequestStatus.Accepted),
-            m.SessionId, m.Id)));
 
         items.AddRange(businessMeetings.Select(b => new MyAreaScheduleItem(
             KindMeeting, b.StartUtc, b.EndUtc, string.Empty, string.Empty,

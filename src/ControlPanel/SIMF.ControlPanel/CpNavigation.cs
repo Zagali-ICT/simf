@@ -73,8 +73,6 @@ public static class CpNavigation
             // layout editor + per-session seat plan.
             new("Module.HallSeatLayouts", "/admin/halls/seat-layouts", RequiredPermission: PermissionCatalog.SeatLayouts.View),
             new("Module.SessionSeatPlans", "/admin/sessions/seat-plans", RequiredPermission: PermissionCatalog.SeatPlans.View),
-            // D-183 (CP UI for D-174 meeting requests).
-            new("Module.MeetingRequests", "/admin/meeting-requests", RequiredPermission: PermissionCatalog.MeetingRequests.View),
             // D-269 — attendee meeting requests TO a speaker (Mockup page 20).
             new("Module.SpeakerMeetingRequests", "/admin/speaker-meeting-requests", RequiredPermission: PermissionCatalog.SpeakerMeetingRequests.View),
             // D-153 — programme speakers (SIMF-DAT-001 §5.4).

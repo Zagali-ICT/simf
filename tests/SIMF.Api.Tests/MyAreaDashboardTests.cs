@@ -50,15 +50,15 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
         Assert.StartsWith("VVIP", data.Identity.TierNameEn!);
         Assert.Equal("#FFD700", data.Identity.PageColor);
 
-        // Counters: 1 held booking; 2 meetings (1 speaker + 1 business).
+        // Counters: 1 held booking; 1 meeting (the business meeting — the
+        // session-scoped MeetingRequest feature was removed in D-278).
         Assert.Equal(1, data.Counters.BookedSessionsCount);
-        Assert.Equal(2, data.Counters.MeetingsCount);
+        Assert.Equal(1, data.Counters.MeetingsCount);
 
-        // Today's schedule: the booked session + the two meetings (all seeded "now").
-        Assert.Equal(3, data.TodaySchedule.Count);
+        // Today's schedule: the booked session + the business meeting (seeded "now").
+        Assert.Equal(2, data.TodaySchedule.Count);
         Assert.Single(data.TodaySchedule, i => i.Kind == "Session");
-        Assert.Equal(2, data.TodaySchedule.Count(i => i.Kind == "Meeting"));
-        Assert.Contains(data.TodaySchedule, i => i.Subject == "Interview about navigation");
+        Assert.Equal(1, data.TodaySchedule.Count(i => i.Kind == "Meeting"));
     }
 
     [Fact]
@@ -88,8 +88,9 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
 
         Assert.Contains("BEGIN:VCALENDAR", ics);
         Assert.Contains("END:VCALENDAR", ics);
-        // One booked session + one speaker meeting + one business meeting = 3 VEVENTs.
-        Assert.Equal(3, CountOccurrences(ics, "BEGIN:VEVENT"));
+        // One booked session + one business meeting = 2 VEVENTs (the session-scoped
+        // MeetingRequest was removed in D-278).
+        Assert.Equal(2, CountOccurrences(ics, "BEGIN:VEVENT"));
         Assert.Contains("SUMMARY:Keynote", ics);
     }
 
@@ -240,19 +241,8 @@ public sealed class MyAreaDashboardTests : IClassFixture<SimfApiFactory>
             CreatedAt = now,
         });
 
-        // Accepted speaker meeting (counter 2 + a Meeting schedule item).
-        app.MeetingRequests.Add(new MeetingRequest
-        {
-            Id = Guid.NewGuid(),
-            SessionId = session.Id,
-            RequestedByUserId = userId,
-            RequesterName = "Saad Alotaibi",
-            Subject = "Interview about navigation",
-            Status = MeetingRequestStatus.Accepted,
-            CreatedAt = now,
-        });
-
-        // Confirmed business meeting at a table (counter 2 + a Meeting item).
+        // Confirmed business meeting at a table (the only Meeting item now —
+        // the session-scoped MeetingRequest feature was removed in D-278).
         var table = new MeetingTable
         {
             Id = Guid.NewGuid(),

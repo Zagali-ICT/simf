@@ -61,7 +61,6 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/session-moderators` | ✅ Real | Administrator | — | [e2e/cp-admin-session-moderators.md](../tests/e2e/cp-admin-session-moderators.md) |
 | `/admin/programme/timeline` | ✅ Real | Administrator | — | [e2e/cp-admin-programme-timeline.md](../tests/e2e/cp-admin-programme-timeline.md) |
 | `/admin/bookings` | ✅ Real (D-227) | Administrator | — | [e2e/cp-admin-bookings.md](../tests/e2e/cp-admin-bookings.md) |
-| `/admin/meeting-requests` | ✅ Real | Administrator | — | [e2e/cp-admin-meeting-requests.md](../tests/e2e/cp-admin-meeting-requests.md) |
 | `/admin/speaker-meeting-requests` | ✅ Real (D-269) | Administrator | — | [e2e/cp-admin-speaker-meeting-requests.md](../tests/e2e/cp-admin-speaker-meeting-requests.md) |
 | `/admin/meeting-tables` | ✅ Real (D-248) | Administrator | [cp/meeting-tables.md](cp/meeting-tables.md) | [e2e/cp-meeting-tables.md](../tests/e2e/cp-meeting-tables.md) |
 | `/admin/business-meetings` | ✅ Real (D-248) | Administrator | [cp/business-meetings.md](cp/business-meetings.md) | [e2e/cp-business-meetings.md](../tests/e2e/cp-business-meetings.md) |

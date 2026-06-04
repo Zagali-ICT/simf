@@ -7,8 +7,8 @@ namespace SIMF.Domain.BusinessMeetings;
 /// D-269 (Mockup page 20 "Speaker profile") — an attendee's request to meet a
 /// <see cref="Speaker"/> who has opted in via
 /// <see cref="Speaker.AllowsMeetingRequests"/>. Distinct from the session-scoped
-/// <see cref="MeetingRequest"/> (the screen-27 "Request interview during a live
-/// session"): this one targets a speaker, not a session. Form fields: the
+/// <c>MeetingRequest</c> (the screen-27 "Request interview during a live
+/// session" feature, removed in D-278): this one targets a speaker, not a session. Form fields: the
 /// requester's display name and the meeting topic. Created
 /// <see cref="MeetingRequestStatus.Pending"/>; an admin reviews and Accepts or
 /// Rejects with an optional response note (the same lifecycle enum the

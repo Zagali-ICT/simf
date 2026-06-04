@@ -48,10 +48,6 @@ public sealed class SiemRulesShapeTests
         "ai-010-invocation-bulk-view.yml",
         "s-001-seat-bulk-release.yml",
         "s-001b-seat-bulk-release-burst.yml",
-        "s-002-meeting-reject-burst.yml",
-        // D-185 — meeting-request PII audit-event consumers
-        "m-001-meeting-request-bulk-view.yml",
-        "m-002-meeting-request-list-scrape.yml",
         // D-186 review-pass — UserType collapse audit-event consumers
         "m-003-profiletype-isvisitor-flip.yml",
         "m-004-approval-scope-probe.yml",

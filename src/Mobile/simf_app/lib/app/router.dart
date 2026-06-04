@@ -68,10 +68,9 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 23, name: RouteNames.sponsors, path: '/sponsors', labelAr: 'الرعاة', labelEn: 'Sponsors'),
   _Route(number: 24, name: RouteNames.archive, path: '/archive', labelAr: 'الأرشيف', labelEn: 'Archive'),
 
-  // Section 4 — Live & Q&A (4 screens)
+  // Section 4 — Live & Q&A (3 screens; 27 request-interview removed — D-278)
   _Route(number: 25, name: RouteNames.liveBroadcast, path: '/live', labelAr: 'البث المباشر', labelEn: 'Live broadcast'),
   _Route(number: 26, name: RouteNames.sendQuestion, path: '/live/question', labelAr: 'إرسال سؤال', labelEn: 'Send question'),
-  _Route(number: 27, name: RouteNames.requestInterview, path: '/live/interview', labelAr: 'طلب مقابلة', labelEn: 'Request interview'),
   _Route(number: 28, name: RouteNames.audienceComments, path: '/live/comments', labelAr: 'تعليقات الجمهور', labelEn: 'Audience comments'),
 
   // Section 5 — Media coverage (3 screens)
@@ -111,7 +110,6 @@ const Set<int> _authenticatedRoutes = <int>{
   14, // My area
   18, // My seat
   26, // Send question
-  27, // Request interview
   32, // Badge / QR
   33, // Notifications
   35, // Meet people

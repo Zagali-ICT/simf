@@ -208,12 +208,6 @@ public static class ErrorCodes
     // to the self-assert toggle as input source).
     public const string NotAtVenue = "NOT_AT_VENUE";
 
-    // MeetingRequests (D-174, gap doc G11 — Mockup page 27).
-    public const string MeetingRequestInvalid = "MEETING_REQUEST_INVALID";
-    public const string MeetingRequestNotFound = "MEETING_REQUEST_NOT_FOUND";
-    public const string MeetingRequestSessionNotFound = "MEETING_REQUEST_SESSION_NOT_FOUND";
-    public const string MeetingRequestStatusInvalid = "MEETING_REQUEST_STATUS_INVALID";
-
     // Speaker meeting requests (D-269 — Mockup page 20 "Speaker profile").
     public const string SpeakerMeetingRequestInvalid = "SPEAKER_MEETING_REQUEST_INVALID";
     public const string SpeakerMeetingRequestNotFound = "SPEAKER_MEETING_REQUEST_NOT_FOUND";

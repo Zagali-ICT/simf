@@ -125,12 +125,9 @@ public class SimfAppDbContext(DbContextOptions<SimfAppDbContext> options) : DbCo
     /// announcements.</summary>
     public DbSet<Banner> Banners => Set<Banner>();
 
-    /// <summary>D-174 (gap doc G11, Mockup page 27) — audience meeting requests.</summary>
-    public DbSet<MeetingRequest> MeetingRequests => Set<MeetingRequest>();
-
     /// <summary>D-269 (Mockup page 20) — attendee meeting requests TO a speaker
-    /// (gated by Speaker.AllowsMeetingRequests). Distinct from the session-scoped
-    /// MeetingRequests above.</summary>
+    /// (gated by Speaker.AllowsMeetingRequests). The session-scoped MeetingRequest
+    /// feature (D-174) was removed in D-278.</summary>
     public DbSet<SpeakerMeetingRequest> SpeakerMeetingRequests => Set<SpeakerMeetingRequest>();
 
     /// <summary>D-175 (gap doc G11, Mockup page 7) — per-hall seat

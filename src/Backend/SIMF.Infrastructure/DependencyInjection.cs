@@ -266,9 +266,6 @@ public static class DependencyInjection
             SIMF.Infrastructure.Cms.AdminCmsService>();
         services.AddScoped<SIMF.Application.Cms.Abstractions.IPublicCmsService,
             SIMF.Infrastructure.Cms.PublicCmsService>();
-        // D-174 (gap doc G11, Mockup page 27) — MeetingRequest service.
-        services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.IMeetingRequestService,
-            SIMF.Infrastructure.MeetingRequests.MeetingRequestService>();
         // D-269 (Mockup page 20) — attendee meeting requests to a speaker.
         services.AddScoped<SIMF.Application.MeetingRequests.Abstractions.ISpeakerMeetingRequestService,
             SIMF.Infrastructure.MeetingRequests.SpeakerMeetingRequestService>();

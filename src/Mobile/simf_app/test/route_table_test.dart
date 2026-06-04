@@ -31,7 +31,6 @@ void main() {
         RouteNames.archive,
         RouteNames.liveBroadcast,
         RouteNames.sendQuestion,
-        RouteNames.requestInterview,
         RouteNames.audienceComments,
         RouteNames.news,
         RouteNames.gallery,
@@ -47,10 +46,10 @@ void main() {
         RouteNames.more,
       ];
 
-      expect(allNumbered.length, equals(38));
+      expect(allNumbered.length, equals(37));
       expect(
         allNumbered.toSet().length,
-        equals(38),
+        equals(37),
         reason: 'No two route names should collide.',
       );
     });
