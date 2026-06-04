@@ -2094,6 +2094,10 @@
   <data name="Admin.Archive.Field.Sessions" xml:space="preserve"><value>الجلسات</value></data>
   <data name="Admin.Archive.Field.Speakers" xml:space="preserve"><value>المتحدثون</value></data>
   <data name="Admin.Archive.Field.CoverImageRelativePath" xml:space="preserve"><value>مسار صورة الغلاف</value></data>
+  <data name="Admin.Archive.Field.LocationEn" xml:space="preserve"><value>المكان (الإنجليزية)</value></data>
+  <data name="Admin.Archive.Field.LocationAr" xml:space="preserve"><value>المكان (العربية)</value></data>
+  <data name="Admin.Archive.Field.DateLabelEn" xml:space="preserve"><value>وصف التاريخ (الإنجليزية)</value></data>
+  <data name="Admin.Archive.Field.DateLabelAr" xml:space="preserve"><value>وصف التاريخ (العربية)</value></data>
   <data name="Admin.Archive.Field.IsActive" xml:space="preserve"><value>مُفعّل (ظاهر في الأرشيف العام)</value></data>
 
   <!-- D-199 — Ratings admin read-only view. -->

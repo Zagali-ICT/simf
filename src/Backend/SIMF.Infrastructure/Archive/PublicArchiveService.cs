@@ -44,4 +44,36 @@ internal sealed class PublicArchiveService(
 
         return new PublicArchive(items);
     }
+
+    public async Task<PublicArchiveEditionDetail?> GetAsync(
+        Guid id, CancellationToken cancellationToken = default)
+    {
+        // §9 (screen 24-01): same visibility gate as the list — a hidden archive
+        // yields 404 at the endpoint (null here), not a leak of one edition.
+        var visibility = await operationsToggleService
+            .GetArchiveVisibilityAsync(cancellationToken);
+        if (!visibility.IsVisible)
+        {
+            return null;
+        }
+
+        return await appDbContext.ArchiveEditions.AsNoTracking()
+            .Where(edition => edition.IsActive && edition.Id == id)
+            .Select(edition => new PublicArchiveEditionDetail(
+                edition.Id,
+                edition.Year,
+                edition.TitleEn,
+                edition.TitleAr,
+                edition.SummaryEn,
+                edition.SummaryAr,
+                edition.LocationEn,
+                edition.LocationAr,
+                edition.DateLabelEn,
+                edition.DateLabelAr,
+                edition.Attendees,
+                edition.Sessions,
+                edition.Speakers,
+                edition.CoverImageRelativePath))
+            .SingleOrDefaultAsync(cancellationToken);
+    }
 }

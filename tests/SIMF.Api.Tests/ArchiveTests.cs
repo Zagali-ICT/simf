@@ -108,6 +108,90 @@ public sealed class ArchiveTests : IClassFixture<SimfApiFactory>
         }
     }
 
+    // §9 (Mockup screen 24-01) — public per-edition detail.
+
+    [Fact]
+    public async Task Public_detail_returns_edition_with_location_and_date_when_visible()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        await PutAuthAsync("/api/v1/admin/archive/visibility",
+            new UpdateArchiveVisibilityRequest { IsVisible = true }, admin);
+
+        var create = await PostAuthAsync("/api/v1/admin/archive",
+            new CreateArchiveEditionRequest
+            {
+                Year = 2015,
+                TitleEn = "SIMF 2015",
+                TitleAr = "سيمف 2015",
+                SummaryEn = "The pilot edition",
+                Attendees = 500,
+                Sessions = 20,
+                Speakers = 25,
+                LocationEn = "Riyadh · Riyadh Front",
+                LocationAr = "الرياض · واجهة الرياض",
+                DateLabelEn = "November 2015 · 3 days",
+                DateLabelAr = "نوفمبر 2015 · 3 أيام",
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminArchiveEditionDetail>>())!.Data!;
+
+        // Detail read is anonymous (no token).
+        var get = await _client.GetAsync($"/api/v1/app/archive/{created.Id}");
+        Assert.Equal(HttpStatusCode.OK, get.StatusCode);
+        var detail = (await get.Content
+            .ReadFromJsonAsync<ApiResult<PublicArchiveEditionDetail>>())!.Data!;
+        Assert.Equal(2015, detail.Year);
+        Assert.Equal("SIMF 2015", detail.TitleEn);
+        Assert.Equal("Riyadh · Riyadh Front", detail.LocationEn);
+        Assert.Equal("الرياض · واجهة الرياض", detail.LocationAr);
+        Assert.Equal("November 2015 · 3 days", detail.DateLabelEn);
+        Assert.Equal("نوفمبر 2015 · 3 أيام", detail.DateLabelAr);
+    }
+
+    [Fact]
+    public async Task Public_detail_returns_404_for_an_unknown_id()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        await PutAuthAsync("/api/v1/admin/archive/visibility",
+            new UpdateArchiveVisibilityRequest { IsVisible = true }, admin);
+
+        var get = await _client.GetAsync($"/api/v1/app/archive/{Guid.NewGuid()}");
+        Assert.Equal(HttpStatusCode.NotFound, get.StatusCode);
+    }
+
+    [Fact]
+    public async Task Public_detail_is_404_when_archive_visibility_is_off()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var create = await PostAuthAsync("/api/v1/admin/archive",
+            new CreateArchiveEditionRequest
+            {
+                Year = 2014,
+                TitleEn = "SIMF 2014",
+                TitleAr = "سيمف 2014",
+                Attendees = 400,
+                Sessions = 15,
+                Speakers = 18,
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminArchiveEditionDetail>>())!.Data!;
+
+        await PutAuthAsync("/api/v1/admin/archive/visibility",
+            new UpdateArchiveVisibilityRequest { IsVisible = false }, admin);
+        try
+        {
+            var get = await _client.GetAsync($"/api/v1/app/archive/{created.Id}");
+            Assert.Equal(HttpStatusCode.NotFound, get.StatusCode);
+        }
+        finally
+        {
+            await PutAuthAsync("/api/v1/admin/archive/visibility",
+                new UpdateArchiveVisibilityRequest { IsVisible = true }, admin);
+        }
+    }
+
     // -- helpers --
 
     private async Task<string> CreateAdministratorAndSignInAsync()

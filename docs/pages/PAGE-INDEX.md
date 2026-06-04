@@ -173,6 +173,7 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | ✅ API built (reuse, D-267) | Visitor (login-only) | [App/Page_018](../App/Page_018/README.md) | [e2e/mobile-my-seat.md](../tests/e2e/mobile-my-seat.md) |
 | #19 `speakers` (`GET /app/speakers`) | ✅ API built (reuse, D-199) | Guest+ | [App/Page_019](../App/Page_019/README.md) | [e2e/mobile-speakers.md](../tests/e2e/mobile-speakers.md) |
 | #20 `speakerProfile` (`GET /app/speakers/{id}` + `…/meeting-requests`) | ✅ API built (reads D-199; meeting D-269) | Guest+ (meeting: Visitor) | [App/Page_020](../App/Page_020/README.md) | [e2e/mobile-speaker-profile.md](../tests/e2e/mobile-speaker-profile.md) |
+| #24-01 `archiveDetail` (`GET /app/archive/{id}`) | ✅ API built (NEW, D-273) | Public (anonymous) | [App/Page_024-01](../App/Page_024-01/README.md) | [e2e/mobile-archive-detail.md](../tests/e2e/mobile-archive-detail.md) |
 
 ---
 

@@ -26,6 +26,32 @@ public sealed class ListPublicArchiveEndpoint(IPublicArchiveService service)
             await service.ListAsync(ct)), ct);
 }
 
+public sealed class GetPublicArchiveEditionRoute { public Guid Id { get; set; } }
+
+/// <summary>§9 (Mockup screen 24-01 "تفاصيل النسخة") — public anonymous detail
+/// for one past edition. Gated by the archive-visibility toggle (D-166): 404
+/// when the archive is hidden, the edition is missing, or it is inactive.</summary>
+public sealed class GetPublicArchiveEditionEndpoint(IPublicArchiveService service)
+    : Endpoint<GetPublicArchiveEditionRoute, ApiResult<PublicArchiveEditionDetail>>
+{
+    public override void Configure()
+    {
+        Get("/app/archive/{id:guid}");
+        AllowAnonymous();
+        Tags("Public");
+    }
+
+    public override async Task HandleAsync(
+        GetPublicArchiveEditionRoute req, CancellationToken ct)
+    {
+        var detail = await service.GetAsync(req.Id, ct)
+            ?? throw new ApiException("archive_edition_not_found", 404,
+                "The archive edition was not found.",
+                "لم يتم العثور على نسخة الأرشيف.");
+        await Send.OkAsync(ApiResult<PublicArchiveEditionDetail>.Ok(detail), ct);
+    }
+}
+
 // -- Admin archive edition CRUD --
 
 public sealed class ListAdminArchiveEndpoint(IAdminArchiveService service)

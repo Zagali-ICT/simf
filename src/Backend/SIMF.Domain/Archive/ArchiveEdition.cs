@@ -40,6 +40,19 @@ public class ArchiveEdition:BaseAuditEntity
 
     /// <summary>Optional cover image relative path under the media root
     /// (e.g. "archive/simf2023.png"). ≤ 512 chars.</summary>
-    public string? CoverImageRelativePath { get; set; } 
+    public string? CoverImageRelativePath { get; set; }
+
+    /// <summary>§9 (Mockup screen 24-01 "تفاصيل النسخة") — the edition's
+    /// place/venue (e.g. "الرياض · واجهة الرياض"). Optional, ≤ 256 chars.</summary>
+    public string? LocationEn { get; set; }
+    public string? LocationAr { get; set; }
+
+    /// <summary>§9 (screen 24-01) — a human date label for the edition
+    /// (e.g. "نوفمبر 2024 · 3 أيام" / "November 2024 · 3 days"); distinct from
+    /// the numeric <see cref="Year"/>. Optional, ≤ 128 chars.</summary>
+    public string? DateLabelEn { get; set; }
+    public string? DateLabelAr { get; set; }
 }
-//still we need to add list of  of programe and list of spker and counters and list of sponser 
+// Deferred (entity TODO): the rich per-edition lists — gallery, programme/session
+// titles, past-speaker names, sponsors — are not yet modelled; the 24-01 detail
+// surfaces title/summary/location/date/counts/cover for now (§9 / D-273).

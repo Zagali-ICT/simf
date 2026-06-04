@@ -9,4 +9,10 @@ namespace SIMF.Application.Archive.Abstractions;
 public interface IPublicArchiveService
 {
     Task<PublicArchive> ListAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>§9 (Mockup screen 24-01 "تفاصيل النسخة") — public detail for one
+    /// past edition; null when the archive is hidden (toggle off) or the edition
+    /// is missing / inactive.</summary>
+    Task<PublicArchiveEditionDetail?> GetAsync(
+        Guid id, CancellationToken cancellationToken = default);
 }

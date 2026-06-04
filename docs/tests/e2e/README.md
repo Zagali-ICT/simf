@@ -178,6 +178,7 @@ API endpoints land (D-249). The per-screen design docs live under
 | #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | [`mobile-my-seat.md`](mobile-my-seat.md) | E2E-MOB018-001..012 |
 | #19 `speakers` (`GET /app/speakers`) | [`mobile-speakers.md`](mobile-speakers.md) | E2E-MOB019-001..007 |
 | #20 `speakerProfile` (`GET /app/speakers/{id}` + meeting-request) | [`mobile-speaker-profile.md`](mobile-speaker-profile.md) | E2E-MOB020-001..010 |
+| #24-01 `archiveDetail` (`GET /app/archive/{id}`) | [`mobile-archive-detail.md`](mobile-archive-detail.md) | E2E-MOB024D-001..009 |
 
 ## How to add a new catalogue file
 

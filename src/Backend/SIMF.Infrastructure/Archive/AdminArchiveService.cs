@@ -76,7 +76,9 @@ internal sealed class AdminArchiveService(
                 edition.SummaryEn, edition.SummaryAr,
                 edition.Attendees, edition.Sessions, edition.Speakers,
                 edition.CoverImageRelativePath, edition.IsActive,
-                edition.CreatedAt))
+                edition.CreatedAt,
+                edition.LocationEn, edition.LocationAr,
+                edition.DateLabelEn, edition.DateLabelAr))
             .ToListAsync(cancellationToken);
 
         return GridPage<AdminArchiveEditionSummary>.Of(page, total,
@@ -121,6 +123,11 @@ internal sealed class AdminArchiveService(
             Sessions = v.Sessions,
             Speakers = v.Speakers,
             CoverImageRelativePath = v.CoverImageRelativePath,
+            // §9 (screen 24-01) — optional place + date label.
+            LocationEn = request.LocationEn?.Trim(),
+            LocationAr = request.LocationAr?.Trim(),
+            DateLabelEn = request.DateLabelEn?.Trim(),
+            DateLabelAr = request.DateLabelAr?.Trim(),
             IsActive = true,
             CreatedAt = now,
         };
@@ -179,6 +186,11 @@ internal sealed class AdminArchiveService(
         edition.Sessions = v.Sessions;
         edition.Speakers = v.Speakers;
         edition.CoverImageRelativePath = v.CoverImageRelativePath;
+        // §9 (screen 24-01) — optional place + date label.
+        edition.LocationEn = request.LocationEn?.Trim();
+        edition.LocationAr = request.LocationAr?.Trim();
+        edition.DateLabelEn = request.DateLabelEn?.Trim();
+        edition.DateLabelAr = request.DateLabelAr?.Trim();
         edition.IsActive = request.IsActive;
         edition.UpdatedAt = timeProvider.GetUtcNow();
 
@@ -293,5 +305,7 @@ internal sealed class AdminArchiveService(
             edition.SummaryEn, edition.SummaryAr,
             edition.Attendees, edition.Sessions, edition.Speakers,
             edition.CoverImageRelativePath, edition.IsActive,
-            edition.CreatedAt, edition.UpdatedAt);
+            edition.CreatedAt, edition.UpdatedAt,
+            edition.LocationEn, edition.LocationAr,
+            edition.DateLabelEn, edition.DateLabelAr);
 }

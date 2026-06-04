@@ -161,6 +161,27 @@
                                ValueChanged="@(v => _form.CoverImageRelativePath = v)"
                                ValueExpression="@(() => _form.CoverImageRelativePath)"
                                Disabled="_busy" />
+                @* §9 (screen 24-01) — place + date label for the edition detail. *@
+                <SimfTextField Label="@L["Admin.Archive.Field.LocationEn"]"
+                               Value="@_form.LocationEn"
+                               ValueChanged="@(v => _form.LocationEn = v)"
+                               ValueExpression="@(() => _form.LocationEn)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Archive.Field.LocationAr"]"
+                               Value="@_form.LocationAr"
+                               ValueChanged="@(v => _form.LocationAr = v)"
+                               ValueExpression="@(() => _form.LocationAr)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Archive.Field.DateLabelEn"]"
+                               Value="@_form.DateLabelEn"
+                               ValueChanged="@(v => _form.DateLabelEn = v)"
+                               ValueExpression="@(() => _form.DateLabelEn)"
+                               Disabled="_busy" />
+                <SimfTextField Label="@L["Admin.Archive.Field.DateLabelAr"]"
+                               Value="@_form.DateLabelAr"
+                               ValueChanged="@(v => _form.DateLabelAr = v)"
+                               ValueExpression="@(() => _form.DateLabelAr)"
+                               Disabled="_busy" />
                 <SimfCheckbox Value="_form.IsActive"
                               ValueChanged="@(v => _form.IsActive = v)"
                               Disabled="_busy">
@@ -193,6 +214,11 @@
         public int Sessions { get; set; }
         public int Speakers { get; set; }
         public string? CoverImageRelativePath { get; set; }
+        // §9 (screen 24-01) — place + date label.
+        public string? LocationEn { get; set; }
+        public string? LocationAr { get; set; }
+        public string? DateLabelEn { get; set; }
+        public string? DateLabelAr { get; set; }
         public bool IsActive { get; set; } = true;
     }
 
@@ -268,6 +294,10 @@
             Sessions = row.Sessions,
             Speakers = row.Speakers,
             CoverImageRelativePath = row.CoverImageRelativePath,
+            LocationEn = row.LocationEn,
+            LocationAr = row.LocationAr,
+            DateLabelEn = row.DateLabelEn,
+            DateLabelAr = row.DateLabelAr,
             IsActive = row.IsActive,
         };
         _toast = null;
@@ -303,6 +333,10 @@
                         Sessions = _form.Sessions,
                         Speakers = _form.Speakers,
                         CoverImageRelativePath = _form.CoverImageRelativePath,
+                        LocationEn = _form.LocationEn,
+                        LocationAr = _form.LocationAr,
+                        DateLabelEn = _form.DateLabelEn,
+                        DateLabelAr = _form.DateLabelAr,
                         IsActive = _form.IsActive,
                     });
             }
@@ -322,6 +356,10 @@
                         Sessions = _form.Sessions,
                         Speakers = _form.Speakers,
                         CoverImageRelativePath = _form.CoverImageRelativePath,
+                        LocationEn = _form.LocationEn,
+                        LocationAr = _form.LocationAr,
+                        DateLabelEn = _form.DateLabelEn,
+                        DateLabelAr = _form.DateLabelAr,
                     });
             }
             if (env is { Success: true })

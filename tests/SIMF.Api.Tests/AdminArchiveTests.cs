@@ -130,6 +130,41 @@ public sealed class AdminArchiveTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    // §9 (Mockup screen 24-01) — place + date label round-trip through CRUD.
+    [Fact]
+    public async Task Admin_create_roundtrips_location_and_date_label()
+    {
+        var admin = await CreateAdministratorAndSignInAsync();
+        var create = await PostAuthAsync("/api/v1/admin/archive",
+            new CreateArchiveEditionRequest
+            {
+                Year = 2013,
+                TitleEn = "SIMF 2013",
+                TitleAr = "سيمف 2013",
+                Attendees = 300,
+                Sessions = 12,
+                Speakers = 15,
+                LocationEn = "Jeddah · Corniche",
+                LocationAr = "جدة · الكورنيش",
+                DateLabelEn = "October 2013 · 2 days",
+                DateLabelAr = "أكتوبر 2013 · يومان",
+            }, admin);
+        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
+        var created = (await create.Content
+            .ReadFromJsonAsync<ApiResult<AdminArchiveEditionDetail>>())!.Data!;
+        Assert.Equal("Jeddah · Corniche", created.LocationEn);
+        Assert.Equal("جدة · الكورنيش", created.LocationAr);
+        Assert.Equal("October 2013 · 2 days", created.DateLabelEn);
+        Assert.Equal("أكتوبر 2013 · يومان", created.DateLabelAr);
+
+        var get = await GetAuthAsync($"/api/v1/admin/archive/{created.Id}", admin);
+        Assert.Equal(HttpStatusCode.OK, get.StatusCode);
+        var detail = (await get.Content
+            .ReadFromJsonAsync<ApiResult<AdminArchiveEditionDetail>>())!.Data!;
+        Assert.Equal("Jeddah · Corniche", detail.LocationEn);
+        Assert.Equal("أكتوبر 2013 · يومان", detail.DateLabelAr);
+    }
+
     // -- helpers --
 
     private async Task<string> CreateAdministratorAndSignInAsync()
