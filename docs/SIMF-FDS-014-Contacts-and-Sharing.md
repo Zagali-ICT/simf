@@ -320,7 +320,12 @@ next-free number (re-verified at each commit).
   - **C2 (next-free at commit)** — Contacts CP directory page (SimfDataGrid list
     + create/edit form) + shared CP Contact picker wired into the five admin
     forms + nav + EN/AR resx; CP E2E + per-page docs.
-- **Slice D** — shared read-only contact-card component for Website + mobile.
+- **Slice D (public-DTO enrichment = D-287)** ✅ shipped — the public Sponsor +
+  MediaPartner DTOs gained the additive contact cluster (phone / email / social /
+  map lat-long) sourced live from the linked Contact (append-only, D-219; null
+  when no contact linked). The shared read-only **card component** (Flutter widget
+  for mobile; the Website card is deferred until the Website has public org pages
+  to host it) lands with the mobile org screens in the app page-by-page workflow.
 
 > Forward slice numbers above (and the original D-263/264/265 labels) are
 > superseded by **live next-free numbering re-verified at each commit** — the

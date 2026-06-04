@@ -335,6 +335,10 @@ public sealed class ContactsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(contact.NameEn, sponsor.NameEn);
         Assert.Equal(contact.LogoRelativePath, sponsor.LogoRelativePath);
         Assert.Equal(contact.Website, sponsor.Url);
+        // D-287 — additive contact cluster sourced from the linked Contact.
+        Assert.Equal(contact.PhonePrimary, sponsor.PhonePrimary);
+        Assert.Equal(contact.Email, sponsor.Email);
+        Assert.Equal(contact.FacebookUrl, sponsor.FacebookUrl);
     }
 
     [Fact]
@@ -353,6 +357,10 @@ public sealed class ContactsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(contact.NameEn, partner.Name);
         Assert.Equal(contact.LogoRelativePath, partner.LogoRelativePath);
         Assert.Equal(contact.Website, partner.Url);
+        // D-287 — additive contact cluster sourced from the linked Contact.
+        Assert.Equal(contact.PhonePrimary, partner.PhonePrimary);
+        Assert.Equal(contact.Email, partner.Email);
+        Assert.Equal(contact.FacebookUrl, partner.FacebookUrl);
     }
 
     [Fact]
@@ -455,6 +463,10 @@ public sealed class ContactsTests : IClassFixture<SimfApiFactory>
             NameEn = "Acme " + Guid.NewGuid().ToString("N")[..6],
             LogoRelativePath = "contacts/acme.png",
             Website = "https://acme.test",
+            // D-287 — the public card's additive contact cluster flows from these.
+            PhonePrimary = "+966512345678",
+            Email = "card@acme.test",
+            FacebookUrl = "https://facebook.com/acme",
         }, token);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
         return (await create.Content.ReadFromJsonAsync<ApiResult<AdminContactDetail>>())!.Data!;

@@ -53,7 +53,10 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
                 .Where(contact => contactIds.Contains(contact.Id) && contact.IsActive)
                 .Select(contact => new ContactCard(
                     contact.Id, contact.Name, contact.NameArabic,
-                    contact.LogoRelativePath, contact.Website))
+                    contact.LogoRelativePath, contact.Website,
+                    contact.PhonePrimary, contact.Email,
+                    contact.FacebookUrl, contact.XUrl, contact.LinkedInUrl, contact.InstagramUrl,
+                    contact.Latitude, contact.Longitude))
                 .ToDictionaryAsync(card => card.Id, cancellationToken);
 
         var groups = rows
@@ -68,7 +71,15 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
                     r.Tier.ToString(),
                     c?.LogoRelativePath ?? r.LogoRelativePath,
                     c?.Website ?? r.Url,
-                    r.DisplayOrder);
+                    r.DisplayOrder,
+                    c?.PhonePrimary,
+                    c?.Email,
+                    c?.FacebookUrl,
+                    c?.XUrl,
+                    c?.LinkedInUrl,
+                    c?.InstagramUrl,
+                    c?.Latitude,
+                    c?.Longitude);
             })
             .GroupBy(sponsor => new { sponsor.Tier, sponsor.TierName })
             .OrderBy(group => group.Key.Tier)
@@ -85,5 +96,8 @@ internal sealed class PublicSponsorService(SimfAppDbContext appDbContext)
     /// sponsor card coalesces over its own inline columns.</summary>
     private sealed record ContactCard(
         Guid Id, string? Name, string NameArabic,
-        string? LogoRelativePath, string? Website);
+        string? LogoRelativePath, string? Website,
+        string? PhonePrimary, string? Email,
+        string? FacebookUrl, string? XUrl, string? LinkedInUrl, string? InstagramUrl,
+        double? Latitude, double? Longitude);
 }
