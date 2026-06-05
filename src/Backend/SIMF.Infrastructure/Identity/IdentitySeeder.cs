@@ -469,28 +469,30 @@ public sealed class IdentitySeeder(
     private async Task EnsureLandingHeroContentAsync(
         Guid actorUserId, CancellationToken cancellationToken)
     {
-        // (Key, EN, AR) — the landing's data-cms="hero.*" bindings.
+        // (Key, EN, AR) — the landing's data-cms="hero.*" bindings. Keys come
+        // from the shared LandingHeroContentKeys so the seeder and the Website
+        // proxy cannot drift on the exact key strings.
         var seed = new[]
         {
-            ("hero.titlestart",
+            (LandingHeroContentKeys.TitleStart,
              "The future of",
              "مستقبل أمن"),
-            ("hero.titlehighlight",
+            (LandingHeroContentKeys.TitleHighlight,
              "seabed security",
              "قاع البحار"),
-            ("hero.titleend",
+            (LandingHeroContentKeys.TitleEnd,
              "and global supply chains",
              "وسلاسل الإمداد العالميّة"),
-            ("hero.tagline",
+            (LandingHeroContentKeys.Tagline,
              "A global Saudi platform bringing leaders, decision-makers and experts together to shape the future of maritime security and protect vital corridors amid accelerating geopolitical and technological change.",
              "منصّة سعوديّة عالميّة تجمع القادة وصنّاع القرار والخبراء لاستشراف مستقبل الأمن البحري وحماية الممرّات الحيوية في ظل التحولّات الجيوسياسيّة والتقنيّة المتسارعة."),
-            ("hero.metadate",
+            (LandingHeroContentKeys.MetaDate,
              "23 — 25 November 2026",
              "23 — 25 نوفمبر 2026"),
-            ("hero.metavenue",
+            (LandingHeroContentKeys.MetaVenue,
              "Sofitel Riyadh Hotel & Convention Centre",
              "فندق ومركز مؤتمرات سوفيتيل الرياض"),
-            ("hero.ctasecondary",
+            (LandingHeroContentKeys.CtaSecondary,
              "Browse the programme",
              "تصفّح البرنامج"),
         };

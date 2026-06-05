@@ -13,6 +13,7 @@
 // landing on its built-in SITE_DEFAULTS rather than blanking.
 using System.Globalization;
 using SIMF.ApiClient;
+using SIMF.Common;
 using SIMF.Contracts.Archive;
 using SIMF.Contracts.Cms;
 using SIMF.Contracts.Media;
@@ -39,13 +40,13 @@ internal static class SiteContentEndpoints
     // CMS service normalises keys) -> (website nested field under `hero`).
     private static readonly (string Key, string Field)[] HeroFields =
     [
-        ("hero.titlestart", "titleStart"),
-        ("hero.titlehighlight", "titleHighlight"),
-        ("hero.titleend", "titleEnd"),
-        ("hero.tagline", "tagline"),
-        ("hero.metadate", "metaDate"),
-        ("hero.metavenue", "metaVenue"),
-        ("hero.ctasecondary", "ctaSecondary"),
+        (LandingHeroContentKeys.TitleStart, "titleStart"),
+        (LandingHeroContentKeys.TitleHighlight, "titleHighlight"),
+        (LandingHeroContentKeys.TitleEnd, "titleEnd"),
+        (LandingHeroContentKeys.Tagline, "tagline"),
+        (LandingHeroContentKeys.MetaDate, "metaDate"),
+        (LandingHeroContentKeys.MetaVenue, "metaVenue"),
+        (LandingHeroContentKeys.CtaSecondary, "ctaSecondary"),
     ];
 
     // The hero keys requested from the CMS batch — derived once from HeroFields

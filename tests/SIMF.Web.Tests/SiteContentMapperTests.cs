@@ -1,3 +1,4 @@
+using SIMF.Common;
 using SIMF.Contracts.Archive;
 using SIMF.Contracts.Cms;
 using SIMF.Contracts.Media;
@@ -13,11 +14,8 @@ namespace SIMF.Web.Tests;
 /// the sponsor+media-partner merge, and the all-or-nothing hero gate.</summary>
 public sealed class SiteContentMapperTests
 {
-    private static readonly string[] HeroKeys =
-    [
-        "hero.titlestart", "hero.titlehighlight", "hero.titleend", "hero.tagline",
-        "hero.metadate", "hero.metavenue", "hero.ctasecondary",
-    ];
+    // The shared key list, so adding a hero field can't silently desync the test.
+    private static readonly string[] HeroKeys = LandingHeroContentKeys.All;
 
     [Fact]
     public void Empty_inputs_produce_an_empty_document()
