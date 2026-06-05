@@ -902,6 +902,7 @@
   <data name="Admin.Logs.Size" xml:space="preserve"><value>الحجم</value></data>
   <data name="Admin.Logs.LastModified" xml:space="preserve"><value>آخر تعديل</value></data>
   <data name="Admin.Users.Title" xml:space="preserve"><value>المسؤولون</value></data>
+  <data name="Admin.Users.Fallback" xml:space="preserve"><value>حدث خطأ ما. حاول مرة أخرى.</value></data>
   <data name="Admin.Users.None" xml:space="preserve"><value>لا توجد حسابات بعد.</value></data>
   <data name="Admin.Users.CreateNew" xml:space="preserve"><value>إضافة مستخدم</value></data>
   <data name="Admin.Users.Column.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
@@ -1501,6 +1502,9 @@
   <data name="Module.Invitations" xml:space="preserve"><value>الدعوات</value></data>
   <data name="Module.Vips" xml:space="preserve"><value>كبار الضيوف</value></data>
   <data name="Admin.Invitations.Title" xml:space="preserve"><value>الدعوات</value></data>
+  <data name="Admin.Invitations.State.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
+  <data name="Admin.Invitations.State.Confirmed" xml:space="preserve"><value>مؤكَّدة</value></data>
+  <data name="Admin.Invitations.State.Declined" xml:space="preserve"><value>مرفوضة</value></data>
   <data name="Admin.Invitations.Loading" xml:space="preserve"><value>جارٍ تحميل الدعوات…</value></data>
   <data name="Admin.Invitations.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الدعوات.</value></data>
   <data name="Admin.Invitations.None" xml:space="preserve"><value>لا توجد دعوات بعد.</value></data>
@@ -1768,6 +1772,11 @@
   <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>حفظ المخطط</value></data>
   <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>تم حفظ المخطط.</value></data>
   <data name="Admin.SessionSeatPlans.Title" xml:space="preserve"><value>مخطط مقاعد الجلسات</value></data>
+  <data name="Admin.SessionSeatPlans.Legend.Free" xml:space="preserve"><value>متاح</value></data>
+  <data name="Admin.SessionSeatPlans.Legend.User" xml:space="preserve"><value>محجوز (زائر)</value></data>
+  <data name="Admin.SessionSeatPlans.Legend.Admin" xml:space="preserve"><value>محجوز (إدارة)</value></data>
+  <data name="Admin.SessionSeatPlans.Legend.Random" xml:space="preserve"><value>عشوائي</value></data>
+  <data name="Admin.SessionSeatPlans.Seat.ReservedTitle" xml:space="preserve"><value>المقعد {0} — {1}</value></data>
   <data name="Admin.SessionSeatPlans.Pick" xml:space="preserve"><value>اختر جلسة</value></data>
   <data name="Admin.SessionSeatPlans.None" xml:space="preserve"><value>لا توجد جلسات متاحة.</value></data>
   <data name="Admin.SessionSeatPlans.NoReservations" xml:space="preserve"><value>لا توجد حجوزات نشطة لهذه الجلسة.</value></data>

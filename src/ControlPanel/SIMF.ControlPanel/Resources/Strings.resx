@@ -912,6 +912,7 @@
   <data name="Admin.Logs.Size" xml:space="preserve"><value>Size</value></data>
   <data name="Admin.Logs.LastModified" xml:space="preserve"><value>Last modified</value></data>
   <data name="Admin.Users.Title" xml:space="preserve"><value>Admins</value></data>
+  <data name="Admin.Users.Fallback" xml:space="preserve"><value>Something went wrong. Please try again.</value></data>
   <data name="Admin.Users.None" xml:space="preserve"><value>No accounts yet.</value></data>
   <data name="Admin.Users.CreateNew" xml:space="preserve"><value>Add user</value></data>
   <data name="Admin.Users.Column.Email" xml:space="preserve"><value>Email</value></data>
@@ -1508,6 +1509,9 @@
   <data name="Module.Invitations" xml:space="preserve"><value>Invitations</value></data>
   <data name="Module.Vips" xml:space="preserve"><value>VIPs</value></data>
   <data name="Admin.Invitations.Title" xml:space="preserve"><value>Invitations</value></data>
+  <data name="Admin.Invitations.State.Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="Admin.Invitations.State.Confirmed" xml:space="preserve"><value>Confirmed</value></data>
+  <data name="Admin.Invitations.State.Declined" xml:space="preserve"><value>Declined</value></data>
   <data name="Admin.Invitations.Loading" xml:space="preserve"><value>Loading invitations…</value></data>
   <data name="Admin.Invitations.LoadFailed" xml:space="preserve"><value>The invitations could not be loaded.</value></data>
   <data name="Admin.Invitations.None" xml:space="preserve"><value>No invitations yet.</value></data>
@@ -1775,6 +1779,11 @@
   <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>Save layout</value></data>
   <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>Layout saved.</value></data>
   <data name="Admin.SessionSeatPlans.Title" xml:space="preserve"><value>Session seat plans</value></data>
+  <data name="Admin.SessionSeatPlans.Legend.Free" xml:space="preserve"><value>Free</value></data>
+  <data name="Admin.SessionSeatPlans.Legend.User" xml:space="preserve"><value>Reserved (attendee)</value></data>
+  <data name="Admin.SessionSeatPlans.Legend.Admin" xml:space="preserve"><value>Reserved (admin)</value></data>
+  <data name="Admin.SessionSeatPlans.Legend.Random" xml:space="preserve"><value>Random</value></data>
+  <data name="Admin.SessionSeatPlans.Seat.ReservedTitle" xml:space="preserve"><value>Seat {0} — {1}</value></data>
   <data name="Admin.SessionSeatPlans.Pick" xml:space="preserve"><value>Select a session</value></data>
   <data name="Admin.SessionSeatPlans.None" xml:space="preserve"><value>No sessions available.</value></data>
   <data name="Admin.SessionSeatPlans.NoReservations" xml:space="preserve"><value>No active reservations on this session.</value></data>
