@@ -51,7 +51,7 @@
 
   <data name="Module.Dashboard" xml:space="preserve"><value>لوحة المعلومات</value></data>
   <data name="Module.Statistics" xml:space="preserve"><value>الإحصائيات</value></data>
-  <data name="Module.Attendance" xml:space="preserve"><value>الحضور</value></data>
+  <data name="Module.Attendance" xml:space="preserve"><value>حضور الجلسات</value></data>
   <data name="Module.RegistrationRequests" xml:space="preserve"><value>طلبات التسجيل</value></data>
   <data name="Module.Attendees" xml:space="preserve"><value>الحضور</value></data>
   <data name="Module.Roles" xml:space="preserve"><value>الأدوار والصلاحيات</value></data>
