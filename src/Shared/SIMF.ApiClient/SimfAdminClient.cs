@@ -6,6 +6,7 @@ using SIMF.Common;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Ai;
 using SIMF.Contracts.Archive;
+using SIMF.Contracts.Attendance;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Exhibition;
 using SIMF.Contracts.Exhibitors;
@@ -2440,6 +2441,22 @@ public sealed class SimfAdminClient(HttpClient http)
         string accessToken, CancellationToken cancellationToken = default) =>
         SendAsync<StatisticsDashboard>(
             HttpMethod.Get, "statistics", content: null,
+            accessToken, cancellationToken);
+
+    // -- FR-506 — session-attendance dashboard (SIMF.Contracts.Attendance) ----
+
+    public Task<ApiCallResult<SessionAttendanceSummary>> GetSessionAttendanceSummaryAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<SessionAttendanceSummary>(
+            HttpMethod.Get, "attendance/summary", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<SessionAttendanceRow>>> ListSessionAttendanceAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<SessionAttendanceRow>>(
+            HttpMethod.Post, "attendance/sessions/list",
+            JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
     // -- D-202 Track-2 — Exhibitor admin CRUD + account provisioning --------

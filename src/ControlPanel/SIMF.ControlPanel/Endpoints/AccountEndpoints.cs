@@ -2437,6 +2437,22 @@ internal static class AccountEndpoints
             return Forward(await api.GetStatisticsAsync(token));
         });
 
+        // FR-506 — session-attendance dashboard BFF passthroughs.
+        group.MapGet("/admin/attendance/summary",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetSessionAttendanceSummaryAsync(token));
+        });
+        group.MapPost("/admin/attendance/sessions/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListSessionAttendanceAsync(body, token));
+        });
+
         // D-202 Track-2 — Exhibitor admin CRUD + account-provisioning BFF passthroughs.
         group.MapPost("/admin/exhibitors/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>

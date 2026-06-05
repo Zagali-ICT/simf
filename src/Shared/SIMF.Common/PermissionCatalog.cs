@@ -453,6 +453,13 @@ public static class PermissionCatalog
         public const string View = "Statistics.View";
     }
 
+    /// <summary>FR-506 (SRS §3.5; FDS-003 §5.5) — read-only session-attendance
+    /// dashboard over the HallAttendance arrival records (D-241).</summary>
+    public static class Attendance
+    {
+        public const string View = "Attendance.View";
+    }
+
     /// <summary>Gate Module (D-148). <see cref="Manage"/>, <see cref="Operate"/>
     /// and <see cref="ViewOwnReports"/> pre-date this catalogue and keep their
     /// exact strings.</summary>
@@ -740,6 +747,7 @@ public static class PermissionCatalog
 
         // System & operations
         new(Statistics.View, "Statistics", "View", "View the statistics dashboard", AdminOnly),
+        new(Attendance.View, "Attendance", "View", "View the session-attendance dashboard", AdminOnly),
 
         new(Gates.Manage, "Gates", "Manage", "Manage gates", AdminOnly),
         new(Gates.Operate, "Gates", "Operate", "Operate a gate", GateOperator),

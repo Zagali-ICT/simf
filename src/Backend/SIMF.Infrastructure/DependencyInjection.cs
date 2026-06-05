@@ -353,6 +353,9 @@ public static class DependencyInjection
         // Exhibitor provisioning.
         services.AddScoped<SIMF.Application.Statistics.Abstractions.IStatisticsService,
             SIMF.Infrastructure.Statistics.StatisticsService>();
+        // FR-506 — read-only session-attendance dashboard over HallAttendance (D-241).
+        services.AddScoped<SIMF.Application.Attendance.Abstractions.ISessionAttendanceService,
+            SIMF.Infrastructure.Attendance.SessionAttendanceService>();
         services.AddScoped<SIMF.Application.Exhibitors.Abstractions.IAdminExhibitorService,
             SIMF.Infrastructure.Exhibitors.AdminExhibitorService>();
         // D-176 (gap doc G12) — centralised AI module: prompt

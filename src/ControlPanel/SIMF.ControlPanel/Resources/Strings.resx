@@ -51,6 +51,7 @@
 
   <data name="Module.Dashboard" xml:space="preserve"><value>Dashboard</value></data>
   <data name="Module.Statistics" xml:space="preserve"><value>Statistics</value></data>
+  <data name="Module.Attendance" xml:space="preserve"><value>Attendance</value></data>
   <data name="Module.RegistrationRequests" xml:space="preserve"><value>Registration requests</value></data>
   <data name="Module.Attendees" xml:space="preserve"><value>Attendees</value></data>
   <data name="Module.Roles" xml:space="preserve"><value>Roles &amp; permissions</value></data>
@@ -2088,6 +2089,20 @@
   <data name="Admin.Comments.LoadFailed" xml:space="preserve"><value>Could not load comments. Please try again.</value></data>
   <data name="Admin.Comments.SessionsLoadFailed" xml:space="preserve"><value>Could not load sessions. Please try again.</value></data>
 
+  <!-- FR-506 — session-attendance dashboard (read-only). -->
+  <data name="Admin.Attendance.Title" xml:space="preserve"><value>Session attendance</value></data>
+  <data name="Admin.Attendance.Loading" xml:space="preserve"><value>Loading attendance…</value></data>
+  <data name="Admin.Attendance.None" xml:space="preserve"><value>No attendance has been recorded yet.</value></data>
+  <data name="Admin.Attendance.LoadFailed" xml:space="preserve"><value>Could not load attendance. Please try again.</value></data>
+  <data name="Admin.Attendance.Stat.LiveNow" xml:space="preserve"><value>Live attendees now</value></data>
+  <data name="Admin.Attendance.Stat.SessionsWithAttendance" xml:space="preserve"><value>Sessions with attendance</value></data>
+  <data name="Admin.Attendance.Stat.TotalArrivals" xml:space="preserve"><value>Total arrivals</value></data>
+  <data name="Admin.Attendance.Col.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Admin.Attendance.Col.Session" xml:space="preserve"><value>Session</value></data>
+  <data name="Admin.Attendance.Col.Hall" xml:space="preserve"><value>Hall</value></data>
+  <data name="Admin.Attendance.Col.Start" xml:space="preserve"><value>Start (UTC)</value></data>
+  <data name="Admin.Attendance.Col.TotalAttendees" xml:space="preserve"><value>Total attendees</value></data>
+  <data name="Admin.Attendance.Col.LiveNow" xml:space="preserve"><value>Live now</value></data>
   <!-- D-202 Track-2 — Statistics dashboard (read-only). -->
   <data name="Admin.Statistics.Title" xml:space="preserve"><value>Statistics</value></data>
   <data name="Admin.Statistics.Loading" xml:space="preserve"><value>Loading statistics…</value></data>
