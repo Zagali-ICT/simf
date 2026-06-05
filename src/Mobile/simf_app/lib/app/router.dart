@@ -25,6 +25,8 @@ import '../features/registration/registration_success_screen.dart';
 import '../features/sessions/my_seat_screen.dart';
 import '../features/sessions/session_detail_screen.dart';
 import '../features/sessions/sessions_screen.dart';
+import '../features/speakers/speaker_profile_screen.dart';
+import '../features/speakers/speakers_screen.dart';
 import '../features/splash/splash_screen.dart';
 import 'route_names.dart';
 import 'route_resume.dart';
@@ -233,6 +235,14 @@ GoRouter buildRouter(Ref ref) {
             if (r.name == RouteNames.mySeat) {
               return MySeatScreen(
                 sessionId: state.pathParameters['sessionId'] ?? '',
+              );
+            }
+            if (r.name == RouteNames.speakers) {
+              return const SpeakersScreen();
+            }
+            if (r.name == RouteNames.speakerProfile) {
+              return SpeakerProfileScreen(
+                speakerId: state.pathParameters['speakerId'] ?? '',
               );
             }
             return ComingSoonScreen(

@@ -18,7 +18,7 @@ Per-page documentation folder. Everything about this app page lives here.
 | Section | 2 — Core screens |
 | Nature | **Vertical list of speaker cards** — avatar, rank line, name, **More** link → Speaker profile |
 | App privilege | **Guest+ (anonymous).** The list endpoint is `AllowAnonymous`; a guest can browse with no sign-in (D-199). |
-| Status | API **BUILT** (reuse, no new API — D-199) ; Flutter screen is a mockup |
+| Status | API **BUILT** (reuse, no new API — D-199); **Flutter screen BUILT (D-302)** — speaker cards → profile |
 
 ## Sources of truth (read first)
 `Mockup.html` screen 19 (the visual) · `SIMF_Screen_Guide_and_User_Journey`

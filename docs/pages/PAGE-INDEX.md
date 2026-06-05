@@ -172,8 +172,8 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | #16 `sessions` (`GET /app/programme/sessions`) | 🟢 Screen built (D-299) | Guest+ | [App/Page_016](../App/Page_016/README.md) | [e2e/mobile-agenda.md](../tests/e2e/mobile-agenda.md) |
 | #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats`) | 🟢 Screen built (D-300) | Guest+ (seat card: Visitor) | [App/Page_017](../App/Page_017/README.md) | [e2e/mobile-session-detail.md](../tests/e2e/mobile-session-detail.md) |
 | #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | 🟢 Screen built (D-301) | Visitor (login-only) | [App/Page_018](../App/Page_018/README.md) | [e2e/mobile-my-seat.md](../tests/e2e/mobile-my-seat.md) |
-| #19 `speakers` (`GET /app/speakers`) | ✅ API built (reuse, D-199) | Guest+ | [App/Page_019](../App/Page_019/README.md) | [e2e/mobile-speakers.md](../tests/e2e/mobile-speakers.md) |
-| #20 `speakerProfile` (`GET /app/speakers/{id}` + `…/meeting-requests`) | ✅ API built (reads D-199; meeting D-269) | Guest+ (meeting: Visitor) | [App/Page_020](../App/Page_020/README.md) | [e2e/mobile-speaker-profile.md](../tests/e2e/mobile-speaker-profile.md) |
+| #19 `speakers` (`GET /app/speakers`) | 🟢 Screen built (D-302) | Guest+ | [App/Page_019](../App/Page_019/README.md) | [e2e/mobile-speakers.md](../tests/e2e/mobile-speakers.md) |
+| #20 `speakerProfile` (`GET /app/speakers/{id}` + `…/meeting-requests`) | 🟢 Screen built (D-303) | Guest+ (meeting: Visitor) | [App/Page_020](../App/Page_020/README.md) | [e2e/mobile-speaker-profile.md](../tests/e2e/mobile-speaker-profile.md) |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | ✅ API built (NEW, D-273) | Public (anonymous) | [App/Page_024-01](../App/Page_024-01/README.md) | [e2e/mobile-archive-detail.md](../tests/e2e/mobile-archive-detail.md) |
 
 ---

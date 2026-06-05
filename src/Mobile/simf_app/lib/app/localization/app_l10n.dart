@@ -448,6 +448,44 @@ class AppL10n {
         'مقعدي في الملتقى: صف $row · مقعد $seat',
         'My SIMF seat: Row $row · Seat $seat',
       );
+
+  // Speakers list (Page 019).
+  String get speakersTitle => _t('المتحدثون', 'Speakers');
+  String get speakersError =>
+      _t('تعذّر تحميل المتحدثين.', 'Could not load the speakers.');
+  String get speakersEmpty => _t('لا يوجد متحدثون', 'No speakers');
+
+  // Speaker profile (Page 020).
+  String get speakerProfileTitle => _t('ملف المتحدث', 'Speaker profile');
+  String get speakerProfileError =>
+      _t('تعذّر تحميل ملف المتحدث.', 'Could not load the speaker profile.');
+  String get speakerNotFound =>
+      _t('المتحدث غير موجود', 'This speaker was not found');
+  String get cvBio => _t('نبذة عنه', 'Biography');
+  String get cvQualifications => _t('المؤهلات العلمية', 'Qualifications');
+  String get cvTraining => _t('الخبرات التدريبية', 'Training experience');
+  String get cvAwards => _t('الجوائز', 'Awards');
+  String get speakerSessionsHeading => _t('جلسات المتحدث', "Speaker's sessions");
+  String get copyLinkLabel => _t('نسخ الرابط', 'Copy link');
+  String get linkCopied => _t('تم نسخ الرابط', 'Link copied');
+  String get requestMeeting => _t('طلب مقابلة', 'Request meeting');
+  String get meetingNameLabel => _t('الاسم', 'Your name');
+  String get meetingSubjectLabel => _t('الموضوع', 'Subject');
+  String get meetingSendButton => _t('إرسال الطلب', 'Send request');
+  String get meetingRequestSent =>
+      _t('تم إرسال طلب المقابلة', 'Meeting request sent');
+  String get meetingRequestInvalid => _t(
+        'يرجى إدخال الاسم والموضوع',
+        'Please enter your name and a subject',
+      );
+  String get meetingRequestNotAllowed => _t(
+        'هذا المتحدث لا يستقبل طلبات المقابلة',
+        'This speaker is not accepting meeting requests',
+      );
+  String get meetingRequestFailed => _t(
+        'تعذّر إرسال الطلب. حاول مرة أخرى.',
+        'Could not send the request. Try again.',
+      );
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

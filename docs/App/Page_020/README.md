@@ -18,7 +18,7 @@ Per-page documentation folder. Everything about this app page lives here.
 | Section | 2 — Core screens |
 | Nature | **Speaker CV detail** — rank/name hero + large avatar + 4 profile tabs (the "CV") + the speaker's sessions; a Visitor can request a meeting |
 | App privilege | **Reads: Guest+ (anonymous)** — the profile read is `AllowAnonymous` (D-199). **Request-meeting action: Visitor login-only** — `RequireApprovedAccount` (D-269); a guest is prompted to sign in. |
-| Status | Reads API **BUILT** (D-199); meeting request **BUILT — NEW** (D-269) |
+| Status | Reads API **BUILT** (D-199); meeting request **BUILT — NEW** (D-269); **Flutter screen BUILT (D-303)** — profile + CV + sessions + social-copy + meeting-request flow |
 
 ## Sources of truth (read first)
 `Mockup.html` screen 20 (the visual) · `SIMF_Screen_Guide_and_User_Journey`

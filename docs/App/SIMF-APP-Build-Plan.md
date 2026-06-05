@@ -76,7 +76,8 @@ Status legend: ✅ **ready** (endpoint shipped under `/app/*`) · 🟡 **to buil
 | 16 | `sessions` (renamed from `agenda`, D-276) | Guest+ | 🟢 **screen built (D-299)** · `GET /app/programme/sessions` (D-199/D-252/D-271) — fetch-once + client-side pills/day-strip/search | [Page_016](Page_016/README.md) |
 | 17 | `sessionDetail` | Guest+ (seat: Visitor) | 🟢 **screen built (D-300)** · `GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats` (D-265) — detail + my-seat card + real add-to-calendar (reminder deferred) | [Page_017](Page_017/README.md) |
 | 18 | `mySeat` | Visitor (login-only) | 🟢 **screen built (D-301)** · `GET /app/sessions/{id}/seats` (D-267) — read-only grid + derived status + navigate + share | [Page_018](Page_018/README.md) |
-| 19–20 | `speakers`, `speakerProfile` | Guest+ | ⏳ existing `Endpoints/Public/PublicSpeaker*` (in this build wave) | — |
+| 19 | `speakers` | Guest+ | 🟢 **screen built (D-302)** · `GET /app/speakers` (D-199) | [Page_019](Page_019/README.md) |
+| 20 | `speakerProfile` | Guest+ (meeting: Visitor) | 🟢 **screen built (D-303)** · `GET /app/speakers/{id}` (D-199) + `POST …/meeting-requests` (D-269) | [Page_020](Page_020/README.md) |
 
 ### Sections 3–8 — content, live, media, badge, smart, settings (21–41)
 
@@ -101,7 +102,7 @@ following the matching `Page_NNN/` Function/Logic/Design docs.
 | **P1 — Auth** | 1 splash, 3 signIn (+ biometric), 5/6 sign-up + OTP, forgot/reset | the only "must be ready" surface (owner) — and it **is** ready server-side | sign-in → token cached |
 | **P2 — Onboarding & registration** | 2 onboarding, 4 type, 7 profile + interests, 9 terms, 10 success, 11 status | completes the new-visitor journey end-to-end; all APIs ready (11 just built) | profile complete → pending → approved |
 | **P3 — Home & identity** | 13 home (privilege-gated tiles), 14 My-Area | the signed-in landing + the personal dashboard | 13 + 14 **screen built (D-296 / D-297)** |
-| **P4 — Core event** | 15 map, 16–20 sessions/detail/seat/speakers | the core attendee value | existing endpoints — 15 **(D-298)**, 16 **(D-299)**, 17 **(D-300)** built |
+| **P4 — Core event** | 15 map, 16–20 sessions/detail/seat/speakers | the core attendee value | **complete** — 15 (D-298), 16 (D-299), 17 (D-300), 18 (D-301), 19 (D-302), 20 (D-303) built |
 | **P5+ — Content / Live / Media / Smart / Settings** | 21–41 | breadth, per the later doc waves | per-screen as documented |
 
 ---
