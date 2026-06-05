@@ -319,7 +319,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             ),
           ),
         );
-      context.goNamed(RouteNames.registrationStatus);
+      context.goNamed(RouteNames.registrationSuccess);
     } on ApiFailure catch (failure) {
       if (!mounted) {
         return;

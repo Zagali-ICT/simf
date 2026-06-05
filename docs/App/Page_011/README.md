@@ -18,7 +18,22 @@ Per-page documentation folder. Everything about this app page lives here.
 | Section | 1 — Onboarding / account lifecycle |
 | Nature | **Approval-process indicator** (read-only status screen) |
 | App privilege | **Signed-in, profile ready, NOT yet approved** (pending account) |
-| Status | Screen design **drafted**; backing route `GET /app/users/me` **(TO BUILD, in-progress this wave)** |
+| Status | **🟢 Screen built** (D-292) — Flutter `RegistrationStatusScreen`; backing route `GET /app/users/me` **BUILT** (`CurrentUserEndpoint`, D-249) |
+
+## As built (Flutter, D-292)
+`RegistrationStatusScreen` (route `registrationStatus` → `/registration/status`,
+**auth-gated** — Page_011 L-1) reads `GET /app/users/me` via the new
+`AuthController.refreshCurrentUser` (which surfaces failures, unlike the
+best-effort `reloadCurrentUser`, and updates the global session). It renders the
+state for `registrationStatus`: **Pending** (hourglass + under-review copy +
+**Re-check** + the four-step stages tracker with step 3 current), **Approved**
+(check + **Continue** → home + all stages complete), **Rejected** (declined copy,
+no Continue). A wire failure shows the **Error** state with retry; a session-expired
+failure flips auth to signed-out and the router's auth gate redirects to sign-in.
+**Sign out** is always available (→ sign-in). The approval reference/date are
+**decoration only (D11)** and are not rendered. Note: the client coerces an unknown
+`registrationStatus` to Pending at the DTO layer (`RegistrationStatus.fromJson`); the
+server only emits the three valid values, so a true unknown does not occur on the wire.
 
 ## Purpose
 A waiting / status screen shown to a user who has signed in and completed their

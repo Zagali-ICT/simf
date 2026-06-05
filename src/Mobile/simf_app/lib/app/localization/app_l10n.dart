@@ -223,6 +223,47 @@ class AppL10n {
   String get termsAcceptButton => _t('موافقة ومتابعة', 'Accept & continue');
   String get declineLabel => _t('رفض', 'Decline');
 
+  // Registration success (Page 010).
+  String get registrationSuccessTitle =>
+      _t('تم التسجيل بنجاح', 'Registration success');
+  String get registrationSuccessMessage => _t(
+        'تم استلام طلبك وهو قيد المراجعة من قبل الإدارة.',
+        'Your request was received and is under admin review.',
+      );
+  String get registrationStatusButton =>
+      _t('حالة التسجيل', 'Registration status');
+  String get goHomeButton => _t('الانتقال للرئيسية', 'Go to home');
+
+  // Registration status (Page 011).
+  String get registrationStatusTitle =>
+      _t('حالة التسجيل', 'Registration status');
+  String get regPendingHeadline =>
+      _t('حسابك قيد المراجعة', 'Your account is under review');
+  String get regPendingMessage => _t(
+        'تم استلام طلبك وسيراجعه فريق SIMF قريبًا.',
+        'Your request was received and the SIMF team will review it soon.',
+      );
+  String get regApprovedHeadline =>
+      _t('تم اعتماد حسابك', 'Your account is approved');
+  String get regApprovedMessage =>
+      _t('يمكنك الآن الدخول إلى التطبيق.', 'You can now enter the app.');
+  String get regRejectedHeadline =>
+      _t('لم يتم اعتماد حسابك', 'Your account was not approved');
+  String get regRejectedMessage => _t(
+        'نأسف، لم تتم الموافقة على طلبك. تواصل مع الدعم لمزيد من المعلومات.',
+        'We are sorry — your request was not approved. Contact support for more information.',
+      );
+  String get regStatusError =>
+      _t('تعذر تحميل حالة الحساب.', 'Could not load your account status.');
+  String get reCheckButton => _t('إعادة التحقق', 'Re-check');
+  String get signOutLink => _t('تسجيل الخروج', 'Sign out');
+  String get stagesTitle => _t('المراحل', 'Stages');
+  String get stageDataSubmitted => _t('إرسال البيانات', 'Data submitted');
+  String get stageEmailConfirmed =>
+      _t('تأكيد البريد الإلكتروني', 'Email confirmed');
+  String get stageTeamReview => _t('مراجعة فريق SIMF', 'SIMF team review');
+  String get stageActivation => _t('تفعيل الحساب', 'Account activation');
+
   // Sign in (Page 003).
   String get signInTitle => _t('تسجيل الدخول', 'Sign in');
   String get emailLabel => _t('البريد الإلكتروني', 'Email');

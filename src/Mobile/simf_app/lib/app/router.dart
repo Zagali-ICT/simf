@@ -17,6 +17,8 @@ import '../features/auth/sign_up_type_screen.dart';
 import '../features/content/terms_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/profile/sign_up_visitor_screen.dart';
+import '../features/registration/registration_status_screen.dart';
+import '../features/registration/registration_success_screen.dart';
 import '../features/splash/splash_screen.dart';
 import 'route_names.dart';
 import 'route_resume.dart';
@@ -112,6 +114,8 @@ const List<_Route> _auxRoutes = <_Route>[
 /// Phase 1 only gates the few obvious cases. Phase 2 / Phase 3 may extend.
 const Set<int> _authenticatedRoutes = <int>{
   7, // Sign up — visitor (profile completion; AUTH-only, Page_007 L-1)
+  10, // Registration success (signed-in, pending; Page_010)
+  11, // Registration status (signed-in, not-yet-approved gate; Page_011 L-1)
   14, // My area
   18, // My seat
   26, // Send question
@@ -207,6 +211,12 @@ GoRouter buildRouter(Ref ref) {
                 requireConsent:
                     state.uri.queryParameters['consent'] == '1',
               );
+            }
+            if (r.name == RouteNames.registrationSuccess) {
+              return const RegistrationSuccessScreen();
+            }
+            if (r.name == RouteNames.registrationStatus) {
+              return const RegistrationStatusScreen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,

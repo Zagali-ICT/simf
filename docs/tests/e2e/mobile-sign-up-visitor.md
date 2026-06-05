@@ -51,7 +51,7 @@ Scenario: A signed-in visitor completes the profile and is sent to wait for appr
   And they tap "Save"
   Then the app POSTs UpsertUserProfileRequest (with InterestIds, no user id) to /app/account/user-profile
   And on ApiResult.Ok it shows "Profile saved"
-  And it navigates to the registration-status (wait-for-approval) screen
+  And it navigates to the registration-success screen (Page_010 → Page_011)
 ```
 
 **Evidence:** `sign_up_visitor_screen_test` — "a pre-filled valid profile upserts and routes to registration-status" (asserts the request carries `interestIds`, `nationalId`, `isSaudi`).

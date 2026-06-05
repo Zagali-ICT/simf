@@ -6,9 +6,9 @@ Business rules behind the screen. The user flow is in
 
 ## Data source
 The screen is driven by a **single read**: `GET /app/users/me`
-(**TO BUILD, in-progress this wave** — see [Page_011_API.md](Page_011_API.md)). The
-Flutter app already calls this endpoint; the backend route is being built now. The
-relevant field is `registrationStatus`.
+(**BUILT** — `CurrentUserEndpoint`, D-249; see [Page_011_API.md](Page_011_API.md)).
+The Flutter app calls this via `AuthController.refreshCurrentUser`. The relevant
+field is `registrationStatus`.
 
 ## L-1 — Status mapping (AccountState → registrationStatus)
 The API does **not** expose the raw internal `AccountState`. It maps the lifecycle
@@ -95,6 +95,6 @@ No silent fallback: an unreadable status is an **error**, never a guessed `Pendi
 - **Decoration ref/date absent** — never an error; the screen renders without them.
 
 ## Dependencies
-- **`GET /app/users/me`** — the only backing call (**TO BUILD, in-progress**).
+- **`GET /app/users/me`** — the only backing call (**BUILT**, `CurrentUserEndpoint`, D-249).
 - App router / privilege gate — owns entry (non-approved in) and exit (approved out);
   this page does not self-route except via its Continue / Sign-out actions.
