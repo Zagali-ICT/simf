@@ -1137,10 +1137,15 @@ public sealed class SimfAdminClient(HttpClient http)
 
     // -- D-165 (gap doc G3) — Session admin CRUD -----------------------------
 
-    public Task<ApiCallResult<GridPage<AdminSessionSummaryDetail>>> ListSessionsAsync(
+    // NOTE: returns AdminSessionSummary (the sessions GRID row — Code/Title/Hall/
+    // times/capacity/status), NOT AdminSessionSummaryDetail (the AI session-summary
+    // detail). The two names collide and the wrong one was bound here, which made
+    // /admin/sessions deserialize every row to defaults (blank code, 0001 dates,
+    // inactive). The CP SessionsList grid is TItem="AdminSessionSummary".
+    public Task<ApiCallResult<GridPage<AdminSessionSummary>>> ListSessionsAsync(
         GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<GridPage<AdminSessionSummaryDetail>>(
+        SendAsync<GridPage<AdminSessionSummary>>(
             HttpMethod.Post, "sessions/list",
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
