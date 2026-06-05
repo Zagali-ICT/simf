@@ -7,6 +7,7 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.Ai;
 using SIMF.Contracts.Archive;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.BusinessMeetings;
 using SIMF.Contracts.Exhibitors;
 using SIMF.Contracts.Exhibition;
 using SIMF.Contracts.Faq;
@@ -1001,6 +1002,121 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.DeactivateHallAsync(id, token));
+        });
+
+        // SIMF-FDS-013 (D-248) — meeting tables + hall allocations + business
+        // meetings BFF passthroughs (mirrors the Halls block above). Without
+        // these the /admin/meeting-tables + /admin/business-meetings pages 400
+        // on every data call (the backend endpoints exist; only these proxies
+        // were missing).
+        group.MapPut("/admin/halls/{hallId:guid}/purpose",
+            async (Guid hallId, SetHallPurposeRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.SetHallPurposeAsync(hallId, body, token));
+        });
+
+        group.MapPost("/admin/halls/{hallId:guid}/meeting-tables/list",
+            async (Guid hallId, GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListMeetingTablesAsync(hallId, body, token));
+        });
+
+        group.MapPost("/admin/halls/{hallId:guid}/meeting-tables",
+            async (Guid hallId, CreateMeetingTableRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateMeetingTableAsync(hallId, body, token));
+        });
+
+        group.MapPut("/admin/meeting-tables/{id:guid}",
+            async (Guid id, UpdateMeetingTableRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateMeetingTableAsync(id, body, token));
+        });
+
+        group.MapDelete("/admin/meeting-tables/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteMeetingTableAsync(id, token));
+        });
+
+        group.MapPost("/admin/halls/{hallId:guid}/meeting-tables/generate",
+            async (Guid hallId, GenerateMeetingTablesRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GenerateMeetingTablesAsync(hallId, body, token));
+        });
+
+        group.MapPost("/admin/halls/{hallId:guid}/hall-allocations/list",
+            async (Guid hallId, GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListHallAllocationsAsync(hallId, body, token));
+        });
+
+        group.MapPost("/admin/halls/{hallId:guid}/hall-allocations",
+            async (Guid hallId, CreateHallAllocationRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateHallAllocationAsync(hallId, body, token));
+        });
+
+        group.MapDelete("/admin/hall-allocations/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ReleaseHallAllocationAsync(id, token));
+        });
+
+        group.MapPost("/admin/business-meetings/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListBusinessMeetingsAsync(body, token));
+        });
+
+        group.MapGet("/admin/business-meetings/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetBusinessMeetingAsync(id, token));
+        });
+
+        group.MapPost("/admin/business-meetings",
+            async (ScheduleMeetingRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ScheduleBusinessMeetingAsync(body, token));
+        });
+
+        group.MapPost("/admin/business-meetings/{id:guid}/cancel",
+            async (Guid id, CancelMeetingRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CancelBusinessMeetingAsync(id, body, token));
         });
 
         // D-151 — Country admin lookup BFF passthroughs.

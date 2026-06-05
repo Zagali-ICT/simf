@@ -8,6 +8,7 @@ using SIMF.Contracts.Ai;
 using SIMF.Contracts.Archive;
 using SIMF.Contracts.Attendance;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.BusinessMeetings;
 using SIMF.Contracts.Exhibition;
 using SIMF.Contracts.Exhibitors;
 using SIMF.Contracts.Faq;
@@ -949,6 +950,109 @@ public sealed class SimfAdminClient(HttpClient http)
         CancellationToken cancellationToken = default) =>
         SendAsync<bool>(
             HttpMethod.Delete, $"halls/{id}", content: null,
+            accessToken, cancellationToken);
+
+    // -- SIMF-FDS-013 (D-248) — meeting tables + hall allocations + meetings -
+
+    public Task<ApiCallResult<bool>> SetHallPurposeAsync(
+        Guid hallId, SetHallPurposeRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Put, $"halls/{hallId}/purpose",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<MeetingTableRow>>> ListMeetingTablesAsync(
+        Guid hallId, GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<MeetingTableRow>>(
+            HttpMethod.Post, $"halls/{hallId}/meeting-tables/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<MeetingTableRow>> CreateMeetingTableAsync(
+        Guid hallId, CreateMeetingTableRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<MeetingTableRow>(
+            HttpMethod.Post, $"halls/{hallId}/meeting-tables",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<MeetingTableRow>> UpdateMeetingTableAsync(
+        Guid id, UpdateMeetingTableRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<MeetingTableRow>(
+            HttpMethod.Put, $"meeting-tables/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeleteMeetingTableAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"meeting-tables/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<MeetingTablesGenerated>> GenerateMeetingTablesAsync(
+        Guid hallId, GenerateMeetingTablesRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<MeetingTablesGenerated>(
+            HttpMethod.Post, $"halls/{hallId}/meeting-tables/generate",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<HallAllocationRow>>> ListHallAllocationsAsync(
+        Guid hallId, GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<HallAllocationRow>>(
+            HttpMethod.Post, $"halls/{hallId}/hall-allocations/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<HallAllocationRow>> CreateHallAllocationAsync(
+        Guid hallId, CreateHallAllocationRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<HallAllocationRow>(
+            HttpMethod.Post, $"halls/{hallId}/hall-allocations",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> ReleaseHallAllocationAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"hall-allocations/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<BusinessMeetingRow>>> ListBusinessMeetingsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<BusinessMeetingRow>>(
+            HttpMethod.Post, "business-meetings/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<BusinessMeetingDetail>> GetBusinessMeetingAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<BusinessMeetingDetail>(
+            HttpMethod.Get, $"business-meetings/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<BusinessMeetingScheduled>> ScheduleBusinessMeetingAsync(
+        ScheduleMeetingRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<BusinessMeetingScheduled>(
+            HttpMethod.Post, "business-meetings",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> CancelBusinessMeetingAsync(
+        Guid id, CancelMeetingRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"business-meetings/{id}/cancel",
+            JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
     // -- D-151 — Country admin lookup CRUD ----------------------------------
