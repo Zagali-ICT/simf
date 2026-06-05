@@ -73,7 +73,8 @@ Status legend: ✅ **ready** (endpoint shipped under `/app/*`) · 🟡 **to buil
 | 13 | `home` | Guest+ | 🟢 **screen built (D-296)** · `…/notifications/unread-count` (count) · `GET /app/bootstrap` (D-251) · live banner deferred (D10) | [Page_013](Page_013/README.md) |
 | 14 | `myArea` | Visitor | 🟢 **screen built (D-297)** · `GET /app/account/dashboard` + `calendar.ics` + `contact-card.vcf` (D-249) — unions held bookings + speaker meetings + confirmed business meetings | [Page_014](Page_014/README.md) |
 | 15 | `venueMap` | Guest | 🟢 **screen built (D-298)** · `GET /app/venue-map` (D-230) + `GET /app/booths` | [Page_015](Page_015/README.md) |
-| 16–20 | `sessions` (renamed from `agenda`, D-276), `sessionDetail`, `mySeat`, `speakers`, `speakerProfile` | Guest/Visitor | ⏳ existing `Endpoints/Programme/*`, `Endpoints/Sessions/SeatReservation*`, `Endpoints/Public/PublicSpeaker*` (later wave) | — |
+| 16 | `sessions` (renamed from `agenda`, D-276) | Guest+ | 🟢 **screen built (D-299)** · `GET /app/programme/sessions` (D-199/D-252/D-271) — fetch-once + client-side pills/day-strip/search | [Page_016](Page_016/README.md) |
+| 17–20 | `sessionDetail`, `mySeat`, `speakers`, `speakerProfile` | Guest/Visitor | ⏳ existing `Endpoints/Programme/*`, `Endpoints/Sessions/SeatReservation*`, `Endpoints/Public/PublicSpeaker*` (later wave) | — |
 
 ### Sections 3–8 — content, live, media, badge, smart, settings (21–41)
 
@@ -98,7 +99,7 @@ following the matching `Page_NNN/` Function/Logic/Design docs.
 | **P1 — Auth** | 1 splash, 3 signIn (+ biometric), 5/6 sign-up + OTP, forgot/reset | the only "must be ready" surface (owner) — and it **is** ready server-side | sign-in → token cached |
 | **P2 — Onboarding & registration** | 2 onboarding, 4 type, 7 profile + interests, 9 terms, 10 success, 11 status | completes the new-visitor journey end-to-end; all APIs ready (11 just built) | profile complete → pending → approved |
 | **P3 — Home & identity** | 13 home (privilege-gated tiles), 14 My-Area | the signed-in landing + the personal dashboard | 13 + 14 **screen built (D-296 / D-297)** |
-| **P4 — Core event** | 15 map, 16–20 agenda/sessions/speakers/seat | the core attendee value | existing endpoints — 15 **screen built (D-298)** |
+| **P4 — Core event** | 15 map, 16–20 sessions/detail/seat/speakers | the core attendee value | existing endpoints — 15 **built (D-298)**, 16 sessions **built (D-299)** |
 | **P5+ — Content / Live / Media / Smart / Settings** | 21–41 | breadth, per the later doc waves | per-screen as documented |
 
 ---

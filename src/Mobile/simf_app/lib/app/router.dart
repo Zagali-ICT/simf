@@ -22,6 +22,7 @@ import '../features/venuemap/venue_map_screen.dart';
 import '../features/profile/sign_up_visitor_screen.dart';
 import '../features/registration/registration_status_screen.dart';
 import '../features/registration/registration_success_screen.dart';
+import '../features/sessions/sessions_screen.dart';
 import '../features/splash/splash_screen.dart';
 import 'route_names.dart';
 import 'route_resume.dart';
@@ -218,6 +219,9 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.venueMap) {
               return const VenueMapScreen();
+            }
+            if (r.name == RouteNames.sessions) {
+              return const SessionsScreen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,

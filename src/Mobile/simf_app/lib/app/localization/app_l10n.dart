@@ -389,6 +389,17 @@ class AppL10n {
   String get legendZone => _t('منطقة', 'Zone');
   String get legendBooth => _t('جناح', 'Booth');
   String get legendPoi => _t('نقطة اهتمام', 'Point of interest');
+
+  // Sessions — daily schedule (Page 016). The two pills + the day strip + the
+  // search box all filter the cached programme client-side (Page_016 L-1).
+  String get sessionsTitle => _t('الجلسات', 'Sessions');
+  String get sessionsViewUpcoming => _t('الجلسات القادمة', 'Upcoming');
+  String get sessionsViewForum => _t('جلسات الفعالية', 'Forum');
+  String get sessionsAllDays => _t('كل الأيام', 'All days');
+  String get sessionsSearchHint => _t('ابحث في الجلسات', 'Search sessions');
+  String get sessionsEmpty => _t('لا توجد جلسات', 'No sessions');
+  String get sessionsError =>
+      _t('تعذّر تحميل الجلسات.', 'Could not load the sessions.');
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

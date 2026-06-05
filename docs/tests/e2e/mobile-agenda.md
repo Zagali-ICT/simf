@@ -3,6 +3,18 @@
 > **Authority:** SIMF E2E test catalogue template (D-133 slice 7). Mobile
 > catalogue — the public programme API is built (D-199) + enriched (D-252); the
 > API implementation lives in `tests/SIMF.Api.Tests/ProgrammeSessionsTests.cs`.
+> The **Flutter screen is built (D-299)** — fetch-once + client-side
+> Upcoming/Forum pills, data-driven day strip and search; widget/model tests in
+> `src/Mobile/simf_app/test/features/sessions/sessions_screen_test.dart`
+> (rows + index, search filter, Forum-pill reveal, row-tap → detail, empty,
+> error→retry) and `…/session_models_test.dart` (tolerant int-enum decode, the
+> real wire field names incl. the D-271 speaker country+photo, the client-side
+> filter + day-strip helpers).
+>
+> **Filename note:** this catalogue keeps its legacy `mobile-agenda.md` name; the
+> screen/route is renamed **Sessions** (D-276). A rename to `mobile-sessions.md`
+> is deferred (needs owner sign-off — it is referenced from PAGE-INDEX + the
+> e2e README).
 
 | | |
 |--|--|
@@ -23,9 +35,13 @@
 | E2E-MOB016-004 | `?day=` restricts to one UTC calendar day (thin-client filter) | happy | P1 | authored ✓ (`Day_filter_restricts_to_that_utc_calendar_day`) |
 | E2E-MOB016-005 | Malformed `?day=` → 400 | error | P1 | authored ✓ (`Malformed_day_filter_is_rejected_with_400`) |
 | E2E-MOB016-006 | Soft-deleted session drops from the list | edge | P1 | authored ✓ (covered by the delete test) |
-| E2E-MOB016-007 | Tap a row → Session detail (17) renders from cache; "main session" = category tag | happy | P1 | authored (screen) |
-| E2E-MOB016-008 | Client filters (Upcoming/Forum pills, day strip, search) slice the cache — no refetch | happy | P0 | authored (screen) |
-| E2E-MOB016-009 | RTL render + day strip scroll + active-session highlight | i18n | P1 | authored (screen) |
+| E2E-MOB016-007 | Tap a row → Session detail (17) route opens; "main session" = category tag | happy | P1 | authored ✓ (screen — `tapping a row navigates to the session detail`) |
+| E2E-MOB016-008 | Client filters (Upcoming/Forum pills, day strip, search) slice the cache — no refetch | happy | P0 | authored ✓ (screen — `Forum pill reveals…`, `search box filters…`) |
+| E2E-MOB016-009 | RTL render + day strip scroll | i18n | P1 | authored ✓ (screen RTL-primary; day strip uses directional insets) |
+| E2E-MOB016-010 | Empty programme → empty state (not a blank list) | edge | P1 | authored ✓ (screen — `an empty programme shows the empty state`) |
+| E2E-MOB016-011 | Fetch fails → error + Retry that re-runs the read | resilience | P0 | authored ✓ (screen — `a load failure shows the error + retry`) |
+| E2E-MOB016-012 | `status` / speaker `role` decode tolerantly (int **or** name; unknown → default) | contract | P0 | authored ✓ (model — `SessionStatus.fromJson` / `SessionSpeakerRole.fromJson`) |
+| E2E-MOB016-013 | List item binds the real wire names incl. the D-271 speaker country+photo | contract | P0 | authored ✓ (model — `SessionListItem.fromJson`) |
 
 ## Scenarios
 
@@ -115,6 +131,9 @@ Scenario: Tapping a row opens the detail from cache with the category tag
   And the live seat count refreshes in the background
 ```
 
+**Evidence:** screen test `tapping a row navigates to the session detail`
+(asserts the `/sessions/:id` route opens with the tapped id).
+
 ### E2E-MOB016-008 — Client-side filters, no refetch
 
 ```gherkin
@@ -125,6 +144,11 @@ Scenario: The pills, day strip and search slice the cache
   And no new GET /app/programme/sessions request is made
 ```
 
+**Evidence:** screen tests `the Forum pill reveals past sessions hidden by Upcoming`
+(Upcoming = `startUtc >= now`, L-2) and `the search box filters the list`. The one
+fetch is held in screen state; filters run over it via `filterSessions` (no repo
+call) — `session_models_test.dart` covers the pure filter + `sessionDays`.
+
 ### E2E-MOB016-009 — RTL render
 
 ```gherkin
@@ -132,10 +156,65 @@ Scenario: The agenda renders right-to-left in Arabic
   Given the device locale is Arabic
   When the agenda renders
   Then the layout and day strip are right-to-left
-  And the active/next session row is highlighted in brass
   And times render in the device timezone
 ```
 
+**Evidence:** the screen is RTL-primary (Arabic default); the day strip uses
+`EdgeInsetsDirectional` so chip spacing flows start→end. (The active/next-session
+brass highlight is deferred to the SIMF-VID-001 visual pass — interim UI.)
+
+### E2E-MOB016-010 — Empty state
+
+```gherkin
+Scenario: An empty programme shows the empty state
+  Given GET /app/programme/sessions returns an empty list
+  When the sessions screen opens
+  Then an empty-state message is shown, not a blank list
+```
+
+**Evidence:** screen test `an empty programme shows the empty state`.
+
+### E2E-MOB016-011 — Error + retry
+
+```gherkin
+Scenario: A failed read offers a working retry
+  Given GET /app/programme/sessions fails (transport / 5xx)
+  When the sessions screen opens
+  Then an error message + Retry are shown
+  And tapping Retry re-runs the read
+```
+
+**Evidence:** screen test `a load failure shows the error + retry, which re-fetches`.
+
+### E2E-MOB016-012 — Tolerant enum decode (int wire, D-299)
+
+```gherkin
+Scenario: status and speaker role decode whether int or name
+  Given SessionStatus / SessionSpeakerRole serialise as ints today (no string converter)
+  When the client decodes status=3 / role=1 (or "Published" / "Host")
+  Then it resolves the known values, and an unknown value falls back to a safe default
+```
+
+**Evidence:** model tests `SessionStatus.fromJson` + `SessionSpeakerRole.fromJson`
+(int, name, unknown→default).
+
+### E2E-MOB016-013 — Wire-contract field names
+
+```gherkin
+Scenario: The list item binds the real wire names incl. the D-271 speaker cluster
+  Given PublicSessionListItem ships title/hallName/startUtc/status + speakers[]
+  And each speaker carries countryId / countryNameEn / countryNameAr / photoRelativePath
+  When the client decodes a session
+  Then it binds those camelCase names and a missing speakers array decodes to []
+```
+
+> Reality note: an earlier draft of `Page_016_API.md` showed `status`/`role` as the
+> enum **names** (`"Scheduled"`, `"Speaker"`); the shipped wire is an **int** (no
+> `JsonStringEnumConverter` in `SIMF.Api`) → corrected with D-299; the client
+> decodes tolerantly either way.
+
+**Evidence:** model test `SessionListItem.fromJson binds the real wire field names…`.
+
 ---
 
-_Last reviewed:_ `2026-06-03` by `SIMF Team`.
+_Last reviewed:_ `2026-06-05` by `SIMF Team`.
