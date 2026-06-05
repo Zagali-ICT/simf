@@ -14,6 +14,7 @@ import '../features/auth/sign_in_screen.dart';
 import '../features/auth/sign_up_email_verify_screen.dart';
 import '../features/auth/sign_up_form_screen.dart';
 import '../features/auth/sign_up_type_screen.dart';
+import '../features/booths/booths_screen.dart';
 import '../features/content/terms_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/myarea/my_area_screen.dart';
@@ -244,6 +245,9 @@ GoRouter buildRouter(Ref ref) {
               return SpeakerProfileScreen(
                 speakerId: state.pathParameters['speakerId'] ?? '',
               );
+            }
+            if (r.name == RouteNames.booths) {
+              return const BoothsScreen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,

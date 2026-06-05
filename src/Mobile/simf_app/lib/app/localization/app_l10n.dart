@@ -486,6 +486,12 @@ class AppL10n {
         'تعذّر إرسال الطلب. حاول مرة أخرى.',
         'Could not send the request. Try again.',
       );
+
+  // Booths (Page 022).
+  String get boothsTitle => _t('الأجنحة', 'Booths');
+  String get boothsError =>
+      _t('تعذّر تحميل الأجنحة.', 'Could not load the booths.');
+  String get boothsEmpty => _t('لا توجد أجنحة', 'No booths');
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
