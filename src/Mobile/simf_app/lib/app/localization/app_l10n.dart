@@ -378,6 +378,17 @@ class AppL10n {
       );
   String get myAreaError =>
       _t('تعذّر تحميل منطقتك.', 'Could not load your area.');
+
+  // Venue map (Page 015).
+  String get venueMapTitle => _t('الخريطة', 'Venue map');
+  String get venueMapError =>
+      _t('تعذّر تحميل الخريطة.', 'Could not load the map.');
+  String get venueMapEmpty =>
+      _t('لا توجد عناصر على الخريطة بعد', 'No map items yet');
+  String get legendHall => _t('قاعة', 'Hall');
+  String get legendZone => _t('منطقة', 'Zone');
+  String get legendBooth => _t('جناح', 'Booth');
+  String get legendPoi => _t('نقطة اهتمام', 'Point of interest');
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -18,6 +18,7 @@ import '../features/content/terms_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/myarea/my_area_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
+import '../features/venuemap/venue_map_screen.dart';
 import '../features/profile/sign_up_visitor_screen.dart';
 import '../features/registration/registration_status_screen.dart';
 import '../features/registration/registration_success_screen.dart';
@@ -214,6 +215,9 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.myArea) {
               return const MyAreaScreen();
+            }
+            if (r.name == RouteNames.venueMap) {
+              return const VenueMapScreen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,
