@@ -32,7 +32,8 @@ the inline **interests** multi-select (1–10 with an `n/10` counter, D12). Save
 sends one `POST /app/account/user-profile`; the optional **ID-document image** is
 picked with `image_picker` and uploaded (multipart, content-type set so the
 server's MIME + magic-byte gate accepts it) **after** the profile row exists. On
-success the app routes to the **registration-status** (wait-for-approval) screen.
+success the app routes to the **registration-success** screen (Page_010 → Page_011;
+the documented sign-up flow — updated D-291).
 The visuals are the interim placeholder design (SIMF-VID-001 swaps them later);
 the API + validation behaviour is real.
 

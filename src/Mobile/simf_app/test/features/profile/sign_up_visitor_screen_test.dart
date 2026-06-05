@@ -115,9 +115,9 @@ Future<void> _pump(
         builder: (c, s) => const SignUpVisitorScreen(),
       ),
       GoRoute(
-        name: RouteNames.registrationStatus,
-        path: '/registration/status',
-        builder: (c, s) => const Scaffold(body: Text('REG-STATUS')),
+        name: RouteNames.registrationSuccess,
+        path: '/registration/success',
+        builder: (c, s) => const Scaffold(body: Text('REG-SUCCESS')),
       ),
     ],
   );
@@ -203,7 +203,7 @@ void main() {
       expect(repo.upserted!.interestIds, contains('i1'));
       expect(repo.upserted!.nationalId, '1000000008');
       expect(repo.upserted!.isSaudi, isTrue);
-      expect(find.text('REG-STATUS'), findsOneWidget);
+      expect(find.text('REG-SUCCESS'), findsOneWidget);
     });
 
     testWidgets('a non-Saudi profile shows the Iqama / Passport document picker',

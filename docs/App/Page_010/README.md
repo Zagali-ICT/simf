@@ -18,7 +18,18 @@ Per-page documentation folder. Everything about this app page lives here.
 | Section | 1 — Onboarding / sign-up |
 | Nature | **Transitional confirmation** (terminal step of the 4-step sign-up; "wait for approval") |
 | App privilege | **Signed-in, pending approval** (account just created, not yet Approved) |
-| Status | Screen **drafted**; transitional only — no own write API. Status poll endpoint **(BUILT — `CurrentUserEndpoint`, D-249)** |
+| Status | **🟢 Screen built** (D-291) — Flutter `RegistrationSuccessScreen`; transitional only, no own write API (the optional status poll lives on Page_011) |
+
+## As built (Flutter, D-291)
+`RegistrationSuccessScreen` (route `registrationSuccess` → `/registration/success`,
+auth-gated) is a static, offline-safe confirmation: a success check + the
+"received / under admin review" message + a primary **حالة التسجيل / Registration
+status** button (→ Page_011) and a ghost **الانتقال للرئيسية / Go to home** button
+(→ home). It has **no app-bar back** and is reached via a **replacement**
+navigation, so the multi-step sign-up form is off the back stack. It owns no API
+(the optional auto-advance poll is deferred to Page_011, which owns the real status
+polling — Page_010 L-3). The Page_007 profile save now routes **here** (then on to
+Page_011), matching the documented sign-up flow.
 
 ## Sources of truth
 `Mockup.html` (visual) · `SIMF_Screen_Guide_and_User_Journey` (narrative, Screen 10) ·

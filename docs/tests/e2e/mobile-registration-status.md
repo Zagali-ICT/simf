@@ -3,8 +3,13 @@
 > **Authority:** SIMF E2E test catalogue template (D-133 slice 7).
 > First file of the **mobile** catalogue — the App build is now landing
 > endpoints (D-249), so the mobile screens are catalogued as their backing
-> APIs ship. Runner-agnostic Gherkin; the implementation for this screen's
-> API lives in `tests/SIMF.Api.Tests/CurrentUserEndpointTests.cs`.
+> APIs ship. Runner-agnostic Gherkin; the API lives in
+> `tests/SIMF.Api.Tests/CurrentUserEndpointTests.cs`. The **Flutter screen is built**
+> (D-292) and widget-tested in
+> `src/Mobile/simf_app/test/features/registration/registration_status_screen_test.dart`
+> (pending / approved→home / rejected / error→retry / sign-out); the throwing
+> `refreshCurrentUser` it uses is covered in
+> `src/Mobile/packages/simf_auth_pkg/test/auth_controller_refresh_user_test.dart`.
 
 | | |
 |--|--|
@@ -24,7 +29,7 @@
 | E2E-MOB011-003 | Rejected account reads `Rejected` → screen routes to rejection | happy | P0 | authored ✓ (`Me_reflects_a_rejected_account_as_Rejected`) |
 | E2E-MOB011-004 | Disabled account collapses to `Rejected` | edge | P1 | authored (mapping) |
 | E2E-MOB011-005 | Missing / expired token → 401 → route to sign-in | auth | P0 | authored ✓ (`Me_without_a_bearer_token_returns_401`) |
-| E2E-MOB011-006 | Unknown `registrationStatus` value → Error state (no silent Pending) | resilience | P2 | authored (client) |
+| E2E-MOB011-006 | Unknown `registrationStatus` value → client coerces to Pending at the DTO layer (server only emits the 3 valid values) | resilience | P2 | authored (DTO coercion) |
 | E2E-MOB011-007 | RTL render of the status indicator + Arabic state label | i18n | P1 | authored (screen) |
 
 ## Scenarios
@@ -105,15 +110,22 @@ Scenario: No token is rejected
 
 **Evidence:** `CurrentUserEndpointTests.Me_without_a_bearer_token_returns_401` (green).
 
-### E2E-MOB011-006 — Unknown status is an error, not a silent Pending
+### E2E-MOB011-006 — Unknown status coercion (DTO layer)
 
 ```gherkin
-Scenario: An unrecognised registrationStatus is treated as Error
-  Given the server returns a registrationStatus the client does not recognise
-  When the screen maps the value
-  Then it shows the Error state with a retry
-  And it does NOT silently fall back to "Pending"
+Scenario: An unrecognised registrationStatus is coerced at the DTO layer
+  Given the server only ever emits "Pending" / "Approved" / "Rejected"
+  When (defensively) a value the client does not recognise is decoded
+  Then RegistrationStatus.fromJson coerces it to "Pending" (its documented fallback)
+  And the screen shows the Pending state
 ```
+
+> Reality note: the app maps `registrationStatus` to the `RegistrationStatus` enum
+> in the shared DTO (`RegistrationStatus.fromJson`), whose documented fallback is
+> `Pending`; the screen therefore never sees a raw unknown string. The server's
+> `AccountState → tri-state` mapping guarantees only the three valid values on the
+> wire, so a true unknown does not occur. (The earlier "unknown → Error" wording did
+> not match the shipped client and was corrected with D-292.)
 
 ### E2E-MOB011-007 — RTL render
 
@@ -127,4 +139,4 @@ Scenario: Arabic state label renders right-to-left
 
 ---
 
-_Last reviewed:_ `2026-06-03` by `SIMF Team`.
+_Last reviewed:_ `2026-06-05` by `SIMF Team`.

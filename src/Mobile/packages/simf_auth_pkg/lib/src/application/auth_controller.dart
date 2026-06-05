@@ -215,6 +215,22 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
     }
   }
 
+  /// Re-reads the current user from `GET /app/users/me` and updates the session,
+  /// **surfacing** any wire failure to the caller (unlike [reloadCurrentUser],
+  /// which is best-effort and swallows it). Used by the registration-status
+  /// screen (Page_011) so it can render Loading / Error distinctly and re-check
+  /// on demand. Returns the refreshed user; throws [AuthFailure] on failure.
+  Future<CurrentUser> refreshCurrentUser() async {
+    final user = await _repository.getCurrentUser();
+    final current = state;
+    if (current is AuthStateSignedIn) {
+      final updated = current.session.copyWith(user: user);
+      await _persistSession(updated);
+      state = AuthStateSignedIn(updated);
+    }
+    return user;
+  }
+
   // ----- device key (biometric, D-172) -------------------------------------
 
   /// Enrols a device key for biometric sign-in (opt-in, after a password
