@@ -131,7 +131,7 @@ void main() {
 
     testWidgets(
         'renders under the production theme without an infinite-width crash '
-        '(D-294)', (tester) async {
+        '(D-295)', (tester) async {
       // Regression: the FilledButton theme sets minimumSize: Size.fromHeight(48)
       // (== Size(infinity, 48)). Inside the onboarding bottom Row that demanded
       // an infinite width and threw a layout assertion, collapsing the whole

@@ -36,7 +36,7 @@ Future<AuthState> _waitForResolved(ProviderContainer container) {
 }
 
 void main() {
-  group('AuthController cold-start restore (Page_001 L-4/L-6, D-294)', () {
+  group('AuthController cold-start restore (Page_001 L-4/L-6, D-295)', () {
     test(
       'a hung keystore read resolves to signed-out instead of stranding at '
       'Initial',

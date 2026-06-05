@@ -294,7 +294,7 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
 
   Future<void> _restoreFromStorage() async {
     try {
-      // Cold-start reads are time-boxed (D-294): a hung or slow platform
+      // Cold-start reads are time-boxed (D-295): a hung or slow platform
       // keystore must never stall the restore, because the router holds the
       // user on the splash while auth is still AuthStateInitial (router.dart),
       // so a stalled read would strand them on the splash forever. On timeout

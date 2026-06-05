@@ -154,30 +154,12 @@ GoRouter buildRouter(Ref ref) {
         unawaited(prefs.setString(StorageKeys.lastRoute, goingTo));
       }
 
-      // While the cold-start restore is still running, hold *protected* routes
-      // on the splash; the splash itself routes out once auth resolves
-      // (Page_001 Logic L-5). The splash's route-out to a public entry screen
-      // (onboarding / sign-in) is never pinned here — otherwise a stalled
-      // restore that never leaves AuthStateInitial would strand the user on the
-      // splash forever (D-294 / Logic L-6). Protected routes still wait for auth
-      // via the gate below.
-      if (authState is AuthStateInitial &&
-          goingTo != '/splash' &&
-          routePathRequiresAuth(state.fullPath)) {
-        return '/splash';
-      }
-
-      if (routePathRequiresAuth(state.fullPath) && !isSignedIn) {
-        return '/sign-in';
-      }
-
-      // A signed-in user has no business on the sign-in screen. (The splash is
-      // left to route itself out, so a resume target is never clobbered here.)
-      if (isSignedIn && goingTo == '/sign-in') {
-        return '/';
-      }
-
-      return null;
+      return redirectDecision(
+        isInitial: authState is AuthStateInitial,
+        isSignedIn: isSignedIn,
+        goingTo: goingTo,
+        fullPath: state.fullPath,
+      );
     },
     routes: <RouteBase>[
       for (final r in _routes)
@@ -291,5 +273,37 @@ int? routeNumberForPath(String? fullPath) {
 /// Whether the matched route pattern needs a signed-in user (the auth gate).
 bool routePathRequiresAuth(String? fullPath) =>
     _authenticatedRoutes.contains(routeNumberForPath(fullPath));
+
+/// The pure auth-gate redirect decision (testable in isolation, like
+/// [routePathRequiresAuth]). Returns the path to redirect to, or null to allow
+/// the navigation. [goingTo] is the matched location; [fullPath] is the matched
+/// route *pattern*.
+///
+/// A signed-in user landing on `/sign-in` is intentionally **not** bounced here
+/// (D-295). Post-sign-in routing belongs to `SignInScreen._routeAfterSignIn`,
+/// which sends a profile-incomplete visitor to the profile screen (Page_007). A
+/// blunt `/sign-in -> /` redirect fired on the auth-state change, disposed the
+/// SignInScreen before its post-sign-in router could run, and stranded
+/// incomplete profiles on Home.
+String? redirectDecision({
+  required bool isInitial,
+  required bool isSignedIn,
+  required String goingTo,
+  required String? fullPath,
+}) {
+  // Hold *protected* routes on the splash while the cold-start restore resolves
+  // (Page_001 L-5 / D-295); the splash routes itself out to a public entry
+  // screen once auth resolves, so a public route is never pinned here —
+  // otherwise a stalled restore would strand the user on the splash (L-6).
+  if (isInitial && goingTo != '/splash' && routePathRequiresAuth(fullPath)) {
+    return '/splash';
+  }
+  // The auth gate (SIMF-MAA-001 §8): a protected route while signed out goes to
+  // the sign-in entry.
+  if (routePathRequiresAuth(fullPath) && !isSignedIn) {
+    return '/sign-in';
+  }
+  return null;
+}
 
 final routerProvider = Provider<GoRouter>(buildRouter);
