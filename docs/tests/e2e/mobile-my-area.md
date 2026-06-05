@@ -3,6 +3,12 @@
 > **Authority:** SIMF E2E test catalogue template (D-133 slice 7). Mobile
 > catalogue — the App API endpoints are built (D-249); the API implementation
 > lives in `tests/SIMF.Api.Tests/MyAreaDashboardTests.cs`.
+> The **Flutter screen is built** (D-297) and widget-tested in
+> `src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart` (approved
+> card+counters+schedule, empty schedule, pending→limited card with no dashboard
+> call, 403→limited, error→retry→refetch, session-row→detail, RTL); the dashboard
+> parser is covered in
+> `src/Mobile/simf_app/test/features/myarea/myarea_models_test.dart`.
 
 | | |
 |--|--|
@@ -11,7 +17,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | An **Approved** visitor token (sign-up → verify-email → `SetAccountState(Approved)` → sign-in); App-DB rows seeded directly. **No literal secrets.** |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-05 |
 
 ## Coverage matrix
 
@@ -24,7 +30,7 @@
 | E2E-MOB014-005 | `contact-card.vcf` returns a vCard with name + job + org + QR id | happy | P1 | authored ✓ (`Contact_card_vcf_returns_a_vCard_with_the_name_and_qr_id`) |
 | E2E-MOB014-006 | No token → 401 | auth | P0 | authored ✓ (`Dashboard_without_a_token_returns_401`) |
 | E2E-MOB014-007 | Not-yet-approved account → 403 (RequireApprovedAccount) | auth | P0 | authored ✓ (`Dashboard_for_a_not_yet_approved_account_is_forbidden`) |
-| E2E-MOB014-008 | RTL render of card + counters + Arabic tier/hall labels | i18n | P1 | authored (screen) |
+| E2E-MOB014-008 | RTL render of card + counters + Arabic tier/hall labels | i18n | P1 | authored ✓ (screen — Arabic RTL + pending/403 limited card + session-row nav) |
 
 ## Scenarios
 
@@ -141,4 +147,4 @@ Scenario: Arabic card renders right-to-left
 
 ---
 
-_Last reviewed:_ `2026-06-03` by `SIMF Team`.
+_Last reviewed:_ `2026-06-05` by `SIMF Team`.

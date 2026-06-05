@@ -23,6 +23,10 @@ dependencies:
   # pick → bytes → multipart upload via simf_data_pkg. Native permission strings
   # (Info.plist / manifest) land in the generated folders (simf-run).
   image_picker: ^1.1.2
+  # Native OS share sheet for My-Area (Page_014): share the user's contact-card
+  # (.vcf) and calendar (.ics) fetched from the App API. Native share config lands
+  # in the generated folders (simf-run).
+  share_plus: ^10.0.0
 
   simf_data_pkg:
     path: packages/simf_data_pkg

@@ -355,6 +355,29 @@ class AppL10n {
   String get tileMyArea => _t('منطقتي', 'My area');
   String get tileEntryBadge => _t('بطاقتي الذكية', 'My smart badge');
   String get tileMeetPeople => _t('قابل أشخاص مثلك', 'Meet people like you');
+
+  // My Area — personal dashboard (Page 014).
+  String get myAreaTitle => _t('منطقتي', 'My area');
+  String enrolledInSessions(int count) =>
+      _t('مسجّل في $count جلسات', 'Enrolled in $count sessions');
+  String get shareLabel => _t('مشاركة', 'Share');
+  String get shareContact => _t('مشاركة جهة اتصال', 'Share contact');
+  String get shareCalendar => _t('مشاركة جدولي', 'Share my calendar');
+  String get shareFailed =>
+      _t('تعذّرت المشاركة. حاول مرة أخرى.', 'Could not share. Try again.');
+  String get statBookedSessions => _t('جلسات محفوظة', 'Booked sessions');
+  String get statMeetings => _t('مقابلات مؤكدة', 'Confirmed meetings');
+  String get todayScheduleTitle => _t('جدولي اليوم', "Today's schedule");
+  String get scheduleEmpty =>
+      _t('لا يوجد لديك مواعيد اليوم', 'No items today');
+  String get smartBadgeLink => _t('بطاقتي الذكية', 'My smart badge');
+  String get accountSettingsLink => _t('إعدادات الحساب', 'Account settings');
+  String get myAreaPendingNote => _t(
+        'حسابك قيد المراجعة. ستظهر بطاقتك وجدولك بعد الاعتماد.',
+        'Your account is under review. Your badge and schedule appear once approved.',
+      );
+  String get myAreaError =>
+      _t('تعذّر تحميل منطقتك.', 'Could not load your area.');
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

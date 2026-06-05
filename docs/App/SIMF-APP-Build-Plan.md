@@ -71,7 +71,7 @@ Status legend: ✅ **ready** (endpoint shipped under `/app/*`) · 🟡 **to buil
 | # | Route | Privilege | API status | Page doc |
 |---|-------|-----------|------------|----------|
 | 13 | `home` | Guest+ | 🟢 **screen built (D-296)** · `…/notifications/unread-count` (count) · `GET /app/bootstrap` (D-251) · live banner deferred (D10) | [Page_013](Page_013/README.md) |
-| 14 | `myArea` | Visitor | ✅ **BUILT (D-249)** `GET /app/account/dashboard` + `calendar.ics` + `contact-card.vcf` — unions held bookings + speaker meetings + confirmed business meetings | [Page_014](Page_014/README.md) |
+| 14 | `myArea` | Visitor | 🟢 **screen built (D-297)** · `GET /app/account/dashboard` + `calendar.ics` + `contact-card.vcf` (D-249) — unions held bookings + speaker meetings + confirmed business meetings | [Page_014](Page_014/README.md) |
 | 15 | `venueMap` | Guest | ✅ `GET /app/venue-map` (D-230) + `GET /app/booths` | [Page_015](Page_015/README.md) |
 | 16–20 | `sessions` (renamed from `agenda`, D-276), `sessionDetail`, `mySeat`, `speakers`, `speakerProfile` | Guest/Visitor | ⏳ existing `Endpoints/Programme/*`, `Endpoints/Sessions/SeatReservation*`, `Endpoints/Public/PublicSpeaker*` (later wave) | — |
 
@@ -97,7 +97,7 @@ following the matching `Page_NNN/` Function/Logic/Design docs.
 | **P0 — Foundation** | app shell, router, theme/RTL, the typed `/app` API client, the auth state machine, secure token store | everything else depends on it | matches `SIMF-MAA-001` |
 | **P1 — Auth** | 1 splash, 3 signIn (+ biometric), 5/6 sign-up + OTP, forgot/reset | the only "must be ready" surface (owner) — and it **is** ready server-side | sign-in → token cached |
 | **P2 — Onboarding & registration** | 2 onboarding, 4 type, 7 profile + interests, 9 terms, 10 success, 11 status | completes the new-visitor journey end-to-end; all APIs ready (11 just built) | profile complete → pending → approved |
-| **P3 — Home & identity** | 13 home (privilege-gated tiles), 14 My-Area | the signed-in landing + the personal dashboard | 13 **screen built (D-296)**; 14 next (API ready) |
+| **P3 — Home & identity** | 13 home (privilege-gated tiles), 14 My-Area | the signed-in landing + the personal dashboard | 13 + 14 **screen built (D-296 / D-297)** |
 | **P4 — Core event** | 15 map, 16–20 agenda/sessions/speakers/seat | the core attendee value | existing endpoints |
 | **P5+ — Content / Live / Media / Smart / Settings** | 21–41 | breadth, per the later doc waves | per-screen as documented |
 
