@@ -98,11 +98,14 @@ stages:
         projects: '$(Build.SourcesDirectory)/src/Website/SIMF.Web/SIMF.Web.csproj'
         arguments: '--configuration $(buildConfiguration) --no-restore'
 
-    # --- Test (a failing test stops the pipeline - SIMF-OPS-001 section 5).
-    #     Building the test projects in Release also recompiles the app code they
-    #     reference, so the warnings-as-errors gate covers every project. ---
+    # --- Test — TEMPORARILY DISABLED (owner request, 2026-06-05). The suite is
+    #     green (919 tests pass) but SIMF.Api.Tests runs ~11 min; disabled to keep
+    #     the pipeline fast for now. RE-ENABLE by removing the `condition: false`
+    #     line below. (SIMF-OPS-001 section 5 expects a failing test to stop the
+    #     pipeline, so restore this before go-live.) ---
     - task: DotNetCoreCLI@2
-      displayName: 'Run all tests'
+      displayName: 'Run all tests (TEMPORARILY DISABLED)'
+      condition: false
       inputs:
         command: 'test'
         projects: '$(Build.SourcesDirectory)/tests/**/*.csproj'

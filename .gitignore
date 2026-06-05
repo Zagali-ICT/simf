@@ -1,5 +1,11 @@
 # SIMF — .gitignore
 
+# ── Production secrets — NEVER commit real values (SIMF-OPS-001 §6) ──
+# deploy/set-env-*.ps1 are EMPTY templates and stay tracked; real filled-in
+# secret scripts (DB passwords, keys) must use these names and stay untracked.
+set-env-prod.ps1
+set-env-*.local.ps1
+
 # ── .NET build output ──────────────────────────────────────────────
 [Bb]in/
 [Oo]bj/
