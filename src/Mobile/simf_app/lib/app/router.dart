@@ -17,6 +17,7 @@ import '../features/auth/sign_up_type_screen.dart';
 import '../features/booths/booths_screen.dart';
 import '../features/content/terms_screen.dart';
 import '../features/home/home_screen.dart';
+import '../features/media_partners/media_partners_screen.dart';
 import '../features/myarea/my_area_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/venuemap/venue_map_screen.dart';
@@ -26,6 +27,7 @@ import '../features/registration/registration_success_screen.dart';
 import '../features/sessions/my_seat_screen.dart';
 import '../features/sessions/session_detail_screen.dart';
 import '../features/sessions/sessions_screen.dart';
+import '../features/sponsors/sponsors_screen.dart';
 import '../features/speakers/speaker_profile_screen.dart';
 import '../features/speakers/speakers_screen.dart';
 import '../features/splash/splash_screen.dart';
@@ -248,6 +250,12 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.booths) {
               return const BoothsScreen();
+            }
+            if (r.name == RouteNames.sponsors) {
+              return const SponsorsScreen();
+            }
+            if (r.name == RouteNames.mediaPartners) {
+              return const MediaPartnersScreen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,

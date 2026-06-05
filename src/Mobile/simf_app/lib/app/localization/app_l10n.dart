@@ -492,6 +492,19 @@ class AppL10n {
   String get boothsError =>
       _t('تعذّر تحميل الأجنحة.', 'Could not load the booths.');
   String get boothsEmpty => _t('لا توجد أجنحة', 'No booths');
+
+  // Sponsors (Page 023).
+  String get sponsorsTitle => _t('الرعاة', 'Sponsors');
+  String get sponsorsError =>
+      _t('تعذّر تحميل الرعاة.', 'Could not load the sponsors.');
+  String get sponsorsEmpty => _t('لا يوجد رعاة', 'No sponsors');
+
+  // Media partners (Page 031).
+  String get mediaPartnersTitle => _t('الشركاء الإعلاميون', 'Media partners');
+  String get mediaPartnersError =>
+      _t('تعذّر تحميل الشركاء الإعلاميين.', 'Could not load the media partners.');
+  String get mediaPartnersEmpty =>
+      _t('لا يوجد شركاء إعلاميون', 'No media partners');
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -175,6 +175,8 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | #19 `speakers` (`GET /app/speakers`) | 🟢 Screen built (D-302) | Guest+ | [App/Page_019](../App/Page_019/README.md) | [e2e/mobile-speakers.md](../tests/e2e/mobile-speakers.md) |
 | #20 `speakerProfile` (`GET /app/speakers/{id}` + `…/meeting-requests`) | 🟢 Screen built (D-303) | Guest+ (meeting: Visitor) | [App/Page_020](../App/Page_020/README.md) | [e2e/mobile-speaker-profile.md](../tests/e2e/mobile-speaker-profile.md) |
 | #22 `booths` (`GET /app/booths` + `/{id}`) | 🟢 Screen built (D-304) | Guest+ | [App/Page_022](../App/Page_022/README.md) | [e2e/mobile-booths.md](../tests/e2e/mobile-booths.md) |
+| #23 `sponsors` (`GET /app/sponsors`) | 🟢 Screen built (D-305) | Guest+ | [App/Page_023](../App/Page_023/README.md) | [e2e/mobile-sponsors.md](../tests/e2e/mobile-sponsors.md) |
+| #31 `mediaPartners` (`GET /app/media-partners`) | 🟢 Screen built (D-306) | Guest+ | [App/Page_031](../App/Page_031/README.md) | [e2e/mobile-media-partners.md](../tests/e2e/mobile-media-partners.md) |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | ✅ API built (NEW, D-273) | Public (anonymous) | [App/Page_024-01](../App/Page_024-01/README.md) | [e2e/mobile-archive-detail.md](../tests/e2e/mobile-archive-detail.md) |
 
 ---
