@@ -49,6 +49,9 @@ set-env-*.local.ps1
 /logs/
 *.tmp
 
+# ── UI-audit scratch (generated screenshots, run logs, helper scripts) ─
+/.ui-audit/
+
 # ── OS files ───────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
