@@ -154,9 +154,16 @@ GoRouter buildRouter(Ref ref) {
         unawaited(prefs.setString(StorageKeys.lastRoute, goingTo));
       }
 
-      // While the cold-start restore is still running, hold on the splash; the
-      // splash itself routes out once auth resolves (Page_001 Logic L-5).
-      if (authState is AuthStateInitial && goingTo != '/splash') {
+      // While the cold-start restore is still running, hold *protected* routes
+      // on the splash; the splash itself routes out once auth resolves
+      // (Page_001 Logic L-5). The splash's route-out to a public entry screen
+      // (onboarding / sign-in) is never pinned here — otherwise a stalled
+      // restore that never leaves AuthStateInitial would strand the user on the
+      // splash forever (D-294 / Logic L-6). Protected routes still wait for auth
+      // via the gate below.
+      if (authState is AuthStateInitial &&
+          goingTo != '/splash' &&
+          routePathRequiresAuth(state.fullPath)) {
         return '/splash';
       }
 

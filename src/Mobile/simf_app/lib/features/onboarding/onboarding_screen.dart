@@ -101,6 +101,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
                   FilledButton(
+                    // The app's FilledButton theme sets a full-width minimum
+                    // (minimumSize: Size.fromHeight(48) == Size(infinity, 48)).
+                    // In a Column that harmlessly stretches to fill, but inside
+                    // this Row it demands an infinite width and throws a layout
+                    // assertion (D-294), collapsing the whole onboarding body.
+                    // Override to a content-width minimum for the in-Row usage.
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 48),
+                    ),
                     onPressed: _onNext,
                     child: Text(
                       isLast ? l10n.onboardingGetStarted : l10n.onboardingNext,
