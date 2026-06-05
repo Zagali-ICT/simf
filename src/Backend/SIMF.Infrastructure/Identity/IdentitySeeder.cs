@@ -181,6 +181,11 @@ public sealed class IdentitySeeder(
         // missing, matches the existing EnsureProfileTypeAsync pattern.
         await EnsureCybersecurityPolicyContentAsync(admin.Id, cancellationToken);
 
+        // Seed the public marketing landing's hero CMS text blocks so the
+        // Website's /content/site proxy can serve them and the CP CMS editor
+        // can manage them. Idempotent — same insert-when-absent shape.
+        await EnsureLandingHeroContentAsync(admin.Id, cancellationToken);
+
         // D-176 (gap doc G12) — seed the default AI prompt catalogue.
         // One prompt per feature; admin can edit at runtime via the CP.
         await EnsureDefaultAiPromptsAsync(admin.Id, cancellationToken);
@@ -452,6 +457,68 @@ public sealed class IdentitySeeder(
         await appDbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation(
             "D-174: cybersecurity policy content blocks ensured (seeded {NewCount} of {Total}).",
+            seed.Length - existingKeys.Count, seed.Length);
+    }
+
+    /// <summary>Seed the public marketing landing's hero CMS text blocks
+    /// (read by the Website's <c>/content/site</c> proxy and editable from the
+    /// CP CMS editor). Keys are lowercase to match the CMS service's key
+    /// normalisation; the Arabic values are the landing's current hardcoded
+    /// defaults verbatim, with paired English translations. Idempotent: each
+    /// block is inserted only when its key is absent.</summary>
+    private async Task EnsureLandingHeroContentAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        // (Key, EN, AR) — the landing's data-cms="hero.*" bindings.
+        var seed = new[]
+        {
+            ("hero.titlestart",
+             "The future of",
+             "مستقبل أمن"),
+            ("hero.titlehighlight",
+             "seabed security",
+             "قاع البحار"),
+            ("hero.titleend",
+             "and global supply chains",
+             "وسلاسل الإمداد العالميّة"),
+            ("hero.tagline",
+             "A global Saudi platform bringing leaders, decision-makers and experts together to shape the future of maritime security and protect vital corridors amid accelerating geopolitical and technological change.",
+             "منصّة سعوديّة عالميّة تجمع القادة وصنّاع القرار والخبراء لاستشراف مستقبل الأمن البحري وحماية الممرّات الحيوية في ظل التحولّات الجيوسياسيّة والتقنيّة المتسارعة."),
+            ("hero.metadate",
+             "23 — 25 November 2026",
+             "23 — 25 نوفمبر 2026"),
+            ("hero.metavenue",
+             "Sofitel Riyadh Hotel & Convention Centre",
+             "فندق ومركز مؤتمرات سوفيتيل الرياض"),
+            ("hero.ctasecondary",
+             "Browse the programme",
+             "تصفّح البرنامج"),
+        };
+
+        var now = timeProvider.GetUtcNow();
+        var existingKeys = await appDbContext.ContentBlocks
+            .Where(b => seed.Select(s => s.Item1).Contains(b.Key))
+            .Select(b => b.Key)
+            .ToListAsync(cancellationToken);
+
+        foreach (var (key, en, ar) in seed)
+        {
+            if (existingKeys.Contains(key)) { continue; }
+            appDbContext.ContentBlocks.Add(new SIMF.Domain.Cms.ContentBlock
+            {
+                Id = Guid.NewGuid(),
+                Key = key,
+                Content = en,
+                ContentArabic = ar,
+                IsActive = true,
+                LastUpdatedByUserId = actorUserId,
+                CreatedAt = now,
+                LastUpdatedAt = now,
+            });
+        }
+        await appDbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "Landing hero content blocks ensured (seeded {NewCount} of {Total}).",
             seed.Length - existingKeys.Count, seed.Length);
     }
 

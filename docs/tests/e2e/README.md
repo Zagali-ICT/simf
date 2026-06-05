@@ -147,6 +147,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 
 | Page | File | Scenarios |
 |------|------|-----------|
+| `/` (marketing landing) | [`web-landing.md`](web-landing.md) | E2E-WLD-001..008 |
 | `/account` | [`web-home.md`](web-home.md) | E2E-WHM-001..010 |
 | `/programme` | [`web-programme.md`](web-programme.md) | E2E-WPG-001..010 |
 | `/visit` | [`web-visit.md`](web-visit.md) | E2E-WVS-001..011 |
