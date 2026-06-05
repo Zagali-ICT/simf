@@ -428,6 +428,26 @@ class AppL10n {
         'ستتوفر التذكيرات مع إعداد الإشعارات.',
         'Reminders arrive with notifications setup.',
       );
+
+  // My Seat map (Page 018).
+  String get mySeatMapTitle => _t('مقعدي · خريطة الجلوس', 'My seat map');
+  String get seatMapError =>
+      _t('تعذّر تحميل خريطة المقاعد.', 'Could not load the seat map.');
+  String get seatMapUnavailable =>
+      _t('خريطة المقاعد غير متاحة بعد', 'Seat map not available yet');
+  String get stageLabel => _t('المسرح', 'Stage');
+  String get noSeatYet => _t('لا يوجد لديك مقعد بعد', 'You have no seat yet');
+  String get legendMine => _t('مقعدك', 'Your seat');
+  String get legendAvailable => _t('متاح', 'Available');
+  String get legendReserved => _t('محجوز', 'Reserved');
+  String seatCapacity(int reserved, int total) =>
+      _t('محجوز $reserved من $total', '$reserved of $total reserved');
+  String get navigateToSeat => _t('إرشادي إلى مقعدي', 'Guide me to my seat');
+  String get shareLocation => _t('مشاركة الموقع', 'Share location');
+  String seatShareText(String row, int seat) => _t(
+        'مقعدي في الملتقى: صف $row · مقعد $seat',
+        'My SIMF seat: Row $row · Seat $seat',
+      );
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

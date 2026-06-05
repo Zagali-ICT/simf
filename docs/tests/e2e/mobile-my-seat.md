@@ -3,7 +3,14 @@
 > **Authority:** SIMF E2E test catalogue template (D-133). Mobile catalogue — the
 > page reuses the already-built per-session seat surface (D-175): the seat-map
 > grid `GET /app/sessions/{id}/seats` and the reserve/release endpoints. API
-> implementation lives in `tests/SIMF.Api.Tests/SeatReservationsTests.cs`.
+> implementation lives in `tests/SIMF.Api.Tests/SeatReservationsTests.cs`. The
+> **Flutter screen is built (D-301)** — **read-only as drawn** (L-4): the grid +
+> derived status + navigate (→ Map 15) + native share. The interactive **picker**
+> (009/010 reserve/release) is the documented later mode over the same shipped
+> endpoints — not wired this page. Widget/model tests in
+> `src/Mobile/simf_app/test/features/sessions/my_seat_screen_test.dart`
+> (banner+grid+legend, share text, navigate, no-layout, 404, error→retry) and
+> `…/seat_map_models_test.dart` (tolerant kind decode, grid + status derivation).
 
 | | |
 |--|--|
@@ -12,7 +19,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | An **approved Visitor** token (the page is login-only); an **Admin** token only to seed the session, the seat layout and a blocked row. **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-05 |
 
 ## Coverage matrix
 
@@ -21,15 +28,15 @@
 | E2E-MOB018-001 | Logged-in viewer gets the full grid (`rowLabels` + `seatsPerRow` + `reservedCells`) | happy | P0 | authored ✓ (`Seat_map_returns_the_layout_and_blocked_row_to_a_viewer`) |
 | E2E-MOB018-002 | My seat is highlighted + the banner shows row/seat (`myCell`) | happy | P0 | authored ✓ (`Seat_map_returns_my_cell_for_the_reserver`) |
 | E2E-MOB018-003 | An admin-blocked row renders as reserved (`AdminReservedRow`) | edge | P1 | authored ✓ (`Seat_map_returns_the_layout_and_blocked_row_to_a_viewer`) |
-| E2E-MOB018-004 | A seat not in `reservedCells` renders available (status derivation) | happy | P1 | authored (screen) |
-| E2E-MOB018-005 | No reservation → `myCell` null → no highlight, "no seat yet" banner | edge | P1 | authored ✓ (`Seat_map_my_cell_is_null_for_a_caller_without_a_reservation`) |
-| E2E-MOB018-006 | Guest / unauthenticated → 401, screen gated out | auth | P0 | authored ✓ (`Seat_map_requires_an_approved_account`) |
-| E2E-MOB018-007 | `إرشادي إلى مقعدي` → Map (15) | happy | P1 | authored (screen) |
-| E2E-MOB018-008 | `مشاركة الموقع` → native share sheet | happy | P2 | authored (screen) |
-| E2E-MOB018-009 | Picker: tap a free seat → reserve → grid repaints with `myCell` | happy | P1 | authored ✓ (`Visitor_can_self_pick_then_release_their_seat`) |
-| E2E-MOB018-010 | Picker: release my seat → `DELETE …/mine` → seat freed | happy | P2 | authored ✓ (`Visitor_can_self_pick_then_release_their_seat`) |
-| E2E-MOB018-011 | Hall with no layout → empty grid → "seat map not available" | edge | P2 | authored (screen) |
-| E2E-MOB018-012 | RTL render; stage stays top; row/seat are LTR | i18n | P1 | authored (screen) |
+| E2E-MOB018-004 | A seat not in `reservedCells` renders available (status derivation) | happy | P1 | authored ✓ (model `reservedKeys`/`isMine` + screen grid) |
+| E2E-MOB018-005 | No reservation → `myCell` null → no highlight, "no seat yet" banner | edge | P1 | authored ✓ (`Seat_map_my_cell_is_null…` + model) |
+| E2E-MOB018-006 | Guest / unauthenticated → 401, screen gated out | auth | P0 | authored ✓ (`Seat_map_requires_an_approved_account`; route 18 in the gate) |
+| E2E-MOB018-007 | `إرشادي إلى مقعدي` → Map (15) | happy | P1 | authored ✓ (screen — `navigate opens the venue map`) |
+| E2E-MOB018-008 | `مشاركة الموقع` → native share sheet (seat-location text) | happy | P2 | authored ✓ (screen — `share sends the seat-location text`) |
+| E2E-MOB018-009 | Picker: tap a free seat → reserve → grid repaints with `myCell` | happy | P1 | API ✓ (`Visitor_can_self_pick…`); **screen picker deferred (read-only, L-4)** |
+| E2E-MOB018-010 | Picker: release my seat → `DELETE …/mine` → seat freed | happy | P2 | API ✓ (`Visitor_can_self_pick…`); **screen picker deferred (read-only, L-4)** |
+| E2E-MOB018-011 | Hall with no layout → empty grid → "seat map not available" | edge | P2 | authored ✓ (screen — `an unconfigured hall shows the unavailable state`) |
+| E2E-MOB018-012 | RTL render; stage stays top; row/seat are LTR | i18n | P1 | authored (screen RTL-primary; grid canvas forced LTR) |
 
 ## Scenarios
 
@@ -174,4 +181,4 @@ Scenario: The seat map renders right-to-left in Arabic
 
 ---
 
-_Last reviewed:_ `2026-06-03` by `SIMF Team`.
+_Last reviewed:_ `2026-06-05` by `SIMF Team`.

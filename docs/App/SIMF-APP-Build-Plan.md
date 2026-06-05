@@ -75,7 +75,8 @@ Status legend: ✅ **ready** (endpoint shipped under `/app/*`) · 🟡 **to buil
 | 15 | `venueMap` | Guest | 🟢 **screen built (D-298)** · `GET /app/venue-map` (D-230) + `GET /app/booths` | [Page_015](Page_015/README.md) |
 | 16 | `sessions` (renamed from `agenda`, D-276) | Guest+ | 🟢 **screen built (D-299)** · `GET /app/programme/sessions` (D-199/D-252/D-271) — fetch-once + client-side pills/day-strip/search | [Page_016](Page_016/README.md) |
 | 17 | `sessionDetail` | Guest+ (seat: Visitor) | 🟢 **screen built (D-300)** · `GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats` (D-265) — detail + my-seat card + real add-to-calendar (reminder deferred) | [Page_017](Page_017/README.md) |
-| 18–20 | `mySeat`, `speakers`, `speakerProfile` | Guest/Visitor | ⏳ existing `Endpoints/Sessions/SeatReservation*`, `Endpoints/Public/PublicSpeaker*` (in this build wave) | — |
+| 18 | `mySeat` | Visitor (login-only) | 🟢 **screen built (D-301)** · `GET /app/sessions/{id}/seats` (D-267) — read-only grid + derived status + navigate + share | [Page_018](Page_018/README.md) |
+| 19–20 | `speakers`, `speakerProfile` | Guest+ | ⏳ existing `Endpoints/Public/PublicSpeaker*` (in this build wave) | — |
 
 ### Sections 3–8 — content, live, media, badge, smart, settings (21–41)
 
