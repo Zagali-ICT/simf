@@ -39,8 +39,8 @@ notification count (L-5), which is **non-blocking and best-effort**. The live/Yo
 banner (L-6) renders from static/config and makes **no call**.
 
 ## L-5 — Notification unread count (best-effort)
-The bell badge calls `GET /app/account/notifications` (exists) for the unread count.
-Rules:
+The bell badge calls `GET /app/account/notifications/unread-count` (exists) for the
+unread count → `{ unreadCount }`. Rules:
 - Only attempted when **signed in** (a token exists); `Guest` shows no count.
 - **Non-blocking:** Home renders fully before/independent of this call.
 - **Silent failure:** on any error (network/401/500) the badge simply shows **no
@@ -77,7 +77,7 @@ tile is **not** a security control.
 
 ## Dependencies
 - **JWT claim** for privilege (L-1) — shipped.
-- `GET /app/account/notifications` for the unread count (L-5) — **exists**.
+- `GET /app/account/notifications/unread-count` for the unread count (L-5) — **exists**.
 - `GET /app/bootstrap` on-login bundle (L-3) — **(TO BUILD, in-progress, D9)**.
 - Live/YouTube banner (L-6) — **no API for now (D10)**.
 - Final per-privilege tile catalogue (L-2) — **pending owner** ("no data for now").

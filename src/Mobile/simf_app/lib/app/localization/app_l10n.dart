@@ -325,6 +325,36 @@ class AppL10n {
   // Login header controls (Page 003) — buttons only for now (no wiring yet).
   String get themeToggleTooltip => _t('المظهر · ليلي/نهاري', 'Light / dark mode');
   String get languageToggleLabel => 'العربية · English';
+
+  // Home — landing / router screen (Page 013). Interim copy + tile labels for
+  // the functional skeleton; the final visuals come from SIMF-VID-001.
+  String get homeTitle => _t('الرئيسية', 'Home');
+  String get notificationsTooltip => _t('الإشعارات', 'Notifications');
+  String get homeDiscoverTitle => _t('اكتشف', 'Discover');
+  String get homeDiscoverSubtitle => _t(
+        'كل ما تحتاجه عن الملتقى في مكان واحد.',
+        'Everything you need about the forum, in one place.',
+      );
+  String get liveNowLabel => _t('مباشر', 'LIVE');
+  String get liveBannerTitle => _t('البث المباشر', 'Live broadcast');
+  String get liveBannerSubtitle =>
+      _t('شاهد الجلسات مباشرةً', 'Watch the sessions live');
+  String get guestPromptText => _t(
+        'أنت تتصفح كضيف. سجّل دخولك للوصول إلى بطاقتك الذكية والإشعارات الشخصية.',
+        'You are browsing as a guest. Sign in to access your smart badge and personal notifications.',
+      );
+  String get guestSignInCta => _t('تسجيل الدخول', 'Sign in');
+  String get tileSessions => _t('الجلسات', 'Sessions');
+  String get tileSpeakers => _t('المتحدثون', 'Speakers');
+  String get tileVenueMap => _t('الخريطة', 'Venue map');
+  String get tileBooths => _t('الأجنحة', 'Booths');
+  String get tileSponsors => _t('الرعاة', 'Sponsors');
+  String get tileNews => _t('الأخبار والتغطية', 'News & coverage');
+  String get tileArchive => _t('الأرشيف', 'Archive');
+  String get tileAbout => _t('عن الملتقى', 'About the forum');
+  String get tileMyArea => _t('منطقتي', 'My area');
+  String get tileEntryBadge => _t('بطاقتي الذكية', 'My smart badge');
+  String get tileMeetPeople => _t('قابل أشخاص مثلك', 'Meet people like you');
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

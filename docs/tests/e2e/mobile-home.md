@@ -3,6 +3,11 @@
 > **Authority:** SIMF E2E test catalogue template (D-133 slice 7). Mobile
 > catalogue — Home's on-login bundle (`GET /app/bootstrap`) is built (D-251);
 > the API implementation lives in `tests/SIMF.Api.Tests/AppBootstrapTests.cs`.
+> The **Flutter screen is built** (D-296) and widget-tested in
+> `src/Mobile/simf_app/test/features/home/home_screen_test.dart` (guest prompt +
+> public tiles, signed-in bell + visitor tiles, badge hidden/shown, tile-tap
+> navigation, RTL); the unread-count provider's gating is covered in
+> `src/Mobile/simf_app/test/features/notifications/notifications_repository_test.dart`.
 
 | | |
 |--|--|
@@ -11,7 +16,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | A signed-in visitor token (`AuthFlow.SignInVisitorWithoutTwoFactorAsync`); `AuthFlow.SetAccountState` for the approved case. **No literal secrets.** |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-05 |
 
 ## Coverage matrix
 
@@ -21,9 +26,9 @@
 | E2E-MOB013-002 | Bootstrap unread count reflects a dispatched notification | happy | P1 | authored ✓ (`Bootstrap_unread_count_reflects_a_dispatched_notification`) |
 | E2E-MOB013-003 | Bootstrap reflects an approved account (pending → approved routing) | happy | P0 | authored ✓ (`Bootstrap_reflects_an_approved_account`) |
 | E2E-MOB013-004 | No token → 401 | auth | P0 | authored ✓ (`Bootstrap_without_a_token_returns_401`) |
-| E2E-MOB013-005 | Guest (no token) renders Home with privilege = Guest, no bootstrap call | happy | P1 | authored (screen) |
-| E2E-MOB013-006 | Privilege from the JWT claim gates the tiles | auth | P1 | authored (screen) |
-| E2E-MOB013-007 | RTL render of Home tiles + bell badge | i18n | P1 | authored (screen) |
+| E2E-MOB013-005 | Guest (no token) renders Home with privilege = Guest, no bootstrap call | happy | P1 | authored ✓ (screen — guest prompt + public tiles, no bell) |
+| E2E-MOB013-006 | Privilege from the JWT claim gates the tiles | auth | P1 | authored ✓ (screen — signed-in bell + Visitor+ tiles) |
+| E2E-MOB013-007 | RTL render of Home tiles + bell badge | i18n | P1 | authored ✓ (screen — Arabic RTL + badge hidden/shown) |
 
 ## Scenarios
 
@@ -117,4 +122,4 @@ Scenario: Home renders right-to-left in Arabic
 
 ---
 
-_Last reviewed:_ `2026-06-03` by `SIMF Team`.
+_Last reviewed:_ `2026-06-05` by `SIMF Team`.

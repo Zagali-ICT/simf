@@ -15,6 +15,7 @@ import '../features/auth/sign_up_email_verify_screen.dart';
 import '../features/auth/sign_up_form_screen.dart';
 import '../features/auth/sign_up_type_screen.dart';
 import '../features/content/terms_screen.dart';
+import '../features/home/home_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/profile/sign_up_visitor_screen.dart';
 import '../features/registration/registration_status_screen.dart';
@@ -206,6 +207,9 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.registrationStatus) {
               return const RegistrationStatusScreen();
+            }
+            if (r.name == RouteNames.home) {
+              return const HomeScreen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,

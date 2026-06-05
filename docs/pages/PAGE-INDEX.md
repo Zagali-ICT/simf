@@ -166,7 +166,7 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | #9 `terms` (`GET /app/content/terms`) | 🟢 Screen built | Guest | [App/Page_009](../App/Page_009/README.md) | [e2e/mobile-terms.md](../tests/e2e/mobile-terms.md) |
 | #10 `registrationSuccess` | 🟢 Screen built | Visitor (pending) | [App/Page_010](../App/Page_010/README.md) | [e2e/mobile-registration-success.md](../tests/e2e/mobile-registration-success.md) |
 | #11 `registrationStatus` (`GET /app/users/me`) | 🟢 Screen built | Visitor (pending) | [App/Page_011](../App/Page_011/README.md) | [e2e/mobile-registration-status.md](../tests/e2e/mobile-registration-status.md) |
-| #13 `home` (`GET /app/bootstrap`) | ✅ API built | Guest+ | [App/Page_013](../App/Page_013/README.md) | [e2e/mobile-home.md](../tests/e2e/mobile-home.md) |
+| #13 `home` (`GET /app/bootstrap` + `…/notifications/unread-count`) | 🟢 Screen built | Guest+ | [App/Page_013](../App/Page_013/README.md) | [e2e/mobile-home.md](../tests/e2e/mobile-home.md) |
 | #14 `myArea` (`GET /app/account/dashboard` + `.ics`/`.vcf`) | ✅ API built | Visitor | [App/Page_014](../App/Page_014/README.md) | [e2e/mobile-my-area.md](../tests/e2e/mobile-my-area.md) |
 | #15 `venueMap` | 📄 Doc | Guest | [App/Page_015](../App/Page_015/README.md) | — |
 | #16 `sessions` (`GET /app/programme/sessions`) | ✅ API built | Guest+ | [App/Page_016](../App/Page_016/README.md) | [e2e/mobile-agenda.md](../tests/e2e/mobile-agenda.md) |
