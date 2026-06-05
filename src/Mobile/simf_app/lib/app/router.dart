@@ -22,6 +22,7 @@ import '../features/venuemap/venue_map_screen.dart';
 import '../features/profile/sign_up_visitor_screen.dart';
 import '../features/registration/registration_status_screen.dart';
 import '../features/registration/registration_success_screen.dart';
+import '../features/sessions/session_detail_screen.dart';
 import '../features/sessions/sessions_screen.dart';
 import '../features/splash/splash_screen.dart';
 import 'route_names.dart';
@@ -222,6 +223,11 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.sessions) {
               return const SessionsScreen();
+            }
+            if (r.name == RouteNames.sessionDetail) {
+              return SessionDetailScreen(
+                sessionId: state.pathParameters['sessionId'] ?? '',
+              );
             }
             return ComingSoonScreen(
               screenNumber: r.number,

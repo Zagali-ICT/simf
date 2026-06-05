@@ -195,7 +195,7 @@ class SessionListItem {
         startUtc: _parseUtc(json['startUtc']),
         endUtc: _parseUtc(json['endUtc']),
         status: SessionStatus.fromJson(json['status']),
-        speakers: _speakers(json['speakers']),
+        speakers: _decodeSpeakers(json['speakers']),
         description: json['description'] as String?,
         descriptionArabic: json['descriptionArabic'] as String?,
         categoryId: json['categoryId'] as String?,
@@ -203,12 +203,6 @@ class SessionListItem {
         categoryNameArabic: json['categoryNameArabic'] as String?,
         primaryThemeColor: json['primaryThemeColor'] as String?,
       );
-
-  static List<SessionSpeaker> _speakers(Object? data) =>
-      (data as List? ?? const <dynamic>[])
-          .whereType<Map<dynamic, dynamic>>()
-          .map((e) => SessionSpeaker.fromJson(e.cast<String, dynamic>()))
-          .toList(growable: false);
 }
 
 /// The envelope for the cached programme (`PublicSessions = { items: [...] }`).
@@ -227,6 +221,116 @@ class SessionsPage {
         .map((e) => SessionListItem.fromJson(e.cast<String, dynamic>()))
         .toList(growable: false);
     return SessionsPage(items);
+  }
+}
+
+/// The full detail for one session — mirrors
+/// `SIMF.Contracts.Programme.PublicSessionDetail` (`GET /app/programme/sessions/{id}`,
+/// anonymous). Page_017 renders the header (code/time/title), the hall + category
+/// tags, the description and the ordered speaker cards (each with the D-271
+/// country flag + photo, reusing [SessionSpeaker]). The wider detail fields
+/// (themes, the seat-availability summary, recording / live-stream URLs) belong
+/// to the seat / live screens (18 / 25) and are intentionally not decoded here.
+@immutable
+class SessionDetail {
+  const SessionDetail({
+    required this.id,
+    required this.code,
+    required this.title,
+    required this.titleArabic,
+    required this.hallId,
+    required this.hallName,
+    required this.hallNameArabic,
+    required this.startUtc,
+    required this.endUtc,
+    required this.speakers,
+    this.description,
+    this.descriptionArabic,
+    this.categoryId,
+    this.categoryName,
+    this.categoryNameArabic,
+  });
+
+  final String id;
+  final String code;
+  final String title;
+  final String titleArabic;
+  final String hallId;
+  final String hallName;
+  final String hallNameArabic;
+  final DateTime startUtc;
+  final DateTime endUtc;
+  final List<SessionSpeaker> speakers;
+  final String? description;
+  final String? descriptionArabic;
+  final String? categoryId;
+  final String? categoryName;
+  final String? categoryNameArabic;
+
+  DateTime get startLocal => startUtc.toLocal();
+  DateTime get endLocal => endUtc.toLocal();
+
+  String localizedTitle(bool isArabic) =>
+      _pickRequired(titleArabic, title, isArabic);
+
+  String localizedHall(bool isArabic) =>
+      _pickRequired(hallNameArabic, hallName, isArabic);
+
+  String? localizedDescription(bool isArabic) =>
+      _pickOptional(descriptionArabic, description, isArabic);
+
+  String? localizedCategory(bool isArabic) =>
+      _pickOptional(categoryNameArabic, categoryName, isArabic);
+
+  static SessionDetail fromJson(Map<String, dynamic> json) => SessionDetail(
+        id: json['id'] as String? ?? '',
+        code: json['code'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        titleArabic: json['titleArabic'] as String? ?? '',
+        hallId: json['hallId'] as String? ?? '',
+        hallName: json['hallName'] as String? ?? '',
+        hallNameArabic: json['hallNameArabic'] as String? ?? '',
+        startUtc: _parseUtc(json['startUtc']),
+        endUtc: _parseUtc(json['endUtc']),
+        speakers: _decodeSpeakers(json['speakers']),
+        description: json['description'] as String?,
+        descriptionArabic: json['descriptionArabic'] as String?,
+        categoryId: json['categoryId'] as String?,
+        categoryName: json['categoryName'] as String?,
+        categoryNameArabic: json['categoryNameArabic'] as String?,
+      );
+}
+
+/// The caller's own active seat for a session — the `myCell` cell of
+/// `SIMF.Contracts.Sessions.SessionSeatMap` (`GET /app/sessions/{id}/seats`,
+/// approved account). The Page_017 card shows `الصف {rowLabel} · مقعد {seatNumber}`
+/// — there is **no column axis** (Page_017 L-3.1). The full grid + the cell `kind`
+/// belong to the My-Seat screen (18).
+@immutable
+class MySeat {
+  const MySeat({
+    required this.reservationId,
+    required this.rowLabel,
+    required this.seatNumber,
+  });
+
+  final String reservationId;
+  final String rowLabel;
+  final int seatNumber;
+
+  /// Reads `myCell` from a `SessionSeatMap` payload; null when the caller has no
+  /// active reservation (the card is hidden — Page_017 L-3).
+  static MySeat? fromSeatMap(Object? data) {
+    final cell = (data is Map ? data['myCell'] : null);
+    if (cell is! Map) {
+      return null;
+    }
+    final map = cell.cast<String, dynamic>();
+    return MySeat(
+      reservationId: map['reservationId'] as String? ?? '',
+      rowLabel: map['rowLabel'] as String? ?? '',
+      seatNumber: (map['seatNumber'] as num?)?.toInt() ?? 0,
+    );
   }
 }
 
@@ -284,6 +388,14 @@ List<DateTime> sessionDays(List<SessionListItem> items) {
 
 bool _sameLocalDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
+
+/// Decodes a `speakers[]` array (shared by the list item + the detail). A
+/// missing / null array decodes to an empty list — never null on the wire (L-7).
+List<SessionSpeaker> _decodeSpeakers(Object? data) =>
+    (data as List? ?? const <dynamic>[])
+        .whereType<Map<dynamic, dynamic>>()
+        .map((e) => SessionSpeaker.fromJson(e.cast<String, dynamic>()))
+        .toList(growable: false);
 
 /// Parses an ISO-8601 wire timestamp into a UTC [DateTime] (the contract is
 /// always UTC). A missing / unparseable value falls back to the epoch in UTC so

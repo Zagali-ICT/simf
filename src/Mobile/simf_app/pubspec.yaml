@@ -27,6 +27,12 @@ dependencies:
   # (.vcf) and calendar (.ics) fetched from the App API. Native share config lands
   # in the generated folders (simf-run).
   share_plus: ^10.0.0
+  # "Add to calendar" for the session detail (Page_017 E4) — opens the device
+  # calendar's add-event editor pre-filled from the cached session (intent-based,
+  # needs no Android permission). The local-notification "reminder" CTA is deferred
+  # to the notifications platform pass (D-300); the server worker (D-217) is the
+  # production reminder path.
+  add_2_calendar: ^3.0.1
 
   simf_data_pkg:
     path: packages/simf_data_pkg

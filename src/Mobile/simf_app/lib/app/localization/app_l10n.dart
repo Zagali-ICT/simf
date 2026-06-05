@@ -400,6 +400,34 @@ class AppL10n {
   String get sessionsEmpty => _t('لا توجد جلسات', 'No sessions');
   String get sessionsError =>
       _t('تعذّر تحميل الجلسات.', 'Could not load the sessions.');
+
+  // Session detail (Page 017).
+  String get sessionDetailTitle => _t('تفاصيل الجلسة', 'Session detail');
+  String get sessionDetailError =>
+      _t('تعذّر تحميل الجلسة.', 'Could not load the session.');
+  String get sessionNotFound =>
+      _t('الجلسة غير موجودة أو تمت إزالتها', 'This session was not found');
+  String get descriptionHeading => _t('وصف الجلسة', 'Description');
+  String get speakersHeading => _t('المتحدثون', 'Speakers');
+  String get hostLabel => _t('المضيف', 'Host');
+  String get mySeatHeading => _t('مقعدي', 'My seat');
+  String seatLocation(String row, int seat) =>
+      _t('الصف $row · مقعد $seat', 'Row $row · Seat $seat');
+  String get seatBadgeHint => _t(
+        'تأكد من إبراز بطاقتك عند الدخول',
+        'Show your badge at entry',
+      );
+  String get seatViewLink => _t('عرض', 'View');
+  String get addToCalendar => _t('أضف إلى تقويمي', 'Add to calendar');
+  String get reminder => _t('تذكير', 'Reminder');
+  String get calendarAdded =>
+      _t('تمت إضافة الجلسة إلى تقويمك', 'Added to your calendar');
+  String get calendarFailed =>
+      _t('تعذّرت إضافة الجلسة إلى التقويم', 'Could not add to calendar');
+  String get reminderDeferred => _t(
+        'ستتوفر التذكيرات مع إعداد الإشعارات.',
+        'Reminders arrive with notifications setup.',
+      );
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
