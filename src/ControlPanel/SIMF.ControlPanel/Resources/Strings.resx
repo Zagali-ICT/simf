@@ -33,6 +33,10 @@
   <data name="Nav.Content" xml:space="preserve"><value>Content</value></data>
   <data name="Nav.Communications" xml:space="preserve"><value>Communications</value></data>
   <data name="Nav.System" xml:space="preserve"><value>System</value></data>
+  <data name="Nav.ScientificCommittee" xml:space="preserve"><value>Scientific committee</value></data>
+  <data name="Nav.PublicRelations" xml:space="preserve"><value>Public relations</value></data>
+  <data name="Nav.Gates" xml:space="preserve"><value>Gates &amp; arrivals</value></data>
+  <data name="Nav.ReferenceData" xml:space="preserve"><value>Reference data</value></data>
 
   <!-- P1.3 (D-214) — shared admin Edit form (Visitor / Other). -->
   <data name="Admin.Edit.Loading" xml:space="preserve"><value>Loading…</value></data>

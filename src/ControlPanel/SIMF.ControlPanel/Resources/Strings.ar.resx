@@ -33,6 +33,10 @@
   <data name="Nav.Content" xml:space="preserve"><value>المحتوى</value></data>
   <data name="Nav.Communications" xml:space="preserve"><value>الاتصالات</value></data>
   <data name="Nav.System" xml:space="preserve"><value>النظام</value></data>
+  <data name="Nav.ScientificCommittee" xml:space="preserve"><value>اللجنة العلمية</value></data>
+  <data name="Nav.PublicRelations" xml:space="preserve"><value>العلاقات العامة</value></data>
+  <data name="Nav.Gates" xml:space="preserve"><value>البوابات والوصول</value></data>
+  <data name="Nav.ReferenceData" xml:space="preserve"><value>البيانات المرجعية</value></data>
 
   <!-- P1.3 (D-214) — shared admin Edit form (Visitor / Other). -->
   <data name="Admin.Edit.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>

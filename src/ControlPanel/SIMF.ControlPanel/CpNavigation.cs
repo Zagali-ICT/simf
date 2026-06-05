@@ -5,9 +5,11 @@ using SIMF.Common.Enums;
 namespace SIMF.ControlPanel;
 
 /// <summary>
-/// The Control Panel navigation map — the eight groups and their modules
-/// (SIMF-CPD-001 section 5.1; D-132 removed the standalone Notifications
-/// group). Each label is a resource key resolved through
+/// The Control Panel navigation map — the navigation groups and their modules
+/// (SIMF-CPD-001 section 5.1). The former 23-item "System" group was split into
+/// coherent groups (People absorbed the attendee accounts; new Scientific
+/// committee / Public relations / Gates &amp; arrivals / Reference data groups).
+/// Each label is a resource key resolved through
 /// <see cref="Strings" />. Issue-1: each item carries a
 /// <see cref="NavItem.RequiredPermission"/>; the shell hides items the
 /// signed-in user lacks (Administrator's wildcard shows everything).
@@ -26,7 +28,7 @@ public static class CpNavigation
     /// <summary>One navigation group — a heading and its items.</summary>
     public sealed record NavGroup(string LabelKey, IReadOnlyList<NavItem> Items);
 
-    /// <summary>The eight navigation groups, in display order.</summary>
+    /// <summary>The navigation groups, in display order.</summary>
     public static readonly IReadOnlyList<NavGroup> Groups =
     [
         new("Nav.Overview",
@@ -39,13 +41,18 @@ public static class CpNavigation
         ]),
         new("Nav.People",
         [
-            // P1.1 (D-214) — the "Registration requests" stub was removed: pending
-            // approvals are delivered by the real per-type queues (Visitors →
-            // Pending, Others → Pending under System; Admins → Pending under
-            // Access control), so the placeholder was a misleading duplicate.
             // D-134 Sprint A — combined attendee roster over Visitors +
             // Others (read-only join on existing tables; no migration).
             new("Module.Attendees", "/admin/attendees", RequiredPermission: PermissionCatalog.Attendees.View),
+            // P7e (D-055) — Visitor + Other attendee accounts and their pending
+            // approval queues. Moved here from the old 23-item System group so the
+            // people-management pages live together (the per-type Pending queues
+            // deliver the registration approvals; Admins' own queue stays under
+            // Access control).
+            new("Module.AdminVisitors", "/admin/visitors", RequiredPermission: PermissionCatalog.Visitors.View),
+            new("Module.AdminVisitorsPending", "/admin/visitors/pending", RequiredPermission: PermissionCatalog.Visitors.View),
+            new("Module.AdminOthers", "/admin/others", RequiredPermission: PermissionCatalog.Others.View),
+            new("Module.AdminOthersPending", "/admin/others/pending", RequiredPermission: PermissionCatalog.Others.View),
             // D-130 — print-bag station: lookup by QR id + reprint badge.
             new("Module.PrintBag", "/admin/print-bag", RequiredPermission: PermissionCatalog.Attendees.PrintBag),
         ]),
@@ -88,6 +95,20 @@ public static class CpNavigation
             new("Module.MeetingTables", "/admin/meeting-tables", RequiredPermission: PermissionCatalog.MeetingTables.View),
             // SIMF-FDS-013 (D-248) — admin-arranged B2B/B2C business meetings.
             new("Module.BusinessMeetings", "/admin/business-meetings", RequiredPermission: PermissionCatalog.BusinessMeetings.View),
+        ]),
+        // Scientific committee desks (moved out of the old 23-item System group):
+        // per-session moderator grants, the central Q&A queue, and the AI
+        // session-summary / محضر desk — all session-bound, so they sit by Programme.
+        new("Nav.ScientificCommittee",
+        [
+            // D-169 (gap doc G6) — per-session moderator grants admin CRUD
+            // (PDF §2.7.2). The moderator's own live-queue desk is
+            // /sessions/{id}/moderate — reached from the Sessions grid, not the nav.
+            new("Module.SessionModerators", "/admin/session-moderators", RequiredPermission: PermissionCatalog.SessionModerators.View),
+            // P3.3 (D-234) — Scientific-Committee central Q&A queue (stage 2).
+            new("Module.QuestionQueue", "/admin/question-queue", RequiredPermission: PermissionCatalog.Questions.View),
+            // P4.1 (D-238) — Scientific-Committee AI session-summary / محضر desk.
+            new("Module.SessionSummaries", "/admin/session-summaries", RequiredPermission: PermissionCatalog.SessionSummaries.View),
         ]),
         new("Nav.Exhibition",
         [
@@ -135,19 +156,29 @@ public static class CpNavigation
             // D-199 — past-editions / archive admin CRUD (Mockup screen 24).
             new("Module.PreviousEditions", "/admin/archive", RequiredPermission: PermissionCatalog.Archive.View),
         ]),
-        // D-132 — the broadcast-Notifications module (admin → audience)
-        // is not built yet; the existing operator notification inbox lives
-        // at /account/notifications (via the bell). Removed the duplicate
-        // "Notifications" nav stub that was misleading operators into
-        // the placeholder instead of the real inbox.
-        new("Nav.System",
+        // D-132 — the broadcast-Notifications module (admin → audience) is not
+        // built yet; the operator notification inbox lives at
+        // /account/notifications (via the bell), not the nav.
+        new("Nav.PublicRelations",
         [
-            // P7e — D-055: Other + Visitor account pages (the Admin account
-            // pages moved to the Access control group in Issue-1).
-            new("Module.AdminOthers", "/admin/others", RequiredPermission: PermissionCatalog.Others.View),
-            new("Module.AdminOthersPending", "/admin/others/pending", RequiredPermission: PermissionCatalog.Others.View),
-            new("Module.AdminVisitors", "/admin/visitors", RequiredPermission: PermissionCatalog.Visitors.View),
-            new("Module.AdminVisitorsPending", "/admin/visitors/pending", RequiredPermission: PermissionCatalog.Visitors.View),
+            // D-168 (gap doc G5) — public-relations desk: invitation CRUD +
+            // VIP list + bulk-notify (PDF §2.7.3).
+            new("Module.Invitations", "/admin/invitations", RequiredPermission: PermissionCatalog.Invitations.View),
+            new("Module.Vips", "/admin/vips", RequiredPermission: PermissionCatalog.Vips.View),
+        ]),
+        new("Nav.Gates",
+        [
+            // D-148 — Gate Module: master CRUD + role-adaptive operator console
+            // (SIMF-FDS-003 §5.6 / SIMF-API-GATES-001).
+            new("Module.Gates", "/admin/gates", RequiredPermission: PermissionCatalog.Gates.Manage),
+            new("Module.GatesOperator", "/admin/gates/operator", RequiredPermission: PermissionCatalog.Gates.Operate),
+            // P5.1d — D-244: hall-door arrival console (operator scans badge QR).
+            new("Module.HallArrivals", "/admin/hall-arrivals", RequiredPermission: PermissionCatalog.HallArrivals.View),
+            // Read-only gates operations dashboard over existing gate reports.
+            new("Module.GatesDashboard", "/admin/gates/dashboard", RequiredPermission: PermissionCatalog.Gates.Manage),
+        ]),
+        new("Nav.ReferenceData",
+        [
             new("Module.AdminInterests", "/admin/interests", RequiredPermission: PermissionCatalog.Interests.View),
             // D-155 — country lookup admin CRUD (D-151 / D-152 reference data).
             new("Module.AdminCountries", "/admin/countries", RequiredPermission: PermissionCatalog.Countries.View),
@@ -159,41 +190,19 @@ public static class CpNavigation
             // D-118 — admin-managed lookup CRUD for ProfileType (per UserType).
             new("Module.AdminVisitorProfileTypes", "/admin/profile-types/visitor", RequiredPermission: PermissionCatalog.ProfileTypes.View),
             new("Module.AdminOtherProfileTypes", "/admin/profile-types/other", RequiredPermission: PermissionCatalog.ProfileTypes.View),
-            new("Module.AdminLogs", "/admin/logs", RequiredPermission: PermissionCatalog.Logs.View),
-            // D-148 — Gate Module: master CRUD + role-adaptive operator console
-            // (SIMF-FDS-003 §5.6 / SIMF-API-GATES-001).
-            new("Module.Gates", "/admin/gates", RequiredPermission: PermissionCatalog.Gates.Manage),
-            new("Module.GatesOperator", "/admin/gates/operator", RequiredPermission: PermissionCatalog.Gates.Operate),
-            // P5.1d — D-244: hall-door arrival console (operator scans badge QR).
-            new("Module.HallArrivals", "/admin/hall-arrivals", RequiredPermission: PermissionCatalog.HallArrivals.View),
-            // Read-only gates operations dashboard over existing gate reports.
-            new("Module.GatesDashboard", "/admin/gates/dashboard", RequiredPermission: PermissionCatalog.Gates.Manage),
+        ]),
+        new("Nav.System",
+        [
             // P2.4 (D-229) — System Configuration (FDS-012 §5.5). Collapses the
             // former /m/configuration + /m/settings stubs into one real page.
             new("Module.Configuration", "/admin/configuration", RequiredPermission: PermissionCatalog.Configuration.View),
+            new("Module.AdminLogs", "/admin/logs", RequiredPermission: PermissionCatalog.Logs.View),
             // D-134 Sprint A — Operation log viewer over the existing
             // OperationLogEntry table (no migration).
             new("Module.OperationLog", "/admin/operation-log", RequiredPermission: PermissionCatalog.OperationLog.View),
             // D-166 (gap doc G4) — registration gate + archive visibility
             // singleton toggles (PDF §2.3, §2.4).
             new("Module.OperationsToggles", "/admin/operations", RequiredPermission: PermissionCatalog.Operations.View),
-            // D-168 (gap doc G5) — public-relations desk: invitation CRUD +
-            // VIP list + bulk-notify (PDF §2.7.3). Open item G-OI-4 was
-            // resolved auto-mode to share the System group instead of a
-            // separate PR layout.
-            new("Module.Invitations", "/admin/invitations", RequiredPermission: PermissionCatalog.Invitations.View),
-            new("Module.Vips", "/admin/vips", RequiredPermission: PermissionCatalog.Vips.View),
-            // D-169 (gap doc G6) — per-session moderator grants admin CRUD
-            // (PDF §2.7.2). The session moderator's own live-queue desk
-            // is /sessions/{id}/moderate — accessed from the Sessions
-            // grid, not the nav.
-            new("Module.SessionModerators", "/admin/session-moderators", RequiredPermission: PermissionCatalog.SessionModerators.View),
-            // P3.3 (D-234) — Scientific-Committee central Q&A queue (stage 2).
-            new("Module.QuestionQueue", "/admin/question-queue", RequiredPermission: PermissionCatalog.Questions.View),
-            // P4.1 (D-238) — Scientific-Committee AI session-summary / محضر desk.
-            new("Module.SessionSummaries", "/admin/session-summaries", RequiredPermission: PermissionCatalog.SessionSummaries.View),
-            // P2.4 (D-229) — the former /m/settings stub is collapsed into the
-            // System Configuration page above; no separate Settings nav item.
         ]),
     ];
 
