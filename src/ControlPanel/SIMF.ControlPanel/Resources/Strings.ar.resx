@@ -18,6 +18,9 @@
   <data name="Shell.Account" xml:space="preserve"><value>الحساب</value></data>
   <data name="Shell.SignOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
   <data name="Shell.ToggleNav" xml:space="preserve"><value>إظهار القائمة</value></data>
+  <data name="Shell.NavSearch" xml:space="preserve"><value>البحث في القائمة</value></data>
+  <data name="Shell.NavSearchPlaceholder" xml:space="preserve"><value>ابحث في القائمة…</value></data>
+  <data name="Shell.NavSearchEmpty" xml:space="preserve"><value>لا توجد عناصر مطابقة</value></data>
   <data name="Shell.SkipToMain" xml:space="preserve"><value>تخطي إلى المحتوى الرئيسي</value></data>
   <data name="Shell.ThemeLight" xml:space="preserve"><value>فاتح</value></data>
   <data name="Shell.ThemeDark" xml:space="preserve"><value>داكن</value></data>
