@@ -194,6 +194,9 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | 🟢 Screen built (D-321) | Guest+ | [App/Page_025](../App/Page_025/README.md) | [e2e/mobile-live.md](../tests/e2e/mobile-live.md) |
 | #36 `chatbot` (interim shell — no API) | 🟢 Screen built (D-322) | Guest+ | [App/Page_036](../App/Page_036/README.md) | [e2e/mobile-chatbot.md](../tests/e2e/mobile-chatbot.md) |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | ✅ API built (NEW, D-273) | Public (anonymous) | [App/Page_024-01](../App/Page_024-01/README.md) | [e2e/mobile-archive-detail.md](../tests/e2e/mobile-archive-detail.md) |
+| `shareMyContact` (`GET/POST /app/account/share-token` + `.vcf`) — FDS-014, additive | 🟢 Screen built (D-324) | Visitor (approved) | [App/FDS-014-Contact-UI](../App/FDS-014-Contact-UI/README.md) | [e2e/mobile-my-contacts.md](../tests/e2e/mobile-my-contacts.md) |
+| `scanContact` (`POST /app/contacts/resolve` + `/save`) — FDS-014, additive | 🟢 Screen built (D-324) | Visitor (approved) | [App/FDS-014-Contact-UI](../App/FDS-014-Contact-UI/README.md) | [e2e/mobile-my-contacts.md](../tests/e2e/mobile-my-contacts.md) |
+| `myContacts` (`GET /app/contacts` + `/{id}` delete + `/{id}/vcard`) — FDS-014, additive | 🟢 Screen built (D-324) | Visitor (approved) | [App/FDS-014-Contact-UI](../App/FDS-014-Contact-UI/README.md) | [e2e/mobile-my-contacts.md](../tests/e2e/mobile-my-contacts.md) |
 
 ---
 

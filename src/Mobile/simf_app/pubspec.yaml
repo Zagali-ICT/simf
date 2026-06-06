@@ -40,6 +40,11 @@ dependencies:
   # config (manifest / Info.plist) lands in the generated folders (simf-run);
   # the real stream provider is still a stub (D-211 D7).
   video_player: ^2.9.1
+  # QR scanner for visitor contact sharing (Scan QR — FDS-014, D-286). Reads
+  # another visitor's share token. Camera permission (manifest / Info.plist)
+  # lands in the generated folders (simf-run). A manual code-entry fallback is
+  # always available, so the resolve→preview→save flow works without the camera.
+  mobile_scanner: ^5.2.3
 
   simf_data_pkg:
     path: packages/simf_data_pkg

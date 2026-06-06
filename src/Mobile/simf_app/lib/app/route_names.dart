@@ -66,6 +66,12 @@ class RouteNames {
   static const String rate = 'rate';
   static const String more = 'more';
 
+  // FDS-014 visitor contact sharing (D-286 API; additive, not mockup-numbered).
+  // Reached from More / My Area; all three require an Approved account.
+  static const String shareMyContact = 'shareMyContact';
+  static const String scanContact = 'scanContact';
+  static const String myContacts = 'myContacts';
+
   // Auxiliary auth routes (not numbered in the mockup but in API-001 §12)
   static const String forgotPassword = 'forgotPassword';
   static const String resetPassword = 'resetPassword';

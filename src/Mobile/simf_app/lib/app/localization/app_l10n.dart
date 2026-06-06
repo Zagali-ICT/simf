@@ -726,6 +726,69 @@ class AppL10n {
       _t('اسأل المساعد للبدء.', 'Ask the assistant to get started.');
   String get chatbotInputHint => _t('اكتب رسالتك…', 'Type your message…');
   String get chatbotSendTooltip => _t('إرسال', 'Send');
+
+  // Visitor contact sharing — FDS-014 (Share my contact / Scan / My Contacts).
+  String get shareMyContactTitle => _t('شارك جهة اتصالي', 'Share my contact');
+  String get shareMyContactHint => _t(
+        'اعرض رمز QR لزائر آخر ليحفظ بطاقتك، أو شاركها كملف vCard.',
+        'Show this QR to another visitor to save your card, or share it as a vCard.',
+      );
+  String get shareMyContactRotate => _t('تدوير الرمز', 'Rotate code');
+  String get shareMyContactRotateConfirmTitle =>
+      _t('تدوير رمز المشاركة؟', 'Rotate share code?');
+  String get shareMyContactRotateConfirmBody => _t(
+        'سيتوقف الرمز السابق عن العمل ولن يتمكن أحد من حفظه بعد ذلك.',
+        'The previous code will stop working and can no longer be saved by anyone.',
+      );
+  String get shareMyContactRotated =>
+      _t('تم إنشاء رمز جديد', 'A new code was generated');
+  String get shareMyContactError =>
+      _t('تعذر تحميل رمز المشاركة.', 'Could not load your share code.');
+
+  String get scanContactTitle => _t('مسح رمز QR', 'Scan QR');
+  String get scanContactManualLabel =>
+      _t('أو أدخل الرمز يدوياً', 'Or enter the code manually');
+  String get scanContactManualField => _t('رمز المشاركة', 'Share code');
+  String get scanContactResolve => _t('بحث', 'Look up');
+  String get scanContactNotFound =>
+      _t('رمز غير صالح أو لم يعد متاحاً.', 'Code not found or no longer valid.');
+  String get scanContactError =>
+      _t('تعذر قراءة جهة الاتصال.', 'Could not read the contact.');
+  String get scanContactCameraUnavailable =>
+      _t('الكاميرا غير متاحة', 'Camera unavailable');
+
+  String get contactPreviewTitle => _t('معاينة جهة الاتصال', 'Contact preview');
+  String get saveContactLabel =>
+      _t('حفظ في جهات اتصالي', 'Save to My Contacts');
+  String get saveContactNoteHint => _t('ملاحظة (اختياري)', 'Note (optional)');
+  String get saveContactSaved => _t('تم حفظ جهة الاتصال', 'Contact saved');
+  String get saveContactSelf =>
+      _t('لا يمكنك حفظ بطاقتك أنت.', 'You can’t save your own card.');
+  String get saveContactError =>
+      _t('تعذر حفظ جهة الاتصال.', 'Could not save the contact.');
+
+  String get myContactsTitle => _t('جهات اتصالي', 'My Contacts');
+  String get myContactsEmpty =>
+      _t('لا توجد جهات اتصال محفوظة بعد', 'No saved contacts yet');
+  String get myContactsEmptyHint => _t(
+        'امسح رمز QR لزائر آخر لحفظ بطاقته.',
+        'Scan another visitor’s QR to save their card.',
+      );
+  String get myContactsError =>
+      _t('تعذر تحميل جهات الاتصال.', 'Could not load your contacts.');
+  String get myContactsRemove => _t('إزالة', 'Remove');
+  String get myContactsRemoveConfirmTitle =>
+      _t('إزالة جهة الاتصال؟', 'Remove contact?');
+  String get myContactsRemoveConfirmBody => _t(
+        'ستتم إزالة جهة الاتصال هذه من قائمتك.',
+        'This contact will be removed from your list.',
+      );
+  String get myContactsRemoved => _t('تمت الإزالة', 'Removed');
+  String get myContactsExportVcard => _t('تصدير vCard', 'Export vCard');
+  String get contactScanAdd => _t('مسح للإضافة', 'Scan to add');
+  String get contactUnavailable =>
+      _t('هذه الجهة لم تعد متاحة', 'This contact is no longer available');
+  String get contactNoteLabel => _t('ملاحظة', 'Note');
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

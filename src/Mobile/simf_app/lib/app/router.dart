@@ -28,6 +28,9 @@ import '../features/ai_summary/session_summary_screen.dart';
 import '../features/badge/badge_screen.dart';
 import '../features/chatbot/chatbot_screen.dart';
 import '../features/comments/audience_comments_screen.dart';
+import '../features/contacts/my_contacts_screen.dart';
+import '../features/contacts/scan_contact_screen.dart';
+import '../features/contacts/share_my_contact_screen.dart';
 import '../features/guest/guest_mode_screen.dart';
 import '../features/live/live_broadcast_screen.dart';
 import '../features/meet/meet_people_screen.dart';
@@ -126,6 +129,12 @@ const List<_Route> _routes = <_Route>[
   // Screen 39 (cybersecurity policy) removed from the app — §9 / D-276.
   _Route(number: 40, name: RouteNames.rate, path: '/rate', labelAr: 'تقييم', labelEn: 'Rate'),
   _Route(number: 41, name: RouteNames.more, path: '/more', labelAr: 'المزيد', labelEn: 'More'),
+
+  // FDS-014 visitor contact sharing (D-286; additive, not mockup-numbered →
+  // sentinel numbers 100+ so they never collide with mockup 1–41 or the aux 0s).
+  _Route(number: 100, name: RouteNames.myContacts, path: '/contacts', labelAr: 'جهات اتصالي', labelEn: 'My Contacts'),
+  _Route(number: 101, name: RouteNames.shareMyContact, path: '/contacts/share', labelAr: 'شارك جهة اتصالي', labelEn: 'Share my contact'),
+  _Route(number: 102, name: RouteNames.scanContact, path: '/contacts/scan', labelAr: 'مسح رمز QR', labelEn: 'Scan QR'),
 ];
 
 /// Auxiliary auth routes that aren't numbered in the mockup but live in
@@ -151,6 +160,9 @@ const Set<int> _authenticatedRoutes = <int>{
   33, // Notifications
   35, // Meet people
   40, // Rate (feedback — approved-only, D-310)
+  100, // My Contacts (FDS-014, approved-only — D-286)
+  101, // Share my contact (FDS-014, approved-only — D-286)
+  102, // Scan contact QR (FDS-014, approved-only — D-286)
 };
 
 /// Builds the go_router instance.
@@ -330,6 +342,15 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.chatbot) {
               return const ChatbotScreen();
+            }
+            if (r.name == RouteNames.myContacts) {
+              return const MyContactsScreen();
+            }
+            if (r.name == RouteNames.shareMyContact) {
+              return const ShareMyContactScreen();
+            }
+            if (r.name == RouteNames.scanContact) {
+              return const ScanContactScreen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,

@@ -49,6 +49,16 @@ class MoreScreen extends StatelessWidget {
               routeName: RouteNames.notifications,
             ),
             _MoreTile(
+              icon: Icons.qr_code_2_outlined,
+              title: l10n.shareMyContactTitle,
+              routeName: RouteNames.shareMyContact,
+            ),
+            _MoreTile(
+              icon: Icons.contacts_outlined,
+              title: l10n.myContactsTitle,
+              routeName: RouteNames.myContacts,
+            ),
+            _MoreTile(
               icon: Icons.handshake_outlined,
               title: l10n.moreMediaPartners,
               routeName: RouteNames.mediaPartners,

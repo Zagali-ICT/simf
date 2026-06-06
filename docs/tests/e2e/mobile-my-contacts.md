@@ -1,10 +1,11 @@
 # E2E test catalogue — `My Contacts` / `Share my contact` (mobile, app API)
 
-> **Authority:** SIMF-FDS-014 §5.4–5.7 (D-286 / Slice E). Visitor-to-visitor
-> contact sharing. The **app API** has shipped + is tested
+> **Authority:** SIMF-FDS-014 §5.4–5.7 (D-286 / Slice E; Flutter UI D-324).
+> Visitor-to-visitor contact sharing. The **app API** has shipped + is tested
 > (`tests/SIMF.Api.Tests/VisitorContactSharingTests.cs`, 9 cases); the **Flutter
-> screens** (Share my contact / Scan / My Contacts) are built later in the app
-> page-by-page workflow and bind to these endpoints.
+> screens** (Share my contact / Scan / My Contacts) are **built** (D-324) under
+> `lib/features/contacts/` and bind to these endpoints — see
+> [`docs/App/FDS-014-Contact-UI/README.md`](../../App/FDS-014-Contact-UI/README.md).
 
 | | |
 |--|--|
