@@ -13,10 +13,12 @@ import '../features/auth/reset_password_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/auth/sign_up_email_verify_screen.dart';
 import '../features/auth/sign_up_form_screen.dart';
+import '../features/about/about_screen.dart';
 import '../features/archive/archive_screen.dart';
 import '../features/auth/sign_up_type_screen.dart';
 import '../features/booths/booths_screen.dart';
 import '../features/content/terms_screen.dart';
+import '../features/feedback/rate_screen.dart';
 import '../features/gallery/gallery_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/media_partners/media_partners_screen.dart';
@@ -136,6 +138,7 @@ const Set<int> _authenticatedRoutes = <int>{
   32, // Badge / QR
   33, // Notifications
   35, // Meet people
+  40, // Rate (feedback — approved-only, D-310)
 };
 
 /// Builds the go_router instance.
@@ -268,6 +271,12 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.gallery) {
               return const GalleryScreen();
+            }
+            if (r.name == RouteNames.aboutForum) {
+              return const AboutScreen();
+            }
+            if (r.name == RouteNames.rate) {
+              return const RateScreen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,

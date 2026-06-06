@@ -522,6 +522,25 @@ class AppL10n {
       _t('تعذّر تحميل الوسائط.', 'Could not load the media.');
   String get galleryEmpty => _t('لا توجد وسائط', 'No media yet');
 
+  // About the forum (Page 037).
+  String get aboutTitle => _t('عن الملتقى', 'About the forum');
+  String get aboutError =>
+      _t('تعذّر تحميل المحتوى.', 'Could not load the content.');
+  String get aboutEmpty =>
+      _t('المحتوى قيد الإعداد', 'Content coming soon');
+
+  // Rate / feedback (Page 040).
+  String get rateTitle => _t('تقييم', 'Rate');
+  String get rateLead =>
+      _t('كيف كانت تجربتك في الملتقى؟', 'How was your forum experience?');
+  String get rateStarsRequired =>
+      _t('يرجى اختيار عدد النجوم', 'Please pick a star rating');
+  String get rateCommentLabel => _t('ملاحظاتك (اختياري)', 'Your comments (optional)');
+  String get rateSubmit => _t('إرسال التقييم', 'Submit rating');
+  String get rateThanks => _t('شكراً لتقييمك', 'Thanks for your rating');
+  String get rateFailed =>
+      _t('تعذّر إرسال التقييم. حاول مرة أخرى.', 'Could not submit. Try again.');
+
   // Media partners (Page 031).
   String get mediaPartnersTitle => _t('الشركاء الإعلاميون', 'Media partners');
   String get mediaPartnersError =>
