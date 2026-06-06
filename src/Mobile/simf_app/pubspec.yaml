@@ -33,6 +33,13 @@ dependencies:
   # to the notifications platform pass (D-300); the server worker (D-217) is the
   # production reminder path.
   add_2_calendar: ^3.0.1
+  # Entry-badge QR (Page_032) — pure-Dart QR painter (no native config) rendering
+  # the account qrId from GET /app/account/dashboard.
+  qr_flutter: ^4.1.0
+  # Live-broadcast player (Page_025) — plays the session liveStreamUrl. Native
+  # config (manifest / Info.plist) lands in the generated folders (simf-run);
+  # the real stream provider is still a stub (D-211 D7).
+  video_player: ^2.9.1
 
   simf_data_pkg:
     path: packages/simf_data_pkg

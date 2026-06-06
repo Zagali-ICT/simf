@@ -24,10 +24,16 @@ import '../features/home/home_screen.dart';
 import '../features/media_partners/media_partners_screen.dart';
 import '../features/news/news_screen.dart';
 import '../features/accessibility/accessibility_screen.dart';
+import '../features/ai_summary/session_summary_screen.dart';
+import '../features/badge/badge_screen.dart';
+import '../features/chatbot/chatbot_screen.dart';
+import '../features/comments/audience_comments_screen.dart';
 import '../features/guest/guest_mode_screen.dart';
+import '../features/live/live_broadcast_screen.dart';
 import '../features/meet/meet_people_screen.dart';
 import '../features/more/more_screen.dart';
 import '../features/notifications/notifications_screen.dart';
+import '../features/questions/send_question_screen.dart';
 import '../features/myarea/my_area_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/venuemap/venue_map_screen.dart';
@@ -140,6 +146,7 @@ const Set<int> _authenticatedRoutes = <int>{
   14, // My area
   18, // My seat
   26, // Send question
+  28, // Audience comments (approved-only, D-319)
   32, // Badge / QR
   33, // Notifications
   35, // Meet people
@@ -297,6 +304,32 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.guestMode) {
               return const GuestModeScreen();
+            }
+            if (r.name == RouteNames.aiSummary) {
+              return AiSummaryScreen(
+                sessionId: state.uri.queryParameters['sessionId'],
+              );
+            }
+            if (r.name == RouteNames.sendQuestion) {
+              return SendQuestionScreen(
+                sessionId: state.uri.queryParameters['sessionId'],
+              );
+            }
+            if (r.name == RouteNames.audienceComments) {
+              return AudienceCommentsScreen(
+                sessionId: state.uri.queryParameters['sessionId'],
+              );
+            }
+            if (r.name == RouteNames.liveBroadcast) {
+              return LiveBroadcastScreen(
+                sessionId: state.uri.queryParameters['sessionId'],
+              );
+            }
+            if (r.name == RouteNames.badge) {
+              return const BadgeScreen();
+            }
+            if (r.name == RouteNames.chatbot) {
+              return const ChatbotScreen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,

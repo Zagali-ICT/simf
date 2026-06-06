@@ -40,3 +40,44 @@ Live captions (**الترجمة الفورية**) are a **client / future** item
 live feed, the screen falls back to the **recorded** stream (`HasRecording`, D-232)
 and the **AI summary / محضر** (`GET …/summary`, D-237/238) — both **already built**.
 See [Page_025_Logic.md](Page_025_Logic.md) and [Page_025_API.md](Page_025_API.md).
+
+## As-built — Flutter screen
+
+The Flutter screen is built as an interim mockup against the real anonymous API.
+
+| | |
+|---|---|
+| Route | `RouteNames.liveBroadcast` → `/live?sessionId=` (optional `sessionId` query param) |
+| Screen | `LiveBroadcastScreen` — `src/Mobile/simf_app/lib/features/live/live_broadcast_screen.dart` |
+| Data | `LiveRepository` + `LiveSession` — `src/Mobile/simf_app/lib/features/live/data/live_repository.dart` |
+| Player | `video_player` (`VideoPlayerController.networkUrl`) — initialised only when `liveStreamUrl` is non-empty; disposed in `dispose()` |
+
+Reuses the shipped public session detail read (no new API — D-271):
+`GET /api/v1/app/programme/sessions/{id}` → `ApiResult<PublicSessionDetail>`. The
+screen decodes only the broadcast slice into `LiveSession`: `title`/`titleArabic`,
+`status` (int — frozen `SessionStatus` 0..3), `hasRecording` (bool),
+`liveStreamUrl` (string?), `liveSignLanguageUrl` (string?). The slice lives in a
+small dedicated `LiveRepository` because the `features/sessions` `SessionDetail`
+model does **not** expose the broadcast fields — same wire contract, no duplicate
+of the full detail model.
+
+Behaviour:
+- **No `sessionId`** (null/blank) → a "no live session selected — open a session
+  to watch" empty state. No fetch, no controller (L-1).
+- **With a `sessionId`** → read the slice, then branch (L-3):
+  - `liveStreamUrl` non-empty → initialise `video_player`, show the `VideoPlayer`
+    at the stream's aspect ratio (16:9 fallback) with a **LIVE** badge + a
+    play/pause FAB. A failed `initialize()` falls back to the not-live copy (L-4).
+  - `liveStreamUrl` null but `hasRecording` → a "recording available" note.
+  - neither → a "not live / scheduled" state.
+- A non-empty `liveSignLanguageUrl` adds a sign-language-available note.
+- Loading / empty(no id) / 404→not-found / error→retry states.
+
+UI is interim (final visuals from SIMF-VID-001).
+
+### Tests
+- Widget: `src/Mobile/simf_app/test/features/live/live_broadcast_screen_test.dart`
+  (no-id empty, blank-id empty, not-live, recording note, sign-language note,
+  404, error→retry, Arabic) — the **non-video** paths only, so no platform
+  channel is hit (real playback needs a device/emulator).
+- E2E: [`docs/tests/e2e/mobile-live.md`](../../tests/e2e/mobile-live.md).
