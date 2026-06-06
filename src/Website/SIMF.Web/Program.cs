@@ -85,6 +85,23 @@ builder.Services.AddScoped<SimfAuthSession>();
 // cookie during the initial (prerendered) render of the proxy endpoints.
 builder.Services.AddHttpContextAccessor();
 
+// SIMF_Api__AllowSelfSignedCertificate=true → accept the API's self-signed
+// certificate on the server-to-server API calls (the API uses a self-signed
+// cert whose name does not match the host). Default false → normal TLS
+// validation, so dev and any other environment are unaffected.
+var allowSelfSignedApiCert =
+    builder.Configuration.GetValue<bool>("Api:AllowSelfSignedCertificate");
+Func<HttpMessageHandler> apiPrimaryHandler = () =>
+{
+    var handler = new HttpClientHandler();
+    if (allowSelfSignedApiCert)
+    {
+        handler.ServerCertificateCustomValidationCallback =
+            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+    }
+    return handler;
+};
+
 // The typed clients for the SIMF API. Server-to-server calls; the access
 // token never reaches the browser.
 builder.Services.AddHttpClient<SimfAuthClient>(client =>
@@ -99,12 +116,14 @@ builder.Services.AddHttpClient<SimfAuthClient>(client =>
             "'Api:BaseUrl' must use HTTPS outside the Development environment.");
     }
     client.BaseAddress = baseUri;
-});
+})
+    .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
 builder.Services.AddHttpClient<SimfAccountClient>(client =>
 {
     var baseUrl = builder.Configuration["Api:BaseUrl"]!;
     client.BaseAddress = new Uri(baseUrl);
-});
+})
+    .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
 // The typed client for the SIMF anonymous public-read endpoints (D-199).
 // Anonymous, so no bearer token; BaseAddress only — the public endpoints do
 // not require an X-App-Key header in this build.
@@ -120,7 +139,8 @@ builder.Services.AddHttpClient<SimfPublicClient>(client =>
             "'Api:BaseUrl' must use HTTPS outside the Development environment.");
     }
     client.BaseAddress = baseUri;
-});
+})
+    .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
 
 var app = builder.Build();
 

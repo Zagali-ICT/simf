@@ -120,6 +120,23 @@ builder.Services.AddScoped<SimfUserChrome>();
 // in the circuit for the interactive callbacks that follow.
 builder.Services.AddHttpContextAccessor();
 
+// SIMF_Api__AllowSelfSignedCertificate=true → accept the API's self-signed
+// certificate on the server-to-server API calls (the API uses a self-signed
+// cert whose name does not match the host). Default false → normal TLS
+// validation, so dev and any other environment are unaffected.
+var allowSelfSignedApiCert =
+    builder.Configuration.GetValue<bool>("Api:AllowSelfSignedCertificate");
+Func<HttpMessageHandler> apiPrimaryHandler = () =>
+{
+    var handler = new HttpClientHandler();
+    if (allowSelfSignedApiCert)
+    {
+        handler.ServerCertificateCustomValidationCallback =
+            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+    }
+    return handler;
+};
+
 // The typed client for the SIMF Login API. The call is server-to-server, so
 // the access token never reaches the browser and there is no cross-origin
 // concern.
@@ -135,19 +152,22 @@ builder.Services.AddHttpClient<SimfAuthClient>(client =>
             "'Api:BaseUrl' must use HTTPS outside the Development environment.");
     }
     client.BaseAddress = baseUri;
-});
+})
+    .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
 
 builder.Services.AddHttpClient<SimfAccountClient>(client =>
 {
     var baseUrl = builder.Configuration["Api:BaseUrl"]!;
     client.BaseAddress = new Uri(baseUrl);
-});
+})
+    .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
 
 builder.Services.AddHttpClient<SimfAdminClient>(client =>
 {
     var baseUrl = builder.Configuration["Api:BaseUrl"]!;
     client.BaseAddress = new Uri(baseUrl);
-});
+})
+    .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
 
 var app = builder.Build();
 
