@@ -54,6 +54,13 @@ void main() {
       expect(find.text('No media yet'), findsOneWidget);
     });
 
+    testWidgets('a read failure shows the error state', (tester) async {
+      await _pump(tester, <Override>[
+        mediaItemsProvider.overrideWith((ref) async => throw Exception('x')),
+      ]);
+      expect(find.text('Could not load the media.'), findsOneWidget);
+    });
+
     test('MediaKind.fromJson decodes int / name', () {
       expect(MediaKind.fromJson(1), MediaKind.video);
       expect(MediaKind.fromJson(0), MediaKind.image);

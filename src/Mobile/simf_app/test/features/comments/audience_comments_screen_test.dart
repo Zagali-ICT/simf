@@ -27,11 +27,12 @@ class _FakeCommentsRepo implements CommentsRepository {
   _FakeCommentsRepo({
     List<Comment>? comments,
     this.listStatus,
+    this.submitStatus = CommentStatus.pending,
   }) : comments = comments ?? <Comment>[];
 
   List<Comment> comments;
   final int? listStatus;
-  final CommentStatus submitStatus = CommentStatus.pending;
+  final CommentStatus submitStatus;
   int listCalls = 0;
   int submitCalls = 0;
   int likeCalls = 0;
@@ -166,6 +167,24 @@ void main() {
         find.text('Your comment was submitted and is awaiting moderation.'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('an approved comment shows the plain submitted toast + refresh',
+        (tester) async {
+      final repo = _FakeCommentsRepo(
+        comments: <Comment>[_comment()],
+        submitStatus: CommentStatus.approved,
+      );
+      await _pump(tester, repo: repo, sessionId: 's1');
+
+      await tester.enterText(find.byType(TextField), 'Nice session');
+      await tester.tap(find.byIcon(Icons.send));
+      await tester.pumpAndSettle();
+
+      expect(repo.submitCalls, 1);
+      expect(find.text('Your comment was submitted'), findsOneWidget);
+      // The success path refreshes the feed (initial load + post-submit reload).
+      expect(repo.listCalls, greaterThanOrEqualTo(2));
     });
 
     testWidgets('tapping like calls like then unlike updates the row',

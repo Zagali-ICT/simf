@@ -113,9 +113,11 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     if (controller == null) {
       return;
     }
-    setState(() {
-      controller.value.isPlaying ? controller.pause() : controller.play();
-    });
+    // The play/pause glyph is driven by the controller's ValueListenable in
+    // [_Player], so no setState is needed here — just fire the toggle.
+    unawaited(
+      controller.value.isPlaying ? controller.pause() : controller.play(),
+    );
   }
 
   @override
@@ -212,15 +214,15 @@ class _Player extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(SimfTokens.radius),
           child: Stack(
-            alignment: Alignment.bottomRight,
+            alignment: AlignmentDirectional.bottomEnd,
             children: <Widget>[
               AspectRatio(
                 aspectRatio: ratio,
                 child: VideoPlayer(controller),
               ),
-              Positioned(
+              PositionedDirectional(
                 top: SimfTokens.space2,
-                left: SimfTokens.space2,
+                start: SimfTokens.space2,
                 child: _LiveBadge(label: liveLabel),
               ),
               Padding(
@@ -228,10 +230,11 @@ class _Player extends StatelessWidget {
                 child: FloatingActionButton.small(
                   heroTag: 'live-play',
                   onPressed: onToggle,
-                  child: Icon(
-                    controller.value.isPlaying
-                        ? Icons.pause
-                        : Icons.play_arrow,
+                  child: ValueListenableBuilder<VideoPlayerValue>(
+                    valueListenable: controller,
+                    builder: (_, value, __) => Icon(
+                      value.isPlaying ? Icons.pause : Icons.play_arrow,
+                    ),
                   ),
                 ),
               ),
@@ -280,12 +283,16 @@ class _LiveBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          const Icon(Icons.fiber_manual_record, size: 10, color: Colors.white),
+          const Icon(
+            Icons.fiber_manual_record,
+            size: 10,
+            color: SimfTokens.surface,
+          ),
           const SizedBox(width: SimfTokens.space1),
           Text(
             label,
             style: const TextStyle(
-              color: Colors.white,
+              color: SimfTokens.surface,
               fontWeight: FontWeight.w700,
               fontSize: SimfTokens.textXs,
             ),

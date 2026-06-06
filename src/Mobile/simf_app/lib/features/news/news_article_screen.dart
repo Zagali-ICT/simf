@@ -7,6 +7,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import 'data/news_models.dart';
+import 'data/news_repository.dart';
 
 /// The full news article (Page_029 detail, `GET /app/news/{id}`). Pushed from the
 /// news list via an imperative route (the screen has no go_router entry).
@@ -38,13 +39,8 @@ class _NewsArticleScreenState extends ConsumerState<NewsArticleScreen> {
       _notFound = false;
     });
     try {
-      final client = ref.read(simfApiClientProvider);
-      final article = await client.get<NewsArticle>(
-        '/app/news/${widget.newsId}',
-        decodeData: (data) => NewsArticle.fromJson(
-          (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{},
-        ),
-      );
+      final article =
+          await ref.read(newsRepositoryProvider).getArticle(widget.newsId);
       if (!mounted) {
         return;
       }
