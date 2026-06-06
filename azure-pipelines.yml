@@ -195,6 +195,23 @@ stages:
               Get-ChildItem $root | Select-Object Name
             displayName: 'Extract app zips to drop_root'
 
+          # Stop the three IIS sites + their app pools BEFORE the publish so no
+          # file is locked while the files are mirrored. (iis-deploy.ps1 also
+          # stops/starts each app internally; this explicit pair adds a
+          # pipeline-level guard, and the matching start step below runs even
+          # if the deploy step fails — condition: always().)
+          - powershell: |
+              Import-Module WebAdministration
+              foreach ($s in 'SIMF.API','SIMF.CP','SIMF.WEB') {
+                if (Get-Website -Name $s -ErrorAction SilentlyContinue) {
+                  Write-Host "Stopping site: $s"
+                  Stop-Website -Name $s -ErrorAction SilentlyContinue
+                  $pool = (Get-Item "IIS:\Sites\$s").applications["/"].applicationPool
+                  if ($pool) { Write-Host "Stopping app pool: $pool"; Stop-WebAppPool -Name $pool -ErrorAction SilentlyContinue }
+                } else { Write-Warning "IIS site not found (skip stop): $s" }
+              }
+            displayName: 'Stop IIS sites (before publish)'
+
           - powershell: |
               ./deploy/iis-deploy.ps1 `
                 -ArtifactRoot "$(Pipeline.Workspace)\drop_root" `
@@ -204,3 +221,19 @@ stages:
             displayName: 'Deploy to IIS'
             # PLACEHOLDERS above: confirm the IIS site names and physical paths
             # for the SIMF server before this stage runs. See deploy/README.md.
+
+          # Start the three IIS sites + their app pools AFTER the publish.
+          # condition: always() so the sites are brought back up even if the
+          # deploy step above failed part-way (don't leave production down).
+          - powershell: |
+              Import-Module WebAdministration
+              foreach ($s in 'SIMF.API','SIMF.CP','SIMF.WEB') {
+                if (Get-Website -Name $s -ErrorAction SilentlyContinue) {
+                  $pool = (Get-Item "IIS:\Sites\$s").applications["/"].applicationPool
+                  if ($pool) { Write-Host "Starting app pool: $pool"; Start-WebAppPool -Name $pool -ErrorAction SilentlyContinue }
+                  Write-Host "Starting site: $s"
+                  Start-Website -Name $s -ErrorAction SilentlyContinue
+                } else { Write-Warning "IIS site not found (skip start): $s" }
+              }
+            displayName: 'Start IIS sites (after publish)'
+            condition: always()
