@@ -273,6 +273,8 @@ class AppL10n {
   String get createAccountQuestion =>
       _t('ليس لديك حساب؟', "Don't have an account?");
   String get createAccountLink => _t('إنشاء حساب', 'Create account');
+  String get browseAsGuestLink =>
+      _t('تصفّح بدون تسجيل الدخول', 'Browse without signing in');
   String get showPasswordTooltip => _t('إظهار كلمة المرور', 'Show password');
   String get hidePasswordTooltip => _t('إخفاء كلمة المرور', 'Hide password');
   String get biometricSignInTooltip =>

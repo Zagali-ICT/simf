@@ -171,6 +171,11 @@ Future<void> _pump(
         path: '/sign-up/visitor',
         builder: (c, s) => const Scaffold(body: Text('PROFILE')),
       ),
+      GoRoute(
+        name: RouteNames.guestMode,
+        path: '/guest',
+        builder: (c, s) => const Scaffold(body: Text('GUEST')),
+      ),
     ],
   );
 
@@ -266,6 +271,17 @@ void main() {
       await _pump(tester, _Outcome.success, prefs);
 
       expect(find.text('prefilled@example.sa'), findsOneWidget);
+    });
+
+    testWidgets('browse-without-signing-in opens the guest screen (no auth)',
+        (tester) async {
+      final prefs = _FakePrefs();
+      await _pump(tester, _Outcome.success, prefs);
+
+      await tester.tap(find.text('Browse without signing in'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('GUEST'), findsOneWidget);
     });
   });
 }
