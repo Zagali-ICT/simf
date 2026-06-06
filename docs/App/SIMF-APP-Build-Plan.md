@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| Date | 2026-06-03 |
+| Date | 2026-06-06 |
 | Status | Active plan — orchestrates the controlled docs + the per-page folders into build phases |
 | Authority | Owner directive ("make plan for app design plan", "do") · decisions in `DECISIONS_LOG` D-249 |
 | Audience | The independent Flutter developer who builds the real app against the **App API** (`/api/v1/app/*`) |
@@ -64,7 +64,7 @@ Status legend: ✅ **ready** (endpoint shipped under `/app/*`) · 🟡 **to buil
 | 9 | `terms` | Guest | ✅ `GET /app/content/{key}` (`terms`; accept is client-side, D8 consent record deferred) | [Page_009](Page_009/README.md) |
 | 10 | `registrationSuccess` | Visitor (pending) | ✅ `GET /app/users/me` (status poll) | [Page_010](Page_010/README.md) |
 | 11 | `registrationStatus` | Visitor (pending) | ✅ **`GET /app/users/me`** (built this wave, D-249) | [Page_011](Page_011/README.md) |
-| 12 | `guestMode` | Guest | — | _n/a (not in this batch)_ |
+| 12 | `guestMode` | Guest | — (no API) | 🟢 **screen built (D-316)**; guest entry wired from sign-in (D-325) — [Page_012](Page_012/README.md) |
 
 ### Section 2 — Core screens (13–20)
 
@@ -81,13 +81,13 @@ Status legend: ✅ **ready** (endpoint shipped under `/app/*`) · 🟡 **to buil
 
 ### Sections 3–8 — content, live, media, badge, smart, settings (21–41)
 
-⏳ **Later waves.** The backend families already exist under `/app/*` for most of
-these (booths, sponsors, archive, live Q&A, audience comments, news,
-media gallery, media partners, badge/QR, notifications, AI summary, meet-people,
-chatbot, about, accessibility, cybersecurity, rate/feedback). They are catalogued
-at the index level in [`SIMF-MOB-API-001`](../SIMF-MOB-API-001-Mobile-API-Requirements.md)
-§7–§14 and will get their own `Page_NNN/` folders + per-page detail in the next
-documentation waves, screen by screen, as they are built.
+✅ **Built.** Screens 21–41 (excluding removed 08/39) are all built — each has its
+`Page_NNN/` folder and an indexed E2E catalogue file; see
+[`PAGE-INDEX.md`](../pages/PAGE-INDEX.md) for the per-screen build decision
+(D-304..D-322). The backend families they bind to live under `/app/*` and are
+catalogued in [`SIMF-MOB-API-001`](../SIMF-MOB-API-001-Mobile-API-Requirements.md)
+§7–§14. The additive FDS-014 visitor contact screens (share / scan / my-contacts)
+are built (D-324).
 
 ---
 
@@ -103,7 +103,7 @@ following the matching `Page_NNN/` Function/Logic/Design docs.
 | **P2 — Onboarding & registration** | 2 onboarding, 4 type, 7 profile + interests, 9 terms, 10 success, 11 status | completes the new-visitor journey end-to-end; all APIs ready (11 just built) | profile complete → pending → approved |
 | **P3 — Home & identity** | 13 home (privilege-gated tiles), 14 My-Area | the signed-in landing + the personal dashboard | 13 + 14 **screen built (D-296 / D-297)** |
 | **P4 — Core event** | 15 map, 16–20 sessions/detail/seat/speakers | the core attendee value | **complete** — 15 (D-298), 16 (D-299), 17 (D-300), 18 (D-301), 19 (D-302), 20 (D-303) built |
-| **P5+ — Content / Live / Media / Smart / Settings** | 21–41 | breadth, per the later doc waves | per-screen as documented |
+| **P5+ — Content / Live / Media / Smart / Settings** | 21–41 | breadth, per the later doc waves | **complete** — screens 21–41 built (D-304..D-322) + FDS-014 contact UI built (D-324) |
 
 ---
 
@@ -127,14 +127,11 @@ following the matching `Page_NNN/` Function/Logic/Design docs.
 - ✅ **FDS-014 Contact sharing (D-281 → D-287)** — the org `Contact` directory
   (CP `/admin/contacts` + picker in the five admin forms) and the visitor
   contact-sharing **app API** are live; public Sponsor/MediaPartner cards carry
-  the additive contact cluster (D-287). The **Flutter screens are not built yet**
-  (see the to-do below).
+  the additive contact cluster (D-287). The **Flutter screens are built** (D-324; see below).
 
-**Flutter to-do — FDS-014 Contact UI (API ready; screens pending):** the
-server side is shipped and tested; these screens bind to the live `/app/*`
-endpoints and are ready to build in the app **page-by-page workflow**. Add the
-routes only when `router.dart` is clean — do not collide with in-flight mobile
-edits.
+**FDS-014 Contact UI — built (D-324):** the four screens are shipped and wired to
+the live `/app/*` endpoints (routes 100–102 in `router.dart`), reached from the
+**More** screen. The four deliverables, all in:
 
 1. **Shared read-only contact-card widget** (FDS-014 Slice D) — reused by the
    org screens and by the scan-preview.
