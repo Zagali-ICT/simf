@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import 'data/accessibility_controller.dart';
 
 /// Page 038 — إمكانية الوصول · Accessibility (#38, `/settings/accessibility`, public).
 ///
@@ -9,29 +11,19 @@ import '../../app/theme/tokens.dart';
 /// line, a text-size choice (Small / Default / Large), a high-contrast switch
 /// and a reduce-motion switch.
 ///
-/// **State is LOCAL only.** Persistence (writing the choices to a settings
-/// store) and app-wide application (actually scaling the text / swapping the
-/// theme / disabling animations across the app) are DEFERRED to a later
-/// settings-store pass — this screen just captures the preferences in widget
-/// state so the controls behave; nothing is saved or applied yet.
-class AccessibilityScreen extends StatefulWidget {
+/// The choices are **persisted** via [AccessibilityController] (prefs-backed)
+/// and **applied app-wide** — the text scaler and reduce-motion flag are
+/// injected into the root MediaQuery and high-contrast swaps the theme (see
+/// `app/app.dart`). Each control reads/writes the controller, so the selection
+/// survives a restart.
+class AccessibilityScreen extends ConsumerWidget {
   const AccessibilityScreen({super.key});
 
   @override
-  State<AccessibilityScreen> createState() => _AccessibilityScreenState();
-}
-
-/// The local text-size choices (index 0 = small, 1 = default, 2 = large).
-enum _TextSize { small, normal, large }
-
-class _AccessibilityScreenState extends State<AccessibilityScreen> {
-  _TextSize _textSize = _TextSize.normal;
-  bool _highContrast = false;
-  bool _reduceMotion = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context);
+    final settings = ref.watch(accessibilityControllerProvider);
+    final controller = ref.read(accessibilityControllerProvider.notifier);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.accessibilityTitle)),
       body: SafeArea(
@@ -50,19 +42,18 @@ class _AccessibilityScreenState extends State<AccessibilityScreen> {
               children: <Widget>[
                 ChoiceChip(
                   label: Text(l10n.accessibilityTextSizeSmall),
-                  selected: _textSize == _TextSize.small,
-                  onSelected: (_) => setState(() => _textSize = _TextSize.small),
+                  selected: settings.textSize == AppTextSize.small,
+                  onSelected: (_) => controller.setTextSize(AppTextSize.small),
                 ),
                 ChoiceChip(
                   label: Text(l10n.accessibilityTextSizeDefault),
-                  selected: _textSize == _TextSize.normal,
-                  onSelected: (_) =>
-                      setState(() => _textSize = _TextSize.normal),
+                  selected: settings.textSize == AppTextSize.normal,
+                  onSelected: (_) => controller.setTextSize(AppTextSize.normal),
                 ),
                 ChoiceChip(
                   label: Text(l10n.accessibilityTextSizeLarge),
-                  selected: _textSize == _TextSize.large,
-                  onSelected: (_) => setState(() => _textSize = _TextSize.large),
+                  selected: settings.textSize == AppTextSize.large,
+                  onSelected: (_) => controller.setTextSize(AppTextSize.large),
                 ),
               ],
             ),
@@ -72,29 +63,19 @@ class _AccessibilityScreenState extends State<AccessibilityScreen> {
               child: Column(
                 children: <Widget>[
                   SwitchListTile(
-                    value: _highContrast,
-                    onChanged: (value) =>
-                        setState(() => _highContrast = value),
+                    value: settings.highContrast,
+                    onChanged: controller.setHighContrast,
                     title: Text(l10n.accessibilityHighContrastTitle),
                     subtitle: Text(l10n.accessibilityHighContrastSubtitle),
                   ),
                   const Divider(height: 1),
                   SwitchListTile(
-                    value: _reduceMotion,
-                    onChanged: (value) =>
-                        setState(() => _reduceMotion = value),
+                    value: settings.reduceMotion,
+                    onChanged: controller.setReduceMotion,
                     title: Text(l10n.accessibilityReduceMotionTitle),
                     subtitle: Text(l10n.accessibilityReduceMotionSubtitle),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: SimfTokens.space5),
-            Text(
-              l10n.accessibilityDeferredNote,
-              style: const TextStyle(
-                color: SimfTokens.inkMuted,
-                fontSize: SimfTokens.textSm,
               ),
             ),
           ],

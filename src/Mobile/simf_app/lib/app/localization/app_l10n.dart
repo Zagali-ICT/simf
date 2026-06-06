@@ -590,10 +590,6 @@ class AppL10n {
         'يقلل الرسوم المتحركة والانتقالات في التطبيق.',
         'Reduces animations and transitions across the app.',
       );
-  String get accessibilityDeferredNote => _t(
-        'ملاحظة: هذه الخيارات لا تُحفظ ولا تُطبّق على مستوى التطبيق بعد — سيتم تفعيلها في تحديث لاحق.',
-        'Note: these choices are not saved or applied app-wide yet — they will be enabled in a later update.',
-      );
 
   // More hub (Page 041) — navigation tiles + static version line.
   String get moreTitle => _t('المزيد', 'More');

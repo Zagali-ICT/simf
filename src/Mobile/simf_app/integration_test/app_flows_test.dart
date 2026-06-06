@@ -7,6 +7,8 @@ import 'package:simf_app/app/app.dart';
 import 'package:simf_app/app/localization/locale_controller.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/router.dart';
+import 'package:simf_app/features/accessibility/accessibility_screen.dart';
+import 'package:simf_app/features/accessibility/data/accessibility_controller.dart';
 import 'package:simf_app/features/auth/sign_in_screen.dart';
 import 'package:simf_app/features/contacts/data/contact_models.dart';
 import 'package:simf_app/features/contacts/data/contacts_repository.dart';
@@ -115,6 +117,8 @@ List<Override> _overrides(AuthState auth) {
   return <Override>[
     simfPrefsStorageProvider.overrideWithValue(prefs),
     localeControllerProvider.overrideWith(() => LocaleController(prefs: prefs)),
+    accessibilityControllerProvider
+        .overrideWith(() => AccessibilityController(prefs: prefs)),
     // Collapse the splash min-display so boot routes immediately.
     minSplashDurationProvider.overrideWithValue(Duration.zero),
     authControllerProvider.overrideWith(() => _FakeAuth(auth)),
@@ -181,5 +185,23 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(ShareMyContactScreen), findsOneWidget);
     expect(find.byType(QrImageView), findsOneWidget);
+  });
+
+  testWidgets('accessibility: changing text size + high-contrast rebuilds the '
+      'app without crashing (D-327)', (tester) async {
+    final container = await _boot(tester, _signedInApprovedVisitor());
+
+    final router = container.read(routerProvider);
+    router.goNamed(RouteNames.accessibility);
+    await tester.pumpAndSettle();
+    expect(find.byType(AccessibilityScreen), findsOneWidget);
+
+    // Large text + high contrast force the root MediaQuery + theme to swap —
+    // the whole tree must rebuild cleanly.
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Large'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(SwitchListTile, 'High contrast'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AccessibilityScreen), findsOneWidget);
   });
 }

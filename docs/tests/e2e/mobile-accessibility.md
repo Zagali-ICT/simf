@@ -2,10 +2,11 @@
 
 > **Authority:** SIMF E2E test catalogue template (D-133). Mobile catalogue —
 > this screen has **no API** (client-local settings only). The **Flutter screen
-> is built** and widget-tested in
+> is built** and tested in
 > `src/Mobile/simf_app/test/features/accessibility/accessibility_screen_test.dart`
-> (renders the three controls; toggling the high-contrast switch flips it).
-> Persistence + app-wide application are DEFERRED to a settings-store pass.
+> + `accessibility_controller_test.dart`. The choices are **persisted** (prefs)
+> and **applied app-wide** — text scaler, reduce-motion, and a high-contrast
+> theme swap (D-327).
 
 | | |
 |--|--|
@@ -21,8 +22,8 @@
 |----|----------|------|----------|--------|
 | E2E-MOB038-001 | The panel renders intro + text-size chips + the two switches | happy | P0 | authored ✓ (screen `renders the three controls`) |
 | E2E-MOB038-002 | Toggling the high-contrast switch flips its value | happy | P0 | authored ✓ (screen `toggling the high-contrast switch flips it`) |
-| E2E-MOB038-003 | Picking a text size selects that chip (local state) | happy | P1 | covered (single-select `ChoiceChip` group) |
-| E2E-MOB038-004 | Choices are not persisted / applied app-wide (DEFERRED) | edge | P2 | covered (doc-comment note — settings-store pass deferred) |
+| E2E-MOB038-003 | Picking a text size selects that chip and persists | happy | P1 | authored ✓ (screen `picking a text size persists the choice`) |
+| E2E-MOB038-004 | Choices are persisted to prefs and applied app-wide (scale / contrast / motion) | happy | P1 | authored ✓ (controller test persists; integration test rebuilds the app) |
 
 ## Scenarios
 
@@ -54,22 +55,25 @@ Scenario: The high-contrast switch toggles
 
 **Evidence:** screen test `toggling the high-contrast switch flips it`.
 
-### E2E-MOB038-003 — Text size / E2E-MOB038-004 — Deferred persistence
+### E2E-MOB038-003 — Text size persists / E2E-MOB038-004 — Applied app-wide
 
 ```gherkin
-Scenario: Picking a text size selects that chip
+Scenario: Picking a text size selects that chip and persists
   When the user taps the "Large" chip
   Then "Large" becomes the selected chip
   And the other text-size chips deselect
+  And the choice is written to prefs (accessibility_font_scale)
 
-Scenario: Choices are not yet persisted or applied
-  Given the user changes any accessibility control
-  Then the change lives only in local widget state
-  And nothing is saved or applied app-wide (deferred to a settings-store pass)
+Scenario: Accessibility choices are applied across the whole app
+  Given the user sets Large text and turns High contrast on
+  Then the root MediaQuery text scaler becomes 1.15
+  And the app theme swaps to the high-contrast variant
+  And the choices survive an app restart (read back from prefs on boot)
 ```
 
-**Evidence:** single-select `ChoiceChip` group; the deferred note is documented
-on the screen and in `Page_038/README.md`.
+**Evidence:** screen test `picking a text size persists the choice`; controller
+test (read-on-boot + each setter persists); integration test (text size +
+high-contrast rebuild the assembled app without crashing).
 
 ---
 

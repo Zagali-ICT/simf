@@ -9,6 +9,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'app/app.dart';
 import 'app/localization/locale_controller.dart';
 import 'core/env/build_config.dart';
+import 'features/accessibility/data/accessibility_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,12 @@ Future<void> main() async {
         // The locale controller — wires the prefs-backed implementation.
         localeControllerProvider.overrideWith(
           () => LocaleController(prefs: prefs),
+        ),
+
+        // The accessibility controller — persists + applies the Page 038
+        // text-size / high-contrast / reduce-motion choices app-wide.
+        accessibilityControllerProvider.overrideWith(
+          () => AccessibilityController(prefs: prefs),
         ),
 
         // The current-language provider used by the headers interceptor.

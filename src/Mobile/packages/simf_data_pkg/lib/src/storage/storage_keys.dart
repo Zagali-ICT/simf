@@ -33,8 +33,10 @@ class StorageKeys {
   static const String lastEmail = 'simf.prefs.last_email';
   static const String lastSeenNotificationsAt =
       'simf.prefs.last_seen_notifications_at_iso';
-  static const String accessibilityFontScale =
-      'simf.prefs.accessibility_font_scale';
+  static const String accessibilityTextSize =
+      'simf.prefs.accessibility_text_size';
   static const String accessibilityHighContrast =
       'simf.prefs.accessibility_high_contrast';
+  static const String accessibilityReduceMotion =
+      'simf.prefs.accessibility_reduce_motion';
 }
