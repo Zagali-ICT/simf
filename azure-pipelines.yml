@@ -203,10 +203,11 @@ stages:
           - powershell: |
               Import-Module WebAdministration
               foreach ($s in 'SIMF.API','SIMF.CP','SIMF.WEB') {
-                if (Get-Website -Name $s -ErrorAction SilentlyContinue) {
+                $site = Get-Website -Name $s -ErrorAction SilentlyContinue
+                if ($null -ne $site) {
                   Write-Host "Stopping site: $s"
                   Stop-Website -Name $s -ErrorAction SilentlyContinue
-                  $pool = (Get-Item "IIS:\Sites\$s").applications["/"].applicationPool
+                  $pool = $site.applicationPool
                   if ($pool) { Write-Host "Stopping app pool: $pool"; Stop-WebAppPool -Name $pool -ErrorAction SilentlyContinue }
                 } else { Write-Warning "IIS site not found (skip stop): $s" }
               }
@@ -228,8 +229,9 @@ stages:
           - powershell: |
               Import-Module WebAdministration
               foreach ($s in 'SIMF.API','SIMF.CP','SIMF.WEB') {
-                if (Get-Website -Name $s -ErrorAction SilentlyContinue) {
-                  $pool = (Get-Item "IIS:\Sites\$s").applications["/"].applicationPool
+                $site = Get-Website -Name $s -ErrorAction SilentlyContinue
+                if ($null -ne $site) {
+                  $pool = $site.applicationPool
                   if ($pool) { Write-Host "Starting app pool: $pool"; Start-WebAppPool -Name $pool -ErrorAction SilentlyContinue }
                   Write-Host "Starting site: $s"
                   Start-Website -Name $s -ErrorAction SilentlyContinue
