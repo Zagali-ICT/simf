@@ -2,34 +2,36 @@ import 'package:flutter/material.dart';
 
 import 'tokens.dart';
 
-/// Builds the app's [ThemeData] for light and dark modes from
-/// [SimfTokens]. Widgets read colour and type from `Theme.of(context)` so
-/// the design swap (SIMF-VID-001) is local to `tokens.dart` and this file.
+/// Builds the app's [ThemeData] from [SimfTokens] + the **IBM Plex Sans Arabic**
+/// type family (the `Mockup.html` app font, D-329). Widgets read colour and type
+/// from `Theme.of(context)`, so the design lives in `tokens.dart` + this file.
+///
+/// The dark (navy) theme is the primary brand surface and carries the mockup's
+/// component styling — cards (`rgba(255,255,255,0.04)` fill + a `--line-2`
+/// hairline, radius 8), accent buttons (navy-on-gold), pill chips, hairline
+/// dividers and a navy bottom-nav.
 class SimfTheme {
   SimfTheme._();
 
-  static ThemeData light() {
-    return ThemeData(
-      brightness: Brightness.light,
-      useMaterial3: true,
-      colorScheme: const ColorScheme.light(
-        primary: SimfTokens.navy,
-        onPrimary: SimfTokens.surface,
-        secondary: SimfTokens.accent,
-        onSecondary: SimfTokens.navy,
-        surface: SimfTokens.surface,
-        onSurface: SimfTokens.ink,
-        error: SimfTokens.danger,
-        onError: SimfTokens.surface,
-      ),
-      scaffoldBackgroundColor: SimfTokens.background,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: SimfTokens.navy,
-        foregroundColor: SimfTokens.surface,
+  /// The bundled mockup type family (assets/fonts, OFL) — set as each theme's
+  /// `fontFamily` so every text style renders in IBM Plex Sans Arabic.
+  static const String fontFamily = 'IBMPlexSansArabic';
+
+  static AppBarTheme _appBar(Color bg, Color fg) => AppBarTheme(
+        backgroundColor: bg,
+        foregroundColor: fg,
         elevation: 0,
         centerTitle: true,
-      ),
-      filledButtonTheme: FilledButtonThemeData(
+        titleTextStyle: TextStyle(
+          fontFamily: fontFamily,
+          color: fg,
+          fontSize: SimfTokens.textLg,
+          fontWeight: FontWeight.w700,
+        ),
+      );
+
+  /// The gold primary button (navy text) used across the app.
+  static FilledButtonThemeData get _accentButton => FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: SimfTokens.accent,
           foregroundColor: SimfTokens.navy,
@@ -41,6 +43,35 @@ class SimfTheme {
             fontWeight: FontWeight.w700,
             fontSize: SimfTokens.textMd,
           ),
+        ),
+      );
+
+  static ThemeData light() {
+    final theme = ThemeData(
+      brightness: Brightness.light,
+      useMaterial3: true,
+      fontFamily: fontFamily,
+      colorScheme: const ColorScheme.light(
+        primary: SimfTokens.navy,
+        onPrimary: SimfTokens.surface,
+        secondary: SimfTokens.accent,
+        onSecondary: SimfTokens.navy,
+        surface: SimfTokens.surface,
+        onSurface: SimfTokens.ink,
+        onSurfaceVariant: SimfTokens.inkMuted,
+        error: SimfTokens.danger,
+        onError: SimfTokens.surface,
+      ),
+      scaffoldBackgroundColor: SimfTokens.background,
+      appBarTheme: _appBar(SimfTokens.navy, SimfTokens.surface),
+      filledButtonTheme: _accentButton,
+      cardTheme: CardThemeData(
+        color: SimfTokens.surface,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(SimfTokens.radius),
+          side: const BorderSide(color: SimfTokens.lineLight),
         ),
       ),
       inputDecorationTheme: const InputDecorationTheme(
@@ -50,38 +81,37 @@ class SimfTheme {
           borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
           borderSide: BorderSide.none,
         ),
-        contentPadding:
-            EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
     );
+    return theme;
   }
 
   static ThemeData dark() {
-    return ThemeData(
+    final theme = ThemeData(
       brightness: Brightness.dark,
       useMaterial3: true,
+      fontFamily: fontFamily,
       colorScheme: const ColorScheme.dark(
         primary: SimfTokens.accent,
         onPrimary: SimfTokens.navy,
         secondary: SimfTokens.accent,
         onSecondary: SimfTokens.navy,
-        surface: SimfTokens.navyDeep,
+        surface: SimfTokens.navy,
         onSurface: SimfTokens.surface,
+        onSurfaceVariant: SimfTokens.txtSecondary,
+        outline: SimfTokens.line,
         error: SimfTokens.danger,
         onError: SimfTokens.surface,
       ),
       scaffoldBackgroundColor: SimfTokens.navy,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: SimfTokens.navy,
-        foregroundColor: SimfTokens.surface,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          backgroundColor: SimfTokens.accent,
-          foregroundColor: SimfTokens.navy,
-          minimumSize: const Size.fromHeight(48),
+      appBarTheme: _appBar(SimfTokens.navy, SimfTokens.surface),
+      filledButtonTheme: _accentButton,
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: SimfTokens.surface,
+          minimumSize: const Size.fromHeight(44),
+          side: const BorderSide(color: SimfTokens.line),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SimfTokens.radius),
           ),
@@ -91,26 +121,81 @@ class SimfTheme {
           ),
         ),
       ),
+      cardTheme: CardThemeData(
+        color: SimfTokens.surfaceTint,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(SimfTokens.radius),
+          side: const BorderSide(color: SimfTokens.line2),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: Colors.transparent,
+        selectedColor: const Color(0x14C9A14A), // accent 8%
+        side: const BorderSide(color: SimfTokens.line),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(6),
+        ),
+        labelStyle: const TextStyle(
+          color: SimfTokens.txtSecondary,
+          fontSize: SimfTokens.textSm,
+          fontWeight: FontWeight.w600,
+        ),
+        secondaryLabelStyle: const TextStyle(
+          color: SimfTokens.surface,
+          fontSize: SimfTokens.textSm,
+          fontWeight: FontWeight.w600,
+        ),
+        showCheckmark: false,
+      ),
+      dividerTheme: const DividerThemeData(
+        color: SimfTokens.line2,
+        thickness: 1,
+        space: 1,
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: SimfTokens.navy,
+        selectedItemColor: SimfTokens.accent,
+        unselectedItemColor: SimfTokens.txtTertiary,
+        type: BottomNavigationBarType.fixed,
+        elevation: 0,
+        showUnselectedLabels: true,
+      ),
+      listTileTheme: const ListTileThemeData(
+        iconColor: SimfTokens.txtSecondary,
+        textColor: SimfTokens.surface,
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.04),
+        fillColor: SimfTokens.surfaceTint,
+        hintStyle: const TextStyle(color: SimfTokens.txtTertiary),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(SimfTokens.radius),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: SimfTokens.line2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(SimfTokens.radius),
+          borderSide: const BorderSide(color: SimfTokens.line2),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(SimfTokens.radius),
+          borderSide: const BorderSide(color: SimfTokens.accent),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
     );
+    return theme;
   }
 
   /// High-contrast light theme — maximised text/background contrast for the
-  /// Page 038 "high contrast" toggle. Built from the `hcLight*` tokens so the
-  /// design swap stays local to `tokens.dart` and this file.
+  /// Page 038 "high contrast" toggle. Built from the `hcLight*` tokens.
   static ThemeData highContrastLight() {
-    return ThemeData(
+    final theme = ThemeData(
       brightness: Brightness.light,
       useMaterial3: true,
+      fontFamily: fontFamily,
       colorScheme: const ColorScheme.light(
         primary: SimfTokens.hcLightInk,
         onPrimary: SimfTokens.hcLightSurface,
@@ -122,12 +207,7 @@ class SimfTheme {
         onError: SimfTokens.hcLightSurface,
       ),
       scaffoldBackgroundColor: SimfTokens.hcLightSurface,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: SimfTokens.hcLightInk,
-        foregroundColor: SimfTokens.hcLightSurface,
-        elevation: 0,
-        centerTitle: true,
-      ),
+      appBarTheme: _appBar(SimfTokens.hcLightInk, SimfTokens.hcLightSurface),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: SimfTokens.hcLightInk,
@@ -152,13 +232,15 @@ class SimfTheme {
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
     );
+    return theme;
   }
 
   /// High-contrast dark theme — the dark-mode counterpart (white on black).
   static ThemeData highContrastDark() {
-    return ThemeData(
+    final theme = ThemeData(
       brightness: Brightness.dark,
       useMaterial3: true,
+      fontFamily: fontFamily,
       colorScheme: const ColorScheme.dark(
         primary: SimfTokens.hcDarkInk,
         onPrimary: SimfTokens.hcDarkSurface,
@@ -170,12 +252,7 @@ class SimfTheme {
         onError: SimfTokens.hcDarkInk,
       ),
       scaffoldBackgroundColor: SimfTokens.hcDarkSurface,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: SimfTokens.hcDarkSurface,
-        foregroundColor: SimfTokens.hcDarkInk,
-        elevation: 0,
-        centerTitle: true,
-      ),
+      appBarTheme: _appBar(SimfTokens.hcDarkSurface, SimfTokens.hcDarkInk),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: SimfTokens.hcDarkInk,
@@ -200,5 +277,6 @@ class SimfTheme {
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
     );
+    return theme;
   }
 }

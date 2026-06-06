@@ -65,3 +65,18 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: false
+  # Mockup typography — IBM Plex Sans Arabic (the Mockup.html app font, OFL),
+  # bundled as an asset so it renders offline + deterministically on every
+  # platform incl. web (no runtime font fetch). Applied app-wide by SimfTheme
+  # via `fontFamily` so the UI matches the approved design (D-329).
+  fonts:
+    - family: IBMPlexSansArabic
+      fonts:
+        - asset: assets/fonts/IBMPlexSansArabic-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/IBMPlexSansArabic-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexSansArabic-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/IBMPlexSansArabic-Bold.ttf
+          weight: 700
