@@ -1,0 +1,151 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/features/notifications/data/notification_models.dart';
+import 'package:simf_app/features/notifications/data/notifications_repository.dart';
+import 'package:simf_app/features/notifications/notifications_screen.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+NotificationItem _item({
+  String id = 'n1',
+  String title = 'Session starts soon',
+  bool isRead = false,
+  NotificationSeverity severity = NotificationSeverity.warning,
+}) {
+  return NotificationItem(
+    id: id,
+    kind: 'SessionReminder',
+    title: title,
+    titleArabic: '',
+    body: 'Hall A in 15 minutes.',
+    bodyArabic: '',
+    severity: severity,
+    isRead: isRead,
+  );
+}
+
+/// A fake repository (via `implements`, so it needs no real [SimfApiClient]):
+/// returns a configurable list (or throws), and records the read calls.
+class _FakeNotificationsRepository implements NotificationsRepository {
+  _FakeNotificationsRepository({
+    this.items = const <NotificationItem>[],
+    this.fail = false,
+  });
+
+  List<NotificationItem> items;
+  bool fail;
+  int listCalls = 0;
+  int markAllCalls = 0;
+  final List<String> readIds = <String>[];
+
+  @override
+  Future<int> getUnreadCount() async => items.where((n) => !n.isRead).length;
+
+  @override
+  Future<List<NotificationItem>> getNotifications({int skip = 0, int top = 50}) async {
+    listCalls++;
+    if (fail) {
+      throw const ApiFailure(code: ApiErrorCodes.clientNetwork, message: 'x');
+    }
+    return items;
+  }
+
+  @override
+  Future<bool> markRead(String id) async {
+    readIds.add(id);
+    return true;
+  }
+
+  @override
+  Future<bool> markAllRead() async {
+    markAllCalls++;
+    return true;
+  }
+}
+
+Future<void> _pump(
+  WidgetTester tester, {
+  required NotificationsRepository repo,
+}) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: <Override>[
+        notificationsRepositoryProvider.overrideWithValue(repo),
+      ],
+      child: MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: AppL10n.supportedLocales,
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+          ...AppL10n.localizationsDelegates,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: const NotificationsScreen(),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+void main() {
+  group('NotificationsScreen (Page 033)', () {
+    testWidgets('renders the notification list', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeNotificationsRepository(
+          items: <NotificationItem>[_item()],
+        ),
+      );
+      expect(find.text('Session starts soon'), findsOneWidget);
+      expect(find.text('Hall A in 15 minutes.'), findsOneWidget);
+    });
+
+    testWidgets('empty list shows the empty state', (tester) async {
+      await _pump(tester, repo: _FakeNotificationsRepository());
+      expect(find.text('No notifications yet'), findsOneWidget);
+    });
+
+    testWidgets('error shows retry, which re-fetches', (tester) async {
+      final repo = _FakeNotificationsRepository(fail: true);
+      await _pump(tester, repo: repo);
+      expect(find.text('Could not load your notifications.'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Retry'));
+      await tester.pumpAndSettle();
+      expect(repo.listCalls, greaterThanOrEqualTo(2));
+    });
+
+    testWidgets('tapping an unread row marks it read then refreshes', (tester) async {
+      final repo = _FakeNotificationsRepository(
+        items: <NotificationItem>[_item()],
+      );
+      await _pump(tester, repo: repo);
+      await tester.tap(find.text('Session starts soon'));
+      await tester.pumpAndSettle();
+      expect(repo.readIds, contains('n1'));
+      expect(repo.listCalls, greaterThanOrEqualTo(2));
+    });
+
+    testWidgets('mark-all action calls the repo when there is unread', (tester) async {
+      final repo = _FakeNotificationsRepository(
+        items: <NotificationItem>[_item()],
+      );
+      await _pump(tester, repo: repo);
+      await tester.tap(find.byIcon(Icons.done_all));
+      await tester.pumpAndSettle();
+      expect(repo.markAllCalls, 1);
+    });
+
+    testWidgets('no mark-all action when everything is read', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeNotificationsRepository(
+          items: <NotificationItem>[_item(isRead: true)],
+        ),
+      );
+      expect(find.byIcon(Icons.done_all), findsNothing);
+    });
+  });
+}

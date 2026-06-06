@@ -182,6 +182,11 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | #37 `aboutForum` (`GET /app/content/about`) | 🟢 Screen built (D-311) | Guest+ | [App/Page_037](../App/Page_037/README.md) | [e2e/mobile-about.md](../tests/e2e/mobile-about.md) |
 | #40 `rate` (`POST /app/feedback/rate`) | 🟢 Screen built (D-310) | Visitor (login-only) | [App/Page_040](../App/Page_040/README.md) | [e2e/mobile-rate.md](../tests/e2e/mobile-rate.md) |
 | #31 `mediaPartners` (`GET /app/media-partners`) | 🟢 Screen built (D-306) | Guest+ | [App/Page_031](../App/Page_031/README.md) | [e2e/mobile-media-partners.md](../tests/e2e/mobile-media-partners.md) |
+| #12 `guestMode` (no API) | 🟢 Screen built (D-316) | Guest | [App/Page_012](../App/Page_012/README.md) | [e2e/mobile-guest-mode.md](../tests/e2e/mobile-guest-mode.md) |
+| #33 `notifications` (`POST /app/account/notifications/list` + `/{id}/read` + `/read-all`) | 🟢 Screen built (D-312) | Signed-in | [App/Page_033](../App/Page_033/README.md) | [e2e/mobile-notifications.md](../tests/e2e/mobile-notifications.md) |
+| #35 `meetPeople` (`GET /app/account/recommendations/meet-like-you`) | 🟢 Screen built (D-313) | Visitor (login-only) | [App/Page_035](../App/Page_035/README.md) | [e2e/mobile-meet-people.md](../tests/e2e/mobile-meet-people.md) |
+| #38 `accessibility` (no API) | 🟢 Screen built (D-314) | Guest+ | [App/Page_038](../App/Page_038/README.md) | [e2e/mobile-accessibility.md](../tests/e2e/mobile-accessibility.md) |
+| #41 `more` (no API) | 🟢 Screen built (D-315) | Guest+ | [App/Page_041](../App/Page_041/README.md) | [e2e/mobile-more.md](../tests/e2e/mobile-more.md) |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | ✅ API built (NEW, D-273) | Public (anonymous) | [App/Page_024-01](../App/Page_024-01/README.md) | [e2e/mobile-archive-detail.md](../tests/e2e/mobile-archive-detail.md) |
 
 ---

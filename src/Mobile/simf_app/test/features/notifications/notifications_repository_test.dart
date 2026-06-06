@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:simf_app/features/notifications/data/notification_models.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -48,6 +49,16 @@ class _FakeNotificationsRepository implements NotificationsRepository {
     }
     return count;
   }
+
+  @override
+  Future<List<NotificationItem>> getNotifications({int skip = 0, int top = 50}) async =>
+      const <NotificationItem>[];
+
+  @override
+  Future<bool> markRead(String id) async => true;
+
+  @override
+  Future<bool> markAllRead() async => true;
 }
 
 void main() {

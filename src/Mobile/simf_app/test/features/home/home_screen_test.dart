@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/home/home_screen.dart';
+import 'package:simf_app/features/notifications/data/notification_models.dart';
 import 'package:simf_app/features/notifications/data/notifications_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 
@@ -47,6 +48,16 @@ class _FakeNotificationsRepository implements NotificationsRepository {
 
   @override
   Future<int> getUnreadCount() async => count;
+
+  @override
+  Future<List<NotificationItem>> getNotifications({int skip = 0, int top = 50}) async =>
+      const <NotificationItem>[];
+
+  @override
+  Future<bool> markRead(String id) async => true;
+
+  @override
+  Future<bool> markAllRead() async => true;
 }
 
 Future<void> _pump(

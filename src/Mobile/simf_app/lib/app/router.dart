@@ -23,6 +23,11 @@ import '../features/gallery/gallery_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/media_partners/media_partners_screen.dart';
 import '../features/news/news_screen.dart';
+import '../features/accessibility/accessibility_screen.dart';
+import '../features/guest/guest_mode_screen.dart';
+import '../features/meet/meet_people_screen.dart';
+import '../features/more/more_screen.dart';
+import '../features/notifications/notifications_screen.dart';
 import '../features/myarea/my_area_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/venuemap/venue_map_screen.dart';
@@ -277,6 +282,21 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.rate) {
               return const RateScreen();
+            }
+            if (r.name == RouteNames.notifications) {
+              return const NotificationsScreen();
+            }
+            if (r.name == RouteNames.meetPeople) {
+              return const MeetPeopleScreen();
+            }
+            if (r.name == RouteNames.accessibility) {
+              return const AccessibilityScreen();
+            }
+            if (r.name == RouteNames.more) {
+              return const MoreScreen();
+            }
+            if (r.name == RouteNames.guestMode) {
+              return const GuestModeScreen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,

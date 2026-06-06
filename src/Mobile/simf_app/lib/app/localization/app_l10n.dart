@@ -547,6 +547,76 @@ class AppL10n {
       _t('تعذّر تحميل الشركاء الإعلاميين.', 'Could not load the media partners.');
   String get mediaPartnersEmpty =>
       _t('لا يوجد شركاء إعلاميون', 'No media partners');
+
+  // Notifications (Page 033).
+  String get notificationsTitle => _t('الإشعارات', 'Notifications');
+  String get notificationsEmpty =>
+      _t('لا توجد إشعارات بعد', 'No notifications yet');
+  String get notificationsError =>
+      _t('تعذّر تحميل إشعاراتك.', 'Could not load your notifications.');
+  String get notificationsMarkAll => _t('تعليم الكل كمقروء', 'Mark all read');
+  String get notificationsMarkAllFailed =>
+      _t('تعذّر تعليم الإشعارات كمقروءة.', 'Could not mark the notifications read.');
+
+  // Meet people (Page 035).
+  String get meetPeopleTitle => _t('قابل أشخاص مثلك', 'Meet people');
+  String get meetPeopleEmpty => _t('لا توجد تطابقات بعد', 'No matches yet');
+  String get meetPeopleError =>
+      _t('تعذّر تحميل التطابقات الخاصة بك.', 'Could not load your matches.');
+  String meetPeopleSharedInterests(int count) =>
+      _t('$count اهتمامات مشتركة', '$count shared interests');
+
+  // Accessibility (Page 038 — client-local settings, no API).
+  String get accessibilityTitle => _t('إمكانية الوصول', 'Accessibility');
+  String get accessibilityIntro => _t(
+        'اضبط تجربة العرض بما يناسبك. هذه الإعدادات محلية على جهازك.',
+        'Adjust the display to suit you. These settings are local to your device.',
+      );
+  String get accessibilityTextSizeLabel => _t('حجم النص', 'Text size');
+  String get accessibilityTextSizeSmall => _t('صغير', 'Small');
+  String get accessibilityTextSizeDefault => _t('افتراضي', 'Default');
+  String get accessibilityTextSizeLarge => _t('كبير', 'Large');
+  String get accessibilityHighContrastTitle =>
+      _t('تباين عالٍ', 'High contrast');
+  String get accessibilityHighContrastSubtitle => _t(
+        'يزيد التباين بين النص والخلفية لتسهيل القراءة.',
+        'Increases the contrast between text and background for easier reading.',
+      );
+  String get accessibilityReduceMotionTitle =>
+      _t('تقليل الحركة', 'Reduce motion');
+  String get accessibilityReduceMotionSubtitle => _t(
+        'يقلل الرسوم المتحركة والانتقالات في التطبيق.',
+        'Reduces animations and transitions across the app.',
+      );
+  String get accessibilityDeferredNote => _t(
+        'ملاحظة: هذه الخيارات لا تُحفظ ولا تُطبّق على مستوى التطبيق بعد — سيتم تفعيلها في تحديث لاحق.',
+        'Note: these choices are not saved or applied app-wide yet — they will be enabled in a later update.',
+      );
+
+  // More hub (Page 041) — navigation tiles + static version line.
+  String get moreTitle => _t('المزيد', 'More');
+  String get moreAbout => _t('عن الملتقى', 'About the forum');
+  String get moreAccessibility => _t('إمكانية الوصول', 'Accessibility');
+  String get moreTerms => _t('الشروط والأحكام', 'Terms & conditions');
+  String get moreRate => _t('تقييم', 'Rate');
+  String get moreNotifications => _t('الإشعارات', 'Notifications');
+  String get moreMediaPartners => _t('الشركاء الإعلاميون', 'Media partners');
+  String get moreVersion => _t('الملتقى البحري v0.1.0', 'SIMF v0.1.0');
+
+  // Guest mode (Page 012 — informational entry).
+  String get guestModeTitle => _t('وضع الضيف', 'Guest mode');
+  String get guestModeHeadline => _t('التصفح كضيف', 'Browsing as guest');
+  String get guestModeBrowseBody => _t(
+        'يمكنك كضيف تصفّح الجلسات والمتحدثين والخريطة التفاعلية والوسائط.',
+        'As a guest you can browse the sessions, speakers, the venue map and the media.',
+      );
+  String get guestModeSignInBody => _t(
+        'سجّل الدخول للحصول على بطاقتك الذكية والإشعارات الشخصية وحجز المقاعد.',
+        'Sign in to get your smart badge, personal notifications and booking.',
+      );
+  String get guestModeContinueButton =>
+      _t('المتابعة كضيف', 'Continue as guest');
+  String get guestModeSignInButton => _t('تسجيل الدخول', 'Sign in');
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {
