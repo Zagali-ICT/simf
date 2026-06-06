@@ -227,6 +227,22 @@ builder.Services.SwaggerDocument(options =>
 // Readiness checks (SIMF-OPS-001 Amendment A.4).
 builder.Services.AddHealthChecks();
 
+// Dev-only CORS — lets a `flutter run -d chrome` web session (a different
+// origin, e.g. http://localhost:8080) call the App API for local diagnostics.
+// NEVER registered outside Development: production is single-origin behind the
+// reverse proxy, so no browser cross-origin call exists there. Origins come
+// from Cors:DevWebOrigins (appsettings.Development.json); default localhost:8080.
+const string devWebCorsPolicy = "DevWebCors";
+if (builder.Environment.IsDevelopment())
+{
+    var devWebOrigins =
+        builder.Configuration.GetSection("Cors:DevWebOrigins").Get<string[]>()
+        ?? ["http://localhost:8080"];
+    builder.Services.AddCors(options => options.AddPolicy(
+        devWebCorsPolicy,
+        policy => policy.WithOrigins(devWebOrigins).AllowAnyHeader().AllowAnyMethod()));
+}
+
 // JWT signing settings. The key must be present and long enough for HMAC-SHA256
 // — a missing or weak key would let an attacker forge tokens.
 var jwtOptions =
@@ -329,6 +345,14 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 
 // Error handling wraps the rest of the pipeline (SIMF-Sprint1 plan section 7).
 app.UseMiddleware<ErrorHandlingMiddleware>();
+
+// Dev-only: apply the web CORS policy before rate-limiting/auth so the browser
+// preflight (OPTIONS) is answered and the cross-origin App-API call succeeds.
+// Gated to Development to match the registration above.
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors(devWebCorsPolicy);
+}
 
 // H7 — D-062: peek the request body for the email field on credential
 // paths so the "auth-email" rate-limit policy can key its partition on

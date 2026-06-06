@@ -1,15 +1,14 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../core/sharing/content_sharer.dart';
 import 'data/contact_models.dart';
 import 'data/contacts_repository.dart';
 import 'widgets/contact_card.dart';
@@ -201,11 +200,10 @@ class _SavedContactSheetState extends ConsumerState<_SavedContactSheet> {
     try {
       final vcf =
           await ref.read(contactsRepositoryProvider).getVcard(widget.row.id);
-      final dir = await Directory.systemTemp.createTemp('simf_share');
-      final file = File('${dir.path}/simf-contact.vcf');
-      await file.writeAsString(vcf);
-      await Share.shareXFiles(
-        <XFile>[XFile(file.path, mimeType: 'text/vcard')],
+      await shareTextContent(
+        content: vcf,
+        filename: 'simf-contact.vcf',
+        mimeType: 'text/vcard',
       );
       if (mounted) {
         setState(() => _busy = false);

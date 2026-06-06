@@ -1,14 +1,13 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../core/sharing/content_sharer.dart';
 import '../myarea/data/myarea_repository.dart';
 import 'data/contacts_repository.dart';
 
@@ -118,11 +117,10 @@ class _ShareMyContactScreenState extends ConsumerState<ShareMyContactScreen> {
     final l10n = AppL10n.of(context);
     try {
       final vcf = await ref.read(myAreaRepositoryProvider).getContactCardVcf();
-      final dir = await Directory.systemTemp.createTemp('simf_share');
-      final file = File('${dir.path}/simf.vcf');
-      await file.writeAsString(vcf);
-      await Share.shareXFiles(
-        <XFile>[XFile(file.path, mimeType: 'text/vcard')],
+      await shareTextContent(
+        content: vcf,
+        filename: 'simf.vcf',
+        mimeType: 'text/vcard',
       );
     } on ApiFailure {
       if (!mounted) {

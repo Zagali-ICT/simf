@@ -1,17 +1,16 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../core/sharing/content_sharer.dart';
 import 'data/myarea_models.dart';
 import 'data/myarea_repository.dart';
 
@@ -102,12 +101,11 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   ) async {
     try {
       final content = await fetch();
-      // Write to a real temp path (no path_provider needed) and share that file
-      // so the OS offers add-to-calendar / add-contact rather than plain text.
-      final dir = await Directory.systemTemp.createTemp('simf_share');
-      final file = File('${dir.path}/$filename');
-      await file.writeAsString(content);
-      await Share.shareXFiles(<XFile>[XFile(file.path, mimeType: mimeType)]);
+      await shareTextContent(
+        content: content,
+        filename: filename,
+        mimeType: mimeType,
+      );
     } on ApiFailure {
       if (!mounted) {
         return;

@@ -31,8 +31,8 @@ class SimfDataConfig {
   /// shell. Never committed.
   final String appKey;
 
-  /// The `X-Device-Type` header value: `Android` or `iOS`. The main app
-  /// computes this from `Platform` at startup.
+  /// The `X-Device-Type` header value: `Android`, `iOS`, or (dev only) `Web`.
+  /// The main app computes this from the platform at startup.
   final SimfDeviceType deviceType;
 
   final Duration connectTimeout;
@@ -45,11 +45,13 @@ class SimfDataConfig {
 }
 
 /// The legal values for the `X-Device-Type` header that come from the
-/// mobile app (SIMF-API-001 §5). `Web` and `ControlPanel` exist on the
-/// header contract but are not produced by this codebase.
+/// mobile app (SIMF-API-001 §5). `web` is sent only by a dev-diagnostics
+/// `flutter run -d chrome` session (SIMF-MAA-001 §2 ships Android + iOS);
+/// `ControlPanel` exists on the header contract but is not produced here.
 enum SimfDeviceType {
   android('Android'),
-  ios('iOS');
+  ios('iOS'),
+  web('Web');
 
   const SimfDeviceType(this.headerValue);
   final String headerValue;

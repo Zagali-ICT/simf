@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,13 +58,14 @@ Future<void> main() async {
 }
 
 SimfDeviceType _deviceType() {
+  // Web is a dev-diagnostics target only (SIMF-MAA-001 §2 ships Android + iOS);
+  // a `flutter run -d chrome` session reports the truthful Web device type.
   if (kIsWeb) {
-    // Flutter web is not in scope (SIMF-MAA-001 §2), but we don't want
-    // `Platform` accesses to crash if someone runs `flutter run -d chrome`
-    // for diagnostics; default to Android in that case.
-    return SimfDeviceType.android;
+    return SimfDeviceType.web;
   }
-  if (Platform.isIOS) {
+  // `defaultTargetPlatform` (foundation) is web-safe and avoids a `dart:io`
+  // import; with the kIsWeb guard above it only runs on a real device.
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
     return SimfDeviceType.ios;
   }
   return SimfDeviceType.android;
