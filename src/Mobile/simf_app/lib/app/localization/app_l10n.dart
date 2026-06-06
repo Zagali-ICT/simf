@@ -499,6 +499,29 @@ class AppL10n {
       _t('تعذّر تحميل الرعاة.', 'Could not load the sponsors.');
   String get sponsorsEmpty => _t('لا يوجد رعاة', 'No sponsors');
 
+  // Archive (Page 024).
+  String get archiveTitle => _t('الأرشيف', 'Archive');
+  String get archiveError =>
+      _t('تعذّر تحميل الأرشيف.', 'Could not load the archive.');
+  String get archiveEmpty => _t('لا توجد نسخ سابقة', 'No past editions');
+  String archiveStats(int attendees, int sessions, int speakers) => _t(
+        '$attendees حضور · $sessions جلسة · $speakers متحدث',
+        '$attendees attendees · $sessions sessions · $speakers speakers',
+      );
+
+  // News (Page 029).
+  String get newsTitle => _t('الأخبار', 'News');
+  String get newsError => _t('تعذّر تحميل الأخبار.', 'Could not load the news.');
+  String get newsEmpty => _t('لا توجد أخبار', 'No news');
+  String get newsNotFound => _t('الخبر غير موجود', 'This article was not found');
+
+  // Media gallery (Page 030).
+  String get galleryTitle =>
+      _t('معرض الصور والفيديوهات', 'Media gallery');
+  String get galleryError =>
+      _t('تعذّر تحميل الوسائط.', 'Could not load the media.');
+  String get galleryEmpty => _t('لا توجد وسائط', 'No media yet');
+
   // Media partners (Page 031).
   String get mediaPartnersTitle => _t('الشركاء الإعلاميون', 'Media partners');
   String get mediaPartnersError =>

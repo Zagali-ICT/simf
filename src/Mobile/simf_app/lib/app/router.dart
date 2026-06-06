@@ -13,11 +13,14 @@ import '../features/auth/reset_password_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/auth/sign_up_email_verify_screen.dart';
 import '../features/auth/sign_up_form_screen.dart';
+import '../features/archive/archive_screen.dart';
 import '../features/auth/sign_up_type_screen.dart';
 import '../features/booths/booths_screen.dart';
 import '../features/content/terms_screen.dart';
+import '../features/gallery/gallery_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/media_partners/media_partners_screen.dart';
+import '../features/news/news_screen.dart';
 import '../features/myarea/my_area_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/venuemap/venue_map_screen.dart';
@@ -256,6 +259,15 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.mediaPartners) {
               return const MediaPartnersScreen();
+            }
+            if (r.name == RouteNames.archive) {
+              return const ArchiveScreen();
+            }
+            if (r.name == RouteNames.news) {
+              return const NewsScreen();
+            }
+            if (r.name == RouteNames.gallery) {
+              return const GalleryScreen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,
