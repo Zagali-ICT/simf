@@ -4,6 +4,12 @@
 > purpose, define / generate meeting tables (random-by-count or by row-column,
 > stop-at-max), and reserve hall space (whole / random-by-count / row-column) over
 > a from–to time-slot.
+>
+> **Page shape (D-338):** the meeting-tables and hall-allocations lists are now
+> two `SimfDataGrid`s (server-paged, select-all, numbered pager, per-row icon
+> actions) under the hall picker + purpose row; **Generate** lives in the tables
+> grid's `CustomToolbar`. Create/Edit/Delete(Release) are API-enforced (page gate
+> `MeetingTables.View`). The three modals are unchanged.
 
 | | |
 |--|--|

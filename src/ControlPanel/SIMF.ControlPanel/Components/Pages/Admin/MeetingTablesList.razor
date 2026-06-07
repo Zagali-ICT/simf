@@ -53,101 +53,77 @@
             </div>
 
             <h3>@L["Admin.MeetingTables.Tables.Heading"]</h3>
-            <div class="simf-form__actions">
-                <AuthorizedAction Permission="@PermissionCatalog.MeetingTables.Edit">
-                    <SimfButton Type="button" OnClick="OnAddTable">@L["Admin.MeetingTables.AddTable"]</SimfButton>
-                </AuthorizedAction>
-                <AuthorizedAction Permission="@PermissionCatalog.MeetingTables.Edit">
-                    <SimfButton Type="button" OnClick="OnGenerate">@L["Admin.MeetingTables.Generate"]</SimfButton>
-                </AuthorizedAction>
-            </div>
-            @if (_tables.Count == 0)
-            {
-                <SimfEmptyState Title="@L["Admin.MeetingTables.Tables.None"]" />
-            }
-            else
-            {
-                <table class="simf-table">
-                    <thead>
-                        <tr>
-                            <th>@L["Admin.MeetingTables.Col.Code"]</th>
-                            <th>@L["Admin.MeetingTables.Col.Row"]</th>
-                            <th>@L["Admin.MeetingTables.Col.Column"]</th>
-                            <th>@L["Admin.MeetingTables.Col.Capacity"]</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var t in _tables)
-                        {
-                            <tr>
-                                <td>@t.Code</td>
-                                <td>@(t.RowLabel ?? "—")</td>
-                                <td>@(t.ColumnNumber?.ToString() ?? "—")</td>
-                                <td>@t.Capacity</td>
-                                <td>
-                                    <AuthorizedAction Permission="@PermissionCatalog.MeetingTables.Edit">
-                                        <SimfButton Type="button" Disabled="_busy"
-                                                    OnClick="@(() => OnEditTable(t))">
-                                            @L["Admin.MeetingTables.Edit"]
-                                        </SimfButton>
-                                    </AuthorizedAction>
-                                    <AuthorizedAction Permission="@PermissionCatalog.MeetingTables.Edit">
-                                        <SimfButton Type="button" Disabled="_busy"
-                                                    OnClick="@(() => OnDeleteTableAsync(t))">
-                                            @L["Admin.MeetingTables.Delete"]
-                                        </SimfButton>
-                                    </AuthorizedAction>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            }
+            <SimfDataGrid TItem="MeetingTableRow"
+                          Query="_tableQuery" Page="_tablePage" Loading="_tableLoading"
+                          OnQueryChanged="OnTableQueryChangedAsync"
+                          Multiselect="true" RowKey="@(r => r.Id.ToString())" RowLabel="@(r => r.Code)"
+                          Caption="@L["Admin.MeetingTables.Tables.Heading"]"
+                          OnAdd="OnAddTable" OnEditOne="OnEditTable" OnDeleteOne="OnDeleteTableAsync"
+                          PrevLabel="@L["Grid.Prev"]" NextLabel="@L["Grid.Next"]"
+                          FirstLabel="@L["Grid.First"]" LastLabel="@L["Grid.Last"]"
+                          PageSizeLabel="@L["Grid.PageSize"]" PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Grid.Loading"]" ActionsHeader="@L["Grid.Actions"]"
+                          SelectAllLabel="@L["Grid.SelectAll"]" SelectRowLabel="@L["Grid.SelectRow"]"
+                          AddLabel="@L["Admin.MeetingTables.AddTable"]"
+                          EditLabel="@L["Grid.Edit"]" DeleteLabel="@L["Grid.Delete"]"
+                          SummaryFormatter="@FormatSummary">
+                <Columns>
+                    <SimfDataGridColumn TItem="MeetingTableRow" Key="code" Header="@L["Admin.MeetingTables.Col.Code"]">
+                        <CellTemplate>@context.Code</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="MeetingTableRow" Key="row" Header="@L["Admin.MeetingTables.Col.Row"]">
+                        <CellTemplate>@(context.RowLabel ?? "—")</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="MeetingTableRow" Key="column" Header="@L["Admin.MeetingTables.Col.Column"]">
+                        <CellTemplate>@(context.ColumnNumber?.ToString() ?? "—")</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="MeetingTableRow" Key="capacity" Header="@L["Admin.MeetingTables.Col.Capacity"]">
+                        <CellTemplate>@context.Capacity</CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <CustomToolbar>
+                    <SimfToolbarButton Icon="flask" Title="@L["Admin.MeetingTables.Generate"]" OnClick="OnGenerate">
+                        @L["Admin.MeetingTables.Generate"]
+                    </SimfToolbarButton>
+                </CustomToolbar>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.MeetingTables.Tables.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
 
             <h3>@L["Admin.MeetingTables.Allocations.Heading"]</h3>
-            <div class="simf-form__actions">
-                <AuthorizedAction Permission="@PermissionCatalog.HallAllocations.Edit">
-                    <SimfButton Type="button" OnClick="OnAddAllocation">@L["Admin.MeetingTables.AddAllocation"]</SimfButton>
-                </AuthorizedAction>
-            </div>
-            @if (_allocations.Count == 0)
-            {
-                <SimfEmptyState Title="@L["Admin.MeetingTables.Allocations.None"]" />
-            }
-            else
-            {
-                <table class="simf-table">
-                    <thead>
-                        <tr>
-                            <th>@L["Admin.MeetingTables.Col.Purpose"]</th>
-                            <th>@L["Admin.MeetingTables.Col.Mode"]</th>
-                            <th>@L["Admin.MeetingTables.Col.Start"]</th>
-                            <th>@L["Admin.MeetingTables.Col.End"]</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var a in _allocations)
-                        {
-                            <tr>
-                                <td>@a.Purpose</td>
-                                <td>@a.Mode @(a.Mode == HallAllocationMode.RandomByCount ? $"({a.UnitCount})" : a.Mode == HallAllocationMode.RowColumn ? $"({a.RowColumnSpec})" : "")</td>
-                                <td>@a.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</td>
-                                <td>@a.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</td>
-                                <td>
-                                    <AuthorizedAction Permission="@PermissionCatalog.HallAllocations.Edit">
-                                        <SimfButton Type="button" Disabled="_busy"
-                                                    OnClick="@(() => OnReleaseAllocationAsync(a))">
-                                            @L["Admin.MeetingTables.Release"]
-                                        </SimfButton>
-                                    </AuthorizedAction>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            }
+            <SimfDataGrid TItem="HallAllocationRow"
+                          Query="_allocQuery" Page="_allocPage" Loading="_allocLoading"
+                          OnQueryChanged="OnAllocQueryChangedAsync"
+                          Multiselect="true" RowKey="@(r => r.Id.ToString())" RowLabel="@(r => r.Purpose.ToString())"
+                          Caption="@L["Admin.MeetingTables.Allocations.Heading"]"
+                          OnAdd="OnAddAllocation" OnDeleteOne="OnReleaseAllocationAsync"
+                          PrevLabel="@L["Grid.Prev"]" NextLabel="@L["Grid.Next"]"
+                          FirstLabel="@L["Grid.First"]" LastLabel="@L["Grid.Last"]"
+                          PageSizeLabel="@L["Grid.PageSize"]" PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Grid.Loading"]" ActionsHeader="@L["Grid.Actions"]"
+                          SelectAllLabel="@L["Grid.SelectAll"]" SelectRowLabel="@L["Grid.SelectRow"]"
+                          AddLabel="@L["Admin.MeetingTables.AddAllocation"]"
+                          DeleteLabel="@L["Admin.MeetingTables.Release"]"
+                          SummaryFormatter="@FormatSummary">
+                <Columns>
+                    <SimfDataGridColumn TItem="HallAllocationRow" Key="purpose" Header="@L["Admin.MeetingTables.Col.Purpose"]">
+                        <CellTemplate>@context.Purpose</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="HallAllocationRow" Key="mode" Header="@L["Admin.MeetingTables.Col.Mode"]">
+                        <CellTemplate>@context.Mode @(context.Mode == HallAllocationMode.RandomByCount ? $"({context.UnitCount})" : context.Mode == HallAllocationMode.RowColumn ? $"({context.RowColumnSpec})" : "")</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="HallAllocationRow" Key="start" Header="@L["Admin.MeetingTables.Col.Start"]">
+                        <CellTemplate>@context.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="HallAllocationRow" Key="end" Header="@L["Admin.MeetingTables.Col.End"]">
+                        <CellTemplate>@context.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.MeetingTables.Allocations.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
         }
     </div>
 </div>
@@ -321,8 +297,14 @@
     private List<AdminHallSummary> _halls = new();
     private Guid? _hallId;
     private int _purpose;
-    private List<MeetingTableRow> _tables = new();
-    private List<HallAllocationRow> _allocations = new();
+    private GridQuery _tableQuery = new() { Top = 20 };
+    private GridPage<MeetingTableRow> _tablePage = new();
+    private bool _tableLoading;
+
+    private GridQuery _allocQuery = new() { Top = 20 };
+    private GridPage<HallAllocationRow> _allocPage = new();
+    private bool _allocLoading;
+
     private bool _busy;
     private Toast? _toast;
 
@@ -363,6 +345,8 @@
         if (_hallId is { } hid)
         {
             _purpose = _halls.FirstOrDefault(h => h.Id == hid)?.Purpose ?? 0;
+            _tableQuery = new GridQuery { Top = _tableQuery.Top };
+            _allocQuery = new GridQuery { Top = _allocQuery.Top };
             await LoadTablesAsync();
             await LoadAllocationsAsync();
         }
@@ -398,22 +382,48 @@
         finally { _busy = false; }
     }
 
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
+
+    private async Task OnTableQueryChangedAsync(GridQuery next)
+    {
+        _tableQuery = next;
+        await LoadTablesAsync();
+    }
+
     private async Task LoadTablesAsync()
     {
         if (_hallId is not { } hid) return;
-        var env = await JS.InvokeAsync<ApiResult<GridPage<MeetingTableRow>>>(
-            "simfAccount.postJson", $"/account/api/admin/halls/{hid}/meeting-tables/list",
-            new { Skip = 0, Top = 500 });
-        if (env is { Success: true, Data: not null }) _tables = env.Data.Items.ToList();
+        _tableLoading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<MeetingTableRow>>>(
+                "simfAccount.postJson", $"/account/api/admin/halls/{hid}/meeting-tables/list", _tableQuery);
+            if (env is { Success: true, Data: not null }) _tablePage = env.Data;
+        }
+        finally { _tableLoading = false; }
+    }
+
+    private async Task OnAllocQueryChangedAsync(GridQuery next)
+    {
+        _allocQuery = next;
+        await LoadAllocationsAsync();
     }
 
     private async Task LoadAllocationsAsync()
     {
         if (_hallId is not { } hid) return;
-        var env = await JS.InvokeAsync<ApiResult<GridPage<HallAllocationRow>>>(
-            "simfAccount.postJson", $"/account/api/admin/halls/{hid}/hall-allocations/list",
-            new { Skip = 0, Top = 500 });
-        if (env is { Success: true, Data: not null }) _allocations = env.Data.Items.ToList();
+        _allocLoading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<HallAllocationRow>>>(
+                "simfAccount.postJson", $"/account/api/admin/halls/{hid}/hall-allocations/list", _allocQuery);
+            if (env is { Success: true, Data: not null }) _allocPage = env.Data;
+        }
+        finally { _allocLoading = false; }
     }
 
     private void OnAddTable()
