@@ -322,7 +322,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   TextButton(
                     onPressed: _busy
                         ? null
-                        : () => context.pushNamed(RouteNames.signUpType),
+                        : () => context.pushNamed(RouteNames.signUpForm),
                     child: Text(l10n.createAccountLink),
                   ),
                 ],

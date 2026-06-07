@@ -115,7 +115,8 @@ class _FakeProfileRepository implements ProfileRepository {
   @override
   Future<List<CountryItem>> getCountries() => throw UnimplementedError();
   @override
-  Future<List<ProfileTypeItem>> getProfileTypes() => throw UnimplementedError();
+  Future<List<ProfileTypeItem>> getProfileTypes({bool? isVisitor}) =>
+      throw UnimplementedError();
   @override
   Future<List<InterestItem>> getInterests() => throw UnimplementedError();
   @override

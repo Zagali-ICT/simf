@@ -13,26 +13,23 @@ import '../../app/theme/tokens.dart';
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
 
-/// Page 007 — إنشاء حساب · زائر · Sign up — visitor (Page_007 docs).
+/// Page 007 — إنشاء حساب · Sign up — profile **data** (Page_007 docs, reworked
+/// D-332 = mockup screen 05).
 ///
-/// Profile completion for a signed-in but profile-incomplete visitor. On open
-/// it loads the existing profile (pre-fill) plus the four lookups (countries,
-/// profile-types, interests, organisations) concurrently, then renders the
-/// richer registration form + the inline interests sub-step (min 1 / max 10,
-/// D12). Save sends one `POST /app/account/user-profile` carrying the form
-/// fields **and** the picked interest ids; the actor comes from the token
-/// (D7), so the body never carries a user id / email. The optional ID-document
-/// image is uploaded (multipart) **after** the profile row exists. On success
-/// the account is profile-complete and the app routes to the wait-for-approval
-/// (registration-status) screen.
+/// Profile data capture for a signed-in but profile-incomplete visitor. On open
+/// it loads the existing profile (pre-fill) plus the three lookups it needs
+/// (countries, profile-types, organisations) concurrently, then renders the
+/// registration form. The first field — **نوع التسجيل (Visitor / Other)** — is a
+/// client-only filter over the ProfileType picker (`?isVisitor=`); it is never
+/// sent to the server (the API has no registration-type field, only
+/// `ProfileTypeId`). **Next** carries the collected data (+ the optional ID image)
+/// forward as a [SignUpProfileDraft] to the interests screen (Page 007‑01,
+/// [RouteNames.signUpInterests]), which adds the interests and fires the single
+/// `POST /app/account/user-profile` save. **No API write happens on this screen.**
 ///
 /// AUTH-only (Page_007 L-1): the route is in the auth gate, so an anonymous open
-/// is impossible. The visuals follow the Mockup.html sign-up `.dark-form` frame:
-/// the navy `.mob-top` header (the AppBar) over a navy form surface that carries
-/// `.mfield` captioned white fields, `.type-chip` selectors, the interest tag
-/// pills and the gold `.mbtn` save button. The UI is the interim placeholder
-/// design (SIMF-VID-001 swaps the visuals later); the API + validation
-/// behaviour is real.
+/// is impossible. The visuals follow the Mockup.html `.dark-form` frame; the
+/// interim placeholder design is swapped by SIMF-VID-001 later.
 class SignUpVisitorScreen extends ConsumerStatefulWidget {
   const SignUpVisitorScreen({super.key});
 
@@ -58,6 +55,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   final TextEditingController _internationalMobile = TextEditingController();
   final TextEditingController _organisationSearch = TextEditingController();
 
+  /// نوع التسجيل: Visitor (true) / Other (false) — the `ProfileType.IsForVisitor`
+  /// filter (D-332). Client-only; not persisted.
+  bool _isVisitorType = true;
   bool _isSaudi = true;
   _DocType _docType = _DocType.iqama;
   DateTime? _dateOfBirth;
@@ -66,11 +66,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   String? _profileTypeId;
   String? _organisationId;
   String? _organisationLabel;
-  final Set<String> _interestIds = <String>{};
+
+  /// Any interest ids already on the profile (pre-fill). Carried forward in the
+  /// draft so the interests screen (Page 007‑01) pre-selects them on re-entry.
+  List<String> _existingInterestIds = const <String>[];
 
   List<CountryItem> _countries = const <CountryItem>[];
   List<ProfileTypeItem> _profileTypes = const <ProfileTypeItem>[];
-  List<InterestItem> _interests = const <InterestItem>[];
   List<OrganisationItem> _organisationResults = const <OrganisationItem>[];
 
   Timer? _organisationDebounce;
@@ -79,9 +81,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   bool _loading = true;
   String? _loadError;
-  bool _submitting = false;
   bool _triedSubmit = false;
-  String? _submitError;
 
   @override
   void initState() {
@@ -116,8 +116,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       final results = await Future.wait(<Future<Object>>[
         repo.getMyProfile(),
         repo.getCountries(),
-        repo.getProfileTypes(),
-        repo.getInterests(),
+        repo.getProfileTypes(isVisitor: _isVisitorType),
         repo.searchOrganisations(top: 20),
       ]);
       if (!mounted) {
@@ -126,8 +125,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       setState(() {
         _countries = results[1] as List<CountryItem>;
         _profileTypes = results[2] as List<ProfileTypeItem>;
-        _interests = results[3] as List<InterestItem>;
-        _organisationResults = results[4] as List<OrganisationItem>;
+        _organisationResults = results[3] as List<OrganisationItem>;
         _applyProfile(results[0] as UserProfileResponse);
         _loading = false;
       });
@@ -178,11 +176,33 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       _dateOfBirth = DateTime.tryParse(profile.dateOfBirth!);
     }
 
-    _interestIds
-      ..clear()
-      ..addAll(
-        profile.interestIds.where((id) => _interests.any((i) => i.id == id)),
-      );
+    // Carried forward to the interests screen (Page 007‑01) for pre-selection.
+    _existingInterestIds = profile.interestIds;
+  }
+
+  // ---- نوع التسجيل (Visitor / Other) ---------------------------------------
+
+  /// Switching the type re-filters the ProfileType picker (`?isVisitor=`) and
+  /// drops any now-invalid ProfileType selection (Page_007 L-3).
+  Future<void> _onTypeChanged(bool isVisitor) async {
+    if (isVisitor == _isVisitorType) {
+      return;
+    }
+    setState(() {
+      _isVisitorType = isVisitor;
+      _profileTypeId = null;
+      _profileTypes = const <ProfileTypeItem>[];
+    });
+    final repo = ref.read(profileRepositoryProvider);
+    try {
+      final types = await repo.getProfileTypes(isVisitor: isVisitor);
+      if (!mounted) {
+        return;
+      }
+      setState(() => _profileTypes = types);
+    } on ApiFailure {
+      // Non-blocking — the picker just stays empty until a retry.
+    }
   }
 
   // ---- Organisation typeahead ---------------------------------------------
@@ -223,24 +243,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       _organisationId = null;
       _organisationLabel = null;
       _organisationSearch.clear();
-    });
-  }
-
-  // ---- Interests sub-step --------------------------------------------------
-
-  void _toggleInterest(String id, bool selected, AppL10n l10n) {
-    if (selected && _interestIds.length >= 10) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l10n.interestsMaxReached)));
-      return;
-    }
-    setState(() {
-      if (selected) {
-        _interestIds.add(id);
-      } else {
-        _interestIds.remove(id);
-      }
     });
   }
 
@@ -289,75 +291,36 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     });
   }
 
-  // ---- Save ----------------------------------------------------------------
+  // ---- Next (carry the draft to the interests screen) ----------------------
 
-  Future<void> _save() async {
-    final l10n = AppL10n.of(context);
-    setState(() {
-      _triedSubmit = true;
-      _submitError = null;
-    });
+  /// Validates the data fields, then carries the collected profile data (+ the
+  /// optional ID image) to the interests screen (Page 007‑01) as a
+  /// [SignUpProfileDraft]. **No API write happens here** — the single save fires
+  /// on the interests screen once interests are picked (D-332).
+  void _next() {
+    setState(() => _triedSubmit = true);
     final formValid = _formKey.currentState?.validate() ?? false;
-    final interestsValid =
-        _interestIds.isNotEmpty && _interestIds.length <= 10;
     final dateOfBirthValid = _dateOfBirth != null;
-    if (!formValid || !interestsValid || !dateOfBirthValid) {
+    if (!formValid || !dateOfBirthValid) {
       setState(() {});
       return;
     }
-
-    setState(() => _submitting = true);
-    final repo = ref.read(profileRepositoryProvider);
-    try {
-      await repo.upsertMyProfile(_buildRequest());
-      final imageFailed = await _uploadIdImageIfAny(repo);
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(
-              imageFailed ? l10n.idImageUploadFailed : l10n.profileSavedToast,
-            ),
-          ),
-        );
-      context.goNamed(RouteNames.registrationSuccess);
-    } on ApiFailure catch (failure) {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _submitError = failure.message);
-    } finally {
-      if (mounted) {
-        setState(() => _submitting = false);
-      }
-    }
+    final draft = SignUpProfileDraft(
+      request: _buildRequest(),
+      idImageBytes: _idImageBytes,
+      idImageName: _idImageName,
+    );
+    context.pushNamed(RouteNames.signUpInterests, extra: draft);
   }
 
-  /// Uploads the picked ID image after the profile exists. Returns true when an
-  /// image was picked but its upload failed — the profile save still succeeded,
-  /// so this is surfaced as a non-blocking warning, not an error.
-  Future<bool> _uploadIdImageIfAny(ProfileRepository repo) async {
-    final bytes = _idImageBytes;
-    final name = _idImageName;
-    if (bytes == null || name == null) {
-      return false;
-    }
-    try {
-      await repo.uploadIdImage(bytes: bytes, filename: name);
-      return false;
-    } on ApiFailure {
-      return true;
-    }
-  }
-
+  /// Builds the request from the data fields. `interestIds` carries any existing
+  /// picks (for pre-selection); the interests screen replaces it via `copyWith`
+  /// before the save.
   UpsertUserProfileRequest _buildRequest() {
     final isSaudi = _isSaudi;
     return UpsertUserProfileRequest(
       profileTypeId: _profileTypeId,
-      interestIds: _interestIds.toList(),
+      interestIds: _existingInterestIds,
       arabicName: _arabicName.text.trim(),
       englishName: _englishName.text.trim(),
       jobTitle: _emptyToNull(_jobTitle.text),
@@ -451,31 +414,16 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
+            // نوع التسجيل (Visitor/Other) + التصنيف (ProfileType) — mockup 05 head.
+            _buildRegistrationTypeSection(l10n),
             _sectionHeader(l10n.profileSectionPersonal),
             ..._buildPersonalFields(l10n),
             _sectionHeader(l10n.profileSectionAffiliation),
             _buildOrganisationField(l10n),
-            const SizedBox(height: SimfTokens.space4),
-            _buildProfileTypeField(l10n),
-            _sectionHeader(l10n.profileSectionInterests),
-            _buildInterestsField(l10n),
             const SizedBox(height: SimfTokens.space6),
-            if (_submitError != null) ...<Widget>[
-              Text(
-                _submitError!,
-                style: const TextStyle(color: SimfTokens.danger),
-              ),
-              const SizedBox(height: SimfTokens.space3),
-            ],
             FilledButton(
-              onPressed: _submitting ? null : () => unawaited(_save()),
-              child: _submitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(l10n.saveLabel),
+              onPressed: () => _next(),
+              child: Text(l10n.nextLabel),
             ),
           ],
         ),
@@ -506,12 +454,39 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     );
   }
 
+  /// نوع التسجيل (Visitor / Other) 2-chip filter + the ProfileType picker it
+  /// filters (mockup 05 head).
+  Widget _buildRegistrationTypeSection(AppL10n l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        _FieldLabel(l10n.registrationTypeLabel),
+        Wrap(
+          spacing: SimfTokens.space2,
+          children: <Widget>[
+            ChoiceChip(
+              label: Text(l10n.signUpTypeVisitor),
+              selected: _isVisitorType,
+              onSelected: (_) => unawaited(_onTypeChanged(true)),
+            ),
+            ChoiceChip(
+              label: Text(l10n.signUpTypeOther),
+              selected: !_isVisitorType,
+              onSelected: (_) => unawaited(_onTypeChanged(false)),
+            ),
+          ],
+        ),
+        const SizedBox(height: SimfTokens.space4),
+        _buildProfileTypeField(l10n),
+      ],
+    );
+  }
+
   List<Widget> _buildPersonalFields(AppL10n l10n) {
     return <Widget>[
       _FieldLabel(l10n.arabicNameLabel),
       TextFormField(
         controller: _arabicName,
-        enabled: !_submitting,
         maxLength: 256,
         style: _fieldTextStyle,
         autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -522,7 +497,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       _FieldLabel(l10n.englishNameLabel),
       TextFormField(
         controller: _englishName,
-        enabled: !_submitting,
         maxLength: 256,
         style: _fieldTextStyle,
         autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -533,7 +507,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       _FieldLabel(l10n.jobTitleLabel),
       TextFormField(
         controller: _jobTitle,
-        enabled: !_submitting,
         maxLength: 128,
         style: _fieldTextStyle,
         decoration: _whiteFieldDecoration(counterText: ''),
@@ -545,9 +518,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         contentPadding: EdgeInsets.zero,
         value: _isSaudi,
         activeThumbColor: SimfTokens.accent,
-        onChanged: _submitting
-            ? null
-            : (value) => setState(() => _isSaudi = value),
+        onChanged: (value) => setState(() => _isSaudi = value),
         title: Text(
           l10n.isSaudiLabel,
           style: const TextStyle(color: SimfTokens.surface),
@@ -563,7 +534,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       _FieldLabel(l10n.placeOfBirthLabel),
       TextFormField(
         controller: _placeOfBirth,
-        enabled: !_submitting,
         maxLength: 128,
         style: _fieldTextStyle,
         decoration: _whiteFieldDecoration(counterText: ''),
@@ -600,9 +570,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           validator: (value) => (value == null || value.isEmpty)
               ? l10n.nationalityRequired
               : null,
-          onChanged: _submitting
-              ? null
-              : (value) => setState(() => _nationalityCode = value),
+          onChanged: (value) => setState(() => _nationalityCode = value),
         ),
       ],
     );
@@ -614,7 +582,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         _FieldLabel(l10n.nationalIdLabel),
         TextFormField(
           controller: _nationalId,
-          enabled: !_submitting,
           keyboardType: TextInputType.number,
           maxLength: 10,
           style: _fieldTextStyle,
@@ -638,12 +605,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           ),
         ],
         selected: <_DocType>{_docType},
-        onSelectionChanged: _submitting
-            ? null
-            : (selection) => setState(() {
-                  _docType = selection.first;
-                  _documentNumber.clear();
-                }),
+        onSelectionChanged: (selection) => setState(() {
+          _docType = selection.first;
+          _documentNumber.clear();
+        }),
       ),
       const SizedBox(height: SimfTokens.space3),
       _FieldLabel(
@@ -653,7 +618,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       ),
       TextFormField(
         controller: _documentNumber,
-        enabled: !_submitting,
         maxLength: _docType == _DocType.iqama ? 10 : 9,
         style: _fieldTextStyle,
         autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -673,7 +637,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         ),
         TextFormField(
           controller: saudi ? _saudiMobile : _internationalMobile,
-          enabled: !_submitting,
           keyboardType: TextInputType.phone,
           textDirection: TextDirection.ltr,
           style: _fieldTextStyle,
@@ -692,7 +655,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       children: <Widget>[
         _FieldLabel(l10n.dateOfBirthLabel),
         InkWell(
-          onTap: _submitting ? null : () => unawaited(_pickDateOfBirth()),
+          onTap: () => unawaited(_pickDateOfBirth()),
           borderRadius:
               const BorderRadius.all(Radius.circular(SimfTokens.radius)),
           child: InputDecorator(
@@ -737,10 +700,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
               child: Text(l10n.genderFemale),
             ),
           ],
-          onChanged: _submitting
-              ? null
-              : (value) =>
-                  setState(() => _gender = value ?? AppGender.unspecified),
+          onChanged: (value) =>
+              setState(() => _gender = value ?? AppGender.unspecified),
         ),
       ],
     );
@@ -752,7 +713,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       return Align(
         alignment: AlignmentDirectional.centerStart,
         child: OutlinedButton.icon(
-          onPressed: _submitting ? null : () => unawaited(_pickIdImage()),
+          onPressed: () => unawaited(_pickIdImage()),
           icon: const Icon(Icons.attach_file, color: SimfTokens.accent),
           label: Text(l10n.attachIdImageLabel),
         ),
@@ -774,7 +735,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         style: const TextStyle(color: SimfTokens.txtSecondary),
       ),
       trailing: TextButton(
-        onPressed: _submitting ? null : _removeIdImage,
+        onPressed: _removeIdImage,
         style: TextButton.styleFrom(foregroundColor: SimfTokens.accent),
         child: Text(l10n.removeLabel),
       ),
@@ -798,7 +759,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                   ),
                 ),
                 TextButton(
-                  onPressed: _submitting ? null : _clearOrganisation,
+                  onPressed: _clearOrganisation,
                   style:
                       TextButton.styleFrom(foregroundColor: SimfTokens.accent),
                   child: Text(l10n.clearLabel),
@@ -815,7 +776,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         _FieldLabel(l10n.organisationLabel),
         TextField(
           controller: _organisationSearch,
-          enabled: !_submitting,
           style: _fieldTextStyle,
           decoration: _whiteFieldDecoration(
             hintText: l10n.organisationSearchHint,
@@ -852,9 +812,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                               color: SimfTokens.txtSecondary,
                             ),
                           ),
-                    onTap: _submitting
-                        ? null
-                        : () => _selectOrganisation(organisation, l10n),
+                    onTap: () => _selectOrganisation(organisation, l10n),
                   ),
                 ),
         ],
@@ -879,76 +837,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                 (type) => ChoiceChip(
                   label: Text(l10n.isArabic ? type.nameArabic : type.name),
                   selected: _profileTypeId == type.id,
-                  onSelected: _submitting
-                      ? null
-                      : (value) => setState(
-                            () => _profileTypeId = value ? type.id : null,
-                          ),
-                ),
-              )
-              .toList(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInterestsField(AppL10n l10n) {
-    if (_interests.isEmpty) {
-      return Text(
-        l10n.interestsEmpty,
-        style: const TextStyle(color: SimfTokens.txtSecondary),
-      );
-    }
-    final showRequiredError = _triedSubmit && _interestIds.isEmpty;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            Flexible(
-              child: Text(
-                l10n.interestsHelper,
-                style: const TextStyle(
-                  color: SimfTokens.txtSecondary,
-                  fontSize: SimfTokens.textSm,
-                ),
-              ),
-            ),
-            Text(
-              l10n.interestsCounter(_interestIds.length),
-              style: const TextStyle(
-                color: SimfTokens.txtTertiary,
-                fontSize: SimfTokens.textSm,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: SimfTokens.space3),
-        Wrap(
-          spacing: SimfTokens.space2,
-          runSpacing: SimfTokens.space2,
-          children: _interests
-              .map(
-                (interest) => FilterChip(
-                  label: Text(
-                    l10n.isArabic ? interest.nameArabic : interest.name,
+                  onSelected: (value) => setState(
+                    () => _profileTypeId = value ? type.id : null,
                   ),
-                  selected: _interestIds.contains(interest.id),
-                  onSelected: _submitting
-                      ? null
-                      : (value) => _toggleInterest(interest.id, value, l10n),
                 ),
               )
               .toList(),
         ),
-        if (showRequiredError) ...<Widget>[
-          const SizedBox(height: SimfTokens.space2),
-          Text(
-            l10n.interestsRequired,
-            style: const TextStyle(color: SimfTokens.danger),
-          ),
-        ],
       ],
     );
   }
@@ -982,8 +877,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   );
 
   /// Per-field white decoration overriding the navy theme to the mockup's
-  /// `.mfield .in` (white fill, ink hint, accent focus ring) — the same field
-  /// treatment as the Page 005 sign-up card.
+  /// `.mfield .in` (white fill, ink hint, accent focus ring).
   InputDecoration _whiteFieldDecoration({
     String? counterText,
     String? hintText,

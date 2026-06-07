@@ -77,6 +77,47 @@ class UpsertUserProfileRequest {
         'organisationId': organisationId,
         'gender': gender.value,
       };
+
+  /// Returns a copy with [interestIds] replaced — used to attach the interests
+  /// picked on Page 007‑01 to the data collected on Page 007 before the single
+  /// save (D-332).
+  UpsertUserProfileRequest copyWith({List<String>? interestIds}) {
+    return UpsertUserProfileRequest(
+      interestIds: interestIds ?? this.interestIds,
+      arabicName: arabicName,
+      englishName: englishName,
+      nationalityCode: nationalityCode,
+      placeOfBirth: placeOfBirth,
+      isSaudi: isSaudi,
+      gender: gender,
+      profileTypeId: profileTypeId,
+      jobTitle: jobTitle,
+      dateOfBirth: dateOfBirth,
+      nationalId: nationalId,
+      iqamaNumber: iqamaNumber,
+      passportNumber: passportNumber,
+      saudiMobile: saudiMobile,
+      internationalMobile: internationalMobile,
+      organisationId: organisationId,
+    );
+  }
+}
+
+/// The in-memory sign-up draft carried from the profile-data screen (Page 007)
+/// to the interests screen (Page 007‑01), which adds the interests and fires the
+/// single `POST /app/account/user-profile` save (D-332). [request] is built with
+/// an empty `interestIds`; the interests screen replaces it via [copyWith].
+@immutable
+class SignUpProfileDraft {
+  const SignUpProfileDraft({
+    required this.request,
+    this.idImageBytes,
+    this.idImageName,
+  });
+
+  final UpsertUserProfileRequest request;
+  final Uint8List? idImageBytes;
+  final String? idImageName;
 }
 
 /// Response for `GET`/`POST /app/account/user-profile` (Page_007 E1/E2). Every

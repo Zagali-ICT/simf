@@ -166,6 +166,10 @@ class AppL10n {
       _t('لا توجد جهات مطابقة', 'No organisations found');
   String get organisationSelected => _t('الجهة محددة', 'Organisation selected');
   String get profileTypeLabel => _t('التصنيف', 'Profile type');
+  // Page 007 — نوع التسجيل (Visitor/Other) filter (D-332). Visitor reuses
+  // [signUpTypeVisitor]; Other is new.
+  String get registrationTypeLabel => _t('نوع التسجيل', 'Registration type');
+  String get signUpTypeOther => _t('أخرى', 'Other');
   String get interestsHelper =>
       _t('اختر من 1 إلى 10 اهتمامات', 'Pick 1 to 10 interests');
   String interestsCounter(int count) =>
@@ -176,6 +180,9 @@ class AppL10n {
   String get removeLabel => _t('إزالة', 'Remove');
   String get clearLabel => _t('مسح', 'Clear');
   String get saveLabel => _t('حفظ', 'Save');
+  // Page 007 advances to the interests screen with Next (D-332); Page 007‑01 title.
+  String get nextLabel => _t('التالي', 'Next');
+  String get interestsTitle => _t('اهتماماتي', 'My interests');
   String get profileSavedToast => _t('تم حفظ الملف الشخصي', 'Profile saved');
   String get idImageUploadFailed => _t(
         'تم حفظ الملف الشخصي، لكن تعذر رفع الصورة. حاول لاحقًا.',

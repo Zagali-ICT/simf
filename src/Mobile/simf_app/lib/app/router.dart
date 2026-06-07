@@ -15,7 +15,6 @@ import '../features/auth/sign_up_email_verify_screen.dart';
 import '../features/auth/sign_up_form_screen.dart';
 import '../features/about/about_screen.dart';
 import '../features/archive/archive_screen.dart';
-import '../features/auth/sign_up_type_screen.dart';
 import '../features/booths/booths_screen.dart';
 import '../features/content/terms_screen.dart';
 import '../features/feedback/rate_screen.dart';
@@ -40,6 +39,8 @@ import '../features/questions/send_question_screen.dart';
 import '../features/myarea/my_area_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/venuemap/venue_map_screen.dart';
+import '../features/profile/data/profile_models.dart';
+import '../features/profile/sign_up_interests_screen.dart';
 import '../features/profile/sign_up_visitor_screen.dart';
 import '../features/registration/registration_status_screen.dart';
 import '../features/registration/registration_success_screen.dart';
@@ -78,10 +79,13 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 1, name: RouteNames.splash, path: '/splash', labelAr: 'البداية', labelEn: 'Splash'),
   _Route(number: 2, name: RouteNames.onboarding, path: '/onboarding', labelAr: 'التهيئة', labelEn: 'Onboarding'),
   _Route(number: 3, name: RouteNames.signIn, path: '/sign-in', labelAr: 'تسجيل الدخول', labelEn: 'Sign in'),
-  _Route(number: 4, name: RouteNames.signUpType, path: '/sign-up/type', labelAr: 'إنشاء حساب — النوع', labelEn: 'Sign up — type'),
+  // Screen 04 (sign-up — type) removed — invented; not in the mockup (D-332).
   _Route(number: 5, name: RouteNames.signUpForm, path: '/sign-up', labelAr: 'إنشاء حساب', labelEn: 'Sign up'),
   _Route(number: 6, name: RouteNames.emailOtp, path: '/sign-up/otp', labelAr: 'التحقق بالبريد', labelEn: 'Email verification'),
-  _Route(number: 7, name: RouteNames.signUpVisitor, path: '/sign-up/visitor', labelAr: 'إنشاء حساب · زائر', labelEn: 'Sign up — visitor'),
+  _Route(number: 7, name: RouteNames.signUpVisitor, path: '/sign-up/visitor', labelAr: 'إنشاء حساب · زائر', labelEn: 'Sign up — profile'),
+  // Page 007‑01 (interests) — mockup 5‑01; split out of #7 (D-332). Sentinel
+  // number 701 so it never collides with a mockup screen number; auth-gated.
+  _Route(number: 701, name: RouteNames.signUpInterests, path: '/sign-up/interests', labelAr: 'اهتماماتي', labelEn: 'My interests'),
   // Screen 08 (exhibitor self-sign-up) removed — exhibitors are CP-only (D-199 / §9).
   _Route(number: 9, name: RouteNames.terms, path: '/terms', labelAr: 'الشروط والأحكام', labelEn: 'Terms & conditions'),
   _Route(number: 10, name: RouteNames.registrationSuccess, path: '/registration/success', labelAr: 'تم التسجيل بنجاح', labelEn: 'Registration success'),
@@ -149,7 +153,8 @@ const List<_Route> _auxRoutes = <_Route>[
 /// SIMF-RPM-001 closes (SIMF-MAA-001 OI-3) this list is conservative —
 /// Phase 1 only gates the few obvious cases. Phase 2 / Phase 3 may extend.
 const Set<int> _authenticatedRoutes = <int>{
-  7, // Sign up — visitor (profile completion; AUTH-only, Page_007 L-1)
+  7, // Sign up — visitor profile data (AUTH-only, Page_007 L-1)
+  701, // Sign up — interests + the single save (AUTH-only, Page_007-01, D-332)
   10, // Registration success (signed-in, pending; Page_010)
   11, // Registration status (signed-in, not-yet-approved gate; Page_011 L-1)
   14, // My area
@@ -221,9 +226,6 @@ GoRouter buildRouter(Ref ref) {
             if (r.name == RouteNames.signIn) {
               return const SignInScreen();
             }
-            if (r.name == RouteNames.signUpType) {
-              return const SignUpTypeScreen();
-            }
             if (r.name == RouteNames.signUpForm) {
               return const SignUpFormScreen();
             }
@@ -234,6 +236,12 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.signUpVisitor) {
               return const SignUpVisitorScreen();
+            }
+            if (r.name == RouteNames.signUpInterests) {
+              final extra = state.extra;
+              return SignUpInterestsScreen(
+                draft: extra is SignUpProfileDraft ? extra : null,
+              );
             }
             if (r.name == RouteNames.terms) {
               // `?consent=1` shows the in-flow accept gate; standalone reads omit it.

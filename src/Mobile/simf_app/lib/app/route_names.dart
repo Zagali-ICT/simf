@@ -16,10 +16,14 @@ class RouteNames {
   static const String splash = 'splash';
   static const String onboarding = 'onboarding';
   static const String signIn = 'signIn';
-  static const String signUpType = 'signUpType';
+  // signUpType removed (D-332) — the invented account-type screen is not in the
+  // mockup; sign-up goes signIn → signUpForm directly.
   static const String signUpForm = 'signUpForm';
   static const String emailOtp = 'emailOtp';
   static const String signUpVisitor = 'signUpVisitor';
+  // Page 007‑01 — the interests step, split out of signUpVisitor (D-332). Owns
+  // the single profile-upsert save.
+  static const String signUpInterests = 'signUpInterests';
   static const String terms = 'terms';
   static const String registrationSuccess = 'registrationSuccess';
   static const String registrationStatus = 'registrationStatus';
