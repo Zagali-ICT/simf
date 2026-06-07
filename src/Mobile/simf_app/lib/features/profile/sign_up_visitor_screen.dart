@@ -27,8 +27,12 @@ import 'data/profile_repository.dart';
 /// (registration-status) screen.
 ///
 /// AUTH-only (Page_007 L-1): the route is in the auth gate, so an anonymous open
-/// is impossible. The UI is the interim placeholder design (SIMF-VID-001 swaps
-/// the visuals later); the API + validation behaviour is real.
+/// is impossible. The visuals follow the Mockup.html sign-up `.dark-form` frame:
+/// the navy `.mob-top` header (the AppBar) over a navy form surface that carries
+/// `.mfield` captioned white fields, `.type-chip` selectors, the interest tag
+/// pills and the gold `.mbtn` save button. The UI is the interim placeholder
+/// design (SIMF-VID-001 swaps the visuals later); the API + validation
+/// behaviour is real.
 class SignUpVisitorScreen extends ConsumerStatefulWidget {
   const SignUpVisitorScreen({super.key});
 
@@ -419,6 +423,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
+      backgroundColor: SimfTokens.navy,
       appBar: AppBar(title: Text(l10n.signUpVisitorTitle)),
       body: SafeArea(child: _buildBody(l10n)),
     );
@@ -426,15 +431,23 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   Widget _buildBody(AppL10n l10n) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: SimfTokens.accent),
+      );
     }
     if (_loadError != null) {
       return _buildLoadError(l10n);
     }
+    // Navy `.dark-form` surface holding the captioned `.mfield` rows.
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(SimfTokens.space6),
+        padding: const EdgeInsets.fromLTRB(
+          SimfTokens.space4,
+          SimfTokens.space5,
+          SimfTokens.space4,
+          SimfTokens.space8,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -442,7 +455,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             ..._buildPersonalFields(l10n),
             _sectionHeader(l10n.profileSectionAffiliation),
             _buildOrganisationField(l10n),
-            const SizedBox(height: SimfTokens.space3),
+            const SizedBox(height: SimfTokens.space4),
             _buildProfileTypeField(l10n),
             _sectionHeader(l10n.profileSectionInterests),
             _buildInterestsField(l10n),
@@ -477,7 +490,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text(l10n.profileLoadError, textAlign: TextAlign.center),
+            Text(
+              l10n.profileLoadError,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: SimfTokens.txtSecondary),
+            ),
             const SizedBox(height: SimfTokens.space4),
             FilledButton(
               onPressed: () => unawaited(_load()),
@@ -491,49 +508,50 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   List<Widget> _buildPersonalFields(AppL10n l10n) {
     return <Widget>[
+      _FieldLabel(l10n.arabicNameLabel),
       TextFormField(
         controller: _arabicName,
         enabled: !_submitting,
         maxLength: 256,
+        style: _fieldTextStyle,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         validator: _validateRequired,
-        decoration: InputDecoration(
-          labelText: l10n.arabicNameLabel,
-          counterText: '',
-        ),
+        decoration: _whiteFieldDecoration(counterText: ''),
       ),
       const SizedBox(height: SimfTokens.space3),
+      _FieldLabel(l10n.englishNameLabel),
       TextFormField(
         controller: _englishName,
         enabled: !_submitting,
         maxLength: 256,
+        style: _fieldTextStyle,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         validator: _validateRequired,
-        decoration: InputDecoration(
-          labelText: l10n.englishNameLabel,
-          counterText: '',
-        ),
+        decoration: _whiteFieldDecoration(counterText: ''),
       ),
       const SizedBox(height: SimfTokens.space3),
+      _FieldLabel(l10n.jobTitleLabel),
       TextFormField(
         controller: _jobTitle,
         enabled: !_submitting,
         maxLength: 128,
-        decoration: InputDecoration(
-          labelText: l10n.jobTitleLabel,
-          counterText: '',
-        ),
+        style: _fieldTextStyle,
+        decoration: _whiteFieldDecoration(counterText: ''),
       ),
       const SizedBox(height: SimfTokens.space3),
       _buildNationalityField(l10n),
-      const SizedBox(height: SimfTokens.space2),
+      const SizedBox(height: SimfTokens.space3),
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
         value: _isSaudi,
+        activeThumbColor: SimfTokens.accent,
         onChanged: _submitting
             ? null
             : (value) => setState(() => _isSaudi = value),
-        title: Text(l10n.isSaudiLabel),
+        title: Text(
+          l10n.isSaudiLabel,
+          style: const TextStyle(color: SimfTokens.surface),
+        ),
       ),
       const SizedBox(height: SimfTokens.space2),
       ..._buildDocumentFields(l10n),
@@ -542,14 +560,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       const SizedBox(height: SimfTokens.space3),
       _buildDateOfBirthField(l10n),
       const SizedBox(height: SimfTokens.space3),
+      _FieldLabel(l10n.placeOfBirthLabel),
       TextFormField(
         controller: _placeOfBirth,
         enabled: !_submitting,
         maxLength: 128,
-        decoration: InputDecoration(
-          labelText: l10n.placeOfBirthLabel,
-          counterText: '',
-        ),
+        style: _fieldTextStyle,
+        decoration: _whiteFieldDecoration(counterText: ''),
       ),
       const SizedBox(height: SimfTokens.space3),
       _buildGenderField(l10n),
@@ -559,48 +576,57 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }
 
   Widget _buildNationalityField(AppL10n l10n) {
-    return DropdownButtonFormField<String>(
-      initialValue: _nationalityCode,
-      isExpanded: true,
-      decoration: InputDecoration(labelText: l10n.nationalityLabel),
-      items: _countries
-          .map(
-            (c) => DropdownMenuItem<String>(
-              value: c.code,
-              child: Text(
-                l10n.isArabic ? c.nameArabic : c.name,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          )
-          .toList(),
-      validator: (value) =>
-          (value == null || value.isEmpty) ? l10n.nationalityRequired : null,
-      onChanged: _submitting
-          ? null
-          : (value) => setState(() => _nationalityCode = value),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _FieldLabel(l10n.nationalityLabel),
+        DropdownButtonFormField<String>(
+          initialValue: _nationalityCode,
+          isExpanded: true,
+          style: _fieldTextStyle,
+          dropdownColor: SimfTokens.surface,
+          decoration: _whiteFieldDecoration(),
+          items: _countries
+              .map(
+                (c) => DropdownMenuItem<String>(
+                  value: c.code,
+                  child: Text(
+                    l10n.isArabic ? c.nameArabic : c.name,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              )
+              .toList(),
+          validator: (value) => (value == null || value.isEmpty)
+              ? l10n.nationalityRequired
+              : null,
+          onChanged: _submitting
+              ? null
+              : (value) => setState(() => _nationalityCode = value),
+        ),
+      ],
     );
   }
 
   List<Widget> _buildDocumentFields(AppL10n l10n) {
     if (_isSaudi) {
       return <Widget>[
+        _FieldLabel(l10n.nationalIdLabel),
         TextFormField(
           controller: _nationalId,
           enabled: !_submitting,
           keyboardType: TextInputType.number,
           maxLength: 10,
+          style: _fieldTextStyle,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: _validateNationalId,
-          decoration: InputDecoration(
-            labelText: l10n.nationalIdLabel,
-            counterText: '',
-          ),
+          decoration: _whiteFieldDecoration(counterText: ''),
         ),
       ];
     }
     return <Widget>[
       SegmentedButton<_DocType>(
+        style: _segmentedStyle,
         segments: <ButtonSegment<_DocType>>[
           ButtonSegment<_DocType>(
             value: _DocType.iqama,
@@ -620,74 +646,103 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                 }),
       ),
       const SizedBox(height: SimfTokens.space3),
+      _FieldLabel(
+        _docType == _DocType.iqama
+            ? l10n.iqamaNumberLabel
+            : l10n.passportNumberLabel,
+      ),
       TextFormField(
         controller: _documentNumber,
         enabled: !_submitting,
         maxLength: _docType == _DocType.iqama ? 10 : 9,
+        style: _fieldTextStyle,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         validator: _validateDocumentNumber,
-        decoration: InputDecoration(
-          labelText: _docType == _DocType.iqama
-              ? l10n.iqamaNumberLabel
-              : l10n.passportNumberLabel,
-          counterText: '',
-        ),
+        decoration: _whiteFieldDecoration(counterText: ''),
       ),
     ];
   }
 
   Widget _buildMobileField(AppL10n l10n) {
     final saudi = _isSaudi;
-    return TextFormField(
-      controller: saudi ? _saudiMobile : _internationalMobile,
-      enabled: !_submitting,
-      keyboardType: TextInputType.phone,
-      textDirection: TextDirection.ltr,
-      autovalidateMode: AutovalidateMode.onUserInteraction,
-      validator: _validatePhone,
-      decoration: InputDecoration(
-        labelText: saudi ? l10n.saudiMobileLabel : l10n.internationalMobileLabel,
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _FieldLabel(
+          saudi ? l10n.saudiMobileLabel : l10n.internationalMobileLabel,
+        ),
+        TextFormField(
+          controller: saudi ? _saudiMobile : _internationalMobile,
+          enabled: !_submitting,
+          keyboardType: TextInputType.phone,
+          textDirection: TextDirection.ltr,
+          style: _fieldTextStyle,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          validator: _validatePhone,
+          decoration: _whiteFieldDecoration(),
+        ),
+      ],
     );
   }
 
   Widget _buildDateOfBirthField(AppL10n l10n) {
     final hasError = _triedSubmit && _dateOfBirth == null;
-    return InkWell(
-      onTap: _submitting ? null : () => unawaited(_pickDateOfBirth()),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: l10n.dateOfBirthLabel,
-          errorText: hasError ? l10n.dateOfBirthRequired : null,
-          suffixIcon: const Icon(Icons.calendar_today_outlined),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _FieldLabel(l10n.dateOfBirthLabel),
+        InkWell(
+          onTap: _submitting ? null : () => unawaited(_pickDateOfBirth()),
+          borderRadius:
+              const BorderRadius.all(Radius.circular(SimfTokens.radius)),
+          child: InputDecorator(
+            decoration: _whiteFieldDecoration(
+              errorText: hasError ? l10n.dateOfBirthRequired : null,
+              suffixIcon: const Icon(
+                Icons.calendar_today_outlined,
+                color: SimfTokens.inkMuted,
+              ),
+            ),
+            child: Text(
+              _dateOfBirth == null ? '—' : _formatDate(_dateOfBirth!),
+              style: _fieldTextStyle,
+            ),
+          ),
         ),
-        child: Text(_dateOfBirth == null ? '—' : _formatDate(_dateOfBirth!)),
-      ),
+      ],
     );
   }
 
   Widget _buildGenderField(AppL10n l10n) {
-    return DropdownButtonFormField<AppGender>(
-      initialValue: _gender,
-      decoration: InputDecoration(labelText: l10n.genderLabel),
-      items: <DropdownMenuItem<AppGender>>[
-        DropdownMenuItem<AppGender>(
-          value: AppGender.unspecified,
-          child: Text(l10n.genderUnspecified),
-        ),
-        DropdownMenuItem<AppGender>(
-          value: AppGender.male,
-          child: Text(l10n.genderMale),
-        ),
-        DropdownMenuItem<AppGender>(
-          value: AppGender.female,
-          child: Text(l10n.genderFemale),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _FieldLabel(l10n.genderLabel),
+        DropdownButtonFormField<AppGender>(
+          initialValue: _gender,
+          style: _fieldTextStyle,
+          dropdownColor: SimfTokens.surface,
+          decoration: _whiteFieldDecoration(),
+          items: <DropdownMenuItem<AppGender>>[
+            DropdownMenuItem<AppGender>(
+              value: AppGender.unspecified,
+              child: Text(l10n.genderUnspecified),
+            ),
+            DropdownMenuItem<AppGender>(
+              value: AppGender.male,
+              child: Text(l10n.genderMale),
+            ),
+            DropdownMenuItem<AppGender>(
+              value: AppGender.female,
+              child: Text(l10n.genderFemale),
+            ),
+          ],
+          onChanged: _submitting
+              ? null
+              : (value) =>
+                  setState(() => _gender = value ?? AppGender.unspecified),
         ),
       ],
-      onChanged: _submitting
-          ? null
-          : (value) =>
-              setState(() => _gender = value ?? AppGender.unspecified),
     );
   }
 
@@ -698,7 +753,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         alignment: AlignmentDirectional.centerStart,
         child: OutlinedButton.icon(
           onPressed: _submitting ? null : () => unawaited(_pickIdImage()),
-          icon: const Icon(Icons.attach_file),
+          icon: const Icon(Icons.attach_file, color: SimfTokens.accent),
           label: Text(l10n.attachIdImageLabel),
         ),
       );
@@ -709,10 +764,18 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         child: Image.memory(bytes, width: 48, height: 48, fit: BoxFit.cover),
       ),
-      title: Text(l10n.idImageAttachedLabel),
-      subtitle: Text(_idImageName ?? '', overflow: TextOverflow.ellipsis),
+      title: Text(
+        l10n.idImageAttachedLabel,
+        style: const TextStyle(color: SimfTokens.surface),
+      ),
+      subtitle: Text(
+        _idImageName ?? '',
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(color: SimfTokens.txtSecondary),
+      ),
       trailing: TextButton(
         onPressed: _submitting ? null : _removeIdImage,
+        style: TextButton.styleFrom(foregroundColor: SimfTokens.accent),
         child: Text(l10n.removeLabel),
       ),
     );
@@ -720,31 +783,43 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   Widget _buildOrganisationField(AppL10n l10n) {
     if (_organisationId != null) {
-      return InputDecorator(
-        decoration: InputDecoration(labelText: l10n.organisationLabel),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: Text(_organisationLabel ?? l10n.organisationSelected),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          _FieldLabel(l10n.organisationLabel),
+          InputDecorator(
+            decoration: _whiteFieldDecoration(),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    _organisationLabel ?? l10n.organisationSelected,
+                    style: _fieldTextStyle,
+                  ),
+                ),
+                TextButton(
+                  onPressed: _submitting ? null : _clearOrganisation,
+                  style:
+                      TextButton.styleFrom(foregroundColor: SimfTokens.accent),
+                  child: Text(l10n.clearLabel),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: _submitting ? null : _clearOrganisation,
-              child: Text(l10n.clearLabel),
-            ),
-          ],
-        ),
+          ),
+        ],
       );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        _FieldLabel(l10n.organisationLabel),
         TextField(
           controller: _organisationSearch,
           enabled: !_submitting,
-          decoration: InputDecoration(
-            labelText: l10n.organisationLabel,
+          style: _fieldTextStyle,
+          decoration: _whiteFieldDecoration(
             hintText: l10n.organisationSearchHint,
-            prefixIcon: const Icon(Icons.search),
+            prefixIcon: const Icon(Icons.search, color: SimfTokens.inkMuted),
           ),
           onChanged: _onOrganisationSearchChanged,
         ),
@@ -753,7 +828,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           if (_organisationResults.isEmpty)
             Padding(
               padding: const EdgeInsets.all(SimfTokens.space2),
-              child: Text(l10n.organisationEmpty),
+              child: Text(
+                l10n.organisationEmpty,
+                style: const TextStyle(color: SimfTokens.txtSecondary),
+              ),
             )
           else
             ..._organisationResults.take(8).map(
@@ -764,10 +842,16 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       l10n.isArabic
                           ? organisation.nameAr
                           : (organisation.nameEn ?? organisation.nameAr),
+                      style: const TextStyle(color: SimfTokens.surface),
                     ),
                     subtitle: organisation.city == null
                         ? null
-                        : Text(organisation.city!),
+                        : Text(
+                            organisation.city!,
+                            style: const TextStyle(
+                              color: SimfTokens.txtSecondary,
+                            ),
+                          ),
                     onTap: _submitting
                         ? null
                         : () => _selectOrganisation(organisation, l10n),
@@ -785,8 +869,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(l10n.profileTypeLabel),
-        const SizedBox(height: SimfTokens.space2),
+        _FieldLabel(l10n.profileTypeLabel),
+        const SizedBox(height: SimfTokens.space1),
         Wrap(
           spacing: SimfTokens.space2,
           runSpacing: SimfTokens.space2,
@@ -810,7 +894,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   Widget _buildInterestsField(AppL10n l10n) {
     if (_interests.isEmpty) {
-      return Text(l10n.interestsEmpty);
+      return Text(
+        l10n.interestsEmpty,
+        style: const TextStyle(color: SimfTokens.txtSecondary),
+      );
     }
     final showRequiredError = _triedSubmit && _interestIds.isEmpty;
     return Column(
@@ -819,11 +906,25 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            Flexible(child: Text(l10n.interestsHelper)),
-            Text(l10n.interestsCounter(_interestIds.length)),
+            Flexible(
+              child: Text(
+                l10n.interestsHelper,
+                style: const TextStyle(
+                  color: SimfTokens.txtSecondary,
+                  fontSize: SimfTokens.textSm,
+                ),
+              ),
+            ),
+            Text(
+              l10n.interestsCounter(_interestIds.length),
+              style: const TextStyle(
+                color: SimfTokens.txtTertiary,
+                fontSize: SimfTokens.textSm,
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: SimfTokens.space2),
+        const SizedBox(height: SimfTokens.space3),
         Wrap(
           spacing: SimfTokens.space2,
           runSpacing: SimfTokens.space2,
@@ -852,21 +953,85 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     );
   }
 
+  /// A `.dark-form` section caption — the kicker above a field group
+  /// (txt-3 tertiary, uppercase-weight, letter-spaced).
   Widget _sectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(
         top: SimfTokens.space5,
-        bottom: SimfTokens.space2,
+        bottom: SimfTokens.space3,
       ),
       child: Text(
         title,
         style: const TextStyle(
+          color: SimfTokens.txtTertiary,
           fontWeight: FontWeight.w700,
-          fontSize: SimfTokens.textLg,
+          fontSize: SimfTokens.textXs,
+          letterSpacing: 0.8,
         ),
       ),
     );
   }
+
+  // ---- Styling helpers (mockup `.dark-form` / `.mfield` / `.type-chip`) -----
+
+  /// Ink-on-white field text, matching the mockup's `.mfield .in` colour.
+  static const TextStyle _fieldTextStyle = TextStyle(
+    color: SimfTokens.ink,
+    fontSize: SimfTokens.textMd,
+  );
+
+  /// Per-field white decoration overriding the navy theme to the mockup's
+  /// `.mfield .in` (white fill, ink hint, accent focus ring) — the same field
+  /// treatment as the Page 005 sign-up card.
+  InputDecoration _whiteFieldDecoration({
+    String? counterText,
+    String? hintText,
+    String? errorText,
+    Widget? prefixIcon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      counterText: counterText,
+      hintText: hintText,
+      errorText: errorText,
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: SimfTokens.surface,
+      hintStyle: const TextStyle(color: SimfTokens.inkMuted),
+      border: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
+        borderSide: BorderSide(color: SimfTokens.accent),
+      ),
+    );
+  }
+
+  /// `.type-grid` segmented selector — transparent on navy with an accent
+  /// fill + navy text on the chosen segment, mirroring `.type-chip.on`.
+  static final ButtonStyle _segmentedStyle = ButtonStyle(
+    backgroundColor: WidgetStateProperty.resolveWith<Color>(
+      (states) => states.contains(WidgetState.selected)
+          ? SimfTokens.accent
+          : Colors.transparent,
+    ),
+    foregroundColor: WidgetStateProperty.resolveWith<Color>(
+      (states) => states.contains(WidgetState.selected)
+          ? SimfTokens.navy
+          : SimfTokens.txtSecondary,
+    ),
+    side: WidgetStateProperty.all(
+      const BorderSide(color: SimfTokens.line),
+    ),
+  );
 
   // ---- Pure helpers --------------------------------------------------------
 
@@ -903,5 +1068,28 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       doubleDigit = !doubleDigit;
     }
     return sum % 10 == 0;
+  }
+}
+
+/// A field caption above its input — the mockup's `.mfield label`
+/// (txt-2 secondary on the navy form).
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SimfTokens.space2),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: SimfTokens.txtSecondary,
+          fontSize: SimfTokens.textSm,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
   }
 }
