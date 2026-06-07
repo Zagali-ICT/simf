@@ -156,7 +156,7 @@ the live `/app/*` endpoints (routes 100–102 in `router.dart`), reached from th
 items are the explicitly **deferred** ones below.
 
 **Deferred (not in this version) — do not build app paths that depend on them:**
-- D4 Nafath sign-in, D8 server-side T&C consent record, D10 live/YouTube banner,
+- D8 server-side T&C consent record, D10 live/YouTube banner,
   D11 mockup decorations (approval ref#+date, booth logo+hall-name).
 - **D1 — configurable 5-day session** → moved to **V2** (owner, 2026-06-03);
   see [`SIMF-V2-Plan.md`](../SIMF-V2-Plan.md) **V2-02**. The V1 refresh-token
