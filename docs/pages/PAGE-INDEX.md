@@ -179,7 +179,7 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | #23 `sponsors` (`GET /app/sponsors`) | 🟢 Screen built (D-305) | Guest+ | [App/Page_023](../App/Page_023/README.md) | [e2e/mobile-sponsors.md](../tests/e2e/mobile-sponsors.md) |
 | #24 `archive` (`GET /app/archive` + `/{id}`) | 🟢 Screen built (D-307) | Guest+ | [App/Page_024](../App/Page_024/README.md) | [e2e/mobile-archive.md](../tests/e2e/mobile-archive.md) |
 | #29 `news` (`GET /app/news` + `/{id}`) | 🟢 Screen built (D-308) | Guest+ | [App/Page_029](../App/Page_029/README.md) | [e2e/mobile-news.md](../tests/e2e/mobile-news.md) |
-| #30 `gallery` (`GET /app/media`) | 🟢 Screen built (D-309) | Guest+ | [App/Page_030](../App/Page_030/README.md) | [e2e/mobile-gallery.md](../tests/e2e/mobile-gallery.md) |
+| #30 `gallery` (`GET /app/media` + `/{id}/image`) | 🟢 Screen built (D-309); tile bitmaps (D-342) | Guest+ | [App/Page_030](../App/Page_030/README.md) | [e2e/mobile-gallery.md](../tests/e2e/mobile-gallery.md) |
 | #37 `aboutForum` (`GET /app/content/about`) | 🟢 Screen built (D-311) | Guest+ | [App/Page_037](../App/Page_037/README.md) | [e2e/mobile-about.md](../tests/e2e/mobile-about.md) |
 | #40 `rate` (`POST /app/feedback/rate`) | 🟢 Screen built (D-310) | Visitor (login-only) | [App/Page_040](../App/Page_040/README.md) | [e2e/mobile-rate.md](../tests/e2e/mobile-rate.md) |
 | #31 `mediaPartners` (`GET /app/media-partners`) | 🟢 Screen built (D-306) | Guest+ | [App/Page_031](../App/Page_031/README.md) | [e2e/mobile-media-partners.md](../tests/e2e/mobile-media-partners.md) |

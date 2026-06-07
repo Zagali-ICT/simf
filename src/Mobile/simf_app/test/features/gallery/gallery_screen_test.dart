@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/gallery/gallery_screen.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 const _items = <MediaItem>[
   MediaItem(
@@ -15,10 +16,22 @@ const _items = <MediaItem>[
   MediaItem(id: 'm2', kind: MediaKind.video, title: 'Keynote'),
 ];
 
+// The screen reads the base URL to build tile image URLs; every pump supplies
+// one (the must-override config provider throws otherwise). The test items
+// carry no bitmap, so tiles render the kind-icon placeholder — no network.
+const _testConfig = SimfDataConfig(
+  baseUrl: 'http://test.local/api/v1',
+  appKey: 'test',
+  deviceType: SimfDeviceType.android,
+);
+
 Future<void> _pump(WidgetTester tester, List<Override> overrides) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: overrides,
+      overrides: <Override>[
+        simfDataConfigProvider.overrideWithValue(_testConfig),
+        ...overrides,
+      ],
       child: MaterialApp(
         locale: const Locale('en'),
         supportedLocales: AppL10n.supportedLocales,
@@ -66,6 +79,21 @@ void main() {
       expect(MediaKind.fromJson(0), MediaKind.image);
       expect(MediaKind.fromJson('Video'), MediaKind.video);
       expect(MediaKind.fromJson(null), MediaKind.image);
+    });
+
+    test('MediaItem.fromJson reads image/thumbnail presence', () {
+      final withBoth = MediaItem.fromJson(<String, dynamic>{
+        'id': 'm1',
+        'kind': 0,
+        'imageUrl': '/media/m1/image',
+        'thumbnailUrl': '/media/m1/thumbnail',
+      });
+      expect(withBoth.hasImage, isTrue);
+      expect(withBoth.hasThumbnail, isTrue);
+
+      final none = MediaItem.fromJson(<String, dynamic>{'id': 'm2', 'kind': 1});
+      expect(none.hasImage, isFalse);
+      expect(none.hasThumbnail, isFalse);
     });
   });
 }

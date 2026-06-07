@@ -22,6 +22,13 @@ enum MediaKind {
 }
 
 /// One media item — mirrors `PublicMediaItem` (`GET /app/media`).
+///
+/// The wire carries `imageUrl` / `thumbnailUrl` (server-relative, non-null only
+/// when bytes were uploaded). We keep them as the [hasImage] / [hasThumbnail]
+/// presence flags rather than the raw strings: the actual bitmap is fetched
+/// from the public route `…/app/media/{id}/(thumbnail|image)` built against the
+/// data-package base URL (the wire string omits the `/app` segment, so it is a
+/// presence signal, not a fetch URL).
 @immutable
 class MediaItem {
   const MediaItem({
@@ -31,6 +38,8 @@ class MediaItem {
     this.titleArabic,
     this.album,
     this.albumArabic,
+    this.hasImage = false,
+    this.hasThumbnail = false,
   });
 
   final String id;
@@ -39,6 +48,8 @@ class MediaItem {
   final String? titleArabic;
   final String? album;
   final String? albumArabic;
+  final bool hasImage;
+  final bool hasThumbnail;
 
   String? localizedTitle(bool isArabic) => _pick(titleArabic, title, isArabic);
   String? localizedAlbum(bool isArabic) => _pick(albumArabic, album, isArabic);
@@ -50,6 +61,8 @@ class MediaItem {
         titleArabic: json['titleArabic'] as String?,
         album: json['album'] as String?,
         albumArabic: json['albumArabic'] as String?,
+        hasImage: (json['imageUrl'] as String?)?.isNotEmpty ?? false,
+        hasThumbnail: (json['thumbnailUrl'] as String?)?.isNotEmpty ?? false,
       );
 }
 
@@ -76,10 +89,11 @@ final mediaItemsProvider =
 
 /// Page 030 — معرض الصور والفيديوهات · Media gallery (#30, `/media`, Guest+).
 ///
-/// **Public.** A grid of media tiles (image / video kind + title/album). The
-/// actual image/video rendering (the `…/image` & `…/thumbnail` binary endpoints
-/// and video playback) is deferred to the asset/media pass — interim tiles show
-/// the kind icon + caption.
+/// **Public.** A grid of media tiles (image / video kind + title/album). Tiles
+/// with an uploaded bitmap render it from the public `…/app/media/{id}/…`
+/// route (thumbnail preferred, image fallback) with a loading spinner and a
+/// graceful fall-back to the kind icon when there is no bitmap or the fetch
+/// fails. Video *playback* (opening the external `VideoUrl`) is still deferred.
 class GalleryScreen extends ConsumerWidget {
   const GalleryScreen({super.key});
 
@@ -87,6 +101,9 @@ class GalleryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context);
     final media = ref.watch(mediaItemsProvider);
+    // The data-package base URL already includes `/api/v1`; the tile builds
+    // `{base}/app/media/{id}/(thumbnail|image)` from it.
+    final baseUrl = ref.watch(simfDataConfigProvider).baseUrl;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.galleryTitle)),
       body: SafeArea(
@@ -110,8 +127,11 @@ class GalleryScreen extends ConsumerWidget {
                 childAspectRatio: 1.1,
               ),
               itemCount: items.length,
-              itemBuilder: (context, index) =>
-                  _MediaTile(item: items[index], isArabic: isArabic),
+              itemBuilder: (context, index) => _MediaTile(
+                item: items[index],
+                isArabic: isArabic,
+                baseUrl: baseUrl,
+              ),
             );
           },
         ),
@@ -121,15 +141,27 @@ class GalleryScreen extends ConsumerWidget {
 }
 
 class _MediaTile extends StatelessWidget {
-  const _MediaTile({required this.item, required this.isArabic});
+  const _MediaTile({
+    required this.item,
+    required this.isArabic,
+    required this.baseUrl,
+  });
 
   final MediaItem item;
   final bool isArabic;
+  final String baseUrl;
 
   @override
   Widget build(BuildContext context) {
     final title = item.localizedTitle(isArabic);
     final album = item.localizedAlbum(isArabic);
+    // Prefer the lighter thumbnail for the grid; fall back to the full image;
+    // null when the item carries no bitmap (then the kind icon is shown).
+    final String? tileUrl = item.hasThumbnail
+        ? '$baseUrl/app/media/${item.id}/thumbnail'
+        : item.hasImage
+            ? '$baseUrl/app/media/${item.id}/image'
+            : null;
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
@@ -137,16 +169,9 @@ class _MediaTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Expanded(
-            child: Container(
-              color: SimfTokens.navyDeep,
-              alignment: Alignment.center,
-              child: Icon(
-                item.kind == MediaKind.video
-                    ? Icons.play_circle_outline
-                    : Icons.image_outlined,
-                size: 40,
-                color: SimfTokens.accent,
-              ),
+            child: _Thumbnail(
+              imageUrl: tileUrl,
+              isVideo: item.kind == MediaKind.video,
             ),
           ),
           Padding(
@@ -182,6 +207,80 @@ class _MediaTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The tile bitmap: a network image (thumbnail/image) with a spinner while it
+/// loads and a fall-back to the kind icon when [imageUrl] is null or the fetch
+/// fails. A video tile overlays a play glyph on its poster.
+class _Thumbnail extends StatelessWidget {
+  const _Thumbnail({required this.imageUrl, required this.isVideo});
+
+  final String? imageUrl;
+  final bool isVideo;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl;
+    if (url == null) {
+      return _PlaceholderBox(isVideo: isVideo);
+    }
+    return Image.network(
+      url,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      gaplessPlayback: true,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) {
+          return isVideo ? _withPlayGlyph(child) : child;
+        }
+        return Container(
+          color: SimfTokens.navyDeep,
+          alignment: Alignment.center,
+          child: const SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) =>
+          _PlaceholderBox(isVideo: isVideo),
+    );
+  }
+
+  Widget _withPlayGlyph(Widget child) => Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          child,
+          const Center(
+            child: Icon(
+              Icons.play_circle_outline,
+              size: 40,
+              color: SimfTokens.surface,
+            ),
+          ),
+        ],
+      );
+}
+
+/// The no-bitmap / failed-fetch fall-back: a navy box with the kind icon
+/// (mirrors the original interim tile).
+class _PlaceholderBox extends StatelessWidget {
+  const _PlaceholderBox({required this.isVideo});
+
+  final bool isVideo;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        color: SimfTokens.navyDeep,
+        alignment: Alignment.center,
+        child: Icon(
+          isVideo ? Icons.play_circle_outline : Icons.image_outlined,
+          size: 40,
+          color: SimfTokens.accent,
+        ),
+      );
 }
 
 class _Empty extends StatelessWidget {
