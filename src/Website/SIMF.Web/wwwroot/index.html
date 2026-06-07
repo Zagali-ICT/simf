@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>الملتقى البحري السعودي الدولي الرابع | SIMF 2026</title>
+<link rel="icon" type="image/png" href="assets/logo-simf.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -374,7 +375,9 @@
   .about-card { max-width: 1280px; margin: 0 auto; display: flex; justify-content: center; }
   .about-img {
     width: 1200px; max-width: 100%; height: 620px;
-    background: url('assets/about-image.png') center/cover no-repeat;
+    /* On-brand asset that ships in wwwroot/assets (the previous
+       about-image.png was never added and 404'd, leaving an empty box). */
+    background: url('assets/neom.avif') center/cover no-repeat, var(--navy);
     margin-top: 48px;
     position: relative;
   }
