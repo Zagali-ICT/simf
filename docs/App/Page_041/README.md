@@ -28,9 +28,13 @@ routes to:
 | Terms & conditions | `RouteNames.terms` → `/terms` |
 | Rate | `RouteNames.rate` → `/rate` |
 | Notifications | `RouteNames.notifications` → `/notifications` |
+| Share my contact | `RouteNames.shareMyContact` → `/contacts/share` |
+| My Contacts | `RouteNames.myContacts` → `/contacts` |
 | Media partners | `RouteNames.mediaPartners` → `/media-partners` |
 
-A static `SIMF v0.1.0` version line is centred at the bottom. The auth gate on
+The **Share my contact** + **My Contacts** tiles are the FDS-014 visitor
+contact-sharing entry points, added with the contact UI (D-324). A static
+`SIMF v0.1.0` version line is centred at the bottom. The auth gate on
 the **destination** routes (e.g. Notifications #33, Rate #40) still applies —
 tapping while signed-out bounces to sign-in (router redirect). UI is interim
 (final visuals from SIMF-VID-001).

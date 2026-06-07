@@ -9,8 +9,8 @@ import '../../app/theme/tokens.dart';
 ///
 /// **Public — no API.** A navigation hub: a list of tiles that route to the
 /// already-built secondary screens (About, Accessibility, Terms, Rate,
-/// Notifications, Media partners), with a static app-version line at the
-/// bottom. UI is interim (final visuals from SIMF-VID-001).
+/// Notifications, Share my contact, My Contacts, Media partners), with a static
+/// app-version line at the bottom. UI is interim (final visuals from SIMF-VID-001).
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
 

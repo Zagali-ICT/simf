@@ -45,3 +45,9 @@ as **initials** and the `pageColor` tier accent uses the token accent — the ca
 `avatarUrl`/`pageColor` are deferred to SIMF-VID-001 to keep the skeleton free of a
 network-image fetch. Tests: `my_area_screen_test.dart` (7) +
 `myarea_models_test.dart` (2).
+
+**Mockup toggles relocated (D-334):** the mockup's on-screen **theme**
+(`المظهر · ليلي/نهاري`) and **language** (`العربية · English`) toggle tiles are
+**not** on this screen by design — the app is pinned **navy-always** (no light
+mode, D-331) and the language control lives on the **Accessibility** screen
+(Page 038, D-327). My-Area therefore carries no theme/language tile.

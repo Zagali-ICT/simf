@@ -30,6 +30,17 @@ opens a bottom sheet that lazily loads the booth's description
 description). Loading / empty / error+retry states. UI is interim (final visuals
 from SIMF-VID-001).
 
+## Scope — mockup blocks intentionally omitted (D11 / D-334)
+The mockup's booth card also shows a **hall name**, a **booth-officer** block
+(`المسؤول في الجناح` + name/photo), **contacts** (📞 phone / ✉ email) and a
+**`أرشدني إلى الجناح`** (directions) action. These are **deliberately not in the
+public app**: the public `GET /app/booths` contract carries only a bare `hallId`
+and no officer/contact fields — the D11 "decoration, not data" rule the venue map
+applies (Page_015_Logic L-6). Booth-officer + Company data **does** exist in the
+backend (D-222) but stays a **CP-only** concern; it is not exposed on the public,
+anonymous booth read, so the app neither receives nor renders it
+(owner-confirmed, D-334).
+
 ## Tests
 - Widget: `src/Mobile/simf_app/test/features/booths/booths_screen_test.dart`
   (list, tap→detail sheet, empty, error→retry).
