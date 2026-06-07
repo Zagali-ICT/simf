@@ -55,6 +55,11 @@ hero CMS blocks store `ContentArabic` (→ base) and `Content` (→ `_en`).
 
 ## 7. Edge cases
 
+- **Loading** → while `/content/site` is in flight the dynamic sections
+  (sessions/speakers/partners/news) show a CSS **skeleton shimmer** (gated on
+  `window.__contentReady`), not the sample defaults; the loader's `finish()`
+  flips the flag and re-renders real rows. Each render step runs in its own
+  try/catch so one section failing on edge data can't strand the others (D-337).
 - **API offline / 503** → `loadSiteContentRemote()` returns `null` → the landing
   keeps its `SITE_DEFAULTS` (no blanking, no error surfaced to the visitor).
 - **A section has no rows** (e.g. archive hidden) → that key is omitted from

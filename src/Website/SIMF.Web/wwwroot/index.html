@@ -1848,6 +1848,33 @@
     .archive-detail .big-y { font-size: 72px !important; }
     .stat-cell .v { font-size: 30px !important; }
   }
+
+  /* ===== Skeleton loading — shown in the dynamic sections while the
+     /content/site feed is in flight, so the page never flashes the built-in
+     sample data. Replaced by real content (or the offline fallback) once the
+     fetch resolves. ===== */
+  @keyframes simf-skeleton-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  .skeleton {
+    background: linear-gradient(
+      100deg,
+      rgba(140,140,150,0.12) 30%,
+      rgba(232,192,96,0.28) 50%,
+      rgba(140,140,150,0.12) 70%);
+    background-size: 200% 100%;
+    animation: simf-skeleton-shimmer 1.4s ease-in-out infinite;
+    border-radius: 8px;
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton { animation: none; }
+  }
+  .skel-line { height: 12px; margin: 9px 0; display: block; }
+  .skel-line.sm { width: 42%; }
+  .skel-line.md { width: 70%; }
+  .skel-line.lg { width: 92%; }
 </style>
 </head>
 <body>
@@ -2260,30 +2287,45 @@
 
   // ============ REMOTE CONTENT — fetch live content from the API via /content/site ============
   (async function loadRemoteContent() {
-    if (!window.loadSiteContentRemote) return;
-    const remote = await window.loadSiteContentRemote();
-    if (!remote) return;
-    // Replace siteContent fields (keep reference)
-    for (const k of Object.keys(remote)) {
-      siteContent[k] = remote[k];
+    // Paint the real content (on success) or the built-in fallback (offline),
+    // and flip __contentReady so the gated renderers stop showing skeletons.
+    function finish() {
+      window.__contentReady = true;
+      // Render each section independently — one section throwing on edge data
+      // (e.g. an empty archive) must not abort the rest, which would leave the
+      // other sections stuck on their skeletons and leak an unhandled rejection.
+      const run = (fn) => { try { fn(); } catch (e) { console.warn('[content] render step failed:', e); } };
+      run(() => { if (typeof applyCmsBindings === 'function') applyCmsBindings(); });
+      run(() => { if (typeof renderPillars === 'function') renderPillars(); });
+      run(() => { if (typeof renderSessions === 'function') renderSessions(); });
+      run(() => { if (typeof renderNews === 'function') renderNews(); });
+      run(() => { if (typeof renderPartners === 'function') renderPartners(); });
+      run(() => { if (typeof renderSpirit === 'function') renderSpirit(); });
+      run(() => { if (typeof renderArchiveYears === 'function') renderArchiveYears(); });
+      run(() => { if (typeof paintArch === 'function' && typeof archIdx !== 'undefined' && arch[archIdx]) paintArch(archIdx); });
+      run(() => { if (typeof renderSlide === 'function' && typeof slideIdx !== 'undefined') renderSlide(slideIdx); });
+      run(() => { if (typeof __speakersBuild === 'function') __speakersBuild(); });
     }
-    // Sync derived array references (mutate in place so existing closures see updates)
-    if (Array.isArray(remote.archive))   { arch.length = 0;     remote.archive.forEach(x => arch.push(x)); }
-    if (Array.isArray(remote.speakers))  { speakers.length = 0; remote.speakers.forEach(x => speakers.push(x)); }
-    if (Array.isArray(remote.partners))  { partners.length = 0; remote.partners.forEach(x => partners.push(x)); }
-    if (Array.isArray(remote.news))      { newsData.length = 0; remote.news.forEach(x => newsData.push(x)); }
-    if (Array.isArray(remote.spirit))    { spirit.length = 0; remote.spirit.forEach(x => spirit.push(x)); }
-    // Re-apply CMS bindings + dynamic renders
-    if (typeof applyCmsBindings === 'function') applyCmsBindings();
-    if (typeof renderPillars === 'function') renderPillars();
-    if (typeof renderSessions === 'function') renderSessions();
-    if (typeof renderNews === 'function') renderNews();
-    if (typeof renderPartners === 'function') renderPartners();
-    if (typeof renderSpirit === 'function') renderSpirit();
-    if (typeof renderArchiveYears === 'function') renderArchiveYears();
-    if (typeof paintArch === 'function' && typeof archIdx !== 'undefined') paintArch(archIdx);
-    if (typeof renderSlide === 'function' && typeof slideIdx !== 'undefined') renderSlide(slideIdx);
-    if (typeof __speakersBuild === 'function') __speakersBuild();
+
+    const remote = window.loadSiteContentRemote
+      ? await window.loadSiteContentRemote()
+      : null;
+
+    if (remote) {
+      // Replace siteContent fields (keep reference)
+      for (const k of Object.keys(remote)) {
+        siteContent[k] = remote[k];
+      }
+      // Sync derived array references (mutate in place so existing closures see updates)
+      if (Array.isArray(remote.archive))   { arch.length = 0;     remote.archive.forEach(x => arch.push(x)); }
+      if (Array.isArray(remote.speakers))  { speakers.length = 0; remote.speakers.forEach(x => speakers.push(x)); }
+      if (Array.isArray(remote.partners))  { partners.length = 0; remote.partners.forEach(x => partners.push(x)); }
+      if (Array.isArray(remote.news))      { newsData.length = 0; remote.news.forEach(x => newsData.push(x)); }
+      if (Array.isArray(remote.spirit))    { spirit.length = 0; remote.spirit.forEach(x => spirit.push(x)); }
+    }
+    // On an unreachable API (remote === null) the arrays keep their built-in
+    // SITE_DEFAULTS — the page degrades to defaults rather than spinning.
+    finish();
   })();
 
   // ============ HERO VIDEO — ensure autoplay (mobile-friendly) ============
@@ -2435,9 +2477,52 @@
     </svg>`;
     return 'data:image/svg+xml;utf8,' + svg.replace(/#/g, '%23').replace(/\n/g, '').replace(/\s+/g, ' ');
   }
+  // ===== Skeleton loading placeholders =====
+  // Until the /content/site fetch resolves, the dynamic sections show shimmer
+  // placeholders instead of the built-in SITE_DEFAULTS sample data. The remote
+  // loader flips window.__contentReady and re-renders with the real data (or,
+  // when the API is unreachable, the defaults).
+  window.__contentReady = false;
+  function skelLines(n) {
+    const w = ['lg', 'md', 'sm'];
+    let out = '';
+    for (let i = 0; i < n; i++) out += `<span class="skeleton skel-line ${w[i % w.length]}"></span>`;
+    return out;
+  }
+  function skeletonSessions(n) {
+    let out = '';
+    for (let i = 0; i < n; i++) out += `<div class="session-row" aria-hidden="true">`
+      + `<div class="session-img skeleton"></div>`
+      + `<div class="session-body">${skelLines(3)}</div></div>`;
+    return out;
+  }
+  function skeletonSpeakers(n) {
+    let out = '';
+    for (let i = 0; i < n; i++) out += `<div class="speaker" aria-hidden="true">`
+      + `<div class="speaker-photo skeleton"></div>`
+      + `<span class="skeleton skel-line md" style="margin-inline:auto"></span>`
+      + `<span class="skeleton skel-line sm" style="margin-inline:auto"></span></div>`;
+    return out;
+  }
+  function skeletonPartners(n) {
+    let out = '';
+    for (let i = 0; i < n; i++) out += `<div class="partner" aria-hidden="true">`
+      + `<div class="partner-logo"><div class="slot skeleton" style="width:100%;height:100%"></div></div>`
+      + `<div class="partner-meta"><span class="skeleton skel-line sm"></span></div></div>`;
+    return out;
+  }
+  function skeletonNews(n) {
+    let out = '';
+    for (let i = 0; i < n; i++) out += `<article class="news-card" aria-hidden="true">`
+      + `<div class="news-thumb skeleton"></div>`
+      + `<div class="news-body">${skelLines(3)}</div></article>`;
+    return out;
+  }
+
   const sgRoot = document.getElementById('sessionsGrid');
   function renderSessions() {
     if (!sgRoot) return;
+    if (!window.__contentReady) { sgRoot.className = 'sessions-list'; sgRoot.innerHTML = skeletonSessions(3); return; }
     const mainSessions = siteContent.sessions || [];
     sgRoot.className = 'sessions-list';
     sgRoot.innerHTML = mainSessions.map(s => `
@@ -2478,6 +2563,7 @@
     if (!speakers.length) return;
 
     function build() {
+      if (!window.__contentReady) { grid.innerHTML = skeletonSpeakers(6); return; }
       const oneSet = speakers.map(speakerCard).join('');
       grid.innerHTML = oneSet;
       const oneSetWidth = grid.scrollWidth + 24;
@@ -2515,6 +2601,7 @@
   function renderPartners() {
     const track = document.getElementById('partnersTrack');
     if (!track) return;
+    if (!window.__contentReady) { track.innerHTML = skeletonPartners(6); return; }
     const baseHTML = partners.map(partnerCard).join('');
     track.innerHTML = baseHTML + baseHTML;
   }
@@ -2525,6 +2612,7 @@
   function renderNews() {
     const grid = document.getElementById('newsGrid');
     if (!grid) return;
+    if (!window.__contentReady) { grid.innerHTML = skeletonNews(3); return; }
     grid.innerHTML = newsData.map(n => `
       <article class="news-card">
         <div class="news-thumb" style="background-image:url('${n.img}')"></div>

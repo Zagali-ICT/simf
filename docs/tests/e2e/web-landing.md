@@ -31,6 +31,7 @@
 | E2E-WLD-007 | Hero CMS text — hero renders the seeded `hero.*` blocks; all-or-nothing (a missing key keeps the default hero) | happy | P1 | _to author_ |
 | E2E-WLD-008 | Bilingual — EN/AR toggle swaps `field`/`field_en` across dynamic sections + hero | i18n | P1 | _to author_ |
 | E2E-WLD-009 | Editorial sections CMS-driven — About / stats strip (incl. the 4 numbers) / Pillars header / Goals render the seeded `about.* / stats.* / pillars.* / goals.*` blocks; an unseeded key keeps the built-in copy (D-336) | happy | P1 | _to author_ |
+| E2E-WLD-010 | Skeleton loading — while `/content/site` is in flight the dynamic sections (sessions/speakers/partners/news) show shimmer placeholders, replaced by real rows once it resolves; no `.skeleton` remains and no unhandled rejection (D-337) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -167,6 +168,26 @@ Scenario: An admin edits a section from the CP and the landing reflects it
   Given an admin updates about.h2 via /admin/content-blocks
   When a visitor reloads "/"
   Then the About heading shows the edited value (no redeploy)
+```
+
+### E2E-WLD-010 — Skeleton loading (D-337)
+
+```gherkin
+Scenario: Dynamic sections show a shimmer skeleton while loading, then real data
+  When a visitor opens "/"
+  Then before /content/site resolves the sessions/speakers/partners/news
+       containers show .skeleton shimmer placeholders (not the sample defaults)
+  When /content/site resolves
+  Then every .skeleton is removed and the real rows render
+  And window.__contentReady is true
+  And the browser console logs no unhandled promise rejection
+
+Scenario: A section that throws on edge data does not strand other skeletons
+  Given the live archive is empty (arch[archIdx] is undefined)
+  When the content loader runs
+  Then the archive paint is skipped without throwing
+  And every other section (incl. speakers) still renders — no stuck skeleton
+  # finish() runs each render step in its own try/catch (regression guard, D-337).
 ```
 
 ---
