@@ -73,31 +73,81 @@ class MediaPartnersScreen extends ConsumerWidget {
               return _Empty(message: l10n.mediaPartnersEmpty);
             }
             final isArabic = l10n.isArabic;
-            return ListView.separated(
+            // Mockup Page 031 `.partners` — a 2-column grid of `.partner`
+            // cards (logo box + caption).
+            return GridView.builder(
               padding: const EdgeInsets.all(SimfTokens.space4),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: SimfTokens.space2,
+                crossAxisSpacing: SimfTokens.space2,
+                childAspectRatio: 1.6,
+              ),
               itemCount: items.length,
-              separatorBuilder: (_, __) =>
-                  const SizedBox(height: SimfTokens.space2),
               itemBuilder: (context, index) {
                 final partner = items[index];
-                return Card(
-                  margin: EdgeInsets.zero,
-                  clipBehavior: Clip.antiAlias,
-                  child: ListTile(
-                    leading: const Icon(
-                      Icons.campaign_outlined,
-                      color: SimfTokens.accent,
-                    ),
-                    title: Text(
-                      partner.localizedName(isArabic),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    subtitle: partner.url == null ? null : Text(partner.url!),
-                  ),
-                );
+                return _PartnerCard(name: partner.localizedName(isArabic));
               },
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// One partner — mockup `.partner` card (logo box · caption). The logo box
+/// renders the partner's initials (interim — no logo asset yet); the caption
+/// below carries the partner name.
+class _PartnerCard extends StatelessWidget {
+  const _PartnerCard({required this.name});
+
+  final String name;
+
+  String get _initials {
+    final words = name.trim().split(RegExp(r'\s+'));
+    final letters = words
+        .where((w) => w.isNotEmpty)
+        .take(2)
+        .map((w) => w.characters.first)
+        .join();
+    return letters.isEmpty ? '—' : letters.toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: SimfTokens.space2,
+          vertical: SimfTokens.space3,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              _initials,
+              style: const TextStyle(
+                color: SimfTokens.surface,
+                fontWeight: FontWeight.w700,
+                fontSize: SimfTokens.textMd,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: SimfTokens.space1),
+            Text(
+              name,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: SimfTokens.txtTertiary,
+                fontSize: SimfTokens.textXs,
+                height: 1.4,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -115,9 +165,13 @@ class _Empty extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          const Icon(Icons.campaign_outlined, size: 56, color: SimfTokens.inkMuted),
+          const Icon(
+            Icons.campaign_outlined,
+            size: 56,
+            color: SimfTokens.txtTertiary,
+          ),
           const SizedBox(height: SimfTokens.space3),
-          Text(message, style: const TextStyle(color: SimfTokens.inkMuted)),
+          Text(message, style: const TextStyle(color: SimfTokens.txtSecondary)),
         ],
       ),
     );

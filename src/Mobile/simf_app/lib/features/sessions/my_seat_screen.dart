@@ -133,26 +133,49 @@ class _SeatMapView extends StatelessWidget {
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
         _Banner(map: map, l10n: l10n),
-        const SizedBox(height: SimfTokens.space4),
-        _StageBar(label: l10n.stageLabel),
         const SizedBox(height: SimfTokens.space3),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Directionality(
-            // The hall plan keeps the stage at the top and seat columns in
-            // venue order — do not mirror the grid geometry in RTL (L-7).
-            textDirection: TextDirection.ltr,
-            child: Column(
-              children: <Widget>[
-                for (final row in map.rowLabels)
-                  _SeatRow(
-                    rowLabel: row,
-                    seatsPerRow: map.seatsPerRow,
-                    reserved: reserved,
-                    map: map,
-                  ),
-              ],
+        // The hall card (mockup `.hall`): a navy gradient panel holding the
+        // gold stage band at the top and the seat rows below it.
+        Container(
+          padding: const EdgeInsets.fromLTRB(
+            SimfTokens.space3,
+            SimfTokens.space3,
+            SimfTokens.space3,
+            SimfTokens.space4,
+          ),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: <Color>[SimfTokens.line2, SimfTokens.surfaceTint],
             ),
+            border: Border.all(color: SimfTokens.line2),
+            borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
+          ),
+          child: Column(
+            children: <Widget>[
+              _StageBar(label: l10n.stageLabel),
+              const SizedBox(height: SimfTokens.space3),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Directionality(
+                  // The hall plan keeps the stage at the top and seat columns in
+                  // venue order — do not mirror the grid geometry in RTL (L-7).
+                  textDirection: TextDirection.ltr,
+                  child: Column(
+                    children: <Widget>[
+                      for (final row in map.rowLabels)
+                        _SeatRow(
+                          rowLabel: row,
+                          seatsPerRow: map.seatsPerRow,
+                          reserved: reserved,
+                          map: map,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: SimfTokens.space4),
@@ -178,7 +201,7 @@ class _Banner extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         side: BorderSide(
-          color: cell != null ? SimfTokens.accent : SimfTokens.inkMuted,
+          color: cell != null ? SimfTokens.accent : SimfTokens.line2,
         ),
       ),
       child: Padding(
@@ -187,7 +210,7 @@ class _Banner extends StatelessWidget {
           children: <Widget>[
             Icon(
               cell != null ? Icons.event_seat : Icons.event_seat_outlined,
-              color: cell != null ? SimfTokens.accent : SimfTokens.inkMuted,
+              color: cell != null ? SimfTokens.accent : SimfTokens.txtTertiary,
             ),
             const SizedBox(width: SimfTokens.space3),
             Expanded(
@@ -199,6 +222,7 @@ class _Banner extends StatelessWidget {
                         ? l10n.seatLocation(cell.rowLabel, cell.seatNumber)
                         : l10n.noSeatYet,
                     style: const TextStyle(
+                      color: SimfTokens.surface,
                       fontWeight: FontWeight.w700,
                       fontSize: SimfTokens.textMd,
                     ),
@@ -207,7 +231,7 @@ class _Banner extends StatelessWidget {
                   Text(
                     l10n.seatCapacity(map.activeReservedCount, map.capacity),
                     style: const TextStyle(
-                      color: SimfTokens.inkMuted,
+                      color: SimfTokens.txtSecondary,
                       fontSize: SimfTokens.textSm,
                     ),
                   ),
@@ -232,8 +256,19 @@ class _StageBar extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: SimfTokens.space2),
       decoration: BoxDecoration(
-        color: SimfTokens.field,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[
+            SimfTokens.accent.withValues(alpha: 0.20),
+            SimfTokens.accent.withValues(alpha: 0.06),
+          ],
+        ),
+        border: Border.all(color: SimfTokens.accent),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(SimfTokens.radiusLarge),
+          bottomRight: Radius.circular(SimfTokens.radiusLarge),
+        ),
       ),
       child: Text(
         label,
@@ -241,7 +276,8 @@ class _StageBar extends StatelessWidget {
         style: const TextStyle(
           fontWeight: FontWeight.w700,
           letterSpacing: 2,
-          color: SimfTokens.inkMuted,
+          fontSize: SimfTokens.textXs,
+          color: SimfTokens.accent,
         ),
       ),
     );
@@ -275,13 +311,12 @@ class _SeatRow extends StatelessWidget {
               style: const TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: SimfTokens.textXs,
-                color: SimfTokens.inkMuted,
+                color: SimfTokens.txtTertiary,
               ),
             ),
           ),
           for (var seat = 1; seat <= seatsPerRow; seat++)
             _SeatBox(
-              seat: seat,
               status: map.isMine(rowLabel, seat)
                   ? _SeatStatus.mine
                   : reserved.contains('$rowLabel:$seat')
@@ -297,41 +332,47 @@ class _SeatRow extends StatelessWidget {
 enum _SeatStatus { mine, reserved, available }
 
 class _SeatBox extends StatelessWidget {
-  const _SeatBox({required this.seat, required this.status});
+  const _SeatBox({required this.status});
 
-  final int seat;
   final _SeatStatus status;
 
   @override
   Widget build(BuildContext context) {
+    // Mockup `.hall .r i`: plain seat squares (no number) — mine glows gold,
+    // taken is a denser fill with no border, available is a faint fill.
     final Color fill;
-    final Color fg;
     Border? border;
+    List<BoxShadow>? glow;
     switch (status) {
       case _SeatStatus.mine:
         fill = SimfTokens.accent;
-        fg = SimfTokens.navy;
-      case _SeatStatus.reserved:
-        fill = SimfTokens.inkMuted;
-        fg = SimfTokens.surface;
-      case _SeatStatus.available:
-        fill = SimfTokens.surface;
-        fg = SimfTokens.inkMuted;
         border = Border.all(color: SimfTokens.accent);
+        glow = <BoxShadow>[
+          BoxShadow(
+            color: SimfTokens.accent.withValues(alpha: 0.30),
+            blurRadius: 0,
+            spreadRadius: 2,
+          ),
+          BoxShadow(
+            color: SimfTokens.accent.withValues(alpha: 0.55),
+            blurRadius: 8,
+          ),
+        ];
+      case _SeatStatus.reserved:
+        fill = SimfTokens.line;
+      case _SeatStatus.available:
+        fill = SimfTokens.surfaceTint;
+        border = Border.all(color: SimfTokens.line2);
     }
     return Container(
-      width: 24,
-      height: 24,
-      margin: const EdgeInsets.symmetric(horizontal: 2),
+      width: 14,
+      height: 14,
+      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
       decoration: BoxDecoration(
         color: fill,
         border: border,
+        boxShadow: glow,
         borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        seat.toString(),
-        style: TextStyle(fontSize: 9, color: fg, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -345,16 +386,17 @@ class _Legend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
+      alignment: WrapAlignment.center,
       spacing: SimfTokens.space4,
       runSpacing: SimfTokens.space2,
       children: <Widget>[
         _LegendItem(color: SimfTokens.accent, label: l10n.legendMine),
         _LegendItem(
-          color: SimfTokens.surface,
+          color: SimfTokens.surfaceTint,
           border: true,
           label: l10n.legendAvailable,
         ),
-        _LegendItem(color: SimfTokens.inkMuted, label: l10n.legendReserved),
+        _LegendItem(color: SimfTokens.line, label: l10n.legendReserved),
       ],
     );
   }
@@ -373,16 +415,22 @@ class _LegendItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Container(
-          width: 16,
-          height: 16,
+          width: 14,
+          height: 14,
           decoration: BoxDecoration(
             color: color,
-            border: border ? Border.all(color: SimfTokens.accent) : null,
+            border: border ? Border.all(color: SimfTokens.line2) : null,
             borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
           ),
         ),
         const SizedBox(width: SimfTokens.space1),
-        Text(label, style: const TextStyle(fontSize: SimfTokens.textSm)),
+        Text(
+          label,
+          style: const TextStyle(
+            color: SimfTokens.txtSecondary,
+            fontSize: SimfTokens.textSm,
+          ),
+        ),
       ],
     );
   }
@@ -400,18 +448,16 @@ class _Actions extends StatelessWidget {
     return Row(
       children: <Widget>[
         Expanded(
-          child: FilledButton.icon(
+          child: FilledButton(
             onPressed: onNavigate,
-            icon: const Icon(Icons.navigation_outlined),
-            label: Text(l10n.navigateToSeat),
+            child: Text(l10n.navigateToSeat),
           ),
         ),
         const SizedBox(width: SimfTokens.space3),
         Expanded(
-          child: OutlinedButton.icon(
+          child: OutlinedButton(
             onPressed: onShare,
-            icon: const Icon(Icons.ios_share),
-            label: Text(l10n.shareLocation),
+            child: Text(l10n.shareLocation),
           ),
         ),
       ],
@@ -431,9 +477,9 @@ class _Message extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(icon, size: 56, color: SimfTokens.inkMuted),
+          Icon(icon, size: 56, color: SimfTokens.txtTertiary),
           const SizedBox(height: SimfTokens.space3),
-          Text(text, style: const TextStyle(color: SimfTokens.inkMuted)),
+          Text(text, style: const TextStyle(color: SimfTokens.txtSecondary)),
         ],
       ),
     );

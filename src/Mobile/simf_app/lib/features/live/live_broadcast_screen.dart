@@ -168,6 +168,7 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
         Text(
           session.localizedTitle(isArabic),
           style: const TextStyle(
+            color: SimfTokens.surface,
             fontWeight: FontWeight.w700,
             fontSize: SimfTokens.textXl,
           ),
@@ -255,7 +256,7 @@ class _PlayerLoading extends StatelessWidget {
       aspectRatio: 16 / 9,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: SimfTokens.field,
+          color: Colors.black,
           borderRadius: BorderRadius.circular(SimfTokens.radius),
         ),
         child: const Center(child: CircularProgressIndicator()),
@@ -326,7 +327,10 @@ class _RecordingNote extends StatelessWidget {
             Expanded(
               child: Text(
                 l10n.liveRecordingAvailable,
-                style: const TextStyle(fontSize: SimfTokens.textMd),
+                style: const TextStyle(
+                  color: SimfTokens.txtSecondary,
+                  fontSize: SimfTokens.textMd,
+                ),
               ),
             ),
           ],
@@ -351,7 +355,7 @@ class _SignLanguageNote extends StatelessWidget {
           child: Text(
             label,
             style: const TextStyle(
-              color: SimfTokens.inkMuted,
+              color: SimfTokens.txtSecondary,
               fontSize: SimfTokens.textSm,
             ),
           ),
@@ -372,21 +376,22 @@ class _NotLiveNote extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space5),
       decoration: BoxDecoration(
-        color: SimfTokens.field,
+        color: SimfTokens.surfaceTint,
         borderRadius: BorderRadius.circular(SimfTokens.radius),
+        border: Border.all(color: SimfTokens.line),
       ),
       child: Column(
         children: <Widget>[
           const Icon(
             Icons.live_tv_outlined,
             size: 40,
-            color: SimfTokens.inkMuted,
+            color: SimfTokens.txtTertiary,
           ),
           const SizedBox(height: SimfTokens.space2),
           Text(
             l10n.liveNotLiveYet,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: SimfTokens.inkMuted),
+            style: const TextStyle(color: SimfTokens.txtTertiary),
           ),
         ],
       ),
@@ -408,12 +413,12 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(icon, size: 56, color: SimfTokens.inkMuted),
+            Icon(icon, size: 56, color: SimfTokens.txtTertiary),
             const SizedBox(height: SimfTokens.space3),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.inkMuted),
+              style: const TextStyle(color: SimfTokens.txtTertiary),
             ),
           ],
         ),

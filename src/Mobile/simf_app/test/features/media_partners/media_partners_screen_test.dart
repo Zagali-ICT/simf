@@ -40,8 +40,9 @@ void main() {
       await _pump(tester, <Override>[
         mediaPartnersProvider.overrideWith((ref) async => _partners),
       ]);
+      // The mockup `.partner` card shows the logo box + name (no raw URL).
       expect(find.text('Al Arabiya'), findsOneWidget);
-      expect(find.text('https://x'), findsOneWidget);
+      expect(find.byType(Card), findsOneWidget);
     });
 
     testWidgets('empty shows the empty state', (tester) async {

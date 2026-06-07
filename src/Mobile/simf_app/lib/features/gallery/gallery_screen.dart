@@ -138,7 +138,7 @@ class _MediaTile extends StatelessWidget {
         children: <Widget>[
           Expanded(
             child: Container(
-              color: SimfTokens.field,
+              color: SimfTokens.navyDeep,
               alignment: Alignment.center,
               child: Icon(
                 item.kind == MediaKind.video
@@ -160,6 +160,7 @@ class _MediaTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
+                      color: SimfTokens.surface,
                       fontWeight: FontWeight.w600,
                       fontSize: SimfTokens.textSm,
                     ),
@@ -170,7 +171,7 @@ class _MediaTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: SimfTokens.inkMuted,
+                      color: SimfTokens.txtTertiary,
                       fontSize: SimfTokens.textXs,
                     ),
                   ),
@@ -197,10 +198,10 @@ class _Empty extends StatelessWidget {
           const Icon(
             Icons.photo_library_outlined,
             size: 56,
-            color: SimfTokens.inkMuted,
+            color: SimfTokens.txtTertiary,
           ),
           const SizedBox(height: SimfTokens.space3),
-          Text(message, style: const TextStyle(color: SimfTokens.inkMuted)),
+          Text(message, style: const TextStyle(color: SimfTokens.txtTertiary)),
         ],
       ),
     );

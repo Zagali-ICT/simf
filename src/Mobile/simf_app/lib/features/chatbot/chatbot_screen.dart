@@ -156,7 +156,10 @@ class _PreviewBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: SimfTokens.field,
+      decoration: const BoxDecoration(
+        color: SimfTokens.surfaceTint,
+        border: Border(bottom: BorderSide(color: SimfTokens.line2)),
+      ),
       padding: const EdgeInsets.symmetric(
         horizontal: SimfTokens.space4,
         vertical: SimfTokens.space3,
@@ -173,7 +176,7 @@ class _PreviewBanner extends StatelessWidget {
             child: Text(
               message,
               style: const TextStyle(
-                color: SimfTokens.inkMuted,
+                color: SimfTokens.txtSecondary,
                 fontSize: SimfTokens.textSm,
               ),
             ),
@@ -181,7 +184,7 @@ class _PreviewBanner extends StatelessWidget {
           IconButton(
             onPressed: onDismiss,
             icon: const Icon(Icons.close, size: 18),
-            color: SimfTokens.inkMuted,
+            color: SimfTokens.txtTertiary,
             visualDensity: VisualDensity.compact,
           ),
         ],
@@ -190,7 +193,8 @@ class _PreviewBanner extends StatelessWidget {
   }
 }
 
-/// One chat bubble: user → right + accent, assistant → left + field.
+/// One chat bubble: user → right + accent + navy text, assistant → left +
+/// navy-surface fill + line2 hairline + surface text, prefixed by an "AI" pill.
 class _Bubble extends StatelessWidget {
   const _Bubble({required this.message});
 
@@ -199,8 +203,19 @@ class _Bubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUser = message.author == _ChatAuthor.user;
+    final text = Text(
+      message.text,
+      style: TextStyle(
+        color: isUser ? SimfTokens.navy : SimfTokens.surface,
+        fontSize: SimfTokens.textSm,
+        height: 1.55,
+        fontWeight: isUser ? FontWeight.w600 : FontWeight.w400,
+      ),
+    );
     return Align(
-      alignment: isUser ? AlignmentDirectional.centerEnd : AlignmentDirectional.centerStart,
+      alignment: isUser
+          ? AlignmentDirectional.centerEnd
+          : AlignmentDirectional.centerStart,
       child: Container(
         margin: const EdgeInsets.only(bottom: SimfTokens.space2),
         padding: const EdgeInsets.symmetric(
@@ -209,15 +224,57 @@ class _Bubble extends StatelessWidget {
         ),
         constraints: const BoxConstraints(maxWidth: 280),
         decoration: BoxDecoration(
-          color: isUser ? SimfTokens.accent : SimfTokens.field,
-          borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
-        ),
-        child: Text(
-          message.text,
-          style: TextStyle(
-            color: isUser ? SimfTokens.surface : SimfTokens.ink,
-            fontSize: SimfTokens.textMd,
+          color: isUser ? SimfTokens.accent : SimfTokens.surfaceTint,
+          border: isUser ? null : Border.all(color: SimfTokens.line2),
+          borderRadius: BorderRadiusDirectional.only(
+            topStart: const Radius.circular(SimfTokens.radiusLarge),
+            topEnd: const Radius.circular(SimfTokens.radiusLarge),
+            bottomStart: Radius.circular(
+              isUser ? SimfTokens.radiusSmall : SimfTokens.radiusLarge,
+            ),
+            bottomEnd: Radius.circular(
+              isUser ? SimfTokens.radiusLarge : SimfTokens.radiusSmall,
+            ),
           ),
+        ),
+        child: isUser
+            ? text
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const _AiPill(),
+                  const SizedBox(width: SimfTokens.space2),
+                  Flexible(child: text),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+/// The small "AI" tag the mockup prefixes every assistant bubble with.
+class _AiPill extends StatelessWidget {
+  const _AiPill();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space1,
+        vertical: 1,
+      ),
+      decoration: BoxDecoration(
+        color: SimfTokens.accent,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      ),
+      child: const Text(
+        'AI',
+        style: TextStyle(
+          color: SimfTokens.navy,
+          fontSize: 8.5,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.4,
         ),
       ),
     );
@@ -244,39 +301,58 @@ class _Composer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(SimfTokens.space3),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: TextField(
-              controller: controller,
-              minLines: 1,
-              maxLines: 4,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => onSend(),
-              decoration: InputDecoration(
-                hintText: hint,
-                filled: true,
-                fillColor: SimfTokens.field,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
-                  borderSide: BorderSide.none,
+      child: Container(
+        decoration: BoxDecoration(
+          color: SimfTokens.surfaceTint,
+          border: Border.all(color: SimfTokens.line2),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        padding: const EdgeInsetsDirectional.only(
+          start: SimfTokens.space4,
+          end: SimfTokens.space1,
+        ),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: TextField(
+                controller: controller,
+                minLines: 1,
+                maxLines: 4,
+                textInputAction: TextInputAction.send,
+                style: const TextStyle(
+                  color: SimfTokens.surface,
+                  fontSize: SimfTokens.textSm,
+                ),
+                onSubmitted: (_) => onSend(),
+                decoration: InputDecoration(
+                  hintText: hint,
+                  hintStyle: const TextStyle(
+                    color: SimfTokens.txtTertiary,
+                    fontSize: SimfTokens.textSm,
+                  ),
+                  isCollapsed: true,
+                  filled: false,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: SimfTokens.space2,
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: SimfTokens.space2),
-          IconButton.filled(
-            tooltip: sendTooltip,
-            onPressed: sending ? null : onSend,
-            icon: sending
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.send),
-          ),
-        ],
+            const SizedBox(width: SimfTokens.space2),
+            IconButton.filled(
+              tooltip: sendTooltip,
+              onPressed: sending ? null : onSend,
+              icon: sending
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.send, size: 18),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -296,10 +372,10 @@ class _Empty extends StatelessWidget {
           const Icon(
             Icons.smart_toy_outlined,
             size: 56,
-            color: SimfTokens.inkMuted,
+            color: SimfTokens.txtTertiary,
           ),
           const SizedBox(height: SimfTokens.space3),
-          Text(message, style: const TextStyle(color: SimfTokens.inkMuted)),
+          Text(message, style: const TextStyle(color: SimfTokens.txtTertiary)),
         ],
       ),
     );

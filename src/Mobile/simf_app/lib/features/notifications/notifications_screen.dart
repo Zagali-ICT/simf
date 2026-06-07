@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
@@ -160,32 +161,99 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: SimfTokens.space2),
-      clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        onTap: item.isRead ? null : onTap,
-        leading: Icon(
-          _severityIcon(item.severity),
-          color: _severityColor(item.severity),
-        ),
-        title: Text(
-          item.localizedTitle(isArabic),
-          style: TextStyle(
-            fontWeight: item.isRead ? FontWeight.w600 : FontWeight.w700,
+    final unread = !item.isRead;
+    final time = item.createdAt == null
+        ? null
+        : DateFormat('HH:mm').format(item.createdAt!.toLocal());
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SimfTokens.space2),
+      child: Material(
+        color: SimfTokens.surfaceTint,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: unread ? onTap : null,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: SimfTokens.space3,
+              vertical: 10,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(SimfTokens.radius),
+              border: Border.all(
+                color: unread
+                    ? SimfTokens.accent.withValues(alpha: 0.40)
+                    : SimfTokens.line2,
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                if (unread) ...<Widget>[
+                  Container(
+                    width: 6,
+                    height: 6,
+                    margin: const EdgeInsets.only(top: 6),
+                    decoration: const BoxDecoration(
+                      color: SimfTokens.accent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: SimfTokens.space2),
+                ],
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: SimfTokens.accent.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(SimfTokens.radius),
+                  ),
+                  child: Icon(
+                    _severityIcon(item.severity),
+                    size: 18,
+                    color: SimfTokens.accent,
+                  ),
+                ),
+                const SizedBox(width: SimfTokens.space3),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        item.localizedTitle(isArabic),
+                        style: const TextStyle(
+                          color: SimfTokens.surface,
+                          fontWeight: FontWeight.w700,
+                          fontSize: SimfTokens.textSm,
+                        ),
+                      ),
+                      const SizedBox(height: SimfTokens.space1 / 2),
+                      Text(
+                        item.localizedBody(isArabic),
+                        style: const TextStyle(
+                          color: SimfTokens.txtSecondary,
+                          fontSize: SimfTokens.textSm,
+                          height: 1.55,
+                        ),
+                      ),
+                      if (time != null) ...<Widget>[
+                        const SizedBox(height: SimfTokens.space1),
+                        Text(
+                          time,
+                          textDirection: TextDirection.ltr,
+                          style: const TextStyle(
+                            color: SimfTokens.txtTertiary,
+                            fontSize: SimfTokens.textXs,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        subtitle: Text(item.localizedBody(isArabic)),
-        trailing: item.isRead
-            ? null
-            : Container(
-                width: SimfTokens.space2,
-                height: SimfTokens.space2,
-                decoration: const BoxDecoration(
-                  color: SimfTokens.accent,
-                  shape: BoxShape.circle,
-                ),
-              ),
       ),
     );
   }
@@ -204,19 +272,6 @@ IconData _severityIcon(NotificationSeverity severity) {
   }
 }
 
-Color _severityColor(NotificationSeverity severity) {
-  switch (severity) {
-    case NotificationSeverity.success:
-      return SimfTokens.success;
-    case NotificationSeverity.warning:
-      return SimfTokens.accent;
-    case NotificationSeverity.error:
-      return SimfTokens.danger;
-    case NotificationSeverity.info:
-      return SimfTokens.navy;
-  }
-}
-
 class _Empty extends StatelessWidget {
   const _Empty({required this.message});
 
@@ -231,10 +286,13 @@ class _Empty extends StatelessWidget {
           const Icon(
             Icons.notifications_none_outlined,
             size: 56,
-            color: SimfTokens.inkMuted,
+            color: SimfTokens.txtTertiary,
           ),
           const SizedBox(height: SimfTokens.space3),
-          Text(message, style: const TextStyle(color: SimfTokens.inkMuted)),
+          Text(
+            message,
+            style: const TextStyle(color: SimfTokens.txtSecondary),
+          ),
         ],
       ),
     );
