@@ -235,7 +235,12 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         const SizedBox(height: SimfTokens.space5),
         Text(
           l10n.todayScheduleTitle,
-          style: const TextStyle(fontWeight: FontWeight.w700),
+          style: const TextStyle(
+            color: SimfTokens.txtTertiary,
+            fontWeight: FontWeight.w700,
+            fontSize: SimfTokens.textXs,
+            letterSpacing: 0.8,
+          ),
         ),
         const SizedBox(height: SimfTokens.space2),
         if (dashboard.todaySchedule.isEmpty)
@@ -243,7 +248,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
             padding: const EdgeInsets.symmetric(vertical: SimfTokens.space4),
             child: Text(
               l10n.scheduleEmpty,
-              style: const TextStyle(color: SimfTokens.inkMuted),
+              style: const TextStyle(color: SimfTokens.txtSecondary),
             ),
           )
         else
@@ -321,6 +326,7 @@ class _ProfileCard extends StatelessWidget {
                   Text(
                     name,
                     style: const TextStyle(
+                      color: SimfTokens.surface,
                       fontWeight: FontWeight.w700,
                       fontSize: SimfTokens.textLg,
                     ),
@@ -329,7 +335,7 @@ class _ProfileCard extends StatelessWidget {
                   Text(
                     line,
                     style: const TextStyle(
-                      color: SimfTokens.inkMuted,
+                      color: SimfTokens.txtSecondary,
                       fontSize: SimfTokens.textSm,
                     ),
                   ),
@@ -348,10 +354,44 @@ class _ProfileCard extends StatelessWidget {
               ),
             ),
             if (onShare != null)
-              IconButton(
-                tooltip: shareTooltip,
-                onPressed: onShare,
-                icon: const Icon(Icons.ios_share, color: SimfTokens.accent),
+              Tooltip(
+                message: shareTooltip ?? '',
+                child: InkWell(
+                  onTap: onShare,
+                  borderRadius: BorderRadius.circular(SimfTokens.radius),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: SimfTokens.space2,
+                      vertical: SimfTokens.space2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: SimfTokens.accent.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(SimfTokens.radius),
+                      border: Border.all(color: SimfTokens.accent),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        const Icon(
+                          Icons.ios_share,
+                          size: 16,
+                          color: SimfTokens.accent,
+                        ),
+                        if (shareTooltip != null) ...<Widget>[
+                          const SizedBox(height: SimfTokens.space1),
+                          Text(
+                            shareTooltip!,
+                            style: const TextStyle(
+                              color: SimfTokens.accent,
+                              fontSize: SimfTokens.textXs,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
               ),
           ],
         ),
@@ -441,7 +481,7 @@ class _StatTile extends StatelessWidget {
             Text(
               label,
               style: const TextStyle(
-                color: SimfTokens.inkMuted,
+                color: SimfTokens.txtSecondary,
                 fontSize: SimfTokens.textXs,
               ),
             ),
@@ -496,14 +536,17 @@ class _ScheduleRow extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       item.localizedTitle(isArabic),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        color: SimfTokens.surface,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     if (hall != null) ...<Widget>[
                       const SizedBox(height: SimfTokens.space1),
                       Text(
                         hall,
                         style: const TextStyle(
-                          color: SimfTokens.inkMuted,
+                          color: SimfTokens.txtTertiary,
                           fontSize: SimfTokens.textXs,
                         ),
                       ),
@@ -514,7 +557,7 @@ class _ScheduleRow extends StatelessWidget {
               Icon(
                 item.isSession ? Icons.event_note_outlined : Icons.people_outline,
                 size: 18,
-                color: SimfTokens.inkMuted,
+                color: SimfTokens.accent,
               ),
             ],
           ),
@@ -544,7 +587,10 @@ class _UtilityLink extends StatelessWidget {
       child: ListTile(
         leading: Icon(icon, color: SimfTokens.accent),
         title: Text(label),
-        trailing: const Icon(Icons.chevron_right, color: SimfTokens.accent),
+        trailing: const Icon(
+          Icons.chevron_left,
+          color: SimfTokens.txtTertiary,
+        ),
         onTap: onTap,
       ),
     );

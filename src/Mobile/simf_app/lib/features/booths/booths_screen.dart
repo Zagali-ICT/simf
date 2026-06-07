@@ -99,50 +99,206 @@ class _BoothsScreenState extends ConsumerState<BoothsScreen> {
     return ListView.separated(
       padding: const EdgeInsets.all(SimfTokens.space4),
       itemCount: _booths.length,
-      separatorBuilder: (_, __) => const SizedBox(height: SimfTokens.space2),
+      separatorBuilder: (_, __) => const SizedBox(height: SimfTokens.space3),
       itemBuilder: (context, index) {
         final booth = _booths[index];
-        final exhibitor = booth.localizedExhibitor(isArabic);
-        final sector = booth.localizedSector(isArabic);
-        final sub = <String>[
-          if (exhibitor != null) exhibitor,
-          if (sector != null) sector,
-        ];
-        return Card(
-          margin: EdgeInsets.zero,
-          clipBehavior: Clip.antiAlias,
-          child: ListTile(
-            onTap: () => _openBooth(booth),
-            leading: const Icon(Icons.storefront_outlined, color: SimfTokens.accent),
-            title: Text(
-              booth.localizedName(isArabic),
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: sub.isEmpty ? null : Text(sub.join(' · ')),
-            trailing: booth.code.isEmpty
-                ? null
-                : Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: SimfTokens.space2,
-                      vertical: SimfTokens.space1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: SimfTokens.field,
-                      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-                    ),
-                    child: Text(
-                      booth.code,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: SimfTokens.textXs,
-                      ),
-                    ),
-                  ),
-          ),
+        return _BoothCard(
+          booth: booth,
+          isArabic: isArabic,
+          onTap: () => _openBooth(booth),
         );
       },
     );
   }
+}
+
+/// One exhibitor card (mockup `.booth`): a top row carrying the storefront mark
+/// and the accent code pill over a hairline, then a `.co` row with a square logo
+/// tile (the booth initials) beside the company name and its grey sub-line.
+/// The mockup's hall name / officer / contacts / directions blocks are omitted
+/// — `GET /app/booths` carries only a bare `hallId` and no contact data (D11).
+class _BoothCard extends StatelessWidget {
+  const _BoothCard({
+    required this.booth,
+    required this.isArabic,
+    required this.onTap,
+  });
+
+  final BoothSummary booth;
+  final bool isArabic;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = booth.localizedName(isArabic);
+    final exhibitor = booth.localizedExhibitor(isArabic);
+    final sector = booth.localizedSector(isArabic);
+    final sub = <String>[
+      if (exhibitor != null) exhibitor,
+      if (sector != null) sector,
+    ];
+
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(SimfTokens.space3),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              _BoothTop(code: booth.code),
+              const SizedBox(height: SimfTokens.space3),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  _LogoTile(initials: _initials(name)),
+                  const SizedBox(width: SimfTokens.space3),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            color: SimfTokens.surface,
+                            fontWeight: FontWeight.w700,
+                            fontSize: SimfTokens.textMd,
+                            height: 1.3,
+                          ),
+                        ),
+                        if (sub.isNotEmpty) ...<Widget>[
+                          const SizedBox(height: SimfTokens.space1),
+                          Text(
+                            sub.join(' · '),
+                            style: const TextStyle(
+                              color: SimfTokens.txtSecondary,
+                              fontWeight: FontWeight.w500,
+                              fontSize: SimfTokens.textSm,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: SimfTokens.space2),
+                  const Icon(
+                    Icons.chevron_left,
+                    color: SimfTokens.txtTertiary,
+                    size: 18,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The card header (mockup `.booth .top`): the storefront mark sits opposite
+/// the accent code pill, with a hairline rule underneath.
+class _BoothTop extends StatelessWidget {
+  const _BoothTop({required this.code});
+
+  final String code;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            const Expanded(
+              child: Icon(
+                Icons.storefront_outlined,
+                color: SimfTokens.accent,
+                size: 18,
+              ),
+            ),
+            if (code.isNotEmpty) _CodePill(code: code),
+          ],
+        ),
+        const SizedBox(height: SimfTokens.space2),
+        const Divider(height: 1),
+      ],
+    );
+  }
+}
+
+/// The accent booth-number pill (mockup `.booth .num`): an accent-tinted fill
+/// with an accent border, the code in accent, always LTR.
+class _CodePill extends StatelessWidget {
+  const _CodePill({required this.code});
+
+  final String code;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space2,
+        vertical: SimfTokens.space1,
+      ),
+      decoration: BoxDecoration(
+        color: SimfTokens.accent.withValues(alpha: 0.10),
+        border: Border.all(color: SimfTokens.accent),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      ),
+      child: Text(
+        code,
+        textDirection: TextDirection.ltr,
+        style: const TextStyle(
+          color: SimfTokens.accent,
+          fontWeight: FontWeight.w700,
+          fontSize: SimfTokens.textXs,
+        ),
+      ),
+    );
+  }
+}
+
+/// The square company-logo tile (mockup `.booth .co .lg`): a small white square
+/// holding the booth initials in navy.
+class _LogoTile extends StatelessWidget {
+  const _LogoTile({required this.initials});
+
+  final String initials;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 34,
+      height: 34,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: SimfTokens.surface,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+      ),
+      child: Text(
+        initials,
+        textDirection: TextDirection.ltr,
+        style: const TextStyle(
+          color: SimfTokens.navy,
+          fontWeight: FontWeight.w700,
+          fontSize: SimfTokens.textXs,
+        ),
+      ),
+    );
+  }
+}
+
+/// The first two letters of a booth name, upper-cased, for the logo tile.
+String _initials(String name) {
+  final trimmed = name.trim();
+  if (trimmed.isEmpty) {
+    return '';
+  }
+  return trimmed.substring(0, trimmed.length >= 2 ? 2 : 1).toUpperCase();
 }
 
 class _BoothSheet extends StatelessWidget {
@@ -169,6 +325,7 @@ class _BoothSheet extends StatelessWidget {
           Text(
             booth.localizedName(isArabic),
             style: const TextStyle(
+              color: SimfTokens.surface,
               fontWeight: FontWeight.w700,
               fontSize: SimfTokens.textLg,
             ),
@@ -187,7 +344,7 @@ class _BoothSheet extends StatelessWidget {
               }
               return Text(
                 parts.join(' · '),
-                style: const TextStyle(color: SimfTokens.inkMuted),
+                style: const TextStyle(color: SimfTokens.txtSecondary),
               );
             },
           ),
@@ -198,14 +355,20 @@ class _BoothSheet extends StatelessWidget {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Text(
                   l10n.loadingLabel,
-                  style: const TextStyle(color: SimfTokens.inkMuted),
+                  style: const TextStyle(color: SimfTokens.txtTertiary),
                 );
               }
               final description = snapshot.data?.localizedDescription(isArabic);
               if (description == null) {
                 return const SizedBox.shrink();
               }
-              return Text(description);
+              return Text(
+                description,
+                style: const TextStyle(
+                  color: SimfTokens.txtSecondary,
+                  height: 1.5,
+                ),
+              );
             },
           ),
         ],
@@ -225,9 +388,13 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          const Icon(Icons.storefront_outlined, size: 56, color: SimfTokens.inkMuted),
+          const Icon(
+            Icons.storefront_outlined,
+            size: 56,
+            color: SimfTokens.txtTertiary,
+          ),
           const SizedBox(height: SimfTokens.space3),
-          Text(message, style: const TextStyle(color: SimfTokens.inkMuted)),
+          Text(message, style: const TextStyle(color: SimfTokens.txtSecondary)),
         ],
       ),
     );

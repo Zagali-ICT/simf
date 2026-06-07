@@ -83,39 +83,105 @@ class _SpeakersScreenState extends ConsumerState<SpeakersScreen> {
     return ListView.separated(
       padding: const EdgeInsets.all(SimfTokens.space4),
       itemCount: _speakers.length,
-      separatorBuilder: (_, __) => const SizedBox(height: SimfTokens.space2),
+      separatorBuilder: (_, __) => const SizedBox(height: SimfTokens.space3),
       itemBuilder: (context, index) {
         final speaker = _speakers[index];
-        final country = speaker.localizedCountry(isArabic);
-        final subParts = <String>[
-          if (speaker.rank != null && speaker.rank!.trim().isNotEmpty)
-            speaker.rank!.trim(),
-          if (country != null) country,
-        ];
-        return Card(
-          margin: EdgeInsets.zero,
-          clipBehavior: Clip.antiAlias,
-          child: ListTile(
-            onTap: () => context.pushNamed(
-              RouteNames.speakerProfile,
-              pathParameters: <String, String>{'speakerId': speaker.id},
-            ),
-            leading: CircleAvatar(
-              backgroundColor: SimfTokens.field,
-              child: Text(
-                speakerInitials(speaker.localizedName(isArabic)),
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
-            title: Text(
-              speaker.localizedName(isArabic),
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            subtitle: subParts.isEmpty ? null : Text(subParts.join(' · ')),
-            trailing: const Icon(Icons.chevron_right, color: SimfTokens.accent),
+        return _SpeakerCard(
+          speaker: speaker,
+          isArabic: isArabic,
+          onTap: () => context.pushNamed(
+            RouteNames.speakerProfile,
+            pathParameters: <String, String>{'speakerId': speaker.id},
           ),
         );
       },
+    );
+  }
+}
+
+/// One speaker card (mockup `.sp-card`): a gold avatar on the leading edge, the
+/// gold rank label above the white name, and a trailing go-arrow — on the navy
+/// surface-tint card the theme already supplies.
+class _SpeakerCard extends StatelessWidget {
+  const _SpeakerCard({
+    required this.speaker,
+    required this.isArabic,
+    required this.onTap,
+  });
+
+  final SpeakerSummary speaker;
+  final bool isArabic;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final country = speaker.localizedCountry(isArabic);
+    final rank = (speaker.rank != null && speaker.rank!.trim().isNotEmpty)
+        ? speaker.rank!.trim()
+        : null;
+    final labelParts = <String>[
+      if (rank != null) rank,
+      if (country != null) country,
+    ];
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(SimfTokens.space3),
+          child: Row(
+            children: <Widget>[
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: SimfTokens.accent,
+                foregroundColor: SimfTokens.navy,
+                child: Text(
+                  speakerInitials(speaker.localizedName(isArabic)),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: SimfTokens.textMd,
+                  ),
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    if (labelParts.isNotEmpty) ...<Widget>[
+                      Text(
+                        labelParts.join(' · '),
+                        style: const TextStyle(
+                          color: SimfTokens.accent,
+                          fontWeight: FontWeight.w600,
+                          fontSize: SimfTokens.textXs,
+                        ),
+                      ),
+                      const SizedBox(height: SimfTokens.space1),
+                    ],
+                    Text(
+                      speaker.localizedName(isArabic),
+                      style: const TextStyle(
+                        color: SimfTokens.surface,
+                        fontWeight: FontWeight.w600,
+                        fontSize: SimfTokens.textSm,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              const Icon(
+                Icons.chevron_left,
+                color: SimfTokens.txtTertiary,
+                size: 18,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -131,9 +197,13 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          const Icon(Icons.groups_outlined, size: 56, color: SimfTokens.inkMuted),
+          const Icon(
+            Icons.groups_outlined,
+            size: 56,
+            color: SimfTokens.txtTertiary,
+          ),
           const SizedBox(height: SimfTokens.space3),
-          Text(message, style: const TextStyle(color: SimfTokens.inkMuted)),
+          Text(message, style: const TextStyle(color: SimfTokens.txtSecondary)),
         ],
       ),
     );

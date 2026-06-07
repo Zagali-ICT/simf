@@ -80,7 +80,11 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(l10n.aboutError, textAlign: TextAlign.center),
+              Text(
+                l10n.aboutError,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: SimfTokens.txtSecondary),
+              ),
               const SizedBox(height: SimfTokens.space4),
               FilledButton(
                 onPressed: () => unawaited(_load()),
@@ -96,15 +100,55 @@ class _AboutScreenState extends ConsumerState<AboutScreen> {
       return Center(
         child: Text(
           l10n.aboutEmpty,
-          style: const TextStyle(color: SimfTokens.inkMuted),
+          style: const TextStyle(color: SimfTokens.txtSecondary),
         ),
       );
     }
     return ListView(
       padding: const EdgeInsets.all(SimfTokens.space4),
       children: <Widget>[
-        SelectableText(block.localizedBody(l10n.isArabic)),
+        _AboutHeroCard(body: block.localizedBody(l10n.isArabic)),
       ],
+    );
+  }
+}
+
+/// The "about the forum" hero card (mockup `.content-hero`): a navy-surface
+/// card with a code-style accent kicker above the localized CMS body.
+class _AboutHeroCard extends StatelessWidget {
+  const _AboutHeroCard({required this.body});
+
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const Text(
+              'SIMF · 2026',
+              style: TextStyle(
+                color: SimfTokens.accent,
+                fontWeight: FontWeight.w700,
+                fontSize: SimfTokens.textXs,
+                letterSpacing: 1.8,
+              ),
+            ),
+            const SizedBox(height: SimfTokens.space2),
+            SelectableText(
+              body,
+              style: const TextStyle(
+                color: SimfTokens.txtSecondary,
+                height: 1.8,
+                fontSize: SimfTokens.textMd,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
