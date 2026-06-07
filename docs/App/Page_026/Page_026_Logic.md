@@ -4,7 +4,7 @@ Business rules behind the live Q&A composer. Verified against the public
 submission + moderator surface (D-169), the recipient pills (D-174), the
 Scientific-Committee queue (D-212), the advisory AI filter (D-236) and the
 arrival gate (D-242). **No new backend behaviour in this wave** — D-271 documents
-the existing pipeline + the open/close window + the screen-28 comments removal.
+the existing pipeline + the question open/close window.
 
 ## L-1 One call submits a question
 The screen writes from a **single** call:
@@ -77,22 +77,25 @@ knows whom the question is for.
   login-only (`RequireApprovedAccount`).
 - **Session missing / soft-deleted** → `404`.
 
-## L-6 The standalone comments screen (28) is REMOVED — comments fold into live
-Per the updated mockup (D-271) the **standalone audience-comments screen (28) is
-removed**. Audience comments still exist and are **already built** — they surface
-**inside** the session / live screen, not as a separate screen. The comments
-pipeline is two stages:
+## L-6 Audience comments (28) is a SEPARATE screen — not part of this composer
+Audience comments are **their own standalone screen** — `AudienceCommentsScreen`
+at `/live/comments` ([Page_028](../Page_028/README.md), **built D-319**), an
+approved-account per-session comment feed reusing the already-built comment + like
+endpoints (D-223). It is **not** folded into this question composer, and it is
+**not** removed. _(An earlier version of this section claimed the screen was
+"removed per D-271"; that was incorrect — D-271 never decided a removal, and the
+screen later shipped at D-319.)_ The comments **moderation pipeline** is two
+stages:
 1. **AI filter on submit** — an `ICommentAiFilter` (stub) screens each comment, so
    it lands either **Approved** or **Pending**.
 2. **Admin approve / hide** — an admin moderates via the CP
    **`/admin/comments-moderation`** desk (`CommentsModerationList`).
 
-No new build for comments in this wave — this section records the **pipeline** and
-the **screen removal** only. The session-question pipeline (this page) and the
-comments pipeline are **separate** surfaces.
+The session-question pipeline (this page) and the comments pipeline are **separate**
+surfaces, on **separate** screens.
 
 ## L-7 Localization
 Arabic primary (RTL), English secondary. The recipient pills
 (`المتحدث` / `المضيف`), the text-area placeholder, the brass `إرسال السؤال`
 button and the moderation note are bilingual per the active locale; the live frame
-+ the three live-mode tabs mirror RTL.
+and the composer mirror RTL.

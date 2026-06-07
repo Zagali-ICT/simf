@@ -12,8 +12,8 @@ Per-page documentation folder. Everything about this app page lives here.
 ## Identity
 | | |
 |---|---|
-| Mockup page | **26** (`Mockup.html`, live-mode tab group 26 / 27 / 28) |
-| Route | `RouteNames.sendQuestion` (one of the three live-mode tabs on the session/live screen) — **auth-gated** |
+| Mockup page | **26** (`Mockup.html`) — the live-mode **question composer**; a standalone auth-gated route in the app (not an in-frame tab) |
+| Route | `RouteNames.sendQuestion` (the live-mode question composer, reached over the session/live screen) — **auth-gated** |
 | Titles | AR **إرسال سؤال** · EN **Send a question** |
 | Section | D — Conference-day live mode |
 | Nature | **Live Q&A composer** — pick a recipient (Speaker / Host), write a question, submit it; questions are reviewed before going on air |
@@ -48,12 +48,12 @@ SIMF-MOB-API-001 (shared API conventions + auth) · `DECISIONS_LOG` **D-169**
 **D-174** (the Speaker / Host recipient pills), **D-212** (the Scientific-Committee
 central queue — every question lands `Pending`), **D-236** (the advisory AI filter
 on submit), **D-242** (the arrival-at-the-hall gate) and **D-271** (this wave —
-the open/close window + the screen-28 comments removal).
+the question open/close window).
 
 ## Headline
-> Screen 26 is one of three **live-mode tabs** (26 إرسال سؤال / 27 طلب مقابلة /
-> 28 تعليقات الجمهور) layered over the live video frame. The user picks a
-> **recipient** — **المتحدث (Speaker)** or **المضيف (Host)** — writes a question
+> Screen 26 is the live-mode **question composer**, layered over the live video
+> frame in the mockup and shipped as a standalone auth-gated route in the app. The
+> user picks a **recipient** — **المتحدث (Speaker)** or **المضيف (Host)** — writes a question
 > and submits it. The question is **reviewed before going on air**: it lands
 > `Pending`, is screened by an **advisory AI filter** (does not block), then is
 > approved by the **Scientific Committee** before a session moderator can push it
@@ -69,12 +69,16 @@ See [Page_026_Logic.md](Page_026_Logic.md) and [Page_026_API.md](Page_026_API.md
 - **Recorded / live session screen (25)** — the live video frame this composer is
   layered over; the **live stream** + sign-language toggle come from the session
   detail's `LiveStreamUrl` / `LiveSignLanguageUrl` (D-271 live stub).
-- **Request interview (27)** — `طلب مقابلة`, the second live-mode tab (press/media
-  branch).
-- **Audience comments (28) — REMOVED.** The standalone audience-comments screen is
-  removed per the updated mockup (D-271); comments still exist (2-stage AI-filter +
-  admin-approve, already built) but surface **inside** the session/live screen, not
-  as a separate screen. See [Page_026_Logic.md](Page_026_Logic.md) L-6.
+- **Request interview (27) — REMOVED (D-278).** The session-scoped "request
+  interview" flow (`طلب مقابلة`) was **permanently removed** — entity, endpoints,
+  CP desk and the Flutter route 27 all deleted. It is no longer a live-mode tab.
+- **Audience comments (28) — a standalone screen, BUILT (D-319).** The
+  audience-comments feed is its own auth-gated route (`/live/comments`,
+  [Page_028](../Page_028/README.md)), reusing the already-built per-session comment
+  + like endpoints (D-223). It is **not** folded into this composer. _(Earlier
+  Page-026 text said screen 28 was "removed per D-271"; that was wrong on both
+  counts — D-271 never decided it and the screen later shipped at D-319.)_ See
+  [Page_026_Logic.md](Page_026_Logic.md) L-6.
 - **Sessions (16)** — the `الأجندة / Agenda` screen renamed to `الجلسات / Sessions`
   (D-271, title + bottom-nav + filter pills); no API change.
 - **CP moderation desks** — the Scientific-Committee queue and the per-session
