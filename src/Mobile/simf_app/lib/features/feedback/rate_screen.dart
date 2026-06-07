@@ -83,30 +83,66 @@ class _RateScreenState extends ConsumerState<RateScreen> {
       appBar: AppBar(title: Text(l10n.rateTitle)),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(SimfTokens.space4),
+          padding: const EdgeInsets.fromLTRB(
+            SimfTokens.space4,
+            SimfTokens.space5,
+            SimfTokens.space4,
+            SimfTokens.space6,
+          ),
           children: <Widget>[
-            Text(l10n.rateLead, style: const TextStyle(fontSize: SimfTokens.textMd)),
-            const SizedBox(height: SimfTokens.space4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            // Centered lead + star selector (mockup: question over a gold
+            // star row), on the bare navy surface.
+            Column(
               children: <Widget>[
-                for (var star = 1; star <= 5; star++)
-                  IconButton(
-                    iconSize: 40,
-                    onPressed: () => setState(() => _stars = star),
-                    icon: Icon(
-                      star <= _stars ? Icons.star : Icons.star_border,
-                      color: SimfTokens.accent,
-                    ),
+                Text(
+                  l10n.rateLead,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: SimfTokens.surface,
+                    fontWeight: FontWeight.w700,
+                    fontSize: SimfTokens.textLg,
+                    height: 1.5,
                   ),
+                ),
+                const SizedBox(height: SimfTokens.space4),
+                // Stars fill left-to-right (LTR) like the mockup row.
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      for (var star = 1; star <= 5; star++)
+                        IconButton(
+                          iconSize: 36,
+                          onPressed: () => setState(() => _stars = star),
+                          icon: Icon(
+                            star <= _stars ? Icons.star : Icons.star_border,
+                            color: star <= _stars
+                                ? SimfTokens.accent
+                                : SimfTokens.line,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: SimfTokens.space4),
+            const SizedBox(height: SimfTokens.space6),
+            // Comments section (mockup: "ملاحظاتك" heading over a bordered box).
+            Text(
+              l10n.rateCommentLabel,
+              style: const TextStyle(
+                color: SimfTokens.txtTertiary,
+                fontWeight: FontWeight.w700,
+                fontSize: SimfTokens.textXs,
+                letterSpacing: 0.8,
+              ),
+            ),
+            const SizedBox(height: SimfTokens.space2),
             TextField(
               controller: _comment,
               maxLength: 2000,
               maxLines: 4,
-              decoration: InputDecoration(labelText: l10n.rateCommentLabel),
             ),
             const SizedBox(height: SimfTokens.space4),
             FilledButton(

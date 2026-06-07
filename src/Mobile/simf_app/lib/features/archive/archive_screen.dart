@@ -76,39 +76,129 @@ class ArchiveScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(SimfTokens.space4),
               itemCount: items.length,
               separatorBuilder: (_, __) =>
-                  const SizedBox(height: SimfTokens.space2),
+                  const SizedBox(height: SimfTokens.space3),
               itemBuilder: (context, index) {
                 final edition = items[index];
-                return Card(
-                  margin: EdgeInsets.zero,
-                  clipBehavior: Clip.antiAlias,
-                  child: ListTile(
-                    onTap: () => _open(context, ref, edition),
-                    leading: CircleAvatar(
-                      backgroundColor: SimfTokens.field,
-                      child: Text(
-                        "'${(edition.year % 100).toString().padLeft(2, '0')}",
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    title: Text(
-                      edition.localizedTitle(isArabic),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    subtitle: Text(
-                      l10n.archiveStats(
-                        edition.attendees,
-                        edition.sessions,
-                        edition.speakers,
-                      ),
-                    ),
-                    trailing:
-                        const Icon(Icons.chevron_right, color: SimfTokens.accent),
-                  ),
+                return _EditionCard(
+                  l10n: l10n,
+                  edition: edition,
+                  isArabic: isArabic,
+                  onTap: () => _open(context, ref, edition),
                 );
               },
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// One past edition as the mockup `.arc-card` — a year banner band, the
+/// edition title + stats line, and an accented "details" footer row.
+class _EditionCard extends StatelessWidget {
+  const _EditionCard({
+    required this.l10n,
+    required this.edition,
+    required this.isArabic,
+    required this.onTap,
+  });
+
+  final AppL10n l10n;
+  final ArchiveEdition edition;
+  final bool isArabic;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            // Banner band — navy-deep with the year overlaid (mockup .banner).
+            Container(
+              height: 64,
+              decoration: const BoxDecoration(
+                color: SimfTokens.navyDeep,
+                border: Border(
+                  bottom: BorderSide(color: SimfTokens.line2),
+                ),
+              ),
+              alignment: AlignmentDirectional.bottomStart,
+              padding: const EdgeInsets.fromLTRB(
+                SimfTokens.space3,
+                0,
+                SimfTokens.space3,
+                SimfTokens.space2,
+              ),
+              child: Text(
+                '${edition.year}',
+                textDirection: TextDirection.ltr,
+                style: const TextStyle(
+                  color: SimfTokens.surface,
+                  fontWeight: FontWeight.w700,
+                  fontSize: SimfTokens.textXl,
+                  height: 1,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            // Title + stats line (mockup .yr title + .stats row, kept as the
+            // single archiveStats string the model carries).
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                SimfTokens.space3,
+                SimfTokens.space3,
+                SimfTokens.space3,
+                SimfTokens.space3,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    edition.localizedTitle(isArabic),
+                    style: const TextStyle(
+                      color: SimfTokens.surface,
+                      fontWeight: FontWeight.w600,
+                      fontSize: SimfTokens.textMd,
+                    ),
+                  ),
+                  const SizedBox(height: SimfTokens.space2),
+                  Text(
+                    l10n.archiveStats(
+                      edition.attendees,
+                      edition.sessions,
+                      edition.speakers,
+                    ),
+                    style: const TextStyle(
+                      color: SimfTokens.txtSecondary,
+                      fontSize: SimfTokens.textSm,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Details footer — accented chevron affordance (mockup .det).
+            Container(
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: SimfTokens.line2)),
+              ),
+              padding: const EdgeInsets.symmetric(
+                vertical: SimfTokens.space2,
+                horizontal: SimfTokens.space3,
+              ),
+              alignment: AlignmentDirectional.centerEnd,
+              child: const Icon(
+                Icons.chevron_left,
+                size: SimfTokens.textXl,
+                color: SimfTokens.accent,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -143,6 +233,7 @@ class _EditionSheet extends StatelessWidget {
           Text(
             '${edition.year} · ${edition.localizedTitle(isArabic)}',
             style: const TextStyle(
+              color: SimfTokens.surface,
               fontWeight: FontWeight.w700,
               fontSize: SimfTokens.textLg,
             ),
@@ -154,7 +245,7 @@ class _EditionSheet extends StatelessWidget {
               edition.sessions,
               edition.speakers,
             ),
-            style: const TextStyle(color: SimfTokens.inkMuted),
+            style: const TextStyle(color: SimfTokens.txtSecondary),
           ),
           const SizedBox(height: SimfTokens.space3),
           FutureBuilder<ArchiveEditionDetail?>(
@@ -163,7 +254,7 @@ class _EditionSheet extends StatelessWidget {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Text(
                   l10n.loadingLabel,
-                  style: const TextStyle(color: SimfTokens.inkMuted),
+                  style: const TextStyle(color: SimfTokens.txtTertiary),
                 );
               }
               final d = snapshot.data;
@@ -180,11 +271,17 @@ class _EditionSheet extends StatelessWidget {
                         if (dateLabel != null) dateLabel,
                         if (location != null) location,
                       ].join(' · '),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        color: SimfTokens.surface,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   if (summary != null) ...<Widget>[
                     const SizedBox(height: SimfTokens.space2),
-                    Text(summary),
+                    Text(
+                      summary,
+                      style: const TextStyle(color: SimfTokens.txtSecondary),
+                    ),
                   ],
                 ],
               );
@@ -207,9 +304,13 @@ class _Empty extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          const Icon(Icons.bookmark_outline, size: 56, color: SimfTokens.inkMuted),
+          const Icon(
+            Icons.bookmark_outline,
+            size: 56,
+            color: SimfTokens.txtTertiary,
+          ),
           const SizedBox(height: SimfTokens.space3),
-          Text(message, style: const TextStyle(color: SimfTokens.inkMuted)),
+          Text(message, style: const TextStyle(color: SimfTokens.txtTertiary)),
         ],
       ),
     );

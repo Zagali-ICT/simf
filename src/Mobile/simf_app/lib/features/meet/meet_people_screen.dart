@@ -77,10 +77,7 @@ class _MatchCard extends StatelessWidget {
     final name = match.localizedName(isArabic);
     final profileType = match.localizedProfileType(isArabic);
     final jobTitle = match.jobTitle?.trim();
-    final sub = <String>[
-      if (jobTitle != null && jobTitle.isNotEmpty) jobTitle,
-      if (profileType != null) profileType,
-    ];
+    final hasJob = jobTitle != null && jobTitle.isNotEmpty;
     return Card(
       margin: const EdgeInsets.only(bottom: SimfTokens.space3),
       clipBehavior: Clip.antiAlias,
@@ -90,10 +87,12 @@ class _MatchCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: SimfTokens.field,
+                  backgroundColor: SimfTokens.accent,
+                  foregroundColor: SimfTokens.navy,
                   child: Text(
                     _initials(name),
                     style: const TextStyle(
@@ -110,15 +109,30 @@ class _MatchCard extends StatelessWidget {
                       Text(
                         name,
                         style: const TextStyle(
+                          color: SimfTokens.surface,
                           fontWeight: FontWeight.w700,
                           fontSize: SimfTokens.textLg,
                         ),
                       ),
-                      if (sub.isNotEmpty) ...<Widget>[
+                      if (hasJob) ...<Widget>[
                         const SizedBox(height: SimfTokens.space1),
                         Text(
-                          sub.join(' · '),
-                          style: const TextStyle(color: SimfTokens.inkMuted),
+                          jobTitle,
+                          style: const TextStyle(
+                            color: SimfTokens.accent,
+                            fontWeight: FontWeight.w600,
+                            fontSize: SimfTokens.textSm,
+                          ),
+                        ),
+                      ],
+                      if (profileType != null) ...<Widget>[
+                        const SizedBox(height: SimfTokens.space1),
+                        Text(
+                          profileType,
+                          style: const TextStyle(
+                            color: SimfTokens.txtSecondary,
+                            fontSize: SimfTokens.textSm,
+                          ),
                         ),
                       ],
                     ],
@@ -130,18 +144,14 @@ class _MatchCard extends StatelessWidget {
               const SizedBox(height: SimfTokens.space3),
               Wrap(
                 spacing: SimfTokens.space2,
-                runSpacing: SimfTokens.space1,
+                runSpacing: SimfTokens.space2,
                 children: <Widget>[
                   for (final interest in match.sharedInterests)
-                    Chip(
-                      label: Text(interest.localizedName(isArabic)),
-                      backgroundColor: SimfTokens.field,
-                      visualDensity: VisualDensity.compact,
-                    ),
+                    _InterestPill(label: interest.localizedName(isArabic)),
                 ],
               ),
             ],
-            const SizedBox(height: SimfTokens.space2),
+            const SizedBox(height: SimfTokens.space3),
             Text(
               l10n.meetPeopleSharedInterests(match.sharedInterestCount),
               style: const TextStyle(
@@ -151,6 +161,37 @@ class _MatchCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Accent shared-interest pill — mirrors the mockup's `.match-head .chip`
+/// (accent-tinted fill + accent border + accent text).
+class _InterestPill extends StatelessWidget {
+  const _InterestPill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space2,
+        vertical: SimfTokens.space1,
+      ),
+      decoration: BoxDecoration(
+        color: SimfTokens.accent.withValues(alpha: 0.06),
+        border: Border.all(color: SimfTokens.accent),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: SimfTokens.accent,
+          fontWeight: FontWeight.w600,
+          fontSize: SimfTokens.textXs,
         ),
       ),
     );
@@ -184,10 +225,13 @@ class _Empty extends StatelessWidget {
           const Icon(
             Icons.people_outline,
             size: 56,
-            color: SimfTokens.inkMuted,
+            color: SimfTokens.txtTertiary,
           ),
           const SizedBox(height: SimfTokens.space3),
-          Text(message, style: const TextStyle(color: SimfTokens.inkMuted)),
+          Text(
+            message,
+            style: const TextStyle(color: SimfTokens.txtSecondary),
+          ),
         ],
       ),
     );
@@ -209,7 +253,11 @@ class _Error extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text(message, textAlign: TextAlign.center),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: SimfTokens.txtSecondary),
+            ),
             const SizedBox(height: SimfTokens.space4),
             FilledButton(onPressed: onRetry, child: Text(l10n.retryLabel)),
           ],

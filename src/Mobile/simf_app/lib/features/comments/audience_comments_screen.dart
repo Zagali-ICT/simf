@@ -186,9 +186,16 @@ class _AudienceCommentsScreenState
         message: l10n.commentsEmpty,
       );
     }
-    return ListView.builder(
-      padding: const EdgeInsets.all(SimfTokens.space4),
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(
+        SimfTokens.space4,
+        SimfTokens.space3,
+        SimfTokens.space4,
+        SimfTokens.space4,
+      ),
       itemCount: _comments.length,
+      separatorBuilder: (context, index) =>
+          const SizedBox(height: SimfTokens.space2),
       itemBuilder: (context, index) {
         final comment = _comments[index];
         return _CommentCard(
@@ -200,49 +207,184 @@ class _AudienceCommentsScreenState
   }
 }
 
-/// One comment row: author + body + a like button (filled when [likedByMe])
-/// showing the count; tapping toggles like / unlike.
+/// One comment row (mockup `.cm`): a head with a gold initials avatar + author
+/// name, the comment body, then a foot with a like pill (red when [likedByMe],
+/// mockup `.like.on`) showing the count and a thin gold accent bar. Tapping the
+/// pill toggles like / unlike.
 class _CommentCard extends StatelessWidget {
   const _CommentCard({required this.comment, required this.onLike});
 
   final Comment comment;
   final VoidCallback onLike;
 
+  String get _initials {
+    final parts = comment.authorDisplayName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) {
+      return '؟';
+    }
+    if (parts.length == 1) {
+      return parts.first.characters.first;
+    }
+    return parts.first.characters.first + parts.last.characters.first;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: SimfTokens.space2),
+      margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space4),
+        padding: const EdgeInsets.symmetric(
+          horizontal: SimfTokens.space3,
+          vertical: SimfTokens.space3,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(
-              comment.authorDisplayName,
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textMd,
-              ),
-            ),
-            const SizedBox(height: SimfTokens.space1),
-            Text(comment.body),
-            const SizedBox(height: SimfTokens.space2),
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: TextButton.icon(
-                onPressed: onLike,
-                icon: Icon(
-                  comment.likedByMe
-                      ? Icons.favorite
-                      : Icons.favorite_border,
-                  size: 18,
-                  color: comment.likedByMe
-                      ? SimfTokens.accent
-                      : SimfTokens.inkMuted,
+            Row(
+              children: <Widget>[
+                CircleAvatar(
+                  radius: 12,
+                  backgroundColor: SimfTokens.accent,
+                  foregroundColor: SimfTokens.navy,
+                  child: Text(
+                    _initials,
+                    style: const TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
-                label: Text(comment.likeCount.toString()),
+                const SizedBox(width: SimfTokens.space2),
+                Expanded(
+                  child: Text(
+                    comment.authorDisplayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: SimfTokens.surface,
+                      fontWeight: FontWeight.w600,
+                      fontSize: SimfTokens.textSm,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: SimfTokens.space2),
+            Text(
+              comment.body,
+              style: const TextStyle(
+                color: SimfTokens.surface,
+                fontSize: SimfTokens.textSm,
+                fontWeight: FontWeight.w500,
+                height: 1.65,
               ),
             ),
+            const SizedBox(height: SimfTokens.space2),
+            Container(
+              margin: const EdgeInsets.only(bottom: SimfTokens.space2),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: SimfTokens.line2)),
+              ),
+            ),
+            Row(
+              children: <Widget>[
+                _LikePill(
+                  liked: comment.likedByMe,
+                  count: comment.likeCount,
+                  onTap: onLike,
+                ),
+                const SizedBox(width: SimfTokens.space2),
+                const Expanded(child: _AccentBar()),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The like control rendered as the mockup `.like` pill — a rounded outline
+/// chip that turns red ([SimfTokens.danger]) when [liked].
+class _LikePill extends StatelessWidget {
+  const _LikePill({
+    required this.liked,
+    required this.count,
+    required this.onTap,
+  });
+
+  final bool liked;
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color = liked ? SimfTokens.danger : SimfTokens.txtSecondary;
+    return Material(
+      color: liked
+          ? SimfTokens.danger.withValues(alpha: 0.06)
+          : Colors.transparent,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SimfTokens.space2,
+            vertical: 3,
+          ),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: liked
+                  ? SimfTokens.danger.withValues(alpha: 0.35)
+                  : SimfTokens.line,
+            ),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(
+                liked ? Icons.favorite : Icons.favorite_border,
+                size: 14,
+                color: color,
+              ),
+              const SizedBox(width: SimfTokens.space1),
+              Text(
+                count.toString(),
+                textDirection: TextDirection.ltr,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                  fontSize: SimfTokens.textXs,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The thin gold gradient bar that fills the comment foot (mockup `.cm-bar`).
+class _AccentBar extends StatelessWidget {
+  const _AccentBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 2,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(1),
+        gradient: LinearGradient(
+          colors: <Color>[
+            SimfTokens.accent.withValues(alpha: 0.25),
+            Colors.transparent,
           ],
         ),
       ),
@@ -268,9 +410,11 @@ class _SubmitBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: SimfTokens.surface,
-      elevation: 8,
+    return Container(
+      decoration: const BoxDecoration(
+        color: SimfTokens.navy,
+        border: Border(top: BorderSide(color: SimfTokens.line2)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(SimfTokens.space3),
         child: Row(
@@ -283,14 +427,27 @@ class _SubmitBox extends StatelessWidget {
                 maxLines: 4,
                 maxLength: 1000,
                 textInputAction: TextInputAction.newline,
+                style: const TextStyle(
+                  color: SimfTokens.surface,
+                  fontSize: SimfTokens.textSm,
+                ),
                 decoration: InputDecoration(
                   hintText: hint,
+                  hintStyle: const TextStyle(color: SimfTokens.txtTertiary),
                   counterText: '',
                   filled: true,
-                  fillColor: SimfTokens.field,
+                  fillColor: SimfTokens.surfaceTint,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(SimfTokens.radius),
-                    borderSide: BorderSide.none,
+                    borderSide: const BorderSide(color: SimfTokens.line2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(SimfTokens.radius),
+                    borderSide: const BorderSide(color: SimfTokens.line2),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(SimfTokens.radius),
+                    borderSide: const BorderSide(color: SimfTokens.accent),
                   ),
                 ),
               ),
@@ -328,12 +485,12 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(icon, size: 56, color: SimfTokens.inkMuted),
+            Icon(icon, size: 56, color: SimfTokens.txtTertiary),
             const SizedBox(height: SimfTokens.space3),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.inkMuted),
+              style: const TextStyle(color: SimfTokens.txtSecondary),
             ),
           ],
         ),
@@ -357,7 +514,11 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text(message, textAlign: TextAlign.center),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: SimfTokens.txtSecondary),
+            ),
             const SizedBox(height: SimfTokens.space4),
             FilledButton(onPressed: onRetry, child: Text(l10n.retryLabel)),
           ],
