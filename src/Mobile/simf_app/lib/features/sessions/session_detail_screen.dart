@@ -9,6 +9,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/simf_bottom_nav.dart';
 import 'data/session_calendar.dart';
 import 'data/session_detail_repository.dart';
 import 'data/session_models.dart';
@@ -21,9 +22,9 @@ import 'data/session_models.dart';
 /// reservation (`myCell`, approved-only — guest/pending see no card, L-3). The
 /// two CTAs are client-local OS actions: **Add-to-calendar** opens the device
 /// calendar pre-filled from the session (E4); the **Reminder** is deferred to the
-/// notifications platform pass (D-300; the server worker D-217 is the real path).
-/// UI is interim — speaker photos/flags render as initials/text until the asset
-/// pass (SIMF-VID-001). 404 → not-found; any other failure → retry.
+/// notifications platform pass (D-300). Styled to `Mockup.html` screen 17
+/// (`.ag-detail`): a gold index badge + meta + title + tag pills, gold-avatar
+/// speaker rows, the brass my-seat card and the two CTAs.
 class SessionDetailScreen extends ConsumerStatefulWidget {
   const SessionDetailScreen({required this.sessionId, super.key});
 
@@ -114,7 +115,8 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
     final l10n = AppL10n.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.sessionDetailTitle)),
-      body: SafeArea(child: _buildBody(l10n)),
+      bottomNavigationBar: const SimfBottomNav(current: SimfTab.sessions),
+      body: SafeArea(top: false, child: _buildBody(l10n)),
     );
   }
 
@@ -129,7 +131,10 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
       );
     }
     if (_error || _detail == null) {
-      return _ErrorState(message: l10n.sessionDetailError, onRetry: () => unawaited(_load()));
+      return _ErrorState(
+        message: l10n.sessionDetailError,
+        onRetry: () => unawaited(_load()),
+      );
     }
     return _content(l10n, _detail!);
   }
@@ -154,7 +159,14 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
           const SizedBox(height: SimfTokens.space5),
           _SectionHeading(l10n.descriptionHeading),
           const SizedBox(height: SimfTokens.space2),
-          Text(description),
+          Text(
+            description,
+            style: const TextStyle(
+              color: SimfTokens.txtSecondary,
+              height: 1.7,
+              fontSize: SimfTokens.textSm,
+            ),
+          ),
         ],
         if (detail.speakers.isNotEmpty) ...<Widget>[
           const SizedBox(height: SimfTokens.space5),
@@ -195,7 +207,7 @@ class _SessionDetailScreenState extends ConsumerState<SessionDetailScreen> {
   }
 }
 
-/// The header band: index/code chip · weekday · date · time window · title.
+/// The header band (mockup `.ag-d-head`): a gold index badge · meta line · title.
 class _Header extends StatelessWidget {
   const _Header({required this.detail, required this.isArabic});
 
@@ -214,12 +226,17 @@ class _Header extends StatelessWidget {
               vertical: SimfTokens.space1,
             ),
             decoration: BoxDecoration(
-              color: SimfTokens.field,
+              color: SimfTokens.accent.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+              border: Border.all(
+                color: SimfTokens.accent.withValues(alpha: 0.30),
+              ),
             ),
             child: Text(
               detail.code,
+              textDirection: TextDirection.ltr,
               style: const TextStyle(
+                color: SimfTokens.accent,
                 fontWeight: FontWeight.w700,
                 fontSize: SimfTokens.textXs,
               ),
@@ -229,7 +246,7 @@ class _Header extends StatelessWidget {
         Text(
           _metaLine(detail, isArabic),
           style: const TextStyle(
-            color: SimfTokens.inkMuted,
+            color: SimfTokens.txtSecondary,
             fontSize: SimfTokens.textSm,
           ),
         ),
@@ -237,8 +254,10 @@ class _Header extends StatelessWidget {
         Text(
           detail.localizedTitle(isArabic),
           style: const TextStyle(
+            color: SimfTokens.surface,
             fontWeight: FontWeight.w700,
             fontSize: SimfTokens.textXl,
+            height: 1.4,
           ),
         ),
       ],
@@ -246,7 +265,8 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// The hall + category tag pills (category shown only when present).
+/// The hall + category tag pills (mockup `.ag-d-tags`) — bordered pills, the
+/// hall (location) tag accented.
 class _TagsRow extends StatelessWidget {
   const _TagsRow({required this.hall, required this.category});
 
@@ -259,42 +279,57 @@ class _TagsRow extends StatelessWidget {
       spacing: SimfTokens.space2,
       runSpacing: SimfTokens.space2,
       children: <Widget>[
-        _Pill(icon: Icons.place_outlined, label: hall),
-        if (category != null) _Pill(icon: Icons.label_outline, label: category!),
+        _Pill(icon: Icons.place_outlined, label: hall, accented: true),
+        if (category != null) _Pill(label: category!, accented: false),
       ],
     );
   }
 }
 
 class _Pill extends StatelessWidget {
-  const _Pill({required this.icon, required this.label});
+  const _Pill({required this.label, required this.accented, this.icon});
 
-  final IconData icon;
+  final IconData? icon;
   final String label;
+  final bool accented;
 
   @override
   Widget build(BuildContext context) {
+    final fg = accented ? SimfTokens.accent : SimfTokens.txtSecondary;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: SimfTokens.space3,
         vertical: SimfTokens.space1,
       ),
       decoration: BoxDecoration(
-        color: SimfTokens.field,
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        color: accented
+            ? SimfTokens.accent.withValues(alpha: 0.06)
+            : SimfTokens.surfaceTint,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: accented
+              ? SimfTokens.accent.withValues(alpha: 0.30)
+              : SimfTokens.line,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(icon, size: 14, color: SimfTokens.accent),
-          const SizedBox(width: SimfTokens.space1),
-          Text(label, style: const TextStyle(fontSize: SimfTokens.textSm)),
+          if (icon != null) ...<Widget>[
+            Icon(icon, size: 13, color: fg),
+            const SizedBox(width: SimfTokens.space1),
+          ],
+          Text(
+            label,
+            style: TextStyle(color: fg, fontSize: SimfTokens.textXs),
+          ),
         ],
       ),
     );
   }
 }
 
+/// A small uppercase section heading (mockup `.ag-d-sec h5`).
 class _SectionHeading extends StatelessWidget {
   const _SectionHeading(this.text);
 
@@ -305,16 +340,17 @@ class _SectionHeading extends StatelessWidget {
     return Text(
       text,
       style: const TextStyle(
+        color: SimfTokens.txtTertiary,
         fontWeight: FontWeight.w700,
-        fontSize: SimfTokens.textLg,
+        fontSize: SimfTokens.textXs,
+        letterSpacing: 0.8,
       ),
     );
   }
 }
 
-/// One speaker card: initials avatar (interim — `photoRelativePath` rendering is
-/// deferred to SIMF-VID-001), name, rank/role, and country name (the flag from
-/// `countryId` is deferred to the flag-asset pass — D-271 data is decoded).
+/// One speaker row (mockup `.ag-d-spk .sp`): a gold initials avatar, white name
+/// and a gold rank/role line. Photos/flags are deferred to SIMF-VID-001.
 class _SpeakerCard extends StatelessWidget {
   const _SpeakerCard({
     required this.speaker,
@@ -344,7 +380,8 @@ class _SpeakerCard extends StatelessWidget {
       child: ListTile(
         onTap: onTap,
         leading: CircleAvatar(
-          backgroundColor: SimfTokens.field,
+          backgroundColor: SimfTokens.accent,
+          foregroundColor: SimfTokens.navy,
           child: Text(
             _initials(name),
             style: const TextStyle(fontWeight: FontWeight.w700),
@@ -352,23 +389,34 @@ class _SpeakerCard extends StatelessWidget {
         ),
         title: Text(
           name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            color: SimfTokens.surface,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-        subtitle: subParts.isEmpty ? null : Text(subParts.join(' · ')),
+        subtitle: subParts.isEmpty
+            ? null
+            : Text(
+                subParts.join(' · '),
+                style: const TextStyle(
+                  color: SimfTokens.accent,
+                  fontSize: SimfTokens.textXs,
+                ),
+              ),
         trailing: speaker.role == SessionSpeakerRole.host
             ? Chip(
                 label: Text(hostLabel),
                 visualDensity: VisualDensity.compact,
                 padding: EdgeInsets.zero,
               )
-            : const Icon(Icons.chevron_right, color: SimfTokens.accent),
+            : const Icon(Icons.chevron_left, color: SimfTokens.txtTertiary),
       ),
     );
   }
 }
 
-/// The brass-bordered my-seat card — row + seat (no column axis, L-3.1) + a
-/// View link to the seat map (18).
+/// The brass-bordered my-seat card (mockup `.ag-d-seat`) — row + seat (no column
+/// axis, L-3.1) + a View link to the seat map (18).
 class _SeatCard extends StatelessWidget {
   const _SeatCard({required this.seat, required this.l10n, required this.onView});
 
@@ -379,7 +427,7 @@ class _SeatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.zero,
+      color: SimfTokens.accent.withValues(alpha: 0.06),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(SimfTokens.radius),
         side: const BorderSide(color: SimfTokens.accent),
@@ -397,6 +445,7 @@ class _SeatCard extends StatelessWidget {
                   Text(
                     l10n.seatLocation(seat.rowLabel, seat.seatNumber),
                     style: const TextStyle(
+                      color: SimfTokens.surface,
                       fontWeight: FontWeight.w700,
                       fontSize: SimfTokens.textMd,
                     ),
@@ -405,7 +454,7 @@ class _SeatCard extends StatelessWidget {
                   Text(
                     l10n.seatBadgeHint,
                     style: const TextStyle(
-                      color: SimfTokens.inkMuted,
+                      color: SimfTokens.txtSecondary,
                       fontSize: SimfTokens.textSm,
                     ),
                   ),
@@ -420,7 +469,7 @@ class _SeatCard extends StatelessWidget {
   }
 }
 
-/// The two CTAs: Add-to-calendar (real, client-local) + Reminder (interim).
+/// The two CTAs (mockup `.ag-d-cta`): Add-to-calendar (gold) + Reminder (outlined).
 class _CtaRow extends StatelessWidget {
   const _CtaRow({
     required this.l10n,
@@ -468,9 +517,9 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(icon, size: 56, color: SimfTokens.inkMuted),
+          Icon(icon, size: 56, color: SimfTokens.txtTertiary),
           const SizedBox(height: SimfTokens.space3),
-          Text(message, style: const TextStyle(color: SimfTokens.inkMuted)),
+          Text(message, style: const TextStyle(color: SimfTokens.txtSecondary)),
         ],
       ),
     );
