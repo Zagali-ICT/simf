@@ -878,6 +878,11 @@
 
 .simf-shell__content {
   flex: 1 1 auto;
+  /* Without this a flex item keeps its content's intrinsic width and refuses
+     to shrink, so a wide page (e.g. a data grid) pushes a horizontal scrollbar
+     onto the whole document. min:0 lets the column shrink and contain its own
+     wide children instead. */
+  min-inline-size: 0;
   overflow-y: auto;
   padding: var(--space-6) var(--space-7);
 }
@@ -885,6 +890,50 @@
 @media (max-width: 1023px) {
   .simf-shell__content { padding: var(--space-5); }
   .simf-shell__nav { flex-basis: 240px; }
+}
+
+/* -- Mobile (Tier 3): the side nav becomes an overlay instead of a column.
+   Below 768px a 240px navigation column squeezes the content and forces a
+   horizontal scrollbar, so the nav is hidden by default and floats over the
+   content (inside the viewport) only when the user opens it from the top bar.
+
+   NOTE — the toggle is INVERTED here vs. desktop, on purpose. On desktop the
+   nav is open by default and the `--nav-hidden` class hides it. On mobile the
+   nav is closed by default and the SAME `--nav-hidden` class (set when the
+   user presses the toggle) is what reveals it. One boolean, two viewport-
+   appropriate meanings — handled entirely in CSS so the C# stays a plain flag.
+   Closed = display:none (zero layout, so it can never widen the document);
+   open = an absolutely-positioned overlay pinned to the inline-start edge
+   (right under RTL, left under LTR) and capped to the viewport width. */
+@media (max-width: 767px) {
+  /* The top bar carries the toggle + brand + a row of controls (language,
+     theme, notifications, user, sign-out). They don't all fit on one line on a
+     phone, so let the bar wrap: the controls drop to a second row instead of
+     forcing a horizontal scrollbar. Wrapping (not hiding) keeps every control
+     reachable and is locale-proof — a longer translated label just wraps. */
+  .simf-shell__topbar {
+    flex-wrap: wrap;
+    block-size: auto;
+    min-block-size: 60px;
+    padding-block: var(--space-2);
+    padding-inline: var(--space-3);
+    row-gap: var(--space-2);
+  }
+
+  .simf-shell__body { position: relative; }
+
+  .simf-shell__nav { display: none; }
+
+  .simf-shell--nav-hidden .simf-shell__nav {
+    display: block;
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: 40;
+    flex-basis: auto;
+    inline-size: min(82vw, 280px);
+    box-shadow: var(--shadow-card);
+  }
 }
 
 /* -- Side-nav search (filter the menu) -- */
