@@ -24,14 +24,18 @@ class SimfApp extends ConsumerWidget {
       title: 'SIMF',
       debugShowCheckedModeBanner: false,
       routerConfig: router,
-      // High-contrast is orthogonal to brightness: it swaps both the light and
-      // dark slots and leaves themeMode to the OS. A future theme-mode control
-      // should set themeMode and extend this ternary, not add a parallel path.
+      // The app is navy-always (the Mockup.html brand surface): every screen is
+      // built on the dark/navy tokens, so themeMode is pinned to dark and the OS
+      // light/dark setting is ignored — on a light-mode device the on-navy text
+      // would otherwise sit on a light scaffold and be unreadable. High-contrast
+      // swaps the dark slot to the high-contrast-dark theme (white-on-black). The
+      // light slots stay wired for a possible future light mode but are not
+      // selected while themeMode is pinned to dark.
       theme:
           a11y.highContrast ? SimfTheme.highContrastLight() : SimfTheme.light(),
       darkTheme:
           a11y.highContrast ? SimfTheme.highContrastDark() : SimfTheme.dark(),
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.dark,
       locale: locale,
       supportedLocales: AppL10n.supportedLocales,
       localizationsDelegates: const <LocalizationsDelegate<dynamic>>[

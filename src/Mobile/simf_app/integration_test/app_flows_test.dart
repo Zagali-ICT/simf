@@ -141,6 +141,22 @@ Future<ProviderContainer> _boot(WidgetTester tester, AuthState auth) async {
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
+  testWidgets('navy-always: the app pins themeMode to dark so a light-mode '
+      'device still renders the navy theme (D-331)', (tester) async {
+    await _boot(tester, const AuthStateSignedOut());
+
+    // The root MaterialApp pins themeMode to dark — the OS light/dark setting
+    // is ignored, so the on-navy screens are never rendered on a light scaffold.
+    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(app.themeMode, ThemeMode.dark);
+
+    // And the theme actually resolved on a screen is the dark (navy) brand,
+    // even though a widget test's default platformBrightness is light — which
+    // is exactly the case that themeMode.system would have rendered light.
+    final ctx = tester.element(find.byType(SignInScreen));
+    expect(Theme.of(ctx).brightness, Brightness.dark);
+  });
+
   testWidgets('guest entry: splash -> sign-in -> browse-as-guest -> guest '
       'landing -> Home (no auth)', (tester) async {
     await _boot(tester, const AuthStateSignedOut());
