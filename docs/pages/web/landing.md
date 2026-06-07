@@ -6,9 +6,9 @@
 | **Surface** | Website (public, anonymous) |
 | **Audience** | Anyone (public marketing site) |
 | **Auth** | None — anonymous |
-| **Status** | ✅ Real (D-294 — dynamic content) |
-| **Source** | [`index.html`](../../../src/Website/SIMF.Web/wwwroot/index.html) · [`content.js`](../../../src/Website/SIMF.Web/wwwroot/content.js) · [`SiteContentEndpoints.cs`](../../../src/Website/SIMF.Web/Endpoints/SiteContentEndpoints.cs) |
-| **Last reviewed** | 2026-06-05 |
+| **Status** | ✅ Real (D-294 dynamic content; D-336 editorial sections CMS-driven) |
+| **Source** | [`index.html`](../../../src/Website/SIMF.Web/wwwroot/index.html) · [`content.js`](../../../src/Website/SIMF.Web/wwwroot/content.js) · [`SiteContentEndpoints.cs`](../../../src/Website/SIMF.Web/Endpoints/SiteContentEndpoints.cs) · [`LandingSectionContentKeys.cs`](../../../src/Shared/SIMF.Common/LandingSectionContentKeys.cs) |
+| **Last reviewed** | 2026-06-07 |
 
 ## 1. Purpose
 
@@ -35,6 +35,13 @@ re-rendered; anything missing (or an offline API) leaves the built-in defaults.
 | Archive (history) | `archive` | `GET /api/v1/app/archive` (empty when the D-166 visibility toggle is off) |
 | Saudi-spirit gallery | `spirit` | `GET /api/v1/app/media` (images re-streamed via `GET /content/media/{id}/image`) |
 | Hero text | `hero.*` | `POST /api/v1/app/content/batch` (keys `hero.titlestart`…`hero.ctasecondary`, seeded) |
+| About / stats strip / Pillars header / Goals (D-336) | `about.*` `stats.*` `pillars.*` `goals.*` | `POST /api/v1/app/content/batch` (32 keys incl. `stats.count1..4`, `goals.item1..5.t/.d`, seeded; editable from CP `/admin/content-blocks`) |
+
+The five Pillar rows and the 12-item insights marquee remain page arrays
+(list/animation data, not CMS) — a noted follow-up. The editorial CMS bindings
+use `data-cms` **alongside** the existing `data-i18n`, so the binding order is
+**API → seeded CMS → built-in dictionary**; an unseeded key keeps the page's own
+copy (zero visual regression).
 
 The API has **no CORS policy**, so the browser cannot call it directly — the
 Website proxy is the same-origin bridge (mirrors the BFF proxy in
@@ -65,7 +72,8 @@ hero CMS blocks store `ContentArabic` (→ base) and `Content` (→ `_en`).
 | Landing loads live sections from `/content/site` | E2E-WLD-001 |
 | Offline API falls back to `SITE_DEFAULTS` | E2E-WLD-004 |
 | Hero CMS text + bilingual switch | E2E-WLD-007 |
+| Editorial sections (About/stats/Pillars/Goals) CMS-driven | E2E-WLD-009 |
 
 Full catalogue: [`e2e/web-landing.md`](../../tests/e2e/web-landing.md).
 
-_Last reviewed:_ 2026-06-05 by Claude (D-294 — landing dynamic content).
+_Last reviewed:_ 2026-06-07 by Claude (D-336 — About/stats/Pillars-header/Goals CMS-driven; was D-294 landing dynamic content).

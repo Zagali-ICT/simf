@@ -30,6 +30,7 @@
 | E2E-WLD-006 | Gallery image proxy — `spirit` images load via `GET /content/media/{id}/image`; a missing image 404s without breaking the page | happy | P2 | _to author_ |
 | E2E-WLD-007 | Hero CMS text — hero renders the seeded `hero.*` blocks; all-or-nothing (a missing key keeps the default hero) | happy | P1 | _to author_ |
 | E2E-WLD-008 | Bilingual — EN/AR toggle swaps `field`/`field_en` across dynamic sections + hero | i18n | P1 | _to author_ |
+| E2E-WLD-009 | Editorial sections CMS-driven — About / stats strip (incl. the 4 numbers) / Pillars header / Goals render the seeded `about.* / stats.* / pillars.* / goals.*` blocks; an unseeded key keeps the built-in copy (D-336) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -144,6 +145,30 @@ Scenario: The language toggle swaps base and _en values
   And Arabic renders RTL with no Latin leakage in the dynamic sections
 ```
 
+### E2E-WLD-009 — Editorial sections are CMS-driven (D-336)
+
+```gherkin
+Scenario: About / stats / Pillars header / Goals render the seeded CMS text
+  Given the about.* / stats.* / pillars.* / goals.* content blocks are seeded
+  When the landing loads /content/site
+  Then the document carries `about`, `stats`, `pillars` and `goals` objects
+  And each text node has a base (Arabic) value and an `_en` sibling
+  And the four stat cells show stats.count1..4 with stats.label1..4
+  And the five goal cards show goals.item1..5.t / .d
+
+Scenario: An unseeded editorial key keeps the page's built-in copy
+  Given the goals.item3.d content block is absent (or the whole goals.* set is)
+  When the landing loads /content/site
+  Then the missing field falls back to the page's data-i18n dictionary text
+  And no editorial section is blank
+  # Binding order is data-cms (CMS) over data-i18n (built-in): API > seeded CMS > dictionary.
+
+Scenario: An admin edits a section from the CP and the landing reflects it
+  Given an admin updates about.h2 via /admin/content-blocks
+  When a visitor reloads "/"
+  Then the About heading shows the edited value (no redeploy)
+```
+
 ---
 
 ## Implementation notes
@@ -160,11 +185,12 @@ Scenario: The language toggle swaps base and _en values
 - **Lower-layer coverage.** Unit tests back the reshape and the client:
   `tests/SIMF.Web.Tests/SiteContentMapperTests.cs` (Compose: bilingual emission,
   partners merge, archive counts, spirit proxy, hero all-or-nothing, empty →
-  empty) and `tests/SIMF.ApiClient.Tests/SimfPublicClientTests.cs` (routes,
+  empty, **landing-section nested bilingual projection + per-section presence,
+  D-336**) and `tests/SIMF.ApiClient.Tests/SimfPublicClientTests.cs` (routes,
   envelope-failure → null, transport-failure → null, media bytes fetch).
 - **Convert to Playwright** when the runner is adopted: each Gherkin scenario
   maps to a `.feature` step; the steps are already runner-agnostic.
 
 ---
 
-_Last reviewed:_ 2026-06-05 by Claude (D-294 — landing dynamic content).
+_Last reviewed:_ 2026-06-07 by Claude (D-336 — About/stats/Pillars-header/Goals CMS-driven; was D-294 landing dynamic content).

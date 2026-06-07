@@ -186,6 +186,12 @@ public sealed class IdentitySeeder(
         // can manage them. Idempotent — same insert-when-absent shape.
         await EnsureLandingHeroContentAsync(admin.Id, cancellationToken);
 
+        // Seed the landing's editorial sections below the hero — About, the
+        // global-landscape stats strip, the Pillars header and the Goals
+        // block — so the same /content/site proxy + CP CMS editor drive them
+        // instead of the page's hardcoded copy. Idempotent, additive data.
+        await EnsureLandingSectionsContentAsync(admin.Id, cancellationToken);
+
         // D-176 (gap doc G12) — seed the default AI prompt catalogue.
         // One prompt per feature; admin can edit at runtime via the CP.
         await EnsureDefaultAiPromptsAsync(admin.Id, cancellationToken);
@@ -521,6 +527,133 @@ public sealed class IdentitySeeder(
         await appDbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation(
             "Landing hero content blocks ensured (seeded {NewCount} of {Total}).",
+            seed.Length - existingKeys.Count, seed.Length);
+    }
+
+    /// <summary>Seed the landing's editorial sections below the hero — About,
+    /// the global-landscape stats strip, the Pillars header and the Goals
+    /// block — as CMS content blocks read by the Website's
+    /// <c>/content/site</c> proxy and editable from the CP CMS editor. The
+    /// Arabic values are the landing's current hardcoded defaults verbatim,
+    /// with their paired English copy from the page's i18n dictionary. Keys
+    /// come from the shared <see cref="LandingSectionContentKeys"/> so the
+    /// seeder and the proxy cannot drift. Idempotent: each block is inserted
+    /// only when its key is absent; additive data — no migration.</summary>
+    private async Task EnsureLandingSectionsContentAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        // (Key, EN, AR) — mirrors the landing's data-cms="about.* / stats.* /
+        // pillars.* / goals.*" bindings.
+        var seed = new[]
+        {
+            // About — Mockup §01.
+            (LandingSectionContentKeys.AboutEyebrow,
+             "About the Forum",
+             "حول الملتقى"),
+            (LandingSectionContentKeys.AboutHeading,
+             "A Saudi global platform driving dialogue and cooperation on maritime security",
+             "منصة سعودية عالمية لدعم الحوار والتعاون في قضايا الأمن البحري"),
+            (LandingSectionContentKeys.AboutBody1,
+             "The Saudi International Maritime Forum is a high-level event that brings together leaders, officials, and experts to share experience and build a shared global understanding of the future of maritime security amid accelerating geopolitical and technological change.",
+             "الملتقى البحري السعودي الدولي حدث رفيع المستوى يجمع القادة والمسؤولين والخبراء لتبادل التجارب والخبرات، وتعزيز فهم عالمي مشترك لمستقبل الأمن البحري في ظل التحولات الجيوسياسية والتقنية المتسارعة."),
+            (LandingSectionContentKeys.AboutBody2,
+             "The Forum reflects the Kingdom of Saudi Arabia's strategic role in anchoring stability across the seas and supporting the resilience of the global economy through an integrated framework that protects the seabed and enhances the efficiency of energy and trade supply chains.",
+             "يعكس الملتقى الدور الاستراتيجي للمملكة العربية السعودية في ترسيخ استقرار البحار ودعم استدامة الاقتصاد العالمي، عبر منظومة متكاملة لحماية قاع البحار ورفع كفاءة سلاسل إمداد الطاقة والتجارة."),
+
+            // Global-landscape stats strip — Mockup §02.
+            (LandingSectionContentKeys.StatsEyebrow,
+             "Global Landscape",
+             "المشهد العالمي"),
+            (LandingSectionContentKeys.StatsIntro,
+             "The world is witnessing unprecedented shifts in maritime security. As threats to global supply chains escalate, seabed security emerges as an urgent international priority for stabilising the seas and sustaining the global economy.",
+             "يشهد العالم تحولات غير مسبوقة في أمن البحار، ومع تصاعد التهديدات التي تطال سلاسل الإمداد العالمية، يبرز أمن قاع البحار كأولوية دولية ملحة لتعزيز استقرار البحار وضمان استدامة الاقتصاد العالمي."),
+            (LandingSectionContentKeys.StatsHeading,
+             "A progressive path tracking the shifts in global maritime security",
+             "مسار متدرج يواكب تحولات الأمن البحري العالمي"),
+            (LandingSectionContentKeys.StatsCount1, "500", "500"),
+            (LandingSectionContentKeys.StatsLabel1,
+             "Participating countries", "دولة مشاركة"),
+            (LandingSectionContentKeys.StatsCount2, "220", "220"),
+            (LandingSectionContentKeys.StatsLabel2,
+             "Leaders & officials", "قائد ومسؤول"),
+            (LandingSectionContentKeys.StatsCount3, "100", "100"),
+            (LandingSectionContentKeys.StatsLabel3,
+             "International speakers", "متحدث دولي"),
+            (LandingSectionContentKeys.StatsCount4, "40", "40"),
+            (LandingSectionContentKeys.StatsLabel4,
+             "Sessions & dialogues", "جلسة وحوار"),
+
+            // Pillars header — Mockup §03.
+            (LandingSectionContentKeys.PillarsEyebrow, "Key Pillars", "المحاور الرئيسية"),
+            (LandingSectionContentKeys.PillarsHeading, "Key Pillars", "المحاور الرئيسية"),
+            (LandingSectionContentKeys.PillarsBody,
+             "Building a comprehensive strategic vision that addresses energy systems, trade, and the link between surface and depths through five core pillars that anchor maritime security and global economic stability.",
+             "لصياغة رؤية استراتيجية شاملة تعالج منظومات الطاقة والتجارة والاتصال بين السطح والأعماق عبر خمسة محاور رئيسية تشكل ركائز الأمن البحري واستقرار الاقتصاد العالمي."),
+
+            // Goals — Mockup §08.
+            (LandingSectionContentKeys.GoalsEyebrow, "Forum Goals", "أهداف الملتقى"),
+            (LandingSectionContentKeys.GoalsHeading, "Ambitious Goals", "أهداف طموحة"),
+            (LandingSectionContentKeys.GoalsBody,
+             "Building an integrated maritime security framework that supports international efforts to protect the seabed and enhance supply-chain efficiency, contributing to global economic stability in alignment with Saudi Vision 2030.",
+             "تعزيز منظومة أمن بحري متكاملة تدعم الجهود الدولية لحماية قاع البحار ورفع كفاءة سلاسل الإمداد، بما يسهم في استقرار الاقتصاد العالمي ويتّسق مع مستهدفات رؤية المملكة 2030."),
+            (LandingSectionContentKeys.GoalsButton,
+             "Browse all goals", "تصفّح الأهداف الكاملة"),
+            (LandingSectionContentKeys.Goal1Title,
+             "Strengthen regional and international maritime security",
+             "تعزيز الأمن البحري الإقليمي والدولي"),
+            (LandingSectionContentKeys.Goal1Body,
+             "Unifying efforts to protect vital maritime corridors and ensure the stability of global navigation.",
+             "توحيد الجهود لحماية الممرّات البحرية الحيويّة وضمان استقرار حركة الملاحة العالميّة."),
+            (LandingSectionContentKeys.Goal2Title,
+             "Protect subsea infrastructure",
+             "حماية البنية التحتيّة تحت السطح"),
+            (LandingSectionContentKeys.Goal2Body,
+             "Safeguarding cables, energy lines, and pipelines that connect the global economy beneath the sea.",
+             "صون الكابلات وخطوط الطاقة والأنابيب التي تربط الاقتصاد العالمي تحت قاع البحار."),
+            (LandingSectionContentKeys.Goal3Title,
+             "Enhance supply-chain efficiency",
+             "رفع كفاءة سلاسل الإمداد"),
+            (LandingSectionContentKeys.Goal3Body,
+             "Modernising ports, corridors, and shipping systems to increase resilience and reduce risk.",
+             "تطوير منظومات الموانئ والممرّات وأنظمة الشحن لرفع المرونة وتقليل المخاطر."),
+            (LandingSectionContentKeys.Goal4Title,
+             "Exchange knowledge and build capacity",
+             "تبادل المعرفة وبناء القدرات"),
+            (LandingSectionContentKeys.Goal4Body,
+             "Expanding the knowledge platform between leaders and experts to develop national and international talent.",
+             "توسيع منصّة المعرفة بين القادة والخبراء لصقل الكوادر الوطنيّة والدوليّة."),
+            (LandingSectionContentKeys.Goal5Title,
+             "Contribute to Vision 2030",
+             "الإسهام في تحقيق رؤية 2030"),
+            (LandingSectionContentKeys.Goal5Body,
+             "Strengthening the Kingdom's position as a global hub for maritime security and the blue economy.",
+             "تعزيز موقع المملكة قطبًا عالميًّا في الأمن البحري والاقتصاد الأزرق."),
+        };
+
+        var now = timeProvider.GetUtcNow();
+        var existingKeys = await appDbContext.ContentBlocks
+            .Where(b => seed.Select(s => s.Item1).Contains(b.Key))
+            .Select(b => b.Key)
+            .ToListAsync(cancellationToken);
+
+        foreach (var (key, en, ar) in seed)
+        {
+            if (existingKeys.Contains(key)) { continue; }
+            appDbContext.ContentBlocks.Add(new SIMF.Domain.Cms.ContentBlock
+            {
+                Id = Guid.NewGuid(),
+                Key = key,
+                Content = en,
+                ContentArabic = ar,
+                IsActive = true,
+                LastUpdatedByUserId = actorUserId,
+                CreatedAt = now,
+                LastUpdatedAt = now,
+            });
+        }
+        await appDbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "Landing section content blocks ensured (seeded {NewCount} of {Total}).",
             seed.Length - existingKeys.Count, seed.Length);
     }
 

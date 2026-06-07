@@ -53,6 +53,11 @@ internal static class SiteContentEndpoints
     // (constant) rather than rebuilt on every request.
     private static readonly string[] HeroKeys = HeroFields.Select(f => f.Key).ToArray();
 
+    // Every landing CMS key requested in one batch: the hero keys plus the
+    // editorial sections below it (About, stats strip, Pillars header, Goals).
+    private static readonly string[] LandingCmsKeys =
+        [.. HeroKeys, .. LandingSectionContentKeys.All];
+
     // Arabic / English cultures cached once for date formatting (the framework
     // caches GetCultureInfo, but holding the references avoids the lookup).
     private static readonly CultureInfo ArabicCulture = CultureInfo.GetCultureInfo("ar");
@@ -96,7 +101,7 @@ internal static class SiteContentEndpoints
         var sponsorsTask = api.GetSponsorsAsync(ct);
         var archiveTask = api.GetArchiveAsync(ct);
         var mediaTask = api.GetMediaAsync(null, 0, 24, ct);
-        var cmsTask = api.GetContentBatchAsync(HeroKeys, ct);
+        var cmsTask = api.GetContentBatchAsync(LandingCmsKeys, ct);
 
         await Task.WhenAll(
             sessionsTask, speakersTask, newsTask, mediaPartnersTask,
@@ -128,6 +133,15 @@ internal static class SiteContentEndpoints
         if (hero is not null)
         {
             result["hero"] = hero;
+        }
+
+        // The editorial sections below the hero (About, stats strip, Pillars
+        // header, Goals). Each top-level section is emitted only when the CMS
+        // returned at least one of its keys, so an unseeded section leaves the
+        // landing on its built-in markup.
+        foreach (var section in MapLandingSections(cms))
+        {
+            result[section.Key] = section.Value;
         }
 
         return result;
@@ -287,6 +301,58 @@ internal static class SiteContentEndpoints
             hero[field + "_en"] = string.IsNullOrEmpty(block.Content) ? block.ContentArabic : block.Content;
         }
         return hero;
+    }
+
+    // Builds the editorial-section objects (about/stats/pillars/goals) from the
+    // CMS batch by projecting each dotted key into a nested bilingual node —
+    // e.g. "goals.item1.t" -> result["goals"]["item1"]["t"]/["t_en"], which is
+    // exactly the path the landing's getCmsValue() reads. Only keys the CMS
+    // actually returned are emitted, so an unseeded key leaves that field on the
+    // page's built-in markup, and a section with no returned keys is absent
+    // entirely. A null batch yields an empty dictionary.
+    private static Dictionary<string, object?> MapLandingSections(PublicContentBlockBatch? batch)
+    {
+        var sections = new Dictionary<string, object?>();
+        if (batch is null)
+        {
+            return sections;
+        }
+        foreach (var key in LandingSectionContentKeys.All)
+        {
+            if (!batch.Blocks.TryGetValue(key, out var block))
+            {
+                continue;
+            }
+            PutNestedBilingual(sections, key, block.ContentArabic, block.Content);
+        }
+        return sections;
+    }
+
+    // Sets a dotted key into nested dictionaries, writing the leaf twice — the
+    // Arabic-preferred display value under the bare field and the English value
+    // under `<field>_en` — matching PutBilingual's convention.
+    private static void PutNestedBilingual(
+        Dictionary<string, object?> root, string dottedKey, string? arabic, string? english)
+    {
+        var parts = dottedKey.Split('.');
+        var node = root;
+        for (var i = 0; i < parts.Length - 1; i++)
+        {
+            if (node.TryGetValue(parts[i], out var existing)
+                && existing is Dictionary<string, object?> childDict)
+            {
+                node = childDict;
+                continue;
+            }
+            var created = new Dictionary<string, object?>();
+            node[parts[i]] = created;
+            node = created;
+        }
+        var leaf = parts[^1];
+        var ar = arabic ?? string.Empty;
+        var en = english ?? string.Empty;
+        node[leaf] = ar.Length > 0 ? ar : en;
+        node[leaf + "_en"] = en.Length > 0 ? en : ar;
     }
 
     // base (Arabic display) prefers the Arabic value, falling back to English so

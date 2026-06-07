@@ -143,6 +143,61 @@ public sealed class SiteContentMapperTests
         Assert.False(result.ContainsKey("hero"));
     }
 
+    [Fact]
+    public void Landing_sections_are_projected_into_nested_bilingual_nodes()
+    {
+        var keys = new[]
+        {
+            LandingSectionContentKeys.AboutHeading,
+            LandingSectionContentKeys.StatsCount1,
+            LandingSectionContentKeys.Goal1Title,
+        };
+        var blocks = keys.ToDictionary(
+            k => k,
+            k => new PublicContentBlock(k, k + "-en", k + "-ar", DateTimeOffset.UnixEpoch));
+
+        var result = SiteContentEndpoints.Compose(
+            null, null, null, null, null, null, null,
+            new PublicContentBlockBatch(blocks));
+
+        // about.h2 -> result["about"]["h2"] / ["h2_en"], Arabic as base.
+        var about = Assert.IsType<Dictionary<string, object?>>(result["about"]);
+        Assert.Equal("about.h2-ar", about["h2"]);
+        Assert.Equal("about.h2-en", about["h2_en"]);
+
+        var stats = Assert.IsType<Dictionary<string, object?>>(result["stats"]);
+        Assert.Equal("stats.count1-ar", stats["count1"]);
+
+        // Two levels deep: goals.item1.t -> result["goals"]["item1"]["t"].
+        var goals = Assert.IsType<Dictionary<string, object?>>(result["goals"]);
+        var item1 = Assert.IsType<Dictionary<string, object?>>(goals["item1"]);
+        Assert.Equal("goals.item1.t-ar", item1["t"]);
+        Assert.Equal("goals.item1.t-en", item1["t_en"]);
+    }
+
+    [Fact]
+    public void Landing_sections_omit_sections_with_no_returned_keys()
+    {
+        // Only an About key present — stats / goals / pillars (and hero, which
+        // needs every key) must stay absent so the page keeps its own markup.
+        var blocks = new Dictionary<string, PublicContentBlock>
+        {
+            [LandingSectionContentKeys.AboutEyebrow] = new(
+                LandingSectionContentKeys.AboutEyebrow, "About", "حول",
+                DateTimeOffset.UnixEpoch),
+        };
+
+        var result = SiteContentEndpoints.Compose(
+            null, null, null, null, null, null, null,
+            new PublicContentBlockBatch(blocks));
+
+        Assert.True(result.ContainsKey("about"));
+        Assert.False(result.ContainsKey("stats"));
+        Assert.False(result.ContainsKey("goals"));
+        Assert.False(result.ContainsKey("pillars"));
+        Assert.False(result.ContainsKey("hero"));
+    }
+
     private static List<object> Rows(Dictionary<string, object?> result, string key) =>
         Assert.IsType<List<object>>(result[key]);
 
