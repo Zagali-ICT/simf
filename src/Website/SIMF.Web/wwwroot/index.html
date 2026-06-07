@@ -969,9 +969,11 @@
     animation: partners-scroll 50s linear infinite;
   }
   .partners-strip:hover .partners-track { animation-play-state: paused; }
+  /* Scroll the logo strip toward the inline-end (rightward on this RTL page):
+     start one full set shifted out and settle to 0 so the loop is seamless. */
   @keyframes partners-scroll {
-    from { transform: translate3d(0, 0, 0); }
-    to   { transform: translate3d(-50%, 0, 0); }
+    from { transform: translate3d(-50%, 0, 0); }
+    to   { transform: translate3d(0, 0, 0); }
   }
   @media (prefers-reduced-motion: reduce) {
     .partners-track { animation: none; }
