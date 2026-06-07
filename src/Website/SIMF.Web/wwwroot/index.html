@@ -2258,7 +2258,7 @@
   }
   applyCmsBindings();
 
-  // ============ REMOTE CONTENT — fetch published edits from Netlify Blobs ============
+  // ============ REMOTE CONTENT — fetch live content from the API via /content/site ============
   (async function loadRemoteContent() {
     if (!window.loadSiteContentRemote) return;
     const remote = await window.loadSiteContentRemote();
@@ -2411,12 +2411,6 @@
   }
   renderPillars();
 
-  // ============ SESSIONS ============
-  const sessionsData = [
-    { n:'01', t:'تهديدات أمن إمدادات الطاقة عبر البحار', d:'يركز على حماية منظومات الطاقة الممتدة عبر البحار، من خطوط وأنابيب النفط والغاز إلى البنية التحتية تحت السطح، في ظل تصاعد التهديدات الجيوسياسية.', img:'url(https://images.unsplash.com/photo-1518176258769-f227c798150e?w=900&q=80) center/cover' },
-    { n:'02', t:'سلاسل الإمداد البحرية والبنية التحتية', d:'بحث مستقبل التجارة البحرية ورفع مرونة سلاسل الإمداد وتعزيز كفاءة الموانئ والممرات البحرية عبر التقنيات الحديثة لضمان استدامة تدفق السلع عالمياً.', img:'url(https://images.unsplash.com/photo-1494412651409-8963ce7935a7?w=900&q=80) center/cover' },
-    { n:'03', t:'أمن قاع البحار والبنية التحتية الرقمية', d:'استعراض تحديات حماية الكابلات البحرية والأنظمة الرقمية في الأعماق، وتعزيز الأمن السيبراني البحري ودور الدول في حماية الاقتصاد الرقمي.', img:'url(https://images.unsplash.com/photo-1605281317010-fe5ffe798166?w=900&q=80) center/cover' },
-  ];
   // ============ SESSIONS — 3 main sessions ============
   // SVG placeholder generator — local, no network deps
   function sessionPlaceholder(label, hue1, hue2) {
