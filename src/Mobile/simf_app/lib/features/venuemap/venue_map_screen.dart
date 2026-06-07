@@ -6,6 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/simf_bottom_nav.dart';
 import 'data/venue_map_models.dart';
 import 'data/venue_map_repository.dart';
 
@@ -117,7 +118,8 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
     final l10n = AppL10n.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.venueMapTitle)),
-      body: SafeArea(child: _buildBody(l10n)),
+      bottomNavigationBar: const SimfBottomNav(current: SimfTab.map),
+      body: SafeArea(top: false, child: _buildBody(l10n)),
     );
   }
 

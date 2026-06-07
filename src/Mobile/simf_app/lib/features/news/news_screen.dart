@@ -4,6 +4,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/simf_bottom_nav.dart';
 import 'data/news_models.dart';
 import 'news_article_screen.dart';
 
@@ -30,7 +31,9 @@ class NewsScreen extends ConsumerWidget {
     final news = ref.watch(newsListProvider);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.newsTitle)),
+      bottomNavigationBar: const SimfBottomNav(current: SimfTab.media),
       body: SafeArea(
+        top: false,
         child: news.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => _Error(

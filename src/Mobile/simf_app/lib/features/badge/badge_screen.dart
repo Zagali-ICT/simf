@@ -7,6 +7,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/simf_bottom_nav.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
 
@@ -69,7 +70,8 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
     final l10n = AppL10n.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.badgeTitle)),
-      body: SafeArea(child: _buildBody(l10n)),
+      bottomNavigationBar: const SimfBottomNav(current: SimfTab.badge),
+      body: SafeArea(top: false, child: _buildBody(l10n)),
     );
   }
 
