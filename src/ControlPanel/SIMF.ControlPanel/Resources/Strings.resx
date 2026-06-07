@@ -1044,6 +1044,8 @@
   <data name="Dashboard.Title" xml:space="preserve"><value>Dashboard</value></data>
   <data name="Dashboard.Welcome" xml:space="preserve"><value>Welcome to the SIMF Control Panel</value></data>
   <data name="Dashboard.Intro" xml:space="preserve"><value>The operations console for the Saudi International Maritime Forum. Statistics and live attendance figures appear here once the event modules are activated.</value></data>
+  <data name="Dashboard.Stats.Heading" xml:space="preserve"><value>Event at a glance</value></data>
+  <data name="Dashboard.Stats.ViewAll" xml:space="preserve"><value>View all statistics</value></data>
 
   <data name="Module.ComingSoon.Title" xml:space="preserve"><value>Coming soon</value></data>
   <data name="Module.ComingSoon.Text" xml:space="preserve"><value>This module is being prepared and will be available in a later release.</value></data>

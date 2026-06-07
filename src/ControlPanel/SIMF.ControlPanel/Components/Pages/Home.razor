@@ -1,9 +1,15 @@
-@* Control Panel — the Dashboard (the Overview landing). A placeholder until
-   the statistics and live-attendance modules are built. *@
+@* Control Panel — the Dashboard (the Overview landing). Shows a welcome panel
+   for every signed-in admin and, for those who hold Statistics.View, a row of
+   live event stat cards (D-339) read from the same aggregate endpoint as the
+   full /admin/statistics dashboard, with a link through to it. The cards are an
+   enhancement gated in code (the page itself stays [Authorize]-only so it is the
+   always-visible landing); the API enforces Statistics.View too. *@
 @page "/"
 @layout CpShellLayout
 @attribute [Authorize]
 @inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject IAuthorizationService Authz
 
 <PageTitle>@L["Dashboard.Title"] · SIMF</PageTitle>
 
@@ -14,4 +20,63 @@
         <h2 class="simf-panel__title">@L["Dashboard.Welcome"]</h2>
         <p class="simf-panel__text">@L["Dashboard.Intro"]</p>
     </div>
+
+    @if (_canViewStats && _dashboard is not null)
+    {
+        <div class="simf-surface">
+            <h2 class="simf-panel__title">@L["Dashboard.Stats.Heading"]</h2>
+            <div class="simf-form__actions">
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.TotalAttendees"]"
+                              Value="@Count(_dashboard.TotalAttendees)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.ApprovedAttendees"]"
+                              Value="@Count(_dashboard.ApprovedAttendees)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.PendingApprovals"]"
+                              Value="@Count(_dashboard.PendingApprovals)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.Sessions"]"
+                              Value="@Count(_dashboard.Sessions)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.Speakers"]"
+                              Value="@Count(_dashboard.Speakers)" />
+                <SimfStatCard Title="@L["Admin.Statistics.Stat.Booths"]"
+                              Value="@Count(_dashboard.Booths)" />
+            </div>
+            <p class="simf-panel__text">
+                <a href="/admin/statistics">@L["Dashboard.Stats.ViewAll"]</a>
+            </p>
+        </div>
+    }
 </div>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    // Fully-qualified: the component's generated class and the contract share the
+    // name StatisticsDashboard (same reason as the statistics page).
+    private SIMF.Contracts.Statistics.StatisticsDashboard? _dashboard;
+    private bool _canViewStats;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState is null) { return; }
+        var user = (await AuthState).User;
+        _canViewStats = (await Authz.AuthorizeAsync(
+            user, PermissionCatalog.PolicyFor(PermissionCatalog.Statistics.View))).Succeeded;
+        if (_canViewStats)
+        {
+            await LoadStatsAsync();
+        }
+    }
+
+    private async Task LoadStatsAsync()
+    {
+        // A failure here leaves the dashboard on the welcome panel only — the
+        // stat cards are an enhancement, not the page's reason to exist.
+        var env = await JS.InvokeAsync<ApiResult<SIMF.Contracts.Statistics.StatisticsDashboard>>(
+            "simfAccount.getJson", "/account/api/admin/statistics");
+        if (env is { Success: true, Data: not null })
+        {
+            _dashboard = env.Data;
+        }
+    }
+
+    private static string Count(int value) => value.ToString(CultureInfo.InvariantCulture);
+}
