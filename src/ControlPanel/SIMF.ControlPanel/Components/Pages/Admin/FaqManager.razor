@@ -1,7 +1,13 @@
-@* P2.1 (D-211) — FAQ management. Two-level: a groups table (top) and, when a
-   group is selected, its entries table (below). FAQ is small-scale (a handful
-   of groups, dozens of entries) so the page loads all rows — no server paging.
-   Mirrors the custom-page approach of SessionSeatPlan rather than SimfDataGrid. *@
+@* P2.1 (D-211) — FAQ management. Two-level: a groups grid (top) and, when a
+   group is selected via "Manage entries", its entries grid (below). Migrated
+   from the custom raw <table> pair to the canonical SimfDataGrid (owner-mandated
+   standard, D-338) — server-paged + numbered pager + select-all + per-row icon
+   actions. Each grid sorts on the columns the FAQ service supports (name /
+   question / display-order); per-column text filters are not enabled because
+   the service filters only by global search + isActive. Page-level
+   [RequirePermission(Faq.View)] gates the page; the Create/Edit/Delete
+   permissions are enforced by the API (the canonical grid pattern moves the
+   per-action gate to the API, as InterestsList/SessionCategoriesList do). *@
 @page "/admin/faq"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Faq.View)]
@@ -19,135 +25,138 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        <div class="simf-toolbar">
-            <h2 class="simf-section__title">@L["Admin.Faq.Groups.Heading"]</h2>
-            <AuthorizedAction Permission="@PermissionCatalog.Faq.Create">
-                <SimfButton Type="button" OnClick="OpenAddGroup">@L["Admin.Faq.Groups.Add"]</SimfButton>
-            </AuthorizedAction>
-        </div>
+        <h2 class="simf-section__title">@L["Admin.Faq.Groups.Heading"]</h2>
 
-        @if (_groups.Count == 0 && !_loading)
-        {
-            <SimfEmptyState Title="@L["Admin.Faq.Groups.None"]" />
-        }
-        else
-        {
-            <table class="simf-table">
-                <thead>
-                    <tr>
-                        <th>@L["Admin.Faq.Col.NameEn"]</th>
-                        <th>@L["Admin.Faq.Col.NameAr"]</th>
-                        <th>@L["Admin.Faq.Col.Order"]</th>
-                        <th>@L["Admin.Faq.Col.EntryCount"]</th>
-                        <th>@L["Admin.Faq.Col.Active"]</th>
-                        <th>@L["Admin.Faq.Col.Actions"]</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var g in _groups)
-                    {
-                        <tr class="@(_selectedGroup?.Id == g.Id ? "is-selected" : null)">
-                            <td>@g.NameEn</td>
-                            <td>@g.NameAr</td>
-                            <td>@g.DisplayOrder</td>
-                            <td>@g.EntryCount</td>
-                            <td>
-                                @if (g.IsActive)
-                                {
-                                    <SimfPill Variant="on">@L["Admin.Faq.Active.Yes"]</SimfPill>
-                                }
-                                else
-                                {
-                                    <SimfPill Variant="off">@L["Admin.Faq.Active.No"]</SimfPill>
-                                }
-                            </td>
-                            <td>
-                                <SimfButton Type="button" Variant="secondary"
-                                            OnClick="@(() => SelectGroupAsync(g))">
-                                    @L["Admin.Faq.Action.ManageEntries"]
-                                </SimfButton>
-                                <AuthorizedAction Permission="@PermissionCatalog.Faq.Edit">
-                                    <SimfButton Type="button" Variant="secondary"
-                                                OnClick="@(() => OpenEditGroup(g))">
-                                        @L["Admin.Faq.Action.Edit"]
-                                    </SimfButton>
-                                </AuthorizedAction>
-                                <AuthorizedAction Permission="@PermissionCatalog.Faq.Delete">
-                                    <SimfButton Type="button" Variant="secondary"
-                                                OnClick="@(() => DeactivateGroupAsync(g))">
-                                        @L["Admin.Faq.Action.Deactivate"]
-                                    </SimfButton>
-                                </AuthorizedAction>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        }
+        <SimfDataGrid TItem="AdminFaqGroupSummary"
+                      Query="_groupQuery"
+                      Page="_groupPage"
+                      Loading="_groupLoading"
+                      OnQueryChanged="OnGroupQueryChangedAsync"
+                      Multiselect="true"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.NameEn)"
+                      Caption="@L["Admin.Faq.Groups.Heading"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnAdd="OpenAddGroup"
+                      OnEditOne="OpenEditGroup"
+                      OnDeleteOne="DeactivateGroupAsync"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Grid.Loading"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      AddLabel="@L["Grid.Add"]"
+                      EditLabel="@L["Grid.Edit"]"
+                      DeleteLabel="@L["Grid.Delete"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminFaqGroupSummary" Key="nameen"
+                                    Header="@L["Admin.Faq.Col.NameEn"]" Sortable="true">
+                    <CellTemplate>@context.NameEn</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminFaqGroupSummary" Key="namear"
+                                    Header="@L["Admin.Faq.Col.NameAr"]">
+                    <CellTemplate>@context.NameAr</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminFaqGroupSummary" Key="displayorder"
+                                    Header="@L["Admin.Faq.Col.Order"]" Sortable="true">
+                    <CellTemplate>@context.DisplayOrder</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminFaqGroupSummary" Key="entryCount"
+                                    Header="@L["Admin.Faq.Col.EntryCount"]">
+                    <CellTemplate>@context.EntryCount</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminFaqGroupSummary" Key="isActive"
+                                    Header="@L["Admin.Faq.Col.Active"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <RowActions>
+                <SimfToolbarButton Icon="list-tree" Title="@L["Admin.Faq.Action.ManageEntries"]"
+                                   OnClick="@(() => SelectGroupAsync(context))" />
+            </RowActions>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Faq.Groups.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
 
         @if (_selectedGroup is not null)
         {
             <h2 class="simf-section__title">
                 @(string.Format(L["Admin.Faq.Entries.Heading"], _selectedGroup.NameEn))
             </h2>
-            <div class="simf-toolbar">
-                <AuthorizedAction Permission="@PermissionCatalog.Faq.Create">
-                    <SimfButton Type="button" OnClick="OpenAddEntry">@L["Admin.Faq.Action.AddEntry"]</SimfButton>
-                </AuthorizedAction>
-            </div>
 
-            @if (_entries.Count == 0)
-            {
-                <SimfEmptyState Title="@L["Admin.Faq.Entries.None"]" />
-            }
-            else
-            {
-                <table class="simf-table">
-                    <thead>
-                        <tr>
-                            <th>@L["Admin.Faq.Col.Question"]</th>
-                            <th>@L["Admin.Faq.Col.NameAr"]</th>
-                            <th>@L["Admin.Faq.Col.Order"]</th>
-                            <th>@L["Admin.Faq.Col.Active"]</th>
-                            <th>@L["Admin.Faq.Col.Actions"]</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var e in _entries)
-                        {
-                            <tr>
-                                <td>@e.Question</td>
-                                <td>@e.QuestionArabic</td>
-                                <td>@e.DisplayOrder</td>
-                                <td>
-                                    @if (e.IsActive)
-                                    {
-                                        <SimfPill Variant="on">@L["Admin.Faq.Active.Yes"]</SimfPill>
-                                    }
-                                    else
-                                    {
-                                        <SimfPill Variant="off">@L["Admin.Faq.Active.No"]</SimfPill>
-                                    }
-                                </td>
-                                <td>
-                                    <AuthorizedAction Permission="@PermissionCatalog.Faq.Edit">
-                                        <SimfButton Type="button" Variant="secondary"
-                                                    OnClick="@(() => OpenEditEntry(e))">
-                                            @L["Admin.Faq.Action.Edit"]
-                                        </SimfButton>
-                                    </AuthorizedAction>
-                                    <AuthorizedAction Permission="@PermissionCatalog.Faq.Delete">
-                                        <SimfButton Type="button" Variant="secondary"
-                                                    OnClick="@(() => DeactivateEntryAsync(e))">
-                                            @L["Admin.Faq.Action.Deactivate"]
-                                        </SimfButton>
-                                    </AuthorizedAction>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            }
+            <SimfDataGrid TItem="AdminFaqEntrySummary"
+                          Query="_entryQuery"
+                          Page="_entryPage"
+                          Loading="_entryLoading"
+                          OnQueryChanged="OnEntryQueryChangedAsync"
+                          Multiselect="true"
+                          RowKey="@(r => r.Id.ToString())"
+                          RowLabel="@(r => r.Question)"
+                          Caption="@L["Admin.Faq.Entries.Heading"]"
+                          OnAdd="OpenAddEntry"
+                          OnEditOne="OpenEditEntry"
+                          OnDeleteOne="DeactivateEntryAsync"
+                          PrevLabel="@L["Grid.Prev"]"
+                          NextLabel="@L["Grid.Next"]"
+                          FirstLabel="@L["Grid.First"]"
+                          LastLabel="@L["Grid.Last"]"
+                          PageSizeLabel="@L["Grid.PageSize"]"
+                          PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Grid.Loading"]"
+                          ActionsHeader="@L["Grid.Actions"]"
+                          SelectAllLabel="@L["Grid.SelectAll"]"
+                          SelectRowLabel="@L["Grid.SelectRow"]"
+                          AddLabel="@L["Admin.Faq.Action.AddEntry"]"
+                          EditLabel="@L["Grid.Edit"]"
+                          DeleteLabel="@L["Grid.Delete"]"
+                          SummaryFormatter="@FormatSummary">
+                <Columns>
+                    <SimfDataGridColumn TItem="AdminFaqEntrySummary" Key="question"
+                                        Header="@L["Admin.Faq.Col.Question"]" Sortable="true">
+                        <CellTemplate>@context.Question</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminFaqEntrySummary" Key="questionar"
+                                        Header="@L["Admin.Faq.Col.NameAr"]">
+                        <CellTemplate>@context.QuestionArabic</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminFaqEntrySummary" Key="displayorder"
+                                        Header="@L["Admin.Faq.Col.Order"]" Sortable="true">
+                        <CellTemplate>@context.DisplayOrder</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminFaqEntrySummary" Key="isActive"
+                                        Header="@L["Admin.Faq.Col.Active"]">
+                        <CellTemplate>
+                            @if (context.IsActive)
+                            {
+                                <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                            }
+                            else
+                            {
+                                <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                            }
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.Faq.Entries.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
         }
     </div>
 </div>
@@ -225,10 +234,15 @@
 @code {
     private record Toast(string Variant, string Message);
 
-    private List<AdminFaqGroupSummary> _groups = new();
+    private GridQuery _groupQuery = new() { Top = 20 };
+    private GridPage<AdminFaqGroupSummary> _groupPage = new();
+    private bool _groupLoading;
+
     private AdminFaqGroupSummary? _selectedGroup;
-    private List<AdminFaqEntrySummary> _entries = new();
-    private bool _loading;
+    private GridQuery _entryQuery = new() { Top = 20 };
+    private GridPage<AdminFaqEntrySummary> _entryPage = new();
+    private bool _entryLoading;
+
     private bool _busy;
     private Toast? _toast;
 
@@ -252,17 +266,29 @@
 
     protected override async Task OnInitializedAsync() => await LoadGroupsAsync();
 
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
+
+    // -- Groups grid --
+    private async Task OnGroupQueryChangedAsync(GridQuery next)
+    {
+        _groupQuery = next;
+        await LoadGroupsAsync();
+    }
+
     private async Task LoadGroupsAsync()
     {
-        _loading = true;
+        _groupLoading = true;
         try
         {
             var env = await JS.InvokeAsync<ApiResult<GridPage<AdminFaqGroupSummary>>>(
-                "simfAccount.postJson", "/account/api/admin/faq/groups/list",
-                new GridQuery { Top = 200 });
+                "simfAccount.postJson", "/account/api/admin/faq/groups/list", _groupQuery);
             if (env is { Success: true, Data: not null })
             {
-                _groups = env.Data.Items.ToList();
+                _groupPage = env.Data;
             }
             else
             {
@@ -270,31 +296,43 @@
                     env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"]);
             }
         }
-        finally { _loading = false; }
+        finally { _groupLoading = false; }
     }
 
+    // -- Entries grid --
     private async Task SelectGroupAsync(AdminFaqGroupSummary group)
     {
         _selectedGroup = group;
+        _entryQuery = new GridQuery { Top = 20 };
+        await LoadEntriesAsync();
+    }
+
+    private async Task OnEntryQueryChangedAsync(GridQuery next)
+    {
+        _entryQuery = next;
         await LoadEntriesAsync();
     }
 
     private async Task LoadEntriesAsync()
     {
         if (_selectedGroup is null) return;
-        var env = await JS.InvokeAsync<ApiResult<GridPage<AdminFaqEntrySummary>>>(
-            "simfAccount.postJson",
-            $"/account/api/admin/faq/groups/{_selectedGroup.Id}/entries/list",
-            new GridQuery { Top = 200 });
-        if (env is { Success: true, Data: not null })
+        _entryLoading = true;
+        try
         {
-            _entries = env.Data.Items.ToList();
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminFaqEntrySummary>>>(
+                "simfAccount.postJson",
+                $"/account/api/admin/faq/groups/{_selectedGroup.Id}/entries/list", _entryQuery);
+            if (env is { Success: true, Data: not null })
+            {
+                _entryPage = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"]);
+            }
         }
-        else
-        {
-            _toast = new Toast("error",
-                env?.Error?.MessageForCurrentCulture() ?? L["Admin.Faq.LoadFailed"]);
-        }
+        finally { _entryLoading = false; }
     }
 
     // -- Group modal --

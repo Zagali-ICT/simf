@@ -7,16 +7,21 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-07 (D-338 — converted to SimfDataGrid) |
 
-> **Page shape.** Two-level custom page (not `SimfDataGrid`): a **groups** table at
-> the top and, once a group's **Manage entries** button is clicked, its **entries**
-> table below. Both tables load all rows (`Top = 200` groups / entries) — no server
-> paging. CRUD runs through two `SimfModal`s (group modal + entry modal). Soft-delete
-> only: **Deactivate** flips `IsActive` to false; rows stay visible (the admin list
-> returns every row, active and inactive). The required permission for the page is
-> `PermissionCatalog.Faq.View`; the action buttons are individually gated by
-> `Faq.Create` / `Faq.Edit` / `Faq.Delete`.
+> **Page shape (D-338).** Two-level master-detail using **two `SimfDataGrid`s**: a
+> **groups** grid at the top and, once a group's **Manage entries** (`list-tree`)
+> row action is clicked, its **entries** grid below. Both are **server-paged** via
+> `/account/api/admin/faq/groups/list` + `/groups/{id}/entries/list` with select-all,
+> numbered pager and per-row Edit/Deactivate icon actions; columns sort on
+> name/question/display-order (no per-column filter — the service filters only by
+> global search + `isActive`). CRUD runs through two `SimfModal`s (group modal + entry
+> modal). Soft-delete only: **Deactivate** flips `IsActive` to false; rows stay
+> visible (the admin list returns every row, active and inactive). The required
+> permission for the page is `PermissionCatalog.Faq.View`; **Create/Edit/Delete are
+> enforced by the API** (the converted grid pattern moves the per-action gate to the
+> API, as the other canonical grid pages do; previously these were individually
+> gated in the UI by `Faq.Create` / `Faq.Edit` / `Faq.Delete`).
 
 ## Coverage matrix
 
