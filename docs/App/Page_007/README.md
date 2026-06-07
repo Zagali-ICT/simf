@@ -1,56 +1,49 @@
-# Page 007 — إنشاء حساب · زائر · Sign up — visitor (profile completion)
+# Page 007 — إنشاء حساب · زائر · Sign up — profile data (مُعاد هيكلته · reworked D-332)
 
 Per-page documentation folder. Everything about this app page lives here.
 
 | Aspect | Document | What it holds |
 |--------|----------|---------------|
-| Function | [Page_007_Function.md](Page_007_Function.md) | What the page does — elements, user steps, the interests sub-step, navigation, acceptance criteria |
-| Logic | [Page_007_Logic.md](Page_007_Logic.md) | Business rules — auth gate, lookup sources, validation, state transitions, edge cases, dependencies |
-| API | [Page_007_API.md](Page_007_API.md) | The backend endpoints + DTOs that serve this page (authoritative contract) |
+| Function | [Page_007_Function.md](Page_007_Function.md) | What the page does — elements, user steps, navigation, acceptance criteria |
+| Logic | [Page_007_Logic.md](Page_007_Logic.md) | Business rules — auth gate, lookup sources, the Visitor/Other filter, validation, edge cases |
+| API | [Page_007_API.md](Page_007_API.md) | The backend lookups + the pre-fill read that serve this page (the **save** lives on Page 007‑01) |
 | Design | [Page_007_Design.md](Page_007_Design.md) | Flutter screen design — layout, components, states, RTL, localization |
 
 ## Identity
 | | |
 |---|---|
-| Mockup page | **05 (+ 5-01 interests + 06 ID photo)** (`Mockup.html`) — owner page **007** (mockup screen **07** is a different, seat/media-row screen) |
+| Mockup page | **05** (`Mockup.html`) — the profile **data** form |
 | Route | `RouteNames.signUpVisitor` → `/sign-up/visitor` |
-| Titles | AR **إنشاء حساب · زائر** · EN **Sign up — visitor** |
+| Titles | AR **إنشاء حساب** · EN **Sign up — profile** |
 | Section | 1 — Onboarding / account |
-| Nature | **Profile completion** (lookups + the interests sub-step → mark complete → wait for approval) |
+| Nature | **Profile data capture** — collect the registration fields, then advance to interests |
 | App privilege | **AUTH-only** — any signed-in account; **no role / no permission code** (D7) |
-| Status | **🟢 Screen built** (D-288) — API (profile upsert + four lookups + id-image) built; Flutter `SignUpVisitorScreen` wired |
+| Status | **🟠 Docs corrected (D-332) — Flutter rebuild pending.** The reworked screen drops the interests sub-step (now [Page 007‑01](../Page_007-01/README.md)) and adds the **نوع التسجيل (Visitor / Other)** field that filters the ProfileType picker. |
 
-## As built (Flutter, D-288)
-`SignUpVisitorScreen` (route `signUpVisitor` → `/sign-up/visitor`, now in the auth
-gate so an anonymous open is impossible — L-1) loads the existing profile + the
-four lookups concurrently, pre-fills, and renders the richer form: names, job
-title, nationality dropdown, **is-Saudi toggle → National-ID vs Iqama/Passport**
-(client mirrors the `^1\d{9}$`/`^2\d{9}$` + Luhn and passport rules), optional
-mobiles, **date-of-birth picker (≥ 18, D-197)**, place of birth, gender, the
-organisation **typeahead** (debounced `?search=&top=20`), profile-type chips, and
-the inline **interests** multi-select (1–10 with an `n/10` counter, D12). Save
-sends one `POST /app/account/user-profile`; the optional **ID-document image** is
-picked with `image_picker` and uploaded (multipart, content-type set so the
-server's MIME + magic-byte gate accepts it) **after** the profile row exists. On
-success the app routes to the **registration-success** screen (Page_010 → Page_011;
-the documented sign-up flow — updated D-291).
-The visuals are the interim placeholder design (SIMF-VID-001 swaps them later);
-the API + validation behaviour is real.
+## What changed (D-332)
+- **Step 3 of the corrected sign-up flow** (= mockup screen 05): Register (`Page_005`)
+  → OTP (`Page_006`) → **this screen (data)** → **[Page 007‑01](../Page_007-01/README.md)
+  (interests)** → single save → Confirmation (`Page_010`).
+- **Added: نوع التسجيل (Visitor / Other).** The first field — 2 chips, زائر / أخرى —
+  the `ProfileType.IsForVisitor` split. It is **not a stored field**; it only filters
+  the ProfileType picker (`GET /app/account/profile-types?isVisitor=true|false`).
+- **Removed: the interests sub-step.** Interests are now their own screen
+  ([Page 007‑01](../Page_007-01/README.md)) — this **reverses D12**.
+- **The Save moved to Page 007‑01.** Because the API requires `interestIds` (1–10) on
+  the single `POST /app/account/user-profile`, this screen collects the data and
+  carries it to Page 007‑01, which adds the interests and fires the one save. This
+  screen ends with **Next**, not Save.
 
-## Owner reference note
-The interests picker (cards, min 1 / max 10) is a **sub-step of this screen**, not a
-separate route. The owner called it "Page 008", but there is **no standalone
-`/sign-up/visitor/interests` route** — it renders inside this page's flow (**D12**).
-"COMPANY" was dropped from the form: the الجهة field is the **organisation lookup**
-(**D-220 / D-221 / D6**). Interests persist through the **profile upsert**, not a
-separate write; the app supplies the actor from the cached sign-in (userId / email),
-so the body carries **no** user id (**D7**).
+## Fields (= mockup 05, + the API-required additions)
+نوع التسجيل (Visitor/Other) · التصنيف / ProfileType · full name AR · full name EN ·
+gender · الجهة / Organisation (typeahead) · job title · document (is-Saudi → National
+ID / Iqama / Passport) · mobile · nationality · ID attachment. **Additive to the
+mockup, required by the API:** date of birth (**≥ 18**, D-197) + place of birth (D-163).
 
 ## Sources of truth
-`Mockup.html` (visual) · `SIMF_Screen_Guide_and_User_Journey` (narrative, Screen 05 + 5-01 interests + 06 ID photo) ·
+`Mockup.html` (visual, screen 05) · `SIMF_Screen_Guide_and_User_Journey` (Screen 05) ·
 SIMF-MOB-API-001 (shared API conventions + auth) · SIMF-MAA-001 (mobile architecture) ·
-DECISIONS_LOG D-046/D-049/D-050/D-186/D-190/D-220/D-221.
+DECISIONS_LOG D-046/D-049/D-050/D-163/D-186/D-190/D-197/D-220/D-221/**D-332**.
 
-> This folder follows the per-page documentation structure (`docs/App/Page_NNN/`).
-> It supersedes any per-screen sign-up detail that previously sat inside the
-> monolithic SIMF-MOB-API-001, which now points here.
+> Per-page documentation structure (`docs/App/Page_NNN/`). The interests screen split
+> out under [Page 007‑01](../Page_007-01/README.md) (D-332, reversing D12).

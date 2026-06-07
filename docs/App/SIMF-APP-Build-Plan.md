@@ -56,10 +56,11 @@ Status legend: ✅ **ready** (endpoint shipped under `/app/*`) · 🟡 **to buil
 | 1 | `splash` | Guest | ✅ `POST /app/auth/refresh` + `GET /app/account/profile` (version = store-native, —) | [Page_001](Page_001/README.md) |
 | 2 | `onboarding` | Guest | — (no API; optional `GET /app/content/{key}`) | [Page_002](Page_002/README.md) |
 | 3 | `signIn` | Guest | ✅ sign-in, refresh, forgot/reset-password, verify-otp, device-key (biometric) | [Page_003](Page_003/README.md) |
-| 4 | `signUpType` | Guest | — (visitor-only app; UI gate) | [Page_004](Page_004/README.md) |
+| ~~4~~ | ~~`signUpType`~~ | — | **REMOVED (D-332)** — invented; not in the mockup. Sign-up goes #3 → #5 directly | [Page_004](Page_004/README.md) |
 | 5 | `signUpForm` | Guest | ✅ `POST /app/auth/sign-up` (D-198 enumeration-resistant; generic 201) | [Page_005](Page_005/README.md) |
 | 6 | `emailOtp` | Guest | ✅ `POST /app/auth/verify-email` + `resend-code` | [Page_006](Page_006/README.md) |
-| 7 | `signUpVisitor` | Visitor | ✅ user-profile upsert + countries + profile-types + interests + `GET /app/organisations` (interests picker is a sub-step here) | [Page_007](Page_007/README.md) |
+| 7 | `signUpVisitor` | Visitor | ✅ profile **data** (نوع التسجيل Visitor/Other filter + profile-types `?isVisitor=` + countries + `GET /app/organisations`); **Next → interests** (D-332) | [Page_007](Page_007/README.md) |
+| 7‑01 | `signUpInterests` | Visitor | ✅ interests lookup + the **single** user-profile upsert (Page-007 data **+** interestIds) + id-image — D-332 | [Page_007-01](Page_007-01/README.md) |
 | 8 | ~~`signUpExhibitor`~~ | — | **removed from the app (D-276)** — exhibitor/sponsor are CP concepts (D-199) | _n/a_ |
 | 9 | `terms` | Guest | ✅ `GET /app/content/{key}` (`terms`; accept is client-side, D8 consent record deferred) | [Page_009](Page_009/README.md) |
 | 10 | `registrationSuccess` | Visitor (pending) | ✅ `GET /app/users/me` (status poll) | [Page_010](Page_010/README.md) |

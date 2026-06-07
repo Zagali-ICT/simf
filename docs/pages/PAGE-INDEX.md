@@ -159,10 +159,11 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | #1 `splash` | 🟢 Screen built | Guest | [App/Page_001](../App/Page_001/README.md) | [e2e/mobile-splash.md](../tests/e2e/mobile-splash.md) |
 | #2 `onboarding` | 🟢 Screen built | Guest | [App/Page_002](../App/Page_002/README.md) | [e2e/mobile-onboarding.md](../tests/e2e/mobile-onboarding.md) |
 | #3 `signIn` (+ verify-otp / forgot / reset) | 🟢 Screen built | Guest | [App/Page_003](../App/Page_003/README.md) | [e2e/mobile-sign-in.md](../tests/e2e/mobile-sign-in.md) |
-| #4 `signUpType` | 🟢 Screen built | Guest | [App/Page_004](../App/Page_004/README.md) | [e2e/mobile-sign-up-type.md](../tests/e2e/mobile-sign-up-type.md) |
+| ~~#4 `signUpType`~~ **REMOVED (D-332)** — invented; not in the mockup. Sign-up goes Page 003 → Page 005 directly | ⛔ Removed | — | [App/Page_004](../App/Page_004/README.md) | [e2e/mobile-sign-up-type.md](../tests/e2e/mobile-sign-up-type.md) |
 | #5 `signUpForm` | 🟢 Screen built | Guest | [App/Page_005](../App/Page_005/README.md) | [e2e/mobile-sign-up-form.md](../tests/e2e/mobile-sign-up-form.md) |
 | #6 `emailOtp` | 🟢 Screen built | Guest | [App/Page_006](../App/Page_006/README.md) | [e2e/mobile-email-otp.md](../tests/e2e/mobile-email-otp.md) |
-| #7 `signUpVisitor` (`POST /app/account/user-profile` + 4 lookups + id-image) | 🟢 Screen built | Visitor | [App/Page_007](../App/Page_007/README.md) | [e2e/mobile-sign-up-visitor.md](../tests/e2e/mobile-sign-up-visitor.md) |
+| #7 `signUpVisitor` — **profile data** (نوع التسجيل Visitor/Other + ProfileType + 3 lookups; **Next → interests**) | 🟠 Docs reworked (D-332), Flutter rebuild pending | Visitor | [App/Page_007](../App/Page_007/README.md) | [e2e/mobile-sign-up-visitor.md](../tests/e2e/mobile-sign-up-visitor.md) |
+| #7‑01 `signUpInterests` — **interests (1–10) + the single `POST /app/account/user-profile` save** | 🟠 Docs created (D-332), Flutter build pending | Visitor | [App/Page_007-01](../App/Page_007-01/README.md) | [e2e/mobile-sign-up-interests.md](../tests/e2e/mobile-sign-up-interests.md) |
 | #9 `terms` (`GET /app/content/terms`) | 🟢 Screen built | Guest | [App/Page_009](../App/Page_009/README.md) | [e2e/mobile-terms.md](../tests/e2e/mobile-terms.md) |
 | #10 `registrationSuccess` | 🟢 Screen built | Visitor (pending) | [App/Page_010](../App/Page_010/README.md) | [e2e/mobile-registration-success.md](../tests/e2e/mobile-registration-success.md) |
 | #11 `registrationStatus` (`GET /app/users/me`) | 🟢 Screen built | Visitor (pending) | [App/Page_011](../App/Page_011/README.md) | [e2e/mobile-registration-status.md](../tests/e2e/mobile-registration-status.md) |
