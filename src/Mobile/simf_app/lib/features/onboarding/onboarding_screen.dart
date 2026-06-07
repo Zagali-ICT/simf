@@ -97,7 +97,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     onPressed: _onSkip,
                     child: Text(
                       l10n.onboardingSkip,
-                      style: const TextStyle(color: SimfTokens.inkMuted),
+                      style: const TextStyle(
+                        color: SimfTokens.txtTertiary,
+                        fontSize: SimfTokens.textSm,
+                      ),
                     ),
                   ),
                   FilledButton(
@@ -142,9 +145,7 @@ class _ProgressSegments extends StatelessWidget {
             width: i == activeIndex ? 22 : 8,
             height: 3,
             decoration: BoxDecoration(
-              color: i == activeIndex
-                  ? SimfTokens.accent
-                  : SimfTokens.surface.withValues(alpha: 0.24),
+              color: i == activeIndex ? SimfTokens.accent : SimfTokens.line,
               borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
             ),
           ),
@@ -175,22 +176,21 @@ class _IntroVideoSlide extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         SizedBox(
-          height: 188,
+          height: 172,
           width: 300,
           child: Container(
             decoration: BoxDecoration(
               color: SimfTokens.navyDeep,
               borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
-              border: Border.all(
-                color: SimfTokens.surface.withValues(alpha: 0.12),
-              ),
+              border: Border.all(color: SimfTokens.line2),
             ),
+            clipBehavior: Clip.antiAlias,
             child: Stack(
               children: <Widget>[
                 Center(
                   child: Container(
-                    width: 56,
-                    height: 56,
+                    width: 46,
+                    height: 46,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: SimfTokens.accent.withValues(alpha: 0.18),
@@ -199,17 +199,17 @@ class _IntroVideoSlide extends StatelessWidget {
                     child: const Icon(
                       Icons.play_arrow_rounded,
                       color: SimfTokens.accent,
-                      size: 30,
+                      size: 20,
                     ),
                   ),
                 ),
                 PositionedDirectional(
                   top: SimfTokens.space2,
                   start: SimfTokens.space3,
-                  child: Text(
+                  child: const Text(
                     'YouTube',
                     style: TextStyle(
-                      color: SimfTokens.surface.withValues(alpha: 0.6),
+                      color: SimfTokens.txtTertiary,
                       fontSize: SimfTokens.textXs,
                       letterSpacing: 1,
                     ),
@@ -221,22 +221,31 @@ class _IntroVideoSlide extends StatelessWidget {
                   child: Text(
                     videoName,
                     textDirection: TextDirection.ltr,
-                    style: TextStyle(
-                      color: SimfTokens.surface.withValues(alpha: 0.6),
+                    style: const TextStyle(
+                      color: SimfTokens.txtSecondary,
                       fontSize: SimfTokens.textXs,
                     ),
                   ),
                 ),
                 PositionedDirectional(
-                  bottom: SimfTokens.space1,
-                  start: SimfTokens.space1,
-                  child: IconButton(
-                    tooltip: l10n.onboardingMutedTooltip,
-                    onPressed: () {},
-                    icon: Icon(
-                      Icons.volume_off_outlined,
-                      color: SimfTokens.surface.withValues(alpha: 0.7),
-                      size: 18,
+                  bottom: SimfTokens.space2,
+                  start: SimfTokens.space2,
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: SimfTokens.line2,
+                    ),
+                    child: IconButton(
+                      tooltip: l10n.onboardingMutedTooltip,
+                      padding: EdgeInsets.zero,
+                      iconSize: 14,
+                      onPressed: () {},
+                      icon: const Icon(
+                        Icons.volume_off_outlined,
+                        color: SimfTokens.txtSecondary,
+                      ),
                     ),
                   ),
                 ),
@@ -244,13 +253,13 @@ class _IntroVideoSlide extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: SimfTokens.space5),
+        const SizedBox(height: SimfTokens.space4),
         Text(
           title,
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: SimfTokens.surface,
-            fontSize: SimfTokens.textXl,
+            fontSize: SimfTokens.textLg,
             fontWeight: FontWeight.w700,
             height: 1.4,
           ),
@@ -259,9 +268,10 @@ class _IntroVideoSlide extends StatelessWidget {
         Text(
           '${l10n.onboardingVideoLabel} ${index + 1} / 3',
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: SimfTokens.surface.withValues(alpha: 0.66),
+          style: const TextStyle(
+            color: SimfTokens.txtSecondary,
             fontSize: SimfTokens.textSm,
+            height: 1.8,
           ),
         ),
       ],

@@ -59,47 +59,50 @@ class _SignUpTypeScreenState extends State<SignUpTypeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
+              // Field label (mockup .mfield label — نوع التسجيل / on-navy hint).
               Text(
                 l10n.signUpTypeLead,
                 style: const TextStyle(
-                  fontSize: SimfTokens.textLg,
-                  fontWeight: FontWeight.w700,
+                  color: SimfTokens.txtSecondary,
+                  fontSize: SimfTokens.textSm,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: SimfTokens.space5),
-              _TypeOption(
+              const SizedBox(height: SimfTokens.space3),
+              _TypeChip(
                 label: l10n.signUpTypeVisitor,
                 helper: l10n.signUpTypeVisitorHelper,
                 selected: _selected == _visitor,
                 onTap: _selectVisitor,
               ),
-              const SizedBox(height: SimfTokens.space3),
-              _TypeOption(
+              const SizedBox(height: SimfTokens.space2),
+              _TypeChip(
                 label: l10n.signUpTypeExhibitor,
                 disabled: true,
                 onTap: _showCpOnlyNote,
               ),
-              const SizedBox(height: SimfTokens.space3),
-              _TypeOption(
+              const SizedBox(height: SimfTokens.space2),
+              _TypeChip(
                 label: l10n.signUpTypeSponsor,
                 disabled: true,
                 onTap: _showCpOnlyNote,
               ),
               const SizedBox(height: SimfTokens.space4),
+              // CP-only explainer (on-navy secondary text + accent icon).
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   const Icon(
                     Icons.info_outline,
                     size: 18,
-                    color: SimfTokens.inkMuted,
+                    color: SimfTokens.accent,
                   ),
                   const SizedBox(width: SimfTokens.space2),
                   Expanded(
                     child: Text(
                       l10n.signUpCpOnlyNote,
                       style: const TextStyle(
-                        color: SimfTokens.inkMuted,
+                        color: SimfTokens.txtTertiary,
                         fontSize: SimfTokens.textSm,
                         height: 1.6,
                       ),
@@ -116,7 +119,10 @@ class _SignUpTypeScreenState extends State<SignUpTypeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Text(l10n.haveAccountQuestion),
+                  Text(
+                    l10n.haveAccountQuestion,
+                    style: const TextStyle(color: SimfTokens.txtSecondary),
+                  ),
                   TextButton(
                     onPressed: () => context.goNamed(RouteNames.signIn),
                     child: Text(l10n.signInTitle),
@@ -131,10 +137,12 @@ class _SignUpTypeScreenState extends State<SignUpTypeScreen> {
   }
 }
 
-/// A single account-type row. `selected` shows the chosen indicator; `disabled`
-/// renders muted and never selects — its `onTap` surfaces the CP-only note.
-class _TypeOption extends StatelessWidget {
-  const _TypeOption({
+/// A single account-type chip (mockup `.type-chip`). Bordered, radius 6, with a
+/// leading radio dot. `selected` paints the accent border + accent-8% fill +
+/// white text + a gold dot; `disabled` renders muted and never selects — its
+/// `onTap` surfaces the CP-only note.
+class _TypeChip extends StatelessWidget {
+  const _TypeChip({
     required this.label,
     required this.onTap,
     this.helper,
@@ -150,14 +158,14 @@ class _TypeOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color borderColor = selected
-        ? SimfTokens.accent
-        : SimfTokens.inkMuted.withValues(alpha: 0.35);
-    final IconData leadingIcon = disabled
-        ? Icons.block
-        : (selected
-              ? Icons.radio_button_checked
-              : Icons.radio_button_unchecked);
+    // Mockup: unselected = white-10% border; selected = accent border + 8% fill.
+    final Color borderColor = selected ? SimfTokens.accent : SimfTokens.line;
+    final Color fillColor = selected
+        ? SimfTokens.accent.withValues(alpha: 0.08)
+        : Colors.transparent;
+    final Color labelColor = selected
+        ? SimfTokens.surface
+        : SimfTokens.txtSecondary;
 
     return Semantics(
       selected: selected,
@@ -167,23 +175,23 @@ class _TypeOption extends StatelessWidget {
         opacity: disabled ? 0.55 : 1,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(SimfTokens.radius),
+          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
           child: Container(
-            padding: const EdgeInsets.all(SimfTokens.space4),
+            padding: const EdgeInsets.symmetric(
+              horizontal: SimfTokens.space4,
+              vertical: SimfTokens.space3,
+            ),
             decoration: BoxDecoration(
+              color: fillColor,
               border: Border.all(
                 color: borderColor,
-                width: selected ? 2 : 1,
+                width: selected ? 1.5 : 1,
               ),
-              borderRadius: BorderRadius.circular(SimfTokens.radius),
+              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
             ),
             child: Row(
               children: <Widget>[
-                Icon(
-                  leadingIcon,
-                  color: selected ? SimfTokens.accent : SimfTokens.inkMuted,
-                  size: 22,
-                ),
+                _RadioDot(selected: selected, disabled: disabled),
                 const SizedBox(width: SimfTokens.space3),
                 Expanded(
                   child: Column(
@@ -191,9 +199,12 @@ class _TypeOption extends StatelessWidget {
                     children: <Widget>[
                       Text(
                         label,
-                        style: const TextStyle(
+                        style: TextStyle(
+                          color: labelColor,
                           fontSize: SimfTokens.textMd,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: selected
+                              ? FontWeight.w600
+                              : FontWeight.w500,
                         ),
                       ),
                       if (helper != null) ...<Widget>[
@@ -201,7 +212,7 @@ class _TypeOption extends StatelessWidget {
                         Text(
                           helper!,
                           style: const TextStyle(
-                            color: SimfTokens.inkMuted,
+                            color: SimfTokens.txtTertiary,
                             fontSize: SimfTokens.textSm,
                             height: 1.5,
                           ),
@@ -215,6 +226,41 @@ class _TypeOption extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The mockup `.type-chip::before` radio dot: a 14px ring that fills with the
+/// accent when the chip is selected.
+class _RadioDot extends StatelessWidget {
+  const _RadioDot({required this.selected, required this.disabled});
+
+  final bool selected;
+  final bool disabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color ringColor = selected
+        ? SimfTokens.accent
+        : SimfTokens.txtTertiary;
+    return Container(
+      width: 16,
+      height: 16,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: ringColor, width: 1.5),
+      ),
+      alignment: Alignment.center,
+      child: selected
+          ? Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: SimfTokens.accent,
+              ),
+            )
+          : null,
     );
   }
 }

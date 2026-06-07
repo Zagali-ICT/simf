@@ -140,35 +140,62 @@ class _SignUpEmailVerifyScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
+    // Mockup frame 4-01 (.otp): a fully-navy, centred column — gold-ringed
+    // envelope mark, the "sent to <email>" caption, the tinted 6-digit entry,
+    // a full-width gold Verify button, and the accent resend line below it.
     return Scaffold(
       appBar: AppBar(title: Text(l10n.emailVerifyTitle)),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(SimfTokens.space6),
+          padding: const EdgeInsets.fromLTRB(
+            SimfTokens.space6,
+            SimfTokens.space8,
+            SimfTokens.space6,
+            SimfTokens.space8,
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
+              const _MailMark(),
               const SizedBox(height: SimfTokens.space5),
+              // Caption (.otp p) + the bold white LTR address it was sent to.
               Text(
                 l10n.emailVerifySentTo,
-                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: SimfTokens.txtSecondary,
+                  fontSize: SimfTokens.textSm,
+                  height: 1.85,
+                ),
               ),
               const SizedBox(height: SimfTokens.space1),
               Text(
                 widget.email,
                 textDirection: TextDirection.ltr,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
+                  color: SimfTokens.surface,
                   fontWeight: FontWeight.w700,
                   fontSize: SimfTokens.textMd,
+                  letterSpacing: 0.4,
                 ),
               ),
               const SizedBox(height: SimfTokens.space5),
+              // The 6-digit code entry — a single tinted box (.cell-d look):
+              // accent border, faint accent fill, centred LTR spaced digits.
               TextField(
                 controller: _code,
                 keyboardType: TextInputType.number,
                 textDirection: TextDirection.ltr,
+                textAlign: TextAlign.center,
                 maxLength: 6,
                 enabled: !_busy,
+                style: const TextStyle(
+                  color: SimfTokens.surface,
+                  fontSize: SimfTokens.textXl,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 8,
+                ),
                 inputFormatters: <TextInputFormatter>[
                   FilteringTextInputFormatter.digitsOnly,
                 ],
@@ -181,29 +208,51 @@ class _SignUpEmailVerifyScreenState
                 decoration: InputDecoration(
                   labelText: l10n.otpLabel,
                   counterText: '',
+                  filled: true,
+                  fillColor: SimfTokens.accent.withValues(alpha: 0.06),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius:
+                        BorderRadius.circular(SimfTokens.radiusSmall + 2),
+                    borderSide: const BorderSide(color: SimfTokens.line),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius:
+                        BorderRadius.circular(SimfTokens.radiusSmall + 2),
+                    borderSide:
+                        const BorderSide(color: SimfTokens.accent, width: 1.5),
+                  ),
                 ),
               ),
               if (_error != null) ...<Widget>[
                 const SizedBox(height: SimfTokens.space3),
                 Text(
                   _error!,
+                  textAlign: TextAlign.center,
                   style: const TextStyle(color: SimfTokens.danger),
                 ),
               ],
               const SizedBox(height: SimfTokens.space5),
-              FilledButton(
-                onPressed: _canVerify ? () => unawaited(_verify()) : null,
-                child: _busy
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(l10n.verifyButton),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _canVerify ? () => unawaited(_verify()) : null,
+                  child: _busy
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(l10n.verifyButton),
+                ),
               ),
               const SizedBox(height: SimfTokens.space2),
+              // Resend line (.otp-foot / .otp-timer) — accent text; shows the
+              // cooldown countdown until it expires, then the resend action.
               TextButton(
                 onPressed: _canResend ? () => unawaited(_resend()) : null,
+                style: TextButton.styleFrom(
+                  foregroundColor: SimfTokens.accent,
+                ),
                 child: Text(
                   _cooldown > 0
                       ? l10n.resendCooldownText(_cooldown)
@@ -213,6 +262,31 @@ class _SignUpEmailVerifyScreenState
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The gold-ringed envelope mark at the top of the OTP frame (.otp-ic): a
+/// 64px circle with an accent border and a faint accent fill.
+class _MailMark extends StatelessWidget {
+  const _MailMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: SimfTokens.accent.withValues(alpha: 0.06),
+        border: Border.all(color: SimfTokens.accent),
+      ),
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.mail_outline,
+        color: SimfTokens.accent,
+        size: 30,
       ),
     );
   }
