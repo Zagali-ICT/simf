@@ -102,7 +102,8 @@ internal static class AuthEndpoints
         // cookie. POST + authenticated-only — a cross-site forged POST
         // carries no cookie (SameSite=Lax) and so is rejected; antiforgery
         // is not the gate here, the SameSite policy is.
-        routes.MapPost("/auth/sign-out", async (HttpContext http, SimfAuthClient api) =>
+        routes.MapPost("/auth/sign-out",
+            async (HttpContext http, SimfAuthClient api, CancellationToken ct) =>
         {
             var logger = AuthLog.Of(http);
             var userId = http.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "(unknown)";
@@ -110,7 +111,7 @@ internal static class AuthEndpoints
             var accessToken = await http.GetTokenAsync("access_token");
             if (accessToken is not null)
             {
-                var result = await api.SignOutAsync(accessToken);
+                var result = await api.SignOutAsync(accessToken, ct);
                 if (!result.Success)
                 {
                     logger.LogWarning(

@@ -9,10 +9,12 @@
 @page "/account/profile"
 @rendermode AppRenderMode.InteractiveServerNoPrerender
 @attribute [Authorize]
+@using Microsoft.Extensions.Logging
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider AuthState
+@inject ILogger<UserProfile> Logger
 
 <PageTitle>@L["Account.Profile.Title"]</PageTitle>
 
@@ -327,7 +329,8 @@
         }
         catch (Exception ex)
         {
-            _loadError = $"{L["Account.Profile.LoadFailed"]} ({ex.Message})";
+            Logger.LogError(ex, "Loading the account profile page failed.");
+            _loadError = L["Account.Profile.LoadFailed"];
             StateHasChanged();
         }
     }
