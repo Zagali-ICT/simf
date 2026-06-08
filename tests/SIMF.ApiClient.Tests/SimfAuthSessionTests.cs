@@ -15,6 +15,32 @@ public sealed class SimfAuthSessionTests
         Assert.Equal(expected, SimfAuthSession.MaskEmail(input));
     }
 
+    [Theory]
+    [InlineData("user@simf.test", true)]
+    [InlineData("a@b", true)]
+    [InlineData("no-at-sign", false)]
+    [InlineData("   ", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void LooksLikeEmail_requires_a_non_empty_value_containing_an_at_sign(string? input, bool expected)
+    {
+        Assert.Equal(expected, SimfAuthSession.LooksLikeEmail(input));
+    }
+
+    [Theory]
+    [InlineData("123456", true)]
+    [InlineData("000000", true)]
+    [InlineData("12345", false)]
+    [InlineData("1234567", false)]
+    [InlineData("12345a", false)]
+    [InlineData("12 456", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void IsSixDigitCode_accepts_only_exactly_six_ascii_digits(string? input, bool expected)
+    {
+        Assert.Equal(expected, SimfAuthSession.IsSixDigitCode(input));
+    }
+
     [Fact]
     public void A_new_session_is_not_signed_in()
     {

@@ -1,18 +1,31 @@
 @* SimfLanguageSwitch — switches the interface language. It is a full
    navigation to the host's culture endpoint, which sets the culture cookie
-   and returns to the current page; the host supplies the href and the label
-   of the language being switched to. *@
+   and returns to the current page. When Href is not supplied, the control
+   derives it from the current page path and the active culture; a host may
+   still pass an explicit Href to override that. *@
 @namespace SIMF.Components.Controls
+@using System.Globalization
+@inject NavigationManager Nav
 
-<a class="simf-control" href="@Href">
+<a class="simf-control" href="@ResolvedHref">
     <SimfIcon Name="globe" Class="simf-control__icon" />
     <span>@Label</span>
 </a>
 
 @code {
-    /// <summary>The host's culture-switch URL, including the target culture and return path.</summary>
-    [Parameter, EditorRequired] public string Href { get; set; } = string.Empty;
+    /// <summary>Optional explicit culture-switch URL. When omitted, the control
+    /// derives it from the current page path and the active culture.</summary>
+    [Parameter] public string? Href { get; set; }
 
     /// <summary>The name of the language being switched to — e.g. "العربية" or "English".</summary>
     [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    private string ResolvedHref => string.IsNullOrEmpty(Href) ? BuildHref() : Href;
+
+    private string BuildHref()
+    {
+        var next = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar" ? "en" : "ar";
+        var returnPath = "/" + Nav.ToBaseRelativePath(Nav.Uri);
+        return $"/culture?culture={next}&redirectUri={Uri.EscapeDataString(returnPath)}";
+    }
 }
