@@ -31,7 +31,8 @@
 | E2E-MOB025-006 | Session 404 → not-found state | resilience | P1 | authored ✓ (screen `a 404 shows the not-found state`) |
 | E2E-MOB025-007 | A read failure → error + Retry that re-fetches | resilience | P0 | authored ✓ (screen `a non-404 failure shows error + retry, which re-fetches`) |
 | E2E-MOB025-008 | Both feeds set → the البث/لغة الإشارة toggle swaps the source (D-349) | happy | P1 | authored ✓ (screen `both feeds set shows the main / sign-language toggle` + `a single (main-only) feed shows no toggle`) |
-| E2E-MOB025-009 | URL rule (D-349): YouTube + HLS/MP4 accepted, others rejected; video-id parsing | unit | P1 | authored ✓ (`youtube_url_test.dart`) |
+| E2E-MOB025-009 | URL rule (D-349): YouTube (valid 11-char id) + HLS/MP4 accepted; no-id / other rejected; video-id parsing | unit | P1 | authored ✓ (`youtube_url_test.dart`) |
+| E2E-MOB025-010 | A feed that fails to load → error + Retry surface, not an endless spinner (D-349) | resilience | P1 | authored ✓ (screen `an unplayable feed surfaces the error state with a retry`) |
 
 ## Scenarios
 

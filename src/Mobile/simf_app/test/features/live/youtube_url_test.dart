@@ -63,13 +63,44 @@ void main() {
       expect(YoutubeUrl.tryParseId(''), isNull);
       expect(YoutubeUrl.tryParseId('not a url'), isNull);
     });
+
+    test('returns null for a YouTube channel / handle / feed link (no id)', () {
+      expect(
+        YoutubeUrl.tryParseId('https://www.youtube.com/@SIMFchannel'),
+        isNull,
+      );
+      expect(YoutubeUrl.tryParseId('https://youtube.com'), isNull);
+      expect(YoutubeUrl.tryParseId('https://www.youtube.com/feed/live'), isNull);
+    });
+
+    test('returns null for a malformed youtu.be embedding watch?v=', () {
+      expect(
+        YoutubeUrl.tryParseId('https://youtu.be/watch?v=dQw4w9WgXcQ'),
+        isNull,
+      );
+    });
+
+    test('returns null for an id of the wrong length', () {
+      expect(YoutubeUrl.tryParseId('https://youtu.be/short'), isNull);
+      expect(YoutubeUrl.tryParseId('https://youtu.be/toolongvideoid12'), isNull);
+    });
   });
 
   group('YoutubeUrl.isAllowedLiveUrl', () {
-    test('accepts YouTube, HLS and MP4', () {
-      expect(YoutubeUrl.isAllowedLiveUrl('https://youtu.be/x'), isTrue);
+    test('accepts YouTube (with id), HLS and MP4', () {
+      expect(
+        YoutubeUrl.isAllowedLiveUrl('https://youtu.be/dQw4w9WgXcQ'),
+        isTrue,
+      );
       expect(YoutubeUrl.isAllowedLiveUrl('https://live.example.sa/s.m3u8'), isTrue);
       expect(YoutubeUrl.isAllowedLiveUrl('https://cdn.example.sa/s.mp4'), isTrue);
+    });
+
+    test('rejects a YouTube link with no video id', () {
+      expect(
+        YoutubeUrl.isAllowedLiveUrl('https://www.youtube.com/@SIMFchannel'),
+        isFalse,
+      );
     });
 
     test('rejects other urls, non-http schemes and blanks', () {

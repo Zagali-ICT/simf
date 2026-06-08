@@ -724,6 +724,10 @@ class AppL10n {
   // and the sign-language feed when the session carries both.
   String get liveFeedMain => _t('البث', 'Main feed');
   String get liveFeedSignLanguage => _t('لغة الإشارة', 'Sign language');
+  String get liveFeedError => _t(
+        'تعذّر تشغيل هذا البث. حاول مرة أخرى.',
+        'Could not play this feed. Try again.',
+      );
 
   // AI assistant (Page 036) — interim shell; no backend chatbot endpoint.
   String get chatbotTitle => _t('المساعد الذكي', 'AI assistant');

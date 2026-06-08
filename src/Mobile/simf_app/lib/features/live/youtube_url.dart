@@ -1,9 +1,9 @@
 /// D-349 — the Flutter mirror of the C# `LiveStreamUrlPolicy` (in
 /// `src/Shared/SIMF.Common/LiveStreamUrlPolicy.cs`). Decides whether a live-feed
-/// URL is accepted (YouTube link OR a direct HLS/MP4 stream) and, for a YouTube
-/// link, extracts the video id the IFrame player needs. The two copies live in
-/// different runtimes and are kept identical on purpose — change one, change the
-/// other.
+/// URL is accepted (a YouTube link with a well-formed video id OR a direct
+/// HLS/MP4 stream) and, for a YouTube link, extracts the video id the IFrame
+/// player needs. The two copies live in different runtimes and are kept
+/// equivalent on purpose — change one, change the other.
 class YoutubeUrl {
   YoutubeUrl._();
 
@@ -13,19 +13,20 @@ class YoutubeUrl {
     'youtube-nocookie.com',
   };
 
-  /// True when [url] is an accepted live-feed URL: an absolute http/https URL
-  /// that is either a YouTube link or a direct HLS/MP4 stream (`.m3u8`/`.mp4`).
+  /// A YouTube video id is exactly 11 URL-safe characters.
+  static final RegExp _idPattern = RegExp(r'^[A-Za-z0-9_-]{11}$');
+
+  /// True when [url] is an accepted live-feed URL: a YouTube link with a valid
+  /// video id, OR a direct HLS/MP4 stream (`.m3u8`/`.mp4`). Mirrors the C#
+  /// `LiveStreamUrlPolicy.IsAllowed`.
   static bool isAllowedLiveUrl(String? url) {
-    final uri = _parse(url);
-    if (uri == null) {
-      return false;
-    }
-    return _isYouTube(uri) || _isDirectStream(uri);
+    return tryParseId(url) != null || _isDirectStream(url);
   }
 
-  /// The YouTube video id for [url], or null when [url] is not a recognised
-  /// YouTube link. Handles `watch?v=`, `youtu.be/<id>`, `/live/<id>`,
-  /// `/embed/<id>` and `/shorts/<id>`.
+  /// The 11-character YouTube video id for [url], or null when [url] is not a
+  /// YouTube link with an extractable, well-formed id. Handles `watch?v=`,
+  /// `youtu.be/<id>`, `/live/<id>`, `/embed/<id>` and `/shorts/<id>`. A YouTube
+  /// host with no id (a channel/handle/feed link) or a malformed id returns null.
   static String? tryParseId(String? url) {
     final uri = _parse(url);
     if (uri == null) {
@@ -35,21 +36,41 @@ class YoutubeUrl {
     if (!_hosts.contains(host)) {
       return null;
     }
+    final candidate = _clean(_extractIdCandidate(uri, host));
+    if (candidate == null || !_idPattern.hasMatch(candidate)) {
+      return null;
+    }
+    return candidate;
+  }
+
+  static String? _extractIdCandidate(Uri uri, String host) {
     if (host == 'youtu.be') {
-      return _clean(uri.pathSegments.isEmpty ? null : uri.pathSegments.first);
+      return uri.pathSegments.isEmpty ? null : uri.pathSegments.first;
     }
     final v = uri.queryParameters['v'];
     if (v != null && v.isNotEmpty) {
-      return _clean(v);
+      return v;
     }
     final segments = uri.pathSegments;
     if (segments.length >= 2 &&
         (segments.first == 'live' ||
             segments.first == 'embed' ||
             segments.first == 'shorts')) {
-      return _clean(segments[1]);
+      return segments[1];
     }
     return null;
+  }
+
+  static bool _isDirectStream(String? url) {
+    final uri = _parse(url);
+    if (uri == null) {
+      return false;
+    }
+    // Use the decoded last path segment so this matches the C# side, which
+    // checks the decoded AbsolutePath (e.g. an encoded "%2Emp4" → ".mp4").
+    final segments = uri.pathSegments;
+    final last = (segments.isEmpty ? '' : segments.last).toLowerCase();
+    return last.endsWith('.m3u8') || last.endsWith('.mp4');
   }
 
   static Uri? _parse(String? url) {
@@ -74,13 +95,6 @@ class YoutubeUrl {
       host = host.substring(2);
     }
     return host;
-  }
-
-  static bool _isYouTube(Uri uri) => _hosts.contains(_bareHost(uri));
-
-  static bool _isDirectStream(Uri uri) {
-    final path = uri.path.toLowerCase();
-    return path.endsWith('.m3u8') || path.endsWith('.mp4');
   }
 
   static String? _clean(String? id) {

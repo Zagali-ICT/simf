@@ -76,8 +76,9 @@ server-side (`AdminSessionService` → 400 `SESSION_INVALID`) by the shared
   LIVE player + badge, **no** لغة الإشارة toggle.
 - **Session soft-deleted / missing** — the detail read 404s
   (`ErrorCodes.SessionNotFound`) → "session removed" state.
-- **Feed URL unreachable** — the player fails to load the manual URL → a player
-  error / retry state (the URL is an interim manual value, L-2).
+- **Feed URL unreachable / un-playable** — the player fails to load the URL (or a
+  YouTube URL has no playable id) → a terminal player **error + Retry** state
+  (built D-349); Retry re-binds the player.
 
 ## L-8 Localization
 Arabic primary (RTL), English secondary. The title `البث المباشر`, the LIVE badge,

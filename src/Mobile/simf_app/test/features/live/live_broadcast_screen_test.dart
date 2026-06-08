@@ -82,8 +82,9 @@ Future<void> _pump(
   if (settle) {
     await tester.pumpAndSettle();
   } else {
-    // A live feed renders an infinite progress spinner, so pumpAndSettle would
-    // time out — pump a few fixed frames to let the read + player init resolve.
+    // A live feed initialises a player off the platform channel (absent here);
+    // pump a few fixed frames to let the read + the (failing, headless) player
+    // init resolve, instead of waiting on pumpAndSettle.
     for (var i = 0; i < 4; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
@@ -180,8 +181,8 @@ void main() {
         ),
         sessionId: 's1',
         // The HLS feed can't initialise headless (no platform channel) — the
-        // player falls back to the loading surface; settle:false avoids the
-        // infinite-spinner timeout. The toggle is what we assert here.
+        // player surfaces the error state; settle:false avoids waiting on the
+        // async init. The toggle is what we assert here.
         settle: false,
       );
 
@@ -202,6 +203,25 @@ void main() {
       );
 
       expect(find.text('Sign language'), findsNothing);
+    });
+
+    testWidgets('an unplayable feed surfaces the error state with a retry',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: _liveSession(
+            liveStreamUrl: 'https://live.example.sa/main.m3u8',
+          ),
+        ),
+        sessionId: 's1',
+        // video_player can't initialise headless → the player shows the terminal
+        // error surface (not an endless spinner), with a Retry (D-349 / L-7).
+        settle: false,
+      );
+
+      expect(find.text('Could not play this feed. Try again.'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Retry'), findsOneWidget);
     });
 
     testWidgets('a 404 shows the not-found state', (tester) async {

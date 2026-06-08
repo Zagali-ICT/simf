@@ -202,40 +202,63 @@ class _LivePlayerState extends State<_LivePlayer> {
   YoutubePlayerController? _youtube;
   VideoPlayerController? _video;
   bool _videoReady = false;
+  bool _error = false;
 
   @override
   void initState() {
     super.initState();
+    _bind();
+  }
+
+  void _bind() {
     final videoId = YoutubeUrl.tryParseId(widget.url);
     if (videoId != null) {
-      _youtube = YoutubePlayerController.fromVideoId(
-        videoId: videoId,
-        autoPlay: true,
-      );
+      try {
+        _youtube = YoutubePlayerController.fromVideoId(
+          videoId: videoId,
+          autoPlay: true,
+        );
+      } catch (_) {
+        // A failure building the IFrame controller degrades to the error
+        // surface rather than crashing the screen (Page_025 L-7).
+        _error = true;
+      }
     } else {
       unawaited(_initVideo(widget.url));
     }
   }
 
+  void _retry() {
+    _youtube?.close();
+    _youtube = null;
+    _video?.dispose();
+    _video = null;
+    setState(() {
+      _error = false;
+      _videoReady = false;
+    });
+    _bind();
+  }
+
   Future<void> _initVideo(String url) async {
-    final controller = VideoPlayerController.networkUrl(Uri.parse(url));
-    _video = controller;
     try {
+      final controller = VideoPlayerController.networkUrl(Uri.parse(url));
+      _video = controller;
       await controller.initialize();
-    } catch (_) {
-      // A bad/unreachable stream falls back to the loading surface rather than
-      // crashing the screen (Page_025 L-7).
       if (!mounted) {
         return;
       }
-      setState(() => _videoReady = false);
-      return;
+      setState(() => _videoReady = true);
+      unawaited(controller.play());
+    } catch (_) {
+      // ANY failure — a malformed URL (Uri.parse), an unreachable stream, or a
+      // codec error — surfaces the error/retry state rather than spinning
+      // forever or crashing the screen (Page_025 L-7).
+      if (!mounted) {
+        return;
+      }
+      setState(() => _error = true);
     }
-    if (!mounted) {
-      return;
-    }
-    setState(() => _videoReady = true);
-    unawaited(controller.play());
   }
 
   void _toggleVideoPlay() {
@@ -259,6 +282,14 @@ class _LivePlayerState extends State<_LivePlayer> {
 
   @override
   Widget build(BuildContext context) {
+    if (_error) {
+      final l10n = AppL10n.of(context);
+      return _PlayerError(
+        message: l10n.liveFeedError,
+        retryLabel: l10n.retryLabel,
+        onRetry: _retry,
+      );
+    }
     final youtube = _youtube;
     if (youtube != null) {
       return _YoutubeView(controller: youtube, liveLabel: widget.liveLabel);
@@ -405,6 +436,58 @@ class _PlayerLoading extends StatelessWidget {
           borderRadius: BorderRadius.circular(SimfTokens.radius),
         ),
         child: const Center(child: CircularProgressIndicator()),
+      ),
+    );
+  }
+}
+
+/// Shown when a live feed fails to load — a terminal error surface with a Retry
+/// that re-binds the player (Page_025 L-7), instead of an endless spinner.
+class _PlayerError extends StatelessWidget {
+  const _PlayerError({
+    required this.message,
+    required this.retryLabel,
+    required this.onRetry,
+  });
+
+  final String message;
+  final String retryLabel;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(SimfTokens.radius),
+        ),
+        // Centred + scrollable so the icon + message + button never overflow
+        // the fixed 16:9 box on a short / landscape viewport (RenderFlex).
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(SimfTokens.space3),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const Icon(
+                  Icons.error_outline,
+                  size: 36,
+                  color: SimfTokens.txtTertiary,
+                ),
+                const SizedBox(height: SimfTokens.space2),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: SimfTokens.txtTertiary),
+                ),
+                const SizedBox(height: SimfTokens.space3),
+                FilledButton(onPressed: onRetry, child: Text(retryLabel)),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

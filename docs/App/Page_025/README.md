@@ -72,6 +72,8 @@ Behaviour:
   - `liveStreamUrl` null but `hasRecording` → a "recording available" note.
   - neither → a "not live / scheduled" state.
 - A `liveSignLanguageUrl` with **no** main feed adds a sign-language-available note.
+- A feed that fails to load (unreachable, or a YouTube URL with no playable id) shows
+  an **error + Retry** surface (D-349 / L-7), not an endless spinner.
 - Loading / empty(no id) / 404→not-found / error→retry states.
 
 UI is interim (final visuals from SIMF-VID-001).

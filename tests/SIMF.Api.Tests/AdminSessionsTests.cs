@@ -320,6 +320,29 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(ErrorCodes.SessionInvalid, body.Error!.Code);
     }
 
+    // D-349 — a YouTube URL with no extractable video id (a channel/handle/feed
+    // link) is rejected, since the player needs the id.
+    [Fact]
+    public async Task Create_with_a_youtube_url_without_a_video_id_is_400_SESSION_INVALID()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 10);
+        var response = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(), Title = "NoId", TitleArabic = "بدون",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                LiveStreamUrl = "https://www.youtube.com/@SIMFchannel",
+            },
+            token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionInvalid, body.Error!.Code);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private static string NewCode() =>
