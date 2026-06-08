@@ -1459,7 +1459,7 @@
   <data name="Admin.Sessions.Field.DescriptionArabic" xml:space="preserve"><value>Description (Arabic)</value></data>
   <data name="Admin.Sessions.Field.LiveStreamUrl" xml:space="preserve"><value>Live stream URL (live broadcast)</value></data>
   <data name="Admin.Sessions.Field.LiveSignLanguageUrl" xml:space="preserve"><value>Sign-language stream URL (optional)</value></data>
-  <data name="Admin.Sessions.Field.LiveStreamUrlHint" xml:space="preserve"><value>Paste a YouTube link (youtube.com / youtu.be) or a direct HLS/MP4 stream URL.</value></data>
+  <data name="Admin.Sessions.Field.LiveStreamUrlHint" xml:space="preserve"><value>Paste a YouTube link (youtube.com / youtu.be) or a direct https HLS/MP4 stream URL.</value></data>
   <data name="Admin.Sessions.Field.LiveSignLanguageUrlHint" xml:space="preserve"><value>Optional. Same formats — a YouTube link or an HLS/MP4 stream URL.</value></data>
   <data name="Admin.Sessions.Field.LiveUrlInvalid" xml:space="preserve"><value>Enter a valid YouTube link or an HLS/MP4 stream URL (https).</value></data>
   <data name="Admin.Sessions.Field.Hall" xml:space="preserve"><value>Hall</value></data>

@@ -28,21 +28,23 @@ public static class LiveStreamUrlPolicy
 
     /// <summary>
     /// True when <paramref name="url"/> is an accepted live-feed URL: an absolute
-    /// http/https URL that is either a YouTube link with a well-formed video id
+    /// <b>https</b> URL that is either a YouTube link with a well-formed video id
     /// or a direct HLS/MP4 stream (path ending <c>.m3u8</c> or <c>.mp4</c>).
-    /// A blank URL is NOT allowed — callers treat blank as "no feed" and skip the
-    /// check, so this method only ever sees a value the admin actually typed.
+    /// Cleartext <c>http</c> is rejected so a feed cannot be silently downgraded /
+    /// man-in-the-middled (D-349 security hardening). A blank URL is NOT allowed —
+    /// callers treat blank as "no feed" and skip the check, so this method only
+    /// ever sees a value the admin actually typed.
     /// </summary>
     public static bool IsAllowed(string? url)
     {
-        if (!TryParseHttpUrl(url, out var uri))
+        if (!TryParseHttpsUrl(url, out var uri))
         {
             return false;
         }
         return TryGetYouTubeVideoId(uri, out _) || IsDirectStream(uri);
     }
 
-    private static bool TryParseHttpUrl(string? url, out Uri uri)
+    private static bool TryParseHttpsUrl(string? url, out Uri uri)
     {
         uri = null!;
         if (string.IsNullOrWhiteSpace(url))
@@ -53,7 +55,7 @@ public static class LiveStreamUrlPolicy
         {
             return false;
         }
-        if (parsed.Scheme != Uri.UriSchemeHttp && parsed.Scheme != Uri.UriSchemeHttps)
+        if (parsed.Scheme != Uri.UriSchemeHttps)
         {
             return false;
         }

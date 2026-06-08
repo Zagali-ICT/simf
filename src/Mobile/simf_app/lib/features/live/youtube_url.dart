@@ -81,7 +81,9 @@ class YoutubeUrl {
     if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
       return null;
     }
-    if (uri.scheme != 'http' && uri.scheme != 'https') {
+    // https only — cleartext http is rejected so a feed cannot be downgraded /
+    // man-in-the-middled (D-349 security hardening; mirrors LiveStreamUrlPolicy).
+    if (uri.scheme != 'https') {
       return null;
     }
     return uri;

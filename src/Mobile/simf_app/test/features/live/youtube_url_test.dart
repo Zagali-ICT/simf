@@ -84,6 +84,13 @@ void main() {
       expect(YoutubeUrl.tryParseId('https://youtu.be/short'), isNull);
       expect(YoutubeUrl.tryParseId('https://youtu.be/toolongvideoid12'), isNull);
     });
+
+    test('returns null for a cleartext http (non-https) YouTube link', () {
+      expect(
+        YoutubeUrl.tryParseId('http://www.youtube.com/watch?v=dQw4w9WgXcQ'),
+        isNull,
+      );
+    });
   });
 
   group('YoutubeUrl.isAllowedLiveUrl', () {
@@ -103,8 +110,16 @@ void main() {
       );
     });
 
-    test('rejects other urls, non-http schemes and blanks', () {
+    test('rejects other urls, non-https schemes and blanks', () {
       expect(YoutubeUrl.isAllowedLiveUrl('https://vimeo.com/12345'), isFalse);
+      expect(
+        YoutubeUrl.isAllowedLiveUrl('http://live.example.sa/s.m3u8'),
+        isFalse,
+      );
+      expect(
+        YoutubeUrl.isAllowedLiveUrl('http://www.youtube.com/watch?v=dQw4w9WgXcQ'),
+        isFalse,
+      );
       expect(YoutubeUrl.isAllowedLiveUrl('ftp://host/s.mp4'), isFalse);
       expect(YoutubeUrl.isAllowedLiveUrl(''), isFalse);
       expect(YoutubeUrl.isAllowedLiveUrl(null), isFalse);

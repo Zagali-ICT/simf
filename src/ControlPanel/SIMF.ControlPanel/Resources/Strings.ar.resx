@@ -1452,7 +1452,7 @@
   <data name="Admin.Sessions.Field.DescriptionArabic" xml:space="preserve"><value>الوصف (العربية)</value></data>
   <data name="Admin.Sessions.Field.LiveStreamUrl" xml:space="preserve"><value>رابط البث المباشر</value></data>
   <data name="Admin.Sessions.Field.LiveSignLanguageUrl" xml:space="preserve"><value>رابط بث لغة الإشارة (اختياري)</value></data>
-  <data name="Admin.Sessions.Field.LiveStreamUrlHint" xml:space="preserve"><value>ألصق رابط يوتيوب (youtube.com / youtu.be) أو رابط بث مباشر بصيغة HLS/MP4.</value></data>
+  <data name="Admin.Sessions.Field.LiveStreamUrlHint" xml:space="preserve"><value>ألصق رابط يوتيوب (youtube.com / youtu.be) أو رابط بث مباشر https بصيغة HLS/MP4.</value></data>
   <data name="Admin.Sessions.Field.LiveSignLanguageUrlHint" xml:space="preserve"><value>اختياري. نفس الصيغ — رابط يوتيوب أو رابط بث HLS/MP4.</value></data>
   <data name="Admin.Sessions.Field.LiveUrlInvalid" xml:space="preserve"><value>أدخل رابط يوتيوب صالحاً أو رابط بث HLS/MP4 (https).</value></data>
   <data name="Admin.Sessions.Field.Hall" xml:space="preserve"><value>القاعة</value></data>

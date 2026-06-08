@@ -343,6 +343,29 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(ErrorCodes.SessionInvalid, body.Error!.Code);
     }
 
+    // D-349 security — a cleartext http live URL is rejected (https only), so a
+    // feed cannot be silently downgraded / man-in-the-middled.
+    [Fact]
+    public async Task Create_with_an_http_live_url_is_400_SESSION_INVALID()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 10);
+        var response = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(), Title = "Cleartext", TitleArabic = "غير آمن",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                LiveStreamUrl = "http://live.example.sa/stream.m3u8",
+            },
+            token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionInvalid, body.Error!.Code);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private static string NewCode() =>
