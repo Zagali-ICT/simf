@@ -68,7 +68,11 @@ public sealed class SiteContentMapperTests
         var sponsor = Cast(rows[0]);
         Assert.Equal("أكمي", sponsor["name"]);
         Assert.Equal("Sponsor", sponsor["type_en"]);
-        Assert.Equal(string.Empty, sponsor["logo"]);
+        // D-348 — sponsors render a per-name SVG logo placeholder data-URI,
+        // not an empty string.
+        var sponsorLogo = Assert.IsType<string>(sponsor["logo"]);
+        Assert.StartsWith("data:image/svg+xml,", sponsorLogo);
+        Assert.Contains("Acme", sponsorLogo);
 
         var partner = Cast(rows[1]);
         Assert.Equal("غلوب نيوز", partner["name"]);
