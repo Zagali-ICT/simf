@@ -205,6 +205,10 @@ public sealed class IdentitySeeder(
         // per-year archive page renders. Idempotent by Year.
         await EnsureDemoArchiveEditionsAsync(admin.Id, cancellationToken);
 
+        // D-348 — seed sponsors + media partners with test logos so the public
+        // partners strip shows a populated logo row (was name-only text).
+        await EnsureDemoPartnersAsync(admin.Id, cancellationToken);
+
         // D-176 (gap doc G12) — seed the default AI prompt catalogue.
         // One prompt per feature; admin can edit at runtime via the CP.
         await EnsureDefaultAiPromptsAsync(admin.Id, cancellationToken);
@@ -818,6 +822,95 @@ public sealed class IdentitySeeder(
         logger.LogInformation(
             "Demo archive editions ensured (inserted {NewCount}, total {Total}).",
             inserted, seed.Length);
+    }
+
+    /// <summary>D-348 — idempotent sponsors + media partners with test logos so
+    /// the public partners strip renders a populated logo row instead of
+    /// name-only text. Idempotent by Name; backfills a test logo onto any active
+    /// row that still has none (incl. the pre-existing demo rows). Logos are test
+    /// placeholders (the column normally holds an asset path; the owner asked for
+    /// any test image while real artwork is pending).</summary>
+    private async Task EnsureDemoPartnersAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        const string logoBase = "https://placehold.co/260x130/ffffff/0a2e6b?text=";
+        string Logo(string label) => logoBase + Uri.EscapeDataString(label);
+        var now = timeProvider.GetUtcNow();
+
+        var sponsors = new (string Name, string NameAr, SponsorTier Tier, int Order)[]
+        {
+            ("Maritime Defense Systems", "نظم الدفاع البحري", SponsorTier.Platinum, 10),
+            ("Gulf Port Authority", "هيئة موانئ الخليج", SponsorTier.Gold, 20),
+            ("Blue Horizon Logistics", "آفاق زرقاء للخدمات اللوجستية", SponsorTier.Gold, 30),
+            ("Coastal Shield Technologies", "تقنيات الدرع الساحلي", SponsorTier.Silver, 40),
+        };
+        var sponsorNames = sponsors.Select(x => x.Name).ToList();
+        var existingSponsors = await appDbContext.Sponsors
+            .Where(s => sponsorNames.Contains(s.Name)).Select(s => s.Name)
+            .ToListAsync(cancellationToken);
+        foreach (var sp in sponsors)
+        {
+            if (existingSponsors.Contains(sp.Name)) { continue; }
+            appDbContext.Sponsors.Add(new SIMF.Domain.Sponsors.Sponsor
+            {
+                Id = Guid.NewGuid(),
+                Name = sp.Name,
+                NameArabic = sp.NameAr,
+                Tier = sp.Tier,
+                DisplayOrder = sp.Order,
+                LogoRelativePath = Logo(sp.Name),
+                IsActive = true,
+                CreatedBy = actorUserId,
+                CreatedAt = now,
+            });
+        }
+
+        var partners = new (string Name, string NameAr, int Order)[]
+        {
+            ("Maritime News Network", "شبكة الأخبار البحرية", 10),
+            ("Naval Affairs Review", "مجلة الشؤون البحرية", 20),
+            ("Sea Trade Daily", "تجارة البحار اليومية", 30),
+        };
+        var partnerNames = partners.Select(x => x.Name).ToList();
+        var existingPartners = await appDbContext.MediaPartners
+            .Where(m => partnerNames.Contains(m.Name)).Select(m => m.Name)
+            .ToListAsync(cancellationToken);
+        foreach (var mp in partners)
+        {
+            if (existingPartners.Contains(mp.Name)) { continue; }
+            appDbContext.MediaPartners.Add(new SIMF.Domain.PublicRelations.MediaPartner
+            {
+                Id = Guid.NewGuid(),
+                Name = mp.Name,
+                NameArabic = mp.NameAr,
+                DisplayOrder = mp.Order,
+                LogoRelativePath = Logo(mp.Name),
+                IsActive = true,
+                CreatedBy = actorUserId,
+                CreatedAt = now,
+            });
+        }
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        // Backfill a test logo onto any active row that still has none (e.g. the
+        // pre-existing single sponsor + partner) so the strip is all logos.
+        var logolessSponsors = await appDbContext.Sponsors
+            .Where(s => s.IsActive && (s.LogoRelativePath == null || s.LogoRelativePath == ""))
+            .ToListAsync(cancellationToken);
+        foreach (var s in logolessSponsors)
+        {
+            s.LogoRelativePath = Logo(string.IsNullOrWhiteSpace(s.Name) ? "Sponsor" : s.Name);
+        }
+        var logolessPartners = await appDbContext.MediaPartners
+            .Where(m => m.IsActive && (m.LogoRelativePath == null || m.LogoRelativePath == ""))
+            .ToListAsync(cancellationToken);
+        foreach (var m in logolessPartners)
+        {
+            m.LogoRelativePath = Logo(string.IsNullOrWhiteSpace(m.Name) ? "Partner" : m.Name);
+        }
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Demo partners ensured (sponsors + media partners with logos).");
     }
 
     /// <summary>D-176 (gap doc G12) — idempotently seeds the default

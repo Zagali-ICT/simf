@@ -768,6 +768,16 @@
     transition: transform .6s ease;
   }
   .session-row:hover .session-img { transform: scale(1.04); }
+  /* No public session image → an intentional branded panel (navy gradient +
+     subtle diagonal weave), not an empty box. The num badge + hall label sit
+     on top. Matches the about / speaker placeholder treatment. */
+  .session-img--brand {
+    background-color: #062253;
+    background-image:
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.035) 0 2px, transparent 2px 22px),
+      radial-gradient(120% 100% at 80% 0%, rgba(232,192,96,0.10) 0%, transparent 45%),
+      linear-gradient(135deg, #062253 0%, #001640 55%, #0a2e6b 100%);
+  }
   .session-img::before {
     content: ""; position: absolute; inset: 0;
     background: linear-gradient(180deg, rgba(0,22,64,0) 40%, rgba(0,22,64,0.85) 100%);
@@ -999,7 +1009,15 @@
   .partner-logo .slot {
     width: 220px; height: 140px;
     display: grid; place-items: center;
-    color: rgba(255,255,255,0.9); font-weight: 700; font-size: 15px;
+    background: #fff; border-radius: 12px; padding: 22px; overflow: hidden;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.20);
+  }
+  .partner-logo .slot img {
+    max-width: 100%; max-height: 100%; object-fit: contain; display: block;
+  }
+  .partner-logo .slot .partner-name {
+    color: var(--navy); font-weight: 800; font-size: 16px;
+    text-align: center; line-height: 1.4;
   }
   .partner-meta {
     height: 80px; border-top: 1px solid rgba(232,192,96,0.22);
@@ -2607,19 +2625,28 @@
     if (!window.__contentReady) { sgRoot.className = 'sessions-list'; sgRoot.innerHTML = skeletonSessions(3); return; }
     const mainSessions = siteContent.sessions || [];
     sgRoot.className = 'sessions-list';
-    sgRoot.innerHTML = mainSessions.map(s => `
+    sgRoot.innerHTML = mainSessions.map((s, idx) => {
+      const img = (s.img || '').trim();
+      const cls = img ? 'session-img' : 'session-img session-img--brand';
+      const style = img ? ` style="background-image:url('${img.replace(/'/g, "\\'")}')"` : '';
+      const n = s.n || String(idx + 1).padStart(2, '0');
+      const label = pickLang(s, 'label');
+      const tag = pickLang(s, 'tag');
+      const desc = pickLang(s, 'desc');
+      return `
       <div class="session-row">
-        <div class="session-img" style="background-image:url('${s.img}')">
-          <span class="num-badge num">${s.n}</span>
-          <span class="img-label">${pickLang(s,'label')}</span>
+        <div class="${cls}"${style}>
+          <span class="num-badge num">${n}</span>
+          ${label ? `<span class="img-label">${label}</span>` : ''}
         </div>
         <div class="session-body">
-          <div class="session-tag">${pickLang(s,'tag')}</div>
-          <h3>${pickLang(s,'title')}</h3>
-          <p class="desc">${pickLang(s,'desc')}</p>
+          ${tag ? `<div class="session-tag">${tag}</div>` : ''}
+          <h3>${pickLang(s, 'title')}</h3>
+          ${desc ? `<p class="desc">${desc}</p>` : ''}
           <a class="session-link" href="#">${uiStr('session_link')}</a>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
   renderSessions();
   /* old session grid disabled — removed */
@@ -2677,11 +2704,14 @@
   function partnerCard(p) {
     const name = pickLang(p,'name');
     const type = pickLang(p,'type');
-    const logo = p.logo || '';
+    const logo = (p.logo || '').trim();
+    const inner = logo
+      ? `<img src="${logo.replace(/"/g, '&quot;')}" alt="${name}">`
+      : `<span class="partner-name">${name}</span>`;
     return `
     <div class="partner">
-      <div class="partner-logo"><div class="slot">${logo ? `<img src="${logo}" alt="${name}" style="max-width:100%;max-height:100%;object-fit:contain;">` : name}</div></div>
-      <div class="partner-meta"><span class="label">${type}</span><span class="arr">↖</span></div>
+      <div class="partner-logo"><div class="slot">${inner}</div></div>
+      <div class="partner-meta"><span class="label">${type}</span></div>
     </div>`;
   }
   function renderPartners() {

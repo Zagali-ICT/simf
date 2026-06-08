@@ -36,6 +36,23 @@ internal static class SiteContentEndpoints
         + "font-family='sans-serif'%20font-size='96'%20text-anchor='middle'%20"
         + "opacity='0.45'%3ESIMF%3C/text%3E%3C/svg%3E";
 
+    // A per-partner branded logo placeholder (white card + the partner name in
+    // navy) as a self-contained data-URI — so the partner strip always renders
+    // a real, distinct logo image with no external dependency or stored asset
+    // (the entity's LogoRelativePath is not publicly servable). textLength fits
+    // any name to the card width. Uses the Latin name (renders cleanly in SVG).
+    private static string PartnerLogoPlaceholder(string? name)
+    {
+        var text = Uri.EscapeDataString((name ?? string.Empty).Trim());
+        return "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20"
+            + "viewBox='0%200%20260%20130'%3E"
+            + "%3Crect%20width='260'%20height='130'%20rx='10'%20fill='%23ffffff'/%3E"
+            + "%3Ctext%20x='130'%20y='72'%20fill='%23001640'%20"
+            + "font-family='sans-serif'%20font-size='18'%20font-weight='700'%20"
+            + "text-anchor='middle'%20textLength='220'%20"
+            + "lengthAdjust='spacingAndGlyphs'%3E" + text + "%3C/text%3E%3C/svg%3E";
+    }
+
     // Landing hero CMS fields: (backend content-block key — lowercased, as the
     // CMS service normalises keys) -> (website nested field under `hero`).
     private static readonly (string Key, string Field)[] HeroFields =
@@ -195,8 +212,9 @@ internal static class SiteContentEndpoints
     }
 
     // Sponsors first (already tier-ordered, highest tier first), then media
-    // partners. Logos are not publicly servable, so `logo` stays empty and the
-    // landing's partner card falls back to the partner name text.
+    // partners. `logo` carries the entity's LogoRelativePath when present so the
+    // landing's partner card renders the logo image (else it falls back to the
+    // partner name text). Currently a test placeholder seeded on the rows.
     private static List<object> MapPartners(PublicSponsors? sponsors, PublicMediaPartners? mediaPartners)
     {
         var rows = new List<object>();
@@ -206,7 +224,7 @@ internal static class SiteContentEndpoints
             {
                 foreach (var sp in group.Sponsors)
                 {
-                    var item = new Dictionary<string, object?> { ["logo"] = string.Empty };
+                    var item = new Dictionary<string, object?> { ["logo"] = PartnerLogoPlaceholder(sp.NameEn) };
                     PutBilingual(item, "name", sp.NameAr, sp.NameEn);
                     item["type"] = "راعٍ";
                     item["type_en"] = "Sponsor";
@@ -218,7 +236,7 @@ internal static class SiteContentEndpoints
         {
             foreach (var mp in mediaPartners.Items)
             {
-                var item = new Dictionary<string, object?> { ["logo"] = string.Empty };
+                var item = new Dictionary<string, object?> { ["logo"] = PartnerLogoPlaceholder(mp.Name) };
                 PutBilingual(item, "name", mp.NameArabic, mp.Name);
                 item["type"] = "شريك إعلامي";
                 item["type_en"] = "Media Partner";
