@@ -192,6 +192,13 @@ public sealed class IdentitySeeder(
         // instead of the page's hardcoded copy. Idempotent, additive data.
         await EnsureLandingSectionsContentAsync(admin.Id, cancellationToken);
 
+        // D-345 — seed a demo speaker roster so the public /app/speakers list
+        // (and the Website speakers strip + the app speakers screen) render a
+        // populated, realistic set out of the box instead of a single lonely
+        // row. Idempotent by Code; admins manage / replace with real speakers
+        // via the CP, and can deactivate these at will.
+        await EnsureDemoSpeakersAsync(admin.Id, cancellationToken);
+
         // D-176 (gap doc G12) — seed the default AI prompt catalogue.
         // One prompt per feature; admin can edit at runtime via the CP.
         await EnsureDefaultAiPromptsAsync(admin.Id, cancellationToken);
@@ -655,6 +662,55 @@ public sealed class IdentitySeeder(
         logger.LogInformation(
             "Landing section content blocks ensured (seeded {NewCount} of {Total}).",
             seed.Length - existingKeys.Count, seed.Length);
+    }
+
+    /// <summary>D-345 — idempotent demo speaker roster. Inserts any missing
+    /// <c>DEMO-SPK-*</c> speaker so the anonymous <c>GET /app/speakers</c> read
+    /// returns a populated, on-theme set (maritime-security / supply-chain) for
+    /// the Website strip and the app screen. Country is left null on purpose:
+    /// <c>Speaker.CountryId</c> is a real FK to <c>Country</c>, and seeding a
+    /// country row is out of scope here. Active + ordered so they surface.</summary>
+    private async Task EnsureDemoSpeakersAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        var seed = new (string Code, string Name, string NameArabic, string Rank, int Order)[]
+        {
+            ("DEMO-SPK-01", "Dr. Sarah Al-Otaibi", "د. سارة العتيبي", "Maritime Security Strategist", 10),
+            ("DEMO-SPK-02", "Adm. James Whitmore", "الأدميرال جيمس ويتمور", "Former Fleet Commander", 20),
+            ("DEMO-SPK-03", "Prof. Khalid Al-Harbi", "أ.د. خالد الحربي", "Blue-Economy Researcher", 30),
+            ("DEMO-SPK-04", "Dr. Liang Chen", "د. ليانغ تشين", "Global Supply-Chain Economist", 40),
+            ("DEMO-SPK-05", "Capt. Maria Santos", "النقيب ماريا سانتوس", "Port Operations Expert", 50),
+            ("DEMO-SPK-06", "Dr. Yuki Tanaka", "د. يوكي تاناكا", "Naval Technology Advisor", 60),
+            ("DEMO-SPK-07", "Cdre. Olivier Dubois", "العميد أوليفييه دوبوا", "Coastal Defence Specialist", 70),
+        };
+
+        var now = timeProvider.GetUtcNow();
+        var existingCodes = await appDbContext.Speakers
+            .Where(s => seed.Select(x => x.Code).Contains(s.Code))
+            .Select(s => s.Code)
+            .ToListAsync(cancellationToken);
+
+        foreach (var (code, name, nameArabic, rank, order) in seed)
+        {
+            if (existingCodes.Contains(code)) { continue; }
+            appDbContext.Speakers.Add(new SIMF.Domain.Programme.Speaker
+            {
+                Id = Guid.NewGuid(),
+                Code = code,
+                Name = name,
+                NameArabic = nameArabic,
+                Rank = rank,
+                DisplayOrder = order,
+                IsActive = true,
+                CreatedBy = actorUserId,
+                CreatedAt = now,
+            });
+        }
+
+        await appDbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "Demo speakers ensured (seeded {NewCount} of {Total}).",
+            seed.Length - existingCodes.Count, seed.Length);
     }
 
     /// <summary>D-176 (gap doc G12) — idempotently seeds the default
