@@ -183,6 +183,12 @@ internal static class SiteContentEndpoints
             // Rank is a single (non-bilingual) line; emit it for both locales.
             PutBilingual(item, "role", sp.Rank, sp.Rank);
             PutBilingual(item, "org", sp.CountryNameAr, sp.CountryNameEn);
+            // Portrait URL (D-346) — the card renders it when present, else its
+            // SVG silhouette. Currently a test placeholder seeded on the speaker.
+            if (!string.IsNullOrWhiteSpace(sp.PhotoRelativePath))
+            {
+                item["photo"] = sp.PhotoRelativePath;
+            }
             rows.Add(item);
         }
         return rows;

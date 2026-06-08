@@ -68,7 +68,10 @@ hero CMS blocks store `ContentArabic` (→ base) and `Content` (→ `_en`).
   key resolved, so the hero never renders half-populated.
 - **No public image** for sessions/news → a neutral branded SVG placeholder.
   Partner logos are not publicly servable, so the partner card falls back to the
-  partner name text. Archive + speaker cards are image-free by design.
+  partner name text. Archive cards are image-free by design. **Speaker cards
+  render a portrait** (`photo` from the proxy = `Speaker.PhotoRelativePath`)
+  when present, else the SVG silhouette (D-346 — demo speakers seed a test
+  portrait URL).
 
 ## 11. E2E
 

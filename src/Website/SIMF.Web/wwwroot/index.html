@@ -920,6 +920,10 @@
     overflow: hidden; position: relative;
   }
   .speaker-photo svg { width: 70%; height: 70%; opacity: 0.45; }
+  .speaker-photo img {
+    position: relative; z-index: 1;
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
   .speaker-photo::before {
     content: ""; position: absolute; inset: 0;
     background-image:
@@ -2553,18 +2557,22 @@
   (function initSpeakersMarquee() {
     const grid = document.getElementById('speakersGrid');
     const wrap = grid.parentElement;
-    const speakerCard = s => `
-      <div class="speaker">
-        <div class="speaker-photo">
-          <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2">
+    const speakerCard = s => {
+      const photo = (s.photo || '').trim();
+      const media = photo
+        ? `<img src="${photo.replace(/"/g, '&quot;')}" alt="" loading="lazy">`
+        : `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="50" cy="38" r="18"/>
             <path d="M20 88 C 20 68, 35 60, 50 60 C 65 60, 80 68, 80 88"/>
-          </svg>
-        </div>
+          </svg>`;
+      return `
+      <div class="speaker">
+        <div class="speaker-photo">${media}</div>
         <h4>${pickLang(s,'name')}</h4>
         <p class="role">${pickLang(s,'role')}</p>
         <p class="org num">${pickLang(s,'org')}</p>
       </div>`;
+    };
     if (!speakers.length) return;
 
     function build() {

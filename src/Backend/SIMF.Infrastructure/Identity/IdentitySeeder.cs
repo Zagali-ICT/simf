@@ -673,26 +673,40 @@ public sealed class IdentitySeeder(
     private async Task EnsureDemoSpeakersAsync(
         Guid actorUserId, CancellationToken cancellationToken)
     {
-        var seed = new (string Code, string Name, string NameArabic, string Rank, int Order)[]
+        // PhotoRelativePath carries a test portrait URL (D-346 — "use any photo
+        // for testing"): the field already exists (no migration), the
+        // /content/site proxy now passes it through, and the Website speaker
+        // card renders it when present. Placeholder portraits from pravatar.cc.
+        var seed = new (string Code, string Name, string NameArabic, string Rank, int Order, string Photo)[]
         {
-            ("DEMO-SPK-01", "Dr. Sarah Al-Otaibi", "د. سارة العتيبي", "Maritime Security Strategist", 10),
-            ("DEMO-SPK-02", "Adm. James Whitmore", "الأدميرال جيمس ويتمور", "Former Fleet Commander", 20),
-            ("DEMO-SPK-03", "Prof. Khalid Al-Harbi", "أ.د. خالد الحربي", "Blue-Economy Researcher", 30),
-            ("DEMO-SPK-04", "Dr. Liang Chen", "د. ليانغ تشين", "Global Supply-Chain Economist", 40),
-            ("DEMO-SPK-05", "Capt. Maria Santos", "النقيب ماريا سانتوس", "Port Operations Expert", 50),
-            ("DEMO-SPK-06", "Dr. Yuki Tanaka", "د. يوكي تاناكا", "Naval Technology Advisor", 60),
-            ("DEMO-SPK-07", "Cdre. Olivier Dubois", "العميد أوليفييه دوبوا", "Coastal Defence Specialist", 70),
+            ("DEMO-SPK-01", "Dr. Sarah Al-Otaibi", "د. سارة العتيبي", "Maritime Security Strategist", 10, "https://i.pravatar.cc/300?img=47"),
+            ("DEMO-SPK-02", "Adm. James Whitmore", "الأدميرال جيمس ويتمور", "Former Fleet Commander", 20, "https://i.pravatar.cc/300?img=12"),
+            ("DEMO-SPK-03", "Prof. Khalid Al-Harbi", "أ.د. خالد الحربي", "Blue-Economy Researcher", 30, "https://i.pravatar.cc/300?img=33"),
+            ("DEMO-SPK-04", "Dr. Liang Chen", "د. ليانغ تشين", "Global Supply-Chain Economist", 40, "https://i.pravatar.cc/300?img=68"),
+            ("DEMO-SPK-05", "Capt. Maria Santos", "النقيب ماريا سانتوس", "Port Operations Expert", 50, "https://i.pravatar.cc/300?img=45"),
+            ("DEMO-SPK-06", "Dr. Yuki Tanaka", "د. يوكي تاناكا", "Naval Technology Advisor", 60, "https://i.pravatar.cc/300?img=60"),
+            ("DEMO-SPK-07", "Cdre. Olivier Dubois", "العميد أوليفييه دوبوا", "Coastal Defence Specialist", 70, "https://i.pravatar.cc/300?img=15"),
         };
 
         var now = timeProvider.GetUtcNow();
-        var existingCodes = await appDbContext.Speakers
-            .Where(s => seed.Select(x => x.Code).Contains(s.Code))
-            .Select(s => s.Code)
-            .ToListAsync(cancellationToken);
+        var codes = seed.Select(x => x.Code).ToList();
+        var existing = await appDbContext.Speakers
+            .Where(s => codes.Contains(s.Code))
+            .ToDictionaryAsync(s => s.Code, cancellationToken);
 
-        foreach (var (code, name, nameArabic, rank, order) in seed)
+        var inserted = 0;
+        foreach (var (code, name, nameArabic, rank, order, photo) in seed)
         {
-            if (existingCodes.Contains(code)) { continue; }
+            if (existing.TryGetValue(code, out var current))
+            {
+                // Already seeded — backfill the test photo if it is missing so an
+                // earlier photo-less seed still ends up with a portrait.
+                if (string.IsNullOrEmpty(current.PhotoRelativePath))
+                {
+                    current.PhotoRelativePath = photo;
+                }
+                continue;
+            }
             appDbContext.Speakers.Add(new SIMF.Domain.Programme.Speaker
             {
                 Id = Guid.NewGuid(),
@@ -701,16 +715,18 @@ public sealed class IdentitySeeder(
                 NameArabic = nameArabic,
                 Rank = rank,
                 DisplayOrder = order,
+                PhotoRelativePath = photo,
                 IsActive = true,
                 CreatedBy = actorUserId,
                 CreatedAt = now,
             });
+            inserted++;
         }
 
         await appDbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation(
-            "Demo speakers ensured (seeded {NewCount} of {Total}).",
-            seed.Length - existingCodes.Count, seed.Length);
+            "Demo speakers ensured (inserted {NewCount}, total {Total}).",
+            inserted, seed.Length);
     }
 
     /// <summary>D-176 (gap doc G12) — idempotently seeds the default
