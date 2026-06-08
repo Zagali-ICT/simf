@@ -114,11 +114,8 @@ builder.Services.AddScoped<SimfUserChrome>();
 // in the circuit for the interactive callbacks that follow.
 builder.Services.AddHttpContextAccessor();
 
-// The typed clients for the SIMF API. Server-to-server calls; the access token
-// never reaches the browser. The base address is resolved and validated once
-// (must be configured, and HTTPS outside Development) so the guard cannot drift
-// between clients — the account/admin clients forward the caller's bearer token,
-// so a cleartext base address would leak it.
+// Typed clients share one validated API base address (SimfApiBaseAddress) —
+// server-to-server, so the token never reaches the browser.
 var apiBaseUri = SimfApiBaseAddress.Resolve(
     builder.Configuration["Api:BaseUrl"], builder.Environment.IsDevelopment());
 

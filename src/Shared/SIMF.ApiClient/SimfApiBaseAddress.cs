@@ -1,13 +1,11 @@
 namespace SIMF.ApiClient;
 
 /// <summary>
-/// Resolves and validates the SIMF API base address shared by the host
-/// projects' typed-client registrations (SIMF.Web and SIMF.ControlPanel). The
-/// value must be configured, and outside the Development environment it must be
-/// HTTPS — the account/admin clients forward the caller's bearer token, so a
-/// cleartext base address would leak it. Kept dependency-free (primitives in)
-/// so the shared client library does not take a configuration/hosting
-/// dependency; each host passes the configured value and its environment flag.
+/// Validates the shared SIMF API base address for both hosts' typed-client
+/// registrations: it must be configured, and HTTPS outside Development — the
+/// clients forward bearer tokens, so a cleartext base address would leak them.
+/// Dependency-free (primitives in) so the client library needs no config/hosting
+/// reference.
 /// </summary>
 public static class SimfApiBaseAddress
 {
