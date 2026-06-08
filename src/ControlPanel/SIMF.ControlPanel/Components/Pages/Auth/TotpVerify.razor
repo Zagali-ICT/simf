@@ -20,7 +20,7 @@
         <ChildContent>
             <SimfAuthCard Title="@L["Auth.Totp.Title"]" SupportingText="@L["Auth.Totp.Supporting"]">
                 <TopControls>
-                    <SimfLanguageSwitch Href="@CultureHref" Label="@L["Auth.LanguageSwitch"]" />
+                    <SimfLanguageSwitch Label="@L["Auth.LanguageSwitch"]" />
                     <SimfThemeToggle />
                 </TopControls>
                 <ChildContent>
@@ -76,15 +76,6 @@
         _editContext.NotifyValidationStateChanged();
     }
 
-    private string CultureHref
-    {
-        get
-        {
-            var next = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar" ? "en" : "ar";
-            return $"/culture?culture={next}&redirectUri={Uri.EscapeDataString("/login/totp")}";
-        }
-    }
-
     private async Task HandleSubmitAsync()
     {
         if (_loading)
@@ -98,7 +89,7 @@
         {
             _messages.Clear();
 
-            if (_model.Code.Length != 6 || !_model.Code.All(char.IsAsciiDigit))
+            if (!SimfAuthSession.IsSixDigitCode(_model.Code))
             {
                 _messages.Add(_editContext.Field(nameof(CodeModel.Code)), L["Auth.Totp.CodeRequired"]);
             }

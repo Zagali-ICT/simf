@@ -16,7 +16,7 @@
         <SimfWordmark />
     </Brand>
     <Controls>
-        <SimfLanguageSwitch Href="@CultureHref" Label='@L["Shell.SwitchLanguage"]' />
+        <SimfLanguageSwitch Label='@L["Shell.SwitchLanguage"]' />
         <SimfThemeToggle LightLabel='@L["Shell.ThemeLight"]' DarkLabel='@L["Shell.ThemeDark"]' />
         <AuthorizeView>
             <SimfNotificationBell
@@ -86,17 +86,6 @@
 </SimfAppShell>
 
 @code {
-    // Switches to the other language and returns to the current page.
-    private string CultureHref
-    {
-        get
-        {
-            var next = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar" ? "en" : "ar";
-            var path = "/" + Nav.ToBaseRelativePath(Nav.Uri);
-            return $"/culture?culture={next}&redirectUri={Uri.EscapeDataString(path)}";
-        }
-    }
-
     // Issue-1 — the signed-in user's permission codes (copied from the JWT into
     // the cookie at sign-in). The side menu hides items the user lacks; an
     // Administrator carries the wildcard "*" and sees everything. Defaults to

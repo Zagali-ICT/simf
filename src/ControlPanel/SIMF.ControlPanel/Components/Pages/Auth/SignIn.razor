@@ -19,7 +19,7 @@
     <ChildContent>
         <SimfAuthCard Title="@L["Auth.SignIn.Title"]" SupportingText="@L["Auth.SignIn.Supporting"]">
             <TopControls>
-                <SimfLanguageSwitch Href="@CultureHref" Label="@L["Auth.LanguageSwitch"]" />
+                <SimfLanguageSwitch Label="@L["Auth.LanguageSwitch"]" />
                 <SimfThemeToggle />
             </TopControls>
             <ChildContent>
@@ -92,16 +92,6 @@
         _editContext.NotifyValidationStateChanged();
     }
 
-    // Switches to the other language and returns to this page.
-    private string CultureHref
-    {
-        get
-        {
-            var next = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar" ? "en" : "ar";
-            return $"/culture?culture={next}&redirectUri={Uri.EscapeDataString("/login")}";
-        }
-    }
-
     private async Task HandleSubmitAsync()
     {
         if (_loading)
@@ -120,7 +110,7 @@
             {
                 _messages.Add(_editContext.Field(nameof(SignInModel.Email)), L["Auth.SignIn.EmailRequired"]);
             }
-            else if (!_model.Email.Contains('@', StringComparison.Ordinal))
+            else if (!SimfAuthSession.LooksLikeEmail(_model.Email))
             {
                 _messages.Add(_editContext.Field(nameof(SignInModel.Email)), L["Auth.SignIn.EmailInvalid"]);
             }
