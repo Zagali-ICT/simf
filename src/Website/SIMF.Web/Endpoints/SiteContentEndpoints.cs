@@ -257,10 +257,18 @@ internal static class SiteContentEndpoints
         foreach (var a in archive.Items)
         {
             var item = new Dictionary<string, object?> { ["year"] = a.Year };
+            // D-347 — id + full detail so the per-year archive page renders the
+            // mockup (screen 24-01) layout from the data already in /content/site.
+            item["id"] = a.Id;
             item["date"] = $"{a.Attendees} حضور · {a.Speakers} متحدث";
             item["date_en"] = $"{a.Attendees} attendees · {a.Speakers} speakers";
             PutBilingual(item, "title", a.TitleAr, a.TitleEn);
             PutBilingual(item, "desc", a.SummaryAr, a.SummaryEn);
+            PutBilingual(item, "location", a.LocationAr, a.LocationEn);
+            PutBilingual(item, "dateLabel", a.DateLabelAr, a.DateLabelEn);
+            item["attendees"] = a.Attendees;
+            item["sessions"] = a.Sessions;
+            item["speakers"] = a.Speakers;
             rows.Add(item);
         }
         return rows;

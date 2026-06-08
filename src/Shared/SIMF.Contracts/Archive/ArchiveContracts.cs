@@ -15,7 +15,15 @@ public sealed record PublicArchiveEdition(
     int Attendees,
     int Sessions,
     int Speakers,
-    string? CoverImageRelativePath);
+    string? CoverImageRelativePath,
+    // D-347 — place + date label carried on the list too, so the Website's
+    // per-year archive page renders the full mockup detail without a second
+    // round-trip. Appended with defaults → existing positional callers/wire
+    // (and the mobile decoder, which reads by name) are unaffected.
+    string? LocationEn = null,
+    string? LocationAr = null,
+    string? DateLabelEn = null,
+    string? DateLabelAr = null);
 
 /// <summary>§9 (Mockup screen 24-01 "تفاصيل النسخة") — public detail for ONE
 /// past edition: title/summary + place + date label + counters + cover. The

@@ -199,6 +199,12 @@ public sealed class IdentitySeeder(
         // via the CP, and can deactivate these at will.
         await EnsureDemoSpeakersAsync(admin.Id, cancellationToken);
 
+        // D-347 — seed a few past-edition rows (and enrich the existing one) so
+        // the public Archive timeline shows several years with real detail
+        // (title / summary / place / date / counters), which the Website's
+        // per-year archive page renders. Idempotent by Year.
+        await EnsureDemoArchiveEditionsAsync(admin.Id, cancellationToken);
+
         // D-176 (gap doc G12) — seed the default AI prompt catalogue.
         // One prompt per feature; admin can edit at runtime via the CP.
         await EnsureDefaultAiPromptsAsync(admin.Id, cancellationToken);
@@ -726,6 +732,91 @@ public sealed class IdentitySeeder(
         await appDbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation(
             "Demo speakers ensured (inserted {NewCount}, total {Total}).",
+            inserted, seed.Length);
+    }
+
+    /// <summary>D-347 — idempotent past-edition roster (by Year). Inserts any
+    /// missing year and backfills the detail fields (title / summary / place /
+    /// date / session count) on a row that was created counters-only, so the
+    /// public Archive timeline and the per-year detail page have real content.
+    /// No migration — every column already exists on <c>ArchiveEdition</c>.</summary>
+    private async Task EnsureDemoArchiveEditionsAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        var seed = new (int Year, string TitleEn, string TitleAr, string SummaryEn, string SummaryAr,
+            string LocationEn, string LocationAr, string DateLabelEn, string DateLabelAr,
+            int Attendees, int Sessions, int Speakers)[]
+        {
+            (2022, "SIMF 2022", "سيمف 2022",
+             "The inaugural edition — charting a course for regional maritime security.",
+             "النسخة الأولى — رسم مسار الأمن البحري الإقليمي.",
+             "Riyadh · Saudi Arabia", "الرياض · المملكة العربية السعودية",
+             "November 2022 · 3 days", "نوفمبر 2022 · 3 أيام", 800, 24, 30),
+            (2023, "SIMF 2023", "سيمف 2023",
+             "Securing tomorrow's seas — resilience across the maritime domain.",
+             "تأمين بحار الغد — المرونة عبر القطاع البحري.",
+             "Riyadh · Saudi Arabia", "الرياض · المملكة العربية السعودية",
+             "November 2023 · 3 days", "نوفمبر 2023 · 3 أيام", 1000, 32, 35),
+            (2024, "SIMF 2024", "سيمف 2024",
+             "Resilient maritime supply chains for a connected world.",
+             "سلاسل إمداد بحرية مرنة لعالم مترابط.",
+             "Riyadh · Saudi Arabia", "الرياض · المملكة العربية السعودية",
+             "November 2024 · 3 days", "نوفمبر 2024 · 3 أيام", 1100, 38, 38),
+            (2025, "SIMF 2025", "سيمف 2025",
+             "The fourth edition — the future of seabed security and supply chains.",
+             "النسخة الرابعة — مستقبل أمن قاع البحار وسلاسل الإمداد.",
+             "Riyadh · Saudi Arabia", "الرياض · المملكة العربية السعودية",
+             "November 2025 · 3 days", "نوفمبر 2025 · 3 أيام", 1200, 40, 40),
+        };
+
+        var now = timeProvider.GetUtcNow();
+        var years = seed.Select(x => x.Year).ToList();
+        var existing = await appDbContext.ArchiveEditions
+            .Where(e => years.Contains(e.Year))
+            .ToDictionaryAsync(e => e.Year, cancellationToken);
+
+        var inserted = 0;
+        foreach (var s in seed)
+        {
+            if (existing.TryGetValue(s.Year, out var current))
+            {
+                // Backfill detail on a counters-only row created earlier.
+                if (string.IsNullOrWhiteSpace(current.TitleEn)) { current.TitleEn = s.TitleEn; }
+                if (string.IsNullOrWhiteSpace(current.TitleAr)) { current.TitleAr = s.TitleAr; }
+                current.SummaryEn ??= s.SummaryEn;
+                current.SummaryAr ??= s.SummaryAr;
+                current.LocationEn ??= s.LocationEn;
+                current.LocationAr ??= s.LocationAr;
+                current.DateLabelEn ??= s.DateLabelEn;
+                current.DateLabelAr ??= s.DateLabelAr;
+                if (current.Sessions == 0) { current.Sessions = s.Sessions; }
+                continue;
+            }
+            appDbContext.ArchiveEditions.Add(new SIMF.Domain.Archive.ArchiveEdition
+            {
+                Id = Guid.NewGuid(),
+                Year = s.Year,
+                TitleEn = s.TitleEn,
+                TitleAr = s.TitleAr,
+                SummaryEn = s.SummaryEn,
+                SummaryAr = s.SummaryAr,
+                LocationEn = s.LocationEn,
+                LocationAr = s.LocationAr,
+                DateLabelEn = s.DateLabelEn,
+                DateLabelAr = s.DateLabelAr,
+                Attendees = s.Attendees,
+                Sessions = s.Sessions,
+                Speakers = s.Speakers,
+                IsActive = true,
+                CreatedBy = actorUserId,
+                CreatedAt = now,
+            });
+            inserted++;
+        }
+
+        await appDbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "Demo archive editions ensured (inserted {NewCount}, total {Total}).",
             inserted, seed.Length);
     }
 

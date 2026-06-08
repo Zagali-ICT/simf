@@ -1180,6 +1180,69 @@
     position: relative; overflow: hidden;
   }
   .archive-tl { max-width: 1280px; margin: 0 auto; position: relative; }
+  .archive-year-tab { cursor: pointer; }
+
+  /* Per-year archive detail — a full-screen "separate page" (mockup 24-01). */
+  .archive-page {
+    position: fixed; inset: 0; z-index: 1000;
+    background: var(--navy, #001640); color: #fff;
+    overflow-y: auto; display: none;
+  }
+  .archive-page.open { display: block; }
+  .archive-page__bar {
+    position: sticky; top: 0; z-index: 2;
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 64px; background: rgba(0,22,64,0.94);
+    border-bottom: 1px solid rgba(232,192,96,0.25);
+  }
+  .archive-page__back {
+    appearance: none; border: 1px solid rgba(232,192,96,0.5);
+    background: transparent; color: var(--gold, #e8c060);
+    border-radius: 999px; padding: 8px 18px; cursor: pointer;
+    font-family: inherit; font-size: 14px;
+  }
+  .archive-page__back:hover { background: rgba(232,192,96,0.12); }
+  .archive-page__bartitle { font-weight: 700; font-size: 18px; }
+  .archive-page__cover {
+    height: 300px; position: relative; display: grid; place-items: center;
+    background: linear-gradient(135deg, #062253 0%, #001640 60%, #0a2e6b 100%);
+    border-bottom: 1px solid rgba(232,192,96,0.25); overflow: hidden;
+  }
+  .archive-page__cover .big-year {
+    font-family: 'Inter', sans-serif; font-weight: 200;
+    font-size: clamp(80px, 16vw, 200px); color: rgba(255,255,255,0.10);
+    direction: ltr; letter-spacing: 0.02em;
+  }
+  .archive-page__body { max-width: 980px; margin: 0 auto; padding: 56px 64px 96px; }
+  .archive-page__label { color: var(--gold, #e8c060); letter-spacing: 0.18em; font-size: 12px; }
+  .archive-page__title {
+    font-family: 'FS Albert Arabic', sans-serif; font-weight: 700;
+    font-size: clamp(28px, 4vw, 44px); margin: 8px 0 20px; color: #fff;
+  }
+  .archive-page__summary {
+    font-size: 18px; line-height: 1.9; color: rgba(255,255,255,0.82); max-width: 760px;
+  }
+  .archive-page__boxes { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 40px; }
+  .archive-page__box {
+    flex: 1 1 240px; border: 1px solid rgba(232,192,96,0.25);
+    border-radius: 14px; padding: 22px 24px; background: rgba(255,255,255,0.03);
+  }
+  .archive-page__box .k { color: var(--gold, #e8c060); font-size: 12px; letter-spacing: 0.10em; margin-bottom: 8px; }
+  .archive-page__box .v { font-size: 18px; font-weight: 600; }
+  .archive-page__counters { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 40px; }
+  .archive-page__counter {
+    flex: 1 1 160px; text-align: center; padding: 28px 16px; border-radius: 14px;
+    background: rgba(232,192,96,0.06); border: 1px solid rgba(232,192,96,0.20);
+  }
+  .archive-page__counter .n {
+    font-family: 'Inter', sans-serif; font-weight: 300; font-size: 48px;
+    color: var(--gold, #e8c060); direction: ltr;
+  }
+  .archive-page__counter .c { font-size: 14px; color: rgba(255,255,255,0.78); margin-top: 6px; }
+  @media (max-width: 767px) {
+    .archive-page__bar, .archive-page__body { padding-left: 20px; padding-right: 20px; }
+    .archive-page__cover { height: 200px; }
+  }
   .archive-years {
     display: grid; grid-template-columns: repeat(4, 1fr);
     position: relative; padding: 24px 0;
@@ -2127,6 +2190,16 @@
   </div>
 </section>
 
+<!-- ARCHIVE — per-year detail page (mockup 24-01) -->
+<div class="archive-page" id="archivePage" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="archive-page__bar">
+    <button type="button" class="archive-page__back" id="archivePageBack">‹ <span data-i18n="archive_back">رجوع</span></button>
+    <div class="archive-page__bartitle" id="archivePageBarTitle"></div>
+  </div>
+  <div class="archive-page__cover"><div class="big-year num" id="archivePageYear"></div></div>
+  <div class="archive-page__body" id="archivePageBody"></div>
+</div>
+
 <!-- SAUDI SPIRIT (الروح السعودي) -->
 <section class="saudi-spirit" id="discover">
   <div class="section-head">
@@ -2693,8 +2766,56 @@
   yearsEl.addEventListener('click', e => {
     const b = e.target.closest('.archive-year-tab'); if (!b) return;
     archIdx = +b.dataset.i;
-    renderArch(archIdx);
+    paintArch(archIdx);
+    openArchivePage(archIdx);
+  });
+
+  // ===== Per-year archive detail page (mockup 24-01) — a full "separate page" =====
+  const archPage = document.getElementById('archivePage');
+  function openArchivePage(i) {
+    const a = arch[i]; if (!a || !archPage) return;
+    const title = pickLang(a, 'title') || ('SIMF ' + a.year);
+    document.getElementById('archivePageYear').textContent = a.year;
+    document.getElementById('archivePageBarTitle').textContent = title;
+    const loc = pickLang(a, 'location');
+    const dl = pickLang(a, 'dateLabel');
+    const summary = pickLang(a, 'desc');
+    const box = (k, v) => v ? `<div class="archive-page__box"><div class="k">${k}</div><div class="v">${v}</div></div>` : '';
+    const counter = (n, c) => `<div class="archive-page__counter"><div class="n">${n == null ? 0 : n}</div><div class="c">${c}</div></div>`;
+    document.getElementById('archivePageBody').innerHTML =
+      `<div class="archive-page__label">${uiStr('archive_label') || 'عنوان الملتقى'}</div>`
+      + `<h3 class="archive-page__title">${title}</h3>`
+      + (summary ? `<p class="archive-page__summary">${summary}</p>` : '')
+      + `<div class="archive-page__boxes">${box(uiStr('archive_place') || 'المكان', loc)}${box(uiStr('archive_time') || 'الزمن', dl)}</div>`
+      + `<div class="archive-page__counters">`
+        + counter(a.sessions, uiStr('archive_sessions') || 'الفعاليات')
+        + counter(a.attendees, uiStr('archive_attendees') || 'الحضور')
+        + counter(a.speakers, uiStr('archive_speakers') || 'المتحدثون')
+      + `</div>`;
+    archPage.classList.add('open');
+    archPage.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    stopArchAuto();
+    if (location.hash !== '#archive-' + a.year) {
+      history.pushState({ arch: i }, '', '#archive-' + a.year);
+    }
+  }
+  function closeArchivePage() {
+    if (!archPage) return;
+    archPage.classList.remove('open');
+    archPage.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
     startArchAuto();
+  }
+  const archBack = document.getElementById('archivePageBack');
+  if (archBack) {
+    archBack.addEventListener('click', () => {
+      if ((location.hash || '').indexOf('#archive-') === 0) { history.back(); }
+      else { closeArchivePage(); }
+    });
+  }
+  window.addEventListener('popstate', () => {
+    if ((location.hash || '').indexOf('#archive-') !== 0) { closeArchivePage(); }
   });
 
   // ============ ANIMATED STATS ============
@@ -2863,6 +2984,8 @@
       goal5_t:'الإسهام في تحقيق رؤية 2030',
       goal5_d:'تعزيز موقع المملكة قطبًا عالميًّا في الأمن البحري والاقتصاد الأزرق.',
       archive_eyebrow:'الأرشيف', archive_h2:'محطات مفصلية في تطور أجندة الأمن البحري العالمي',
+      archive_back:'رجوع', archive_label:'عنوان الملتقى', archive_place:'المكان', archive_time:'الزمن',
+      archive_sessions:'الفعاليات', archive_attendees:'الحضور', archive_speakers:'المتحدثون',
       spirit_eyebrow:'اكتشف السعودية', spirit_h2:'روح السعوديّة <span class="accent">في رحلتك</span>',
       spirit_p:'تمتدّ تجربة الزائر إلى ما هو أبعد من قاعات الملتقى — تكشف لك المملكة عن أصالتها وحداثتها معًا، من الواحات والتراث إلى المعالم الحديثة والمدن المستقبليّة.',
       spirit_tag_heritage:'التراث · العُلا',
@@ -2921,6 +3044,8 @@
       goal5_t:'Contribute to Vision 2030',
       goal5_d:'Strengthening the Kingdom\'s position as a global hub for maritime security and the blue economy.',
       archive_eyebrow:'Archive', archive_h2:'Defining milestones in the evolution of the global maritime-security agenda',
+      archive_back:'Back', archive_label:'Edition', archive_place:'Location', archive_time:'When',
+      archive_sessions:'Sessions', archive_attendees:'Attendees', archive_speakers:'Speakers',
       spirit_eyebrow:'Discover Saudi Arabia', spirit_h2:'The Saudi Spirit <span class="accent">on Your Journey</span>',
       spirit_p:'Your experience extends well beyond the forum halls — the Kingdom unveils its heritage and modernity together, from ancient oases to futuristic cities.',
       spirit_tag_heritage:'Heritage · AlUla', spirit_t1:'AlUla — Cradle of Civilisations',
