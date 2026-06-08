@@ -198,6 +198,13 @@ pending **D6**. See `docs/decisions/DECISIONS_LOG.md` D-211. No other
 freeze items are lifted; future schema/enum changes beyond this named
 list still require explicit owner approval.
 
+**Update (D-349, 2026-06-08):** D7 (a live-video provider) is **resolved for the
+proof of concept** — the live + sign-language feeds use **YouTube** (via
+`youtube_player_iframe`, with HLS/MP4 kept as a fallback); no schema change (the
+URL already lives on `Session.LiveStreamUrl`). The other two D-211 deferrals
+(G-OI-2 geofence chain, D6 statistics list) remain open. See
+`docs/decisions/DECISIONS_LOG.md` D-349.
+
 **As-built (P2 wave, 2026-06-02):** four of the D-211 named items shipped as
 additive migrations — D-227 Booking approval workflow (`SeatReservation`
 +Status/+review columns, `App/D227`), D-228 Speaker presentation-files

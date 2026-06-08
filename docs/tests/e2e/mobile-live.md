@@ -17,19 +17,21 @@
 | **Route** | `GET /api/v1/app/programme/sessions/{id}` · app screen #25 `/live?sessionId=` |
 | **Surface** | Mobile (Flutter) + App API |
 | **Auth setup** | **None** — the read is `AllowAnonymous` (a guest can watch). |
-| **Last reviewed** | 2026-06-06 |
+| **Last reviewed** | 2026-06-08 |
 
 ## Coverage matrix
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
 | E2E-MOB025-001 | No `sessionId` → "pick a session" empty state, no fetch | edge | P0 | authored ✓ (screen `no sessionId shows the pick-a-session empty state`) |
-| E2E-MOB025-002 | A live stream URL → the player + LIVE badge | happy | P0 | manual (real playback needs a device — not widget-tested) |
+| E2E-MOB025-002 | A YouTube / HLS live URL → the player + LIVE badge | happy | P0 | manual (real playback needs a device — not widget-tested) |
 | E2E-MOB025-003 | No stream + no recording → the not-live state | edge | P1 | authored ✓ (screen `no stream + no recording shows the not-live state`) |
 | E2E-MOB025-004 | No stream but a recording → the recording note | edge | P1 | authored ✓ (screen `no stream but a recording shows the recording note`) |
 | E2E-MOB025-005 | A sign-language URL → the sign-language note | edge | P2 | authored ✓ (screen `a sign-language url shows the sign-language note`) |
 | E2E-MOB025-006 | Session 404 → not-found state | resilience | P1 | authored ✓ (screen `a 404 shows the not-found state`) |
 | E2E-MOB025-007 | A read failure → error + Retry that re-fetches | resilience | P0 | authored ✓ (screen `a non-404 failure shows error + retry, which re-fetches`) |
+| E2E-MOB025-008 | Both feeds set → the البث/لغة الإشارة toggle swaps the source (D-349) | happy | P1 | authored ✓ (screen `both feeds set shows the main / sign-language toggle` + `a single (main-only) feed shows no toggle`) |
+| E2E-MOB025-009 | URL rule (D-349): YouTube + HLS/MP4 accepted, others rejected; video-id parsing | unit | P1 | authored ✓ (`youtube_url_test.dart`) |
 
 ## Scenarios
 
@@ -50,18 +52,26 @@ Scenario: Opening /live without a sessionId
 **Evidence:** screen test `no sessionId shows the pick-a-session empty state`
 (+ `an empty sessionId is treated as no selection`).
 
-### E2E-MOB025-002 — Live player
+### E2E-MOB025-002 — Live player (YouTube / HLS, D-349) + E2E-MOB025-008 — toggle
 
 ```gherkin
 Scenario: A broadcasting session shows the player
   Given the session has a non-empty liveStreamUrl
-  When the app calls GET /api/v1/app/programme/sessions/{id}
-  Then a video player initialises at the stream's aspect ratio
-  And a LIVE badge and a play/pause control are shown
+  When the app reads GET /api/v1/app/programme/sessions/{id}
+  Then a YouTube link plays via the youtube_player_iframe IFrame player,
+       else an HLS/MP4 URL plays via video_player at the stream's aspect ratio
+  And a LIVE badge is shown over the player
+
+Scenario: Both feeds set show a source toggle
+  Given the session has both liveStreamUrl and liveSignLanguageUrl
+  Then a "البث / لغة الإشارة" toggle is shown
+  And selecting "لغة الإشارة" swaps the player to the sign-language feed
 ```
 
-**Evidence:** manual — real playback needs a platform; the widget tests cover
-every non-video path instead.
+**Evidence:** the toggle is widget-tested (`both feeds set shows the main /
+sign-language toggle`, `a single (main-only) feed shows no toggle`); the URL rule +
+video-id parser are unit-tested (`youtube_url_test.dart`). Real YouTube/HLS playback
+is **manual** — it needs a device/emulator (no platform channel headless).
 
 ### E2E-MOB025-003 — Not live / E2E-MOB025-004 — Recording / E2E-MOB025-005 — Sign language
 
@@ -100,4 +110,4 @@ Scenario: A failed read offers a retry
 
 ---
 
-_Last reviewed:_ `2026-06-06` by `SIMF Team`.
+_Last reviewed:_ `2026-06-08` by `SIMF Team`.

@@ -40,6 +40,12 @@ dependencies:
   # config (manifest / Info.plist) lands in the generated folders (simf-run);
   # the real stream provider is still a stub (D-211 D7).
   video_player: ^2.9.1
+  # Live-broadcast YouTube player (Page 025, D-349) — plays a YouTube
+  # liveStreamUrl / sign-language feed via the official IFrame Player API (rides
+  # on webview_flutter; native config lands in the generated folders at
+  # simf-run). YouTube is the POC live-video provider; HLS/MP4 (video_player
+  # above) stays the fallback when the feed is not a YouTube link.
+  youtube_player_iframe: ^6.0.2
   # QR scanner for visitor contact sharing (Scan QR — FDS-014, D-286). Reads
   # another visitor's share token. Camera permission (manifest / Info.plist)
   # lands in the generated folders (simf-run). A manual code-entry fallback is

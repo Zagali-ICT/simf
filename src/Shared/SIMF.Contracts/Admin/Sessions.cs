@@ -87,7 +87,8 @@ public sealed class AdminCreateSessionRequest
     public IList<AdminSessionSpeakerEntry> Speakers { get; set; }
         = new List<AdminSessionSpeakerEntry>();
     public IList<Guid> ThemeIds { get; set; } = new List<Guid>();
-    // §8 — optional live broadcast stream URLs (manual stub provider).
+    // §8 / D-349 — optional live feed URLs (YouTube POC + HLS fallback; the
+    // shared LiveStreamUrlPolicy validates both).
     public string? LiveStreamUrl { get; set; }
     public string? LiveSignLanguageUrl { get; set; }
 }
@@ -109,7 +110,8 @@ public sealed class AdminUpdateSessionRequest
         = new List<AdminSessionSpeakerEntry>();
     public IList<Guid> ThemeIds { get; set; } = new List<Guid>();
     public bool IsActive { get; set; } = true;
-    // §8 — optional live broadcast stream URLs (manual stub provider).
+    // §8 / D-349 — optional live feed URLs (YouTube POC + HLS fallback; the
+    // shared LiveStreamUrlPolicy validates both).
     public string? LiveStreamUrl { get; set; }
     public string? LiveSignLanguageUrl { get; set; }
 }

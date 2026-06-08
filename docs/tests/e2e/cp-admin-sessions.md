@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-08 |
 
 > **Permissions.** The page is gated `@attribute [RequirePermission(PermissionCatalog.Sessions.View)]`
 > (`"Sessions.View"`). CRUD actions sit behind distinct codes:
@@ -54,6 +54,7 @@
 | E2E-SES-015 | Recording: non-video upload → 400 `SESSION_RECORDING_INVALID` | error | P2 | _to author_ |
 | E2E-SES-016 | Server 500 on `/list` → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-SES-017 | RTL/Arabic render mirrors grid + Add modal + lifecycle footer | i18n | P1 | _to author_ |
+| E2E-SES-018 | Live-URL validation (D-349) — YouTube/HLS accepted; other URL → bilingual error (client + 400 `SESSION_INVALID`) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -388,6 +389,25 @@ Scenario: Arabic toggle mirrors the grid, the Add modal and the lifecycle footer
   And the lifecycle footer buttons render in Arabic ("وضع علامة منعقدة"… per resx) and mirror
 ```
 
+### E2E-SES-018 — Live broadcast URL validation (D-349)
+
+```gherkin
+Scenario: A YouTube or HLS live URL is accepted; anything else is rejected
+  Given the Add modal is open with a valid Code, Title, Hall, Start and End
+  And the "Live stream URL (live broadcast)" field shows the hint
+      "Paste a YouTube link (youtube.com / youtu.be) or a direct HLS/MP4 stream URL."
+  When they set Live stream URL="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  And they click "Create session"
+  Then the API returns 200 and the session is created with that live URL
+
+  When they Edit the session and set Live stream URL="https://vimeo.com/12345"
+  And they click "Save changes"
+  Then a SimfAlert error reads "Enter a valid YouTube link or an HLS/MP4 stream URL (https)."
+      / "أدخل رابط يوتيوب صالحاً أو رابط بث HLS/MP4 (https)."
+  And the modal stays open and no PUT fires (client guard)
+  And were it to reach the API it would 400 SESSION_INVALID (shared LiveStreamUrlPolicy)
+```
+
 ---
 
 ## Implementation notes
@@ -396,7 +416,8 @@ Scenario: Arabic toggle mirrors the grid, the Add modal and the lifecycle footer
   suites cover the same surface without a browser, and should be kept in sync /
   retired as E2E coverage lands:
   - `tests/SIMF.Api.Tests/AdminSessionsTests.cs` — CRUD, duplicate-code (409),
-    time-window (400), hall-not-found (400), speaker/theme link validation.
+    time-window (400), hall-not-found (400), speaker/theme link validation,
+    live-URL validation (D-349 — YouTube/HLS accepted, other → 400 SESSION_INVALID).
   - `tests/SIMF.Api.Tests/SessionLifecycleTests.cs` — the `Scheduled → Held →
     Recorded → Published` transition matrix + the `SESSION_STATUS_TRANSITION_INVALID`
     rejections (P3.2a / D-231).
@@ -418,4 +439,4 @@ Scenario: Arabic toggle mirrors the grid, the Add modal and the lifecycle footer
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-08 by Claude (E2E catalogue rebuild).

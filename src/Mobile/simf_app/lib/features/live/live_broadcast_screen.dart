@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'package:video_player/video_player.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
 import 'data/live_repository.dart';
+import 'youtube_url.dart';
 
 /// Page 025 — البث المباشر · Live broadcast (#25, `/live?sessionId=`).
 ///
@@ -15,12 +17,18 @@ import 'data/live_repository.dart';
 /// With no id it shows a "pick a session" empty state and never fetches. With
 /// an id it reads the broadcast slice (`GET /app/programme/sessions/{id}`,
 /// `AllowAnonymous`) and branches three ways (Page_025 L-3):
-/// * `liveStreamUrl` non-empty → initialise a [VideoPlayerController] and show
-///   the player + a LIVE badge;
+/// * `liveStreamUrl` non-empty → play the feed and show a LIVE badge; when a
+///   `liveSignLanguageUrl` also exists a toggle swaps the player between the
+///   main feed and the sign-language feed (Page_025 L-3);
 /// * `liveStreamUrl` null but `hasRecording` → a "recording available" note;
 /// * neither → a "not live / scheduled" state.
-/// 404 → not-found; any other failure → retry. The controller is disposed in
-/// [dispose]. UI is interim — final visuals land with SIMF-VID-001.
+/// 404 → not-found; any other failure → retry.
+///
+/// **Provider (D-349):** the live-video provider is **YouTube** (POC). Each feed
+/// URL is sniffed by [YoutubeUrl]: a YouTube link plays via the IFrame player,
+/// anything else (HLS/MP4) via `video_player`. The player widget owns its own
+/// controller lifecycle, so swapping the active URL just rebuilds it.
+/// UI is interim — final visuals land with SIMF-VID-001.
 class LiveBroadcastScreen extends ConsumerStatefulWidget {
   const LiveBroadcastScreen({this.sessionId, super.key});
 
@@ -36,8 +44,11 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   bool _error = false;
   bool _notFound = false;
   LiveSession? _session;
-  VideoPlayerController? _controller;
-  bool _videoReady = false;
+
+  /// When true the player shows the sign-language feed instead of the main one.
+  /// Only meaningful when the session carries both feeds (the toggle is hidden
+  /// otherwise).
+  bool _showSignLanguage = false;
 
   bool get _hasId =>
       widget.sessionId != null && widget.sessionId!.trim().isNotEmpty;
@@ -50,12 +61,6 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -63,19 +68,17 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
       _notFound = false;
     });
     try {
-      final session =
-          await ref.read(liveRepositoryProvider).getLiveSession(widget.sessionId!.trim());
+      final session = await ref
+          .read(liveRepositoryProvider)
+          .getLiveSession(widget.sessionId!.trim());
       if (!mounted) {
         return;
       }
       setState(() {
         _session = session;
+        _showSignLanguage = false;
         _loading = false;
       });
-      final url = session.liveStreamUrl;
-      if (url != null) {
-        await _initPlayer(url);
-      }
     } on ApiFailure catch (failure) {
       if (!mounted) {
         return;
@@ -86,38 +89,6 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
         _error = failure.httpStatus != 404;
       });
     }
-  }
-
-  Future<void> _initPlayer(String url) async {
-    final controller = VideoPlayerController.networkUrl(Uri.parse(url));
-    _controller = controller;
-    try {
-      await controller.initialize();
-    } catch (_) {
-      // A bad/unreachable stream falls back to the recording/not-live copy
-      // rather than crashing the screen (Page_025 L-4).
-      if (!mounted) {
-        return;
-      }
-      setState(() => _videoReady = false);
-      return;
-    }
-    if (!mounted) {
-      return;
-    }
-    setState(() => _videoReady = true);
-  }
-
-  void _togglePlay() {
-    final controller = _controller;
-    if (controller == null) {
-      return;
-    }
-    // The play/pause glyph is driven by the controller's ValueListenable in
-    // [_Player], so no setState is needed here — just fire the toggle.
-    unawaited(
-      controller.value.isPlaying ? controller.pause() : controller.play(),
-    );
   }
 
   @override
@@ -156,7 +127,13 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
 
   Widget _content(AppL10n l10n, LiveSession session) {
     final isArabic = l10n.isArabic;
-    final controller = _controller;
+    final mainUrl = session.liveStreamUrl;
+    final signUrl = session.liveSignLanguageUrl;
+    final hasBothFeeds = mainUrl != null && signUrl != null;
+    // When the main feed is present, the active feed is the sign-language one
+    // only while the toggle is on AND a sign feed exists; otherwise the main feed.
+    final activeUrl = (_showSignLanguage && signUrl != null) ? signUrl : mainUrl;
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         SimfTokens.space4,
@@ -174,15 +151,31 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
           ),
         ),
         const SizedBox(height: SimfTokens.space4),
-        if (session.liveStreamUrl != null && _videoReady && controller != null)
-          _Player(controller: controller, onToggle: _togglePlay, liveLabel: l10n.liveNowLabel)
-        else if (session.liveStreamUrl != null)
-          const _PlayerLoading()
-        else if (session.hasRecording)
+        if (mainUrl != null) ...<Widget>[
+          // Keyed by the active URL so swapping the feed disposes the old
+          // controller and builds a fresh player for the new one.
+          _LivePlayer(
+            key: ValueKey<String>(activeUrl!),
+            url: activeUrl,
+            liveLabel: l10n.liveNowLabel,
+          ),
+          if (hasBothFeeds) ...<Widget>[
+            const SizedBox(height: SimfTokens.space3),
+            _FeedToggle(
+              showSignLanguage: _showSignLanguage,
+              mainLabel: l10n.liveFeedMain,
+              signLabel: l10n.liveFeedSignLanguage,
+              onChanged: (value) =>
+                  setState(() => _showSignLanguage = value),
+            ),
+          ],
+        ] else if (session.hasRecording)
           _RecordingNote(l10n: l10n)
         else
           _NotLiveNote(l10n: l10n),
-        if (session.liveSignLanguageUrl != null) ...<Widget>[
+        // No main feed but a sign-language feed is announced → keep the note
+        // (there is nothing to toggle between).
+        if (signUrl != null && mainUrl == null) ...<Widget>[
           const SizedBox(height: SimfTokens.space3),
           _SignLanguageNote(label: l10n.liveSignLanguageAvailable),
         ],
@@ -191,8 +184,160 @@ class _LiveBroadcastScreenState extends ConsumerState<LiveBroadcastScreen> {
   }
 }
 
-/// The video surface: a 16:9-aware [VideoPlayer] with a LIVE badge overlay and a
-/// play/pause FAB.
+/// The live video surface. Owns its own controller and picks the player by the
+/// URL (D-349): a YouTube link → the IFrame player; anything else (HLS/MP4) →
+/// `video_player`. The parent rebuilds this with a new `ValueKey(url)` to switch
+/// feeds, so this widget only ever binds one URL for its lifetime.
+class _LivePlayer extends StatefulWidget {
+  const _LivePlayer({required this.url, required this.liveLabel, super.key});
+
+  final String url;
+  final String liveLabel;
+
+  @override
+  State<_LivePlayer> createState() => _LivePlayerState();
+}
+
+class _LivePlayerState extends State<_LivePlayer> {
+  YoutubePlayerController? _youtube;
+  VideoPlayerController? _video;
+  bool _videoReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final videoId = YoutubeUrl.tryParseId(widget.url);
+    if (videoId != null) {
+      _youtube = YoutubePlayerController.fromVideoId(
+        videoId: videoId,
+        autoPlay: true,
+      );
+    } else {
+      unawaited(_initVideo(widget.url));
+    }
+  }
+
+  Future<void> _initVideo(String url) async {
+    final controller = VideoPlayerController.networkUrl(Uri.parse(url));
+    _video = controller;
+    try {
+      await controller.initialize();
+    } catch (_) {
+      // A bad/unreachable stream falls back to the loading surface rather than
+      // crashing the screen (Page_025 L-7).
+      if (!mounted) {
+        return;
+      }
+      setState(() => _videoReady = false);
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() => _videoReady = true);
+    unawaited(controller.play());
+  }
+
+  void _toggleVideoPlay() {
+    final controller = _video;
+    if (controller == null) {
+      return;
+    }
+    // The glyph is driven by the controller's ValueListenable in [_Player], so
+    // no setState is needed here — just fire the toggle.
+    unawaited(
+      controller.value.isPlaying ? controller.pause() : controller.play(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _youtube?.close();
+    _video?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final youtube = _youtube;
+    if (youtube != null) {
+      return _YoutubeView(controller: youtube, liveLabel: widget.liveLabel);
+    }
+    final video = _video;
+    if (video != null && _videoReady) {
+      return _Player(
+        controller: video,
+        onToggle: _toggleVideoPlay,
+        liveLabel: widget.liveLabel,
+      );
+    }
+    return const _PlayerLoading();
+  }
+}
+
+/// The YouTube IFrame player surface (D-349) with a LIVE badge overlay. YouTube
+/// supplies its own play/pause + CC controls (the latter covers الترجمة الفورية
+/// for YouTube feeds), so no extra play FAB is added here.
+class _YoutubeView extends StatelessWidget {
+  const _YoutubeView({required this.controller, required this.liveLabel});
+
+  final YoutubePlayerController controller;
+  final String liveLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(SimfTokens.radius),
+      child: Stack(
+        alignment: AlignmentDirectional.topStart,
+        children: <Widget>[
+          YoutubePlayer(controller: controller, aspectRatio: 16 / 9),
+          PositionedDirectional(
+            top: SimfTokens.space2,
+            start: SimfTokens.space2,
+            child: _LiveBadge(label: liveLabel),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Swaps the player between the main feed and the sign-language feed (Page_025
+/// L-3). Shown only when the session carries both.
+class _FeedToggle extends StatelessWidget {
+  const _FeedToggle({
+    required this.showSignLanguage,
+    required this.mainLabel,
+    required this.signLabel,
+    required this.onChanged,
+  });
+
+  final bool showSignLanguage;
+  final String mainLabel;
+  final String signLabel;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<bool>(
+      showSelectedIcon: false,
+      segments: <ButtonSegment<bool>>[
+        ButtonSegment<bool>(value: false, label: Text(mainLabel)),
+        ButtonSegment<bool>(
+          value: true,
+          label: Text(signLabel),
+          icon: const Icon(Icons.sign_language_outlined, size: 16),
+        ),
+      ],
+      selected: <bool>{showSignLanguage},
+      onSelectionChanged: (selection) => onChanged(selection.first),
+    );
+  }
+}
+
+/// The `video_player` surface: a 16:9-aware [VideoPlayer] with a LIVE badge
+/// overlay and a play/pause FAB (the HLS/MP4 fallback path).
 class _Player extends StatelessWidget {
   const _Player({
     required this.controller,

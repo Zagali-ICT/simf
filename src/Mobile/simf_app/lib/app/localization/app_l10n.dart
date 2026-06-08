@@ -720,6 +720,10 @@ class AppL10n {
         'تتوفر ترجمة بلغة الإشارة.',
         'Sign-language interpretation is available.',
       );
+  // Live feed toggle (Page 025, D-349) — swaps the player between the main feed
+  // and the sign-language feed when the session carries both.
+  String get liveFeedMain => _t('البث', 'Main feed');
+  String get liveFeedSignLanguage => _t('لغة الإشارة', 'Sign language');
 
   // AI assistant (Page 036) — interim shell; no backend chatbot endpoint.
   String get chatbotTitle => _t('المساعد الذكي', 'AI assistant');

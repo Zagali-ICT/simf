@@ -109,10 +109,11 @@ public class Session : BaseAuditEntity
     public Guid? RecordingUploadedByUserId { get; set; }
 
     /// <summary>§8 (Mockup screen 25 "البث المباشر") — the LIVE broadcast stream
-    /// URL (HLS / YouTube / etc.), set manually by an admin in the CP. Non-null
+    /// URL, set manually by an admin in the CP. Non-null
     /// = this session has a live broadcast (the app shows the LIVE player);
-    /// null = recorded/scheduled only. Interim "stub provider": a real managed
-    /// provider replaces the manual URL later (deferred, D-211 D7). Orthogonal
+    /// null = recorded/scheduled only. D-349: the provider is YouTube (a YouTube
+    /// watch/live URL) for the POC, with a direct HLS/MP4 URL accepted as a
+    /// fallback — both validated by <c>LiveStreamUrlPolicy</c>. Orthogonal
     /// to <see cref="Status"/> and the recording.</summary>
     public string? LiveStreamUrl { get; set; }
 

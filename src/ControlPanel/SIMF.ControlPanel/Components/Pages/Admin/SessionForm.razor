@@ -32,11 +32,13 @@
                       Value="@_model.DescriptionArabic"
                       ValueChanged="@(v => _model.DescriptionArabic = v)" />
 
-        @* §8 — live broadcast stream URLs (manual stub provider). *@
+        @* §8 / D-349 — live broadcast feed URLs (YouTube POC + HLS fallback). *@
         <SimfTextField Label="@L["Admin.Sessions.Field.LiveStreamUrl"]"
+                       Helper="@L["Admin.Sessions.Field.LiveStreamUrlHint"]"
                        MaxLength="1024"
                        @bind-Value="_model.LiveStreamUrl" Disabled="_busy" />
         <SimfTextField Label="@L["Admin.Sessions.Field.LiveSignLanguageUrl"]"
+                       Helper="@L["Admin.Sessions.Field.LiveSignLanguageUrlHint"]"
                        MaxLength="1024"
                        @bind-Value="_model.LiveSignLanguageUrl" Disabled="_busy" />
 
@@ -488,6 +490,17 @@
                 _error = L["Admin.Sessions.Field.CapacityInvalid"]; return;
             }
             capacityOverride = parsed;
+        }
+        // §8 / D-349 — each non-blank live URL must be a YouTube link or an HLS/MP4
+        // stream. Shared rule (LiveStreamUrlPolicy); the API enforces the same.
+        var liveUrlInvalid =
+            (!string.IsNullOrWhiteSpace(_model.LiveStreamUrl)
+                && !LiveStreamUrlPolicy.IsAllowed(_model.LiveStreamUrl))
+            || (!string.IsNullOrWhiteSpace(_model.LiveSignLanguageUrl)
+                && !LiveStreamUrlPolicy.IsAllowed(_model.LiveSignLanguageUrl));
+        if (liveUrlInvalid)
+        {
+            _error = L["Admin.Sessions.Field.LiveUrlInvalid"]; return;
         }
         // B9b — D-226: optional category (empty selection = no category).
         Guid? categoryId = Guid.TryParse(_categoryIdInput, out var cid) ? cid : null;

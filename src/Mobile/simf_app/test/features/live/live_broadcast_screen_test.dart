@@ -49,6 +49,7 @@ Future<void> _pump(
   required LiveRepository repo,
   String? sessionId,
   Locale locale = const Locale('en'),
+  bool settle = true,
 }) async {
   final router = GoRouter(
     initialLocation: '/live',
@@ -78,7 +79,15 @@ Future<void> _pump(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    // A live feed renders an infinite progress spinner, so pumpAndSettle would
+    // time out — pump a few fixed frames to let the read + player init resolve.
+    for (var i = 0; i < 4; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+  }
 }
 
 void main() {
@@ -157,6 +166,42 @@ void main() {
         find.text('Sign-language interpretation is available.'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('both feeds set shows the main / sign-language toggle',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: _liveSession(
+            liveStreamUrl: 'https://live.example.sa/main.m3u8',
+            liveSignLanguageUrl: 'https://live.example.sa/sign.m3u8',
+          ),
+        ),
+        sessionId: 's1',
+        // The HLS feed can't initialise headless (no platform channel) — the
+        // player falls back to the loading surface; settle:false avoids the
+        // infinite-spinner timeout. The toggle is what we assert here.
+        settle: false,
+      );
+
+      expect(find.text('Main feed'), findsOneWidget);
+      expect(find.text('Sign language'), findsOneWidget);
+    });
+
+    testWidgets('a single (main-only) feed shows no toggle', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeLiveRepo(
+          session: _liveSession(
+            liveStreamUrl: 'https://live.example.sa/main.m3u8',
+          ),
+        ),
+        sessionId: 's1',
+        settle: false,
+      );
+
+      expect(find.text('Sign language'), findsNothing);
     });
 
     testWidgets('a 404 shows the not-found state', (tester) async {

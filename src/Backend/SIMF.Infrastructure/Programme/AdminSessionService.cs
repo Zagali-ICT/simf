@@ -1,4 +1,4 @@
-// Tests: SIMF.Api.Tests/AdminSessionsTests.cs
+// Tests: SIMF.Api.Tests/AdminSessionsTests.cs (+ D-349 live-URL validation)
 // Tests: SIMF.Api.Tests/SessionLifecycleTests.cs (P3.2a — D-231 lifecycle)
 // Tests: SIMF.Api.Tests/SessionRecordingTests.cs (P3.2b — D-232 recording)
 using Microsoft.EntityFrameworkCore;
@@ -114,6 +114,7 @@ internal sealed class AdminSessionService(
             request.Code, request.Title, request.TitleArabic);
         ValidateTimeWindow(request.StartUtc, request.EndUtc);
         ValidateCapacity(request.CapacityOverride);
+        ValidateLiveUrls(request.LiveStreamUrl, request.LiveSignLanguageUrl);
 
         var hall = await ResolveHallAsync(request.HallId, cancellationToken);
         await EnsureSpeakersExistAsync(request.Speakers, cancellationToken);
@@ -206,6 +207,7 @@ internal sealed class AdminSessionService(
             request.Code, request.Title, request.TitleArabic);
         ValidateTimeWindow(request.StartUtc, request.EndUtc);
         ValidateCapacity(request.CapacityOverride);
+        ValidateLiveUrls(request.LiveStreamUrl, request.LiveSignLanguageUrl);
 
         var hall = await ResolveHallAsync(request.HallId, cancellationToken);
         await EnsureSpeakersExistAsync(request.Speakers, cancellationToken);
@@ -496,6 +498,28 @@ internal sealed class AdminSessionService(
                 ErrorCodes.SessionInvalid, 400,
                 "Capacity override must be zero or a positive integer.",
                 "يجب أن تكون السعة المخصصة صفراً أو عدداً صحيحاً موجباً.");
+        }
+    }
+
+    // §8 / D-349 — a non-blank live feed URL must be a YouTube link or a direct
+    // HLS/MP4 stream (the same rule the CP form enforces, LiveStreamUrlPolicy).
+    // Blank stays "no feed" and is persisted as null (NullIfBlank below).
+    private static void ValidateLiveUrls(string? liveStreamUrl, string? signLanguageUrl)
+    {
+        ValidateLiveUrl(liveStreamUrl,
+            "The live stream URL must be a YouTube link or an HLS/MP4 stream.",
+            "يجب أن يكون رابط البث المباشر رابط يوتيوب أو بثاً بصيغة HLS/MP4.");
+        ValidateLiveUrl(signLanguageUrl,
+            "The sign-language stream URL must be a YouTube link or an HLS/MP4 stream.",
+            "يجب أن يكون رابط بث لغة الإشارة رابط يوتيوب أو بثاً بصيغة HLS/MP4.");
+    }
+
+    private static void ValidateLiveUrl(string? url, string englishMessage, string arabicMessage)
+    {
+        if (!string.IsNullOrWhiteSpace(url) && !LiveStreamUrlPolicy.IsAllowed(url))
+        {
+            throw new ApiException(
+                ErrorCodes.SessionInvalid, 400, englishMessage, arabicMessage);
         }
     }
 
