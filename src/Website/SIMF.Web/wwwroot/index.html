@@ -2357,6 +2357,21 @@
     if (window.currentLang === 'en' && item[field + '_en'] != null && item[field + '_en'] !== '') return item[field + '_en'];
     return item[field] != null ? item[field] : '';
   }
+  // HTML-escape any value before it is interpolated into innerHTML. The dynamic
+  // sections are fed by /content/site, i.e. admin-entered data (speaker/partner
+  // names, session + archive titles/descriptions); without this a stored
+  // "<img src=x onerror=...>" in any of those fields would execute for every
+  // public visitor (stored DOM-XSS). Used for all backend-sourced text + the
+  // user-data attributes (alt, photo src) the renderers below emit.
+  function esc(v) {
+    if (v == null) return '';
+    return String(v)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
   // Inline UI strings used inside dynamic renderers.
   const UI_STRINGS = {
     ar: { session_link: 'تفاصيل الجلسة ←', news_more: 'اقرأ المزيد ←' },
@@ -2636,13 +2651,13 @@
       return `
       <div class="session-row">
         <div class="${cls}"${style}>
-          <span class="num-badge num">${n}</span>
-          ${label ? `<span class="img-label">${label}</span>` : ''}
+          <span class="num-badge num">${esc(n)}</span>
+          ${label ? `<span class="img-label">${esc(label)}</span>` : ''}
         </div>
         <div class="session-body">
-          ${tag ? `<div class="session-tag">${tag}</div>` : ''}
-          <h3>${pickLang(s, 'title')}</h3>
-          ${desc ? `<p class="desc">${desc}</p>` : ''}
+          ${tag ? `<div class="session-tag">${esc(tag)}</div>` : ''}
+          <h3>${esc(pickLang(s, 'title'))}</h3>
+          ${desc ? `<p class="desc">${esc(desc)}</p>` : ''}
           <a class="session-link" href="#">${uiStr('session_link')}</a>
         </div>
       </div>`;
@@ -2660,7 +2675,7 @@
     const speakerCard = s => {
       const photo = (s.photo || '').trim();
       const media = photo
-        ? `<img src="${photo.replace(/"/g, '&quot;')}" alt="" loading="lazy">`
+        ? `<img src="${esc(photo)}" alt="" loading="lazy">`
         : `<svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="50" cy="38" r="18"/>
             <path d="M20 88 C 20 68, 35 60, 50 60 C 65 60, 80 68, 80 88"/>
@@ -2668,9 +2683,9 @@
       return `
       <div class="speaker">
         <div class="speaker-photo">${media}</div>
-        <h4>${pickLang(s,'name')}</h4>
-        <p class="role">${pickLang(s,'role')}</p>
-        <p class="org num">${pickLang(s,'org')}</p>
+        <h4>${esc(pickLang(s,'name'))}</h4>
+        <p class="role">${esc(pickLang(s,'role'))}</p>
+        <p class="org num">${esc(pickLang(s,'org'))}</p>
       </div>`;
     };
     if (!speakers.length) return;
@@ -2706,12 +2721,12 @@
     const type = pickLang(p,'type');
     const logo = (p.logo || '').trim();
     const inner = logo
-      ? `<img src="${logo.replace(/"/g, '&quot;')}" alt="${name}">`
-      : `<span class="partner-name">${name}</span>`;
+      ? `<img src="${esc(logo)}" alt="${esc(name)}">`
+      : `<span class="partner-name">${esc(name)}</span>`;
     return `
     <div class="partner">
       <div class="partner-logo"><div class="slot">${inner}</div></div>
-      <div class="partner-meta"><span class="label">${type}</span></div>
+      <div class="partner-meta"><span class="label">${esc(type)}</span></div>
     </div>`;
   }
   function renderPartners() {
@@ -2733,9 +2748,9 @@
       <article class="news-card">
         <div class="news-thumb" style="background-image:url('${n.img}')"></div>
         <div class="news-body">
-          <div class="date num">${pickLang(n,'date')}</div>
-          <h3>${pickLang(n,'title')}</h3>
-          <p>${pickLang(n,'excerpt')}</p>
+          <div class="date num">${esc(pickLang(n,'date'))}</div>
+          <h3>${esc(pickLang(n,'title'))}</h3>
+          <p>${esc(pickLang(n,'excerpt'))}</p>
           <a class="more" href="#">${uiStr('news_more')}</a>
         </div>
       </article>
@@ -2759,11 +2774,11 @@
   const yearsEl = document.getElementById('archiveYears');
   const detailEl = document.getElementById('archiveDetail');
   function renderArchiveYears() {
-    yearsEl.innerHTML = arch.map((a,i)=>`<button class="archive-year-tab${i===archIdx?' active':''}" data-i="${i}"><span class="y num">${a.year}</span><span class="dot"></span></button>`).join('');
+    yearsEl.innerHTML = arch.map((a,i)=>`<button class="archive-year-tab${i===archIdx?' active':''}" data-i="${i}"><span class="y num">${esc(a.year)}</span><span class="dot"></span></button>`).join('');
   }
   function paintArch(i){
     const a = arch[i];
-    detailEl.innerHTML = `<div class="big-y num">${a.year}</div><div><p class="date num">${pickLang(a,'date')}</p><h4>${pickLang(a,'title')}</h4><p class="desc">${pickLang(a,'desc')}</p></div>`;
+    detailEl.innerHTML = `<div class="big-y num">${esc(a.year)}</div><div><p class="date num">${esc(pickLang(a,'date'))}</p><h4>${esc(pickLang(a,'title'))}</h4><p class="desc">${esc(pickLang(a,'desc'))}</p></div>`;
     yearsEl.querySelectorAll('.archive-year-tab').forEach((b,j)=>b.classList.toggle('active', i===j));
   }
   function renderArch(i){
@@ -2810,12 +2825,12 @@
     const loc = pickLang(a, 'location');
     const dl = pickLang(a, 'dateLabel');
     const summary = pickLang(a, 'desc');
-    const box = (k, v) => v ? `<div class="archive-page__box"><div class="k">${k}</div><div class="v">${v}</div></div>` : '';
-    const counter = (n, c) => `<div class="archive-page__counter"><div class="n">${n == null ? 0 : n}</div><div class="c">${c}</div></div>`;
+    const box = (k, v) => v ? `<div class="archive-page__box"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>` : '';
+    const counter = (n, c) => `<div class="archive-page__counter"><div class="n">${esc(n == null ? 0 : n)}</div><div class="c">${esc(c)}</div></div>`;
     document.getElementById('archivePageBody').innerHTML =
-      `<div class="archive-page__label">${uiStr('archive_label') || 'عنوان الملتقى'}</div>`
-      + `<h3 class="archive-page__title">${title}</h3>`
-      + (summary ? `<p class="archive-page__summary">${summary}</p>` : '')
+      `<div class="archive-page__label">${esc(uiStr('archive_label') || 'عنوان الملتقى')}</div>`
+      + `<h3 class="archive-page__title">${esc(title)}</h3>`
+      + (summary ? `<p class="archive-page__summary">${esc(summary)}</p>` : '')
       + `<div class="archive-page__boxes">${box(uiStr('archive_place') || 'المكان', loc)}${box(uiStr('archive_time') || 'الزمن', dl)}</div>`
       + `<div class="archive-page__counters">`
         + counter(a.sessions, uiStr('archive_sessions') || 'الفعاليات')
