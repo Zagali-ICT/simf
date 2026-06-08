@@ -84,7 +84,8 @@ builder.Services.AddHttpContextAccessor();
 // once (must be configured, and HTTPS outside Development) so the guard cannot
 // drift between clients — the account client forwards the visitor's bearer
 // token, so a cleartext base address would leak it.
-var apiBaseUri = ResolveApiBaseUri(builder.Configuration, builder.Environment);
+var apiBaseUri = SimfApiBaseAddress.Resolve(
+    builder.Configuration["Api:BaseUrl"], builder.Environment.IsDevelopment());
 
 builder.Services.AddHttpClient<SimfAuthClient>(client => client.BaseAddress = apiBaseUri);
 builder.Services.AddHttpClient<SimfAccountClient>(client => client.BaseAddress = apiBaseUri);
@@ -138,21 +139,3 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
-
-// Resolves the SIMF API base address from configuration and enforces the
-// transport-security invariant: 'Api:BaseUrl' must be present, and outside the
-// Development environment it must be HTTPS (so the forwarded bearer token is
-// never sent over cleartext HTTP).
-static Uri ResolveApiBaseUri(IConfiguration configuration, IHostEnvironment environment)
-{
-    var baseUrl = configuration["Api:BaseUrl"]
-        ?? throw new InvalidOperationException(
-            "Configuration value 'Api:BaseUrl' is required but was not found.");
-    var baseUri = new Uri(baseUrl);
-    if (!environment.IsDevelopment() && baseUri.Scheme != Uri.UriSchemeHttps)
-    {
-        throw new InvalidOperationException(
-            "'Api:BaseUrl' must use HTTPS outside the Development environment.");
-    }
-    return baseUri;
-}
