@@ -114,6 +114,11 @@ builder.Services.AddScoped<SimfAuthSession>();
 // layout (reads to render) and the profile page (writes on load + change).
 builder.Services.AddScoped<SimfUserChrome>();
 
+// D-353 — per-user, per-page CRUD display preferences (dialog vs full page),
+// persisted in the browser's localStorage. Scoped per circuit (it uses the
+// circuit's IJSRuntime).
+builder.Services.AddScoped<CpPreferences>();
+
 // HttpContext access — the profile page captures the access token from the
 // cookie auth result during the initial (prerendered) render, then holds it
 // in the circuit for the interactive callbacks that follow.

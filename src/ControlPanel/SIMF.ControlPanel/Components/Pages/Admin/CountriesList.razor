@@ -1,169 +1,167 @@
-@* D-155 — Countries CRUD. D-151 reference data, the lookup table that
-   D-152 (UserProfile.NationalityId) and D-153 (Speaker.CountryId) both
-   join against. Mirrors the ThemesList canonical pattern. *@
+@* D-155 — Countries CRUD (lookup table joined by UserProfile.NationalityId
+   and Speaker.CountryId). Centralized dialog/full-page framing D-353: Add /
+   Edit / View / Delete are hosted by CrudShell, which frames the reusable
+   CountryAddEdit and CountryViewDelete forms as a popup or a full page per the
+   admin's toolbar choice (persisted in localStorage via CpPreferences). *@
 @page "/admin/countries"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Countries.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
+@inject CpPreferences Prefs
 
 <PageTitle>@L["Admin.Countries.Title"] · SIMF</PageTitle>
 
-<SimfBanner Title="@L["Admin.Countries.Title"]" />
+@if (!GridHidden)
+{
+    <SimfBanner Title="@L["Admin.Countries.Title"]" />
 
-<div class="simf-page-wide">
-    <div class="simf-surface">
-        @if (_toast is not null)
-        {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
-        }
+    <div class="simf-page-wide">
+        <div class="simf-surface">
+            @if (_toast is not null)
+            {
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            }
 
-        <SimfDataGrid TItem="AdminCountrySummary"
-                      Query="_query"
-                      Page="_page"
-                      Loading="_loading"
-                      OnQueryChanged="OnQueryChangedAsync"
-                      Multiselect="true"
-                      RowKey="@(r => r.Id.ToString())"
-                      RowLabel="@(r => r.Name)"
-                      Caption="@L["Admin.Countries.Title"]"
-                      FilterColumnLabel="@L["Admin.Countries.FilterColumn"]"
-                      OnAdd="OnAddAsync"
-                      OnEditOne="OnEditAsync"
-                      OnDetailsOne="OnDetailsAsync"
-                      OnDeleteOne="OnDeactivateAsync"
-                      PrevLabel="@L["Admin.Countries.Prev"]"
-                      NextLabel="@L["Admin.Countries.Next"]"
-                      FirstLabel="@L["Admin.Countries.Pager.First"]"
-                      LastLabel="@L["Admin.Countries.Pager.Last"]"
-                      PageSizeLabel="@L["Admin.Countries.Pager.PageSize"]"
-                      PageFormatter="@FormatPage"
-                      LoadingLabel="@L["Admin.Countries.Loading"]"
-                      FilterPlaceholder="@L["Admin.Countries.FilterPlaceholder"]"
-                      ActionsHeader="@L["Admin.Countries.Column.Actions"]"
-                      SelectAllLabel="@L["Admin.Countries.Action.SelectAll"]"
-                      SelectRowLabel="@L["Admin.Countries.Action.SelectRow"]"
-                      AddLabel="@L["Admin.Countries.Action.Add"]"
-                      EditLabel="@L["Admin.Countries.Action.Edit"]"
-                      DetailsLabel="@L["Admin.Countries.Action.Details"]"
-                      DeleteLabel="@L["Admin.Countries.Action.Deactivate"]"
-                      SummaryFormatter="@FormatSummary">
-            <Columns>
-                <SimfDataGridColumn TItem="AdminCountrySummary" Key="id"
-                                    Header="@L["Admin.Countries.Column.Id"]"
-                                    Sortable="true">
-                    <CellTemplate>@context.Id</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminCountrySummary" Key="code"
-                                    Header="@L["Admin.Countries.Column.Code"]"
-                                    Sortable="true" Filterable="true">
-                    <CellTemplate>@context.Code</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminCountrySummary" Key="name"
-                                    Header="@L["Admin.Countries.Column.NameEn"]"
-                                    Sortable="true">
-                    <CellTemplate>@context.Name</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminCountrySummary" Key="namearabic"
-                                    Header="@L["Admin.Countries.Column.NameAr"]">
-                    <CellTemplate>@context.NameArabic</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminCountrySummary" Key="phonePrefix"
-                                    Header="@L["Admin.Countries.Column.PhonePrefix"]">
-                    <CellTemplate>@(context.PhonePrefix ?? "—")</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminCountrySummary" Key="displayOrder"
-                                    Header="@L["Admin.Countries.Column.DisplayOrder"]"
-                                    Sortable="true">
-                    <CellTemplate>@context.DisplayOrder</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminCountrySummary" Key="isActive"
-                                    Header="@L["Admin.Countries.Column.Active"]">
-                    <CellTemplate>
-                        @if (context.IsActive)
-                        {
-                            <SimfPill Variant="on">@L["Admin.Countries.Active.Yes"]</SimfPill>
-                        }
-                        else
-                        {
-                            <SimfPill Variant="off">@L["Admin.Countries.Active.No"]</SimfPill>
-                        }
-                    </CellTemplate>
-                </SimfDataGridColumn>
-            </Columns>
-            <EmptyTemplate>
-                <SimfEmptyState Title="@L["Admin.Countries.None"]" />
-            </EmptyTemplate>
-        </SimfDataGrid>
+            <SimfDataGrid TItem="AdminCountrySummary"
+                          Query="_query"
+                          Page="_page"
+                          Loading="_loading"
+                          OnQueryChanged="OnQueryChangedAsync"
+                          Multiselect="true"
+                          RowKey="@(r => r.Id.ToString())"
+                          RowLabel="@(r => r.Name)"
+                          Caption="@L["Admin.Countries.Title"]"
+                          FilterColumnLabel="@L["Admin.Countries.FilterColumn"]"
+                          OnAdd="OnAddAsync"
+                          OnEditOne="OnEditAsync"
+                          OnDetailsOne="OnDetailsAsync"
+                          OnDeleteOne="OnDeleteAsync"
+                          PrevLabel="@L["Admin.Countries.Prev"]"
+                          NextLabel="@L["Admin.Countries.Next"]"
+                          FirstLabel="@L["Admin.Countries.Pager.First"]"
+                          LastLabel="@L["Admin.Countries.Pager.Last"]"
+                          PageSizeLabel="@L["Admin.Countries.Pager.PageSize"]"
+                          PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Admin.Countries.Loading"]"
+                          FilterPlaceholder="@L["Admin.Countries.FilterPlaceholder"]"
+                          ActionsHeader="@L["Admin.Countries.Column.Actions"]"
+                          SelectAllLabel="@L["Admin.Countries.Action.SelectAll"]"
+                          SelectRowLabel="@L["Admin.Countries.Action.SelectRow"]"
+                          AddLabel="@L["Admin.Countries.Action.Add"]"
+                          EditLabel="@L["Admin.Countries.Action.Edit"]"
+                          DetailsLabel="@L["Admin.Countries.Action.Details"]"
+                          DeleteLabel="@L["Admin.Countries.Action.Deactivate"]"
+                          SummaryFormatter="@FormatSummary">
+                <CustomToolbar>
+                    <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
+                </CustomToolbar>
+                <Columns>
+                    <SimfDataGridColumn TItem="AdminCountrySummary" Key="id"
+                                        Header="@L["Admin.Countries.Column.Id"]"
+                                        Sortable="true">
+                        <CellTemplate>@context.Id</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminCountrySummary" Key="code"
+                                        Header="@L["Admin.Countries.Column.Code"]"
+                                        Sortable="true" Filterable="true">
+                        <CellTemplate>@context.Code</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminCountrySummary" Key="name"
+                                        Header="@L["Admin.Countries.Column.NameEn"]"
+                                        Sortable="true">
+                        <CellTemplate>@context.Name</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminCountrySummary" Key="namearabic"
+                                        Header="@L["Admin.Countries.Column.NameAr"]">
+                        <CellTemplate>@context.NameArabic</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminCountrySummary" Key="phonePrefix"
+                                        Header="@L["Admin.Countries.Column.PhonePrefix"]">
+                        <CellTemplate>@(context.PhonePrefix ?? "—")</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminCountrySummary" Key="displayOrder"
+                                        Header="@L["Admin.Countries.Column.DisplayOrder"]"
+                                        Sortable="true">
+                        <CellTemplate>@context.DisplayOrder</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminCountrySummary" Key="isActive"
+                                        Header="@L["Admin.Countries.Column.Active"]">
+                        <CellTemplate>
+                            @if (context.IsActive)
+                            {
+                                <SimfPill Variant="on">@L["Admin.Countries.Active.Yes"]</SimfPill>
+                            }
+                            else
+                            {
+                                <SimfPill Variant="off">@L["Admin.Countries.Active.No"]</SimfPill>
+                            }
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.Countries.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
+        </div>
     </div>
-</div>
-
-@if (_addOpen)
-{
-    <SimfModal Open="true" Title="@L["Admin.Countries.Add.Title"]"
-               OnClose="@(() => _addOpen = false)">
-        <ChildContent>
-            <CountryForm OnSuccess="OnAddSucceededAsync"
-                         OnCancel="@(() => _addOpen = false)" />
-        </ChildContent>
-    </SimfModal>
 }
 
-@if (_editTarget is not null)
+@if (FormOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.Countries.Edit.Title"]"
-               OnClose="@(() => _editTarget = null)">
-        <ChildContent>
-            <CountryForm Initial="_editTarget"
-                         OnSuccess="OnEditSucceededAsync"
-                         OnCancel="@(() => _editTarget = null)" />
-        </ChildContent>
-    </SimfModal>
-}
-
-@if (_detailsTarget is not null)
-{
-    <SimfModal Open="true" Title="@L["Admin.Countries.Details.Title"]"
-               OnClose="@(() => _detailsTarget = null)">
-        <ChildContent>
-            <dl class="simf-dl">
-                <dt>@L["Admin.Countries.Column.Id"]</dt>
-                <dd>@_detailsTarget.Id</dd>
-                <dt>@L["Admin.Countries.Column.Code"]</dt>
-                <dd>@_detailsTarget.Code</dd>
-                <dt>@L["Admin.Countries.Column.NameEn"]</dt>
-                <dd>@_detailsTarget.Name</dd>
-                <dt>@L["Admin.Countries.Column.NameAr"]</dt>
-                <dd>@_detailsTarget.NameArabic</dd>
-                <dt>@L["Admin.Countries.Column.PhonePrefix"]</dt>
-                <dd>@(_detailsTarget.PhonePrefix ?? "—")</dd>
-                <dt>@L["Admin.Countries.Column.DisplayOrder"]</dt>
-                <dd>@_detailsTarget.DisplayOrder</dd>
-                <dt>@L["Admin.Countries.Column.Active"]</dt>
-                <dd>@(_detailsTarget.IsActive ? L["Admin.Countries.Active.Yes"] : L["Admin.Countries.Active.No"])</dd>
-            </dl>
-        </ChildContent>
-        <Footer>
-            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _detailsTarget = null)">
-                @L["Admin.Countries.Details.Close"]
-            </SimfButton>
-        </Footer>
-    </SimfModal>
+    <CrudShell Open="true" Presentation="_presentation"
+               Title="@FormTitle" CloseLabel="@L["Admin.Countries.Details.Close"]"
+               OnClose="CloseForm">
+        @if (_form == FormKind.AddEdit)
+        {
+            <CountryAddEdit IsEdit="_isEdit" Initial="_target"
+                            OnSuccess="OnSavedAsync" OnCancel="CloseForm" />
+        }
+        else if (_form == FormKind.ViewDelete)
+        {
+            <CountryViewDelete IsDelete="_isDelete" Initial="_target"
+                               OnDeleted="OnDeletedAsync" OnCancel="CloseForm" />
+        }
+    </CrudShell>
 }
 
 @code {
     private record Toast(string Variant, string Message);
+
+    private enum FormKind { None, AddEdit, ViewDelete }
+
+    private const string PageKey = "countries";
 
     private GridQuery _query = new() { Top = 50 };
     private GridPage<AdminCountrySummary> _page = new();
     private bool _loading;
     private Toast? _toast;
 
-    private bool _addOpen;
-    private AdminCountryDetail? _editTarget;
-    private AdminCountryDetail? _detailsTarget;
+    private CrudPresentation _presentation = CrudPresentation.Dialog;
+    private FormKind _form = FormKind.None;
+    private bool _isEdit;
+    private bool _isDelete;
+    private AdminCountryDetail? _target;
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    private bool FormOpen => _form != FormKind.None;
+    private bool GridHidden => FormOpen && _presentation == CrudPresentation.Page;
+
+    private string FormTitle => _form switch
+    {
+        FormKind.AddEdit => _isEdit
+            ? L["Admin.Countries.Edit.Title"]
+            : L["Admin.Countries.Add.Title"],
+        FormKind.ViewDelete => _isDelete
+            ? L["Admin.Countries.Delete.Title"]
+            : L["Admin.Countries.Details.Title"],
+        _ => string.Empty,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _presentation = await Prefs.GetPresentationAsync(PageKey);
+        await LoadAsync();
+    }
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
@@ -194,67 +192,78 @@
 
     private Task OnAddAsync()
     {
-        _addOpen = true;
+        _toast = null;
+        _form = FormKind.AddEdit;
+        _isEdit = false;
+        _target = null;
         return Task.CompletedTask;
-    }
-
-    private async Task OnAddSucceededAsync(AdminCountryDetail created)
-    {
-        _addOpen = false;
-        _toast = new Toast("success", string.Format(L["Admin.Countries.Created"], created.Name));
-        await LoadAsync();
     }
 
     private async Task OnEditAsync(AdminCountrySummary row)
     {
-        var envelope = await JS.InvokeAsync<ApiResult<AdminCountryDetail>>(
-            "simfAccount.getJson", $"/account/api/admin/countries/{row.Id}");
-        if (envelope is { Success: true, Data: not null })
-        {
-            _editTarget = envelope.Data;
-        }
-        else
-        {
-            _toast = new Toast("error",
-                envelope?.Error?.MessageForCurrentCulture()
-                ?? L["Admin.Countries.LoadFailed"]);
-        }
-    }
-
-    private async Task OnEditSucceededAsync(AdminCountryDetail updated)
-    {
-        _editTarget = null;
-        _toast = new Toast("success", string.Format(L["Admin.Countries.Updated"], updated.Name));
-        await LoadAsync();
+        var detail = await LoadDetailAsync(row.Id);
+        if (detail is null) return;
+        _form = FormKind.AddEdit;
+        _isEdit = true;
+        _target = detail;
     }
 
     private async Task OnDetailsAsync(AdminCountrySummary row)
     {
-        var envelope = await JS.InvokeAsync<ApiResult<AdminCountryDetail>>(
-            "simfAccount.getJson", $"/account/api/admin/countries/{row.Id}");
-        if (envelope is { Success: true, Data: not null })
-        {
-            _detailsTarget = envelope.Data;
-        }
+        var detail = await LoadDetailAsync(row.Id);
+        if (detail is null) return;
+        _form = FormKind.ViewDelete;
+        _isDelete = false;
+        _target = detail;
     }
 
-    private async Task OnDeactivateAsync(AdminCountrySummary row)
+    private async Task OnDeleteAsync(AdminCountrySummary row)
+    {
+        var detail = await LoadDetailAsync(row.Id);
+        if (detail is null) return;
+        _form = FormKind.ViewDelete;
+        _isDelete = true;
+        _target = detail;
+    }
+
+    // Edit / View / Delete all work against the full detail (the grid carries
+    // a summary). Returns null and surfaces a toast on failure.
+    private async Task<AdminCountryDetail?> LoadDetailAsync(int id)
     {
         _toast = null;
-        var envelope = await JS.InvokeAsync<ApiResult<bool>>(
-            "simfAccount.deleteJson", $"/account/api/admin/countries/{row.Id}");
-        if (envelope is { Success: true })
+        var envelope = await JS.InvokeAsync<ApiResult<AdminCountryDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/countries/{id}");
+        if (envelope is { Success: true, Data: not null })
         {
-            _toast = new Toast("success",
-                string.Format(L["Admin.Countries.Deactivated"], row.Name));
-            await LoadAsync();
+            return envelope.Data;
         }
-        else
-        {
-            _toast = new Toast("error",
-                envelope?.Error?.MessageForCurrentCulture()
-                ?? L["Admin.Countries.Fallback"]);
-        }
+        _toast = new Toast("error",
+            envelope?.Error?.MessageForCurrentCulture()
+            ?? L["Admin.Countries.LoadFailed"]);
+        return null;
+    }
+
+    private void CloseForm()
+    {
+        _form = FormKind.None;
+        _target = null;
+    }
+
+    private async Task OnSavedAsync(AdminCountryDetail saved)
+    {
+        var wasEdit = _isEdit;
+        CloseForm();
+        _toast = new Toast("success",
+            string.Format(wasEdit ? L["Admin.Countries.Updated"] : L["Admin.Countries.Created"], saved.Name));
+        await LoadAsync();
+    }
+
+    private async Task OnDeletedAsync(AdminCountryDetail deleted)
+    {
+        CloseForm();
+        _toast = new Toast("success",
+            string.Format(L["Admin.Countries.Deactivated"], deleted.Name));
+        await LoadAsync();
     }
 
     private string FormatSummary(int skip, int taken, int total) =>

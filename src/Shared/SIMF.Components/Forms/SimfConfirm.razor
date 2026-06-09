@@ -1,0 +1,61 @@
+@* SimfConfirm — a small must-decide confirmation dialog (D-353). Wraps
+   SimfModal with RequireExplicitClose so a destructive action (the Delete
+   step of a View/Delete form) cannot be dismissed by an accidental backdrop
+   click. Reusable across every CRUD page's delete confirmation. *@
+@namespace SIMF.Components.Forms
+
+@if (Open)
+{
+    <SimfModal Open="true" Title="@Title"
+               CloseLabel="@CancelLabel"
+               RequireExplicitClose="true"
+               OnClose="OnCancel">
+        <ChildContent>
+            <p class="simf-confirm__message">@Message</p>
+            @ChildContent
+        </ChildContent>
+        <Footer>
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="Busy" OnClick="OnCancel">
+                @CancelLabel
+            </SimfButton>
+            <SimfButton Type="button" Variant="@(Danger ? "danger" : "primary")"
+                        Loading="Busy" LoadingLabel="@ConfirmLabel" OnClick="OnConfirm">
+                @ConfirmLabel
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    /// <summary>True to show the confirmation dialog.</summary>
+    [Parameter] public bool Open { get; set; }
+
+    /// <summary>The dialog title.</summary>
+    [Parameter] public string Title { get; set; } = string.Empty;
+
+    /// <summary>The confirmation question / consequence text.</summary>
+    [Parameter] public string Message { get; set; } = string.Empty;
+
+    /// <summary>The confirm button label.</summary>
+    [Parameter] public string ConfirmLabel { get; set; } = "Confirm";
+
+    /// <summary>The cancel button label — also the close button's accessible label.</summary>
+    [Parameter] public string CancelLabel { get; set; } = "Cancel";
+
+    /// <summary>True to style the confirm button as destructive (red).</summary>
+    [Parameter] public bool Danger { get; set; }
+
+    /// <summary>True while the confirmed action is running — disables both buttons
+    /// and shows the spinner on Confirm.</summary>
+    [Parameter] public bool Busy { get; set; }
+
+    /// <summary>Optional extra body content below the message.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Raised when the user confirms.</summary>
+    [Parameter] public EventCallback OnConfirm { get; set; }
+
+    /// <summary>Raised when the user cancels / closes.</summary>
+    [Parameter] public EventCallback OnCancel { get; set; }
+}

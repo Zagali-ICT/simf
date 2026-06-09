@@ -8,6 +8,7 @@
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 @inject SimfUserChrome UserChrome
+@inject CpPreferences Prefs
 
 <PageTitle>@L["Profile.Title"]</PageTitle>
 
@@ -210,6 +211,23 @@ else
                 }
             </div>
         </section>
+
+        @* -- Display preferences (D-353) ------------------------------------------ *@
+        <section class="simf-card simf-page-card">
+            <h2 class="simf-card__title">@L["Profile.Display.Title"]</h2>
+            @if (_displayFlash is not null)
+            {
+                <SimfAlert Variant="success">@_displayFlash</SimfAlert>
+            }
+            <p>@L["Profile.Display.Description"]</p>
+            <div class="simf-form__actions">
+                <SimfButton Type="button" Variant="secondary" Loading="_busy"
+                            LoadingLabel="@L["Profile.Display.ClearButton"]"
+                            OnClick="ClearDisplayPrefsAsync">
+                    @L["Profile.Display.ClearButton"]
+                </SimfButton>
+            </div>
+        </section>
     </div>
 }
 
@@ -233,6 +251,7 @@ else
     private string? _passwordError;
     private string? _avatarError;
     private string? _avatarOk;
+    private string? _displayFlash;
     // D-119 — cropper flow state.
     private bool _cropperOpen;
     private string _cropperImageUrl = string.Empty;
@@ -499,6 +518,23 @@ else
             {
                 _avatarError = envelope?.Error?.MessageForCurrentCulture();
             }
+        }
+        finally { _busy = false; }
+    }
+
+    // -- Display preferences (D-353) ------------------------------------------
+
+    // Clears every saved CP display/layout preference in this browser
+    // (the CRUD dialog/full-page choices, and future grid layout). Pure
+    // client-side localStorage wipe — no API, so no permission gate.
+    private async Task ClearDisplayPrefsAsync()
+    {
+        _displayFlash = null;
+        _busy = true;
+        try
+        {
+            await Prefs.ClearAllAsync();
+            _displayFlash = L["Profile.Display.Cleared"];
         }
         finally { _busy = false; }
     }

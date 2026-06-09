@@ -197,6 +197,12 @@ window.simfAccount = {
 window.simfModal = (function () {
     let openCount = 0;
     const bindings = new WeakMap();
+    // D-353 — ordered stack of currently-bound panels. When modals stack
+    // (e.g. a delete SimfConfirm opened over a CrudDialogFrame form), only the
+    // TOPMOST modal traps Tab/Esc. Without this the outer panel's trap — whose
+    // focusable list includes the inner panel's buttons (the inner panel is a
+    // DOM descendant) — fights the inner modal's trap.
+    const stack = [];
     const focusableSelector =
         'a[href], button:not([disabled]), input:not([disabled]), '
         + 'select:not([disabled]), textarea:not([disabled]), '
@@ -219,6 +225,7 @@ window.simfModal = (function () {
             if (!panel) return;
             if (bindings.has(panel)) return;       // already bound
 
+            stack.push(panel);
             const previousActive = document.activeElement;
             openCount++;
             if (openCount === 1) {
@@ -227,6 +234,8 @@ window.simfModal = (function () {
             focusFirst(panel);
 
             const handler = (event) => {
+                // D-353 — only the topmost modal handles keys when modals stack.
+                if (stack.length > 0 && stack[stack.length - 1] !== panel) return;
                 if (event.key === 'Escape' && allowEsc) {
                     event.preventDefault();
                     dotNetRef.invokeMethodAsync('OnEscPressed');
@@ -261,6 +270,8 @@ window.simfModal = (function () {
             const { handler, previousActive } = bindings.get(panel);
             document.removeEventListener('keydown', handler, true);
             bindings.delete(panel);
+            const stackIndex = stack.indexOf(panel);
+            if (stackIndex !== -1) { stack.splice(stackIndex, 1); }
 
             openCount = Math.max(0, openCount - 1);
             if (openCount === 0) {

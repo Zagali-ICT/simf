@@ -271,6 +271,9 @@
   <data name="Admin.Interests.Pager.Last" xml:space="preserve"><value>Last page</value></data>
   <data name="Admin.Interests.Pager.PageSize" xml:space="preserve"><value>Show</value></data>
   <data name="Admin.Interests.Pager.Page" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <!-- D-353 — View/Delete confirmation strings -->
+  <data name="Admin.Interests.Delete.Title" xml:space="preserve"><value>Deactivate interest</value></data>
+  <data name="Admin.Interests.Delete.Message" xml:space="preserve"><value>Deactivate "{0}"? It will be hidden from the visitor picker. You can re-activate it later by editing it.</value></data>
 
   <!-- D-134 Sprint A — Roles CRUD strings -->
   <data name="Admin.Roles.Title" xml:space="preserve"><value>Roles &amp; permissions</value></data>
@@ -595,6 +598,9 @@
   <data name="Admin.Countries.Edit.Title" xml:space="preserve"><value>Edit country</value></data>
   <data name="Admin.Countries.Details.Title" xml:space="preserve"><value>Country details</value></data>
   <data name="Admin.Countries.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <!-- D-353 — View/Delete confirmation strings -->
+  <data name="Admin.Countries.Delete.Title" xml:space="preserve"><value>Deactivate country</value></data>
+  <data name="Admin.Countries.Delete.Message" xml:space="preserve"><value>Deactivate "{0}"? It will be hidden from the nationality picker. You can re-activate it later by editing it.</value></data>
   <data name="Admin.Countries.New.Submit" xml:space="preserve"><value>Create country</value></data>
   <data name="Admin.Countries.New.Submitting" xml:space="preserve"><value>Creating</value></data>
   <data name="Admin.Countries.Edit.Submit" xml:space="preserve"><value>Save changes</value></data>
@@ -1197,6 +1203,11 @@
   <data name="Profile.Roles.None" xml:space="preserve"><value>No roles are assigned to this account.</value></data>
 
   <data name="Profile.Avatar.Title" xml:space="preserve"><value>My avatar</value></data>
+  <!-- D-353 — Display preferences (clear saved CRUD dialog/full-page + grid layout) -->
+  <data name="Profile.Display.Title" xml:space="preserve"><value>Display preferences</value></data>
+  <data name="Profile.Display.Description" xml:space="preserve"><value>Your add / edit / view dialog or full-page choice and saved table layouts are stored in this browser.</value></data>
+  <data name="Profile.Display.ClearButton" xml:space="preserve"><value>Clear saved layout</value></data>
+  <data name="Profile.Display.Cleared" xml:space="preserve"><value>Your saved display preferences were cleared.</value></data>
   <data name="Profile.Avatar.None" xml:space="preserve"><value>No avatar set.</value></data>
   <data name="Profile.Avatar.Upload" xml:space="preserve"><value>Upload new image</value></data>
   <data name="Profile.Avatar.Picker" xml:space="preserve"><value>Choose avatar image file</value></data>
@@ -2417,6 +2428,9 @@
   <data name="Grid.PageSize" xml:space="preserve"><value>Show</value></data>
   <data name="Grid.Page" xml:space="preserve"><value>Page {0} of {1}</value></data>
   <data name="Grid.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <!-- D-353 — CRUD presentation toggle (dialog vs full page) -->
+  <data name="Grid.View.Dialog" xml:space="preserve"><value>Open as dialog</value></data>
+  <data name="Grid.View.Page" xml:space="preserve"><value>Open as full page</value></data>
   <data name="Grid.Add" xml:space="preserve"><value>Add</value></data>
   <data name="Grid.Edit" xml:space="preserve"><value>Edit</value></data>
   <data name="Grid.Details" xml:space="preserve"><value>Details</value></data>
