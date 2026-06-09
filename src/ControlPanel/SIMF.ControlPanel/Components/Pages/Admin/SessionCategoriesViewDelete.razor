@@ -1,0 +1,90 @@
+@* D-353 â€” reusable Session-Category View/Delete form, hosted by CrudShell (as
+   a popup or a full page) from SessionCategoriesList.razor. Inherits
+   CrudViewDeleteFormBase so it exposes the standard parameter surface
+   (IsDelete / Initial / OnDeleted / OnCancel). Read-only details always show;
+   when IsDelete=true a Deactivate button appears and a SimfConfirm gates the
+   destructive call (replaces the old native JS confirm() on the list). Adds
+   the View path the inline form never had. *@
+@inherits CrudViewDeleteFormBase<AdminSessionCategoryDetail>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.SessionCategories.Col.NameEn"]</dt>
+        <dd>@Initial.Name</dd>
+        <dt>@L["Admin.SessionCategories.Col.NameAr"]</dt>
+        <dd>@Initial.NameArabic</dd>
+        <dt>@L["Admin.SessionCategories.Col.Order"]</dt>
+        <dd>@Initial.DisplayOrder</dd>
+        <dt>@L["Admin.SessionCategories.Col.Active"]</dt>
+        <dd>@(Initial.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.SessionCategories.Action.Deactivate"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.SessionCategories.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.SessionCategories.Delete.Title"]"
+                 Message="@string.Format(L["Admin.SessionCategories.Delete.Message"], Initial.Name)"
+                 ConfirmLabel="@L["Admin.SessionCategories.Action.Deactivate"]"
+                 CancelLabel="@L["Admin.SessionCategories.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/session-categories/{Initial.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                // Close the confirm first so the error lands on the visible
+                // form body, not behind the (still-open) confirm overlay.
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.SessionCategories.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.SessionCategories.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+}

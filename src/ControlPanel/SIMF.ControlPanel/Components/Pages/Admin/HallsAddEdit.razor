@@ -1,5 +1,10 @@
-@* D-134 Sprint B — reusable Hall Add/Edit form. Mirrors ThemeForm. *@
+@* D-353 â€” reusable Hall Add/Edit form, hosted by CrudShell (popup or full
+   page) from HallsList. Inherits CrudAddEditFormBase so it exposes the standard
+   CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). Branches Create
+   vs Update on IsEdit (POST when !IsEdit, PUT against Initial!.Id when IsEdit).
+   Supersedes HallForm.razor (D-134), which keyed off Initial==null. *@
 @using System.Globalization
+@inherits CrudAddEditFormBase<AdminHallDetail>
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 
@@ -56,7 +61,7 @@
                        ValueChanged="@(v => _geoRadiusInput = v)"
                        ValueExpression="@(() => _geoRadiusInput)"
                        Disabled="_busy" />
-        @if (Initial is not null)
+        @if (IsEdit)
         {
             <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
                 @L["Admin.Halls.Field.IsActive"]
@@ -65,8 +70,8 @@
     </div>
     <div class="simf-form__actions">
         <SimfButton Loading="_busy"
-                    LoadingLabel="@(Initial is null ? L["Admin.Halls.New.Submitting"] : L["Admin.Halls.Edit.Submitting"])">
-            @(Initial is null ? L["Admin.Halls.New.Submit"] : L["Admin.Halls.Edit.Submit"])
+                    LoadingLabel="@(IsEdit ? L["Admin.Halls.Edit.Submitting"] : L["Admin.Halls.New.Submitting"])">
+            @(IsEdit ? L["Admin.Halls.Edit.Submit"] : L["Admin.Halls.New.Submit"])
         </SimfButton>
         @if (OnCancel.HasDelegate)
         {
@@ -87,10 +92,6 @@
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
-
-    [Parameter] public AdminHallDetail? Initial { get; set; }
-    [Parameter] public EventCallback<AdminHallDetail> OnSuccess { get; set; }
-    [Parameter] public EventCallback OnCancel { get; set; }
 
     protected override void OnInitialized()
     {
@@ -130,7 +131,7 @@
         try
         {
             ApiResult<AdminHallDetail>? envelope;
-            if (Initial is null)
+            if (!IsEdit)
             {
                 envelope = await JS.InvokeAsync<ApiResult<AdminHallDetail>>(
                     "simfAccount.postJson", "/account/api/admin/halls",
@@ -150,7 +151,7 @@
             else
             {
                 envelope = await JS.InvokeAsync<ApiResult<AdminHallDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/halls/{Initial.Id}",
+                    "simfAccount.putJson", $"/account/api/admin/halls/{Initial!.Id}",
                     new AdminUpdateHallRequest
                     {
                         Code = _model.Code.Trim().ToUpperInvariant(),
@@ -183,8 +184,8 @@
         finally { _busy = false; }
     }
 
-    // P5.1 — D-240: parse the geofence inputs. All three together (a valid
-    // coordinate + positive radius ≤ 100 km), or all three empty (no geofence).
+    // P5.1 â€” D-240: parse the geofence inputs. All three together (a valid
+    // coordinate + positive radius â‰¤ 100 km), or all three empty (no geofence).
     private bool TryParseGeofence(out double? lat, out double? lon, out double? radius)
     {
         lat = lon = radius = null;

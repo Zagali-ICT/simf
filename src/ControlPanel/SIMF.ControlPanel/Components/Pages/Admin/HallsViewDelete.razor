@@ -1,0 +1,92 @@
+@* D-353 â€” reusable Hall View/Delete form, hosted by CrudShell (popup or full
+   page) from HallsList. Inherits CrudViewDeleteFormBase so it exposes the
+   standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
+   details always show; when IsDelete=true a Deactivate button appears and a
+   SimfConfirm gates the soft-delete (was a one-click delete on the list). *@
+@inherits CrudViewDeleteFormBase<AdminHallDetail>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Halls.Column.Code"]</dt>
+        <dd>@Initial.Code</dd>
+        <dt>@L["Admin.Halls.Column.Name"]</dt>
+        <dd>@Initial.Name</dd>
+        <dt>@L["Admin.Halls.Column.NameArabic"]</dt>
+        <dd>@Initial.NameArabic</dd>
+        <dt>@L["Admin.Halls.Column.Capacity"]</dt>
+        <dd>@Initial.Capacity</dd>
+        <dt>@L["Admin.Halls.Column.Floor"]</dt>
+        <dd>@(Initial.Floor ?? "â€”")</dd>
+        <dt>@L["Admin.Halls.Field.EquipmentNotes"]</dt>
+        <dd>@(Initial.EquipmentNotes ?? "â€”")</dd>
+        <dt>@L["Admin.Halls.Column.Active"]</dt>
+        <dd>@(Initial.IsActive ? L["Admin.Halls.Active.Yes"] : L["Admin.Halls.Active.No"])</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.Halls.Action.Deactivate"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.Halls.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.Halls.Delete.Title"]"
+                 Message="@string.Format(L["Admin.Halls.Delete.Message"], Initial.Name)"
+                 ConfirmLabel="@L["Admin.Halls.Action.Deactivate"]"
+                 CancelLabel="@L["Admin.Halls.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/halls/{Initial.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Halls.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.Halls.Fallback"];
+        }
+        finally { _busy = false; }
+    }
+}

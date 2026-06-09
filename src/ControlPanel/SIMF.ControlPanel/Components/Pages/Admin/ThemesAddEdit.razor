@@ -1,7 +1,9 @@
-@* D-134 Sprint B — reusable Theme Add/Edit form. Hosted in the modal
-   opened from ThemesList.razor. Mirrors the InterestForm extraction
-   pattern (D-132). When Initial is null the form runs in Create mode;
-   otherwise Edit mode (with the IsActive checkbox shown). *@
+@* D-353 â€” reusable Theme Add/Edit form, hosted by CrudShell (popup or full
+   page) from ThemesList. Inherits CrudAddEditFormBase so it exposes the
+   standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). Branch
+   Create vs Update on IsEdit (POST when !IsEdit, PUT against Initial!.Id when
+   IsEdit). Supersedes ThemeForm.razor (D-134), which keyed off Initial==null. *@
+@inherits CrudAddEditFormBase<AdminThemeDetail>
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 
@@ -44,7 +46,7 @@
                        Helper="@L["Admin.Themes.Field.PageColorHint"]"
                        MaxLength="32"
                        @bind-Value="_model.PageColor" Disabled="_busy" />
-        @if (Initial is not null)
+        @if (IsEdit)
         {
             <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
                 @L["Admin.Themes.Field.IsActive"]
@@ -53,8 +55,8 @@
     </div>
     <div class="simf-form__actions">
         <SimfButton Loading="_busy"
-                    LoadingLabel="@(Initial is null ? L["Admin.Themes.New.Submitting"] : L["Admin.Themes.Edit.Submitting"])">
-            @(Initial is null ? L["Admin.Themes.New.Submit"] : L["Admin.Themes.Edit.Submit"])
+                    LoadingLabel="@(IsEdit ? L["Admin.Themes.Edit.Submitting"] : L["Admin.Themes.New.Submitting"])">
+            @(IsEdit ? L["Admin.Themes.Edit.Submit"] : L["Admin.Themes.New.Submit"])
         </SimfButton>
         @if (OnCancel.HasDelegate)
         {
@@ -72,10 +74,6 @@
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
-
-    [Parameter] public AdminThemeDetail? Initial { get; set; }
-    [Parameter] public EventCallback<AdminThemeDetail> OnSuccess { get; set; }
-    [Parameter] public EventCallback OnCancel { get; set; }
 
     protected override void OnInitialized()
     {
@@ -127,7 +125,7 @@
         try
         {
             ApiResult<AdminThemeDetail>? envelope;
-            if (Initial is null)
+            if (!IsEdit)
             {
                 envelope = await JS.InvokeAsync<ApiResult<AdminThemeDetail>>(
                     "simfAccount.postJson", "/account/api/admin/themes",
@@ -145,7 +143,7 @@
             else
             {
                 envelope = await JS.InvokeAsync<ApiResult<AdminThemeDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/themes/{Initial.Id}",
+                    "simfAccount.putJson", $"/account/api/admin/themes/{Initial!.Id}",
                     new AdminUpdateThemeRequest
                     {
                         Code = _model.Code.Trim().ToUpperInvariant(),

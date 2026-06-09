@@ -1,5 +1,9 @@
-@* D-148 — reusable Gate Add/Edit form. SIMF-FDS-003 §5.6. Mirrors HallForm
-   and extends with DirectionMode + allow-list + operator-assignments. *@
+@* D-353 â€” reusable Gate Add/Edit form, hosted by CrudShell (popup or full
+   page) from GatesList. Inherits CrudAddEditFormBase so it exposes the standard
+   CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). Branches Create
+   vs Update on IsEdit (POST when !IsEdit, PUT against Initial!.Id when IsEdit).
+   Supersedes GateForm.razor (D-148), which keyed off Initial==null. *@
+@inherits CrudAddEditFormBase<AdminGateDetail>
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 
@@ -67,14 +71,14 @@
                 {
                     <option value="@op.Id"
                             selected="@_model.AssignedOperatorUserIds.Contains(op.Id)">
-                        @op.Email — @op.DisplayName
+                        @op.Email â€” @op.DisplayName
                     </option>
                 }
             </select>
             <span class="simf-field__helper">@L["Admin.Gates.Field.AssignedOperatorsHint"]</span>
         </label>
 
-        @if (Initial is not null)
+        @if (IsEdit)
         {
             <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
                 @L["Admin.Gates.Field.IsActive"]
@@ -83,8 +87,8 @@
     </div>
     <div class="simf-form__actions">
         <SimfButton Loading="_busy"
-                    LoadingLabel="@(Initial is null ? L["Admin.Gates.New.Submitting"] : L["Admin.Gates.Edit.Submitting"])">
-            @(Initial is null ? L["Admin.Gates.New.Submit"] : L["Admin.Gates.Edit.Submit"])
+                    LoadingLabel="@(IsEdit ? L["Admin.Gates.Edit.Submitting"] : L["Admin.Gates.New.Submitting"])">
+            @(IsEdit ? L["Admin.Gates.Edit.Submit"] : L["Admin.Gates.New.Submit"])
         </SimfButton>
         @if (OnCancel.HasDelegate)
         {
@@ -104,10 +108,6 @@
 
     private IReadOnlyList<ProfileTypeOption> _profileTypes = Array.Empty<ProfileTypeOption>();
     private IReadOnlyList<OperatorOption> _operators = Array.Empty<OperatorOption>();
-
-    [Parameter] public AdminGateDetail? Initial { get; set; }
-    [Parameter] public EventCallback<AdminGateDetail> OnSuccess { get; set; }
-    [Parameter] public EventCallback OnCancel { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -181,7 +181,7 @@
         try
         {
             ApiResult<AdminGateDetail>? envelope;
-            if (Initial is null)
+            if (!IsEdit)
             {
                 envelope = await JS.InvokeAsync<ApiResult<AdminGateDetail>>(
                     "simfAccount.postJson", "/account/api/admin/gates",
@@ -200,7 +200,7 @@
             else
             {
                 envelope = await JS.InvokeAsync<ApiResult<AdminGateDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/gates/{Initial.Id}",
+                    "simfAccount.putJson", $"/account/api/admin/gates/{Initial!.Id}",
                     new AdminUpdateGateRequest
                     {
                         Code = _model.Code.Trim().ToUpperInvariant(),
