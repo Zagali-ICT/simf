@@ -2484,17 +2484,17 @@
   <data name="Admin.Contacts.Picker.Clear" xml:space="preserve"><value>إزالة</value></data>
   <data name="Admin.Contacts.Picker.Linked" xml:space="preserve"><value>مرتبطة بـ: {0}</value></data>
   <data name="Admin.Contacts.Picker.NotLinked" xml:space="preserve"><value>لا توجد جهة اتصال مرتبطة</value></data>
-  <data name="Admin.Themes.Delete.Title" xml:space="preserve"><value>ØªØ¹Ø·ÙŠÙ„ Ø§Ù„Ù…Ø­ÙˆØ±</value></data>
-  <data name="Admin.Themes.Delete.Message" xml:space="preserve"><value>ØªØ¹Ø·ÙŠÙ„ Ø§Ù„Ù…Ø­ÙˆØ± "{0}"ØŸ Ø³ÙŠÙØ®ÙÙ‰ Ù…Ù† Ø¬Ø¯ÙˆÙ„ Ø§Ù„Ø£Ø¹Ù…Ø§Ù„ ÙˆÙ…Ù†ØªÙ‚ÙŠ Ù…Ø­Ø±Ø± Ø§Ù„Ø¬Ù„Ø³Ø©. ÙŠÙ…ÙƒÙ†Ùƒ Ø¥Ø¹Ø§Ø¯Ø© ØªÙØ¹ÙŠÙ„Ù‡ Ù„Ø§Ø­Ù‚Ø§Ù‹ Ø¨ØªØ¹Ø¯ÙŠÙ„Ù‡.</value></data>
-  <data name="Admin.Halls.Delete.Title" xml:space="preserve"><value>Ø¥Ù„ØºØ§Ø¡ ØªÙØ¹ÙŠÙ„ Ø§Ù„Ù‚Ø§Ø¹Ø©</value></data>
-  <data name="Admin.Halls.Delete.Message" xml:space="preserve"><value>Ù‡Ù„ ØªØ±ÙŠØ¯ Ø¥Ù„ØºØ§Ø¡ ØªÙØ¹ÙŠÙ„ Ø§Ù„Ù‚Ø§Ø¹Ø© "{0}"ØŸ Ù„Ù† ØªÙƒÙˆÙ† Ù…ØªØ§Ø­Ø© Ù„Ø¥Ø³Ù†Ø§Ø¯ Ø§Ù„Ø¬Ù„Ø³Ø§Øª Ø¨Ø¹Ø¯ Ø°Ù„Ùƒ.</value></data>
-  <data name="Admin.Gates.Delete.Title" xml:space="preserve"><value>Ø¥Ù„ØºØ§Ø¡ ØªÙØ¹ÙŠÙ„ Ø§Ù„Ø¨ÙˆØ§Ø¨Ø©</value></data>
-  <data name="Admin.Gates.Delete.Message" xml:space="preserve"><value>Ø¥Ù„ØºØ§Ø¡ ØªÙØ¹ÙŠÙ„ "{0}"ØŸ Ø³ØªØªÙˆÙ‚Ù Ø¹Ù† Ù‚Ø¨ÙˆÙ„ Ø¹Ù…Ù„ÙŠØ§Øª Ø§Ù„Ù…Ø³Ø­ ÙˆØ³ØªÙØ®ÙÙ‰ Ù…Ù† Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ø¨ÙˆØ§Ø¨Ø§Øª. ÙŠÙ…ÙƒÙ†Ùƒ Ø¥Ø¹Ø§Ø¯Ø© ØªÙØ¹ÙŠÙ„Ù‡Ø§ Ù„Ø§Ø­Ù‚Ù‹Ø§ Ø¹Ø¨Ø± Ø§Ù„ØªØ¹Ø¯ÙŠÙ„.</value></data>
-  <data name="Admin.SessionCategories.Details.Title" xml:space="preserve"><value>ØªÙØ§ØµÙŠÙ„ Ø§Ù„ØªØµÙ†ÙŠÙ</value></data>
-  <data name="Admin.SessionCategories.Details.Close" xml:space="preserve"><value>Ø¥ØºÙ„Ø§Ù‚</value></data>
-  <data name="Admin.SessionCategories.Action.Deactivate" xml:space="preserve"><value>ØªØ¹Ø·ÙŠÙ„</value></data>
-  <data name="Admin.SessionCategories.Delete.Title" xml:space="preserve"><value>ØªØ¹Ø·ÙŠÙ„ Ø§Ù„ØªØµÙ†ÙŠÙ</value></data>
-  <data name="Admin.SessionCategories.Delete.Message" xml:space="preserve"><value>ØªØ¹Ø·ÙŠÙ„ "{0}"ØŸ Ø³ÙŠÙØ®ÙÙ‰ Ù…Ù† Ø£Ø¯Ø§Ø© Ø§Ø®ØªÙŠØ§Ø± ØªØµÙ†ÙŠÙ Ø§Ù„Ø¬Ù„Ø³Ø§Øª. ÙŠÙ…ÙƒÙ†Ùƒ Ø¥Ø¹Ø§Ø¯Ø© ØªÙØ¹ÙŠÙ„Ù‡ Ù„Ø§Ø­Ù‚Ù‹Ø§ Ø¹Ø¨Ø± Ø§Ù„ØªØ¹Ø¯ÙŠÙ„.</value></data>
-  <data name="Admin.Roles.Delete.Title" xml:space="preserve"><value>Ø­Ø°Ù Ø§Ù„Ø¯ÙˆØ±</value></data>
-  <data name="Admin.Roles.Delete.Message" xml:space="preserve"><value>Ø­Ø°Ù Ø§Ù„Ø¯ÙˆØ± "{0}"ØŸ Ø³ÙŠÙÙ‚Ø¯ ÙƒÙ„ Ù…Ù† ÙŠÙ…Ù„ÙƒÙ‡ Ø§Ù„ØµÙ„Ø§Ø­ÙŠØ§Øª Ø§Ù„ØªÙŠ ÙŠÙ…Ù†Ø­Ù‡Ø§. Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø§Ù„ØªØ±Ø§Ø¬Ø¹ Ø¹Ù† Ù‡Ø°Ø§ Ø§Ù„Ø¥Ø¬Ø±Ø§Ø¡.</value></data>
+  <data name="Admin.Themes.Delete.Title" xml:space="preserve"><value>تعطيل المحور</value></data>
+  <data name="Admin.Themes.Delete.Message" xml:space="preserve"><value>تعطيل المحور "{0}"؟ سيُخفى من جدول الأعمال ومنتقي محرر الجلسة. يمكنك إعادة تفعيله لاحقاً بتعديله.</value></data>
+  <data name="Admin.Halls.Delete.Title" xml:space="preserve"><value>إلغاء تفعيل القاعة</value></data>
+  <data name="Admin.Halls.Delete.Message" xml:space="preserve"><value>هل تريد إلغاء تفعيل القاعة "{0}"؟ لن تكون متاحة لإسناد الجلسات بعد ذلك.</value></data>
+  <data name="Admin.Gates.Delete.Title" xml:space="preserve"><value>إلغاء تفعيل البوابة</value></data>
+  <data name="Admin.Gates.Delete.Message" xml:space="preserve"><value>إلغاء تفعيل "{0}"؟ ستتوقف عن قبول عمليات المسح وستُخفى من قائمة البوابات. يمكنك إعادة تفعيلها لاحقًا عبر التعديل.</value></data>
+  <data name="Admin.SessionCategories.Details.Title" xml:space="preserve"><value>تفاصيل التصنيف</value></data>
+  <data name="Admin.SessionCategories.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.SessionCategories.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.SessionCategories.Delete.Title" xml:space="preserve"><value>تعطيل التصنيف</value></data>
+  <data name="Admin.SessionCategories.Delete.Message" xml:space="preserve"><value>تعطيل "{0}"؟ سيُخفى من أداة اختيار تصنيف الجلسات. يمكنك إعادة تفعيله لاحقًا عبر التعديل.</value></data>
+  <data name="Admin.Roles.Delete.Title" xml:space="preserve"><value>حذف الدور</value></data>
+  <data name="Admin.Roles.Delete.Message" xml:space="preserve"><value>حذف الدور "{0}"؟ سيفقد كل من يملكه الصلاحيات التي يمنحها. لا يمكن التراجع عن هذا الإجراء.</value></data>
 </root>
