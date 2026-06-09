@@ -1,0 +1,92 @@
+@* D-353 — reusable Country View/Delete form, hosted by CrudShell (popup or
+   full page) from CountriesList. Inherits CrudViewDeleteFormBase so it exposes
+   the standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
+   details always show; when IsDelete=true a Deactivate button appears and a
+   SimfConfirm gates the soft-delete (was a one-click delete on the list). *@
+@inherits CrudViewDeleteFormBase<AdminCountryDetail>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Countries.Column.Id"]</dt>
+        <dd>@Initial.Id</dd>
+        <dt>@L["Admin.Countries.Column.Code"]</dt>
+        <dd>@Initial.Code</dd>
+        <dt>@L["Admin.Countries.Column.NameEn"]</dt>
+        <dd>@Initial.Name</dd>
+        <dt>@L["Admin.Countries.Column.NameAr"]</dt>
+        <dd>@Initial.NameArabic</dd>
+        <dt>@L["Admin.Countries.Column.PhonePrefix"]</dt>
+        <dd>@(Initial.PhonePrefix ?? "—")</dd>
+        <dt>@L["Admin.Countries.Column.DisplayOrder"]</dt>
+        <dd>@Initial.DisplayOrder</dd>
+        <dt>@L["Admin.Countries.Column.Active"]</dt>
+        <dd>@(Initial.IsActive ? L["Admin.Countries.Active.Yes"] : L["Admin.Countries.Active.No"])</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.Countries.Action.Deactivate"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.Countries.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.Countries.Delete.Title"]"
+                 Message="@string.Format(L["Admin.Countries.Delete.Message"], Initial.Name)"
+                 ConfirmLabel="@L["Admin.Countries.Action.Deactivate"]"
+                 CancelLabel="@L["Admin.Countries.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/countries/{Initial.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Countries.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.Countries.Fallback"];
+        }
+        finally { _busy = false; }
+    }
+}

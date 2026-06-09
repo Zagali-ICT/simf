@@ -595,6 +595,9 @@
   <data name="Admin.Countries.Edit.Title" xml:space="preserve"><value>تعديل البلد</value></data>
   <data name="Admin.Countries.Details.Title" xml:space="preserve"><value>تفاصيل البلد</value></data>
   <data name="Admin.Countries.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <!-- D-353 — View/Delete confirmation strings -->
+  <data name="Admin.Countries.Delete.Title" xml:space="preserve"><value>إلغاء تفعيل الدولة</value></data>
+  <data name="Admin.Countries.Delete.Message" xml:space="preserve"><value>إلغاء تفعيل "{0}"؟ سيُخفى من أداة اختيار الجنسية. يمكنك إعادة تفعيله لاحقًا عبر التعديل.</value></data>
   <data name="Admin.Countries.New.Submit" xml:space="preserve"><value>إنشاء البلد</value></data>
   <data name="Admin.Countries.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء</value></data>
   <data name="Admin.Countries.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>

@@ -8,7 +8,7 @@
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
 | **Required permission** | `Countries.View` (page gate). Create/Edit/Deactivate actions hit endpoints gated by `Countries.Create` / `Countries.Edit` / `Countries.Delete`. |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-09 (D-353 — dialog/full-page framing + delete confirmation) |
 
 ## Coverage matrix
 
@@ -28,6 +28,9 @@
 | E2E-CTY-012 | Validation: phone prefix > 8 chars / negative display order | error | P2 | _to author_ |
 | E2E-CTY-013 | Conflict: duplicate ISO id → 409 `COUNTRY_ID_DUPLICATE` | error | P1 | _to author_ |
 | E2E-CTY-014 | Conflict: duplicate alpha-2 code → 409 `COUNTRY_CODE_DUPLICATE` | error | P1 | _to author_ |
+| E2E-CTY-015 | Presentation toggle: switch to full page + persists across reload (D-353) | happy | P1 | smoked 2026-06-09 |
+| E2E-CTY-016 | Full-page mode: Add/Edit/View replace the grid; Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-CTY-017 | Deactivate opens View/Delete → SimfConfirm gates the call (D-353) | error | P0 | _to author_ |
 | E2E-CTY-015 | Not found: edit/details of a missing id → 404 `COUNTRY_NOT_FOUND` | error | P2 | _to author_ |
 | E2E-CTY-016 | Server 500 on `/list` → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-CTY-017 | RTL render: Arabic toggle mirrors page + Add modal | i18n | P1 | _to author_ |

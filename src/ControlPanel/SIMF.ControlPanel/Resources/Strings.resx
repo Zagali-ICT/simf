@@ -598,6 +598,9 @@
   <data name="Admin.Countries.Edit.Title" xml:space="preserve"><value>Edit country</value></data>
   <data name="Admin.Countries.Details.Title" xml:space="preserve"><value>Country details</value></data>
   <data name="Admin.Countries.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <!-- D-353 — View/Delete confirmation strings -->
+  <data name="Admin.Countries.Delete.Title" xml:space="preserve"><value>Deactivate country</value></data>
+  <data name="Admin.Countries.Delete.Message" xml:space="preserve"><value>Deactivate "{0}"? It will be hidden from the nationality picker. You can re-activate it later by editing it.</value></data>
   <data name="Admin.Countries.New.Submit" xml:space="preserve"><value>Create country</value></data>
   <data name="Admin.Countries.New.Submitting" xml:space="preserve"><value>Creating</value></data>
   <data name="Admin.Countries.Edit.Submit" xml:space="preserve"><value>Save changes</value></data>
