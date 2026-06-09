@@ -2575,4 +2575,20 @@
   <data name="Admin.Organisations.Delete.Title" xml:space="preserve"><value>Deactivate organisation</value></data>
   <data name="Admin.Organisations.Delete.Message" xml:space="preserve"><value>Deactivate “{0}”? It will be removed from the public lookup.</value></data>
   <data name="Admin.Organisations.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.Sponsors.Details.Title" xml:space="preserve"><value>Sponsor details</value></data>
+  <data name="Admin.Sponsors.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Sponsors.Delete.Title" xml:space="preserve"><value>Delete sponsor</value></data>
+  <data name="Admin.Sponsors.Delete.Message" xml:space="preserve"><value>Delete the sponsor "{0}"? It will be removed from the public sponsors list immediately. You can reactivate it later by editing it.</value></data>
+  <data name="Admin.Sponsors.New.Submit" xml:space="preserve"><value>Create sponsor</value></data>
+  <data name="Admin.Sponsors.New.Submitting" xml:space="preserve"><value>Creating</value></data>
+  <data name="Admin.Sponsors.Edit.Submit" xml:space="preserve"><value>Save changes</value></data>
+  <data name="Admin.Sponsors.Edit.Submitting" xml:space="preserve"><value>Saving</value></data>
+  <data name="Admin.Sponsors.Fallback" xml:space="preserve"><value>The operation could not be completed.</value></data>
+  <data name="Admin.Exhibitors.Details.Title" xml:space="preserve"><value>Exhibitor details</value></data>
+  <data name="Admin.Exhibitors.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Exhibitors.Delete.Title" xml:space="preserve"><value>Deactivate exhibitor</value></data>
+  <data name="Admin.Exhibitors.Delete.Message" xml:space="preserve"><value>Deactivate the exhibitor "{0}"? It will be removed from the public exhibitor list immediately. You can reactivate it later by editing it.</value></data>
+  <data name="Admin.Exhibitors.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.Speakers.Delete.Title" xml:space="preserve"><value>Deactivate speaker</value></data>
+  <data name="Admin.Speakers.Delete.Message" xml:space="preserve"><value>Deactivate the speaker "{0}"? They will be hidden from the public speaker list and the Session editor picker. You can reactivate them later by editing.</value></data>
 </root>

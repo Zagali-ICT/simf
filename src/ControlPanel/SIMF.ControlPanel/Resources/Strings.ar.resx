@@ -2568,4 +2568,20 @@
   <data name="Admin.Organisations.Delete.Title" xml:space="preserve"><value>تعطيل الجهة</value></data>
   <data name="Admin.Organisations.Delete.Message" xml:space="preserve"><value>تعطيل «{0}»؟ ستُزال من قائمة البحث العامة.</value></data>
   <data name="Admin.Organisations.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.Sponsors.Details.Title" xml:space="preserve"><value>تفاصيل الراعي</value></data>
+  <data name="Admin.Sponsors.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Sponsors.Delete.Title" xml:space="preserve"><value>حذف الراعي</value></data>
+  <data name="Admin.Sponsors.Delete.Message" xml:space="preserve"><value>هل تريد حذف الراعي "{0}"؟ سيُزال من قائمة الرعاة العامة فورًا. يمكنك إعادة تفعيله لاحقًا بتعديله.</value></data>
+  <data name="Admin.Sponsors.New.Submit" xml:space="preserve"><value>إضافة راعٍ</value></data>
+  <data name="Admin.Sponsors.New.Submitting" xml:space="preserve"><value>جارٍ الإضافة</value></data>
+  <data name="Admin.Sponsors.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.Sponsors.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Admin.Sponsors.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
+  <data name="Admin.Exhibitors.Details.Title" xml:space="preserve"><value>تفاصيل العارض</value></data>
+  <data name="Admin.Exhibitors.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Exhibitors.Delete.Title" xml:space="preserve"><value>إلغاء تفعيل العارض</value></data>
+  <data name="Admin.Exhibitors.Delete.Message" xml:space="preserve"><value>هل تريد إلغاء تفعيل العارض "{0}"؟ سيُزال من قائمة العارضين العامة فورًا. يمكنك إعادة تفعيله لاحقًا بتعديله.</value></data>
+  <data name="Admin.Exhibitors.Action.Deactivate" xml:space="preserve"><value>إلغاء التفعيل</value></data>
+  <data name="Admin.Speakers.Delete.Title" xml:space="preserve"><value>تعطيل المتحدّث</value></data>
+  <data name="Admin.Speakers.Delete.Message" xml:space="preserve"><value>تعطيل المتحدّث "{0}"؟ سيُخفى من قائمة المتحدّثين العامة ومنتقي محرر الجلسة. يمكنك إعادة تفعيله لاحقاً بتعديله.</value></data>
 </root>

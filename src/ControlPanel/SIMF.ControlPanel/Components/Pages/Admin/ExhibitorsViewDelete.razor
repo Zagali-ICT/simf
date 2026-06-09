@@ -1,0 +1,92 @@
+@* D-353 — reusable Exhibitor View/Delete form, hosted by CrudShell (popup or
+   full page) from ExhibitorsList. Inherits CrudViewDeleteFormBase so it exposes
+   the standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
+   details always show; when IsDelete=true a Deactivate button appears and a
+   SimfConfirm gates the soft-delete (was a window.confirm on the list). The
+   delete hits the same /account/api/admin/exhibitors/{id} route as before. *@
+@inherits CrudViewDeleteFormBase<AdminExhibitorDetail>
+@using SIMF.Contracts.Exhibitors
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Exhibitors.Field.NameEn"]</dt>
+        <dd>@Initial.NameEn</dd>
+        <dt>@L["Admin.Exhibitors.Field.NameAr"]</dt>
+        <dd>@Initial.NameAr</dd>
+        <dt>@L["Admin.Exhibitors.Field.ContactEmail"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.ContactEmail) ? "—" : Initial.ContactEmail)</dd>
+        <dt>@L["Admin.Exhibitors.Field.ContactPhone"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.ContactPhone) ? "—" : Initial.ContactPhone)</dd>
+        <dt>@L["Admin.Exhibitors.Field.Website"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Website) ? "—" : Initial.Website)</dd>
+        <dt>@L["Admin.Exhibitors.Col.Active"]</dt>
+        <dd>@(Initial.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.Exhibitors.Action.Deactivate"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.Exhibitors.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.Exhibitors.Delete.Title"]"
+                 Message="@string.Format(L["Admin.Exhibitors.Delete.Message"], Initial.NameEn)"
+                 ConfirmLabel="@L["Admin.Exhibitors.Action.Deactivate"]"
+                 CancelLabel="@L["Admin.Exhibitors.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/exhibitors/{Initial.Id}");
+            if (env is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                _confirming = false;
+                _error = env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Exhibitors.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.Exhibitors.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+}

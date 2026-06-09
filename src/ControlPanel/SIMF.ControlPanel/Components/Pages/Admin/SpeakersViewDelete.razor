@@ -1,0 +1,123 @@
+@* D-353 — reusable Speaker View/Delete form, hosted by CrudShell (popup or full
+   page) from SpeakersList. Inherits CrudViewDeleteFormBase so it exposes the
+   standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
+   details always show; when IsDelete=true a Deactivate button appears and a
+   SimfConfirm gates the soft-delete (was a one-click delete on the list). *@
+@inherits CrudViewDeleteFormBase<AdminSpeakerDetail>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Speakers.Column.Code"]</dt>
+        <dd>@Initial.Code</dd>
+        <dt>@L["Admin.Speakers.Column.Name"]</dt>
+        <dd>@Initial.Name</dd>
+        <dt>@L["Admin.Speakers.Column.NameArabic"]</dt>
+        <dd>@Initial.NameArabic</dd>
+        <dt>@L["Admin.Speakers.Column.Rank"]</dt>
+        <dd>@(Initial.Rank ?? "—")</dd>
+        <dt>@L["Admin.Speakers.Column.Country"]</dt>
+        <dd>@(CountryLabel(Initial) ?? "—")</dd>
+        <dt>@L["Admin.Speakers.Field.Bio"]</dt>
+        <dd>@(Initial.Bio ?? "—")</dd>
+        <dt>@L["Admin.Speakers.Field.BioArabic"]</dt>
+        <dd>@(Initial.BioArabic ?? "—")</dd>
+        <dt>@L["Admin.Speakers.Field.Qualifications"]</dt>
+        <dd>@(Initial.Qualifications ?? "—")</dd>
+        <dt>@L["Admin.Speakers.Field.QualificationsArabic"]</dt>
+        <dd>@(Initial.QualificationsArabic ?? "—")</dd>
+        <dt>@L["Admin.Speakers.Field.TrainingExperience"]</dt>
+        <dd>@(Initial.TrainingExperience ?? "—")</dd>
+        <dt>@L["Admin.Speakers.Field.TrainingExperienceArabic"]</dt>
+        <dd>@(Initial.TrainingExperienceArabic ?? "—")</dd>
+        <dt>@L["Admin.Speakers.Field.Awards"]</dt>
+        <dd>@(Initial.Awards ?? "—")</dd>
+        <dt>@L["Admin.Speakers.Field.AwardsArabic"]</dt>
+        <dd>@(Initial.AwardsArabic ?? "—")</dd>
+        <dt>@L["Admin.Speakers.Field.AllowsMeetingRequests"]</dt>
+        <dd>@(Initial.AllowsMeetingRequests ? L["Admin.Speakers.Active.Yes"] : L["Admin.Speakers.Active.No"])</dd>
+        <dt>@L["Admin.Speakers.Field.AllowsDataSharing"]</dt>
+        <dd>@(Initial.AllowsDataSharing ? L["Admin.Speakers.Active.Yes"] : L["Admin.Speakers.Active.No"])</dd>
+        <dt>@L["Admin.Speakers.Field.FacebookUrl"]</dt>
+        <dd>@(Initial.FacebookUrl ?? "—")</dd>
+        <dt>@L["Admin.Speakers.Field.LinkedInUrl"]</dt>
+        <dd>@(Initial.LinkedInUrl ?? "—")</dd>
+        <dt>@L["Admin.Speakers.Field.XUrl"]</dt>
+        <dd>@(Initial.XUrl ?? "—")</dd>
+        <dt>@L["Admin.Speakers.Column.DisplayOrder"]</dt>
+        <dd>@Initial.DisplayOrder</dd>
+        <dt>@L["Admin.Speakers.Column.Active"]</dt>
+        <dd>@(Initial.IsActive ? L["Admin.Speakers.Active.Yes"] : L["Admin.Speakers.Active.No"])</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.Speakers.Action.Deactivate"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.Speakers.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.Speakers.Delete.Title"]"
+                 Message="@string.Format(L["Admin.Speakers.Delete.Message"], Initial.Name)"
+                 ConfirmLabel="@L["Admin.Speakers.Action.Deactivate"]"
+                 CancelLabel="@L["Admin.Speakers.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    private static string? CountryLabel(AdminSpeakerDetail row) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? row.CountryNameAr ?? row.CountryNameEn
+            : row.CountryNameEn ?? row.CountryNameAr;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/speakers/{Initial.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Speakers.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.Speakers.Fallback"];
+        }
+        finally { _busy = false; }
+    }
+}

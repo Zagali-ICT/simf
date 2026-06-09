@@ -1,7 +1,11 @@
-@* D-153 — reusable Speaker Add/Edit form, hosted in the modal opened
-   from SpeakersList. Mirrors the ThemeForm extraction pattern. Country
-   picker is populated from /admin/countries/list (active rows only) on
+@* D-353 — reusable Speaker Add/Edit form, hosted by CrudShell (popup or full
+   page) from SpeakersList. Inherits CrudAddEditFormBase so it exposes the
+   standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). Branch
+   Create vs Update on IsEdit (POST when !IsEdit, PUT against Initial!.Id when
+   IsEdit). Supersedes SpeakerForm.razor (D-153), which keyed off Initial==null.
+   Country picker is populated from /admin/countries/list (active rows only) on
    first render. *@
+@inherits CrudAddEditFormBase<AdminSpeakerDetail>
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 
@@ -99,7 +103,7 @@
                        ValueExpression="@(() => _displayOrderInput)"
                        Disabled="_busy" />
 
-        @if (Initial is not null)
+        @if (IsEdit)
         {
             <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
                 @L["Admin.Speakers.Field.IsActive"]
@@ -108,8 +112,8 @@
     </div>
     <div class="simf-form__actions">
         <SimfButton Loading="_busy"
-                    LoadingLabel="@(Initial is null ? L["Admin.Speakers.New.Submitting"] : L["Admin.Speakers.Edit.Submitting"])">
-            @(Initial is null ? L["Admin.Speakers.New.Submit"] : L["Admin.Speakers.Edit.Submit"])
+                    LoadingLabel="@(IsEdit ? L["Admin.Speakers.Edit.Submitting"] : L["Admin.Speakers.New.Submitting"])">
+            @(IsEdit ? L["Admin.Speakers.Edit.Submit"] : L["Admin.Speakers.New.Submit"])
         </SimfButton>
         @if (OnCancel.HasDelegate)
         {
@@ -133,10 +137,6 @@
     // Country picker state — populated lazily on first render.
     private string[] _countryIds = Array.Empty<string>();
     private Dictionary<string, AdminCountrySummary> _countriesById = new();
-
-    [Parameter] public AdminSpeakerDetail? Initial { get; set; }
-    [Parameter] public EventCallback<AdminSpeakerDetail> OnSuccess { get; set; }
-    [Parameter] public EventCallback OnCancel { get; set; }
 
     protected override void OnInitialized()
     {
@@ -237,7 +237,7 @@
         try
         {
             ApiResult<AdminSpeakerDetail>? envelope;
-            if (Initial is null)
+            if (!IsEdit)
             {
                 envelope = await JS.InvokeAsync<ApiResult<AdminSpeakerDetail>>(
                     "simfAccount.postJson", "/account/api/admin/speakers",
@@ -268,7 +268,7 @@
             else
             {
                 envelope = await JS.InvokeAsync<ApiResult<AdminSpeakerDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/speakers/{Initial.Id}",
+                    "simfAccount.putJson", $"/account/api/admin/speakers/{Initial!.Id}",
                     new AdminUpdateSpeakerRequest
                     {
                         Code = _model.Code.Trim().ToUpperInvariant(),

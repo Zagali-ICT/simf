@@ -551,6 +551,9 @@ internal static class AccountEndpoints
         MapGridExcel(group, "contacts"); 
         MapGridExcel(group, "news"); 
         MapGridExcel(group, "ai/prompts");
+        MapGridExcel(group, "sponsors");
+        MapGridExcel(group, "exhibitors");
+        MapGridExcel(group, "speakers");
         // Organisations keeps its bespoke government-Excel bulk import, so it
         // gets the generic EXPORT only (no generic /import route).
         MapGridExport(group, "organisations");

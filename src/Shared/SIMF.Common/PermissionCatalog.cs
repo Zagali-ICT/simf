@@ -288,6 +288,8 @@ public static class PermissionCatalog
         public const string Create = "Speakers.Create";
         public const string Edit = "Speakers.Edit";
         public const string Delete = "Speakers.Delete";
+        public const string Export = "Speakers.Export";
+        public const string Import = "Speakers.Import";
     }
 
     /// <summary>Assigning moderators to sessions.</summary>
@@ -343,6 +345,8 @@ public static class PermissionCatalog
         public const string Create = "Exhibitors.Create";
         public const string Edit = "Exhibitors.Edit";
         public const string Delete = "Exhibitors.Delete";
+        public const string Export = "Exhibitors.Export";
+        public const string Import = "Exhibitors.Import";
     }
 
     public static class Booths
@@ -359,6 +363,8 @@ public static class PermissionCatalog
         public const string Create = "Sponsors.Create";
         public const string Edit = "Sponsors.Edit";
         public const string Delete = "Sponsors.Delete";
+        public const string Export = "Sponsors.Export";
+        public const string Import = "Sponsors.Import";
     }
 
     /// <summary>P2.5 (D-230) — 2D venue map editor (FR-605, FDS-006 §5.3).</summary>
@@ -696,6 +702,8 @@ public static class PermissionCatalog
         new(Speakers.Create, "Speakers", "Create", "Create speakers", AdminOnly),
         new(Speakers.Edit, "Speakers", "Edit", "Edit speakers", AdminOnly),
         new(Speakers.Delete, "Speakers", "Delete", "Delete speakers", AdminOnly),
+        new(Speakers.Export, "Speakers", "Export", "Export speakers", AdminOnly),
+        new(Speakers.Import, "Speakers", "Import", "Import speakers", AdminOnly),
 
         new(SessionModerators.View, "SessionModerators", "View", "View session moderators", AdminOnly),
         new(SessionModerators.Assign, "SessionModerators", "Assign", "Assign session moderators", AdminOnly),
@@ -722,6 +730,8 @@ public static class PermissionCatalog
         new(Exhibitors.Create, "Exhibitors", "Create", "Create exhibitors", AdminOnly),
         new(Exhibitors.Edit, "Exhibitors", "Edit", "Edit exhibitors", AdminOnly),
         new(Exhibitors.Delete, "Exhibitors", "Delete", "Delete exhibitors", AdminOnly),
+        new(Exhibitors.Export, "Exhibitors", "Export", "Export exhibitors", AdminOnly),
+        new(Exhibitors.Import, "Exhibitors", "Import", "Import exhibitors", AdminOnly),
 
         new(Booths.View, "Booths", "View", "View booths", AdminOnly),
         new(Booths.Create, "Booths", "Create", "Create booths", AdminOnly),
@@ -732,6 +742,8 @@ public static class PermissionCatalog
         new(Sponsors.Create, "Sponsors", "Create", "Create sponsors", AdminOnly),
         new(Sponsors.Edit, "Sponsors", "Edit", "Edit sponsors", AdminOnly),
         new(Sponsors.Delete, "Sponsors", "Delete", "Delete sponsors", AdminOnly),
+        new(Sponsors.Export, "Sponsors", "Export", "Export sponsors", AdminOnly),
+        new(Sponsors.Import, "Sponsors", "Import", "Import sponsors", AdminOnly),
 
         // P2.5 — D-230: 2D venue map editor.
         new(VenueMap.View, "VenueMap", "View", "View the venue map", AdminOnly),
