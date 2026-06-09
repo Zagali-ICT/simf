@@ -1,0 +1,27 @@
+@* CrudDialogFrame — the "open as a popup" presentation for a CRUD form
+   (D-353). A thin wrapper over SimfModal so the dialog framing lives in one
+   place; the hosted form supplies its own action buttons in its body. *@
+@namespace SIMF.Components.Forms
+
+<SimfModal Open="true"
+           Title="@Title"
+           CloseLabel="@CloseLabel"
+           OnClose="OnClose">
+    <ChildContent>
+        @ChildContent
+    </ChildContent>
+</SimfModal>
+
+@code {
+    /// <summary>The dialog title — also the modal's aria-label.</summary>
+    [Parameter] public string Title { get; set; } = string.Empty;
+
+    /// <summary>The accessible label for the modal close button.</summary>
+    [Parameter] public string CloseLabel { get; set; } = "Close";
+
+    /// <summary>Raised when the user closes the dialog.</summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    /// <summary>The hosted form.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

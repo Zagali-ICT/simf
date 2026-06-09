@@ -1011,6 +1011,12 @@
 
 .simf-nav-item__label { flex: 1 1 auto; min-width: 0; }
 
+/* CP side-menu per-item icon: never shrinks; colour is inherited (currentColor),
+   so an inactive item renders in the muted link colour and the active item's
+   icon turns primary along with its label. */
+.simf-nav-item__icon { flex: 0 0 auto; opacity: 0.75; }
+.simf-nav-item__link--active .simf-nav-item__icon { opacity: 1; }
+
 /* D-132 — "Soon" tag rendered next to nav entries that still resolve to
    the ModulePlaceholder, so operators can see at a glance which menu
    items are real and which are not yet built. */
@@ -1272,6 +1278,72 @@
 
 /* Scroll-lock the page body while a modal is open. */
 body.simf-modal-open { overflow: hidden; }
+
+/* -- Confirmation dialog message (SimfConfirm) ------------------------------ */
+.simf-confirm__message {
+  margin: 0;
+  color: var(--color-text);
+  line-height: var(--line-height-body);
+}
+
+/* -- CRUD page frame — the full-page alternative to the dialog (D-353).
+   Renders in the normal content flow as a surface card with a title + close
+   header, mirroring the modal's chrome so the two presentations feel the
+   same. The close button is direction-neutral (the X icon), so it needs no
+   RTL flip. ------------------------------------------------------------------ */
+.simf-crudpage {
+  inline-size: 100%;
+  max-inline-size: 1600px;
+  background-color: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.simf-crudpage__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.simf-crudpage__close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 32px;
+  block-size: 32px;
+  padding: 0;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-field);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.simf-crudpage__close:hover { background-color: var(--color-surface-sunken); color: var(--color-text); }
+.simf-crudpage__close:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
+
+.simf-crudpage__title {
+  margin: 0;
+  flex: 1 1 auto;
+  font-size: var(--font-size-subtitle);
+  line-height: var(--line-height-subtitle);
+  font-weight: var(--font-weight-heading);
+  color: var(--color-text);
+}
+
+.simf-crudpage__body {
+  padding: var(--space-6);
+  color: var(--color-text);
+  line-height: var(--line-height-body);
+}
+
+@media (max-width: 639px) {
+  .simf-crudpage__body { padding: var(--space-4); }
+}
 
 /* -- Field — select / textarea variants ------------------------------------- */
 .simf-field__control--select {

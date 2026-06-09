@@ -7,13 +7,13 @@
 | **Surface** | Control Panel |
 | **Audience** | Administrator |
 | **Auth** | `[Authorize(Roles = "Administrator")]` + cookie-auth session + JWT bearer forwarded by BFF |
-| **Pattern** | D-117 canonical CRUD + D-132 mandatory Multiselect / SimfBanner |
+| **Pattern** | D-117 canonical CRUD + D-132 Multiselect / SimfBanner + D-353 centralized dialog/full-page framing (reference pilot) |
 | **Status** | ✅ Real |
 | **Implements use case(s)** | UC-INT-LIST, UC-INT-CREATE, UC-INT-EDIT, UC-INT-VIEW, UC-INT-DEACTIVATE _(to be authored under `SIMF-UCS-001`)_ |
 | **Backend endpoints** | `POST /account/api/admin/interests/list`, `POST /account/api/admin/interests`, `PUT /account/api/admin/interests/{id}`, `DELETE /account/api/admin/interests/{id}` |
-| **Source file** | [`src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/InterestsList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/InterestsList.razor) + child [`InterestForm.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/InterestForm.razor) |
-| **Tests** | [`docs/tests/e2e/cp-admin-interests.md`](../../tests/e2e/cp-admin-interests.md) (to be authored) |
-| **Last reviewed** | 2026-05-28 |
+| **Source file** | [`InterestsList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/InterestsList.razor) + the two reusable forms [`InterestAddEdit.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/InterestAddEdit.razor) and [`InterestViewDelete.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/InterestViewDelete.razor), framed by the shared `CrudShell` (D-353). _(`InterestForm.razor` was renamed to `InterestAddEdit.razor`.)_ |
+| **Tests** | [`docs/tests/e2e/cp-admin-interests.md`](../../tests/e2e/cp-admin-interests.md) |
+| **Last reviewed** | 2026-06-09 |
 
 ---
 
@@ -51,6 +51,10 @@ effect on the visitor-facing picker the next time it loads.
 |-------|------|----------|
 | Default (with rows) | `docs/screenshots/d132-interests-canonical.png` | 2026-05-28 |
 | Add modal | `docs/screenshots/d132-interests-add-modal.png` | 2026-05-28 |
+| Grid (RTL, D-353) | `docs/screenshots/d353-interests-grid-rtl.png` | 2026-06-09 |
+| Add — full page (D-353) | `docs/screenshots/d353-interests-add-fullpage-rtl.png` | 2026-06-09 |
+| Add — dialog (D-353) | `docs/screenshots/d353-interests-add-dialog-rtl.png` | 2026-06-09 |
+| Deactivate confirmation (D-353) | `docs/screenshots/d353-interests-delete-confirm-rtl.png` | 2026-06-09 |
 | Edit modal | _to capture_ | — |
 | Details modal | _to capture_ | — |
 | Empty state (no interests) | _to capture_ | — |
@@ -69,10 +73,11 @@ subtitle, no Actions slot. Title resx: EN "Interests", AR "الاهتمامات"
 | Button | Wired callback | Calls | Notes |
 |--------|----------------|-------|-------|
 | **Select all** | `ToggleSelectAllAsync` (built into `SimfDataGrid`) | — | Multiselect=true mandatory per D-132 |
-| **Add** | `OnAddAsync` | sets `_addOpen = true` → opens Add modal | hosts `<InterestForm />` |
-| **Edit** | `OnEditAsync(row)` | sets `_editTarget = row` → opens Edit modal | hosts `<InterestForm Initial="@row" />` — no extra GET, the row already has every editable field |
-| **Details** | `OnDetailsAsync(row)` | sets `_detailsTarget = row` → opens read-only Details modal | renders `<dl class="simf-dl">` of every field |
-| **Deactivate** | `OnDeactivateAsync(row)` | `DELETE /account/api/admin/interests/{id}` | soft-delete (sets `IsActive = false`) |
+| **Open as dialog / full page** | `CrudPresentationToggle` (`@bind-Value="_presentation"`) | persists `simf.cp.prefs.interests` via `CpPreferences` | D-353 — picks how the four forms below open; default dialog |
+| **Add** | `OnAddAsync` | `_form = AddEdit; _isEdit = false` → `CrudShell` hosts `<InterestAddEdit IsEdit="false" />` | popup or full page per the toggle |
+| **Edit** | `OnEditAsync(row)` | `_form = AddEdit; _isEdit = true; _target = row` → `<InterestAddEdit IsEdit="true" Initial="@row" />` | no extra GET — the row already has every editable field |
+| **Details** | `OnDetailsAsync(row)` | `_form = ViewDelete; _isDelete = false; _target = row` → `<InterestViewDelete IsDelete="false" />` | read-only `<dl>` of every field |
+| **Deactivate** | `OnDeleteAsync(row)` | `_form = ViewDelete; _isDelete = true; _target = row` → `<InterestViewDelete IsDelete="true" />` → `SimfConfirm` → `DELETE /account/api/admin/interests/{id}` | D-353 — now shows the record + a **confirmation** before the soft-delete (was one-click) |
 
 Bulk-delete (`OnDeleteSelected`) is intentionally **not wired**: deactivation is
 a per-row destructive action and a bulk-deactivate UX would be more dangerous
@@ -95,7 +100,7 @@ Export are also unwired — domain doesn't need them.
 - Caption: EN "Showing X–Y of Z" / AR "عرض X–Y من Z"
 - Page label: EN "Page X of Y" / AR "الصفحة X من Y"
 
-### 4.5 Form fields (Add + Edit modal, via `InterestForm.razor`)
+### 4.5 Form fields (Add + Edit, via `InterestAddEdit.razor`)
 
 | Field | Type | Required | MaxLength | Validation | Locale |
 |-------|------|----------|-----------|------------|--------|
@@ -109,14 +114,29 @@ The DisplayOrder field uses `Value`/`ValueChanged` + `ValueExpression` (not
 string lives in `_displayOrderInput`. Without `ValueExpression`, an
 `EditContext`-bound `EditForm` crashes with `InputText requires a value for
 the 'ValueExpression' parameter`. _(This was the D-132 mid-flight bug; the fix
-is in `InterestForm.razor:34`.)_
+lives in `InterestAddEdit.razor`.)_
+
+### 4.6 Presentation: dialog vs full page (D-353)
+
+The four forms above are hosted by the shared `CrudShell`, which frames the
+same form either as a centred popup (`CrudDialogFrame` over `SimfModal`) or as
+a full-width in-place panel (`CrudPageFrame`) that replaces the grid until the
+user saves or closes — **same route, no navigation**. The `CrudPresentationToggle`
+in the toolbar flips between the two and persists the choice per browser in
+`localStorage` (`simf.cp.prefs.interests`) via the `CpPreferences` service; the
+default is dialog, so behaviour is unchanged until the admin opts in. The user
+can wipe every saved choice from **Profile → Display preferences → Clear saved
+layout**. The two forms expose the standard CRUD parameter surface from
+`CrudAddEditFormBase<T>` / `CrudViewDeleteFormBase<T>`. This page is the
+reference implementation; the same pattern rolls out to the other CP list pages
+(see the [CRUD-frame dev guide](../../manuals/SIMF-Crud-Frame-Dev-Guide.md)).
 
 ## 5. Data flow
 
 ```
 Administrator clicks Add
-  → OnAddAsync() sets _addOpen = true
-  → <SimfModal> renders <InterestForm />
+  → OnAddAsync() sets _form = AddEdit (_isEdit = false)
+  → <CrudShell> frames <InterestAddEdit IsEdit="false" /> as a popup or full page (per the toggle)
   → admin fills 3 fields, clicks Create
   → HandleSubmitAsync() validates client-side
   → JS interop: simfAccount.postJson("/account/api/admin/interests", AdminCreateInterestRequest)
@@ -124,7 +144,7 @@ Administrator clicks Add
   → API endpoint POST /api/v1/admin/interests
   → AdminInterestService creates the row (transactional, row-audited via D-109 interceptor)
   → ApiResult<AdminInterestSummary>
-  → CP modal calls OnSuccess(created)
+  → CP form calls OnSuccess(created)
   → list reloads, success toast "Interest 'X' was created."
 ```
 
@@ -137,7 +157,7 @@ Administrator clicks Add
 
 ## 6. Validation + error handling
 
-- **Client-side guards** (`InterestForm.HandleSubmitAsync`):
+- **Client-side guards** (`InterestAddEdit.HandleSubmitAsync`):
   - `Name`: not whitespace, 1–128 chars
   - `NameArabic`: not whitespace, 1–128 chars
   - `DisplayOrder`: integer ≥ 0
@@ -217,7 +237,7 @@ Administrator clicks Add
 
 ## 11. Related E2E test scenarios
 
-_(catalogue to be authored under `docs/tests/e2e/cp-admin-interests.md`)_
+Authored at [`docs/tests/e2e/cp-admin-interests.md`](../../tests/e2e/cp-admin-interests.md).
 
 | Scenario | ID | Coverage |
 |----------|----|----------|
@@ -236,7 +256,7 @@ _(catalogue to be authored under `docs/tests/e2e/cp-admin-interests.md`)_
 - Architecture: [`SIMF-SAD-001`](../../SIMF-SAD-001-Software-Architecture-Document.md) — modular monolith / DDD layering.
 - API spec: [`SIMF-API-001`](../../SIMF-API-001-API-Specification.md) — `ApiResult<T>` envelope, error model.
 - Decisions log: [`DECISIONS_LOG.md`](../../decisions/DECISIONS_LOG.md) — D-050 (original), D-117 (canonical CRUD pattern), D-132 (migration).
-- Source: `src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/InterestsList.razor` + `InterestForm.razor`.
+- Source: `src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/InterestsList.razor` + `InterestAddEdit.razor` + `InterestViewDelete.razor`, framed by `CrudShell` (D-353).
 - Component catalogue: [`SIMF-CMP-001`](../../SIMF-CMP-001-Component-Catalog.md) — `SimfDataGrid`, `SimfBanner`, `SimfModal`, `SimfTextField`, `SimfCheckbox`, `SimfPill`, `SimfButton`, `SimfEmptyState`, `SimfAlert`.
 
 ## 13. Changelog
@@ -245,6 +265,7 @@ _(catalogue to be authored under `docs/tests/e2e/cp-admin-interests.md`)_
 |------|----------|--------|
 | 2026-05-26 | D-050 (P9) | Original implementation: SimfDataGrid with navigate-to-page Add / Edit. |
 | 2026-05-28 | D-132 | Migrated to canonical CRUD pattern: SimfBanner, Multiselect+RowKey, modal-based Add/Edit/Details (via new `InterestForm.razor` child), full pager labels, `EmptyTemplate`, `_displayOrderInput` `ValueExpression` fix. `CreateInterest.razor` + `EditInterest.razor` deleted; their routes 404 by design. |
+| 2026-06-09 | D-353 | Reference pilot for the centralized CRUD framing: `InterestForm.razor` → `InterestAddEdit.razor` (now keys off `IsEdit`); new `InterestViewDelete.razor` (read-only details + confirmed deactivate); `InterestsList` rewired to one `CrudPresentationToggle` + one `CrudShell` per form-kind (dialog or full page, persisted per browser). Delete now shows the record + a `SimfConfirm` step (was one-click). |
 
 ---
 

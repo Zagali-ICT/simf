@@ -1,9 +1,10 @@
-@* D-132 — reusable Interest Add/Edit form. Hosted in the modal opened
-   from InterestsList.razor. Mirrors the CreateVisitorForm/CreateAdminForm
-   extraction pattern (D-114/D-117) so the modal and any deep-link
-   fallback render the same form with one source of truth. When Initial
-   is null the form runs in Create mode; otherwise Edit mode (with the
-   IsActive checkbox shown). *@
+@* D-353 — reusable Interest Add/Edit form, hosted by CrudShell (as a popup
+   or a full page) from InterestsList.razor. Inherits CrudAddEditFormBase so
+   it exposes the standard CRUD-form parameter surface (IsEdit / Initial /
+   OnSuccess / OnCancel). IsEdit=false runs Create (POST); IsEdit=true runs
+   Edit (PUT against Initial) and shows the IsActive checkbox. Supersedes the
+   old InterestForm.razor (D-132) which keyed off Initial==null. *@
+@inherits CrudAddEditFormBase<AdminInterestSummary>
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 
@@ -29,7 +30,7 @@
                        ValueChanged="@(v => _displayOrderInput = v)"
                        ValueExpression="@(() => _displayOrderInput)"
                        Disabled="_busy" />
-        @if (Initial is not null)
+        @if (IsEdit)
         {
             <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
                 @L["Admin.Interests.Field.IsActive"]
@@ -38,8 +39,8 @@
     </div>
     <div class="simf-form__actions">
         <SimfButton Loading="_busy"
-                    LoadingLabel="@(Initial is null ? L["Admin.Interests.New.Submitting"] : L["Admin.Interests.Edit.Submitting"])">
-            @(Initial is null ? L["Admin.Interests.New.Submit"] : L["Admin.Interests.Edit.Submit"])
+                    LoadingLabel="@(IsEdit ? L["Admin.Interests.Edit.Submitting"] : L["Admin.Interests.New.Submitting"])">
+            @(IsEdit ? L["Admin.Interests.Edit.Submit"] : L["Admin.Interests.New.Submit"])
         </SimfButton>
         @if (OnCancel.HasDelegate)
         {
@@ -57,17 +58,6 @@
     private EditContext _editContext = default!;
     private bool _busy;
     private string? _error;
-
-    /// <summary>When set, runs in Edit mode and PUTs to /admin/interests/{Initial.Id};
-    /// otherwise runs in Create mode and POSTs to /admin/interests.</summary>
-    [Parameter] public AdminInterestSummary? Initial { get; set; }
-
-    /// <summary>Fires after a successful create or update. The host modal closes
-    /// itself and reloads the grid in response.</summary>
-    [Parameter] public EventCallback<AdminInterestSummary> OnSuccess { get; set; }
-
-    /// <summary>Optional cancel callback (host modal close). When unset, no Cancel button.</summary>
-    [Parameter] public EventCallback OnCancel { get; set; }
 
     protected override void OnInitialized()
     {
@@ -103,7 +93,7 @@
         try
         {
             ApiResult<AdminInterestSummary>? envelope;
-            if (Initial is null)
+            if (!IsEdit)
             {
                 envelope = await JS.InvokeAsync<ApiResult<AdminInterestSummary>>(
                     "simfAccount.postJson", "/account/api/admin/interests",
@@ -117,7 +107,7 @@
             else
             {
                 envelope = await JS.InvokeAsync<ApiResult<AdminInterestSummary>>(
-                    "simfAccount.putJson", $"/account/api/admin/interests/{Initial.Id}",
+                    "simfAccount.putJson", $"/account/api/admin/interests/{Initial!.Id}",
                     new AdminUpdateInterestRequest
                     {
                         Name = _model.Name.Trim(),

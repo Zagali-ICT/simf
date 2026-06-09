@@ -256,6 +256,9 @@
   <data name="Admin.Interests.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
   <data name="Admin.Interests.None" xml:space="preserve"><value>لا توجد اهتمامات بعد.</value></data>
   <data name="Admin.Interests.Add.Title" xml:space="preserve"><value>إضافة اهتمام</value></data>
+  <!-- D-353 — View/Delete confirmation strings -->
+  <data name="Admin.Interests.Delete.Title" xml:space="preserve"><value>إلغاء تفعيل الاهتمام</value></data>
+  <data name="Admin.Interests.Delete.Message" xml:space="preserve"><value>إلغاء تفعيل "{0}"؟ سيُخفى من أداة اختيار الزائر. يمكنك إعادة تفعيله لاحقًا عبر التعديل.</value></data>
   <data name="Admin.Interests.Add.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.Interests.Add.Close" xml:space="preserve"><value>إغلاق</value></data>
   <data name="Admin.Interests.Edit.Close" xml:space="preserve"><value>إغلاق</value></data>
@@ -1188,6 +1191,11 @@
   <data name="Profile.Roles.None" xml:space="preserve"><value>لا توجد صلاحيات معيّنة لهذا الحساب.</value></data>
 
   <data name="Profile.Avatar.Title" xml:space="preserve"><value>صورتي الشخصية</value></data>
+  <!-- D-353 — Display preferences (clear saved CRUD dialog/full-page + grid layout) -->
+  <data name="Profile.Display.Title" xml:space="preserve"><value>تفضيلات العرض</value></data>
+  <data name="Profile.Display.Description" xml:space="preserve"><value>يتم حفظ اختيارك لفتح نماذج الإضافة والتعديل والعرض كنافذة منبثقة أو صفحة كاملة وتخطيطات الجداول في هذا المتصفح.</value></data>
+  <data name="Profile.Display.ClearButton" xml:space="preserve"><value>مسح التخطيط المحفوظ</value></data>
+  <data name="Profile.Display.Cleared" xml:space="preserve"><value>تم مسح تفضيلات العرض المحفوظة.</value></data>
   <data name="Profile.Avatar.None" xml:space="preserve"><value>لا توجد صورة شخصية.</value></data>
   <data name="Profile.Avatar.Upload" xml:space="preserve"><value>رفع صورة جديدة</value></data>
   <data name="Profile.Avatar.Picker" xml:space="preserve"><value>اختر ملف صورة الحساب</value></data>
@@ -2410,6 +2418,9 @@
   <data name="Grid.PageSize" xml:space="preserve"><value>عرض</value></data>
   <data name="Grid.Page" xml:space="preserve"><value>صفحة {0} من {1}</value></data>
   <data name="Grid.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <!-- D-353 — CRUD presentation toggle (dialog vs full page) -->
+  <data name="Grid.View.Dialog" xml:space="preserve"><value>فتح كنافذة منبثقة</value></data>
+  <data name="Grid.View.Page" xml:space="preserve"><value>فتح كصفحة كاملة</value></data>
   <data name="Grid.Add" xml:space="preserve"><value>إضافة</value></data>
   <data name="Grid.Edit" xml:space="preserve"><value>تعديل</value></data>
   <data name="Grid.Details" xml:space="preserve"><value>تفاصيل</value></data>

@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP `dbji csx7 c3mj s2qa sjcl rbcl kiqk ovr3` |
-| **Last reviewed** | 2026-05-28 |
+| **Last reviewed** | 2026-06-09 (D-353 — dialog/full-page framing + delete confirmation) |
 
 ## Coverage matrix
 
@@ -20,6 +20,9 @@
 | E2E-INT-005 | Conflict: duplicate name → 409 + bilingual server message | error | P1 | _to author_ |
 | E2E-INT-006 | Server error: API 500 on `/list` → bilingual fallback | resilience | P2 | _to author_ |
 | E2E-INT-007 | RTL render: Arabic toggle mirrors page + modal | i18n | P1 | smoked manually 2026-05-28 |
+| E2E-INT-008 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
+| E2E-INT-009 | Full-page mode: Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-INT-010 | Delete confirmation: Deactivate opens View/Delete → SimfConfirm gates the call (D-353) | error | P0 | _to author_ |
 
 ## Scenarios
 
@@ -65,7 +68,13 @@ Scenario: Create, edit, view, deactivate one interest
   Then the modal closes
 
   When the administrator clicks the "Deactivate" icon on that row
-  Then a green toast reads "Interest \"Naval Engineering\" was deactivated."
+  Then the View/Delete form opens (dialog by default) showing the row's read-only details
+  And a red "Deactivate" button is visible
+  When they click "Deactivate"
+  Then a SimfConfirm dialog asks to confirm, naming the interest
+  When they click the confirm "Deactivate" button
+  Then the form closes
+  And a green toast reads "Interest \"Naval Engineering\" was deactivated."
   And the row remains visible but the pill changes to the grey "Inactive" pill
 ```
 
@@ -150,6 +159,52 @@ Scenario: Arabic toggle mirrors page + Add modal
   Then the Add modal opens in RTL
   And the field labels are Arabic
   And the form actions appear in reverse order
+```
+
+### E2E-INT-008 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/interests with the default "dialog" presentation
+  And the grid toolbar shows the "Open as full page" toggle (maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.interests" holds {"v":1,"presentation":"page"}
+  When they reload /admin/interests
+  Then the toggle still reads "Open as dialog"
+  And opening Add now renders the full-page frame (not a popup)
+```
+
+### E2E-INT-009 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page"
+  When the administrator clicks "Add interest"
+  Then the grid + banner are replaced by the CrudPageFrame (title + close header + the form)
+  And there is no modal backdrop
+  When they fill the three fields and click "Create interest"
+  Then the page frame closes
+  And the grid re-appears with the new row and the success toast
+  When they click the "Edit" icon and then the frame's close (X) button
+  Then the form closes and the grid re-appears unchanged
+```
+
+### E2E-INT-010 — Delete confirmation gate (D-353)
+
+```gherkin
+Scenario: Deactivate requires explicit confirmation
+  Given the administrator is on /admin/interests
+  When they click the "Deactivate" icon on a row
+  Then the View/Delete form opens showing the row's read-only details and a red "Deactivate" button
+  When they click "Deactivate"
+  Then a SimfConfirm dialog appears naming the interest
+  And it cannot be dismissed by a backdrop click (RequireExplicitClose)
+  When they click "Cancel"
+  Then no DELETE request fires and the row is unchanged
+  When they re-open and click "Deactivate" then confirm
+  Then exactly one DELETE /account/api/admin/interests/{id} fires
+  And the success toast appears and the pill turns grey "Inactive"
 ```
 
 ---
