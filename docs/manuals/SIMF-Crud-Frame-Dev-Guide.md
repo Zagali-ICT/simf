@@ -137,4 +137,57 @@ changeset**:
 
 ---
 
-_Authored 2026-06-09 (D-353). Update this guide if the framework API changes._
+---
+
+## 5. Excel Export + Import (D-356) — the dynamic grid Excel engine
+
+The uniform standard now also includes Excel **Export** (every CRUD page) and
+**Import** (every page that has a create/upsert path; read-only / queue pages
+get Export only). One hardened engine renders/parses for all resources — the
+per-resource code is minimal. **Interests is the reference** (`InterestExcelEndpoints.cs`,
+`CrudGridExcel.razor`, `InterestsList.razor`).
+
+### Backend (one file per resource)
+`src/Backend/SIMF.Api/Endpoints/Admin/{Resource}ExcelEndpoints.cs`:
+
+- `Export{Resource}Endpoint : AdminGridExportEndpoint<TSummary>` — declare
+  `RoutePath` (`/admin/{slug}/export`), `Permission`
+  (`PermissionCatalog.{Resource}.Export`), `SheetName`, `FilePrefix`, the
+  `Columns` (header + per-row value selector), `ListAsync` (reuse the existing
+  list service) and `IdOf`.
+- `Import{Resource}Endpoint : AdminGridImportEndpoint` — declare `RoutePath`
+  (`/admin/{slug}/import`), `Permission` (`...Import`), `SheetName`,
+  `RequiredHeaders`, `RowKey`, and `ApplyRowAsync` (bind a parsed row to the
+  create request + call the service; **throw `DataValidationException` for a bad
+  row** → it becomes a per-row error, never a batch abort). Omit this class for
+  read-only / queue resources.
+
+### Permissions
+Add `{Resource}.Export` (+ `.Import`) to the nested class **and** to `All` in
+`PermissionCatalog` (`AdminOnly` baseline). Idempotent seed — **no migration**.
+
+### CP BFF
+One line in `AccountEndpoints.MapAccountEndpoints`: `MapGridExcel(group, "{slug}");`
+— registers the `/admin/{slug}/export` + `/import` proxies.
+
+### CP page
+Wire the grid: `OnExport="OnExportAsync"` + `OnImport="OnImportAsync"` +
+`ExportLabel="@L["Grid.Export"]"` + `ImportLabel="@L["Grid.Import"]"`; add
+`<CrudGridExcel @ref="_excel" Resource="{slug}" OnImported="OnImportedAsync" OnError="OnExcelError" />`
+after the grid; add the four handlers (copy from `InterestsList.razor`).
+Read-only pages omit `OnImport` / `ImportLabel`.
+
+### Security (inherited — never reimplement per page)
+Formula-injection sanitisation (CWE-1236), strict sheet-name match, required-header
+check, 5 MB + ZIP-magic upload gate and the 5 000-row cap all live in the engine
+(`ClosedXmlGridExcelExporter` / `ClosedXmlGridExcelImporter` /
+`AdminGridImportEndpoint`).
+
+### DoD (in addition to §4)
+An integration test mirroring `InterestExcelTests.cs` (export round-trip, a
+positive import, the not-a-workbook + wrong-sheet rejections, the permission
+gate) and the page's E2E catalogue gains export + import scenarios.
+
+---
+
+_Authored 2026-06-09 (D-353); §5 added 2026-06-09 (D-356). Update this guide if the framework API changes._

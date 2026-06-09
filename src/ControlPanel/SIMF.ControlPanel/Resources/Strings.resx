@@ -2438,6 +2438,15 @@
   <data name="Grid.Close" xml:space="preserve"><value>Close</value></data>
   <data name="Grid.Active" xml:space="preserve"><value>Active</value></data>
   <data name="Grid.Inactive" xml:space="preserve"><value>Inactive</value></data>
+  <data name="Grid.Export" xml:space="preserve"><value>Export</value></data>
+  <data name="Grid.Import" xml:space="preserve"><value>Import</value></data>
+  <data name="Grid.Import.Picker" xml:space="preserve"><value>Choose an Excel (.xlsx) file to import</value></data>
+  <data name="Grid.Import.ResultTitle" xml:space="preserve"><value>Import results</value></data>
+  <data name="Grid.Import.ResultBody" xml:space="preserve"><value>{0} created, {1} updated, {2} skipped.</value></data>
+  <data name="Grid.Import.RowError" xml:space="preserve"><value>Row {0} ({1}): {2}</value></data>
+  <data name="Grid.Import.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Grid.Import.Failed" xml:space="preserve"><value>The import could not be completed.</value></data>
+  <data name="Grid.Import.Done" xml:space="preserve"><value>Import complete.</value></data>
   <data name="Admin.AiPrompts.Active.Yes" xml:space="preserve"><value>Active</value></data>
   <data name="Admin.AiPrompts.Active.No" xml:space="preserve"><value>Inactive</value></data>
   <!-- SIMF-FDS-014 (D-281/C2) — shared Contact directory -->

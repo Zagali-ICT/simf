@@ -129,6 +129,8 @@ public static class PermissionCatalog
         public const string Create = "Interests.Create";
         public const string Edit = "Interests.Edit";
         public const string Delete = "Interests.Delete";
+        public const string Export = "Interests.Export";
+        public const string Import = "Interests.Import";
     }
 
     /// <summary>Countries reference data.</summary>
@@ -574,6 +576,8 @@ public static class PermissionCatalog
         new(Interests.Create, "Interests", "Create", "Create interests", AdminOnly),
         new(Interests.Edit, "Interests", "Edit", "Edit interests", AdminOnly),
         new(Interests.Delete, "Interests", "Delete", "Delete interests", AdminOnly),
+        new(Interests.Export, "Interests", "Export", "Export interests", AdminOnly),
+        new(Interests.Import, "Interests", "Import", "Import interests", AdminOnly),
 
         new(Countries.View, "Countries", "View", "View countries", AdminOnly),
         new(Countries.Create, "Countries", "Create", "Create countries", AdminOnly),

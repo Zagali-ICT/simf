@@ -532,6 +532,11 @@ internal static class AccountEndpoints
                 stream.ToArray(), file.FileName, token));
         }).DisableAntiforgery();
 
+        // D-356 — generic grid Excel proxies. One line per resource registers
+        // both /admin/{slug}/export (binary) and /admin/{slug}/import (multipart),
+        // forwarding to the API's generic grid endpoints. Interests is the pilot.
+        MapGridExcel(group, "interests");
+
         // D-118 — D-113 type-scoped bulk proxies for Visitors and Others.
         // The visitors/others CP list pages (D-114) call these JS endpoints
         // and they forward to the API's D-113 routes with the access token.
@@ -2638,4 +2643,50 @@ internal static class AccountEndpoints
     /// </summary>
     private static IResult Forward<T>(ApiCallResult<T> result) =>
         Results.Json(result.Body, statusCode: result.StatusCode);
+
+    /// <summary>
+    /// D-356 — registers the generic grid Excel proxy pair for one resource
+    /// slug: <c>POST /admin/{slug}/export</c> (returns the XLSX bytes for the
+    /// browser to save) and <c>POST /admin/{slug}/import</c> (multipart upload,
+    /// forwards the per-row result). Both forward to the API's generic grid
+    /// endpoints with the cookie's access token; the browser never sees it.
+    /// </summary>
+    private static void MapGridExcel(IEndpointRouteBuilder group, string slug)
+    {
+        group.MapPost($"/admin/{slug}/export",
+            async (AdminGridExportRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, bytes) = await api.ExportGridAsync(slug, body, token);
+            if (status != 200 || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            return Results.File(bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"simf-{slug}-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx");
+        });
+
+        group.MapPost($"/admin/{slug}/import",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.AdminImportEmpty,
+                    Message = "An Excel file is required.",
+                    MessageArabic = "ملف Excel مطلوب.",
+                }));
+            }
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return Forward(await api.ImportGridAsync(slug, stream.ToArray(), file.FileName, token));
+        }).DisableAntiforgery();
+    }
 }

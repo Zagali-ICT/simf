@@ -2431,6 +2431,15 @@
   <data name="Grid.Close" xml:space="preserve"><value>إغلاق</value></data>
   <data name="Grid.Active" xml:space="preserve"><value>مُفعّل</value></data>
   <data name="Grid.Inactive" xml:space="preserve"><value>غير مُفعّل</value></data>
+  <data name="Grid.Export" xml:space="preserve"><value>تصدير</value></data>
+  <data name="Grid.Import" xml:space="preserve"><value>استيراد</value></data>
+  <data name="Grid.Import.Picker" xml:space="preserve"><value>اختر ملف Excel (.xlsx) للاستيراد</value></data>
+  <data name="Grid.Import.ResultTitle" xml:space="preserve"><value>نتائج الاستيراد</value></data>
+  <data name="Grid.Import.ResultBody" xml:space="preserve"><value>تم إنشاء {0}، وتحديث {1}، وتخطّي {2}.</value></data>
+  <data name="Grid.Import.RowError" xml:space="preserve"><value>الصف {0} ({1}): {2}</value></data>
+  <data name="Grid.Import.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Grid.Import.Failed" xml:space="preserve"><value>تعذّر إكمال الاستيراد.</value></data>
+  <data name="Grid.Import.Done" xml:space="preserve"><value>اكتمل الاستيراد.</value></data>
   <data name="Admin.AiPrompts.Active.Yes" xml:space="preserve"><value>مُفعّل</value></data>
   <data name="Admin.AiPrompts.Active.No" xml:space="preserve"><value>غير مُفعّل</value></data>
   <!-- SIMF-FDS-014 (D-281/C2) — shared Contact directory -->

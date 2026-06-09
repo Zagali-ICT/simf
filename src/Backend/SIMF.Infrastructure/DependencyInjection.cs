@@ -423,6 +423,10 @@ public static class DependencyInjection
         // P1.6 — export-only workbook builders for the read-only admin grids.
         services.AddSingleton<IOperationLogExcelService, ClosedXmlOperationLogExcelService>();
         services.AddSingleton<IAttendeeExcelService, ClosedXmlAttendeeExcelService>();
+        // D-356 — generic grid Excel engine (one hardened exporter/importer for
+        // every resource's export/import, driven by per-resource column descriptors).
+        services.AddSingleton<SIMF.Application.Excel.IGridExcelExporter, ClosedXmlGridExcelExporter>();
+        services.AddSingleton<SIMF.Application.Excel.IGridExcelImporter, ClosedXmlGridExcelImporter>();
         services.AddSingleton<IAvatarStorage, FilesystemAvatarStorage>();
         services.AddSingleton<IUserIdDocumentStorage, EncryptedUserIdDocumentStorage>();
         services.AddSingleton<ILogFileService, LogFileService>();

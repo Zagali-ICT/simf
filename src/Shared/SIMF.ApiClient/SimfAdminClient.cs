@@ -188,6 +188,57 @@ public sealed class SimfAdminClient(HttpClient http)
         }
     }
 
+    /// <summary>D-356 — generic grid XLSX export by resource slug (e.g. "interests").
+    /// Posts the selected ids / grid query and returns the workbook bytes.</summary>
+    public Task<(int StatusCode, byte[] Bytes)> ExportGridAsync(
+        string resource,
+        SIMF.Contracts.Admin.AdminGridExportRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        PostForBytesAsync($"{resource}/export", request, accessToken, cancellationToken);
+
+    /// <summary>D-356 — generic grid XLSX import by resource slug. Multipart
+    /// upload, single file field "file"; returns the per-row outcome summary.</summary>
+    public async Task<ApiCallResult<SIMF.Contracts.Admin.AdminGridImportResult>> ImportGridAsync(
+        string resource,
+        byte[] xlsx,
+        string fileName,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        using var content = new MultipartFormDataContent();
+        var file = new ByteArrayContent(xlsx);
+        file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        content.Add(file, "file", fileName);
+
+        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + $"{resource}/import")
+        {
+            Content = content,
+        };
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            var body = await response.Content.ReadFromJsonAsync<ApiResult<SIMF.Contracts.Admin.AdminGridImportResult>>(
+                JsonOptions, cancellationToken);
+            return new ApiCallResult<SIMF.Contracts.Admin.AdminGridImportResult>(
+                (int)response.StatusCode,
+                body ?? TransportFailure<SIMF.Contracts.Admin.AdminGridImportResult>(
+                    "The server returned an empty response.",
+                    "أعاد الخادم استجابة فارغة."));
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException or JsonException)
+        {
+            return new ApiCallResult<SIMF.Contracts.Admin.AdminGridImportResult>(
+                (int)HttpStatusCode.ServiceUnavailable,
+                TransportFailure<SIMF.Contracts.Admin.AdminGridImportResult>(
+                    "The SIMF service could not be reached. Please try again.",
+                    "تعذّر الوصول إلى خدمة SIMF. حاول مرة أخرى."));
+        }
+    }
+
     // -- D-113 — type-scoped bulk operations for Visitors and Others ---------
 
     /// <summary>Soft-deletes one or many visitor accounts (D-113).</summary>

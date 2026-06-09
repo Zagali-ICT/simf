@@ -23,6 +23,9 @@
 | E2E-INT-008 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
 | E2E-INT-009 | Full-page mode: Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
 | E2E-INT-010 | Delete confirmation: Deactivate opens View/Delete → SimfConfirm gates the call (D-353) | error | P0 | _to author_ |
+| E2E-INT-011 | Excel export: toolbar Export downloads an .xlsx of the filtered grid (D-356) | happy | P1 | _to author_ |
+| E2E-INT-012 | Excel import: upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
+| E2E-INT-013 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -205,6 +208,45 @@ Scenario: Deactivate requires explicit confirmation
   When they re-open and click "Deactivate" then confirm
   Then exactly one DELETE /account/api/admin/interests/{id} fires
   And the success toast appears and the pill turns grey "Inactive"
+```
+
+### E2E-INT-011 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the filtered grid to an XLSX workbook
+  Given the administrator is on /admin/interests with at least two interests
+  When they click the toolbar "Export" action with no rows selected
+  Then a POST /account/api/admin/interests/export fires with an empty Ids list and the current Query
+  And the browser saves a file named simf-interests-{timestamp}.xlsx
+  And the workbook's "Interests" sheet has the header Name | NameArabic | DisplayOrder | IsActive
+  When they instead select two rows then click "Export"
+  Then the workbook contains exactly those two rows
+```
+
+### E2E-INT-012 — Excel import (D-356)
+
+```gherkin
+Scenario: Import interests from a workbook and see the per-row outcome
+  Given the administrator is on /admin/interests
+  When they click the toolbar "Import" action
+  And they choose an .xlsx whose "Interests" sheet has Name/NameArabic rows for two new interests
+  Then a POST /account/api/admin/interests/import fires as multipart form data
+  And the import-result modal shows "2 created, 0 updated, 0 skipped."
+  And the grid reloads and lists both new interests
+  When they import a workbook containing one duplicate name and one new name
+  Then the modal shows 1 created and one row error naming the duplicate
+```
+
+### E2E-INT-013 — Excel import rejection (D-356)
+
+```gherkin
+Scenario: A bad upload is rejected without creating anything
+  Given the administrator is on /admin/interests
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic check)
+  Then the request returns 400 and the page shows a bilingual error toast
+  And no interest is created
+  When they import a workbook whose sheet is not named "Interests"
+  Then the request returns 400 with the bilingual "worksheet named 'Interests'" message
 ```
 
 ---
