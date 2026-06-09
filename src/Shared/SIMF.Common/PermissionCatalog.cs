@@ -355,6 +355,8 @@ public static class PermissionCatalog
         public const string Create = "Booths.Create";
         public const string Edit = "Booths.Edit";
         public const string Delete = "Booths.Delete";
+        public const string Export = "Booths.Export";
+        public const string Import = "Booths.Import";
     }
 
     public static class Sponsors
@@ -374,6 +376,8 @@ public static class PermissionCatalog
         public const string Create = "VenueMap.Create";
         public const string Edit = "VenueMap.Edit";
         public const string Delete = "VenueMap.Delete";
+        public const string Export = "VenueMap.Export";
+        public const string Import = "VenueMap.Import";
     }
 
     // ── Engagement ───────────────────────────────────────────────────────
@@ -544,6 +548,7 @@ public static class PermissionCatalog
     {
         public const string View = "Invitations.View";
         public const string Manage = "Invitations.Manage";
+        public const string Export = "Invitations.Export";
     }
 
     /// <summary>VIP list + bulk notify (D-168). Both codes pre-date this
@@ -737,6 +742,8 @@ public static class PermissionCatalog
         new(Booths.Create, "Booths", "Create", "Create booths", AdminOnly),
         new(Booths.Edit, "Booths", "Edit", "Edit booths", AdminOnly),
         new(Booths.Delete, "Booths", "Delete", "Delete booths", AdminOnly),
+        new(Booths.Export, "Booths", "Export", "Export booths", AdminOnly),
+        new(Booths.Import, "Booths", "Import", "Import booths", AdminOnly),
 
         new(Sponsors.View, "Sponsors", "View", "View sponsors", AdminOnly),
         new(Sponsors.Create, "Sponsors", "Create", "Create sponsors", AdminOnly),
@@ -750,6 +757,8 @@ public static class PermissionCatalog
         new(VenueMap.Create, "VenueMap", "Create", "Create venue-map nodes", AdminOnly),
         new(VenueMap.Edit, "VenueMap", "Edit", "Edit venue-map nodes", AdminOnly),
         new(VenueMap.Delete, "VenueMap", "Delete", "Delete venue-map nodes", AdminOnly),
+        new(VenueMap.Export, "VenueMap", "Export", "Export venue-map nodes", AdminOnly),
+        new(VenueMap.Import, "VenueMap", "Import", "Import venue-map nodes", AdminOnly),
 
         // Engagement
         new(Comments.View, "Comments", "View", "View audience comments", AdminOnly),
@@ -846,6 +855,7 @@ public static class PermissionCatalog
 
         new(Invitations.View, "Invitations", "View", "View invitations", PublicRelations),
         new(Invitations.Manage, "Invitations", "Manage", "Manage invitations", PublicRelations),
+        new(Invitations.Export, "Invitations", "Export", "Export invitations", PublicRelations),
 
         new(Vips.View, "Vips", "View", "View the VIP list", PublicRelations),
         new(Vips.Notify, "Vips", "Notify", "Notify VIPs", PublicRelations),

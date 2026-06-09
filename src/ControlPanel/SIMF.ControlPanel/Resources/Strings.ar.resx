@@ -2584,4 +2584,40 @@
   <data name="Admin.Exhibitors.Action.Deactivate" xml:space="preserve"><value>إلغاء التفعيل</value></data>
   <data name="Admin.Speakers.Delete.Title" xml:space="preserve"><value>تعطيل المتحدّث</value></data>
   <data name="Admin.Speakers.Delete.Message" xml:space="preserve"><value>تعطيل المتحدّث "{0}"؟ سيُخفى من قائمة المتحدّثين العامة ومنتقي محرر الجلسة. يمكنك إعادة تفعيله لاحقاً بتعديله.</value></data>
+  <!-- D-353 — CrudShell host titles + reusable Add/Edit/View/Delete form labels. -->
+  <data name="Admin.Booths.Details.Title" xml:space="preserve"><value>تفاصيل الجناح</value></data>
+  <data name="Admin.Booths.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Booths.Delete.Title" xml:space="preserve"><value>حذف الجناح</value></data>
+  <data name="Admin.Booths.Delete.Message" xml:space="preserve"><value>هل تريد حذف الجناح ”{0}“؟ ستتم إزالته من قائمة المعرض العامة وخريطة الموقع فوراً.</value></data>
+  <data name="Admin.Booths.Fallback" xml:space="preserve"><value>تعذّر إكمال الطلب. يُرجى المحاولة مرة أخرى.</value></data>
+  <data name="Admin.Booths.New.Submit" xml:space="preserve"><value>إنشاء الجناح</value></data>
+  <data name="Admin.Booths.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء…</value></data>
+  <data name="Admin.Booths.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.Booths.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
+  <data name="Admin.VenueMap.Col.Hall" xml:space="preserve"><value>القاعة المرتبطة</value></data>
+  <data name="Admin.VenueMap.Col.Booth" xml:space="preserve"><value>الجناح المرتبط</value></data>
+  <data name="Admin.VenueMap.Details.Title" xml:space="preserve"><value>تفاصيل عقدة الخريطة</value></data>
+  <data name="Admin.VenueMap.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.VenueMap.Delete.Title" xml:space="preserve"><value>حذف عقدة الخريطة</value></data>
+  <data name="Admin.VenueMap.Delete.Message" xml:space="preserve"><value>هل تريد حذف عقدة الخريطة "{0}"؟ ستختفي من خريطة التطبيق ثنائية الأبعاد فورًا. يمكنك إعادة تفعيلها لاحقًا بتعديلها.</value></data>
+  <data name="Admin.VenueMap.New.Submit" xml:space="preserve"><value>إنشاء عقدة</value></data>
+  <data name="Admin.VenueMap.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء</value></data>
+  <data name="Admin.VenueMap.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.VenueMap.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Admin.VenueMap.Fallback" xml:space="preserve"><value>تعذّر إكمال العملية.</value></data>
+  <data name="Admin.Invitations.Col.RecipientEn" xml:space="preserve"><value>المستلم (الإنجليزية)</value></data>
+  <data name="Admin.Invitations.Col.RecipientAr" xml:space="preserve"><value>المستلم (العربية)</value></data>
+  <data name="Admin.Invitations.Col.JobTitle" xml:space="preserve"><value>المسمى الوظيفي</value></data>
+  <data name="Admin.Invitations.Col.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Invitations.Col.RespondedAt" xml:space="preserve"><value>تاريخ الرد</value></data>
+  <data name="Admin.Invitations.Col.UpdatedAt" xml:space="preserve"><value>تاريخ التحديث</value></data>
+  <data name="Admin.Invitations.Details.Title" xml:space="preserve"><value>تفاصيل الدعوة</value></data>
+  <data name="Admin.Invitations.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Invitations.Delete.Title" xml:space="preserve"><value>إلغاء الدعوة</value></data>
+  <data name="Admin.Invitations.Delete.Message" xml:space="preserve"><value>هل تريد إلغاء الدعوة الموجَّهة إلى "{0}"؟ ستتم إزالتها من القائمة فورًا. يمكنك إعادة تفعيلها لاحقًا بتعديلها.</value></data>
+  <data name="Admin.Invitations.New.Submitting" xml:space="preserve"><value>جارٍ الإرسال</value></data>
+  <data name="Admin.Invitations.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Admin.Invitations.RecipientRequired" xml:space="preserve"><value>أدخل معرّف ملف مستخدم صالح للمستلم.</value></data>
+  <data name="Admin.Invitations.Saved" xml:space="preserve"><value>تم حفظ الدعوة.</value></data>
+  <data name="Admin.Invitations.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
 </root>

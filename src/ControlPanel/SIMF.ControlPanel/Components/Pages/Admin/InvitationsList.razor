@@ -1,183 +1,169 @@
-@* D-168 (gap doc G5, PDF §2.7.3) — public-relations: invitation desk.
-   Lists invitations with state filter; the Add/Edit modals collect the
-   recipient (by UserProfile id) + free-text notes; the Edit modal also
-   allows admin override of State. Gated by Administrator OR
-   PublicRelations role (the BFF forwards the JWT, the API policy
-   enforces the role). Migrated to SimfDataGrid (owner-mandated). *@
+@* D-168 (gap doc G5, PDF §2.7.3) — public-relations: invitation desk. Lists
+   invitations with a state filter. Centralized dialog/full-page framing D-353:
+   Add / Edit / View / Delete are hosted by CrudShell, which frames the reusable
+   InvitationsAddEdit and InvitationsViewDelete forms as a popup or a full page per
+   the admin's toolbar choice (persisted in localStorage via CpPreferences). The
+   two inline SimfModals (Send + Edit) it used to carry are gone. Gated by
+   Administrator OR PublicRelations (the BFF forwards the JWT, the API policy
+   enforces the permission). D-356: Excel EXPORT only (invitations are
+   created/edited from the forms — no import). *@
 @page "/admin/invitations"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Invitations.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
+@inject CpPreferences Prefs
 
 <PageTitle>@L["Admin.Invitations.Title"] · SIMF</PageTitle>
 
-<SimfBanner Title="@L["Admin.Invitations.Title"]" />
-
-<div class="simf-page-wide">
-    <div class="simf-surface">
-        @if (_toast is not null)
-        {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
-        }
-
-        <SimfDataGrid TItem="AdminInvitationSummary"
-                      Query="_query"
-                      Page="_page"
-                      Loading="_loading"
-                      OnQueryChanged="OnQueryChangedAsync"
-                      Multiselect="true"
-                      RowKey="@(r => r.Id.ToString())"
-                      RowLabel="@(r => RecipientLabel(r))"
-                      Caption="@L["Admin.Invitations.Title"]"
-                      FilterColumnLabel="@L["Grid.FilterColumn"]"
-                      OnAdd="OnAdd"
-                      OnEditOne="OnEditAsync"
-                      OnDeleteOne="OnDeleteOneAsync"
-                      PrevLabel="@L["Grid.Prev"]"
-                      NextLabel="@L["Grid.Next"]"
-                      FirstLabel="@L["Grid.First"]"
-                      LastLabel="@L["Grid.Last"]"
-                      PageSizeLabel="@L["Grid.PageSize"]"
-                      PageFormatter="@FormatPage"
-                      LoadingLabel="@L["Admin.Invitations.Loading"]"
-                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
-                      ActionsHeader="@L["Grid.Actions"]"
-                      SelectAllLabel="@L["Grid.SelectAll"]"
-                      SelectRowLabel="@L["Grid.SelectRow"]"
-                      AddLabel="@L["Admin.Invitations.New"]"
-                      EditLabel="@L["Grid.Edit"]"
-                      DeleteLabel="@L["Admin.Invitations.Deactivate"]"
-                      SummaryFormatter="@FormatSummary">
-            <Columns>
-                <SimfDataGridColumn TItem="AdminInvitationSummary" Key="recipient"
-                                    Header="@L["Admin.Invitations.Col.Recipient"]">
-                    <CellTemplate>@RecipientLabel(context)</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminInvitationSummary" Key="profileType"
-                                    Header="@L["Admin.Invitations.Col.ProfileType"]">
-                    <CellTemplate>@(context.RecipientProfileTypeName ?? "—")</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminInvitationSummary" Key="state"
-                                    Header="@L["Admin.Invitations.Col.State"]"
-                                    Sortable="true" Filterable="true">
-                    <CellTemplate>
-                        <SimfPill Variant="@StatePillVariant(context.State)">@StateLabel(context.State)</SimfPill>
-                    </CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminInvitationSummary" Key="createdat"
-                                    Header="@L["Admin.Invitations.Col.CreatedAt"]"
-                                    Sortable="true">
-                    <CellTemplate>@context.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminInvitationSummary" Key="sentBy"
-                                    Header="@L["Admin.Invitations.Col.SentBy"]">
-                    <CellTemplate>@context.SentByDisplayName</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminInvitationSummary" Key="active"
-                                    Header="@L["Grid.Active"]">
-                    <CellTemplate>
-                        @if (context.IsActive)
-                        {
-                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
-                        }
-                        else
-                        {
-                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
-                        }
-                    </CellTemplate>
-                </SimfDataGridColumn>
-            </Columns>
-            <EmptyTemplate>
-                <SimfEmptyState Title="@L["Admin.Invitations.None"]" />
-            </EmptyTemplate>
-        </SimfDataGrid>
-    </div>
-</div>
-
-@if (_addOpen)
+@if (!GridHidden)
 {
-    <SimfModal Open="true" Title="@L["Admin.Invitations.Add.Title"]"
-               OnClose="@(() => _addOpen = false)">
-        <ChildContent>
-            <div class="simf-form__fields">
-                <SimfTextField Label="@L["Admin.Invitations.Field.Recipient"]"
-                               Value="@_newRecipientId"
-                               ValueChanged="@(v => _newRecipientId = v)"
-                               ValueExpression="@(() => _newRecipientId)"
-                               Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.Invitations.Field.Notes"]"
-                               Value="@_newNotes"
-                               ValueChanged="@(v => _newNotes = v)"
-                               ValueExpression="@(() => _newNotes)"
-                               Disabled="_busy" />
-            </div>
-        </ChildContent>
-        <Footer>
-            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _addOpen = false)">
-                @L["Admin.Invitations.Cancel"]
-            </SimfButton>
-            <SimfButton Type="button" OnClick="SubmitCreateAsync"
-                        Loading="_busy">
-                @L["Admin.Invitations.Submit.Create"]
-            </SimfButton>
-        </Footer>
-    </SimfModal>
+    <SimfBanner Title="@L["Admin.Invitations.Title"]" />
+
+    <div class="simf-page-wide">
+        <div class="simf-surface">
+            @if (_toast is not null)
+            {
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            }
+
+            <SimfDataGrid TItem="AdminInvitationSummary"
+                          Query="_query"
+                          Page="_page"
+                          Loading="_loading"
+                          OnQueryChanged="OnQueryChangedAsync"
+                          Multiselect="true"
+                          RowKey="@(r => r.Id.ToString())"
+                          RowLabel="@(r => RecipientLabel(r))"
+                          Caption="@L["Admin.Invitations.Title"]"
+                          FilterColumnLabel="@L["Grid.FilterColumn"]"
+                          OnAdd="OnAddAsync"
+                          OnEditOne="OnEditAsync"
+                          OnDetailsOne="OnDetailsAsync"
+                          OnDeleteOne="OnDeleteAsync"
+                          OnExport="OnExportAsync"
+                          PrevLabel="@L["Grid.Prev"]"
+                          NextLabel="@L["Grid.Next"]"
+                          FirstLabel="@L["Grid.First"]"
+                          LastLabel="@L["Grid.Last"]"
+                          PageSizeLabel="@L["Grid.PageSize"]"
+                          PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Admin.Invitations.Loading"]"
+                          FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                          ActionsHeader="@L["Grid.Actions"]"
+                          SelectAllLabel="@L["Grid.SelectAll"]"
+                          SelectRowLabel="@L["Grid.SelectRow"]"
+                          AddLabel="@L["Admin.Invitations.New"]"
+                          EditLabel="@L["Grid.Edit"]"
+                          DetailsLabel="@L["Grid.Details"]"
+                          DeleteLabel="@L["Admin.Invitations.Deactivate"]"
+                          ExportLabel="@L["Grid.Export"]"
+                          SummaryFormatter="@FormatSummary">
+                <CustomToolbar>
+                    <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
+                </CustomToolbar>
+                <Columns>
+                    <SimfDataGridColumn TItem="AdminInvitationSummary" Key="recipient"
+                                        Header="@L["Admin.Invitations.Col.Recipient"]">
+                        <CellTemplate>@RecipientLabel(context)</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminInvitationSummary" Key="profileType"
+                                        Header="@L["Admin.Invitations.Col.ProfileType"]">
+                        <CellTemplate>@(context.RecipientProfileTypeName ?? "—")</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminInvitationSummary" Key="state"
+                                        Header="@L["Admin.Invitations.Col.State"]"
+                                        Sortable="true" Filterable="true">
+                        <CellTemplate>
+                            <SimfPill Variant="@StatePillVariant(context.State)">@StateLabel(context.State)</SimfPill>
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminInvitationSummary" Key="createdat"
+                                        Header="@L["Admin.Invitations.Col.CreatedAt"]"
+                                        Sortable="true">
+                        <CellTemplate>@context.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminInvitationSummary" Key="sentBy"
+                                        Header="@L["Admin.Invitations.Col.SentBy"]">
+                        <CellTemplate>@context.SentByDisplayName</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminInvitationSummary" Key="active"
+                                        Header="@L["Grid.Active"]">
+                        <CellTemplate>
+                            @if (context.IsActive)
+                            {
+                                <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                            }
+                            else
+                            {
+                                <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                            }
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.Invitations.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
+        </div>
+    </div>
 }
 
-@if (_editTarget is not null)
+@if (FormOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.Invitations.Edit.Title"]"
-               OnClose="@(() => _editTarget = null)">
-        <ChildContent>
-            <div class="simf-form__fields">
-                <SimfSelect TValue="InvitationState"
-                            Label="@L["Admin.Invitations.Field.State"]"
-                            Items="_invitationStates"
-                            Value="_editState"
-                            ValueChanged="@((InvitationState v) => _editState = v)"
-                            ValueExpression="@(() => _editState)"
-                            Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.Invitations.Field.Notes"]"
-                               Value="@_editNotes"
-                               ValueChanged="@(v => _editNotes = v)"
-                               ValueExpression="@(() => _editNotes)"
-                               Disabled="_busy" />
-            </div>
-        </ChildContent>
-        <Footer>
-            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _editTarget = null)">
-                @L["Admin.Invitations.Cancel"]
-            </SimfButton>
-            <SimfButton Type="button" OnClick="SubmitUpdateAsync"
-                        Loading="_busy">
-                @L["Admin.Invitations.Submit.Update"]
-            </SimfButton>
-        </Footer>
-    </SimfModal>
+    <CrudShell Open="true" Presentation="_presentation"
+               Title="@FormTitle" CloseLabel="@L["Admin.Invitations.Details.Close"]"
+               OnClose="CloseForm">
+        @if (_form == FormKind.AddEdit)
+        {
+            <InvitationsAddEdit IsEdit="_isEdit" Initial="_target"
+                                OnSuccess="OnSavedAsync" OnCancel="CloseForm" />
+        }
+        else if (_form == FormKind.ViewDelete)
+        {
+            <InvitationsViewDelete IsDelete="_isDelete" Initial="_target"
+                                   OnDeleted="OnDeletedAsync" OnCancel="CloseForm" />
+        }
+    </CrudShell>
 }
 
 @code {
     private record Toast(string Variant, string Message);
 
+    private enum FormKind { None, AddEdit, ViewDelete }
+
+    private const string PageKey = "invitations";
+
     private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminInvitationSummary> _page = new();
     private bool _loading;
-    private bool _busy;
     private Toast? _toast;
 
-    private bool _addOpen;
-    private string _newRecipientId = string.Empty;
-    private string _newNotes = string.Empty;
+    private CrudPresentation _presentation = CrudPresentation.Dialog;
+    private FormKind _form = FormKind.None;
+    private bool _isEdit;
+    private bool _isDelete;
+    private AdminInvitationDetail? _target;
 
-    private AdminInvitationDetail? _editTarget;
-    private InvitationState _editState = InvitationState.Pending;
-    private string _editNotes = string.Empty;
+    private bool FormOpen => _form != FormKind.None;
+    private bool GridHidden => FormOpen && _presentation == CrudPresentation.Page;
 
-    private static readonly InvitationState[] _invitationStates =
-        Enum.GetValues<InvitationState>();
+    private string FormTitle => _form switch
+    {
+        FormKind.AddEdit => _isEdit
+            ? L["Admin.Invitations.Edit.Title"]
+            : L["Admin.Invitations.Add.Title"],
+        FormKind.ViewDelete => _isDelete
+            ? L["Admin.Invitations.Delete.Title"]
+            : L["Admin.Invitations.Details.Title"],
+        _ => string.Empty,
+    };
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        _presentation = await Prefs.GetPresentationAsync(PageKey);
+        await LoadAsync();
+    }
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
@@ -212,112 +198,91 @@
         finally { _loading = false; }
     }
 
-    private void OnAdd()
+    private Task OnAddAsync()
     {
-        _addOpen = true;
-        _newRecipientId = string.Empty;
-        _newNotes = string.Empty;
-    }
-
-    private async Task SubmitCreateAsync()
-    {
-        if (_busy) return;
-        if (!Guid.TryParse(_newRecipientId, out var recipientId))
-        {
-            _toast = new Toast("error", L["Admin.Invitations.LoadFailed"]);
-            return;
-        }
-        _busy = true;
         _toast = null;
-        try
-        {
-            var env = await JS.InvokeAsync<ApiResult<AdminInvitationDetail>>(
-                "simfAccount.postJson", "/account/api/admin/invitations",
-                new AdminCreateInvitationRequest
-                {
-                    SentToUserProfileId = recipientId,
-                    Notes = string.IsNullOrWhiteSpace(_newNotes) ? null : _newNotes,
-                });
-            if (env is { Success: true, Data: not null })
-            {
-                _addOpen = false;
-                _toast = new Toast("success", L["Admin.Invitations.Created"]);
-                await LoadAsync();
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Invitations.LoadFailed"]);
-            }
-        }
-        finally { _busy = false; }
+        _form = FormKind.AddEdit;
+        _isEdit = false;
+        _target = null;
+        return Task.CompletedTask;
     }
 
     private async Task OnEditAsync(AdminInvitationSummary row)
     {
+        var detail = await LoadDetailAsync(row.Id);
+        if (detail is null) return;
+        _form = FormKind.AddEdit;
+        _isEdit = true;
+        _target = detail;
+    }
+
+    private async Task OnDetailsAsync(AdminInvitationSummary row)
+    {
+        var detail = await LoadDetailAsync(row.Id);
+        if (detail is null) return;
+        _form = FormKind.ViewDelete;
+        _isDelete = false;
+        _target = detail;
+    }
+
+    private async Task OnDeleteAsync(AdminInvitationSummary row)
+    {
+        var detail = await LoadDetailAsync(row.Id);
+        if (detail is null) return;
+        _form = FormKind.ViewDelete;
+        _isDelete = true;
+        _target = detail;
+    }
+
+    // Edit / View / Delete all work against the full detail (mirrors
+    // GET /admin/invitations/{id}) — the grid summary omits the recipient's job
+    // title + the responded/updated timestamps. Returns null and surfaces a toast
+    // on failure.
+    private async Task<AdminInvitationDetail?> LoadDetailAsync(Guid id)
+    {
+        _toast = null;
         var env = await JS.InvokeAsync<ApiResult<AdminInvitationDetail>>(
-            "simfAccount.getJson", $"/account/api/admin/invitations/{row.Id}");
+            "simfAccount.getJson", $"/account/api/admin/invitations/{id}");
         if (env is { Success: true, Data: not null })
         {
-            _editTarget = env.Data;
-            _editState = env.Data.State;
-            _editNotes = env.Data.Notes ?? string.Empty;
+            return env.Data;
         }
+        _toast = new Toast("error",
+            env?.Error?.MessageForCurrentCulture()
+            ?? L["Admin.Invitations.LoadFailed"]);
+        return null;
     }
 
-    private async Task SubmitUpdateAsync()
+    private void CloseForm()
     {
-        if (_busy || _editTarget is null) return;
-        _busy = true;
-        _toast = null;
-        try
-        {
-            var env = await JS.InvokeAsync<ApiResult<AdminInvitationDetail>>(
-                "simfAccount.putJson", $"/account/api/admin/invitations/{_editTarget.Id}",
-                new AdminUpdateInvitationRequest
-                {
-                    State = _editState,
-                    Notes = string.IsNullOrWhiteSpace(_editNotes) ? null : _editNotes,
-                });
-            if (env is { Success: true })
-            {
-                _editTarget = null;
-                _toast = new Toast("success", L["Admin.Invitations.Updated"]);
-                await LoadAsync();
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Invitations.LoadFailed"]);
-            }
-        }
-        finally { _busy = false; }
+        _form = FormKind.None;
+        _target = null;
     }
 
-    private async Task OnDeleteOneAsync(AdminInvitationSummary row)
+    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // download via the generic /export proxy. Export only — invitations are
+    // created/edited from the CP forms, so there is no import path.
+    private Task OnExportAsync(IReadOnlyList<AdminInvitationSummary> selected) =>
+        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/invitations/export",
+            new AdminGridExportRequest
+            {
+                Ids = selected.Select(row => row.Id).ToList(),
+                Query = selected.Count == 0 ? _query : null,
+            }).AsTask();
+
+    private async Task OnSavedAsync(AdminInvitationDetail saved)
     {
-        if (_busy) return;
-        _busy = true;
-        _toast = null;
-        try
-        {
-            var env = await JS.InvokeAsync<ApiResult<bool>>(
-                "simfAccount.deleteJson", $"/account/api/admin/invitations/{row.Id}");
-            if (env is { Success: true })
-            {
-                _toast = new Toast("success", L["Admin.Invitations.Deactivated"]);
-                await LoadAsync();
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Invitations.LoadFailed"]);
-            }
-        }
-        finally { _busy = false; }
+        CloseForm();
+        _toast = new Toast("success", L["Admin.Invitations.Saved"]);
+        await LoadAsync();
+    }
+
+    private async Task OnDeletedAsync(AdminInvitationDetail deleted)
+    {
+        CloseForm();
+        _toast = new Toast("success", L["Admin.Invitations.Deactivated"]);
+        await LoadAsync();
     }
 
     private string RecipientLabel(AdminInvitationSummary row) =>
