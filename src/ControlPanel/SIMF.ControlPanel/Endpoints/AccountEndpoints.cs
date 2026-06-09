@@ -542,6 +542,15 @@ internal static class AccountEndpoints
         MapGridExcel(group, "gates");
         MapGridExcel(group, "session-categories");
         MapGridExcel(group, "roles");
+        MapGridExcel(group, "banners"); 
+        MapGridExcel(group, "content-blocks"); 
+        MapGridExcel(group, "media-partners"); 
+        MapGridExcel(group, "archive"); 
+        MapGridExcel(group, "media"); 
+        MapGridExcel(group, "system-settings"); 
+        MapGridExcel(group, "contacts"); 
+        MapGridExcel(group, "news"); 
+        MapGridExcel(group, "ai/prompts");
 
         // D-118 — D-113 type-scoped bulk proxies for Visitors and Others.
         // The visitors/others CP list pages (D-114) call these JS endpoints

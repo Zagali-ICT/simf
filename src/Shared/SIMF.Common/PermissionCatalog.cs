@@ -175,6 +175,8 @@ public static class PermissionCatalog
     {
         public const string View = "Contacts.View";
         public const string Edit = "Contacts.Edit";
+        public const string Export = "Contacts.Export";
+        public const string Import = "Contacts.Import";
     }
 
     // ── Programme ────────────────────────────────────────────────────────
@@ -391,6 +393,8 @@ public static class PermissionCatalog
         public const string Edit = "AiPrompts.Edit";
         public const string Delete = "AiPrompts.Delete";
         public const string Test = "AiPrompts.Test";
+        public const string Export = "AiPrompts.Export";
+        public const string Import = "AiPrompts.Import";
     }
 
     public static class AiInvocations
@@ -406,6 +410,8 @@ public static class PermissionCatalog
         public const string View = "ContentBlocks.View";
         public const string Edit = "ContentBlocks.Edit";
         public const string Delete = "ContentBlocks.Delete";
+        public const string Export = "ContentBlocks.Export";
+        public const string Import = "ContentBlocks.Import";
     }
 
     public static class Banners
@@ -414,6 +420,8 @@ public static class PermissionCatalog
         public const string Create = "Banners.Create";
         public const string Edit = "Banners.Edit";
         public const string Delete = "Banners.Delete";
+        public const string Export = "Banners.Export";
+        public const string Import = "Banners.Import";
     }
 
     public static class Media
@@ -422,6 +430,8 @@ public static class PermissionCatalog
         public const string Create = "Media.Create";
         public const string Edit = "Media.Edit";
         public const string Delete = "Media.Delete";
+        public const string Export = "Media.Export";
+        public const string Import = "Media.Import";
     }
 
     public static class News
@@ -430,6 +440,8 @@ public static class PermissionCatalog
         public const string Create = "News.Create";
         public const string Edit = "News.Edit";
         public const string Delete = "News.Delete";
+        public const string Export = "News.Export";
+        public const string Import = "News.Import";
     }
 
     /// <summary>P2.1 (D-211) — FAQ management (two-level group → entry).</summary>
@@ -447,6 +459,8 @@ public static class PermissionCatalog
         public const string Create = "MediaPartners.Create";
         public const string Edit = "MediaPartners.Edit";
         public const string Delete = "MediaPartners.Delete";
+        public const string Export = "MediaPartners.Export";
+        public const string Import = "MediaPartners.Import";
     }
 
     public static class Archive
@@ -456,6 +470,8 @@ public static class PermissionCatalog
         public const string Edit = "Archive.Edit";
         public const string Delete = "Archive.Delete";
         public const string Snapshot = "Archive.Snapshot";
+        public const string Export = "Archive.Export";
+        public const string Import = "Archive.Import";
     }
 
     // ── System & operations ──────────────────────────────────────────────
@@ -498,6 +514,8 @@ public static class PermissionCatalog
         public const string Create = "Configuration.Create";
         public const string Edit = "Configuration.Edit";
         public const string Delete = "Configuration.Delete";
+        public const string Export = "Configuration.Export";
+        public const string Import = "Configuration.Import";
     }
 
     public static class OperationLog
@@ -614,6 +632,8 @@ public static class PermissionCatalog
         // SIMF-FDS-014 — D-261: shared contact directory.
         new(Contacts.View, "Contacts", "View", "View contacts", AdminOnly),
         new(Contacts.Edit, "Contacts", "Edit", "Create / edit / delete contacts", AdminOnly),
+        new(Contacts.Export, "Contacts", "Export", "Export contacts", AdminOnly),
+        new(Contacts.Import, "Contacts", "Import", "Import contacts", AdminOnly),
 
         // Programme
         new(Themes.View, "Themes", "View", "View themes", AdminOnly),
@@ -729,6 +749,8 @@ public static class PermissionCatalog
         new(AiPrompts.Edit, "AiPrompts", "Edit", "Edit AI prompts", AdminOnly),
         new(AiPrompts.Delete, "AiPrompts", "Delete", "Delete AI prompts", AdminOnly),
         new(AiPrompts.Test, "AiPrompts", "Test", "Test AI prompts", AdminOnly),
+        new(AiPrompts.Export, "AiPrompts", "Export", "Export AI prompts", AdminOnly),
+        new(AiPrompts.Import, "AiPrompts", "Import", "Import AI prompts", AdminOnly),
 
         new(AiInvocations.View, "AiInvocations", "View", "View AI invocations log", AdminOnly),
 
@@ -736,16 +758,22 @@ public static class PermissionCatalog
         new(ContentBlocks.View, "ContentBlocks", "View", "View content blocks", AdminOnly),
         new(ContentBlocks.Edit, "ContentBlocks", "Edit", "Edit content blocks", AdminOnly),
         new(ContentBlocks.Delete, "ContentBlocks", "Delete", "Delete content blocks", AdminOnly),
+        new(ContentBlocks.Export, "ContentBlocks", "Export", "Export content blocks", AdminOnly),
+        new(ContentBlocks.Import, "ContentBlocks", "Import", "Import content blocks", AdminOnly),
 
         new(Banners.View, "Banners", "View", "View banners", AdminOnly),
         new(Banners.Create, "Banners", "Create", "Create banners", AdminOnly),
         new(Banners.Edit, "Banners", "Edit", "Edit banners", AdminOnly),
         new(Banners.Delete, "Banners", "Delete", "Delete banners", AdminOnly),
+        new(Banners.Export, "Banners", "Export", "Export banners", AdminOnly),
+        new(Banners.Import, "Banners", "Import", "Import banners", AdminOnly),
 
         new(Media.View, "Media", "View", "View media gallery", AdminOnly),
         new(Media.Create, "Media", "Create", "Create media items", AdminOnly),
         new(Media.Edit, "Media", "Edit", "Edit media items", AdminOnly),
         new(Media.Delete, "Media", "Delete", "Delete media items", AdminOnly),
+        new(Media.Export, "Media", "Export", "Export media items", AdminOnly),
+        new(Media.Import, "Media", "Import", "Import media items", AdminOnly),
 
         // News is PR/marketing territory: the admin News endpoints were gated
         // by PublicRelationsAccess before this catalogue, so the PublicRelations
@@ -754,6 +782,8 @@ public static class PermissionCatalog
         new(News.Create, "News", "Create", "Create news articles", PublicRelations),
         new(News.Edit, "News", "Edit", "Edit news articles", PublicRelations),
         new(News.Delete, "News", "Delete", "Delete news articles", PublicRelations),
+        new(News.Export, "News", "Export", "Export news articles", PublicRelations),
+        new(News.Import, "News", "Import", "Import news articles", PublicRelations),
 
         new(Faq.View, "Faq", "View", "View FAQ groups + entries", AdminOnly),
         new(Faq.Create, "Faq", "Create", "Create FAQ groups + entries", AdminOnly),
@@ -764,12 +794,16 @@ public static class PermissionCatalog
         new(MediaPartners.Create, "MediaPartners", "Create", "Create media partners", AdminOnly),
         new(MediaPartners.Edit, "MediaPartners", "Edit", "Edit media partners", AdminOnly),
         new(MediaPartners.Delete, "MediaPartners", "Delete", "Delete media partners", AdminOnly),
+        new(MediaPartners.Export, "MediaPartners", "Export", "Export media partners", AdminOnly),
+        new(MediaPartners.Import, "MediaPartners", "Import", "Import media partners", AdminOnly),
 
         new(Archive.View, "Archive", "View", "View archive editions", AdminOnly),
         new(Archive.Create, "Archive", "Create", "Create archive editions", AdminOnly),
         new(Archive.Edit, "Archive", "Edit", "Edit archive editions", AdminOnly),
         new(Archive.Delete, "Archive", "Delete", "Delete archive editions", AdminOnly),
         new(Archive.Snapshot, "Archive", "Snapshot", "Snapshot the current event into a past edition", AdminOnly),
+        new(Archive.Export, "Archive", "Export", "Export archive editions", AdminOnly),
+        new(Archive.Import, "Archive", "Import", "Import archive editions", AdminOnly),
 
         // System & operations
         new(Statistics.View, "Statistics", "View", "View the statistics dashboard", AdminOnly),
@@ -789,6 +823,8 @@ public static class PermissionCatalog
         new(Configuration.Create, "Configuration", "Create", "Create system settings", AdminOnly),
         new(Configuration.Edit, "Configuration", "Edit", "Edit system settings", AdminOnly),
         new(Configuration.Delete, "Configuration", "Delete", "Delete system settings", AdminOnly),
+        new(Configuration.Export, "Configuration", "Export", "Export system settings", AdminOnly),
+        new(Configuration.Import, "Configuration", "Import", "Import system settings", AdminOnly),
 
         new(OperationLog.View, "OperationLog", "View", "View the operation log", AdminOnly),
         new(OperationLog.Export, "OperationLog", "Export", "Export the operation log", AdminOnly),

@@ -1,11 +1,11 @@
-@* D-199 (CP UI for D-199 Media gallery, Mockup page 30) â€” admin CRUD
+@* D-199 (CP UI for D-199 Media gallery, Mockup page 30) — admin CRUD
    over the public media gallery. An item is either an Image (its bitmap
    is uploaded out-of-row via POST /admin/media/{id}/image) or a Video
    (an external playback Url). Image bytes can only be attached once the
    item row exists, so the upload control lives in the Edit form.
-   D-256 â€” migrated from the raw <table> to the owner-mandated
+   D-256 — migrated from the raw <table> to the owner-mandated
    SimfDataGrid (server-paged, sortable + filterable, full pager).
-   D-353 â€” centralized dialog/full-page framing: Add / Edit / View / Delete
+   D-353 — centralized dialog/full-page framing: Add / Edit / View / Delete
    are hosted by CrudShell, which frames the reusable MediaAddEdit and
    MediaViewDelete forms as a popup or a full page per the admin's toolbar
    choice (persisted in localStorage via CpPreferences). The inline SimfModal
@@ -19,7 +19,7 @@
 @inject IJSRuntime JS
 @inject CpPreferences Prefs
 
-<PageTitle>@L["Admin.Media.Title"] Â· SIMF</PageTitle>
+<PageTitle>@L["Admin.Media.Title"] · SIMF</PageTitle>
 
 @if (!GridHidden)
 {
@@ -46,6 +46,8 @@
                           OnEditOne="OnEditAsync"
                           OnDetailsOne="OnDetailsAsync"
                           OnDeleteOne="OnDeleteAsync"
+                          OnExport="OnExportAsync"
+                          OnImport="OnImportAsync"
                           PrevLabel="@L["Grid.Prev"]"
                           NextLabel="@L["Grid.Next"]"
                           FirstLabel="@L["Grid.First"]"
@@ -61,6 +63,8 @@
                           EditLabel="@L["Grid.Edit"]"
                           DetailsLabel="@L["Grid.Details"]"
                           DeleteLabel="@L["Grid.Delete"]"
+                          ExportLabel="@L["Grid.Export"]"
+                          ImportLabel="@L["Grid.Import"]"
                           SummaryFormatter="@FormatSummary">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
@@ -74,22 +78,22 @@
                     <SimfDataGridColumn TItem="AdminMediaSummary" Key="title"
                                         Header="@L["Admin.Media.Col.TitleEn"]"
                                         Sortable="true" Filterable="true">
-                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.Title) ? "â€”" : context.Title)</CellTemplate>
+                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.Title) ? "—" : context.Title)</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminMediaSummary" Key="titlearabic"
                                         Header="@L["Admin.Media.Col.TitleAr"]"
                                         Filterable="true">
-                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.TitleArabic) ? "â€”" : context.TitleArabic)</CellTemplate>
+                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.TitleArabic) ? "—" : context.TitleArabic)</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminMediaSummary" Key="album"
                                         Header="@L["Admin.Media.Col.AlbumEn"]"
                                         Filterable="true">
-                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.Album) ? "â€”" : context.Album)</CellTemplate>
+                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.Album) ? "—" : context.Album)</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminMediaSummary" Key="albumarabic"
                                         Header="@L["Admin.Media.Col.AlbumAr"]"
                                         Filterable="true">
-                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.AlbumArabic) ? "â€”" : context.AlbumArabic)</CellTemplate>
+                        <CellTemplate>@(string.IsNullOrWhiteSpace(context.AlbumArabic) ? "—" : context.AlbumArabic)</CellTemplate>
                     </SimfDataGridColumn>
                     <SimfDataGridColumn TItem="AdminMediaSummary" Key="hasImage"
                                         Header="@L["Admin.Media.Col.HasImage"]">
@@ -128,6 +132,9 @@
                     <SimfEmptyState Title="@L["Admin.Media.None"]" />
                 </EmptyTemplate>
             </SimfDataGrid>
+
+            <CrudGridExcel @ref="_excel" Resource="media"
+                           OnImported="OnImportedAsync" OnError="OnExcelError" />
         </div>
     </div>
 }
@@ -167,6 +174,7 @@
     private bool _isEdit;
     private bool _isDelete;
     private AdminMediaDetail? _target;
+    private CrudGridExcel? _excel;
 
     private bool FormOpen => _form != FormKind.None;
     private bool GridHidden => FormOpen && _presentation == CrudPresentation.Page;
@@ -282,6 +290,20 @@
         _target = null;
     }
 
+    // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
+    private Task OnExportAsync(IReadOnlyList<AdminMediaSummary> selected) =>
+        _excel!.ExportAsync(selected.Select(row => row.Id).ToList(), _query);
+
+    private Task OnImportAsync() => _excel!.TriggerImportAsync();
+
+    private async Task OnImportedAsync()
+    {
+        _toast = new Toast("success", L["Grid.Import.Done"]);
+        await LoadAsync();
+    }
+
+    private void OnExcelError(string message) => _toast = new Toast("error", message);
+
     private async Task OnSavedAsync(AdminMediaDetail saved)
     {
         CloseForm();
@@ -303,7 +325,7 @@
         _ => kind.ToString(),
     };
 
-    // Per-row accessible label for the selection checkbox â€” the English title,
+    // Per-row accessible label for the selection checkbox — the English title,
     // else the Arabic title, else the kind so a screen reader gets something.
     private string RowLabel(AdminMediaSummary row) =>
         !string.IsNullOrWhiteSpace(row.Title) ? row.Title!

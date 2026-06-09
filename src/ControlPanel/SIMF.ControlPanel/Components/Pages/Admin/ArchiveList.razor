@@ -1,4 +1,4 @@
-@* D-199 (Mockup screen 24) â€” admin CRUD over the public Archive / Past
+@* D-199 (Mockup screen 24) — admin CRUD over the public Archive / Past
    Editions list. Each edition carries a year, bilingual title + summary,
    the headline attendees/sessions/speakers counts, an optional cover-image
    relative path, and the active flag that gates public visibility.
@@ -16,7 +16,7 @@
 @inject IJSRuntime JS
 @inject CpPreferences Prefs
 
-<PageTitle>@L["Admin.Archive.Title"] Â· SIMF</PageTitle>
+<PageTitle>@L["Admin.Archive.Title"] · SIMF</PageTitle>
 
 @if (!GridHidden)
 {
@@ -29,7 +29,7 @@
                 <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
             }
 
-            @* D-275 (Â§9) â€” one-click "make this year history" snapshot. *@
+            @* D-275 (§9) — one-click "make this year history" snapshot. *@
             <div class="simf-toolbar">
                 <AuthorizedAction Permission="@PermissionCatalog.Archive.Snapshot">
                     <SimfButton Type="button" Variant="secondary" Disabled="_busy"
@@ -53,6 +53,8 @@
                           OnEditOne="OnEditAsync"
                           OnDetailsOne="OnDetailsAsync"
                           OnDeleteOne="OnDeleteAsync"
+                          OnExport="OnExportAsync"
+                          OnImport="OnImportAsync"
                           PrevLabel="@L["Grid.Prev"]"
                           NextLabel="@L["Grid.Next"]"
                           FirstLabel="@L["Grid.First"]"
@@ -68,6 +70,8 @@
                           EditLabel="@L["Grid.Edit"]"
                           DetailsLabel="@L["Grid.Details"]"
                           DeleteLabel="@L["Grid.Delete"]"
+                          ExportLabel="@L["Grid.Export"]"
+                          ImportLabel="@L["Grid.Import"]"
                           SummaryFormatter="@FormatSummary">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
@@ -118,6 +122,9 @@
                     <SimfEmptyState Title="@L["Admin.Archive.None"]" />
                 </EmptyTemplate>
             </SimfDataGrid>
+
+            <CrudGridExcel @ref="_excel" Resource="archive"
+                           OnImported="OnImportedAsync" OnError="OnExcelError" />
         </div>
     </div>
 }
@@ -140,7 +147,7 @@
     </CrudShell>
 }
 
-@* D-275 (Â§9) â€” "make this year history" confirm dialog (counts auto-computed). *@
+@* D-275 (§9) — "make this year history" confirm dialog (counts auto-computed). *@
 @if (_snapshotOpen)
 {
     <SimfModal Open="true"
@@ -188,6 +195,7 @@
 
     private bool _snapshotOpen;
     private bool _snapshotMakeVisible = true;
+    private CrudGridExcel? _excel;
 
     private bool FormOpen => _form != FormKind.None;
     private bool GridHidden => FormOpen && _presentation == CrudPresentation.Page;
@@ -245,7 +253,7 @@
 
     // The grid summary carries every field the Add/Edit + View/Delete forms
     // need (title/summary, counters, cover, place, date label, active), so the
-    // forms bind the summary row directly â€” no per-row detail round-trip
+    // forms bind the summary row directly — no per-row detail round-trip
     // (mirrors Interests / ContentBlocks).
     private Task OnAddAsync()
     {
@@ -288,6 +296,20 @@
         _form = FormKind.None;
         _target = null;
     }
+
+    // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
+    private Task OnExportAsync(IReadOnlyList<AdminArchiveEditionSummary> selected) =>
+        _excel!.ExportAsync(selected.Select(row => row.Id).ToList(), _query);
+
+    private Task OnImportAsync() => _excel!.TriggerImportAsync();
+
+    private async Task OnImportedAsync()
+    {
+        _toast = new Toast("success", L["Grid.Import.Done"]);
+        await LoadAsync();
+    }
+
+    private void OnExcelError(string message) => _toast = new Toast("error", message);
 
     private async Task OnSavedAsync(AdminArchiveEditionSummary saved)
     {
