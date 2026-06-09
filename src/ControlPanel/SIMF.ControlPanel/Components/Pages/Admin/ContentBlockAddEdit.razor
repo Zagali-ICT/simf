@@ -1,0 +1,110 @@
+@* D-353 â€” reusable Content-Block Add/Edit form, hosted by CrudShell (popup or
+   full page) from ContentBlocksList. Inherits CrudAddEditFormBase so it exposes
+   the standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel).
+   ContentBlocks upsert by Key (a single PUT serves both Add and Edit): the Key
+   is required and editable on Add, read-only on Edit. Supersedes the inline
+   SimfModal form that lived in ContentBlocksList. *@
+@inherits CrudAddEditFormBase<AdminContentBlockSummary>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        <SimfTextField Label="@L["Admin.ContentBlocks.Field.Key"]"
+                       MaxLength="128"
+                       @bind-Value="_model.Key" Disabled="@(_busy || IsEdit)" />
+        <SimfTextField Label="@L["Admin.ContentBlocks.Field.ContentEn"]"
+                       @bind-Value="_model.Content" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.ContentBlocks.Field.ContentAr"]"
+                       @bind-Value="_model.ContentArabic" Disabled="_busy" />
+        <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
+            @L["Admin.ContentBlocks.Field.IsActive"]
+        </SimfCheckbox>
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy" LoadingLabel="@L["Admin.ContentBlocks.Submit"]">
+            @L["Admin.ContentBlocks.Submit"]
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy" OnClick="OnCancel">
+                @L["Admin.ContentBlocks.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private readonly Model _model = new();
+    private EditContext _editContext = default!;
+    private bool _busy;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        if (Initial is not null)
+        {
+            _model.Key = Initial.Key;
+            _model.Content = Initial.Content;
+            _model.ContentArabic = Initial.ContentArabic;
+            _model.IsActive = Initial.IsActive;
+        }
+        _editContext = new EditContext(_model);
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_model.Key) || _model.Key.Trim().Length > 128)
+        {
+            _error = L["Admin.ContentBlocks.Required"]; return;
+        }
+
+        _busy = true;
+        try
+        {
+            // Upsert-by-Key â€” one PUT serves both Add and Edit (the row is
+            // created if the Key is new, updated in place if it exists).
+            var envelope = await JS.InvokeAsync<ApiResult<AdminContentBlockSummary>>(
+                "simfAccount.putJson", "/account/api/admin/content-blocks",
+                new UpsertContentBlockRequest
+                {
+                    Key = _model.Key.Trim(),
+                    Content = _model.Content,
+                    ContentArabic = _model.ContentArabic,
+                    IsActive = _model.IsActive,
+                });
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.ContentBlocks.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.ContentBlocks.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+
+    private sealed class Model
+    {
+        public string Key { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public string ContentArabic { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+}

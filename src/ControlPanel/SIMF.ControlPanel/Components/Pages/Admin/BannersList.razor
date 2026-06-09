@@ -1,192 +1,164 @@
-@* D-173 (gap doc G8, PDF §1) — Dynamic CMS: time-windowed banners /
+@* D-173 (gap doc G8, PDF Â§1) â€” Dynamic CMS: time-windowed banners /
    announcements. Admin CRUD; public read filters by current window.
-   D-256 — migrated from the raw <table> to the owner-mandated
-   SimfDataGrid (server-paged, sortable + filterable, full pager). *@
+   D-256 â€” migrated from the raw <table> to the owner-mandated
+   SimfDataGrid (server-paged, sortable + filterable, full pager).
+   D-353 â€” centralized dialog/full-page framing: Add / Edit / View / Delete
+   are hosted by CrudShell, which frames the reusable BannersAddEdit and
+   BannersViewDelete forms as a popup or a full page per the admin's toolbar
+   choice (persisted in localStorage via CpPreferences). The inline SimfModal
+   form + one-click delete it used to carry are gone. *@
 @page "/admin/banners"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Banners.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
+@inject CpPreferences Prefs
 
-<PageTitle>@L["Admin.Banners.Title"] · SIMF</PageTitle>
+<PageTitle>@L["Admin.Banners.Title"] Â· SIMF</PageTitle>
 
-<SimfBanner Title="@L["Admin.Banners.Title"]" />
-
-<div class="simf-page-wide">
-    <div class="simf-surface">
-        @if (_toast is not null)
-        {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
-        }
-
-        <SimfDataGrid TItem="AdminBannerSummary"
-                      Query="_query"
-                      Page="_page"
-                      Loading="_loading"
-                      OnQueryChanged="OnQueryChangedAsync"
-                      Multiselect="true"
-                      RowKey="@(r => r.Id.ToString())"
-                      RowLabel="@(r => TitleLabel(r))"
-                      Caption="@L["Admin.Banners.Title"]"
-                      FilterColumnLabel="@L["Grid.FilterColumn"]"
-                      OnAdd="OnAdd"
-                      OnEditOne="OnEditAsync"
-                      OnDeleteOne="OnDeleteAsync"
-                      PrevLabel="@L["Grid.Prev"]"
-                      NextLabel="@L["Grid.Next"]"
-                      FirstLabel="@L["Grid.First"]"
-                      LastLabel="@L["Grid.Last"]"
-                      PageSizeLabel="@L["Grid.PageSize"]"
-                      PageFormatter="@FormatPage"
-                      LoadingLabel="@L["Admin.Banners.Loading"]"
-                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
-                      ActionsHeader="@L["Grid.Actions"]"
-                      SelectAllLabel="@L["Grid.SelectAll"]"
-                      SelectRowLabel="@L["Grid.SelectRow"]"
-                      AddLabel="@L["Grid.Add"]"
-                      EditLabel="@L["Grid.Edit"]"
-                      DeleteLabel="@L["Grid.Delete"]"
-                      SummaryFormatter="@FormatSummary">
-            <Columns>
-                <SimfDataGridColumn TItem="AdminBannerSummary" Key="title"
-                                    Header="@L["Admin.Banners.Col.Title"]"
-                                    Sortable="true" Filterable="true">
-                    <CellTemplate>@TitleLabel(context)</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminBannerSummary" Key="startUtc"
-                                    Header="@L["Admin.Banners.Col.StartUtc"]"
-                                    Sortable="true">
-                    <CellTemplate>@context.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminBannerSummary" Key="endUtc"
-                                    Header="@L["Admin.Banners.Col.EndUtc"]"
-                                    Sortable="true">
-                    <CellTemplate>@context.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminBannerSummary" Key="displayOrder"
-                                    Header="@L["Admin.Banners.Col.DisplayOrder"]"
-                                    Sortable="true">
-                    <CellTemplate>@context.DisplayOrder</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminBannerSummary" Key="isActive"
-                                    Header="@L["Admin.Banners.Col.Active"]"
-                                    Sortable="true">
-                    <CellTemplate>
-                        @if (context.IsActive)
-                        {
-                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
-                        }
-                        else
-                        {
-                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
-                        }
-                    </CellTemplate>
-                </SimfDataGridColumn>
-            </Columns>
-            <EmptyTemplate>
-                <SimfEmptyState Title="@L["Admin.Banners.None"]" />
-            </EmptyTemplate>
-        </SimfDataGrid>
-    </div>
-</div>
-
-@if (_editOpen)
+@if (!GridHidden)
 {
-    <SimfModal Open="true" Title="@(_isEdit ? L["Admin.Banners.Edit.Title"] : L["Admin.Banners.Add.Title"])"
-               OnClose="@(() => _editOpen = false)">
-        <ChildContent>
-            <div class="simf-form__fields">
-                <SimfTextField Label="@L["Admin.Banners.Field.TitleEn"]"
-                               Value="@_titleEn"
-                               ValueChanged="@(v => _titleEn = v)"
-                               ValueExpression="@(() => _titleEn)"
-                               Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.Banners.Field.TitleAr"]"
-                               Value="@_titleAr"
-                               ValueChanged="@(v => _titleAr = v)"
-                               ValueExpression="@(() => _titleAr)"
-                               Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.Banners.Field.BodyEn"]"
-                               Value="@_bodyEn"
-                               ValueChanged="@(v => _bodyEn = v)"
-                               ValueExpression="@(() => _bodyEn)"
-                               Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.Banners.Field.BodyAr"]"
-                               Value="@_bodyAr"
-                               ValueChanged="@(v => _bodyAr = v)"
-                               ValueExpression="@(() => _bodyAr)"
-                               Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.Banners.Field.ImageUrl"]"
-                               Value="@_imageUrl"
-                               ValueChanged="@(v => _imageUrl = v)"
-                               ValueExpression="@(() => _imageUrl)"
-                               Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.Banners.Field.LinkUrl"]"
-                               Value="@_linkUrl"
-                               ValueChanged="@(v => _linkUrl = v)"
-                               ValueExpression="@(() => _linkUrl)"
-                               Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.Banners.Field.StartUtc"]"
-                               Type="datetime-local"
-                               Value="@_startUtc"
-                               ValueChanged="@(v => _startUtc = v)"
-                               ValueExpression="@(() => _startUtc)"
-                               Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.Banners.Field.EndUtc"]"
-                               Type="datetime-local"
-                               Value="@_endUtc"
-                               ValueChanged="@(v => _endUtc = v)"
-                               ValueExpression="@(() => _endUtc)"
-                               Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.Banners.Field.DisplayOrder"]"
-                               Type="number"
-                               Value="@_displayOrder.ToString()"
-                               ValueChanged="@(v => int.TryParse(v, out _displayOrder))"
-                               ValueExpression="@(() => _displayOrder.ToString())"
-                               Disabled="_busy" />
-                @if (_isEdit)
-                {
-                    <SimfCheckbox @bind-Value="_isActive" Disabled="_busy">
-                        @L["Admin.Banners.Field.IsActive"]
-                    </SimfCheckbox>
-                }
-            </div>
-        </ChildContent>
-        <Footer>
-            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _editOpen = false)">
-                @L["Admin.Banners.Cancel"]
-            </SimfButton>
-            <SimfButton Type="button" OnClick="SubmitAsync" Loading="_busy">
-                @L["Admin.Banners.Submit"]
-            </SimfButton>
-        </Footer>
-    </SimfModal>
+    <SimfBanner Title="@L["Admin.Banners.Title"]" />
+
+    <div class="simf-page-wide">
+        <div class="simf-surface">
+            @if (_toast is not null)
+            {
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            }
+
+            <SimfDataGrid TItem="AdminBannerSummary"
+                          Query="_query"
+                          Page="_page"
+                          Loading="_loading"
+                          OnQueryChanged="OnQueryChangedAsync"
+                          Multiselect="true"
+                          RowKey="@(r => r.Id.ToString())"
+                          RowLabel="@(r => TitleLabel(r))"
+                          Caption="@L["Admin.Banners.Title"]"
+                          FilterColumnLabel="@L["Grid.FilterColumn"]"
+                          OnAdd="OnAddAsync"
+                          OnEditOne="OnEditAsync"
+                          OnDetailsOne="OnDetailsAsync"
+                          OnDeleteOne="OnDeleteAsync"
+                          PrevLabel="@L["Grid.Prev"]"
+                          NextLabel="@L["Grid.Next"]"
+                          FirstLabel="@L["Grid.First"]"
+                          LastLabel="@L["Grid.Last"]"
+                          PageSizeLabel="@L["Grid.PageSize"]"
+                          PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Admin.Banners.Loading"]"
+                          FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                          ActionsHeader="@L["Grid.Actions"]"
+                          SelectAllLabel="@L["Grid.SelectAll"]"
+                          SelectRowLabel="@L["Grid.SelectRow"]"
+                          AddLabel="@L["Grid.Add"]"
+                          EditLabel="@L["Grid.Edit"]"
+                          DetailsLabel="@L["Grid.Details"]"
+                          DeleteLabel="@L["Grid.Delete"]"
+                          SummaryFormatter="@FormatSummary">
+                <CustomToolbar>
+                    <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
+                </CustomToolbar>
+                <Columns>
+                    <SimfDataGridColumn TItem="AdminBannerSummary" Key="title"
+                                        Header="@L["Admin.Banners.Col.Title"]"
+                                        Sortable="true" Filterable="true">
+                        <CellTemplate>@TitleLabel(context)</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminBannerSummary" Key="startUtc"
+                                        Header="@L["Admin.Banners.Col.StartUtc"]"
+                                        Sortable="true">
+                        <CellTemplate>@context.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminBannerSummary" Key="endUtc"
+                                        Header="@L["Admin.Banners.Col.EndUtc"]"
+                                        Sortable="true">
+                        <CellTemplate>@context.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminBannerSummary" Key="displayOrder"
+                                        Header="@L["Admin.Banners.Col.DisplayOrder"]"
+                                        Sortable="true">
+                        <CellTemplate>@context.DisplayOrder</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminBannerSummary" Key="isActive"
+                                        Header="@L["Admin.Banners.Col.Active"]"
+                                        Sortable="true">
+                        <CellTemplate>
+                            @if (context.IsActive)
+                            {
+                                <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                            }
+                            else
+                            {
+                                <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                            }
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.Banners.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
+        </div>
+    </div>
+}
+
+@if (FormOpen)
+{
+    <CrudShell Open="true" Presentation="_presentation"
+               Title="@FormTitle" CloseLabel="@L["Admin.Banners.Details.Close"]"
+               OnClose="CloseForm">
+        @if (_form == FormKind.AddEdit)
+        {
+            <BannersAddEdit IsEdit="_isEdit" Initial="_target"
+                            OnSuccess="OnSavedAsync" OnCancel="CloseForm" />
+        }
+        else if (_form == FormKind.ViewDelete)
+        {
+            <BannersViewDelete IsDelete="_isDelete" Initial="_target"
+                               OnDeleted="OnDeletedAsync" OnCancel="CloseForm" />
+        }
+    </CrudShell>
 }
 
 @code {
     private record Toast(string Variant, string Message);
 
+    private enum FormKind { None, AddEdit, ViewDelete }
+
+    private const string PageKey = "banners";
+
     private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminBannerSummary> _page = new();
     private bool _loading;
-    private bool _busy;
     private Toast? _toast;
 
-    private bool _editOpen;
+    private CrudPresentation _presentation = CrudPresentation.Dialog;
+    private FormKind _form = FormKind.None;
     private bool _isEdit;
-    private Guid _editId;
-    private string _titleEn = string.Empty;
-    private string _titleAr = string.Empty;
-    private string _bodyEn = string.Empty;
-    private string _bodyAr = string.Empty;
-    private string _imageUrl = string.Empty;
-    private string _linkUrl = string.Empty;
-    private string _startUtc = string.Empty;
-    private string _endUtc = string.Empty;
-    private int _displayOrder;
-    private bool _isActive = true;
+    private bool _isDelete;
+    private AdminBannerDetail? _target;
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    private bool FormOpen => _form != FormKind.None;
+    private bool GridHidden => FormOpen && _presentation == CrudPresentation.Page;
+
+    private string FormTitle => _form switch
+    {
+        FormKind.AddEdit => _isEdit
+            ? L["Admin.Banners.Edit.Title"]
+            : L["Admin.Banners.Add.Title"],
+        FormKind.ViewDelete => _isDelete
+            ? L["Admin.Banners.Delete.Title"]
+            : L["Admin.Banners.Details.Title"],
+        _ => string.Empty,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _presentation = await Prefs.GetPresentationAsync(PageKey);
+        await LoadAsync();
+    }
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
@@ -195,7 +167,7 @@
     }
 
     private string FormatSummary(int skip, int taken, int total) =>
-        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+        string.Format(L["Admin.Banners.Summary"], skip + 1, skip + taken, total);
 
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
@@ -221,126 +193,77 @@
         finally { _loading = false; }
     }
 
-    private void OnAdd()
+    private Task OnAddAsync()
     {
-        _editOpen = true;
+        _toast = null;
+        _form = FormKind.AddEdit;
         _isEdit = false;
-        _editId = Guid.Empty;
-        _titleEn = _titleAr = _bodyEn = _bodyAr = string.Empty;
-        _imageUrl = _linkUrl = string.Empty;
-        var now = DateTime.UtcNow;
-        _startUtc = now.ToString("yyyy-MM-ddTHH:mm");
-        _endUtc = now.AddDays(1).ToString("yyyy-MM-ddTHH:mm");
-        _displayOrder = 0;
-        _isActive = true;
+        _target = null;
+        return Task.CompletedTask;
     }
 
     private async Task OnEditAsync(AdminBannerSummary row)
     {
-        var env = await JS.InvokeAsync<ApiResult<AdminBannerDetail>>(
-            "simfAccount.getJson", $"/account/api/admin/banners/{row.Id}");
-        if (env is not { Success: true, Data: not null }) return;
-        var detail = env.Data;
-        _editOpen = true;
+        var detail = await LoadDetailAsync(row.Id);
+        if (detail is null) return;
+        _form = FormKind.AddEdit;
         _isEdit = true;
-        _editId = detail.Id;
-        _titleEn = detail.Title;
-        _titleAr = detail.TitleArabic;
-        _bodyEn = detail.Body;
-        _bodyAr = detail.BodyArabic;
-        _imageUrl = detail.ImageUrl ?? string.Empty;
-        _linkUrl = detail.LinkUrl ?? string.Empty;
-        _startUtc = detail.StartUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm");
-        _endUtc = detail.EndUtc.UtcDateTime.ToString("yyyy-MM-ddTHH:mm");
-        _displayOrder = detail.DisplayOrder;
-        _isActive = detail.IsActive;
+        _target = detail;
     }
 
-    private async Task SubmitAsync()
+    private async Task OnDetailsAsync(AdminBannerSummary row)
     {
-        if (_busy) return;
-        if (!DateTime.TryParse(_startUtc, out var startParsed)
-            || !DateTime.TryParse(_endUtc, out var endParsed))
-        {
-            _toast = new Toast("error", L["Admin.Banners.LoadFailed"]);
-            return;
-        }
-        var startUtc = new DateTimeOffset(DateTime.SpecifyKind(startParsed, DateTimeKind.Utc));
-        var endUtc = new DateTimeOffset(DateTime.SpecifyKind(endParsed, DateTimeKind.Utc));
-
-        _busy = true;
-        _toast = null;
-        try
-        {
-            object body;
-            string url;
-            string method;
-            if (_isEdit)
-            {
-                body = new UpdateBannerRequest
-                {
-                    Title = _titleEn, TitleArabic = _titleAr,
-                    Body = _bodyEn, BodyArabic = _bodyAr,
-                    ImageUrl = string.IsNullOrWhiteSpace(_imageUrl) ? null : _imageUrl,
-                    LinkUrl = string.IsNullOrWhiteSpace(_linkUrl) ? null : _linkUrl,
-                    StartUtc = startUtc, EndUtc = endUtc,
-                    DisplayOrder = _displayOrder, IsActive = _isActive,
-                };
-                url = $"/account/api/admin/banners/{_editId}";
-                method = "simfAccount.putJson";
-            }
-            else
-            {
-                body = new CreateBannerRequest
-                {
-                    Title = _titleEn, TitleArabic = _titleAr,
-                    Body = _bodyEn, BodyArabic = _bodyAr,
-                    ImageUrl = string.IsNullOrWhiteSpace(_imageUrl) ? null : _imageUrl,
-                    LinkUrl = string.IsNullOrWhiteSpace(_linkUrl) ? null : _linkUrl,
-                    StartUtc = startUtc, EndUtc = endUtc,
-                    DisplayOrder = _displayOrder,
-                };
-                url = "/account/api/admin/banners";
-                method = "simfAccount.postJson";
-            }
-            var env = await JS.InvokeAsync<ApiResult<AdminBannerDetail>>(method, url, body);
-            if (env is { Success: true })
-            {
-                _editOpen = false;
-                _toast = new Toast("success", L["Admin.Banners.Saved"]);
-                await LoadAsync();
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Banners.LoadFailed"]);
-            }
-        }
-        finally { _busy = false; }
+        var detail = await LoadDetailAsync(row.Id);
+        if (detail is null) return;
+        _form = FormKind.ViewDelete;
+        _isDelete = false;
+        _target = detail;
     }
 
     private async Task OnDeleteAsync(AdminBannerSummary row)
     {
-        if (_busy) return;
-        _busy = true;
-        try
+        var detail = await LoadDetailAsync(row.Id);
+        if (detail is null) return;
+        _form = FormKind.ViewDelete;
+        _isDelete = true;
+        _target = detail;
+    }
+
+    // Edit / View / Delete all work against the full detail (the grid carries
+    // a summary). Returns null and surfaces a toast on failure.
+    private async Task<AdminBannerDetail?> LoadDetailAsync(Guid id)
+    {
+        _toast = null;
+        var env = await JS.InvokeAsync<ApiResult<AdminBannerDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/banners/{id}");
+        if (env is { Success: true, Data: not null })
         {
-            var env = await JS.InvokeAsync<ApiResult<bool>>(
-                "simfAccount.deleteJson", $"/account/api/admin/banners/{row.Id}");
-            if (env is { Success: true })
-            {
-                _toast = new Toast("success", L["Admin.Banners.Deleted"]);
-                await LoadAsync();
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Banners.LoadFailed"]);
-            }
+            return env.Data;
         }
-        finally { _busy = false; }
+        _toast = new Toast("error",
+            env?.Error?.MessageForCurrentCulture()
+            ?? L["Admin.Banners.LoadFailed"]);
+        return null;
+    }
+
+    private void CloseForm()
+    {
+        _form = FormKind.None;
+        _target = null;
+    }
+
+    private async Task OnSavedAsync(AdminBannerDetail saved)
+    {
+        CloseForm();
+        _toast = new Toast("success", L["Admin.Banners.Saved"]);
+        await LoadAsync();
+    }
+
+    private async Task OnDeletedAsync(AdminBannerDetail deleted)
+    {
+        CloseForm();
+        _toast = new Toast("success", L["Admin.Banners.Deleted"]);
+        await LoadAsync();
     }
 
     private static string TitleLabel(AdminBannerSummary row) =>

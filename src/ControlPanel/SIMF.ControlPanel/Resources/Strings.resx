@@ -2504,4 +2504,66 @@
   <data name="Admin.SessionCategories.Delete.Message" xml:space="preserve"><value>Deactivate "{0}"? It will be hidden from the session category picker. You can re-activate it later via Edit.</value></data>
   <data name="Admin.Roles.Delete.Title" xml:space="preserve"><value>Delete role</value></data>
   <data name="Admin.Roles.Delete.Message" xml:space="preserve"><value>Delete the role "{0}"? Anyone who holds it loses the permissions it grants. This cannot be undone.</value></data>
+  <data name="Admin.Configuration.Details.Title" xml:space="preserve"><value>Setting details</value></data>
+  <data name="Admin.Configuration.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Configuration.Delete.Title" xml:space="preserve"><value>Delete setting</value></data>
+  <data name="Admin.Configuration.Delete.Message" xml:space="preserve"><value>Delete the setting “{0}”? This deactivates it.</value></data>
+  <data name="Admin.Configuration.Field.KeyHint" xml:space="preserve"><value>A unique identifier, e.g. registration.open. Cannot be changed later.</value></data>
+  <data name="Admin.Configuration.Field.KeyReadOnly" xml:space="preserve"><value>The key is fixed once the setting is created.</value></data>
+  <data name="Admin.Configuration.Field.KeyInvalid" xml:space="preserve"><value>Enter a key (up to 128 characters).</value></data>
+  <data name="Admin.Configuration.Field.ValueInvalid" xml:space="preserve"><value>Enter a value (up to 1024 characters).</value></data>
+  <data name="Admin.Configuration.Field.DescriptionHint" xml:space="preserve"><value>An optional note explaining what this setting does.</value></data>
+  <data name="Admin.Configuration.Field.DescriptionInvalid" xml:space="preserve"><value>The description must be 512 characters or fewer.</value></data>
+  <data name="Admin.Configuration.New.Submit" xml:space="preserve"><value>Create setting</value></data>
+  <data name="Admin.Configuration.New.Submitting" xml:space="preserve"><value>Creating…</value></data>
+  <data name="Admin.Configuration.Edit.Submit" xml:space="preserve"><value>Save changes</value></data>
+  <data name="Admin.Configuration.Edit.Submitting" xml:space="preserve"><value>Saving…</value></data>
+  <data name="Admin.Configuration.Fallback" xml:space="preserve"><value>Something went wrong. Please try again.</value></data>
+  <data name="Admin.Contacts.Details.Title" xml:space="preserve"><value>Contact details</value></data>
+  <data name="Admin.Contacts.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Contacts.Delete.Title" xml:space="preserve"><value>Deactivate contact</value></data>
+  <data name="Admin.Contacts.Delete.Message" xml:space="preserve"><value>Deactivate "{0}"? It will no longer be available to link from sponsors, exhibitors, media partners, speakers or booths.</value></data>
+  <data name="Admin.Contacts.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.News.Details.Title" xml:space="preserve"><value>News article details</value></data>
+  <data name="Admin.News.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.News.Delete.Title" xml:space="preserve"><value>Delete news article</value></data>
+  <data name="Admin.News.Delete.Message" xml:space="preserve"><value>Delete “{0}”? It will be removed from the public feed immediately.</value></data>
+  <data name="Admin.AiPrompts.Details.Title" xml:space="preserve"><value>AI prompt details</value></data>
+  <data name="Admin.AiPrompts.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.AiPrompts.Delete.Title" xml:space="preserve"><value>Deactivate AI prompt</value></data>
+  <data name="Admin.AiPrompts.Delete.Message" xml:space="preserve"><value>Deactivate the AI prompt “{0}”? It will no longer be served to features.</value></data>
+  <data name="Admin.AiPrompts.Required" xml:space="preserve"><value>Display name (English and Arabic) is required.</value></data>
+  <data name="Admin.AiPrompts.Field.KeyRequired" xml:space="preserve"><value>A key is required.</value></data>
+  <data name="Admin.Banners.Details.Title" xml:space="preserve"><value>Banner details</value></data>
+  <data name="Admin.Banners.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Banners.Delete.Title" xml:space="preserve"><value>Deactivate banner</value></data>
+  <data name="Admin.Banners.Delete.Message" xml:space="preserve"><value>Deactivate the banner “{0}”? It will stop showing on the public site.</value></data>
+  <data name="Admin.Banners.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.Banners.Required" xml:space="preserve"><value>Please complete the required fields.</value></data>
+  <data name="Admin.ContentBlocks.Add.Title" xml:space="preserve"><value>New content block</value></data>
+  <data name="Admin.ContentBlocks.Details.Title" xml:space="preserve"><value>Content block details</value></data>
+  <data name="Admin.ContentBlocks.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.ContentBlocks.Action.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.ContentBlocks.Delete.Title" xml:space="preserve"><value>Delete content block</value></data>
+  <data name="Admin.ContentBlocks.Delete.Message" xml:space="preserve"><value>Delete the content block "{0}"? This removes it from the site.</value></data>
+  <data name="Admin.ContentBlocks.Required" xml:space="preserve"><value>A key is required (up to 128 characters).</value></data>
+  <data name="Admin.MediaPartners.Details.Title" xml:space="preserve"><value>Media partner details</value></data>
+  <data name="Admin.MediaPartners.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.MediaPartners.Delete.Title" xml:space="preserve"><value>Delete media partner</value></data>
+  <data name="Admin.MediaPartners.Delete.Message" xml:space="preserve"><value>Delete "{0}"? It will be removed from the public list immediately.</value></data>
+  <data name="Admin.Archive.Details.Title" xml:space="preserve"><value>Edition details</value></data>
+  <data name="Admin.Archive.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Archive.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.Archive.Delete.Title" xml:space="preserve"><value>Deactivate edition</value></data>
+  <data name="Admin.Archive.Delete.Message" xml:space="preserve"><value>Deactivate “{0}”? It will be removed from the public archive immediately.</value></data>
+  <data name="Admin.Media.Details.Title" xml:space="preserve"><value>Media item details</value></data>
+  <data name="Admin.Media.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Media.Action.Deactivate" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.Media.Delete.Title" xml:space="preserve"><value>Delete media item</value></data>
+  <data name="Admin.Media.Delete.Message" xml:space="preserve"><value>Delete “{0}”? It will be removed from the public gallery.</value></data>
+  <data name="Admin.Organisations.Details.Title" xml:space="preserve"><value>Organisation details</value></data>
+  <data name="Admin.Organisations.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Organisations.Delete.Title" xml:space="preserve"><value>Deactivate organisation</value></data>
+  <data name="Admin.Organisations.Delete.Message" xml:space="preserve"><value>Deactivate “{0}”? It will be removed from the public lookup.</value></data>
+  <data name="Admin.Organisations.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
 </root>

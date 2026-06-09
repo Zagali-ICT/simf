@@ -1,0 +1,70 @@
+// D-353 rollout â€” behaviour tests for ArchiveViewDelete (merged View/Delete
+// form). View shows details only; Delete mode gates the soft-delete
+// (DeactivateAsync) behind SimfConfirm (no DELETE until confirmed).
+using Bunit;
+using SIMF.Common;
+using SIMF.Contracts.Archive;
+using SIMF.ControlPanel.Components.Pages.Admin;
+
+namespace SIMF.ControlPanel.Tests;
+
+public sealed class ArchiveViewDeleteTests : CpComponentTestBase
+{
+    private static AdminArchiveEditionSummary Summary() => new(
+        Guid.NewGuid(), 2024, "SIMF 2024", "Ø³ÙŠÙ…Ù 2024",
+        "Summary EN", "Summary AR", 1200, 30, 18,
+        "/media/archive/2024.jpg", IsActive: true, DateTimeOffset.UnixEpoch,
+        "Riyadh", "Ø§Ù„Ø±ÙŠØ§Ø¶", "Mar 2024", "Ù…Ø§Ø±Ø³ 2024");
+
+    [Fact]
+    public void View_mode_shows_details_and_no_delete_button()
+    {
+        var cut = RenderComponent<ArchiveViewDelete>(p => p
+            .Add(x => x.IsDelete, false)
+            .Add(x => x.Initial, Summary()));
+
+        Assert.Contains("SIMF 2024", cut.Markup);
+        Assert.Empty(cut.FindAll(".simf-button--danger"));
+        Assert.Empty(cut.FindAll(".simf-modal"));
+    }
+
+    [Fact]
+    public void Delete_mode_gates_the_call_behind_confirmation()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var deleteHandler = JSInterop.Setup<ApiResult<bool>>(
+            "simfAccount.deleteJson", _ => true)
+            .SetResult(ApiResult<bool>.Ok(true));
+
+        var row = Summary();
+        var cut = RenderComponent<ArchiveViewDelete>(p => p
+            .Add(x => x.IsDelete, true)
+            .Add(x => x.Initial, row));
+
+        cut.Find(".simf-button--danger").Click();
+        Assert.NotEmpty(cut.FindAll(".simf-modal"));      // SimfConfirm opened
+        Assert.Empty(deleteHandler.Invocations);          // nothing deleted yet
+
+        cut.Find(".simf-modal__footer .simf-button--danger").Click();
+        var del = deleteHandler.Invocations.Single();
+        Assert.Equal($"/account/api/admin/archive/{row.Id}", (string)del.Arguments[0]!);
+    }
+
+    [Fact]
+    public void Cancelling_the_confirmation_fires_no_delete()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        var deleteHandler = JSInterop.Setup<ApiResult<bool>>(
+            "simfAccount.deleteJson", _ => true)
+            .SetResult(ApiResult<bool>.Ok(true));
+
+        var cut = RenderComponent<ArchiveViewDelete>(p => p
+            .Add(x => x.IsDelete, true)
+            .Add(x => x.Initial, Summary()));
+
+        cut.Find(".simf-button--danger").Click();
+        cut.Find(".simf-modal__footer .simf-button--secondary").Click();
+
+        Assert.Empty(deleteHandler.Invocations);
+    }
+}

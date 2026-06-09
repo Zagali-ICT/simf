@@ -1,0 +1,174 @@
+@* D-353 â€” reusable Organisation Add/Edit form, hosted by CrudShell (as a
+   popup or a full page) from OrganisationsList.razor. Inherits
+   CrudAddEditFormBase so it exposes the standard CRUD-form parameter surface
+   (IsEdit / Initial / OnSuccess / OnCancel). IsEdit=false runs Create (POST);
+   IsEdit=true runs Edit (PUT against Initial) and shows the IsActive checkbox.
+   Supersedes the inline SimfModal form that lived in OrganisationsList. The
+   bilingual lookup carries no contact columns in the grid summary, so the list
+   page fetches the full detail before opening this form in Edit mode. *@
+@inherits CrudAddEditFormBase<AdminOrganisationDetail>
+@using SIMF.Contracts.Organisations
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        <SimfTextField Label="@L["Admin.Organisations.Field.NameAr"]"
+                       MaxLength="256"
+                       @bind-Value="_model.NameAr" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Organisations.Field.NameEn"]"
+                       MaxLength="256"
+                       @bind-Value="_model.NameEn" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Organisations.Field.CommercialRegistration"]"
+                       MaxLength="32"
+                       @bind-Value="_model.CommercialRegistration" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Organisations.Field.Sector"]"
+                       MaxLength="128"
+                       @bind-Value="_model.Sector" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Organisations.Field.City"]"
+                       MaxLength="128"
+                       @bind-Value="_model.City" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Organisations.Field.Phone"]"
+                       MaxLength="32"
+                       @bind-Value="_model.Phone" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Organisations.Field.Email"]"
+                       MaxLength="320"
+                       @bind-Value="_model.Email" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Organisations.Field.Website"]"
+                       MaxLength="512"
+                       @bind-Value="_model.Website" Disabled="_busy" />
+
+        @if (IsEdit)
+        {
+            <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
+                @L["Admin.Organisations.Field.IsActive"]
+            </SimfCheckbox>
+        }
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy" LoadingLabel="@L["Admin.Organisations.Save"]">
+            @L["Admin.Organisations.Save"]
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy" OnClick="OnCancel">
+                @L["Admin.Organisations.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private readonly Model _model = new();
+    private EditContext _editContext = default!;
+    private bool _busy;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        if (Initial is not null)
+        {
+            _model.NameAr = Initial.NameAr;
+            _model.NameEn = Initial.NameEn ?? string.Empty;
+            _model.CommercialRegistration = Initial.CommercialRegistration ?? string.Empty;
+            _model.Sector = Initial.Sector ?? string.Empty;
+            _model.City = Initial.City ?? string.Empty;
+            _model.Phone = Initial.Phone ?? string.Empty;
+            _model.Email = Initial.Email ?? string.Empty;
+            _model.Website = Initial.Website ?? string.Empty;
+            _model.IsActive = Initial.IsActive;
+        }
+        _editContext = new EditContext(_model);
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _error = null;
+
+        // Arabic name is the only required field (server-side FluentValidation
+        // is the source of truth; this stops an obviously-empty submit).
+        if (string.IsNullOrWhiteSpace(_model.NameAr))
+        {
+            _error = L["Admin.Organisations.Required"]; return;
+        }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminOrganisationDetail>? envelope;
+            if (!IsEdit)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminOrganisationDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/organisations",
+                    new CreateOrganisationRequest
+                    {
+                        NameAr = _model.NameAr.Trim(),
+                        NameEn = NullIfBlank(_model.NameEn),
+                        CommercialRegistration = NullIfBlank(_model.CommercialRegistration),
+                        Sector = NullIfBlank(_model.Sector),
+                        City = NullIfBlank(_model.City),
+                        Phone = NullIfBlank(_model.Phone),
+                        Email = NullIfBlank(_model.Email),
+                        Website = NullIfBlank(_model.Website),
+                    });
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminOrganisationDetail>>(
+                    "simfAccount.putJson", $"/account/api/admin/organisations/{Initial!.Id}",
+                    new UpdateOrganisationRequest
+                    {
+                        NameAr = _model.NameAr.Trim(),
+                        NameEn = NullIfBlank(_model.NameEn),
+                        CommercialRegistration = NullIfBlank(_model.CommercialRegistration),
+                        Sector = NullIfBlank(_model.Sector),
+                        City = NullIfBlank(_model.City),
+                        Phone = NullIfBlank(_model.Phone),
+                        Email = NullIfBlank(_model.Email),
+                        Website = NullIfBlank(_model.Website),
+                        IsActive = _model.IsActive,
+                    });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Organisations.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.Organisations.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+
+    // Optional fields are nullable on the wire â€” send null rather than an empty
+    // string when the admin leaves them blank.
+    private static string? NullIfBlank(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private sealed class Model
+    {
+        public string NameAr { get; set; } = string.Empty;
+        public string NameEn { get; set; } = string.Empty;
+        public string CommercialRegistration { get; set; } = string.Empty;
+        public string Sector { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Website { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+}

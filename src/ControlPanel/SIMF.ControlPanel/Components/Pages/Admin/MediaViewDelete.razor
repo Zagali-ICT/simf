@@ -1,0 +1,123 @@
+@* D-353 â€” reusable Media View/Delete form, hosted by CrudShell (popup or full
+   page) from MediaList.razor. Inherits CrudViewDeleteFormBase so it exposes the
+   standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
+   details always show; when IsDelete=true a Delete button appears and a
+   SimfConfirm gates the destructive call (replaces the old native JS confirm()
+   on the list). The image state (an attached bitmap on an Image item) is shown
+   as a presence indicator â€” the raw bytes are server-internal (no public
+   image-preview endpoint exists to embed), matching the prior Edit-modal
+   behaviour. Adds the View path the inline form never had. *@
+@inherits CrudViewDeleteFormBase<AdminMediaDetail>
+@using SIMF.Contracts.Media
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Media.Col.Kind"]</dt>
+        <dd>@KindLabel(Initial.Kind)</dd>
+        <dt>@L["Admin.Media.Col.TitleEn"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Title) ? "â€”" : Initial.Title)</dd>
+        <dt>@L["Admin.Media.Col.TitleAr"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.TitleArabic) ? "â€”" : Initial.TitleArabic)</dd>
+        <dt>@L["Admin.Media.Col.AlbumEn"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Album) ? "â€”" : Initial.Album)</dd>
+        <dt>@L["Admin.Media.Col.AlbumAr"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.AlbumArabic) ? "â€”" : Initial.AlbumArabic)</dd>
+        @if (Initial.Kind == MediaKind.Video)
+        {
+            <dt>@L["Admin.Media.Field.VideoUrl"]</dt>
+            <dd>@(string.IsNullOrWhiteSpace(Initial.Url) ? "â€”" : Initial.Url)</dd>
+        }
+        else
+        {
+            <dt>@L["Admin.Media.Col.HasImage"]</dt>
+            <dd>@(Initial.HasImage ? L["Admin.Media.Image.Present"] : L["Admin.Media.Image.None"])</dd>
+        }
+        <dt>@L["Admin.Media.Col.DisplayOrder"]</dt>
+        <dd>@Initial.DisplayOrder</dd>
+        <dt>@L["Admin.Media.Col.Active"]</dt>
+        <dd>@(Initial.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.Media.Action.Deactivate"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.Media.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.Media.Delete.Title"]"
+                 Message="@string.Format(L["Admin.Media.Delete.Message"], RowName(Initial))"
+                 ConfirmLabel="@L["Admin.Media.Action.Deactivate"]"
+                 CancelLabel="@L["Admin.Media.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/media/{Initial.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                // Close the confirm first so the error lands on the visible
+                // form body, not behind the (still-open) confirm overlay.
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Media.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.Media.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+
+    private string KindLabel(MediaKind kind) => kind switch
+    {
+        MediaKind.Image => L["Admin.Media.Kind.Image"],
+        MediaKind.Video => L["Admin.Media.Kind.Video"],
+        _ => kind.ToString(),
+    };
+
+    // The confirmation needs a human name for the item: the English title,
+    // else the Arabic title, else the kind so the message is never blank.
+    private string RowName(AdminMediaDetail row) =>
+        !string.IsNullOrWhiteSpace(row.Title) ? row.Title!
+        : !string.IsNullOrWhiteSpace(row.TitleArabic) ? row.TitleArabic!
+        : KindLabel(row.Kind);
+}

@@ -1,0 +1,258 @@
+@* D-353 — reusable AI-prompt Add/Edit form, hosted by CrudShell (as a popup or
+   a full page) from AiPromptsList.razor. Inherits CrudAddEditFormBase so it
+   exposes the standard CRUD-form parameter surface (IsEdit / Initial /
+   OnSuccess / OnCancel). IsEdit=false runs Create (POST, with the immutable
+   Key); IsEdit=true runs Edit (PUT against Initial) and shows the IsActive
+   checkbox. Supersedes the inline SimfModal form that lived in
+   AiPromptsList.razor. The nested view-model is named FormModel (not Model) so
+   its Model property does not clash with the enclosing type name (CS0542). *@
+@inherits CrudAddEditFormBase<AdminAiPromptDetail>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        <SimfTextField Label="@L["Admin.AiPrompts.Field.Key"]"
+                       @bind-Value="_model.Key"
+                       Disabled="@(_busy || IsEdit)" />
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.AiPrompts.Field.Feature"]</span>
+            <select class="simf-field__input"
+                    value="@((int)_model.Feature)"
+                    @onchange="OnFeatureChanged"
+                    disabled="@_busy">
+                @foreach (var f in Enum.GetValues<AiFeature>())
+                {
+                    <option value="@((int)f)">@f</option>
+                }
+            </select>
+        </label>
+        <SimfTextField Label="@L["Admin.AiPrompts.Field.DisplayName"]"
+                       @bind-Value="_model.DisplayName" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.AiPrompts.Field.DisplayNameArabic"]"
+                       @bind-Value="_model.DisplayNameArabic" Disabled="_busy" />
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.AiPrompts.Field.Provider"]</span>
+            <select class="simf-field__input"
+                    value="@((int)_model.Provider)"
+                    @onchange="OnProviderChanged"
+                    disabled="@_busy">
+                @foreach (var p in Enum.GetValues<AiProvider>())
+                {
+                    <option value="@((int)p)">@p</option>
+                }
+            </select>
+        </label>
+        <SimfTextField Label="@L["Admin.AiPrompts.Field.Model"]"
+                       @bind-Value="_model.Model" Disabled="_busy" />
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.AiPrompts.Field.SystemPrompt"]</span>
+            <textarea class="simf-field__input" rows="6"
+                      value="@_model.SystemPrompt"
+                      @onchange="OnSystemPromptChanged"
+                      disabled="@_busy"></textarea>
+        </label>
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.AiPrompts.Field.UserPromptTemplate"]</span>
+            <textarea class="simf-field__input" rows="4"
+                      value="@_model.UserPromptTemplate"
+                      @onchange="OnUserPromptChanged"
+                      disabled="@_busy"></textarea>
+        </label>
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.AiPrompts.Field.Temperature"]</span>
+            <input class="simf-field__input" type="number" step="0.1" min="0" max="2"
+                   value="@_model.Temperature.ToString(CultureInfo.InvariantCulture)"
+                   @onchange="OnTemperatureChanged"
+                   disabled="@_busy" />
+        </label>
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.AiPrompts.Field.MaxOutputTokens"]</span>
+            <input class="simf-field__input" type="number" min="1" max="8000"
+                   value="@_model.MaxOutputTokens"
+                   @onchange="OnMaxTokensChanged"
+                   disabled="@_busy" />
+        </label>
+        @if (IsEdit)
+        {
+            <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
+                @L["Admin.AiPrompts.Field.IsActive"]
+            </SimfCheckbox>
+        }
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy" LoadingLabel="@L["Admin.AiPrompts.Save"]">
+            @L["Admin.AiPrompts.Save"]
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy" OnClick="OnCancel">
+                @L["Admin.AiPrompts.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private readonly FormModel _model = new();
+    private EditContext _editContext = default!;
+    private bool _busy;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        if (Initial is not null)
+        {
+            _model.Key = Initial.Key;
+            _model.Feature = Initial.Feature;
+            _model.DisplayName = Initial.DisplayName;
+            _model.DisplayNameArabic = Initial.DisplayNameArabic;
+            _model.Description = Initial.Description;
+            _model.DescriptionArabic = Initial.DescriptionArabic;
+            _model.Provider = Initial.Provider;
+            _model.Model = Initial.Model;
+            _model.SystemPrompt = Initial.SystemPrompt;
+            _model.UserPromptTemplate = Initial.UserPromptTemplate;
+            _model.Temperature = Initial.Temperature;
+            _model.MaxOutputTokens = Initial.MaxOutputTokens;
+            _model.IsActive = Initial.IsActive;
+        }
+        _editContext = new EditContext(_model);
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _error = null;
+
+        if (!IsEdit && string.IsNullOrWhiteSpace(_model.Key))
+        {
+            _error = L["Admin.AiPrompts.Field.KeyRequired"]; return;
+        }
+        if (string.IsNullOrWhiteSpace(_model.DisplayName)
+            || string.IsNullOrWhiteSpace(_model.DisplayNameArabic))
+        {
+            _error = L["Admin.AiPrompts.Required"]; return;
+        }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminAiPromptDetail>? envelope;
+            if (IsEdit)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminAiPromptDetail>>(
+                    "simfAccount.putJson",
+                    $"/account/api/admin/ai/prompts/{Initial!.Id}",
+                    new UpdateAiPromptRequest
+                    {
+                        Feature = _model.Feature,
+                        DisplayName = _model.DisplayName.Trim(),
+                        DisplayNameArabic = _model.DisplayNameArabic.Trim(),
+                        Description = _model.Description,
+                        DescriptionArabic = _model.DescriptionArabic,
+                        Provider = _model.Provider,
+                        Model = _model.Model,
+                        SystemPrompt = _model.SystemPrompt,
+                        UserPromptTemplate = _model.UserPromptTemplate,
+                        Temperature = _model.Temperature,
+                        MaxOutputTokens = _model.MaxOutputTokens,
+                        IsActive = _model.IsActive,
+                    });
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminAiPromptDetail>>(
+                    "simfAccount.postJson",
+                    "/account/api/admin/ai/prompts",
+                    new CreateAiPromptRequest
+                    {
+                        Key = _model.Key.Trim(),
+                        Feature = _model.Feature,
+                        DisplayName = _model.DisplayName.Trim(),
+                        DisplayNameArabic = _model.DisplayNameArabic.Trim(),
+                        Description = _model.Description,
+                        DescriptionArabic = _model.DescriptionArabic,
+                        Provider = _model.Provider,
+                        Model = _model.Model,
+                        SystemPrompt = _model.SystemPrompt,
+                        UserPromptTemplate = _model.UserPromptTemplate,
+                        Temperature = _model.Temperature,
+                        MaxOutputTokens = _model.MaxOutputTokens,
+                    });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.AiPrompts.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.AiPrompts.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnFeatureChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var v))
+            _model.Feature = (AiFeature)v;
+    }
+
+    private void OnProviderChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var v))
+            _model.Provider = (AiProvider)v;
+    }
+
+    private void OnSystemPromptChanged(ChangeEventArgs e) =>
+        _model.SystemPrompt = e.Value?.ToString() ?? string.Empty;
+
+    private void OnUserPromptChanged(ChangeEventArgs e) =>
+        _model.UserPromptTemplate = e.Value?.ToString() ?? string.Empty;
+
+    private void OnTemperatureChanged(ChangeEventArgs e)
+    {
+        if (double.TryParse(e.Value?.ToString(),
+            NumberStyles.Float, CultureInfo.InvariantCulture, out var d))
+            _model.Temperature = d;
+    }
+
+    private void OnMaxTokensChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n))
+            _model.MaxOutputTokens = n;
+    }
+
+    // The form's view-model. Named FormModel (not Model) because it carries a
+    // Model property (the AI model id) — a property cannot share its enclosing
+    // type's name (CS0542).
+    private sealed class FormModel
+    {
+        public string Key { get; set; } = string.Empty;
+        public AiFeature Feature { get; set; }
+        public string DisplayName { get; set; } = string.Empty;
+        public string DisplayNameArabic { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string? DescriptionArabic { get; set; }
+        public AiProvider Provider { get; set; } = AiProvider.Echo;
+        public string Model { get; set; } = "echo";
+        public string SystemPrompt { get; set; } = string.Empty;
+        public string UserPromptTemplate { get; set; } = string.Empty;
+        public double Temperature { get; set; } = 0.2;
+        public int MaxOutputTokens { get; set; } = 512;
+        public bool IsActive { get; set; } = true;
+    }
+}

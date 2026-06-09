@@ -1,0 +1,138 @@
+@* D-353 — reusable Contact View/Delete form, hosted by CrudShell (popup or
+   full page) from ContactsList. Inherits CrudViewDeleteFormBase so it exposes
+   the standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
+   details always show; when IsDelete=true a Deactivate button appears and a
+   SimfConfirm gates the soft-delete (replaces the old native JS confirm() on
+   the list). A contact still referenced by an active entity is blocked
+   server-side (409 CONTACT_IN_USE) — that error is surfaced on the visible
+   form body, after the confirm is closed first. The logo is shown as its
+   stored relative path (text), matching the field on the Add/Edit form — there
+   is no image component in the Simf* library. *@
+@inherits CrudViewDeleteFormBase<AdminContactDetail>
+@using SIMF.Contracts.Contacts
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Contacts.Field.NameAr"]</dt>
+        <dd>@Initial.NameAr</dd>
+        <dt>@L["Admin.Contacts.Field.NameEn"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.NameEn) ? "—" : Initial.NameEn)</dd>
+        <dt>@L["Admin.Contacts.Field.LogoRelativePath"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.LogoRelativePath) ? "—" : Initial.LogoRelativePath)</dd>
+        <dt>@L["Admin.Contacts.Field.PhonePrimary"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.PhonePrimary) ? "—" : Initial.PhonePrimary)</dd>
+        <dt>@L["Admin.Contacts.Field.PhoneSecondary"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.PhoneSecondary) ? "—" : Initial.PhoneSecondary)</dd>
+        <dt>@L["Admin.Contacts.Field.Email"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Email) ? "—" : Initial.Email)</dd>
+        <dt>@L["Admin.Contacts.Field.Website"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Website) ? "—" : Initial.Website)</dd>
+        <dt>@L["Admin.Contacts.Field.FacebookUrl"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.FacebookUrl) ? "—" : Initial.FacebookUrl)</dd>
+        <dt>@L["Admin.Contacts.Field.XUrl"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.XUrl) ? "—" : Initial.XUrl)</dd>
+        <dt>@L["Admin.Contacts.Field.LinkedInUrl"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.LinkedInUrl) ? "—" : Initial.LinkedInUrl)</dd>
+        <dt>@L["Admin.Contacts.Field.InstagramUrl"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.InstagramUrl) ? "—" : Initial.InstagramUrl)</dd>
+        <dt>@L["Admin.Contacts.Col.Country"]</dt>
+        <dd>@CountryName</dd>
+        <dt>@L["Admin.Contacts.Field.Latitude"]</dt>
+        <dd>@(Initial.Latitude?.ToString(CultureInfo.InvariantCulture) ?? "—")</dd>
+        <dt>@L["Admin.Contacts.Field.Longitude"]</dt>
+        <dd>@(Initial.Longitude?.ToString(CultureInfo.InvariantCulture) ?? "—")</dd>
+        <dt>@L["Admin.Contacts.Col.Active"]</dt>
+        <dd>@(Initial.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.Contacts.Action.Deactivate"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.Contacts.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.Contacts.Delete.Title"]"
+                 Message="@string.Format(L["Admin.Contacts.Delete.Message"], DisplayName)"
+                 ConfirmLabel="@L["Admin.Contacts.Action.Deactivate"]"
+                 CancelLabel="@L["Admin.Contacts.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    private string DisplayName
+    {
+        get
+        {
+            if (Initial is null) return string.Empty;
+            var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+            if (!isArabic && !string.IsNullOrWhiteSpace(Initial.NameEn)) return Initial.NameEn!;
+            return Initial.NameAr;
+        }
+    }
+
+    private string CountryName
+    {
+        get
+        {
+            if (Initial is null) return "—";
+            var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+            var name = isArabic ? Initial.CountryNameAr : Initial.CountryNameEn;
+            return string.IsNullOrWhiteSpace(name) ? "—" : name;
+        }
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/contacts/{Initial.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                // Close the confirm first so the error lands on the visible
+                // form body, not behind the (still-open) confirm overlay.
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Contacts.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.Contacts.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+}

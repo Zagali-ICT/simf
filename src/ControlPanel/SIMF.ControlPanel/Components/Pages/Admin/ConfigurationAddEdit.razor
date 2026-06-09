@@ -1,0 +1,145 @@
+@* D-353 — reusable System Configuration Add/Edit form, hosted by CrudShell
+   (popup or full page) from ConfigurationList. Inherits CrudAddEditFormBase so
+   it exposes the standard CRUD-form surface (IsEdit / Initial / OnSuccess /
+   OnCancel). The Key is the setting's stable identifier: required and editable
+   on Add, read-only on Edit (the API fixes the key once created). *@
+@inherits CrudAddEditFormBase<AdminSystemSettingDetail>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        <SimfTextField Label="@L["Admin.Configuration.Field.Key"]"
+                       Helper="@(IsEdit ? L["Admin.Configuration.Field.KeyReadOnly"] : L["Admin.Configuration.Field.KeyHint"])"
+                       MaxLength="128"
+                       @bind-Value="_model.Key"
+                       Disabled="@(_busy || IsEdit)" />
+        <SimfTextField Label="@L["Admin.Configuration.Field.Value"]"
+                       MaxLength="1024"
+                       @bind-Value="_model.Value" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Configuration.Field.Description"]"
+                       Helper="@L["Admin.Configuration.Field.DescriptionHint"]"
+                       MaxLength="512"
+                       @bind-Value="_model.Description" Disabled="_busy" />
+
+        @if (IsEdit)
+        {
+            <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
+                @L["Admin.Configuration.Field.IsActive"]
+            </SimfCheckbox>
+        }
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy"
+                    LoadingLabel="@(IsEdit ? L["Admin.Configuration.Edit.Submitting"] : L["Admin.Configuration.New.Submitting"])">
+            @(IsEdit ? L["Admin.Configuration.Edit.Submit"] : L["Admin.Configuration.New.Submit"])
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy" OnClick="OnCancel">
+                @L["Admin.Configuration.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private readonly FormModel _model = new();
+    private EditContext _editContext = default!;
+    private bool _busy;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        if (Initial is not null)
+        {
+            _model.Key = Initial.Key;
+            _model.Value = Initial.Value;
+            _model.Description = Initial.Description ?? string.Empty;
+            _model.IsActive = Initial.IsActive;
+        }
+        _editContext = new EditContext(_model);
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _error = null;
+
+        if (!IsEdit)
+        {
+            if (string.IsNullOrWhiteSpace(_model.Key) || _model.Key.Trim().Length > 128)
+            {
+                _error = L["Admin.Configuration.Field.KeyInvalid"]; return;
+            }
+        }
+        if (string.IsNullOrWhiteSpace(_model.Value) || _model.Value.Length > 1024)
+        {
+            _error = L["Admin.Configuration.Field.ValueInvalid"]; return;
+        }
+        if (_model.Description.Length > 512)
+        {
+            _error = L["Admin.Configuration.Field.DescriptionInvalid"]; return;
+        }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminSystemSettingDetail>? envelope;
+            if (!IsEdit)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminSystemSettingDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/system-settings",
+                    new AdminCreateSystemSettingRequest
+                    {
+                        Key = _model.Key.Trim(),
+                        Value = _model.Value.Trim(),
+                        Description = NullIfBlank(_model.Description),
+                    });
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminSystemSettingDetail>>(
+                    "simfAccount.putJson", $"/account/api/admin/system-settings/{Initial!.Id}",
+                    new AdminUpdateSystemSettingRequest
+                    {
+                        Value = _model.Value.Trim(),
+                        Description = NullIfBlank(_model.Description),
+                        IsActive = _model.IsActive,
+                    });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Configuration.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.Configuration.Fallback"];
+        }
+        finally { _busy = false; }
+    }
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private sealed class FormModel
+    {
+        public string Key { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+    }
+}

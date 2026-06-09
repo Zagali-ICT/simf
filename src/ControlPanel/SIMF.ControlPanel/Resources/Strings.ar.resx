@@ -2497,4 +2497,66 @@
   <data name="Admin.SessionCategories.Delete.Message" xml:space="preserve"><value>تعطيل "{0}"؟ سيُخفى من أداة اختيار تصنيف الجلسات. يمكنك إعادة تفعيله لاحقًا عبر التعديل.</value></data>
   <data name="Admin.Roles.Delete.Title" xml:space="preserve"><value>حذف الدور</value></data>
   <data name="Admin.Roles.Delete.Message" xml:space="preserve"><value>حذف الدور "{0}"؟ سيفقد كل من يملكه الصلاحيات التي يمنحها. لا يمكن التراجع عن هذا الإجراء.</value></data>
+  <data name="Admin.Configuration.Details.Title" xml:space="preserve"><value>تفاصيل الإعداد</value></data>
+  <data name="Admin.Configuration.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Configuration.Delete.Title" xml:space="preserve"><value>حذف الإعداد</value></data>
+  <data name="Admin.Configuration.Delete.Message" xml:space="preserve"><value>هل تريد حذف الإعداد ”{0}“؟ سيؤدي ذلك إلى تعطيله.</value></data>
+  <data name="Admin.Configuration.Field.KeyHint" xml:space="preserve"><value>معرّف فريد، مثل registration.open. لا يمكن تغييره لاحقًا.</value></data>
+  <data name="Admin.Configuration.Field.KeyReadOnly" xml:space="preserve"><value>المفتاح ثابت بعد إنشاء الإعداد.</value></data>
+  <data name="Admin.Configuration.Field.KeyInvalid" xml:space="preserve"><value>أدخل مفتاحًا (حتى 128 حرفًا).</value></data>
+  <data name="Admin.Configuration.Field.ValueInvalid" xml:space="preserve"><value>أدخل قيمة (حتى 1024 حرفًا).</value></data>
+  <data name="Admin.Configuration.Field.DescriptionHint" xml:space="preserve"><value>ملاحظة اختيارية تشرح وظيفة هذا الإعداد.</value></data>
+  <data name="Admin.Configuration.Field.DescriptionInvalid" xml:space="preserve"><value>يجب ألا يتجاوز الوصف 512 حرفًا.</value></data>
+  <data name="Admin.Configuration.New.Submit" xml:space="preserve"><value>إنشاء إعداد</value></data>
+  <data name="Admin.Configuration.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء…</value></data>
+  <data name="Admin.Configuration.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.Configuration.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
+  <data name="Admin.Configuration.Fallback" xml:space="preserve"><value>حدث خطأ ما. يرجى المحاولة مرة أخرى.</value></data>
+  <data name="Admin.Contacts.Details.Title" xml:space="preserve"><value>تفاصيل جهة الاتصال</value></data>
+  <data name="Admin.Contacts.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Contacts.Delete.Title" xml:space="preserve"><value>تعطيل جهة الاتصال</value></data>
+  <data name="Admin.Contacts.Delete.Message" xml:space="preserve"><value>هل تريد تعطيل "{0}"؟ لن تكون متاحة للربط من الرعاة أو العارضين أو الشركاء الإعلاميين أو المتحدثين أو الأجنحة.</value></data>
+  <data name="Admin.Contacts.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.News.Details.Title" xml:space="preserve"><value>تفاصيل الخبر</value></data>
+  <data name="Admin.News.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.News.Delete.Title" xml:space="preserve"><value>حذف الخبر</value></data>
+  <data name="Admin.News.Delete.Message" xml:space="preserve"><value>هل تريد حذف «{0}»؟ ستتم إزالته من الواجهة العامة فورًا.</value></data>
+  <data name="Admin.AiPrompts.Details.Title" xml:space="preserve"><value>تفاصيل محفّز الذكاء الاصطناعي</value></data>
+  <data name="Admin.AiPrompts.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.AiPrompts.Delete.Title" xml:space="preserve"><value>تعطيل محفّز الذكاء الاصطناعي</value></data>
+  <data name="Admin.AiPrompts.Delete.Message" xml:space="preserve"><value>هل تريد تعطيل المحفّز «{0}»؟ لن يُقدَّم بعد ذلك للميزات.</value></data>
+  <data name="Admin.AiPrompts.Required" xml:space="preserve"><value>الاسم (بالإنجليزية والعربية) مطلوب.</value></data>
+  <data name="Admin.AiPrompts.Field.KeyRequired" xml:space="preserve"><value>المفتاح مطلوب.</value></data>
+  <data name="Admin.Banners.Details.Title" xml:space="preserve"><value>تفاصيل اللافتة</value></data>
+  <data name="Admin.Banners.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Banners.Delete.Title" xml:space="preserve"><value>تعطيل اللافتة</value></data>
+  <data name="Admin.Banners.Delete.Message" xml:space="preserve"><value>تعطيل اللافتة ‏«{0}»؟ سيتوقف عرضها في الموقع العام.</value></data>
+  <data name="Admin.Banners.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.Banners.Required" xml:space="preserve"><value>يرجى إكمال الحقول المطلوبة.</value></data>
+  <data name="Admin.ContentBlocks.Add.Title" xml:space="preserve"><value>كتلة محتوى جديدة</value></data>
+  <data name="Admin.ContentBlocks.Details.Title" xml:space="preserve"><value>تفاصيل كتلة المحتوى</value></data>
+  <data name="Admin.ContentBlocks.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.ContentBlocks.Action.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.ContentBlocks.Delete.Title" xml:space="preserve"><value>حذف كتلة المحتوى</value></data>
+  <data name="Admin.ContentBlocks.Delete.Message" xml:space="preserve"><value>هل تريد حذف كتلة المحتوى "{0}"؟ سيؤدي ذلك إلى إزالتها من الموقع.</value></data>
+  <data name="Admin.ContentBlocks.Required" xml:space="preserve"><value>المفتاح مطلوب (حتى 128 حرفًا).</value></data>
+  <data name="Admin.MediaPartners.Details.Title" xml:space="preserve"><value>تفاصيل الشريك الإعلامي</value></data>
+  <data name="Admin.MediaPartners.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.MediaPartners.Delete.Title" xml:space="preserve"><value>حذف الشريك الإعلامي</value></data>
+  <data name="Admin.MediaPartners.Delete.Message" xml:space="preserve"><value>هل تريد حذف "{0}"؟ سيُزال من القائمة العامة فورًا.</value></data>
+  <data name="Admin.Archive.Details.Title" xml:space="preserve"><value>تفاصيل النسخة</value></data>
+  <data name="Admin.Archive.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Archive.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.Archive.Delete.Title" xml:space="preserve"><value>تعطيل النسخة</value></data>
+  <data name="Admin.Archive.Delete.Message" xml:space="preserve"><value>تعطيل «{0}»؟ ستتم إزالتها من الأرشيف العام فورًا.</value></data>
+  <data name="Admin.Media.Details.Title" xml:space="preserve"><value>تفاصيل عنصر الوسائط</value></data>
+  <data name="Admin.Media.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Media.Action.Deactivate" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Media.Delete.Title" xml:space="preserve"><value>حذف عنصر الوسائط</value></data>
+  <data name="Admin.Media.Delete.Message" xml:space="preserve"><value>هل تريد حذف “{0}”؟ ستتم إزالته من المعرض العام.</value></data>
+  <data name="Admin.Organisations.Details.Title" xml:space="preserve"><value>تفاصيل الجهة</value></data>
+  <data name="Admin.Organisations.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Organisations.Delete.Title" xml:space="preserve"><value>تعطيل الجهة</value></data>
+  <data name="Admin.Organisations.Delete.Message" xml:space="preserve"><value>تعطيل «{0}»؟ ستُزال من قائمة البحث العامة.</value></data>
+  <data name="Admin.Organisations.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
 </root>

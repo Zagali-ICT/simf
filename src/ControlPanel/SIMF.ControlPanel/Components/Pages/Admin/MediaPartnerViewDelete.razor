@@ -1,0 +1,95 @@
+@* D-353 â€” reusable Media-Partner View/Delete form, hosted by CrudShell (popup
+   or full page) from MediaPartnersList.razor. Inherits CrudViewDeleteFormBase so
+   it exposes the standard surface (IsDelete / Initial / OnDeleted / OnCancel).
+   Read-only details always show (including the logo path); when IsDelete=true a
+   Delete button appears and a SimfConfirm gates the soft-delete (replaces the
+   old native JS confirm() on the list). Adds the View path the inline form
+   never had. *@
+@inherits CrudViewDeleteFormBase<AdminMediaPartnerDetail>
+@using SIMF.Contracts.PublicRelations
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.MediaPartners.Col.NameEn"]</dt>
+        <dd>@Initial.Name</dd>
+        <dt>@L["Admin.MediaPartners.Col.NameAr"]</dt>
+        <dd>@Initial.NameArabic</dd>
+        <dt>@L["Admin.MediaPartners.Col.Logo"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.LogoRelativePath) ? "â€”" : Initial.LogoRelativePath)</dd>
+        <dt>@L["Admin.MediaPartners.Col.Url"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Url) ? "â€”" : Initial.Url)</dd>
+        <dt>@L["Admin.MediaPartners.Col.DisplayOrder"]</dt>
+        <dd>@Initial.DisplayOrder</dd>
+        <dt>@L["Admin.MediaPartners.Col.Active"]</dt>
+        <dd>@(Initial.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.MediaPartners.Delete"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.MediaPartners.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.MediaPartners.Delete.Title"]"
+                 Message="@string.Format(L["Admin.MediaPartners.Delete.Message"], Initial.Name)"
+                 ConfirmLabel="@L["Admin.MediaPartners.Delete"]"
+                 CancelLabel="@L["Admin.MediaPartners.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/media-partners/{Initial.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                // Close the confirm first so the error lands on the visible
+                // form body, not behind the (still-open) confirm overlay.
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.MediaPartners.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.MediaPartners.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+}

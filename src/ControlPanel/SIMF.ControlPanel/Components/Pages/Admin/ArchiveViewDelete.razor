@@ -1,0 +1,123 @@
+@* D-353 â€” reusable Archive (Past Editions) View/Delete form, hosted by
+   CrudShell (as a popup or a full page) from ArchiveList.razor. Inherits
+   CrudViewDeleteFormBase so it exposes the standard parameter surface
+   (IsDelete / Initial / OnDeleted / OnCancel). Read-only details always show
+   (including a cover-image preview when present); when IsDelete=true a
+   Deactivate button appears and a SimfConfirm gates the destructive call
+   (replaces the old native JS confirm() on the list). The DELETE endpoint
+   soft-deletes (DeactivateAsync), pulling the edition from the public archive. *@
+@inherits CrudViewDeleteFormBase<AdminArchiveEditionSummary>
+@using SIMF.Contracts.Archive
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Archive.Col.Year"]</dt>
+        <dd>@Initial.Year</dd>
+        <dt>@L["Admin.Archive.Col.TitleEn"]</dt>
+        <dd>@Initial.TitleEn</dd>
+        <dt>@L["Admin.Archive.Col.TitleAr"]</dt>
+        <dd>@Initial.TitleAr</dd>
+        <dt>@L["Admin.Archive.Field.SummaryEn"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.SummaryEn) ? "â€”" : Initial.SummaryEn)</dd>
+        <dt>@L["Admin.Archive.Field.SummaryAr"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.SummaryAr) ? "â€”" : Initial.SummaryAr)</dd>
+        <dt>@L["Admin.Archive.Col.Attendees"]</dt>
+        <dd>@Initial.Attendees</dd>
+        <dt>@L["Admin.Archive.Col.Sessions"]</dt>
+        <dd>@Initial.Sessions</dd>
+        <dt>@L["Admin.Archive.Col.Speakers"]</dt>
+        <dd>@Initial.Speakers</dd>
+        <dt>@L["Admin.Archive.Field.LocationEn"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.LocationEn) ? "â€”" : Initial.LocationEn)</dd>
+        <dt>@L["Admin.Archive.Field.LocationAr"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.LocationAr) ? "â€”" : Initial.LocationAr)</dd>
+        <dt>@L["Admin.Archive.Field.DateLabelEn"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.DateLabelEn) ? "â€”" : Initial.DateLabelEn)</dd>
+        <dt>@L["Admin.Archive.Field.DateLabelAr"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.DateLabelAr) ? "â€”" : Initial.DateLabelAr)</dd>
+        <dt>@L["Admin.Archive.Field.CoverImageRelativePath"]</dt>
+        <dd>
+            @if (!string.IsNullOrWhiteSpace(Initial.CoverImageRelativePath))
+            {
+                <span>@Initial.CoverImageRelativePath</span>
+                <img class="simf-detail__image" src="@Initial.CoverImageRelativePath"
+                     alt="@Initial.TitleEn" />
+            }
+            else
+            {
+                <span>â€”</span>
+            }
+        </dd>
+        <dt>@L["Admin.Archive.Col.Active"]</dt>
+        <dd>@(Initial.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.Archive.Action.Deactivate"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.Archive.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.Archive.Delete.Title"]"
+                 Message="@string.Format(L["Admin.Archive.Delete.Message"], Initial.TitleEn)"
+                 ConfirmLabel="@L["Admin.Archive.Action.Deactivate"]"
+                 CancelLabel="@L["Admin.Archive.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/archive/{Initial.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                // Close the confirm first so the error lands on the visible
+                // form body, not behind the (still-open) confirm overlay.
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Archive.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.Archive.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+}
