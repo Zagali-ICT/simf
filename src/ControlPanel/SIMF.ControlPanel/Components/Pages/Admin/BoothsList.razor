@@ -281,6 +281,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Flip the grid into its loading state from the very first paint:
+        // OnInitializedAsync first yields inside LoadHallsAsync, so without this
+        // the in-progress frame would render with _loading == false and the spinner
+        // would never show on first load. LoadAsync's finally clears it.
+        _loading = true;
         await LoadHallsAsync();
         await LoadExhibitorsAsync();
         await LoadAsync();
