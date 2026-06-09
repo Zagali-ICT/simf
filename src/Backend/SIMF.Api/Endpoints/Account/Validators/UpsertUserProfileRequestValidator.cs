@@ -43,15 +43,15 @@ public sealed class UpsertUserProfileRequestValidator
                 "Profile type id is not a valid identifier.",
                 "معرّف نوع الملف الشخصي غير صالح.");
 
-        // B3 — D-221: الجهة. Optional; only shape-check here (non-empty Guid
-        // when supplied). The existence / IsActive check runs in the service
-        // against the App DB (cross-context, FluentValidation is sync), exactly
-        // like ProfileTypeId / NationalityCode.
+        // B3 — D-221: الجهة. Required for every registrant (owner rule —
+        // org mandatory across Web + App + CP). Shape-check only here
+        // (non-null, non-empty Guid); the existence / IsActive check runs in
+        // the service against the App DB (cross-context, FluentValidation is
+        // sync), exactly like ProfileTypeId / NationalityCode.
         RuleFor(request => request.OrganisationId)
-            .Must(id => id is null || id != Guid.Empty)
-            .Bilingual(
-                "Organisation id is not a valid identifier.",
-                "معرّف الجهة غير صالح.");
+            .Must(id => id is { } orgId && orgId != Guid.Empty).Bilingual(
+                "Organisation is required.",
+                "الجهة مطلوبة.");
 
         // B3 — D-221: الجنس. Must be a defined enum value (Unspecified is
         // allowed — the field is optional).

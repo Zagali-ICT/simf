@@ -711,6 +711,18 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Upsert_without_OrganisationId_returns_400()
+    {
+        // B3 — D-221: organisation is required for every registrant.
+        var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.OrganisationId = null;
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Upsert_with_inactive_OrganisationId_returns_400()
     {
         var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
@@ -760,6 +772,9 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         string arabicName = "مستخدم اختبار")
     {
         var interestId = await SeedInterestAsync();
+        // B3 — D-221: organisation is now required, so the baseline valid
+        // request carries one. Bad-org tests override OrganisationId afterwards.
+        var organisationId = await SeedOrganisationAsync();
         return new UpsertUserProfileRequest
         {
             InterestIds = new List<Guid> { interestId },
@@ -770,6 +785,7 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
             PlaceOfBirth = "Riyadh",
             IsSaudi = true,
             NationalId = "1101798278",   // D-197 — Luhn-valid Saudi national id
+            OrganisationId = organisationId,
         };
     }
 

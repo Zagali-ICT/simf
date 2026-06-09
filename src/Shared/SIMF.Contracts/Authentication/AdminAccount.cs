@@ -446,6 +446,11 @@ public sealed class AdminWalkInRegistrationRequest
     /// <summary>International mobile (<c>+CC-local</c>).</summary>
     public string? InternationalMobile { get; set; }
 
+    /// <summary>B3 — D-221 (الجهة): the picked <see cref="Organisation"/> id.
+    /// Required at the walk-in desk (the validator rejects null / empty); the
+    /// service rejects an unknown / inactive id with <c>OrganisationInvalid</c>.</summary>
+    public Guid? OrganisationId { get; set; }
+
     /// <summary>Picked interest ids (visitor-only; ignored for Other kind).</summary>
     public IList<Guid> InterestIds { get; set; } = new List<Guid>();
 }

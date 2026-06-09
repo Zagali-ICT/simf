@@ -319,6 +319,14 @@ if (!app.Environment.IsEnvironment("Testing"))
     await services.GetRequiredService<SimfAppDbContext>().Database.MigrateAsync();
     await services.GetRequiredService<SimfIdentityDbContext>().Database.MigrateAsync();
     await services.GetRequiredService<IdentitySeeder>().SeedAsync();
+
+    // B3 — D-221 — in Development only, seed a few sample organisations so the
+    // registration organisation picker has data before the gov Excel import.
+    if (app.Environment.IsDevelopment())
+    {
+        await services.GetRequiredService<SIMF.Infrastructure.Organisations.OrganisationSeeder>()
+            .SeedFakeAsync();
+    }
 }
 
 // Recover the real client IP — but only from a trusted proxy (see above).

@@ -355,6 +355,41 @@ Scenario: Arabic toggle mirrors the page, the Add wizard and the Details modal
   Then the description list labels are Arabic and the modal title reads "تفاصيل الزائر — {email}"
 ```
 
+### E2E-VIS-021 — Organisation is required (D-354)
+
+```gherkin
+Scenario: The walk-in cannot be registered without an organisation
+  Given I am signed in as an Administrator and open the Add-visitor modal
+  And I fill a valid badge type, English + Arabic name, badge name, nationality/ID and a mobile
+  But I leave the Organisation (الجهة) field unpicked
+  When I press Register
+  Then the form does not submit
+  And an inline error under the Organisation field reads "Pick an organisation." ("اختر الجهة." in Arabic)
+
+Scenario: Picking an organisation from the typeahead unblocks the submit
+  Given I am in the Add-visitor modal with every other field valid
+  When I type "Aramco" into the Organisation search box
+  And I pick "Saudi Aramco" from the results list
+  Then the field shows "Selected: Saudi Aramco"
+  And pressing Register creates the visitor and shows the WalkInSuccessModal QR badge
+```
+
+### E2E-VIS-022 — Numeric ID fields reject letters + inline field validation (D-354)
+
+```gherkin
+Scenario: The National ID / Iqama field accepts digits only
+  Given I am in the Add-visitor modal
+  When I type "12ab34" into the Saudi National ID field
+  Then the field shows "1234" (non-digits are stripped as I type)
+
+Scenario: An invalid Iqama shows an inline error on the field, not just a top banner
+  Given I switch the visitor to Non-Saudi and pick the Iqama document type
+  And I enter "1000000000" (does not start with 2) into the Iqama field
+  When I press Register
+  Then an inline error renders directly under the Iqama field
+  And the form does not submit
+```
+
 ---
 
 ## Implementation notes

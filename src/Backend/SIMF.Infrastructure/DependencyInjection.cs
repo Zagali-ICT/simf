@@ -317,6 +317,9 @@ public static class DependencyInjection
             SIMF.Infrastructure.Organisations.PublicOrganisationService>();
         services.AddScoped<SIMF.Application.Organisations.Abstractions.IOrganisationExcelReader,
             SIMF.Infrastructure.Excel.ClosedXmlOrganisationReader>();
+        // B3 — D-221 — dev-only sample-organisation seeder (Program.cs runs it in
+        // Development only; production uses the gov Excel import).
+        services.AddScoped<SIMF.Infrastructure.Organisations.OrganisationSeeder>();
         // SIMF-FDS-014 (D-261) — shared Contact directory admin CRUD.
         services.AddScoped<SIMF.Application.Contacts.Abstractions.IAdminContactService,
             SIMF.Infrastructure.Contacts.AdminContactService>();

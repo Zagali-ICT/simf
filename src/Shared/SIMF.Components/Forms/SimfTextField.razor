@@ -2,6 +2,9 @@
    Renders its own validation message (styled), an optional leading icon and
    optional helper text. *@
 @inherits SimfFieldBase
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime JS
 
 <div class="simf-field @(HasError ? "simf-field--error" : null) @(Disabled ? "simf-field--disabled" : null)">
     <label class="simf-field__label" for="@FieldElementId">@Label</label>
@@ -10,13 +13,31 @@
         {
             <SimfIcon Name="@Icon" Class="simf-field__icon" />
         }
-        <InputText id="@FieldElementId" class="simf-field__input"
-                   Value="@Value" ValueChanged="@ValueChanged" ValueExpression="@ValueExpression"
-                   type="@Type" inputmode="@InputMode" autocomplete="@Autocomplete"
+        @if (Numeric)
+        {
+            @* Numeric mode — a raw input restricted to digits. The C# handler
+               keeps the bound model digit-only even if the JS cleaner never
+               loads; the JS cleaner (attached on first render) strips any
+               non-digit from the DOM in place so letters never appear. *@
+            <input id="@FieldElementId" class="simf-field__input"
+                   type="text" inputmode="numeric" pattern="[0-9]*"
+                   value="@Value" @oninput="OnNumericInputAsync"
+                   autocomplete="@Autocomplete"
                    placeholder="@Placeholder" disabled="@Disabled"
                    maxlength="@(MaxLength?.ToString())"
                    aria-invalid="@(HasError ? "true" : null)"
                    aria-describedby="@DescribedBy" />
+        }
+        else
+        {
+            <InputText id="@FieldElementId" class="simf-field__input"
+                       Value="@Value" ValueChanged="@ValueChanged" ValueExpression="@ValueExpression"
+                       type="@Type" inputmode="@InputMode" autocomplete="@Autocomplete"
+                       placeholder="@Placeholder" disabled="@Disabled"
+                       maxlength="@(MaxLength?.ToString())"
+                       aria-invalid="@(HasError ? "true" : null)"
+                       aria-describedby="@DescribedBy" />
+        }
     </div>
     @if (HasError)
     {
@@ -32,6 +53,8 @@
 </div>
 
 @code {
+    private IJSObjectReference? _numericModule;
+
     /// <summary>The HTML input type — <c>text</c>, <c>email</c>, etc.</summary>
     [Parameter] public string Type { get; set; } = "text";
 
@@ -55,8 +78,66 @@
     /// server-side FluentValidation rule.</summary>
     [Parameter] public int? MaxLength { get; set; }
 
+    /// <summary>Opt-in digit-only mode (B3 — D-221 hardening). When true the
+    /// field accepts digits only: a C# strip keeps the bound model clean and a
+    /// small JS cleaner removes any pasted / typed non-digit from the DOM in
+    /// place. Default false — every existing consumer is unaffected.</summary>
+    [Parameter] public bool Numeric { get; set; }
+
     private string? DescribedBy =>
         HasError ? ErrorElementId
         : !string.IsNullOrEmpty(Helper) ? HelperElementId
         : null;
+
+    // Numeric mode — strip non-digits so the bound model is always digit-only,
+    // independent of the JS cosmetic cleaner. Honours MaxLength.
+    private async Task OnNumericInputAsync(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString() ?? string.Empty;
+        var digits = new string(raw.Where(char.IsAsciiDigit).ToArray());
+        if (MaxLength is { } max && digits.Length > max)
+        {
+            digits = digits[..max];
+        }
+        if (!string.Equals(digits, Value, StringComparison.Ordinal))
+        {
+            await ValueChanged.InvokeAsync(digits);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && Numeric)
+        {
+            try
+            {
+                _numericModule = await JS.InvokeAsync<IJSObjectReference>(
+                    "import", "/_content/SIMF.Components/js/simf-numeric.js");
+                await _numericModule.InvokeVoidAsync("digitsOnly", FieldElementId);
+            }
+            catch (JSException)
+            {
+                // Best-effort cosmetic cleaner — the C# strip already keeps the
+                // model digit-only, so a JS load failure is non-fatal.
+            }
+            catch (InvalidOperationException)
+            {
+                // JS interop unavailable (e.g. prerender) — same fallback.
+            }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // SimfFieldBase.Dispose() (IDisposable) is NOT called by the renderer
+        // when a component also implements IAsyncDisposable, so unsubscribe the
+        // validation handler here, then release the imported JS module.
+        Dispose();
+        if (_numericModule is not null)
+        {
+            try { await _numericModule.DisposeAsync(); }
+            catch (JSDisconnectedException) { /* circuit already gone */ }
+            catch (JSException) { /* module already torn down */ }
+        }
+    }
 }

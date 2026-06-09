@@ -143,6 +143,7 @@ UserProfileResponse _completeProfile() => const UserProfileResponse(
       hasIdImage: false,
       nationalId: '1000000008', // matches ^1\d{9}$ and is Luhn-valid
       dateOfBirth: '2000-01-31',
+      organisationId: 'o1', // B3 — D-221: organisation is now required
     );
 
 Future<void> _tapNext(WidgetTester tester) async {
@@ -210,6 +211,32 @@ void main() {
       // Navigated to the interests screen; this screen did NOT upsert.
       expect(find.text('INTERESTS'), findsOneWidget);
       expect(repo.upserted, isNull);
+    });
+
+    testWidgets('a profile missing only the organisation blocks Next (B3 — D-221)',
+        (tester) async {
+      // Every field valid except the organisation → the required-organisation
+      // gate keeps the desk on this screen with an inline error.
+      const profileNoOrg = UserProfileResponse(
+        interestIds: <String>['i1'],
+        arabicName: 'راكان السالم',
+        englishName: 'Rakan Alsalem',
+        nationalityCode: 'SA',
+        placeOfBirth: 'Riyadh',
+        isSaudi: true,
+        gender: AppGender.male,
+        hasIdImage: false,
+        nationalId: '1000000008',
+        dateOfBirth: '2000-01-31',
+        // organisationId intentionally null.
+      );
+      final repo = _FakeProfileRepository(profile: profileNoOrg);
+      await _pump(tester, repo);
+
+      await _tapNext(tester);
+
+      expect(find.text('INTERESTS'), findsNothing);
+      expect(find.text('Pick your organisation from the list'), findsOneWidget);
     });
 
     testWidgets('a non-Saudi profile shows the Iqama / Passport document picker',

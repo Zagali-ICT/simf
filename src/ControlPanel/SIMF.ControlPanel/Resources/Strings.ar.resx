@@ -824,6 +824,14 @@
   <data name="Admin.WalkIn.Section.IdDocument" xml:space="preserve"><value>وثيقة الهوية</value></data>
   <data name="Admin.WalkIn.Section.IdDocument.Hint" xml:space="preserve"><value>صورة اختيارية للهوية الوطنية أو الإقامة أو جواز السفر. PNG / JPEG / WebP حتى 5 ميغابايت. تُخزَّن مشفّرة.</value></data>
   <data name="Admin.WalkIn.Field.IdDocument.Selected" xml:space="preserve"><value>تم اختيار: {0}</value></data>
+  <!-- B3 — D-221 — حقل الجهة المطلوب في نموذج التسجيل الفوري. -->
+  <data name="Admin.WalkIn.Section.Organisation" xml:space="preserve"><value>الجهة</value></data>
+  <data name="Admin.WalkIn.Field.Organisation" xml:space="preserve"><value>الجهة</value></data>
+  <data name="Admin.WalkIn.Field.Organisation.Search" xml:space="preserve"><value>ابحث بالاسم أو المدينة…</value></data>
+  <data name="Admin.WalkIn.Field.Organisation.Hint" xml:space="preserve"><value>ابحث واختر جهة الزائر. مطلوب.</value></data>
+  <data name="Admin.WalkIn.Field.Organisation.Selected" xml:space="preserve"><value>تم اختيار: {0}</value></data>
+  <data name="Admin.WalkIn.Field.Organisation.NoResults" xml:space="preserve"><value>لا توجد جهات مطابقة.</value></data>
+  <data name="Admin.WalkIn.Error.OrganisationRequired" xml:space="preserve"><value>اختر الجهة.</value></data>
   <data name="Admin.Pending.View.Field.QrId" xml:space="preserve"><value>رمز QR</value></data>
   <data name="Admin.Pending.View.Field.IdImage" xml:space="preserve"><value>وثيقة الهوية</value></data>
 

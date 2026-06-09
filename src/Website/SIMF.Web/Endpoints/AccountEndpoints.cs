@@ -51,6 +51,12 @@ internal static class AccountEndpoints
             async (HttpContext http, SimfAccountClient api, CancellationToken ct) =>
             Forward(await api.GetActiveInterestsAsync(Token(http), ct)));
 
+        // B3 — D-221 — organisations picker for the user-profile الجهة field.
+        group.MapGet("/organisations",
+            async (string? search, int? top, HttpContext http,
+                   SimfAccountClient api, CancellationToken ct) =>
+            Forward(await api.SearchOrganisationsAsync(search, top ?? 20, Token(http), ct)));
+
         // P12 — notifications proxy.
         group.MapPost("/notifications/list",
             async (GridQuery body, HttpContext http, SimfAccountClient api, CancellationToken ct) =>

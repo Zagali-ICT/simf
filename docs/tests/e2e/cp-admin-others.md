@@ -407,6 +407,18 @@ Scenario: Arabic toggle mirrors the page, wizard and modals
   Then the title reads "حذف الحسابات الأخرى" and the reason field + actions mirror
 ```
 
+### E2E-OTH-022 — Organisation required + digit-only IDs on the Others walk-in (D-354)
+
+```gherkin
+Scenario: The Others walk-in requires an organisation too (shared form)
+  Given the administrator opens the Add modal on /admin/others (Kind=Other)
+  And fills a valid partner badge type, names, nationality/ID and a mobile
+  But leaves the Organisation (الجهة) field unpicked
+  When they press Register
+  Then the form does not submit and an inline "Pick an organisation." error shows
+  And the National ID / Iqama field strips any non-digit typed into it
+```
+
 ---
 
 ## Implementation notes

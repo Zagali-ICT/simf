@@ -161,10 +161,13 @@ class AppL10n {
   String get genderFemale => _t('أنثى', 'Female');
   String get organisationLabel => _t('الجهة / المنظمة', 'Organisation');
   String get organisationSearchHint =>
-      _t('ابحث عن جهتك (اختياري)', 'Search your organisation (optional)');
+      _t('ابحث عن جهتك', 'Search your organisation');
   String get organisationEmpty =>
       _t('لا توجد جهات مطابقة', 'No organisations found');
   String get organisationSelected => _t('الجهة محددة', 'Organisation selected');
+  // B3 — D-221 (الجهة): required-field message on the sign-up screen.
+  String get organisationRequired =>
+      _t('اختر جهتك من القائمة', 'Pick your organisation from the list');
   String get profileTypeLabel => _t('التصنيف', 'Profile type');
   // Page 007 — نوع التسجيل (Visitor/Other) filter (D-332). Visitor reuses
   // [signUpTypeVisitor]; Other is new.

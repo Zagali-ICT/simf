@@ -62,6 +62,15 @@ public sealed class AdminWalkInRegistrationRequestValidator
                 "Profile type is required.",
                 "نوع الملف الشخصي مطلوب.");
 
+        // B3 — D-221 (الجهة): required at the desk. Shape-check only here
+        // (non-null, non-empty Guid); the existence / IsActive check runs in
+        // the service against the App DB (cross-context — FluentValidation is
+        // sync), exactly like ProfileTypeId / NationalityCode.
+        RuleFor(request => request.OrganisationId)
+            .Must(id => id is { } orgId && orgId != Guid.Empty).Bilingual(
+                "Organisation is required.",
+                "الجهة مطلوبة.");
+
         RuleFor(request => request.NationalityCode)
             .NotEmpty().Bilingual(
                 "Nationality is required.",

@@ -832,6 +832,14 @@
   <data name="Admin.WalkIn.Section.IdDocument" xml:space="preserve"><value>ID document</value></data>
   <data name="Admin.WalkIn.Section.IdDocument.Hint" xml:space="preserve"><value>Optional scan of the national ID, Iqama or passport. PNG / JPEG / WebP, up to 5 MB. Stored encrypted at rest.</value></data>
   <data name="Admin.WalkIn.Field.IdDocument.Selected" xml:space="preserve"><value>Selected: {0}</value></data>
+  <!-- B3 — D-221 — required organisation (الجهة) picker on the walk-in form. -->
+  <data name="Admin.WalkIn.Section.Organisation" xml:space="preserve"><value>Organisation</value></data>
+  <data name="Admin.WalkIn.Field.Organisation" xml:space="preserve"><value>Organisation</value></data>
+  <data name="Admin.WalkIn.Field.Organisation.Search" xml:space="preserve"><value>Search by name or city…</value></data>
+  <data name="Admin.WalkIn.Field.Organisation.Hint" xml:space="preserve"><value>Search and pick the visitor's organisation. Required.</value></data>
+  <data name="Admin.WalkIn.Field.Organisation.Selected" xml:space="preserve"><value>Selected: {0}</value></data>
+  <data name="Admin.WalkIn.Field.Organisation.NoResults" xml:space="preserve"><value>No matching organisations.</value></data>
+  <data name="Admin.WalkIn.Error.OrganisationRequired" xml:space="preserve"><value>Pick an organisation.</value></data>
   <data name="Admin.Pending.View.Field.QrId" xml:space="preserve"><value>QR id</value></data>
   <data name="Admin.Pending.View.Field.IdImage" xml:space="preserve"><value>ID document</value></data>
 

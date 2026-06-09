@@ -294,6 +294,27 @@ Scenario: Arabic culture mirrors the page and localises every label
   And the form fields and header actions mirror to the right
 ```
 
+### E2E-WPR-017 — Organisation is required + digit-only ID fields (D-354)
+
+```gherkin
+Scenario: Saving is blocked until an organisation is picked
+  Given the visitor is on /account/profile with every other field valid
+  But the Organisation field is empty
+  When they press Save
+  Then the page does not post
+  And an inline error under the Organisation field reads
+    "Please pick your organisation from the list." ("الرجاء اختيار جهتك من القائمة." in Arabic)
+
+Scenario: The Organisation datalist links the typed value back to a real id
+  When the visitor types "Mawani" and picks the matching datalist option
+  Then OrganisationId is set and Save succeeds
+  And typing free text that matches no option leaves the field unlinked and re-blocks Save
+
+Scenario: The National ID / Iqama field accepts digits only
+  When the visitor types "10ab00" into the Saudi National ID field
+  Then the field shows "1000" (non-digit characters are stripped as they type)
+```
+
 ---
 
 ## Implementation notes

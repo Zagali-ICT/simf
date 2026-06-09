@@ -128,6 +128,21 @@ Scenario: The organisation field searches and links by id
   And a search with no matches shows "No organisations found" (never a blocking error)
 ```
 
+### E2E-MOB007-008b — Organisation is required (D-354)
+
+```gherkin
+Scenario: Next is blocked until an organisation is picked
+  Given every other field on the data screen is valid
+  But no organisation is selected
+  When the visitor taps Next
+  Then the screen does not navigate to the interests screen
+  And an inline error under the organisation field reads
+    "Pick your organisation from the list" ("اختر جهتك من القائمة" in Arabic)
+```
+
+**Evidence:** `sign_up_visitor_screen_test` — "a profile missing only the
+organisation blocks Next (B3 — D-221)".
+
 ### E2E-MOB007-009 — Auth gate
 
 ```gherkin

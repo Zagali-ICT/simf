@@ -18,6 +18,8 @@
        server-side FluentValidation rules).
 *@
 @using SIMF.Contracts.UserProfile
+@using SIMF.Contracts.Organisations
+@implements IDisposable
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 
@@ -81,10 +83,6 @@
                            Helper="@L["Admin.WalkIn.Field.EnglishName.Hint"]"
                            MaxLength="128"
                            @bind-Value="_model.EnglishName" />
-            <SimfTextField Label="@L["Admin.WalkIn.Field.ArabicName"]"
-                           Helper="@L["Admin.WalkIn.Field.ArabicName.Hint"]"
-                           MaxLength="128"
-                           @bind-Value="_model.ArabicName" />
             @* D-163 (PDF §2.6) — optional job title for the badge. *@
             <SimfTextField Label="@L["Admin.WalkIn.Field.JobTitle"]"
                            Helper="@L["Admin.WalkIn.Field.JobTitle.Hint"]"
@@ -93,10 +91,82 @@
                            ValueChanged="@(v => _model.JobTitle = string.IsNullOrWhiteSpace(v) ? null : v)"
                            ValueExpression="@(() => _model.JobTitle)" />
         </div>
+        @* الاسم الكامل (عربي) — full-width row of its own (owner request). *@
+        <div class="simf-walkin__grid simf-walkin__grid--single">
+            <SimfTextField Label="@L["Admin.WalkIn.Field.ArabicName"]"
+                           Helper="@L["Admin.WalkIn.Field.ArabicName.Hint"]"
+                           MaxLength="128"
+                           @bind-Value="_model.ArabicName" />
+        </div>
         <div class="simf-walkin__grid simf-walkin__grid--single">
             <SimfTextField Label="@L["Admin.WalkIn.Field.PlaceOfBirth"]"
                            MaxLength="128"
                            @bind-Value="_model.PlaceOfBirth" />
+        </div>
+    </fieldset>
+
+    @* -- Section 2b: Organisation (الجهة) — required (B3 / D-221) --------
+       Searchable typeahead over the active organisations lookup; mirrors the
+       mobile sign-up picker. The desk must pick a registered organisation. *@
+    <fieldset class="simf-walkin__section" disabled="@(_busy ? "disabled" : null)">
+        <legend>@L["Admin.WalkIn.Section.Organisation"]</legend>
+        <div class="simf-walkin__grid simf-walkin__grid--single">
+            <div class="simf-field @(_orgError is not null ? "simf-field--error" : null)">
+                <label class="simf-field__label" for="walkin-org-search">
+                    @L["Admin.WalkIn.Field.Organisation"]
+                </label>
+                <div class="simf-field__control">
+                    <input id="walkin-org-search" class="simf-field__input"
+                           autocomplete="off"
+                           placeholder="@L["Admin.WalkIn.Field.Organisation.Search"]"
+                           value="@_orgSearch" @oninput="OnOrgSearchInputAsync"
+                           @onfocusin="OpenOrgList"
+                           aria-invalid="@(_orgError is not null ? "true" : null)" />
+                </div>
+                @if (_orgListOpen && _orgResults.Length > 0)
+                {
+                    <ul class="simf-walkin__org-results" role="listbox"
+                        aria-label="@L["Admin.WalkIn.Section.Organisation"]">
+                        @foreach (var org in _orgResults)
+                        {
+                            <li>
+                                @* preventDefault on mousedown keeps focus on the
+                                   input so the option click registers before blur. *@
+                                <button type="button" class="simf-walkin__org-option"
+                                        @onmousedown:preventDefault="true"
+                                        @onclick="@(() => SelectOrganisation(org))">
+                                    @OrgLabel(org)
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                }
+                else if (_orgListOpen && _orgSearch.Length > 0)
+                {
+                    <ul class="simf-walkin__org-results">
+                        <li class="simf-walkin__org-empty">
+                            @L["Admin.WalkIn.Field.Organisation.NoResults"]
+                        </li>
+                    </ul>
+                }
+                @if (_orgError is not null)
+                {
+                    <div class="simf-field__error" role="alert">
+                        <SimfIcon Name="alert" Size="14" Class="simf-field__error-icon" />
+                        <span>@_orgError</span>
+                    </div>
+                }
+                else if (_model.OrganisationId is not null && _orgSelectedLabel is not null)
+                {
+                    <div class="simf-field__helper">
+                        @string.Format(L["Admin.WalkIn.Field.Organisation.Selected"], _orgSelectedLabel)
+                    </div>
+                }
+                else
+                {
+                    <div class="simf-field__helper">@L["Admin.WalkIn.Field.Organisation.Hint"]</div>
+                }
+            </div>
         </div>
     </fieldset>
 
@@ -125,7 +195,7 @@
             <div class="simf-walkin__grid">
                 <SimfTextField Label="@L["Admin.WalkIn.Field.NationalId"]"
                                Helper="@L["Admin.WalkIn.Field.NationalId.Hint"]"
-                               MaxLength="10" InputMode="numeric"
+                               MaxLength="10" Numeric="true"
                                @bind-Value="_model.NationalId" />
             </div>
         }
@@ -172,7 +242,7 @@
                 {
                     <SimfTextField Label="@L["Admin.WalkIn.Field.IqamaNumber"]"
                                    Helper="@L["Admin.WalkIn.Field.Iqama.Hint"]"
-                                   MaxLength="10" InputMode="numeric"
+                                   MaxLength="10" Numeric="true"
                                    @bind-Value="_model.IqamaNumber" />
                 }
                 else
@@ -268,6 +338,7 @@
 @code {
     private readonly Model _model = new();
     private EditContext _editContext = default!;
+    private ValidationMessageStore _messages = default!;
     private bool _busy;
     private string? _error;
     private AdminProfileTypeSummary[] _profileTypes = Array.Empty<AdminProfileTypeSummary>();
@@ -275,6 +346,14 @@
     private InterestDto[] _interests = Array.Empty<InterestDto>();
     private string _idKind = "Iqama";
     private string? _idDocumentName;
+
+    // B3 — D-221 (الجهة): the required organisation typeahead state.
+    private string _orgSearch = string.Empty;
+    private string? _orgSelectedLabel;
+    private string? _orgError;
+    private bool _orgListOpen;
+    private OrganisationPickerItem[] _orgResults = Array.Empty<OrganisationPickerItem>();
+    private CancellationTokenSource? _orgSearchCts;
 
     /// <summary>"Visitor" or "Other" — drives the profile-type picker
     /// query and the interests section visibility.</summary>
@@ -290,15 +369,22 @@
     protected override async Task OnInitializedAsync()
     {
         _editContext = new EditContext(_model);
+        // D-221 — surface per-field errors inline (the form owns the rules; the
+        // ValidationMessageStore lets SimfTextField render them next to the field).
+        _messages = new ValidationMessageStore(_editContext);
 
-        // Load profile types for this kind + interests + countries in
-        // parallel — the desk shouldn't wait for three sequential round-trips.
+        // Load profile types for this kind + interests + countries +
+        // organisations in parallel — the desk shouldn't wait for sequential
+        // round-trips.
         var profileTypesTask = JS.InvokeAsync<ApiResult<IReadOnlyList<AdminProfileTypeSummary>>>(
             "simfAccount.getJson",
             $"/account/api/admin/profile-types?userType={Uri.EscapeDataString(Kind)}").AsTask();
         var countriesTask = JS.InvokeAsync<ApiResult<CountryListResponse>>(
             "simfAccount.getJson",
             "/account/api/admin/walk-in/countries").AsTask();
+        var organisationsTask = JS.InvokeAsync<ApiResult<IReadOnlyList<OrganisationPickerItem>>>(
+            "simfAccount.getJson",
+            "/account/api/admin/walk-in/organisations?top=20").AsTask();
 
         Task<ApiResult<InterestListResponse>>? interestsTask = null;
         if (string.Equals(Kind, "Visitor", StringComparison.OrdinalIgnoreCase))
@@ -317,6 +403,12 @@
         if (cEnvelope is { Success: true, Data: not null })
         {
             _countries = cEnvelope.Data.Countries.ToArray();
+        }
+
+        var oEnvelope = await organisationsTask;
+        if (oEnvelope is { Success: true, Data: not null })
+        {
+            _orgResults = oEnvelope.Data.ToArray();
         }
 
         if (interestsTask is not null)
@@ -417,35 +509,111 @@
     private static string InterestLabel(InterestDto i) =>
         CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar" ? i.NameArabic : i.Name;
 
+    // B3 — D-221 (الجهة): organisation typeahead. Prefer the Arabic name in
+    // an Arabic UI; fall back to English when the Arabic name is blank.
+    private static string OrgLabel(OrganisationPickerItem o) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? o.NameAr
+            : (string.IsNullOrWhiteSpace(o.NameEn) ? o.NameAr : o.NameEn!);
+
+    private void OpenOrgList() => _orgListOpen = true;
+
+    private async Task OnOrgSearchInputAsync(ChangeEventArgs e)
+    {
+        _orgSearch = e.Value?.ToString() ?? string.Empty;
+        _orgListOpen = true;
+        // If the operator edits after picking, drop the selection until they
+        // pick again — the field must always reflect a real chosen organisation.
+        if (_orgSelectedLabel is not null
+            && !string.Equals(_orgSearch, _orgSelectedLabel, StringComparison.Ordinal))
+        {
+            _model.OrganisationId = null;
+            _orgSelectedLabel = null;
+        }
+
+        // Debounce — cancel the previous in-flight search before issuing a new
+        // one so fast typing doesn't fan out a request per keystroke.
+        _orgSearchCts?.Cancel();
+        _orgSearchCts?.Dispose();
+        _orgSearchCts = new CancellationTokenSource();
+        var token = _orgSearchCts.Token;
+        var term = _orgSearch;
+        try
+        {
+            await Task.Delay(250, token);
+            await SearchOrganisationsAsync(term);
+            StateHasChanged();
+        }
+        catch (TaskCanceledException) { /* superseded by a newer keystroke */ }
+    }
+
+    private async Task SearchOrganisationsAsync(string? term)
+    {
+        var url = "/account/api/admin/walk-in/organisations?top=20";
+        if (!string.IsNullOrWhiteSpace(term))
+        {
+            url += $"&search={Uri.EscapeDataString(term.Trim())}";
+        }
+        var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<OrganisationPickerItem>>>(
+            "simfAccount.getJson", url);
+        _orgResults = envelope is { Success: true, Data: not null }
+            ? envelope.Data.ToArray()
+            : Array.Empty<OrganisationPickerItem>();
+    }
+
+    private void SelectOrganisation(OrganisationPickerItem org)
+    {
+        _model.OrganisationId = org.Id;
+        _orgSelectedLabel = OrgLabel(org);
+        _orgSearch = _orgSelectedLabel;
+        _orgListOpen = false;
+        _orgError = null;
+    }
+
     private async Task HandleSubmitAsync()
     {
         if (_busy) return;
-        _error = null;
 
-        // Client-side gate — the server-side FluentValidation owns the
-        // canonical rule set; this is just the friendly UX layer.
+        // Client-side gate — the server-side FluentValidation owns the canonical
+        // rule set; this is the friendly inline UX layer. Field-level failures
+        // render next to the field (ValidationMessageStore); the card / picker /
+        // phone group errors surface in the top alert.
+        _messages.Clear();
+        _error = null;
+        _orgError = null;
+        var ok = true;
+
         if (_model.ProfileTypeId == Guid.Empty)
         {
-            _error = L["Admin.WalkIn.Error.ProfileTypeRequired"]; return;
+            _error = L["Admin.WalkIn.Error.ProfileTypeRequired"]; ok = false;
         }
-        if (_model.EnglishName.Length is < 2 or > 128)
+        if (_model.EnglishName.Trim().Length is < 2 or > 128)
         {
-            _error = L["Admin.WalkIn.Error.EnglishNameRequired"]; return;
+            _messages.Add(_editContext.Field(nameof(_model.EnglishName)),
+                L["Admin.WalkIn.Error.EnglishNameRequired"]); ok = false;
         }
-        if (_model.ArabicName.Length is < 2 or > 128)
+        if (_model.ArabicName.Trim().Length is < 2 or > 128)
         {
-            _error = L["Admin.WalkIn.Error.ArabicNameRequired"]; return;
+            _messages.Add(_editContext.Field(nameof(_model.ArabicName)),
+                L["Admin.WalkIn.Error.ArabicNameRequired"]); ok = false;
         }
-        if (_model.DisplayName.Length is < 2 or > 128)
+        if (_model.DisplayName.Trim().Length is < 2 or > 128)
         {
-            _error = L["Admin.WalkIn.Error.DisplayNameRequired"]; return;
+            _messages.Add(_editContext.Field(nameof(_model.DisplayName)),
+                L["Admin.WalkIn.Error.DisplayNameRequired"]); ok = false;
+        }
+        // B3 — D-221 (الجهة): required; inline under the picker.
+        if (_model.OrganisationId is null)
+        {
+            _orgError = L["Admin.WalkIn.Error.OrganisationRequired"]; ok = false;
         }
         if (_model.IsSaudi)
         {
             if (string.IsNullOrWhiteSpace(_model.NationalId)
                 || !SaudiIdPattern.IsMatch(_model.NationalId))
             {
-                _error = L["Admin.WalkIn.Error.NationalIdRequired"]; return;
+                _messages.Add(_editContext.Field(nameof(_model.NationalId)),
+                    L["Admin.WalkIn.Error.NationalIdRequired"]); ok = false;
             }
             // Force nationality to SA — the picker is hidden in this branch.
             _model.NationalityCode = "SA";
@@ -454,14 +622,15 @@
         {
             if (string.IsNullOrWhiteSpace(_model.NationalityCode))
             {
-                _error = L["Admin.WalkIn.Error.NationalityRequired"]; return;
+                _error = L["Admin.WalkIn.Error.NationalityRequired"]; ok = false;
             }
             if (_idKind == "Iqama")
             {
                 if (string.IsNullOrWhiteSpace(_model.IqamaNumber)
                     || !IqamaPattern.IsMatch(_model.IqamaNumber))
                 {
-                    _error = L["Admin.WalkIn.Error.IqamaInvalid"]; return;
+                    _messages.Add(_editContext.Field(nameof(_model.IqamaNumber)),
+                        L["Admin.WalkIn.Error.IqamaInvalid"]); ok = false;
                 }
                 _model.PassportNumber = null;
             }
@@ -470,15 +639,19 @@
                 if (string.IsNullOrWhiteSpace(_model.PassportNumber)
                     || _model.PassportNumber.Length > 20)
                 {
-                    _error = L["Admin.WalkIn.Error.PassportRequired"]; return;
+                    _messages.Add(_editContext.Field(nameof(_model.PassportNumber)),
+                        L["Admin.WalkIn.Error.PassportRequired"]); ok = false;
                 }
                 _model.IqamaNumber = null;
             }
         }
         if (string.IsNullOrWhiteSpace(_model.SaudiMobile) && string.IsNullOrWhiteSpace(_model.InternationalMobile))
         {
-            _error = L["Admin.WalkIn.Error.MobileRequired"]; return;
+            _error = L["Admin.WalkIn.Error.MobileRequired"]; ok = false;
         }
+
+        _editContext.NotifyValidationStateChanged();
+        if (!ok) return;
 
         var basePath = string.Equals(Kind, "Other", StringComparison.OrdinalIgnoreCase)
             ? "/account/api/admin/others"
@@ -506,6 +679,7 @@
                     PassportNumber = _model.IsSaudi ? null : _model.PassportNumber,
                     SaudiMobile = string.IsNullOrWhiteSpace(_model.SaudiMobile) ? null : _model.SaudiMobile.Trim(),
                     InternationalMobile = string.IsNullOrWhiteSpace(_model.InternationalMobile) ? null : _model.InternationalMobile.Trim(),
+                    OrganisationId = _model.OrganisationId,
                     InterestIds = _model.InterestIds.ToList(),
                 });
 
@@ -543,13 +717,16 @@
     }
 
     /// <summary>Clears the model to defaults so the desk can immediately
-    /// register the next walk-in. Preserves the selected ProfileTypeId
-    /// because most walks-in to one desk are the same kind.</summary>
+    /// register the next walk-in. Preserves the selected ProfileTypeId and the
+    /// picked organisation because most walks-in to one desk share both.</summary>
     public void ResetForm()
     {
         var keepProfileTypeId = _model.ProfileTypeId;
         var keepIsSaudi = _model.IsSaudi;
         var keepNationality = _model.NationalityCode;
+        var keepOrganisationId = _model.OrganisationId;
+        var keepOrgLabel = _orgSelectedLabel;
+        var keepOrgSearch = _orgSearch;
         _model.Email = string.Empty;
         _model.DisplayName = string.Empty;
         _model.ArabicName = string.Empty;
@@ -565,8 +742,21 @@
         _model.ProfileTypeId = keepProfileTypeId;
         _model.IsSaudi = keepIsSaudi;
         _model.NationalityCode = keepNationality;
+        _model.OrganisationId = keepOrganisationId;
+        _orgSelectedLabel = keepOrgLabel;
+        _orgSearch = keepOrgSearch;
+        _orgError = null;
+        _orgListOpen = false;
         _idDocumentName = null;
+        _messages.Clear();
+        _editContext.NotifyValidationStateChanged();
         StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _orgSearchCts?.Cancel();
+        _orgSearchCts?.Dispose();
     }
 
     private sealed class Model
@@ -586,6 +776,7 @@
         public string? PassportNumber { get; set; }
         public string? SaudiMobile { get; set; }
         public string? InternationalMobile { get; set; }
+        public Guid? OrganisationId { get; set; }
         public List<Guid> InterestIds { get; set; } = new();
     }
 }

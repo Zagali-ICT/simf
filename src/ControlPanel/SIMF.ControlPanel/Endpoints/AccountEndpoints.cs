@@ -358,6 +358,15 @@ internal static class AccountEndpoints
             return Forward(await api.GetProfileCountriesAsync(token));
         });
 
+        // B3 — D-221 — organisations picker for the walk-in form's الجهة field.
+        group.MapGet("/admin/walk-in/organisations",
+            async (string? search, int? top, HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.SearchOrganisationsAsync(search, top ?? 20, token));
+        });
+
         // D-127 — active interests picker for the visitor walk-in form.
         group.MapGet("/interests",
             async (HttpContext http, SimfAccountClient api) =>

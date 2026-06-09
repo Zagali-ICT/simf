@@ -301,7 +301,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     setState(() => _triedSubmit = true);
     final formValid = _formKey.currentState?.validate() ?? false;
     final dateOfBirthValid = _dateOfBirth != null;
-    if (!formValid || !dateOfBirthValid) {
+    // B3 — D-221 (الجهة): organisation is required (server enforces it too).
+    final organisationValid = _organisationId != null;
+    if (!formValid || !dateOfBirthValid || !organisationValid) {
       setState(() {});
       return;
     }
@@ -780,6 +782,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           decoration: _whiteFieldDecoration(
             hintText: l10n.organisationSearchHint,
             prefixIcon: const Icon(Icons.search, color: SimfTokens.inkMuted),
+            // B3 — D-221: required — flag the empty pick after a submit attempt.
+            errorText: (_triedSubmit && _organisationId == null)
+                ? l10n.organisationRequired
+                : null,
           ),
           onChanged: _onOrganisationSearchChanged,
         ),

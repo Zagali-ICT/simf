@@ -88,6 +88,11 @@
   <data name="Account.Profile.JobTitleHint" xml:space="preserve"><value>مثل "ربان" أو "مدير العمليات". حتى 128 حرفًا.</value></data>
   <data name="Account.Profile.Nationality" xml:space="preserve"><value>الجنسية</value></data>
   <data name="Account.Profile.NationalityPlaceholder" xml:space="preserve"><value>اختر الدولة</value></data>
+  <!-- B3 — D-221 — حقل الجهة المطلوب. -->
+  <data name="Account.Profile.Organisation" xml:space="preserve"><value>الجهة</value></data>
+  <data name="Account.Profile.OrganisationSearch" xml:space="preserve"><value>ابحث واختر جهتك…</value></data>
+  <data name="Account.Profile.OrganisationHint" xml:space="preserve"><value>اكتب اسم جهتك أو مدينتها ثم اخترها من القائمة. مطلوب.</value></data>
+  <data name="Account.Profile.OrganisationRequired" xml:space="preserve"><value>الرجاء اختيار جهتك من القائمة.</value></data>
   <data name="Account.Profile.DateOfBirth" xml:space="preserve"><value>تاريخ الميلاد</value></data>
   <data name="Account.Profile.PlaceOfBirth" xml:space="preserve"><value>مكان الميلاد</value></data>
   <data name="Account.Profile.IsSaudi" xml:space="preserve"><value>هل تحمل الجنسية السعودية؟</value></data>
