@@ -120,6 +120,8 @@ public static class PermissionCatalog
         public const string Edit = "Roles.Edit";
         public const string Delete = "Roles.Delete";
         public const string AssignPermissions = "Roles.AssignPermissions";
+        public const string Export = "Roles.Export";
+        public const string Import = "Roles.Import";
     }
 
     /// <summary>Profile interests reference data.</summary>
@@ -140,6 +142,8 @@ public static class PermissionCatalog
         public const string Create = "Countries.Create";
         public const string Edit = "Countries.Edit";
         public const string Delete = "Countries.Delete";
+        public const string Export = "Countries.Export";
+        public const string Import = "Countries.Import";
     }
 
     /// <summary>Profile types (visitor + other) reference data.</summary>
@@ -182,6 +186,8 @@ public static class PermissionCatalog
         public const string Create = "SessionCategories.Create";
         public const string Edit = "SessionCategories.Edit";
         public const string Delete = "SessionCategories.Delete";
+        public const string Export = "SessionCategories.Export";
+        public const string Import = "SessionCategories.Import";
     }
 
     public static class Themes
@@ -190,6 +196,8 @@ public static class PermissionCatalog
         public const string Create = "Themes.Create";
         public const string Edit = "Themes.Edit";
         public const string Delete = "Themes.Delete";
+        public const string Export = "Themes.Export";
+        public const string Import = "Themes.Import";
     }
 
     public static class Sessions
@@ -215,6 +223,8 @@ public static class PermissionCatalog
         public const string Create = "Halls.Create";
         public const string Edit = "Halls.Edit";
         public const string Delete = "Halls.Delete";
+        public const string Export = "Halls.Export";
+        public const string Import = "Halls.Import";
     }
 
     /// <summary>Hall seat-layout editor.</summary>
@@ -470,6 +480,8 @@ public static class PermissionCatalog
         public const string Manage = "Gates.Manage";
         public const string Operate = "Gates.Operate";
         public const string ViewOwnReports = "Gates.ViewOwnReports";
+        public const string Export = "Gates.Export";
+        public const string Import = "Gates.Import";
     }
 
     /// <summary>Operations toggles (registration / archive visibility).</summary>
@@ -571,6 +583,8 @@ public static class PermissionCatalog
         new(Roles.Edit, "Roles", "Edit", "Rename roles", AdminOnly),
         new(Roles.Delete, "Roles", "Delete", "Delete roles", AdminOnly),
         new(Roles.AssignPermissions, "Roles", "AssignPermissions", "Assign permissions to roles", AdminOnly),
+        new(Roles.Export, "Roles", "Export", "Export roles", AdminOnly),
+        new(Roles.Import, "Roles", "Import", "Import roles", AdminOnly),
 
         new(Interests.View, "Interests", "View", "View interests", AdminOnly),
         new(Interests.Create, "Interests", "Create", "Create interests", AdminOnly),
@@ -583,6 +597,8 @@ public static class PermissionCatalog
         new(Countries.Create, "Countries", "Create", "Create countries", AdminOnly),
         new(Countries.Edit, "Countries", "Edit", "Edit countries", AdminOnly),
         new(Countries.Delete, "Countries", "Delete", "Delete countries", AdminOnly),
+        new(Countries.Export, "Countries", "Export", "Export countries", AdminOnly),
+        new(Countries.Import, "Countries", "Import", "Import countries", AdminOnly),
 
         new(ProfileTypes.View, "ProfileTypes", "View", "View profile types", AdminOnly),
         new(ProfileTypes.Create, "ProfileTypes", "Create", "Create profile types", AdminOnly),
@@ -604,12 +620,16 @@ public static class PermissionCatalog
         new(Themes.Create, "Themes", "Create", "Create themes", AdminOnly),
         new(Themes.Edit, "Themes", "Edit", "Edit themes", AdminOnly),
         new(Themes.Delete, "Themes", "Delete", "Delete themes", AdminOnly),
+        new(Themes.Export, "Themes", "Export", "Export themes", AdminOnly),
+        new(Themes.Import, "Themes", "Import", "Import themes", AdminOnly),
 
         // B9b — D-226: session categories (dynamic lookup).
         new(SessionCategories.View, "SessionCategories", "View", "View session categories", AdminOnly),
         new(SessionCategories.Create, "SessionCategories", "Create", "Create session categories", AdminOnly),
         new(SessionCategories.Edit, "SessionCategories", "Edit", "Edit session categories", AdminOnly),
         new(SessionCategories.Delete, "SessionCategories", "Delete", "Delete session categories", AdminOnly),
+        new(SessionCategories.Export, "SessionCategories", "Export", "Export session categories", AdminOnly),
+        new(SessionCategories.Import, "SessionCategories", "Import", "Import session categories", AdminOnly),
 
         new(Sessions.View, "Sessions", "View", "View sessions", AdminOnly),
         new(Sessions.Create, "Sessions", "Create", "Create sessions", AdminOnly),
@@ -624,6 +644,8 @@ public static class PermissionCatalog
         new(Halls.Create, "Halls", "Create", "Create halls", AdminOnly),
         new(Halls.Edit, "Halls", "Edit", "Edit halls", AdminOnly),
         new(Halls.Delete, "Halls", "Delete", "Delete halls", AdminOnly),
+        new(Halls.Export, "Halls", "Export", "Export halls", AdminOnly),
+        new(Halls.Import, "Halls", "Import", "Import halls", AdminOnly),
 
         new(SeatLayouts.View, "SeatLayouts", "View", "View hall seat layouts", AdminOnly),
         new(SeatLayouts.Edit, "SeatLayouts", "Edit", "Edit hall seat layouts", AdminOnly),
@@ -756,6 +778,8 @@ public static class PermissionCatalog
         new(Gates.Manage, "Gates", "Manage", "Manage gates", AdminOnly),
         new(Gates.Operate, "Gates", "Operate", "Operate a gate", GateOperator),
         new(Gates.ViewOwnReports, "Gates", "ViewOwnReports", "View own gate reports", GateOperator),
+        new(Gates.Export, "Gates", "Export", "Export gates", AdminOnly),
+        new(Gates.Import, "Gates", "Import", "Import gates", AdminOnly),
 
         new(Operations.View, "Operations", "View", "View operations toggles", AdminOnly),
         new(Operations.Edit, "Operations", "Edit", "Change operations toggles", AdminOnly),

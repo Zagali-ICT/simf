@@ -39,6 +39,8 @@
                           OnEditOne="OnEditAsync"
                           OnDetailsOne="OnDetailsAsync"
                           OnDeleteOne="OnDeleteAsync"
+                          OnExport="OnExportAsync"
+                          OnImport="OnImportAsync"
                           PrevLabel="@L["Admin.Roles.Prev"]"
                           NextLabel="@L["Admin.Roles.Next"]"
                           FirstLabel="@L["Admin.Roles.Pager.First"]"
@@ -54,6 +56,8 @@
                           EditLabel="@L["Admin.Roles.Action.Edit"]"
                           DetailsLabel="@L["Admin.Roles.Action.Details"]"
                           DeleteLabel="@L["Admin.Roles.Action.Delete"]"
+                          ExportLabel="@L["Grid.Export"]"
+                          ImportLabel="@L["Grid.Import"]"
                           SummaryFormatter="@FormatSummary">
                 <CustomToolbar>
                     <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
@@ -98,6 +102,9 @@
                     <SimfEmptyState Title="@L["Admin.Roles.None"]" />
                 </EmptyTemplate>
             </SimfDataGrid>
+
+            <CrudGridExcel @ref="_excel" Resource="roles"
+                           OnImported="OnImportedAsync" OnError="OnExcelError" />
         </div>
     </div>
 }
@@ -137,6 +144,7 @@
     private bool _isEdit;
     private bool _isDelete;
     private AdminRoleSummary? _target;
+    private CrudGridExcel? _excel;
 
     private bool FormOpen => _form != FormKind.None;
     private bool GridHidden => FormOpen && _presentation == CrudPresentation.Page;
@@ -226,6 +234,20 @@
         _form = FormKind.None;
         _target = null;
     }
+
+    // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
+    private Task OnExportAsync(IReadOnlyList<AdminRoleSummary> selected) =>
+        _excel!.ExportAsync(selected.Select(row => row.Id).ToList(), _query);
+
+    private Task OnImportAsync() => _excel!.TriggerImportAsync();
+
+    private async Task OnImportedAsync()
+    {
+        _toast = new Toast("success", L["Grid.Import.Done"]);
+        await LoadAsync();
+    }
+
+    private void OnExcelError(string message) => _toast = new Toast("error", message);
 
     private async Task OnSavedAsync(AdminRoleSummary saved)
     {

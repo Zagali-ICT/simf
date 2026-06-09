@@ -536,6 +536,12 @@ internal static class AccountEndpoints
         // both /admin/{slug}/export (binary) and /admin/{slug}/import (multipart),
         // forwarding to the API's generic grid endpoints. Interests is the pilot.
         MapGridExcel(group, "interests");
+        MapGridExcel(group, "countries");
+        MapGridExcel(group, "themes");
+        MapGridExcel(group, "halls");
+        MapGridExcel(group, "gates");
+        MapGridExcel(group, "session-categories");
+        MapGridExcel(group, "roles");
 
         // D-118 — D-113 type-scoped bulk proxies for Visitors and Others.
         // The visitors/others CP list pages (D-114) call these JS endpoints
