@@ -28,6 +28,11 @@ using SIMF.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Production secrets + overrides arrive as SIMF_-prefixed, double-underscore
+// environment variables (set-env-prod.ps1 / SIMF-OPS-001 §6); registering the
+// prefix here is what strips it and binds those values at runtime (D-355).
+builder.Configuration.AddEnvironmentVariables("SIMF_");
+
 // Structured logging through Serilog (SIMF-SAD-001 section 11).
 // P6 — per-project log files under {Storage:LogDirectory}/SIMF.Api/log-{Date}.log;
 // the CP /admin/logs page reads from the same root.
@@ -209,6 +214,10 @@ builder.Services.SwaggerDocument(options =>
         settings.DocumentName = "app";
         settings.Version = "v1";
     };
+    // Explicit so a future FastEndpoints default change can't silently drop the
+    // "Authorize" (JWT bearer) button — every protected endpoint authenticates
+    // on the default Bearer scheme (D-355; the package default is already true).
+    options.EnableJWTBearerAuth = true;
     options.EndpointFilter = ep =>
         ep.Routes?.Any(route => route.Contains("app/") && !route.Contains("admin/")) == true;
 });
@@ -220,6 +229,7 @@ builder.Services.SwaggerDocument(options =>
         settings.DocumentName = "cp";
         settings.Version = "v1";
     };
+    options.EnableJWTBearerAuth = true;
     options.EndpointFilter = ep =>
         ep.Routes?.Any(route => route.Contains("admin/")) == true;
 });
@@ -289,6 +299,12 @@ builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHand
 var knownProxies =
     builder.Configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? [];
 
+// D-355 — OpenAPI UI exposure (SIMF-API-001 §13). Off in production unless
+// explicitly enabled, and then only behind the Basic-auth gate below.
+var swaggerOptions =
+    builder.Configuration.GetSection(SwaggerOptions.SectionName).Get<SwaggerOptions>()
+    ?? new SwaggerOptions();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment()
@@ -298,6 +314,19 @@ if (!app.Environment.IsDevelopment()
     throw new InvalidOperationException(
         "ReverseProxy:KnownProxies must be configured outside Development — "
         + "the rate limiter and the audit-log source IP depend on a trusted proxy.");
+}
+
+// D-355 — never expose the OpenAPI UI unauthenticated in production. If it is
+// enabled there, the Basic-auth credentials must be present, or refuse to start.
+if (app.Environment.IsProduction()
+    && swaggerOptions.AllowSwagger
+    && (string.IsNullOrWhiteSpace(swaggerOptions.Username)
+        || string.IsNullOrWhiteSpace(swaggerOptions.Password)))
+{
+    throw new InvalidOperationException(
+        "Swagger:Username and Swagger:Password must be configured when "
+        + "Swagger:AllowSwagger is true in Production — the OpenAPI UI must not "
+        + "be served without the Basic-auth gate.");
 }
 
 // Apply the migrations and seed the super-admin. Skipped under the test host,
@@ -397,9 +426,17 @@ app.UseFastEndpoints(config =>
         });
 });
 
-// The OpenAPI UI is available outside production only (SIMF-API-001 section 13).
-if (!app.Environment.IsProduction())
+// The OpenAPI UI is served outside production always, and in production only
+// when explicitly enabled (Swagger:AllowSwagger) — and there only behind the
+// Basic-auth gate, because the API is public via the reverse proxy
+// (SAD-001 §10.1). SIMF-API-001 §13 + D-355.
+if (!app.Environment.IsProduction() || swaggerOptions.AllowSwagger)
 {
+    if (app.Environment.IsProduction())
+    {
+        app.UseMiddleware<SwaggerBasicAuthMiddleware>(swaggerOptions);
+    }
+
     app.UseSwaggerGen();
 }
 

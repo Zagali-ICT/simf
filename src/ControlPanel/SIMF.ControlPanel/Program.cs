@@ -8,6 +8,11 @@ using SIMF.ControlPanel.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Production secrets + overrides arrive as SIMF_-prefixed, double-underscore
+// environment variables (set-env-prod.ps1 / SIMF-OPS-001 §6); registering the
+// prefix here is what strips it and binds those values at runtime (D-355).
+builder.Configuration.AddEnvironmentVariables("SIMF_");
+
 // P6 — per-project log files under {Storage:LogDirectory}/SIMF.ControlPanel/log-{Date}.log.
 builder.Host.UseSerilog((context, configuration) =>
 {
