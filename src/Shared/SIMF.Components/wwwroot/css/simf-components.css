@@ -209,6 +209,13 @@
   margin-block-end: var(--space-6);
 }
 
+/* A flash / status alert placed directly under a section title needs room from
+   the title: the title has no bottom margin and the alert no top, so without
+   this they touch (e.g. Profile "Display preferences" / "Recovery codes"). */
+.simf-page-card .simf-card__title + .simf-alert {
+  margin-block-start: var(--space-4);
+}
+
 /* -- Profile page layout ---------------------------------------------------- */
 .simf-profile {
   display: flex;
