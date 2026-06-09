@@ -551,6 +551,9 @@ internal static class AccountEndpoints
         MapGridExcel(group, "contacts"); 
         MapGridExcel(group, "news"); 
         MapGridExcel(group, "ai/prompts");
+        // Organisations keeps its bespoke government-Excel bulk import, so it
+        // gets the generic EXPORT only (no generic /import route).
+        MapGridExport(group, "organisations");
 
         // D-118 — D-113 type-scoped bulk proxies for Visitors and Others.
         // The visitors/others CP list pages (D-114) call these JS endpoints
@@ -2660,13 +2663,13 @@ internal static class AccountEndpoints
         Results.Json(result.Body, statusCode: result.StatusCode);
 
     /// <summary>
-    /// D-356 — registers the generic grid Excel proxy pair for one resource
-    /// slug: <c>POST /admin/{slug}/export</c> (returns the XLSX bytes for the
-    /// browser to save) and <c>POST /admin/{slug}/import</c> (multipart upload,
-    /// forwards the per-row result). Both forward to the API's generic grid
-    /// endpoints with the cookie's access token; the browser never sees it.
+    /// D-356 — registers the generic grid Excel EXPORT proxy for one resource:
+    /// <c>POST /admin/{slug}/export</c> returns the XLSX bytes for the browser to
+    /// save, forwarding to the API with the cookie's access token (the browser
+    /// never sees it). Used standalone for a resource that has a bespoke import
+    /// (e.g. Organisations) and as half of <see cref="MapGridExcel"/>.
     /// </summary>
-    private static void MapGridExcel(IEndpointRouteBuilder group, string slug)
+    private static void MapGridExport(IEndpointRouteBuilder group, string slug)
     {
         group.MapPost($"/admin/{slug}/export",
             async (AdminGridExportRequest body, HttpContext http, SimfAdminClient api) =>
@@ -2682,6 +2685,16 @@ internal static class AccountEndpoints
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 $"simf-{slug}-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx");
         });
+    }
+
+    /// <summary>
+    /// D-356 — registers the generic grid Excel proxy PAIR for one resource:
+    /// <see cref="MapGridExport"/> + <c>POST /admin/{slug}/import</c> (multipart
+    /// upload, forwards the per-row result).
+    /// </summary>
+    private static void MapGridExcel(IEndpointRouteBuilder group, string slug)
+    {
+        MapGridExport(group, slug);
 
         group.MapPost($"/admin/{slug}/import",
             async (HttpContext http, SimfAdminClient api) =>

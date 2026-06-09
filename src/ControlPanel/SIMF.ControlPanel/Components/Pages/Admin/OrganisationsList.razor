@@ -13,6 +13,7 @@
 @page "/admin/organisations"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Organisations.View)]
+@using SIMF.Contracts.Admin
 @using SIMF.Contracts.Organisations
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
@@ -59,7 +60,9 @@
                           OnEditOne="OnEditAsync"
                           OnDetailsOne="OnDetailsAsync"
                           OnDeleteOne="OnDeleteAsync"
+                          OnExport="OnExportAsync"
                           OnImport="OpenImport"
+                          ExportLabel="@L["Grid.Export"]"
                           ImportLabel="@L["Admin.Organisations.Import"]"
                           PrevLabel="@L["Grid.Prev"]"
                           NextLabel="@L["Grid.Next"]"
@@ -360,6 +363,18 @@
         _toast = new Toast("success", L["Admin.Organisations.Deleted"]);
         await LoadAsync();
     }
+
+    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // download via the generic /export proxy; Organisations keeps its bespoke
+    // government-Excel import below (a separate hidden input + modal).
+    private Task OnExportAsync(IReadOnlyList<AdminOrganisationSummary> selected) =>
+        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/organisations/export",
+            new AdminGridExportRequest
+            {
+                Ids = selected.Select(row => row.Id).ToList(),
+                Query = selected.Count == 0 ? _query : null,
+            }).AsTask();
 
     // -- Excel import --
     private void OpenImport()
