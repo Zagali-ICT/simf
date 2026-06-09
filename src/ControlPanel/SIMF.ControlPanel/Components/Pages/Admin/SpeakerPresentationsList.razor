@@ -78,6 +78,8 @@
                           RowLabel="@(r => r.FileName)"
                           Caption="@L["Admin.SpeakerPresentations.Title"]"
                           FilterColumnLabel="@L["Grid.FilterColumn"]"
+                          OnExport="OnExportAsync"
+                          ExportLabel="@L["Grid.Export"]"
                           PrevLabel="@L["Grid.Prev"]"
                           NextLabel="@L["Grid.Next"]"
                           FirstLabel="@L["Grid.First"]"
@@ -274,6 +276,25 @@
         // opening the URL saves the file without navigating away.
         await JS.InvokeVoidAsync("window.open",
             $"/account/api/admin/speaker-presentations/{row.Id}/file", "_blank");
+    }
+
+    // D-356 — Excel export (selected rows, or the whole filtered set for the
+    // selected speaker). This grid is master-detail: the export endpoint has no
+    // GridQuery list, so the chosen speaker id rides Query.Filters["speakerId"]
+    // (the endpoint lists that speaker's files, then honours any selected ids).
+    private Task OnExportAsync(IReadOnlyList<AdminSpeakerPresentationRow> selected)
+    {
+        var query = new GridQuery
+        {
+            Filters = new Dictionary<string, string> { ["speakerId"] = _speakerId },
+        };
+        return JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/speaker-presentations/export",
+            new AdminGridExportRequest
+            {
+                Ids = selected.Select(row => row.Id).ToList(),
+                Query = query,
+            }).AsTask();
     }
 
     private async Task UploadAsync()

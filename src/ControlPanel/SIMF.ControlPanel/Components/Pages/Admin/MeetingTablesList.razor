@@ -5,6 +5,7 @@
 @page "/admin/meeting-tables"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.MeetingTables.View)]
+@using SIMF.Contracts.Admin
 @using SIMF.Contracts.BusinessMeetings
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
@@ -59,6 +60,7 @@
                           Multiselect="true" RowKey="@(r => r.Id.ToString())" RowLabel="@(r => r.Code)"
                           Caption="@L["Admin.MeetingTables.Tables.Heading"]"
                           OnAdd="OnAddTable" OnEditOne="OnEditTable" OnDeleteOne="OnDeleteTableAsync"
+                          OnExport="OnExportTablesAsync"
                           PrevLabel="@L["Grid.Prev"]" NextLabel="@L["Grid.Next"]"
                           FirstLabel="@L["Grid.First"]" LastLabel="@L["Grid.Last"]"
                           PageSizeLabel="@L["Grid.PageSize"]" PageFormatter="@FormatPage"
@@ -66,6 +68,7 @@
                           SelectAllLabel="@L["Grid.SelectAll"]" SelectRowLabel="@L["Grid.SelectRow"]"
                           AddLabel="@L["Admin.MeetingTables.AddTable"]"
                           EditLabel="@L["Grid.Edit"]" DeleteLabel="@L["Grid.Delete"]"
+                          ExportLabel="@L["Grid.Export"]"
                           SummaryFormatter="@FormatSummary">
                 <Columns>
                     <SimfDataGridColumn TItem="MeetingTableRow" Key="code" Header="@L["Admin.MeetingTables.Col.Code"]">
@@ -523,6 +526,34 @@
             }
         }
         finally { _busy = false; }
+    }
+
+    // D-356 — Excel export (selected rows, or the current filtered set) of the
+    // hall's meeting tables. The grid is hall-scoped, so the hall id rides
+    // GridQuery.Filters["hallId"]; the API resolves it back to ListTablesAsync.
+    // No hall selected → nothing to export.
+    private Task OnExportTablesAsync(IReadOnlyList<MeetingTableRow> selected)
+    {
+        if (_hallId is not { } hid) return Task.CompletedTask;
+        var query = new GridQuery
+        {
+            Skip = 0,
+            Top = _tableQuery.Top,
+            Search = _tableQuery.Search,
+            Sort = _tableQuery.Sort,
+            SortDescending = _tableQuery.SortDescending,
+            Filters = new Dictionary<string, string>(_tableQuery.Filters)
+            {
+                ["hallId"] = hid.ToString(),
+            },
+        };
+        return JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/meeting-tables/export",
+            new AdminGridExportRequest
+            {
+                Ids = selected.Select(row => row.Id).ToList(),
+                Query = query,
+            }).AsTask();
     }
 
     private void OnGenerate()

@@ -26,6 +26,8 @@
                       OnQueryChanged="OnQueryChangedAsync"
                       RowKey="@(r => r.SessionId.ToString())"
                       Caption="@L["Admin.SessionSummaries.Title"]"
+                      OnExport="OnExportAsync"
+                      ExportLabel="@L["Grid.Export"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
                       ActionsHeader="@L["Grid.Actions"]"
@@ -184,6 +186,19 @@
 
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
+
+    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // download via the generic /export proxy. Export only — summaries are
+    // drafted / edited / published from this desk's own actions, so there is no
+    // import path. Rows are keyed by SessionId (the desk has no separate Id).
+    private Task OnExportAsync(IReadOnlyList<AdminSessionSummaryRow> selected) =>
+        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/session-summaries/export",
+            new AdminGridExportRequest
+            {
+                Ids = selected.Select(row => row.SessionId).ToList(),
+                Query = selected.Count == 0 ? _query : null,
+            }).AsTask();
 
     private async Task LoadAsync()
     {

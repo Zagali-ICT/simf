@@ -250,6 +250,7 @@ public static class PermissionCatalog
         public const string View = "Bookings.View";
         public const string Approve = "Bookings.Approve";
         public const string Reject = "Bookings.Reject";
+        public const string Export = "Bookings.Export";
     }
 
     /// <summary>SIMF-FDS-013 (D-248) — meeting tables inside a Meeting/General hall
@@ -258,6 +259,7 @@ public static class PermissionCatalog
     {
         public const string View = "MeetingTables.View";
         public const string Edit = "MeetingTables.Edit";
+        public const string Export = "MeetingTables.Export";
     }
 
     /// <summary>SIMF-FDS-013 (D-248) — the flexible hall allocation layer
@@ -280,6 +282,7 @@ public static class PermissionCatalog
     {
         public const string View = "SpeakerMeetingRequests.View";
         public const string Manage = "SpeakerMeetingRequests.Manage";
+        public const string Export = "SpeakerMeetingRequests.Export";
     }
 
     public static class Speakers
@@ -326,6 +329,7 @@ public static class PermissionCatalog
         public const string View = "SessionSummaries.View";
         public const string Edit = "SessionSummaries.Edit";
         public const string Publish = "SessionSummaries.Publish";
+        public const string Export = "SessionSummaries.Export";
     }
 
     /// <summary>P5.1d — D-244 (FDS-003 §5.4): the hall-door arrival console — an
@@ -387,12 +391,14 @@ public static class PermissionCatalog
     {
         public const string View = "Comments.View";
         public const string Moderate = "Comments.Moderate";
+        public const string Export = "Comments.Export";
     }
 
     /// <summary>Ratings / feedback viewer.</summary>
     public static class Ratings
     {
         public const string View = "Ratings.View";
+        public const string Export = "Ratings.Export";
     }
 
     // ── Knowledge ────────────────────────────────────────────────────────
@@ -557,6 +563,7 @@ public static class PermissionCatalog
     {
         public const string View = "Vips.View";
         public const string Notify = "Vips.Notify";
+        public const string Export = "Vips.Export";
     }
 
     // These baseline-role lists MUST be declared before `All`: static field
@@ -690,10 +697,12 @@ public static class PermissionCatalog
         new(Bookings.View, "Bookings", "View", "View the booking approval queue", AdminOnly),
         new(Bookings.Approve, "Bookings", "Approve", "Approve bookings", AdminOnly),
         new(Bookings.Reject, "Bookings", "Reject", "Reject bookings", AdminOnly),
+        new(Bookings.Export, "Bookings", "Export", "Export bookings to Excel", AdminOnly),
 
         // SIMF-FDS-013 — D-248: flexible hall config + B2B/B2C business meetings.
         new(MeetingTables.View, "MeetingTables", "View", "View meeting tables", AdminOnly),
         new(MeetingTables.Edit, "MeetingTables", "Edit", "Define / generate meeting tables", AdminOnly),
+        new(MeetingTables.Export, "MeetingTables", "Export", "Export meeting tables", AdminOnly),
         new(HallAllocations.View, "HallAllocations", "View", "View hall allocations", AdminOnly),
         new(HallAllocations.Edit, "HallAllocations", "Edit", "Reserve / release hall allocations", AdminOnly),
         new(BusinessMeetings.View, "BusinessMeetings", "View", "View business meetings", AdminOnly),
@@ -702,6 +711,7 @@ public static class PermissionCatalog
 
         new(SpeakerMeetingRequests.View, "SpeakerMeetingRequests", "View", "View speaker meeting requests", AdminOnly),
         new(SpeakerMeetingRequests.Manage, "SpeakerMeetingRequests", "Manage", "Manage speaker meeting requests", AdminOnly),
+        new(SpeakerMeetingRequests.Export, "SpeakerMeetingRequests", "Export", "Export speaker meeting requests", AdminOnly),
 
         new(Speakers.View, "Speakers", "View", "View speakers", AdminOnly),
         new(Speakers.Create, "Speakers", "Create", "Create speakers", AdminOnly),
@@ -725,6 +735,7 @@ public static class PermissionCatalog
         new(SessionSummaries.View, "SessionSummaries", "View", "View session summaries", AdminOnly),
         new(SessionSummaries.Edit, "SessionSummaries", "Edit", "Generate / edit session summaries", AdminOnly),
         new(SessionSummaries.Publish, "SessionSummaries", "Publish", "Publish / un-publish session summaries", AdminOnly),
+        new(SessionSummaries.Export, "SessionSummaries", "Export", "Export session summaries", AdminOnly),
 
         // P5.1d — D-244: hall-door arrival console (operator QR scan).
         new(HallArrivals.View, "HallArrivals", "View", "View the hall-arrival console", AdminOnly),
@@ -763,8 +774,10 @@ public static class PermissionCatalog
         // Engagement
         new(Comments.View, "Comments", "View", "View audience comments", AdminOnly),
         new(Comments.Moderate, "Comments", "Moderate", "Moderate audience comments", AdminOnly),
+        new(Comments.Export, "Comments", "Export", "Export audience comments", AdminOnly),
 
         new(Ratings.View, "Ratings", "View", "View ratings and feedback", AdminOnly),
+        new(Ratings.Export, "Ratings", "Export", "Export ratings and feedback", AdminOnly),
 
         // Knowledge
         new(AiPrompts.View, "AiPrompts", "View", "View AI prompts", AdminOnly),
@@ -859,5 +872,6 @@ public static class PermissionCatalog
 
         new(Vips.View, "Vips", "View", "View the VIP list", PublicRelations),
         new(Vips.Notify, "Vips", "Notify", "Notify VIPs", PublicRelations),
+        new(Vips.Export, "Vips", "Export", "Export the VIP list", PublicRelations),
     ];
 }
