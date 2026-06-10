@@ -105,6 +105,23 @@ internal static class SiteContentEndpoints
             http.Response.Headers.CacheControl = "public, max-age=300";
             return Results.File(bytes, contentType);
         });
+
+        // Re-streams one media-asset image same-origin (the unified Asset
+        // pipeline, D-357) so a public page's <img>/CSS background loads it
+        // without reaching the API origin directly. `category` is the
+        // AssetCategory enum name; `ownerId` is the owning row's id. The API
+        // serves the bytes, 302s to an external link, or 404s when none.
+        routes.MapGet("/content/assets/{category}/{ownerId:guid}/image",
+            async (string category, Guid ownerId, SimfPublicClient api, HttpContext http, CancellationToken ct) =>
+        {
+            var (status, contentType, bytes) = await api.FetchAssetImageAsync(category, ownerId, ct);
+            if (status != 200 || contentType is null || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            http.Response.Headers.CacheControl = "public, max-age=300";
+            return Results.File(bytes, contentType);
+        });
     }
 
     private static async Task<Dictionary<string, object?>> BuildAsync(

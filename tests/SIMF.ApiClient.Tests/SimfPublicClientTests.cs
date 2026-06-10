@@ -135,6 +135,40 @@ public sealed class SimfPublicClientTests
         Assert.Empty(body);
     }
 
+    [Fact]
+    public async Task FetchAssetImage_returns_bytes_and_targets_the_category_owner_route()
+    {
+        var bytes = new byte[] { 9, 8, 7 };
+        HttpRequestMessage? seen = null;
+        var client = Client(req =>
+        {
+            seen = req;
+            var content = new ByteArrayContent(bytes);
+            content.Headers.ContentType = new MediaTypeHeaderValue("image/webp");
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = content };
+        });
+
+        var owner = Guid.NewGuid();
+        var (status, contentType, body) = await client.FetchAssetImageAsync("SpeakerPhoto", owner);
+
+        Assert.Equal(200, status);
+        Assert.Equal("image/webp", contentType);
+        Assert.Equal(3, body.Length);
+        Assert.Contains($"assets/SpeakerPhoto/{owner}/image", seen!.RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task FetchAssetImage_maps_a_404_to_empty()
+    {
+        var client = Client(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
+
+        var (status, contentType, body) = await client.FetchAssetImageAsync("SpeakerPhoto", Guid.NewGuid());
+
+        Assert.Equal(404, status);
+        Assert.Null(contentType);
+        Assert.Empty(body);
+    }
+
     private static HttpResponseMessage Ok<T>(ApiResult<T> envelope) =>
         new(HttpStatusCode.OK) { Content = JsonContent.Create(envelope, options: Json) };
 
