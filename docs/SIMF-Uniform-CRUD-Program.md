@@ -1,6 +1,6 @@
 # SIMF — Uniform CRUD Standard Program (D-356)
 
-Last updated: 2026-06-09
+Last updated: 2026-06-10
 Owner directive (2026-06-09): *"Make one big plan, execute in your recommended
 order, no more ask, one-time execution. Iterate through ALL pages and implement
 Page⇄Popup switching; do Export AND Import on all pages (you may do it as a
@@ -9,6 +9,40 @@ dynamic per-CRUD grid data component); then review, verify and run E2E."*
 This is the binding execution plan for the program. It is the continuity anchor:
 if context is lost, resume from the **Status board** below. It does not override
 the global rules (`~/.claude/CLAUDE.md`) or the controlled docs under `docs/`.
+
+---
+
+## Completion status (as-built, 2026-06-10)
+
+The **conversion scope is complete** and pushed to `origin/feature/app-cp-api-split`.
+Excel **export is on all 39 admin list pages** (import wherever a create/upsert
+path exists), through the single generic engine — and the D-353 Page⇄Popup toggle
++ CrudShell forms are on **every genuine entity-CRUD page**. Each wave: API+CP
+Release build 0/0, new Excel/CP tests green, additive-only (D-110 safe), surgical
+staging (the concurrent worker's nav/icon/resx edits stayed out of every commit).
+
+| Commit | Wave | Pages | Verify |
+|--------|------|-------|--------|
+| (P0–P2) | engine + 17 toggled pages | Interests…AiPrompts + Organisations(export-only) | green |
+| `f5fcafd` | 3a | Sponsors, Exhibitors, Speakers (convert + export+import) | 9/9 |
+| `8900ce3` | 3b | Booths, VenueMap, Invitations(export-only) (convert) | 9/9 |
+| `8a0fac6` | 4a | Comments, Ratings, SpeakerPresentations, Vips, Bookings, SessionSummaries, SpeakerMeetingRequests, MeetingTables (export-only) | 16/16 |
+| `3dd809f` | 4b | Sessions (convert + export+import) | 4/4 |
+| `8f3c474` | 4c | SessionModerators, QuestionQueue, BusinessMeetings (export-only) — **export now on all 39** | 6/6 |
+| `145ab2a` | 4d | Users, Visitors, Others account pages (toggle + CrudShell forms; export/import already present, all other dialogs preserved) | CP 180/180 |
+
+**Notes / caveats grounded this session:**
+- **Pre-existing flake (not from this program):** `AdminArchiveTests.Admin_create_then_get_roundtrips` hard-codes `Year=2023` and collides on the non-reset shared integration DB; fails independently of these changes.
+- **Shared-DB contention:** a concurrent process running the API + DB writes degraded one full-suite run (1h48m, 7 unrelated failures); the flagged `NotificationTests` passes 6/6 in isolation — environmental, not a regression. Per-change verification used clean builds + targeted tests.
+
+### Remaining (DoD debt — Phases 5–6, not yet done)
+- **Phase 5 — docs + E2E catalogue** for every changed page (`docs/pages/PAGE-INDEX.md`
+  + per-page refs + `docs/tests/e2e/` files). This is a large authoring batch and
+  is **outstanding**.
+- **Phase 6 — final pass:** an adversarial review, a clean full `SIMF.Api.Tests`
+  run (**needs the integration DB quiet** — currently contended), and a live
+  browser/DOM smoke of the converted pages (needs the CP running on an
+  uncontended port). Outstanding.
 
 ---
 
