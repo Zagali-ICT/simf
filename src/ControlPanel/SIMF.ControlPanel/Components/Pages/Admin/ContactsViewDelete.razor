@@ -20,6 +20,12 @@
 
 @if (Initial is not null)
 {
+    @* D-357 — logo from the unified media-asset pipeline. *@
+    <div class="simf-image-upload__preview">
+        <SimfImageThumb Src="@($"/account/api/admin/assets/CompanyLogo/{Initial.Id}/image")"
+                        Alt="@(Initial.NameEn ?? Initial.NameAr)" Class="simf-img-thumb--lg" />
+    </div>
+
     <dl class="simf-dl">
         <dt>@L["Admin.Contacts.Field.NameAr"]</dt>
         <dd>@Initial.NameAr</dd>

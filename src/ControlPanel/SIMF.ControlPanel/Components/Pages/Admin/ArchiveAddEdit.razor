@@ -87,6 +87,15 @@
                 @L["Admin.Archive.Field.IsActive"]
             </SimfCheckbox>
         }
+        @* D-357 — cover image via the unified media-asset pipeline (edit only; the
+           row must exist before bytes can be attached). *@
+        @if (IsEdit && Initial is not null)
+        {
+            <div class="simf-field">
+                <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
+                <SimfImageUpload Category="ArchiveCover" OwnerId="@Initial.Id" Alt="@_model.TitleEn" />
+            </div>
+        }
     </div>
     <div class="simf-form__actions">
         <SimfButton Loading="_busy" LoadingLabel="@L["Admin.Archive.Save"]">

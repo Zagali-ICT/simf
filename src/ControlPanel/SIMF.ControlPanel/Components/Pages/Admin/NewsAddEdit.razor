@@ -93,6 +93,15 @@
                 @L["Admin.News.Field.IsActive"]
             </SimfCheckbox>
         }
+        @* D-357 — image via the unified media-asset pipeline (edit only; the row
+           must exist before bytes can be attached). *@
+        @if (IsEdit && Initial is not null)
+        {
+            <div class="simf-field">
+                <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
+                <SimfImageUpload Category="NewsImage" OwnerId="@Initial.Id" Alt="@_model.Title" />
+            </div>
+        }
     </div>
     <div class="simf-form__actions">
         <SimfButton Type="button" OnClick="HandleSubmitAsync"

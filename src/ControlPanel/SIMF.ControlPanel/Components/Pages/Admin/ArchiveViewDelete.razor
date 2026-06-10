@@ -18,6 +18,12 @@
 
 @if (Initial is not null)
 {
+    @* D-357 — cover image from the unified media-asset pipeline. *@
+    <div class="simf-image-upload__preview">
+        <SimfImageThumb Src="@($"/account/api/admin/assets/ArchiveCover/{Initial.Id}/image")"
+                        Alt="@Initial.TitleEn" Class="simf-img-thumb--lg" />
+    </div>
+
     <dl class="simf-dl">
         <dt>@L["Admin.Archive.Col.Year"]</dt>
         <dd>@Initial.Year</dd>
