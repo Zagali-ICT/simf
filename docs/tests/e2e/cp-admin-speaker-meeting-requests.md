@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Decision:** D-269 — the **speaker-scoped** meeting request. A signed-in,
 > approved visitor on the **Speaker profile** (app screen #20, `/speakers/:speakerId`)
@@ -73,6 +73,7 @@
 | E2E-SMR-012 | Per-column grid filter (Status / Requester / Subject) narrows the grid, resets paging | happy | P1 | _to author_ |
 | E2E-SMR-013 | Column sort (Requester / Status / Submitted) toggles `Sort` + `SortDescending` | happy | P2 | _to author_ |
 | E2E-SMR-014 | List write is audited `Admin.SpeakerMeetingRequestsListed` | audit | P1 | authored ✓ (`List_writes_audit_event`) |
+| E2E-SMR-015 | Excel export — toolbar Export downloads an .xlsx of the filtered grid; selected rows export just those (D-356) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -332,6 +333,46 @@ Scenario: Loading the queue writes an audit event
 
 **Evidence:** `SpeakerMeetingRequestsTests.List_writes_audit_event` (green).
 
+### E2E-SMR-015 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the speaker meeting requests queue to an XLSX workbook
+  # D-356 added grid Excel EXPORT to this queue (export-only — there is no import
+  # path because requests are created from the app and responded to from the CP
+  # modal). The CP grid wires OnExport only; the toolbar shows an "Export" action
+  # (no "Import" affordance). The download goes through the generic BFF proxy via
+  # simfAccount.downloadXlsx → POST /account/api/admin/speaker-meeting-requests/export,
+  # posting AdminGridExportRequest { Ids, Query }.
+  Given the administrator is on /admin/speaker-meeting-requests with at least three rows
+  And no rows are selected
+  When they click the toolbar "Export" / "تصدير" action
+  Then POST /account/api/admin/speaker-meeting-requests/export fires
+  And the body carries an empty Ids list and the current Query (so the WHOLE filtered grid is exported)
+  And the API returns HTTP 200 with an .xlsx body
+  And the browser saves a file named simf-speaker-meeting-requests-{timestamp}.xlsx
+  And the workbook's "SpeakerMeetingRequests" sheet header row reads Speaker | Requester | Subject | Status | CreatedAt | RespondedAt
+  And the requester email column is NOT present (PII is detail-only, the D-185 pattern)
+
+  When the administrator first sets the "Status" column filter to "Pending"
+  And then clicks "Export" with no rows selected
+  Then the export body carries Filters["status"]="Pending" in Query (export honours the active grid filters/sort)
+  And only the Pending rows appear in the workbook
+
+  When the administrator instead ticks the checkboxes on exactly two rows
+  And clicks "Export"
+  Then the export body carries those two row Ids and a null Query
+  And the workbook contains exactly those two rows
+  # The API caps the export at 5000 rows.
+```
+
+**Evidence:** `SpeakerMeetingRequestsExcelTests` (`tests/SIMF.Api.Tests/SpeakerMeetingRequestsExcelTests.cs`) covers the export endpoint at the API layer — the `SpeakerMeetingRequests` sheet, the six-column header (no requester email), filter/selection honoured, and the `SpeakerMeetingRequests.Export` permission gate.
+
+**Evidence captured (browser run):**
+- Screenshot (toolbar): `docs/screenshots/cp-admin-speaker-meeting-requests-export-toolbar.png` (Export action present, no Import)
+- Network: `POST /account/api/admin/speaker-meeting-requests/export` returns 200 with the .xlsx body
+- Downloaded file: `simf-speaker-meeting-requests-{timestamp}.xlsx`, sheet `SpeakerMeetingRequests`, header `Speaker | Requester | Subject | Status | CreatedAt | RespondedAt`
+- Console errors: 0 expected
+
 ---
 
 ## Implementation notes
@@ -375,4 +416,4 @@ Scenario: Loading the queue writes an audit event
 
 ---
 
-_Last reviewed:_ `2026-06-03` by `SIMF Team` (D-269 — speaker meeting requests admin desk).
+_Last reviewed:_ `2026-06-10` by `SIMF Team` (D-356 Phase 5 — Excel + toggle; added E2E-SMR-015 grid Excel export. Original D-269 authoring 2026-06-03).

@@ -35,14 +35,43 @@ staging (the concurrent worker's nav/icon/resx edits stayed out of every commit)
 - **Pre-existing flake (not from this program):** `AdminArchiveTests.Admin_create_then_get_roundtrips` hard-codes `Year=2023` and collides on the non-reset shared integration DB; fails independently of these changes.
 - **Shared-DB contention:** a concurrent process running the API + DB writes degraded one full-suite run (1h48m, 7 unrelated failures); the flagged `NotificationTests` passes 6/6 in isolation — environmental, not a regression. Per-change verification used clean builds + targeted tests.
 
-### Remaining (DoD debt — Phases 5–6, not yet done)
-- **Phase 5 — docs + E2E catalogue** for every changed page (`docs/pages/PAGE-INDEX.md`
-  + per-page refs + `docs/tests/e2e/` files). This is a large authoring batch and
-  is **outstanding**.
+### Phase 5 — docs + E2E catalogue (as-built, 2026-06-10) — DONE
+
+Authored by a 37-agent workflow (one agent per changed CP page, each grounded in
+the live `.razor`/endpoint source), then centrally reconciled:
+
+- **E2E catalogues:** all 36 changed CP catalogue files gained their D-356 Excel
+  **export** (+ **import** + **import-rejection** where a create/upsert path
+  exists) and D-353 **Page⇄Popup toggle** + **CrudShell `SimfConfirm` delete-gate**
+  scenarios (append-only; stable ids; mirrors the `cp-admin-interests.md` gold
+  pattern INT-008..013). **`cp-admin-exhibitors.md` created** (E2E-EXH-001..023) —
+  the page's first authored catalogue. ~130 scenarios added in total.
+- **`docs/tests/e2e/README.md`:** every changed page's scenario-id range bumped to
+  its new maximum (verified file-max == index-range for all 37) + the Exhibitors
+  row + a Phase-5 snapshot bullet.
+- **Per-page reference docs:** 8 existing updated (Themes, Halls, Roles,
+  Business-meetings, Meeting-tables, Admins, Visitors, Others) + **7 authored** for
+  the full CrudShell conversions (Sponsors, Exhibitors, Speakers, Booths,
+  Venue-map, Invitations, Sessions). `PAGE-INDEX.md` Doc column flipped "—" → link
+  for those 7 + the new Exhibitors row + refreshed doc-debt note.
+- **Verification (docs):** every modified catalogue passes the heading↔matrix
+  consistency gate (no orphan rows, no missing scenarios, no duplicate ids); two
+  **pre-existing** matrix gaps closed incidentally (OTH-022, VIS-021/022 — D-354
+  scenarios that had headings but no matrix row before this run).
+- **Honest scope note:** the ~20 export-only / lookup CP pages that only gained
+  Excel **export** still show Doc = "—" in `PAGE-INDEX.md`; each is fully covered
+  by its E2E catalogue file, and authoring those reference docs stays tracked as a
+  follow-up (unchanged pre-existing debt).
+- **Surfaced (not fixed — out of scope / pre-existing):** `cp-admin-booths.md`
+  E2E-BTH-016 references filter key `sectorEn` but the server filter key is
+  `sector`; the EN `Strings.resx` is missing `Admin.Speakers.Delete.Title/Message`
+  keys referenced by `SpeakersViewDelete.razor`.
+
+### Remaining (Phase 6 — not yet done)
 - **Phase 6 — final pass:** an adversarial review, a clean full `SIMF.Api.Tests`
   run (**needs the integration DB quiet** — currently contended), and a live
   browser/DOM smoke of the converted pages (needs the CP running on an
-  uncontended port). Outstanding.
+  uncontended port). Outstanding / environment-blocked.
 
 ---
 

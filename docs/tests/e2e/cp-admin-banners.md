@@ -7,23 +7,36 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page summary.** The Banners page (D-173, gap doc G8, PDF §1) is the admin
 > CRUD over time-windowed CMS banners / announcements surfaced on the public
 > Website + Flutter app. As of **D-256** the raw `<table>` was migrated to the
 > owner-mandated **`SimfDataGrid`** (server-paged): columns Title, Start, End,
-> Order, Active, plus the grid's own **Add** toolbar button, quiet per-row
-> **Edit (pencil)** and **Delete (trash)** icon actions, and one **Add/Edit**
-> modal. The **Title** column carries a per-column filter input; **all five
-> columns are sortable**; the grid renders a full pager (page size **20**,
+> Order, Active, plus the grid's own **Add** toolbar button and quiet per-row
+> **Edit (pencil)**, **Details (eye)** and **Delete (trash)** icon actions. The
+> **Title** column carries a per-column filter input; **all five columns are
+> sortable**; the grid renders a full pager (page size **20**,
 > `GridQuery { Top = 20 }`). The select-all / per-row checkboxes are present
-> (`Multiselect="true"`) but there is **no bulk action** wired (no
-> `CustomToolbar`) — selection is cosmetic. There is **no separate "Details"
-> view** — the Edit icon re-opens the same modal pre-filled and is the
-> read-back path. `RequiredPermission` = `PermissionCatalog.Banners.View`.
+> (`Multiselect="true"`); the `CustomToolbar` now hosts the **`CrudPresentationToggle`**
+> (D-353) — selection feeds the Excel **Export** action (D-356).
+> `RequiredPermission` = `PermissionCatalog.Banners.View`.
 >
-> **Modal fields (in render order):** Title (English), Title (Arabic),
+> **D-353 (shipped) — the inline `SimfModal` Add/Edit form + the one-click
+> trash delete are GONE.** Add / Edit / Details / Delete are now hosted by
+> **`CrudShell`** (popup or full page per the toolbar toggle, persisted in
+> `localStorage` via `CpPreferences`) framing the reusable **`BannersAddEdit`**
+> and **`BannersViewDelete`** forms. Delete is no longer one-click: the trash
+> icon opens `BannersViewDelete` (read-only details) whose **Deactivate** button
+> is gated by a **`SimfConfirm`** dialog (NOT the native `window.confirm`). The
+> Details (eye) icon opens the same `BannersViewDelete` form in read-only mode.
+>
+> **D-356 (shipped) — Excel export + import.** The toolbar **Export** and
+> **Import** actions are wired to the reusable **`CrudGridExcel`** component
+> (`Resource="banners"`): Export → `POST /admin/banners/export`, Import →
+> `POST /admin/banners/import`. See E2E-BNR-020..022.
+>
+> **AddEdit form fields (in render order):** Title (English), Title (Arabic),
 > Body (English), Body (Arabic), Image URL, Click-through URL,
 > Start (UTC) `datetime-local`, End (UTC) `datetime-local`, Display order
 > `number`, and (Edit only) an **Active** checkbox. Submit button label is
@@ -55,6 +68,12 @@
 | E2E-BNR-014 | RTL / Arabic render: page + modal mirror, Arabic title column shown | i18n | P1 | _to author_ |
 | E2E-BNR-015 | Per-column filter: typing in the Title filter narrows the grid (`Filters["title"]`, Skip→0) | happy | P1 | _to author_ |
 | E2E-BNR-016 | Column sort: clicking the Title / Start headers toggles `Sort` + `SortDescending` | happy | P2 | _to author_ |
+| E2E-BNR-017 | Presentation toggle: switch to full-page + persists across reload (localStorage `simf.cp.prefs.banners`) (D-353) | happy | P1 | _to author_ |
+| E2E-BNR-018 | Full-page mode: Add/Edit/View take over the content area, Save returns to grid, no backdrop (D-353) | happy | P1 | _to author_ |
+| E2E-BNR-019 | Delete confirmation gate: Delete opens BannersViewDelete → SimfConfirm gates the DELETE (D-353) | error | P0 | _to author_ |
+| E2E-BNR-020 | Excel export: toolbar Export → POST /export (whole filtered grid vs selected rows; header row) (D-356) | happy | P1 | _to author_ |
+| E2E-BNR-021 | Excel import: toolbar Import → POST /import multipart → "N created…" modal + per-row error (D-356) | happy | P1 | _to author_ |
+| E2E-BNR-022 | Excel import rejection: non-.xlsx / wrong-sheet upload → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -116,6 +135,9 @@ Scenario: Create, read-back via Edit, toggle Active, then delete one banner
   And the row's Order column reads "0" and the Active column shows "—"
 
   When the administrator clicks the row's Delete (trash) icon action
+  Then the BannersViewDelete form opens (in CrudShell) showing the row's read-only
+      details and a red "Deactivate" button (D-353 — no longer a one-click delete)
+  When they click "Deactivate" and confirm in the SimfConfirm dialog
   Then the BFF calls DELETE /account/api/admin/banners/{id} and returns 200
   And a green toast reads "Banner deleted." / "تم حذف اللافتة."
   And the grid reloads and the row no longer appears (soft-deleted: IsActive=false,
@@ -256,6 +278,9 @@ Scenario: Edit re-reads the detail and pre-fills every field
 Scenario: Delete removes the row from the grid
   Given an active banner row "SIMF 2026 Keynote" exists in the grid
   When the administrator clicks the row's Delete (trash) icon action
+  Then the BannersViewDelete form opens with a red "Deactivate" button
+      (D-353 — the SimfConfirm gate is exercised in full by E2E-BNR-019)
+  When they click "Deactivate" and confirm
   Then the BFF calls DELETE /account/api/admin/banners/{id} and the API returns 200
   And a green toast reads "Banner deleted." / "تم حذف اللافتة."
   And the grid reloads (POST /account/api/admin/banners/list returns 200)
@@ -353,6 +378,142 @@ Scenario: Clicking a sortable header toggles ascending / descending order
   And the grid re-renders by earliest StartUtc first
 ```
 
+### E2E-BNR-017 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/banners with the default "dialog" presentation
+    (the page reads CpPreferences.GetPresentationAsync("banners") in OnInitializedAsync,
+     which defaults to Dialog when no preference is stored)
+  And the grid's CustomToolbar shows the CrudPresentationToggle "Open as full page"
+      control (maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.banners" holds {"v":1,"presentation":"page"}
+  When they reload /admin/banners
+  Then GetPresentationAsync("banners") re-reads the preference so the toggle still
+      reads "Open as dialog"
+  And opening Add now renders the full-page frame (not a popup)
+```
+
+**Evidence captured:**
+- Screenshot of the toolbar toggle in both states → `docs/screenshots/cp-admin-banners-toggle-{dialog,page}.png`
+- Application tab: localStorage `simf.cp.prefs.banners` = `{"v":1,"presentation":"page"}`
+- Console errors: 0 expected
+
+### E2E-BNR-018 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page" (the toggle persisted "page")
+  When the administrator clicks the grid's Add (+) toolbar action
+  Then the grid + SimfBanner are hidden (GridHidden = FormOpen && presentation == Page)
+  And the CrudShell renders the BannersAddEdit form full-page with a title + close (X) header
+  And there is no modal backdrop
+  When they fill Title (English)="Closing Ceremony", Title (Arabic)="الحفل الختامي",
+      Body (English)="Join us at 17:00.", Body (Arabic)="انضموا إلينا الساعة 17:00."
+  And they set a valid Start/End window and Display order="3"
+  And they click "Save"
+  Then POST /account/api/admin/banners returns 200
+  And the page frame closes (CloseForm) and the grid + banner re-appear
+  And a green toast reads "Banner saved." / "تم حفظ اللافتة."
+  And the new "Closing Ceremony" row is visible
+  When they click the row's Edit (pencil) icon and then the frame's close (X) button
+  Then the form closes and the grid re-appears unchanged (no PUT fired)
+```
+
+### E2E-BNR-019 — Delete confirmation gate (CrudShell + SimfConfirm) (D-353)
+
+```gherkin
+Scenario: Delete requires explicit confirmation in the SimfConfirm dialog
+  Given the administrator is on /admin/banners with an active banner
+      "SIMF 2026 Keynote"
+  When they click the row's Delete (trash) icon action
+  Then the BFF calls GET /account/api/admin/banners/{id} and returns 200
+  And the BannersViewDelete form opens (in CrudShell) showing the banner's read-only
+      details (incl. the image preview) and a red "Deactivate" button
+  When they click "Deactivate"
+  Then a SimfConfirm dialog appears titled "Delete banner" / "حذف اللافتة"
+  And its message names the banner: "Delete the banner \"SIMF 2026 Keynote\"?"
+      (Admin.Banners.Delete.Message formatted with the title; TitleLabel picks
+       the Arabic title when the culture is ar)
+  When they click the confirm dialog's "Cancel" button
+  Then no DELETE request fires and the form and row are unchanged
+  When they re-open Delete, click "Deactivate", then click the confirm "Deactivate" button
+  Then exactly one DELETE /account/api/admin/banners/{id} fires and returns 200
+  And the CrudShell closes (CloseForm) and the grid reloads
+  And a green toast reads "Banner deleted." / "تم حذف اللافتة."
+  And the deactivated row no longer renders in the active grid
+```
+
+**Evidence captured:**
+- Network: exactly ONE `DELETE /account/api/admin/banners/{id}` after confirm; ZERO after Cancel
+- Screenshot of the SimfConfirm dialog naming the banner → `docs/screenshots/cp-admin-banners-delete-confirm.png`
+
+### E2E-BNR-020 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the filtered grid to an XLSX workbook
+  Given the administrator is on /admin/banners with at least two banners
+  When they click the toolbar "Export" action with no rows selected
+  Then OnExportAsync calls _excel.ExportAsync with an empty Ids list and the current _query
+  And a POST /account/api/admin/banners/export fires carrying
+      AdminGridExportRequest { Ids: [], Query: <current GridQuery> }
+  And the response is an .xlsx (content-type
+      application/vnd.openxmlformats-officedocument.spreadsheetml.sheet)
+  And the browser saves a file named simf-banners-{yyyyMMddHHmmss}.xlsx
+  And the workbook's "Banners" sheet header row reads
+      Title | TitleArabic | StartUtc | EndUtc | DisplayOrder | IsActive
+  And it contains the whole filtered set (the API caps the export at 5000 rows)
+  When they instead tick two row checkboxes then click "Export"
+  Then the POST carries those two Ids (Query still sent) and the workbook contains
+      exactly those two banner rows
+```
+
+**Evidence captured:**
+- Network: `POST /account/api/admin/banners/export` returns 200 with the xlsx content-type
+- Saved file `simf-banners-*.xlsx` opens with the six-column header row above
+
+### E2E-BNR-021 — Excel import (D-356)
+
+```gherkin
+Scenario: Import banners from a workbook and see the per-row outcome
+  Given the administrator is on /admin/banners
+  When they click the toolbar "Import" action
+  Then OnImportAsync calls _excel.TriggerImportAsync, which clicks the hidden
+      file input id="banners-import-input" (accept=".xlsx")
+  When they choose an .xlsx whose "Banners" sheet has the required headers
+      Title | TitleArabic | Body | BodyArabic | StartUtc | EndUtc
+      with rows for two new banners
+  Then a POST /account/api/admin/banners/import fires as multipart/form-data
+  And the import-result modal shows "2 created, 0 updated, 0 skipped." with no row errors
+  And the green shared toast "Grid.Import.Done" appears (OnImported → OnImportedAsync)
+  And the grid reloads (POST /account/api/admin/banners/list) and lists both new banners
+  When they import a workbook whose rows include one with a blank Body
+  Then that row is reported as a per-row error "The English body is required."
+      / "النص بالإنجليزية مطلوب." (DataValidationException, not a batch abort)
+  And the valid rows in the same workbook are still created
+```
+
+### E2E-BNR-022 — Excel import rejection (bad / wrong-sheet upload) (D-356)
+
+```gherkin
+Scenario: A bad upload is rejected without creating anything
+  Given the administrator is on /admin/banners
+  When they pick a file that is not a valid .xlsx (fails the ZIP-magic / 5MB gate)
+  Then the import request returns HTTP 400
+  And the page shows a bilingual error toast (OnError → OnExcelError surfaces the
+      server MessageForCurrentCulture)
+  And no banner is created
+  When they instead pick a workbook whose worksheet is NOT named "Banners"
+  Then the import returns HTTP 400 with the bilingual "worksheet named 'Banners'" message
+  And the grid is unchanged
+  When they pick a workbook on the "Banners" sheet that omits a required header
+      (e.g. missing BodyArabic)
+  Then the import returns HTTP 400 naming the missing required header
+  And nothing is created
+```
+
 ---
 
 ## Implementation notes
@@ -384,4 +545,4 @@ Scenario: Clicking a sortable header toggles ascending / descending order
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle): added E2E-BNR-017..022 (presentation toggle, full-page round-trip, CrudShell+SimfConfirm delete gate, Excel export/import/rejection) and corrected the stale page-summary + BNR-001/010 one-click-delete claims to the shipped CrudShell + SimfConfirm flow.

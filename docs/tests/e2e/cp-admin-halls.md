@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Permission gate:** the page is `@attribute [RequirePermission(PermissionCatalog.Halls.View)]`
 > (`Halls.View`). Add (`Halls.Create`), Edit (`Halls.Edit`) and Deactivate
@@ -35,6 +35,12 @@
 | E2E-HAL-014 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-HAL-015 | RTL render: Arabic toggle mirrors page + Add modal | i18n | P1 | _to author_ |
 | E2E-HAL-016 | Grid: per-column filter (code/name/nameArabic/floor) narrows the list | happy | P2 | _to author_ |
+| E2E-HAL-017 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
+| E2E-HAL-018 | Full-page mode: Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-HAL-019 | Delete confirmation gate: Deactivate opens View/Delete → SimfConfirm gates the call (D-353) | error | P0 | _to author_ |
+| E2E-HAL-020 | Excel export: toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
+| E2E-HAL-021 | Excel import: upload a workbook → rows created/updated + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
+| E2E-HAL-022 | Excel import: a non-.xlsx / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -96,7 +102,9 @@ Scenario: Create, edit, view, then deactivate one hall
   Then the modal closes
 
   When the administrator clicks the "Deactivate" icon on that row
-  Then a DELETE /account/api/admin/halls/{id} fires (HTTP 200)
+  Then the View/Delete form opens (CrudShell, dialog by default) showing the row's read-only details and a red "Deactivate" button
+  When they click "Deactivate" and confirm the SimfConfirm dialog (see E2E-HAL-019)
+  Then exactly one DELETE /account/api/admin/halls/{id} fires (HTTP 200)
   And a green toast reads "Hall \"Main Auditorium\" was deactivated." / "تم تعطيل القاعة \"Main Auditorium\"."
   And the row remains visible but the pill changes to the grey "Inactive" pill
 ```
@@ -342,6 +350,108 @@ Scenario: Typing into a per-column filter input re-queries the list endpoint
       combined (AND), narrowing the grid further
 ```
 
+### E2E-HAL-017 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/halls with the default "dialog" presentation
+  And the grid toolbar shows the CrudPresentationToggle "Open as full page" control (maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.halls" holds {"v":1,"presentation":"page"}
+  When they reload /admin/halls
+  Then OnInitializedAsync re-reads the preference via Prefs.GetPresentationAsync("halls")
+  And the toggle still reads "Open as dialog"
+  And opening "Add hall" now renders the full-page frame (not a popup)
+```
+
+### E2E-HAL-018 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page" (localStorage "simf.cp.prefs.halls" = page)
+  When the administrator clicks "Add hall"
+  Then the grid + SimfBanner are hidden (GridHidden) and the CrudShell renders the
+      HallsAddEdit form as a full page titled "Add hall" with a close header
+  And there is no modal backdrop
+  When they fill Code="H9", Name (English)="Annex", Name (Arabic)="الملحق", Capacity="80"
+  And they click "Create hall"
+  Then POST /account/api/admin/halls fires (HTTP 200)
+  And the page frame closes (CloseForm) and the grid re-appears with the new row and the success toast
+  When they click the "Edit" icon and then the frame's close (X) button
+  Then the form closes and the grid re-appears unchanged (no PUT fires)
+```
+
+### E2E-HAL-019 — Delete confirmation gate (CrudShell + SimfConfirm) (D-353)
+
+```gherkin
+Scenario: Deactivate requires explicit SimfConfirm confirmation
+  Given the administrator is on /admin/halls
+  When they click the "Deactivate" icon on a row for Name="Main Auditorium"
+  Then a GET /account/api/admin/halls/{id} fires (HTTP 200)
+  And the HallsViewDelete form opens inside the CrudShell showing the read-only <dl>
+      (Code, Name, Name (Arabic), Capacity, Floor, Equipment + accessibility notes, Status)
+      and a red "Deactivate" button
+  When they click "Deactivate"
+  Then a SimfConfirm dialog appears titled "Deactivate hall"
+  And its message names the hall: "Deactivate hall \"Main Auditorium\"? It will be hidden from Session assignment."
+      / the Arabic equivalent (Admin.Halls.Delete.Message)
+  When they click "Cancel"
+  Then no DELETE request fires and the row is unchanged
+  When they re-open the form, click "Deactivate" then the confirm "Deactivate" button
+  Then exactly one DELETE /account/api/admin/halls/{id} fires (HTTP 200)
+  And the form closes and a green toast reads "Hall \"Main Auditorium\" was deactivated."
+  And the row's pill turns grey "Inactive"
+```
+
+### E2E-HAL-020 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the filtered grid (or just selected rows) to an XLSX workbook
+  Given the administrator is on /admin/halls with at least two halls
+  When they click the toolbar "Export" action with no rows selected
+  Then OnExportAsync calls CrudGridExcel.ExportAsync with an empty Ids list and the current Query
+  And a POST /account/api/admin/halls/export fires carrying
+      AdminGridExportRequest { Ids: [], Query: <current GridQuery> }
+  And the browser saves an .xlsx whose sheet has the header row
+      Code | Name | NameArabic | Capacity | Floor | IsActive
+  And the workbook contains every hall in the current filtered grid (capped at 5000 rows)
+  When they instead select two rows then click "Export"
+  Then the request carries those two Ids (and Query is omitted/ignored for the selection)
+  And the workbook contains exactly those two halls
+```
+
+### E2E-HAL-021 — Excel import (D-356)
+
+```gherkin
+Scenario: Import halls from a workbook and see the per-row outcome
+  Given the administrator is on /admin/halls
+  When they click the toolbar "Import" action
+  Then OnImportAsync calls CrudGridExcel.TriggerImportAsync, opening the file picker
+      (input id "halls-import-input", accept=".xlsx")
+  When they choose an .xlsx whose sheet has Code/Name/NameArabic/Capacity rows for two new halls
+  Then a POST /account/api/admin/halls/import fires as multipart form data
+  And the import-result modal shows "2 created, 0 updated, 0 skipped."
+  And OnImportedAsync raises the shared success toast (Grid.Import.Done) and the grid reloads listing both new halls
+  When they import a workbook that updates one existing Code and adds one new Code
+  Then the modal shows "1 created, 1 updated, 0 skipped."
+  When they import a workbook containing one row that fails validation (e.g. Capacity="-5")
+  Then the modal lists that row under the per-row error list and it is not created
+```
+
+### E2E-HAL-022 — Excel import rejection (D-356)
+
+```gherkin
+Scenario: A bad upload is rejected without creating anything
+  Given the administrator is on /admin/halls
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic check, or exceeds the 5 MB gate)
+  Then POST /account/api/admin/halls/import returns HTTP 400
+  And OnExcelError surfaces a bilingual error toast and no hall is created
+  When they import a workbook whose sheet is not the expected "halls" sheet
+  Then the request returns HTTP 400 with the bilingual wrong-worksheet message
+  And nothing is created or updated
+```
+
 ---
 
 ## Implementation notes
@@ -378,4 +488,4 @@ Scenario: Typing into a per-column filter input re-queries the list endpoint
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel export/import + D-353 Page<->Popup toggle scenarios E2E-HAL-017..022; E2E-HAL-001 deactivate step reconciled to the CrudShell + SimfConfirm gate).

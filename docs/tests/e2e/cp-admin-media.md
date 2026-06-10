@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page permission:** `PermissionCatalog.Media.View` gates the page
 > (`@attribute [RequirePermission(PermissionCatalog.Media.View)]`). The mutating
@@ -26,7 +26,7 @@
 | E2E-MED-001 | Golden round-trip — Add Image → save → attach bitmap → Edit → Delete | happy | P0 | _to author_ |
 | E2E-MED-002 | Add Video item (URL required, modal closes on create) | happy | P0 | _to author_ |
 | E2E-MED-003 | Edit existing item — change metadata + DisplayOrder + toggle Active | happy | P1 | _to author_ |
-| E2E-MED-004 | Delete item — `confirm()` dialog → soft-delete → row leaves active list | happy | P1 | _to author_ |
+| E2E-MED-004 | Delete item — CrudShell ViewDelete + SimfConfirm → soft-delete → row leaves active list | happy | P1 | _to author_ |
 | E2E-MED-005 | Image upload — pick file, Upload, `HasImage` flips to ✓ | happy | P1 | _to author_ |
 | E2E-MED-006 | Kind toggle — Image⇄Video shows/hides Video URL + image controls | happy | P2 | _to author_ |
 | E2E-MED-007 | Empty list renders `SimfEmptyState` | happy | P1 | _to author_ |
@@ -35,10 +35,16 @@
 | E2E-MED-010 | Image upload rejected — empty / >10 MB file → bilingual 400 | error | P1 | _to author_ |
 | E2E-MED-011 | Missing item — Edit/Delete a deleted id → 404 `MediaNotFound` | error | P2 | _to author_ |
 | E2E-MED-012 | Server 500 on `/list` → bilingual fallback toast | resilience | P2 | _to author_ |
-| E2E-MED-013 | Delete cancelled — dismiss `confirm()` → no DELETE fires | edge | P2 | _to author_ |
+| E2E-MED-013 | Delete cancelled — Cancel the SimfConfirm dialog → no DELETE fires | edge | P2 | _to author_ |
 | E2E-MED-014 | RTL render — Arabic toggle mirrors page + modal | i18n | P1 | _to author_ |
 | E2E-MED-015 | Per-column filter narrows the grid (Title (English) + Album (English)) | grid | P1 | _to author_ |
 | E2E-MED-016 | Column sort toggles (Title (English) / Display order) | grid | P2 | _to author_ |
+| E2E-MED-017 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
+| E2E-MED-018 | Full-page mode: Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-MED-019 | Delete confirmation gate: Deactivate opens CrudShell ViewDelete → SimfConfirm gates the DELETE (D-353) | error | P0 | _to author_ |
+| E2E-MED-020 | Excel export: toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
+| E2E-MED-021 | Excel import: upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
+| E2E-MED-022 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -95,7 +101,8 @@ Scenario: Create an Image item, attach its bitmap, edit it, then delete it
   And the grid row's Order column reads "0"
 
   When they click the row's Delete (trash) action
-  And they accept the browser confirm "Delete this media item? It will be removed from the public gallery."
+  Then the View/Delete form opens (CrudShell) showing the read-only details and a red "Deactivate" button
+  When they click "Deactivate" and confirm in the SimfConfirm dialog
   Then DELETE /account/api/admin/media/{id} returns 200
   And a green toast reads "Media item deleted." / "تم حذف عنصر الوسائط."
   And the grid returns to {N} active rows (soft-delete; IsActive=false)
@@ -146,11 +153,13 @@ Scenario: Edit metadata, DisplayOrder and the Active flag of an existing item
 ### E2E-MED-004 — Delete (soft-delete) with confirm
 
 ```gherkin
-Scenario: Delete an item via the browser confirm dialog
+Scenario: Delete an item via the CrudShell ViewDelete form + SimfConfirm gate
   Given a media item exists in the active grid
   When the administrator clicks the row's Delete (trash) action
-  Then a browser confirm appears reading "Delete this media item? It will be removed from the public gallery."
-  When they accept the confirm
+  Then the View/Delete form opens (CrudShell, dialog by default) showing the read-only details and a red "Deactivate" button
+  When they click "Deactivate"
+  Then a SimfConfirm dialog appears naming the item
+  When they click the confirm "Deactivate" button
   Then DELETE /account/api/admin/media/{id} returns 200 with ApiResult.Data=true
   And a green toast reads "Media item deleted." / "تم حذف عنصر الوسائط."
   And the row is removed from the active list (IsActive set false server-side, not a hard delete)
@@ -275,10 +284,11 @@ Scenario: API 500 on /list shows the fallback bilingual toast
 ### E2E-MED-013 — Delete cancelled
 
 ```gherkin
-Scenario: Dismissing the confirm dialog cancels the delete
+Scenario: Cancelling the SimfConfirm dialog cancels the delete
   Given a media item exists in the grid
   When the administrator clicks the row's Delete (trash) action
-  And they DISMISS the browser confirm dialog
+  And the View/Delete form opens, they click "Deactivate"
+  And in the SimfConfirm dialog they click "Cancel"
   Then no DELETE /account/api/admin/media/{id} request fires
   And the row stays in the grid unchanged
   And no toast appears
@@ -353,6 +363,120 @@ Scenario: Clicking a sortable column header cycles ascending → descending
 `hasImage` are NOT sortable. The default order (no Sort) is DisplayOrder
 ascending then CreatedAt descending.
 
+### E2E-MED-017 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/media with the default "dialog" presentation
+  And the grid toolbar shows the CrudPresentationToggle "Open as full page" control (maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.media" holds {"v":1,"presentation":"page"}
+  When they reload /admin/media
+  Then OnInitializedAsync re-reads CpPreferences.GetPresentationAsync("media")
+  And the toggle still reads "Open as dialog"
+  And opening "Add media item" now renders the full-page frame (not a popup)
+```
+
+### E2E-MED-018 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page" (GridHidden hides the grid while a form is open)
+  When the administrator clicks "Add media item"
+  Then the grid + SimfBanner are replaced by the CrudShell full-page frame (title "Add media item" + close header + the MediaAddEdit form)
+  And there is no modal backdrop
+  When they fill Type="Video" + Title (English)="Closing Reel" + Video URL="https://www.youtube.com/watch?v=zzz999" + Display order="2"
+  And they click "Save"
+  Then the page frame closes
+  And the grid re-appears with the new Video row and the success toast "Media item saved." / "تم حفظ عنصر الوسائط."
+  When they click the row's Edit (pencil) action and then the frame's Close button
+  Then the form closes and the grid re-appears unchanged (no PUT fired)
+```
+
+**Note:** for an **Image** create the shell does NOT close on the first Save —
+`MediaAddEdit` flips into Edit mode in place (full page) so the bitmap can be
+attached; the shell only closes via OnSuccess on the Video create or any
+Edit-mode save. Drive the Video branch above to see the page-frame round-trip.
+
+### E2E-MED-019 — Delete confirmation gate (CrudShell + SimfConfirm) (D-353)
+
+```gherkin
+Scenario: Deactivate requires explicit confirmation through SimfConfirm
+  Given the administrator is on /admin/media
+  When they click the "Delete" (trash) icon on a row
+  Then GET /account/api/admin/media/{id} returns 200
+  And the View/Delete form (MediaViewDelete) opens in the CrudShell showing the read-only
+      details (Type, both titles, both albums, Video URL or Has image, Display order, Active)
+      and a red "Deactivate" button
+  When they click "Deactivate"
+  Then a SimfConfirm dialog appears whose message names the item via RowName (English title,
+      else Arabic title, else the kind label) — "Deactivate this media item \"{name}\"?…"
+  When they click "Cancel" in the SimfConfirm
+  Then no DELETE request fires and the row is unchanged
+  When they re-open, click "Deactivate" and click the confirm "Deactivate" button
+  Then exactly one DELETE /account/api/admin/media/{id} fires and returns 200
+  And the form closes and a green toast reads "Media item deleted." / "تم حذف عنصر الوسائط."
+  And the row leaves the active list (soft-delete; IsActive=false)
+```
+
+**Note:** the delete no longer uses the native `confirm()` (D-353). On a server
+failure the SimfConfirm closes first so the bilingual error lands on the visible
+form body (`MediaViewDelete.ConfirmDeleteAsync`), not behind the overlay.
+
+### E2E-MED-020 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the filtered grid (and a selected subset) to an XLSX workbook
+  Given the administrator is on /admin/media with at least two media items
+  When they click the toolbar "Export" action with no rows selected
+  Then OnExportAsync calls CrudGridExcel.ExportAsync(empty Ids, current _query)
+  And a POST /account/api/admin/media/export fires carrying AdminGridExportRequest
+      { Ids: [], Query: the current GridQuery } (Query is sent only when no rows are selected)
+  And the browser saves an .xlsx workbook of the whole filtered grid
+  And the workbook's media sheet has a header row of the exported media columns
+  When they instead tick two rows then click "Export"
+  Then the POST carries those two Ids and an empty Query
+  And the workbook contains exactly those two rows
+  And the API caps the export at 5000 rows
+```
+
+**Note:** the export Resource slug passed to `CrudGridExcel` is `media`
+(`<CrudGridExcel @ref="_excel" Resource="media" … />`), so the BFF route is
+`/account/api/admin/media/export` → API `/admin/media/export`.
+
+### E2E-MED-021 — Excel import (D-356)
+
+```gherkin
+Scenario: Import media from a workbook and see the per-row outcome
+  Given the administrator is on /admin/media
+  When they click the toolbar "Import" action
+  Then OnImportAsync calls CrudGridExcel.TriggerImportAsync() which clicks the hidden
+      file <input id="media-import-input"> (accept=".xlsx")
+  When they choose an .xlsx whose media sheet has rows for two new items
+  Then a POST /account/api/admin/media/import fires as multipart form data
+  And the import-result modal shows "2 created, 0 updated, 0 skipped." plus a (here empty) per-row error list
+  And the page raises OnImported → the shared "Grid.Import.Done" success toast
+  And the grid reloads (LoadAsync) and lists both new items
+  When they import a workbook with one row that fails a row rule
+  Then the modal shows that row under the per-row error list and counts it as skipped
+  And the API caps the import at 5000 rows
+```
+
+### E2E-MED-022 — Excel import rejection (bad / wrong-sheet upload) (D-356)
+
+```gherkin
+Scenario: A bad upload is rejected without creating anything
+  Given the administrator is on /admin/media
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic check) or exceeds the 5 MB gate
+  Then the request returns HTTP 400
+  And CrudGridExcel raises OnError → the page shows a bilingual error toast (OnExcelError)
+  And no media item is created
+  When they import a workbook whose sheet is not the expected media sheet
+  Then the request returns HTTP 400 with the bilingual wrong-worksheet message
+  And nothing is created
+```
+
 ---
 
 ## Implementation notes
@@ -387,4 +511,4 @@ ascending then CreatedAt descending.
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle): added E2E-MED-017..022 (toggle persist, full-page round-trip, CrudShell+SimfConfirm delete gate, Excel export, Excel import, Excel import rejection) and corrected the stale native-`confirm()` delete copy in MED-001/004/013 to the shipped CrudShell + SimfConfirm flow.

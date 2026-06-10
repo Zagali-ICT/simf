@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **What this page does.** D-169 (gap doc G6, PDF §2.7.2) admin desk for
 > per-session moderator **grants**. It is *not* the moderator's own live
@@ -42,6 +42,7 @@
 | E2E-SMD-015 | RTL / Arabic render mirrors page + Assign modal | i18n | P1 | _to author_ |
 | E2E-SMD-016 | Per-column filter — typing in "Filter column Session" narrows the grid | function | P1 | _to author_ |
 | E2E-SMD-017 | Column sort — Session / Assigned headers toggle asc↔desc | function | P2 | _to author_ |
+| E2E-SMD-018 | Excel export — toolbar Export downloads an .xlsx of the grants (whole grid vs selected rows) (D-356) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -333,6 +334,42 @@ Scenario: The Assigned column is also sortable
       (Identity-DB names are resolved on read, not server-sortable — D-157)
 ```
 
+### E2E-SMD-018 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the grant grid to an XLSX workbook
+  Given the administrator is on /admin/session-moderators with at least two grant rows
+  And no rows are selected
+  When they click the grid toolbar "Export" action
+  Then the page calls simfAccount.downloadXlsx against
+       /account/api/admin/session-moderators/export
+  And the request body is an AdminGridExportRequest with an empty Ids list
+      and the current GridQuery (Query is sent only because no rows are selected)
+  And the API caps the export at 5000 rows
+  And the browser saves an .xlsx workbook whose header row carries the grant
+      columns Session | Moderator | AssignedBy | AssignedAt
+  And the body rows mirror the on-screen grants (session Code/Title, moderator
+      display name + email, assigning admin, and the UTC AssignedAt timestamp)
+
+Scenario: Export only the selected grant rows
+  Given the administrator is on /admin/session-moderators
+  And they tick the row checkboxes for two specific grant rows
+  When they click the toolbar "Export" action
+  Then simfAccount.downloadXlsx posts an AdminGridExportRequest whose Ids list
+       holds exactly those two rows' UserId values
+  And Query is null (selection overrides the filter)
+  And the saved workbook contains exactly those two grant rows
+```
+
+**Evidence captured:**
+- Screenshot of the toolbar Export action firing → `docs/screenshots/cp-admin-session-moderators-export.png`
+- Network: a single POST to `/account/api/admin/session-moderators/export` returns 200 with the `.xlsx` content type
+- Console errors: 0 expected
+- Note: this page is **export-only** — there is no Import action (the grid wires
+  `OnExport` but not `OnImport`), and unlike the converted CRUD pages it streams
+  the workbook via the `simfAccount.downloadXlsx` JS proxy rather than rendering
+  a `CrudGridExcel` component.
+
 ---
 
 ## Implementation notes
@@ -364,3 +401,4 @@ Scenario: The Assigned column is also sortable
 ---
 
 _Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle): added E2E-SMD-018 (Excel export); toggle/import/CrudShell-delete confirmed NOT present (export-only page).

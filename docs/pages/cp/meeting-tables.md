@@ -16,6 +16,15 @@ Configures a hall for its role and reserves its space. An operator picks a hall 
    / **row/column** — the flexible allocation layer that keeps the same hall from
    being double-used across sessions, booths and meetings.
 
+**Excel export (D-356).** The meeting-tables grid's toolbar carries an **Export**
+action that downloads the selected hall's tables as an `.xlsx`
+(`Code | Row | Column | Capacity`). With no rows selected it exports the hall's
+current filtered set (the request rides the selected `hallId` in the query
+filter); with rows ticked it exports just those, capped at 5000 rows. Export is
+the only Excel direction on this page — there is **no** import, and the page does
+**not** carry the D-353 Page↔Popup presentation toggle (the three forms stay
+modal, and delete/release use the native confirm prompt).
+
 ## Access
 
 | | |
@@ -45,3 +54,11 @@ Configures a hall for its role and reserves its space. An operator picks a hall 
 
 - Integration: `tests/SIMF.Api.Tests/BusinessMeetingsTests.cs`
 - E2E catalogue: [`e2e/cp-meeting-tables.md`](../../tests/e2e/cp-meeting-tables.md)
+
+## Changelog
+
+| Date | Decision | Change |
+|------|----------|--------|
+| 2026-06-10 | D-356 / D-353 | Tables grid gained an Excel **Export** action (export-only; no import). The D-353 Page↔Popup presentation toggle was **not** added to this page. |
+
+_Last reviewed:_ 2026-06-10 (D-356 Phase 5 — Excel export).

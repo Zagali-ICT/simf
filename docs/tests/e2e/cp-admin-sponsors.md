@@ -2,12 +2,12 @@
 
 | | |
 |--|--|
-| **Page** | [`cp/admin-sponsors.md`](../../pages/cp/admin-sponsors.md) _(reference doc not yet authored — grounded directly in `SponsorsList.razor`)_ |
+| **Page** | [`cp/admin-sponsors.md`](../../pages/cp/admin-sponsors.md) |
 | **Route** | `/admin/sponsors` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page permission:** the page is gated by `@attribute [RequirePermission(PermissionCatalog.Sponsors.View)]`.
 > The action buttons (Add / Edit / Delete) are **not** wrapped in `<AuthorizedAction>` on
@@ -23,8 +23,8 @@
 | E2E-SPN-001 | Full CRUD round-trip — Add → Edit → Delete (deactivate) | happy | P0 | _to author_ |
 | E2E-SPN-002 | Add a sponsor (create-only, all fields incl. logo/url/order) | happy | P1 | _to author_ |
 | E2E-SPN-003 | Edit a sponsor (change tier + toggle Active off) | happy | P1 | _to author_ |
-| E2E-SPN-004 | Delete (soft-deactivate) with the native confirm dialog | happy | P1 | _to author_ |
-| E2E-SPN-005 | Cancel delete from the confirm dialog (no-op) | happy | P2 | _to author_ |
+| E2E-SPN-004 | Delete (soft-deactivate) confirmed via the SimfConfirm gate (D-353; superseded by E2E-SPN-020) | happy | P1 | _to author_ |
+| E2E-SPN-005 | Cancel delete from the SimfConfirm gate (no-op) (D-353; superseded by E2E-SPN-020) | happy | P2 | _to author_ |
 | E2E-SPN-006 | Tier dropdown carries all four tiers + grid ordering | happy | P2 | _to author_ |
 | E2E-SPN-007 | Empty list renders `SimfEmptyState` | happy | P1 | _to author_ |
 | E2E-SPN-008 | Auth gate (page) — admin lacking `Sponsors.View` → `/not-permitted` | auth | P0 | _to author_ |
@@ -37,6 +37,12 @@
 | E2E-SPN-015 | RTL/Arabic render — page + modal mirror | i18n | P1 | _to author_ |
 | E2E-SPN-016 | Per-column filter narrows the grid (Name (English) / Name (Arabic)) | happy | P1 | _to author_ |
 | E2E-SPN-017 | Column sort toggles (Tier asc → desc) | happy | P2 | _to author_ |
+| E2E-SPN-018 | Presentation toggle persists across reload (Page ↔ Popup) (D-353) | happy | P1 | _to author_ |
+| E2E-SPN-019 | Full-page mode round-trip — Add/Edit/View take over the content area (D-353) | happy | P1 | _to author_ |
+| E2E-SPN-020 | Delete confirmation gate — ViewDelete + SimfConfirm (not native confirm) (D-353) | error | P0 | _to author_ |
+| E2E-SPN-021 | Excel export — toolbar Export → POST /export (whole grid vs selected rows) (D-356) | happy | P1 | _to author_ |
+| E2E-SPN-022 | Excel import — Import → workbook → result modal "N created…" + per-row error (D-356) | happy | P1 | _to author_ |
+| E2E-SPN-023 | Excel import rejection — non-.xlsx / wrong-sheet → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -88,10 +94,11 @@ Scenario: Create, edit, then delete one sponsor
   And the row's Display order column now reads "20"
 
   When the administrator clicks the row's Delete (trash) action
-  Then a native browser confirm dialog appears reading
-       "Delete this sponsor? It will be removed from the public list immediately."
-       / "هل تريد حذف هذا الراعي؟ سيُزال من القائمة العامة فورًا."
-  When they accept the confirm dialog
+  Then the SponsorsViewDelete form opens (CrudShell popup or full page per the toggle) with a
+       red "Delete" button (D-353: the inline native window.confirm was removed)
+  When they click the red "Delete" button
+  Then a SimfConfirm dialog appears naming the sponsor (Admin.Sponsors.Delete.Message)
+  When they click the confirm "Delete"
   Then the BFF fires DELETE /account/api/admin/sponsors/{id} and the API returns HTTP 200
   And a green toast reads "Sponsor deleted." / "تم حذف الراعي."
   And the grid reloads
@@ -151,11 +158,11 @@ Scenario: Re-tier and deactivate via the Edit modal
 ### E2E-SPN-004 — Delete (soft-deactivate) confirmed
 
 ```gherkin
-Scenario: Delete a sponsor and accept the confirm dialog
+Scenario: Delete a sponsor and confirm via SimfConfirm
   Given a sponsor "Saab" exists and is Active
   When the administrator clicks the "Saab" row's Delete (trash) action
-  Then a native confirm dialog appears with the bilingual delete-confirm copy
-  When they accept the dialog
+  Then the SponsorsViewDelete form opens with a red "Delete" button (D-353)
+  When they click "Delete" and then confirm in the SimfConfirm dialog
   Then DELETE /account/api/admin/sponsors/{id} returns HTTP 200
   And a green toast reads "Sponsor deleted." / "تم حذف الراعي."
   And the grid reloads with the row's Active column now "—"
@@ -165,10 +172,11 @@ Scenario: Delete a sponsor and accept the confirm dialog
 ### E2E-SPN-005 — Cancel delete (no-op)
 
 ```gherkin
-Scenario: Dismiss the delete confirm dialog
+Scenario: Dismiss the SimfConfirm delete gate
   Given a sponsor "Saab" exists and is Active
   When the administrator clicks the "Saab" row's Delete (trash) action
-  And they dismiss (cancel) the native confirm dialog
+  And the SponsorsViewDelete form opens and they click "Delete"
+  And they dismiss (Cancel) the SimfConfirm dialog (D-353; no native window.confirm)
   Then no DELETE request fires
   And no toast appears
   And the "Saab" row is unchanged (still Active="✓")
@@ -363,6 +371,142 @@ Scenario: Clicking a sortable column header toggles ascending/descending
       Display order and Active (Logo path and Link are not Sortable)
 ```
 
+### E2E-SPN-018 — Presentation toggle persists across reload (D-353)
+
+```gherkin
+Scenario: Switch between Popup and full Page and the choice persists
+  Given the administrator is on /admin/sponsors with the default "dialog" (popup) presentation
+  And the grid toolbar shows the CrudPresentationToggle (PageKey="sponsors")
+  When they click the toggle to choose "Open as full page"
+  Then localStorage key "simf.cp.prefs.sponsors" holds {"v":1,"presentation":"page"}
+  When they reload /admin/sponsors
+  Then OnInitializedAsync calls Prefs.GetPresentationAsync("sponsors") and reads back "page"
+  And opening "Add" now renders the full-page CrudShell frame (not a popup with a backdrop)
+  When they switch the toggle back to "Open as dialog"
+  Then localStorage key "simf.cp.prefs.sponsors" holds {"v":1,"presentation":"dialog"}
+  And after a reload opening "Add" renders the popup dialog again
+```
+
+### E2E-SPN-019 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: In full-page mode the Add/Edit/View forms take over the content area
+  Given the presentation for /admin/sponsors is set to "page"
+  When the administrator clicks the grid toolbar "Add" action
+  Then the grid + SimfBanner are hidden (GridHidden = FormOpen && presentation == Page)
+  And the CrudShell renders full-page with the title "Add sponsor" and a Close ("Close") header
+  And there is no modal backdrop
+  When they fill Name (English) = "Naval Group", Name (Arabic) = "نافال جروب",
+      select Tier = "Platinum", and click "Add sponsor"
+  Then POST /account/api/admin/sponsors returns HTTP 200
+  And the CrudShell closes and the grid + banner re-appear with the new row
+  And a green toast reads "Sponsor saved." / "تم حفظ الراعي."
+  When they click the row's Details action
+  Then the SponsorsViewDelete form opens full-page in read-only mode (no Delete button)
+      showing Name (English/Arabic), Tier, Logo path, Link, Display order and Active
+  When they click the CrudShell close (X) / "Close"
+  Then the form closes and the grid re-appears unchanged
+```
+
+### E2E-SPN-020 — Delete confirmation gate (CrudShell + SimfConfirm) (D-353)
+
+```gherkin
+Scenario: Delete is gated by SimfConfirm inside the ViewDelete form, not window.confirm
+  Given a sponsor "Naval Group" exists and is Active
+  And the administrator is on /admin/sponsors
+  When they click the "Naval Group" row's Delete (trash) action
+  Then the page first GETs /account/api/admin/sponsors/{id} to load the full detail
+  And the SponsorsViewDelete form opens (in a CrudShell popup or full page per the toggle)
+      showing the read-only details and a red "Delete" button
+  When they click the red "Delete" button
+  Then a SimfConfirm dialog appears (Danger=true) with the message
+       Admin.Sponsors.Delete.Message formatted with the sponsor's English name
+       (NOT a native browser window.confirm)
+  When they click the confirm "Cancel"
+  Then no DELETE request fires and the row is unchanged (still Active = "✓")
+  When they re-open Delete and click the confirm "Delete"
+  Then exactly one DELETE /account/api/admin/sponsors/{id} fires and returns HTTP 200
+  And the CrudShell closes
+  And a green toast reads "Sponsor deleted." / "تم حذف الراعي."
+  And the grid reloads (the soft-deactivated row shows Active = "—" until an isActive
+      filter excludes inactive rows)
+```
+
+**Evidence captured:**
+- The delete now flows through `SponsorsViewDelete.razor` → `SimfConfirm` → `simfAccount.deleteJson`;
+  there is **no** `window.confirm` / `handle_dialog` step any more (the inline list `confirm()` was
+  removed in D-353).
+- Network: exactly one `DELETE /account/api/admin/sponsors/{id}` on confirm, zero on Cancel.
+
+### E2E-SPN-021 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the filtered grid (or just selected rows) to an XLSX workbook
+  Given the administrator is on /admin/sponsors with at least two sponsors
+  When they click the toolbar "Export" action with no rows selected
+  Then OnExportAsync calls _excel.ExportAsync(empty Ids, current Query)
+  And a POST /account/api/admin/sponsors/export fires carrying
+      AdminGridExportRequest { Ids: [], Query: <current GridQuery> }
+  And the API caps the set at 5000 rows and returns an XLSX
+      (Content-Type application/vnd.openxmlformats-officedocument.spreadsheetml.sheet)
+  And the browser saves a file named simf-sponsors-{yyyyMMddHHmmss}.xlsx
+  And the workbook's "Sponsors" sheet header row reads
+      NameEn | NameAr | Tier | LogoRelativePath | Url | DisplayOrder | IsActive
+  And the Tier column is written by display name (Platinum/Gold/Silver/Bronze) so it
+      round-trips back through import
+  When they instead select two rows then click "Export"
+  Then the export request carries those two Ids in AdminGridExportRequest.Ids
+  And the workbook contains exactly those two rows
+```
+
+### E2E-SPN-022 — Excel import (D-356)
+
+```gherkin
+Scenario: Import sponsors from a workbook and see the per-row outcome
+  Given the administrator is on /admin/sponsors
+  When they click the toolbar "Import" action
+  Then OnImportAsync calls _excel.TriggerImportAsync(), opening the file picker
+      on the hidden <input id="sponsors-import-input" accept=".xlsx">
+  When they choose an .xlsx whose "Sponsors" sheet has the required headers
+      NameEn, NameAr, Tier and rows for two new sponsors
+      (e.g. "Thales"/"تاليس"/"Gold" and "Leonardo"/"ليوناردو"/"Silver")
+  Then a POST /account/api/admin/sponsors/import fires as multipart form data
+      (field "file")
+  And the import-result modal shows "2 created, 0 updated, 0 skipped." with an empty error list
+  And a green toast reads the shared Grid.Import.Done key ("Import complete.")
+  And OnImportedAsync reloads the grid (LoadAsync) so both new sponsors appear
+  When they import a workbook with one row whose Tier cell is "Diamond" (unknown)
+  Then ParseTier raises a per-row DataValidationException and that row is reported in the
+      modal's error list ("The tier must be one of Platinum, Gold, Silver or Bronze."
+      / "يجب أن تكون الفئة إحدى: بلاتيني أو ذهبي أو فضي أو برونزي.") while the valid rows
+      still create (one bad row never aborts the batch)
+  And a row missing NameEn or NameAr is reported with
+      "Both the English and Arabic names are required." /
+      "الاسم بالإنجليزية والعربية مطلوبان."
+  And note: import is insert-only — ContactId (the optional shared-Contact link) is never set
+      by import; an admin links a contact afterwards via Edit
+```
+
+### E2E-SPN-023 — Excel import rejection (D-356)
+
+```gherkin
+Scenario: A bad / wrong-sheet upload is rejected and nothing is created
+  Given the administrator is on /admin/sponsors
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic check 50 4B 03 04)
+  Then POST /account/api/admin/sponsors/import returns HTTP 400 (DataValidationException)
+  And OnExcelError surfaces a red toast reading
+       "The file is not a valid Excel workbook." / "الملف ليس مصنف Excel صالحًا."
+  And no sponsor is created
+  When they import an .xlsx larger than 5 MB
+  Then the request is rejected (HTTP 413, AdminImportEmpty) with
+       "The Excel file is too large. The maximum is 5 MB." /
+       "ملف Excel كبير جدًا. الحد الأقصى 5 ميغابايت."
+  When they import a workbook whose worksheet is not named "Sponsors" (or is missing one of
+       the required headers NameEn / NameAr / Tier)
+  Then the parse fails and the request returns 400 with the bilingual worksheet/header message
+  And no sponsor is created
+```
+
 ---
 
 ## Implementation notes
@@ -390,17 +534,37 @@ Scenario: Clicking a sortable column header toggles ascending/descending
   - `POST /admin/sponsors` — policy `Sponsors.Create`, rate-limited "auth"
   - `PUT /admin/sponsors/{id}` — policy `Sponsors.Edit`, rate-limited "auth"
   - `DELETE /admin/sponsors/{id}` — policy `Sponsors.Delete` (soft-deactivate), rate-limited "auth"
+  - `POST /admin/sponsors/export` — policy `Sponsors.Export`, rate-limited "auth"; columns
+    NameEn, NameAr, Tier (display name), LogoRelativePath, Url, DisplayOrder, IsActive; sheet
+    "Sponsors"; file `simf-sponsors-{ts}.xlsx`; 5000-row cap
+    (`src/Backend/SIMF.Api/Endpoints/Admin/SponsorsExcelEndpoints.cs` →
+    `ExportSponsorsEndpoint` over `AdminGridExportEndpoint<AdminSponsorSummary>`)
+  - `POST /admin/sponsors/import` — policy `Sponsors.Import`, rate-limited "auth"; multipart
+    "file"; required headers NameEn/NameAr/Tier; insert-only; ContactId omitted; 5 MB +
+    ZIP-magic upload gate (400/`AdminImportEmpty`), 5000-row cap; unknown tier / blank name =
+    per-row error (`ImportSponsorsEndpoint` over `AdminGridImportEndpoint`)
   - Error codes: `SponsorInvalid` (400), `SponsorDuplicate` (409), `SponsorNotFound` (404)
   - Tier values: 10=Platinum, 20=Gold, 30=Silver, 40=Bronze
   - Field limits: NameEn/NameAr 1–256, LogoRelativePath ≤256, Url ≤512, DisplayOrder ≥0
   - Audit events: `Sponsor.Created`, `Sponsor.Updated`, `Sponsor.Deactivated`
-- **CP page note.** The page uses the native `window.confirm` for delete (not a
-  `SimfModal`), so the delete scenarios must handle a browser dialog
-  (`handle_dialog` in Chrome DevTools MCP). The "Details" read-only modal that the
-  Interests page has does NOT exist here — Sponsors has only Add/Edit + Delete.
-  Action buttons are not individually `<AuthorizedAction>`-gated; per-action
-  enforcement is API-side only (see E2E-SPN-009).
+- **CP page note (updated D-353/D-356).** The page is now fully on the uniform CRUD
+  shell: Add/Edit (`SponsorsAddEdit`), View/Delete (`SponsorsViewDelete`) and the
+  read-only Details view are all hosted by `CrudShell`, framed as a popup or a full
+  page per the toolbar `CrudPresentationToggle` (PageKey `"sponsors"`, persisted in
+  localStorage `simf.cp.prefs.sponsors`). Delete is gated by an in-form `SimfConfirm`
+  (no native `window.confirm`, so no `handle_dialog` step) — see E2E-SPN-020. A
+  read-only **Details** view now exists (E2E-SPN-019) via the same ViewDelete form
+  with `IsDelete=false`. D-356 added Excel **export + import** through `CrudGridExcel`
+  (`Resource="sponsors"`): export `POST /admin/sponsors/export`, import
+  `POST /admin/sponsors/import` (insert-only, 5 MB + ZIP-magic gate, 5000-row cap) —
+  see E2E-SPN-021..023. Action buttons are not individually `<AuthorizedAction>`-gated;
+  per-action enforcement is API-side only (see E2E-SPN-009), and Export/Import are
+  gated by the `Sponsors.Export` / `Sponsors.Import` policies on the API.
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle). Added E2E-SPN-018..023
+(D-353 toggle + full-page round-trip + SimfConfirm delete gate; D-356 Excel export/import +
+import rejection) and corrected the stale native-`window.confirm` delete copy in
+E2E-SPN-001/004/005 + the CP page note to the shipped CrudShell + SimfConfirm flow.
+Prior: 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

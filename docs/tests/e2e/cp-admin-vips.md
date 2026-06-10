@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **What this page is.** The VIP desk is a **read-only `SimfDataGrid`** (D-256
 > conversion) — it is NOT a CRUD grid. The rows are the subset of `UserProfiles`
@@ -43,6 +43,7 @@
 | E2E-VIP-010 | Non-VIP id in selection → silently skipped, reported in `SkippedProfileIds` | error | P1 | _to author_ |
 | E2E-VIP-011 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-VIP-012 | RTL render: Arabic toggle mirrors page + notify modal | i18n | P1 | _to author_ |
+| E2E-VIP-013 | Excel export (D-356): toolbar Export downloads an .xlsx of the selected rows / whole filtered grid | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -243,6 +244,37 @@ Scenario: Arabic toggle mirrors the page + notify modal
   And the footer buttons are "إرسال" (Send) and "إلغاء" (Cancel)
 ```
 
+### E2E-VIP-013 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the VIP list to an XLSX workbook (selected rows or the whole filtered grid)
+  Given the administrator is on /admin/vips with at least two VIP rows present
+  And they hold the Vips.Export permission
+  And the grid toolbar shows the "Export" action (no Import — the VIP list is export-only)
+  When they click "Export" with no rows selected
+  Then the BFF forwards POST /account/api/admin/vips/export
+  And the request body is AdminGridExportRequest with an empty Ids list and the current Query (the whole filtered grid)
+  And the API returns HTTP 200 with an .xlsx body and a download named "simf-vips-{timestamp}.xlsx"
+  And the workbook's "VIPs" sheet header row reads
+    """
+    EnglishName | ArabicName | JobTitle | ProfileType | ProfileTypeArabic | Email
+    """
+  And the sheet contains one data row per VIP in the filtered set
+
+  When they instead tick the rows "HRH Faisal Al Saud" and "Adm. Turki Al Maliki" then click "Export"
+  Then the request body carries Ids = [those two UserProfileIds] and Query = null
+  And the downloaded workbook contains exactly those two rows
+  # The export endpoint (AdminGridExportEndpoint<AdminVipSummary>, gated by Vips.Export)
+  # caps the export at 5000 rows; an admin who lacks Vips.Export gets HTTP 403 with the
+  # bilingual MessageForCurrentCulture() and no file is produced.
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-vips-export.png` (toolbar Export clicked, two rows ticked)
+- Network: `POST /account/api/admin/vips/export` returns 200 with `Content-Type` `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+- File: saved workbook opened, "VIPs" sheet header row matches the six columns above
+- Console errors: 0 expected
+
 ---
 
 ## Implementation notes
@@ -269,4 +301,4 @@ Scenario: Arabic toggle mirrors the page + notify modal
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added E2E-VIP-013 export; D-256/D-257 grid affordances reconciled).

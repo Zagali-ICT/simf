@@ -8,7 +8,7 @@
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
 | **Required permission** | `Countries.View` (page gate). Create/Edit/Deactivate actions hit endpoints gated by `Countries.Create` / `Countries.Edit` / `Countries.Delete`. |
-| **Last reviewed** | 2026-06-09 (D-353 — dialog/full-page framing + delete confirmation) |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 ## Coverage matrix
 
@@ -34,6 +34,9 @@
 | E2E-CTY-015 | Not found: edit/details of a missing id → 404 `COUNTRY_NOT_FOUND` | error | P2 | _to author_ |
 | E2E-CTY-016 | Server 500 on `/list` → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-CTY-017 | RTL render: Arabic toggle mirrors page + Add modal | i18n | P1 | _to author_ |
+| E2E-CTY-018 | Excel export: toolbar Export downloads an .xlsx of the filtered grid (D-356) | happy | P1 | _to author_ |
+| E2E-CTY-019 | Excel import: upload a workbook → rows created/updated + result modal (D-356) | happy | P1 | _to author_ |
+| E2E-CTY-020 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing changed (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -324,6 +327,70 @@ Scenario: Arabic toggle mirrors page + Add modal
   And the form actions ("إنشاء البلد" / "إلغاء") appear in reverse order
 ```
 
+### E2E-CTY-018 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the country lookup to an XLSX workbook
+  Given the administrator is on /admin/countries with at least two countries
+  And the grid toolbar shows the "Export" action (CrudGridExcel Resource="countries")
+  When they click "Export" with no rows selected
+  Then a POST /account/api/admin/countries/export fires with an empty Ids list
+    and the current Query (the AdminGridExportRequest carries Query when no
+    rows are selected)
+  And the API caps the export at 5000 rows
+  And the browser saves a file named simf-countries-{timestamp}.xlsx
+  And the workbook's "Countries" sheet has a header row with the country
+    columns (ISO id, Code, Name (English), Name (Arabic), Dial code,
+    Display order, Active)
+  When they instead select two rows then click "Export"
+  Then the POST still sends an empty Ids list (Country ids are int, not the
+    Guid the generic export contract carries), so the export always covers the
+    current filtered grid rather than the per-row selection
+```
+
+**Evidence captured:**
+- The export POST body `AdminGridExportRequest { Ids: [], Query: {…} }` (Ids always empty for this page — see `OnExportAsync` in `CountriesList.razor`)
+- Network: POST `/account/api/admin/countries/export` returns 200 with the `.xlsx` content type
+- The saved workbook opens with the header row + one data row per country
+
+### E2E-CTY-019 — Excel import (D-356)
+
+```gherkin
+Scenario: Import countries from a workbook and see the per-row outcome
+  Given the administrator is on /admin/countries
+  When they click the toolbar "Import" action
+  Then the hidden file input #countries-import-input (accept=".xlsx") opens
+  When they choose an .xlsx whose "Countries" sheet has rows for two new
+    countries (e.g. id=116/KH/Cambodia and id=104/MM/Myanmar)
+  Then a POST /account/api/admin/countries/import fires as multipart form data
+  And the import-result modal shows "2 created, 0 updated, 0 skipped."
+  And a green toast reads the shared Grid.Import.Done message
+  And the grid reloads and lists both new countries
+  When they import a workbook that updates one existing row and adds one new row
+  Then the modal shows "1 created, 1 updated, 0 skipped."
+  When they import a workbook containing one row whose code duplicates an
+    existing different country
+  Then that row is skipped and the modal lists a per-row error naming the
+    offending row (e.g. COUNTRY_CODE_DUPLICATE)
+  And the API caps the import at 5000 rows
+```
+
+### E2E-CTY-020 — Excel import rejection (D-356)
+
+```gherkin
+Scenario: A bad or wrong-sheet upload is rejected without changing anything
+  Given the administrator is on /admin/countries
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic check)
+    or exceeds the 5 MB upload gate
+  Then the request returns HTTP 400
+  And the page shows a bilingual error toast via CrudGridExcel's OnError
+  And no country is created or updated
+  When they import a workbook whose sheet is not named "Countries"
+  Then the request returns HTTP 400 with the bilingual "worksheet named
+    'Countries'" message
+  And the grid is unchanged
+```
+
 ---
 
 ## Implementation notes
@@ -353,4 +420,4 @@ Scenario: Arabic toggle mirrors page + Add modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle).

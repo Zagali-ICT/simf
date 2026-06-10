@@ -61,6 +61,19 @@ new administrator or removing access for a departing one.
 
 ### 4.2 Toolbar
 
+> **D-353 / D-356 (2026-06-10).** The `CustomToolbar` now hosts a
+> `CrudPresentationToggle` (PageKey `"admins"`) that switches Add / Edit-roles /
+> Details between a **popup dialog** and a **full page**; the choice is persisted
+> in `localStorage` (`simf.cp.prefs.admins`) via `CpPreferences` and rehydrated in
+> `OnInitializedAsync`. Add / Edit-roles / Details are framed by `CrudShell`
+> (hosting `UsersAddEdit` / `UsersViewDelete`); the inline SimfModal versions are
+> gone. **Excel is N/A as a generic `CrudGridExcel` here** — this account page
+> keeps its own bespoke Excel wiring (`OnExportAsync` → `simfAccount.downloadXlsx`,
+> `OnImportAsync` → the `#users-import-input` picker, both against
+> `/account/api/admin/admins/{export,import}`), preserved unchanged through the
+> D-356 program. Delete stays the reason-gated bulk-delete modal (10–500 chars),
+> **not** a `SimfConfirm` gate.
+
 | Button | Wired callback | Endpoint | Notes |
 |--------|----------------|----------|-------|
 | Select all | built-in | — | tick every visible row |
@@ -179,7 +192,8 @@ _(catalogue to be authored under `docs/tests/e2e/cp-admin-admins.md`)_
 | 2026-?? | D-044 / D-045 H1 | Selection state hardening (selection clears on page/size change). |
 | 2026-05-26 | D-117 | Promoted to canonical CRUD pattern (banner + modals + full toolbar). |
 | 2026-05-28 | D-132 | Title resx flipped EN "Users → Admins" + AR "المستخدمون → المسؤولون". |
+| 2026-06-10 | D-353 / D-356 | Add/Edit-roles/Details moved to `CrudShell` + `CrudPresentationToggle` (Page↔Popup, persisted in `simf.cp.prefs.admins`); inline modals removed. Excel export/import kept as the page's bespoke wiring (no generic `CrudGridExcel`). New E2E scenarios E2E-USR-022..024. |
 
 ---
 
-_Last reviewed:_ 2026-05-28 by Claude (D-133 slice 2).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle).

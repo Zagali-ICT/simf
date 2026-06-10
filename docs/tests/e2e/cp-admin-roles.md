@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper. The page is gated by `PermissionCatalog.Roles.View`; the per-row "Permissions" link is gated by `PermissionCatalog.Roles.AssignPermissions`. |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page gate (verified in source).** `RolesList.razor` carries
 > `@attribute [RequirePermission(PermissionCatalog.Roles.View)]` — the
@@ -41,6 +41,12 @@
 | E2E-ROL-016 | Delete an in-use role blocked → 409 `RoleInUse` (holder count in toast) | error | P1 | _to author_ |
 | E2E-ROL-017 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-ROL-018 | RTL render — Arabic toggle mirrors page + Add modal | i18n | P1 | _to author_ |
+| E2E-ROL-019 | Presentation toggle persists across reload (`simf.cp.prefs.roles`) (D-353) | happy | P1 | _to author_ |
+| E2E-ROL-020 | Full-page mode round-trip — Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-ROL-021 | Delete confirmation gate — ViewDelete + SimfConfirm; Cancel = no DELETE, confirm = exactly one DELETE (D-353) | error | P0 | _to author_ |
+| E2E-ROL-022 | Excel export — toolbar Export downloads an .xlsx of the filtered grid (whole vs selected) (D-356) | happy | P1 | _to author_ |
+| E2E-ROL-023 | Excel import — upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
+| E2E-ROL-024 | Excel import rejection — non-.xlsx / wrong-sheet upload → bilingual 400, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -94,9 +100,13 @@ Scenario: Create, view, rename, then delete one custom role
   And a green toast reads 'Role "Public Relations Office" was updated.'
   And the row's Name column now reads "Public Relations Office"
 
-  # --- Delete ---
+  # --- Delete (D-353: CrudShell ViewDelete + SimfConfirm gate) ---
   When the administrator clicks the "Delete" icon on the "Public Relations Office" row
-  Then DELETE /account/api/admin/roles/{id} fires and returns HTTP 200
+  Then the RolesViewDelete form opens (dialog by default) showing the read-only role details and a red "Delete" button
+  When they click "Delete"
+  Then a SimfConfirm dialog asks to confirm, naming the role "Public Relations Office"
+  When they click the confirm "Delete" button
+  Then exactly one DELETE /account/api/admin/roles/{id} fires and returns HTTP 200
   And a green toast reads 'Role "Public Relations Office" was deleted.'
   And the grid reloads and the row no longer appears
   And the grid shows {N} rows again
@@ -175,6 +185,8 @@ Scenario: Details modal renders the four-field description list
 Scenario: Delete a custom role that no user holds
   Given a custom role "Temp Reviewers" exists with Users=0
   When the administrator clicks its "Delete" icon
+  Then the RolesViewDelete form opens and they click "Delete"
+  And a SimfConfirm dialog naming "Temp Reviewers" appears; they click the confirm "Delete" button
   Then DELETE /account/api/admin/roles/{id} returns ApiResult.Success = true
   And a green toast reads 'Role "Temp Reviewers" was deleted.'
   And the grid reloads and the "Temp Reviewers" row is gone
@@ -316,8 +328,9 @@ Scenario: Renaming a custom role onto an existing name returns 409
 Scenario: Deleting a built-in role is refused
   Given the grid contains the baseline "Administrator" role (Type pill "Built-in")
   When the administrator clicks its "Delete" icon
+  Then the RolesViewDelete form opens; they click "Delete" and confirm in the SimfConfirm dialog
   Then DELETE /account/api/admin/roles/{id} returns HTTP 409 with Code = "RoleIsBaseline"
-  And a red toast surfaces the bilingual server message:
+  And the SimfConfirm closes and a red SimfAlert on the form body surfaces the bilingual server message:
       "Baseline roles cannot be deleted." / "لا يمكن حذف الأدوار الأساسية."
   And the "Administrator" row remains in the grid
 ```
@@ -328,8 +341,9 @@ Scenario: Deleting a built-in role is refused
 Scenario: Deleting a role that users still hold is refused with the holder count
   Given a custom role "Reviewers" exists and 2 admin users currently hold it
   When the administrator clicks its "Delete" icon
+  Then the RolesViewDelete form opens; they click "Delete" and confirm in the SimfConfirm dialog
   Then DELETE /account/api/admin/roles/{id} returns HTTP 409 with Code = "RoleInUse"
-  And a red toast surfaces the bilingual server message with the count interpolated:
+  And the SimfConfirm closes and a red SimfAlert on the form body surfaces the bilingual server message with the count interpolated:
       "The role cannot be deleted while 2 user(s) hold it." / "لا يمكن حذف الدور طالما يحمله 2 مستخدم(مستخدمين)."
   And the "Reviewers" row remains in the grid
 ```
@@ -364,6 +378,112 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   And the form action buttons appear in reverse order
 ```
 
+### E2E-ROL-019 — Presentation toggle persists across reload (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/roles with the default "dialog" presentation
+  And the grid toolbar shows the CrudPresentationToggle ("Open as full page", maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.roles" holds {"v":1,"presentation":"page"}
+  When they reload /admin/roles
+  Then OnInitializedAsync reads Prefs.GetPresentationAsync("roles") and the toggle still reads "Open as dialog"
+  And opening "Add role" now renders the full-page CrudShell frame (not a popup)
+```
+
+**Evidence captured:**
+- localStorage value `simf.cp.prefs.roles` = `{"v":1,"presentation":"page"}` after toggling, persisted across the reload
+- Console errors: 0 expected
+
+### E2E-ROL-020 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page" (localStorage "simf.cp.prefs.roles" = {"v":1,"presentation":"page"})
+  When the administrator clicks "Add role"
+  Then the grid + SimfBanner are hidden (GridHidden) and the CrudShell renders the RolesAddEdit form full-page
+  And there is no modal backdrop
+  When they fill Role name="Press Office" and click "Create role"
+  Then the CrudShell closes
+  And POST /account/api/admin/roles fires and returns HTTP 200
+  And the grid re-appears with the new "Press Office" row and the green 'Role "Press Office" was created.' toast
+  When they click the "Edit" icon on a custom role and then the CrudShell close (X / "Close")
+  Then the form closes and the grid re-appears unchanged (no PUT fires)
+  When they click the "Details" icon on a custom role
+  Then the RolesViewDelete form opens full-page in read-only mode (the four-field description list, no Delete button)
+```
+
+### E2E-ROL-021 — Delete confirmation gate (CrudShell + SimfConfirm) (D-353)
+
+```gherkin
+Scenario: Delete requires explicit confirmation in the SimfConfirm dialog
+  Given the administrator is on /admin/roles
+  And a custom unused role "Temp Reviewers" exists (Users=0)
+  When they click the "Delete" icon on that row
+  Then the RolesViewDelete form opens (dialog by default) showing the read-only role details and a red "Delete" button
+  And NO DELETE request has fired yet
+  When they click "Delete"
+  Then a SimfConfirm dialog appears with the message 'Delete the role "Temp Reviewers"? This cannot be undone.' (Admin.Roles.Delete.Message)
+  When they click "Cancel"
+  Then no DELETE /account/api/admin/roles/{id} request fires and the role is unchanged
+  When they re-open the Delete form, click "Delete", then click the confirm "Delete" button
+  Then exactly one DELETE /account/api/admin/roles/{id} fires and returns HTTP 200
+  And a green toast reads 'Role "Temp Reviewers" was deleted.'
+  And the grid reloads and the "Temp Reviewers" row is gone
+```
+
+**Evidence captured:**
+- Network: zero DELETE on Cancel; exactly one DELETE on confirm
+- The hard delete is no longer one-click from the row — it is gated by RolesViewDelete + SimfConfirm (D-353), correcting the older one-click description in E2E-ROL-001/006
+
+### E2E-ROL-022 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the roles grid to an XLSX workbook
+  Given the administrator is on /admin/roles with at least two roles
+  When they click the toolbar "Export" action with no rows selected
+  Then OnExportAsync calls CrudGridExcel.ExportAsync with an empty Ids list
+  And a POST /account/api/admin/roles/export fires with body AdminGridExportRequest { Ids: [], Query: <current GridQuery> }
+  And the browser saves an .xlsx workbook of the whole filtered grid
+  And the workbook header row carries the role columns Name | Type (Built-in/Custom) | Users | Permissions
+  When they instead select two rows then click "Export"
+  Then the request body carries those two ids and Query = null (selection wins over the filter)
+  And the workbook contains exactly those two roles
+  And the API caps the export at 5000 rows
+```
+
+### E2E-ROL-023 — Excel import (D-356)
+
+```gherkin
+Scenario: Import roles from a workbook and see the per-row outcome
+  Given the administrator is on /admin/roles
+  When they click the toolbar "Import" action
+  Then CrudGridExcel.TriggerImportAsync opens the OS file picker on the hidden input "roles-import-input" (accept=".xlsx")
+  When they choose an .xlsx whose sheet has Name rows for two new roles
+  Then a POST /account/api/admin/roles/import fires as multipart form data
+  And the import-result SimfModal shows "2 created, 0 updated, 0 skipped." (Grid.Import.ResultBody)
+  And a green toast reads the shared Grid.Import.Done message
+  And the grid reloads and lists both new roles
+  When they import a workbook containing one duplicate role name and one new name
+  Then the result modal shows 1 created and one per-row error naming the duplicate (Grid.Import.RowError)
+  And the API caps the import at 5000 rows
+```
+
+### E2E-ROL-024 — Excel import rejection (bad / wrong-sheet upload) (D-356)
+
+```gherkin
+Scenario: A bad upload is rejected without creating anything
+  Given the administrator is on /admin/roles
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic check, or exceeds the 5MB gate)
+  Then POST /account/api/admin/roles/import returns HTTP 400
+  And CrudGridExcel.OnError surfaces a bilingual error toast on the page
+  And no role is created
+  When they import a workbook whose worksheet is not the expected roles sheet
+  Then the request returns HTTP 400 with the bilingual "wrong worksheet" message
+  And no role is created
+```
+
 ---
 
 ## Implementation notes
@@ -395,4 +515,4 @@ Scenario: Arabic toggle mirrors the page and the Add modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added E2E-ROL-019..024 and corrected the now-stale one-click delete steps to the D-353 CrudShell + SimfConfirm gate).

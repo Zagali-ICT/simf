@@ -2,12 +2,12 @@
 
 | | |
 |--|--|
-| **Page** | [`cp/admin-sessions.md`](../../pages/cp/admin-sessions.md) _(reference doc not yet authored — page source is `SessionsList.razor` + `SessionForm.razor`)_ |
+| **Page** | [`cp/admin-sessions.md`](../../pages/cp/admin-sessions.md) — source `SessionsList.razor` + `SessionsAddEdit.razor` + `SessionsViewDelete.razor` (D-353 CrudShell) |
 | **Route** | `/admin/sessions` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-08 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Permissions.** The page is gated `@attribute [RequirePermission(PermissionCatalog.Sessions.View)]`
 > (`"Sessions.View"`). CRUD actions sit behind distinct codes:
@@ -55,6 +55,12 @@
 | E2E-SES-016 | Server 500 on `/list` → bilingual fallback toast | resilience | P2 | _to author_ |
 | E2E-SES-017 | RTL/Arabic render mirrors grid + Add modal + lifecycle footer | i18n | P1 | _to author_ |
 | E2E-SES-018 | Live-URL validation (D-349) — YouTube/HLS accepted; other URL → bilingual error (client + 400 `SESSION_INVALID`) | error | P1 | _to author_ |
+| E2E-SES-019 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
+| E2E-SES-020 | Full-page mode: Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-SES-021 | Delete confirmation: Deactivate opens View/Delete → SimfConfirm gates the call (D-353) | error | P0 | _to author_ |
+| E2E-SES-022 | Excel export: toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
+| E2E-SES-023 | Excel import: upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
+| E2E-SES-024 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -118,6 +124,11 @@ Scenario: Create, edit, view, deactivate one session
   Then the modal closes
 
   When the administrator clicks the "Deactivate" icon on that row
+  Then the View/Delete form opens (CrudShell, dialog by default) showing the row's read-only details
+      and a red "Deactivate" button
+  When they click "Deactivate"
+  Then a SimfConfirm dialog asks to confirm, naming the session
+  When they click the confirm "Deactivate" button
   Then the DELETE /account/api/admin/sessions/{id} returns 200
   And a green toast reads "Session \"Future of Naval Logistics\" was deactivated."
   And the row's Status pill changes from the green "Active" to the grey "Inactive"
@@ -408,6 +419,114 @@ Scenario: A YouTube or HLS live URL is accepted; anything else is rejected
   And were it to reach the API it would 400 SESSION_INVALID (shared LiveStreamUrlPolicy)
 ```
 
+### E2E-SES-019 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/sessions with the default "dialog" presentation
+  And the grid toolbar shows the "Open as full page" toggle (maximize icon) from CrudPresentationToggle
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.sessions" holds {"v":1,"presentation":"page"}
+  When they reload /admin/sessions
+  Then OnInitializedAsync re-reads Prefs.GetPresentationAsync("sessions")
+  And the toggle still reads "Open as dialog"
+  And opening "Add session" now renders the full-page frame (not a popup)
+```
+
+### E2E-SES-020 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page" (CrudPresentation.Page)
+  When the administrator clicks "Add session"
+  Then the grid + SimfBanner are hidden (GridHidden) and replaced by the CrudShell page frame
+      (title "Add session" + close header + the SessionsAddEdit form)
+  And there is no modal backdrop
+  When they fill Code, Title (EN/AR), Hall, Start and End and click "Create session"
+  Then the POST /account/api/admin/sessions returns 200
+  And the page frame closes and the grid re-appears with the new row and the success toast
+  When they click the "Edit" icon and then the frame's "Close" (X) header button
+  Then the GET /account/api/admin/sessions/{id} loads the full detail into SessionsAddEdit
+  And clicking Close re-shows the grid unchanged (no PUT fires)
+  When they click the "Details" icon
+  Then SessionsViewDelete renders read-only in the same full-page frame (IsDelete=false, no Deactivate button)
+```
+
+### E2E-SES-021 — Delete confirmation gate (D-353)
+
+```gherkin
+Scenario: Deactivate requires explicit confirmation through SimfConfirm
+  Given the administrator is on /admin/sessions
+  When they click the "Deactivate" icon on a row
+  Then the GET /account/api/admin/sessions/{id} loads the detail
+  And SessionsViewDelete opens (CrudShell) showing the read-only details and a red "Deactivate" button
+      (the broadcast-lifecycle + recording blocks render too, gated by Sessions.Publish)
+  When they click "Deactivate"
+  Then a SimfConfirm dialog appears with the title "Deactivate session" and the message
+      naming the session: "Deactivate the session \"Future of Naval Logistics\"? It will be hidden from the public agenda."
+  When they click "Cancel"
+  Then no DELETE request fires and the row is unchanged
+  When they re-open and click "Deactivate" then the confirm "Deactivate" button
+  Then exactly one DELETE /account/api/admin/sessions/{id} fires (soft-delete, Sessions.Delete)
+  And the success toast reads "Session \"Future of Naval Logistics\" was deactivated."
+  And the grid reloads with the row's pill turned grey "Inactive"
+```
+
+### E2E-SES-022 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the sessions grid to an XLSX workbook
+  Given the administrator is on /admin/sessions with at least two sessions
+  When they click the toolbar "Export" action with no rows selected
+  Then a POST /account/api/admin/sessions/export fires carrying AdminGridExportRequest
+      with an empty Ids list and the current Query (whole filtered grid, capped at 5000 rows)
+  And the browser saves a file named simf-sessions-{timestamp}.xlsx
+  And the workbook's "Sessions" sheet header row reads
+      Code | Title | TitleArabic | Hall | Category | StartUtc | EndUtc | Capacity | Status | IsActive
+  And the Hall cell holds the hall *code*, the Category cell the category English name,
+      and StartUtc/EndUtc are ISO-8601 UTC strings (e.g. 2026-11-10T09:00:00Z)
+  And the speaker roster and theme set are NOT exported (M-to-M, omitted by design)
+  When they instead select two rows then click "Export"
+  Then the POST body carries those two Ids and the workbook contains exactly those two rows
+```
+
+### E2E-SES-023 — Excel import (D-356)
+
+```gherkin
+Scenario: Import sessions from a workbook and see the per-row outcome
+  Given the administrator is on /admin/sessions
+  And one active Hall with code "AUD-A" exists
+  When they click the toolbar "Import" action (the file picker "sessions-import-input", accept=".xlsx", opens)
+  And they choose an .xlsx whose "Sessions" sheet has the required headers
+      Code | Title | TitleArabic | Hall | StartUtc | EndUtc
+      with two new rows (Hall="AUD-A", valid ISO StartUtc < EndUtc)
+  Then a POST /account/api/admin/sessions/import fires as multipart form data
+  And the import-result modal shows "2 created, 0 updated, 0 skipped." (import is insert-only)
+  And the grid reloads and a green toast reads the shared Grid.Import.Done text
+  When they import a workbook where one row has a Hall code that no active hall matches
+  Then that row appears in the per-row error list reading "No active hall with code '…' was found."
+      and the others still import (one bad row never aborts the batch)
+  When they import a row whose EndUtc is at/before StartUtc
+  Then that row errors with "The end time must be after the start time."
+```
+
+### E2E-SES-024 — Excel import rejection (D-356)
+
+```gherkin
+Scenario: A bad upload is rejected without creating anything
+  Given the administrator is on /admin/sessions
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic check)
+  Then the API returns HTTP 400 and the page shows a bilingual error toast
+      "The file is not a valid Excel workbook." / "الملف ليس مصنف Excel صالحًا."
+  And no session is created
+  When they import a file larger than 5 MB
+  Then the API returns HTTP 413 "The Excel file is too large. The maximum is 5 MB."
+  When they import a workbook whose sheet is not named "Sessions"
+      (or is missing a required header from Code/Title/TitleArabic/Hall/StartUtc/EndUtc)
+  Then the parse rejects it with a bilingual error and nothing is created
+```
+
 ---
 
 ## Implementation notes
@@ -426,6 +545,11 @@ Scenario: A YouTube or HLS live URL is accepted; anything else is rejected
   - Permission enforcement is asserted by `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs`
     and `tests/SIMF.ControlPanel.Tests/CpNavigationPermissionTests.cs` (the nav
     item's `RequiredPermission = Sessions.View`).
+  - `tests/SIMF.Api.Tests/SessionsExcelTests.cs` — the D-356 Excel export/import
+    surface (the `Sessions` sheet column layout, hall-code / category-name
+    resolution, the insert-only import, the per-row error aggregation, the
+    `Sessions.Export` / `Sessions.Import` permission gates and the
+    ZIP-magic / 5 MB / 5000-row upload defence).
 - **Manual smoke is canonical today.** Until Playwright is adopted, run these
   scenarios as a Chrome DevTools MCP session: sign in per the Auth setup, walk
   each scenario, and capture screenshots into `docs/screenshots/cp-admin-sessions-*.png`.
@@ -439,4 +563,4 @@ Scenario: A YouTube or HLS live URL is accepted; anything else is rejected
 
 ---
 
-_Last reviewed:_ 2026-06-08 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle).

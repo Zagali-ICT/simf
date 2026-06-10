@@ -27,6 +27,16 @@ equipment / accessibility notes.
 Canonical D-132 CRUD: SimfBanner + toolbar + grid with sortable Code /
 Name / Capacity, Status pill, per-row Details / Edit / Deactivate.
 
+**D-356 / D-353 uniform CRUD.** The toolbar now also offers **Excel export +
+import** (Export / Import → `.xlsx`, via `CrudGridExcel Resource="halls"` →
+`/account/api/admin/halls/export` + `/import`, capped at 5000 rows; non-`.xlsx`
+uploads are rejected with HTTP 400). Add / Edit / Details / Deactivate are framed
+by **`CrudShell`** with a **Page↔Popup presentation toggle**
+(`CrudPresentationToggle`, `PageKey="halls"`, persisted in localStorage
+`simf.cp.prefs.halls`). Deactivate opens the read-only `HallsViewDelete` form
+whose Deactivate button is gated by a **`SimfConfirm`** dialog (no more one-click
+delete).
+
 ## 4.5 Form fields
 
 | Field | Required | MaxLength | Validation |
@@ -75,5 +85,6 @@ E2E-HAL-001..007.
 | Date | Decision | Change |
 |------|----------|--------|
 | 2026-05-29 | D-134 Sprint B / D-135 | Original — Halls entity + EF migration `AddHalls` + canonical CRUD page. |
+| 2026-06-10 | D-356 / D-353 | Uniform CRUD — added Excel export + import (`CrudGridExcel Resource="halls"`) and the Page↔Popup presentation toggle; CRUD forms hosted by `CrudShell` (`HallsAddEdit` / `HallsViewDelete`), Deactivate now gated by `SimfConfirm`. |
 
-_Last reviewed:_ 2026-05-29 by Claude (D-134 Sprint B / D-135).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 / D-353 uniform CRUD — Excel + toggle).

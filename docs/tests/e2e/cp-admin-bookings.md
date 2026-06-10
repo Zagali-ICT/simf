@@ -8,7 +8,7 @@
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP via the `Get-Totp` helper |
 | **Required permission** | `Bookings.View` (page); `Bookings.Approve` (Approve + bulk Approve); `Bookings.Reject` (Reject) — `PermissionCatalog.Bookings.*` |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **What this page is.** P2.2 / D-227 (SIMF-FDS-005 §5.2): the booking approval
 > queue. It lists **Pending**, still-held visitor seat bookings across all
@@ -36,6 +36,7 @@
 | E2E-BKG-010 | RTL / Arabic render — page + Reject modal mirror | i18n | P1 | _to author_ |
 | E2E-BKG-011 | Per-column grid filter (Session / Seat) narrows the queue | happy | P1 | _to author_ |
 | E2E-BKG-012 | Column sort toggles (Session / Booked) ascending ⇄ descending | happy | P2 | _to author_ |
+| E2E-BKG-013 | Excel export (D-356) — toolbar Export downloads an .xlsx of the queue (whole filtered set vs selected rows) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -337,6 +338,67 @@ Scenario: Clicking a sortable header toggles ascending then descending
 - Console errors: 0 expected
 - Network: each header click POSTs `/account/api/admin/bookings/list` with the new `sort` / `sortDescending` and `skip: 0`
 
+### E2E-BKG-013 — Excel export (D-356)
+
+```gherkin
+Feature: Booking approvals — Excel export (D-356 Uniform CRUD)
+  As an Administrator with the Bookings.Export permission
+  I want to export the booking approval queue to an .xlsx workbook
+  So that I can review or share the pending bookings offline
+
+Background:
+  Given the API is reachable on http://localhost:5175
+  And the Control Panel is reachable on http://localhost:5158
+  And an Administrator with Bookings.View + Bookings.Export has signed in via
+    /login + /login/totp and landed on /admin/bookings
+  And the queue holds at least two Pending rows, including Session="Naval Logistics Forum"
+    Seat="A1" for Attendee="Layla Al-Harbi", and Session="Maritime Cyber Defence"
+    Seat="B3" for Attendee="Omar Said"
+
+Scenario: Export the whole filtered queue when no rows are selected
+  Given the grid toolbar shows the "Export" action labelled "Export" / "تصدير"
+    (wired on the SimfDataGrid via OnExport; the underlying
+    /api/v1/admin/bookings/export endpoint is gated by Bookings.Export, so an
+    admin lacking that permission gets HTTP 403 on click)
+  And no rows are selected
+  When the administrator clicks "Export"
+  Then the browser invokes simfAccount.downloadXlsx against
+    POST /account/api/admin/bookings/export
+  And the request body is an AdminGridExportRequest whose Ids list is EMPTY
+    and whose Query carries the current GridQuery (so the export mirrors the
+    on-screen filtered/sorted set)
+  And the API returns HTTP 200 with an
+    application/vnd.openxmlformats-officedocument.spreadsheetml.sheet body
+  And the browser saves a file named simf-bookings-{timestamp}.xlsx
+  And the workbook's "Bookings" sheet has the header row
+    SessionTitle | SessionTitleArabic | SessionStart | Row | Seat | Kind | Attendee | BookedAt
+  And the body has one row per Pending booking in the queue (seat split into the
+    Row label + Seat number, and the seat Kind enum rendered as text)
+
+Scenario: Export only the selected rows
+  Given the administrator ticks the checkbox on the "Naval Logistics Forum" / A1 row
+  And ticks the checkbox on the "Maritime Cyber Defence" / B3 row
+  When they click "Export"
+  Then the AdminGridExportRequest body carries Ids = ["{reservationId-A1}", "{reservationId-B3}"]
+    and a null Query (the selection wins over the filtered set)
+  And the workbook contains exactly those two booking rows
+  And a selection larger than the 5000-row export cap is rejected by the API
+    with HTTP 400 (the endpoint caps export at 5000 rows)
+
+Scenario: Export is export-only — there is no Import affordance
+  Given the administrator is on /admin/bookings
+  Then the toolbar exposes "Export" but NOT an "Import" action
+  And no /account/api/admin/bookings/import endpoint exists for this page
+    (bookings are created by visitors in the app and only approved/rejected here)
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-bookings-export.png` (toolbar Export action, no Import action present)
+- Console errors: 0 expected
+- Network: `POST /account/api/admin/bookings/export` returns 200; request body shows `ids: []` + a `query` object (whole-grid export) or a populated `ids` array + `query: null` (selected-rows export)
+- Downloaded workbook: `simf-bookings-{timestamp}.xlsx`, sheet "Bookings", header row `SessionTitle | SessionTitleArabic | SessionStart | Row | Seat | Kind | Attendee | BookedAt`
+- API integration test: `tests/SIMF.Api.Tests/BookingsExcelTests.cs` covers the same surface at the endpoint layer (export-only — no import test, as `ExportBookingsEndpoint` is the only Excel endpoint for this page)
+
 ---
 
 ## Implementation notes
@@ -372,4 +434,4 @@ Scenario: Clicking a sortable header toggles ascending then descending
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added E2E-BKG-013 Excel export, export-only per `ExportBookingsEndpoint`). Earlier: 2026-06-03 (E2E catalogue rebuild, D-256/D-257 grid affordances reconciled).

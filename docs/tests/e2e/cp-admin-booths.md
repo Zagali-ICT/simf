@@ -7,37 +7,60 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Surface map (verified against source).** Page:
 > `src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/BoothsList.razor`
 > (`@page "/admin/booths"`, `@attribute [RequirePermission(PermissionCatalog.Booths.View)]`).
 > Required permission to load: **`Booths.View`**; the grid is roles-only gated and
 > `Administrator = "*"` (wildcard) always passes. The page is a single
-> `SimfDataGrid` + one Add/Edit modal (no Details modal). The grid (D-256 raw-
-> table→grid conversion) carries per-column filter inputs, sortable headers,
-> select-all/row checkboxes (`Multiselect="true"`, cosmetic — there is **no**
-> bulk-action toolbar), quiet icon row-actions (Edit pencil / Delete trash via
-> `OnEditOne`/`OnDeleteOne`), and a pager loading `Top=20` rows per page. BFF
+> `SimfDataGrid` plus the reusable **CrudShell** that frames a `BoothsAddEdit`
+> (Add/Edit) form, a `BoothsViewDelete` (View/Delete) form, and one
+> `<CrudGridExcel @ref="_excel" Resource="booths" …>` host (D-353 + D-356 — the
+> old inline `SimfModal` form + native `confirm()` delete are gone). The grid
+> (D-256 raw-table→grid conversion) carries per-column filter inputs, sortable
+> headers, select-all/row checkboxes (`Multiselect="true"`, cosmetic — there is
+> **no** bulk-action toolbar), quiet icon row-actions (Add / Edit pencil /
+> Details / Delete trash via `OnAdd`/`OnEditOne`/`OnDetailsOne`/`OnDeleteOne`),
+> a toolbar **Export** + **Import** action (`OnExport`/`OnImport`), a
+> `<CrudPresentationToggle PageKey="booths" @bind-Value="_presentation" />` in
+> the `<CustomToolbar>`, and a pager loading `Top=20` rows per page. BFF
 > passthroughs live in
 > `AccountEndpoints.cs` lines 2089–2122; the API lives in
 > `src/Backend/SIMF.Api/Endpoints/Admin/BoothEndpoints.cs`; the service +
 > validation in `src/Backend/SIMF.Infrastructure/Exhibition/AdminBoothService.cs`.
 >
-> **Every action on the page (from the `.razor`):**
-> 1. `Add booth` grid toolbar button → opens the empty Add modal (`OnAdd`).
-> 2. Per-row Edit (pencil) icon action → GETs the full detail, opens the
->    pre-filled Edit modal (`OnEditOne` → `GET /account/api/admin/booths/{id}`).
-> 3. Per-row Delete (trash) icon action → JS `confirm()` then soft-delete
->    (`OnDeleteOne` → `DELETE /account/api/admin/booths/{id}`).
-> 4. Modal `Save` → `SaveAsync`: client guard on Code/NameEn/NameAr, then
->    `POST /account/api/admin/booths` (create) or `PUT .../{id}` (edit).
-> 5. Modal `Cancel` / close → discards the form (`_editOpen = false`).
-> 6. Modal form fields: Code, Name (English), Name (Arabic), **Exhibitor
->    company** (`<select>`, active `Exhibitor` companies only), Booth officer
->    name / phone / email, Sector (English/Arabic), Description
->    (English/Arabic) textareas, **Hall** (`<select>`, active halls only),
->    Map X / Map Y numeric inputs, and **Active** checkbox (Edit only-meaningful).
+> **Every action on the page (from the `.razor`, post D-353/D-356):**
+> 1. `Add booth` grid toolbar button → `OnAddAsync` opens the empty
+>    `BoothsAddEdit` form inside CrudShell.
+> 2. Per-row Edit (pencil) icon action → `OnEditAsync` GETs the full detail then
+>    opens the pre-filled `BoothsAddEdit` form
+>    (`GET /account/api/admin/booths/{id}`).
+> 3. Per-row Details icon action → `OnDetailsAsync` GETs the detail and opens
+>    `BoothsViewDelete` read-only (no Delete button).
+> 4. Per-row Delete (trash) icon action → `OnDeleteAsync` GETs the detail and
+>    opens `BoothsViewDelete` with a red **Delete** button gated by a
+>    `SimfConfirm` dialog (NOT a native `confirm()`); confirm →
+>    `simfAccount.deleteJson` `DELETE /account/api/admin/booths/{id}`.
+> 5. `BoothsAddEdit` `Save` → `HandleSubmitAsync`: client guard on
+>    Code/NameEn/NameAr (`Admin.Booths.Required`), then
+>    `POST /account/api/admin/booths` (create) or `PUT .../{id}` (edit);
+>    `OnSuccess` closes the shell + `Admin.Booths.Saved` toast.
+> 6. `Cancel` / shell close (`CloseLabel`) → discards the form (`CloseForm`).
+> 7. Toolbar **Export** → `OnExportAsync` → `_excel.ExportAsync(ids, _query)` →
+>    `POST /account/api/admin/booths/export` (D-356).
+> 8. Toolbar **Import** → `OnImportAsync` → `_excel.TriggerImportAsync()` (file
+>    picker `#booths-import-input`, `accept=".xlsx"`) →
+>    `POST /account/api/admin/booths/import` (D-356).
+> 9. `<CrudPresentationToggle>` in the `<CustomToolbar>` flips
+>    `_presentation` between dialog (popup) and full page, persisted in
+>    localStorage `simf.cp.prefs.booths` via `CpPreferences` (D-353).
+> 10. Form fields (`BoothsAddEdit`): Code, Name (English), Name (Arabic),
+>    **Exhibitor company** (`<select>`, active `Exhibitor` companies only),
+>    Booth officer name / phone / email, an optional **Contact** link
+>    (`ContactPicker`, SIMF-FDS-014 / D-283), Sector (English/Arabic),
+>    Description (English/Arabic) textareas, **Hall** (`<select>`, active halls
+>    only), Map X / Map Y numeric inputs, and **Active** checkbox (Edit only).
 >
 > **Backing endpoints / error codes (verified):**
 > - `POST /account/api/admin/booths/list` → `ApiResult<GridPage<AdminBoothSummary>>` (`Booths.View`)
@@ -45,6 +68,11 @@
 > - `POST /account/api/admin/booths` → create (`Booths.Create`; rate-limit policy `auth`)
 > - `PUT /account/api/admin/booths/{id}` → update (`Booths.Edit`; rate-limit policy `auth`)
 > - `DELETE /account/api/admin/booths/{id}` → soft-delete (`Booths.Delete`; rate-limit policy `auth`)
+> - `POST /account/api/admin/booths/export` → `AdminGridExportRequest { Ids, Query }`
+>   → `.xlsx` download (`Booths.Export`); selected `Ids` win, else `Query`; 5000-row cap (D-356).
+> - `POST /account/api/admin/booths/import` → multipart `.xlsx` upload (`Booths.Import`);
+>   insert-only; per-row `Created/Updated/Skipped` + error list; 5000-row cap; non-`.xlsx`
+>   (ZIP-magic + 5 MB gate) or wrong sheet → HTTP 400 (D-356).
 > - Error codes: `BOOTH_INVALID` (400), `BOOTH_NOT_FOUND` (404),
 >   `BOOTH_CODE_DUPLICATE` (409). Server validation (the source of truth):
 >   Code 2–16 chars (upper-cased + trimmed), NameEn/NameAr 1–128, officer
@@ -73,6 +101,12 @@
 | E2E-BTH-015 | RTL / Arabic render mirrors page + Add modal | i18n | P1 | _to author_ |
 | E2E-BTH-016 | Per-column filter narrows the grid (Code / Sector EN) | happy | P1 | _to author_ |
 | E2E-BTH-017 | Column sort toggles (Code header) | happy | P2 | _to author_ |
+| E2E-BTH-018 | Presentation toggle persists across reload (Page/Popup) (D-353) | happy | P1 | _to author_ |
+| E2E-BTH-019 | Full-page mode round-trip — Add/Edit/View take over the content area (D-353) | happy | P1 | _to author_ |
+| E2E-BTH-020 | Delete confirmation gate — CrudShell ViewDelete + SimfConfirm (D-353) | error | P0 | _to author_ |
+| E2E-BTH-021 | Excel export — whole filtered grid vs selected rows (D-356) | happy | P1 | _to author_ |
+| E2E-BTH-022 | Excel import — workbook → per-row outcome + FK resolution (D-356) | happy | P1 | _to author_ |
+| E2E-BTH-023 | Excel import rejection — non-.xlsx / wrong sheet → 400, nothing created (D-356) | i18n | P1 | _to author_ |
 
 ## Scenarios
 
@@ -129,8 +163,10 @@ Scenario: Create, edit, then deactivate one booth
   And reopening Edit shows Sector (English)="Maritime Logistics"
 
   When the administrator clicks the "A-12" row's Delete (trash) icon action
-  Then a browser confirm() dialog appears reading "Delete this booth? It will be removed from the public exhibition list and the venue map immediately."
-  When they accept the dialog
+  Then the BoothsViewDelete form opens (CrudShell) showing the booth's read-only details and a red "Delete" button
+  When they click "Delete"
+  Then a SimfConfirm dialog appears reading "Delete booth “A-12”? It will be removed from the public exhibition list and the venue map immediately." / "هل تريد حذف الجناح ”A-12“؟ ستتم إزالته من قائمة المعرض العامة وخريطة الموقع فوراً."
+  When they confirm
   Then the BFF forwards DELETE /account/api/admin/booths/{id} and returns HTTP 200
   And a green toast reads "Booth deleted." / "تم حذف الجناح."
   And the grid reloads and the "A-12" row no longer appears (soft-deleted: IsActive=false, filtered from the public list)
@@ -143,7 +179,7 @@ Scenario: Create, edit, then deactivate one booth
 - Screenshot after: `docs/screenshots/cp-admin-booths-golden-after.png`
 - Console errors: 0 expected
 - Network: every `/account/api/admin/booths/*`, `/account/api/admin/halls/list`,
-  and `/account/api/admin/companies/list` call returns 200
+  and `/account/api/admin/exhibitors/list` call returns 200
 - Audit rows: one `Booth.Created`, one `Booth.Updated`, one `Booth.Deactivated`
   row with the actor's id (the signed-in admin)
 
@@ -207,11 +243,13 @@ Scenario: Edit pre-fills from the detail endpoint and persists a change
 Scenario: Deleting a booth requires confirmation then soft-deletes it
   Given a booth with Code="D-09" exists in the grid
   When the administrator clicks the "D-09" row's Delete (trash) icon action
-  Then a confirm() dialog appears with the bilingual delete-confirm copy
-  When they cancel the dialog
+  Then the BoothsViewDelete form opens (CrudShell) with a red "Delete" button
+  When they click "Delete"
+  Then a SimfConfirm dialog appears with the bilingual delete-confirm copy naming "D-09"
+  When they click "Cancel"
   Then no DELETE request fires and the row stays in the grid
 
-  When they click the "D-09" row's Delete (trash) icon action again and accept the dialog
+  When they re-open the "D-09" row's Delete form, click "Delete", and confirm
   Then DELETE /account/api/admin/booths/{id} is sent and returns HTTP 200
   And the toast reads "Booth deleted." / "تم حذف الجناح."
   And the grid reloads and the "D-09" row is gone
@@ -390,6 +428,150 @@ Scenario: Clicking a sortable header toggles ascending / descending order
   And the Company and Hall columns expose NO sort affordance (client-resolved, not server-sortable)
 ```
 
+### E2E-BTH-018 — Presentation toggle persists across reload (D-353)
+
+```gherkin
+Scenario: Switch between Popup and full Page and the choice persists
+  Given the administrator is on /admin/booths with the default "dialog" (popup) presentation
+  And the grid toolbar (CustomToolbar) shows the CrudPresentationToggle (PageKey="booths")
+  When they click the toggle to choose "Open as full page"
+  Then localStorage key "simf.cp.prefs.booths" holds {"v":1,"presentation":"page"}
+  When they reload /admin/booths
+  Then OnInitializedAsync calls Prefs.GetPresentationAsync("booths") and reads back "page"
+  And opening "Add booth" now renders the full-page CrudShell frame (not a popup with a backdrop)
+  When they switch the toggle back to "Open as dialog"
+  Then localStorage key "simf.cp.prefs.booths" holds {"v":1,"presentation":"dialog"}
+  And after a reload opening "Add booth" renders the popup dialog again
+```
+
+### E2E-BTH-019 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: In full-page mode the Add/Edit/View forms take over the content area
+  Given the presentation for /admin/booths is set to "page"
+  When the administrator clicks the grid toolbar "Add booth" action
+  Then the grid + SimfBanner are hidden (GridHidden = FormOpen && presentation == Page)
+  And the CrudShell renders full-page with the title "Add booth" and a Close ("Close") header
+  And there is no modal backdrop
+  When they fill Code="E-11", Name (English)="Hydrographic Survey", Name (Arabic)="المسح الهيدروغرافي"
+  And they click "Add booth"
+  Then POST /account/api/admin/booths returns HTTP 200
+  And the CrudShell closes and the grid + banner re-appear with the new "E-11" row
+  And a green toast reads "Booth saved." / "تم حفظ الجناح."
+  When they click the "E-11" row's Details action
+  Then the BoothsViewDelete form opens full-page in read-only mode (IsDelete=false, no Delete button)
+      showing Code, both names, Exhibitor, officer name/phone/email, sector EN/AR,
+      description EN/AR, Hall, Map X, Map Y and Active
+  When they click the CrudShell close (X) / "Close"
+  Then the form closes and the grid re-appears unchanged
+```
+
+### E2E-BTH-020 — Delete confirmation gate (CrudShell + SimfConfirm) (D-353)
+
+```gherkin
+Scenario: Delete is gated by SimfConfirm inside the ViewDelete form, not window.confirm
+  Given a booth "F-22" exists and is Active
+  And the administrator is on /admin/booths
+  When they click the "F-22" row's Delete (trash) action
+  Then the page first GETs /account/api/admin/booths/{id} to load the full detail
+  And the BoothsViewDelete form opens (in a CrudShell popup or full page per the toggle)
+      showing the read-only details and a red "Delete" button
+  When they click the red "Delete" button
+  Then a SimfConfirm dialog appears (Danger=true) with the message
+       Admin.Booths.Delete.Message formatted with the booth's English name "F-22"
+       (NOT a native browser window.confirm)
+  When they click the confirm "Cancel"
+  Then no DELETE request fires and the row is unchanged (still Active = "✓")
+  When they re-open Delete and click the confirm "Delete"
+  Then exactly one DELETE /account/api/admin/booths/{id} fires and returns HTTP 200
+  And the CrudShell closes
+  And a green toast reads "Booth deleted." / "تم حذف الجناح."
+  And the grid reloads and the soft-deactivated "F-22" row drops from the list
+  And an audit row Booth.Deactivated records the actor id
+```
+
+**Evidence captured:**
+- The delete now flows through `BoothsViewDelete.razor` → `SimfConfirm` → `simfAccount.deleteJson`;
+  there is **no** `window.confirm` / `handle_dialog` step any more (the inline list `confirm()` was
+  removed in D-353).
+- Network: exactly one `DELETE /account/api/admin/booths/{id}` on confirm, zero on Cancel.
+
+### E2E-BTH-021 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the filtered grid (or just selected rows) to an XLSX workbook
+  Given the administrator is on /admin/booths with at least two booths
+  When they click the toolbar "Export" action with no rows selected
+  Then OnExportAsync calls _excel.ExportAsync(empty Ids, current Query)
+  And a POST /account/api/admin/booths/export fires carrying
+      AdminGridExportRequest { Ids: [], Query: <current GridQuery> }
+  And the API caps the set at 5000 rows and returns an XLSX
+      (Content-Type application/vnd.openxmlformats-officedocument.spreadsheetml.sheet)
+  And the browser saves a file named simf-booths-{yyyyMMddHHmmss}.xlsx
+  And the workbook's "Booths" sheet header row reads
+      Code | Name | NameArabic | Exhibitor | Sector | Hall | IsActive
+  And the Exhibitor column is written as the exhibitor's English name and the Hall column
+      as the hall's Code (the two human-readable natural keys the import resolves back), so the
+      workbook round-trips through import
+  When they instead select two rows then click "Export"
+  Then the export request carries those two Ids in AdminGridExportRequest.Ids (and Query is null)
+  And the workbook contains exactly those two rows
+```
+
+### E2E-BTH-022 — Excel import (D-356)
+
+```gherkin
+Scenario: Import booths from a workbook and see the per-row outcome + FK resolution
+  Given the administrator is on /admin/booths
+  And an active Exhibitor company named "Maritime Tech LLC" exists
+  And an active Hall with Code "HALL-A" exists
+  When they click the toolbar "Import" action
+  Then OnImportAsync calls _excel.TriggerImportAsync(), opening the file picker
+      on the hidden <input id="booths-import-input" accept=".xlsx">
+  When they choose an .xlsx whose "Booths" sheet has the required headers
+      Code, Name, NameArabic (and the optional Exhibitor, Sector, Hall columns)
+      and two new rows, e.g.
+      | G-01 | Naval Robotics | الروبوتات البحرية | Maritime Tech LLC |        | HALL-A |
+      | G-02 | Coastal Radar  | الرادار الساحلي   |                   | Radar  |        |
+  Then a POST /account/api/admin/booths/import fires as multipart form data (field "file")
+  And the import-result modal shows "2 created, 0 updated, 0 skipped." with an empty error list
+      (import is insert-only — Created is the only success kind)
+  And the "G-01" row resolves its Exhibitor link from the English name "Maritime Tech LLC"
+      and its Hall link from the code "HALL-A" (case-insensitive, active only)
+  And a green toast reads the shared Grid.Import.Done key ("Import complete.")
+  And OnImportedAsync reloads the grid (LoadAsync) so both new booths appear
+  And note: the officer name/phone/email, the optional shared-Contact link (SIMF-FDS-014 / D-283)
+      and the Map X / Map Y position are NOT importable — import always leaves them unset; an
+      admin sets them afterwards via Edit
+  When they import a workbook whose Code cell is 1 character (below the 2–16 range)
+  Then that row is reported in the modal's error list
+      ("Code must be between 2 and 16 characters." / "يجب أن يكون الرمز بين حرفين و16 حرفًا.")
+      while the valid rows still create (one bad row never aborts the batch)
+  When they import a workbook whose Exhibitor cell names no active exhibitor
+  Then that row errors with
+      "No active exhibitor named '{value}' was found." / "لم يتم العثور على عارض مفعّل باسم '{value}'."
+  And a row whose Hall cell matches no active hall errors with
+      "No active hall with code '{value}' was found." / "لم يتم العثور على قاعة مفعّلة بالرمز '{value}'."
+```
+
+### E2E-BTH-023 — Excel import rejection (D-356)
+
+```gherkin
+Scenario: A bad / wrong-sheet upload is rejected and nothing is created
+  Given the administrator is on /admin/booths
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic check 50 4B 03 04)
+  Then POST /account/api/admin/booths/import returns HTTP 400 (DataValidationException)
+  And CrudGridExcel.OnFileSelectedAsync raises OnError → OnExcelError surfaces a red toast
+      reading the bilingual "not a valid Excel workbook" message
+  And no booth is created
+  When they import an .xlsx larger than 5 MB
+  Then the request is rejected (the 5 MB upload gate) and a red toast appears, nothing created
+  When they import a workbook whose worksheet is not named "Booths" (or is missing one of the
+      required headers Code / Name / NameArabic)
+  Then the parse fails and the request returns 400 with the bilingual worksheet/header message
+  And no booth is created
+```
+
 ---
 
 ## Implementation notes
@@ -414,14 +596,22 @@ Scenario: Clicking a sortable header toggles ascending / descending order
   (`Booths.View`/`Create`/`Edit`/`Delete`). `tests/SIMF.ControlPanel.Tests/CpNavigationPermissionTests.cs`
   and `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs` fail the build if a gate
   is missing.
-- **No Details modal.** Unlike `/admin/interests`, this page has no read-only
-  Details modal — only the Add/Edit modal. The grid (D-256) loads `Top=20` rows
-  per page with a pager (Prev/Next/First/Last) and the "Showing {0}–{1} of {2}"
-  summary line. Do not author scenarios for UI that does not exist.
+- **Details view shipped with D-353.** The page now hosts a read-only Details
+  view (`OnDetailsOne` → `BoothsViewDelete` with no Delete button) in addition to
+  Add/Edit — both framed by CrudShell as a popup or a full page per the toolbar
+  toggle. (Earlier waves of this file noted "no Details modal"; that is no longer
+  true.) The grid (D-256) loads `Top=20` rows per page with a pager
+  (Prev/Next/First/Last) and the "Showing {0}–{1} of {2}" summary line.
 - **No bulk action.** The grid is `Multiselect="true"` (select-all + per-row
   checkboxes) but has no `<CustomToolbar>` bulk-action button — the checkboxes are
   cosmetic here. Do not author a bulk-action scenario.
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle). Added E2E-BTH-018..023
+(D-353 Page↔Popup toggle + full-page round-trip + CrudShell/SimfConfirm delete gate; D-356 Excel
+export/import + import rejection), grounded in `BoothsList.razor` + `BoothsAddEdit.razor` +
+`BoothsViewDelete.razor` + `BoothsExcelEndpoints.cs` (export columns Code/Name/NameArabic/
+Exhibitor[English name]/Sector/Hall[code]/IsActive; import resolves the Exhibitor by English
+name + the Hall by code, insert-only, officer/Contact/MapX/MapY omitted).
+Prior: 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

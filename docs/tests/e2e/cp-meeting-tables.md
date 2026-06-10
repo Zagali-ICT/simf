@@ -21,7 +21,7 @@
 | **Permissions** | `MeetingTables.View` (page), `MeetingTables.Edit`, `HallAllocations.View/Edit`, `Halls.Edit` (set purpose) |
 | **API** | `PUT /api/v1/admin/halls/{id}/purpose`, `POST /api/v1/admin/halls/{hallId}/meeting-tables[/list|/generate]`, `PUT|DELETE /api/v1/admin/meeting-tables/{id}`, `POST /api/v1/admin/halls/{hallId}/hall-allocations[/list]`, `DELETE /api/v1/admin/hall-allocations/{id}` |
 | **Backed by tests** | `tests/SIMF.Api.Tests/BusinessMeetingsTests.cs` |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel export; tables grid now exports to .xlsx) |
 
 ## Coverage matrix
 
@@ -39,6 +39,7 @@
 | E2E-MHT-010 | Table in a non-Meeting hall is rejected | error | P0 | authored |
 | E2E-MHT-011 | Overlapping hall allocation is rejected | error | P0 | authored |
 | E2E-MHT-012 | Auth gate (non-admin → /not-permitted) | auth | P0 | authored |
+| E2E-MHT-013 | Excel export: tables grid Export → POST /export (.xlsx of the hall's tables; whole grid vs selected rows) (D-356) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -162,6 +163,33 @@ Scenario: Non-administrator user is denied
   Then they are redirected to /not-permitted with HTTP 200
 ```
 
+### E2E-MHT-013 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the hall's meeting tables to an XLSX workbook
+  Given an Administrator is signed in and on /admin/meeting-tables
+  And hall "Majlis A" has Purpose = Meeting and at least two tables (e.g. "T-01", "T-02")
+  And the admin has selected hall "Majlis A" so the tables grid is shown
+  When they click the tables grid's toolbar "Export" action with no rows selected
+  Then simfAccount.downloadXlsx POSTs to /account/api/admin/meeting-tables/export
+  And the AdminGridExportRequest carries an empty Ids list and the current Query
+  And the Query.Filters carries "hallId" = the selected hall's id (the grid is hall-scoped)
+  And the browser saves an .xlsx whose sheet's header row reads Code | Row | Column | Capacity
+  And the workbook holds every table in the hall's current filtered set
+
+  When they instead tick the row checkbox on "T-01" and "T-02" then click "Export"
+  Then the AdminGridExportRequest carries Ids = [T-01.Id, T-02.Id]
+  And the workbook contains exactly those two tables
+
+  When no hall is selected (the tables grid is not rendered)
+  Then there is no Export action to invoke and no /export request can fire
+
+Scenario: Export caps at 5000 rows
+  Given the hall's filtered table set would exceed 5000 rows
+  When the admin exports the whole grid
+  Then the API caps the workbook at 5000 rows
+```
+
 ---
 
-_Last reviewed:_ 2026-06-03 by the SIMF engineering team.
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel export). Earlier review 2026-06-03 by the SIMF engineering team.

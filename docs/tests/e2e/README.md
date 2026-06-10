@@ -43,54 +43,54 @@ not reused. Each page owns a unique 3–4 letter namespace.
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/admin/admins` | [`cp-admin-admins.md`](cp-admin-admins.md) | E2E-USR-001..021 |
+| `/admin/admins` | [`cp-admin-admins.md`](cp-admin-admins.md) | E2E-USR-001..024 |
 | `/admin/admins/pending` | [`cp-admin-admins-pending.md`](cp-admin-admins-pending.md) | E2E-APN-001..015 |
-| `/admin/others` | [`cp-admin-others.md`](cp-admin-others.md) | E2E-OTH-001..021 |
+| `/admin/others` | [`cp-admin-others.md`](cp-admin-others.md) | E2E-OTH-001..024 |
 | `/admin/others/pending` | [`cp-admin-others-pending.md`](cp-admin-others-pending.md) | E2E-OPN-001..016 |
-| `/admin/visitors` | [`cp-admin-visitors.md`](cp-admin-visitors.md) | E2E-VIS-001..020 |
+| `/admin/visitors` | [`cp-admin-visitors.md`](cp-admin-visitors.md) | E2E-VIS-001..024 |
 | `/admin/visitors/pending` | [`cp-admin-visitors-pending.md`](cp-admin-visitors-pending.md) | E2E-VPN-001..016 |
 | `/admin/attendees` | [`cp-admin-attendees.md`](cp-admin-attendees.md) | E2E-ATT-001..016 |
 | `/admin/print-bag` | [`cp-admin-print-bag.md`](cp-admin-print-bag.md) | E2E-PRT-001..011 |
-| `/admin/interests` | [`cp-admin-interests.md`](cp-admin-interests.md) | E2E-INT-001..007 |
+| `/admin/interests` | [`cp-admin-interests.md`](cp-admin-interests.md) | E2E-INT-001..013 |
 | `/admin/profile-types/visitor` | [`cp-admin-profile-types-visitor.md`](cp-admin-profile-types-visitor.md) | E2E-VPT-001..014 |
 | `/admin/profile-types/other` | [`cp-admin-profile-types-other.md`](cp-admin-profile-types-other.md) | E2E-OPT-001..015 |
-| `/admin/organisations` | [`cp-admin-organisations.md`](cp-admin-organisations.md) | E2E-ORG-001..015 |
-| `/admin/contacts` | [`cp-admin-contacts.md`](cp-admin-contacts.md) | E2E-CON-001..014 |
-| `/admin/countries` | [`cp-admin-countries.md`](cp-admin-countries.md) | E2E-CTY-001..017 |
-| `/admin/vips` | [`cp-admin-vips.md`](cp-admin-vips.md) | E2E-VIP-001..012 |
-| `/admin/invitations` | [`cp-admin-invitations.md`](cp-admin-invitations.md) | E2E-INV-001..014 |
+| `/admin/organisations` | [`cp-admin-organisations.md`](cp-admin-organisations.md) | E2E-ORG-001..019 |
+| `/admin/contacts` | [`cp-admin-contacts.md`](cp-admin-contacts.md) | E2E-CON-001..020 |
+| `/admin/countries` | [`cp-admin-countries.md`](cp-admin-countries.md) | E2E-CTY-001..020 |
+| `/admin/vips` | [`cp-admin-vips.md`](cp-admin-vips.md) | E2E-VIP-001..013 |
+| `/admin/invitations` | [`cp-admin-invitations.md`](cp-admin-invitations.md) | E2E-INV-001..018 |
 | `/admin/reset-2fa` | [`cp-admin-reset-2fa.md`](cp-admin-reset-2fa.md) | E2E-R2F-001..012 |
-| `/admin/roles` | [`cp-admin-roles.md`](cp-admin-roles.md) | E2E-ROL-001..018 |
+| `/admin/roles` | [`cp-admin-roles.md`](cp-admin-roles.md) | E2E-ROL-001..024 |
 | `/admin/roles/{id}/permissions` | [`cp-admin-roles-permissions.md`](cp-admin-roles-permissions.md) | E2E-RPM-001..013 |
 
 ### Control Panel — Programme & sessions
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/admin/themes` | [`cp-admin-themes.md`](cp-admin-themes.md) | E2E-THM-001..018 |
-| `/admin/halls` | [`cp-admin-halls.md`](cp-admin-halls.md) | E2E-HAL-001..016 |
+| `/admin/themes` | [`cp-admin-themes.md`](cp-admin-themes.md) | E2E-THM-001..024 |
+| `/admin/halls` | [`cp-admin-halls.md`](cp-admin-halls.md) | E2E-HAL-001..022 |
 | `/admin/halls/seat-layouts` | [`cp-admin-halls-seat-layouts.md`](cp-admin-halls-seat-layouts.md) | E2E-HSL-001..015 |
-| `/admin/speakers` | [`cp-admin-speakers.md`](cp-admin-speakers.md) | E2E-SPK-001..016 |
-| `/admin/speaker-presentations` | [`cp-admin-speaker-presentations.md`](cp-admin-speaker-presentations.md) | E2E-SPP-001..016 |
-| `/admin/sessions` | [`cp-admin-sessions.md`](cp-admin-sessions.md) | E2E-SES-001..017 |
+| `/admin/speakers` | [`cp-admin-speakers.md`](cp-admin-speakers.md) | E2E-SPK-001..022 |
+| `/admin/speaker-presentations` | [`cp-admin-speaker-presentations.md`](cp-admin-speaker-presentations.md) | E2E-SPP-001..017 |
+| `/admin/sessions` | [`cp-admin-sessions.md`](cp-admin-sessions.md) | E2E-SES-001..024 |
 | `/admin/sessions/seat-plans` | [`cp-admin-sessions-seat-plans.md`](cp-admin-sessions-seat-plans.md) | E2E-SSP-001..014 |
-| `/admin/session-categories` | [`cp-admin-session-categories.md`](cp-admin-session-categories.md) | E2E-SCT-001..016 |
-| `/admin/session-moderators` | [`cp-admin-session-moderators.md`](cp-admin-session-moderators.md) | E2E-SMD-001..017 |
+| `/admin/session-categories` | [`cp-admin-session-categories.md`](cp-admin-session-categories.md) | E2E-SCT-001..021 |
+| `/admin/session-moderators` | [`cp-admin-session-moderators.md`](cp-admin-session-moderators.md) | E2E-SMD-001..018 |
 | `/admin/programme/timeline` | [`cp-admin-programme-timeline.md`](cp-admin-programme-timeline.md) | E2E-PTL-001..011 |
-| `/admin/bookings` | [`cp-admin-bookings.md`](cp-admin-bookings.md) | E2E-BKG-001..012 |
-| `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..014 |
-| `/admin/meeting-tables` | [`cp-meeting-tables.md`](cp-meeting-tables.md) | E2E-MHT-001..012 |
-| `/admin/business-meetings` | [`cp-business-meetings.md`](cp-business-meetings.md) | E2E-BMT-001..015 |
+| `/admin/bookings` | [`cp-admin-bookings.md`](cp-admin-bookings.md) | E2E-BKG-001..013 |
+| `/admin/speaker-meeting-requests` | [`cp-admin-speaker-meeting-requests.md`](cp-admin-speaker-meeting-requests.md) | E2E-SMR-001..015 |
+| `/admin/meeting-tables` | [`cp-meeting-tables.md`](cp-meeting-tables.md) | E2E-MHT-001..013 |
+| `/admin/business-meetings` | [`cp-business-meetings.md`](cp-business-meetings.md) | E2E-BMT-001..016 |
 
 ### Control Panel — Engagement, Q&A & attendance
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/admin/question-queue` | [`cp-admin-question-queue.md`](cp-admin-question-queue.md) | E2E-QQU-001..014 |
+| `/admin/question-queue` | [`cp-admin-question-queue.md`](cp-admin-question-queue.md) | E2E-QQU-001..015 |
 | `/sessions/{id}/moderate` | [`cp-session-moderate.md`](cp-session-moderate.md) | E2E-MOD-001..012 |
-| `/admin/comments-moderation` | [`cp-admin-comments-moderation.md`](cp-admin-comments-moderation.md) | E2E-CMT-001..017 |
-| `/admin/ratings` | [`cp-admin-ratings.md`](cp-admin-ratings.md) | E2E-RAT-001..012 |
-| `/admin/session-summaries` | [`cp-admin-session-summaries.md`](cp-admin-session-summaries.md) | E2E-SUM-001..017 |
+| `/admin/comments-moderation` | [`cp-admin-comments-moderation.md`](cp-admin-comments-moderation.md) | E2E-CMT-001..018 |
+| `/admin/ratings` | [`cp-admin-ratings.md`](cp-admin-ratings.md) | E2E-RAT-001..013 |
+| `/admin/session-summaries` | [`cp-admin-session-summaries.md`](cp-admin-session-summaries.md) | E2E-SUM-001..018 |
 | `/admin/hall-arrivals` | [`cp-admin-hall-arrivals.md`](cp-admin-hall-arrivals.md) | E2E-HAR-001..014 |
 
 ### Control Panel — Exhibition
@@ -98,36 +98,37 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | Page | File | Scenarios |
 |------|------|-----------|
 | `/admin/companies` | [`cp-admin-companies.md`](cp-admin-companies.md) | E2E-CMP-001..016 |
-| `/admin/booths` | [`cp-admin-booths.md`](cp-admin-booths.md) | E2E-BTH-001..017 |
-| `/admin/sponsors` | [`cp-admin-sponsors.md`](cp-admin-sponsors.md) | E2E-SPN-001..017 |
-| `/admin/media-partners` | [`cp-admin-media-partners.md`](cp-admin-media-partners.md) | E2E-MPR-001..013 |
-| `/admin/venue-map` | [`cp-admin-venue-map.md`](cp-admin-venue-map.md) | E2E-VMP-001..018 |
+| `/admin/exhibitors` | [`cp-admin-exhibitors.md`](cp-admin-exhibitors.md) | E2E-EXH-001..023 |
+| `/admin/booths` | [`cp-admin-booths.md`](cp-admin-booths.md) | E2E-BTH-001..023 |
+| `/admin/sponsors` | [`cp-admin-sponsors.md`](cp-admin-sponsors.md) | E2E-SPN-001..023 |
+| `/admin/media-partners` | [`cp-admin-media-partners.md`](cp-admin-media-partners.md) | E2E-MPR-001..019 |
+| `/admin/venue-map` | [`cp-admin-venue-map.md`](cp-admin-venue-map.md) | E2E-VMP-001..024 |
 
 ### Control Panel — Content & media
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/admin/news` | [`cp-admin-news.md`](cp-admin-news.md) | E2E-NWS-001..015 |
-| `/admin/media` | [`cp-admin-media.md`](cp-admin-media.md) | E2E-MED-001..016 |
-| `/admin/archive` | [`cp-admin-archive.md`](cp-admin-archive.md) | E2E-ARC-001..017 |
-| `/admin/banners` | [`cp-admin-banners.md`](cp-admin-banners.md) | E2E-BNR-001..016 |
-| `/admin/content-blocks` | [`cp-admin-content-blocks.md`](cp-admin-content-blocks.md) | E2E-CNT-001..014 |
+| `/admin/news` | [`cp-admin-news.md`](cp-admin-news.md) | E2E-NWS-001..021 |
+| `/admin/media` | [`cp-admin-media.md`](cp-admin-media.md) | E2E-MED-001..022 |
+| `/admin/archive` | [`cp-admin-archive.md`](cp-admin-archive.md) | E2E-ARC-001..023 |
+| `/admin/banners` | [`cp-admin-banners.md`](cp-admin-banners.md) | E2E-BNR-001..022 |
+| `/admin/content-blocks` | [`cp-admin-content-blocks.md`](cp-admin-content-blocks.md) | E2E-CNT-001..020 |
 
 ### Control Panel — AI
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/admin/ai/prompts` | [`cp-admin-ai-prompts.md`](cp-admin-ai-prompts.md) | E2E-AIP-001..016 |
+| `/admin/ai/prompts` | [`cp-admin-ai-prompts.md`](cp-admin-ai-prompts.md) | E2E-AIP-001..022 |
 | `/admin/ai/invocations` | [`cp-admin-ai-invocations.md`](cp-admin-ai-invocations.md) | E2E-AIV-001..012 |
 
 ### Control Panel — Access control & system
 
 | Page | File | Scenarios |
 |------|------|-----------|
-| `/admin/gates` | [`cp-admin-gates.md`](cp-admin-gates.md) | E2E-GAT-001..015 |
+| `/admin/gates` | [`cp-admin-gates.md`](cp-admin-gates.md) | E2E-GAT-001..021 |
 | `/admin/gates/operator` | [`cp-admin-gates-operator.md`](cp-admin-gates-operator.md) | E2E-GOP-001..013 |
 | `/admin/gates/dashboard` | [`cp-admin-gates-dashboard.md`](cp-admin-gates-dashboard.md) | E2E-GDS-001..011 |
-| `/admin/configuration` | [`cp-admin-configuration.md`](cp-admin-configuration.md) | E2E-CFG-001..017 |
+| `/admin/configuration` | [`cp-admin-configuration.md`](cp-admin-configuration.md) | E2E-CFG-001..023 |
 | `/admin/operations` | [`cp-admin-operations.md`](cp-admin-operations.md) | E2E-OPS-001..011 |
 | `/admin/operation-log` | [`cp-admin-operation-log.md`](cp-admin-operation-log.md) | E2E-OPL-001..018 |
 | `/admin/logs` | [`cp-admin-logs.md`](cp-admin-logs.md) | E2E-LOG-001..013 |
@@ -236,3 +237,17 @@ API endpoints land (D-249). The per-screen design docs live under
   driven from these scenarios; many scenarios are also covered at the API layer
   by `tests/SIMF.Api.Tests/*` (each per-page file's "Implementation notes"
   cross-reference the covering xUnit cases).
+
+### Update — 2026-06-10 (D-356 Phase 5 — Uniform CRUD: Excel + Page⇄Popup toggle)
+
+- **New page catalogued:** `/admin/exhibitors` (`cp-admin-exhibitors.md`,
+  E2E-EXH-001..023) — its first authored E2E file.
+- **+~130 scenarios** appended across 37 changed CP pages to cover the D-356
+  generic Excel **export** (and **import** where a create/upsert path exists)
+  and the D-353 **Page⇄Popup presentation toggle** + CrudShell `SimfConfirm`
+  delete gate. Ranges in the index above reflect the new maxima. Every added id
+  is contiguous and stable; no existing scenario was renumbered.
+- **Reference docs:** 8 existing per-page docs updated + 7 authored for the full
+  CrudShell conversions (Sponsors, Exhibitors, Speakers, Booths, Venue-map,
+  Invitations, Sessions). Remaining `docs/pages/cp/*` "—" debt is unchanged
+  (export-only/lookup pages) and stays tracked in `PAGE-INDEX.md`.

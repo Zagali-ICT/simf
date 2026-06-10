@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page permission:** `[RequirePermission(PermissionCatalog.News.View)]` (`"News.View"`).
 > The mutating actions hit endpoints gated by `News.Create` / `News.Edit` /
@@ -24,7 +24,7 @@
 | E2E-NWS-003 | Auth gate: signed-in user without `News.View` → `/not-permitted` | auth | P0 | _to author_ |
 | E2E-NWS-004 | Add — Add modal opens with all 12 fields (no Active checkbox) | crud | P1 | _to author_ |
 | E2E-NWS-005 | Edit — modal pre-fills from detail fetch + shows Active checkbox | crud | P1 | _to author_ |
-| E2E-NWS-006 | Delete — `confirm()` dialog gates the soft-delete; Cancel aborts | crud | P1 | _to author_ |
+| E2E-NWS-006 | Delete — CrudShell ViewDelete + SimfConfirm gates the soft-delete; Cancel aborts (D-353) | crud | P1 | _to author_ |
 | E2E-NWS-007 | Client validation: blank required field → bilingual modal error, no POST | error | P1 | _to author_ |
 | E2E-NWS-008 | Server validation: over-length title (>200) → 400 `NEWS_INVALID` | error | P2 | _to author_ |
 | E2E-NWS-009 | Conflict: duplicate English title → 409 `NEWS_TITLE_DUPLICATE` | error | P1 | _to author_ |
@@ -34,6 +34,12 @@
 | E2E-NWS-013 | RTL render: Arabic toggle mirrors page + Add modal | i18n | P1 | _to author_ |
 | E2E-NWS-014 | Per-column grid filter (Title/Category EN) narrows the grid, Skip resets to 0 | crud | P1 | _to author_ |
 | E2E-NWS-015 | Column sort (Title EN / Publish date / Display order) toggles asc↔desc | crud | P2 | _to author_ |
+| E2E-NWS-016 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
+| E2E-NWS-017 | Full-page mode: Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-NWS-018 | Delete confirmation gate: CrudShell + SimfConfirm — Cancel = no DELETE, confirm = one DELETE (D-353) | error | P0 | _to author_ |
+| E2E-NWS-019 | Excel export: toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
+| E2E-NWS-020 | Excel import: upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
+| E2E-NWS-021 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -88,8 +94,12 @@ Scenario: Create, edit (toggle Active), then delete one article
   And the row's Order column now reads "0"
 
   When the administrator clicks the row's Delete (trash) icon action
-  And the browser confirm() dialog reads "Delete this news article? It will be removed from the public feed immediately."
-  And they accept the dialog
+  Then the CrudShell opens the NewsViewDelete form (dialog by default) showing the
+      article's read-only details and a red "Delete" button (D-353 — the old native
+      browser confirm() is gone)
+  When they click "Delete"
+  Then a SimfConfirm dialog appears naming the article
+  When they confirm
   Then a DELETE /account/api/admin/news/{id} fires and returns HTTP 200
   And the toast reads "News article deleted." / "تم حذف الخبر."
   And the row's Active column now reads "—" (soft-deleted; admin grid still lists it)
@@ -168,12 +178,15 @@ Scenario: Edit fetches the full detail and surfaces the Active checkbox
 Scenario: Cancelling the confirm dialog aborts the soft-delete
   Given a News article row is visible
   When the administrator clicks the row's Delete (trash) icon action
-  Then a browser confirm() dialog appears reading
-      "Delete this news article? It will be removed from the public feed immediately."
-      / "هل تريد حذف هذا الخبر؟ ستتم إزالته من الواجهة العامة فورًا."
-  When they dismiss the dialog (Cancel)
+  Then the CrudShell opens the NewsViewDelete form with a red "Delete" button
+      (D-353 — the native browser confirm() this page used to carry is gone)
+  When they click "Delete"
+  Then a SimfConfirm dialog appears naming the article
+      ("Delete this news article? It will be removed from the public feed immediately."
+       / "هل تريد حذف هذا الخبر؟ ستتم إزالته من الواجهة العامة فورًا.")
+  When they dismiss the SimfConfirm (Cancel)
   Then no DELETE /account/api/admin/news/{id} request fires
-  And the row is unchanged (Active still "✓")
+  And the form stays open and the row is unchanged (Active still "✓")
   And no toast appears
 ```
 
@@ -338,6 +351,116 @@ Scenario: Clicking a sortable header toggles ascending then descending
   And the previous "publishedat" header returns to the neutral (↕) state
 ```
 
+### E2E-NWS-016 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/news with the default "dialog" presentation
+  And the grid toolbar shows the CrudPresentationToggle ("Open as full page", maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.news" holds {"v":1,"presentation":"page"}
+      (CpPreferences writes the versioned per-page blob via the simfPrefs JS helper)
+  When they reload /admin/news
+  Then OnInitializedAsync reads the saved preference (Prefs.GetPresentationAsync("news"))
+  And the toggle still reads "Open as dialog"
+  And opening "Add news article" now renders the full-page CrudPageFrame (not a popup)
+```
+
+### E2E-NWS-017 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page" (localStorage simf.cp.prefs.news = "page")
+  When the administrator clicks "Add news article"
+  Then GridHidden becomes true: the grid + SimfBanner are replaced by the CrudShell
+      page frame (title header + close button + the NewsAddEdit form)
+  And there is no modal backdrop
+  When they fill the required EN/AR title, category and body fields and click "Save"
+  Then a POST /account/api/admin/news returns 200, the page frame closes,
+      and the grid re-appears with the new row and the "News article saved." toast
+  When they click a row's Edit (pencil) icon then the frame's close (X) button
+      (CloseLabel "Close" / "إغلاق")
+  Then the form closes and the grid re-appears unchanged (no PUT fired)
+```
+
+### E2E-NWS-018 — Delete confirmation gate (CrudShell + SimfConfirm) (D-353)
+
+```gherkin
+Scenario: Delete requires explicit SimfConfirm confirmation
+  Given the administrator is on /admin/news
+  When they click the Delete (trash) icon on a row
+  Then a GET /account/api/admin/news/{id} fetches the full AdminNewsDetail
+  And the CrudShell opens the NewsViewDelete form showing the article's read-only
+      details (incl. the cover-image preview when ImageRelativePath is set) and a
+      red "Delete" button (the old native browser confirm() is gone)
+  When they click "Delete"
+  Then a SimfConfirm dialog appears reading
+      "Delete this news article? It will be removed from the public feed immediately."
+      / "هل تريد حذف هذا الخبر؟ ستتم إزالته من الواجهة العامة فورًا."
+      (Admin.News.Delete.Message formatted with the article title; Danger=true)
+  And it cannot be dismissed by a backdrop click
+  When they click "Cancel"
+  Then no DELETE /account/api/admin/news/{id} request fires and the row is unchanged
+  When they re-open the form, click "Delete", then confirm
+  Then exactly one DELETE /account/api/admin/news/{id} fires (HTTP 200)
+  And the form closes, the "News article deleted." / "تم حذف الخبر." toast appears,
+      and the row's Active column flips to "—" (soft-deleted; admin grid still lists it)
+```
+
+### E2E-NWS-019 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the filtered grid (or selected rows) to an XLSX workbook
+  Given the administrator is on /admin/news with at least two articles
+      (the page holds News.Export via the News.* baseline / "*" wildcard)
+  When they click the toolbar "Export" action with no rows selected
+  Then a POST /account/api/admin/news/export fires carrying an AdminGridExportRequest
+      with an empty Ids list and the current GridQuery (Query is sent only when no
+      rows are selected)
+  And the browser saves a file named simf-news-{timestamp}.xlsx
+  And the workbook's "News" sheet header row reads
+      Title | TitleArabic | Category | CategoryArabic | PublishedAt | DisplayOrder | IsActive
+  When they instead select two rows then click "Export"
+  Then the request carries those two Ids and a null Query
+  And the workbook contains exactly those two rows
+  And the API caps the export at 5000 rows
+```
+
+### E2E-NWS-020 — Excel import (D-356)
+
+```gherkin
+Scenario: Import news articles from a workbook and see the per-row outcome
+  Given the administrator is on /admin/news (the page holds News.Import)
+  When they click the toolbar "Import" action
+  Then the hidden file input id="news-import-input" (accept=".xlsx") opens the OS picker
+  When they choose an .xlsx whose "News" sheet has the required headers
+      Title, TitleArabic, Body, BodyArabic, Category, CategoryArabic and two new rows
+  Then a POST /account/api/admin/news/import fires as multipart form data
+  And the import-result modal shows "2 created, 0 updated, 0 skipped."
+      (Grid.Import.ResultBody) and the shared green "Grid.Import.Done" toast appears
+  And the grid reloads and lists both new articles
+  When they import a workbook whose first row repeats an existing English title
+      and whose second row is a new title
+  Then the modal shows 1 created and a per-row error naming the duplicate row
+      (the service rejects the duplicate English title per-row — it is not a batch abort)
+```
+
+### E2E-NWS-021 — Excel import rejection (D-356)
+
+```gherkin
+Scenario: A bad or wrong-sheet upload is rejected without creating anything
+  Given the administrator is on /admin/news
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic / 5MB gate)
+  Then the request returns HTTP 400 and the page shows a bilingual error toast
+      (the CrudGridExcel OnError surfaces ApiResult.Error.MessageForCurrentCulture())
+  And no News article is created
+  When they import a workbook whose sheet is not named "News"
+      (or is missing a required header such as Body / BodyArabic)
+  Then the request returns HTTP 400 with the bilingual worksheet/header message
+  And no News article is created
+```
+
 ---
 
 ## Implementation notes
@@ -362,4 +485,8 @@ Scenario: Clicking a sortable header toggles ascending then descending
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle): added the
+presentation-toggle, full-page round-trip, CrudShell+SimfConfirm delete gate, and
+Excel export/import/rejection scenarios; corrected the now-stale native-confirm()
+delete copy in E2E-NWS-001 and E2E-NWS-006 to the shipped CrudShell + SimfConfirm flow.
+Prior: 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

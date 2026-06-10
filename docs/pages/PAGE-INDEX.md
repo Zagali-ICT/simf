@@ -46,7 +46,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/contacts` | ✅ Real (D-281) | Administrator | — | [e2e/cp-admin-contacts.md](../tests/e2e/cp-admin-contacts.md) |
 | `/admin/countries` | ✅ Real | Administrator | — | [e2e/cp-admin-countries.md](../tests/e2e/cp-admin-countries.md) |
 | `/admin/vips` | ✅ Real | Administrator | — | [e2e/cp-admin-vips.md](../tests/e2e/cp-admin-vips.md) |
-| `/admin/invitations` | ✅ Real | Administrator | — | [e2e/cp-admin-invitations.md](../tests/e2e/cp-admin-invitations.md) |
+| `/admin/invitations` | ✅ Real | Administrator | [cp/admin-invitations.md](cp/admin-invitations.md) | [e2e/cp-admin-invitations.md](../tests/e2e/cp-admin-invitations.md) |
 | `/admin/reset-2fa` | ✅ Real | Administrator | [cp/admin-reset-2fa.md](cp/admin-reset-2fa.md) | [e2e/cp-admin-reset-2fa.md](../tests/e2e/cp-admin-reset-2fa.md) |
 | `/admin/roles` | ✅ Real | Administrator | [cp/admin-roles.md](cp/admin-roles.md) | [e2e/cp-admin-roles.md](../tests/e2e/cp-admin-roles.md) |
 | `/admin/roles/{id}/permissions` | ✅ Real | Administrator | — | [e2e/cp-admin-roles-permissions.md](../tests/e2e/cp-admin-roles-permissions.md) |
@@ -54,9 +54,9 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/themes` | ✅ Real | Administrator | [cp/admin-themes.md](cp/admin-themes.md) | [e2e/cp-admin-themes.md](../tests/e2e/cp-admin-themes.md) |
 | `/admin/halls` | ✅ Real | Administrator | [cp/admin-halls.md](cp/admin-halls.md) | [e2e/cp-admin-halls.md](../tests/e2e/cp-admin-halls.md) |
 | `/admin/halls/seat-layouts` | ✅ Real | Administrator | — | [e2e/cp-admin-halls-seat-layouts.md](../tests/e2e/cp-admin-halls-seat-layouts.md) |
-| `/admin/speakers` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-speakers.md](../tests/e2e/cp-admin-speakers.md) |
+| `/admin/speakers` | ✅ Real (D-199) | Administrator | [cp/admin-speakers.md](cp/admin-speakers.md) | [e2e/cp-admin-speakers.md](../tests/e2e/cp-admin-speakers.md) |
 | `/admin/speaker-presentations` | ✅ Real (D-228) | Administrator | — | [e2e/cp-admin-speaker-presentations.md](../tests/e2e/cp-admin-speaker-presentations.md) |
-| `/admin/sessions` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-sessions.md](../tests/e2e/cp-admin-sessions.md) |
+| `/admin/sessions` | ✅ Real (D-199) | Administrator | [cp/admin-sessions.md](cp/admin-sessions.md) | [e2e/cp-admin-sessions.md](../tests/e2e/cp-admin-sessions.md) |
 | `/admin/sessions/seat-plans` | ✅ Real | Administrator | — | [e2e/cp-admin-sessions-seat-plans.md](../tests/e2e/cp-admin-sessions-seat-plans.md) |
 | `/admin/session-categories` | ✅ Real (D-226) | Administrator | — | [e2e/cp-admin-session-categories.md](../tests/e2e/cp-admin-session-categories.md) |
 | `/admin/session-moderators` | ✅ Real | Administrator | — | [e2e/cp-admin-session-moderators.md](../tests/e2e/cp-admin-session-moderators.md) |
@@ -74,10 +74,11 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/hall-arrivals` | ✅ Real (D-244) | Administrator/operator | — | [e2e/cp-admin-hall-arrivals.md](../tests/e2e/cp-admin-hall-arrivals.md) |
 | **Exhibition** | | | | |
 | `/admin/companies` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-companies.md](../tests/e2e/cp-admin-companies.md) |
-| `/admin/booths` | ✅ Real (D-199/D-222) | Administrator | — | [e2e/cp-admin-booths.md](../tests/e2e/cp-admin-booths.md) |
-| `/admin/sponsors` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-sponsors.md](../tests/e2e/cp-admin-sponsors.md) |
+| `/admin/exhibitors` | ✅ Real (D-202/D-274) | Administrator | [cp/admin-exhibitors.md](cp/admin-exhibitors.md) | [e2e/cp-admin-exhibitors.md](../tests/e2e/cp-admin-exhibitors.md) |
+| `/admin/booths` | ✅ Real (D-199/D-222) | Administrator | [cp/admin-booths.md](cp/admin-booths.md) | [e2e/cp-admin-booths.md](../tests/e2e/cp-admin-booths.md) |
+| `/admin/sponsors` | ✅ Real (D-199) | Administrator | [cp/admin-sponsors.md](cp/admin-sponsors.md) | [e2e/cp-admin-sponsors.md](../tests/e2e/cp-admin-sponsors.md) |
 | `/admin/media-partners` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-media-partners.md](../tests/e2e/cp-admin-media-partners.md) |
-| `/admin/venue-map` | ✅ Real (D-230) | Administrator | — | [e2e/cp-admin-venue-map.md](../tests/e2e/cp-admin-venue-map.md) |
+| `/admin/venue-map` | ✅ Real (D-230) | Administrator | [cp/admin-venue-map.md](cp/admin-venue-map.md) | [e2e/cp-admin-venue-map.md](../tests/e2e/cp-admin-venue-map.md) |
 | **Content & media** | | | | |
 | `/admin/news` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-news.md](../tests/e2e/cp-admin-news.md) |
 | `/admin/media` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-media.md](../tests/e2e/cp-admin-media.md) |
@@ -219,8 +220,10 @@ The reverse rule: **a page that exists in code but not on this index has not
 shipped.** At PR review, search this file for the route; a missing row = an
 incomplete PR.
 
-> **Doc-column debt (2026-06-02):** the ~33 event-module + P2–P5 pages now have
-> full E2E catalogue files (Test column) but their `docs/pages/cp/{slug}.md`
-> reference docs are not yet authored (Doc = "—"). Authoring those reference
-> docs is tracked as a follow-up; the E2E files are the executable source of
-> truth in the meantime.
+> **Doc-column debt (updated 2026-06-10, D-356 Phase 5):** D-356 Phase 5 authored
+> reference docs for the seven full-CrudShell conversions — Exhibitors, Booths,
+> Sponsors, Venue-map, Speakers, Sessions, Invitations (Doc now links, not "—") —
+> and refreshed eight existing ones. The remaining `docs/pages/cp/{slug}.md` "—"
+> rows are the export-only / lookup CP pages that only gained Excel **export** in
+> D-356; each is fully covered by its E2E catalogue file (the executable source of
+> truth) and authoring their reference docs stays tracked as a follow-up.

@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page permission:** `[RequirePermission(PermissionCatalog.Visitors.View)]` (`Visitors.View`).
 > Per-action gates on the backing API: `Visitors.Create` (Duplicate),
@@ -42,6 +42,10 @@
 | E2E-VIS-018 | Cross-kind id on `/admin/visitors/{otherId}/profile` → 404 (D-124) | error | P1 | _to author_ |
 | E2E-VIS-019 | Server 500 on `/list` → empty grid, no crash (resilient fallback) | resilience | P2 | _to author_ |
 | E2E-VIS-020 | RTL / Arabic render — page + Add wizard + Details modal mirror | i18n | P1 | _to author_ |
+| E2E-VIS-021 | Organisation is required (D-354) | error | P1 | _to author_ |
+| E2E-VIS-022 | Numeric ID fields reject letters + inline field validation (D-354) | error | P1 | _to author_ |
+| E2E-VIS-023 | Presentation toggle: switch Add/Edit/Details to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
+| E2E-VIS-024 | Full-page mode: Add/Edit/Details take over the content area, save/close returns to grid (D-353) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -390,6 +394,61 @@ Scenario: An invalid Iqama shows an inline error on the field, not just a top ba
   And the form does not submit
 ```
 
+### E2E-VIS-023 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch the Add/Edit/Details framing to full-page and it persists across reload
+  Given the administrator is on /admin/visitors with the default "dialog" presentation
+  And the grid toolbar shows the CrudPresentationToggle "Open as full page" control (maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.visitors" holds {"v":1,"presentation":"page"}
+  When they reload /admin/visitors
+  Then OnInitializedAsync re-reads the preference via Prefs.GetPresentationAsync("visitors")
+  And the toggle still reads "Open as dialog"
+  And opening "Add visitor" now renders the full-page CrudShell frame (not a popup)
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-visitors-toggle-page.png`
+- Console errors: 0 expected
+- Storage: `simf.cp.prefs.visitors` = `{"v":1,"presentation":"page"}` after the toggle, and still present after reload
+- Network: toggling fires no `/account/api/admin/visitors/*` request (the preference is client-side only)
+
+### E2E-VIS-024 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/Details take over the content area; save or close returns to the grid
+  Given the presentation is set to "full page" (Presentation = Page)
+  When the administrator clicks the toolbar "Add visitor" action
+  Then the SimfBanner + grid are hidden (GridHidden) and the CrudShell renders the
+       full-page frame titled "Add visitor" (Admin.Visitors.Add.Title) hosting the
+       D-127 walk-in CreateVisitorForm wizard
+  And there is no modal backdrop
+  When they complete the wizard and it reports success (register-onsite 200)
+  Then the CrudShell closes (CloseForm) and the banner + grid re-appear
+  And a green toast reads "Invitation sent to {email}." (Admin.CreateVisitor.Success)
+  And the grid reloads via POST /account/api/admin/visitors/list
+
+  When the administrator clicks the "Edit" action on a row
+  Then the full-page frame titled "Edit visitor" (Admin.Visitors.Edit.Title) hosts EditAccountForm (Scope=visitors)
+  When they change the Display name and Save
+  Then PUT /account/api/admin/visitors/{id} returns 200
+  And the frame closes, the grid re-appears, and a green toast reads "The account was updated." (Admin.Edit.Saved)
+
+  When the administrator clicks the "Details" action on a row
+  Then the full-page frame titled "Visitor details — {email}" (Admin.Visitors.Details.Title) hosts the
+       details-only VisitorsViewDelete form (no Delete button — visitor delete is the reason-gated bulk dialog)
+  And GET /account/api/admin/visitors/{id}/profile returns 200 and the description lists render
+  When they click the frame "Close" (Admin.Visitors.Details.Close)
+  Then the frame closes and the grid re-appears unchanged
+```
+
+**Evidence captured:**
+- Screenshots: `docs/screenshots/cp-admin-visitors-fullpage-add.png`, `-fullpage-edit.png`, `-fullpage-details.png`
+- Console errors: 0 expected
+- Network: register-onsite / PUT / profile / list calls all return 200; no modal backdrop element is present in the DOM while a full-page frame is open
+
 ---
 
 ## Implementation notes
@@ -422,4 +481,4 @@ Scenario: An invalid Iqama shows an inline error on the field, not just a top ba
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added E2E-VIS-023/024 for the D-353 Page↔Popup presentation toggle).

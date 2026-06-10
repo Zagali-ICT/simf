@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **What this page does (grounded in `SessionSummariesList.razor`).** This is the
 > Scientific-Committee AI session-summary / محضر desk (P4.1 / D-238, Mockup screen
@@ -60,6 +60,7 @@
 | E2E-SUM-015 | RTL / Arabic render — page + editor modal mirror | i18n | P1 | _to author_ |
 | E2E-SUM-016 | Per-column filter on Session narrows the grid (client-side, Skip→0) | happy | P1 | _to author_ |
 | E2E-SUM-017 | Column sort on Session toggles ascending / descending | happy | P2 | _to author_ |
+| E2E-SUM-018 | Excel export — toolbar Export downloads an .xlsx of the active-session set (D-356) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -352,6 +353,37 @@ Scenario: Sorting the Session column toggles ascending then descending
   And no new GET /account/api/admin/session-summaries request fires
 ```
 
+### E2E-SUM-018 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the active-session set to an XLSX workbook
+  Given the administrator is on /admin/session-summaries with at least two active sessions
+  And the administrator holds SessionSummaries.Export (Administrator = "*")
+  And the grid toolbar shows the "Export" action
+  When they click the toolbar "Export" action
+  Then simfAccount.downloadXlsx POSTs to /account/api/admin/session-summaries/export
+  And the request body is an AdminGridExportRequest with an empty Ids list and the current Query
+  # The desk has no select-all / multiselect toolbar, so the selected list is always
+  # empty and Query is sent — the export always covers the whole active-session set.
+  And the endpoint runs under policy "SessionSummaries.Export" + RequireApprovedAccount (and the "auth" rate limiter)
+  And the response is an attachment named simf-session-summaries-{yyyyMMddHHmmss}.xlsx
+  And the workbook's "SessionSummaries" sheet has the header row
+    SessionCode | SessionTitle | SessionTitleArabic | SessionStartUtc | Status | Source | PublishedAt | UpdatedAt
+  And a no-summary row exports Status="None" and Source="—"
+  And an AI-drafted draft row exports Status="Draft" and Source="AI"
+  And a published, hand-written row exports Status="Published" and Source="Manual"
+  And the whole-grid export is capped at 5000 rows (MaxExportRows)
+  # Export only — this desk drafts / edits / publishes summaries through its own
+  # bespoke endpoints, so there is NO import path (the grid wires OnExport but not
+  # OnImport, and the API exposes /export with no /import).
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-session-summaries-export.png` (toolbar Export + saved file)
+- Network: a single POST `/account/api/admin/session-summaries/export` returns 200 with `Content-Disposition: attachment; filename="simf-session-summaries-…xlsx"`
+- Console errors: 0 expected
+- Workbook check: the "SessionSummaries" sheet header row matches the eight columns above; one data row per active session
+
 ---
 
 ## Implementation notes
@@ -385,4 +417,4 @@ Scenario: Sorting the Session column toggles ascending then descending
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added E2E-SUM-018 Excel export, export-only). Earlier: 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

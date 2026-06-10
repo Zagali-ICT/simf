@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page background.** P2.5 (D-230) — CP editor for the 2D venue map
 > (SIMF-FDS-006 §5.3/§7, FR-605). Each row is a **node**: a bilingual label
@@ -44,6 +44,12 @@
 | E2E-VMP-016 | RTL render: Arabic toggle mirrors page + Add modal | i18n | P1 | _to author_ |
 | E2E-VMP-017 | Per-column filter on Label narrows the grid (`Filters["label"]`, Skip→0) | happy | P1 | _to author_ |
 | E2E-VMP-018 | Column sort toggles on Label / Kind (`Sort` + `SortDescending`) | happy | P2 | _to author_ |
+| E2E-VMP-019 | Presentation toggle persists across reload (D-353) | happy | P1 | _to author_ |
+| E2E-VMP-020 | Full-page mode round-trip — Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-VMP-021 | Delete confirmation gate — ViewDelete + SimfConfirm (Cancel = no DELETE; confirm = one DELETE) (D-353) | error | P0 | _to author_ |
+| E2E-VMP-022 | Excel export — toolbar Export → POST /export (whole grid vs selected rows; workbook header row) (D-356) | happy | P1 | _to author_ |
+| E2E-VMP-023 | Excel import — Import → file picker → POST /import multipart; result modal + per-row error (D-356) | happy | P1 | _to author_ |
+| E2E-VMP-024 | Excel import rejection — non-.xlsx / wrong-sheet upload → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -96,8 +102,10 @@ Scenario: Create, edit (move + deactivate), then delete one node
   And the row's Position column reads "200, 150.4" and the Active column reads "—"
 
   When the administrator clicks the row's Delete (trash) action
-  Then a browser confirm() dialog reads "Remove this venue-map node?" / "هل تريد إزالة عقدة الخريطة هذه؟"
-  When they accept the dialog
+  Then the VenueMapViewDelete form opens (dialog by default) showing the node's read-only details and a red "Delete" button
+  When they click "Delete"
+  Then a SimfConfirm dialog reads "Delete venue-map node" naming the node "Main Entrance"
+  When they click the confirm "Delete" button
   Then DELETE /account/api/admin/venue-map/{id} fires and returns 200
   And a green toast reads "Node removed." / "تمت إزالة العقدة."
   And the grid reloads and no longer shows "Main Entrance"
@@ -193,11 +201,13 @@ Scenario: Cancel closes the modal without saving
 ### E2E-VMP-008 — Delete confirmation cancelled
 
 ```gherkin
-Scenario: Declining the confirm dialog leaves the node intact
+Scenario: Declining the confirmation leaves the node intact
   Given a node "Keep Me" exists in the grid
   When the administrator clicks the row's Delete (trash) action
-  Then a confirm() dialog reads "Remove this venue-map node?"
-  When they dismiss the dialog
+  Then the VenueMapViewDelete form opens showing the node's read-only details and a red "Delete" button
+  When they click "Delete"
+  Then a SimfConfirm dialog reads "Delete venue-map node" naming "Keep Me"
+  When they click the confirm "Cancel" button (or close the form)
   Then NO DELETE /account/api/admin/venue-map/{id} request fires
   And the "Keep Me" row remains in the grid
 ```
@@ -350,6 +360,118 @@ Scenario: Clicking a sortable header cycles ascending then descending
   # Active column have no sort affordance.
 ```
 
+### E2E-VMP-019 — Presentation toggle persists across reload (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/venue-map with the default "dialog" presentation
+  And the grid toolbar (CustomToolbar slot) shows the CrudPresentationToggle ("Open as full page", maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.venue-map" holds {"V":1,"Presentation":"page"}
+  When they reload /admin/venue-map
+  Then OnInitializedAsync calls Prefs.GetPresentationAsync("venue-map") and reads "page"
+  And the toggle still reads "Open as dialog"
+  And opening "New node" now renders the full-page CrudShell frame (not a popup)
+```
+
+### E2E-VMP-020 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page" (GridHidden = FormOpen && presentation == Page)
+  When the administrator clicks "New node"
+  Then the SimfBanner + grid are replaced by the CrudShell page frame
+    (titled "New venue-map node" with a close header hosting VenueMapAddEdit)
+  And there is no modal backdrop
+  When they fill Label (English)="Stage Marker", Label (Arabic)="علامة المنصة"
+  And select Kind="PointOfInterest", set X position="15", Y position="22"
+  And click "Save"
+  Then POST /account/api/admin/venue-map fires and returns 200
+  And the page frame closes (GridHidden flips back to false)
+  And the grid re-appears with the new "Stage Marker" row and the green toast "Node saved." / "تم حفظ العقدة."
+  When they click the row's Edit (pencil) action and then the frame's close (X) button ("Close")
+  Then GET /account/api/admin/venue-map/{id} fired, the form filled, and on close the grid re-appears unchanged
+  # The same CrudShell hosts View (Details) and Delete; in Page mode each takes over the content area.
+```
+
+### E2E-VMP-021 — Delete confirmation gate (CrudShell + SimfConfirm) (D-353)
+
+```gherkin
+Scenario: Delete requires explicit confirmation through SimfConfirm (no native confirm())
+  Given the administrator is on /admin/venue-map and a node "Main Entrance" exists
+  When they click the row's Delete (trash) action
+  Then GET /account/api/admin/venue-map/{id} fires and returns 200
+  And the VenueMapViewDelete form opens (hosted by CrudShell) showing the read-only
+    detail list (Label, Label (Arabic), Kind, Position, Linked hall, Linked booth, Active)
+    and a red "Delete" button
+  When they click "Delete"
+  Then a SimfConfirm dialog (Danger=true) titled "Delete venue-map node" appears,
+    its message naming the node "Main Entrance"
+    ("Delete venue-map node \"Main Entrance\"? It will disappear from the app's 2D map…")
+  When they click the confirm "Cancel" button
+  Then NO DELETE /account/api/admin/venue-map/{id} request fires and the node is unchanged
+  When they re-open the Delete form, click "Delete", then click the confirm "Delete" button
+  Then exactly one DELETE /account/api/admin/venue-map/{id} fires and returns 200
+  And the form closes and a green toast reads "Node removed." / "تمت إزالة العقدة."
+  And the grid reloads (POST /list) and no longer shows "Main Entrance"
+  # Soft delete: the API calls node.Deactivate(); a second delete on an already-inactive node still returns 200 (idempotent).
+```
+
+### E2E-VMP-022 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the venue-map grid to an XLSX workbook
+  Given the administrator is on /admin/venue-map with at least two nodes
+  When they click the toolbar "Export" action with no rows selected
+  Then OnExportAsync calls _excel.ExportAsync with an empty Ids list and the current GridQuery
+  And a POST /account/api/admin/venue-map/export fires carrying AdminGridExportRequest { Ids: [], Query }
+  And the API returns the binary workbook with
+    Content-Disposition attachment; filename="simf-venue-map-{yyyyMMddHHmmss}.xlsx"
+  And the workbook's "VenueMap" sheet header row reads
+    Label | LabelArabic | Kind | X | Y | Hall | Booth | IsActive
+  And each node's optional Hall/Booth link is written as its human-readable code (empty cell when the link was deactivated)
+  When they instead select two rows then click "Export"
+  Then the POST carries those two row Ids and the workbook contains exactly those two rows
+  # The whole-grid export is capped at MaxExportRows = 5000 (Skip reset to 0, Top forced to 5000).
+```
+
+### E2E-VMP-023 — Excel import (D-356)
+
+```gherkin
+Scenario: Import venue-map nodes from a workbook and see the per-row outcome
+  Given the administrator is on /admin/venue-map
+  When they click the toolbar "Import" action
+  Then OnImportAsync calls _excel.TriggerImportAsync(), opening the file picker on input id "venue-map-import-input" (accept=".xlsx")
+  When they choose an .xlsx whose "VenueMap" sheet has the required headers Label | LabelArabic | Kind
+    and two new rows (e.g. Label="Quay 7" Kind="PointOfInterest", Label="Zone B" Kind="Zone")
+  Then a POST /account/api/admin/venue-map/import fires as multipart form data (field "file")
+  And the import-result modal shows "2 created, 0 updated, 0 skipped." ("{Created} created, {Updated} updated, {Skipped} skipped")
+  And the success toast reads "Import complete." / "اكتمل الاستيراد." (Grid.Import.Done)
+  And the grid reloads (POST /list) and lists both new nodes
+  When they import a workbook one of whose rows names a Hall code that is not an active hall
+  Then that row appears in the per-row error list
+    ("Row {n} (Quay 7): No active hall has the code \"…\".") and the other rows still import
+  # Import is insert-only (every applied row counts as Created); a blank Hall/Booth cell leaves the link unset.
+```
+
+### E2E-VMP-024 — Excel import rejection (bad / wrong-sheet upload) (D-356)
+
+```gherkin
+Scenario: A bad upload is rejected without creating anything
+  Given the administrator is on /admin/venue-map
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic 0x50 0x4B 0x03 0x04 check)
+  Then POST /account/api/admin/venue-map/import returns HTTP 400
+  And OnExcelError surfaces a red bilingual toast
+    ("The file is not a valid Excel workbook." / "الملف ليس مصنف Excel صالحًا.")
+  And no venue-map node is created
+  When they instead upload a workbook whose worksheet is NOT named "VenueMap"
+  Then the request returns 400 with the bilingual "worksheet named 'VenueMap'" message and nothing is created
+  When they upload a file larger than 5 MB
+  Then the request returns HTTP 413 with the bilingual "maximum is 5 MB" message
+  # Required headers on the VenueMap sheet: Label, LabelArabic, Kind (case-insensitive). Import is capped at MaxImportRows = 5000.
+```
+
 ---
 
 ## Implementation notes
@@ -359,10 +481,11 @@ Scenario: Clicking a sortable header cycles ascending then descending
   session: sign in as `superadmin@zagali-ict.com` via `/login` + `/login/totp`
   (TOTP from the `Get-Totp` helper), walk each scenario, and capture screenshots
   into `docs/screenshots/cp-admin-venue-map-{scenario}.png`.
-- **No page reference doc yet.** `docs/pages/cp/venue-map.md` does not exist at
-  the time of writing (P2.5 / D-230 page). The grounding for this catalogue is
-  the `.razor` page, the `VenueMapEndpoints` / `VenueMapService`, and the resx
-  strings — create the page doc when the page reference set is back-filled.
+- **Page reference doc.** The page reference doc lives at
+  [`docs/pages/cp/admin-venue-map.md`](../../pages/cp/admin-venue-map.md)
+  (created D-356 Phase 5). The grounding for this catalogue is the `.razor` page +
+  `VenueMapAddEdit` / `VenueMapViewDelete` forms, the `VenueMapEndpoints` /
+  `VenueMapExcelEndpoints` / `VenueMapService`, and the resx strings.
 - **API integration tests** at `tests/SIMF.Api.Tests/VenueMapTests.cs` cover the
   same surface at a lower layer (no browser):
   - `Create_then_get_then_list_and_public_read` — create → GET by id → public
@@ -384,4 +507,9 @@ Scenario: Clicking a sortable header cycles ascending then descending
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle). Added
+E2E-VMP-019..024 (D-353 presentation toggle + full-page round-trip + CrudShell/
+SimfConfirm delete gate; D-356 Excel export + import + import rejection). Corrected
+the VMP-001/008 delete legs that still described a native `confirm()` — the page now
+deletes through `VenueMapViewDelete` + `SimfConfirm`. (Prior: 2026-06-03 E2E
+catalogue rebuild, D-256/D-257 grid affordances reconciled.)

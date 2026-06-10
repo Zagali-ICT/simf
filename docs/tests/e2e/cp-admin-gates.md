@@ -7,12 +7,30 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page facts (read from source, do not invent):**
 > - Page: `src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/GatesList.razor`
 >   (D-148 — Gate Module CRUD list, mirrors `HallsList`).
-> - Form: `GateForm.razor` (shared Add/Edit; the **Active** checkbox only renders in Edit).
+> - Forms (D-353): the Add/Edit/View/Delete forms are hosted by **`CrudShell`**
+>   (popup or full page per the toolbar toggle, persisted in localStorage via
+>   `CpPreferences`). `GatesAddEdit.razor` is the shared Add/Edit form (the
+>   **Active** checkbox only renders in Edit); `GatesViewDelete.razor` shows the
+>   read-only details and, when deleting, gates the soft-delete behind a
+>   `SimfConfirm` dialog (it is **not** a one-click delete on the list row).
+> - Presentation toggle (D-353): `<CrudPresentationToggle PageKey="gates" />` in the
+>   grid `CustomToolbar`; `Prefs.GetPresentationAsync("gates")` seeds it in
+>   `OnInitializedAsync`; the choice persists under localStorage
+>   `simf.cp.prefs.gates` = `{"v":1,"presentation":"page"|"dialog"}`.
+> - Excel (D-356): the grid wires `OnExport` + `OnImport` and renders
+>   `<CrudGridExcel Resource="gates" />`. BFF: `POST /account/api/admin/gates/export`
+>   and `POST /account/api/admin/gates/import`. Export permission `Gates.Export`,
+>   import permission `Gates.Import`. Export sheet **"Gates"**, file prefix
+>   `simf-gates`, header row `Code | Name | NameArabic | DirectionMode |
+>   AllowedProfileTypeCount | AssignedOperatorCount | IsActive`. Import is
+>   **insert-only**, required headers `Code | Name | NameArabic` (the parser also
+>   reads optional `Description`, `DescriptionArabic`, `DirectionMode`); a
+>   duplicate code or invalid field is a per-row error, not a batch abort.
 > - Required permission: **`Gates.Manage`** (`@attribute [RequirePermission(PermissionCatalog.Gates.Manage)]`).
 > - Nav item: `Module.Gates` → `/admin/gates`, `RequiredPermission = PermissionCatalog.Gates.Manage` (`CpNavigation.cs`).
 > - BFF passthroughs (`AccountEndpoints.cs`): `POST /account/api/admin/gates/list`,
@@ -53,6 +71,12 @@
 | E2E-GAT-013 | Server 500 / list failure → bilingual load-failed toast | resilience | P2 | _to author_ |
 | E2E-GAT-014 | RTL / Arabic render mirrors page + modal | i18n | P1 | _to author_ |
 | E2E-GAT-015 | Per-column filter narrows the grid (Code / Name / Name (Arabic)) | happy | P1 | _to author_ |
+| E2E-GAT-016 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
+| E2E-GAT-017 | Full-page mode: Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-GAT-018 | Delete confirmation: Deactivate opens View/Delete → SimfConfirm gates the call (D-353) | error | P0 | _to author_ |
+| E2E-GAT-019 | Excel export: toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
+| E2E-GAT-020 | Excel import: upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
+| E2E-GAT-021 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -112,9 +136,13 @@ Scenario: Create, edit, view, deactivate one gate
   Then the modal closes
 
   When the administrator clicks the "Deactivate" icon on that row
+  Then the View/Delete form opens (dialog by default) showing the read-only
+    details and a red "Deactivate" button (D-353 — no longer a one-click delete)
+  When they click "Deactivate" and confirm the SimfConfirm dialog naming the gate
   Then a DELETE /account/api/admin/gates/{id} fires and the API returns 200
   And a green toast reads 'Gate "Main Gate" was deactivated.'
   And the row's Status pill changes to the grey "Inactive" pill
+  (the confirmation gate itself is exercised in full by E2E-GAT-018)
 ```
 
 **Evidence captured:**
@@ -370,6 +398,142 @@ Scenario: Typing into a per-column grid filter narrows the grid server-side
   `gate.NameArabic` for keys `code` / `name` / `namearabic` (case-insensitive key);
   unknown filter keys are ignored.
 
+### E2E-GAT-016 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/gates with the default "dialog" presentation
+  And the grid toolbar shows the CrudPresentationToggle "Open as full page"
+    (maximize icon) — PageKey "gates"
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.gates" holds {"v":1,"presentation":"page"}
+  When they reload /admin/gates
+  Then OnInitializedAsync seeds the toggle from Prefs.GetPresentationAsync("gates")
+  And the toggle still reads "Open as dialog"
+  And opening "Add gate" now renders the full-page CrudShell frame (not a popup)
+```
+
+**Evidence captured:**
+- Screenshot of the toolbar toggle in each state → `docs/screenshots/cp-admin-gates-toggle-{dialog,page}.png`
+- DevTools Application → localStorage shows `simf.cp.prefs.gates` = `{"v":1,"presentation":"page"}`
+
+### E2E-GAT-017 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation for /admin/gates is set to "full page"
+    (localStorage simf.cp.prefs.gates {"v":1,"presentation":"page"})
+  When the administrator clicks "Add gate"
+  Then the grid + SimfBanner are hidden (GridHidden) and the CrudShell renders the
+    full-page frame: title "Add gate", a Close header, and the GatesAddEdit form
+  And there is no modal backdrop
+  When they fill Code="G-FP-1" + Name (English)="Full Page Gate"
+    + Name (Arabic)="بوابة الصفحة الكاملة" and click "Create gate"
+  Then the page frame closes and the grid re-appears with the new row
+    and the green toast 'Gate "Full Page Gate" was created.'
+  When they click the "Edit" icon on a row and then the frame's Close (X) button
+  Then GatesAddEdit closes via OnCancel and the grid re-appears unchanged
+    (no PUT fired)
+  When they click the "Details" icon
+  Then the read-only GatesViewDelete form takes over the content area (no backdrop)
+  And clicking "Close" returns to the grid
+```
+
+### E2E-GAT-018 — Delete confirmation gate (D-353)
+
+```gherkin
+Scenario: Deactivate requires explicit SimfConfirm confirmation
+  Given the administrator is on /admin/gates and a gate "G-MAIN-1" (Main Gate) exists
+  When they click the "Deactivate" icon on that row
+  Then a GET /account/api/admin/gates/{id} fires to load the detail
+  And the GatesViewDelete form opens (dialog by default) showing the read-only
+    description list (Code, Name, Name (Arabic), Direction, Allowed types,
+    Operators, Status) and a red "Deactivate" button
+  And NO DELETE request has fired yet (this replaced the old one-click delete)
+  When they click the form's "Deactivate" button
+  Then a SimfConfirm dialog appears with the message
+    "Deactivate gate \"Main Gate\"?" (Arabic from Admin.Gates.Delete.Message)
+    and a danger "Deactivate" confirm + "Cancel" button
+  When they click "Cancel"
+  Then the confirm closes, NO DELETE /account/api/admin/gates/{id} fires,
+    and the row is unchanged
+  When they click "Deactivate" again and then the confirm "Deactivate" button
+  Then exactly one DELETE /account/api/admin/gates/{id} fires (simfAccount.deleteJson)
+  And the form closes and a green toast reads 'Gate "Main Gate" was deactivated.'
+  And the row's Status pill turns grey "Inactive"
+```
+
+**Evidence captured:**
+- Network: confirm-cancel path fires zero DELETE; confirm path fires exactly one.
+- Screenshot of the SimfConfirm dialog → `docs/screenshots/cp-admin-gates-delete-confirm.png`
+
+### E2E-GAT-019 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the filtered grid (and a selection) to an XLSX workbook
+  Given the administrator is on /admin/gates with at least two gates
+  And they hold the Gates.Export permission
+  When they click the toolbar "Export" action with no rows selected
+  Then a POST /account/api/admin/gates/export fires carrying
+    AdminGridExportRequest { Ids: [], Query: <current grid query> }
+    (an empty Ids list means the whole filtered grid is exported)
+  And the browser saves a file named simf-gates-{timestamp}.xlsx
+  And the workbook's "Gates" sheet has the header row
+    Code | Name | NameArabic | DirectionMode | AllowedProfileTypeCount |
+    AssignedOperatorCount | IsActive
+  When they instead tick two row checkboxes then click "Export"
+  Then the POST carries those two row Ids (Query omitted) and the workbook
+    contains exactly those two gates
+  And the API caps the export at 5000 rows
+```
+
+**Evidence captured:**
+- Network: `POST /account/api/admin/gates/export` returns 200 with an
+  `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` body.
+- Saved file opened: header row matches the seven columns above.
+
+### E2E-GAT-020 — Excel import (D-356)
+
+```gherkin
+Scenario: Import gates from a workbook and see the per-row outcome
+  Given the administrator is on /admin/gates and holds the Gates.Import permission
+  When they click the toolbar "Import" action
+  Then the hidden file input "gates-import-input" (accept=".xlsx") opens the picker
+  When they choose an .xlsx whose "Gates" sheet has the required headers
+    Code | Name | NameArabic and two new rows
+    (G-IMP-1 / Import Gate 1 / بوابة مستوردة ١ and G-IMP-2 / Import Gate 2 / بوابة مستوردة ٢)
+  Then a POST /account/api/admin/gates/import fires as multipart form data
+  And the import-result modal shows "2 created, 0 updated, 0 skipped."
+  And the shared "Grid.Import.Done" success toast appears
+  And the grid reloads (LoadAsync) and lists both new gates
+  When they re-import a workbook containing one duplicate code (G-IMP-1) and one
+    new code (G-IMP-3)
+  Then the modal shows 1 created and one per-row error naming the duplicate row
+    (import is insert-only — a duplicate code is a per-row error, not a batch abort)
+```
+
+**Evidence captured:**
+- Network: `POST /account/api/admin/gates/import` (multipart) returns 200 with the
+  created/updated/skipped counts + per-row error list.
+- Audit rows: one `Gate.Created` per successfully imported row.
+
+### E2E-GAT-021 — Excel import rejection (D-356)
+
+```gherkin
+Scenario: A bad / wrong-sheet upload is rejected without creating anything
+  Given the administrator is on /admin/gates with the Gates.Import permission
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic check)
+    or exceeds the 5 MB upload gate
+  Then the request returns HTTP 400 and OnError surfaces a bilingual error toast
+  And no gate is created
+  When they import a workbook whose sheet is NOT named "Gates"
+    (or is missing one of the required headers Code / Name / NameArabic)
+  Then the request returns HTTP 400 with the bilingual "worksheet named 'Gates'"
+    / required-headers message
+  And the grid is unchanged and no Gate.Created audit row is written
+```
+
 ---
 
 ## Implementation notes
@@ -395,4 +559,5 @@ Scenario: Typing into a per-column grid filter narrows the grid server-side
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added
+E2E-GAT-016..021, corrected the stale GateForm/one-click-delete page facts).

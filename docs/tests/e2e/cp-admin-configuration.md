@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page in one line:** admin CRUD over the platform system-settings key/value
 > store (P2.4 / D-229, FDS-012 §5.5). Permission family `Configuration.*`
@@ -21,8 +21,10 @@
 > - The **Key** field is locked on edit (`Disabled="@(_busy || _isEdit)"`) — the
 >   key is immutable once created.
 > - The **Active** checkbox is rendered **only in the Edit modal** (`@if (_isEdit)`).
-> - **Delete** is a soft deactivate behind a native browser `confirm()` dialog
->   (JS `confirm`), not an in-page modal.
+> - **Delete** is a soft deactivate. (D-353 — corrected) It is no longer a
+>   native browser `confirm()`: Delete now opens the `ConfigurationViewDelete`
+>   form inside `CrudShell` (dialog or full page per the toggle), and the
+>   actual call is gated by an in-page `SimfConfirm` dialog. See E2E-CFG-020.
 > - Empty-key validation is **client-side** (toast, no network call); length /
 >   duplicate validation is **server-side**.
 > - **Grid affordances (D-256 — raw table → `SimfDataGrid`):** the page now
@@ -54,6 +56,12 @@
 | E2E-CFG-015 | RTL / Arabic render mirrors page + Add/Edit modal | i18n | P1 | _to author_ |
 | E2E-CFG-016 | Per-column filter (Key / Value) narrows the grid, resets Skip to 0 | grid | P1 | _to author_ |
 | E2E-CFG-017 | Column sort on Key toggles asc ⇄ desc | grid | P2 | _to author_ |
+| E2E-CFG-018 | Presentation toggle persists across reload (Page ⇄ Popup) (D-353) | happy | P1 | _to author_ |
+| E2E-CFG-019 | Full-page mode round-trip — Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-CFG-020 | Delete confirmation gate — CrudShell ViewDelete + SimfConfirm (Cancel = no DELETE, confirm = one DELETE) (D-353) | error | P0 | _to author_ |
+| E2E-CFG-021 | Excel export — toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
+| E2E-CFG-022 | Excel import — upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
+| E2E-CFG-023 | Excel import rejection — non-.xlsx / wrong-sheet upload → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -364,6 +372,113 @@ Scenario: Clicking the Key header toggles ascending ⇄ descending
   # Only the Key column is Sortable; Value / Description / Active headers do not sort.
 ```
 
+### E2E-CFG-018 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch the form presentation and it persists across reload
+  Given the administrator is on /admin/configuration with the default "dialog" presentation
+  And the grid toolbar shows the CrudPresentationToggle (PageKey = "configuration")
+  When they click the toggle to "Open as full page"
+  Then the toggle label flips to "Open as dialog"
+  And localStorage key "simf.cp.prefs.configuration" holds {"v":1,"presentation":"page"}
+  When they reload /admin/configuration
+  Then the page re-reads the preference via CpPreferences.GetPresentationAsync("configuration")
+  And the toggle still reads "Open as dialog"
+  And opening "New setting" now renders the full-page CrudShell frame (not a popup)
+  When they flip the toggle back to "Open as dialog"
+  Then localStorage "simf.cp.prefs.configuration" holds {"v":1,"presentation":"dialog"}
+  # PageKey = "configuration" (const PageKey in ConfigurationList); the toggle binds _presentation.
+```
+
+### E2E-CFG-019 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page" (localStorage presentation = "page")
+  When the administrator clicks "New setting"
+  Then the grid + SimfBanner are hidden (GridHidden) and the CrudShell renders the
+        ConfigurationAddEdit form full-page with a title + close header
+  And there is no modal backdrop
+  When they fill Key="event.startDate", Value="2026-11-01" and click "Save"
+  Then POST /account/api/admin/system-settings returns 200
+  And the full-page frame closes
+  And the grid re-appears with the new row and a green "Setting saved." / "تم حفظ الإعداد." toast
+  When they click the row's Edit (pencil) icon and then the frame's Close header button
+  Then the form closes and the grid re-appears unchanged (no PUT fired)
+```
+
+### E2E-CFG-020 — Delete confirmation gate (CrudShell + SimfConfirm) (D-353)
+
+```gherkin
+Scenario: Delete requires explicit SimfConfirm confirmation (no native confirm)
+  Given a setting Key="archive.editions.visible", Value="true", Active="✓" exists
+  When the administrator clicks the row's Delete (trash) icon action
+  Then GET /account/api/admin/system-settings/{id} returns 200
+  And the ConfigurationViewDelete form opens inside CrudShell showing the read-only
+        details (Key / Value / Description / Active) and a red "Delete" / "حذف" button
+  And NO native browser confirm() dialog is used
+  When they click the red "Delete" button
+  Then a SimfConfirm dialog titled "Remove setting" / "حذف الإعداد" appears
+  And its message reads 'Remove the setting "archive.editions.visible"? It will no longer apply.' /
+        'هل تريد حذف الإعداد ”archive.editions.visible“؟ سيؤدي ذلك إلى تعطيله.'
+  When they click "Cancel" / "إلغاء"
+  Then no DELETE /account/api/admin/system-settings/{id} request fires and the row is unchanged
+  When they re-open the form, click "Delete" then confirm "Delete" / "حذف"
+  Then exactly one DELETE /account/api/admin/system-settings/{id} fires and returns 200
+  And the form closes and a green "Setting removed." / "تمت إزالة الإعداد." toast appears
+  And the grid reloads (the deactivated row no longer shows as active)
+  # Supersedes the native confirm() flow described in E2E-CFG-001/005/006 (pre-D-353).
+```
+
+### E2E-CFG-021 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the filtered grid to an XLSX workbook
+  Given the administrator is on /admin/configuration with at least two settings
+  When they click the toolbar "Export" / "تصدير" action with no rows selected
+  Then a POST /account/api/admin/system-settings/export fires with an
+        AdminGridExportRequest carrying an empty Ids list and the current Query
+  And the browser saves a file named simf-configuration-{timestamp}.xlsx
+  And the workbook's "Configuration" sheet header row reads Key | Value | Description | IsActive
+  When they instead select two rows and click "Export"
+  Then the request carries those two Ids and an omitted Query
+  And the workbook contains exactly those two rows
+  # Export is gated by Configuration.Export; the API caps the export at 5000 rows.
+```
+
+### E2E-CFG-022 — Excel import (D-356)
+
+```gherkin
+Scenario: Import settings from a workbook and see the per-row outcome
+  Given the administrator is on /admin/configuration
+  When they click the toolbar "Import" / "استيراد" action
+  And the hidden file input id="system-settings-import-input" (accept=".xlsx") opens
+  And they choose an .xlsx whose "Configuration" sheet has Key/Value rows for two new settings
+  Then a POST /account/api/admin/system-settings/import fires as multipart form data
+  And the import-result modal shows "2 created, 0 updated, 0 skipped"
+  And a green "Import complete." / "اكتمل الاستيراد." (Grid.Import.Done) toast appears
+  And the grid reloads and lists both new settings
+  When they import a workbook containing one duplicate active Key and one new Key
+  Then the modal shows 1 created, 0 updated, and one per-row error naming the duplicate
+        (the service returns 409 SYSTEM_SETTING_KEY_DUPLICATE for that row, not a batch abort)
+  # Required headers are Key + Value; import is insert-only and gated by Configuration.Import.
+```
+
+### E2E-CFG-023 — Excel import rejection (D-356)
+
+```gherkin
+Scenario: A bad / wrong-sheet upload is rejected without creating anything
+  Given the administrator is on /admin/configuration
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic check) or exceeds 5MB
+  Then the request returns HTTP 400 and the page shows a bilingual error toast
+  And no system setting is created
+  When they import a workbook whose sheet is not named "Configuration"
+        (or is missing the required Key / Value headers)
+  Then the request returns HTTP 400 with the bilingual worksheet/header error message
+  And nothing is created
+  # The upload defence (ZIP-magic + 5MB gate) and the 5000-row cap live in the shared import base.
+```
+
 ---
 
 ## Implementation notes
@@ -395,4 +510,4 @@ Scenario: Clicking the Key header toggles ascending ⇄ descending
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; appended E2E-CFG-018..023, corrected the stale native-confirm delete note to CrudShell + SimfConfirm).

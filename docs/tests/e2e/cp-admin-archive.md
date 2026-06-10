@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Permission gate.** The page carries `@attribute [RequirePermission(PermissionCatalog.Archive.View)]`
 > (`"Archive.View"`). The backing API endpoints are gated per action:
@@ -66,6 +66,12 @@
 | E2E-ARC-015 | Second snapshot of the same year → `archive_edition_year_duplicate` 409 | error | P1 | authored ✓ (`Snapshot_creates_current_year_edition_and_duplicate_409`) |
 | E2E-ARC-016 | Snapshot forbidden without `Archive.Snapshot` (non-admin → 403) | auth | P0 | authored ✓ (`Snapshot_is_forbidden_for_a_non_admin`) |
 | E2E-ARC-017 | "Show in archive now" checkbox flips `ArchiveVisibility` on | happy | P1 | authored (screen) |
+| E2E-ARC-018 | Presentation toggle persists across reload (`simf.cp.prefs.archive`) (D-353) | happy | P1 | _to author_ |
+| E2E-ARC-019 | Full-page mode round-trip — Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-ARC-020 | Delete confirmation gate — ViewDelete + SimfConfirm (Cancel = no DELETE; confirm = one DELETE) (D-353) | error | P0 | _to author_ |
+| E2E-ARC-021 | Excel export — whole filtered grid vs selected rows, real header row (D-356) | happy | P1 | _to author_ |
+| E2E-ARC-022 | Excel import — workbook upload → rows created + per-row outcome modal (D-356) | happy | P1 | _to author_ |
+| E2E-ARC-023 | Excel import rejection — non-.xlsx / wrong-sheet upload → bilingual 400, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -118,9 +124,11 @@ Scenario: Create, list, edit, then deactivate one archive edition
   And the 2019 row's Attendees column now reads "1350"
 
   When the administrator clicks the 2019 row's Delete (trash) action
-  Then a native confirm() dialog appears reading
-      "Delete this edition? It will be removed from the public archive immediately."
-  When they accept the dialog
+  Then the View/Delete form opens (CrudShell, dialog by default) showing the row's read-only details
+  And a red "Deactivate" button is visible
+  When they click "Deactivate"
+  Then a SimfConfirm dialog asks to confirm, naming the edition
+  When they click the confirm "Deactivate" button
   Then the BFF forwards DELETE /account/api/admin/archive/{id} and the API returns HTTP 200
   And a green toast reads "Edition deleted."
   And the grid reloads
@@ -250,9 +258,10 @@ Scenario: Edit pre-fills the row and can toggle public visibility off
 Scenario: Dismissing the delete confirm keeps the edition active
   Given an active ArchiveEdition for Year=2019 exists (Active pill = "Active")
   When the administrator clicks the 2019 row's Delete (trash) action
-  Then a native confirm() dialog appears reading
-      "Delete this edition? It will be removed from the public archive immediately."
-  When they dismiss / cancel the dialog
+  Then the View/Delete form (CrudShell) opens showing the row's read-only details and a red "Deactivate" button
+  When they click "Deactivate"
+  Then a SimfConfirm dialog appears naming the edition
+  When they dismiss / cancel the confirm dialog
   Then NO DELETE /account/api/admin/archive/{id} request fires
   And the 2019 row stays in the grid with its Active pill still reading "Active"
   And no toast appears
@@ -401,6 +410,112 @@ Scenario: The optional checkbox reveals the archive after the snapshot
   Then the snapshot still creates the edition but the visibility toggle is left unchanged
 ```
 
+### E2E-ARC-018 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/archive with the default "dialog" presentation
+  And the grid toolbar's CustomToolbar shows the "Open as full page" toggle (maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.archive" holds {"v":1,"presentation":"page"}
+  When they reload /admin/archive
+  Then OnInitializedAsync calls Prefs.GetPresentationAsync("archive") and restores "page"
+  And the toggle still reads "Open as dialog"
+  And opening "Add edition" now renders the full-page frame (not a popup)
+```
+
+### E2E-ARC-019 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page"
+  When the administrator clicks "Add edition"
+  Then the grid + SimfBanner are replaced by the CrudShell full-page frame
+      (title "Add edition" + close header + the ArchiveAddEdit form)
+  And there is no modal backdrop
+  When they set Year="2018", Title (English)="SIMF 2018", Title (Arabic)="سيمف 2018"
+  And they click "Save"
+  Then the BFF forwards POST /account/api/admin/archive and the API returns HTTP 200
+  And the page frame closes
+  And the grid re-appears with the new row and a green "Edition saved." toast
+  When they click the Edit (pencil) action and then the frame's close (X) button
+  Then the ArchiveAddEdit form closes and the grid re-appears unchanged
+```
+
+### E2E-ARC-020 — Delete confirmation gate (CrudShell + SimfConfirm) (D-353)
+
+```gherkin
+Scenario: Deactivate requires explicit SimfConfirm confirmation
+  Given the administrator is on /admin/archive
+  And an active edition for Year=2019 (Title (English)="SIMF 2019 — Inaugural Forum") exists
+  When they click the 2019 row's Delete (trash) action
+  Then the ArchiveViewDelete form opens inside CrudShell showing the row's read-only details
+  And a red "Deactivate" button is visible
+  When they click "Deactivate"
+  Then a SimfConfirm dialog appears titled "Delete edition" naming the edition
+      ("Delete \"SIMF 2019 — Inaugural Forum\"? It will be hidden from the public archive.")
+  When they click "Cancel" on the confirm
+  Then NO DELETE /account/api/admin/archive/{id} request fires and the row is unchanged
+  When they re-open Deactivate and click the confirm "Deactivate" button
+  Then exactly one DELETE /account/api/admin/archive/{id} fires and the API returns HTTP 200
+  And the form closes, a green "Edition deleted." toast appears
+  And the 2019 row stays in the grid with its Active pill flipped to "Inactive"
+```
+
+### E2E-ARC-021 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the filtered grid to an XLSX workbook
+  Given the administrator is on /admin/archive with at least two editions
+  When they click the toolbar "Export" action with no rows selected
+  Then a POST /account/api/admin/archive/export fires carrying AdminGridExportRequest
+      with an empty Ids list and the current Query (whole filtered grid)
+  And the browser saves a file named simf-archive-{timestamp}.xlsx
+  And the workbook's "Archive" sheet header row is
+      Year | TitleEn | TitleAr | Attendees | Sessions | Speakers | IsActive
+  When they instead select two rows then click "Export"
+  Then the request carries those two Ids and a null Query
+  And the workbook contains exactly those two editions
+  And the API caps the export at 5000 rows
+```
+
+### E2E-ARC-022 — Excel import (D-356)
+
+```gherkin
+Scenario: Import editions from a workbook and see the per-row outcome
+  Given the administrator is on /admin/archive
+  When they click the toolbar "Import" action
+  Then the hidden file input "archive-import-input" (accept=".xlsx") opens the OS picker
+  When they choose an .xlsx whose "Archive" sheet has Year/TitleEn/TitleAr rows
+      for two new years (e.g. 2016 and 2017)
+  Then a POST /account/api/admin/archive/import fires as multipart form data
+  And the import-result modal shows "2 created, 0 updated, 0 skipped."
+  And a green toast reads the shared Grid.Import.Done message
+  And the grid reloads and lists both new editions
+  When they import a workbook containing one duplicate year (an existing edition)
+      and one new year
+  Then the modal shows 1 created and one per-row error naming the duplicate year
+      (the service's archive_edition_year_duplicate 409 recorded as a row error,
+       the batch is not aborted)
+  And the import is insert-only (no existing edition is updated)
+```
+
+### E2E-ARC-023 — Excel import rejection (D-356)
+
+```gherkin
+Scenario: A bad or wrong-sheet upload is rejected without creating anything
+  Given the administrator is on /admin/archive
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic / 5MB gate)
+  Then the request returns HTTP 400 and the page shows a bilingual error toast
+  And no archive edition is created
+  When they import a workbook whose sheet is not named "Archive"
+      (or is missing a required header: Year, TitleEn or TitleAr)
+  Then the request returns HTTP 400 with the bilingual "worksheet named 'Archive'" /
+      required-header message
+  And no archive edition is created
+```
+
 ---
 
 ## Implementation notes
@@ -427,7 +542,21 @@ Scenario: The optional checkbox reveals the archive after the snapshot
   and `tests/SIMF.Api.Tests/PermissionEnforcementTests.cs` already assert the
   `Archive.*` codes gate both nav + endpoints; E2E-ARC-003 is the browser-level
   proof of the same gate.
+- **Excel export/import (D-356).** The grid wires `OnExport`/`OnImport` to the
+  shared `CrudGridExcel` (`Resource="archive"`), which posts the generic
+  `/account/api/admin/archive/export|import` BFF routes. The API endpoints live in
+  `src/Backend/SIMF.Api/Endpoints/Admin/ArchiveExcelEndpoints.cs`
+  (`ExportArchiveEndpoint` gated by `Archive.Export`; `ImportArchiveEndpoint`
+  gated by `Archive.Import`, insert-only, required headers `Year/TitleEn/TitleAr`,
+  duplicate-year 409 recorded as a per-row error). Lower-layer coverage:
+  `tests/SIMF.Api.Tests/ArchiveExcelTests.cs`. E2E-ARC-021..023 are the
+  browser-level proof.
+- **Delete is CrudShell + SimfConfirm (D-353), not a native confirm().** The
+  earlier description of a native `confirm()` dialog on the row's Delete action is
+  superseded — Delete now opens the `ArchiveViewDelete` form inside `CrudShell`
+  and the destructive call is gated by a `SimfConfirm` dialog. E2E-ARC-001,
+  E2E-ARC-009 and E2E-ARC-020 reflect the shipped behaviour.
 
 ---
 
-_Last reviewed:_ 2026-06-04 by SIMF Team (D-275 "make this year history" snapshot action added: E2E-ARC-014..017).
+_Last reviewed:_ 2026-06-10 by SIMF Team (D-356 Phase 5 — Excel export/import + D-353 Page↔Popup toggle: E2E-ARC-018..023; corrected the stale native-confirm() delete copy in ARC-001/ARC-009).

@@ -18,6 +18,7 @@ once that aggregate read ships (the union already reserves space for them).
 | **Permission (page)** | `BusinessMeetings.View` |
 | **Schedule** | `BusinessMeetings.Schedule` |
 | **Cancel** | `BusinessMeetings.Cancel` |
+| **Export** | `BusinessMeetings.Export` |
 | **Nav** | Programme group → "Business Meetings" |
 
 ## Layout
@@ -28,6 +29,13 @@ once that aggregate read ships (the union already reserves space for them).
   hall) → type (B2B/B2C, admin-set) → Start/End (UTC) → participant builder (add any
   number of Company or Visitor parties; ≥ 2, ≤ table capacity) → optional Notes.
 - **Cancel modal:** optional reason. **Detail modal:** participants + slot + reason.
+- **Excel export (D-356):** a toolbar **Export** action downloads the grid as an
+  `.xlsx` (selected rows, or the whole filtered set when nothing is ticked) via
+  `POST /api/v1/admin/business-meetings/export`. The "BusinessMeetings" sheet has
+  the columns Hall · Table · Type · Start · End · Parties · Status. This page is
+  **export-only** — meetings are scheduled and cancelled through the page's bespoke
+  modals, so there is **no import** path. It also keeps its bespoke modals (no
+  D-353 Page↔Popup presentation toggle).
 
 ## Rules (server-enforced)
 
@@ -50,5 +58,16 @@ once that aggregate read ships (the union already reserves space for them).
 
 ## Tests
 
-- Integration: `tests/SIMF.Api.Tests/BusinessMeetingsTests.cs`
+- Integration: `tests/SIMF.Api.Tests/BusinessMeetingsTests.cs`,
+  `tests/SIMF.Api.Tests/BusinessMeetingsExcelTests.cs`
 - E2E catalogue: [`e2e/cp-business-meetings.md`](../../tests/e2e/cp-business-meetings.md)
+
+## Changelog
+
+| Date | Change |
+|------|--------|
+| 2026-06-10 | D-356 — added Excel **export** (toolbar Export → `.xlsx`, "BusinessMeetings" sheet). Export-only: no import, and no D-353 Page↔Popup toggle (page keeps its bespoke schedule/cancel/detail modals). |
+
+---
+
+_Last reviewed:_ 2026-06-10 (D-356 Phase 5 — Excel export added; export-only).

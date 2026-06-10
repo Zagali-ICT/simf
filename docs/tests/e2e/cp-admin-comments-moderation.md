@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **What this page is.** A session-scoped moderation desk (D-199, Mockup page 28
 > — "Audience comments" / تعليقات الجمهور). The admin picks one live session from
@@ -56,6 +56,7 @@
 | E2E-CMT-015 | RTL render — Arabic toggle mirrors banner, picker, grid, icon actions | i18n | P1 | _to author_ |
 | E2E-CMT-016 | Per-column filter — typing in the Comment filter narrows the grid (maps to `Search`, Skip→0) | happy | P1 | _to author_ |
 | E2E-CMT-017 | Column sort — clicking the Submitted header toggles `Sort="created"` asc↔desc | happy | P2 | _to author_ |
+| E2E-CMT-018 | Excel export (D-356) — toolbar Export downloads an .xlsx of the picked session's comments (whole set vs selected rows) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -344,6 +345,44 @@ Scenario: Clicking the Submitted header toggles ascending/descending sort
   And the rows re-order newest-submitted first and the header shows the descending arrow (▼)
 ```
 
+### E2E-CMT-018 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the picked session's comments to an XLSX workbook
+  Given the administrator is on /admin/comments-moderation
+  And they have selected session "S-01 — Opening Keynote"
+  And that session has three active comments (one Pending, one Approved, one Hidden)
+  And the SimfDataGrid renders all three rows (summary "Showing 1–3 of 3")
+  # Export is the only Excel affordance on this desk — there is NO Import:
+  #   comments originate from the public app, so the grid wires OnExport only.
+  When the administrator clicks the toolbar "Export" action with no rows selected
+  Then the page calls simfAccount.downloadXlsx against
+      POST /account/api/admin/comments-moderation/export
+  And the request body is an AdminGridExportRequest with an empty Ids list and a Query
+      whose Filters carry "sessionId" = {S-01 id} (plus the current Sort + the body filter
+      mapped to Search), so the export covers the whole picked-session set across every status
+  And the browser saves a file named simf-comments-{timestamp}.xlsx
+  And the workbook's "Comments" sheet has the header row
+      Author | Email | Body | Status | AiVerdict | Created
+  And the sheet has three data rows whose Status cells read "Pending", "Approved" and "Hidden"
+
+  When the administrator instead selects exactly the Approved and Hidden rows then clicks "Export"
+  Then the request body carries those two comment ids in Ids (Query still pins the sessionId)
+  And the workbook contains exactly those two rows (the unselected Pending row is excluded)
+
+  # Guardrails (verified at the API / SIMF.Api.Tests layer, CommentsExcelTests.cs):
+  # the export is capped at 5000 rows, and with no (or an unparseable) "sessionId"
+  # filter the endpoint exports nothing rather than dumping every session's comments.
+```
+
+**Evidence captured:**
+- Screenshot of the saved workbook's header + status rows →
+  `docs/screenshots/cp-admin-comments-moderation-export.png`
+- Network: the single POST /account/api/admin/comments-moderation/export returns 200
+  with an `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` body
+- Permission: the export endpoint is gated on `PermissionCatalog.Comments.Export`
+  (a *third* permission distinct from `Comments.View` and `Comments.Moderate`)
+
 ---
 
 ## Implementation notes
@@ -378,4 +417,4 @@ Scenario: Clicking the Submitted header toggles ascending/descending sort
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added the Excel-export scenario E2E-CMT-018).

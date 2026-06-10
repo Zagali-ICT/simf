@@ -67,6 +67,21 @@ however, hosts the **D-127 walk-in registration wizard** instead of the slim
   6. **Interests** — chip multi-select (≤10, Visitor only).
 - Submit → `WalkInSuccessModal` shows the printed badge with SVG QR + Done / Print / Register-another.
 
+**D-353 presentation toggle / D-356 Excel.** The toolbar now carries the
+`CrudPresentationToggle` (Page ↔ Popup): the Add walk-in wizard, the Edit
+account form, and the read-only Details form are hosted by the centralized
+`CrudShell`, which frames them as a dialog (default) or as a full page per the
+admin's choice. The choice persists per-admin in `localStorage`
+(`simf.cp.prefs.visitors`, read on init via `CpPreferences.GetPresentationAsync`).
+The D-356 "Uniform CRUD" **Excel** treatment is **N/A as a new addition here** —
+this account page already shipped its own Excel export/import (toolbar
+Export/Import → `/account/api/admin/visitors/export` | `/import`, with the
+visitor-specific import-result modal) and does **not** use the generic
+`CrudGridExcel` component; that surface is unchanged and stays covered by
+E2E-VIS-013/014/015. Visitor delete remains the reason-gated **bulk-delete**
+dialog (there is no single-row hard delete), so the View/Delete form is
+details-only — it never renders a Delete button or a `SimfConfirm` gate.
+
 ## 5. Data flow (walk-in)
 
 ```
@@ -159,7 +174,8 @@ Identical canonical shape — see [`admin-interests.md`](admin-interests.md) §8
 | 2026-05-28 | D-128 | Approve-with-review on Pending visitors (sibling page). |
 | 2026-05-28 | D-129 | Saudi ID regex, non-Saudi Iqama/Passport sub-picker, ID image inline. |
 | 2026-05-28 | D-131 | Identity field reorder + numbered section badges + bigger tiles. |
+| 2026-06-10 | D-353 / D-356 | Add/Edit/Details moved into `CrudShell` with a Page↔Popup `CrudPresentationToggle` (persisted as `simf.cp.prefs.visitors`). Uniform-CRUD Excel is N/A here — the page keeps its existing visitor-specific Excel export/import (not `CrudGridExcel`); delete stays the reason-gated bulk dialog (View/Delete is details-only). |
 
 ---
 
-_Last reviewed:_ 2026-05-28 by Claude (D-133 slice 2).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — D-353 Page↔Popup toggle note; Excel N/A for this account page).
