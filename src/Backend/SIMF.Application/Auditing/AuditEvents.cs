@@ -158,6 +158,13 @@ public static class AuditEvents
     public const string SpeakerPresentationUploaded = "SpeakerPresentation.Uploaded";
     public const string SpeakerPresentationDeleted = "SpeakerPresentation.Deleted";
 
+    // Unified media assets (D-357 — the one upload/download pipeline for speaker
+    // photos, company / sponsor / media-partner logos, archive covers, news images)
+    public const string AssetUploaded = "Asset.Uploaded";
+    public const string AssetLinked = "Asset.Linked";
+    public const string AssetRemoved = "Asset.Removed";
+    public const string AssetRestored = "Asset.Restored";
+
     // System configuration settings (P2.4 / D-229 — FDS-012 §5.5)
     public const string SystemSettingCreated = "SystemSetting.Created";
     public const string SystemSettingUpdated = "SystemSetting.Updated";

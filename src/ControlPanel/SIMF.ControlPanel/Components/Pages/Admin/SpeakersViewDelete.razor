@@ -14,6 +14,12 @@
 
 @if (Initial is not null)
 {
+    @* D-357 — speaker photo from the unified media-asset pipeline. *@
+    <div class="simf-image-upload__preview">
+        <SimfImageThumb Src="@($"/account/api/admin/assets/SpeakerPhoto/{Initial.Id}/image")"
+                        Alt="@Initial.Name" Class="simf-img-thumb--lg" />
+    </div>
+
     <dl class="simf-dl">
         <dt>@L["Admin.Speakers.Column.Code"]</dt>
         <dd>@Initial.Code</dd>

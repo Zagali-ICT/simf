@@ -1,0 +1,29 @@
+@* D-357 — render a unified media-asset image with a graceful placeholder.
+   Generic (no JS / no BFF) so it is safe in any host; the caller supplies the
+   resolved image URL (e.g. the CP asset-fetch proxy). *@
+@namespace SIMF.Components.Forms
+
+<span class="simf-img-thumb @Class">
+    @if (!string.IsNullOrWhiteSpace(Src))
+    {
+        <img class="simf-img-thumb__img" src="@Src" alt="@Alt" loading="lazy" />
+    }
+    else
+    {
+        <SimfIcon Name="image" Class="simf-img-thumb__placeholder" Size="@IconSize" />
+    }
+</span>
+
+@code {
+    /// <summary>Resolved image URL. Empty renders the placeholder icon.</summary>
+    [Parameter] public string? Src { get; set; }
+
+    /// <summary>Alt text for the image.</summary>
+    [Parameter] public string? Alt { get; set; }
+
+    /// <summary>Extra CSS class on the wrapper (e.g. a size modifier).</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Placeholder icon size in px (shown when there is no image).</summary>
+    [Parameter] public int IconSize { get; set; } = 24;
+}

@@ -1,0 +1,247 @@
+@* D-357 — central Media Library: manage every unified media Asset across all
+   entities (speaker photos, company / sponsor / media-partner logos, archive
+   covers, news images). Lists active + soft-deleted rows; preview + deactivate /
+   restore. Gated by MediaLibrary.View; manage actions by MediaLibrary.Manage. *@
+@page "/admin/media-library"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.MediaLibrary.View)]
+@using SIMF.Contracts.Assets
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.MediaLibrary.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.MediaLibrary.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        <SimfDataGrid TItem="AdminAssetSummary"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Multiselect="false"
+                      RowKey="@(r => r.Id.ToString())"
+                      RowLabel="@(r => r.OwnerName ?? r.OwnerId.ToString())"
+                      Caption="@L["Admin.MediaLibrary.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnDetailsOne="OnDetailsAsync"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Grid.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      ActionsHeader="@L["Grid.Actions"]"
+                      SelectAllLabel="@L["Grid.SelectAll"]"
+                      SelectRowLabel="@L["Grid.SelectRow"]"
+                      DetailsLabel="@L["Admin.MediaLibrary.Manage"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="AdminAssetSummary" Key="category"
+                                    Header="@L["Admin.MediaLibrary.Col.Category"]">
+                    <CellTemplate>@context.Category</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAssetSummary" Key="owner"
+                                    Header="@L["Admin.MediaLibrary.Col.Owner"]">
+                    <CellTemplate>@(string.IsNullOrWhiteSpace(context.OwnerName) ? context.OwnerId.ToString()[..8] : context.OwnerName)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAssetSummary" Key="preview"
+                                    Header="@L["Admin.MediaLibrary.Col.Preview"]">
+                    <CellTemplate>
+                        <SimfImageThumb Src="@PreviewSrc(context)" Alt="@context.OwnerName" />
+                    </CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAssetSummary" Key="kind"
+                                    Header="@L["Admin.MediaLibrary.Col.Kind"]">
+                    <CellTemplate>@context.Kind</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAssetSummary" Key="type"
+                                    Header="@L["Admin.MediaLibrary.Col.Type"]">
+                    <CellTemplate>@TypeLabel(context)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="AdminAssetSummary" Key="isActive"
+                                    Header="@L["Grid.Active"]">
+                    <CellTemplate>
+                        @if (context.IsActive)
+                        {
+                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                        }
+                        else
+                        {
+                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.MediaLibrary.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@if (_detailsTarget is not null)
+{
+    <SimfModal Open="true" Title="@L["Admin.MediaLibrary.Details.Title"]"
+               OnClose="@(() => _detailsTarget = null)">
+        <ChildContent>
+            <div class="simf-image-upload__preview">
+                <SimfImageThumb Src="@PreviewSrc(_detailsTarget)" Alt="@_detailsTarget.OwnerName"
+                                Class="simf-img-thumb--lg" />
+            </div>
+            <dl class="simf-dl">
+                <dt>@L["Admin.MediaLibrary.Col.Category"]</dt>
+                <dd>@_detailsTarget.Category</dd>
+                <dt>@L["Admin.MediaLibrary.Col.Owner"]</dt>
+                <dd>@(_detailsTarget.OwnerName ?? _detailsTarget.OwnerId.ToString())</dd>
+                <dt>@L["Admin.MediaLibrary.Col.Kind"]</dt>
+                <dd>@_detailsTarget.Kind</dd>
+                <dt>@L["Admin.MediaLibrary.Col.Type"]</dt>
+                <dd>@TypeLabel(_detailsTarget)</dd>
+                @if (_detailsTarget.SourceType == SIMF.Common.Enums.AssetSourceType.ExternalLink)
+                {
+                    <dt>@L["Admin.MediaLibrary.Col.Url"]</dt>
+                    <dd><a href="@_detailsTarget.ExternalUrl" target="_blank" rel="noopener">@_detailsTarget.ExternalUrl</a></dd>
+                }
+                <dt>@L["Grid.Active"]</dt>
+                <dd>@(_detailsTarget.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])</dd>
+            </dl>
+        </ChildContent>
+        <Footer>
+            <AuthorizedAction Permission="@PermissionCatalog.MediaLibrary.Manage">
+                @if (_detailsTarget.IsActive)
+                {
+                    <SimfButton Type="button" Variant="danger" Loading="_busy" OnClick="DeactivateAsync">
+                        @L["Admin.MediaLibrary.Deactivate"]
+                    </SimfButton>
+                }
+                else
+                {
+                    <SimfButton Type="button" Loading="_busy" OnClick="RestoreAsync">
+                        @L["Admin.MediaLibrary.Restore"]
+                    </SimfButton>
+                }
+            </AuthorizedAction>
+            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _detailsTarget = null)">
+                @L["Admin.MediaLibrary.Details.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private GridQuery _query = new() { Top = 20 };
+    private GridPage<AdminAssetSummary> _page = new();
+    private bool _loading;
+    private bool _busy;
+    private Toast? _toast;
+    private AdminAssetSummary? _detailsTarget;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminAssetSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/assets/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.MediaLibrary.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task OnDetailsAsync(AdminAssetSummary row)
+    {
+        var env = await JS.InvokeAsync<ApiResult<AdminAssetSummary>>(
+            "simfAccount.getJson", $"/account/api/admin/assets/item/{row.Id}");
+        if (env is { Success: true, Data: not null })
+        {
+            _detailsTarget = env.Data;
+        }
+    }
+
+    private async Task DeactivateAsync()
+    {
+        if (_busy || _detailsTarget is null) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/assets/item/{_detailsTarget.Id}");
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.MediaLibrary.Deactivated"]);
+                _detailsTarget = null;
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.MediaLibrary.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task RestoreAsync()
+    {
+        if (_busy || _detailsTarget is null) return;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.postJson", $"/account/api/admin/assets/item/{_detailsTarget.Id}/restore", new { });
+            if (env is { Success: true })
+            {
+                _toast = new Toast("success", L["Admin.MediaLibrary.Restored"]);
+                _detailsTarget = null;
+                await LoadAsync();
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.MediaLibrary.LoadFailed"]);
+            }
+        }
+        finally { _busy = false; }
+    }
+
+    private static string PreviewSrc(AdminAssetSummary a) =>
+        $"/account/api/admin/assets/{a.Category}/{a.OwnerId}/image";
+
+    private string TypeLabel(AdminAssetSummary a) =>
+        a.SourceType == SIMF.Common.Enums.AssetSourceType.ExternalLink
+            ? L["Admin.MediaLibrary.Type.Link"]
+            : L["Admin.MediaLibrary.Type.Upload"];
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
+}

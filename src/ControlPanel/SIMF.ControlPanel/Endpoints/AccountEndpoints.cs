@@ -2067,6 +2067,82 @@ internal static class AccountEndpoints
             return Forward(await api.DeleteMediaAsync(id, token));
         });
 
+        // D-357 — unified media-asset pipeline BFF passthroughs: per-entity upload /
+        // link / preview-fetch + the central Media Library list / get / deactivate /
+        // restore. Reused by every entity form's SimfImageUpload + the Media Library page.
+        group.MapPost("/admin/assets/{category}/{ownerId:guid}/image",
+            async (string category, Guid ownerId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.ValidationFailed,
+                    Message = "A file is required.",
+                    MessageArabic = "الملف مطلوب.",
+                }));
+            }
+            var kind = http.Request.Query["kind"].ToString();
+            if (string.IsNullOrWhiteSpace(kind)) { kind = form["kind"].ToString(); }
+            if (string.IsNullOrWhiteSpace(kind)) { kind = "Image"; }
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return Forward(await api.UploadAssetImageAsync(
+                category, ownerId, kind, stream.ToArray(), file.ContentType, file.FileName, token));
+        }).DisableAntiforgery();
+
+        group.MapPut("/admin/assets/{category}/{ownerId:guid}/link",
+            async (string category, Guid ownerId, SIMF.Contracts.Assets.SetAssetLinkRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.SetAssetLinkAsync(category, ownerId, body, token));
+        });
+
+        group.MapGet("/admin/assets/{category}/{ownerId:guid}/image",
+            async (string category, Guid ownerId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, contentType, bytes) = await api.FetchAssetImageAsync(category, ownerId, token);
+            if (status != 200 || bytes.Length == 0) { return Results.StatusCode(status); }
+            return Results.File(bytes, contentType ?? "application/octet-stream");
+        });
+
+        group.MapPost("/admin/assets/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListAssetsAsync(body, token));
+        });
+        group.MapGet("/admin/assets/item/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetAssetAsync(id, token));
+        });
+        group.MapDelete("/admin/assets/item/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateAssetAsync(id, token));
+        });
+        group.MapPost("/admin/assets/item/{id:guid}/restore",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RestoreAssetAsync(id, token));
+        });
+
         // P2.3 (D-228) — speaker presentation files (list / upload / download / delete).
         group.MapGet("/admin/speakers/{speakerId:guid}/presentations",
             async (Guid speakerId, HttpContext http, SimfAdminClient api) =>

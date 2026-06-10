@@ -6,6 +6,10 @@
 <li class="simf-nav-item">
     <NavLink class="simf-nav-item__link" ActiveClass="simf-nav-item__link--active"
              href="@Href" Match="NavLinkMatch.All">
+        @if (!string.IsNullOrWhiteSpace(Icon))
+        {
+            <SimfIcon Name="@Icon" Class="simf-nav-item__icon" Size="18" />
+        }
         <span class="simf-nav-item__label">@Label</span>
         @if (!string.IsNullOrWhiteSpace(BadgeLabel))
         {
@@ -24,4 +28,9 @@
     /// <summary>Optional small badge rendered after the label
     /// (e.g. "Soon" for stub modules — D-132).</summary>
     [Parameter] public string? BadgeLabel { get; set; }
+
+    /// <summary>Optional leading icon name (a <see cref="SimfIcon" /> key)
+    /// rendered before the label — used by the CP side menu for per-item
+    /// sub-menu icons. <c>null</c> renders no icon.</summary>
+    [Parameter] public string? Icon { get; set; }
 }

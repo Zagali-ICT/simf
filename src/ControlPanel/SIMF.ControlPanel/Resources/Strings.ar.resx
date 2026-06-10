@@ -2622,4 +2622,35 @@
   <data name="Admin.Invitations.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
   <data name="Admin.Sessions.Delete.Title" xml:space="preserve"><value>إلغاء تفعيل الجلسة</value></data>
   <data name="Admin.Sessions.Delete.Message" xml:space="preserve"><value>هل تريد إلغاء تفعيل الجلسة "{0}"؟ سيتم إخفاؤها من البرنامج العام.</value></data>
+  <data name="Module.MediaLibrary" xml:space="preserve"><value>مكتبة الوسائط</value></data>
+  <data name="Admin.MediaLibrary.Title" xml:space="preserve"><value>مكتبة الوسائط</value></data>
+  <data name="Admin.MediaLibrary.Col.Category" xml:space="preserve"><value>الفئة</value></data>
+  <data name="Admin.MediaLibrary.Col.Owner" xml:space="preserve"><value>العنصر</value></data>
+  <data name="Admin.MediaLibrary.Col.Preview" xml:space="preserve"><value>معاينة</value></data>
+  <data name="Admin.MediaLibrary.Col.Kind" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.MediaLibrary.Col.Type" xml:space="preserve"><value>المصدر</value></data>
+  <data name="Admin.MediaLibrary.Col.Url" xml:space="preserve"><value>الرابط</value></data>
+  <data name="Admin.MediaLibrary.Type.Upload" xml:space="preserve"><value>ملف مرفوع</value></data>
+  <data name="Admin.MediaLibrary.Type.Link" xml:space="preserve"><value>رابط خارجي</value></data>
+  <data name="Admin.MediaLibrary.Manage" xml:space="preserve"><value>إدارة</value></data>
+  <data name="Admin.MediaLibrary.Details.Title" xml:space="preserve"><value>تفاصيل الأصل</value></data>
+  <data name="Admin.MediaLibrary.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.MediaLibrary.Deactivate" xml:space="preserve"><value>إلغاء التفعيل</value></data>
+  <data name="Admin.MediaLibrary.Restore" xml:space="preserve"><value>استعادة</value></data>
+  <data name="Admin.MediaLibrary.None" xml:space="preserve"><value>لا توجد أصول وسائط بعد.</value></data>
+  <data name="Admin.MediaLibrary.Deactivated" xml:space="preserve"><value>تم إلغاء تفعيل الأصل.</value></data>
+  <data name="Admin.MediaLibrary.Restored" xml:space="preserve"><value>تمت استعادة الأصل.</value></data>
+  <data name="Admin.MediaLibrary.LoadFailed" xml:space="preserve"><value>تعذّر تحميل أصول الوسائط.</value></data>
+  <data name="Admin.Asset.Heading" xml:space="preserve"><value>الصورة</value></data>
+  <data name="Admin.Asset.SaveFirst" xml:space="preserve"><value>احفظ السجل أولاً ثم أضف صورة.</value></data>
+  <data name="Admin.Asset.UploadTab" xml:space="preserve"><value>رفع ملف</value></data>
+  <data name="Admin.Asset.LinkTab" xml:space="preserve"><value>رابط خارجي</value></data>
+  <data name="Admin.Asset.File" xml:space="preserve"><value>الملف</value></data>
+  <data name="Admin.Asset.Upload" xml:space="preserve"><value>رفع</value></data>
+  <data name="Admin.Asset.Url" xml:space="preserve"><value>الرابط</value></data>
+  <data name="Admin.Asset.Kind" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.Asset.Kind.Image" xml:space="preserve"><value>صورة</value></data>
+  <data name="Admin.Asset.Kind.Video" xml:space="preserve"><value>فيديو</value></data>
+  <data name="Admin.Asset.Kind.Document" xml:space="preserve"><value>مستند</value></data>
+  <data name="Admin.Asset.SaveLink" xml:space="preserve"><value>حفظ الرابط</value></data>
 </root>

@@ -1,0 +1,168 @@
+@* D-357 — reusable media-asset control: upload a file OR set an external link
+   for one (category, owner), with a live preview. CP-only (drives the BFF asset
+   passthroughs + simfAccount JS); used by every entity Add/Edit form. The owner
+   row must already exist (OwnerId non-empty) — same as the Media image pattern. *@
+@inject IJSRuntime JS
+
+<div class="simf-image-upload">
+    <SimfImageThumb Src="@PreviewSrc" Alt="@Alt" Class="simf-image-upload__thumb" />
+
+    @if (_error is not null)
+    {
+        <SimfAlert Variant="error">@_error</SimfAlert>
+    }
+    @if (_success is not null)
+    {
+        <SimfAlert Variant="success">@_success</SimfAlert>
+    }
+
+    @if (OwnerId == Guid.Empty)
+    {
+        <p class="simf-field__hint">@SaveFirstLabel</p>
+    }
+    else
+    {
+        <div class="simf-image-upload__modes">
+            <SimfButton Type="button" Variant="@(_mode == Mode.Upload ? "primary" : "secondary")"
+                        OnClick="@(() => _mode = Mode.Upload)">@UploadTabLabel</SimfButton>
+            <SimfButton Type="button" Variant="@(_mode == Mode.Link ? "primary" : "secondary")"
+                        OnClick="@(() => _mode = Mode.Link)">@LinkTabLabel</SimfButton>
+        </div>
+
+        @if (_mode == Mode.Upload)
+        {
+            <label class="simf-field">
+                <span class="simf-field__label">@KindLabel</span>
+                <select class="simf-field__input" @bind="_uploadKind" disabled="@_busy">
+                    <option value="Image">@KindImageLabel</option>
+                    <option value="Document">@KindDocumentLabel</option>
+                </select>
+            </label>
+            <label class="simf-field">
+                <span class="simf-field__label">@FileLabel</span>
+                <input id="@_inputId" type="file" class="simf-field__input"
+                       accept="image/png,image/jpeg,image/webp,application/pdf" disabled="@_busy" />
+            </label>
+            <SimfButton Type="button" Loading="_busy" OnClick="UploadAsync">@UploadButtonLabel</SimfButton>
+        }
+        else
+        {
+            <label class="simf-field">
+                <span class="simf-field__label">@KindLabel</span>
+                <select class="simf-field__input" @bind="_linkKind" disabled="@_busy">
+                    <option value="Image">@KindImageLabel</option>
+                    <option value="Video">@KindVideoLabel</option>
+                    <option value="Document">@KindDocumentLabel</option>
+                </select>
+            </label>
+            <label class="simf-field">
+                <span class="simf-field__label">@UrlLabel</span>
+                <input type="url" class="simf-field__input" placeholder="https://..."
+                       @bind="_url" disabled="@_busy" />
+            </label>
+            <SimfButton Type="button" Loading="_busy" OnClick="SaveLinkAsync">@SaveLinkButtonLabel</SimfButton>
+        }
+    }
+</div>
+
+@code {
+    private enum Mode { Upload, Link }
+    private Mode _mode = Mode.Upload;
+    private readonly string _inputId = $"asset-file-{Guid.NewGuid():N}";
+    private string _uploadKind = "Image";
+    private string _linkKind = "Image";
+    private string _url = string.Empty;
+    private bool _busy;
+    private string? _error;
+    private string? _success;
+    private int _version;
+
+    /// <summary>The asset category enum name (e.g. "SpeakerPhoto").</summary>
+    [Parameter, EditorRequired] public string Category { get; set; } = string.Empty;
+
+    /// <summary>The owning entity's id. <c>Guid.Empty</c> shows the "save first" hint.</summary>
+    [Parameter, EditorRequired] public Guid OwnerId { get; set; }
+
+    [Parameter] public string? Alt { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    // Localised labels (the host form passes L[...] values; English fallbacks here).
+    [Parameter] public string SaveFirstLabel { get; set; } = "Save the record first, then add an image.";
+    [Parameter] public string UploadTabLabel { get; set; } = "Upload file";
+    [Parameter] public string LinkTabLabel { get; set; } = "External link";
+    [Parameter] public string FileLabel { get; set; } = "File";
+    [Parameter] public string UploadButtonLabel { get; set; } = "Upload";
+    [Parameter] public string UrlLabel { get; set; } = "URL";
+    [Parameter] public string KindLabel { get; set; } = "Kind";
+    [Parameter] public string KindImageLabel { get; set; } = "Image";
+    [Parameter] public string KindVideoLabel { get; set; } = "Video";
+    [Parameter] public string KindDocumentLabel { get; set; } = "Document";
+    [Parameter] public string SaveLinkButtonLabel { get; set; } = "Save link";
+
+    private string PreviewSrc =>
+        OwnerId == Guid.Empty || string.IsNullOrEmpty(Category)
+            ? string.Empty
+            : $"/account/api/admin/assets/{Category}/{OwnerId}/image?v={_version}";
+
+    private async Task UploadAsync()
+    {
+        if (_busy) return;
+        _error = null;
+        _success = null;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.uploadFile",
+                $"/account/api/admin/assets/{Category}/{OwnerId}/image?kind={_uploadKind}",
+                _inputId);
+            if (env is { Success: true })
+            {
+                _version++;
+                _success = UploadButtonLabel;
+                await OnChanged.InvokeAsync();
+            }
+            else
+            {
+                _error = env?.Error?.MessageForCurrentCulture() ?? FileLabel;
+            }
+        }
+        catch
+        {
+            _error = FileLabel;
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task SaveLinkAsync()
+    {
+        if (_busy) return;
+        _error = null;
+        _success = null;
+        if (string.IsNullOrWhiteSpace(_url)) { _error = UrlLabel; return; }
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.putJson",
+                $"/account/api/admin/assets/{Category}/{OwnerId}/link",
+                new { Kind = _linkKind, Url = _url.Trim() });
+            if (env is { Success: true })
+            {
+                _version++;
+                _url = string.Empty;
+                _success = SaveLinkButtonLabel;
+                await OnChanged.InvokeAsync();
+            }
+            else
+            {
+                _error = env?.Error?.MessageForCurrentCulture() ?? UrlLabel;
+            }
+        }
+        catch
+        {
+            _error = UrlLabel;
+        }
+        finally { _busy = false; }
+    }
+}

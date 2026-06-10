@@ -306,6 +306,15 @@ public static class DependencyInjection
             configuration.GetSection(SIMF.Infrastructure.Media.MediaImageStorageOptions.SectionName));
         services.AddSingleton<SIMF.Application.Abstractions.IMediaImageStorage,
             SIMF.Infrastructure.Media.FilesystemMediaImageStorage>();
+        // D-357 — unified media-asset pipeline: the single upload/download store
+        // every image-bearing entity shares (speaker photo, company / sponsor /
+        // media-partner logo, archive cover, news image).
+        services.Configure<SIMF.Infrastructure.Assets.ImageAssetStorageOptions>(
+            configuration.GetSection(SIMF.Infrastructure.Assets.ImageAssetStorageOptions.SectionName));
+        services.AddSingleton<SIMF.Application.Abstractions.IImageAssetStorage,
+            SIMF.Infrastructure.Assets.FilesystemImageAssetStorage>();
+        services.AddScoped<SIMF.Application.Assets.Abstractions.IAssetService,
+            SIMF.Infrastructure.Assets.AssetService>();
         services.AddScoped<SIMF.Application.Exhibition.Abstractions.IPublicBoothService,
             SIMF.Infrastructure.Exhibition.PublicBoothService>();
         services.AddScoped<SIMF.Application.Exhibition.Abstractions.IAdminBoothService,

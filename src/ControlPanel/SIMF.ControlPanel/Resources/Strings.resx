@@ -2629,4 +2629,35 @@
   <data name="Admin.Invitations.Fallback" xml:space="preserve"><value>The operation could not be completed.</value></data>
   <data name="Admin.Sessions.Delete.Title" xml:space="preserve"><value>Deactivate session</value></data>
   <data name="Admin.Sessions.Delete.Message" xml:space="preserve"><value>Deactivate the session "{0}"? It will be hidden from the public programme.</value></data>
+  <data name="Module.MediaLibrary" xml:space="preserve"><value>Media library</value></data>
+  <data name="Admin.MediaLibrary.Title" xml:space="preserve"><value>Media library</value></data>
+  <data name="Admin.MediaLibrary.Col.Category" xml:space="preserve"><value>Category</value></data>
+  <data name="Admin.MediaLibrary.Col.Owner" xml:space="preserve"><value>Owner</value></data>
+  <data name="Admin.MediaLibrary.Col.Preview" xml:space="preserve"><value>Preview</value></data>
+  <data name="Admin.MediaLibrary.Col.Kind" xml:space="preserve"><value>Kind</value></data>
+  <data name="Admin.MediaLibrary.Col.Type" xml:space="preserve"><value>Source</value></data>
+  <data name="Admin.MediaLibrary.Col.Url" xml:space="preserve"><value>URL</value></data>
+  <data name="Admin.MediaLibrary.Type.Upload" xml:space="preserve"><value>Uploaded file</value></data>
+  <data name="Admin.MediaLibrary.Type.Link" xml:space="preserve"><value>External link</value></data>
+  <data name="Admin.MediaLibrary.Manage" xml:space="preserve"><value>Manage</value></data>
+  <data name="Admin.MediaLibrary.Details.Title" xml:space="preserve"><value>Asset details</value></data>
+  <data name="Admin.MediaLibrary.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.MediaLibrary.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.MediaLibrary.Restore" xml:space="preserve"><value>Restore</value></data>
+  <data name="Admin.MediaLibrary.None" xml:space="preserve"><value>No media assets yet.</value></data>
+  <data name="Admin.MediaLibrary.Deactivated" xml:space="preserve"><value>Asset deactivated.</value></data>
+  <data name="Admin.MediaLibrary.Restored" xml:space="preserve"><value>Asset restored.</value></data>
+  <data name="Admin.MediaLibrary.LoadFailed" xml:space="preserve"><value>Could not load media assets.</value></data>
+  <data name="Admin.Asset.Heading" xml:space="preserve"><value>Image</value></data>
+  <data name="Admin.Asset.SaveFirst" xml:space="preserve"><value>Save the record first, then add an image.</value></data>
+  <data name="Admin.Asset.UploadTab" xml:space="preserve"><value>Upload file</value></data>
+  <data name="Admin.Asset.LinkTab" xml:space="preserve"><value>External link</value></data>
+  <data name="Admin.Asset.File" xml:space="preserve"><value>File</value></data>
+  <data name="Admin.Asset.Upload" xml:space="preserve"><value>Upload</value></data>
+  <data name="Admin.Asset.Url" xml:space="preserve"><value>URL</value></data>
+  <data name="Admin.Asset.Kind" xml:space="preserve"><value>Kind</value></data>
+  <data name="Admin.Asset.Kind.Image" xml:space="preserve"><value>Image</value></data>
+  <data name="Admin.Asset.Kind.Video" xml:space="preserve"><value>Video</value></data>
+  <data name="Admin.Asset.Kind.Document" xml:space="preserve"><value>Document</value></data>
+  <data name="Admin.Asset.SaveLink" xml:space="preserve"><value>Save link</value></data>
 </root>

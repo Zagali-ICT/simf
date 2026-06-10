@@ -1024,6 +1024,26 @@
 .simf-nav-item__icon { flex: 0 0 auto; opacity: 0.75; }
 .simf-nav-item__link--active .simf-nav-item__icon { opacity: 1; }
 
+/* D-357 — unified media-asset thumbnail (Media Library + entity forms/views). */
+.simf-img-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 48px;
+  block-size: 48px;
+  border-radius: var(--radius-field);
+  background-color: var(--color-surface-sunken);
+  overflow: hidden;
+  color: var(--color-text-muted);
+}
+.simf-img-thumb__img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+.simf-img-thumb--lg { inline-size: 96px; block-size: 96px; }
+
+/* D-357 — the reusable media-asset upload control (file / external-link tabs). */
+.simf-image-upload { display: flex; flex-direction: column; gap: var(--space-2); }
+.simf-image-upload__modes { display: flex; gap: var(--space-2); }
+.simf-image-upload__thumb { inline-size: 96px; block-size: 96px; }
+
 /* D-132 — "Soon" tag rendered next to nav entries that still resolve to
    the ModulePlaceholder, so operators can see at a glance which menu
    items are real and which are not yet built. */

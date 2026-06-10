@@ -143,6 +143,39 @@ public sealed class SimfPublicClient(HttpClient http)
         }
     }
 
+    /// <summary>D-357 — fetch a unified media asset's bytes
+    /// (<c>GET /api/v1/app/assets/{category}/{ownerId}/image</c>) so the Website's
+    /// same-origin proxy can re-stream it. An external-link asset is followed
+    /// transparently by HttpClient; an unreachable service surfaces as 503.</summary>
+    public async Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchAssetImageAsync(
+        string category, Guid ownerId, CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(
+            HttpMethod.Get, $"{BasePath}assets/{category}/{ownerId}/image");
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return ((int)response.StatusCode, null, []);
+            }
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return (
+                (int)response.StatusCode,
+                response.Content.Headers.ContentType?.MediaType,
+                bytes);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException)
+        {
+            return ((int)HttpStatusCode.ServiceUnavailable, null, []);
+        }
+    }
+
     private Task<T?> GetAsync<T>(string path, CancellationToken cancellationToken)
         where T : class =>
         ReadEnvelopeAsync<T>(ct => http.GetAsync(BasePath + path, ct), cancellationToken);

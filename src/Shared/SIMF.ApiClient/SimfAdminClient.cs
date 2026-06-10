@@ -2066,6 +2066,85 @@ public sealed class SimfAdminClient(HttpClient http)
             accessToken, cancellationToken);
     }
 
+    // -- D-357 — unified media-asset pipeline (one upload / link / fetch for every entity) --
+
+    /// <summary>Upload (or replace) a media asset's file for (category, owner).</summary>
+    public Task<ApiCallResult<bool>> UploadAssetImageAsync(
+        string category, Guid ownerId, string kind,
+        byte[] content, string contentType, string fileName,
+        string accessToken, CancellationToken cancellationToken = default)
+    {
+        var multipart = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(content);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        multipart.Add(fileContent, "file", fileName);
+        multipart.Add(new StringContent(kind), "kind");
+        return SendAsync<bool>(
+            HttpMethod.Post, $"assets/{category}/{ownerId}/image", multipart,
+            accessToken, cancellationToken);
+    }
+
+    /// <summary>Set (or replace) a media asset to an external link for (category, owner).</summary>
+    public Task<ApiCallResult<bool>> SetAssetLinkAsync(
+        string category, Guid ownerId,
+        SIMF.Contracts.Assets.SetAssetLinkRequest request,
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Put, $"assets/{category}/{ownerId}/link",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Fetch an asset's bytes for the CP admin preview proxy (the API
+    /// 302s an external-link asset, which HttpClient follows transparently).</summary>
+    public async Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchAssetImageAsync(
+        string category, Guid ownerId, string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(
+            HttpMethod.Get, $"{BasePath}assets/{category}/{ownerId}/image");
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            if (!response.IsSuccessStatusCode) { return ((int)response.StatusCode, null, []); }
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return ((int)response.StatusCode,
+                response.Content.Headers.ContentType?.MediaType, bytes);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
+        {
+            return (503, null, []);
+        }
+    }
+
+    /// <summary>One page of all media assets for the central Media Library.</summary>
+    public Task<ApiCallResult<GridPage<SIMF.Contracts.Assets.AdminAssetSummary>>> ListAssetsAsync(
+        GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<SIMF.Contracts.Assets.AdminAssetSummary>>(
+            HttpMethod.Post, "assets/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>One media asset by id.</summary>
+    public Task<ApiCallResult<SIMF.Contracts.Assets.AdminAssetSummary>> GetAssetAsync(
+        Guid id, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<SIMF.Contracts.Assets.AdminAssetSummary>(
+            HttpMethod.Get, $"assets/item/{id}", null, accessToken, cancellationToken);
+
+    /// <summary>Soft-delete (deactivate) a media asset.</summary>
+    public Task<ApiCallResult<bool>> DeactivateAssetAsync(
+        Guid id, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(HttpMethod.Delete, $"assets/item/{id}", null, accessToken, cancellationToken);
+
+    /// <summary>Restore a soft-deleted media asset.</summary>
+    public Task<ApiCallResult<bool>> RestoreAssetAsync(
+        Guid id, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(HttpMethod.Post, $"assets/item/{id}/restore", null, accessToken, cancellationToken);
+
     // -- D-199 — Media-partner admin CRUD (SIMF.Contracts.PublicRelations) --
 
     public Task<ApiCallResult<GridPage<AdminMediaPartnerSummary>>> ListMediaPartnersAsync(

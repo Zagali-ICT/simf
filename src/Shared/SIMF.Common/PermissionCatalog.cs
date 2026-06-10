@@ -298,6 +298,15 @@ public static class PermissionCatalog
         public const string Import = "Speakers.Import";
     }
 
+    /// <summary>D-357 — the centralised media-library page that manages every
+    /// unified media <c>Asset</c> across all entities. <c>View</c> lists +
+    /// previews; <c>Manage</c> deactivates / restores / edits links.</summary>
+    public static class MediaLibrary
+    {
+        public const string View = "MediaLibrary.View";
+        public const string Manage = "MediaLibrary.Manage";
+    }
+
     /// <summary>Assigning moderators to sessions.</summary>
     public static class SessionModerators
     {
@@ -847,6 +856,10 @@ public static class PermissionCatalog
         new(Archive.Create, "Archive", "Create", "Create archive editions", AdminOnly),
         new(Archive.Edit, "Archive", "Edit", "Edit archive editions", AdminOnly),
         new(Archive.Delete, "Archive", "Delete", "Delete archive editions", AdminOnly),
+
+        // D-357 — centralised media library (manage every unified media asset).
+        new(MediaLibrary.View, "MediaLibrary", "View", "View the media library", AdminOnly),
+        new(MediaLibrary.Manage, "MediaLibrary", "Manage", "Manage media assets (deactivate / restore / edit links)", AdminOnly),
         new(Archive.Snapshot, "Archive", "Snapshot", "Snapshot the current event into a past edition", AdminOnly),
         new(Archive.Export, "Archive", "Export", "Export archive editions", AdminOnly),
         new(Archive.Import, "Archive", "Import", "Import archive editions", AdminOnly),
