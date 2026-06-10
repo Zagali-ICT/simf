@@ -278,6 +278,7 @@ public static class PermissionCatalog
         public const string View = "BusinessMeetings.View";
         public const string Schedule = "BusinessMeetings.Schedule";
         public const string Cancel = "BusinessMeetings.Cancel";
+        public const string Export = "BusinessMeetings.Export";
     }
 
     public static class SpeakerMeetingRequests
@@ -303,6 +304,7 @@ public static class PermissionCatalog
         public const string View = "SessionModerators.View";
         public const string Assign = "SessionModerators.Assign";
         public const string Revoke = "SessionModerators.Revoke";
+        public const string Export = "SessionModerators.Export";
     }
 
     /// <summary>The live session moderation desk (Q&amp;A + comments).</summary>
@@ -320,6 +322,7 @@ public static class PermissionCatalog
         public const string View = "Questions.View";
         public const string Moderate = "Questions.Moderate";
         public const string Escalate = "Questions.Escalate";
+        public const string Export = "Questions.Export";
     }
 
     /// <summary>P4.1 — D-238: the Scientific-Committee AI session-summary / محضر
@@ -712,6 +715,7 @@ public static class PermissionCatalog
         new(BusinessMeetings.View, "BusinessMeetings", "View", "View business meetings", AdminOnly),
         new(BusinessMeetings.Schedule, "BusinessMeetings", "Schedule", "Schedule business meetings", AdminOnly),
         new(BusinessMeetings.Cancel, "BusinessMeetings", "Cancel", "Cancel business meetings", AdminOnly),
+        new(BusinessMeetings.Export, "BusinessMeetings", "Export", "Export business meetings", AdminOnly),
 
         new(SpeakerMeetingRequests.View, "SpeakerMeetingRequests", "View", "View speaker meeting requests", AdminOnly),
         new(SpeakerMeetingRequests.Manage, "SpeakerMeetingRequests", "Manage", "Manage speaker meeting requests", AdminOnly),
@@ -727,6 +731,7 @@ public static class PermissionCatalog
         new(SessionModerators.View, "SessionModerators", "View", "View session moderators", AdminOnly),
         new(SessionModerators.Assign, "SessionModerators", "Assign", "Assign session moderators", AdminOnly),
         new(SessionModerators.Revoke, "SessionModerators", "Revoke", "Revoke session moderators", AdminOnly),
+        new(SessionModerators.Export, "SessionModerators", "Export", "Export session moderators", AdminOnly),
 
         new(SessionModeration.Moderate, "SessionModeration", "Moderate", "Moderate a live session", AdminOnly),
 
@@ -734,6 +739,7 @@ public static class PermissionCatalog
         new(Questions.View, "Questions", "View", "View the question queue", AdminOnly),
         new(Questions.Moderate, "Questions", "Moderate", "Approve / hide questions", AdminOnly),
         new(Questions.Escalate, "Questions", "Escalate", "Escalate questions to a role", AdminOnly),
+        new(Questions.Export, "Questions", "Export", "Export the question queue", AdminOnly),
 
         // P4.1 — D-238: AI session-summary / محضر committee desk.
         new(SessionSummaries.View, "SessionSummaries", "View", "View session summaries", AdminOnly),

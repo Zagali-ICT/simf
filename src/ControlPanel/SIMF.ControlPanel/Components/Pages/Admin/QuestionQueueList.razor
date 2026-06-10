@@ -33,6 +33,8 @@
                       Multiselect="true"
                       RowKey="@(r => r.Id.ToString())"
                       RowLabel="@(r => r.QuestionText)"
+                      OnExport="OnExportAsync"
+                      ExportLabel="@L["Grid.Export"]"
                       Caption="@L["Admin.QuestionQueue.Title"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       PrevLabel="@L["Grid.Prev"]"
@@ -222,6 +224,20 @@
     private static bool Contains(string? value, string needle) =>
         value is not null
         && value.Contains(needle, StringComparison.OrdinalIgnoreCase);
+
+    // D-356 — Excel export (selected rows, or the whole Pending queue). Direct
+    // download via the generic /export proxy. Export only — questions are
+    // audience-submitted and moderated in place (approve / hide / escalate); the
+    // queue is not scoped by a parent picked on the page, so an empty selection
+    // exports the full cross-session Pending queue the server already lists.
+    private Task OnExportAsync(IReadOnlyList<SessionQuestionQueueRow> selected) =>
+        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/questions/export",
+            new AdminGridExportRequest
+            {
+                Ids = selected.Select(row => row.Id).ToList(),
+                Query = selected.Count == 0 ? _query : null,
+            }).AsTask();
 
     private Task ApproveAsync(Guid id) =>
         ActAsync($"/account/api/admin/questions/{id}/approve", L["Admin.QuestionQueue.Approved"]);

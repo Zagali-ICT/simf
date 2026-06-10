@@ -27,6 +27,8 @@
                       Multiselect="true"
                       RowKey="@(r => $"{r.SessionId}/{r.UserId}")"
                       RowLabel="@(r => r.ModeratorDisplayName)"
+                      OnExport="OnExportAsync"
+                      ExportLabel="@L["Grid.Export"]"
                       Caption="@L["Admin.SessionModerators.Title"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       OnAdd="OnAdd"
@@ -130,6 +132,18 @@
         _query = next;
         await LoadAsync();
     }
+
+    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // download via the generic /export proxy. Export only — grants are managed
+    // in place via assign/revoke; the row's UserId is the selectable id.
+    private Task OnExportAsync(IReadOnlyList<AdminSessionModeratorRow> selected) =>
+        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/session-moderators/export",
+            new AdminGridExportRequest
+            {
+                Ids = selected.Select(row => row.UserId).ToList(),
+                Query = selected.Count == 0 ? _query : null,
+            }).AsTask();
 
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
