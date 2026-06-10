@@ -1,0 +1,306 @@
+@* D-353 — reusable Session View/Delete form, hosted by CrudShell (popup or full
+   page) from SessionsList. Inherits CrudViewDeleteFormBase so it exposes the
+   standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
+   details always show; when IsDelete=true a Deactivate button appears and a
+   SimfConfirm gates the soft-delete (replaces the old one-click delete on the
+   list). The former Details-modal extras are preserved here in the View path:
+   the broadcast-lifecycle transitions (P3.2 / D-231) and the recording
+   attach / remove (P3.2b / D-232), both still gated by Sessions.Publish. *@
+@inherits CrudViewDeleteFormBase<AdminSessionDetail>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (_target is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Sessions.Column.Code"]</dt>
+        <dd>@_target.Code</dd>
+        <dt>@L["Admin.Sessions.Column.Title"]</dt>
+        <dd>@_target.Title</dd>
+        <dt>@L["Admin.Sessions.Column.TitleArabic"]</dt>
+        <dd>@_target.TitleArabic</dd>
+        <dt>@L["Admin.Sessions.Field.Description"]</dt>
+        <dd>@(_target.Description ?? "—")</dd>
+        <dt>@L["Admin.Sessions.Field.DescriptionArabic"]</dt>
+        <dd>@(_target.DescriptionArabic ?? "—")</dd>
+        <dt>@L["Admin.Sessions.Column.Hall"]</dt>
+        <dd>@HallLabel(_target)</dd>
+        <dt>@L["Admin.Sessions.Column.StartUtc"]</dt>
+        <dd>@_target.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+        <dt>@L["Admin.Sessions.Column.EndUtc"]</dt>
+        <dd>@_target.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+        <dt>@L["Admin.Sessions.Field.CapacityOverride"]</dt>
+        <dd>@(_target.CapacityOverride?.ToString() ?? L["Admin.Sessions.Field.CapacityInherits"])</dd>
+        <dt>@L["Admin.Sessions.Field.EffectiveCapacity"]</dt>
+        <dd>@_target.EffectiveCapacity</dd>
+        <dt>@L["Admin.Sessions.Field.LiveStreamUrl"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(_target.LiveStreamUrl) ? "—" : _target.LiveStreamUrl)</dd>
+        <dt>@L["Admin.Sessions.Field.LiveSignLanguageUrl"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(_target.LiveSignLanguageUrl) ? "—" : _target.LiveSignLanguageUrl)</dd>
+        <dt>@L["Admin.Sessions.Field.Speakers"]</dt>
+        <dd>
+            @if (_target.Speakers.Count == 0)
+            {
+                <span>—</span>
+            }
+            else
+            {
+                <ul class="simf-dl__list">
+                    @foreach (var s in _target.Speakers)
+                    {
+                        <li>@s.Name (@s.NameArabic)</li>
+                    }
+                </ul>
+            }
+        </dd>
+        <dt>@L["Admin.Sessions.Column.Active"]</dt>
+        <dd>@(_target.IsActive ? L["Admin.Sessions.Active.Yes"] : L["Admin.Sessions.Active.No"])</dd>
+        <dt>@L["Admin.Sessions.Column.Status"]</dt>
+        <dd>
+            <SimfPill Variant="@StatusPillVariant(_target.Status)">
+                @StatusLabel(_target.Status)
+            </SimfPill>
+        </dd>
+        @if (_target.PublishedAt is { } published)
+        {
+            <dt>@L["Admin.Sessions.Lifecycle.PublishedAt"]</dt>
+            <dd>@published.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+        }
+        <dt>@L["Admin.Sessions.Recording.Label"]</dt>
+        <dd>
+            @if (_target.HasRecording)
+            {
+                <span>@_target.RecordingFileName (@FormatBytes(_target.RecordingSizeBytes))</span>
+            }
+            else
+            {
+                <span>@L["Admin.Sessions.Recording.None"]</span>
+            }
+        </dd>
+    </dl>
+
+    @* P3.2b — D-232: the Committee attaches/removes the recording here, gated by
+       Sessions.Publish (same permission as the lifecycle). *@
+    <AuthorizedAction Permission="@PermissionCatalog.Sessions.Publish">
+        <div class="simf-form">
+            <label class="simf-field">
+                <span class="simf-field__label">@L["Admin.Sessions.Recording.File"]</span>
+                <input class="simf-field__input" type="file" id="session-recording-input"
+                       accept="video/*" disabled="@_recordingBusy" />
+            </label>
+            <div class="simf-form__actions">
+                <SimfButton Type="button" Loading="_recordingBusy"
+                            OnClick="UploadRecordingAsync">
+                    @L["Admin.Sessions.Recording.Upload"]
+                </SimfButton>
+                @if (_target.HasRecording)
+                {
+                    <SimfButton Type="button" Loading="_recordingBusy"
+                                OnClick="DeleteRecordingAsync">
+                        @L["Admin.Sessions.Recording.Delete"]
+                    </SimfButton>
+                }
+            </div>
+        </div>
+    </AuthorizedAction>
+
+    @* P3.2 — D-231: the Committee drives the broadcast lifecycle here, gated by
+       Sessions.Publish (distinct from session edit). *@
+    <AuthorizedAction Permission="@PermissionCatalog.Sessions.Publish">
+        <div class="simf-form__actions">
+            @foreach (var move in NextTransitions(_target.Status))
+            {
+                <SimfButton Type="button" Disabled="_lifecycleBusy"
+                            OnClick="@(() => SetStatusAsync(move.Target))">
+                    @L[move.LabelKey]
+                </SimfButton>
+            }
+        </div>
+    </AuthorizedAction>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.Sessions.Action.Deactivate"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.Sessions.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.Sessions.Delete.Title"]"
+                 Message="@string.Format(L["Admin.Sessions.Delete.Message"], _target.Title)"
+                 ConfirmLabel="@L["Admin.Sessions.Action.Deactivate"]"
+                 CancelLabel="@L["Admin.Sessions.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    // A local copy of the row so the lifecycle / recording actions can refresh
+    // the displayed detail in place (the parent passes an immutable Initial).
+    private AdminSessionDetail? _target;
+    private bool _busy;
+    private bool _confirming;
+    private bool _lifecycleBusy;
+    private bool _recordingBusy;
+    private string? _error;
+
+    protected override void OnParametersSet() => _target ??= Initial;
+
+    private static string HallLabel(AdminSessionDetail row) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? row.HallNameArabic
+            : row.HallName;
+
+    // The resx keys are 1:1 with the enum names (Admin.Sessions.Status.<Name>),
+    // so derive the key — no switch + dead fallback to keep in sync.
+    private string StatusLabel(SessionStatus status) =>
+        L[$"Admin.Sessions.Status.{status}"];
+
+    private static string StatusPillVariant(SessionStatus status) => status switch
+    {
+        SessionStatus.Published => "on",
+        SessionStatus.Scheduled => "neutral",
+        _ => "admin",
+    };
+
+    private static IEnumerable<(SessionStatus Target, string LabelKey)> NextTransitions(
+        SessionStatus current) => current switch
+    {
+        SessionStatus.Scheduled =>
+            [(SessionStatus.Held, "Admin.Sessions.Lifecycle.MarkHeld")],
+        SessionStatus.Held =>
+            [(SessionStatus.Scheduled, "Admin.Sessions.Lifecycle.BackToScheduled"),
+             (SessionStatus.Recorded, "Admin.Sessions.Lifecycle.MarkRecorded")],
+        SessionStatus.Recorded =>
+            [(SessionStatus.Held, "Admin.Sessions.Lifecycle.BackToHeld"),
+             (SessionStatus.Published, "Admin.Sessions.Lifecycle.Publish")],
+        SessionStatus.Published =>
+            [(SessionStatus.Recorded, "Admin.Sessions.Lifecycle.Unpublish")],
+        _ => [],
+    };
+
+    private async Task SetStatusAsync(SessionStatus target)
+    {
+        if (_target is null) { return; }
+        _lifecycleBusy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminSessionDetail>>(
+                "simfAccount.putJson",
+                $"/account/api/admin/sessions/{_target.Id}/status",
+                new SetSessionStatusRequest { Status = target });
+            if (envelope is { Success: true, Data: not null })
+            {
+                _target = envelope.Data;
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Sessions.Fallback"];
+            }
+        }
+        finally { _lifecycleBusy = false; }
+    }
+
+    // P3.2b — D-232: attach / remove the session recording. Upload streams the
+    // file through the hidden <input> via simfAccount.uploadFile; the returned
+    // detail refreshes the view so HasRecording flips immediately.
+    private async Task UploadRecordingAsync()
+    {
+        if (_target is null) { return; }
+        _recordingBusy = true;
+        _error = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminSessionDetail>>(
+                "simfAccount.uploadFile",
+                $"/account/api/admin/sessions/{_target.Id}/recording",
+                "session-recording-input");
+            if (env is { Success: true, Data: not null })
+            {
+                _target = env.Data;
+            }
+            else
+            {
+                _error = env?.Error?.MessageForCurrentCulture() ?? L["Admin.Sessions.Fallback"];
+            }
+        }
+        finally { _recordingBusy = false; }
+    }
+
+    private async Task DeleteRecordingAsync()
+    {
+        if (_target is null) { return; }
+        _recordingBusy = true;
+        _error = null;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<AdminSessionDetail>>(
+                "simfAccount.deleteJson",
+                $"/account/api/admin/sessions/{_target.Id}/recording");
+            if (env is { Success: true, Data: not null })
+            {
+                _target = env.Data;
+            }
+            else
+            {
+                _error = env?.Error?.MessageForCurrentCulture() ?? L["Admin.Sessions.Fallback"];
+            }
+        }
+        finally { _recordingBusy = false; }
+    }
+
+    private static string FormatBytes(long? bytes)
+    {
+        if (bytes is not { } value) { return "—"; }
+        return value >= 1_048_576
+            ? $"{value / 1_048_576.0:0.#} MB"
+            : $"{value / 1024.0:0.#} KB";
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || _target is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/sessions/{_target.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(_target);
+            }
+            else
+            {
+                // Close the confirm first so the error lands on the visible form
+                // body, not behind the (still-open) confirm overlay.
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Sessions.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.Sessions.Fallback"];
+        }
+        finally { _busy = false; }
+    }
+}

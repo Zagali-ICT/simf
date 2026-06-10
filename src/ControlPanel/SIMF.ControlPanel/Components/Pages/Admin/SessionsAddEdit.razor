@@ -1,6 +1,13 @@
-@* D-165 (gap doc G3) — reusable Session Add/Edit form, hosted in the
-   modal from SessionsList. Loads Hall picker, Speaker picker (with
-   reorderable list), and Theme multi-picker lazily on first render. *@
+@* D-353 — reusable Session Add/Edit form, hosted by CrudShell (popup or full
+   page) from SessionsList. Inherits CrudAddEditFormBase so it exposes the
+   standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). IsEdit
+   =false runs Create (POST); IsEdit=true runs Edit (PUT against Initial) and
+   shows the IsActive checkbox. Extracted verbatim from the former inline
+   SessionForm: the Hall + Category pickers, the reorderable Speaker roster (with
+   the speaker/host role, D-225), the Theme multi-picker, the StartUtc/EndUtc
+   window, the live-feed URLs (§8 / D-349) and the same create/update request
+   DTOs + JS calls the inline SimfModal form used. *@
+@inherits CrudAddEditFormBase<AdminSessionDetail>
 @using SIMF.Common.Enums
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
@@ -164,7 +171,7 @@
             </ul>
         }
 
-        @if (Initial is not null)
+        @if (IsEdit)
         {
             <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
                 @L["Admin.Sessions.Field.IsActive"]
@@ -173,8 +180,8 @@
     </div>
     <div class="simf-form__actions">
         <SimfButton Loading="_busy"
-                    LoadingLabel="@(Initial is null ? L["Admin.Sessions.New.Submitting"] : L["Admin.Sessions.Edit.Submitting"])">
-            @(Initial is null ? L["Admin.Sessions.New.Submit"] : L["Admin.Sessions.Edit.Submit"])
+                    LoadingLabel="@(IsEdit ? L["Admin.Sessions.Edit.Submitting"] : L["Admin.Sessions.New.Submitting"])">
+            @(IsEdit ? L["Admin.Sessions.Edit.Submit"] : L["Admin.Sessions.New.Submit"])
         </SimfButton>
         @if (OnCancel.HasDelegate)
         {
@@ -210,10 +217,6 @@
 
     private readonly List<AdminSessionSpeakerEntry> _selectedSpeakers = new();
     private readonly List<Guid> _selectedThemes = new();
-
-    [Parameter] public AdminSessionDetail? Initial { get; set; }
-    [Parameter] public EventCallback<AdminSessionDetail> OnSuccess { get; set; }
-    [Parameter] public EventCallback OnCancel { get; set; }
 
     protected override void OnInitialized()
     {
@@ -509,7 +512,7 @@
         try
         {
             ApiResult<AdminSessionDetail>? envelope;
-            if (Initial is null)
+            if (!IsEdit)
             {
                 envelope = await JS.InvokeAsync<ApiResult<AdminSessionDetail>>(
                     "simfAccount.postJson", "/account/api/admin/sessions",
@@ -534,7 +537,7 @@
             else
             {
                 envelope = await JS.InvokeAsync<ApiResult<AdminSessionDetail>>(
-                    "simfAccount.putJson", $"/account/api/admin/sessions/{Initial.Id}",
+                    "simfAccount.putJson", $"/account/api/admin/sessions/{Initial!.Id}",
                     new AdminUpdateSessionRequest
                     {
                         Code = _model.Code.Trim().ToUpperInvariant(),

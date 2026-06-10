@@ -213,6 +213,8 @@ public static class PermissionCatalog
         // P3.2 — D-231: drive the broadcast lifecycle (mark held / recorded,
         // publish + un-publish). Held by the Scientific Committee role.
         public const string Publish = "Sessions.Publish";
+        public const string Export = "Sessions.Export";
+        public const string Import = "Sessions.Import";
     }
 
     public static class ProgrammeTimeline
@@ -677,6 +679,8 @@ public static class PermissionCatalog
         new(Sessions.Delete, "Sessions", "Delete", "Delete sessions", AdminOnly),
         // P3.2 — D-231: session broadcast lifecycle (mark held/recorded, publish).
         new(Sessions.Publish, "Sessions", "Publish", "Publish sessions & manage their lifecycle", AdminOnly),
+        new(Sessions.Export, "Sessions", "Export", "Export sessions", AdminOnly),
+        new(Sessions.Import, "Sessions", "Import", "Import sessions", AdminOnly),
 
         new(ProgrammeTimeline.View, "ProgrammeTimeline", "View", "View the programme timeline", AdminOnly),
 

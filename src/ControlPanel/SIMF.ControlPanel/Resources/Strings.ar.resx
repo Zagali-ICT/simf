@@ -2620,4 +2620,6 @@
   <data name="Admin.Invitations.RecipientRequired" xml:space="preserve"><value>أدخل معرّف ملف مستخدم صالح للمستلم.</value></data>
   <data name="Admin.Invitations.Saved" xml:space="preserve"><value>تم حفظ الدعوة.</value></data>
   <data name="Admin.Invitations.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
+  <data name="Admin.Sessions.Delete.Title" xml:space="preserve"><value>إلغاء تفعيل الجلسة</value></data>
+  <data name="Admin.Sessions.Delete.Message" xml:space="preserve"><value>هل تريد إلغاء تفعيل الجلسة "{0}"؟ سيتم إخفاؤها من البرنامج العام.</value></data>
 </root>

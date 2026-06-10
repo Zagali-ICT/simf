@@ -2627,4 +2627,6 @@
   <data name="Admin.Invitations.RecipientRequired" xml:space="preserve"><value>Enter a valid recipient UserProfile id.</value></data>
   <data name="Admin.Invitations.Saved" xml:space="preserve"><value>Invitation saved.</value></data>
   <data name="Admin.Invitations.Fallback" xml:space="preserve"><value>The operation could not be completed.</value></data>
+  <data name="Admin.Sessions.Delete.Title" xml:space="preserve"><value>Deactivate session</value></data>
+  <data name="Admin.Sessions.Delete.Message" xml:space="preserve"><value>Deactivate the session "{0}"? It will be hidden from the public programme.</value></data>
 </root>
