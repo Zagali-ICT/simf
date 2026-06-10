@@ -113,6 +113,7 @@ not reused. Each page owns a unique 3–4 letter namespace.
 | `/admin/archive` | [`cp-admin-archive.md`](cp-admin-archive.md) | E2E-ARC-001..023 |
 | `/admin/banners` | [`cp-admin-banners.md`](cp-admin-banners.md) | E2E-BNR-001..022 |
 | `/admin/content-blocks` | [`cp-admin-content-blocks.md`](cp-admin-content-blocks.md) | E2E-CNT-001..020 |
+| `/admin/media-library` | [`cp-admin-media-library.md`](cp-admin-media-library.md) | E2E-MLIB-001..010 |
 
 ### Control Panel — AI
 
