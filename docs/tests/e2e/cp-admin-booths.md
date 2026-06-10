@@ -76,7 +76,7 @@
 > - Error codes: `BOOTH_INVALID` (400), `BOOTH_NOT_FOUND` (404),
 >   `BOOTH_CODE_DUPLICATE` (409). Server validation (the source of truth):
 >   Code 2–16 chars (upper-cased + trimmed), NameEn/NameAr 1–128, officer
->   email must contain `@`, HallId must be an active hall, CompanyId must be
+>   email must contain `@`, HallId must be an active hall, ExhibitorId must be
 >   an **active Exhibitor** company.
 > - Audit events: `Booth.Created`, `Booth.Updated`, `Booth.Deactivated`.
 
@@ -213,7 +213,7 @@ Scenario: Add a fully-populated booth
   And they fill Map X position="55.5"
   And they fill Map Y position="88.25"
   And they click "Save"
-  Then POST /account/api/admin/booths is sent with CompanyId, HallId, and MapX/MapY populated
+  Then POST /account/api/admin/booths is sent with ExhibitorId, HallId, and MapX/MapY populated
   And the API returns HTTP 200 and the grid shows the new "B-07" row
   And the row's Company column resolves the chosen company's English name
   And the row's Hall column resolves the chosen hall's name
@@ -408,7 +408,7 @@ Scenario: Typing in a per-column filter narrows the grid via the list endpoint
   And the "Showing {0}–{1} of {2}" summary updates to the filtered count
 
   When they clear the Code filter and type "Maritime" into the "Filter column Sector (English)" input
-  Then a POST /account/api/admin/booths/list fires with GridQuery.Filters["sectorEn"]="Maritime" and Skip reset to 0
+  Then a POST /account/api/admin/booths/list fires with GridQuery.Filters["sector"]="Maritime" and Skip reset to 0
   And only the "B-07" row (Sector (English)="Maritime Logistics") remains
   And the Company and Hall columns expose NO filter input (they are client-resolved, not server-filterable)
 ```

@@ -221,8 +221,8 @@ Scenario: A recipient id that is not a GUID is rejected before any POST
   When the administrator fills Recipient (UserProfile id)="not-a-guid"
   And they click "Send"
   Then SubmitCreateAsync fails the Guid.TryParse guard
-  And a red toast appears reading "The invitations could not be loaded." / "تعذّر تحميل الدعوات."
-    (the page reuses the LoadFailed string as the parse-failure fallback)
+  And a red SimfAlert appears in the form reading the Admin.Invitations.RecipientRequired
+    message (e.g. "A valid recipient is required." / "يجب اختيار مستلم صالح.")
   And the modal stays open
   And NO POST /account/api/admin/invitations request fires
 ```

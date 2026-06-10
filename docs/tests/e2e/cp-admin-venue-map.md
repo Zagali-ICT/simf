@@ -2,7 +2,7 @@
 
 | | |
 |--|--|
-| **Page** | [`cp/venue-map.md`](../../pages/cp/venue-map.md) |
+| **Page** | [`cp/admin-venue-map.md`](../../pages/cp/admin-venue-map.md) |
 | **Route** | `/admin/venue-map` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
@@ -16,7 +16,7 @@
 > **optional** link to a Hall **or** a Booth. The hall/booth pickers are loaded
 > at mount from `/account/api/admin/halls/list` + `/account/api/admin/booths/list`
 > (Top=500). The Flutter app renders the active nodes on its 2D canvas via the
-> public `GET /api/v1/venue-map`. The table **ships empty** — the Logistics team
+> public `GET /api/v1/app/venue-map`. The table **ships empty** — the Logistics team
 > places the nodes — so the empty-state path is the default first render. Mirrors
 > `SessionCategoriesList`. **RequiredPermission:** the page is gated by
 > `PermissionCatalog.VenueMap.View`; the toolbar/row actions are gated by
@@ -489,7 +489,7 @@ Scenario: A bad upload is rejected without creating anything
 - **API integration tests** at `tests/SIMF.Api.Tests/VenueMapTests.cs` cover the
   same surface at a lower layer (no browser):
   - `Create_then_get_then_list_and_public_read` — create → GET by id → public
-    `GET /api/v1/venue-map` returns the active node (mirrors E2E-VMP-001/002).
+    `GET /api/v1/app/venue-map` returns the active node (mirrors E2E-VMP-001/002).
   - `Create_with_an_unknown_hall_is_400` — asserts `ErrorCodes.VenueMapNodeInvalid`
     (mirrors E2E-VMP-013).
   - `Deactivate_drops_it_from_the_public_read` — soft-delete removes the node
