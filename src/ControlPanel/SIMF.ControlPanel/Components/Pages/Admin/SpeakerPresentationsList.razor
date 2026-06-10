@@ -26,19 +26,41 @@
             <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
         }
 
-        <div class="simf-form__fields">
-            <label class="simf-field">
-                <span class="simf-field__label">@L["Admin.SpeakerPresentations.Speaker"]</span>
-                <select class="simf-field__input" value="@_speakerId"
-                        @onchange="OnSpeakerChanged" disabled="@_busy">
-                    <option value="">@L["Admin.SpeakerPresentations.SelectSpeaker"]</option>
+        @* D-357 — pick a speaker from a wall of profile cards (photo + name +
+           country). Selecting one reveals their presentation files below; this
+           gallery replaces the old <select> picker. *@
+        @if (string.IsNullOrEmpty(_speakerId))
+        {
+            @if (_speakers.Count == 0)
+            {
+                <SimfEmptyState Title="@L["Admin.SpeakerPresentations.NoSpeakers"]" />
+            }
+            else
+            {
+                <div class="simf-speaker-picker">
                     @foreach (var s in _speakers)
                     {
-                        <option value="@s.Id">@s.Name</option>
+                        <button type="button" class="simf-speaker-card" disabled="@_busy"
+                                @onclick="@(() => SelectSpeakerAsync(s.Id.ToString()))">
+                            <SimfImageThumb Src="@($"/account/api/admin/assets/SpeakerPhoto/{s.Id}/image")"
+                                            Alt="@SpeakerName(s)" Class="simf-speaker-card__photo" />
+                            <span class="simf-speaker-card__name">@SpeakerName(s)</span>
+                            <span class="simf-speaker-card__country">@SpeakerCountry(s)</span>
+                        </button>
                     }
-                </select>
-            </label>
-        </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="simf-form__actions">
+                <SimfButton Type="button" Variant="secondary"
+                            Disabled="_busy" OnClick="BackToSpeakers">
+                    @L["Admin.SpeakerPresentations.BackToSpeakers"]
+                </SimfButton>
+                <span class="simf-speaker-selected">@SelectedSpeakerName</span>
+            </div>
+        }
 
         @if (!string.IsNullOrEmpty(_speakerId))
         {
@@ -186,9 +208,10 @@
         }
     }
 
-    private async Task OnSpeakerChanged(ChangeEventArgs e)
+    private async Task SelectSpeakerAsync(string id)
     {
-        _speakerId = e.Value?.ToString() ?? string.Empty;
+        _speakerId = id;
+        _sessionId = string.Empty;
         _allRows = new();
         _query = new GridQuery { Top = 20 };
         _page = new();
@@ -197,6 +220,36 @@
         {
             await LoadPresentationsAsync();
         }
+    }
+
+    private void BackToSpeakers()
+    {
+        _speakerId = string.Empty;
+        _sessionId = string.Empty;
+        _allRows = new();
+        _page = new();
+        _toast = null;
+    }
+
+    private string SelectedSpeakerName
+    {
+        get
+        {
+            var s = _speakers.FirstOrDefault(x => x.Id.ToString() == _speakerId);
+            return s is null ? string.Empty : SpeakerName(s);
+        }
+    }
+
+    private static string SpeakerName(AdminSpeakerSummary s) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? (string.IsNullOrWhiteSpace(s.NameArabic) ? s.Name : s.NameArabic)
+            : s.Name;
+
+    private static string SpeakerCountry(AdminSpeakerSummary s)
+    {
+        var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+        var name = isArabic ? s.CountryNameAr : s.CountryNameEn;
+        return string.IsNullOrWhiteSpace(name) ? "—" : name;
     }
 
     private void OnSessionChanged(ChangeEventArgs e) =>
