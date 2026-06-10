@@ -1,0 +1,75 @@
+@* D-353 — reusable Other (partner / event-team account) Add/Edit form, hosted
+   by CrudShell (popup or full page) from OthersList. Inherits
+   CrudAddEditFormBase<AdminUserProfileView> so it exposes the standard CRUD-form
+   surface (IsEdit / Initial / OnSuccess / OnCancel). This is an account/security
+   page: the form does NOT reimplement the account create/edit logic — it hosts
+   the EXACT same components the inline SimfModal Add / Edit used:
+   IsEdit=false → the walk-in CreateOtherForm wizard (Kind=Other; POST + auto-QR);
+   IsEdit=true  → the shared EditAccountForm (Scope="others"; PUT). Same fields,
+   same validation, same routes, same email-change security note. Both hosted
+   components render their own action row + Cancel, so this form adds none. *@
+@inherits CrudAddEditFormBase<AdminUserProfileView>
+@inject IStringLocalizer<Strings> L
+
+@if (!IsEdit)
+{
+    @* Add — the D-127 walk-in Other registration wizard (POST
+       /account/api/admin/others/register-onsite, auto-approved + QR minted).
+       Identical to the component the inline Add SimfModal hosted. *@
+    <CreateOtherForm OnSuccess="OnCreatedAsync"
+                     OnCancel="OnCancel"
+                     CancelLabel="@L["Admin.Others.Add.Close"]" />
+}
+else if (Initial is not null)
+{
+    @* Edit — the shared partner-account edit form (PUT
+       /account/api/admin/others/{id}). Identical to the component the inline
+       Edit SimfModal hosted. Loads its own profile by AccountId. *@
+    <EditAccountForm AccountId="Initial.Id" Scope="others" IsVisitorScope="false"
+                     OnSaved="OnSavedInternalAsync"
+                     OnCancel="OnCancel" />
+}
+
+@code {
+    // Add path — bridge the wizard's AdminCreateUserResponse into the typed
+    // OnSuccess the CrudShell host expects. The host only reads the saved row's
+    // Email (for the create toast) and Id, so a minimal AdminUserProfileView
+    // carrying those is sufficient; the grid reloads from the server next.
+    private Task OnCreatedAsync(AdminCreateUserResponse created) =>
+        OnSuccess.InvokeAsync(NewlyCreatedView(created));
+
+    // Edit path — the EditAccountForm raises a parameterless OnSaved; replay the
+    // (unchanged) Initial row so the host shows the edit-saved toast and reloads.
+    private Task OnSavedInternalAsync() => OnSuccess.InvokeAsync(Initial);
+
+    private static AdminUserProfileView NewlyCreatedView(AdminCreateUserResponse created) =>
+        new(
+            Id: created.UserId,
+            Email: created.Email,
+            DisplayName: string.Empty,
+            UserType: string.Empty,
+            AccountState: string.Empty,
+            ProfileTypeId: null,
+            ProfileTypeName: null,
+            ProfileTypeNameArabic: null,
+            ProfileTypeColor: null,
+            QrId: null,
+            ArabicName: null,
+            EnglishName: null,
+            JobTitle: null,
+            NationalityCode: null,
+            DateOfBirth: null,
+            PlaceOfBirth: null,
+            IsSaudi: false,
+            NationalId: null,
+            IqamaNumber: null,
+            PassportNumber: null,
+            SaudiMobile: null,
+            InternationalMobile: null,
+            HasIdImage: false,
+            InterestIds: Array.Empty<Guid>(),
+            RejectionReason: null,
+            RejectionReasonArabic: null,
+            CreatedAt: DateTimeOffset.UtcNow,
+            UpdatedAt: null);
+}

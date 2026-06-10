@@ -1,0 +1,84 @@
+@* D-353 — reusable Other (partner / event-team account) View form, hosted by
+   CrudShell (popup or full page) from OthersList. Inherits
+   CrudViewDeleteFormBase<AdminUserProfileView> for the standard surface
+   (IsDelete / Initial / OnDeleted / OnCancel). This is DETAILS-ONLY: the page's
+   single-row delete is the reason-gated soft-delete (10–500 char audited reason
+   via /account/api/admin/others/bulk-delete), which stays wired to the grid's
+   OnDeleteOne dialog and must NOT be reimplemented here — so this form never
+   renders a Delete button (IsDelete is ignored) and never calls a delete route.
+   The read-only body is the exact same profile + ID-document view the inline
+   Details SimfModal rendered (D-129 / D-126 admin read). *@
+@inherits CrudViewDeleteFormBase<AdminUserProfileView>
+@inject IStringLocalizer<Strings> L
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Pending.View.Field.Email"]</dt>
+        <dd>@Initial.Email</dd>
+        <dt>@L["Admin.Pending.View.Field.DisplayName"]</dt>
+        <dd>@Initial.DisplayName</dd>
+        <dt>@L["Admin.Pending.View.Field.UserType"]</dt>
+        <dd>@Initial.UserType</dd>
+        <dt>@L["Admin.Users.Details.Field.State"]</dt>
+        <dd>@Initial.AccountState</dd>
+        <dt>@L["Admin.Pending.View.Field.ProfileType"]</dt>
+        <dd>@(Initial.ProfileTypeName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.Created"]</dt>
+        <dd>@Initial.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
+    </dl>
+    <dl class="simf-dl">
+        <dt>@L["Admin.Pending.View.Field.ArabicName"]</dt>
+        <dd>@(Initial.ArabicName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.EnglishName"]</dt>
+        <dd>@(Initial.EnglishName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.Nationality"]</dt>
+        <dd>@(Initial.NationalityCode ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.DateOfBirth"]</dt>
+        <dd>@(Initial.DateOfBirth?.ToString("yyyy-MM-dd") ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.PlaceOfBirth"]</dt>
+        <dd>@(Initial.PlaceOfBirth ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.IdentityType"]</dt>
+        <dd>@IdentityTypeLabel(Initial)</dd>
+        <dt>@L["Admin.Pending.View.Field.IdentityNumber"]</dt>
+        <dd>@(IdentityNumber(Initial) ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.SaudiMobile"]</dt>
+        <dd>@(Initial.SaudiMobile ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.InternationalMobile"]</dt>
+        <dd>@(Initial.InternationalMobile ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.QrId"]</dt>
+        <dd>@(Initial.QrId ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+    </dl>
+    @if (Initial.HasIdImage)
+    {
+        <div class="simf-walkin__id-image">
+            <h4>@L["Admin.Pending.View.Field.IdImage"]</h4>
+            <img src="@($"/account/api/admin/others/{Initial.Id}/id-document?v={DateTime.UtcNow.Ticks}")"
+                 alt="@L["Admin.Pending.View.Field.IdImage"]" />
+        </div>
+    }
+
+    <div class="simf-form__actions">
+        <SimfButton Type="button" Variant="secondary" OnClick="OnCancel">
+            @L["Admin.Others.Details.Close"]
+        </SimfButton>
+    </div>
+}
+
+@code {
+    private string IdentityTypeLabel(AdminUserProfileView profile)
+    {
+        if (!string.IsNullOrEmpty(profile.NationalId))
+            return L["Admin.Pending.View.IdentityType.National"];
+        if (!string.IsNullOrEmpty(profile.IqamaNumber))
+            return L["Admin.Pending.View.IdentityType.Iqama"];
+        if (!string.IsNullOrEmpty(profile.PassportNumber))
+            return L["Admin.Pending.View.IdentityType.Passport"];
+        return L["Admin.Pending.View.MissingValue"];
+    }
+
+    private static string? IdentityNumber(AdminUserProfileView profile) =>
+        profile.NationalId
+            ?? profile.IqamaNumber
+            ?? profile.PassportNumber;
+}

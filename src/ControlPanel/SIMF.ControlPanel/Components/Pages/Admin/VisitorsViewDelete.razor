@@ -1,0 +1,129 @@
+@* D-353 — reusable Visitor View form, hosted by CrudShell (popup or full page)
+   from VisitorsList. Inherits CrudViewDeleteFormBase so it exposes the standard
+   surface (IsDelete / Initial / OnDeleted / OnCancel). This page has NO
+   single-row delete path — a row "delete" on the visitors grid opens the
+   reason-gated bulk-delete dialog on the list page (preserved there) — so this
+   form is DETAILS-ONLY: it never renders a Delete button and never raises
+   OnDeleted. It loads the full profile via the D-126 admin read
+   (/account/api/admin/visitors/{id}/profile) and renders the ID document image
+   inline, exactly as the inline SimfModal Details flow did. *@
+@inherits CrudViewDeleteFormBase<AdminUserSummary>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_loading)
+{
+    <p>@L["Admin.Pending.View.Loading"]</p>
+}
+else if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+else if (_profile is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Pending.View.Field.Email"]</dt>
+        <dd>@_profile.Email</dd>
+        <dt>@L["Admin.Pending.View.Field.DisplayName"]</dt>
+        <dd>@_profile.DisplayName</dd>
+        <dt>@L["Admin.Pending.View.Field.UserType"]</dt>
+        <dd>@_profile.UserType</dd>
+        <dt>@L["Admin.Users.Details.Field.State"]</dt>
+        <dd>@_profile.AccountState</dd>
+        <dt>@L["Admin.Pending.View.Field.ProfileType"]</dt>
+        <dd>@(_profile.ProfileTypeName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.Created"]</dt>
+        <dd>@_profile.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</dd>
+    </dl>
+    <dl class="simf-dl">
+        <dt>@L["Admin.Pending.View.Field.ArabicName"]</dt>
+        <dd>@(_profile.ArabicName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.EnglishName"]</dt>
+        <dd>@(_profile.EnglishName ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.Nationality"]</dt>
+        <dd>@(_profile.NationalityCode ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.DateOfBirth"]</dt>
+        <dd>@(_profile.DateOfBirth?.ToString("yyyy-MM-dd") ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.PlaceOfBirth"]</dt>
+        <dd>@(_profile.PlaceOfBirth ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.IdentityType"]</dt>
+        <dd>@IdentityTypeLabel(_profile)</dd>
+        <dt>@L["Admin.Pending.View.Field.IdentityNumber"]</dt>
+        <dd>@(IdentityNumber(_profile) ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.SaudiMobile"]</dt>
+        <dd>@(_profile.SaudiMobile ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.InternationalMobile"]</dt>
+        <dd>@(_profile.InternationalMobile ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+        <dt>@L["Admin.Pending.View.Field.InterestCount"]</dt>
+        <dd>@_profile.InterestIds.Count</dd>
+        <dt>@L["Admin.Pending.View.Field.QrId"]</dt>
+        <dd>@(_profile.QrId ?? L["Admin.Pending.View.MissingValue"].Value)</dd>
+    </dl>
+    @if (_profile.HasIdImage)
+    {
+        <div class="simf-walkin__id-image">
+            <h4>@L["Admin.Pending.View.Field.IdImage"]</h4>
+            <img src="@($"/account/api/admin/visitors/{_profile.Id}/id-document?v={DateTime.UtcNow.Ticks}")"
+                 alt="@L["Admin.Pending.View.Field.IdImage"]" />
+        </div>
+    }
+}
+
+<div class="simf-form__actions">
+    <SimfButton Type="button" Variant="secondary" OnClick="OnCancel">
+        @L["Admin.Visitors.Details.Close"]
+    </SimfButton>
+</div>
+
+@code {
+    private AdminUserProfileView? _profile;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Initial is null)
+        {
+            _loading = false;
+            return;
+        }
+
+        _loading = true;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<AdminUserProfileView>>(
+                "simfAccount.getJson",
+                $"/account/api/admin/visitors/{Initial.Id}/profile");
+            if (envelope is { Success: true, Data: not null })
+            {
+                _profile = envelope.Data;
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Pending.View.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.Pending.View.Fallback"];
+        }
+        finally { _loading = false; }
+    }
+
+    private string IdentityTypeLabel(AdminUserProfileView profile)
+    {
+        if (!string.IsNullOrEmpty(profile.NationalId))
+            return L["Admin.Pending.View.IdentityType.National"];
+        if (!string.IsNullOrEmpty(profile.IqamaNumber))
+            return L["Admin.Pending.View.IdentityType.Iqama"];
+        if (!string.IsNullOrEmpty(profile.PassportNumber))
+            return L["Admin.Pending.View.IdentityType.Passport"];
+        return L["Admin.Pending.View.MissingValue"];
+    }
+
+    private static string? IdentityNumber(AdminUserProfileView profile) =>
+        profile.NationalId
+            ?? profile.IqamaNumber
+            ?? profile.PassportNumber;
+}

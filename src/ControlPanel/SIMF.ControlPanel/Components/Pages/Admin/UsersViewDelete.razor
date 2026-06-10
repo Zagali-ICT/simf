@@ -1,0 +1,41 @@
+@* D-353 — reusable Admin-user View form, hosted by CrudShell (popup or full
+   page) from UsersList. Inherits CrudViewDeleteFormBase<AdminUserSummary> so it
+   exposes the standard surface (IsDelete / Initial / OnDeleted / OnCancel).
+   This account/security page has NO simple single-row delete: deletion runs
+   through the preserved reason-gated bulk-delete dialog on the list (one row or
+   many), so this form is DETAILS-ONLY — it renders the same read-only fields the
+   inline Details modal showed (straight from the row summary, no extra fetch)
+   plus a Close button. IsDelete / OnDeleted are inherited but unused here; the
+   list never opens this form in delete mode. *@
+@inherits CrudViewDeleteFormBase<AdminUserSummary>
+@inject IStringLocalizer<Strings> L
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Users.Details.Field.Email"]</dt>
+        <dd>@Initial.Email</dd>
+        <dt>@L["Admin.Users.Details.Field.DisplayName"]</dt>
+        <dd>@Initial.DisplayName</dd>
+        <dt>@L["Admin.Users.Details.Field.State"]</dt>
+        <dd>@Initial.AccountState</dd>
+        <dt>@L["Admin.Users.Details.Field.Role"]</dt>
+        <dd>
+            @(Initial.IsAdministrator
+                ? L["Admin.Users.Role.Administrator"]
+                : L["Admin.Users.Role.User"])
+        </dd>
+        <dt>@L["Admin.Users.Details.Field.TwoFactor"]</dt>
+        <dd>
+            @(Initial.TwoFactorEnabled
+                ? L["Admin.Users.TwoFactor.On"]
+                : L["Admin.Users.TwoFactor.Off"])
+        </dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        <SimfButton Type="button" Variant="secondary" OnClick="OnCancel">
+            @L["Admin.Users.Details.Close"]
+        </SimfButton>
+    </div>
+}
