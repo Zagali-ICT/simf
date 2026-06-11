@@ -32,31 +32,35 @@ public sealed class AdminArchiveTests : IClassFixture<SimfApiFactory>
     public async Task Admin_create_then_get_roundtrips()
     {
         var admin = await CreateAdministratorAndSignInAsync();
+        // 2019 is deliberately OUTSIDE the seeded edition set (IdentitySeeder
+        // seeds 2022–2025) so this create cannot collide with seeded demo data
+        // and return 409 — that collision was the cause of the historical
+        // AdminArchive flake. Keep this year out of the seeded range.
         var create = await PostAuthAsync("/api/v1/admin/archive",
             new CreateArchiveEditionRequest
             {
-                Year = 2023,
-                TitleEn = "SIMF 2023",
-                TitleAr = "سيمف 2023",
-                SummaryEn = "The third edition — Securing Tomorrow's Seas",
-                SummaryAr = "النسخة الثالثة",
+                Year = 2019,
+                TitleEn = "SIMF 2019",
+                TitleAr = "سيمف 2019",
+                SummaryEn = "A test edition for the create/get roundtrip.",
+                SummaryAr = "نسخة اختبارية لمسار الإنشاء والاسترجاع.",
                 Attendees = 1200,
                 Sessions = 45,
                 Speakers = 80,
-                CoverImageRelativePath = "archive/simf2023.png",
+                CoverImageRelativePath = "archive/simf2019.png",
             }, admin);
         Assert.Equal(HttpStatusCode.OK, create.StatusCode);
         var created = (await create.Content
             .ReadFromJsonAsync<ApiResult<AdminArchiveEditionDetail>>())!.Data!;
         Assert.NotEqual(Guid.Empty, created.Id);
-        Assert.Equal(2023, created.Year);
+        Assert.Equal(2019, created.Year);
         Assert.Equal(1200, created.Attendees);
 
         var get = await GetAuthAsync($"/api/v1/admin/archive/{created.Id}", admin);
         Assert.Equal(HttpStatusCode.OK, get.StatusCode);
         var detail = (await get.Content
             .ReadFromJsonAsync<ApiResult<AdminArchiveEditionDetail>>())!.Data!;
-        Assert.Equal("SIMF 2023", detail.TitleEn);
+        Assert.Equal("SIMF 2019", detail.TitleEn);
         Assert.Equal(80, detail.Speakers);
     }
 

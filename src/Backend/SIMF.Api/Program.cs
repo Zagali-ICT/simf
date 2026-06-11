@@ -28,9 +28,11 @@ using SIMF.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Production secrets + overrides arrive as SIMF_-prefixed, double-underscore
-// environment variables (set-env-prod.ps1 / SIMF-OPS-001 §6); registering the
-// prefix here is what strips it and binds those values at runtime (D-355).
+// Production secrets/config arrive as SIMF_-prefixed Machine-scope environment
+// variables (deploy/set-env-*.ps1, SIMF-OPS-001 section 6). This source strips
+// the prefix, so SIMF_ConnectionStrings__SimfAppDb binds to
+// ConnectionStrings:SimfAppDb. ASPNETCORE_ENVIRONMENT stays un-prefixed (the
+// host reads it before configuration sources load). (D-355)
 builder.Configuration.AddEnvironmentVariables("SIMF_");
 
 // Structured logging through Serilog (SIMF-SAD-001 section 11).

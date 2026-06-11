@@ -1,0 +1,233 @@
+# Session summaries (محضر desk) — `/admin/session-summaries`
+
+| | |
+|--|--|
+| **Route** | `/admin/session-summaries` |
+| **Audience** | Administrator / Scientific Committee |
+| **Auth** | `@attribute [RequirePermission(PermissionCatalog.SessionSummaries.View)]` (page). API: list/read on `SessionSummaries.View`, generate/save on `SessionSummaries.Edit`, publish/unpublish on `SessionSummaries.Publish`, export on `SessionSummaries.Export` — all on top of `RequireApprovedAccount`. Generate/save/publish/unpublish + export also carry the `"auth"` rate limiter. |
+| **Pattern** | P4.1 / D-238 (Completion Programme §6.4.1, Mockup screen 34). **Not** a CRUD-add page — a session-driven editorial desk: one row per active session, summary created lazily by AI draft or Save. |
+| **Status** | ✅ Real (D-238); Excel export added D-356 |
+| **Backend endpoints** | BFF `/account/api/admin/session-summaries/*` → API: `GET /admin/session-summaries` (list), `GET /admin/session-summaries/{sessionId}` (detail), `POST /admin/session-summaries/{sessionId}/generate` (AI draft), `PUT /admin/session-summaries/{sessionId}` (save), `PUT /admin/session-summaries/{sessionId}/publish`, `PUT /admin/session-summaries/{sessionId}/unpublish`, `POST /admin/session-summaries/export` (D-356, export only) |
+| **Source** | [`SessionSummariesList.razor`](../../../src/ControlPanel/SIMF.ControlPanel/Components/Pages/Admin/SessionSummariesList.razor), [`SessionSummaryEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Admin/SessionSummaryEndpoints.cs), [`SessionSummariesExcelEndpoints.cs`](../../../src/Backend/SIMF.Api/Endpoints/Admin/SessionSummariesExcelEndpoints.cs), [`AdminSessionSummaryService.cs`](../../../src/Backend/SIMF.Infrastructure/Programme/AdminSessionSummaryService.cs), [`SessionSummary.cs`](../../../src/Backend/SIMF.Domain/Programme/SessionSummary.cs), [`SessionSummaries.cs`](../../../src/Shared/SIMF.Contracts/Admin/SessionSummaries.cs) |
+| **Backed by** | `dbo.SessionSummaries` (1:1 with `Session`, migration `D237_AddSessionSummary`, 2026-06-02). |
+| **Tests** | [`docs/tests/e2e/cp-admin-session-summaries.md`](../../tests/e2e/cp-admin-session-summaries.md) |
+| **Last reviewed** | 2026-06-11 |
+
+## 1. Purpose
+
+The Scientific-Committee AI session-summary / محضر desk per the Completion
+Programme §6.4.1 (Mockup screen 34, "ملخص الجلسة بالذكاء الاصطناعي"). The
+محضر is the Committee's own editorial minute for a session; the app reads it on
+screen 34 **only once it is published**.
+
+The desk lists **every active session** (newest session first, by `StartUtc`
+descending) with the state of its summary, and the Committee acts per row:
+
+- **AI draft** (Generate) — routes through the central `IAiService` seam using
+  the seeded `session-summary` prompt. The shipped provider is the
+  deterministic **Echo** stub; a real provider plugs in by editing the prompt's
+  provider in the CP (no code change). The draft is written into the **Arabic
+  full-text column only**, leaving the English column + curated sections for the
+  Committee. Re-generating replaces the Arabic AI draft but preserves the
+  Committee's English text, curated sections, and publish state.
+- **Edit / Save** — eight bilingual sections (key points, recommendations,
+  speakers, full text — each EN + AR). Saving a session that has no summary yet
+  creates a hand-written draft (`AiModel` stays null).
+- **Publish / Unpublish** — stamps / clears `PublishedAt`; this is the gate the
+  public app read honours.
+
+This is a session-driven desk: rows appear / disappear with the active `Session`
+set; the summary is a 1:1 child created lazily. There is no "Add" button and no
+per-row Deactivate.
+
+## 4. UI
+
+- `SimfBanner` titled `Admin.SessionSummaries.Title`, inside `simf-page-wide`
+  → `simf-surface`. A `SimfAlert` (variant from the toast) shows transient
+  success / error feedback above the grid.
+- Grid via `SimfDataGrid` over the in-memory rows. One read loads every active
+  session, then **filter / sort / page run client-side** in `BuildPage()`; page
+  size `Top = 20`, rows keyed by `SessionId`.
+- Columns:
+  - **Session** (`Key="session"`) — `Sortable` + `Filterable`; renders
+    `SessionTitle`.
+  - **Status** (`Key="status"`) — display-only (no filter / sort). A `SimfPill`:
+    `off` → "No summary" (`!HasSummary`), `on` → "Published" (`IsPublished`),
+    `warn` → "Draft" otherwise.
+  - **Source** (`Key="source"`) — display-only. `—` when no summary, else
+    "AI-drafted" (`GeneratedByAi`) or "Manual".
+- Row actions are **quiet icon buttons** (`SimfToolbarButton`, tooltip on
+  hover), wrapped in `<AuthorizedAction>`:
+  - **Generate** (sparkle, `SessionSummaries.Edit`) — always shown.
+  - **Edit** (pencil, `SessionSummaries.Edit`) — only when `HasSummary`.
+  - **Publish / Unpublish** (power, `SessionSummaries.Publish`) — only when
+    `HasSummary`; the icon's tooltip toggles between Publish / Unpublish on
+    `IsPublished`.
+  - There is **no bulk action** — no select-all / multiselect toolbar on this
+    desk.
+- **Empty state** — `SimfEmptyState` titled `Admin.SessionSummaries.None` when
+  no active sessions are listed.
+- **Editor modal** (`SimfModal`, opened by Generate or Edit) titled with the
+  session title. When the loaded summary carries an `AiModel`, a `SimfAlert`
+  variant `info` shows the AI banner (`Admin.SessionSummaries.AiBanner`). Eight
+  `SimfTextarea` fields (see §4.5). Footer: **Save** (`SaveAsync`) + **Cancel**
+  (`CloseEditor`, discards without a PUT).
+- **Excel export (D-356):** the grid toolbar carries an **Export** action
+  (`OnExport` wired, `ExportLabel="@L["Grid.Export"]"`). It posts an
+  `AdminGridExportRequest { Ids, Query }` to
+  `/account/api/admin/session-summaries/export` via
+  `simfAccount.downloadXlsx`. Because the desk has no select-all, `Ids` is
+  always empty and `Query` is sent, so the export always covers the whole
+  active-session set. The file is `simf-session-summaries-{yyyyMMddHHmmss}.xlsx`,
+  sheet "SessionSummaries". **Export only** — the grid does **not** wire
+  `OnImport` and the API exposes no `/import` route; summaries are drafted /
+  edited / published through this desk's own bespoke endpoints.
+
+## 4.5 Form fields
+
+The editor's eight sections bind to `SaveSessionSummaryRequest`; the client
+`MaxLength` props mirror the server limits (`Clean(...)` in
+`AdminSessionSummaryService`).
+
+| Field (resx) | Rows | MaxLength | Server limit |
+|--------------|------|-----------|--------------|
+| Key points (English) | 3 | 4000 | `SectionMax = 4000` |
+| Key points (Arabic) | 3 | 4000 | `SectionMax = 4000` |
+| Recommendations (English) | 3 | 4000 | `SectionMax = 4000` |
+| Recommendations (Arabic) | 3 | 4000 | `SectionMax = 4000` |
+| Speakers (English) | 2 | 1000 | `SpeakersMax = 1000` |
+| Speakers (Arabic) | 2 | 1000 | `SpeakersMax = 1000` |
+| Full text (English) | 5 | 8000 | `FullTextMax = 8000` |
+| Full text (Arabic) | 5 | 8000 | `FullTextMax = 8000` |
+
+Each value is trimmed server-side; a section over its limit is rejected (see §6).
+Key points are newline-delimited bullet lists (one bullet per non-empty line on
+screen 34).
+
+## 5. Data flow + endpoints
+
+- **List** — page `OnInitializedAsync` → `LoadAsync()` → `simfAccount.getJson`
+  `/account/api/admin/session-summaries` → BFF passthrough
+  `api.ListSessionSummariesAsync` → API `GET /admin/session-summaries`
+  (`ListSessionSummariesEndpoint`) → `service.ListAsync`. The service projects one
+  `AdminSessionSummaryRow` per active session with a correlated sub-select on the
+  1:1 summary (`HasSummary` / `GeneratedByAi` / `IsPublished` derived from
+  `AiModel` / `PublishedAt`). Returns the whole set in one read; the grid pages
+  it client-side.
+- **Detail** — Edit → `getJson` `/{sessionId}` → `GetSessionSummaryAdminEndpoint`
+  → `service.GetAsync`. Returns `AdminSessionSummaryDetail` (all eight sections +
+  `AiModel` + publish state + timestamps), or 404 `SESSION_SUMMARY_NOT_FOUND`.
+- **Generate** — sparkle → `postJson` `/{sessionId}/generate` →
+  `GenerateSessionSummaryEndpoint` (actor `sub` from JWT) → `service.GenerateAsync`.
+  Builds prompt inputs from the session title + active speakers + abstract,
+  invokes `IAiService`, writes the truncated output into `FullTextArabic`, stamps
+  `AiModel`, audits `SessionSummary.Generated` (with model + invocation id).
+  Returns the detail and opens the editor pre-filled.
+- **Save** — `putJson` `/{sessionId}` with `SaveSessionSummaryRequest` →
+  `SaveSessionSummaryEndpoint` → `service.SaveAsync` (creates the row if absent;
+  `AiModel` stays null for a hand-written draft). Audits `SessionSummary.Saved`.
+- **Publish / Unpublish** — `putJson` `/{sessionId}/publish` or `/unpublish` →
+  `Publish`/`UnpublishSessionSummaryEndpoint` → `SetPublishedAsync` (stamps /
+  clears `PublishedAt` + `PublishedByUserId`). Audits `SessionSummary.Published`
+  / `SessionSummary.Unpublished`.
+- **Export (D-356)** — toolbar Export → `simfAccount.downloadXlsx`
+  `/account/api/admin/session-summaries/export` → BFF `MapGridExport(group,
+  "session-summaries")` → API `ExportSessionSummariesEndpoint` (extends
+  `AdminGridExportEndpoint<AdminSessionSummaryRow>`) → `service.ListAsync`. The
+  base resets `Skip = 0`, caps `Top = MaxExportRows (5000)`, applies the
+  selected-id filter (none here), and streams the workbook. `IdOf` = `SessionId`.
+
+The BFF `AccountEndpoints` forwards each route with the bearer token via
+`SimfAdminClient`; all responses use the `ApiResult<T>` envelope.
+
+## 6. Validation + error handling
+
+- **Section length** — `Clean(value, max, field)` trims then rejects an
+  over-length section with HTTP 400, `ApiResult.Error.Code =
+  "SESSION_SUMMARY_INVALID"` (`ErrorCodes.SessionSummaryInvalid`), bilingual
+  message ("The {field} must be {max} characters or fewer." / Arabic). The
+  client `MaxLength` props cap normal input, so this guard fires on a forged /
+  pasted over-length body.
+- **Summary not found** — reading, publishing, or unpublishing a session with no
+  summary returns HTTP 404, `Code = "SESSION_SUMMARY_NOT_FOUND"`
+  (`ErrorCodes.SessionSummaryNotFound`), "No summary exists for this session
+  yet." / "لا يوجد ملخّص لهذه الجلسة بعد."
+- **Session not found** — generate/save/publish against an unknown or
+  soft-deleted (`IsActive = false`) session returns HTTP 404, `Code =
+  "SESSION_NOT_FOUND"` (`ErrorCodes.SessionNotFound`), "The session was not
+  found." / "لم يتم العثور على الجلسة." (`LoadSessionForDraftAsync`).
+- **Generate AI draft** is truncated to `FullTextMax (8000)` rather than rejected
+  (`Truncate`), since the provider output is not user input.
+- **Client feedback** — the page surfaces a transient toast (`success` / `error`
+  `SimfAlert`); errors prefer `envelope.Error.MessageForCurrentCulture()`, falling
+  back to a bilingual resx string (`Fallback` / `LoadFailed`).
+
+## 7. Edge cases + known limitations
+
+- **AI draft is Arabic-only.** The seeded `session-summary` prompt produces
+  Arabic minutes, so the draft lands in `FullTextArabic`; the English column +
+  curated sections stay empty for the Committee. Writing one language into both
+  columns would surface the wrong language once a real Arabic provider replaces
+  Echo.
+- **Provenance, not state.** `AiModel` records the draft origin; editing never
+  clears it. Re-generate preserves the Committee's English text, curated
+  sections, and publish state.
+- **Publish is orthogonal to the session's broadcast `Status`** — the محضر is the
+  Committee's own editorial document, published by its own action.
+- **Export only.** No import path exists on this desk (export endpoint with no
+  `/import`; grid wires `OnExport` only). The whole-grid export is capped at 5000
+  rows (`MaxExportRows`); a non-`.xlsx` concern does not arise as there is no
+  upload.
+- **Soft delete** — `SessionSummary.IsActive`; all reads filter `IsActive`. The
+  summary is cascade-deleted with its session (it is meaningless without it).
+
+## 8. i18n + RTL
+
+`Admin.SessionSummaries.*` keys in `Strings.resx` / `Strings.ar.resx` (EN ↔ AR
+parity): `Title`, `Loading`, `None`, `LoadFailed`, `Fallback`, `Generated`,
+`Saved`, `Published`, `Unpublished`, `AiBanner`, `Col.Session` / `Col.Status` /
+`Col.Source`, `Status.None` / `Status.Draft` / `Status.Published`, `Source.Ai` /
+`Source.Manual`, `Action.Generate` / `Action.Edit` / `Action.Publish` /
+`Action.Unpublish`, `Editor.Save` / `Editor.Cancel`, and the eight `Field.*`
+labels. Grid chrome reuses the shared `Grid.*` keys (`Export`, `FilterColumn`,
+`FilterPlaceholder`, `Actions`, paging). Under the Arabic toggle the page and the
+editor modal mirror RTL; the Arabic strings describe the desk as
+"ملخصات الجلسات (المحاضر)" with the AI-draft banner phrased as a review-before-
+publish notice.
+
+## 10. Use cases
+
+- AI-draft a محضر, review/edit the bilingual sections, publish it, and take it
+  offline again — the editorial round-trip the app's screen-34 read depends on.
+- Hand-write a محضر from scratch for a session that was not AI-drafted.
+- Export the active-session summary set to Excel for offline committee review
+  (D-356).
+
+## 11. E2E
+
+See [`docs/tests/e2e/cp-admin-session-summaries.md`](../../tests/e2e/cp-admin-session-summaries.md):
+E2E-SUM-001 golden round-trip (AI draft → edit → publish → unpublish), 002 list
+renders one row per active session, 003 AI draft fills Arabic full-text, 004 edit
+existing, 005 publish, 006 unpublish, 007 editor cancel discards, 008 empty state,
+009 page auth gate, 010 action gate, 011 section over max length (400), 012
+publish without a summary (404), 013 missing / deleted session (404), 014 server
+500 on list, 015 RTL render, 016 per-column filter (client-side), 017 column sort,
+018 Excel export (export only).
+
+## 12. Related docs
+
+- Authority spec: SIMF Completion Programme §6.4.1; Mockup screen 34.
+- Permission catalogue: `docs/SIMF-Permission-Catalogue.md` —
+  `SessionSummaries.View` / `.Edit` / `.Publish` / `.Export`.
+- Decisions: D-237 (entity + migration), D-238 (committee desk + permissions),
+  D-356 (Excel export-only).
+- Sibling Programme modules: Sessions, Speakers, Themes (`admin-themes.md`).
+
+## 13. Changelog
+
+| Date | Decision | Change |
+|------|----------|--------|
+| 2026-06-02 | D-237 / D-238 | Original — `SessionSummary` entity + migration `D237_AddSessionSummary` + the Scientific-Committee محضر desk (list / generate / edit / publish / unpublish) through the central AI seam (Echo provider). Gated by `SessionSummaries.View` / `.Edit` / `.Publish`. |
+| 2026-06-11 | D-356 | Excel **export added** (toolbar Export → `/account/api/admin/session-summaries/export`, sheet "SessionSummaries", columns `SessionCode \| SessionTitle \| SessionTitleArabic \| SessionStartUtc \| Status \| Source \| PublishedAt \| UpdatedAt`, capped at 5000 rows). New permission `SessionSummaries.Export`. **Export only** — no import path (source wires `OnExport`, not `OnImport`). E2E catalogue extended with E2E-SUM-018. |
+
+_Last reviewed:_ 2026-06-11 by Claude (D-356 — reference doc authored, grounded in live source; Excel export-only).

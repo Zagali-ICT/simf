@@ -8,9 +8,10 @@ using SIMF.ControlPanel.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Production secrets + overrides arrive as SIMF_-prefixed, double-underscore
-// environment variables (set-env-prod.ps1 / SIMF-OPS-001 §6); registering the
-// prefix here is what strips it and binds those values at runtime (D-355).
+// Production secrets/config arrive as SIMF_-prefixed Machine-scope environment
+// variables (deploy/set-env-*.ps1, SIMF-OPS-001 section 6). This source strips
+// the prefix, so SIMF_Api__BaseUrl binds to Api:BaseUrl. ASPNETCORE_ENVIRONMENT
+// stays un-prefixed (the host reads it before configuration sources load). (D-355)
 builder.Configuration.AddEnvironmentVariables("SIMF_");
 
 // P6 — per-project log files under {Storage:LogDirectory}/SIMF.ControlPanel/log-{Date}.log.
@@ -124,14 +125,36 @@ builder.Services.AddScoped<CpPreferences>();
 // in the circuit for the interactive callbacks that follow.
 builder.Services.AddHttpContextAccessor();
 
+// SIMF_Api__AllowSelfSignedCertificate=true → accept the API's self-signed
+// certificate on the server-to-server API calls (the API uses a self-signed
+// cert whose name does not match the host). Default false → normal TLS
+// validation, so dev and any other environment are unaffected. (D-355)
+var allowSelfSignedApiCert =
+    builder.Configuration.GetValue<bool>("Api:AllowSelfSignedCertificate");
+Func<HttpMessageHandler> apiPrimaryHandler = () =>
+{
+    var handler = new HttpClientHandler();
+    if (allowSelfSignedApiCert)
+    {
+        handler.ServerCertificateCustomValidationCallback =
+            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+    }
+    return handler;
+};
+
 // Typed clients share one validated API base address (SimfApiBaseAddress) —
-// server-to-server, so the token never reaches the browser.
+// server-to-server, so the token never reaches the browser. The self-signed
+// cert handler (above) is applied to each so production over a self-signed
+// API cert works when SIMF_Api__AllowSelfSignedCertificate=true.
 var apiBaseUri = SimfApiBaseAddress.Resolve(
     builder.Configuration["Api:BaseUrl"], builder.Environment.IsDevelopment());
 
-builder.Services.AddHttpClient<SimfAuthClient>(client => client.BaseAddress = apiBaseUri);
-builder.Services.AddHttpClient<SimfAccountClient>(client => client.BaseAddress = apiBaseUri);
-builder.Services.AddHttpClient<SimfAdminClient>(client => client.BaseAddress = apiBaseUri);
+builder.Services.AddHttpClient<SimfAuthClient>(client => client.BaseAddress = apiBaseUri)
+    .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
+builder.Services.AddHttpClient<SimfAccountClient>(client => client.BaseAddress = apiBaseUri)
+    .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
+builder.Services.AddHttpClient<SimfAdminClient>(client => client.BaseAddress = apiBaseUri)
+    .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
 
 var app = builder.Build();
 
