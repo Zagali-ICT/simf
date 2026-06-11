@@ -192,6 +192,18 @@ class AppL10n {
       _t('$count / 10 مُختارة', '$count / 10 selected');
   String get interestsEmpty => _t('لا توجد اهتمامات', 'No interests available');
   String get attachIdImageLabel => _t('إرفاق صورة الهوية', 'Attach ID image');
+  // KSA-Project profile frame copy (Figma 168:2972, D-368).
+  String get createProfileTitle => _t('إنشاء ملف شخصى', 'Create profile');
+  String get documentNumberLabel => _t('رقم الوثيقة', 'Document number');
+  String get attachmentsLabel => _t(
+        'المرفقات (صورة الهوية / الإقامة / الجواز)',
+        'Attachments (ID / Iqama / passport image)',
+      );
+  String get attachFileLabel => _t('إرفاق ملف', 'Attach file');
+  String get termsAgreeQuestion => _t(
+        'الموافقة على الشروط والأحكام؟',
+        'Agree to the terms & conditions?',
+      );
   String get idImageAttachedLabel => _t('تم إرفاق الصورة', 'Image attached');
   String get removeLabel => _t('إزالة', 'Remove');
   String get clearLabel => _t('مسح', 'Clear');

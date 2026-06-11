@@ -60,7 +60,7 @@ Shared widgets: `lib/app/widgets/simf_logo.dart` (`SimfLogo`, 4x asset
 | P1 | Promote Login v2 → official sign-in | `/sign-in` | 168:2800 | ✅ shipped 2026-06-11 (D-360) | preview `be81082`; promotion — see git log |
 | 1 | Splash (Page 001) | `/splash` | 159:573 | ✅ shipped 2026-06-11 (D-361) | — |
 | 2 | Onboarding carousel (Page 002) | `/onboarding` | 148:22, 159:942, 159:1052 | ✅ shipped 2026-06-11 (D-362 — videos dropped for static panels, owner decision) | — |
-| 3 | Profile-data form (Page 007) | `/sign-up/visitor` | 168:2972 | ⏳ pending — owner resolved the flow question 2026-06-11: **no flow change**; the frame maps to Page 007 (it has no password fields). Page 005 register keeps its current UI (no frame delivered). | — |
+| 3 | Profile-data form (Page 007) | `/sign-up/visitor` | 168:2972 | ✅ shipped 2026-06-11 (D-368 — frame's "رقم اللوحة" skipped: no backend field; DOB/place-of-birth/national-ID path kept: API-required; live check N/A: auth-gated). Page 005 register keeps its current UI (no frame delivered). | — |
 | 4 | Email-OTP verify (Page 006) | `/sign-up/otp` | 505:837 | ✅ shipped 2026-06-11 (D-364). The 2FA OTP screen (`/auth/verify-otp`) keeps its old look — restyling it with the same segmented-box pattern is a tracked follow-up. | — |
 | 5 | Interests picker (Page 007-01) | `/sign-up/interests` | 505:1083 | ✅ shipped 2026-06-11 (D-365 — live check N/A: auth+draft-gated; widget tests stand in) | — |
 | 6 | Registration success (Page 010) | `/registration/success` | 505:1451 | ✅ shipped 2026-06-11 (D-366 — masked reference card, visual-only contact tiles; live check N/A: auth-gated) | — |

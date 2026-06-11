@@ -7,6 +7,24 @@ in [Page_007_Function.md](Page_007_Function.md); rules in
 > **Reworked (D-332).** Data form only (mockup 05). The interests grid moved to
 > [Page 007‑01](../Page_007-01/README.md); this screen ends with **Next**.
 
+> **As-built (KSA-Project redesign, 2026-06-11 — D-368, Figma 168:2972):** the
+> login-style navy header (`SimfLogo` 44 + forum name, back chevron + the
+> **wired globe language toggle**) over the beige `cardBeige` card holding the
+> whole form — **إنشاء ملف شخصى** card head with the avatar mark; the
+> visitor/other and document-type pickers as the design's **beige segmented
+> tabs** (unselected = white pill, selected = beige with white text); gender as
+> two white **radio pills** (18 px gold ring, gold dot when picked); all inputs
+> in the login field language (12-grey label, 48 px `beigeBorder`-bordered
+> transparent input, radius 4); the bordered **إرفاق ملف** attach box (56 px,
+> plus mark; thumbnail + remove once attached); the underlined
+> **الموافقة على الشروط والأحكام؟** link → Page 009; the gold **التالي**.
+> **Logic byte-identical** (lookups, prefill, typeahead, Luhn, draft → 007-01).
+> **Design deltas (D-368):** the frame's "رقم اللوحة (اختياري)" has **no
+> backend field** and is not rendered (flagged to the owner); date of birth,
+> place of birth and the Saudi-national switch + national-ID path are **kept**
+> (API-required) in the same styling although the frame omits them. The old
+> screen is parked in `lib/features/_legacy_mockup/`.
+
 ## Layout (= mockup screen 05)
 ```
 ┌────────────────────────────────────────────┐

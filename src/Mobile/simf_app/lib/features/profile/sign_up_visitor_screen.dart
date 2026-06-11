@@ -8,28 +8,34 @@ import 'package:image_picker/image_picker.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/simf_logo.dart';
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
 
-/// Page 007 — إنشاء حساب · Sign up — profile **data** (Page_007 docs, reworked
-/// D-332 = mockup screen 05).
+const Color _sweepTint = Color(0x0AFFFFFF);
+const BorderRadius _radius4 =
+    BorderRadius.all(Radius.circular(SimfTokens.radiusSmall));
+
+/// Page 007 — إنشاء ملف شخصى · Sign up — profile **data**. The KSA-Project
+/// Figma design (node 168:2972 — D-368): the login-style navy header (logo +
+/// forum name, back chevron + the wired globe language toggle) over the beige
+/// card holding the whole form — login-style bordered fields, the beige
+/// segmented tabs (visitor/other + document type), gender radio pills, the
+/// attach box, the underlined terms link and the gold التالي. The previous
+/// screen is parked in `_legacy_mockup/`.
 ///
-/// Profile data capture for a signed-in but profile-incomplete visitor. On open
-/// it loads the existing profile (pre-fill) plus the three lookups it needs
-/// (countries, profile-types, organisations) concurrently, then renders the
-/// registration form. The first field — **نوع التسجيل (Visitor / Other)** — is a
-/// client-only filter over the ProfileType picker (`?isVisitor=`); it is never
-/// sent to the server (the API has no registration-type field, only
-/// `ProfileTypeId`). **Next** carries the collected data (+ the optional ID image)
-/// forward as a [SignUpProfileDraft] to the interests screen (Page 007‑01,
-/// [RouteNames.signUpInterests]), which adds the interests and fires the single
-/// `POST /app/account/user-profile` save. **No API write happens on this screen.**
-///
-/// AUTH-only (Page_007 L-1): the route is in the auth gate, so an anonymous open
-/// is impossible. The visuals follow the Mockup.html `.dark-form` frame; the
-/// interim placeholder design is swapped by SIMF-VID-001 later.
+/// Contract unchanged (D-332): loads the existing profile + the three lookups
+/// concurrently; the visitor/other tab is a client-only `?isVisitor=` filter
+/// over the ProfileType picker; **Next** carries the collected data (+ the
+/// optional ID image) forward as a [SignUpProfileDraft] to the interests
+/// screen, which fires the single profile save. **No API write happens here.**
+/// Design deltas (recorded in D-368): the frame's "رقم اللوحة (اختياري)" has
+/// no backend field and is NOT rendered; date of birth, place of birth and
+/// the Saudi national-ID path are kept (API-required) in the same styling
+/// even though the frame omits them.
 class SignUpVisitorScreen extends ConsumerStatefulWidget {
   const SignUpVisitorScreen({super.key});
 
@@ -162,12 +168,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _gender = profile.gender;
 
     final code = profile.nationalityCode;
-    _nationalityCode =
-        _countries.any((c) => c.code == code) ? code : null;
+    _nationalityCode = _countries.any((c) => c.code == code) ? code : null;
 
     final typeId = profile.profileTypeId;
-    _profileTypeId =
-        _profileTypes.any((t) => t.id == typeId) ? typeId : null;
+    _profileTypeId = _profileTypes.any((t) => t.id == typeId) ? typeId : null;
 
     _organisationId = profile.organisationId;
     _organisationLabel = null;
@@ -265,8 +269,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   Future<void> _pickIdImage() async {
     try {
-      final file =
-          await ImagePicker().pickImage(source: ImageSource.gallery);
+      final file = await ImagePicker().pickImage(source: ImageSource.gallery);
       if (file == null) {
         return;
       }
@@ -366,7 +369,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       return l10n.documentRequired;
     }
     if (_docType == _DocType.iqama) {
-      final valid = RegExp(r'^2\d{9}$').hasMatch(number) && _isValidLuhn(number);
+      final valid =
+          RegExp(r'^2\d{9}$').hasMatch(number) && _isValidLuhn(number);
       return valid ? null : l10n.iqamaInvalid;
     }
     final valid = RegExp(r'^[A-Za-z0-9]{6,9}$').hasMatch(number);
@@ -382,15 +386,119 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return valid ? null : AppL10n.of(context).phoneInvalid;
   }
 
+  /// The globe button toggles AR ↔ EN and persists the choice (D-363 pattern).
+  void _toggleLanguage() {
+    final isArabic = ref.read(localeControllerProvider).languageCode == 'ar';
+    unawaited(
+      ref
+          .read(localeControllerProvider.notifier)
+          .setLanguage(isArabic ? 'en' : 'ar'),
+    );
+  }
+
+  void _back() {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.go('/');
+  }
+
   // ---- Build ---------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
-      backgroundColor: SimfTokens.navy,
-      appBar: AppBar(title: Text(l10n.signUpVisitorTitle)),
-      body: SafeArea(child: _buildBody(l10n)),
+      backgroundColor: SimfTokens.navySurface,
+      body: Stack(
+        children: <Widget>[
+          // Decorative diagonal sweep behind the header (Figma 168:3180).
+          Positioned(
+            top: -180,
+            right: -40,
+            child: Transform.rotate(
+              angle: 0.4936, // 28.28°
+              child: Container(
+                width: 313,
+                height: 323,
+                decoration: BoxDecoration(
+                  color: _sweepTint,
+                  borderRadius: BorderRadius.circular(40),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              children: <Widget>[
+                // Top controls (Figma 627:2398): chevron left, language toggle
+                // right — forced LTR so the sides match the frame under RTL.
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    textDirection: TextDirection.ltr,
+                    children: <Widget>[
+                      IconButton(
+                        onPressed: _back,
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new,
+                          color: Colors.white,
+                          size: 20,
+                          textDirection: TextDirection.ltr,
+                        ),
+                      ),
+                      const Spacer(),
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: IconButton(
+                          tooltip: l10n.languageToggleLabel,
+                          onPressed: _toggleLanguage,
+                          style: IconButton.styleFrom(
+                            backgroundColor: SimfTokens.navyDeep,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: _radius4,
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.language,
+                            color: SimfTokens.accent,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Forum header (Figma 168:2974) — logo at the inline start.
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    const SimfLogo(size: 44),
+                    const SizedBox(width: 16),
+                    Flexible(
+                      child: Text(
+                        l10n.signInForumTitle,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Expanded(child: _buildBody(l10n)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -403,31 +511,168 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     if (_loadError != null) {
       return _buildLoadError(l10n);
     }
-    // Navy `.dark-form` surface holding the captioned `.mfield` rows.
+    // The beige form card (Figma 168:2977) holding the whole form.
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          SimfTokens.space4,
-          SimfTokens.space5,
-          SimfTokens.space4,
-          SimfTokens.space8,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            // نوع التسجيل (Visitor/Other) + التصنيف (ProfileType) — mockup 05 head.
-            _buildRegistrationTypeSection(l10n),
-            _sectionHeader(l10n.profileSectionPersonal),
-            ..._buildPersonalFields(l10n),
-            _sectionHeader(l10n.profileSectionAffiliation),
-            _buildOrganisationField(l10n),
-            const SizedBox(height: SimfTokens.space6),
-            FilledButton(
-              onPressed: () => _next(),
-              child: Text(l10n.nextLabel),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            // A Material (not a decorated Container) so the ListTile/switch
+            // ink inside the card renders above the beige fill.
+            child: Material(
+              color: SimfTokens.cardBeige,
+              borderRadius: _radius4,
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    // Card head (Figma 522:2186): avatar badge + title.
+                    Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            l10n.createProfileTitle,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              color: SimfTokens.headlineInk,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.account_circle_outlined,
+                          size: 40,
+                          color: SimfTokens.headlineInk,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    // نوع التسجيل (Visitor / Other) — beige tabs (Figma 505:1075).
+                    _BeigeTabs(
+                      options: <String>[
+                        l10n.signUpTypeVisitor,
+                        l10n.signUpTypeOther,
+                      ],
+                      selectedIndex: _isVisitorType ? 0 : 1,
+                      onChanged: (index) =>
+                          unawaited(_onTypeChanged(index == 0)),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildProfileTypeField(l10n),
+                    const SizedBox(height: 16),
+                    _FieldLabel(l10n.arabicNameLabel),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _arabicName,
+                      maxLength: 256,
+                      style: _inputStyle,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: _validateRequired,
+                      decoration: _fieldDecoration(counterText: ''),
+                    ),
+                    const SizedBox(height: 16),
+                    _FieldLabel(l10n.englishNameLabel),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _englishName,
+                      maxLength: 256,
+                      textDirection: TextDirection.ltr,
+                      style: _inputStyle,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: _validateRequired,
+                      decoration: _fieldDecoration(counterText: ''),
+                    ),
+                    const SizedBox(height: 16),
+                    _FieldLabel(l10n.genderLabel),
+                    const SizedBox(height: 8),
+                    _buildGenderPills(l10n),
+                    const SizedBox(height: 16),
+                    _buildOrganisationField(l10n),
+                    const SizedBox(height: 16),
+                    _FieldLabel(l10n.jobTitleLabel),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _jobTitle,
+                      maxLength: 128,
+                      style: _inputStyle,
+                      decoration: _fieldDecoration(counterText: ''),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildNationalityField(l10n),
+                    const SizedBox(height: 16),
+                    // The Saudi switch drives national-ID vs iqama/passport —
+                    // kept from the shipped contract (the frame omits it).
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      value: _isSaudi,
+                      activeThumbColor: SimfTokens.accent,
+                      onChanged: (value) => setState(() => _isSaudi = value),
+                      title: Text(
+                        l10n.isSaudiLabel,
+                        style: const TextStyle(
+                          color: SimfTokens.headlineInk,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ..._buildDocumentFields(l10n),
+                    const SizedBox(height: 16),
+                    _buildMobileField(l10n),
+                    const SizedBox(height: 16),
+                    _buildDateOfBirthField(l10n),
+                    const SizedBox(height: 16),
+                    _FieldLabel(l10n.placeOfBirthLabel),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _placeOfBirth,
+                      maxLength: 128,
+                      style: _inputStyle,
+                      decoration: _fieldDecoration(counterText: ''),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildIdImageField(l10n),
+                    const SizedBox(height: 16),
+                    // Underlined terms link (Figma 522:2179) — opens Page 009.
+                    Center(
+                      child: TextButton(
+                        onPressed: () => context.pushNamed(RouteNames.terms),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          foregroundColor: SimfTokens.navy,
+                        ),
+                        child: Text(
+                          l10n.termsAgreeQuestion,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: () => _next(),
+                      child: Text(
+                        l10n.nextLabel,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -456,95 +701,64 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     );
   }
 
-  /// نوع التسجيل (Visitor / Other) 2-chip filter + the ProfileType picker it
-  /// filters (mockup 05 head).
-  Widget _buildRegistrationTypeSection(AppL10n l10n) {
+  Widget _buildProfileTypeField(AppL10n l10n) {
+    if (_profileTypes.isEmpty) {
+      return const SizedBox.shrink();
+    }
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _FieldLabel(l10n.registrationTypeLabel),
-        Wrap(
-          spacing: SimfTokens.space2,
-          children: <Widget>[
-            ChoiceChip(
-              label: Text(l10n.signUpTypeVisitor),
-              selected: _isVisitorType,
-              onSelected: (_) => unawaited(_onTypeChanged(true)),
-            ),
-            ChoiceChip(
-              label: Text(l10n.signUpTypeOther),
-              selected: !_isVisitorType,
-              onSelected: (_) => unawaited(_onTypeChanged(false)),
-            ),
-          ],
+        _FieldLabel(l10n.profileTypeLabel),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          initialValue: _profileTypeId,
+          isExpanded: true,
+          style: _inputStyle,
+          dropdownColor: SimfTokens.cardBeige,
+          icon: const Icon(
+            Icons.keyboard_arrow_down,
+            color: SimfTokens.greyText,
+          ),
+          decoration: _fieldDecoration(),
+          items: _profileTypes
+              .map(
+                (type) => DropdownMenuItem<String>(
+                  value: type.id,
+                  child: Text(
+                    l10n.isArabic ? type.nameArabic : type.name,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: (value) => setState(() => _profileTypeId = value),
         ),
-        const SizedBox(height: SimfTokens.space4),
-        _buildProfileTypeField(l10n),
       ],
     );
   }
 
-  List<Widget> _buildPersonalFields(AppL10n l10n) {
-    return <Widget>[
-      _FieldLabel(l10n.arabicNameLabel),
-      TextFormField(
-        controller: _arabicName,
-        maxLength: 256,
-        style: _fieldTextStyle,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        validator: _validateRequired,
-        decoration: _whiteFieldDecoration(counterText: ''),
-      ),
-      const SizedBox(height: SimfTokens.space3),
-      _FieldLabel(l10n.englishNameLabel),
-      TextFormField(
-        controller: _englishName,
-        maxLength: 256,
-        style: _fieldTextStyle,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        validator: _validateRequired,
-        decoration: _whiteFieldDecoration(counterText: ''),
-      ),
-      const SizedBox(height: SimfTokens.space3),
-      _FieldLabel(l10n.jobTitleLabel),
-      TextFormField(
-        controller: _jobTitle,
-        maxLength: 128,
-        style: _fieldTextStyle,
-        decoration: _whiteFieldDecoration(counterText: ''),
-      ),
-      const SizedBox(height: SimfTokens.space3),
-      _buildNationalityField(l10n),
-      const SizedBox(height: SimfTokens.space3),
-      SwitchListTile(
-        contentPadding: EdgeInsets.zero,
-        value: _isSaudi,
-        activeThumbColor: SimfTokens.accent,
-        onChanged: (value) => setState(() => _isSaudi = value),
-        title: Text(
-          l10n.isSaudiLabel,
-          style: const TextStyle(color: SimfTokens.surface),
+  /// Gender as the design's two radio pills (Figma 522:2150) — white pills on
+  /// the beige card, an 18 px gold-ringed radio that fills when selected.
+  Widget _buildGenderPills(AppL10n l10n) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: _RadioPill(
+            label: l10n.genderMale,
+            selected: _gender == AppGender.male,
+            onTap: () => setState(() => _gender = AppGender.male),
+          ),
         ),
-      ),
-      const SizedBox(height: SimfTokens.space2),
-      ..._buildDocumentFields(l10n),
-      const SizedBox(height: SimfTokens.space3),
-      _buildMobileField(l10n),
-      const SizedBox(height: SimfTokens.space3),
-      _buildDateOfBirthField(l10n),
-      const SizedBox(height: SimfTokens.space3),
-      _FieldLabel(l10n.placeOfBirthLabel),
-      TextFormField(
-        controller: _placeOfBirth,
-        maxLength: 128,
-        style: _fieldTextStyle,
-        decoration: _whiteFieldDecoration(counterText: ''),
-      ),
-      const SizedBox(height: SimfTokens.space3),
-      _buildGenderField(l10n),
-      const SizedBox(height: SimfTokens.space4),
-      _buildIdImageField(l10n),
-    ];
+        const SizedBox(width: 8),
+        Expanded(
+          child: _RadioPill(
+            label: l10n.genderFemale,
+            selected: _gender == AppGender.female,
+            onTap: () => setState(() => _gender = AppGender.female),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildNationalityField(AppL10n l10n) {
@@ -552,12 +766,17 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(l10n.nationalityLabel),
+        const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           initialValue: _nationalityCode,
           isExpanded: true,
-          style: _fieldTextStyle,
-          dropdownColor: SimfTokens.surface,
-          decoration: _whiteFieldDecoration(),
+          style: _inputStyle,
+          dropdownColor: SimfTokens.cardBeige,
+          icon: const Icon(
+            Icons.keyboard_arrow_down,
+            color: SimfTokens.greyText,
+          ),
+          decoration: _fieldDecoration(),
           items: _countries
               .map(
                 (c) => DropdownMenuItem<String>(
@@ -582,49 +801,39 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     if (_isSaudi) {
       return <Widget>[
         _FieldLabel(l10n.nationalIdLabel),
+        const SizedBox(height: 8),
         TextFormField(
           controller: _nationalId,
           keyboardType: TextInputType.number,
           maxLength: 10,
-          style: _fieldTextStyle,
+          style: _inputStyle,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: _validateNationalId,
-          decoration: _whiteFieldDecoration(counterText: ''),
+          decoration: _fieldDecoration(counterText: ''),
         ),
       ];
     }
     return <Widget>[
-      SegmentedButton<_DocType>(
-        style: _segmentedStyle,
-        segments: <ButtonSegment<_DocType>>[
-          ButtonSegment<_DocType>(
-            value: _DocType.iqama,
-            label: Text(l10n.iqamaSegment),
-          ),
-          ButtonSegment<_DocType>(
-            value: _DocType.passport,
-            label: Text(l10n.passportSegment),
-          ),
-        ],
-        selected: <_DocType>{_docType},
-        onSelectionChanged: (selection) => setState(() {
-          _docType = selection.first;
+      _FieldLabel(l10n.documentTypeLabel),
+      const SizedBox(height: 8),
+      _BeigeTabs(
+        options: <String>[l10n.iqamaSegment, l10n.passportSegment],
+        selectedIndex: _docType == _DocType.iqama ? 0 : 1,
+        onChanged: (index) => setState(() {
+          _docType = index == 0 ? _DocType.iqama : _DocType.passport;
           _documentNumber.clear();
         }),
       ),
-      const SizedBox(height: SimfTokens.space3),
-      _FieldLabel(
-        _docType == _DocType.iqama
-            ? l10n.iqamaNumberLabel
-            : l10n.passportNumberLabel,
-      ),
+      const SizedBox(height: 16),
+      _FieldLabel(l10n.documentNumberLabel),
+      const SizedBox(height: 8),
       TextFormField(
         controller: _documentNumber,
         maxLength: _docType == _DocType.iqama ? 10 : 9,
-        style: _fieldTextStyle,
+        style: _inputStyle,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         validator: _validateDocumentNumber,
-        decoration: _whiteFieldDecoration(counterText: ''),
+        decoration: _fieldDecoration(counterText: ''),
       ),
     ];
   }
@@ -637,14 +846,15 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         _FieldLabel(
           saudi ? l10n.saudiMobileLabel : l10n.internationalMobileLabel,
         ),
+        const SizedBox(height: 8),
         TextFormField(
           controller: saudi ? _saudiMobile : _internationalMobile,
           keyboardType: TextInputType.phone,
           textDirection: TextDirection.ltr,
-          style: _fieldTextStyle,
+          style: _inputStyle,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: _validatePhone,
-          decoration: _whiteFieldDecoration(),
+          decoration: _fieldDecoration(),
         ),
       ],
     );
@@ -656,21 +866,22 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(l10n.dateOfBirthLabel),
+        const SizedBox(height: 8),
         InkWell(
           onTap: () => unawaited(_pickDateOfBirth()),
-          borderRadius:
-              const BorderRadius.all(Radius.circular(SimfTokens.radius)),
+          borderRadius: _radius4,
           child: InputDecorator(
-            decoration: _whiteFieldDecoration(
+            decoration: _fieldDecoration(
               errorText: hasError ? l10n.dateOfBirthRequired : null,
               suffixIcon: const Icon(
                 Icons.calendar_today_outlined,
-                color: SimfTokens.inkMuted,
+                color: SimfTokens.greyText,
+                size: 18,
               ),
             ),
             child: Text(
               _dateOfBirth == null ? '—' : _formatDate(_dateOfBirth!),
-              style: _fieldTextStyle,
+              style: _inputStyle,
             ),
           ),
         ),
@@ -678,69 +889,86 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     );
   }
 
-  Widget _buildGenderField(AppL10n l10n) {
+  /// The attach box (Figma 505:1322): a 56 px bordered row with the plus mark;
+  /// once attached it shows the thumbnail + name + remove.
+  Widget _buildIdImageField(AppL10n l10n) {
+    final bytes = _idImageBytes;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _FieldLabel(l10n.genderLabel),
-        DropdownButtonFormField<AppGender>(
-          initialValue: _gender,
-          style: _fieldTextStyle,
-          dropdownColor: SimfTokens.surface,
-          decoration: _whiteFieldDecoration(),
-          items: <DropdownMenuItem<AppGender>>[
-            DropdownMenuItem<AppGender>(
-              value: AppGender.unspecified,
-              child: Text(l10n.genderUnspecified),
+        _FieldLabel(l10n.attachmentsLabel),
+        const SizedBox(height: 8),
+        if (bytes == null)
+          InkWell(
+            onTap: () => unawaited(_pickIdImage()),
+            borderRadius: _radius4,
+            child: Container(
+              height: 56,
+              decoration: BoxDecoration(
+                border: Border.all(color: SimfTokens.beigeBorder),
+                borderRadius: _radius4,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text(
+                    l10n.attachFileLabel,
+                    style: const TextStyle(
+                      color: SimfTokens.inputInk,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.add_circle_outline,
+                    size: 24,
+                    color: SimfTokens.greyText,
+                  ),
+                ],
+              ),
             ),
-            DropdownMenuItem<AppGender>(
-              value: AppGender.male,
-              child: Text(l10n.genderMale),
+          )
+        else
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              border: Border.all(color: SimfTokens.beigeBorder),
+              borderRadius: _radius4,
             ),
-            DropdownMenuItem<AppGender>(
-              value: AppGender.female,
-              child: Text(l10n.genderFemale),
+            child: Row(
+              children: <Widget>[
+                ClipRRect(
+                  borderRadius: _radius4,
+                  child: Image.memory(
+                    bytes,
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _idImageName ?? l10n.idImageAttachedLabel,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: SimfTokens.inputInk,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _removeIdImage,
+                  style: TextButton.styleFrom(
+                    foregroundColor: SimfTokens.accent,
+                  ),
+                  child: Text(l10n.removeLabel),
+                ),
+              ],
             ),
-          ],
-          onChanged: (value) =>
-              setState(() => _gender = value ?? AppGender.unspecified),
-        ),
+          ),
       ],
-    );
-  }
-
-  Widget _buildIdImageField(AppL10n l10n) {
-    final bytes = _idImageBytes;
-    if (bytes == null) {
-      return Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: OutlinedButton.icon(
-          onPressed: () => unawaited(_pickIdImage()),
-          icon: const Icon(Icons.attach_file, color: SimfTokens.accent),
-          label: Text(l10n.attachIdImageLabel),
-        ),
-      );
-    }
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: ClipRRect(
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        child: Image.memory(bytes, width: 48, height: 48, fit: BoxFit.cover),
-      ),
-      title: Text(
-        l10n.idImageAttachedLabel,
-        style: const TextStyle(color: SimfTokens.surface),
-      ),
-      subtitle: Text(
-        _idImageName ?? '',
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(color: SimfTokens.txtSecondary),
-      ),
-      trailing: TextButton(
-        onPressed: _removeIdImage,
-        style: TextButton.styleFrom(foregroundColor: SimfTokens.accent),
-        child: Text(l10n.removeLabel),
-      ),
     );
   }
 
@@ -750,14 +978,15 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           _FieldLabel(l10n.organisationLabel),
+          const SizedBox(height: 8),
           InputDecorator(
-            decoration: _whiteFieldDecoration(),
+            decoration: _fieldDecoration(),
             child: Row(
               children: <Widget>[
                 Expanded(
                   child: Text(
                     _organisationLabel ?? l10n.organisationSelected,
-                    style: _fieldTextStyle,
+                    style: _inputStyle,
                   ),
                 ),
                 TextButton(
@@ -776,12 +1005,14 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(l10n.organisationLabel),
+        const SizedBox(height: 8),
         TextField(
           controller: _organisationSearch,
-          style: _fieldTextStyle,
-          decoration: _whiteFieldDecoration(
+          style: _inputStyle,
+          decoration: _fieldDecoration(
             hintText: l10n.organisationSearchHint,
-            prefixIcon: const Icon(Icons.search, color: SimfTokens.inkMuted),
+            prefixIcon:
+                const Icon(Icons.search, color: SimfTokens.greyText, size: 18),
             // B3 — D-221: required — flag the empty pick after a submit attempt.
             errorText: (_triedSubmit && _organisationId == null)
                 ? l10n.organisationRequired
@@ -790,13 +1021,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           onChanged: _onOrganisationSearchChanged,
         ),
         if (_organisationSearch.text.trim().isNotEmpty) ...<Widget>[
-          const SizedBox(height: SimfTokens.space2),
+          const SizedBox(height: 8),
           if (_organisationResults.isEmpty)
             Padding(
-              padding: const EdgeInsets.all(SimfTokens.space2),
+              padding: const EdgeInsets.all(8),
               child: Text(
                 l10n.organisationEmpty,
-                style: const TextStyle(color: SimfTokens.txtSecondary),
+                style: const TextStyle(color: SimfTokens.greyText),
               ),
             )
           else
@@ -808,15 +1039,13 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       l10n.isArabic
                           ? organisation.nameAr
                           : (organisation.nameEn ?? organisation.nameAr),
-                      style: const TextStyle(color: SimfTokens.surface),
+                      style: const TextStyle(color: SimfTokens.headlineInk),
                     ),
                     subtitle: organisation.city == null
                         ? null
                         : Text(
                             organisation.city!,
-                            style: const TextStyle(
-                              color: SimfTokens.txtSecondary,
-                            ),
+                            style: const TextStyle(color: SimfTokens.greyText),
                           ),
                     onTap: () => _selectOrganisation(organisation, l10n),
                   ),
@@ -826,65 +1055,24 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     );
   }
 
-  Widget _buildProfileTypeField(AppL10n l10n) {
-    if (_profileTypes.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        _FieldLabel(l10n.profileTypeLabel),
-        const SizedBox(height: SimfTokens.space1),
-        Wrap(
-          spacing: SimfTokens.space2,
-          runSpacing: SimfTokens.space2,
-          children: _profileTypes
-              .map(
-                (type) => ChoiceChip(
-                  label: Text(l10n.isArabic ? type.nameArabic : type.name),
-                  selected: _profileTypeId == type.id,
-                  onSelected: (value) => setState(
-                    () => _profileTypeId = value ? type.id : null,
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-      ],
-    );
-  }
+  // ---- Styling (the login-card field language — Figma 168:2972) ------------
 
-  /// A `.dark-form` section caption — the kicker above a field group
-  /// (txt-3 tertiary, uppercase-weight, letter-spaced).
-  Widget _sectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        top: SimfTokens.space5,
-        bottom: SimfTokens.space3,
-      ),
-      child: Text(
-        title,
-        style: const TextStyle(
-          color: SimfTokens.txtTertiary,
-          fontWeight: FontWeight.w700,
-          fontSize: SimfTokens.textXs,
-          letterSpacing: 0.8,
-        ),
-      ),
-    );
-  }
-
-  // ---- Styling helpers (mockup `.dark-form` / `.mfield` / `.type-chip`) -----
-
-  /// Ink-on-white field text, matching the mockup's `.mfield .in` colour.
-  static const TextStyle _fieldTextStyle = TextStyle(
-    color: SimfTokens.ink,
-    fontSize: SimfTokens.textMd,
+  static const TextStyle _inputStyle = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: SimfTokens.inputInk,
   );
 
-  /// Per-field white decoration overriding the navy theme to the mockup's
-  /// `.mfield .in` (white fill, ink hint, accent focus ring).
-  InputDecoration _whiteFieldDecoration({
+  static const OutlineInputBorder _restingBorder = OutlineInputBorder(
+    borderRadius: _radius4,
+    borderSide: BorderSide(color: SimfTokens.beigeBorder),
+  );
+  static const OutlineInputBorder _focusedBorder = OutlineInputBorder(
+    borderRadius: _radius4,
+    borderSide: BorderSide(color: SimfTokens.accent),
+  );
+
+  InputDecoration _fieldDecoration({
     String? counterText,
     String? hintText,
     String? errorText,
@@ -897,41 +1085,16 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       errorText: errorText,
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
-      filled: true,
-      fillColor: SimfTokens.surface,
-      hintStyle: const TextStyle(color: SimfTokens.inkMuted),
-      border: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
-        borderSide: BorderSide(color: SimfTokens.accent),
-      ),
+      isDense: true,
+      filled: false,
+      hintStyle: const TextStyle(color: SimfTokens.greyText),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+      border: _restingBorder,
+      enabledBorder: _restingBorder,
+      focusedBorder: _focusedBorder,
+      disabledBorder: _restingBorder,
     );
   }
-
-  /// `.type-grid` segmented selector — transparent on navy with an accent
-  /// fill + navy text on the chosen segment, mirroring `.type-chip.on`.
-  static final ButtonStyle _segmentedStyle = ButtonStyle(
-    backgroundColor: WidgetStateProperty.resolveWith<Color>(
-      (states) => states.contains(WidgetState.selected)
-          ? SimfTokens.accent
-          : Colors.transparent,
-    ),
-    foregroundColor: WidgetStateProperty.resolveWith<Color>(
-      (states) => states.contains(WidgetState.selected)
-          ? SimfTokens.navy
-          : SimfTokens.txtSecondary,
-    ),
-    side: WidgetStateProperty.all(
-      const BorderSide(color: SimfTokens.line),
-    ),
-  );
 
   // ---- Pure helpers --------------------------------------------------------
 
@@ -971,8 +1134,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }
 }
 
-/// A field caption above its input — the mockup's `.mfield label`
-/// (txt-2 secondary on the navy form).
+/// A field caption above its input — the design's 12-grey label
+/// (Figma "Title" rows).
 class _FieldLabel extends StatelessWidget {
   const _FieldLabel(this.text);
 
@@ -980,14 +1143,135 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: SimfTokens.space2),
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
       child: Text(
         text,
         style: const TextStyle(
-          color: SimfTokens.txtSecondary,
-          fontSize: SimfTokens.textSm,
+          color: SimfTokens.greyText,
+          fontSize: 12,
           fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+}
+
+/// The design's beige segmented tabs (Figma 505:1075 / 505:1030): a
+/// `beigeBorder` container; the **unselected** segment is a white pill with
+/// ink text, the **selected** segment shows the container beige with white
+/// text.
+class _BeigeTabs extends StatelessWidget {
+  const _BeigeTabs({
+    required this.options,
+    required this.selectedIndex,
+    required this.onChanged,
+  });
+
+  final List<String> options;
+  final int selectedIndex;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: SimfTokens.beigeBorder,
+        borderRadius: _radius4,
+      ),
+      child: Row(
+        children: <Widget>[
+          for (int i = 0; i < options.length; i++) ...<Widget>[
+            if (i > 0) const SizedBox(width: 1),
+            Expanded(
+              child: InkWell(
+                onTap: () => onChanged(i),
+                borderRadius: _radius4,
+                child: Container(
+                  height: 34,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: i == selectedIndex
+                        ? SimfTokens.beigeBorder
+                        : Colors.white,
+                    borderRadius: _radius4,
+                  ),
+                  child: Text(
+                    options[i],
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color:
+                          i == selectedIndex ? Colors.white : SimfTokens.navy,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// One of the design's gender radio pills (Figma 522:2151): a white pill with
+/// the label and an 18 px gold-ringed radio that fills when selected.
+class _RadioPill extends StatelessWidget {
+  const _RadioPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: _radius4,
+      child: Container(
+        height: 48,
+        decoration: const BoxDecoration(
+          color: Color(0xE6FFFFFF), // white at 90% over the beige card
+          borderRadius: _radius4,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: SimfTokens.navy,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: SimfTokens.accent, width: 1.2),
+              ),
+              alignment: Alignment.center,
+              child: selected
+                  ? Container(
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: SimfTokens.accent,
+                      ),
+                    )
+                  : null,
+            ),
+          ],
         ),
       ),
     );

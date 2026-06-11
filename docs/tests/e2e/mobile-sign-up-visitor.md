@@ -6,9 +6,11 @@
 > this screen now ends with **Next**, and a **نوع التسجيل (Visitor/Other)** chip filters
 > the ProfileType picker. Spec: [`Page_007`](../../App/Page_007/README.md).
 >
-> **Status note:** the scenarios below are the **target spec**; the Flutter rebuild
-> (D-332 step 2) re-points the `Evidence` to the new widget tests. Until then the
-> shipped widget tests cover the old combined screen.
+> **Status note:** the D-332 rebuild shipped and the D-368 redesign restyled it;
+> `sign_up_visitor_screen_test.dart` covers the type filter, validation,
+> Saudi/non-Saudi document branches, the organisation gate and the Next→draft
+> hand-off on the **new** screen. Scenario wording that says "chips" reads as
+> the design's segmented tabs since D-368.
 
 | | |
 |--|--|
@@ -17,7 +19,19 @@
 | **APIs** | `GET /api/v1/app/account/user-profile` (pre-fill); lookups `GET …/user-profile/countries`, `GET …/profile-types?isVisitor=`, `GET /app/organisations?search=&top=`. **No POST and no interests lookup on this screen** — those are on Page 007‑01. All signed-in, no role/permission (D7). |
 | **Surface** | Mobile (Flutter) — Visitor (signed-in, profile-incomplete) |
 | **Auth setup** | A signed-in Visitor token (own `sub`). Obtain via the standard app sign-in; never a literal secret. |
-| **Last reviewed** | 2026-06-07 |
+| **Last reviewed** | 2026-06-11 |
+
+> **KSA-Project redesign (D-368, Figma 168:2972):** the form now lives in the
+> beige card under the login-style navy header (logo + forum name + wired
+> globe language toggle); visitor/other + document-type are beige segmented
+> tabs, gender is two radio pills, the attach control is the bordered
+> إرفاق ملف box, and an underlined terms link opens Page 009. **The
+> lookups/prefill/typeahead/validation/draft contract is unchanged.** Deltas:
+> the frame's "رقم اللوحة (اختياري)" has no backend field and is not rendered;
+> DOB, place of birth and the Saudi switch + national-ID path are kept
+> (API-required) though the frame omits them. Old screen parked in
+> `lib/features/_legacy_mockup/`. Live browser check N/A (auth-gated);
+> widget tests cover render + contract.
 
 ## Coverage matrix
 
@@ -173,4 +187,4 @@ Scenario: The form mirrors under Arabic
 
 ---
 
-_Last reviewed:_ `2026-06-07` by `SIMF Team` — reworked under D-332 (data screen; interests + save → Page 007‑01).
+_Last reviewed:_ `2026-06-11` by `SIMF Team` — reworked under D-332 (data screen; interests + save → Page 007‑01).

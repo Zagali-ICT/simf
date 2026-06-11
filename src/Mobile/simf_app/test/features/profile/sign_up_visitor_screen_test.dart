@@ -150,6 +150,7 @@ Future<void> _tapNext(WidgetTester tester) async {
   final next = find.widgetWithText(FilledButton, 'Next');
   await tester.ensureVisible(next);
   await tester.pumpAndSettle();
+  await tester.ensureVisible(next);
   await tester.tap(next);
   await tester.pumpAndSettle();
 }
@@ -160,11 +161,8 @@ void main() {
         (tester) async {
       await _pump(tester, _FakeProfileRepository());
 
-      expect(find.text('Registration type'), findsOneWidget);
-      expect(find.widgetWithText(ChoiceChip, 'Visitor'), findsOneWidget);
-      expect(find.widgetWithText(ChoiceChip, 'Other'), findsOneWidget);
-      expect(find.text('Personal'), findsOneWidget);
-      expect(find.text('Affiliation'), findsOneWidget);
+      expect(find.text('Visitor'), findsOneWidget);
+      expect(find.text('Other'), findsOneWidget);
       expect(find.text('Nationality'), findsWidgets);
       expect(find.widgetWithText(FilledButton, 'Next'), findsOneWidget);
       // Interests are NOT on this screen anymore (D-332).
@@ -181,7 +179,7 @@ void main() {
       expect(repo.lastProfileTypesIsVisitor, isTrue);
 
       // Picking "Other" re-filters with isVisitor=false.
-      await tester.tap(find.widgetWithText(ChoiceChip, 'Other'));
+      await tester.tap(find.text('Other'));
       await tester.pumpAndSettle();
       expect(repo.lastProfileTypesIsVisitor, isFalse);
     });
