@@ -71,6 +71,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: false
+  # Login v2 design-preview logo (Figma KSA-Project 168:2800 — D-358).
+  assets:
+    - assets/images/
   # Mockup typography — IBM Plex Sans Arabic (the Mockup.html app font, OFL),
   # bundled as an asset so it renders offline + deterministically on every
   # platform incl. web (no runtime font fetch). Applied app-wide by SimfTheme

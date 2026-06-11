@@ -82,4 +82,8 @@ class RouteNames {
 
   /// Visitor email-OTP second factor at sign-in (the app has no TOTP).
   static const String verifyOtp = 'verifyOtp';
+
+  /// Login v2 — design-preview of the Figma KSA-Project login (168:2800,
+  /// D-358). Lives beside [signIn]; not a numbered mockup screen.
+  static const String signIn2 = 'signIn2';
 }
