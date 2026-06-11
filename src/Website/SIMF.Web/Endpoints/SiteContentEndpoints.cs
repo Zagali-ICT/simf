@@ -217,9 +217,15 @@ internal static class SiteContentEndpoints
             // Rank is a single (non-bilingual) line; emit it for both locales.
             PutBilingual(item, "role", sp.Rank, sp.Rank);
             PutBilingual(item, "org", sp.CountryNameAr, sp.CountryNameEn);
-            // Portrait URL (D-346) — the card renders it when present, else its
-            // SVG silhouette. Currently a test placeholder seeded on the speaker.
-            if (!string.IsNullOrWhiteSpace(sp.PhotoRelativePath))
+            // Portrait URL — prefer an uploaded/linked SpeakerPhoto asset from the
+            // unified media-asset pipeline (D-357), served same-origin through the
+            // /content/assets proxy; otherwise fall back to the legacy portrait path
+            // (D-346). The card renders whichever is present, else its SVG silhouette.
+            if (sp.HasPhotoAsset)
+            {
+                item["photo"] = $"/content/assets/SpeakerPhoto/{sp.Id}/image";
+            }
+            else if (!string.IsNullOrWhiteSpace(sp.PhotoRelativePath))
             {
                 item["photo"] = sp.PhotoRelativePath;
             }

@@ -1,6 +1,7 @@
 // Tests: SIMF.Api.Tests/PublicSpeakersTests.cs
 using Microsoft.EntityFrameworkCore;
 using SIMF.Application.Programme.Abstractions;
+using SIMF.Common.Enums;
 using SIMF.Contracts.Programme;
 using SIMF.Infrastructure.Persistence;
 
@@ -53,6 +54,18 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
                 .Select(row => row.CountryId!.Value),
             cancellationToken);
 
+        // D-357 — which of these speakers have an active SpeakerPhoto asset (one
+        // batched query; OwnerId is the speaker id, resolved cross-row with no FK).
+        var speakerIds = rows.Select(row => row.Id).ToList();
+        var withPhotoAsset = (await dbContext.Assets
+            .AsNoTracking()
+            .Where(asset => asset.Category == AssetCategory.SpeakerPhoto
+                && asset.IsActive
+                && speakerIds.Contains(asset.OwnerId))
+            .Select(asset => asset.OwnerId)
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
+
         var items = rows
             .Select(row =>
             {
@@ -66,7 +79,8 @@ internal sealed class PublicSpeakerService(SimfAppDbContext dbContext)
                 return new PublicSpeakerSummary(
                     row.Id, row.Name, row.NameArabic, row.Rank,
                     row.CountryId, en, ar,
-                    row.PhotoRelativePath, row.DisplayOrder);
+                    row.PhotoRelativePath, row.DisplayOrder,
+                    withPhotoAsset.Contains(row.Id));
             })
             .ToList();
 

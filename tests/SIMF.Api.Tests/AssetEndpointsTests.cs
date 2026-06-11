@@ -1,0 +1,269 @@
+// D-357 — integration coverage for the unified media-asset endpoint family:
+// per-category upload / external-link / public-serve gated by the OWNING entity's
+// permission, plus the central Media Library management (list / deactivate /
+// restore) gated by MediaLibrary.View / .Manage. Owner ids are free Guids — the
+// asset rows reference them polymorphically with no FK (D-157), so the tests need
+// no seeded owner row.
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
+using SIMF.Common;
+using SIMF.Common.Enums;
+using SIMF.Contracts.Assets;
+using SIMF.Contracts.Authentication;
+using SIMF.Domain.IdentityAccess;
+using Xunit;
+
+namespace SIMF.Api.Tests;
+
+public sealed class AssetEndpointsTests : IClassFixture<SimfApiFactory>
+{
+    private const string AdministratorRole = "Administrator";
+
+    // Minimal 1x1 PNG.
+    private static readonly byte[] Png = Convert.FromBase64String(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==");
+
+    private readonly SimfApiFactory _factory;
+    private readonly HttpClient _client;
+
+    public AssetEndpointsTests(SimfApiFactory factory)
+    {
+        _factory = factory;
+        _factory.EnsureDatabaseCreated();
+        _client = factory.CreateClient();
+    }
+
+    [Fact]
+    public async Task Upload_image_then_public_app_image_streams()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+
+        var upload = await UploadAsync("SpeakerPhoto", owner, "Image", Png, "image/png", "p.png", token);
+        Assert.Equal(HttpStatusCode.OK, upload.StatusCode);
+
+        // Anonymous public serve now returns the bytes.
+        var img = await _client.GetAsync($"/api/v1/app/assets/SpeakerPhoto/{owner}/image");
+        Assert.Equal(HttpStatusCode.OK, img.StatusCode);
+        Assert.NotEmpty(await img.Content.ReadAsByteArrayAsync());
+
+        // And it shows up in the Media Library list as an active uploaded image.
+        var row = await FindByOwnerAsync(owner, token);
+        Assert.NotNull(row);
+        Assert.Equal(AssetCategory.SpeakerPhoto, row!.Category);
+        Assert.Equal(AssetKind.Image, row.Kind);
+        Assert.Equal(AssetSourceType.Upload, row.SourceType);
+        Assert.True(row.IsActive);
+    }
+
+    [Fact]
+    public async Task External_link_is_stored_as_a_link_row()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+
+        var link = await PutAuthAsync(
+            $"/api/v1/admin/assets/NewsImage/{owner}/link",
+            new SetAssetLinkRequest { Kind = AssetKind.Image, Url = "https://cdn.example/x.jpg" },
+            token);
+        Assert.Equal(HttpStatusCode.OK, link.StatusCode);
+
+        var row = await FindByOwnerAsync(owner, token);
+        Assert.NotNull(row);
+        Assert.Equal(AssetSourceType.ExternalLink, row!.SourceType);
+        Assert.Equal("https://cdn.example/x.jpg", row.ExternalUrl);
+    }
+
+    [Fact]
+    public async Task Deactivate_then_restore_round_trips()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+        await UploadAsync("SpeakerPhoto", owner, "Image", Png, "image/png", "p.png", token);
+        var id = (await FindByOwnerAsync(owner, token))!.Id;
+
+        var del = await DeleteAuthAsync($"/api/v1/admin/assets/item/{id}", token);
+        Assert.Equal(HttpStatusCode.OK, del.StatusCode);
+        Assert.False((await GetItemAsync(id, token))!.IsActive);
+
+        var restore = await PostAuthAsync($"/api/v1/admin/assets/item/{id}/restore", new { }, token);
+        Assert.Equal(HttpStatusCode.OK, restore.StatusCode);
+        Assert.True((await GetItemAsync(id, token))!.IsActive);
+    }
+
+    [Fact]
+    public async Task Restore_is_blocked_with_409_when_a_live_asset_owns_the_pair()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+
+        // Asset A, then deactivate it.
+        await UploadAsync("SpeakerPhoto", owner, "Image", Png, "image/png", "a.png", token);
+        var idA = (await FindByOwnerAsync(owner, token))!.Id;
+        await DeleteAuthAsync($"/api/v1/admin/assets/item/{idA}", token);
+
+        // Asset B for the same (category, owner) — a new live row.
+        await UploadAsync("SpeakerPhoto", owner, "Image", Png, "image/png", "b.png", token);
+
+        // Restoring A now collides with the live B → 409 (the filtered unique index).
+        var restore = await PostAuthAsync($"/api/v1/admin/assets/item/{idA}/restore", new { }, token);
+        Assert.Equal(HttpStatusCode.Conflict, restore.StatusCode);
+        Assert.False((await GetItemAsync(idA, token))!.IsActive);
+    }
+
+    [Fact]
+    public async Task Wrong_content_type_upload_is_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+        var resp = await UploadAsync(
+            "SpeakerPhoto", owner, "Image", "not-an-image"u8.ToArray(), "text/plain", "x.txt", token);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Video_kind_upload_is_rejected_400()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var owner = Guid.NewGuid();
+        var resp = await UploadAsync("SpeakerPhoto", owner, "Video", Png, "image/png", "v.png", token);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Anonymous_caller_is_unauthorized_on_upload()
+    {
+        var owner = Guid.NewGuid();
+        using var form = BuildForm(Png, "image/png", "p.png");
+        var req = new HttpRequestMessage(
+            HttpMethod.Post, $"/api/v1/admin/assets/SpeakerPhoto/{owner}/image?kind=Image") { Content = form };
+        var resp = await _client.SendAsync(req);
+        Assert.Equal(HttpStatusCode.Unauthorized, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Non_admin_caller_is_forbidden_on_upload()
+    {
+        var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
+        var owner = Guid.NewGuid();
+        var resp = await UploadAsync(
+            "SpeakerPhoto", owner, "Image", Png, "image/png", "p.png", tokens.AccessToken);
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Media_library_list_is_forbidden_without_the_permission()
+    {
+        // A visitor is approved (passes RequireApprovedAccount) but holds no
+        // MediaLibrary.View claim → 403 on the management list.
+        var tokens = await AuthFlow.SignInVisitorWithoutTwoFactorAsync(_client, _factory);
+        var resp = await PostAuthAsync("/api/v1/admin/assets/list", new GridQuery { Top = 10 }, tokens.AccessToken);
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Get_unknown_item_is_404()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var resp = await GetAuthAsync($"/api/v1/admin/assets/item/{Guid.NewGuid()}", token);
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    // -- Helpers --------------------------------------------------------------
+
+    private static MultipartFormDataContent BuildForm(byte[] bytes, string contentType, string fileName)
+    {
+        var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(bytes);
+        file.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        form.Add(file, "File", fileName);
+        return form;
+    }
+
+    private Task<HttpResponseMessage> UploadAsync(
+        string category, Guid owner, string kind, byte[] bytes, string contentType, string fileName, string token)
+    {
+        var form = BuildForm(bytes, contentType, fileName);
+        var req = new HttpRequestMessage(
+            HttpMethod.Post, $"/api/v1/admin/assets/{category}/{owner}/image?kind={kind}") { Content = form };
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(req);
+    }
+
+    private async Task<AdminAssetSummary?> FindByOwnerAsync(Guid owner, string token)
+    {
+        var resp = await PostAuthAsync("/api/v1/admin/assets/list", new GridQuery { Top = 200 }, token);
+        var page = (await resp.Content
+            .ReadFromJsonAsync<ApiResult<GridPage<AdminAssetSummary>>>())!.Data!;
+        return page.Items.FirstOrDefault(a => a.OwnerId == owner);
+    }
+
+    private async Task<AdminAssetSummary?> GetItemAsync(Guid id, string token)
+    {
+        var resp = await GetAuthAsync($"/api/v1/admin/assets/item/{id}", token);
+        if (resp.StatusCode != HttpStatusCode.OK) { return null; }
+        return (await resp.Content.ReadFromJsonAsync<ApiResult<AdminAssetSummary>>())!.Data;
+    }
+
+    private async Task<string> CreateAdministratorAndSignInAsync()
+    {
+        var email = $"asset-admin-{Guid.NewGuid():N}@simf.test";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
+            if (!await roles.RoleExistsAsync(AdministratorRole))
+            {
+                await roles.CreateAsync(new SimfRole { Name = AdministratorRole });
+            }
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                DisplayName = "Asset Admin",
+                AccountState = AccountState.Approved,
+                UserType = UserType.Admin,
+            };
+            await users.CreateAsync(user, AuthFlow.Password);
+            await users.AddToRoleAsync(user, AdministratorRole);
+        }
+
+        var sign = await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/sign-in",
+            new SignInRequest { Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp });
+        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        return body.Data!.Tokens!.AccessToken;
+    }
+
+    private Task<HttpResponseMessage> GetAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> PostAuthAsync<TBody>(string url, TBody body, string token) where TBody : class
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent.Create(body) };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> PutAuthAsync<TBody>(string url, TBody body, string token) where TBody : class
+    {
+        var request = new HttpRequestMessage(HttpMethod.Put, url) { Content = JsonContent.Create(body) };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+
+    private Task<HttpResponseMessage> DeleteAuthAsync(string url, string token)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return _client.SendAsync(request);
+    }
+}

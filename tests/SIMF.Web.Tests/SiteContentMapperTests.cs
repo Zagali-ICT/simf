@@ -46,6 +46,31 @@ public sealed class SiteContentMapperTests
     }
 
     [Fact]
+    public void Speaker_photo_prefers_the_asset_proxy_then_falls_back_to_legacy_path()
+    {
+        var withAsset = Guid.NewGuid();
+        var speakers = new PublicSpeakers(new[]
+        {
+            // Has an uploaded/linked asset → same-origin asset proxy URL wins,
+            // even though a legacy path is also present.
+            new PublicSpeakerSummary(withAsset, "A", "أ", null, null, null, null,
+                "/legacy/a.jpg", 0, HasPhotoAsset: true),
+            // No asset, legacy portrait path only → the legacy path.
+            new PublicSpeakerSummary(Guid.NewGuid(), "B", "ب", null, null, null, null,
+                "/legacy/b.jpg", 1, HasPhotoAsset: false),
+            // Neither → no photo key (the card renders its silhouette).
+            new PublicSpeakerSummary(Guid.NewGuid(), "C", "ج", null, null, null, null,
+                null, 2, HasPhotoAsset: false),
+        });
+
+        var result = SiteContentEndpoints.Compose(null, speakers, null, null, null, null, null, null);
+
+        Assert.Equal($"/content/assets/SpeakerPhoto/{withAsset}/image", Row(result, "speakers", 0)["photo"]);
+        Assert.Equal("/legacy/b.jpg", Row(result, "speakers", 1)["photo"]);
+        Assert.False(Row(result, "speakers", 2).ContainsKey("photo"));
+    }
+
+    [Fact]
     public void Partners_merge_sponsors_first_then_media_partners()
     {
         var sponsors = new PublicSponsors(new[]
