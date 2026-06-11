@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
@@ -9,11 +8,8 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import 'widgets/otp_code_boxes.dart';
 
-// OTP-frame colours (Figma 505:837) not yet shared by a second screen; they
-// move into SimfTokens when the 2FA OTP screen adopts the same design.
-const Color _codeBoxBorder = Color(0xFF1E3A5F);
-const Color _mutedBlue = Color(0xFF8A9CC0);
 const Color _sweepTint = Color(0x0AFFFFFF);
 
 /// Page 006 — التحقق بالبريد · Email verification. The KSA-Project Figma
@@ -234,24 +230,7 @@ class _SignUpEmailVerifyScreenState
                         children: <Widget>[
                           const SizedBox(height: 48),
                           // Gold-ringed mail mark (Figma 505:969).
-                          Container(
-                            width: 96,
-                            height: 96,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: SimfTokens.navyDeep,
-                              border: Border.all(
-                                color: SimfTokens.accent,
-                                width: 1.2,
-                              ),
-                            ),
-                            alignment: Alignment.center,
-                            child: const Icon(
-                              Icons.mail_outline,
-                              color: SimfTokens.accent,
-                              size: 34,
-                            ),
-                          ),
+                          const OtpMark(icon: Icons.mail_outline),
                           const SizedBox(height: 24),
                           Text(
                             l10n.enterOtpTitle,
@@ -282,7 +261,17 @@ class _SignUpEmailVerifyScreenState
                             ),
                           ),
                           const SizedBox(height: 48),
-                          _buildCodeBoxes(),
+                          OtpCodeBoxes(
+                            controller: _code,
+                            focusNode: _codeFocus,
+                            enabled: !_busy,
+                            onChanged: () => setState(() {}),
+                            onSubmitted: () {
+                              if (_canVerify) {
+                                unawaited(_verify());
+                              }
+                            },
+                          ),
                           const SizedBox(height: 16),
                           if (_cooldown > 0)
                             Row(
@@ -291,7 +280,7 @@ class _SignUpEmailVerifyScreenState
                                 Text(
                                   l10n.resendInLabel,
                                   style: const TextStyle(
-                                    color: _mutedBlue,
+                                    color: otpMutedBlue,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -386,89 +375,6 @@ class _SignUpEmailVerifyScreenState
                   ),
                 ),
                 const SizedBox(height: 24),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Six segmented code boxes over one invisible capture field (Figma
-  /// 505:987). Tapping anywhere on the row focuses the field; the box at the
-  /// caret highlights gold while focused.
-  Widget _buildCodeBoxes() {
-    final digits = _code.text;
-    final activeIndex = digits.length.clamp(0, 5);
-    return SizedBox(
-      height: 52,
-      child: Stack(
-        children: <Widget>[
-          Positioned.fill(
-            child: TextField(
-              controller: _code,
-              focusNode: _codeFocus,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              enabled: !_busy,
-              autocorrect: false,
-              showCursor: false,
-              enableInteractiveSelection: false,
-              style: const TextStyle(color: Colors.transparent, fontSize: 1),
-              inputFormatters: <TextInputFormatter>[
-                FilteringTextInputFormatter.digitsOnly,
-              ],
-              onChanged: (_) => setState(() {}),
-              onSubmitted: (_) {
-                if (_canVerify) {
-                  unawaited(_verify());
-                }
-              },
-              decoration: const InputDecoration(
-                counterText: '',
-                isCollapsed: true,
-                filled: false,
-                // Kill every theme border — the capture field must be
-                // invisible behind the rendered boxes.
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                disabledBorder: InputBorder.none,
-              ),
-            ),
-          ),
-          IgnorePointer(
-            child: Row(
-              // Code digits read left → right regardless of locale.
-              textDirection: TextDirection.ltr,
-              children: <Widget>[
-                for (int i = 0; i < 6; i++) ...<Widget>[
-                  if (i > 0) const SizedBox(width: 16),
-                  Expanded(
-                    child: Container(
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: SimfTokens.navy,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          width: 1.5,
-                          color: _codeFocus.hasFocus && i == activeIndex
-                              ? SimfTokens.accent
-                              : _codeBoxBorder,
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        i < digits.length ? digits[i] : '',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),

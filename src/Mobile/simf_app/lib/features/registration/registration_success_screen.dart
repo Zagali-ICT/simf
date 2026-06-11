@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../core/env/build_config.dart';
 
 // Success-frame colours (Figma 505:1451) not yet shared by a second screen.
 const Color _green = Color(0xFF22C55E);
@@ -37,6 +41,16 @@ class RegistrationSuccessScreen extends StatelessWidget {
       return;
     }
     context.go('/');
+  }
+
+  /// Opening the dialer / mail app is best-effort — a missing handler must
+  /// never crash the confirmation screen.
+  static Future<void> _launchContact(Uri uri) async {
+    try {
+      await launchUrl(uri);
+    } catch (_) {
+      // No app can handle the scheme — silently keep the user on the page.
+    }
   }
 
   @override
@@ -116,8 +130,7 @@ class RegistrationSuccessScreen extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: SimfTokens.navyDeep,
                                   shape: BoxShape.circle,
-                                  border:
-                                      Border.all(color: _green, width: 2.4),
+                                  border: Border.all(color: _green, width: 2.4),
                                 ),
                                 child: const Icon(
                                   Icons.check_rounded,
@@ -149,8 +162,7 @@ class RegistrationSuccessScreen extends StatelessWidget {
                             const SizedBox(height: 24),
                             // Masked reference card (Figma 505:1525, D-366).
                             Container(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 24),
+                              padding: const EdgeInsets.symmetric(vertical: 24),
                               decoration: BoxDecoration(
                                 color: _refCardFill,
                                 borderRadius: BorderRadius.circular(8),
@@ -222,17 +234,43 @@ class RegistrationSuccessScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            // Visual-only contact tiles (D-366): no official
-                            // contact details yet — wiring tracked on the
-                            // programme board.
+                            // Contact tiles (D-369): each opens the OS
+                            // dialer / mail app when its BuildConfig value is
+                            // supplied; an empty value keeps the tile inert.
                             Row(
-                              children: const <Widget>[
+                              children: <Widget>[
                                 Expanded(
-                                  child: _ContactTile(icon: Icons.call_outlined),
+                                  child: _ContactTile(
+                                    icon: Icons.call_outlined,
+                                    onTap: BuildConfig.supportPhone.isEmpty
+                                        ? null
+                                        : () => unawaited(
+                                              _launchContact(
+                                                Uri(
+                                                  scheme: 'tel',
+                                                  path:
+                                                      BuildConfig.supportPhone,
+                                                ),
+                                              ),
+                                            ),
+                                  ),
                                 ),
-                                SizedBox(width: 16),
+                                const SizedBox(width: 16),
                                 Expanded(
-                                  child: _ContactTile(icon: Icons.mail_outline),
+                                  child: _ContactTile(
+                                    icon: Icons.mail_outline,
+                                    onTap: BuildConfig.supportEmail.isEmpty
+                                        ? null
+                                        : () => unawaited(
+                                              _launchContact(
+                                                Uri(
+                                                  scheme: 'mailto',
+                                                  path:
+                                                      BuildConfig.supportEmail,
+                                                ),
+                                              ),
+                                            ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -262,23 +300,28 @@ class RegistrationSuccessScreen extends StatelessWidget {
   }
 }
 
-/// One bordered contact tile (Figma 522:2223) — visual-only until the
-/// official contact details exist (D-366).
+/// One bordered contact tile (Figma 522:2223). Inert (null [onTap]) until its
+/// BuildConfig contact value is supplied (D-369).
 class _ContactTile extends StatelessWidget {
-  const _ContactTile({required this.icon});
+  const _ContactTile({required this.icon, this.onTap});
 
   final IconData icon;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 52,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        border: Border.all(color: _tileBorder, width: 0.8),
-        borderRadius: BorderRadius.circular(10),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        height: 52,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          border: Border.all(color: _tileBorder, width: 0.8),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: Colors.white, size: 24),
       ),
-      child: Icon(icon, color: Colors.white, size: 24),
     );
   }
 }

@@ -79,11 +79,19 @@ Shared widgets: `lib/app/widgets/simf_logo.dart` (`SimfLogo`, 4x asset
 
 ## Known open items
 
-- **Contact tiles wiring (Page 010, D-366)** — the تواصل معانا phone/mail
-  tiles are visual-only until the owner supplies the official contact details
-  (then wire via OS intents; may need `url_launcher` — owner install approval).
-- **2FA OTP screen restyle** (`/auth/verify-otp`) — reuse the D-364
-  segmented-box pattern; no dedicated frame was delivered.
+- **Contact tiles (Page 010) — wired via config (D-369):** the tiles open the
+  OS dialer/mail through `url_launcher` (owner-approved) gated on
+  `BuildConfig.supportPhone` / `supportEmail` (`--dart-define
+  SIMF_SUPPORT_PHONE / SIMF_SUPPORT_EMAIL`). **Open input:** the owner still
+  needs to supply the official values — empty keeps a tile inert.
+- **2FA OTP screen restyle — DONE (D-369):** `/auth/verify-otp` now uses the
+  shared `OtpCodeBoxes`/`OtpMark` (extracted from D-364 when this second
+  consumer appeared); verified live.
+- **Regression pass (D-369):** suite 334/334 + analyze clean; live drive of
+  sign-in / OTP screens / terms chrome; backend API started locally —
+  `/health` 200 and `GET /app/content/terms` 200 with real bilingual content
+  (the in-browser loaded render is CORS-blocked for the dev-web origin; native
+  builds are unaffected — the widget tests cover the loaded rendering).
 
 - **Sign-up flow question — RESOLVED (owner, 2026-06-11):** no flow change.
   Register (Page 005, user+pwd+confirm → its own API) keeps its current UI —

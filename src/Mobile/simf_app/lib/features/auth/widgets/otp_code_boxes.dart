@@ -1,0 +1,133 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../../../app/theme/tokens.dart';
+
+/// The KSA OTP-frame box border (Figma 505:987 — D-364, promoted to a shared
+/// widget when the 2FA screen became the second consumer, D-369).
+const Color otpCodeBoxBorder = Color(0xFF1E3A5F);
+
+/// The OTP frame's muted blue caption colour (countdown label).
+const Color otpMutedBlue = Color(0xFF8A9CC0);
+
+/// Six segmented code boxes rendered over one invisible capture field — the
+/// KSA-Project OTP entry (Figma 505:987). Tapping anywhere on the row focuses
+/// the field natively (so `tester.enterText` keeps working); the box at the
+/// caret highlights gold while focused. The parent owns the controller/focus
+/// node and rebuilds on [onChanged].
+class OtpCodeBoxes extends StatelessWidget {
+  const OtpCodeBoxes({
+    super.key,
+    required this.controller,
+    required this.focusNode,
+    required this.enabled,
+    required this.onChanged,
+    required this.onSubmitted,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final bool enabled;
+  final VoidCallback onChanged;
+  final VoidCallback onSubmitted;
+
+  @override
+  Widget build(BuildContext context) {
+    final digits = controller.text;
+    final activeIndex = digits.length.clamp(0, 5);
+    return SizedBox(
+      height: 52,
+      child: Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: TextField(
+              controller: controller,
+              focusNode: focusNode,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              enabled: enabled,
+              autocorrect: false,
+              showCursor: false,
+              enableInteractiveSelection: false,
+              style: const TextStyle(color: Colors.transparent, fontSize: 1),
+              inputFormatters: <TextInputFormatter>[
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              onChanged: (_) => onChanged(),
+              onSubmitted: (_) => onSubmitted(),
+              decoration: const InputDecoration(
+                counterText: '',
+                isCollapsed: true,
+                filled: false,
+                // Kill every theme border — the capture field must be
+                // invisible behind the rendered boxes.
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+              ),
+            ),
+          ),
+          IgnorePointer(
+            child: Row(
+              // Code digits read left → right regardless of locale.
+              textDirection: TextDirection.ltr,
+              children: <Widget>[
+                for (int i = 0; i < 6; i++) ...<Widget>[
+                  if (i > 0) const SizedBox(width: 16),
+                  Expanded(
+                    child: Container(
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: SimfTokens.navy,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          width: 1.5,
+                          color: focusNode.hasFocus && i == activeIndex
+                              ? SimfTokens.accent
+                              : otpCodeBoxBorder,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        i < digits.length ? digits[i] : '',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The OTP frame's gold-ringed circular mark (mail icon on the verify
+/// screens — Figma 505:969).
+class OtpMark extends StatelessWidget {
+  const OtpMark({super.key, required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 96,
+      height: 96,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: SimfTokens.navyDeep,
+        border: Border.all(color: SimfTokens.accent, width: 1.2),
+      ),
+      alignment: Alignment.center,
+      child: Icon(icon, color: SimfTokens.accent, size: 34),
+    );
+  }
+}

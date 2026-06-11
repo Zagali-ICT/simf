@@ -33,6 +33,15 @@ class BuildConfig {
     defaultValue: 'simf-dev-app-key',
   );
 
+  /// Official support contacts for the registration-success screen's
+  /// تواصل معانا tiles (D-369). Empty (the default) keeps a tile inert —
+  /// never a dead dialer/mail intent — until the real values are supplied
+  /// at build time via `--dart-define`.
+  static const String supportPhone =
+      String.fromEnvironment('SIMF_SUPPORT_PHONE');
+  static const String supportEmail =
+      String.fromEnvironment('SIMF_SUPPORT_EMAIL');
+
   /// Whether to print request / response summaries in the dio logging
   /// interceptor. Forced off when `build == 'prod'`.
   static bool get enableRequestLogging => build != 'prod';

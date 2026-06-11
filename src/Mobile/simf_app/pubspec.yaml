@@ -46,6 +46,11 @@ dependencies:
   # simf-run). YouTube is the POC live-video provider; HLS/MP4 (video_player
   # above) stays the fallback when the feed is not a YouTube link.
   youtube_player_iframe: ^6.0.2
+  # Opens the OS dialer / mail app from the registration-success contact tiles
+  # (Page_010, D-369). Tiles stay inert until BuildConfig.supportPhone/Email
+  # are supplied via --dart-define; native queries config (Android 11+
+  # <queries> for tel/mailto) lands in the generated folders (simf-run).
+  url_launcher: ^6.3.0
   # QR scanner for visitor contact sharing (Scan QR — FDS-014, D-286). Reads
   # another visitor's share token. Camera permission (manifest / Info.plist)
   # lands in the generated folders (simf-run). A manual code-entry fallback is
