@@ -67,11 +67,35 @@ the live `.razor`/endpoint source), then centrally reconciled:
   `sector`; the EN `Strings.resx` is missing `Admin.Speakers.Delete.Title/Message`
   keys referenced by `SpeakersViewDelete.razor`.
 
-### Remaining (Phase 6 — not yet done)
-- **Phase 6 — final pass:** an adversarial review, a clean full `SIMF.Api.Tests`
-  run (**needs the integration DB quiet** — currently contended), and a live
-  browser/DOM smoke of the converted pages (needs the CP running on an
-  uncontended port). Outstanding / environment-blocked.
+### Phase 6 — final verification (as-built, 2026-06-11) — DONE
+
+- **6.1 adversarial doc audit + fixes** — 7 skeptic agents re-read the live source
+  to refute the conversion docs' concrete claims: 2 clean, 8 findings + 2 swept;
+  all 10 fixed and re-verified (commit `8e17c52`).
+- **6.2a Release build gate** — `dotnet build -c Release` of the full backend
+  graph (API + Infrastructure + Application + Domain + Shared + Api.Tests):
+  **0 Warnings, 0 Errors**.
+- **6.2b Full `SIMF.Api.Tests` run** (Release, isolated per-run test DBs) —
+  **968 / 969 passed**. The sole failure is the **known pre-existing flake**
+  `AdminArchiveTests.Admin_create_then_get_roundtrips` (hard-coded `Year=2023`
+  collides with the year-unique guard inside the per-run shared App DB; file
+  never touched by this work, unrelated to D-356/D-357). **All 142 D-356 Excel
+  integration tests passed (0 failed)** across all 35 resource classes —
+  certifying the generic export/import engine end-to-end through the real API+DB.
+- **6.2c Live browser/DOM smoke** (CP on :5158 + API on :5175, signed in as
+  Super Administrator via TOTP) — Sponsors verified deeply, Sessions + Exhibitors
+  render-clean. Every page: **0 console errors, 0 network failures (all 200/304),
+  no horizontal overflow (`scrollWidth==clientWidth`), no broken images**, and the
+  Export + Import + Page⇄Popup toggle affordances present. The D-353 toggle was
+  exercised live: clicking flips the label and persists
+  `localStorage["simf.cp.prefs.sponsors"]={"v":1,"presentation":"page"}`, and in
+  page-mode Add opens the `SponsorsAddEdit` form **full-page (no dialog backdrop,
+  grid replaced)** with its real fields. Evidence:
+  `docs/screenshots/p62-cp-admin-sponsors-live.png`.
+
+**The D-356 Uniform CRUD program is complete and verified** — build, integration
+tests, and live render all green; docs + audit fixes pushed to
+`origin/feature/app-cp-api-split`.
 
 ---
 
