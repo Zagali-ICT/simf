@@ -1,22 +1,20 @@
 import 'package:flutter/material.dart';
 
-/// Placeholder design tokens for the WS3 skeleton (SIMF-MAA-001 v1.2 §11).
+/// Design tokens for the SIMF app (SIMF-MAA-001 v1.2 §11).
 ///
-/// These values are **not** the final design system. The final tokens come
-/// from SIMF-VID-001 once the external designer delivers it. The mockup
-/// colours below are pulled directly from `Mockup.html` so the placeholder
-/// app looks roughly like the proposal; they are NOT a brand specification.
-///
-/// When SIMF-VID-001 lands, swap the literal values below for the
-/// designer's token values. Widgets reference [SimfTokens], not literals,
-/// so the swap is local to this file.
+/// The **colour** tokens carry the delivered KSA-Project Figma design system
+/// (file PSXHhY0UVTAPSaIOf9uNKd — D-358/D-359 app redesign programme); they
+/// supersede the interim `Mockup.html` placeholder palette. Spacing, radii and
+/// the raw type scale are unchanged until further design frames dictate
+/// otherwise. Widgets reference [SimfTokens], not literals, so any future
+/// design change stays local to this file.
 class SimfTokens {
   SimfTokens._();
 
-  // Colours — taken from Mockup.html for visual continuity, NOT final.
-  static const Color navy = Color(0xFF0F2238);
-  static const Color navyDeep = Color(0xFF1A2E47);
-  static const Color accent = Color(0xFFC9A14A);
+  // Core brand colours — KSA-Project Figma variables (D-359).
+  static const Color navy = Color(0xFF01132D); // "Primary- Color" — dark scaffold
+  static const Color navyDeep = Color(0xFF192B41); // "BG" — boxes/cards on navy
+  static const Color accent = Color(0xFFC9A84C); // "Secondary- Color" — gold
   static const Color ink = Color(0xFF1A2030);
   static const Color inkMuted = Color(0xFF5A6573);
   static const Color surface = Color(0xFFFFFFFF);
@@ -24,6 +22,16 @@ class SimfTokens {
   static const Color field = Color(0xFFEEF1F4);
   static const Color danger = Color(0xFFA8182A);
   static const Color success = Color(0xFF2E7D32);
+
+  // KSA-Project light-surface + auth-flow palette (D-358/D-359).
+  static const Color navySurface = Color(0xFF102238); // elevated navy surface (login bg)
+  static const Color beigeBorder = Color(0xFFC2B8A2); // "Pragraph Color" — borders + on-navy paragraph text
+  static const Color cardBeige = Color(0xFFF1ECE4); // light card surface
+  static const Color goldSoft = Color(0xFFD0AC77); // secondary gold text/icons
+  static const Color headlineInk = Color(0xFF111827); // headings on light surfaces
+  static const Color greyText = Color(0xFF6C7278); // secondary text on light surfaces
+  static const Color linkNavy = Color(0xFF00245E); // inline links on light surfaces
+  static const Color inputInk = Color(0xCC111827); // input text on light surfaces (#111827 at 80%)
 
   // On-navy hairlines + muted text + light-surface hairline, straight from
   // Mockup.html (--line / --line-2 / --txt-2 / --txt-3 / --line-light). These

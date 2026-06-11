@@ -9,28 +9,28 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
+import '../../app/theme/tokens.dart';
+import '../../app/widgets/simf_logo.dart';
 import '../profile/data/profile_repository.dart';
 
-// Figma design palette (KSA-Project node 168:2800). Deliberately screen-local:
-// this screen is a design-preview candidate beside the shipped Page 003
-// SignInScreen. If the design is adopted, these values move into SimfTokens
-// (which still carries the interim Mockup.html palette pending SIMF-VID-001).
-const Color _bgNavy = Color(0xFF102238);
-const Color _card = Color(0xFFF1ECE4);
-const Color _fieldBorder = Color(0xFFC2B8A2);
-const Color _gold = Color(0xFFC9A84C);
-const Color _goldText = Color(0xFFD0AC77);
-const Color _headline = Color(0xFF111827);
-const Color _grey = Color(0xFF6C7278);
-const Color _linkNavy = Color(0xFF00245E);
-const Color _inputText = Color(0xCC111827); // #111827 at 80%
-const Color _danger = Color(0xFFA8182A);
-const Color _sweepTint = Color(0x0AFFFFFF); // white 4% decorative sweep
-
-const String _logoAsset = 'assets/images/login2_logo.png';
+// Screen-local shorthands for the KSA-Project design tokens. The palette was
+// promoted into SimfTokens in Phase 0 of the app redesign (D-359), closing the
+// D-358 note that kept it screen-local while the design was a preview.
+const Color _bgNavy = SimfTokens.navySurface;
+const Color _card = SimfTokens.cardBeige;
+const Color _fieldBorder = SimfTokens.beigeBorder;
+const Color _gold = SimfTokens.accent;
+const Color _goldText = SimfTokens.goldSoft;
+const Color _headline = SimfTokens.headlineInk;
+const Color _grey = SimfTokens.greyText;
+const Color _linkNavy = SimfTokens.linkNavy;
+const Color _inputText = SimfTokens.inputInk;
+const Color _danger = SimfTokens.danger;
+const Color _sweepTint = SimfTokens.surfaceTint;
 
 // The design's card / field / button corner radius.
-const BorderRadius _radius4 = BorderRadius.all(Radius.circular(4));
+const BorderRadius _radius4 =
+    BorderRadius.all(Radius.circular(SimfTokens.radiusSmall));
 
 /// Login v2 — the Figma "KSA Project" login design (node 168:2800), built as a
 /// separate design-preview screen beside the shipped Page 003 SignInScreen
@@ -537,7 +537,7 @@ class _Header extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        Image.asset(_logoAsset, width: 44, height: 44),
+        const SimfLogo(size: 44),
         const SizedBox(width: 16),
         Flexible(
           child: Text(

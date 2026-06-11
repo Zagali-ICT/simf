@@ -30,14 +30,15 @@ class SimfTheme {
         ),
       );
 
-  /// The gold primary button (navy text) used across the app.
+  /// The gold primary button (white bold text, radius 4) — the KSA-Project
+  /// design's primary action across all delivered frames (D-359).
   static FilledButtonThemeData get _accentButton => FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: SimfTokens.accent,
-          foregroundColor: SimfTokens.navy,
+          foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(48),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(SimfTokens.radius),
+            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
           ),
           textStyle: const TextStyle(
             fontWeight: FontWeight.w700,
@@ -110,10 +111,10 @@ class SimfTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: SimfTokens.surface,
-          minimumSize: const Size.fromHeight(44),
-          side: const BorderSide(color: SimfTokens.line),
+          minimumSize: const Size.fromHeight(48),
+          side: const BorderSide(color: SimfTokens.beigeBorder),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(SimfTokens.radius),
+            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
           ),
           textStyle: const TextStyle(
             fontWeight: FontWeight.w700,
@@ -130,19 +131,18 @@ class SimfTheme {
           side: const BorderSide(color: SimfTokens.line2),
         ),
       ),
-      chipTheme: ChipThemeData(
+      chipTheme: const ChipThemeData(
         backgroundColor: Colors.transparent,
-        selectedColor: const Color(0x14C9A14A), // accent 8%
-        side: const BorderSide(color: SimfTokens.line),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
-        ),
-        labelStyle: const TextStyle(
+        // Solid-gold selected pill chips — the KSA interests design (D-359).
+        selectedColor: SimfTokens.accent,
+        side: BorderSide(color: SimfTokens.line),
+        shape: StadiumBorder(),
+        labelStyle: TextStyle(
           color: SimfTokens.txtSecondary,
           fontSize: SimfTokens.textSm,
           fontWeight: FontWeight.w600,
         ),
-        secondaryLabelStyle: const TextStyle(
+        secondaryLabelStyle: TextStyle(
           color: SimfTokens.surface,
           fontSize: SimfTokens.textSm,
           fontWeight: FontWeight.w600,
