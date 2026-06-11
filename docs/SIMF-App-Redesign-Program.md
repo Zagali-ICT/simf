@@ -58,7 +58,7 @@ Shared widgets: `lib/app/widgets/simf_logo.dart` (`SimfLogo`, 4x asset
 |---|--------|-------|---------------|--------|--------|
 | P0 | Design system (tokens/theme/logo) | — | variables + 159:580 | ✅ shipped 2026-06-11 | `e7f8c7b` |
 | P1 | Promote Login v2 → official sign-in | `/sign-in` | 168:2800 | ✅ shipped 2026-06-11 (D-360) | preview `be81082`; promotion — see git log |
-| 1 | Splash (Page 001) | `/splash` | 159:573 | ⏳ pending | — |
+| 1 | Splash (Page 001) | `/splash` | 159:573 | ✅ shipped 2026-06-11 (D-361) | — |
 | 2 | Onboarding carousel (Page 002) | `/onboarding` | 148:22, 159:942, 159:1052 | ⏳ pending | — |
 | 3 | Sign-up form (Page 005) | `/sign-up` | 168:2972 | ⏳ pending — ⚠️ flow question open (profile fields merged in; owner call needed before build) | — |
 | 4 | Email-OTP verify (Page 006) | `/sign-up/otp` | 505:837 | ⏳ pending (evaluate reuse for `/auth/verify-otp` 2FA) | — |

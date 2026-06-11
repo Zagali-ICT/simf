@@ -332,9 +332,10 @@ class AppL10n {
         'الملتقى البحري السعودي الدولي',
         'Saudi International Maritime Forum',
       );
+  // Two lines per the KSA-Project splash frame (Figma 159:573, D-361).
   String get splashEventLine => _t(
-        'النسخة الرابعة · ٢٣–٢٥ نوفمبر ٢٠٢٦ · الرياض',
-        '4th Edition · 23–25 Nov 2026 · Riyadh',
+        'النسخة الرابعة\n٢٣–٢٥ نوفمبر ٢٠٢٦ · الرياض',
+        '4th Edition\n23–25 Nov 2026 · Riyadh',
       );
 
   // Onboarding intro videos (Page 002 — interim placeholder frames; the real

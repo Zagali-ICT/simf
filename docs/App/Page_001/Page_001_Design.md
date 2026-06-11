@@ -1,13 +1,18 @@
 # Page 001 — Design (البداية · Splash) — Flutter
 
-Screen design for the Flutter app. Layout from `Mockup.html` (Screen 1); boot binds to
-[Page_001_API.md](Page_001_API.md); rules in [Page_001_Logic.md](Page_001_Logic.md).
+Screen design for the Flutter app. **As-built: the KSA-Project Figma design
+(node 159:573 — D-361)**; boot binds to [Page_001_API.md](Page_001_API.md);
+rules in [Page_001_Logic.md](Page_001_Logic.md). The previous `Mockup.html`
+placeholder is parked in `lib/features/_legacy_mockup/`.
 
 ## Layout (top → bottom)
-1. **Full-bleed background** — brand background (brass/navy SIMF theme), edge to edge, no app bar.
-2. **Centered SIMF logo** — vertically and horizontally centered; the single focal element.
-3. **(Optional) subtle progress affordance** — a small spinner / pulse beneath the logo while
-   boot work runs; no text, no controls.
+1. **Full-bleed navy** — `SimfTokens.navy` (#01132D, the design's Primary), edge to edge, no app bar.
+2. **Centred brand lock-up** — `SimfLogo` (136), then **SAUDI · MOD · RSNF**
+   (16, `beigeBorder`), then the forum name **الملتقى البحري السعودي الدولي**
+   (24 semibold white, 1.5 line height), then **النسخة الرابعة / ٢٣–٢٥ نوفمبر ٢٠٢٦ · الرياض**
+   on two lines (18, `beigeBorder`).
+3. **No progress affordance** — the design shows none; the minimum-display timer +
+   hard caps (Logic L-1/L-6) bound the wait instead.
 4. **Update dialog (conditional)** — a modal over the splash only when the store-native check
    reports an update (hard = non-dismissible, soft = dismissible) — see Logic L-2.
 

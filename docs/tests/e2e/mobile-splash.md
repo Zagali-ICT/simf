@@ -16,7 +16,16 @@
 | **Surface** | Mobile (Flutter) — bootstrap screen, non-interactive except the update dialog |
 | **Test runner** | Flutter widget/unit test (boot decision) · device/emulator drive for the visual + route-out |
 | **Auth setup** | A secure-storage seed (refresh token ± access token ± cached user). For a live device run, sign in once on screen #3, then relaunch. **No literal secrets** — the device-key/refresh token comes from a real prior sign-in. |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-11 |
+
+> **KSA-Project redesign (D-361, Figma 159:573):** the splash now renders the
+> brand lock-up — `SimfLogo` (136) over "SAUDI · MOD · RSNF", the forum name,
+> and the two-line edition/date — on the navy primary surface, with **no
+> spinner** (the design shows none; the L-1/L-6 timers bound the wait). The
+> boot sequence, update dialogs and route-out contract are unchanged; the old
+> placeholder screen is parked in `lib/features/_legacy_mockup/`. New widget
+> tests: `splash_screen_test.dart` (lock-up render + route-out by name +
+> resumed location).
 
 ## Coverage matrix
 
@@ -217,4 +226,4 @@ Scenario: Arabic-primary splash renders right-to-left
 
 ---
 
-_Last reviewed:_ `2026-06-03` by `SIMF Team`.
+_Last reviewed:_ `2026-06-11` by `SIMF Team`.

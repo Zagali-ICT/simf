@@ -6,17 +6,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
-import '../../app/widgets/simf_logo.dart';
 import '../../core/startup/app_update_checker.dart';
-import 'splash_controller.dart';
+import '../splash/splash_controller.dart';
 
-/// Page 001 — البداية · Splash / bootstrap. The KSA-Project Figma design
-/// (node 159:573, D-361): the brand mark over "SAUDI · MOD · RSNF", the forum
-/// name, and the edition/date lines, centred on the navy primary surface.
-///
-/// Shows the lock-up while [SplashController] runs the boot sequence
-/// (store-update check + cold-start session restore), then routes out once.
-/// The previous placeholder screen is parked in `_legacy_mockup/`.
+/// LEGACY — the pre-redesign placeholder Page 001 splash, parked here when the
+/// KSA-Project design landed at the real route (D-361, app redesign
+/// programme). Never routed; kept compiling until the owner approves deleting
+/// the legacy directory at programme close (§6 freeze rules).
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -42,39 +38,41 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       backgroundColor: SimfTokens.navy,
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
+          padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              const SimfLogo(size: 136),
-              const SizedBox(height: 8),
+              const _LogoMark(),
+              const SizedBox(height: SimfTokens.space6),
               Text(
                 l10n.splashTagline,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontSize: 16,
+                  color: SimfTokens.txtTertiary,
+                  fontSize: 9,
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: SimfTokens.space3),
               Text(
                 l10n.splashTitle,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                  height: 1.5, // 36/24 — the design's Title line height.
+                  color: SimfTokens.surface,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  height: 1.5,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: SimfTokens.space2),
               Text(
                 l10n.splashEventLine,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: SimfTokens.beigeBorder,
-                  fontSize: 18,
-                  height: 1.5, // 27/18 — the design's Sub-title line height.
+                  color: SimfTokens.txtSecondary,
+                  fontSize: 11,
+                  height: 1.7,
                 ),
               ),
             ],
@@ -159,6 +157,38 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+/// The interim brass-on-navy logo placeholder. Replaced by the real asset with
+/// SIMF-VID-001; no image asset is bundled yet (Page_001_Design — Design notes).
+/// Matches the mockup splash lockup: a hairline gold ring with the "SIMF"
+/// wordmark in gold, not a filled disc.
+class _LogoMark extends StatelessWidget {
+  const _LogoMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 68,
+      height: 68,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.fromBorderSide(
+          BorderSide(color: SimfTokens.accent),
+        ),
+      ),
+      alignment: Alignment.center,
+      child: const Text(
+        'SIMF',
+        style: TextStyle(
+          color: SimfTokens.accent,
+          fontWeight: FontWeight.w700,
+          fontSize: SimfTokens.textSm,
+          letterSpacing: 2,
+        ),
+      ),
     );
   }
 }
