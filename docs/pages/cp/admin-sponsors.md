@@ -277,7 +277,7 @@ the nav rail mirrors, the toolbar + pager reverse, and the `CrudShell` form mirr
 
 | Date | Decision | Change |
 |------|----------|--------|
-| 2026-06-11 | D-357 | Sponsor **logo** wired to the unified media-asset pipeline: `SimfImageUpload Category="SponsorLogo"` on the Add/Edit form + a `SimfImageThumb` of `/account/api/admin/assets/SponsorLogo/{id}/image` on Details/Deactivate (complements the existing free-text `LogoRelativePath` field). E2E catalogue extended with E2E-SPN-024. |
+| 2026-06-11 | D-357 | Sponsor **logo** wired to the unified media-asset pipeline: `SimfImageUpload Category="SponsorLogo"` on the Add/Edit form (edit mode only — the sponsor row must exist before bytes can attach) + a `SimfImageThumb` of `/account/api/admin/assets/SponsorLogo/{id}/image` on Details/Deactivate (complements the existing free-text `LogoRelativePath` field). E2E catalogue extended with E2E-SPN-024. |
 | 2026-06-10 | D-356 / D-353 | Reference doc created. Documents the D-353 `CrudShell` Add/Edit + View/Delete forms with the Page ↔ Popup `CrudPresentationToggle` (PageKey `sponsors`) and the `SimfConfirm`-gated delete (replacing the old inline modal + native `confirm()`), plus the D-356 Excel export (`POST /export`) and insert-only import (`POST /import`) via `CrudGridExcel`. |
 | 2026-06-02 (orig) | D-199 | Sponsors admin CRUD shipped (Mockup page 23). |
 

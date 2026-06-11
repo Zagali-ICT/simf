@@ -43,7 +43,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/profile-types/visitor` | ✅ Real | Administrator | [cp/admin-profile-types-visitor.md](cp/admin-profile-types-visitor.md) | [e2e/cp-admin-profile-types-visitor.md](../tests/e2e/cp-admin-profile-types-visitor.md) |
 | `/admin/profile-types/other` | ✅ Real | Administrator | [cp/admin-profile-types-other.md](cp/admin-profile-types-other.md) | [e2e/cp-admin-profile-types-other.md](../tests/e2e/cp-admin-profile-types-other.md) |
 | `/admin/organisations` | ✅ Real (D-220) | Administrator | — | [e2e/cp-admin-organisations.md](../tests/e2e/cp-admin-organisations.md) |
-| `/admin/contacts` | ✅ Real (D-281) | Administrator | — | [e2e/cp-admin-contacts.md](../tests/e2e/cp-admin-contacts.md) |
+| `/admin/contacts` | ✅ Real (D-281) | Administrator | [cp/admin-contacts.md](cp/admin-contacts.md) | [e2e/cp-admin-contacts.md](../tests/e2e/cp-admin-contacts.md) |
 | `/admin/countries` | ✅ Real | Administrator | — | [e2e/cp-admin-countries.md](../tests/e2e/cp-admin-countries.md) |
 | `/admin/vips` | ✅ Real | Administrator | — | [e2e/cp-admin-vips.md](../tests/e2e/cp-admin-vips.md) |
 | `/admin/invitations` | ✅ Real | Administrator | [cp/admin-invitations.md](cp/admin-invitations.md) | [e2e/cp-admin-invitations.md](../tests/e2e/cp-admin-invitations.md) |
@@ -77,12 +77,12 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/exhibitors` | ✅ Real (D-202/D-274) | Administrator | [cp/admin-exhibitors.md](cp/admin-exhibitors.md) | [e2e/cp-admin-exhibitors.md](../tests/e2e/cp-admin-exhibitors.md) |
 | `/admin/booths` | ✅ Real (D-199/D-222) | Administrator | [cp/admin-booths.md](cp/admin-booths.md) | [e2e/cp-admin-booths.md](../tests/e2e/cp-admin-booths.md) |
 | `/admin/sponsors` | ✅ Real (D-199) | Administrator | [cp/admin-sponsors.md](cp/admin-sponsors.md) | [e2e/cp-admin-sponsors.md](../tests/e2e/cp-admin-sponsors.md) |
-| `/admin/media-partners` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-media-partners.md](../tests/e2e/cp-admin-media-partners.md) |
+| `/admin/media-partners` | ✅ Real (D-199) | Administrator | [cp/admin-media-partners.md](cp/admin-media-partners.md) | [e2e/cp-admin-media-partners.md](../tests/e2e/cp-admin-media-partners.md) |
 | `/admin/venue-map` | ✅ Real (D-230) | Administrator | [cp/admin-venue-map.md](cp/admin-venue-map.md) | [e2e/cp-admin-venue-map.md](../tests/e2e/cp-admin-venue-map.md) |
 | **Content & media** | | | | |
-| `/admin/news` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-news.md](../tests/e2e/cp-admin-news.md) |
+| `/admin/news` | ✅ Real (D-199) | Administrator | [cp/admin-news.md](cp/admin-news.md) | [e2e/cp-admin-news.md](../tests/e2e/cp-admin-news.md) |
 | `/admin/media` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-media.md](../tests/e2e/cp-admin-media.md) |
-| `/admin/archive` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-archive.md](../tests/e2e/cp-admin-archive.md) |
+| `/admin/archive` | ✅ Real (D-199) | Administrator | [cp/admin-archive.md](cp/admin-archive.md) | [e2e/cp-admin-archive.md](../tests/e2e/cp-admin-archive.md) |
 | `/admin/media-library` | ✅ Real (D-357) | Administrator | [cp/media-library.md](cp/media-library.md) | [e2e/cp-admin-media-library.md](../tests/e2e/cp-admin-media-library.md) |
 | `/admin/banners` | ✅ Real | Administrator | — | [e2e/cp-admin-banners.md](../tests/e2e/cp-admin-banners.md) |
 | `/admin/content-blocks` | ✅ Real | Administrator | — | [e2e/cp-admin-content-blocks.md](../tests/e2e/cp-admin-content-blocks.md) |
