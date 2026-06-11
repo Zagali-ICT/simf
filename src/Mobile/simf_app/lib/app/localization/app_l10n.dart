@@ -289,7 +289,8 @@ class AppL10n {
       _t('تصفّح بدون تسجيل الدخول', 'Browse without signing in');
   String get showPasswordTooltip => _t('إظهار كلمة المرور', 'Show password');
   String get hidePasswordTooltip => _t('إخفاء كلمة المرور', 'Hide password');
-  // Sign in — KSA-Project design (Figma 168:2800, D-358/D-360).
+  // Sign in — KSA-Project design (Figma 168:2800, D-358/D-360/D-363).
+  String get guestSignInLink => _t('الدخول كزائر', 'Enter as guest');
   String get signInForumTitle =>
       _t('الملتقى الدولى البحرى', 'International Maritime Forum');
   String get rememberMeLabel => _t('تذكرنى', 'Remember me');

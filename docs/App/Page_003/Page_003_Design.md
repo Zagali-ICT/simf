@@ -7,7 +7,7 @@ Behaviour is in [Page_003_Function.md](Page_003_Function.md); rules in
 ## Layout (top → bottom) — KSA-Project design (Figma 168:2800, D-360)
 | Zone | Content |
 |---|---|
-| Background | Navy `SimfTokens.navySurface` full-bleed; subtle rotated decorative sweep behind the header; **no app bar**. Back chevron top-left (pops, else onboarding). |
+| Background | Navy `SimfTokens.navySurface` full-bleed; subtle rotated decorative sweep behind the header; **no app bar**. Top controls (Figma 627:2361, D-363): back chevron top-left (pops, else onboarding) + the **globe language toggle** top-right (40×40 `navyDeep` square, radius 4, gold globe — wired to `LocaleController`, AR ↔ EN persisted). |
 | Brand / header | `SimfLogo` (44) + forum name **الملتقى الدولى البحرى** in white, centered. |
 | Card | Beige `SimfTokens.cardBeige` card (radius 4, padding 24) holding everything below. |
 | Card title | AR **تسجيل الدخول** / EN **Sign in**, centered, 24 semibold. |
@@ -18,7 +18,7 @@ Behaviour is in [Page_003_Function.md](Page_003_Function.md); rules in
 | Sign-up row | **ليس لديك حساب؟ إنشاء حساب** — link to the sign-up flow. |
 | Divider | Hairline — **او / or** — hairline. |
 | Face ID | Outlined **التسجيل ببصمة الوجه** button, gold text + face icon — **always visible** per the design; unavailable devices fall back silently to the password path. |
-| Guest link | **Browse without signing in** (owner-approved addition to the frame — only guest entry, D-360). |
+| Guest link | Underlined **الدخول كزائر / Enter as guest** (design-native since the frame's D-363 update — only guest entry, Page_012). |
 
 ## Components
 | Component | Binding / behaviour |

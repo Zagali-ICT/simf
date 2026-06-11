@@ -8,6 +8,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
@@ -40,9 +41,10 @@ const BorderRadius _radius4 =
 /// redirect, the post-sign-in profile-completeness route (D-288), best-effort
 /// device-key enrolment after a successful sign-in, and the Face-ID
 /// device-key path. The email is pre-filled from the last successful sign-in;
-/// the design's "remember me" checkbox gates whether it is stored. The guest
-/// link below the Face-ID button is an owner-approved addition to the frame —
-/// it is the app's only guest-mode entry (D-360).
+/// the design's "remember me" checkbox gates whether it is stored. The frame's
+/// 2026-06-11 update (D-363) added the globe language toggle (top-right,
+/// wired to [LocaleController]) and the underlined "الدخول كزائر" guest link —
+/// the app's only guest-mode entry (Page_012).
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({super.key});
 
@@ -223,6 +225,17 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     context.goNamed(RouteNames.onboarding);
   }
 
+  /// The globe button toggles AR ↔ EN and persists the choice (D-363).
+  void _toggleLanguage() {
+    final isArabic =
+        ref.read(localeControllerProvider).languageCode == 'ar';
+    unawaited(
+      ref
+          .read(localeControllerProvider.notifier)
+          .setLanguage(isArabic ? 'en' : 'ar'),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
@@ -250,22 +263,47 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           SafeArea(
             child: Stack(
               children: <Widget>[
+                // Top controls (Figma 627:2361): back chevron left, language
+                // toggle right. Forced LTR so the sides — and the chevron
+                // glyph — match the frame even under RTL.
                 Padding(
-                  padding: const EdgeInsets.only(left: 8, top: 8),
-                  child: Align(
-                    alignment: Alignment.topLeft,
-                    child: IconButton(
-                      onPressed: _busy ? null : _back,
-                      // The Figma frame draws the chevron pointing left even
-                      // though the design is RTL; force LTR so the glyph is
-                      // not auto-mirrored.
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new,
-                        color: Colors.white,
-                        size: 20,
-                        textDirection: TextDirection.ltr,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    textDirection: TextDirection.ltr,
+                    children: <Widget>[
+                      IconButton(
+                        onPressed: _busy ? null : _back,
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new,
+                          color: Colors.white,
+                          size: 20,
+                          textDirection: TextDirection.ltr,
+                        ),
                       ),
-                    ),
+                      const Spacer(),
+                      SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: IconButton(
+                          tooltip: l10n.languageToggleLabel,
+                          onPressed: _busy ? null : _toggleLanguage,
+                          style: IconButton.styleFrom(
+                            backgroundColor: SimfTokens.navyDeep,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: _radius4,
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.language,
+                            color: SimfTokens.accent,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 Center(
@@ -511,17 +549,25 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 8),
-          // Guest entry — owner-approved addition to the Figma frame (D-360):
-          // the app's only path into guest mode (Page_012).
-          TextButton(
-            onPressed: _busy
-                ? null
-                : () => context.pushNamed(RouteNames.guestMode),
-            style: _linkButtonStyle(_grey),
-            child: Text(
-              l10n.browseAsGuestLink,
-              style: const TextStyle(fontSize: 12),
+          // Guest entry (Figma 627:2390, D-363) — the underlined design-native
+          // link; the app's only path into guest mode (Page_012).
+          SizedBox(
+            height: 48,
+            child: Center(
+              child: TextButton(
+                onPressed: _busy
+                    ? null
+                    : () => context.pushNamed(RouteNames.guestMode),
+                style: _linkButtonStyle(_grey),
+                child: Text(
+                  l10n.guestSignInLink,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
             ),
           ),
         ],

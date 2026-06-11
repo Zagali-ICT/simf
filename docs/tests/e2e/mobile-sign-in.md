@@ -17,12 +17,15 @@
 | **Auth setup** | A registered visitor (approved / pending / 2FA-on as the scenario needs). OTP codes via the email channel; **no literal secrets**. |
 | **Last reviewed** | 2026-06-11 |
 
-> **KSA-Project redesign (D-358/D-360, Figma 168:2800):** the screen is now the
-> navy + beige-card design — no app bar (the D-272 theme/language placeholder
-> buttons are gone), back chevron top-left, **remember-me checkbox** (default
-> ON) gating the email prefill store, the **Face-ID button always visible**
-> (silent fallback when unavailable), and the guest link kept below it. The
-> previous mockup screen is parked in `lib/features/_legacy_mockup/`.
+> **KSA-Project redesign (D-358/D-360/D-363, Figma 168:2800):** the screen is
+> the navy + beige-card design — no app bar; back chevron top-left and a
+> **globe language toggle** top-right (wired: AR ↔ EN persisted via
+> `LocaleController` — supersedes the old D-272 unwired placeholders);
+> **remember-me checkbox** (default ON) gating the email prefill store; the
+> **Face-ID button always visible** (silent fallback when unavailable); the
+> underlined **"الدخول كزائر"** guest link below it (design-native since the
+> frame's 2026-06-11 update). The previous mockup screen is parked in
+> `lib/features/_legacy_mockup/`.
 
 ## Coverage matrix
 
@@ -43,6 +46,7 @@
 | E2E-MOB003-013 | Signed-in → profile-incomplete routes to Page_007 (`/sign-up/visitor`); complete → Home; probe failure → Home | happy | P0 | authored ✓ (widget test) |
 | E2E-MOB003-014 | "Browse without signing in" → guest landing (Page 012) → public Home, no token (D-325) | happy | P1 | authored ✓ (widget test) |
 | E2E-MOB003-015 | Remember-me unchecked → the email is NOT stored for the next prefill (D-360) | edge | P1 | authored ✓ (widget test) |
+| E2E-MOB003-016 | Globe button toggles AR ↔ EN and persists the preference (D-363) | happy | P1 | authored ✓ (widget test) |
 
 ## Scenarios
 
@@ -176,7 +180,7 @@ routes to the visitor profile screen (Page_007 auto-route)".
 Feature: Open the app as a guest
 Scenario: A signed-out user enters the app without an account
   Given the sign-in screen
-  When the user taps "Browse without signing in"
+  When the user taps the underlined "الدخول كزائر / Enter as guest" link
   Then the guest-mode landing (Page 012) opens
   And "Continue as guest" enters the public Home (#13) with no token
   And Guest+ content (sessions, speakers, venue map, media) is browsable
@@ -198,6 +202,19 @@ Scenario: Unchecking remember-me skips storing the email
 
 **Evidence:** `sign_in_screen_test` — "unchecking remember-me skips storing the
 email".
+
+### E2E-MOB003-016 — Language toggle (D-363)
+
+```gherkin
+Scenario: The globe button switches the app language
+  Given the sign-in screen in Arabic
+  When the user taps the globe button (top-right)
+  Then the app switches to English and the preference is persisted
+  And tapping again returns to Arabic
+```
+
+**Evidence:** `sign_in_screen_test` — "the globe button toggles and persists
+the language".
 
 ---
 

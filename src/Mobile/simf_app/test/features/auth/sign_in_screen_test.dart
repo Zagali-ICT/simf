@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/localization/locale_controller.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/auth/sign_in_screen.dart';
 import 'package:simf_app/features/profile/data/profile_models.dart';
@@ -194,6 +195,9 @@ Future<void> _pump(
         profileRepositoryProvider.overrideWithValue(
           _FakeProfileRepository(complete: profileComplete),
         ),
+        localeControllerProvider.overrideWith(
+          () => LocaleController(prefs: prefs),
+        ),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -329,16 +333,28 @@ void main() {
       expect(find.text('ONBOARDING'), findsOneWidget);
     });
 
-    testWidgets('browse-without-signing-in opens the guest screen (D-360)',
+    testWidgets('the guest link opens the guest screen (D-363)',
         (tester) async {
       final prefs = _FakePrefs();
       await _pump(tester, _Outcome.success, prefs);
 
-      await tester.ensureVisible(find.text('Browse without signing in'));
-      await tester.tap(find.text('Browse without signing in'));
+      await tester.ensureVisible(find.text('Enter as guest'));
+      await tester.tap(find.text('Enter as guest'));
       await tester.pumpAndSettle();
 
       expect(find.text('GUEST'), findsOneWidget);
+    });
+
+    testWidgets('the globe button toggles and persists the language (D-363)',
+        (tester) async {
+      final prefs = _FakePrefs();
+      await _pump(tester, _Outcome.success, prefs);
+
+      // Empty prefs boot the controller in Arabic; the toggle flips to EN.
+      await tester.tap(find.byIcon(Icons.language));
+      await tester.pumpAndSettle();
+
+      expect(prefs.getString(StorageKeys.preferredLanguage), equals('en'));
     });
   });
 }
