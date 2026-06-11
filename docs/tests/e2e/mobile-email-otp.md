@@ -16,7 +16,15 @@
 | **APIs** | `POST /api/v1/app/auth/verify-email` (`{ email, code }` → `{ email, emailVerified }`) · `POST /api/v1/app/auth/resend-code` (`{ email }` → `{ email, codeExpiresInSeconds }`) — both `AllowAnonymous`, `auth` limiter |
 | **Surface** | Mobile (Flutter) — Anonymous (mid sign-up, no token yet) |
 | **Auth setup** | None. No token / `Authorization` header — identity is asserted by email + the emailed 6-digit code. The code is read at run time from `SIMF_Identity.AccountCodes` (`Purpose = EmailVerification`, latest unconsumed) — **never** a literal code. |
-| **Last reviewed** | 2026-06-04 |
+| **Last reviewed** | 2026-06-11 |
+
+> **KSA-Project redesign (D-364, Figma 505:837):** the sign-up verify screen
+> now renders six segmented code boxes (one invisible capture field), the
+> gold-ringed mail mark, the gold `mm:ss` countdown + muted-blue label, and
+> the **لم يصلك الرمز؟ إعادة الإرسال** footer. The verify / resend / cooldown
+> contract is unchanged; the old screen is parked in
+> `lib/features/_legacy_mockup/`. (The sign-in 2FA OTP screen keeps its
+> previous look until its own redesign changeset.)
 
 ## Coverage matrix
 

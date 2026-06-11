@@ -136,11 +136,13 @@ void main() {
       final controller = _FakeController(resendSeconds: 45);
       await _pump(tester, controller);
 
-      await tester.tap(find.widgetWithText(TextButton, 'Resend code'));
+      await tester.tap(find.widgetWithText(TextButton, 'Resend'));
       await tester.pump();
 
       expect(controller.resendCalled, isTrue);
-      expect(find.text('Resend in 45s'), findsOneWidget);
+      // The D-364 design splits the countdown into a label + mm:ss time.
+      expect(find.text('Resend in'), findsOneWidget);
+      expect(find.text('00:45'), findsOneWidget);
 
       // Dispose the tree so the cooldown Timer is cancelled (no pending timer).
       await tester.pumpWidget(const SizedBox());

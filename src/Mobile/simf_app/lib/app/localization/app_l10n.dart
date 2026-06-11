@@ -125,6 +125,12 @@ class AppL10n {
       _t('أرسلنا رمزًا من 6 أرقام إلى', 'We sent a 6-digit code to');
   String get emailVerifiedToast => _t('تم التحقق من البريد', 'Email verified');
   String get resendCodeButton => _t('إعادة إرسال الرمز', 'Resend code');
+  // KSA-Project OTP frame copy (Figma 505:837, D-364).
+  String get enterOtpTitle =>
+      _t('أدخل رمز التحقق', 'Enter the verification code');
+  String get resendInLabel => _t('إعادة الإرسال خلال', 'Resend in');
+  String get noCodeQuestion => _t('لم يصلك الرمز؟', "Didn't get the code?");
+  String get resendAction => _t('إعادة الإرسال', 'Resend');
   String resendCooldownText(int seconds) =>
       _t('إعادة الإرسال خلال $seconds ث', 'Resend in ${seconds}s');
 

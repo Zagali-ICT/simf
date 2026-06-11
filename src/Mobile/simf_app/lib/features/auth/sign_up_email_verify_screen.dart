@@ -10,15 +10,22 @@ import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 
-/// Page 006 — التحقق بالبريد · Email verification (Page_006 docs).
+// OTP-frame colours (Figma 505:837) not yet shared by a second screen; they
+// move into SimfTokens when the 2FA OTP screen adopts the same design.
+const Color _codeBoxBorder = Color(0xFF1E3A5F);
+const Color _mutedBlue = Color(0xFF8A9CC0);
+const Color _sweepTint = Color(0x0AFFFFFF);
+
+/// Page 006 — التحقق بالبريد · Email verification. The KSA-Project Figma
+/// design (node 505:837 — D-364): navy surface with the decorative sweep, a
+/// gold-ringed mail mark, six segmented code boxes, the gold تحقق button and
+/// the "لم يصلك الرمز؟ إعادة الإرسال" footer. The previous screen is parked in
+/// `_legacy_mockup/`.
 ///
-/// Sign-up **step 2**: the user enters the 6-digit code emailed after sign-up
-/// and the app calls `POST /app/auth/verify-email { email, code }` — anonymous,
-/// no token yet. On success the account moves Registered → EmailVerified; since
-/// verify-email issues **no session**, the verified user is routed to sign-in to
-/// continue (the profile step is authenticated — Page_006 Function). **Resend**
-/// re-issues the code via `POST /app/auth/resend-code` and restarts a cooldown
-/// from the returned `codeExpiresInSeconds`. The email is passed in from Page 005.
+/// Contract unchanged — sign-up **step 2**: `POST /app/auth/verify-email
+/// { email, code }` (anonymous); success routes to sign-in (verify-email
+/// issues no session). **Resend** re-issues via `POST /app/auth/resend-code`
+/// and restarts the cooldown from the returned `codeExpiresInSeconds`.
 class SignUpEmailVerifyScreen extends ConsumerStatefulWidget {
   const SignUpEmailVerifyScreen({required this.email, super.key});
 
@@ -33,14 +40,23 @@ class SignUpEmailVerifyScreen extends ConsumerStatefulWidget {
 class _SignUpEmailVerifyScreenState
     extends ConsumerState<SignUpEmailVerifyScreen> {
   final TextEditingController _code = TextEditingController();
+  final FocusNode _codeFocus = FocusNode();
   bool _busy = false;
   String? _error;
   int _cooldown = 0;
   Timer? _timer;
 
   @override
+  void initState() {
+    super.initState();
+    // The focused-box highlight follows the hidden field's focus.
+    _codeFocus.addListener(() => setState(() {}));
+  }
+
+  @override
   void dispose() {
     _timer?.cancel();
+    _codeFocus.dispose();
     _code.dispose();
     super.dispose();
   }
@@ -137,156 +153,326 @@ class _SignUpEmailVerifyScreenState
     }
   }
 
+  void _back() {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.goNamed(RouteNames.signUpForm);
+  }
+
+  String _formatCooldown(int seconds) {
+    final m = (seconds ~/ 60).toString().padLeft(2, '0');
+    final s = (seconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    // Mockup frame 4-01 (.otp): a fully-navy, centred column — gold-ringed
-    // envelope mark, the "sent to <email>" caption, the tinted 6-digit entry,
-    // a full-width gold Verify button, and the accent resend line below it.
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.emailVerifyTitle)),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            SimfTokens.space6,
-            SimfTokens.space8,
-            SimfTokens.space6,
-            SimfTokens.space8,
+      backgroundColor: SimfTokens.navySurface,
+      body: Stack(
+        children: <Widget>[
+          // Decorative diagonal sweep (Figma 505:887, top-right area).
+          Positioned(
+            top: -180,
+            right: -80,
+            child: Transform.rotate(
+              angle: 0.4936, // 28.28°
+              child: Container(
+                width: 313,
+                height: 323,
+                decoration: BoxDecoration(
+                  color: _sweepTint,
+                  borderRadius: BorderRadius.circular(40),
+                ),
+              ),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              const _MailMark(),
-              const SizedBox(height: SimfTokens.space5),
-              // Caption (.otp p) + the bold white LTR address it was sent to.
-              Text(
-                l10n.emailVerifySentTo,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: SimfTokens.txtSecondary,
-                  fontSize: SimfTokens.textSm,
-                  height: 1.85,
-                ),
-              ),
-              const SizedBox(height: SimfTokens.space1),
-              Text(
-                widget.email,
-                textDirection: TextDirection.ltr,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: SimfTokens.surface,
-                  fontWeight: FontWeight.w700,
-                  fontSize: SimfTokens.textMd,
-                  letterSpacing: 0.4,
-                ),
-              ),
-              const SizedBox(height: SimfTokens.space5),
-              // The 6-digit code entry — a single tinted box (.cell-d look):
-              // accent border, faint accent fill, centred LTR spaced digits.
-              TextField(
-                controller: _code,
-                keyboardType: TextInputType.number,
-                textDirection: TextDirection.ltr,
-                textAlign: TextAlign.center,
-                maxLength: 6,
-                enabled: !_busy,
-                style: const TextStyle(
-                  color: SimfTokens.surface,
-                  fontSize: SimfTokens.textXl,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 8,
-                ),
-                inputFormatters: <TextInputFormatter>[
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
-                onChanged: (_) => setState(() {}),
-                onSubmitted: (_) {
-                  if (_canVerify) {
-                    unawaited(_verify());
-                  }
-                },
-                decoration: InputDecoration(
-                  labelText: l10n.otpLabel,
-                  counterText: '',
-                  filled: true,
-                  fillColor: SimfTokens.accent.withValues(alpha: 0.06),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(SimfTokens.radiusSmall + 2),
-                    borderSide: const BorderSide(color: SimfTokens.line),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(SimfTokens.radiusSmall + 2),
-                    borderSide:
-                        const BorderSide(color: SimfTokens.accent, width: 1.5),
+          SafeArea(
+            child: Column(
+              children: <Widget>[
+                // Header band (Figma 505:919): chevron left, centred title.
+                SizedBox(
+                  height: 56,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: <Widget>[
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: IconButton(
+                            onPressed: _busy ? null : _back,
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new,
+                              color: Colors.white,
+                              size: 20,
+                              textDirection: TextDirection.ltr,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        l10n.emailVerifyTitle,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              if (_error != null) ...<Widget>[
-                const SizedBox(height: SimfTokens.space3),
-                Text(
-                  _error!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: SimfTokens.danger),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 400),
+                      child: Column(
+                        children: <Widget>[
+                          const SizedBox(height: 48),
+                          // Gold-ringed mail mark (Figma 505:969).
+                          Container(
+                            width: 96,
+                            height: 96,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: SimfTokens.navyDeep,
+                              border: Border.all(
+                                color: SimfTokens.accent,
+                                width: 1.2,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.mail_outline,
+                              color: SimfTokens.accent,
+                              size: 34,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            l10n.enterOtpTitle,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            l10n.emailVerifySentTo,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: SimfTokens.beigeBorder,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            widget.email,
+                            textDirection: TextDirection.ltr,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: SimfTokens.accent,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 48),
+                          _buildCodeBoxes(),
+                          const SizedBox(height: 16),
+                          if (_cooldown > 0)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: <Widget>[
+                                Text(
+                                  l10n.resendInLabel,
+                                  style: const TextStyle(
+                                    color: _mutedBlue,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  _formatCooldown(_cooldown),
+                                  textDirection: TextDirection.ltr,
+                                  style: const TextStyle(
+                                    color: SimfTokens.accent,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          if (_error != null) ...<Widget>[
+                            const SizedBox(height: 12),
+                            Text(
+                              _error!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: SimfTokens.danger,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
+                // Bottom actions (Figma 505:1003).
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      FilledButton(
+                        onPressed:
+                            _canVerify ? () => unawaited(_verify()) : null,
+                        child: _busy
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                l10n.verifyButton,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Text(
+                            l10n.noCodeQuestion,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          TextButton(
+                            onPressed:
+                                _canResend ? () => unawaited(_resend()) : null,
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              foregroundColor: SimfTokens.accent,
+                            ),
+                            child: Text(
+                              l10n.resendAction,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
               ],
-              const SizedBox(height: SimfTokens.space5),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _canVerify ? () => unawaited(_verify()) : null,
-                  child: _busy
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(l10n.verifyButton),
-                ),
-              ),
-              const SizedBox(height: SimfTokens.space2),
-              // Resend line (.otp-foot / .otp-timer) — accent text; shows the
-              // cooldown countdown until it expires, then the resend action.
-              TextButton(
-                onPressed: _canResend ? () => unawaited(_resend()) : null,
-                style: TextButton.styleFrom(
-                  foregroundColor: SimfTokens.accent,
-                ),
-                child: Text(
-                  _cooldown > 0
-                      ? l10n.resendCooldownText(_cooldown)
-                      : l10n.resendCodeButton,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
-}
 
-/// The gold-ringed envelope mark at the top of the OTP frame (.otp-ic): a
-/// 64px circle with an accent border and a faint accent fill.
-class _MailMark extends StatelessWidget {
-  const _MailMark();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: SimfTokens.accent.withValues(alpha: 0.06),
-        border: Border.all(color: SimfTokens.accent),
-      ),
-      alignment: Alignment.center,
-      child: const Icon(
-        Icons.mail_outline,
-        color: SimfTokens.accent,
-        size: 30,
+  /// Six segmented code boxes over one invisible capture field (Figma
+  /// 505:987). Tapping anywhere on the row focuses the field; the box at the
+  /// caret highlights gold while focused.
+  Widget _buildCodeBoxes() {
+    final digits = _code.text;
+    final activeIndex = digits.length.clamp(0, 5);
+    return SizedBox(
+      height: 52,
+      child: Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: TextField(
+              controller: _code,
+              focusNode: _codeFocus,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              enabled: !_busy,
+              autocorrect: false,
+              showCursor: false,
+              enableInteractiveSelection: false,
+              style: const TextStyle(color: Colors.transparent, fontSize: 1),
+              inputFormatters: <TextInputFormatter>[
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              onChanged: (_) => setState(() {}),
+              onSubmitted: (_) {
+                if (_canVerify) {
+                  unawaited(_verify());
+                }
+              },
+              decoration: const InputDecoration(
+                counterText: '',
+                isCollapsed: true,
+                filled: false,
+                // Kill every theme border — the capture field must be
+                // invisible behind the rendered boxes.
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+              ),
+            ),
+          ),
+          IgnorePointer(
+            child: Row(
+              // Code digits read left → right regardless of locale.
+              textDirection: TextDirection.ltr,
+              children: <Widget>[
+                for (int i = 0; i < 6; i++) ...<Widget>[
+                  if (i > 0) const SizedBox(width: 16),
+                  Expanded(
+                    child: Container(
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: SimfTokens.navy,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          width: 1.5,
+                          color: _codeFocus.hasFocus && i == activeIndex
+                              ? SimfTokens.accent
+                              : _codeBoxBorder,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        i < digits.length ? digits[i] : '',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

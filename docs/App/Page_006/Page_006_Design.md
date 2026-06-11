@@ -4,6 +4,18 @@ Flutter screen design for the sign-up email-OTP step. Behaviour is in
 [Page_006_Function.md](Page_006_Function.md) / [Page_006_Logic.md](Page_006_Logic.md);
 the contract is in [Page_006_API.md](Page_006_API.md).
 
+> **As-built (KSA-Project redesign, 2026-06-11 — D-364, Figma 505:837):**
+> navy `navySurface` surface with the decorative sweep and a custom header
+> (back chevron + centred 24-medium title — no Material app bar); a 96 px
+> gold-ringed `navyDeep` circle with the gold mail icon; **أدخل رمز التحقق**
+> heading; the sent-to caption with the address in gold; **six segmented code
+> boxes** (`#01132D` fill, `#1E3A5F` border, radius 14, gold focus highlight,
+> one invisible capture field beneath — replaces the old single 6-digit
+> field); the countdown as gold `mm:ss` + a muted-blue label; the gold تحقق
+> button pinned at the bottom with the **لم يصلك الرمز؟ إعادة الإرسال** footer.
+> Verify/resend/cooldown logic unchanged; the previous screen is parked in
+> `lib/features/_legacy_mockup/`.
+
 ## Layout (top → bottom)
 | Zone | Content |
 |---|---|
