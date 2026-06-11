@@ -13,9 +13,6 @@ const Set<String> _nonResumablePrefixes = <String>{
   '/splash',
   '/onboarding',
   '/sign-in',
-  // Login v2 design-preview (D-358) — a transient auth entry like /sign-in;
-  // listed separately because the /sign-in prefix only matches `/sign-in/...`.
-  '/sign-in-2',
   '/sign-up',
   '/terms',
   '/registration',

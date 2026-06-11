@@ -287,12 +287,12 @@ class AppL10n {
       _t('تصفّح بدون تسجيل الدخول', 'Browse without signing in');
   String get showPasswordTooltip => _t('إظهار كلمة المرور', 'Show password');
   String get hidePasswordTooltip => _t('إخفاء كلمة المرور', 'Hide password');
-  // Login v2 — design-preview (Figma KSA-Project 168:2800, D-358).
-  String get login2ForumTitle =>
+  // Sign in — KSA-Project design (Figma 168:2800, D-358/D-360).
+  String get signInForumTitle =>
       _t('الملتقى الدولى البحرى', 'International Maritime Forum');
-  String get login2RememberMe => _t('تذكرنى', 'Remember me');
-  String get login2Or => _t('او', 'or');
-  String get login2FaceIdButton =>
+  String get rememberMeLabel => _t('تذكرنى', 'Remember me');
+  String get orDividerLabel => _t('او', 'or');
+  String get faceIdSignInButton =>
       _t('التسجيل ببصمة الوجه', 'Sign in with Face ID');
 
   String get biometricSignInTooltip =>

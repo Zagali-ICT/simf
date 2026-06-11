@@ -9,7 +9,6 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../core/widgets/coming_soon_screen.dart';
 import '../features/auth/email_otp_verify_screen.dart';
 import '../features/auth/forgot_password_screen.dart';
-import '../features/auth/login2.dart';
 import '../features/auth/reset_password_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/auth/sign_up_email_verify_screen.dart';
@@ -148,9 +147,6 @@ const List<_Route> _auxRoutes = <_Route>[
   _Route(number: 0, name: RouteNames.forgotPassword, path: '/auth/forgot-password', labelAr: 'استعادة كلمة المرور', labelEn: 'Forgot password'),
   _Route(number: 0, name: RouteNames.resetPassword, path: '/auth/reset-password', labelAr: 'تعيين كلمة مرور جديدة', labelEn: 'Reset password'),
   _Route(number: 0, name: RouteNames.verifyOtp, path: '/auth/verify-otp', labelAr: 'رمز التحقق', labelEn: 'Verify OTP'),
-  // Login v2 — design-preview of the Figma KSA-Project login (168:2800,
-  // D-358). Public like /sign-in; number 0 keeps it outside the auth gate.
-  _Route(number: 0, name: RouteNames.signIn2, path: '/sign-in-2', labelAr: 'تسجيل الدخول ٢', labelEn: 'Sign in v2'),
 ];
 
 /// Screen numbers that need a signed-in user (Visitor or higher). Until
@@ -386,9 +382,6 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.verifyOtp) {
               return const EmailOtpVerifyScreen();
-            }
-            if (r.name == RouteNames.signIn2) {
-              return const Login2Screen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,

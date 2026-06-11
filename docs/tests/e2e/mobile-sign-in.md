@@ -15,7 +15,14 @@
 | **APIs** | `POST /app/auth/sign-in` · `verify-otp` · `forgot-password` · `reset-password` · `refresh` (+ device-key for biometric) |
 | **Surface** | Mobile (Flutter) — Guest entry; promotes to Visitor/Moderator/Staff on success |
 | **Auth setup** | A registered visitor (approved / pending / 2FA-on as the scenario needs). OTP codes via the email channel; **no literal secrets**. |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-11 |
+
+> **KSA-Project redesign (D-358/D-360, Figma 168:2800):** the screen is now the
+> navy + beige-card design — no app bar (the D-272 theme/language placeholder
+> buttons are gone), back chevron top-left, **remember-me checkbox** (default
+> ON) gating the email prefill store, the **Face-ID button always visible**
+> (silent fallback when unavailable), and the guest link kept below it. The
+> previous mockup screen is parked in `lib/features/_legacy_mockup/`.
 
 ## Coverage matrix
 
@@ -35,6 +42,7 @@
 | E2E-MOB003-012 | Biometric (device-key) re-open | happy | P0 | authored ✓ (Dart client + controller tests; **.NET↔Dart interop proven by backend golden-vector test, D-266**; on-device prompt → simf-run) |
 | E2E-MOB003-013 | Signed-in → profile-incomplete routes to Page_007 (`/sign-up/visitor`); complete → Home; probe failure → Home | happy | P0 | authored ✓ (widget test) |
 | E2E-MOB003-014 | "Browse without signing in" → guest landing (Page 012) → public Home, no token (D-325) | happy | P1 | authored ✓ (widget test) |
+| E2E-MOB003-015 | Remember-me unchecked → the email is NOT stored for the next prefill (D-360) | edge | P1 | authored ✓ (widget test) |
 
 ## Scenarios
 
@@ -49,7 +57,7 @@ Scenario: An approved visitor signs in
   And on success the tokens are stored
   And the app hydrates the real app-role from GET /app/users/me
   And routes to Home (#13) as a Visitor (not Guest)
-  And the email is persisted for next time
+  And the email is persisted for next time (remember-me checked — the default)
 ```
 
 **Evidence:** `sign_in_screen_test` (routes home + stores email); `auth_controller_signin_test` (hydration → Visitor).
@@ -178,6 +186,19 @@ Scenario: A signed-out user enters the app without an account
 **Evidence:** `sign_in_screen_test` — "browse-without-signing-in opens the guest
 screen (no auth)". The guest landing itself is `GuestModeScreen` (Page 012).
 
+### E2E-MOB003-015 — Remember-me gates the email store (D-360)
+
+```gherkin
+Scenario: Unchecking remember-me skips storing the email
+  Given the sign-in screen with the remember-me checkbox checked by default
+  When the user unchecks remember-me and signs in successfully
+  Then the app routes to Home
+  And the email is NOT stored for the next prefill
+```
+
+**Evidence:** `sign_in_screen_test` — "unchecking remember-me skips storing the
+email".
+
 ---
 
-_Last reviewed:_ `2026-06-06` by `SIMF Team`.
+_Last reviewed:_ `2026-06-11` by `SIMF Team`.

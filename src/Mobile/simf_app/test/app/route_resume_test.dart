@@ -18,7 +18,6 @@ void main() {
         expect(isResumableLocation('/splash'), isFalse);
         expect(isResumableLocation('/onboarding'), isFalse);
         expect(isResumableLocation('/sign-in'), isFalse);
-        expect(isResumableLocation('/sign-in-2'), isFalse);
         expect(isResumableLocation('/sign-up'), isFalse);
         expect(isResumableLocation('/sign-up/otp'), isFalse);
         expect(isResumableLocation('/terms'), isFalse);

@@ -4,15 +4,21 @@ Flutter screen design — layout, components, data binding, states, RTL and loca
 Behaviour is in [Page_003_Function.md](Page_003_Function.md); rules in
 [Page_003_Logic.md](Page_003_Logic.md).
 
-## Layout (top → bottom)
+## Layout (top → bottom) — KSA-Project design (Figma 168:2800, D-360)
 | Zone | Content |
 |---|---|
-| Brand / header | SIMF logo + screen title — AR **تسجيل الدخول** / EN **Sign in**. |
-| Email field | Labelled text input, email keyboard, UI max **50** chars; pre-filled when the session expired. |
-| Password field | Secure input, obscured, show/hide toggle, UI max **32** chars. |
-| Primary action | **Sign in** button (full-width). Spinner replaces the label while a request is in flight. |
-| Biometric | Face/biometric icon button — shown only when a device-key is enrolled and the window is in-window. |
-| Secondary links | **Forgot password?** and **Create account**. |
+| Background | Navy `SimfTokens.navySurface` full-bleed; subtle rotated decorative sweep behind the header; **no app bar**. Back chevron top-left (pops, else onboarding). |
+| Brand / header | `SimfLogo` (44) + forum name **الملتقى الدولى البحرى** in white, centered. |
+| Card | Beige `SimfTokens.cardBeige` card (radius 4, padding 24) holding everything below. |
+| Card title | AR **تسجيل الدخول** / EN **Sign in**, centered, 24 semibold. |
+| Email field | Labelled outlined input (beige border), email keyboard, LTR text, UI max **50**; pre-filled from the local store. |
+| Password field | Labelled outlined secure input, eye show/hide toggle, UI max **32**. |
+| Remember row | **Remember me** checkbox (default ON — gates the email prefill store) + **Forgot password?** link. |
+| Primary action | Gold **دخول / Sign in** button (full-width, 48, white bold). Spinner while in flight. |
+| Sign-up row | **ليس لديك حساب؟ إنشاء حساب** — link to the sign-up flow. |
+| Divider | Hairline — **او / or** — hairline. |
+| Face ID | Outlined **التسجيل ببصمة الوجه** button, gold text + face icon — **always visible** per the design; unavailable devices fall back silently to the password path. |
+| Guest link | **Browse without signing in** (owner-approved addition to the frame — only guest entry, D-360). |
 
 ## Components
 | Component | Binding / behaviour |
@@ -20,7 +26,8 @@ Behaviour is in [Page_003_Function.md](Page_003_Function.md); rules in
 | Email input | Two-way bound to `email`; trims; enforces 50-char UI cap; pre-fill from local store (Logic L-3). |
 | Password input | Two-way bound to `password`; obscured; 32-char UI cap; cleared on invalid-credentials error. |
 | Sign in button | Disabled when either field is empty or a request is in flight; triggers `POST /app/auth/sign-in`. |
-| Biometric button | Triggers on-device face auth → device-key refresh (Logic L-2); hidden when unavailable. |
+| Biometric button | Triggers on-device face auth → device-key refresh (Logic L-2); **always rendered** (D-360 design); failures fall back silently to the password path. After a successful password sign-in the screen runs a best-effort device-key enrolment. |
+| Remember-me checkbox | Default **checked** (preserves the historical always-store behaviour); unchecked → the email is not stored for the next prefill. |
 | Forgot password link | Opens the forgot-password / reset flow (Logic L-6). |
 | Create account link | Navigates to the sign-up flow. |
 | Error surface | Inline field errors + a bilingual snackbar/banner sourced from `ApiResult<T>.errors`. |

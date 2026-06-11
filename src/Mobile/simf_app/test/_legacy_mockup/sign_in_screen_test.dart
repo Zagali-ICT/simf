@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
-import 'package:simf_app/features/auth/login2.dart';
+import 'package:simf_app/features/_legacy_mockup/sign_in_screen.dart';
 import 'package:simf_app/features/profile/data/profile_models.dart';
 import 'package:simf_app/features/profile/data/profile_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
@@ -14,8 +14,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 enum _Outcome { success, otp, invalid }
 
 /// A fake controller whose `signIn` transitions to a configured outcome,
-/// so the screen's UI → navigation/error glue can be tested in isolation
-/// (same harness as sign_in_screen_test.dart).
+/// so the screen's UI → navigation/error glue can be tested in isolation.
 class _FakeAuthController extends AuthController {
   _FakeAuthController(this.outcome);
 
@@ -91,7 +90,7 @@ class _FakePrefs implements SimfPrefsStorage {
   }
 }
 
-/// Fake profile repo for the post-sign-in completeness probe. Only
+/// Fake profile repo for the post-sign-in completeness probe (Slice 3). Only
 /// `getMyProfile` is exercised by the sign-in route; the rest are unused.
 class _FakeProfileRepository implements ProfileRepository {
   _FakeProfileRepository({required this.complete});
@@ -141,12 +140,12 @@ Future<void> _pump(
   bool profileComplete = true,
 }) async {
   final router = GoRouter(
-    initialLocation: '/sign-in-2',
+    initialLocation: '/sign-in',
     routes: <RouteBase>[
       GoRoute(
-        name: RouteNames.signIn2,
-        path: '/sign-in-2',
-        builder: (c, s) => const Login2Screen(),
+        name: RouteNames.signIn,
+        path: '/sign-in',
+        builder: (c, s) => const SignInScreen(),
       ),
       GoRoute(
         name: RouteNames.home,
@@ -174,9 +173,9 @@ Future<void> _pump(
         builder: (c, s) => const Scaffold(body: Text('PROFILE')),
       ),
       GoRoute(
-        name: RouteNames.onboarding,
-        path: '/onboarding',
-        builder: (c, s) => const Scaffold(body: Text('ONBOARDING')),
+        name: RouteNames.guestMode,
+        path: '/guest',
+        builder: (c, s) => const Scaffold(body: Text('GUEST')),
       ),
     ],
   );
@@ -213,9 +212,9 @@ Future<void> _enterCreds(WidgetTester tester) async {
 }
 
 void main() {
-  group('Login2Screen (Figma 168:2800 design-preview)', () {
+  group('SignInScreen (Page 003)', () {
     testWidgets('successful sign-in with a complete profile routes home and '
-        'stores the email (remember-me default on)', (tester) async {
+        'stores the email', (tester) async {
       final prefs = _FakePrefs();
       await _pump(tester, _Outcome.success, prefs);
 
@@ -224,25 +223,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('HOME'), findsOneWidget);
-      expect(
-        prefs.getString(StorageKeys.lastEmail),
-        equals('visitor@example.sa'),
-      );
-    });
-
-    testWidgets('unchecking remember-me skips storing the email',
-        (tester) async {
-      final prefs = _FakePrefs();
-      await _pump(tester, _Outcome.success, prefs);
-
-      await _enterCreds(tester);
-      await tester.tap(find.byType(Checkbox));
-      await tester.pump();
-      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('HOME'), findsOneWidget);
-      expect(prefs.getString(StorageKeys.lastEmail), isNull);
+      expect(prefs.getString(StorageKeys.lastEmail), equals('visitor@example.sa'));
     });
 
     testWidgets('successful sign-in with an incomplete profile routes to the '
@@ -256,6 +237,8 @@ void main() {
 
       expect(find.text('PROFILE'), findsOneWidget);
       expect(find.text('HOME'), findsNothing);
+      // The email is still recorded for the next cold start.
+      expect(prefs.getString(StorageKeys.lastEmail), equals('visitor@example.sa'));
     });
 
     testWidgets('a 2FA account routes to the email-OTP screen', (tester) async {
@@ -269,7 +252,7 @@ void main() {
       expect(find.text('OTP-SCREEN'), findsOneWidget);
     });
 
-    testWidgets('invalid credentials show the error and stay on the screen',
+    testWidgets('invalid credentials show the error and stay on sign-in',
         (tester) async {
       final prefs = _FakePrefs();
       await _pump(tester, _Outcome.invalid, prefs);
@@ -291,37 +274,15 @@ void main() {
       expect(find.text('prefilled@example.sa'), findsOneWidget);
     });
 
-    testWidgets('the create-account link opens the sign-up form',
+    testWidgets('browse-without-signing-in opens the guest screen (no auth)',
         (tester) async {
       final prefs = _FakePrefs();
       await _pump(tester, _Outcome.success, prefs);
 
-      await tester.tap(find.text('Create account'));
+      await tester.tap(find.text('Browse without signing in'));
       await tester.pumpAndSettle();
 
-      expect(find.text('SIGN-UP'), findsOneWidget);
-    });
-
-    testWidgets('the forgot-password link opens the reset flow',
-        (tester) async {
-      final prefs = _FakePrefs();
-      await _pump(tester, _Outcome.success, prefs);
-
-      await tester.tap(find.text('Forgot password?'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('FORGOT'), findsOneWidget);
-    });
-
-    testWidgets('the back chevron with no history falls back to onboarding',
-        (tester) async {
-      final prefs = _FakePrefs();
-      await _pump(tester, _Outcome.success, prefs);
-
-      await tester.tap(find.byIcon(Icons.arrow_back_ios_new));
-      await tester.pumpAndSettle();
-
-      expect(find.text('ONBOARDING'), findsOneWidget);
+      expect(find.text('GUEST'), findsOneWidget);
     });
   });
 }
