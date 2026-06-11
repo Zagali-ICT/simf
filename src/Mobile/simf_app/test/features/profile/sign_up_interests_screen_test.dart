@@ -146,7 +146,7 @@ Future<void> _pump(
 }
 
 bool _saveEnabled(WidgetTester tester) {
-  final save = find.widgetWithText(FilledButton, 'Save');
+  final save = find.widgetWithText(FilledButton, 'Continue');
   return tester.widget<FilledButton>(save).onPressed != null;
 }
 
@@ -157,11 +157,11 @@ void main() {
       await _pump(tester, _FakeProfileRepository());
 
       expect(find.text('My interests'), findsOneWidget);
-      expect(find.widgetWithText(FilterChip, 'Naval Defence'), findsOneWidget);
+      expect(find.text('Naval Defence'), findsOneWidget);
       expect(find.text('0 / 10 selected'), findsOneWidget);
       expect(_saveEnabled(tester), isFalse);
 
-      await tester.tap(find.widgetWithText(FilterChip, 'Naval Defence'));
+      await tester.tap(find.text('Naval Defence'));
       await tester.pumpAndSettle();
 
       expect(find.text('1 / 10 selected'), findsOneWidget);
@@ -173,9 +173,9 @@ void main() {
       final repo = _FakeProfileRepository();
       await _pump(tester, repo);
 
-      await tester.tap(find.widgetWithText(FilterChip, 'Naval Defence'));
+      await tester.tap(find.text('Naval Defence'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Continue'));
       await tester.pumpAndSettle();
 
       expect(repo.upserted, isNotNull);
@@ -202,9 +202,9 @@ void main() {
       final repo = _FakeProfileRepository(throwOnSave: true);
       await _pump(tester, repo);
 
-      await tester.tap(find.widgetWithText(FilterChip, 'Naval Defence'));
+      await tester.tap(find.text('Naval Defence'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.tap(find.widgetWithText(FilledButton, 'Continue'));
       await tester.pumpAndSettle();
 
       expect(find.text('boom'), findsOneWidget);

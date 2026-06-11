@@ -11,20 +11,22 @@ import '../../app/theme/tokens.dart';
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
 
-/// Page 007‑01 — اهتماماتي · Sign up — interests (Page_007-01 docs, mockup 5‑01,
-/// new D-332).
+// Interests-frame colours (Figma 505:1083) not yet shared by a second screen.
+const Color _chipBorder = Color(0xFF2A4066);
+const Color _sweepTint = Color(0x0AFFFFFF);
+
+/// Page 007‑01 — اهتماماتي · Sign up — interests. The KSA-Project Figma design
+/// (node 505:1083 — D-365): navy surface + sweep, custom header, the
+/// اختر اهتماماتك heading, a two-column pill grid (gold selected /
+/// `navyDeep`-with-border unselected), the n/10 counter, and the gold متابعة
+/// button pinned at the bottom. The previous screen is parked in
+/// `_legacy_mockup/`.
 ///
-/// The interests step of sign-up, split out of Page 007. It receives the
-/// [SignUpProfileDraft] collected on the profile-data screen (Page 007), loads
-/// the interests lookup, and requires the user to pick **1–10**. On **Save** it
-/// fires the **single** `POST /app/account/user-profile` — the Page-007 data
-/// **plus** the picked `interestIds` (via `copyWith`) — then uploads the optional
-/// ID image (after the row exists) and routes to the registration-success /
-/// "please wait" screen (Page 010). There is no separate interests write (D-050).
-///
-/// AUTH-only (Page_007-01 L-1): the route is in the auth gate, so an anonymous
-/// open is impossible. A direct open without a draft (deep link) shows a recover
-/// state that sends the user back to the profile-data screen.
+/// Contract unchanged (D-332/D-050): receives the [SignUpProfileDraft] from
+/// Page 007, loads the interests lookup, requires **1–10** picks, fires the
+/// **single** `POST /app/account/user-profile` (draft + interestIds), uploads
+/// the optional ID image, then routes to Page 010. AUTH-only; a draft-less
+/// deep link shows the recover state back to the profile-data screen.
 class SignUpInterestsScreen extends ConsumerStatefulWidget {
   const SignUpInterestsScreen({super.key, this.draft});
 
@@ -87,15 +89,16 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
     }
   }
 
-  void _toggleInterest(String id, bool selected, AppL10n l10n) {
-    if (selected && _selected.length >= 10) {
+  void _toggleInterest(String id, AppL10n l10n) {
+    final selecting = !_selected.contains(id);
+    if (selecting && _selected.length >= 10) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(l10n.interestsMaxReached)));
       return;
     }
     setState(() {
-      if (selected) {
+      if (selecting) {
         _selected.add(id);
       } else {
         _selected.remove(id);
@@ -167,13 +170,78 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
     }
   }
 
+  void _back() {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.goNamed(RouteNames.signUpVisitor);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
-      backgroundColor: SimfTokens.navy,
-      appBar: AppBar(title: Text(l10n.interestsTitle)),
-      body: SafeArea(child: _buildBody(l10n)),
+      backgroundColor: SimfTokens.navySurface,
+      body: Stack(
+        children: <Widget>[
+          // Decorative diagonal sweep (Figma 505:1086, top-right area).
+          Positioned(
+            top: -180,
+            right: -40,
+            child: Transform.rotate(
+              angle: 0.4936, // 28.28°
+              child: Container(
+                width: 313,
+                height: 323,
+                decoration: BoxDecoration(
+                  color: _sweepTint,
+                  borderRadius: BorderRadius.circular(40),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              children: <Widget>[
+                // Header band (Figma 505:1190): chevron left, centred title.
+                SizedBox(
+                  height: 56,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: <Widget>[
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: IconButton(
+                            onPressed: _submitting ? null : _back,
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new,
+                              color: Colors.white,
+                              size: 20,
+                              textDirection: TextDirection.ltr,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        l10n.interestsTitle,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(child: _buildBody(l10n)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -194,8 +262,7 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
               ),
               const SizedBox(height: SimfTokens.space4),
               FilledButton(
-                onPressed: () =>
-                    context.goNamed(RouteNames.signUpVisitor),
+                onPressed: () => context.goNamed(RouteNames.signUpVisitor),
                 child: Text(l10n.signUpVisitorTitle),
               ),
             ],
@@ -211,39 +278,96 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
     if (_loadError != null) {
       return _buildLoadError(l10n);
     }
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(
-        SimfTokens.space4,
-        SimfTokens.space5,
-        SimfTokens.space4,
-        SimfTokens.space8,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          _buildInterests(l10n),
-          const SizedBox(height: SimfTokens.space6),
-          if (_submitError != null) ...<Widget>[
-            Text(
-              _submitError!,
-              style: const TextStyle(color: SimfTokens.danger),
+    return Column(
+      children: <Widget>[
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(
+                children: <Widget>[
+                  const SizedBox(height: 24),
+                  Text(
+                    l10n.interestsChooseTitle,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      l10n.interestsHelper,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: SimfTokens.beigeBorder,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        height: 21 / 16,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  _buildChips(l10n),
+                  const SizedBox(height: 24),
+                  Text(
+                    l10n.interestsCounter(_selected.length),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: SimfTokens.beigeBorder,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (_submitError != null) ...<Widget>[
+                    const SizedBox(height: 12),
+                    Text(
+                      _submitError!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: SimfTokens.danger,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
-            const SizedBox(height: SimfTokens.space3),
-          ],
-          FilledButton(
-            onPressed: (_submitting || _selected.isEmpty)
-                ? null
-                : () => unawaited(_save()),
-            child: _submitting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(l10n.saveLabel),
           ),
-        ],
-      ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: (_submitting || _selected.isEmpty)
+                  ? null
+                  : () => unawaited(_save()),
+              child: _submitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      l10n.continueLabel,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -270,56 +394,55 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
     );
   }
 
-  Widget _buildInterests(AppL10n l10n) {
+  /// The design's two-column pill grid (Figma 505:1222): gold when selected,
+  /// `navyDeep` with a muted border otherwise.
+  Widget _buildChips(AppL10n l10n) {
     if (_interests.isEmpty) {
       return Text(
         l10n.interestsEmpty,
         style: const TextStyle(color: SimfTokens.txtSecondary),
       );
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            Flexible(
-              child: Text(
-                l10n.interestsHelper,
-                style: const TextStyle(
-                  color: SimfTokens.txtSecondary,
-                  fontSize: SimfTokens.textSm,
-                ),
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 12,
+        mainAxisExtent: 43,
+      ),
+      itemCount: _interests.length,
+      itemBuilder: (context, index) {
+        final interest = _interests[index];
+        final selected = _selected.contains(interest.id);
+        return InkWell(
+          onTap: _submitting ? null : () => _toggleInterest(interest.id, l10n),
+          borderRadius: BorderRadius.circular(999),
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: selected ? SimfTokens.accent : SimfTokens.navyDeep,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                width: 1.2,
+                color: selected ? SimfTokens.accent : _chipBorder,
               ),
             ),
-            Text(
-              l10n.interestsCounter(_selected.length),
+            child: Text(
+              l10n.isArabic ? interest.nameArabic : interest.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                color: SimfTokens.txtTertiary,
-                fontSize: SimfTokens.textSm,
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: SimfTokens.space3),
-        Wrap(
-          spacing: SimfTokens.space2,
-          runSpacing: SimfTokens.space2,
-          children: _interests
-              .map(
-                (interest) => FilterChip(
-                  label: Text(
-                    l10n.isArabic ? interest.nameArabic : interest.name,
-                  ),
-                  selected: _selected.contains(interest.id),
-                  onSelected: _submitting
-                      ? null
-                      : (value) => _toggleInterest(interest.id, value, l10n),
-                ),
-              )
-              .toList(),
-        ),
-      ],
+          ),
+        );
+      },
     );
   }
 }

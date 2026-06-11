@@ -6,6 +6,16 @@ Flutter screen design — layout, components, states, RTL, localization. Behavio
 
 > **New (D-332).** Mirrors mockup screen 5‑01.
 
+> **As-built (KSA-Project redesign, 2026-06-11 — D-365, Figma 505:1083):**
+> navy `navySurface` surface + decorative sweep, custom header (back chevron +
+> centred **اهتماماتي** title — no Material app bar); **اختر اهتماماتك**
+> heading + the long helper copy in `beigeBorder`; a **two-column pill grid**
+> (43 px rows, gap 10×12 — gold `accent` fill when selected, `navyDeep` fill
+> with a `#2A4066` border otherwise, 14-bold white labels); the centred
+> **n / 10** counter; the gold **متابعة** button pinned at the bottom. The
+> draft/1–10/single-upsert/ID-image contract is unchanged; the old screen is
+> parked in `lib/features/_legacy_mockup/`.
+
 ## Layout (= mockup screen 5‑01)
 ```
 ┌────────────────────────────────────────────┐

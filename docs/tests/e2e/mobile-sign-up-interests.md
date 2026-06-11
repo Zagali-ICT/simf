@@ -15,7 +15,16 @@
 | **APIs** | `GET /api/v1/app/account/interests` (lookup); **`POST /api/v1/app/account/user-profile`** (the single upsert: Page-007 data **+** `interestIds`); `POST …/user-profile/id-image` (multipart, optional, after the row exists). Signed-in, no role/permission (D7). |
 | **Surface** | Mobile (Flutter) — Visitor (signed-in, profile-incomplete), arriving from Page 007 |
 | **Auth setup** | A signed-in Visitor token (own `sub`). Obtain via the standard app sign-in; never a literal secret. |
-| **Last reviewed** | 2026-06-07 |
+| **Last reviewed** | 2026-06-11 |
+
+> **KSA-Project redesign (D-365, Figma 505:1083):** the screen now renders the
+> two-column pill grid (gold selected / `navyDeep`+border unselected), the
+> اختر اهتماماتك heading + long helper, the centred n/10 counter, and a
+> **متابعة** (Continue) primary button — the Save label is gone. The
+> draft / 1–10 / single-upsert / ID-image contract is unchanged; the old
+> screen is parked in `lib/features/_legacy_mockup/`. Live browser check is
+> N/A for this screen (auth-gated + requires the in-memory Page-007 draft);
+> the widget tests cover the render + contract.
 
 ## Coverage matrix
 
@@ -119,4 +128,4 @@ Scenario: The interests grid mirrors under Arabic
 
 ---
 
-_Last reviewed:_ `2026-06-07` by `SIMF Team` — created under D-332.
+_Last reviewed:_ `2026-06-11` by `SIMF Team` — created under D-332; D-365 redesign noted.

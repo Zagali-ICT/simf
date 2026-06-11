@@ -181,8 +181,13 @@ class AppL10n {
   // [signUpTypeVisitor]; Other is new.
   String get registrationTypeLabel => _t('نوع التسجيل', 'Registration type');
   String get signUpTypeOther => _t('أخرى', 'Other');
-  String get interestsHelper =>
-      _t('اختر من 1 إلى 10 اهتمامات', 'Pick 1 to 10 interests');
+  // KSA-Project interests frame copy (Figma 505:1083, D-365).
+  String get interestsChooseTitle =>
+      _t('اختر اهتماماتك', 'Choose your interests');
+  String get interestsHelper => _t(
+        'اختر ما لا يقل عن واحد وبحد أقصى 10 اهتمامات تُستخدم لاقتراح أشخاص وجلسات مناسبة لك.',
+        'Pick at least one and up to 10 interests — used to suggest people and sessions for you.',
+      );
   String interestsCounter(int count) =>
       _t('$count / 10 مُختارة', '$count / 10 selected');
   String get interestsEmpty => _t('لا توجد اهتمامات', 'No interests available');
