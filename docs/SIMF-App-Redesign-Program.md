@@ -60,7 +60,7 @@ Shared widgets: `lib/app/widgets/simf_logo.dart` (`SimfLogo`, 4x asset
 | P1 | Promote Login v2 → official sign-in | `/sign-in` | 168:2800 | ✅ shipped 2026-06-11 (D-360) | preview `be81082`; promotion — see git log |
 | 1 | Splash (Page 001) | `/splash` | 159:573 | ✅ shipped 2026-06-11 (D-361) | — |
 | 2 | Onboarding carousel (Page 002) | `/onboarding` | 148:22, 159:942, 159:1052 | ✅ shipped 2026-06-11 (D-362 — videos dropped for static panels, owner decision) | — |
-| 3 | Sign-up form (Page 005) | `/sign-up` | 168:2972 | ⏳ pending — ⚠️ flow question open (profile fields merged in; owner call needed before build) | — |
+| 3 | Profile-data form (Page 007) | `/sign-up/visitor` | 168:2972 | ⏳ pending — owner resolved the flow question 2026-06-11: **no flow change**; the frame maps to Page 007 (it has no password fields). Page 005 register keeps its current UI (no frame delivered). | — |
 | 4 | Email-OTP verify (Page 006) | `/sign-up/otp` | 505:837 | ⏳ pending (evaluate reuse for `/auth/verify-otp` 2FA) | — |
 | 5 | Interests picker (Page 007-01) | `/sign-up/interests` | 505:1083 | ⏳ pending | — |
 | 6 | Registration success (Page 010) | `/registration/success` | 505:1451 | ⏳ pending | — |
@@ -79,10 +79,12 @@ Shared widgets: `lib/app/widgets/simf_logo.dart` (`SimfLogo`, 4x asset
 
 ## Known open items
 
-- **Sign-up flow question (page 3)** — the design merges document/gender/
-  organisation/job/attachment fields into sign-up; today those live in the
-  Page 007 profile upsert. Owner must choose: one screen driving the two
-  existing API calls, or a backend contract change (needs its own approval).
+- **Sign-up flow question — RESOLVED (owner, 2026-06-11):** no flow change.
+  Register (Page 005, user+pwd+confirm → its own API) keeps its current UI —
+  no frame was delivered for it; then OTP; then ONE profile API across TWO
+  pages (frame 168:2972 = the Page 007 data form; frame 505:1083 = the
+  interests page); then the success/wait screen. Frame 168:2972 is therefore
+  the **Page 007 redesign**, mapped onto the existing fields/logic only.
 - The design's Arabic header on the login frame ("الملتقى الدولى البحرى")
   differs in spelling from the app's `appName` ("الملتقى البحري") — designer
   typo suspected, owner to confirm.
