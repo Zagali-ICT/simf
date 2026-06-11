@@ -249,13 +249,22 @@ class AppL10n {
   // Registration success (Page 010).
   String get registrationSuccessTitle =>
       _t('تم التسجيل بنجاح', 'Registration success');
+  // KSA-Project success frame copy (Figma 505:1451, D-366).
   String get registrationSuccessMessage => _t(
-        'تم استلام طلبك وهو قيد المراجعة من قبل الإدارة.',
-        'Your request was received and is under admin review.',
+        'تم استلام طلبك ومراجعته\nستصلك رسالة تأكيد على بريدك الإلكتروني.',
+        'Your request was received and is under review.\nA confirmation email will reach your inbox.',
       );
   String get registrationStatusButton =>
       _t('حالة التسجيل', 'Registration status');
   String get goHomeButton => _t('الانتقال للرئيسية', 'Go to home');
+  String get regSuccessHeaderTitle => _t('تم التسجيل', 'Registered');
+  String get referenceNumberLabel =>
+      _t('رقم البطاقة المرجعي', 'Reference badge number');
+  String get contactUsTitle => _t('تواصل معانا', 'Contact us');
+  String get simfSocialFooter => _t(
+        '@SIMF_RSNF · الملتقى البحري السعودي الدولي',
+        '@SIMF_RSNF · Saudi International Maritime Forum',
+      );
 
   // Registration status (Page 011).
   String get registrationStatusTitle =>

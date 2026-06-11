@@ -54,7 +54,7 @@ void main() {
         find.widgetWithText(FilledButton, 'Registration status'),
         findsOneWidget,
       );
-      expect(find.widgetWithText(TextButton, 'Go to home'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Go to home'), findsOneWidget);
     });
 
     testWidgets('primary button routes to the registration-status screen',
@@ -72,7 +72,10 @@ void main() {
     testWidgets('ghost button routes home', (tester) async {
       await _pump(tester);
 
-      await tester.tap(find.widgetWithText(TextButton, 'Go to home'));
+      await tester.ensureVisible(
+        find.widgetWithText(OutlinedButton, 'Go to home'),
+      );
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Go to home'));
       await tester.pumpAndSettle();
 
       expect(find.text('HOME'), findsOneWidget);

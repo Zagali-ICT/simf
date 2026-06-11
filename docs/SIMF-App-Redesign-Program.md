@@ -63,7 +63,7 @@ Shared widgets: `lib/app/widgets/simf_logo.dart` (`SimfLogo`, 4x asset
 | 3 | Profile-data form (Page 007) | `/sign-up/visitor` | 168:2972 | ⏳ pending — owner resolved the flow question 2026-06-11: **no flow change**; the frame maps to Page 007 (it has no password fields). Page 005 register keeps its current UI (no frame delivered). | — |
 | 4 | Email-OTP verify (Page 006) | `/sign-up/otp` | 505:837 | ✅ shipped 2026-06-11 (D-364). The 2FA OTP screen (`/auth/verify-otp`) keeps its old look — restyling it with the same segmented-box pattern is a tracked follow-up. | — |
 | 5 | Interests picker (Page 007-01) | `/sign-up/interests` | 505:1083 | ✅ shipped 2026-06-11 (D-365 — live check N/A: auth+draft-gated; widget tests stand in) | — |
-| 6 | Registration success (Page 010) | `/registration/success` | 505:1451 | ⏳ pending | — |
+| 6 | Registration success (Page 010) | `/registration/success` | 505:1451 | ✅ shipped 2026-06-11 (D-366 — masked reference card, visual-only contact tiles; live check N/A: auth-gated) | — |
 | 7 | Terms & conditions | `/terms` | 505:1553 | ⏳ pending | — |
 
 ## Per-page gate checklist (every row above must pass all of these)
@@ -78,6 +78,12 @@ Shared widgets: `lib/app/widgets/simf_logo.dart` (`SimfLogo`, 4x asset
 6. Decisions-log entry; commit with a descriptive message.
 
 ## Known open items
+
+- **Contact tiles wiring (Page 010, D-366)** — the تواصل معانا phone/mail
+  tiles are visual-only until the owner supplies the official contact details
+  (then wire via OS intents; may need `url_launcher` — owner install approval).
+- **2FA OTP screen restyle** (`/auth/verify-otp`) — reuse the D-364
+  segmented-box pattern; no dedicated frame was delivered.
 
 - **Sign-up flow question — RESOLVED (owner, 2026-06-11):** no flow change.
   Register (Page 005, user+pwd+confirm → its own API) keeps its current UI —

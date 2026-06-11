@@ -12,7 +12,14 @@
 | **APIs** | **None** — static confirmation; the account was already created by the Page_007 profile save. The optional status poll lives on Page_011. |
 | **Surface** | Mobile (Flutter) — signed-in, pending approval |
 | **Auth setup** | A signed-in (pending) session — reached automatically after the profile save. |
-| **Last reviewed** | 2026-06-05 |
+| **Last reviewed** | 2026-06-11 |
+
+> **KSA-Project redesign (D-366, Figma 505:1451):** green-ringed check on
+> `navyDeep`, two-line review copy, the **masked** `SIMF-2026-xxxx` reference
+> card (no fetch — offline-safe contract kept), gold status + accent-outlined
+> home buttons, visual-only contact tiles + `@SIMF_RSNF` footer. The old
+> screen is parked in `lib/features/_legacy_mockup/`. Live browser check N/A
+> (auth-gated); widget tests cover render + both routes.
 
 ## Coverage matrix
 
@@ -66,12 +73,13 @@ Scenario: The user goes to the home screen
 ```gherkin
 Scenario: Back does not re-open the sign-up form
   Given the screen was reached as a replacement of the profile form
-  Then there is no app-bar back affordance
-  And a system back does not return into the multi-step sign-up form
+  When the user taps the header back chevron (or system back)
+  Then the app goes to home — never back into the multi-step sign-up form
 ```
 
-> By construction: the screen has no `AppBar`/back, and the profile save uses
-> `context.goNamed` (replacement), so the sign-up steps are off the back stack.
+> By construction: the profile save uses `context.goNamed` (replacement), so
+> the sign-up steps are off the back stack; the D-366 header chevron pops only
+> when a pop target exists, otherwise it falls back to home.
 
 ### E2E-MOB010-005 — Offline-safe
 
@@ -101,4 +109,4 @@ Scenario: The confirmation mirrors under Arabic
 
 ---
 
-_Last reviewed:_ `2026-06-05` by `SIMF Team`.
+_Last reviewed:_ `2026-06-11` by `SIMF Team`.

@@ -3,6 +3,19 @@
 Flutter screen design for the registration-success confirmation. Visual source
 is `Mockup.html` page 10; behaviour is in [Page_010_Logic.md](Page_010_Logic.md).
 
+> **As-built (KSA-Project redesign, 2026-06-11 — D-366, Figma 505:1451):**
+> navy `navySurface` surface + decorative sweep, custom header (back chevron +
+> centred **تم التسجيل** — no Material app bar); a 104 px `navyDeep` circle
+> with a `#22C55E` green ring + check; the success headline and the frame's
+> two-line review copy; the **masked reference card** (`#01132D` 80%, radius 8 —
+> shows the design's literal `SIMF-2026-xxxx`; owner decision: no fetch, the
+> page stays offline-safe, the real reference surfaces on badge/status);
+> gold **حالة التسجيل** + accent-outlined **الانتقال للرئيسية** (white text);
+> the **تواصل معانا** phone/mail tiles (`#253660` border, radius 10 —
+> **visual-only**, owner decision, wiring tracked on the programme board);
+> the `@SIMF_RSNF` footer. No-API contract unchanged; the old screen is parked
+> in `lib/features/_legacy_mockup/`.
+
 ## Layout
 A single, vertically-centred confirmation column — no scrolling list, no form.
 
