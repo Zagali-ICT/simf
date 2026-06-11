@@ -43,6 +43,7 @@
 | E2E-SPN-021 | Excel export — toolbar Export → POST /export (whole grid vs selected rows) (D-356) | happy | P1 | _to author_ |
 | E2E-SPN-022 | Excel import — Import → workbook → result modal "N created…" + per-row error (D-356) | happy | P1 | _to author_ |
 | E2E-SPN-023 | Excel import rejection — non-.xlsx / wrong-sheet → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-SPN-024 | Logo via the unified media-asset pipeline — upload then external link (D-357) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -560,6 +561,25 @@ Scenario: A bad / wrong-sheet upload is rejected and nothing is created
   see E2E-SPN-021..023. Action buttons are not individually `<AuthorizedAction>`-gated;
   per-action enforcement is API-side only (see E2E-SPN-009), and Export/Import are
   gated by the `Sponsors.Export` / `Sponsors.Import` policies on the API.
+
+### E2E-SPN-024 — Logo via the unified media-asset pipeline (D-357)
+
+```gherkin
+Scenario: Upload logo, then switch it to an external link
+  Given an Administrator is editing a sponsor
+  When they open the "Image" control, choose "Upload file", pick a PNG and click Upload
+  Then a success message shows and the preview thumbnail refreshes
+  And GET /account/api/admin/assets/SponsorLogo/{ownerId}/image returns the bytes (200)
+  And /admin/media-library lists it as SponsorLogo - this entity - Image - Uploaded file - active
+  When they switch to "External link", enter https://cdn.example/x.jpg and click Save link
+  Then the asset Source becomes "External link" and GET /app/assets/SponsorLogo/{ownerId}/image 302s to that URL
+  And the same-origin /content/assets/SponsorLogo/{ownerId}/image proxy serves it for any public page that renders this entity
+```
+
+**Evidence:** the Asset DB row + the out-of-row file (or stored link); the Media Library row;
+0 console errors; audit `AssetUploaded` then `AssetLinked`. Validation: a non-image / over-5 MB /
+video upload is 400; deactivate->restore round-trips; restoring when a live (category,owner) asset
+already exists is 409 (covered by `tests/SIMF.Api.Tests/AssetEndpointsTests.cs`).
 
 ---
 

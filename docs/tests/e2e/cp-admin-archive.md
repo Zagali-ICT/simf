@@ -72,6 +72,7 @@
 | E2E-ARC-021 | Excel export — whole filtered grid vs selected rows, real header row (D-356) | happy | P1 | _to author_ |
 | E2E-ARC-022 | Excel import — workbook upload → rows created + per-row outcome modal (D-356) | happy | P1 | _to author_ |
 | E2E-ARC-023 | Excel import rejection — non-.xlsx / wrong-sheet upload → bilingual 400, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-ARC-024 | Cover Image via the unified media-asset pipeline — upload then external link (D-357) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -556,6 +557,25 @@ Scenario: A bad or wrong-sheet upload is rejected without creating anything
   superseded — Delete now opens the `ArchiveViewDelete` form inside `CrudShell`
   and the destructive call is gated by a `SimfConfirm` dialog. E2E-ARC-001,
   E2E-ARC-009 and E2E-ARC-020 reflect the shipped behaviour.
+
+### E2E-ARC-024 — Cover Image via the unified media-asset pipeline (D-357)
+
+```gherkin
+Scenario: Upload cover image, then switch it to an external link
+  Given an Administrator is editing an archive edition
+  When they open the "Image" control, choose "Upload file", pick a PNG and click Upload
+  Then a success message shows and the preview thumbnail refreshes
+  And GET /account/api/admin/assets/ArchiveCover/{ownerId}/image returns the bytes (200)
+  And /admin/media-library lists it as ArchiveCover - this entity - Image - Uploaded file - active
+  When they switch to "External link", enter https://cdn.example/x.jpg and click Save link
+  Then the asset Source becomes "External link" and GET /app/assets/ArchiveCover/{ownerId}/image 302s to that URL
+  And the same-origin /content/assets/ArchiveCover/{ownerId}/image proxy serves it for any public page that renders this edition
+```
+
+**Evidence:** the Asset DB row + the out-of-row file (or stored link); the Media Library row;
+0 console errors; audit `AssetUploaded` then `AssetLinked`. Validation: a non-image / over-5 MB /
+video upload is 400; deactivate->restore round-trips; restoring when a live (category,owner) asset
+already exists is 409 (covered by `tests/SIMF.Api.Tests/AssetEndpointsTests.cs`).
 
 ---
 

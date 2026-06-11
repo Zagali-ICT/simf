@@ -38,6 +38,7 @@
 | E2E-CON-018 | Excel export — toolbar Export downloads the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
 | E2E-CON-019 | Excel import — upload a workbook → rows created/updated + per-row outcome (D-356) | happy | P1 | _to author_ |
 | E2E-CON-020 | Excel import rejection — non-.xlsx / wrong-sheet upload → 400, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-CON-021 | Logo via the unified media-asset pipeline — upload then external link (D-357) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -340,6 +341,25 @@ Scenario: A bad upload is rejected without creating anything
   `ContactId` onto the Sponsor / Exhibitor / MediaPartner / Speaker / Booth-officer
   forms is catalogued centrally here as **E2E-CON-013/014** (the component is
   identical across all five forms); each form's own catalogue cross-references it.
+
+### E2E-CON-021 — Logo via the unified media-asset pipeline (D-357)
+
+```gherkin
+Scenario: Upload logo, then switch it to an external link
+  Given an Administrator is editing a contact
+  When they open the "Image" control, choose "Upload file", pick a PNG and click Upload
+  Then a success message shows and the preview thumbnail refreshes
+  And GET /account/api/admin/assets/CompanyLogo/{ownerId}/image returns the bytes (200)
+  And /admin/media-library lists it as CompanyLogo - this entity - Image - Uploaded file - active
+  When they switch to "External link", enter https://cdn.example/x.jpg and click Save link
+  Then the asset Source becomes "External link" and GET /app/assets/CompanyLogo/{ownerId}/image 302s to that URL
+  And the same-origin /content/assets/CompanyLogo/{ownerId}/image proxy serves it for any public page that renders this entity
+```
+
+**Evidence:** the Asset DB row + the out-of-row file (or stored link); the Media Library row;
+0 console errors; audit `AssetUploaded` then `AssetLinked`. Validation: a non-image / over-5 MB /
+video upload is 400; deactivate->restore round-trips; restoring when a live (category,owner) asset
+already exists is 409 (covered by `tests/SIMF.Api.Tests/AssetEndpointsTests.cs`).
 
 ---
 

@@ -40,6 +40,7 @@
 | E2E-NWS-019 | Excel export: toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
 | E2E-NWS-020 | Excel import: upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
 | E2E-NWS-021 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-NWS-022 | Image via the unified media-asset pipeline — upload then external link (D-357) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -482,6 +483,25 @@ Scenario: A bad or wrong-sheet upload is rejected without creating anything
   rows regardless of `IsActive` / publish window (drafts + soft-deleted), so "Delete"
   flips the Active column to "—" rather than removing the row — recovery is the
   reactivate-via-Edit path in E2E-NWS-011.
+
+### E2E-NWS-022 — Image via the unified media-asset pipeline (D-357)
+
+```gherkin
+Scenario: Upload image, then switch it to an external link
+  Given an Administrator is editing an article
+  When they open the "Image" control, choose "Upload file", pick a PNG and click Upload
+  Then a success message shows and the preview thumbnail refreshes
+  And GET /account/api/admin/assets/NewsImage/{ownerId}/image returns the bytes (200)
+  And /admin/media-library lists it as NewsImage - this entity - Image - Uploaded file - active
+  When they switch to "External link", enter https://cdn.example/x.jpg and click Save link
+  Then the asset Source becomes "External link" and GET /app/assets/NewsImage/{ownerId}/image 302s to that URL
+  And the same-origin /content/assets/NewsImage/{ownerId}/image proxy serves it for any public page that renders this article
+```
+
+**Evidence:** the Asset DB row + the out-of-row file (or stored link); the Media Library row;
+0 console errors; audit `AssetUploaded` then `AssetLinked`. Validation: a non-image / over-5 MB /
+video upload is 400; deactivate->restore round-trips; restoring when a live (category,owner) asset
+already exists is 409 (covered by `tests/SIMF.Api.Tests/AssetEndpointsTests.cs`).
 
 ---
 
