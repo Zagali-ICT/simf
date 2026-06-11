@@ -161,11 +161,18 @@ class AppL10n {
   String get genderFemale => _t('أنثى', 'Female');
   String get organisationLabel => _t('الجهة / المنظمة', 'Organisation');
   String get organisationSearchHint =>
-      _t('ابحث عن جهتك (اختياري)', 'Search your organisation (optional)');
+      _t('ابحث عن جهتك', 'Search your organisation');
   String get organisationEmpty =>
       _t('لا توجد جهات مطابقة', 'No organisations found');
   String get organisationSelected => _t('الجهة محددة', 'Organisation selected');
+  // B3 — D-221 (الجهة): required-field message on the sign-up screen.
+  String get organisationRequired =>
+      _t('اختر جهتك من القائمة', 'Pick your organisation from the list');
   String get profileTypeLabel => _t('التصنيف', 'Profile type');
+  // Page 007 — نوع التسجيل (Visitor/Other) filter (D-332). Visitor reuses
+  // [signUpTypeVisitor]; Other is new.
+  String get registrationTypeLabel => _t('نوع التسجيل', 'Registration type');
+  String get signUpTypeOther => _t('أخرى', 'Other');
   String get interestsHelper =>
       _t('اختر من 1 إلى 10 اهتمامات', 'Pick 1 to 10 interests');
   String interestsCounter(int count) =>
@@ -176,6 +183,9 @@ class AppL10n {
   String get removeLabel => _t('إزالة', 'Remove');
   String get clearLabel => _t('مسح', 'Clear');
   String get saveLabel => _t('حفظ', 'Save');
+  // Page 007 advances to the interests screen with Next (D-332); Page 007‑01 title.
+  String get nextLabel => _t('التالي', 'Next');
+  String get interestsTitle => _t('اهتماماتي', 'My interests');
   String get profileSavedToast => _t('تم حفظ الملف الشخصي', 'Profile saved');
   String get idImageUploadFailed => _t(
         'تم حفظ الملف الشخصي، لكن تعذر رفع الصورة. حاول لاحقًا.',
@@ -273,6 +283,8 @@ class AppL10n {
   String get createAccountQuestion =>
       _t('ليس لديك حساب؟', "Don't have an account?");
   String get createAccountLink => _t('إنشاء حساب', 'Create account');
+  String get browseAsGuestLink =>
+      _t('تصفّح بدون تسجيل الدخول', 'Browse without signing in');
   String get showPasswordTooltip => _t('إظهار كلمة المرور', 'Show password');
   String get hidePasswordTooltip => _t('إخفاء كلمة المرور', 'Hide password');
   String get biometricSignInTooltip =>
@@ -325,6 +337,474 @@ class AppL10n {
   // Login header controls (Page 003) — buttons only for now (no wiring yet).
   String get themeToggleTooltip => _t('المظهر · ليلي/نهاري', 'Light / dark mode');
   String get languageToggleLabel => 'العربية · English';
+
+  // Home — landing / router screen (Page 013). Interim copy + tile labels for
+  // the functional skeleton; the final visuals come from SIMF-VID-001.
+  String get homeTitle => _t('الرئيسية', 'Home');
+  String get notificationsTooltip => _t('الإشعارات', 'Notifications');
+  String get homeDiscoverTitle => _t('اكتشف', 'Discover');
+  String get homeDiscoverSubtitle => _t(
+        'كل ما تحتاجه عن الملتقى في مكان واحد.',
+        'Everything you need about the forum, in one place.',
+      );
+  String get liveNowLabel => _t('مباشر', 'LIVE');
+  String get liveBannerTitle => _t('البث المباشر', 'Live broadcast');
+  String get liveBannerSubtitle =>
+      _t('شاهد الجلسات مباشرةً', 'Watch the sessions live');
+  String get guestPromptText => _t(
+        'أنت تتصفح كضيف. سجّل دخولك للوصول إلى بطاقتك الذكية والإشعارات الشخصية.',
+        'You are browsing as a guest. Sign in to access your smart badge and personal notifications.',
+      );
+  String get guestSignInCta => _t('تسجيل الدخول', 'Sign in');
+  String get tileSessions => _t('الجلسات', 'Sessions');
+  String get tileSpeakers => _t('المتحدثون', 'Speakers');
+  String get tileVenueMap => _t('الخريطة', 'Venue map');
+  String get tileBooths => _t('الأجنحة', 'Booths');
+  String get tileSponsors => _t('الرعاة', 'Sponsors');
+  String get tileNews => _t('الأخبار والتغطية', 'News & coverage');
+  String get tileArchive => _t('الأرشيف', 'Archive');
+  String get tileAbout => _t('عن الملتقى', 'About the forum');
+  String get tileMyArea => _t('منطقتي', 'My area');
+  String get tileEntryBadge => _t('بطاقتي الذكية', 'My smart badge');
+  String get tileMeetPeople => _t('قابل أشخاص مثلك', 'Meet people like you');
+
+  // My Area — personal dashboard (Page 014).
+  String get myAreaTitle => _t('منطقتي', 'My area');
+  String enrolledInSessions(int count) =>
+      _t('مسجّل في $count جلسات', 'Enrolled in $count sessions');
+  String get shareLabel => _t('مشاركة', 'Share');
+  String get shareContact => _t('مشاركة جهة اتصال', 'Share contact');
+  String get shareCalendar => _t('مشاركة جدولي', 'Share my calendar');
+  String get shareFailed =>
+      _t('تعذّرت المشاركة. حاول مرة أخرى.', 'Could not share. Try again.');
+  String get statBookedSessions => _t('جلسات محفوظة', 'Booked sessions');
+  String get statMeetings => _t('مقابلات مؤكدة', 'Confirmed meetings');
+  String get todayScheduleTitle => _t('جدولي اليوم', "Today's schedule");
+  String get scheduleEmpty =>
+      _t('لا يوجد لديك مواعيد اليوم', 'No items today');
+  String get smartBadgeLink => _t('بطاقتي الذكية', 'My smart badge');
+  String get accountSettingsLink => _t('إعدادات الحساب', 'Account settings');
+  String get myAreaPendingNote => _t(
+        'حسابك قيد المراجعة. ستظهر بطاقتك وجدولك بعد الاعتماد.',
+        'Your account is under review. Your badge and schedule appear once approved.',
+      );
+  String get myAreaError =>
+      _t('تعذّر تحميل منطقتك.', 'Could not load your area.');
+
+  // Venue map (Page 015).
+  String get venueMapTitle => _t('الخريطة', 'Venue map');
+  String get venueMapError =>
+      _t('تعذّر تحميل الخريطة.', 'Could not load the map.');
+  String get venueMapEmpty =>
+      _t('لا توجد عناصر على الخريطة بعد', 'No map items yet');
+  String get legendHall => _t('قاعة', 'Hall');
+  String get legendZone => _t('منطقة', 'Zone');
+  String get legendBooth => _t('جناح', 'Booth');
+  String get legendPoi => _t('نقطة اهتمام', 'Point of interest');
+
+  // Sessions — daily schedule (Page 016). The two pills + the day strip + the
+  // search box all filter the cached programme client-side (Page_016 L-1).
+  String get sessionsTitle => _t('الجلسات', 'Sessions');
+  String get sessionsViewUpcoming => _t('الجلسات القادمة', 'Upcoming');
+  String get sessionsViewForum => _t('جلسات الفعالية', 'Forum');
+  String get sessionsAllDays => _t('كل الأيام', 'All days');
+  String get sessionsSearchHint => _t('ابحث في الجلسات', 'Search sessions');
+  String get sessionsEmpty => _t('لا توجد جلسات', 'No sessions');
+  String get sessionsError =>
+      _t('تعذّر تحميل الجلسات.', 'Could not load the sessions.');
+
+  // Session detail (Page 017).
+  String get sessionDetailTitle => _t('تفاصيل الجلسة', 'Session detail');
+  String get sessionDetailError =>
+      _t('تعذّر تحميل الجلسة.', 'Could not load the session.');
+  String get sessionNotFound =>
+      _t('الجلسة غير موجودة أو تمت إزالتها', 'This session was not found');
+  String get descriptionHeading => _t('وصف الجلسة', 'Description');
+  String get speakersHeading => _t('المتحدثون', 'Speakers');
+  String get hostLabel => _t('المضيف', 'Host');
+  String get mySeatHeading => _t('مقعدي', 'My seat');
+  String seatLocation(String row, int seat) =>
+      _t('الصف $row · مقعد $seat', 'Row $row · Seat $seat');
+  String get seatBadgeHint => _t(
+        'تأكد من إبراز بطاقتك عند الدخول',
+        'Show your badge at entry',
+      );
+  String get seatViewLink => _t('عرض', 'View');
+  String get addToCalendar => _t('أضف إلى تقويمي', 'Add to calendar');
+  String get reminder => _t('تذكير', 'Reminder');
+  String get calendarAdded =>
+      _t('تمت إضافة الجلسة إلى تقويمك', 'Added to your calendar');
+  String get calendarFailed =>
+      _t('تعذّرت إضافة الجلسة إلى التقويم', 'Could not add to calendar');
+  String get reminderDeferred => _t(
+        'ستتوفر التذكيرات مع إعداد الإشعارات.',
+        'Reminders arrive with notifications setup.',
+      );
+
+  // My Seat map (Page 018).
+  String get mySeatMapTitle => _t('مقعدي · خريطة الجلوس', 'My seat map');
+  String get seatMapError =>
+      _t('تعذّر تحميل خريطة المقاعد.', 'Could not load the seat map.');
+  String get seatMapUnavailable =>
+      _t('خريطة المقاعد غير متاحة بعد', 'Seat map not available yet');
+  String get stageLabel => _t('المسرح', 'Stage');
+  String get noSeatYet => _t('لا يوجد لديك مقعد بعد', 'You have no seat yet');
+  String get legendMine => _t('مقعدك', 'Your seat');
+  String get legendAvailable => _t('متاح', 'Available');
+  String get legendReserved => _t('محجوز', 'Reserved');
+  String seatCapacity(int reserved, int total) =>
+      _t('محجوز $reserved من $total', '$reserved of $total reserved');
+  String get navigateToSeat => _t('إرشادي إلى مقعدي', 'Guide me to my seat');
+  String get shareLocation => _t('مشاركة الموقع', 'Share location');
+  String seatShareText(String row, int seat) => _t(
+        'مقعدي في الملتقى: صف $row · مقعد $seat',
+        'My SIMF seat: Row $row · Seat $seat',
+      );
+
+  // Speakers list (Page 019).
+  String get speakersTitle => _t('المتحدثون', 'Speakers');
+  String get speakersError =>
+      _t('تعذّر تحميل المتحدثين.', 'Could not load the speakers.');
+  String get speakersEmpty => _t('لا يوجد متحدثون', 'No speakers');
+
+  // Speaker profile (Page 020).
+  String get speakerProfileTitle => _t('ملف المتحدث', 'Speaker profile');
+  String get speakerProfileError =>
+      _t('تعذّر تحميل ملف المتحدث.', 'Could not load the speaker profile.');
+  String get speakerNotFound =>
+      _t('المتحدث غير موجود', 'This speaker was not found');
+  String get cvBio => _t('نبذة عنه', 'Biography');
+  String get cvQualifications => _t('المؤهلات العلمية', 'Qualifications');
+  String get cvTraining => _t('الخبرات التدريبية', 'Training experience');
+  String get cvAwards => _t('الجوائز', 'Awards');
+  String get speakerSessionsHeading => _t('جلسات المتحدث', "Speaker's sessions");
+  String get copyLinkLabel => _t('نسخ الرابط', 'Copy link');
+  String get linkCopied => _t('تم نسخ الرابط', 'Link copied');
+  String get requestMeeting => _t('طلب مقابلة', 'Request meeting');
+  String get meetingNameLabel => _t('الاسم', 'Your name');
+  String get meetingSubjectLabel => _t('الموضوع', 'Subject');
+  String get meetingSendButton => _t('إرسال الطلب', 'Send request');
+  String get meetingRequestSent =>
+      _t('تم إرسال طلب المقابلة', 'Meeting request sent');
+  String get meetingRequestInvalid => _t(
+        'يرجى إدخال الاسم والموضوع',
+        'Please enter your name and a subject',
+      );
+  String get meetingRequestNotAllowed => _t(
+        'هذا المتحدث لا يستقبل طلبات المقابلة',
+        'This speaker is not accepting meeting requests',
+      );
+  String get meetingRequestFailed => _t(
+        'تعذّر إرسال الطلب. حاول مرة أخرى.',
+        'Could not send the request. Try again.',
+      );
+
+  // Booths (Page 022).
+  String get boothsTitle => _t('الأجنحة', 'Booths');
+  String get boothsError =>
+      _t('تعذّر تحميل الأجنحة.', 'Could not load the booths.');
+  String get boothsEmpty => _t('لا توجد أجنحة', 'No booths');
+
+  // Sponsors (Page 023).
+  String get sponsorsTitle => _t('الرعاة', 'Sponsors');
+  String get sponsorsError =>
+      _t('تعذّر تحميل الرعاة.', 'Could not load the sponsors.');
+  String get sponsorsEmpty => _t('لا يوجد رعاة', 'No sponsors');
+
+  // Archive (Page 024).
+  String get archiveTitle => _t('الأرشيف', 'Archive');
+  String get archiveError =>
+      _t('تعذّر تحميل الأرشيف.', 'Could not load the archive.');
+  String get archiveEmpty => _t('لا توجد نسخ سابقة', 'No past editions');
+  String archiveStats(int attendees, int sessions, int speakers) => _t(
+        '$attendees حضور · $sessions جلسة · $speakers متحدث',
+        '$attendees attendees · $sessions sessions · $speakers speakers',
+      );
+
+  // News (Page 029).
+  String get newsTitle => _t('الأخبار', 'News');
+  String get newsError => _t('تعذّر تحميل الأخبار.', 'Could not load the news.');
+  String get newsEmpty => _t('لا توجد أخبار', 'No news');
+  String get newsNotFound => _t('الخبر غير موجود', 'This article was not found');
+
+  // Media gallery (Page 030).
+  String get galleryTitle =>
+      _t('معرض الصور والفيديوهات', 'Media gallery');
+  String get galleryError =>
+      _t('تعذّر تحميل الوسائط.', 'Could not load the media.');
+  String get galleryEmpty => _t('لا توجد وسائط', 'No media yet');
+
+  // About the forum (Page 037).
+  String get aboutTitle => _t('عن الملتقى', 'About the forum');
+  String get aboutError =>
+      _t('تعذّر تحميل المحتوى.', 'Could not load the content.');
+  String get aboutEmpty =>
+      _t('المحتوى قيد الإعداد', 'Content coming soon');
+
+  // Rate / feedback (Page 040).
+  String get rateTitle => _t('تقييم', 'Rate');
+  String get rateLead =>
+      _t('كيف كانت تجربتك في الملتقى؟', 'How was your forum experience?');
+  String get rateStarsRequired =>
+      _t('يرجى اختيار عدد النجوم', 'Please pick a star rating');
+  String get rateCommentLabel => _t('ملاحظاتك (اختياري)', 'Your comments (optional)');
+  String get rateSubmit => _t('إرسال التقييم', 'Submit rating');
+  String get rateThanks => _t('شكراً لتقييمك', 'Thanks for your rating');
+  String get rateFailed =>
+      _t('تعذّر إرسال التقييم. حاول مرة أخرى.', 'Could not submit. Try again.');
+
+  // Media partners (Page 031).
+  String get mediaPartnersTitle => _t('الشركاء الإعلاميون', 'Media partners');
+  String get mediaPartnersError =>
+      _t('تعذّر تحميل الشركاء الإعلاميين.', 'Could not load the media partners.');
+  String get mediaPartnersEmpty =>
+      _t('لا يوجد شركاء إعلاميون', 'No media partners');
+
+  // Notifications (Page 033).
+  String get notificationsTitle => _t('الإشعارات', 'Notifications');
+  String get notificationsEmpty =>
+      _t('لا توجد إشعارات بعد', 'No notifications yet');
+  String get notificationsError =>
+      _t('تعذّر تحميل إشعاراتك.', 'Could not load your notifications.');
+  String get notificationsMarkAll => _t('تعليم الكل كمقروء', 'Mark all read');
+  String get notificationsMarkAllFailed =>
+      _t('تعذّر تعليم الإشعارات كمقروءة.', 'Could not mark the notifications read.');
+
+  // Meet people (Page 035).
+  String get meetPeopleTitle => _t('قابل أشخاص مثلك', 'Meet people');
+  String get meetPeopleEmpty => _t('لا توجد تطابقات بعد', 'No matches yet');
+  String get meetPeopleError =>
+      _t('تعذّر تحميل التطابقات الخاصة بك.', 'Could not load your matches.');
+  String meetPeopleSharedInterests(int count) =>
+      _t('$count اهتمامات مشتركة', '$count shared interests');
+
+  // Accessibility (Page 038 — client-local settings, no API).
+  String get accessibilityTitle => _t('إمكانية الوصول', 'Accessibility');
+  String get accessibilityIntro => _t(
+        'اضبط تجربة العرض بما يناسبك. هذه الإعدادات محلية على جهازك.',
+        'Adjust the display to suit you. These settings are local to your device.',
+      );
+  String get accessibilityTextSizeLabel => _t('حجم النص', 'Text size');
+  String get accessibilityTextSizeSmall => _t('صغير', 'Small');
+  String get accessibilityTextSizeDefault => _t('افتراضي', 'Default');
+  String get accessibilityTextSizeLarge => _t('كبير', 'Large');
+  String get accessibilityHighContrastTitle =>
+      _t('تباين عالٍ', 'High contrast');
+  String get accessibilityHighContrastSubtitle => _t(
+        'يزيد التباين بين النص والخلفية لتسهيل القراءة.',
+        'Increases the contrast between text and background for easier reading.',
+      );
+  String get accessibilityReduceMotionTitle =>
+      _t('تقليل الحركة', 'Reduce motion');
+  String get accessibilityReduceMotionSubtitle => _t(
+        'يقلل الرسوم المتحركة والانتقالات في التطبيق.',
+        'Reduces animations and transitions across the app.',
+      );
+
+  // More hub (Page 041) — navigation tiles + static version line.
+  String get moreTitle => _t('المزيد', 'More');
+  String get moreAbout => _t('عن الملتقى', 'About the forum');
+  String get moreAccessibility => _t('إمكانية الوصول', 'Accessibility');
+  String get moreTerms => _t('الشروط والأحكام', 'Terms & conditions');
+  String get moreRate => _t('تقييم', 'Rate');
+  String get moreNotifications => _t('الإشعارات', 'Notifications');
+  String get moreMediaPartners => _t('الشركاء الإعلاميون', 'Media partners');
+  String get moreVersion => _t('الملتقى البحري v0.1.0', 'SIMF v0.1.0');
+
+  // Guest mode (Page 012 — informational entry).
+  String get guestModeTitle => _t('وضع الضيف', 'Guest mode');
+  String get guestModeHeadline => _t('التصفح كضيف', 'Browsing as guest');
+  String get guestModeBrowseBody => _t(
+        'يمكنك كضيف تصفّح الجلسات والمتحدثين والخريطة التفاعلية والوسائط.',
+        'As a guest you can browse the sessions, speakers, the venue map and the media.',
+      );
+  String get guestModeSignInBody => _t(
+        'سجّل الدخول للحصول على بطاقتك الذكية والإشعارات الشخصية وحجز المقاعد.',
+        'Sign in to get your smart badge, personal notifications and booking.',
+      );
+  String get guestModeContinueButton =>
+      _t('المتابعة كضيف', 'Continue as guest');
+  String get guestModeSignInButton => _t('تسجيل الدخول', 'Sign in');
+
+  // AI session summary (Page 034).
+  String get aiSummaryTitle => _t('ملخص الجلسة', 'AI session summary');
+  String get aiSummaryOpenFromSession => _t(
+        'افتح ملخص جلسة من صفحة الجلسة.',
+        'Open a session summary from a session.',
+      );
+  String get aiSummaryNone =>
+      _t('لا يوجد ملخص منشور بعد.', 'No published summary yet.');
+  String get aiSummaryError =>
+      _t('تعذر تحميل الملخص.', 'Could not load the summary.');
+  String get aiSummaryGeneratedBanner =>
+      _t('تم إنشاؤه بواسطة الذكاء الاصطناعي', 'Generated by AI');
+  String get aiSummaryKeyPointsHeading => _t('أبرز النقاط', 'Key points');
+  String get aiSummaryRecommendationsHeading =>
+      _t('التوصيات', 'Recommendations');
+  String get aiSummarySpeakersHeading => _t('المتحدثون', 'Speakers');
+  String get aiSummaryFullTextHeading => _t('النص الكامل', 'Full text');
+
+  // Send a question (Page 026 — live Q&A composer).
+  String get sendQuestionTitle => _t('إرسال سؤال', 'Send a question');
+  String get sendQuestionNoSession => _t(
+        'افتح هذه الشاشة من جلسة مباشرة لإرسال سؤال.',
+        'Open this from a live session to send a question.',
+      );
+  String get sendQuestionRecipientLabel => _t('إلى من؟', 'Send to');
+  String get sendQuestionToSpeaker => _t('المتحدث', 'Speaker');
+  String get sendQuestionToHost => _t('المضيف', 'Host');
+  String get sendQuestionFieldLabel => _t('سؤالك', 'Your question');
+  String get sendQuestionHint =>
+      _t('اكتب سؤالك هنا…', 'Type your question here…');
+  String get sendQuestionEmpty =>
+      _t('اكتب سؤالك أولاً', 'Type your question first');
+  String get sendQuestionSubmit => _t('إرسال السؤال', 'Send question');
+  String get sendQuestionSent => _t('تم إرسال سؤالك', 'Your question was sent');
+  String get sendQuestionNotOpen => _t(
+        'الأسئلة مفتوحة فقط من 5 دقائق قبل بدء الجلسة حتى انتهائها.',
+        'Questions are only open from 5 minutes before the session until it ends.',
+      );
+  String get sendQuestionFailed => _t(
+        'تعذر إرسال سؤالك. حاول مرة أخرى.',
+        'Could not send your question. Try again.',
+      );
+  String get sendQuestionWindowHint => _t(
+        'تتم مراجعة الأسئلة قبل عرضها على الهواء.',
+        'Questions are reviewed before going on air.',
+      );
+
+  // Audience comments (Page 028).
+  String get commentsTitle => _t('تعليقات الجمهور', 'Audience comments');
+  String get commentsNoSession =>
+      _t('افتح هذه الشاشة من جلسة مباشرة.', 'Open this from a live session.');
+  String get commentsError =>
+      _t('تعذّر تحميل التعليقات.', 'Could not load the comments.');
+  String get commentsEmpty => _t('لا توجد تعليقات بعد', 'No comments yet');
+  String get commentBodyHint => _t('اكتب تعليقك…', 'Write your comment…');
+  String get commentSend => _t('إرسال', 'Send');
+  String get commentSubmitted =>
+      _t('تم إرسال تعليقك', 'Your comment was submitted');
+  String get commentSubmittedPending => _t(
+        'تم إرسال تعليقك وهو قيد المراجعة.',
+        'Your comment was submitted and is awaiting moderation.',
+      );
+  String get commentSubmitFailed => _t(
+        'تعذّر إرسال التعليق. حاول مرة أخرى.',
+        'Could not submit the comment. Try again.',
+      );
+
+  // Entry badge (Page 032).
+  String get badgeTitle => _t('بطاقة الدخول', 'Entry badge');
+  String get badgeShowAtEntry =>
+      _t('أبرز هذه البطاقة عند الدخول', 'Show this at entry');
+  String get badgePendingBody => _t(
+        'ستتوفر بطاقتك بعد اعتماد حسابك.',
+        'Your badge is available once your account is approved.',
+      );
+  String get badgeError => _t('تعذّر تحميل بطاقتك.', 'Could not load your badge.');
+
+  // Live broadcast (Page 025). liveNowLabel already exists (reused for the badge).
+  String get liveBroadcastTitle => _t('البث المباشر', 'Live broadcast');
+  String get liveNoSessionSelected => _t(
+        'لا توجد جلسة بث محددة — افتح جلسة لمشاهدتها.',
+        'No live session selected — open a session to watch.',
+      );
+  String get liveBroadcastError =>
+      _t('تعذّر تحميل البث المباشر.', 'Could not load the live broadcast.');
+  String get liveRecordingAvailable => _t(
+        'يتوفر تسجيل لهذه الجلسة.',
+        'A recording of this session is available.',
+      );
+  String get liveNotLiveYet => _t(
+        'هذه الجلسة لا تُبَث حالياً.',
+        'This session is not broadcasting right now.',
+      );
+  String get liveSignLanguageAvailable => _t(
+        'تتوفر ترجمة بلغة الإشارة.',
+        'Sign-language interpretation is available.',
+      );
+  // Live feed toggle (Page 025, D-349) — swaps the player between the main feed
+  // and the sign-language feed when the session carries both.
+  String get liveFeedMain => _t('البث', 'Main feed');
+  String get liveFeedSignLanguage => _t('لغة الإشارة', 'Sign language');
+  String get liveFeedError => _t(
+        'تعذّر تشغيل هذا البث. حاول مرة أخرى.',
+        'Could not play this feed. Try again.',
+      );
+
+  // AI assistant (Page 036) — interim shell; no backend chatbot endpoint.
+  String get chatbotTitle => _t('المساعد الذكي', 'AI assistant');
+  String get chatbotPreviewBanner => _t(
+        'المساعد الذكي في وضع المعاينة — الردود مؤقتة.',
+        'The AI assistant is in preview — replies are interim.',
+      );
+  String get chatbotEmpty =>
+      _t('اسأل المساعد للبدء.', 'Ask the assistant to get started.');
+  String get chatbotInputHint => _t('اكتب رسالتك…', 'Type your message…');
+  String get chatbotSendTooltip => _t('إرسال', 'Send');
+
+  // Visitor contact sharing — FDS-014 (Share my contact / Scan / My Contacts).
+  String get shareMyContactTitle => _t('شارك جهة اتصالي', 'Share my contact');
+  String get shareMyContactHint => _t(
+        'اعرض رمز QR لزائر آخر ليحفظ بطاقتك، أو شاركها كملف vCard.',
+        'Show this QR to another visitor to save your card, or share it as a vCard.',
+      );
+  String get shareMyContactRotate => _t('تدوير الرمز', 'Rotate code');
+  String get shareMyContactRotateConfirmTitle =>
+      _t('تدوير رمز المشاركة؟', 'Rotate share code?');
+  String get shareMyContactRotateConfirmBody => _t(
+        'سيتوقف الرمز السابق عن العمل ولن يتمكن أحد من حفظه بعد ذلك.',
+        'The previous code will stop working and can no longer be saved by anyone.',
+      );
+  String get shareMyContactRotated =>
+      _t('تم إنشاء رمز جديد', 'A new code was generated');
+  String get shareMyContactError =>
+      _t('تعذر تحميل رمز المشاركة.', 'Could not load your share code.');
+
+  String get scanContactTitle => _t('مسح رمز QR', 'Scan QR');
+  String get scanContactManualLabel =>
+      _t('أو أدخل الرمز يدوياً', 'Or enter the code manually');
+  String get scanContactManualField => _t('رمز المشاركة', 'Share code');
+  String get scanContactResolve => _t('بحث', 'Look up');
+  String get scanContactNotFound =>
+      _t('رمز غير صالح أو لم يعد متاحاً.', 'Code not found or no longer valid.');
+  String get scanContactError =>
+      _t('تعذر قراءة جهة الاتصال.', 'Could not read the contact.');
+  String get scanContactCameraUnavailable =>
+      _t('الكاميرا غير متاحة', 'Camera unavailable');
+
+  String get contactPreviewTitle => _t('معاينة جهة الاتصال', 'Contact preview');
+  String get saveContactLabel =>
+      _t('حفظ في جهات اتصالي', 'Save to My Contacts');
+  String get saveContactNoteHint => _t('ملاحظة (اختياري)', 'Note (optional)');
+  String get saveContactSaved => _t('تم حفظ جهة الاتصال', 'Contact saved');
+  String get saveContactSelf =>
+      _t('لا يمكنك حفظ بطاقتك أنت.', 'You can’t save your own card.');
+  String get saveContactError =>
+      _t('تعذر حفظ جهة الاتصال.', 'Could not save the contact.');
+
+  String get myContactsTitle => _t('جهات اتصالي', 'My Contacts');
+  String get myContactsEmpty =>
+      _t('لا توجد جهات اتصال محفوظة بعد', 'No saved contacts yet');
+  String get myContactsEmptyHint => _t(
+        'امسح رمز QR لزائر آخر لحفظ بطاقته.',
+        'Scan another visitor’s QR to save their card.',
+      );
+  String get myContactsError =>
+      _t('تعذر تحميل جهات الاتصال.', 'Could not load your contacts.');
+  String get myContactsRemove => _t('إزالة', 'Remove');
+  String get myContactsRemoveConfirmTitle =>
+      _t('إزالة جهة الاتصال؟', 'Remove contact?');
+  String get myContactsRemoveConfirmBody => _t(
+        'ستتم إزالة جهة الاتصال هذه من قائمتك.',
+        'This contact will be removed from your list.',
+      );
+  String get myContactsRemoved => _t('تمت الإزالة', 'Removed');
+  String get myContactsExportVcard => _t('تصدير vCard', 'Export vCard');
+  String get contactScanAdd => _t('مسح للإضافة', 'Scan to add');
+  String get contactUnavailable =>
+      _t('هذه الجهة لم تعد متاحة', 'This contact is no longer available');
+  String get contactNoteLabel => _t('ملاحظة', 'Note');
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

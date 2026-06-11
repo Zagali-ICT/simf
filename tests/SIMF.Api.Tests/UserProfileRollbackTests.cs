@@ -138,8 +138,11 @@ public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshToke
         var signInBody = (await signIn.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         var token = signInBody.Data!.Tokens!.AccessToken;
 
-        // Seed one Interest so the upsert validator's >=1 rule passes.
+        // Seed one Interest + one Organisation so the upsert validator passes
+        // (B3 — D-221 made organisation required) and the fault under test
+        // (refresh-token revoke) is the only thing that throws.
         Guid interestId;
+        Guid organisationId;
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
@@ -154,9 +157,19 @@ public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshToke
                 CreatedAt = DateTimeOffset.UtcNow,
             };
             appDb.Interests.Add(interest);
+            var organisation = new SIMF.Domain.Organisations.Organisation
+            {
+                Id = Guid.NewGuid(),
+                NameArabic = "جهة اختبار",
+                Name = $"Rollback Org {Guid.NewGuid():N}",
+                IsActive = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            appDb.Organisations.Add(organisation);
             await db.SaveChangesAsync();
             await appDb.SaveChangesAsync();
             interestId = interest.Id;
+            organisationId = organisation.Id;
         }
 
         // Upsert profile — the EmailVerified → PendingApproval auto-
@@ -176,6 +189,7 @@ public sealed class UserProfileRollbackTests : IClassFixture<ThrowingRefreshToke
                 PlaceOfBirth = "Riyadh",
                 IsSaudi = true,
                 NationalId = "1101798278",
+                OrganisationId = organisationId,
             }),
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);

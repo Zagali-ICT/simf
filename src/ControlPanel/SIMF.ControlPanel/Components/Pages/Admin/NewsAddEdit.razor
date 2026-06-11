@@ -1,0 +1,267 @@
+@* D-353 — reusable News Add/Edit form, hosted by CrudShell (as a popup or a
+   full page) from NewsList.razor. Inherits CrudAddEditFormBase so it exposes
+   the standard CRUD-form parameter surface (IsEdit / Initial / OnSuccess /
+   OnCancel). IsEdit=false runs Create (POST); IsEdit=true runs Edit (PUT
+   against Initial) and shows the IsActive checkbox. Supersedes the inline
+   SimfModal form that lived in NewsList. The image is a plain relative-path
+   string (no upload widget here), so it round-trips as a text field. *@
+@inherits CrudAddEditFormBase<AdminNewsDetail>
+@using SIMF.Contracts.PublicRelations
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<div class="simf-form">
+    <div class="simf-form__fields">
+        <SimfTextField Label="@L["Admin.News.Field.TitleEn"]"
+                       Value="@_model.Title"
+                       ValueChanged="@(v => _model.Title = v)"
+                       ValueExpression="@(() => _model.Title)"
+                       MaxLength="200"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.News.Field.TitleAr"]"
+                       Value="@_model.TitleArabic"
+                       ValueChanged="@(v => _model.TitleArabic = v)"
+                       ValueExpression="@(() => _model.TitleArabic)"
+                       MaxLength="200"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.News.Field.CategoryEn"]"
+                       Value="@_model.Category"
+                       ValueChanged="@(v => _model.Category = v)"
+                       ValueExpression="@(() => _model.Category)"
+                       MaxLength="100"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.News.Field.CategoryAr"]"
+                       Value="@_model.CategoryArabic"
+                       ValueChanged="@(v => _model.CategoryArabic = v)"
+                       ValueExpression="@(() => _model.CategoryArabic)"
+                       MaxLength="100"
+                       Disabled="_busy" />
+        <SimfTextarea Label="@L["Admin.News.Field.ExcerptEn"]"
+                      Value="@_model.Excerpt"
+                      ValueChanged="@(v => _model.Excerpt = v)"
+                      Rows="2"
+                      MaxLength="500"
+                      Disabled="_busy" />
+        <SimfTextarea Label="@L["Admin.News.Field.ExcerptAr"]"
+                      Value="@_model.ExcerptArabic"
+                      ValueChanged="@(v => _model.ExcerptArabic = v)"
+                      Rows="2"
+                      MaxLength="500"
+                      Disabled="_busy" />
+        <SimfTextarea Label="@L["Admin.News.Field.BodyEn"]"
+                      Value="@_model.Body"
+                      ValueChanged="@(v => _model.Body = v)"
+                      Rows="6"
+                      MaxLength="8000"
+                      Disabled="_busy" />
+        <SimfTextarea Label="@L["Admin.News.Field.BodyAr"]"
+                      Value="@_model.BodyArabic"
+                      ValueChanged="@(v => _model.BodyArabic = v)"
+                      Rows="6"
+                      MaxLength="8000"
+                      Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.News.Field.ImageRelativePath"]"
+                       Value="@_model.ImageRelativePath"
+                       ValueChanged="@(v => _model.ImageRelativePath = v)"
+                       ValueExpression="@(() => _model.ImageRelativePath)"
+                       MaxLength="512"
+                       Disabled="_busy" />
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.News.Field.PublishedAt"]</span>
+            <input class="simf-field__input" type="date"
+                   value="@_publishedAtText"
+                   @onchange="OnPublishedAtChanged"
+                   disabled="@_busy" />
+        </label>
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.News.Field.DisplayOrder"]</span>
+            <input class="simf-field__input" type="number" min="0" max="99999"
+                   value="@_model.DisplayOrder"
+                   @onchange="OnDisplayOrderChanged"
+                   disabled="@_busy" />
+        </label>
+        @if (IsEdit)
+        {
+            <SimfCheckbox Value="_model.IsActive"
+                          ValueChanged="@(v => _model.IsActive = v)"
+                          Disabled="_busy">
+                @L["Admin.News.Field.IsActive"]
+            </SimfCheckbox>
+        }
+        @* D-357 — image via the unified media-asset pipeline (edit only; the row
+           must exist before bytes can be attached). *@
+        @if (IsEdit && Initial is not null)
+        {
+            <div class="simf-field">
+                <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
+                <SimfImageUpload Category="NewsImage" OwnerId="@Initial.Id" Alt="@_model.Title" />
+            </div>
+        }
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Type="button" OnClick="HandleSubmitAsync"
+                    Loading="_busy" LoadingLabel="@L["Admin.News.Save"]">
+            @L["Admin.News.Save"]
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy" OnClick="OnCancel">
+                @L["Admin.News.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly Model _model = new();
+    private bool _busy;
+    private string? _error;
+
+    // The <input type="date"> value mirror — kept as the yyyy-MM-dd text the
+    // browser exchanges so the field round-trips cleanly against the
+    // DateTimeOffset on the form model.
+    private string _publishedAtText = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        if (Initial is not null)
+        {
+            _model.Title = Initial.Title;
+            _model.TitleArabic = Initial.TitleArabic;
+            _model.Excerpt = Initial.Excerpt ?? string.Empty;
+            _model.ExcerptArabic = Initial.ExcerptArabic ?? string.Empty;
+            _model.Body = Initial.Body;
+            _model.BodyArabic = Initial.BodyArabic;
+            _model.Category = Initial.Category;
+            _model.CategoryArabic = Initial.CategoryArabic;
+            _model.ImageRelativePath = Initial.ImageRelativePath ?? string.Empty;
+            _model.PublishedAt = Initial.PublishedAt;
+            _model.DisplayOrder = Initial.DisplayOrder;
+            _model.IsActive = Initial.IsActive;
+        }
+        _publishedAtText = _model.PublishedAt.ToString("yyyy-MM-dd");
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _error = null;
+
+        // Required-field client guards (the server validator is authoritative;
+        // these stop a no-op round-trip and give an immediate message).
+        if (string.IsNullOrWhiteSpace(_model.Title)
+            || string.IsNullOrWhiteSpace(_model.TitleArabic)
+            || string.IsNullOrWhiteSpace(_model.Body)
+            || string.IsNullOrWhiteSpace(_model.BodyArabic)
+            || string.IsNullOrWhiteSpace(_model.Category)
+            || string.IsNullOrWhiteSpace(_model.CategoryArabic))
+        {
+            _error = L["Admin.News.RequiredFields"];
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminNewsDetail>? envelope;
+            if (!IsEdit)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminNewsDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/news",
+                    new CreateNewsRequest
+                    {
+                        Title = _model.Title,
+                        TitleArabic = _model.TitleArabic,
+                        Excerpt = NullIfBlank(_model.Excerpt),
+                        ExcerptArabic = NullIfBlank(_model.ExcerptArabic),
+                        Body = _model.Body,
+                        BodyArabic = _model.BodyArabic,
+                        Category = _model.Category,
+                        CategoryArabic = _model.CategoryArabic,
+                        ImageRelativePath = NullIfBlank(_model.ImageRelativePath),
+                        PublishedAt = _model.PublishedAt,
+                        DisplayOrder = _model.DisplayOrder,
+                    });
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminNewsDetail>>(
+                    "simfAccount.putJson", $"/account/api/admin/news/{Initial!.Id}",
+                    new UpdateNewsRequest
+                    {
+                        Title = _model.Title,
+                        TitleArabic = _model.TitleArabic,
+                        Excerpt = NullIfBlank(_model.Excerpt),
+                        ExcerptArabic = NullIfBlank(_model.ExcerptArabic),
+                        Body = _model.Body,
+                        BodyArabic = _model.BodyArabic,
+                        Category = _model.Category,
+                        CategoryArabic = _model.CategoryArabic,
+                        ImageRelativePath = NullIfBlank(_model.ImageRelativePath),
+                        PublishedAt = _model.PublishedAt,
+                        DisplayOrder = _model.DisplayOrder,
+                        IsActive = _model.IsActive,
+                    });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.News.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.News.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnPublishedAtChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(raw)
+            || !DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                out var parsed))
+        {
+            return;
+        }
+        _model.PublishedAt = parsed;
+        _publishedAtText = parsed.ToString("yyyy-MM-dd");
+    }
+
+    private void OnDisplayOrderChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n) && n >= 0) _model.DisplayOrder = n;
+    }
+
+    private static string? NullIfBlank(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value;
+
+    private sealed class Model
+    {
+        public string Title { get; set; } = string.Empty;
+        public string TitleArabic { get; set; } = string.Empty;
+        public string Excerpt { get; set; } = string.Empty;
+        public string ExcerptArabic { get; set; } = string.Empty;
+        public string Body { get; set; } = string.Empty;
+        public string BodyArabic { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string CategoryArabic { get; set; } = string.Empty;
+        public string ImageRelativePath { get; set; } = string.Empty;
+        public DateTimeOffset PublishedAt { get; set; } = DateTimeOffset.UtcNow;
+        public int DisplayOrder { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+}

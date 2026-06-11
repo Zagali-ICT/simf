@@ -1,0 +1,183 @@
+@* D-357 — reusable media-asset control: upload a file OR set an external link
+   for one (category, owner), with a live preview. CP-only (drives the BFF asset
+   passthroughs + simfAccount JS); used by every entity Add/Edit form. The owner
+   row must already exist (OwnerId non-empty) — same as the Media image pattern.
+   Labels self-localise from the shared Admin.Asset.* resources; a host may still
+   override any single label via the matching parameter. *@
+@inject IJSRuntime JS
+@inject IStringLocalizer<Strings> L
+
+<div class="simf-image-upload">
+    <SimfImageThumb Src="@PreviewSrc" Alt="@Alt" Class="simf-image-upload__thumb" />
+
+    @if (_error is not null)
+    {
+        <SimfAlert Variant="error">@_error</SimfAlert>
+    }
+    @if (_success is not null)
+    {
+        <SimfAlert Variant="success">@_success</SimfAlert>
+    }
+
+    @if (OwnerId == Guid.Empty)
+    {
+        <p class="simf-field__hint">@SaveFirstText</p>
+    }
+    else
+    {
+        <div class="simf-image-upload__modes">
+            <SimfButton Type="button" Variant="@(_mode == Mode.Upload ? "primary" : "secondary")"
+                        OnClick="@(() => _mode = Mode.Upload)">@UploadTabText</SimfButton>
+            <SimfButton Type="button" Variant="@(_mode == Mode.Link ? "primary" : "secondary")"
+                        OnClick="@(() => _mode = Mode.Link)">@LinkTabText</SimfButton>
+        </div>
+
+        @if (_mode == Mode.Upload)
+        {
+            <label class="simf-field">
+                <span class="simf-field__label">@KindText</span>
+                <select class="simf-field__input" @bind="_uploadKind" disabled="@_busy">
+                    <option value="Image">@KindImageText</option>
+                    <option value="Document">@KindDocumentText</option>
+                </select>
+            </label>
+            <label class="simf-field">
+                <span class="simf-field__label">@FileText</span>
+                <input id="@_inputId" type="file" class="simf-field__input"
+                       accept="image/png,image/jpeg,image/webp,application/pdf" disabled="@_busy" />
+            </label>
+            <SimfButton Type="button" Loading="_busy" OnClick="UploadAsync">@UploadButtonText</SimfButton>
+        }
+        else
+        {
+            <label class="simf-field">
+                <span class="simf-field__label">@KindText</span>
+                <select class="simf-field__input" @bind="_linkKind" disabled="@_busy">
+                    <option value="Image">@KindImageText</option>
+                    <option value="Video">@KindVideoText</option>
+                    <option value="Document">@KindDocumentText</option>
+                </select>
+            </label>
+            <label class="simf-field">
+                <span class="simf-field__label">@UrlText</span>
+                <input type="url" class="simf-field__input" placeholder="https://..."
+                       @bind="_url" disabled="@_busy" />
+            </label>
+            <SimfButton Type="button" Loading="_busy" OnClick="SaveLinkAsync">@SaveLinkButtonText</SimfButton>
+        }
+    }
+</div>
+
+@code {
+    private enum Mode { Upload, Link }
+    private Mode _mode = Mode.Upload;
+    private readonly string _inputId = $"asset-file-{Guid.NewGuid():N}";
+    private string _uploadKind = "Image";
+    private string _linkKind = "Image";
+    private string _url = string.Empty;
+    private bool _busy;
+    private string? _error;
+    private string? _success;
+    private int _version;
+
+    /// <summary>The asset category enum name (e.g. "SpeakerPhoto").</summary>
+    [Parameter, EditorRequired] public string Category { get; set; } = string.Empty;
+
+    /// <summary>The owning entity's id. <c>Guid.Empty</c> shows the "save first" hint.</summary>
+    [Parameter, EditorRequired] public Guid OwnerId { get; set; }
+
+    [Parameter] public string? Alt { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    // Optional per-call label overrides; each defaults to the shared Admin.Asset.* resource.
+    [Parameter] public string? SaveFirstLabel { get; set; }
+    [Parameter] public string? UploadTabLabel { get; set; }
+    [Parameter] public string? LinkTabLabel { get; set; }
+    [Parameter] public string? FileLabel { get; set; }
+    [Parameter] public string? UploadButtonLabel { get; set; }
+    [Parameter] public string? UrlLabel { get; set; }
+    [Parameter] public string? KindLabel { get; set; }
+    [Parameter] public string? KindImageLabel { get; set; }
+    [Parameter] public string? KindVideoLabel { get; set; }
+    [Parameter] public string? KindDocumentLabel { get; set; }
+    [Parameter] public string? SaveLinkButtonLabel { get; set; }
+
+    private string SaveFirstText => SaveFirstLabel ?? L["Admin.Asset.SaveFirst"];
+    private string UploadTabText => UploadTabLabel ?? L["Admin.Asset.UploadTab"];
+    private string LinkTabText => LinkTabLabel ?? L["Admin.Asset.LinkTab"];
+    private string FileText => FileLabel ?? L["Admin.Asset.File"];
+    private string UploadButtonText => UploadButtonLabel ?? L["Admin.Asset.Upload"];
+    private string UrlText => UrlLabel ?? L["Admin.Asset.Url"];
+    private string KindText => KindLabel ?? L["Admin.Asset.Kind"];
+    private string KindImageText => KindImageLabel ?? L["Admin.Asset.Kind.Image"];
+    private string KindVideoText => KindVideoLabel ?? L["Admin.Asset.Kind.Video"];
+    private string KindDocumentText => KindDocumentLabel ?? L["Admin.Asset.Kind.Document"];
+    private string SaveLinkButtonText => SaveLinkButtonLabel ?? L["Admin.Asset.SaveLink"];
+
+    private string PreviewSrc =>
+        OwnerId == Guid.Empty || string.IsNullOrEmpty(Category)
+            ? string.Empty
+            : $"/account/api/admin/assets/{Category}/{OwnerId}/image?v={_version}";
+
+    private async Task UploadAsync()
+    {
+        if (_busy) return;
+        _error = null;
+        _success = null;
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.uploadFile",
+                $"/account/api/admin/assets/{Category}/{OwnerId}/image?kind={_uploadKind}",
+                _inputId);
+            if (env is { Success: true })
+            {
+                _version++;
+                _success = UploadButtonText;
+                await OnChanged.InvokeAsync();
+            }
+            else
+            {
+                _error = env?.Error?.MessageForCurrentCulture() ?? FileText;
+            }
+        }
+        catch
+        {
+            _error = FileText;
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task SaveLinkAsync()
+    {
+        if (_busy) return;
+        _error = null;
+        _success = null;
+        if (string.IsNullOrWhiteSpace(_url)) { _error = UrlText; return; }
+        _busy = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.putJson",
+                $"/account/api/admin/assets/{Category}/{OwnerId}/link",
+                new { Kind = _linkKind, Url = _url.Trim() });
+            if (env is { Success: true })
+            {
+                _version++;
+                _url = string.Empty;
+                _success = SaveLinkButtonText;
+                await OnChanged.InvokeAsync();
+            }
+            else
+            {
+                _error = env?.Error?.MessageForCurrentCulture() ?? UrlText;
+            }
+        }
+        catch
+        {
+            _error = UrlText;
+        }
+        finally { _busy = false; }
+    }
+}

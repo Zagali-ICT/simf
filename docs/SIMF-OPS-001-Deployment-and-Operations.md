@@ -108,8 +108,12 @@ Configuration follows SIMF-SES-001 section 4.4.
   environment variables, set by a per-service `set-env-<service>.ps1` script.
 - The `set-env-<service>.ps1` committed to the repository is a placeholder
   template with empty values; the real secret values are never committed.
-- Variables use the ASP.NET Core double-underscore convention
-  (`ConnectionStrings__AppData`).
+- Variables use the ASP.NET Core double-underscore convention with a `SIMF_`
+  prefix (`SIMF_ConnectionStrings__SimfAppDb`). Each host registers
+  `builder.Configuration.AddEnvironmentVariables("SIMF_")`, which strips the
+  prefix at bind time so the value lands on `ConnectionStrings:SimfAppDb`
+  (D-355). The prefix keeps SIMF's variables from colliding with other apps' on
+  a shared host.
 
 ## 7. Database and migrations
 
@@ -305,6 +309,8 @@ populate every row marked **Required**.
 | Ai | `OpenAi:BaseUrl` | Optional (default `https://api.openai.com/v1`) | Provider base URL — point at an internal proxy if needed | Default OK |
 | Ai | `OpenAi:DefaultModel` | Optional (default `gpt-4o-mini`) | Fallback model when a prompt omits its own Model | Default OK |
 | Ai | `PromptHash:Secret` | **Required for prod** | HMAC key for the D-181 prompt-content drift hashes — generate with `openssl rand -base64 32` | Falls back to a deterministic per-process key + logs a startup warning. **`AiAuditDetail.IsHmacKeyDevFallback` becomes `true`; the hosting layer must refuse to start in prod** |
+| Swagger | `AllowSwagger` | Optional (default `false`) | Serve the OpenAPI UI in Production too (non-prod always serves it) — D-355 | Default OK; UI stays off in production |
+| Swagger | `Username` / `Password` | **Required if `AllowSwagger=true` in prod** | HTTP Basic-auth gate for the `/swagger` surface so the App+CP contract isn't anonymously enumerable (D-355) | Startup throws if `AllowSwagger=true` without both |
 | Serilog | `MinimumLevel` etc. | Optional | Log levels per source | Defaults OK |
 
 ### B.2 Migration order — App before Identity

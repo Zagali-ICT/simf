@@ -50,7 +50,7 @@ On launch the app:
 - **Pre-fill email from local store** when the session is expired / lost / after logout —
   then **ask only for the password** to simplify.
 
-## Page 004 & 006 — Sign-up (3 steps); step 1 here  *(routes: `signUpType`/`signUpForm` + `emailOtp`)*
+## Page 005 & 006 — Sign-up · register + OTP  *(routes: `signUpForm` + `emailOtp`; the old `signUpType` screen was removed — D-332)*
 - Step 1 fields: **email, password, confirm-password**.
 - **If the account already exists** → show "you already have an account — do you want to
   **reset** or **login**?".

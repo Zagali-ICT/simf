@@ -1,0 +1,173 @@
+@* D-353 — reusable Exhibitor Add/Edit form, hosted by CrudShell (popup or full
+   page) from ExhibitorsList. Inherits CrudAddEditFormBase so it exposes the
+   standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). Branch
+   Create vs Update on IsEdit (POST when !IsEdit, PUT against Initial!.Id when
+   IsEdit). Re-uses the same field controls, the same client guards, the same
+   Create/Update request DTOs and the same simfAccount.postJson/putJson calls
+   the inline modal carried before (D-202). *@
+@inherits CrudAddEditFormBase<AdminExhibitorDetail>
+@using SIMF.Contracts.Exhibitors
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<div class="simf-form__fields">
+    <SimfTextField Label="@L["Admin.Exhibitors.Field.NameEn"]"
+                   Value="@_form.NameEn"
+                   ValueChanged="@(v => _form.NameEn = v)"
+                   ValueExpression="@(() => _form.NameEn)"
+                   MaxLength="256"
+                   Disabled="_busy" />
+    <SimfTextField Label="@L["Admin.Exhibitors.Field.NameAr"]"
+                   Value="@_form.NameAr"
+                   ValueChanged="@(v => _form.NameAr = v)"
+                   ValueExpression="@(() => _form.NameAr)"
+                   MaxLength="256"
+                   Disabled="_busy" />
+    <SimfTextField Label="@L["Admin.Exhibitors.Field.ContactEmail"]"
+                   Value="@_form.ContactEmail"
+                   ValueChanged="@(v => _form.ContactEmail = v)"
+                   ValueExpression="@(() => _form.ContactEmail)"
+                   MaxLength="320"
+                   Disabled="_busy" />
+    <SimfTextField Label="@L["Admin.Exhibitors.Field.ContactPhone"]"
+                   Value="@_form.ContactPhone"
+                   ValueChanged="@(v => _form.ContactPhone = v)"
+                   ValueExpression="@(() => _form.ContactPhone)"
+                   MaxLength="32"
+                   Disabled="_busy" />
+    <SimfTextField Label="@L["Admin.Exhibitors.Field.Website"]"
+                   Value="@_form.Website"
+                   ValueChanged="@(v => _form.Website = v)"
+                   ValueExpression="@(() => _form.Website)"
+                   MaxLength="512"
+                   Disabled="_busy" />
+    @* SIMF-FDS-014 (D-283) — optional link to a shared Contact directory record. *@
+    <ContactPicker Value="_form.ContactId" ValueChanged="@(v => _form.ContactId = v)" Disabled="_busy" />
+    @if (IsEdit)
+    {
+        <SimfCheckbox Value="_form.IsActive"
+                      ValueChanged="@(v => _form.IsActive = v)"
+                      Disabled="_busy">
+            @L["Admin.Exhibitors.Field.IsActive"]
+        </SimfCheckbox>
+    }
+</div>
+
+<div class="simf-form__actions">
+    <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
+        @L["Admin.Exhibitors.Save"]
+    </SimfButton>
+    @if (OnCancel.HasDelegate)
+    {
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.Exhibitors.Cancel"]
+        </SimfButton>
+    }
+</div>
+
+@code {
+    private readonly FormModel _form = new();
+    private bool _busy;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        if (Initial is not null)
+        {
+            _form.NameEn = Initial.NameEn;
+            _form.NameAr = Initial.NameAr;
+            _form.ContactEmail = Initial.ContactEmail ?? string.Empty;
+            _form.ContactPhone = Initial.ContactPhone ?? string.Empty;
+            _form.Website = Initial.Website ?? string.Empty;
+            _form.ContactId = Initial.ContactId;
+            _form.IsActive = Initial.IsActive;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+
+        // Required-field client guards (the server validator is authoritative;
+        // these stop a no-op round-trip and give an immediate message).
+        if (string.IsNullOrWhiteSpace(_form.NameEn)
+            || string.IsNullOrWhiteSpace(_form.NameAr))
+        {
+            _error = L["Admin.Exhibitors.NameRequired"];
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        try
+        {
+            ApiResult<AdminExhibitorDetail>? env;
+            if (!IsEdit)
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminExhibitorDetail>>(
+                    "simfAccount.postJson",
+                    "/account/api/admin/exhibitors",
+                    new CreateExhibitorRequest
+                    {
+                        NameEn = _form.NameEn,
+                        NameAr = _form.NameAr,
+                        ContactEmail = NullIfBlank(_form.ContactEmail),
+                        ContactPhone = NullIfBlank(_form.ContactPhone),
+                        Website = NullIfBlank(_form.Website),
+                        ContactId = _form.ContactId,
+                    });
+            }
+            else
+            {
+                env = await JS.InvokeAsync<ApiResult<AdminExhibitorDetail>>(
+                    "simfAccount.putJson",
+                    $"/account/api/admin/exhibitors/{Initial!.Id}",
+                    new UpdateExhibitorRequest
+                    {
+                        NameEn = _form.NameEn,
+                        NameAr = _form.NameAr,
+                        ContactEmail = NullIfBlank(_form.ContactEmail),
+                        ContactPhone = NullIfBlank(_form.ContactPhone),
+                        Website = NullIfBlank(_form.Website),
+                        ContactId = _form.ContactId,
+                        IsActive = _form.IsActive,
+                    });
+            }
+
+            if (env is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(env.Data);
+            }
+            else
+            {
+                _error = env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Exhibitors.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.Exhibitors.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+
+    private static string? NullIfBlank(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value;
+
+    private sealed class FormModel
+    {
+        public string NameEn { get; set; } = string.Empty;
+        public string NameAr { get; set; } = string.Empty;
+        public string ContactEmail { get; set; } = string.Empty;
+        public string ContactPhone { get; set; } = string.Empty;
+        public string Website { get; set; } = string.Empty;
+        public Guid? ContactId { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+}

@@ -43,9 +43,9 @@ themes, speakers, seats, status):
 | **Recorded / scheduled** (no live feed) | `liveStreamUrl == null` → fall back to E2 / E3 |
 | **Live captions** (`الترجمة الفورية`) | **client / future** — no server field (Page_025_Logic L-4) |
 
-`liveStreamUrl` + `liveSignLanguageUrl` are an **interim manual-URL stub provider**
-set by an admin (E4); a real managed provider replaces them later (deferred, D-211
-D7).
+`liveStreamUrl` + `liveSignLanguageUrl` are admin-set (E4). The provider is
+**YouTube** (POC) with an **HLS/MP4** fallback (D-349); the app sniffs each URL and
+picks the YouTube IFrame player or `video_player`.
 
 ## E2 — recorded streaming (fallback when not live)  **(BUILT — D-232, cross-ref)**
 When `liveStreamUrl` is null and `hasRecording` is true, the app streams the
@@ -72,7 +72,9 @@ The live + sign-language URLs are authored by an admin in the **CP Session form*
 broadcast)"** + **"Sign-language stream URL (optional)"** (`Admin.Sessions.Field.
 LiveStreamUrl` / `…LiveSignLanguageUrl`; AR `رابط البث المباشر` / `رابط بث لغة
 الإشارة (اختياري)`). The form reuses the **`Sessions.Edit`** permission. A blank
-field is persisted as **null**. The app **reads** these on E1 — it never writes them.
+field is persisted as **null**, and a non-blank URL must be a YouTube link or an
+HLS/MP4 stream — validated client-side (a format hint) and server-side (400
+`SESSION_INVALID`) by the shared `LiveStreamUrlPolicy` (D-349). The app **reads** these on E1 — it never writes them.
 
 ## E5 — Send a question is a separate, login-only surface
 The **Send-question** action paired with a live session is **not** on this anonymous

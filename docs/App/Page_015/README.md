@@ -23,7 +23,7 @@ public booths read. The whole screen is **public** content — no sign-in needed
 | Section | 2 — Core screens |
 | Nature | **2D venue map** (positioned nodes + booth popups) |
 | App privilege | **Public** (AllowAnonymous) — Guest and above |
-| Status | API **built** (D-230 venue-map, D-199 booths); design **drafted** |
+| Status | **Flutter screen BUILT (D-298)**; API **built** (D-230 venue-map, D-199 booths) |
 
 ## Sources of truth
 `Mockup.html` (visual) · `SIMF_Screen_Guide_and_User_Journey` (narrative, Screen 15) ·
@@ -38,3 +38,20 @@ DECISIONS_LOG **D-230** (venue-map nodes) + **D-199 / D-222** (booths).
 > hall **name** in the popup are **decoration unless confirmed real**. The
 > shipped booth DTOs carry no `LogoUrl` and only a `HallId` (a bare Guid),
 > not a hall name — see [Page_015_Logic.md](Page_015_Logic.md) L-6.
+
+## As-built (D-298)
+
+The Flutter `VenueMapScreen` (`features/venuemap/venue_map_screen.dart`) replaces
+the `ComingSoonScreen` placeholder. On open it loads `GET /app/venue-map` +
+`GET /app/booths` in parallel (`VenueMapRepository`), normalises each node's
+`(x, y)` against the loaded set's bounds (L-4), and renders a kind-styled marker
+per node on an `InteractiveViewer` pan/zoom plane. Tapping a **Booth** marker
+opens a bottom-sheet popup composed from the cached `PublicBoothSummary` plus a
+lazy `GET /app/booths/{id}` for the description — a 404/transport failure keeps the
+summary and drops the description (L-5/L-8). A four-kind **legend** overlays the
+map. The canvas is forced **LTR** so venue geometry is not mirrored in Arabic;
+only the chrome/labels follow the locale (L-3). **Pre-build fix:** the booth DTO
+field names in this folder were `nameEn/nameAr/…` but the shipped contract is
+`name/nameArabic/exhibitorName/sector/description` — corrected here and bound
+correctly. Logo + hall-name stay **decoration** (D11 / L-6). Tests:
+`venue_map_screen_test.dart` (6) + `venue_map_models_test.dart` (7).

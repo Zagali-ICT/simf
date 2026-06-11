@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page permission:** `@attribute [RequirePermission(PermissionCatalog.AiPrompts.View)]`.
 > Each row action is gated by its own permission at the API:
@@ -39,6 +39,12 @@
 | E2E-AIP-014 | Pager summary line reads "Showing X–Y of Z" | happy | P2 | _to author_ |
 | E2E-AIP-015 | Per-column filter (Key / Name) narrows the grid via `Filters[key]` | grid | P1 | _to author_ |
 | E2E-AIP-016 | Column sort toggles ascending → descending → off (`Sort` + `SortDescending`) | grid | P2 | _to author_ |
+| E2E-AIP-017 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
+| E2E-AIP-018 | Full-page mode: Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-AIP-019 | Delete confirmation: Deactivate opens View/Delete → SimfConfirm gates the call (D-353) | error | P0 | _to author_ |
+| E2E-AIP-020 | Excel export: toolbar Export downloads an .xlsx of the filtered grid (D-356) | happy | P1 | _to author_ |
+| E2E-AIP-021 | Excel import: upload a workbook → rows created/updated + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
+| E2E-AIP-022 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -370,6 +376,134 @@ Scenario: Clicking a sortable header cycles ascending → descending → ascendi
       returns to its neutral (↕) state
 ```
 
+### E2E-AIP-017 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/ai/prompts with the default "dialog" presentation
+  And the grid toolbar's CustomToolbar slot shows the CrudPresentationToggle
+      ("Open as full page", maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And the bound _presentation flips to CrudPresentation.Page
+  And CpPreferences persists localStorage key "simf.cp.prefs.ai-prompts"
+      = {"v":1,"presentation":"page"}
+  When they reload /admin/ai/prompts
+  Then OnInitializedAsync calls Prefs.GetPresentationAsync("ai-prompts")
+      and the toggle restores to "Open as dialog"
+  And opening "New prompt" now renders the full-page CrudShell frame (not a popup)
+```
+
+### E2E-AIP-018 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page" (_presentation = CrudPresentation.Page)
+  When the administrator clicks "New prompt"
+  Then GridHidden becomes true so the SimfBanner + grid are removed from the DOM
+  And the CrudShell renders the AiPromptsAddEdit form full-page (Presentation="Page")
+      titled "Create AI prompt", with no modal backdrop
+  When they fill Key="welcome-greeting", Feature, Display name (English/Arabic),
+      leave Provider="Echo"/Model="echo", and click "Save"
+  Then POST /account/api/admin/ai/prompts returns 200
+  And CloseForm runs: the full-page frame closes and the grid + banner re-appear
+  And a green SimfAlert reads "Prompt saved." with the new row showing Version "v1"
+  When they click the row's Edit (pencil) action then the CrudShell close (X) button
+      (CloseLabel "Close")
+  Then GET /account/api/admin/ai/prompts/{id} had returned 200, the form closes,
+      and the grid re-appears unchanged (no PUT fired)
+```
+
+### E2E-AIP-019 — Delete confirmation gate (CrudShell + SimfConfirm) (D-353)
+
+```gherkin
+Scenario: Deactivate requires explicit confirmation through SimfConfirm
+  Given an active prompt "welcome-greeting" exists in the grid
+  When the administrator clicks the row's Delete (trash) action in the grid RowActions
+  Then GET /account/api/admin/ai/prompts/{id} returns 200
+  And a CrudShell opens hosting AiPromptsViewDelete (IsDelete=true), titled
+      "Deactivate AI prompt", showing the prompt's read-only description list
+      (Key, Feature, Display name, Provider, Model, System prompt, User prompt
+      template, Temperature, Max output tokens, Version, Active) and a red
+      "Deactivate" button
+  When they click the red "Deactivate" button
+  Then a SimfConfirm dialog opens (Danger=true) whose message is
+      Admin.AiPrompts.Delete.Message formatted with the Key
+      ("welcome-greeting"), with confirm "Deactivate" / cancel "Cancel"
+  And no DELETE request has fired yet
+  When they click "Cancel"
+  Then the SimfConfirm closes, the form stays open, and the row is unchanged
+  When they click "Deactivate" again and then confirm "Deactivate"
+  Then exactly one DELETE /account/api/admin/ai/prompts/{id} fires and returns
+      200 (ApiResult<bool> success)
+  And the CrudShell closes
+  And a green SimfAlert reads "Prompt deactivated." / "تمّ تعطيل المحفّز."
+  And the grid reloads and the row's Active column now shows the "off" pill
+```
+
+**Note:** delete is **no longer** a one-click trash action that fires DELETE
+directly — D-353 routes it through CrudShell + AiPromptsViewDelete and a
+SimfConfirm gate (not the native `window.confirm`). E2E-AIP-001 and E2E-AIP-011
+above describe the older one-click path and remain for the API-outcome
+assertions, but the in-browser flow is the gated one proven here.
+
+### E2E-AIP-020 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the AI-prompt grid to an XLSX workbook
+  Given the administrator is on /admin/ai/prompts with at least two prompts
+  And the toolbar shows the "Export" action (SimfDataGrid OnExport is wired and a
+      CrudGridExcel Resource="ai/prompts" is rendered)
+  When they click "Export" with no rows selected
+  Then OnExportAsync calls _excel.ExportAsync with an empty Ids list and the
+      current GridQuery
+  And a POST /account/api/admin/ai/prompts/export fires carrying
+      AdminGridExportRequest { Ids = [], Query = _query } (Query sent because no
+      rows are selected = whole filtered grid)
+  And the browser saves an .xlsx workbook whose sheet header row carries the
+      prompt columns (Key, Feature, Display name, Provider, Model, Version, Active)
+  When they instead tick two rows then click "Export"
+  Then the POST carries AdminGridExportRequest { Ids = [those two ids] } and the
+      workbook contains exactly those two rows
+  And the API caps any export at 5000 rows
+```
+
+### E2E-AIP-021 — Excel import (D-356)
+
+```gherkin
+Scenario: Import AI prompts from a workbook and see the per-row outcome
+  Given the administrator is on /admin/ai/prompts
+  And the toolbar shows the "Import" action (SimfDataGrid OnImport is wired)
+  When they click "Import"
+  Then OnImportAsync calls _excel.TriggerImportAsync which clicks the hidden
+      file input id "ai/prompts-import-input" (accept=".xlsx")
+  When they choose a valid .xlsx describing two new prompts
+  Then a POST /account/api/admin/ai/prompts/import fires as multipart form data
+  And the import-result modal shows "2 created, 0 updated, 0 skipped."
+  And OnImportedAsync surfaces the shared "Grid.Import.Done" success toast and
+      reloads the grid (POST /account/api/admin/ai/prompts/list) showing both rows
+  When they import a workbook with one new Key and one already-existing Key
+  Then the result modal shows 1 created / 1 updated (or skipped) plus a per-row
+      error list naming the affected row
+  And the API caps any import at 5000 rows
+```
+
+### E2E-AIP-022 — Excel import rejection (bad / wrong-sheet upload) (D-356)
+
+```gherkin
+Scenario: A bad upload is rejected without creating anything
+  Given the administrator is on /admin/ai/prompts
+  When they click "Import" and choose a file that is not a valid .xlsx
+      (fails the ZIP-magic check) or exceeds the 5MB gate
+  Then POST /account/api/admin/ai/prompts/import returns HTTP 400
+  And CrudGridExcel raises OnError so OnExcelError shows a red bilingual toast
+  And no AiPrompt row is created and the grid is unchanged
+  When they instead upload a workbook whose worksheet is not the expected
+      prompts sheet
+  Then the request returns HTTP 400 with the bilingual wrong-sheet message
+  And again nothing is created
+```
+
 ---
 
 ## Implementation notes
@@ -398,4 +532,4 @@ Scenario: Clicking a sortable header cycles ascending → descending → ascendi
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle): added E2E-AIP-017..022 for the CrudPresentationToggle, full-page CrudShell round-trip, the SimfConfirm delete gate, and Excel export/import (+ rejection). Prior review 2026-06-03 (E2E catalogue rebuild, D-256/D-257 grid affordances reconciled).

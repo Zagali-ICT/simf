@@ -1,0 +1,141 @@
+@* D-353 — reusable Invitation Add/Edit form, hosted by CrudShell (popup or full
+   page) from InvitationsList. Inherits CrudAddEditFormBase so it exposes the
+   standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). Folds the
+   two inline SimfModals the list used to carry: IsEdit=false runs the SEND/Add
+   flow (recipient UserProfile id + optional notes → POST), IsEdit=true runs the
+   EDIT flow (admin state override + notes → PUT against Initial). Recipient and
+   SentBy are fixed once sent, so the Edit branch never re-shows the recipient
+   field; State is system-defaulted to Pending on create, so the Add branch never
+   shows the state field. Same create/update request DTOs + JS calls the inline
+   modals used. *@
+@inherits CrudAddEditFormBase<AdminInvitationDetail>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        @if (!IsEdit)
+        {
+            <SimfTextField Label="@L["Admin.Invitations.Field.Recipient"]"
+                           Value="@_model.RecipientId"
+                           ValueChanged="@(v => _model.RecipientId = v)"
+                           ValueExpression="@(() => _model.RecipientId)"
+                           Disabled="_busy" />
+        }
+        else
+        {
+            <SimfSelect TValue="InvitationState"
+                        Label="@L["Admin.Invitations.Field.State"]"
+                        Items="_invitationStates"
+                        Value="_model.State"
+                        ValueChanged="@((InvitationState v) => _model.State = v)"
+                        ValueExpression="@(() => _model.State)"
+                        Disabled="_busy" />
+        }
+        <SimfTextField Label="@L["Admin.Invitations.Field.Notes"]"
+                       Value="@_model.Notes"
+                       ValueChanged="@(v => _model.Notes = v)"
+                       ValueExpression="@(() => _model.Notes)"
+                       Disabled="_busy" />
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy"
+                    LoadingLabel="@(IsEdit ? L["Admin.Invitations.Edit.Submitting"] : L["Admin.Invitations.New.Submitting"])">
+            @(IsEdit ? L["Admin.Invitations.Submit.Update"] : L["Admin.Invitations.Submit.Create"])
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy" OnClick="OnCancel">
+                @L["Admin.Invitations.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private static readonly InvitationState[] _invitationStates =
+        Enum.GetValues<InvitationState>();
+
+    private readonly Model _model = new();
+    private EditContext _editContext = default!;
+    private bool _busy;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        if (Initial is not null)
+        {
+            _model.State = Initial.State;
+            _model.Notes = Initial.Notes ?? string.Empty;
+        }
+        _editContext = new EditContext(_model);
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _error = null;
+
+        if (!IsEdit && !Guid.TryParse(_model.RecipientId.Trim(), out _))
+        {
+            _error = L["Admin.Invitations.RecipientRequired"]; return;
+        }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminInvitationDetail>? envelope;
+            if (!IsEdit)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminInvitationDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/invitations",
+                    new AdminCreateInvitationRequest
+                    {
+                        SentToUserProfileId = Guid.Parse(_model.RecipientId.Trim()),
+                        Notes = NullIfBlank(_model.Notes),
+                    });
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminInvitationDetail>>(
+                    "simfAccount.putJson", $"/account/api/admin/invitations/{Initial!.Id}",
+                    new AdminUpdateInvitationRequest
+                    {
+                        State = _model.State,
+                        Notes = NullIfBlank(_model.Notes),
+                    });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Invitations.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.Invitations.Fallback"];
+        }
+        finally { _busy = false; }
+    }
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private sealed class Model
+    {
+        public string RecipientId { get; set; } = string.Empty;
+        public InvitationState State { get; set; } = InvitationState.Pending;
+        public string Notes { get; set; } = string.Empty;
+    }
+}

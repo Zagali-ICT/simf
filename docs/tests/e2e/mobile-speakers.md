@@ -6,6 +6,10 @@
 > mockup grid. The "login only" rule (D-269) applies **only** to the meeting
 > request on the profile (20), not to this list. API implementation lives in
 > [`tests/SIMF.Api.Tests/PublicSpeakersTests.cs`](../../../tests/SIMF.Api.Tests/PublicSpeakersTests.cs).
+> The **Flutter screen is built (D-302)** — widget tests in
+> `src/Mobile/simf_app/test/features/speakers/speakers_screen_test.dart` (cards,
+> card→profile nav, empty, error→retry) + model tests in `…/speaker_models_test.dart`.
+> Interim UI: avatar = initials, country = text (flag/photo asset pass is SIMF-VID-001).
 
 | | |
 |--|--|
@@ -14,7 +18,7 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | **None** — the list is `AllowAnonymous` (guest+). An **Admin** token is used **only** to seed the speakers (and to soft-delete one). **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-05 |
 
 ## Coverage matrix
 
@@ -22,11 +26,11 @@
 |----|----------|------|----------|--------|
 | E2E-MOB019-001 | Anonymous caller gets the active speakers as `ApiResult<PublicSpeakers>` (`items`) | happy | P0 | authored ✓ (`PublicSpeakersTests`) |
 | E2E-MOB019-002 | Items are ordered by `displayOrder` then `name` | happy | P0 | authored ✓ (`PublicSpeakersTests`) |
-| E2E-MOB019-003 | Each card carries avatar (`photoRelativePath`), rank (`rank`) and name (`name` / `nameArabic`) | happy | P1 | authored (screen) |
-| E2E-MOB019-004 | Tapping a card → Speaker profile (20) with that `id` | happy | P0 | authored (screen) |
+| E2E-MOB019-003 | Each card carries avatar (`photoRelativePath`), rank (`rank`) and name (`name` / `nameArabic`) | happy | P1 | authored ✓ (screen) |
+| E2E-MOB019-004 | Tapping a card → Speaker profile (20) with that `id` | happy | P0 | authored ✓ (screen) |
 | E2E-MOB019-005 | A soft-deleted speaker drops out of the list | edge | P1 | authored ✓ (`PublicSpeakersTests`) |
-| E2E-MOB019-006 | No speakers → empty `items` → list placeholder | edge | P2 | authored (screen) |
-| E2E-MOB019-007 | RTL render; rank/name right-to-left, avatar leading | i18n | P1 | authored (screen) |
+| E2E-MOB019-006 | No speakers → empty `items` → list placeholder | edge | P2 | authored ✓ (screen) |
+| E2E-MOB019-007 | RTL render; rank/name right-to-left, avatar leading | i18n | P1 | authored ✓ (screen) |
 
 ## Scenarios
 
@@ -117,4 +121,4 @@ Scenario: The speakers grid renders right-to-left in Arabic
 
 ---
 
-_Last reviewed:_ `2026-06-03` by `SIMF Team`.
+_Last reviewed:_ `2026-06-05` by `SIMF Team`.

@@ -1,0 +1,162 @@
+@* D-353 — reusable Booth View/Delete form, hosted by CrudShell (popup or full
+   page) from BoothsList. Inherits CrudViewDeleteFormBase so it exposes the
+   standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
+   details always show; when IsDelete=true a Delete button appears and a
+   SimfConfirm gates the soft-delete (replaces the old native JS confirm() on the
+   list). Adds the View path the inline modal never had. The exhibitor + hall
+   names are resolved from the cached lookups (the detail carries only the ids).
+   *@
+@inherits CrudViewDeleteFormBase<AdminBoothDetail>
+@using SIMF.Contracts.Exhibition
+@using SIMF.Contracts.Exhibitors
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Booths.Col.Code"]</dt>
+        <dd>@Initial.Code</dd>
+        <dt>@L["Admin.Booths.Col.NameEn"]</dt>
+        <dd>@Initial.Name</dd>
+        <dt>@L["Admin.Booths.Col.NameAr"]</dt>
+        <dd>@Initial.NameArabic</dd>
+        <dt>@L["Admin.Booths.Col.Exhibitor"]</dt>
+        <dd>@ExhibitorName(Initial.ExhibitorId)</dd>
+        <dt>@L["Admin.Booths.Field.OfficerName"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.OfficerName) ? "—" : Initial.OfficerName)</dd>
+        <dt>@L["Admin.Booths.Field.OfficerPhone"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.OfficerPhone) ? "—" : Initial.OfficerPhone)</dd>
+        <dt>@L["Admin.Booths.Field.OfficerEmail"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.OfficerEmail) ? "—" : Initial.OfficerEmail)</dd>
+        <dt>@L["Admin.Booths.Field.SectorEn"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Sector) ? "—" : Initial.Sector)</dd>
+        <dt>@L["Admin.Booths.Field.SectorAr"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.SectorArabic) ? "—" : Initial.SectorArabic)</dd>
+        <dt>@L["Admin.Booths.Field.DescriptionEn"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Description) ? "—" : Initial.Description)</dd>
+        <dt>@L["Admin.Booths.Field.DescriptionAr"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.DescriptionArabic) ? "—" : Initial.DescriptionArabic)</dd>
+        <dt>@L["Admin.Booths.Col.Hall"]</dt>
+        <dd>@HallName(Initial.HallId)</dd>
+        <dt>@L["Admin.Booths.Field.MapX"]</dt>
+        <dd>@(Initial.MapX?.ToString(CultureInfo.InvariantCulture) ?? "—")</dd>
+        <dt>@L["Admin.Booths.Field.MapY"]</dt>
+        <dd>@(Initial.MapY?.ToString(CultureInfo.InvariantCulture) ?? "—")</dd>
+        <dt>@L["Admin.Booths.Col.Active"]</dt>
+        <dd>@(Initial.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.Booths.Delete"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.Booths.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.Booths.Delete.Title"]"
+                 Message="@string.Format(L["Admin.Booths.Delete.Message"], Initial.Name)"
+                 ConfirmLabel="@L["Admin.Booths.Delete"]"
+                 CancelLabel="@L["Admin.Booths.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    // The detail carries only the exhibitor + hall ids; load the active lookups
+    // so the read-only view can show their names (mirrors the list grid columns).
+    private List<AdminExhibitorSummary> _exhibitors = new();
+    private List<AdminHallSummary> _halls = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadExhibitorsAsync();
+        await LoadHallsAsync();
+    }
+
+    private async Task LoadExhibitorsAsync()
+    {
+        var env = await JS.InvokeAsync<ApiResult<GridPage<AdminExhibitorSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/exhibitors/list",
+            new GridQuery { Top = 500 });
+        if (env is { Success: true, Data: not null })
+        {
+            _exhibitors = env.Data.Items.ToList();
+        }
+    }
+
+    private async Task LoadHallsAsync()
+    {
+        var env = await JS.InvokeAsync<ApiResult<GridPage<AdminHallSummary>>>(
+            "simfAccount.postJson", "/account/api/admin/halls/list",
+            new GridQuery { Top = 500 });
+        if (env is { Success: true, Data: not null })
+        {
+            _halls = env.Data.Items.ToList();
+        }
+    }
+
+    private string ExhibitorName(Guid? exhibitorId)
+    {
+        if (exhibitorId is null) return "—";
+        var exhibitor = _exhibitors.FirstOrDefault(c => c.Id == exhibitorId.Value);
+        return exhibitor is null ? "—" : exhibitor.NameEn;
+    }
+
+    private string HallName(Guid? hallId)
+    {
+        if (hallId is null) return "—";
+        var hall = _halls.FirstOrDefault(h => h.Id == hallId.Value);
+        return hall is null ? "—" : hall.Name;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/booths/{Initial.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                // Close the confirm first so the error lands on the visible form
+                // body, not behind the (still-open) confirm overlay.
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Booths.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.Booths.Fallback"];
+        }
+        finally { _busy = false; }
+    }
+}

@@ -18,6 +18,9 @@
   <data name="Shell.Account" xml:space="preserve"><value>Account</value></data>
   <data name="Shell.SignOut" xml:space="preserve"><value>Sign out</value></data>
   <data name="Shell.ToggleNav" xml:space="preserve"><value>Toggle navigation</value></data>
+  <data name="Shell.NavSearch" xml:space="preserve"><value>Search the menu</value></data>
+  <data name="Shell.NavSearchPlaceholder" xml:space="preserve"><value>Search menu…</value></data>
+  <data name="Shell.NavSearchEmpty" xml:space="preserve"><value>No matching items</value></data>
   <data name="Shell.SkipToMain" xml:space="preserve"><value>Skip to main content</value></data>
   <data name="Shell.ThemeLight" xml:space="preserve"><value>Light</value></data>
   <data name="Shell.ThemeDark" xml:space="preserve"><value>Dark</value></data>
@@ -33,6 +36,10 @@
   <data name="Nav.Content" xml:space="preserve"><value>Content</value></data>
   <data name="Nav.Communications" xml:space="preserve"><value>Communications</value></data>
   <data name="Nav.System" xml:space="preserve"><value>System</value></data>
+  <data name="Nav.ScientificCommittee" xml:space="preserve"><value>Scientific committee</value></data>
+  <data name="Nav.PublicRelations" xml:space="preserve"><value>Public relations</value></data>
+  <data name="Nav.Gates" xml:space="preserve"><value>Gates &amp; arrivals</value></data>
+  <data name="Nav.ReferenceData" xml:space="preserve"><value>Reference data</value></data>
 
   <!-- P1.3 (D-214) — shared admin Edit form (Visitor / Other). -->
   <data name="Admin.Edit.Loading" xml:space="preserve"><value>Loading…</value></data>
@@ -51,6 +58,7 @@
 
   <data name="Module.Dashboard" xml:space="preserve"><value>Dashboard</value></data>
   <data name="Module.Statistics" xml:space="preserve"><value>Statistics</value></data>
+  <data name="Module.Attendance" xml:space="preserve"><value>Session attendance</value></data>
   <data name="Module.RegistrationRequests" xml:space="preserve"><value>Registration requests</value></data>
   <data name="Module.Attendees" xml:space="preserve"><value>Attendees</value></data>
   <data name="Module.Roles" xml:space="preserve"><value>Roles &amp; permissions</value></data>
@@ -263,6 +271,9 @@
   <data name="Admin.Interests.Pager.Last" xml:space="preserve"><value>Last page</value></data>
   <data name="Admin.Interests.Pager.PageSize" xml:space="preserve"><value>Show</value></data>
   <data name="Admin.Interests.Pager.Page" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <!-- D-353 — View/Delete confirmation strings -->
+  <data name="Admin.Interests.Delete.Title" xml:space="preserve"><value>Deactivate interest</value></data>
+  <data name="Admin.Interests.Delete.Message" xml:space="preserve"><value>Deactivate "{0}"? It will be hidden from the visitor picker. You can re-activate it later by editing it.</value></data>
 
   <!-- D-134 Sprint A — Roles CRUD strings -->
   <data name="Admin.Roles.Title" xml:space="preserve"><value>Roles &amp; permissions</value></data>
@@ -587,6 +598,9 @@
   <data name="Admin.Countries.Edit.Title" xml:space="preserve"><value>Edit country</value></data>
   <data name="Admin.Countries.Details.Title" xml:space="preserve"><value>Country details</value></data>
   <data name="Admin.Countries.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <!-- D-353 — View/Delete confirmation strings -->
+  <data name="Admin.Countries.Delete.Title" xml:space="preserve"><value>Deactivate country</value></data>
+  <data name="Admin.Countries.Delete.Message" xml:space="preserve"><value>Deactivate "{0}"? It will be hidden from the nationality picker. You can re-activate it later by editing it.</value></data>
   <data name="Admin.Countries.New.Submit" xml:space="preserve"><value>Create country</value></data>
   <data name="Admin.Countries.New.Submitting" xml:space="preserve"><value>Creating</value></data>
   <data name="Admin.Countries.Edit.Submit" xml:space="preserve"><value>Save changes</value></data>
@@ -824,6 +838,14 @@
   <data name="Admin.WalkIn.Section.IdDocument" xml:space="preserve"><value>ID document</value></data>
   <data name="Admin.WalkIn.Section.IdDocument.Hint" xml:space="preserve"><value>Optional scan of the national ID, Iqama or passport. PNG / JPEG / WebP, up to 5 MB. Stored encrypted at rest.</value></data>
   <data name="Admin.WalkIn.Field.IdDocument.Selected" xml:space="preserve"><value>Selected: {0}</value></data>
+  <!-- B3 — D-221 — required organisation (الجهة) picker on the walk-in form. -->
+  <data name="Admin.WalkIn.Section.Organisation" xml:space="preserve"><value>Organisation</value></data>
+  <data name="Admin.WalkIn.Field.Organisation" xml:space="preserve"><value>Organisation</value></data>
+  <data name="Admin.WalkIn.Field.Organisation.Search" xml:space="preserve"><value>Search by name or city…</value></data>
+  <data name="Admin.WalkIn.Field.Organisation.Hint" xml:space="preserve"><value>Search and pick the visitor's organisation. Required.</value></data>
+  <data name="Admin.WalkIn.Field.Organisation.Selected" xml:space="preserve"><value>Selected: {0}</value></data>
+  <data name="Admin.WalkIn.Field.Organisation.NoResults" xml:space="preserve"><value>No matching organisations.</value></data>
+  <data name="Admin.WalkIn.Error.OrganisationRequired" xml:space="preserve"><value>Pick an organisation.</value></data>
   <data name="Admin.Pending.View.Field.QrId" xml:space="preserve"><value>QR id</value></data>
   <data name="Admin.Pending.View.Field.IdImage" xml:space="preserve"><value>ID document</value></data>
 
@@ -904,6 +926,7 @@
   <data name="Admin.Logs.Size" xml:space="preserve"><value>Size</value></data>
   <data name="Admin.Logs.LastModified" xml:space="preserve"><value>Last modified</value></data>
   <data name="Admin.Users.Title" xml:space="preserve"><value>Admins</value></data>
+  <data name="Admin.Users.Fallback" xml:space="preserve"><value>Something went wrong. Please try again.</value></data>
   <data name="Admin.Users.None" xml:space="preserve"><value>No accounts yet.</value></data>
   <data name="Admin.Users.CreateNew" xml:space="preserve"><value>Add user</value></data>
   <data name="Admin.Users.Column.Email" xml:space="preserve"><value>Email</value></data>
@@ -1035,6 +1058,8 @@
   <data name="Dashboard.Title" xml:space="preserve"><value>Dashboard</value></data>
   <data name="Dashboard.Welcome" xml:space="preserve"><value>Welcome to the SIMF Control Panel</value></data>
   <data name="Dashboard.Intro" xml:space="preserve"><value>The operations console for the Saudi International Maritime Forum. Statistics and live attendance figures appear here once the event modules are activated.</value></data>
+  <data name="Dashboard.Stats.Heading" xml:space="preserve"><value>Event at a glance</value></data>
+  <data name="Dashboard.Stats.ViewAll" xml:space="preserve"><value>View all statistics</value></data>
 
   <data name="Module.ComingSoon.Title" xml:space="preserve"><value>Coming soon</value></data>
   <data name="Module.ComingSoon.Text" xml:space="preserve"><value>This module is being prepared and will be available in a later release.</value></data>
@@ -1178,6 +1203,11 @@
   <data name="Profile.Roles.None" xml:space="preserve"><value>No roles are assigned to this account.</value></data>
 
   <data name="Profile.Avatar.Title" xml:space="preserve"><value>My avatar</value></data>
+  <!-- D-353 — Display preferences (clear saved CRUD dialog/full-page + grid layout) -->
+  <data name="Profile.Display.Title" xml:space="preserve"><value>Display preferences</value></data>
+  <data name="Profile.Display.Description" xml:space="preserve"><value>Your add / edit / view dialog or full-page choice and saved table layouts are stored in this browser.</value></data>
+  <data name="Profile.Display.ClearButton" xml:space="preserve"><value>Clear saved layout</value></data>
+  <data name="Profile.Display.Cleared" xml:space="preserve"><value>Your saved display preferences were cleared.</value></data>
   <data name="Profile.Avatar.None" xml:space="preserve"><value>No avatar set.</value></data>
   <data name="Profile.Avatar.Upload" xml:space="preserve"><value>Upload new image</value></data>
   <data name="Profile.Avatar.Picker" xml:space="preserve"><value>Choose avatar image file</value></data>
@@ -1346,6 +1376,8 @@
   <data name="Admin.SpeakerPresentations.Title" xml:space="preserve"><value>Speaker presentations</value></data>
   <data name="Admin.SpeakerPresentations.Speaker" xml:space="preserve"><value>Speaker</value></data>
   <data name="Admin.SpeakerPresentations.SelectSpeaker" xml:space="preserve"><value>— Select a speaker —</value></data>
+  <data name="Admin.SpeakerPresentations.BackToSpeakers" xml:space="preserve"><value>← All speakers</value></data>
+  <data name="Admin.SpeakerPresentations.NoSpeakers" xml:space="preserve"><value>No speakers yet.</value></data>
   <data name="Admin.SpeakerPresentations.Session" xml:space="preserve"><value>Session</value></data>
   <data name="Admin.SpeakerPresentations.SelectSession" xml:space="preserve"><value>— Select a session —</value></data>
   <data name="Admin.SpeakerPresentations.File" xml:space="preserve"><value>Presentation file</value></data>
@@ -1448,6 +1480,9 @@
   <data name="Admin.Sessions.Field.DescriptionArabic" xml:space="preserve"><value>Description (Arabic)</value></data>
   <data name="Admin.Sessions.Field.LiveStreamUrl" xml:space="preserve"><value>Live stream URL (live broadcast)</value></data>
   <data name="Admin.Sessions.Field.LiveSignLanguageUrl" xml:space="preserve"><value>Sign-language stream URL (optional)</value></data>
+  <data name="Admin.Sessions.Field.LiveStreamUrlHint" xml:space="preserve"><value>Paste a YouTube link (youtube.com / youtu.be) or a direct https HLS/MP4 stream URL.</value></data>
+  <data name="Admin.Sessions.Field.LiveSignLanguageUrlHint" xml:space="preserve"><value>Optional. Same formats — a YouTube link or an HLS/MP4 stream URL.</value></data>
+  <data name="Admin.Sessions.Field.LiveUrlInvalid" xml:space="preserve"><value>Enter a valid YouTube link or an HLS/MP4 stream URL (https).</value></data>
   <data name="Admin.Sessions.Field.Hall" xml:space="preserve"><value>Hall</value></data>
   <data name="Admin.Sessions.Field.HallPlaceholder" xml:space="preserve"><value>— Select a hall —</value></data>
   <data name="Admin.Sessions.Field.HallRequired" xml:space="preserve"><value>Hall is required.</value></data>
@@ -1500,6 +1535,9 @@
   <data name="Module.Invitations" xml:space="preserve"><value>Invitations</value></data>
   <data name="Module.Vips" xml:space="preserve"><value>VIPs</value></data>
   <data name="Admin.Invitations.Title" xml:space="preserve"><value>Invitations</value></data>
+  <data name="Admin.Invitations.State.Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="Admin.Invitations.State.Confirmed" xml:space="preserve"><value>Confirmed</value></data>
+  <data name="Admin.Invitations.State.Declined" xml:space="preserve"><value>Declined</value></data>
   <data name="Admin.Invitations.Loading" xml:space="preserve"><value>Loading invitations…</value></data>
   <data name="Admin.Invitations.LoadFailed" xml:space="preserve"><value>The invitations could not be loaded.</value></data>
   <data name="Admin.Invitations.None" xml:space="preserve"><value>No invitations yet.</value></data>
@@ -1767,6 +1805,11 @@
   <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>Save layout</value></data>
   <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>Layout saved.</value></data>
   <data name="Admin.SessionSeatPlans.Title" xml:space="preserve"><value>Session seat plans</value></data>
+  <data name="Admin.SessionSeatPlans.Legend.Free" xml:space="preserve"><value>Free</value></data>
+  <data name="Admin.SessionSeatPlans.Legend.User" xml:space="preserve"><value>Reserved (attendee)</value></data>
+  <data name="Admin.SessionSeatPlans.Legend.Admin" xml:space="preserve"><value>Reserved (admin)</value></data>
+  <data name="Admin.SessionSeatPlans.Legend.Random" xml:space="preserve"><value>Random</value></data>
+  <data name="Admin.SessionSeatPlans.Seat.ReservedTitle" xml:space="preserve"><value>Seat {0} — {1}</value></data>
   <data name="Admin.SessionSeatPlans.Pick" xml:space="preserve"><value>Select a session</value></data>
   <data name="Admin.SessionSeatPlans.None" xml:space="preserve"><value>No sessions available.</value></data>
   <data name="Admin.SessionSeatPlans.NoReservations" xml:space="preserve"><value>No active reservations on this session.</value></data>
@@ -2088,6 +2131,20 @@
   <data name="Admin.Comments.LoadFailed" xml:space="preserve"><value>Could not load comments. Please try again.</value></data>
   <data name="Admin.Comments.SessionsLoadFailed" xml:space="preserve"><value>Could not load sessions. Please try again.</value></data>
 
+  <!-- FR-506 — session-attendance dashboard (read-only). -->
+  <data name="Admin.Attendance.Title" xml:space="preserve"><value>Session attendance</value></data>
+  <data name="Admin.Attendance.Loading" xml:space="preserve"><value>Loading attendance…</value></data>
+  <data name="Admin.Attendance.None" xml:space="preserve"><value>No attendance has been recorded yet.</value></data>
+  <data name="Admin.Attendance.LoadFailed" xml:space="preserve"><value>Could not load attendance. Please try again.</value></data>
+  <data name="Admin.Attendance.Stat.LiveNow" xml:space="preserve"><value>Live attendees now</value></data>
+  <data name="Admin.Attendance.Stat.SessionsWithAttendance" xml:space="preserve"><value>Sessions with attendance</value></data>
+  <data name="Admin.Attendance.Stat.TotalArrivals" xml:space="preserve"><value>Total arrivals</value></data>
+  <data name="Admin.Attendance.Col.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Admin.Attendance.Col.Session" xml:space="preserve"><value>Session</value></data>
+  <data name="Admin.Attendance.Col.Hall" xml:space="preserve"><value>Hall</value></data>
+  <data name="Admin.Attendance.Col.Start" xml:space="preserve"><value>Start (UTC)</value></data>
+  <data name="Admin.Attendance.Col.TotalAttendees" xml:space="preserve"><value>Total attendees</value></data>
+  <data name="Admin.Attendance.Col.LiveNow" xml:space="preserve"><value>Live now</value></data>
   <!-- D-202 Track-2 — Statistics dashboard (read-only). -->
   <data name="Admin.Statistics.Title" xml:space="preserve"><value>Statistics</value></data>
   <data name="Admin.Statistics.Loading" xml:space="preserve"><value>Loading statistics…</value></data>
@@ -2373,6 +2430,9 @@
   <data name="Grid.PageSize" xml:space="preserve"><value>Show</value></data>
   <data name="Grid.Page" xml:space="preserve"><value>Page {0} of {1}</value></data>
   <data name="Grid.Summary" xml:space="preserve"><value>Showing {0}–{1} of {2}</value></data>
+  <!-- D-353 — CRUD presentation toggle (dialog vs full page) -->
+  <data name="Grid.View.Dialog" xml:space="preserve"><value>Open as dialog</value></data>
+  <data name="Grid.View.Page" xml:space="preserve"><value>Open as full page</value></data>
   <data name="Grid.Add" xml:space="preserve"><value>Add</value></data>
   <data name="Grid.Edit" xml:space="preserve"><value>Edit</value></data>
   <data name="Grid.Details" xml:space="preserve"><value>Details</value></data>
@@ -2380,6 +2440,15 @@
   <data name="Grid.Close" xml:space="preserve"><value>Close</value></data>
   <data name="Grid.Active" xml:space="preserve"><value>Active</value></data>
   <data name="Grid.Inactive" xml:space="preserve"><value>Inactive</value></data>
+  <data name="Grid.Export" xml:space="preserve"><value>Export</value></data>
+  <data name="Grid.Import" xml:space="preserve"><value>Import</value></data>
+  <data name="Grid.Import.Picker" xml:space="preserve"><value>Choose an Excel (.xlsx) file to import</value></data>
+  <data name="Grid.Import.ResultTitle" xml:space="preserve"><value>Import results</value></data>
+  <data name="Grid.Import.ResultBody" xml:space="preserve"><value>{0} created, {1} updated, {2} skipped.</value></data>
+  <data name="Grid.Import.RowError" xml:space="preserve"><value>Row {0} ({1}): {2}</value></data>
+  <data name="Grid.Import.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Grid.Import.Failed" xml:space="preserve"><value>The import could not be completed.</value></data>
+  <data name="Grid.Import.Done" xml:space="preserve"><value>Import complete.</value></data>
   <data name="Admin.AiPrompts.Active.Yes" xml:space="preserve"><value>Active</value></data>
   <data name="Admin.AiPrompts.Active.No" xml:space="preserve"><value>Inactive</value></data>
   <!-- SIMF-FDS-014 (D-281/C2) — shared Contact directory -->
@@ -2433,4 +2502,164 @@
   <data name="Admin.Contacts.Picker.Clear" xml:space="preserve"><value>Clear</value></data>
   <data name="Admin.Contacts.Picker.Linked" xml:space="preserve"><value>Linked: {0}</value></data>
   <data name="Admin.Contacts.Picker.NotLinked" xml:space="preserve"><value>No contact linked</value></data>
+  <data name="Admin.Themes.Delete.Title" xml:space="preserve"><value>Deactivate theme</value></data>
+  <data name="Admin.Themes.Delete.Message" xml:space="preserve"><value>Deactivate the theme "{0}"? It will be hidden from the agenda and the Session editor picker. You can reactivate it later by editing it.</value></data>
+  <data name="Admin.Halls.Delete.Title" xml:space="preserve"><value>Deactivate hall</value></data>
+  <data name="Admin.Halls.Delete.Message" xml:space="preserve"><value>Deactivate the hall "{0}"? It will no longer be available for session assignment.</value></data>
+  <data name="Admin.Gates.Delete.Title" xml:space="preserve"><value>Deactivate gate</value></data>
+  <data name="Admin.Gates.Delete.Message" xml:space="preserve"><value>Deactivate "{0}"? It will stop accepting scans and be hidden from the gates list. You can re-activate it later by editing it.</value></data>
+  <data name="Admin.SessionCategories.Details.Title" xml:space="preserve"><value>Category details</value></data>
+  <data name="Admin.SessionCategories.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.SessionCategories.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.SessionCategories.Delete.Title" xml:space="preserve"><value>Deactivate category</value></data>
+  <data name="Admin.SessionCategories.Delete.Message" xml:space="preserve"><value>Deactivate "{0}"? It will be hidden from the session category picker. You can re-activate it later via Edit.</value></data>
+  <data name="Admin.Roles.Delete.Title" xml:space="preserve"><value>Delete role</value></data>
+  <data name="Admin.Roles.Delete.Message" xml:space="preserve"><value>Delete the role "{0}"? Anyone who holds it loses the permissions it grants. This cannot be undone.</value></data>
+  <data name="Admin.Configuration.Details.Title" xml:space="preserve"><value>Setting details</value></data>
+  <data name="Admin.Configuration.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Configuration.Delete.Title" xml:space="preserve"><value>Delete setting</value></data>
+  <data name="Admin.Configuration.Delete.Message" xml:space="preserve"><value>Delete the setting “{0}”? This deactivates it.</value></data>
+  <data name="Admin.Configuration.Field.KeyHint" xml:space="preserve"><value>A unique identifier, e.g. registration.open. Cannot be changed later.</value></data>
+  <data name="Admin.Configuration.Field.KeyReadOnly" xml:space="preserve"><value>The key is fixed once the setting is created.</value></data>
+  <data name="Admin.Configuration.Field.KeyInvalid" xml:space="preserve"><value>Enter a key (up to 128 characters).</value></data>
+  <data name="Admin.Configuration.Field.ValueInvalid" xml:space="preserve"><value>Enter a value (up to 1024 characters).</value></data>
+  <data name="Admin.Configuration.Field.DescriptionHint" xml:space="preserve"><value>An optional note explaining what this setting does.</value></data>
+  <data name="Admin.Configuration.Field.DescriptionInvalid" xml:space="preserve"><value>The description must be 512 characters or fewer.</value></data>
+  <data name="Admin.Configuration.New.Submit" xml:space="preserve"><value>Create setting</value></data>
+  <data name="Admin.Configuration.New.Submitting" xml:space="preserve"><value>Creating…</value></data>
+  <data name="Admin.Configuration.Edit.Submit" xml:space="preserve"><value>Save changes</value></data>
+  <data name="Admin.Configuration.Edit.Submitting" xml:space="preserve"><value>Saving…</value></data>
+  <data name="Admin.Configuration.Fallback" xml:space="preserve"><value>Something went wrong. Please try again.</value></data>
+  <data name="Admin.Contacts.Details.Title" xml:space="preserve"><value>Contact details</value></data>
+  <data name="Admin.Contacts.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Contacts.Delete.Title" xml:space="preserve"><value>Deactivate contact</value></data>
+  <data name="Admin.Contacts.Delete.Message" xml:space="preserve"><value>Deactivate "{0}"? It will no longer be available to link from sponsors, exhibitors, media partners, speakers or booths.</value></data>
+  <data name="Admin.Contacts.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.News.Details.Title" xml:space="preserve"><value>News article details</value></data>
+  <data name="Admin.News.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.News.Delete.Title" xml:space="preserve"><value>Delete news article</value></data>
+  <data name="Admin.News.Delete.Message" xml:space="preserve"><value>Delete “{0}”? It will be removed from the public feed immediately.</value></data>
+  <data name="Admin.AiPrompts.Details.Title" xml:space="preserve"><value>AI prompt details</value></data>
+  <data name="Admin.AiPrompts.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.AiPrompts.Delete.Title" xml:space="preserve"><value>Deactivate AI prompt</value></data>
+  <data name="Admin.AiPrompts.Delete.Message" xml:space="preserve"><value>Deactivate the AI prompt “{0}”? It will no longer be served to features.</value></data>
+  <data name="Admin.AiPrompts.Required" xml:space="preserve"><value>Display name (English and Arabic) is required.</value></data>
+  <data name="Admin.AiPrompts.Field.KeyRequired" xml:space="preserve"><value>A key is required.</value></data>
+  <data name="Admin.Banners.Details.Title" xml:space="preserve"><value>Banner details</value></data>
+  <data name="Admin.Banners.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Banners.Delete.Title" xml:space="preserve"><value>Deactivate banner</value></data>
+  <data name="Admin.Banners.Delete.Message" xml:space="preserve"><value>Deactivate the banner “{0}”? It will stop showing on the public site.</value></data>
+  <data name="Admin.Banners.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.Banners.Required" xml:space="preserve"><value>Please complete the required fields.</value></data>
+  <data name="Admin.ContentBlocks.Add.Title" xml:space="preserve"><value>New content block</value></data>
+  <data name="Admin.ContentBlocks.Details.Title" xml:space="preserve"><value>Content block details</value></data>
+  <data name="Admin.ContentBlocks.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.ContentBlocks.Action.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.ContentBlocks.Delete.Title" xml:space="preserve"><value>Delete content block</value></data>
+  <data name="Admin.ContentBlocks.Delete.Message" xml:space="preserve"><value>Delete the content block "{0}"? This removes it from the site.</value></data>
+  <data name="Admin.ContentBlocks.Required" xml:space="preserve"><value>A key is required (up to 128 characters).</value></data>
+  <data name="Admin.MediaPartners.Details.Title" xml:space="preserve"><value>Media partner details</value></data>
+  <data name="Admin.MediaPartners.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.MediaPartners.Delete.Title" xml:space="preserve"><value>Delete media partner</value></data>
+  <data name="Admin.MediaPartners.Delete.Message" xml:space="preserve"><value>Delete "{0}"? It will be removed from the public list immediately.</value></data>
+  <data name="Admin.Archive.Details.Title" xml:space="preserve"><value>Edition details</value></data>
+  <data name="Admin.Archive.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Archive.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.Archive.Delete.Title" xml:space="preserve"><value>Deactivate edition</value></data>
+  <data name="Admin.Archive.Delete.Message" xml:space="preserve"><value>Deactivate “{0}”? It will be removed from the public archive immediately.</value></data>
+  <data name="Admin.Media.Details.Title" xml:space="preserve"><value>Media item details</value></data>
+  <data name="Admin.Media.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Media.Action.Deactivate" xml:space="preserve"><value>Delete</value></data>
+  <data name="Admin.Media.Delete.Title" xml:space="preserve"><value>Delete media item</value></data>
+  <data name="Admin.Media.Delete.Message" xml:space="preserve"><value>Delete “{0}”? It will be removed from the public gallery.</value></data>
+  <data name="Admin.Organisations.Details.Title" xml:space="preserve"><value>Organisation details</value></data>
+  <data name="Admin.Organisations.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Organisations.Delete.Title" xml:space="preserve"><value>Deactivate organisation</value></data>
+  <data name="Admin.Organisations.Delete.Message" xml:space="preserve"><value>Deactivate “{0}”? It will be removed from the public lookup.</value></data>
+  <data name="Admin.Organisations.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.Sponsors.Details.Title" xml:space="preserve"><value>Sponsor details</value></data>
+  <data name="Admin.Sponsors.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Sponsors.Delete.Title" xml:space="preserve"><value>Delete sponsor</value></data>
+  <data name="Admin.Sponsors.Delete.Message" xml:space="preserve"><value>Delete the sponsor "{0}"? It will be removed from the public sponsors list immediately. You can reactivate it later by editing it.</value></data>
+  <data name="Admin.Sponsors.New.Submit" xml:space="preserve"><value>Create sponsor</value></data>
+  <data name="Admin.Sponsors.New.Submitting" xml:space="preserve"><value>Creating</value></data>
+  <data name="Admin.Sponsors.Edit.Submit" xml:space="preserve"><value>Save changes</value></data>
+  <data name="Admin.Sponsors.Edit.Submitting" xml:space="preserve"><value>Saving</value></data>
+  <data name="Admin.Sponsors.Fallback" xml:space="preserve"><value>The operation could not be completed.</value></data>
+  <data name="Admin.Exhibitors.Details.Title" xml:space="preserve"><value>Exhibitor details</value></data>
+  <data name="Admin.Exhibitors.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Exhibitors.Delete.Title" xml:space="preserve"><value>Deactivate exhibitor</value></data>
+  <data name="Admin.Exhibitors.Delete.Message" xml:space="preserve"><value>Deactivate the exhibitor "{0}"? It will be removed from the public exhibitor list immediately. You can reactivate it later by editing it.</value></data>
+  <data name="Admin.Exhibitors.Action.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.Speakers.Delete.Title" xml:space="preserve"><value>Deactivate speaker</value></data>
+  <data name="Admin.Speakers.Delete.Message" xml:space="preserve"><value>Deactivate the speaker "{0}"? They will be hidden from the public speaker list and the Session editor picker. You can reactivate them later by editing.</value></data>
+  <!-- D-353 — CrudShell host titles + reusable Add/Edit/View/Delete form labels. -->
+  <data name="Admin.Booths.Details.Title" xml:space="preserve"><value>Booth details</value></data>
+  <data name="Admin.Booths.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Booths.Delete.Title" xml:space="preserve"><value>Delete booth</value></data>
+  <data name="Admin.Booths.Delete.Message" xml:space="preserve"><value>Delete the booth “{0}”? It will be removed from the public exhibition list and the venue map immediately.</value></data>
+  <data name="Admin.Booths.Fallback" xml:space="preserve"><value>Could not complete the request. Please try again.</value></data>
+  <data name="Admin.Booths.New.Submit" xml:space="preserve"><value>Create booth</value></data>
+  <data name="Admin.Booths.New.Submitting" xml:space="preserve"><value>Creating…</value></data>
+  <data name="Admin.Booths.Edit.Submit" xml:space="preserve"><value>Save changes</value></data>
+  <data name="Admin.Booths.Edit.Submitting" xml:space="preserve"><value>Saving…</value></data>
+  <data name="Admin.VenueMap.Col.Hall" xml:space="preserve"><value>Linked hall</value></data>
+  <data name="Admin.VenueMap.Col.Booth" xml:space="preserve"><value>Linked booth</value></data>
+  <data name="Admin.VenueMap.Details.Title" xml:space="preserve"><value>Venue-map node details</value></data>
+  <data name="Admin.VenueMap.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.VenueMap.Delete.Title" xml:space="preserve"><value>Delete venue-map node</value></data>
+  <data name="Admin.VenueMap.Delete.Message" xml:space="preserve"><value>Delete the venue-map node "{0}"? It will disappear from the app's 2D map immediately. You can reactivate it later by editing it.</value></data>
+  <data name="Admin.VenueMap.New.Submit" xml:space="preserve"><value>Create node</value></data>
+  <data name="Admin.VenueMap.New.Submitting" xml:space="preserve"><value>Creating</value></data>
+  <data name="Admin.VenueMap.Edit.Submit" xml:space="preserve"><value>Save changes</value></data>
+  <data name="Admin.VenueMap.Edit.Submitting" xml:space="preserve"><value>Saving</value></data>
+  <data name="Admin.VenueMap.Fallback" xml:space="preserve"><value>The operation could not be completed.</value></data>
+  <data name="Admin.Invitations.Col.RecipientEn" xml:space="preserve"><value>Recipient (English)</value></data>
+  <data name="Admin.Invitations.Col.RecipientAr" xml:space="preserve"><value>Recipient (Arabic)</value></data>
+  <data name="Admin.Invitations.Col.JobTitle" xml:space="preserve"><value>Job title</value></data>
+  <data name="Admin.Invitations.Col.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Admin.Invitations.Col.RespondedAt" xml:space="preserve"><value>Responded</value></data>
+  <data name="Admin.Invitations.Col.UpdatedAt" xml:space="preserve"><value>Updated</value></data>
+  <data name="Admin.Invitations.Details.Title" xml:space="preserve"><value>Invitation details</value></data>
+  <data name="Admin.Invitations.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.Invitations.Delete.Title" xml:space="preserve"><value>Cancel invitation</value></data>
+  <data name="Admin.Invitations.Delete.Message" xml:space="preserve"><value>Cancel the invitation to "{0}"? It will be removed from the list immediately. You can reactivate it later by editing it.</value></data>
+  <data name="Admin.Invitations.New.Submitting" xml:space="preserve"><value>Sending</value></data>
+  <data name="Admin.Invitations.Edit.Submitting" xml:space="preserve"><value>Saving</value></data>
+  <data name="Admin.Invitations.RecipientRequired" xml:space="preserve"><value>Enter a valid recipient UserProfile id.</value></data>
+  <data name="Admin.Invitations.Saved" xml:space="preserve"><value>Invitation saved.</value></data>
+  <data name="Admin.Invitations.Fallback" xml:space="preserve"><value>The operation could not be completed.</value></data>
+  <data name="Admin.Sessions.Delete.Title" xml:space="preserve"><value>Deactivate session</value></data>
+  <data name="Admin.Sessions.Delete.Message" xml:space="preserve"><value>Deactivate the session "{0}"? It will be hidden from the public programme.</value></data>
+  <data name="Module.MediaLibrary" xml:space="preserve"><value>Media library</value></data>
+  <data name="Admin.MediaLibrary.Title" xml:space="preserve"><value>Media library</value></data>
+  <data name="Admin.MediaLibrary.Col.Category" xml:space="preserve"><value>Category</value></data>
+  <data name="Admin.MediaLibrary.Col.Owner" xml:space="preserve"><value>Owner</value></data>
+  <data name="Admin.MediaLibrary.Col.Preview" xml:space="preserve"><value>Preview</value></data>
+  <data name="Admin.MediaLibrary.Col.Kind" xml:space="preserve"><value>Kind</value></data>
+  <data name="Admin.MediaLibrary.Col.Type" xml:space="preserve"><value>Source</value></data>
+  <data name="Admin.MediaLibrary.Col.Url" xml:space="preserve"><value>URL</value></data>
+  <data name="Admin.MediaLibrary.Type.Upload" xml:space="preserve"><value>Uploaded file</value></data>
+  <data name="Admin.MediaLibrary.Type.Link" xml:space="preserve"><value>External link</value></data>
+  <data name="Admin.MediaLibrary.Manage" xml:space="preserve"><value>Manage</value></data>
+  <data name="Admin.MediaLibrary.Details.Title" xml:space="preserve"><value>Asset details</value></data>
+  <data name="Admin.MediaLibrary.Details.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Admin.MediaLibrary.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Admin.MediaLibrary.Restore" xml:space="preserve"><value>Restore</value></data>
+  <data name="Admin.MediaLibrary.None" xml:space="preserve"><value>No media assets yet.</value></data>
+  <data name="Admin.MediaLibrary.Deactivated" xml:space="preserve"><value>Asset deactivated.</value></data>
+  <data name="Admin.MediaLibrary.Restored" xml:space="preserve"><value>Asset restored.</value></data>
+  <data name="Admin.MediaLibrary.LoadFailed" xml:space="preserve"><value>Could not load media assets.</value></data>
+  <data name="Admin.Asset.Heading" xml:space="preserve"><value>Image</value></data>
+  <data name="Admin.Asset.SaveFirst" xml:space="preserve"><value>Save the record first, then add an image.</value></data>
+  <data name="Admin.Asset.UploadTab" xml:space="preserve"><value>Upload file</value></data>
+  <data name="Admin.Asset.LinkTab" xml:space="preserve"><value>External link</value></data>
+  <data name="Admin.Asset.File" xml:space="preserve"><value>File</value></data>
+  <data name="Admin.Asset.Upload" xml:space="preserve"><value>Upload</value></data>
+  <data name="Admin.Asset.Url" xml:space="preserve"><value>URL</value></data>
+  <data name="Admin.Asset.Kind" xml:space="preserve"><value>Kind</value></data>
+  <data name="Admin.Asset.Kind.Image" xml:space="preserve"><value>Image</value></data>
+  <data name="Admin.Asset.Kind.Video" xml:space="preserve"><value>Video</value></data>
+  <data name="Admin.Asset.Kind.Document" xml:space="preserve"><value>Document</value></data>
+  <data name="Admin.Asset.SaveLink" xml:space="preserve"><value>Save link</value></data>
 </root>

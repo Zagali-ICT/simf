@@ -19,6 +19,10 @@ import '../../app/theme/tokens.dart';
 /// it only creates the under-review Visitor account and triggers the email code.
 /// `confirmPassword` is checked locally for instant feedback **and** sent in the
 /// body — the server re-validates `confirmPassword == password` (D-270).
+///
+/// Visuals follow the Mockup.html sign-up frame: a white anchor-splash top
+/// (anchor mark on white) over a navy anchor-card holding the form, with white
+/// fields and the gold create-account button.
 class SignUpFormScreen extends ConsumerStatefulWidget {
   const SignUpFormScreen({super.key});
 
@@ -116,118 +120,323 @@ class _SignUpFormScreenState extends ConsumerState<SignUpFormScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.signUpTitle)),
+      backgroundColor: SimfTokens.surface,
       body: SafeArea(
+        bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(SimfTokens.space6),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                const SizedBox(height: SimfTokens.space4),
-                TextFormField(
-                  controller: _email,
-                  keyboardType: TextInputType.emailAddress,
-                  textDirection: TextDirection.ltr,
-                  enabled: !_busy,
-                  maxLength: 50,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  validator: _validateEmail,
-                  decoration: InputDecoration(
-                    labelText: l10n.emailLabel,
-                    counterText: '',
-                  ),
-                ),
-                const SizedBox(height: SimfTokens.space3),
-                TextFormField(
-                  controller: _password,
-                  obscureText: _obscure,
-                  enabled: !_busy,
-                  maxLength: 32,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  validator: _validatePassword,
-                  decoration: InputDecoration(
-                    labelText: l10n.passwordLabel,
-                    counterText: '',
-                    suffixIcon: IconButton(
-                      tooltip: _obscure
-                          ? l10n.showPasswordTooltip
-                          : l10n.hidePasswordTooltip,
-                      icon: Icon(
-                        _obscure
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                      ),
-                      onPressed: () => setState(() => _obscure = !_obscure),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: SimfTokens.space3),
-                TextFormField(
-                  controller: _confirm,
-                  obscureText: _obscureConfirm,
-                  enabled: !_busy,
-                  maxLength: 32,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  validator: _validateConfirm,
-                  onFieldSubmitted: (_) {
-                    if (!_busy) {
-                      unawaited(_submit());
-                    }
-                  },
-                  decoration: InputDecoration(
-                    labelText: l10n.confirmPasswordLabel,
-                    counterText: '',
-                    suffixIcon: IconButton(
-                      tooltip: _obscureConfirm
-                          ? l10n.showPasswordTooltip
-                          : l10n.hidePasswordTooltip,
-                      icon: Icon(
-                        _obscureConfirm
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                      ),
-                      onPressed: () =>
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.sizeOf(context).height -
+                  MediaQuery.paddingOf(context).top,
+            ),
+            child: IntrinsicHeight(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  const _AnchorSplashTop(),
+                  Expanded(
+                    child: _SignUpCard(
+                      formKey: _formKey,
+                      email: _email,
+                      password: _password,
+                      confirm: _confirm,
+                      obscure: _obscure,
+                      obscureConfirm: _obscureConfirm,
+                      busy: _busy,
+                      error: _error,
+                      l10n: l10n,
+                      onToggleObscure: () =>
+                          setState(() => _obscure = !_obscure),
+                      onToggleObscureConfirm: () =>
                           setState(() => _obscureConfirm = !_obscureConfirm),
+                      validateEmail: _validateEmail,
+                      validatePassword: _validatePassword,
+                      validateConfirm: _validateConfirm,
+                      onSubmit: () => unawaited(_submit()),
+                      onSignIn: () => context.goNamed(RouteNames.signIn),
                     ),
-                  ),
-                ),
-                if (_error != null) ...<Widget>[
-                  const SizedBox(height: SimfTokens.space3),
-                  Text(
-                    _error!,
-                    style: const TextStyle(color: SimfTokens.danger),
                   ),
                 ],
-                const SizedBox(height: SimfTokens.space5),
-                FilledButton(
-                  onPressed: _busy ? null : () => unawaited(_submit()),
-                  child: _busy
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(l10n.signUpButton),
-                ),
-                const SizedBox(height: SimfTokens.space4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Text(l10n.haveAccountQuestion),
-                    TextButton(
-                      onPressed: _busy
-                          ? null
-                          : () => context.goNamed(RouteNames.signIn),
-                      child: Text(l10n.signInTitle),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The white "anchor-splash" top — the brass-on-white anchor mark over the
+/// white entry surface, matching the Mockup.html sign-up frame.
+class _AnchorSplashTop extends StatelessWidget {
+  const _AnchorSplashTop();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(
+        SimfTokens.space4,
+        SimfTokens.space8,
+        SimfTokens.space4,
+        SimfTokens.space6,
+      ),
+      child: Center(child: _AnchorMark()),
+    );
+  }
+}
+
+/// Interim brass anchor mark drawn on the white splash (final asset per
+/// SIMF-VID-001). Uses [SimfTokens.ink] on white, like the mockup's `a-mark`.
+class _AnchorMark extends StatelessWidget {
+  const _AnchorMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 54,
+      height: 54,
+      child: Icon(
+        Icons.anchor,
+        size: 48,
+        color: SimfTokens.ink,
+      ),
+    );
+  }
+}
+
+/// The navy "anchor-card" holding the sign-up form — rounded top corners,
+/// white fields, gold create-account button, and the "have account / sign in"
+/// foot, matching the Mockup.html navy card.
+class _SignUpCard extends StatelessWidget {
+  const _SignUpCard({
+    required this.formKey,
+    required this.email,
+    required this.password,
+    required this.confirm,
+    required this.obscure,
+    required this.obscureConfirm,
+    required this.busy,
+    required this.error,
+    required this.l10n,
+    required this.onToggleObscure,
+    required this.onToggleObscureConfirm,
+    required this.validateEmail,
+    required this.validatePassword,
+    required this.validateConfirm,
+    required this.onSubmit,
+    required this.onSignIn,
+  });
+
+  final GlobalKey<FormState> formKey;
+  final TextEditingController email;
+  final TextEditingController password;
+  final TextEditingController confirm;
+  final bool obscure;
+  final bool obscureConfirm;
+  final bool busy;
+  final String? error;
+  final AppL10n l10n;
+  final VoidCallback onToggleObscure;
+  final VoidCallback onToggleObscureConfirm;
+  final FormFieldValidator<String> validateEmail;
+  final FormFieldValidator<String> validatePassword;
+  final FormFieldValidator<String> validateConfirm;
+  final VoidCallback onSubmit;
+  final VoidCallback onSignIn;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: SimfTokens.navy,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(SimfTokens.radiusXl),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(
+        SimfTokens.space6,
+        SimfTokens.space6,
+        SimfTokens.space6,
+        SimfTokens.space6,
+      ),
+      child: Form(
+        key: formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Text(
+              l10n.signUpTitle,
+              style: const TextStyle(
+                color: SimfTokens.surface,
+                fontSize: SimfTokens.textXl,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: SimfTokens.space5),
+            _FieldLabel(l10n.emailLabel),
+            const SizedBox(height: SimfTokens.space2),
+            TextFormField(
+              controller: email,
+              keyboardType: TextInputType.emailAddress,
+              textDirection: TextDirection.ltr,
+              enabled: !busy,
+              maxLength: 50,
+              style: _fieldTextStyle,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: validateEmail,
+              decoration: _whiteFieldDecoration(counterText: ''),
+            ),
+            const SizedBox(height: SimfTokens.space3),
+            _FieldLabel(l10n.passwordLabel),
+            const SizedBox(height: SimfTokens.space2),
+            TextFormField(
+              controller: password,
+              obscureText: obscure,
+              enabled: !busy,
+              maxLength: 32,
+              style: _fieldTextStyle,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: validatePassword,
+              decoration: _whiteFieldDecoration(
+                counterText: '',
+                suffixIcon: IconButton(
+                  tooltip: obscure
+                      ? l10n.showPasswordTooltip
+                      : l10n.hidePasswordTooltip,
+                  icon: Icon(
+                    obscure
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    color: SimfTokens.inkMuted,
+                  ),
+                  onPressed: onToggleObscure,
+                ),
+              ),
+            ),
+            const SizedBox(height: SimfTokens.space3),
+            _FieldLabel(l10n.confirmPasswordLabel),
+            const SizedBox(height: SimfTokens.space2),
+            TextFormField(
+              controller: confirm,
+              obscureText: obscureConfirm,
+              enabled: !busy,
+              maxLength: 32,
+              style: _fieldTextStyle,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: validateConfirm,
+              onFieldSubmitted: (_) {
+                if (!busy) {
+                  onSubmit();
+                }
+              },
+              decoration: _whiteFieldDecoration(
+                counterText: '',
+                suffixIcon: IconButton(
+                  tooltip: obscureConfirm
+                      ? l10n.showPasswordTooltip
+                      : l10n.hidePasswordTooltip,
+                  icon: Icon(
+                    obscureConfirm
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    color: SimfTokens.inkMuted,
+                  ),
+                  onPressed: onToggleObscureConfirm,
+                ),
+              ),
+            ),
+            if (error != null) ...<Widget>[
+              const SizedBox(height: SimfTokens.space3),
+              Text(
+                error!,
+                style: const TextStyle(color: SimfTokens.danger),
+              ),
+            ],
+            const SizedBox(height: SimfTokens.space5),
+            FilledButton(
+              onPressed: busy ? null : onSubmit,
+              child: busy
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(l10n.signUpButton),
+            ),
+            const SizedBox(height: SimfTokens.space4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Text(
+                  l10n.haveAccountQuestion,
+                  style: const TextStyle(color: SimfTokens.txtSecondary),
+                ),
+                TextButton(
+                  onPressed: busy ? null : onSignIn,
+                  style: TextButton.styleFrom(
+                    foregroundColor: SimfTokens.accent,
+                  ),
+                  child: Text(l10n.signInTitle),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// White text-field text colour for the navy card (ink on white fill),
+  /// mirroring the mockup's `.mfield .in` colour.
+  static const TextStyle _fieldTextStyle = TextStyle(
+    color: SimfTokens.ink,
+    fontSize: SimfTokens.textMd,
+  );
+
+  /// Per-field decoration overriding the navy theme to the mockup's white
+  /// field (white fill, ink hint, accent focus ring).
+  InputDecoration _whiteFieldDecoration({
+    required String counterText,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      counterText: counterText,
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: SimfTokens.surface,
+      hintStyle: const TextStyle(color: SimfTokens.inkMuted),
+      border: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radius)),
+        borderSide: BorderSide(color: SimfTokens.accent),
+      ),
+    );
+  }
+}
+
+/// A field caption above its input — the mockup's `.mfield label`
+/// (txt-2 secondary on the navy card).
+class _FieldLabel extends StatelessWidget {
+  const _FieldLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: SimfTokens.txtSecondary,
+        fontSize: SimfTokens.textSm,
+        fontWeight: FontWeight.w500,
       ),
     );
   }

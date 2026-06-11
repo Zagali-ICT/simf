@@ -1,0 +1,124 @@
+@* D-353 — reusable News View/Delete form, hosted by CrudShell (as a popup or
+   a full page) from NewsList.razor. Inherits CrudViewDeleteFormBase so it
+   exposes the standard parameter surface (IsDelete / Initial / OnDeleted /
+   OnCancel). Read-only details always show (with the cover image preview when
+   the article carries one); when IsDelete=true a Delete button appears and a
+   SimfConfirm gates the soft-delete (replaces the old native JS confirm() on
+   the list). Adds the View path the inline form never had. *@
+@inherits CrudViewDeleteFormBase<AdminNewsDetail>
+@using SIMF.Contracts.PublicRelations
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    @* D-357 — image from the unified media-asset pipeline. *@
+    <div class="simf-image-upload__preview">
+        <SimfImageThumb Src="@($"/account/api/admin/assets/NewsImage/{Initial.Id}/image")"
+                        Alt="@Initial.Title" Class="simf-img-thumb--lg" />
+    </div>
+
+    <dl class="simf-dl">
+        <dt>@L["Admin.News.Col.TitleEn"]</dt>
+        <dd>@Initial.Title</dd>
+        <dt>@L["Admin.News.Col.TitleAr"]</dt>
+        <dd>@Initial.TitleArabic</dd>
+        <dt>@L["Admin.News.Col.CategoryEn"]</dt>
+        <dd>@Initial.Category</dd>
+        <dt>@L["Admin.News.Col.CategoryAr"]</dt>
+        <dd>@Initial.CategoryArabic</dd>
+        <dt>@L["Admin.News.Field.ExcerptEn"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Excerpt) ? "—" : Initial.Excerpt)</dd>
+        <dt>@L["Admin.News.Field.ExcerptAr"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.ExcerptArabic) ? "—" : Initial.ExcerptArabic)</dd>
+        <dt>@L["Admin.News.Field.BodyEn"]</dt>
+        <dd>@Initial.Body</dd>
+        <dt>@L["Admin.News.Field.BodyAr"]</dt>
+        <dd>@Initial.BodyArabic</dd>
+        <dt>@L["Admin.News.Field.ImageRelativePath"]</dt>
+        <dd>
+            @if (string.IsNullOrWhiteSpace(Initial.ImageRelativePath))
+            {
+                <text>—</text>
+            }
+            else
+            {
+                <span>@Initial.ImageRelativePath</span>
+                <img class="simf-detail-image" src="@Initial.ImageRelativePath"
+                     alt="@Initial.Title" loading="lazy" />
+            }
+        </dd>
+        <dt>@L["Admin.News.Col.PublishedAt"]</dt>
+        <dd>@Initial.PublishedAt.ToString("yyyy-MM-dd")</dd>
+        <dt>@L["Admin.News.Col.DisplayOrder"]</dt>
+        <dd>@Initial.DisplayOrder</dd>
+        <dt>@L["Admin.News.Col.Active"]</dt>
+        <dd>@(Initial.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.News.Delete"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.News.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.News.Delete.Title"]"
+                 Message="@string.Format(L["Admin.News.Delete.Message"], Initial.Title)"
+                 ConfirmLabel="@L["Admin.News.Delete"]"
+                 CancelLabel="@L["Admin.News.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/news/{Initial.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                // Close the confirm first so the error lands on the visible
+                // form body, not behind the (still-open) confirm overlay.
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.News.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.News.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+}

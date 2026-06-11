@@ -33,8 +33,24 @@ This is the **first new-schema module** under D-135 — the EF migration
   literal text), Status (Active / Inactive pill).
 - Per-row Details modal showing every field including descriptions.
 - Per-row Edit modal hosting `ThemeForm` (Initial=row).
-- Per-row Deactivate (soft-delete).
+- Per-row Deactivate (soft-delete). Since D-353 the Deactivate action opens the
+  reusable `ThemesViewDelete` form (hosted by `CrudShell` as a popup or full page)
+  whose Deactivate button is gated by a `SimfConfirm` dialog — no longer a one-click
+  delete from the list row.
 - Sortable on Code, Name, Order.
+- **Excel export + import (D-356):** the toolbar carries **Export** and **Import**
+  actions. Export posts `AdminGridExportRequest { Ids, Query }` to
+  `/account/api/admin/themes/export` (selected rows, else the whole filtered grid)
+  and downloads `simf-themes-{timestamp}.xlsx` with the sheet "Themes" and header
+  row `Code | Name | NameArabic | DisplayOrder | PageColor | IsActive`. Import
+  (insert-only) posts an `.xlsx` to `/account/api/admin/themes/import` (required
+  headers `Code | Name | NameArabic | PageColor`) and shows a result modal
+  ("N created, N updated, N skipped" + per-row errors); a duplicate Code is a
+  per-row error, not a batch abort. Both are capped at 5000 rows; a non-`.xlsx`
+  upload is rejected with HTTP 400.
+- **Page ↔ Popup presentation toggle (D-353):** the toolbar `CrudPresentationToggle`
+  lets the admin host Add/Edit/View/Delete as a dialog or a full page; the choice
+  persists in `localStorage` under `simf.cp.prefs.themes` and is restored on load.
 
 ## 4.5 Form fields
 
@@ -105,5 +121,6 @@ deactivate, 005 details modal, 006 auth, 007 RTL.
 | Date | Decision | Change |
 |------|----------|--------|
 | 2026-05-29 | D-134 Sprint B / D-135 | Original — Themes entity + EF migration `AddThemes` + canonical CRUD page. First D-135 freeze-lift module shipped. |
+| 2026-06-10 | D-356 / D-353 | Excel export + import added (toolbar Export/Import → `.xlsx`, sheet "Themes"); CRUD forms split into `ThemesAddEdit` + `ThemesViewDelete` hosted by `CrudShell` with a `SimfConfirm`-gated Deactivate and a Page↔Popup presentation toggle persisted in `localStorage`. E2E catalogue extended with E2E-THM-019…024. |
 
-_Last reviewed:_ 2026-05-29 by Claude (D-134 Sprint B / D-135).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + D-353 toggle).

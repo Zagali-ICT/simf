@@ -1,154 +1,163 @@
-@* Control Panel — Interests lookup CRUD (P9 — D-050, migrated to the
-   canonical D-117 popup-CRUD pattern in D-132). Administrator-only.
-   SimfBanner page-top, SimfDataGrid with Multiselect + full numbered
-   pager, modal-based Add / Edit / Details / Delete. The reusable
-   InterestForm.razor is hosted in both the Add and Edit modals. *@
+@* Control Panel — Interests lookup CRUD (P9 — D-050; popup-CRUD D-132;
+   centralized dialog/full-page framing D-353). Administrator-only. SimfBanner
+   page-top, SimfDataGrid with Multiselect + numbered pager. Add / Edit / View /
+   Delete are hosted by CrudShell, which frames the reusable InterestAddEdit and
+   InterestViewDelete forms either as a popup or a full page per the admin's
+   toolbar choice (persisted in localStorage via CpPreferences). *@
 @page "/admin/interests"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Interests.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
+@inject CpPreferences Prefs
 
 <PageTitle>@L["Admin.Interests.Title"] · SIMF</PageTitle>
 
-<SimfBanner Title="@L["Admin.Interests.Title"]" />
+@if (!GridHidden)
+{
+    <SimfBanner Title="@L["Admin.Interests.Title"]" />
 
-<div class="simf-page-wide">
-    <div class="simf-surface">
-        @if (_toast is not null)
-        {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
-        }
+    <div class="simf-page-wide">
+        <div class="simf-surface">
+            @if (_toast is not null)
+            {
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            }
 
-        <SimfDataGrid TItem="AdminInterestSummary"
-                      Query="_query"
-                      Page="_page"
-                      Loading="_loading"
-                      OnQueryChanged="OnQueryChangedAsync"
-                      Multiselect="true"
-                      RowKey="@(r => r.Id.ToString())"
-                      RowLabel="@(r => r.Name)"
-                      Caption="@L["Admin.Interests.Title"]"
-                      FilterColumnLabel="@L["Admin.Interests.FilterColumn"]"
-                      OnAdd="OnAddAsync"
-                      OnEditOne="OnEditAsync"
-                      OnDetailsOne="OnDetailsAsync"
-                      OnDeleteOne="OnDeactivateAsync"
-                      PrevLabel="@L["Admin.Interests.Prev"]"
-                      NextLabel="@L["Admin.Interests.Next"]"
-                      FirstLabel="@L["Admin.Interests.Pager.First"]"
-                      LastLabel="@L["Admin.Interests.Pager.Last"]"
-                      PageSizeLabel="@L["Admin.Interests.Pager.PageSize"]"
-                      PageFormatter="@FormatPage"
-                      LoadingLabel="@L["Admin.Interests.Loading"]"
-                      FilterPlaceholder="@L["Admin.Interests.FilterPlaceholder"]"
-                      ActionsHeader="@L["Admin.Interests.Column.Actions"]"
-                      SelectAllLabel="@L["Admin.Interests.Action.SelectAll"]"
-                      SelectRowLabel="@L["Admin.Interests.Action.SelectRow"]"
-                      AddLabel="@L["Admin.Interests.Action.Add"]"
-                      EditLabel="@L["Admin.Interests.Action.Edit"]"
-                      DetailsLabel="@L["Admin.Interests.Action.Details"]"
-                      DeleteLabel="@L["Admin.Interests.Action.Deactivate"]"
-                      SummaryFormatter="@FormatSummary">
-            <Columns>
-                <SimfDataGridColumn TItem="AdminInterestSummary" Key="name"
-                                    Header="@L["Admin.Interests.Column.Name"]"
-                                    Sortable="true" Filterable="true">
-                    <CellTemplate>@context.Name</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminInterestSummary" Key="nameArabic"
-                                    Header="@L["Admin.Interests.Column.NameArabic"]"
-                                    Sortable="true" Filterable="true">
-                    <CellTemplate>@context.NameArabic</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminInterestSummary" Key="displayOrder"
-                                    Header="@L["Admin.Interests.Column.DisplayOrder"]"
-                                    Sortable="true">
-                    <CellTemplate>@context.DisplayOrder</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminInterestSummary" Key="isActive"
-                                    Header="@L["Admin.Interests.Column.Active"]">
-                    <CellTemplate>
-                        @if (context.IsActive)
-                        {
-                            <SimfPill Variant="on">@L["Admin.Interests.Active.Yes"]</SimfPill>
-                        }
-                        else
-                        {
-                            <SimfPill Variant="off">@L["Admin.Interests.Active.No"]</SimfPill>
-                        }
-                    </CellTemplate>
-                </SimfDataGridColumn>
-            </Columns>
-            <EmptyTemplate>
-                <SimfEmptyState Title="@L["Admin.Interests.None"]" />
-            </EmptyTemplate>
-        </SimfDataGrid>
+            <SimfDataGrid TItem="AdminInterestSummary"
+                          Query="_query"
+                          Page="_page"
+                          Loading="_loading"
+                          OnQueryChanged="OnQueryChangedAsync"
+                          Multiselect="true"
+                          RowKey="@(r => r.Id.ToString())"
+                          RowLabel="@(r => r.Name)"
+                          Caption="@L["Admin.Interests.Title"]"
+                          FilterColumnLabel="@L["Admin.Interests.FilterColumn"]"
+                          OnAdd="OnAddAsync"
+                          OnEditOne="OnEditAsync"
+                          OnDetailsOne="OnDetailsAsync"
+                          OnDeleteOne="OnDeleteAsync"
+                          OnExport="OnExportAsync"
+                          OnImport="OnImportAsync"
+                          PrevLabel="@L["Admin.Interests.Prev"]"
+                          NextLabel="@L["Admin.Interests.Next"]"
+                          FirstLabel="@L["Admin.Interests.Pager.First"]"
+                          LastLabel="@L["Admin.Interests.Pager.Last"]"
+                          PageSizeLabel="@L["Admin.Interests.Pager.PageSize"]"
+                          PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Admin.Interests.Loading"]"
+                          FilterPlaceholder="@L["Admin.Interests.FilterPlaceholder"]"
+                          ActionsHeader="@L["Admin.Interests.Column.Actions"]"
+                          SelectAllLabel="@L["Admin.Interests.Action.SelectAll"]"
+                          SelectRowLabel="@L["Admin.Interests.Action.SelectRow"]"
+                          AddLabel="@L["Admin.Interests.Action.Add"]"
+                          EditLabel="@L["Admin.Interests.Action.Edit"]"
+                          DetailsLabel="@L["Admin.Interests.Action.Details"]"
+                          DeleteLabel="@L["Admin.Interests.Action.Deactivate"]"
+                          ExportLabel="@L["Grid.Export"]"
+                          ImportLabel="@L["Grid.Import"]"
+                          SummaryFormatter="@FormatSummary">
+                <CustomToolbar>
+                    <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
+                </CustomToolbar>
+                <Columns>
+                    <SimfDataGridColumn TItem="AdminInterestSummary" Key="name"
+                                        Header="@L["Admin.Interests.Column.Name"]"
+                                        Sortable="true" Filterable="true">
+                        <CellTemplate>@context.Name</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminInterestSummary" Key="nameArabic"
+                                        Header="@L["Admin.Interests.Column.NameArabic"]"
+                                        Sortable="true" Filterable="true">
+                        <CellTemplate>@context.NameArabic</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminInterestSummary" Key="displayOrder"
+                                        Header="@L["Admin.Interests.Column.DisplayOrder"]"
+                                        Sortable="true">
+                        <CellTemplate>@context.DisplayOrder</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminInterestSummary" Key="isActive"
+                                        Header="@L["Admin.Interests.Column.Active"]">
+                        <CellTemplate>
+                            @if (context.IsActive)
+                            {
+                                <SimfPill Variant="on">@L["Admin.Interests.Active.Yes"]</SimfPill>
+                            }
+                            else
+                            {
+                                <SimfPill Variant="off">@L["Admin.Interests.Active.No"]</SimfPill>
+                            }
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.Interests.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
+
+            <CrudGridExcel @ref="_excel" Resource="interests"
+                           OnImported="OnImportedAsync" OnError="OnExcelError" />
+        </div>
     </div>
-</div>
-
-@if (_addOpen)
-{
-    <SimfModal Open="true" Title="@L["Admin.Interests.Add.Title"]"
-               OnClose="@(() => _addOpen = false)">
-        <ChildContent>
-            <InterestForm OnSuccess="OnAddSucceededAsync"
-                          OnCancel="@(() => _addOpen = false)" />
-        </ChildContent>
-    </SimfModal>
 }
 
-@if (_editTarget is not null)
+@if (FormOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.Interests.Edit.Title"]"
-               OnClose="@(() => _editTarget = null)">
-        <ChildContent>
-            <InterestForm Initial="_editTarget"
-                          OnSuccess="OnEditSucceededAsync"
-                          OnCancel="@(() => _editTarget = null)" />
-        </ChildContent>
-    </SimfModal>
-}
-
-@if (_detailsTarget is not null)
-{
-    <SimfModal Open="true" Title="@L["Admin.Interests.Details.Title"]"
-               OnClose="@(() => _detailsTarget = null)">
-        <ChildContent>
-            <dl class="simf-dl">
-                <dt>@L["Admin.Interests.Column.Name"]</dt>
-                <dd>@_detailsTarget.Name</dd>
-                <dt>@L["Admin.Interests.Column.NameArabic"]</dt>
-                <dd>@_detailsTarget.NameArabic</dd>
-                <dt>@L["Admin.Interests.Column.DisplayOrder"]</dt>
-                <dd>@_detailsTarget.DisplayOrder</dd>
-                <dt>@L["Admin.Interests.Column.Active"]</dt>
-                <dd>@(_detailsTarget.IsActive
-                    ? L["Admin.Interests.Active.Yes"]
-                    : L["Admin.Interests.Active.No"])</dd>
-            </dl>
-        </ChildContent>
-        <Footer>
-            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _detailsTarget = null)">
-                @L["Admin.Interests.Details.Close"]
-            </SimfButton>
-        </Footer>
-    </SimfModal>
+    <CrudShell Open="true" Presentation="_presentation"
+               Title="@FormTitle" CloseLabel="@L["Admin.Interests.Details.Close"]"
+               OnClose="CloseForm">
+        @if (_form == FormKind.AddEdit)
+        {
+            <InterestAddEdit IsEdit="_isEdit" Initial="_target"
+                             OnSuccess="OnSavedAsync" OnCancel="CloseForm" />
+        }
+        else if (_form == FormKind.ViewDelete)
+        {
+            <InterestViewDelete IsDelete="_isDelete" Initial="_target"
+                                OnDeleted="OnDeletedAsync" OnCancel="CloseForm" />
+        }
+    </CrudShell>
 }
 
 @code {
     private record Toast(string Variant, string Message);
+
+    private enum FormKind { None, AddEdit, ViewDelete }
+
+    private const string PageKey = "interests";
 
     private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminInterestSummary> _page = new();
     private bool _loading;
     private Toast? _toast;
 
-    private bool _addOpen;
-    private AdminInterestSummary? _editTarget;
-    private AdminInterestSummary? _detailsTarget;
+    private CrudPresentation _presentation = CrudPresentation.Dialog;
+    private FormKind _form = FormKind.None;
+    private bool _isEdit;
+    private bool _isDelete;
+    private AdminInterestSummary? _target;
+    private CrudGridExcel? _excel;
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    private bool FormOpen => _form != FormKind.None;
+    private bool GridHidden => FormOpen && _presentation == CrudPresentation.Page;
+
+    private string FormTitle => _form switch
+    {
+        FormKind.AddEdit => _isEdit
+            ? L["Admin.Interests.Edit.Title"]
+            : L["Admin.Interests.Add.Title"],
+        FormKind.ViewDelete => _isDelete
+            ? L["Admin.Interests.Delete.Title"]
+            : L["Admin.Interests.Details.Title"],
+        _ => string.Empty,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _presentation = await Prefs.GetPresentationAsync(PageKey);
+        await LoadAsync();
+    }
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
@@ -179,53 +188,75 @@
 
     private Task OnAddAsync()
     {
-        _addOpen = true;
+        _toast = null;
+        _form = FormKind.AddEdit;
+        _isEdit = false;
+        _target = null;
         return Task.CompletedTask;
-    }
-
-    private async Task OnAddSucceededAsync(AdminInterestSummary created)
-    {
-        _addOpen = false;
-        _toast = new Toast("success", string.Format(L["Admin.Interests.Created"], created.Name));
-        await LoadAsync();
     }
 
     private Task OnEditAsync(AdminInterestSummary row)
     {
-        _editTarget = row;
+        _toast = null;
+        _form = FormKind.AddEdit;
+        _isEdit = true;
+        _target = row;
         return Task.CompletedTask;
-    }
-
-    private async Task OnEditSucceededAsync(AdminInterestSummary updated)
-    {
-        _editTarget = null;
-        _toast = new Toast("success", string.Format(L["Admin.Interests.Updated"], updated.Name));
-        await LoadAsync();
     }
 
     private Task OnDetailsAsync(AdminInterestSummary row)
     {
-        _detailsTarget = row;
+        _toast = null;
+        _form = FormKind.ViewDelete;
+        _isDelete = false;
+        _target = row;
         return Task.CompletedTask;
     }
 
-    private async Task OnDeactivateAsync(AdminInterestSummary row)
+    private Task OnDeleteAsync(AdminInterestSummary row)
     {
         _toast = null;
-        var envelope = await JS.InvokeAsync<ApiResult<bool>>(
-            "simfAccount.deleteJson", $"/account/api/admin/interests/{row.Id}");
-        if (envelope is { Success: true })
-        {
-            _toast = new Toast("success",
-                string.Format(L["Admin.Interests.Deactivated"], row.Name));
-            await LoadAsync();
-        }
-        else
-        {
-            _toast = new Toast("error",
-                envelope?.Error?.MessageForCurrentCulture()
-                ?? L["Admin.Interests.Fallback"]);
-        }
+        _form = FormKind.ViewDelete;
+        _isDelete = true;
+        _target = row;
+        return Task.CompletedTask;
+    }
+
+    private void CloseForm()
+    {
+        _form = FormKind.None;
+        _target = null;
+    }
+
+    // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
+    private Task OnExportAsync(IReadOnlyList<AdminInterestSummary> selected) =>
+        _excel!.ExportAsync(selected.Select(row => row.Id).ToList(), _query);
+
+    private Task OnImportAsync() => _excel!.TriggerImportAsync();
+
+    private async Task OnImportedAsync()
+    {
+        _toast = new Toast("success", L["Grid.Import.Done"]);
+        await LoadAsync();
+    }
+
+    private void OnExcelError(string message) => _toast = new Toast("error", message);
+
+    private async Task OnSavedAsync(AdminInterestSummary saved)
+    {
+        var wasEdit = _isEdit;
+        CloseForm();
+        _toast = new Toast("success",
+            string.Format(wasEdit ? L["Admin.Interests.Updated"] : L["Admin.Interests.Created"], saved.Name));
+        await LoadAsync();
+    }
+
+    private async Task OnDeletedAsync(AdminInterestSummary deleted)
+    {
+        CloseForm();
+        _toast = new Toast("success",
+            string.Format(L["Admin.Interests.Deactivated"], deleted.Name));
+        await LoadAsync();
     }
 
     private string FormatSummary(int skip, int taken, int total) =>

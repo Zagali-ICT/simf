@@ -7,12 +7,13 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page permission:** the page is gated by `@attribute [RequirePermission(PermissionCatalog.Organisations.View)]`.
 > The toolbar / row actions are individually gated by `Organisations.Create`,
-> `Organisations.Edit`, `Organisations.Delete` and `Organisations.Import`
-> (`AdminOnly` baseline). `Administrator = "*"` therefore sees every action.
+> `Organisations.Edit`, `Organisations.Delete`, `Organisations.Import` and
+> `Organisations.Export` (`AdminOnly` baseline). `Administrator = "*"` therefore
+> sees every action.
 > The CP page calls the BFF passthroughs under `/account/api/admin/organisations/*`
 > (`AccountEndpoints.cs`), which forward to the API endpoints in
 > `OrganisationEndpoints.cs`.
@@ -36,6 +37,10 @@
 | E2E-ORG-013 | RTL / Arabic render mirrors page, grid, both modals | i18n | P1 | _to author_ |
 | E2E-ORG-014 | Per-column filter narrows the grid (`GridQuery.Filters`) | function | P1 | _to author_ |
 | E2E-ORG-015 | Column sort toggles (`Sort` + `SortDescending`) | function | P2 | _to author_ |
+| E2E-ORG-016 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
+| E2E-ORG-017 | Full-page mode: Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-ORG-018 | Delete confirmation gate — View/Delete + SimfConfirm (Cancel = no DELETE; confirm = one DELETE) (D-353) | error | P0 | _to author_ |
+| E2E-ORG-019 | Excel export: toolbar Export downloads an `.xlsx` of the filtered grid (whole grid vs selected rows) (D-356) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -92,9 +97,13 @@ Scenario: Create, search, edit, deactivate one organisation
   And the row's City column reads "Jeddah"
 
   When the administrator clicks the row's Delete (trash) action in the grid
-  Then a browser confirm() appears reading
-      "Deactivate this organisation? It will be removed from the public lookup."
-  When they accept the confirm
+  Then the View/Delete form opens (in CrudShell — dialog by default) showing the
+      row's read-only details (incl. Phone/Email/Website) and a red "Deactivate" button
+  When they click "Deactivate"
+  Then a SimfConfirm dialog appears reading
+      "Deactivate “شركة البحرية للأنظمة”? It will be removed from the public lookup."
+      / "تعطيل «شركة البحرية للأنظمة»؟ ستُزال من قائمة البحث العامة."
+  When they click the confirm "Deactivate" button
   Then DELETE /account/api/admin/organisations/{id} fires and the API returns 200
   And a green toast reads "Organisation deactivated." / "تم تعطيل الجهة."
   And on reload the row no longer shows in the active-default grid
@@ -241,10 +250,11 @@ Scenario: Duplicate commercial registration returns 409 ORGANISATION_INVALID
 ### E2E-ORG-010 — Delete confirm cancelled
 
 ```gherkin
-Scenario: Cancelling the confirm does not deactivate
+Scenario: Cancelling the SimfConfirm does not deactivate
   Given the grid shows at least one organisation
   When the administrator clicks the row's Delete (trash) action in the grid
-  And dismisses the browser confirm() dialog
+  Then the View/Delete form opens (CrudShell) with a red "Deactivate" button
+  When they click "Deactivate" and then click "Cancel" on the SimfConfirm dialog
   Then no DELETE /account/api/admin/organisations/{id} request fires
   And the row remains unchanged and active
   And no toast appears
@@ -348,6 +358,91 @@ Scenario: Clicking a sortable header toggles ascending / descending
       (switching column resets the direction to ascending)
 ```
 
+### E2E-ORG-016 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/organisations with the default "dialog" presentation
+  And the grid toolbar (CustomToolbar) shows the "Open as full page" toggle (maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.organisations" holds {"v":1,"presentation":"page"}
+  When they reload /admin/organisations
+  Then OnInitializedAsync reads the preference back (Prefs.GetPresentationAsync("organisations"))
+  And the toggle still reads "Open as dialog"
+  And opening "New organisation" now renders the full-page frame (not a popup)
+```
+
+### E2E-ORG-017 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page"
+  When the administrator clicks "New organisation"
+  Then the grid + SimfBanner are hidden (GridHidden) and the CrudShell renders the
+      OrganisationAddEdit form as a full page (title + close header, no modal backdrop)
+  When they fill Name (Arabic)="هيئة الموانئ" and click "Save"
+  Then PUT/POST /account/api/admin/organisations returns 200
+  And the page frame closes and the grid re-appears with the new row and the
+      green "Organisation saved." / "تم حفظ الجهة." toast
+  When they click the row's Edit (pencil) action and then the frame's close (X) button
+  Then GET /account/api/admin/organisations/{id} fired to prefill, the form closes,
+      and the grid re-appears unchanged (no PUT)
+  When they click the row's Details (eye) action
+  Then the OrganisationViewDelete form opens read-only as a full page (no "Deactivate" button)
+  When they click "Close"
+  Then the form closes and the grid re-appears
+```
+
+### E2E-ORG-018 — Delete confirmation gate (CrudShell + SimfConfirm) (D-353)
+
+```gherkin
+Scenario: Deactivate requires explicit SimfConfirm — Cancel skips, confirm fires exactly one DELETE
+  Given the administrator is on /admin/organisations with at least one organisation
+      (e.g. Name (Arabic)="شركة البحرية للأنظمة")
+  When they click the row's Delete (trash) action in the grid
+  Then GET /account/api/admin/organisations/{id} fires to load the full detail
+  And the OrganisationViewDelete form opens in CrudShell showing the read-only details
+      (incl. Phone/Email/Website) and a red "Deactivate" button — NOT a native window.confirm()
+  When they click "Deactivate"
+  Then a SimfConfirm dialog appears titled "Deactivate organisation" / "تعطيل الجهة"
+  And its message reads "Deactivate “شركة البحرية للأنظمة”? It will be removed from the public lookup."
+      / "تعطيل «شركة البحرية للأنظمة»؟ ستُزال من قائمة البحث العامة."
+  When they click "Cancel" on the SimfConfirm
+  Then no DELETE request fires and the form stays open with the row unchanged
+  When they click "Deactivate" again and then the confirm "Deactivate" button
+  Then exactly one DELETE /account/api/admin/organisations/{id} fires and returns 200
+  And the form closes, the grid reloads, and a green toast reads
+      "Organisation deactivated." / "تم تعطيل الجهة."
+  And the row's Active pill turns grey "Inactive"
+```
+
+### E2E-ORG-019 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the filtered grid to an XLSX workbook (whole grid vs selected rows)
+  Given the administrator is on /admin/organisations with at least two organisations
+  When they click the toolbar "Export" / "تصدير" action with no rows selected
+  Then a POST /account/api/admin/organisations/export fires carrying
+      AdminGridExportRequest with an empty Ids list and the current GridQuery
+      (the request sends Query only when no rows are selected)
+  And the browser saves a file named simf-organisations-{timestamp}.xlsx
+  And the workbook's "Organisations" sheet has the header row
+      NameAr | NameEn | CommercialRegistration | Sector | City | IsActive
+  And the rows match the current filtered / searched grid
+  When they instead select two rows (row checkboxes) then click "Export"
+  Then the request carries those two Ids and a null Query
+  And the workbook contains exactly those two organisations
+```
+
+> Note: Organisations is **export-only** for the generic D-356 grid Excel
+> (`ExportOrganisationsEndpoint`, gated by `Organisations.Export`); there is no
+> generic grid-import endpoint. The page's separate "Import Excel" button drives
+> the bespoke government-workbook upload modal already covered by E2E-ORG-004
+> (golden import) and E2E-ORG-011 (bad-file rejection). The export uses
+> `simfAccount.downloadXlsx` (direct browser download), not a `CrudGridExcel`
+> component. The API caps export at 5000 rows.
+
 ---
 
 ## Implementation notes
@@ -375,4 +470,4 @@ Scenario: Clicking a sortable header toggles ascending / descending
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; added E2E-ORG-016..019, corrected the now-stale native-`confirm()` delete copy in ORG-001/ORG-010 to the shipped CrudShell + SimfConfirm gate).

@@ -1,0 +1,102 @@
+@* D-353 â€” reusable Organisation View/Delete form, hosted by CrudShell (as a
+   popup or a full page) from OrganisationsList.razor. Inherits
+   CrudViewDeleteFormBase so it exposes the standard parameter surface
+   (IsDelete / Initial / OnDeleted / OnCancel). Read-only details always show
+   (including the contact columns the grid summary omits â€” phone / email /
+   website); when IsDelete=true a Deactivate button appears and a SimfConfirm
+   gates the destructive call (replaces the old native JS confirm() on the
+   list). Adds the View path the inline form never had. *@
+@inherits CrudViewDeleteFormBase<AdminOrganisationDetail>
+@using SIMF.Contracts.Organisations
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Organisations.Col.NameAr"]</dt>
+        <dd>@Initial.NameAr</dd>
+        <dt>@L["Admin.Organisations.Col.NameEn"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.NameEn) ? "â€”" : Initial.NameEn)</dd>
+        <dt>@L["Admin.Organisations.Col.CommercialRegistration"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.CommercialRegistration) ? "â€”" : Initial.CommercialRegistration)</dd>
+        <dt>@L["Admin.Organisations.Col.Sector"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Sector) ? "â€”" : Initial.Sector)</dd>
+        <dt>@L["Admin.Organisations.Col.City"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.City) ? "â€”" : Initial.City)</dd>
+        <dt>@L["Admin.Organisations.Field.Phone"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Phone) ? "â€”" : Initial.Phone)</dd>
+        <dt>@L["Admin.Organisations.Field.Email"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Email) ? "â€”" : Initial.Email)</dd>
+        <dt>@L["Admin.Organisations.Field.Website"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Website) ? "â€”" : Initial.Website)</dd>
+        <dt>@L["Admin.Organisations.Col.Active"]</dt>
+        <dd>@(Initial.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.Organisations.Action.Deactivate"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.Organisations.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.Organisations.Delete.Title"]"
+                 Message="@string.Format(L["Admin.Organisations.Delete.Message"], Initial.NameAr)"
+                 ConfirmLabel="@L["Admin.Organisations.Action.Deactivate"]"
+                 CancelLabel="@L["Admin.Organisations.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/organisations/{Initial.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                // Close the confirm first so the error lands on the visible
+                // form body, not behind the (still-open) confirm overlay.
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Organisations.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.Organisations.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+}

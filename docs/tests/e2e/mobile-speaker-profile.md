@@ -7,6 +7,11 @@
 > from the session-scoped MeetingRequest (mockup screen 27). API implementation
 > lives in `tests/SIMF.Api.Tests/PublicSpeakersTests.cs` (reads) and
 > `tests/SIMF.Api.Tests/SpeakerMeetingRequestsTests.cs` (meeting request).
+> The **Flutter screen is built (D-303)** — widget tests in
+> `src/Mobile/simf_app/test/features/speakers/speaker_profile_screen_test.dart`
+> (profile+CV+sessions, guest→sign-in, signed-in submit→toast, button hidden when
+> opted out, 404). Interim UI: avatar = initials, CV as stacked sections (not
+> tabs), social links copy-to-clipboard (URL-launch deferred to SIMF-VID-001).
 
 | | |
 |--|--|
@@ -15,22 +20,22 @@
 | **Surface** | Mobile (Flutter) + App API |
 | **Test runner** | xUnit + `WebApplicationFactory` (API) · Flutter widget/integration test (screen) |
 | **Auth setup** | **Anonymous** for the profile read; an **approved Visitor** token for the meeting request; an **Admin** token only to seed the speakers (and set `allowsMeetingRequests` / `allowsDataSharing`). **No literal secrets** (admin TOTP via the `Get-Totp` helper). |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-05 |
 
 ## Coverage matrix
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
 | E2E-MOB020-001 | Anonymous profile renders name/rank + the 4 CV tabs + sessions | happy | P0 | authored ✓ (`PublicSpeakersTests`) |
-| E2E-MOB020-002 | Social links shown only when `allowsDataSharing` | edge | P1 | authored (screen) |
+| E2E-MOB020-002 | Social links shown only when `allowsDataSharing` | edge | P1 | authored ✓ (screen) |
 | E2E-MOB020-003 | Unknown / soft-deleted speaker → 404 `SPEAKER_NOT_FOUND` | edge | P0 | authored ✓ (`PublicSpeakersTests`) |
-| E2E-MOB020-004 | Request-meeting button hidden when `allowsMeetingRequests` is false | edge | P0 | authored (screen) |
+| E2E-MOB020-004 | Request-meeting button hidden when `allowsMeetingRequests` is false | edge | P0 | authored ✓ (screen) |
 | E2E-MOB020-005 | Approved visitor submits to a speaker that allows meetings → 200 Pending | happy | P0 | authored ✓ (`Submit_to_a_speaker_that_allows_meetings_returns_pending`) |
 | E2E-MOB020-006 | Speaker does not accept meetings → 409 `SPEAKER_MEETING_REQUESTS_NOT_ALLOWED` | edge | P0 | authored ✓ (`Submit_to_a_speaker_that_does_not_accept_meetings_is_409`) |
 | E2E-MOB020-007 | Guest / unauthenticated submit → 401 | auth | P0 | authored ✓ (`Submit_requires_login`) |
 | E2E-MOB020-008 | Empty subject → 400 `SPEAKER_MEETING_REQUEST_INVALID` | validation | P0 | authored ✓ (`Submit_with_empty_subject_is_invalid`) |
-| E2E-MOB020-009 | Tap a speaker session → Session detail (17) | happy | P1 | authored (screen) |
-| E2E-MOB020-010 | RTL render; hero, back chevron and tabs right-to-left | i18n | P1 | authored (screen) |
+| E2E-MOB020-009 | Tap a speaker session → Session detail (17) | happy | P1 | authored ✓ (screen) |
+| E2E-MOB020-010 | RTL render; hero, back chevron and tabs right-to-left | i18n | P1 | authored ✓ (screen) |
 
 ## Scenarios
 
@@ -162,4 +167,4 @@ Scenario: The speaker profile renders right-to-left in Arabic
 
 ---
 
-_Last reviewed:_ `2026-06-03` by `SIMF Team`.
+_Last reviewed:_ `2026-06-05` by `SIMF Team`.

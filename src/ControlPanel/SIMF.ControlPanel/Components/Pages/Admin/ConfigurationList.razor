@@ -1,160 +1,169 @@
 @* P2.4 (D-229) — System Configuration page (SIMF-FDS-012 §5.5). Admin CRUD
    over the platform system-settings store (the settings that are not content
    and not categories). Ships empty; the team seeds the keys once the client
-   confirms the list (FDS-012 OI-2). Mirrors SessionCategoriesList. Registration
-   open/close lives on its own Operations page. *@
+   confirms the list (FDS-012 OI-2). Registration open/close lives on its own
+   Operations page. Centralized dialog/full-page framing D-353: Add / Edit /
+   View / Delete are hosted by CrudShell, which frames the reusable
+   ConfigurationAddEdit and ConfigurationViewDelete forms as a popup or a full
+   page per the admin's toolbar choice (persisted in localStorage via
+   CpPreferences). Edit / View / Delete work against the full detail fetched by
+   id (the grid carries a summary). The inline SimfModal form + native confirm()
+   delete it used to carry are gone. *@
 @page "/admin/configuration"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Configuration.View)]
 @using SIMF.Contracts.Admin
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
+@inject CpPreferences Prefs
 
 <PageTitle>@L["Admin.Configuration.Title"] · SIMF</PageTitle>
 
-<SimfBanner Title="@L["Admin.Configuration.Title"]" />
-
-<div class="simf-page-wide">
-    <div class="simf-surface">
-        @if (_toast is not null)
-        {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
-        }
-
-        <SimfDataGrid TItem="AdminSystemSettingSummary"
-                      Query="_query"
-                      Page="_page"
-                      Loading="_loading"
-                      OnQueryChanged="OnQueryChangedAsync"
-                      Multiselect="true"
-                      RowKey="@(r => r.Id.ToString())"
-                      RowLabel="@(r => r.Key)"
-                      Caption="@L["Admin.Configuration.Title"]"
-                      FilterColumnLabel="@L["Grid.FilterColumn"]"
-                      OnAdd="OnAdd"
-                      OnEditOne="OnEdit"
-                      OnDeleteOne="OnDeleteAsync"
-                      PrevLabel="@L["Grid.Prev"]"
-                      NextLabel="@L["Grid.Next"]"
-                      FirstLabel="@L["Grid.First"]"
-                      LastLabel="@L["Grid.Last"]"
-                      PageSizeLabel="@L["Grid.PageSize"]"
-                      PageFormatter="@FormatPage"
-                      LoadingLabel="@L["Admin.Configuration.Loading"]"
-                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
-                      ActionsHeader="@L["Grid.Actions"]"
-                      SelectAllLabel="@L["Grid.SelectAll"]"
-                      SelectRowLabel="@L["Grid.SelectRow"]"
-                      AddLabel="@L["Grid.Add"]"
-                      EditLabel="@L["Grid.Edit"]"
-                      DeleteLabel="@L["Grid.Delete"]"
-                      SummaryFormatter="@FormatSummary">
-            <Columns>
-                <SimfDataGridColumn TItem="AdminSystemSettingSummary" Key="key"
-                                    Header="@L["Admin.Configuration.Col.Key"]"
-                                    Sortable="true" Filterable="true">
-                    <CellTemplate><code>@context.Key</code></CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminSystemSettingSummary" Key="value"
-                                    Header="@L["Admin.Configuration.Col.Value"]"
-                                    Filterable="true">
-                    <CellTemplate>@context.Value</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminSystemSettingSummary" Key="description"
-                                    Header="@L["Admin.Configuration.Col.Description"]"
-                                    Filterable="true">
-                    <CellTemplate>@context.Description</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminSystemSettingSummary" Key="isActive"
-                                    Header="@L["Admin.Configuration.Col.Active"]">
-                    <CellTemplate>
-                        @if (context.IsActive)
-                        {
-                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
-                        }
-                        else
-                        {
-                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
-                        }
-                    </CellTemplate>
-                </SimfDataGridColumn>
-            </Columns>
-            <EmptyTemplate>
-                <SimfEmptyState Title="@L["Admin.Configuration.None"]" />
-            </EmptyTemplate>
-        </SimfDataGrid>
-    </div>
-</div>
-
-@if (_editOpen)
+@if (!GridHidden)
 {
-    <SimfModal Open="true"
-               Title="@(_isEdit ? L["Admin.Configuration.Edit.Title"] : L["Admin.Configuration.Add.Title"])"
-               OnClose="@(() => _editOpen = false)">
-        <ChildContent>
-            <div class="simf-form__fields">
-                <SimfTextField Label="@L["Admin.Configuration.Field.Key"]"
-                               Value="@_form.Key"
-                               ValueChanged="@(v => _form.Key = v)"
-                               ValueExpression="@(() => _form.Key)"
-                               MaxLength="128"
-                               Disabled="@(_busy || _isEdit)" />
-                <SimfTextField Label="@L["Admin.Configuration.Field.Value"]"
-                               Value="@_form.Value"
-                               ValueChanged="@(v => _form.Value = v)"
-                               ValueExpression="@(() => _form.Value)"
-                               MaxLength="2048"
-                               Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.Configuration.Field.Description"]"
-                               Value="@_form.Description"
-                               ValueChanged="@(v => _form.Description = v)"
-                               ValueExpression="@(() => _form.Description)"
-                               MaxLength="512"
-                               Disabled="_busy" />
-                @if (_isEdit)
-                {
-                    <SimfCheckbox Value="_form.IsActive"
-                                  ValueChanged="@(v => _form.IsActive = v)"
-                                  Disabled="_busy">
-                        @L["Admin.Configuration.Field.IsActive"]
-                    </SimfCheckbox>
-                }
-            </div>
-        </ChildContent>
-        <Footer>
-            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _editOpen = false)">
-                @L["Admin.Configuration.Cancel"]
-            </SimfButton>
-            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
-                @L["Admin.Configuration.Save"]
-            </SimfButton>
-        </Footer>
-    </SimfModal>
+    <SimfBanner Title="@L["Admin.Configuration.Title"]" />
+
+    <div class="simf-page-wide">
+        <div class="simf-surface">
+            @if (_toast is not null)
+            {
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            }
+
+            <SimfDataGrid TItem="AdminSystemSettingSummary"
+                          Query="_query"
+                          Page="_page"
+                          Loading="_loading"
+                          OnQueryChanged="OnQueryChangedAsync"
+                          Multiselect="true"
+                          RowKey="@(r => r.Id.ToString())"
+                          RowLabel="@(r => r.Key)"
+                          Caption="@L["Admin.Configuration.Title"]"
+                          FilterColumnLabel="@L["Grid.FilterColumn"]"
+                          OnAdd="OnAddAsync"
+                          OnEditOne="OnEditAsync"
+                          OnDetailsOne="OnDetailsAsync"
+                          OnDeleteOne="OnDeleteAsync"
+                          OnExport="OnExportAsync"
+                          OnImport="OnImportAsync"
+                          PrevLabel="@L["Grid.Prev"]"
+                          NextLabel="@L["Grid.Next"]"
+                          FirstLabel="@L["Grid.First"]"
+                          LastLabel="@L["Grid.Last"]"
+                          PageSizeLabel="@L["Grid.PageSize"]"
+                          PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Admin.Configuration.Loading"]"
+                          FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                          ActionsHeader="@L["Grid.Actions"]"
+                          SelectAllLabel="@L["Grid.SelectAll"]"
+                          SelectRowLabel="@L["Grid.SelectRow"]"
+                          AddLabel="@L["Grid.Add"]"
+                          EditLabel="@L["Grid.Edit"]"
+                          DetailsLabel="@L["Grid.Details"]"
+                          DeleteLabel="@L["Grid.Delete"]"
+                          ExportLabel="@L["Grid.Export"]"
+                          ImportLabel="@L["Grid.Import"]"
+                          SummaryFormatter="@FormatSummary">
+                <CustomToolbar>
+                    <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
+                </CustomToolbar>
+                <Columns>
+                    <SimfDataGridColumn TItem="AdminSystemSettingSummary" Key="key"
+                                        Header="@L["Admin.Configuration.Col.Key"]"
+                                        Sortable="true" Filterable="true">
+                        <CellTemplate><code>@context.Key</code></CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminSystemSettingSummary" Key="value"
+                                        Header="@L["Admin.Configuration.Col.Value"]"
+                                        Filterable="true">
+                        <CellTemplate>@context.Value</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminSystemSettingSummary" Key="description"
+                                        Header="@L["Admin.Configuration.Col.Description"]"
+                                        Filterable="true">
+                        <CellTemplate>@context.Description</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminSystemSettingSummary" Key="isActive"
+                                        Header="@L["Admin.Configuration.Col.Active"]">
+                        <CellTemplate>
+                            @if (context.IsActive)
+                            {
+                                <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                            }
+                            else
+                            {
+                                <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                            }
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.Configuration.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
+
+            <CrudGridExcel @ref="_excel" Resource="system-settings"
+                           OnImported="OnImportedAsync" OnError="OnExcelError" />
+        </div>
+    </div>
+}
+
+@if (FormOpen)
+{
+    <CrudShell Open="true" Presentation="_presentation"
+               Title="@FormTitle" CloseLabel="@L["Admin.Configuration.Details.Close"]"
+               OnClose="CloseForm">
+        @if (_form == FormKind.AddEdit)
+        {
+            <ConfigurationAddEdit IsEdit="_isEdit" Initial="_target"
+                                  OnSuccess="OnSavedAsync" OnCancel="CloseForm" />
+        }
+        else if (_form == FormKind.ViewDelete)
+        {
+            <ConfigurationViewDelete IsDelete="_isDelete" Initial="_target"
+                                     OnDeleted="OnDeletedAsync" OnCancel="CloseForm" />
+        }
+    </CrudShell>
 }
 
 @code {
     private record Toast(string Variant, string Message);
 
-    private sealed class FormModel
-    {
-        public string Key { get; set; } = string.Empty;
-        public string Value { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public bool IsActive { get; set; } = true;
-    }
+    private enum FormKind { None, AddEdit, ViewDelete }
+
+    private const string PageKey = "configuration";
 
     private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminSystemSettingSummary> _page = new();
     private bool _loading;
-    private bool _busy;
     private Toast? _toast;
 
-    private bool _editOpen;
+    private CrudPresentation _presentation = CrudPresentation.Dialog;
+    private FormKind _form = FormKind.None;
     private bool _isEdit;
-    private Guid _editingId;
-    private FormModel _form = new();
+    private bool _isDelete;
+    private AdminSystemSettingDetail? _target;
+    private CrudGridExcel? _excel;
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    private bool FormOpen => _form != FormKind.None;
+    private bool GridHidden => FormOpen && _presentation == CrudPresentation.Page;
+
+    private string FormTitle => _form switch
+    {
+        FormKind.AddEdit => _isEdit
+            ? L["Admin.Configuration.Edit.Title"]
+            : L["Admin.Configuration.Add.Title"],
+        FormKind.ViewDelete => _isDelete
+            ? L["Admin.Configuration.Delete.Title"]
+            : L["Admin.Configuration.Details.Title"],
+        _ => string.Empty,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _presentation = await Prefs.GetPresentationAsync(PageKey);
+        await LoadAsync();
+    }
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
@@ -163,7 +172,7 @@
     }
 
     private string FormatSummary(int skip, int taken, int total) =>
-        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+        string.Format(L["Admin.Configuration.Summary"], skip + 1, skip + taken, total);
 
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
@@ -173,136 +182,106 @@
         _loading = true;
         try
         {
-            var env = await JS.InvokeAsync<ApiResult<GridPage<AdminSystemSettingSummary>>>(
+            var envelope = await JS.InvokeAsync<ApiResult<GridPage<AdminSystemSettingSummary>>>(
                 "simfAccount.postJson", "/account/api/admin/system-settings/list", _query);
-            if (env is { Success: true, Data: not null })
+            if (envelope is { Success: true, Data: not null })
             {
-                _page = env.Data;
+                _page = envelope.Data;
             }
             else
             {
                 _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Configuration.LoadFailed"]);
+                    envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Configuration.LoadFailed"]);
             }
         }
         finally { _loading = false; }
     }
 
-    private void OnAdd()
+    private Task OnAddAsync()
     {
-        _editOpen = true;
+        _toast = null;
+        _form = FormKind.AddEdit;
         _isEdit = false;
-        _editingId = Guid.Empty;
-        _form = new FormModel();
-        _toast = null;
+        _target = null;
+        return Task.CompletedTask;
     }
 
-    private async Task OnEdit(AdminSystemSettingSummary row)
+    private async Task OnEditAsync(AdminSystemSettingSummary row)
     {
-        if (_busy) return;
-        _busy = true;
-        _toast = null;
-        try
-        {
-            var env = await JS.InvokeAsync<ApiResult<AdminSystemSettingDetail>>(
-                "simfAccount.getJson", $"/account/api/admin/system-settings/{row.Id}");
-            if (env is { Success: true, Data: not null })
-            {
-                var d = env.Data;
-                _editingId = d.Id;
-                _form = new FormModel
-                {
-                    Key = d.Key,
-                    Value = d.Value,
-                    Description = d.Description ?? string.Empty,
-                    IsActive = d.IsActive,
-                };
-                _isEdit = true;
-                _editOpen = true;
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Configuration.LoadFailed"]);
-            }
-        }
-        finally { _busy = false; }
+        var detail = await LoadDetailAsync(row.Id);
+        if (detail is null) return;
+        _form = FormKind.AddEdit;
+        _isEdit = true;
+        _target = detail;
     }
 
-    private async Task SaveAsync()
+    private async Task OnDetailsAsync(AdminSystemSettingSummary row)
     {
-        if (_busy) return;
-        if (string.IsNullOrWhiteSpace(_form.Key))
-        {
-            _toast = new Toast("error", L["Admin.Configuration.Required"]);
-            return;
-        }
-        _busy = true;
-        _toast = null;
-        try
-        {
-            ApiResult<AdminSystemSettingDetail>? env;
-            if (_isEdit)
-            {
-                env = await JS.InvokeAsync<ApiResult<AdminSystemSettingDetail>>(
-                    "simfAccount.putJson",
-                    $"/account/api/admin/system-settings/{_editingId}",
-                    new AdminUpdateSystemSettingRequest
-                    {
-                        Value = _form.Value,
-                        Description = string.IsNullOrWhiteSpace(_form.Description) ? null : _form.Description,
-                        IsActive = _form.IsActive,
-                    });
-            }
-            else
-            {
-                env = await JS.InvokeAsync<ApiResult<AdminSystemSettingDetail>>(
-                    "simfAccount.postJson",
-                    "/account/api/admin/system-settings",
-                    new AdminCreateSystemSettingRequest
-                    {
-                        Key = _form.Key,
-                        Value = _form.Value,
-                        Description = string.IsNullOrWhiteSpace(_form.Description) ? null : _form.Description,
-                    });
-            }
-            if (env is { Success: true })
-            {
-                _editOpen = false;
-                _toast = new Toast("success", L["Admin.Configuration.Saved"]);
-                await LoadAsync();
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Configuration.LoadFailed"]);
-            }
-        }
-        finally { _busy = false; }
+        var detail = await LoadDetailAsync(row.Id);
+        if (detail is null) return;
+        _form = FormKind.ViewDelete;
+        _isDelete = false;
+        _target = detail;
     }
 
     private async Task OnDeleteAsync(AdminSystemSettingSummary row)
     {
-        if (_busy) return;
-        var confirmed = await JS.InvokeAsync<bool>(
-            "confirm", L["Admin.Configuration.Delete.Confirm"].Value);
-        if (!confirmed) return;
-        _busy = true;
-        try
+        var detail = await LoadDetailAsync(row.Id);
+        if (detail is null) return;
+        _form = FormKind.ViewDelete;
+        _isDelete = true;
+        _target = detail;
+    }
+
+    // Edit / View / Delete all work against the full detail (the grid carries
+    // a summary). Returns null and surfaces a toast on failure.
+    private async Task<AdminSystemSettingDetail?> LoadDetailAsync(Guid id)
+    {
+        _toast = null;
+        var envelope = await JS.InvokeAsync<ApiResult<AdminSystemSettingDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/system-settings/{id}");
+        if (envelope is { Success: true, Data: not null })
         {
-            var env = await JS.InvokeAsync<ApiResult<bool>>(
-                "simfAccount.deleteJson", $"/account/api/admin/system-settings/{row.Id}");
-            if (env is { Success: true })
-            {
-                _toast = new Toast("success", L["Admin.Configuration.Deleted"]);
-                await LoadAsync();
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture() ?? L["Admin.Configuration.LoadFailed"]);
-            }
+            return envelope.Data;
         }
-        finally { _busy = false; }
+        _toast = new Toast("error",
+            envelope?.Error?.MessageForCurrentCulture()
+            ?? L["Admin.Configuration.LoadFailed"]);
+        return null;
+    }
+
+    private void CloseForm()
+    {
+        _form = FormKind.None;
+        _target = null;
+    }
+
+    // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
+    private Task OnExportAsync(IReadOnlyList<AdminSystemSettingSummary> selected) =>
+        _excel!.ExportAsync(selected.Select(row => row.Id).ToList(), _query);
+
+    private Task OnImportAsync() => _excel!.TriggerImportAsync();
+
+    private async Task OnImportedAsync()
+    {
+        _toast = new Toast("success", L["Grid.Import.Done"]);
+        await LoadAsync();
+    }
+
+    private void OnExcelError(string message) => _toast = new Toast("error", message);
+
+    private async Task OnSavedAsync(AdminSystemSettingDetail saved)
+    {
+        CloseForm();
+        _toast = new Toast("success", L["Admin.Configuration.Saved"]);
+        await LoadAsync();
+    }
+
+    private async Task OnDeletedAsync(AdminSystemSettingDetail deleted)
+    {
+        CloseForm();
+        _toast = new Toast("success", L["Admin.Configuration.Deleted"]);
+        await LoadAsync();
     }
 }

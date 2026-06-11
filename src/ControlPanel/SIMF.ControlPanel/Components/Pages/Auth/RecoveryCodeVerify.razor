@@ -21,7 +21,7 @@
             <SimfAuthCard Title="@L["Auth.RecoveryCode.Title"]"
                           SupportingText="@L["Auth.RecoveryCode.Supporting"]">
                 <TopControls>
-                    <SimfLanguageSwitch Href="@CultureHref" Label="@L["Auth.LanguageSwitch"]" />
+                    <SimfLanguageSwitch Label="@L["Auth.LanguageSwitch"]" />
                     <SimfThemeToggle />
                 </TopControls>
                 <ChildContent>
@@ -78,15 +78,6 @@
     {
         _messages.Clear(e.FieldIdentifier);
         _editContext.NotifyValidationStateChanged();
-    }
-
-    private string CultureHref
-    {
-        get
-        {
-            var next = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar" ? "en" : "ar";
-            return $"/culture?culture={next}&redirectUri={Uri.EscapeDataString("/login/recovery")}";
-        }
     }
 
     private async Task HandleSubmitAsync()

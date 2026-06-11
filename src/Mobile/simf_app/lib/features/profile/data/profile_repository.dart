@@ -42,10 +42,14 @@ class ProfileRepository {
     );
   }
 
-  /// E4 — profile-type lookup (active, non-Admin rows).
-  Future<List<ProfileTypeItem>> getProfileTypes() {
+  /// E4 — profile-type lookup (active, non-Admin rows). [isVisitor] mirrors the
+  /// نوع التسجيل chip: true → audience rows, false → partner/Other rows, null → all.
+  Future<List<ProfileTypeItem>> getProfileTypes({bool? isVisitor}) {
     return _client.get<List<ProfileTypeItem>>(
       '/app/account/profile-types',
+      queryParameters: isVisitor == null
+          ? null
+          : <String, dynamic>{'isVisitor': isVisitor},
       decodeData: (data) => _keyed(data, 'items', ProfileTypeItem.fromJson),
     );
   }

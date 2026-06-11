@@ -30,6 +30,8 @@
     @* D-116: Cropper.Blazor static assets (image cropping modal). *@
     <link rel="stylesheet" href="@Assets["_content/Cropper.Blazor/cropper.min.css"]" />
     <script src="@Assets["_content/SIMF.Components/js/simf-theme.js"]"></script>
+    @* D-353 — per-page UI preference store (CRUD dialog/full-page choice). *@
+    <script src="@Assets["_content/SIMF.Components/js/simf-prefs.js"]"></script>
     <script src="@Assets["js/simf-account.js"]"></script>
     @* D-123: the underlying cropperjs global MUST load before the Cropper.Blazor
        JS interop bridge — V10 ERP App.razor lines 32-33 do the same. Without

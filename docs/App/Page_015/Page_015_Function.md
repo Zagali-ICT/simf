@@ -50,11 +50,11 @@ code, no `RequireApprovedAccount`. A signed-in visitor sees exactly the same pag
 ## Booth popup content
 | Field | Source | Note |
 |-------|--------|------|
-| Name (AR/EN) | `PublicBoothSummary.NameAr` / `NameEn` | always real |
+| Name (AR/EN) | `PublicBoothSummary.NameArabic` / `Name` | always real |
 | Code | `PublicBoothSummary.Code` | always real |
-| Exhibitor (AR/EN) | `ExhibitorNameAr` / `ExhibitorNameEn` | nullable |
-| Sector (AR/EN) | `SectorAr` / `SectorEn` | nullable |
-| Description | `PublicBoothDetail.DescriptionAr` / `DescriptionEn` | only via detail call |
+| Exhibitor (AR/EN) | `ExhibitorNameArabic` / `ExhibitorName` | nullable |
+| Sector (AR/EN) | `SectorArabic` / `Sector` | nullable |
+| Description | `PublicBoothDetail.DescriptionArabic` / `Description` | only via detail call |
 | **Logo image** | — | **decoration — no DTO field (D11)** |
 | **Hall name** | — | only `HallId` (Guid) ships; **name is decoration (D11)** |
 

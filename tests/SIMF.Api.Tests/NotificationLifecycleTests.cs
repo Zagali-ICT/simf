@@ -40,8 +40,9 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
     {
         var (subjectToken, subjectId) = await CreateEmailVerifiedVisitorAsync();
         var (adminEmail, adminId) = await CreateAdminAsync();
-        // Seed an interest so the upsert validator passes.
+        // Seed an interest + organisation so the upsert validator passes.
         var interestId = await SeedInterestAsync();
+        var organisationId = await SeedOrganisationAsync();
 
         var request = new UpsertUserProfileRequest
         {
@@ -53,6 +54,7 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
             PlaceOfBirth = "Riyadh",
             IsSaudi = true,
             NationalId = "1101798278",
+            OrganisationId = organisationId,
         };
 
         var response = await PostAuthAsync(
@@ -382,6 +384,24 @@ public sealed class NotificationLifecycleTests : IClassFixture<SimfApiFactory>
         await db.SaveChangesAsync();
         await appDb.SaveChangesAsync();
         return interest.Id;
+    }
+
+    // B3 — D-221: organisation is now required on the profile upsert.
+    private async Task<Guid> SeedOrganisationAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var org = new SIMF.Domain.Organisations.Organisation
+        {
+            Id = Guid.NewGuid(),
+            NameArabic = "جهة الإشعارات",
+            Name = $"Notif Org {Guid.NewGuid():N}",
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        appDb.Organisations.Add(org);
+        await appDb.SaveChangesAsync();
+        return org.Id;
     }
 
     private Task<HttpResponseMessage> PostAuthAsync<TBody>(

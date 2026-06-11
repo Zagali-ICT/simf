@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel export added; toggle N/A on this read-only page) |
 
 > **Page shape (read this first).** `/admin/ratings` is a **read-only** admin view
 > of attendee forum ratings (D-199, Mockup screen 40 "Rate the Forum"). There is
@@ -56,6 +56,7 @@
 | E2E-RAT-010 | RTL / Arabic render — page, stat cards, table headers mirror | i18n | P1 | _to author_ |
 | E2E-RAT-011 | Per-column filter (Comment) narrows the grid via `GridQuery.Filters["comment"]` | happy | P1 | _to author_ |
 | E2E-RAT-012 | Column sort toggles (Stars / Submitted at) via `Sort` + `SortDescending` | happy | P2 | _to author_ |
+| E2E-RAT-013 | Excel export — toolbar Export downloads an .xlsx of the filtered grid (whole grid vs selected rows) (D-356) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -148,9 +149,10 @@ Scenario: The page exposes no write controls
   When the page has finished loading
   Then there is no "Add rating" / "New" / toolbar create button
   And no grid row exposes an Edit (pencil), Delete (trash), Deactivate, or Details (info) icon action
-  And the grid has no bulk-action toolbar button (the select-all + row checkboxes are cosmetic — no handler is wired)
-  And the only read affordances are the column sort buttons (Stars / Submitted at), the Comment per-column filter input, the pager, the language toggle and the nav rail
-  And no /account/api/admin/feedback/ratings PUT/POST(create)/DELETE request can be issued from this page
+  And the only toolbar action is "Export" (wired via OnExport — read-only Excel download, never a write); there is no edit/delete bulk-action button
+  And the select-all + row checkboxes (Multiselect="true") drive only the Export selection, not any write/bulk-edit action
+  And the read affordances are the "Export" toolbar action, the column sort buttons (Stars / Submitted at), the Comment per-column filter input, the pager, the language toggle and the nav rail
+  And no /account/api/admin/feedback/ratings PUT/POST(create)/DELETE request can be issued from this page (the only outbound write-shaped call is the read-only POST /account/api/admin/ratings/export that streams an .xlsx)
 ```
 
 ### E2E-RAT-006 — Empty state
@@ -278,6 +280,40 @@ Scenario: Sorting on Stars and Submitted at toggles ascending / descending
   And the "Comment" and "Active" columns have no sort button (Sortable is unset)
 ```
 
+### E2E-RAT-013 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the ratings grid to an XLSX workbook (whole filtered set vs selected rows)
+  Given the administrator is on /admin/ratings with at least two active ratings visible
+  And the grid toolbar shows the "Export" action (OnExport wired; ExportLabel = L["Grid.Export"])
+  When they click "Export" with no rows selected
+  Then the page calls the JS interop simfAccount.downloadXlsx against
+    POST /account/api/admin/ratings/export (BFF → API) as a direct file download
+  And the AdminGridExportRequest body carries Ids = [] (empty) and Query = the current _query
+    (so the whole currently-filtered set is exported)
+  And the browser saves an .xlsx workbook whose sheet header row reads
+    Stars | Comment | IsActive | CreatedAt (the read-only grid columns)
+  And no rating data is created, updated or deleted (export is read-only)
+
+  When they instead tick exactly two rows then click "Export"
+  Then the AdminGridExportRequest body carries those two rating Ids and Query = null
+    (selected.Count > 0, so the current page query is omitted)
+  And the workbook contains exactly those two rows
+
+  When the export would exceed 5000 rows (the API export cap)
+  Then the API returns HTTP 400 and the page surfaces a bilingual error toast
+    and no file is saved
+```
+
+**Evidence captured:**
+- Screenshot of the toolbar "Export" action + the saved workbook → `docs/screenshots/cp-admin-ratings-export.png`
+- Console errors: 0 expected
+- Network: POST /account/api/admin/ratings/export returns 200 with an
+  `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` body; the
+  attachment filename header carries the `.xlsx` name
+- This page is **export-only** — there is no Import toolbar action wired (OnImport is
+  not set), so no `/account/api/admin/ratings/import` call is reachable from here
+
 ---
 
 ## Implementation notes
@@ -315,3 +351,4 @@ Scenario: Sorting on Stars and Submitted at toggles ascending / descending
 ---
 
 _Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle): added E2E-RAT-013 (Excel export); page is export-only with no presentation toggle (read-only view, no forms). Corrected the read-only-guarantee scenario (E2E-RAT-005) to account for the now-shipped Export toolbar action.

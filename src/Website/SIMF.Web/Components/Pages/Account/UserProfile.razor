@@ -9,10 +9,14 @@
 @page "/account/profile"
 @rendermode AppRenderMode.InteractiveServerNoPrerender
 @attribute [Authorize]
+@using Microsoft.Extensions.Logging
+@using SIMF.Contracts.Organisations
+@implements IDisposable
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider AuthState
+@inject ILogger<UserProfile> Logger
 
 <PageTitle>@L["Account.Profile.Title"]</PageTitle>
 
@@ -87,6 +91,41 @@
                                    ValueExpression="@(() => _model.JobTitle)"
                                    Disabled="_saving" />
 
+                    @* B3 — D-221 (الجهة): required organisation typeahead via a
+                       native datalist (no custom CSS — Web centralises styling
+                       in the theme; datalist needs none). *@
+                    <div class="simf-field @(_orgError is not null ? "simf-field--error" : null)">
+                        <label class="simf-field__label" for="profile-org">
+                            @L["Account.Profile.Organisation"]
+                        </label>
+                        <div class="simf-field__control">
+                            <input id="profile-org" class="simf-field__input"
+                                   list="profile-org-list" autocomplete="off"
+                                   placeholder="@L["Account.Profile.OrganisationSearch"]"
+                                   value="@_orgSearch"
+                                   @oninput="OnOrgInputAsync" @onchange="OnOrgCommitted"
+                                   disabled="@_saving"
+                                   aria-invalid="@(_orgError is not null ? "true" : null)" />
+                            <datalist id="profile-org-list">
+                                @foreach (var o in _orgResults)
+                                {
+                                    <option value="@OrgLabel(o)"></option>
+                                }
+                            </datalist>
+                        </div>
+                        @if (_orgError is not null)
+                        {
+                            <p class="simf-field__error" role="alert">
+                                <SimfIcon Name="alert" Size="14" Class="simf-field__error-icon" />
+                                @_orgError
+                            </p>
+                        }
+                        else
+                        {
+                            <p class="simf-field__helper">@L["Account.Profile.OrganisationHint"]</p>
+                        }
+                    </div>
+
                     <SimfSelect TValue="string"
                                 Label="@L["Account.Profile.Nationality"]"
                                 Placeholder="@L["Account.Profile.NationalityPlaceholder"]"
@@ -120,6 +159,7 @@
                         <SimfTextField Label="@L["Account.Profile.NationalId"]"
                                        @bind-Value="_nationalIdInput"
                                        Helper="@L["Account.Profile.NationalIdHint"]"
+                                       MaxLength="10" Numeric="true"
                                        Disabled="_saving" />
                     }
                     else
@@ -127,6 +167,7 @@
                         <SimfTextField Label="@L["Account.Profile.Iqama"]"
                                        @bind-Value="_iqamaInput"
                                        Helper="@L["Account.Profile.IqamaHint"]"
+                                       MaxLength="10" Numeric="true"
                                        Disabled="_saving" />
                         <SimfTextField Label="@L["Account.Profile.Passport"]"
                                        @bind-Value="_passportInput"
@@ -225,6 +266,12 @@
     private string _iqamaInput = string.Empty;
     private string _passportInput = string.Empty;
 
+    // B3 — D-221 (الجهة): required organisation typeahead (native datalist).
+    private string _orgSearch = string.Empty;
+    private string? _orgError;
+    private OrganisationPickerItem[] _orgResults = Array.Empty<OrganisationPickerItem>();
+    private CancellationTokenSource? _orgSearchCts;
+
     private EditContext _editContext = default!;
     private ValidationMessageStore _messages = default!;
     private bool _saving;
@@ -272,18 +319,22 @@
     {
         try
         {
-            // Three parallel fetches — the page can't render without all of them.
+            // Parallel fetches — the page can't render without the first three;
+            // organisations seed the picker (a failed fetch leaves it empty).
             var profileTask = JS.InvokeAsync<ApiResult<UserProfileResponse>>(
                 "simfAccount.getJson", "/account/api/user-profile").AsTask();
             var countriesTask = JS.InvokeAsync<ApiResult<CountryListResponse>>(
                 "simfAccount.getJson", "/account/api/user-profile/countries").AsTask();
             var interestsTask = JS.InvokeAsync<ApiResult<InterestListResponse>>(
                 "simfAccount.getJson", "/account/api/interests").AsTask();
-            await Task.WhenAll(profileTask, countriesTask, interestsTask);
+            var organisationsTask = JS.InvokeAsync<ApiResult<IReadOnlyList<OrganisationPickerItem>>>(
+                "simfAccount.getJson", "/account/api/organisations?top=20").AsTask();
+            await Task.WhenAll(profileTask, countriesTask, interestsTask, organisationsTask);
 
             var profileEnvelope = await profileTask;
             var countriesEnvelope = await countriesTask;
             var interestsEnvelope = await interestsTask;
+            var organisationsEnvelope = await organisationsTask;
 
             if (profileEnvelope is null || !profileEnvelope.Success || profileEnvelope.Data is null
                 || countriesEnvelope is null || !countriesEnvelope.Success || countriesEnvelope.Data is null
@@ -319,6 +370,18 @@
             _model.SaudiMobile = _response.SaudiMobile;
             _model.InternationalMobile = _response.InternationalMobile;
 
+            // B3 — D-221: seed the organisation picker and pre-fill the saved
+            // pick. The label resolves only if the org is in the first page of
+            // results; the id is preserved regardless, so a returning user's
+            // save is never blocked by a label that did not resolve.
+            if (organisationsEnvelope is { Success: true, Data: not null })
+            {
+                _orgResults = organisationsEnvelope.Data.ToArray();
+            }
+            _model.OrganisationId = _response.OrganisationId;
+            var currentOrg = _orgResults.FirstOrDefault(o => o.Id == _response.OrganisationId);
+            _orgSearch = currentOrg is not null ? OrgLabel(currentOrg) : string.Empty;
+
             if (!string.IsNullOrEmpty(_response.QrId))
             {
                 _qrSvg = BuildQrSvg(_response.QrId);
@@ -327,7 +390,8 @@
         }
         catch (Exception ex)
         {
-            _loadError = $"{L["Account.Profile.LoadFailed"]} ({ex.Message})";
+            Logger.LogError(ex, "Loading the account profile page failed.");
+            _loadError = L["Account.Profile.LoadFailed"];
             StateHasChanged();
         }
     }
@@ -351,6 +415,14 @@
         _model.PassportNumber = !_model.IsSaudi
             ? (string.IsNullOrWhiteSpace(_passportInput) ? null : _passportInput.Trim())
             : null;
+
+        // B3 — D-221: organisation is required (the server enforces it too).
+        _orgError = null;
+        if (_model.OrganisationId is null)
+        {
+            _orgError = L["Account.Profile.OrganisationRequired"];
+            return;
+        }
 
         _saving = true;
         try
@@ -379,6 +451,66 @@
     {
         _model.DateOfBirth = DateOnly.TryParse(value, out var parsed) ? parsed : null;
         return Task.CompletedTask;
+    }
+
+    // B3 — D-221 (الجهة): organisation typeahead. The label carries the city so
+    // datalist options stay distinct when two organisations share a name.
+    private static string OrgLabel(OrganisationPickerItem o)
+    {
+        var isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+        var name = isArabic ? o.NameAr : (string.IsNullOrWhiteSpace(o.NameEn) ? o.NameAr : o.NameEn!);
+        return string.IsNullOrWhiteSpace(o.City) ? name : $"{name} — {o.City}";
+    }
+
+    private async Task OnOrgInputAsync(ChangeEventArgs e)
+    {
+        _orgSearch = e.Value?.ToString() ?? string.Empty;
+        // Debounce so fast typing doesn't fan out a request per keystroke.
+        _orgSearchCts?.Cancel();
+        _orgSearchCts?.Dispose();
+        _orgSearchCts = new CancellationTokenSource();
+        var token = _orgSearchCts.Token;
+        var term = _orgSearch;
+        try
+        {
+            await Task.Delay(250, token);
+            await SearchOrganisationsAsync(term);
+            StateHasChanged();
+        }
+        catch (TaskCanceledException) { /* superseded by a newer keystroke */ }
+    }
+
+    // The datalist commits a value on selection / blur; resolve it back to a
+    // real organisation id. Free text that matches no option clears the pick,
+    // so the required check below blocks the save until a real one is chosen.
+    private void OnOrgCommitted(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? string.Empty;
+        _orgSearch = value;
+        var match = _orgResults.FirstOrDefault(
+            o => string.Equals(OrgLabel(o), value, StringComparison.Ordinal));
+        _model.OrganisationId = match?.Id;
+        if (_model.OrganisationId is not null)
+        {
+            _orgError = null;
+            // A datalist pick fires input (debounced search) AND change; the org
+            // is already chosen, so cancel the pending search to skip a wasted fetch.
+            _orgSearchCts?.Cancel();
+        }
+    }
+
+    private async Task SearchOrganisationsAsync(string? term)
+    {
+        var url = "/account/api/organisations?top=20";
+        if (!string.IsNullOrWhiteSpace(term))
+        {
+            url += $"&search={Uri.EscapeDataString(term.Trim())}";
+        }
+        var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<OrganisationPickerItem>>>(
+            "simfAccount.getJson", url);
+        _orgResults = envelope is { Success: true, Data: not null }
+            ? envelope.Data.ToArray()
+            : Array.Empty<OrganisationPickerItem>();
     }
 
     private async Task UploadIdImageAsync()
@@ -441,5 +573,11 @@
         using var data = generator.CreateQrCode(qrId, QRCoder.QRCodeGenerator.ECCLevel.Q);
         var svg = new QRCoder.SvgQRCode(data);
         return svg.GetGraphic(4);
+    }
+
+    public void Dispose()
+    {
+        _orgSearchCts?.Cancel();
+        _orgSearchCts?.Dispose();
     }
 }

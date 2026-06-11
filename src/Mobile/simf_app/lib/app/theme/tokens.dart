@@ -25,6 +25,26 @@ class SimfTokens {
   static const Color danger = Color(0xFFA8182A);
   static const Color success = Color(0xFF2E7D32);
 
+  // On-navy hairlines + muted text + light-surface hairline, straight from
+  // Mockup.html (--line / --line-2 / --txt-2 / --txt-3 / --line-light). These
+  // drive the dark theme's cards, dividers, borders and secondary text.
+  static const Color line = Color(0x1AFFFFFF); // white 10%
+  static const Color line2 = Color(0x0FFFFFFF); // white 6%
+  static const Color surfaceTint = Color(0x0AFFFFFF); // white 4% (card fill)
+  static const Color txtSecondary = Color(0xA6FFFFFF); // white 65%
+  static const Color txtTertiary = Color(0x66FFFFFF); // white 40%
+  static const Color lineLight = Color(0x140F2238); // navy 8%
+
+  // High-contrast accessibility palette (WCAG-boosted; interim, not final
+  // design — see SIMF-VID-001). Used only when the Page 038 high-contrast
+  // toggle is on, via SimfTheme.highContrastLight()/highContrastDark().
+  static const Color hcLightSurface = Color(0xFFFFFFFF);
+  static const Color hcLightInk = Color(0xFF000000);
+  static const Color hcLightField = Color(0xFFEAEAEA);
+  static const Color hcDarkSurface = Color(0xFF000000);
+  static const Color hcDarkInk = Color(0xFFFFFFFF);
+  static const Color hcDarkField = Color(0xFF1A1A1A);
+
   // Spacing scale.
   static const double space1 = 4;
   static const double space2 = 8;

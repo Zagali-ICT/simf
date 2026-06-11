@@ -1,0 +1,113 @@
+@* D-353 — reusable Invitation View/Delete form, hosted by CrudShell (popup or
+   full page) from InvitationsList. Inherits CrudViewDeleteFormBase so it exposes
+   the standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
+   details always show (State + SentBy are system-managed, so they only appear
+   here); when IsDelete=true a danger Delete button appears and a SimfConfirm gates
+   the soft-delete (replaces the native confirm the list used to carry). Adds the
+   View path the inline modals never had. *@
+@inherits CrudViewDeleteFormBase<AdminInvitationDetail>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Invitations.Col.RecipientEn"]</dt>
+        <dd>@Initial.RecipientEnglishName</dd>
+        <dt>@L["Admin.Invitations.Col.RecipientAr"]</dt>
+        <dd>@Initial.RecipientArabicName</dd>
+        <dt>@L["Admin.Invitations.Col.ProfileType"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.RecipientProfileTypeName) ? "—" : Initial.RecipientProfileTypeName)</dd>
+        <dt>@L["Admin.Invitations.Col.JobTitle"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.RecipientJobTitle) ? "—" : Initial.RecipientJobTitle)</dd>
+        <dt>@L["Admin.Invitations.Col.Email"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.RecipientEmail) ? "—" : Initial.RecipientEmail)</dd>
+        <dt>@L["Admin.Invitations.Col.State"]</dt>
+        <dd>@StateLabel(Initial.State)</dd>
+        <dt>@L["Admin.Invitations.Field.Notes"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.Notes) ? "—" : Initial.Notes)</dd>
+        <dt>@L["Admin.Invitations.Col.SentBy"]</dt>
+        <dd>@Initial.SentByDisplayName</dd>
+        <dt>@L["Admin.Invitations.Col.CreatedAt"]</dt>
+        <dd>@Initial.CreatedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'")</dd>
+        <dt>@L["Admin.Invitations.Col.RespondedAt"]</dt>
+        <dd>@(Initial.RespondedAt.HasValue ? Initial.RespondedAt.Value.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'") : "—")</dd>
+        <dt>@L["Admin.Invitations.Col.UpdatedAt"]</dt>
+        <dd>@(Initial.UpdatedAt.HasValue ? Initial.UpdatedAt.Value.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'") : "—")</dd>
+        <dt>@L["Grid.Active"]</dt>
+        <dd>@(Initial.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.Invitations.Deactivate"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.Invitations.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.Invitations.Delete.Title"]"
+                 Message="@string.Format(L["Admin.Invitations.Delete.Message"], Initial.RecipientEnglishName)"
+                 ConfirmLabel="@L["Admin.Invitations.Deactivate"]"
+                 CancelLabel="@L["Admin.Invitations.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/invitations/{Initial.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                // Close the confirm first so the error lands on the visible form
+                // body, not behind the (still-open) confirm overlay.
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Invitations.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.Invitations.Fallback"];
+        }
+        finally { _busy = false; }
+    }
+
+    private string StateLabel(InvitationState state) => state switch
+    {
+        InvitationState.Confirmed => L["Admin.Invitations.State.Confirmed"],
+        InvitationState.Declined => L["Admin.Invitations.State.Declined"],
+        _ => L["Admin.Invitations.State.Pending"],
+    };
+}

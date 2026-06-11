@@ -2,120 +2,134 @@
    D-045 H1, promoted to canonical CRUD pattern in D-117). Administrator
    only. Uses SimfDataGrid with the full myComment #16 spec, the new
    correct icon set, the full pager (First/Prev/numbered/Next/Last +
-   page-size), the SimfBanner page-top, and modal-based Add / Edit /
-   Details flows. /admin/admins/new still resolves to the create-user
-   page as a deep-link fallback (Q-D). *@
+   page-size), and the SimfBanner page-top. /admin/admins/new still
+   resolves to the create-user page as a deep-link fallback (Q-D).
+   Centralized dialog/full-page framing D-353: Add / Edit (roles) / Details
+   are hosted by CrudShell, which frames the reusable UsersAddEdit and
+   UsersViewDelete forms as a popup or a full page per the admin's toolbar
+   choice (persisted in localStorage via CpPreferences). The inline SimfModal
+   Add / Edit-roles / Details dialogs it used to carry are gone; the
+   reason-gated bulk-delete, the duplicate dialog, the Excel import-result
+   modal, copy/paste, the Excel export/import wiring and the Reset-2FA row
+   action are all preserved unchanged. *@
 @page "/admin/admins"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.Admins.View)]
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
+@inject CpPreferences Prefs
 
 <PageTitle>@L["Admin.Users.Title"] · SIMF</PageTitle>
 
-<SimfBanner Title="@L["Admin.Users.Title"]" />
+@if (!GridHidden)
+{
+    <SimfBanner Title="@L["Admin.Users.Title"]" />
 
-<div class="simf-page-wide">
-    <div class="simf-surface">
-        <SimfDataGrid TItem="AdminUserSummary"
-                      Query="_query"
-                      Page="_page"
-                      Loading="_loading"
-                      OnQueryChanged="OnQueryChangedAsync"
-                      Multiselect="true"
-                      RowKey="@(user => user.Id.ToString())"
-                      RowLabel="@(user => user.Email)"
-                      Caption="@L["Admin.Users.Title"]"
-                      FilterColumnLabel="@L["Admin.Users.FilterColumn"]"
-                      OnAdd="OnAddAsync"
-                      OnEditOne="OnEditAsync"
-                      OnDetailsOne="OnDetailsAsync"
-                      OnDeleteSelected="OnBulkDeleteAsync"
-                      OnDeleteOne="OnRowDeleteAsync"
-                      OnDuplicateOne="OnDuplicateAsync"
-                      OnCopySelected="OnCopySelectedAsync"
-                      OnCopyOne="OnCopyOneAsync"
-                      OnPaste="OnPasteAsync"
-                      OnExport="OnExportAsync"
-                      OnImport="OnImportAsync"
-                      PrevLabel="@L["Admin.Users.Prev"]"
-                      NextLabel="@L["Admin.Users.Next"]"
-                      FirstLabel="@L["Admin.Users.Pager.First"]"
-                      LastLabel="@L["Admin.Users.Pager.Last"]"
-                      PageSizeLabel="@L["Admin.Users.Pager.PageSize"]"
-                      PageFormatter="@FormatPage"
-                      LoadingLabel="@L["Admin.Users.Loading"]"
-                      FilterPlaceholder="@L["Admin.Users.FilterPlaceholder"]"
-                      ActionsHeader="@L["Admin.Users.Column.Actions"]"
-                      SelectAllLabel="@L["Admin.Users.Action.SelectAll"]"
-                      SelectRowLabel="@L["Admin.Users.Action.SelectRow"]"
-                      AddLabel="@L["Admin.Users.Action.Add"]"
-                      EditLabel="@L["Admin.Users.Action.Edit"]"
-                      DetailsLabel="@L["Admin.Users.Action.Details"]"
-                      DeleteLabel="@L["Admin.Users.Action.Delete"]"
-                      CopyLabel="@L["Admin.Users.Action.Copy"]"
-                      PasteLabel="@L["Admin.Users.Action.Paste"]"
-                      DuplicateLabel="@L["Admin.Users.Action.Duplicate"]"
-                      ImportLabel="@L["Admin.Users.Action.Import"]"
-                      ExportLabel="@L["Admin.Users.Action.Export"]"
-                      SummaryFormatter="@FormatSummary">
-            <Columns>
-                <SimfDataGridColumn TItem="AdminUserSummary" Key="email"
-                                    Header="@L["Admin.Users.Column.Email"]"
-                                    Sortable="true" Filterable="true">
-                    <CellTemplate>@context.Email</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminUserSummary" Key="displayName"
-                                    Header="@L["Admin.Users.Column.DisplayName"]"
-                                    Sortable="true" Filterable="true">
-                    <CellTemplate>@context.DisplayName</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminUserSummary" Key="state"
-                                    Header="@L["Admin.Users.Column.State"]"
-                                    Sortable="true">
-                    <CellTemplate>@context.AccountState</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminUserSummary" Key="role"
-                                    Header="@L["Admin.Users.Column.Role"]">
-                    <CellTemplate>
-                        @if (context.IsAdministrator)
-                        {
-                            <SimfPill Variant="admin">@L["Admin.Users.Role.Administrator"]</SimfPill>
-                        }
-                        else
-                        {
-                            <SimfPill>@L["Admin.Users.Role.User"]</SimfPill>
-                        }
-                    </CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminUserSummary" Key="twoFactor"
-                                    Header="@L["Admin.Users.Column.TwoFactor"]">
-                    <CellTemplate>
-                        @if (context.TwoFactorEnabled)
-                        {
-                            <SimfPill Variant="on">@L["Admin.Users.TwoFactor.On"]</SimfPill>
-                        }
-                        else
-                        {
-                            <SimfPill Variant="off">@L["Admin.Users.TwoFactor.Off"]</SimfPill>
-                        }
-                    </CellTemplate>
-                </SimfDataGridColumn>
-            </Columns>
-            <RowActions Context="user">
-                @if (!user.IsAdministrator && user.TwoFactorEnabled)
-                {
-                    <SimfLink Href="@($"/admin/reset-2fa?email={Uri.EscapeDataString(user.Email)}")">
-                        @L["Admin.Users.Action.Reset2FA"]
-                    </SimfLink>
-                }
-            </RowActions>
-            <EmptyTemplate>
-                <SimfEmptyState Title="@L["Admin.Users.None"]" />
-            </EmptyTemplate>
-        </SimfDataGrid>
+    <div class="simf-page-wide">
+        <div class="simf-surface">
+            <SimfDataGrid TItem="AdminUserSummary"
+                          Query="_query"
+                          Page="_page"
+                          Loading="_loading"
+                          OnQueryChanged="OnQueryChangedAsync"
+                          Multiselect="true"
+                          RowKey="@(user => user.Id.ToString())"
+                          RowLabel="@(user => user.Email)"
+                          Caption="@L["Admin.Users.Title"]"
+                          FilterColumnLabel="@L["Admin.Users.FilterColumn"]"
+                          OnAdd="OnAddAsync"
+                          OnEditOne="OnEditAsync"
+                          OnDetailsOne="OnDetailsAsync"
+                          OnDeleteSelected="OnBulkDeleteAsync"
+                          OnDeleteOne="OnRowDeleteAsync"
+                          OnDuplicateOne="OnDuplicateAsync"
+                          OnCopySelected="OnCopySelectedAsync"
+                          OnCopyOne="OnCopyOneAsync"
+                          OnPaste="OnPasteAsync"
+                          OnExport="OnExportAsync"
+                          OnImport="OnImportAsync"
+                          PrevLabel="@L["Admin.Users.Prev"]"
+                          NextLabel="@L["Admin.Users.Next"]"
+                          FirstLabel="@L["Admin.Users.Pager.First"]"
+                          LastLabel="@L["Admin.Users.Pager.Last"]"
+                          PageSizeLabel="@L["Admin.Users.Pager.PageSize"]"
+                          PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Admin.Users.Loading"]"
+                          FilterPlaceholder="@L["Admin.Users.FilterPlaceholder"]"
+                          ActionsHeader="@L["Admin.Users.Column.Actions"]"
+                          SelectAllLabel="@L["Admin.Users.Action.SelectAll"]"
+                          SelectRowLabel="@L["Admin.Users.Action.SelectRow"]"
+                          AddLabel="@L["Admin.Users.Action.Add"]"
+                          EditLabel="@L["Admin.Users.Action.Edit"]"
+                          DetailsLabel="@L["Admin.Users.Action.Details"]"
+                          DeleteLabel="@L["Admin.Users.Action.Delete"]"
+                          CopyLabel="@L["Admin.Users.Action.Copy"]"
+                          PasteLabel="@L["Admin.Users.Action.Paste"]"
+                          DuplicateLabel="@L["Admin.Users.Action.Duplicate"]"
+                          ImportLabel="@L["Admin.Users.Action.Import"]"
+                          ExportLabel="@L["Admin.Users.Action.Export"]"
+                          SummaryFormatter="@FormatSummary">
+                <CustomToolbar>
+                    <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
+                </CustomToolbar>
+                <Columns>
+                    <SimfDataGridColumn TItem="AdminUserSummary" Key="email"
+                                        Header="@L["Admin.Users.Column.Email"]"
+                                        Sortable="true" Filterable="true">
+                        <CellTemplate>@context.Email</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminUserSummary" Key="displayName"
+                                        Header="@L["Admin.Users.Column.DisplayName"]"
+                                        Sortable="true" Filterable="true">
+                        <CellTemplate>@context.DisplayName</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminUserSummary" Key="state"
+                                        Header="@L["Admin.Users.Column.State"]"
+                                        Sortable="true">
+                        <CellTemplate>@context.AccountState</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminUserSummary" Key="role"
+                                        Header="@L["Admin.Users.Column.Role"]">
+                        <CellTemplate>
+                            @if (context.IsAdministrator)
+                            {
+                                <SimfPill Variant="admin">@L["Admin.Users.Role.Administrator"]</SimfPill>
+                            }
+                            else
+                            {
+                                <SimfPill>@L["Admin.Users.Role.User"]</SimfPill>
+                            }
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminUserSummary" Key="twoFactor"
+                                        Header="@L["Admin.Users.Column.TwoFactor"]">
+                        <CellTemplate>
+                            @if (context.TwoFactorEnabled)
+                            {
+                                <SimfPill Variant="on">@L["Admin.Users.TwoFactor.On"]</SimfPill>
+                            }
+                            else
+                            {
+                                <SimfPill Variant="off">@L["Admin.Users.TwoFactor.Off"]</SimfPill>
+                            }
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <RowActions Context="user">
+                    @if (!user.IsAdministrator && user.TwoFactorEnabled)
+                    {
+                        <SimfLink Href="@($"/admin/reset-2fa?email={Uri.EscapeDataString(user.Email)}")">
+                            @L["Admin.Users.Action.Reset2FA"]
+                        </SimfLink>
+                    }
+                </RowActions>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.Users.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
+        </div>
     </div>
-</div>
+}
 
 @if (_toast is not null)
 {
@@ -132,98 +146,23 @@
        aria-label="@L["Admin.Users.Import.Picker"]"
        @onchange="OnImportFileSelectedAsync" />
 
-@* D-117 — Add user modal (replaces navigation to /admin/admins/new). *@
-@if (_addOpen)
+@* D-353 — Add (CreateAdminForm) / Edit (roles) / Details hosted by CrudShell. *@
+@if (FormOpen)
 {
-    <SimfModal Open="true" Title="@L["Admin.Users.Add.Title"]" OnClose="@(() => _addOpen = false)">
-        <ChildContent>
-            <CreateAdminForm OnSuccess="OnAddSucceededAsync"
-                             OnCancel="@(() => _addOpen = false)"
-                             CancelLabel="@L["Admin.Users.Add.Close"]" />
-        </ChildContent>
-    </SimfModal>
-}
-
-@* Issue-1 — Edit a user's RBAC roles (replaces the D-117 stub). *@
-@if (_editTarget is not null)
-{
-    <SimfModal Open="true"
-               Title="@string.Format(L["Admin.Users.EditRoles.Title"], _editTarget.Email)"
-               OnClose="CloseEdit">
-        <ChildContent>
-            @if (_editError is not null)
-            {
-                <SimfAlert Variant="error">@_editError</SimfAlert>
-            }
-            @if (_editLoading)
-            {
-                <p>@L["Admin.Users.EditRoles.Loading"]</p>
-            }
-            else if (_availableRoles.Count == 0)
-            {
-                <p>@L["Admin.Users.EditRoles.NoRoles"]</p>
-            }
-            else
-            {
-                <p>@L["Admin.Users.EditRoles.Intro"]</p>
-                @foreach (var roleName in _availableRoles)
-                {
-                    <SimfCheckbox Value="_editSelectedRoles.Contains(roleName)"
-                                  ValueChanged="@((bool on) => ToggleEditRole(roleName, on))"
-                                  Disabled="_editBusy">
-                        @roleName
-                    </SimfCheckbox>
-                }
-            }
-        </ChildContent>
-        <Footer>
-            <SimfButton Type="button" Variant="primary" Loading="_editBusy"
-                        LoadingLabel="@L["Admin.Users.EditRoles.Saving"]"
-                        Disabled="@(_editLoading || _availableRoles.Count == 0)"
-                        OnClick="SaveRolesAsync">
-                @L["Admin.Users.EditRoles.Save"]
-            </SimfButton>
-            <SimfButton Type="button" Variant="secondary" Disabled="_editBusy" OnClick="CloseEdit">
-                @L["Admin.Users.EditRoles.Cancel"]
-            </SimfButton>
-        </Footer>
-    </SimfModal>
-}
-
-@* D-117 — Details modal (read-only view of the row's data — no extra fetch). *@
-@if (_detailsTarget is not null)
-{
-    <SimfModal Open="true"
-               Title="@string.Format(L["Admin.Users.Details.Title"], _detailsTarget.Email)"
-               OnClose="@(() => _detailsTarget = null)">
-        <ChildContent>
-            <dl class="simf-dl">
-                <dt>@L["Admin.Users.Details.Field.Email"]</dt>
-                <dd>@_detailsTarget.Email</dd>
-                <dt>@L["Admin.Users.Details.Field.DisplayName"]</dt>
-                <dd>@_detailsTarget.DisplayName</dd>
-                <dt>@L["Admin.Users.Details.Field.State"]</dt>
-                <dd>@_detailsTarget.AccountState</dd>
-                <dt>@L["Admin.Users.Details.Field.Role"]</dt>
-                <dd>
-                    @(_detailsTarget.IsAdministrator
-                        ? L["Admin.Users.Role.Administrator"]
-                        : L["Admin.Users.Role.User"])
-                </dd>
-                <dt>@L["Admin.Users.Details.Field.TwoFactor"]</dt>
-                <dd>
-                    @(_detailsTarget.TwoFactorEnabled
-                        ? L["Admin.Users.TwoFactor.On"]
-                        : L["Admin.Users.TwoFactor.Off"])
-                </dd>
-            </dl>
-        </ChildContent>
-        <Footer>
-            <SimfButton Type="button" Variant="secondary" OnClick="@(() => _detailsTarget = null)">
-                @L["Admin.Users.Details.Close"]
-            </SimfButton>
-        </Footer>
-    </SimfModal>
+    <CrudShell Open="true" Presentation="_presentation"
+               Title="@FormTitle" CloseLabel="@L["Admin.Users.Details.Close"]"
+               OnClose="CloseForm">
+        @if (_form == FormKind.AddEdit)
+        {
+            <UsersAddEdit IsEdit="_isEdit" Initial="_target"
+                          OnSuccess="OnSavedAsync" OnCancel="CloseForm" />
+        }
+        else if (_form == FormKind.ViewDelete)
+        {
+            <UsersViewDelete IsDelete="_isDelete" Initial="_target"
+                             OnDeleted="OnDeletedAsync" OnCancel="CloseForm" />
+        }
+    </CrudShell>
 }
 
 @if (_bulkDeleteOpen)
@@ -302,24 +241,25 @@
 }
 
 @code {
+    private enum FormKind { None, AddEdit, ViewDelete }
+
+    private const string PageKey = "admins";
+
     private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminUserSummary>? _page;
     private bool _loading;
     private bool _busy;
 
-    // D-117 — Add modal state (replaces navigation to /admin/admins/new).
-    private bool _addOpen;
+    // D-353 — presentation toggle + hosted-form state (replaces the inline
+    // Add / Edit-roles / Details SimfModals).
+    private CrudPresentation _presentation = CrudPresentation.Dialog;
+    private FormKind _form = FormKind.None;
+    private bool _isEdit;
+    private bool _isDelete;
+    private AdminUserSummary? _target;
 
-    // Issue-1 — Edit-roles modal state.
-    private AdminUserSummary? _editTarget;
-    private readonly List<string> _availableRoles = new();
-    private readonly HashSet<string> _editSelectedRoles = new(StringComparer.Ordinal);
-    private bool _editLoading;
-    private bool _editBusy;
-    private string? _editError;
-
-    // D-117 — Details modal state. Read-only view of the row's data.
-    private AdminUserSummary? _detailsTarget;
+    private bool FormOpen => _form != FormKind.None;
+    private bool GridHidden => FormOpen && _presentation == CrudPresentation.Page;
 
     // Bulk-delete modal state
     private bool _bulkDeleteOpen;
@@ -337,7 +277,20 @@
     // Transient toast for clipboard outcomes / error flashes (D-045 H1)
     private Toast? _toast;
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    private string FormTitle => _form switch
+    {
+        FormKind.AddEdit => _isEdit
+            ? string.Format(L["Admin.Users.EditRoles.Title"], _target?.Email)
+            : L["Admin.Users.Add.Title"],
+        FormKind.ViewDelete => string.Format(L["Admin.Users.Details.Title"], _target?.Email),
+        _ => string.Empty,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _presentation = await Prefs.GetPresentationAsync(PageKey);
+        await LoadAsync();
+    }
 
     private async Task OnQueryChangedAsync(GridQuery next)
     {
@@ -360,92 +313,54 @@
         finally { _loading = false; }
     }
 
+    // D-353 — open the hosted Add form (CreateAdminForm) in the shell.
     private Task OnAddAsync()
     {
-        _addOpen = true;
+        _form = FormKind.AddEdit;
+        _isEdit = false;
+        _target = null;
         return Task.CompletedTask;
     }
 
-    private async Task OnAddSucceededAsync(AdminCreateUserResponse created)
+    // D-353 — open the hosted Edit-roles form in the shell.
+    private Task OnEditAsync(AdminUserSummary user)
     {
-        _addOpen = false;
-        ShowToast("success", string.Format(L["Admin.CreateUser.Success"], created.Email));
+        _form = FormKind.AddEdit;
+        _isEdit = true;
+        _target = user;
+        return Task.CompletedTask;
+    }
+
+    // D-353 — open the hosted read-only Details form in the shell (no extra fetch).
+    private Task OnDetailsAsync(AdminUserSummary user)
+    {
+        _form = FormKind.ViewDelete;
+        _isDelete = false;
+        _target = user;
+        return Task.CompletedTask;
+    }
+
+    private void CloseForm()
+    {
+        _form = FormKind.None;
+        _target = null;
+    }
+
+    // D-353 — Add success (CreateAdminForm) or roles saved (edit) both land here.
+    private async Task OnSavedAsync(AdminUserSummary? saved)
+    {
+        var wasEdit = _isEdit;
+        CloseForm();
+        ShowToast("success",
+            wasEdit && saved is not null
+                ? string.Format(L["Admin.Users.EditRoles.Saved"], saved.Email)
+                : L["Admin.Users.Add.Saved"]);
         await LoadAsync();
     }
 
-    private async Task OnEditAsync(AdminUserSummary user)
-    {
-        _editTarget = user;
-        _editError = null;
-        _editLoading = true;
-        _availableRoles.Clear();
-        _editSelectedRoles.Clear();
-        try
-        {
-            var roles = await JS.InvokeAsync<ApiResult<GridPage<AdminRoleSummary>>>(
-                "simfAccount.postJson", "/account/api/admin/roles/list",
-                new GridQuery { Top = 200, Sort = "name" });
-            if (roles is { Success: true, Data: not null })
-            {
-                _availableRoles.AddRange(roles.Data.Items.Select(role => role.Name));
-            }
-
-            var current = await JS.InvokeAsync<ApiResult<AdminUserRolesResponse>>(
-                "simfAccount.getJson", $"/account/api/admin/admins/{user.Id}/roles");
-            if (current is { Success: true, Data: not null })
-            {
-                foreach (var roleName in current.Data.Roles)
-                {
-                    _editSelectedRoles.Add(roleName);
-                }
-            }
-        }
-        catch (JSException)
-        {
-            _editError = L["Admin.Users.EditRoles.LoadFailed"];
-        }
-        finally { _editLoading = false; }
-    }
-
-    private void ToggleEditRole(string roleName, bool on)
-    {
-        if (on) { _editSelectedRoles.Add(roleName); }
-        else { _editSelectedRoles.Remove(roleName); }
-    }
-
-    private async Task SaveRolesAsync()
-    {
-        if (_editTarget is null || _editBusy) { return; }
-        _editBusy = true;
-        _editError = null;
-        try
-        {
-            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
-                "simfAccount.putJson", $"/account/api/admin/admins/{_editTarget.Id}/roles",
-                new AdminSetUserRolesRequest { Roles = _editSelectedRoles.ToList() });
-            if (envelope is { Success: true })
-            {
-                var email = _editTarget.Email;
-                _editTarget = null;
-                ShowToast("success", string.Format(L["Admin.Users.EditRoles.Saved"], email));
-                await LoadAsync();
-            }
-            else
-            {
-                _editError = envelope?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.Users.EditRoles.Fallback"];
-            }
-        }
-        finally { _editBusy = false; }
-    }
-
-    private void CloseEdit() => _editTarget = null;
-
-    private Task OnDetailsAsync(AdminUserSummary user)
-    {
-        _detailsTarget = user;
-        return Task.CompletedTask;
-    }
+    // Details is read-only; the form never raises OnDeleted, but the shell wires
+    // it for symmetry. Closing simply reloads is unnecessary — just close.
+    private void OnDeletedAsync(AdminUserSummary deleted) => CloseForm();
 
     private Task OnRowDeleteAsync(AdminUserSummary user)
     {

@@ -326,6 +326,27 @@ internal sealed partial class AdminAccountService(
                 $"الجنسية '{nationalityCode}' غير مدعومة.");
         }
 
+        // B3 — D-221 (الجهة): the validator requires a non-empty id; confirm it
+        // resolves to an active Organisation before creating any Identity row,
+        // so a bad id surfaces as a clean 400 instead of a later FK violation.
+        if (request.OrganisationId is not { } organisationId || organisationId == Guid.Empty)
+        {
+            throw new ApiException(
+                ErrorCodes.OrganisationInvalid, 400,
+                "Organisation is required.",
+                "الجهة مطلوبة.");
+        }
+        var organisationIsActive = await appDbContext.Organisations
+            .AsNoTracking()
+            .AnyAsync(o => o.Id == organisationId && o.IsActive, cancellationToken);
+        if (!organisationIsActive)
+        {
+            throw new ApiException(
+                ErrorCodes.OrganisationInvalid, 400,
+                "The selected organisation is not valid.",
+                "الجهة المحددة غير صالحة.");
+        }
+
         var now = timeProvider.GetUtcNow();
         var user = new SimfUser
         {
@@ -375,6 +396,8 @@ internal sealed partial class AdminAccountService(
             PassportNumber = request.IsSaudi ? null : request.PassportNumber,
             SaudiMobile = NormaliseOptional(request.SaudiMobile),
             InternationalMobile = NormaliseOptional(request.InternationalMobile),
+            // B3 — D-221 (الجهة): the desk-required organisation pick.
+            OrganisationId = organisationId,
             CreatedAt = now,
         };
         // Visitor kind owns interests; Other kind ignores them per the prompt.

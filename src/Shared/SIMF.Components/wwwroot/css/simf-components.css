@@ -209,6 +209,13 @@
   margin-block-end: var(--space-6);
 }
 
+/* A flash / status alert placed directly under a section title needs room from
+   the title: the title has no bottom margin and the alert no top, so without
+   this they touch (e.g. Profile "Display preferences" / "Recovery codes"). */
+.simf-page-card .simf-card__title + .simf-alert {
+  margin-block-start: var(--space-4);
+}
+
 /* -- Profile page layout ---------------------------------------------------- */
 .simf-profile {
   display: flex;
@@ -878,6 +885,11 @@
 
 .simf-shell__content {
   flex: 1 1 auto;
+  /* Without this a flex item keeps its content's intrinsic width and refuses
+     to shrink, so a wide page (e.g. a data grid) pushes a horizontal scrollbar
+     onto the whole document. min:0 lets the column shrink and contain its own
+     wide children instead. */
+  min-inline-size: 0;
   overflow-y: auto;
   padding: var(--space-6) var(--space-7);
 }
@@ -885,6 +897,87 @@
 @media (max-width: 1023px) {
   .simf-shell__content { padding: var(--space-5); }
   .simf-shell__nav { flex-basis: 240px; }
+}
+
+/* -- Mobile (Tier 3): the side nav becomes an overlay instead of a column.
+   Below 768px a 240px navigation column squeezes the content and forces a
+   horizontal scrollbar, so the nav is hidden by default and floats over the
+   content (inside the viewport) only when the user opens it from the top bar.
+
+   NOTE — the toggle is INVERTED here vs. desktop, on purpose. On desktop the
+   nav is open by default and the `--nav-hidden` class hides it. On mobile the
+   nav is closed by default and the SAME `--nav-hidden` class (set when the
+   user presses the toggle) is what reveals it. One boolean, two viewport-
+   appropriate meanings — handled entirely in CSS so the C# stays a plain flag.
+   Closed = display:none (zero layout, so it can never widen the document);
+   open = an absolutely-positioned overlay pinned to the inline-start edge
+   (right under RTL, left under LTR) and capped to the viewport width. */
+@media (max-width: 767px) {
+  /* The top bar carries the toggle + brand + a row of controls (language,
+     theme, notifications, user, sign-out). They don't all fit on one line on a
+     phone, so let the bar wrap: the controls drop to a second row instead of
+     forcing a horizontal scrollbar. Wrapping (not hiding) keeps every control
+     reachable and is locale-proof — a longer translated label just wraps. */
+  .simf-shell__topbar {
+    flex-wrap: wrap;
+    block-size: auto;
+    min-block-size: 60px;
+    padding-block: var(--space-2);
+    padding-inline: var(--space-3);
+    row-gap: var(--space-2);
+  }
+
+  .simf-shell__body { position: relative; }
+
+  .simf-shell__nav { display: none; }
+
+  .simf-shell--nav-hidden .simf-shell__nav {
+    display: block;
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: 40;
+    flex-basis: auto;
+    inline-size: min(82vw, 280px);
+    box-shadow: var(--shadow-card);
+  }
+}
+
+/* -- Side-nav search (filter the menu) -- */
+.simf-nav-search {
+  position: relative;
+  margin-block-end: var(--space-5);
+}
+
+.simf-nav-search__icon {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: var(--space-3);
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.simf-nav-search__input {
+  inline-size: 100%;
+  padding-block: var(--space-2);
+  padding-inline: calc(var(--space-3) + 16px + var(--space-2)) var(--space-3);
+  font: inherit;
+  font-size: var(--font-size-body);
+  color: var(--color-text);
+  background-color: var(--color-surface-sunken);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-field);
+}
+
+.simf-nav-search__input::placeholder { color: var(--color-text-muted); }
+.simf-nav-search__input:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
+
+.simf-nav-search__empty {
+  margin: 0;
+  padding-inline: var(--space-3);
+  font-size: var(--font-size-caption);
+  color: var(--color-text-muted);
 }
 
 /* -- Navigation groups and items -- */
@@ -924,6 +1017,60 @@
 }
 
 .simf-nav-item__label { flex: 1 1 auto; min-width: 0; }
+
+/* CP side-menu per-item icon: never shrinks; colour is inherited (currentColor),
+   so an inactive item renders in the muted link colour and the active item's
+   icon turns primary along with its label. */
+.simf-nav-item__icon { flex: 0 0 auto; opacity: 0.75; }
+.simf-nav-item__link--active .simf-nav-item__icon { opacity: 1; }
+
+/* D-357 — unified media-asset thumbnail (Media Library + entity forms/views). */
+.simf-img-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 48px;
+  block-size: 48px;
+  border-radius: var(--radius-field);
+  background-color: var(--color-surface-sunken);
+  overflow: hidden;
+  color: var(--color-text-muted);
+}
+.simf-img-thumb__img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+.simf-img-thumb--lg { inline-size: 96px; block-size: 96px; }
+
+/* D-357 — the reusable media-asset upload control (file / external-link tabs). */
+.simf-image-upload { display: flex; flex-direction: column; gap: var(--space-2); }
+.simf-image-upload__modes { display: flex; gap: var(--space-2); }
+.simf-image-upload__thumb { inline-size: 96px; block-size: 96px; }
+
+/* D-357 — speaker-presentation picker: a wall of profile cards (photo + name +
+   country); selecting one reveals that speaker's presentation files below. */
+.simf-speaker-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: var(--space-3);
+  margin-block: var(--space-3);
+}
+.simf-speaker-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-card);
+  cursor: pointer;
+  text-align: center;
+  color: var(--color-text);
+}
+.simf-speaker-card:hover { border-color: var(--color-primary); box-shadow: var(--shadow-sm); }
+.simf-speaker-card:disabled { opacity: 0.6; cursor: default; }
+.simf-speaker-card__photo { inline-size: 72px; block-size: 72px; border-radius: 50%; }
+.simf-speaker-card__name { font-weight: var(--font-weight-bold); }
+.simf-speaker-card__country { color: var(--color-text-muted); font-size: 0.85em; }
+.simf-speaker-selected { font-weight: var(--font-weight-bold); align-self: center; }
 
 /* D-132 — "Soon" tag rendered next to nav entries that still resolve to
    the ModulePlaceholder, so operators can see at a glance which menu
@@ -1186,6 +1333,72 @@
 
 /* Scroll-lock the page body while a modal is open. */
 body.simf-modal-open { overflow: hidden; }
+
+/* -- Confirmation dialog message (SimfConfirm) ------------------------------ */
+.simf-confirm__message {
+  margin: 0;
+  color: var(--color-text);
+  line-height: var(--line-height-body);
+}
+
+/* -- CRUD page frame — the full-page alternative to the dialog (D-353).
+   Renders in the normal content flow as a surface card with a title + close
+   header, mirroring the modal's chrome so the two presentations feel the
+   same. The close button is direction-neutral (the X icon), so it needs no
+   RTL flip. ------------------------------------------------------------------ */
+.simf-crudpage {
+  inline-size: 100%;
+  max-inline-size: 1600px;
+  background-color: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.simf-crudpage__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.simf-crudpage__close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 32px;
+  block-size: 32px;
+  padding: 0;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-field);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.simf-crudpage__close:hover { background-color: var(--color-surface-sunken); color: var(--color-text); }
+.simf-crudpage__close:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
+
+.simf-crudpage__title {
+  margin: 0;
+  flex: 1 1 auto;
+  font-size: var(--font-size-subtitle);
+  line-height: var(--line-height-subtitle);
+  font-weight: var(--font-weight-heading);
+  color: var(--color-text);
+}
+
+.simf-crudpage__body {
+  padding: var(--space-6);
+  color: var(--color-text);
+  line-height: var(--line-height-body);
+}
+
+@media (max-width: 639px) {
+  .simf-crudpage__body { padding: var(--space-4); }
+}
 
 /* -- Field — select / textarea variants ------------------------------------- */
 .simf-field__control--select {

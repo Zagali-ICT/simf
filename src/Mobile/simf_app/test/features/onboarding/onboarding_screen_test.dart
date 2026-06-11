@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
+import 'package:simf_app/app/theme/app_theme.dart';
 import 'package:simf_app/features/onboarding/onboarding_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -126,6 +127,53 @@ void main() {
 
       expect(prefs.getBool(StorageKeys.onboardingCompleted), isTrue);
       expect(find.text('SIGN-IN-SCREEN'), findsOneWidget);
+    });
+
+    testWidgets(
+        'renders under the production theme without an infinite-width crash '
+        '(D-295)', (tester) async {
+      // Regression: the FilledButton theme sets minimumSize: Size.fromHeight(48)
+      // (== Size(infinity, 48)). Inside the onboarding bottom Row that demanded
+      // an infinite width and threw a layout assertion, collapsing the whole
+      // body + nav buttons (observed on a real device). The other tests miss it
+      // because they pump a bare MaterialApp with no theme; this one applies the
+      // real SimfTheme so the regression is locked in.
+      final router = GoRouter(
+        initialLocation: '/onboarding',
+        routes: <RouteBase>[
+          GoRoute(
+            name: RouteNames.onboarding,
+            path: '/onboarding',
+            builder: (context, state) => const OnboardingScreen(),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: <Override>[
+            simfPrefsStorageProvider.overrideWithValue(_FakePrefs()),
+          ],
+          child: MaterialApp.router(
+            theme: SimfTheme.light(),
+            routerConfig: router,
+            locale: const Locale('en'),
+            supportedLocales: AppL10n.supportedLocales,
+            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+              ...AppL10n.localizationsDelegates,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      // The body + both nav buttons actually laid out (they did not before).
+      expect(find.text('Next'), findsOneWidget);
+      expect(find.text('Skip'), findsOneWidget);
     });
   });
 }

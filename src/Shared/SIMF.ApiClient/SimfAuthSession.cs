@@ -73,4 +73,17 @@ public sealed class SimfAuthSession
             : $"{local[0]}••••{local[^1]}";
         return masked + domain;
     }
+
+    /// <summary>
+    /// A minimal client-side email sanity check for the sign-in / reset forms —
+    /// the authoritative validation is server-side; this only catches the
+    /// obvious empty / no-"@" case before a round-trip.
+    /// </summary>
+    public static bool LooksLikeEmail(string? email) =>
+        !string.IsNullOrWhiteSpace(email) && email.Contains('@', StringComparison.Ordinal);
+
+    /// <summary>True when the value is exactly a six-digit numeric code — the
+    /// shape of the emailed OTP and password-reset codes.</summary>
+    public static bool IsSixDigitCode(string? code) =>
+        code is { Length: 6 } && code.All(char.IsAsciiDigit);
 }

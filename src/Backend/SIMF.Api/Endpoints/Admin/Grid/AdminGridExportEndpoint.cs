@@ -1,0 +1,77 @@
+using FastEndpoints;
+using SIMF.Application.Excel;
+using SIMF.Application.IdentityAccess;
+using SIMF.Common;
+using SIMF.Contracts.Admin;
+
+namespace SIMF.Api.Endpoints.Admin.Grid;
+
+/// <summary>
+/// Generic base for a resource's <c>POST /admin/{resource}/export</c> endpoint
+/// (D-356). A concrete subclass supplies the route, the <c>{Resource}.Export</c>
+/// permission, the sheet name + file prefix, the column descriptors, and how to
+/// list + identify its rows; this base owns the auth gate, the ids-or-query
+/// selection (capped), the workbook render and the binary response. Mirrors the
+/// proven <c>ExportUsersEndpoint</c> (D-044 b) so every grid export behaves the
+/// same.
+/// </summary>
+/// <typeparam name="TRow">The grid summary row type.</typeparam>
+public abstract class AdminGridExportEndpoint<TRow>(IGridExcelExporter exporter)
+    : Endpoint<AdminGridExportRequest>
+{
+    /// <summary>The whole-grid export is capped at this many rows.</summary>
+    protected const int MaxExportRows = 5_000;
+
+    /// <summary>The endpoint route, e.g. <c>/admin/interests/export</c>.</summary>
+    protected abstract string RoutePath { get; }
+
+    /// <summary>The <c>{Resource}.Export</c> permission code that gates this endpoint.</summary>
+    protected abstract string Permission { get; }
+
+    /// <summary>The worksheet name (also required, by exact name, on import).</summary>
+    protected abstract string SheetName { get; }
+
+    /// <summary>The downloaded file-name prefix, e.g. <c>simf-interests</c>.</summary>
+    protected abstract string FilePrefix { get; }
+
+    /// <summary>The export column layout (header + per-row value selector).</summary>
+    protected abstract IReadOnlyList<GridExcelColumn<TRow>> Columns { get; }
+
+    /// <summary>Lists the rows matching <paramref name="query"/> (the base caps
+    /// <c>Top</c> at <see cref="MaxExportRows"/> and resets <c>Skip</c>).</summary>
+    protected abstract Task<IReadOnlyList<TRow>> ListAsync(GridQuery query, CancellationToken ct);
+
+    /// <summary>The row's id, used to honour a selected-ids export.</summary>
+    protected abstract Guid IdOf(TRow row);
+
+    public override void Configure()
+    {
+        Post(RoutePath);
+        Policies(PermissionCatalog.PolicyFor(Permission), nameof(AuthorizationPolicies.RequireApprovedAccount));
+        Tags("Admin");
+        Options(routeBuilder => routeBuilder.RequireRateLimiting("auth"));
+        Summary(summary => summary.Summary =
+            "Export the grid to an XLSX workbook (selected rows, or the whole filtered set).");
+    }
+
+    public override async Task HandleAsync(AdminGridExportRequest req, CancellationToken ct)
+    {
+        var query = req.Query ?? new GridQuery();
+        query.Skip = 0;
+        query.Top = MaxExportRows;
+
+        var rows = await ListAsync(query, ct);
+        if (req.Ids is { Count: > 0 })
+        {
+            var wanted = req.Ids.ToHashSet();
+            rows = rows.Where(row => wanted.Contains(IdOf(row))).ToList();
+        }
+
+        var bytes = exporter.Export(rows, Columns, SheetName);
+        HttpContext.Response.Headers.ContentDisposition =
+            $"attachment; filename=\"{FilePrefix}-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx\"";
+        await Send.BytesAsync(bytes,
+            contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            cancellation: ct);
+    }
+}

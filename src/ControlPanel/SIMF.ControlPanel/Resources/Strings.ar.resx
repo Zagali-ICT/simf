@@ -18,6 +18,9 @@
   <data name="Shell.Account" xml:space="preserve"><value>الحساب</value></data>
   <data name="Shell.SignOut" xml:space="preserve"><value>تسجيل الخروج</value></data>
   <data name="Shell.ToggleNav" xml:space="preserve"><value>إظهار القائمة</value></data>
+  <data name="Shell.NavSearch" xml:space="preserve"><value>البحث في القائمة</value></data>
+  <data name="Shell.NavSearchPlaceholder" xml:space="preserve"><value>ابحث في القائمة…</value></data>
+  <data name="Shell.NavSearchEmpty" xml:space="preserve"><value>لا توجد عناصر مطابقة</value></data>
   <data name="Shell.SkipToMain" xml:space="preserve"><value>تخطي إلى المحتوى الرئيسي</value></data>
   <data name="Shell.ThemeLight" xml:space="preserve"><value>فاتح</value></data>
   <data name="Shell.ThemeDark" xml:space="preserve"><value>داكن</value></data>
@@ -33,6 +36,10 @@
   <data name="Nav.Content" xml:space="preserve"><value>المحتوى</value></data>
   <data name="Nav.Communications" xml:space="preserve"><value>الاتصالات</value></data>
   <data name="Nav.System" xml:space="preserve"><value>النظام</value></data>
+  <data name="Nav.ScientificCommittee" xml:space="preserve"><value>اللجنة العلمية</value></data>
+  <data name="Nav.PublicRelations" xml:space="preserve"><value>العلاقات العامة</value></data>
+  <data name="Nav.Gates" xml:space="preserve"><value>البوابات والوصول</value></data>
+  <data name="Nav.ReferenceData" xml:space="preserve"><value>البيانات المرجعية</value></data>
 
   <!-- P1.3 (D-214) — shared admin Edit form (Visitor / Other). -->
   <data name="Admin.Edit.Loading" xml:space="preserve"><value>جارٍ التحميل…</value></data>
@@ -51,6 +58,7 @@
 
   <data name="Module.Dashboard" xml:space="preserve"><value>لوحة المعلومات</value></data>
   <data name="Module.Statistics" xml:space="preserve"><value>الإحصائيات</value></data>
+  <data name="Module.Attendance" xml:space="preserve"><value>حضور الجلسات</value></data>
   <data name="Module.RegistrationRequests" xml:space="preserve"><value>طلبات التسجيل</value></data>
   <data name="Module.Attendees" xml:space="preserve"><value>الحضور</value></data>
   <data name="Module.Roles" xml:space="preserve"><value>الأدوار والصلاحيات</value></data>
@@ -248,6 +256,9 @@
   <data name="Admin.Interests.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
   <data name="Admin.Interests.None" xml:space="preserve"><value>لا توجد اهتمامات بعد.</value></data>
   <data name="Admin.Interests.Add.Title" xml:space="preserve"><value>إضافة اهتمام</value></data>
+  <!-- D-353 — View/Delete confirmation strings -->
+  <data name="Admin.Interests.Delete.Title" xml:space="preserve"><value>إلغاء تفعيل الاهتمام</value></data>
+  <data name="Admin.Interests.Delete.Message" xml:space="preserve"><value>إلغاء تفعيل "{0}"؟ سيُخفى من أداة اختيار الزائر. يمكنك إعادة تفعيله لاحقًا عبر التعديل.</value></data>
   <data name="Admin.Interests.Add.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.Interests.Add.Close" xml:space="preserve"><value>إغلاق</value></data>
   <data name="Admin.Interests.Edit.Close" xml:space="preserve"><value>إغلاق</value></data>
@@ -584,6 +595,9 @@
   <data name="Admin.Countries.Edit.Title" xml:space="preserve"><value>تعديل البلد</value></data>
   <data name="Admin.Countries.Details.Title" xml:space="preserve"><value>تفاصيل البلد</value></data>
   <data name="Admin.Countries.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <!-- D-353 — View/Delete confirmation strings -->
+  <data name="Admin.Countries.Delete.Title" xml:space="preserve"><value>إلغاء تفعيل الدولة</value></data>
+  <data name="Admin.Countries.Delete.Message" xml:space="preserve"><value>إلغاء تفعيل "{0}"؟ سيُخفى من أداة اختيار الجنسية. يمكنك إعادة تفعيله لاحقًا عبر التعديل.</value></data>
   <data name="Admin.Countries.New.Submit" xml:space="preserve"><value>إنشاء البلد</value></data>
   <data name="Admin.Countries.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء</value></data>
   <data name="Admin.Countries.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
@@ -816,6 +830,14 @@
   <data name="Admin.WalkIn.Section.IdDocument" xml:space="preserve"><value>وثيقة الهوية</value></data>
   <data name="Admin.WalkIn.Section.IdDocument.Hint" xml:space="preserve"><value>صورة اختيارية للهوية الوطنية أو الإقامة أو جواز السفر. PNG / JPEG / WebP حتى 5 ميغابايت. تُخزَّن مشفّرة.</value></data>
   <data name="Admin.WalkIn.Field.IdDocument.Selected" xml:space="preserve"><value>تم اختيار: {0}</value></data>
+  <!-- B3 — D-221 — حقل الجهة المطلوب في نموذج التسجيل الفوري. -->
+  <data name="Admin.WalkIn.Section.Organisation" xml:space="preserve"><value>الجهة</value></data>
+  <data name="Admin.WalkIn.Field.Organisation" xml:space="preserve"><value>الجهة</value></data>
+  <data name="Admin.WalkIn.Field.Organisation.Search" xml:space="preserve"><value>ابحث بالاسم أو المدينة…</value></data>
+  <data name="Admin.WalkIn.Field.Organisation.Hint" xml:space="preserve"><value>ابحث واختر جهة الزائر. مطلوب.</value></data>
+  <data name="Admin.WalkIn.Field.Organisation.Selected" xml:space="preserve"><value>تم اختيار: {0}</value></data>
+  <data name="Admin.WalkIn.Field.Organisation.NoResults" xml:space="preserve"><value>لا توجد جهات مطابقة.</value></data>
+  <data name="Admin.WalkIn.Error.OrganisationRequired" xml:space="preserve"><value>اختر الجهة.</value></data>
   <data name="Admin.Pending.View.Field.QrId" xml:space="preserve"><value>رمز QR</value></data>
   <data name="Admin.Pending.View.Field.IdImage" xml:space="preserve"><value>وثيقة الهوية</value></data>
 
@@ -894,6 +916,7 @@
   <data name="Admin.Logs.Size" xml:space="preserve"><value>الحجم</value></data>
   <data name="Admin.Logs.LastModified" xml:space="preserve"><value>آخر تعديل</value></data>
   <data name="Admin.Users.Title" xml:space="preserve"><value>المسؤولون</value></data>
+  <data name="Admin.Users.Fallback" xml:space="preserve"><value>حدث خطأ ما. حاول مرة أخرى.</value></data>
   <data name="Admin.Users.None" xml:space="preserve"><value>لا توجد حسابات بعد.</value></data>
   <data name="Admin.Users.CreateNew" xml:space="preserve"><value>إضافة مستخدم</value></data>
   <data name="Admin.Users.Column.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
@@ -1026,6 +1049,8 @@
   <data name="Dashboard.Title" xml:space="preserve"><value>لوحة المعلومات</value></data>
   <data name="Dashboard.Welcome" xml:space="preserve"><value>مرحبًا بك في لوحة تحكم الملتقى البحري السعودي الدولي</value></data>
   <data name="Dashboard.Intro" xml:space="preserve"><value>منصة تشغيل الملتقى البحري السعودي الدولي. تظهر هنا الإحصاءات وأعداد الحضور المباشر بمجرد تفعيل وحدات الفعالية.</value></data>
+  <data name="Dashboard.Stats.Heading" xml:space="preserve"><value>نظرة سريعة على الفعالية</value></data>
+  <data name="Dashboard.Stats.ViewAll" xml:space="preserve"><value>عرض كل الإحصائيات</value></data>
 
   <data name="Module.ComingSoon.Title" xml:space="preserve"><value>قريبًا</value></data>
   <data name="Module.ComingSoon.Text" xml:space="preserve"><value>هذه الوحدة قيد الإعداد وستكون متاحة في إصدار لاحق.</value></data>
@@ -1169,6 +1194,11 @@
   <data name="Profile.Roles.None" xml:space="preserve"><value>لا توجد صلاحيات معيّنة لهذا الحساب.</value></data>
 
   <data name="Profile.Avatar.Title" xml:space="preserve"><value>صورتي الشخصية</value></data>
+  <!-- D-353 — Display preferences (clear saved CRUD dialog/full-page + grid layout) -->
+  <data name="Profile.Display.Title" xml:space="preserve"><value>تفضيلات العرض</value></data>
+  <data name="Profile.Display.Description" xml:space="preserve"><value>يتم حفظ اختيارك لفتح نماذج الإضافة والتعديل والعرض كنافذة منبثقة أو صفحة كاملة وتخطيطات الجداول في هذا المتصفح.</value></data>
+  <data name="Profile.Display.ClearButton" xml:space="preserve"><value>مسح التخطيط المحفوظ</value></data>
+  <data name="Profile.Display.Cleared" xml:space="preserve"><value>تم مسح تفضيلات العرض المحفوظة.</value></data>
   <data name="Profile.Avatar.None" xml:space="preserve"><value>لا توجد صورة شخصية.</value></data>
   <data name="Profile.Avatar.Upload" xml:space="preserve"><value>رفع صورة جديدة</value></data>
   <data name="Profile.Avatar.Picker" xml:space="preserve"><value>اختر ملف صورة الحساب</value></data>
@@ -1339,6 +1369,8 @@
   <data name="Admin.SpeakerPresentations.Title" xml:space="preserve"><value>عروض المتحدثين</value></data>
   <data name="Admin.SpeakerPresentations.Speaker" xml:space="preserve"><value>المتحدث</value></data>
   <data name="Admin.SpeakerPresentations.SelectSpeaker" xml:space="preserve"><value>— اختر متحدثاً —</value></data>
+  <data name="Admin.SpeakerPresentations.BackToSpeakers" xml:space="preserve"><value>← كل المتحدثين</value></data>
+  <data name="Admin.SpeakerPresentations.NoSpeakers" xml:space="preserve"><value>لا يوجد متحدثون بعد.</value></data>
   <data name="Admin.SpeakerPresentations.Session" xml:space="preserve"><value>الجلسة</value></data>
   <data name="Admin.SpeakerPresentations.SelectSession" xml:space="preserve"><value>— اختر جلسة —</value></data>
   <data name="Admin.SpeakerPresentations.File" xml:space="preserve"><value>ملف العرض</value></data>
@@ -1441,6 +1473,9 @@
   <data name="Admin.Sessions.Field.DescriptionArabic" xml:space="preserve"><value>الوصف (العربية)</value></data>
   <data name="Admin.Sessions.Field.LiveStreamUrl" xml:space="preserve"><value>رابط البث المباشر</value></data>
   <data name="Admin.Sessions.Field.LiveSignLanguageUrl" xml:space="preserve"><value>رابط بث لغة الإشارة (اختياري)</value></data>
+  <data name="Admin.Sessions.Field.LiveStreamUrlHint" xml:space="preserve"><value>ألصق رابط يوتيوب (youtube.com / youtu.be) أو رابط بث مباشر https بصيغة HLS/MP4.</value></data>
+  <data name="Admin.Sessions.Field.LiveSignLanguageUrlHint" xml:space="preserve"><value>اختياري. نفس الصيغ — رابط يوتيوب أو رابط بث HLS/MP4.</value></data>
+  <data name="Admin.Sessions.Field.LiveUrlInvalid" xml:space="preserve"><value>أدخل رابط يوتيوب صالحاً أو رابط بث HLS/MP4 (https).</value></data>
   <data name="Admin.Sessions.Field.Hall" xml:space="preserve"><value>القاعة</value></data>
   <data name="Admin.Sessions.Field.HallPlaceholder" xml:space="preserve"><value>— اختر القاعة —</value></data>
   <data name="Admin.Sessions.Field.HallRequired" xml:space="preserve"><value>القاعة مطلوبة.</value></data>
@@ -1493,6 +1528,9 @@
   <data name="Module.Invitations" xml:space="preserve"><value>الدعوات</value></data>
   <data name="Module.Vips" xml:space="preserve"><value>كبار الضيوف</value></data>
   <data name="Admin.Invitations.Title" xml:space="preserve"><value>الدعوات</value></data>
+  <data name="Admin.Invitations.State.Pending" xml:space="preserve"><value>قيد الانتظار</value></data>
+  <data name="Admin.Invitations.State.Confirmed" xml:space="preserve"><value>مؤكَّدة</value></data>
+  <data name="Admin.Invitations.State.Declined" xml:space="preserve"><value>مرفوضة</value></data>
   <data name="Admin.Invitations.Loading" xml:space="preserve"><value>جارٍ تحميل الدعوات…</value></data>
   <data name="Admin.Invitations.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الدعوات.</value></data>
   <data name="Admin.Invitations.None" xml:space="preserve"><value>لا توجد دعوات بعد.</value></data>
@@ -1760,6 +1798,11 @@
   <data name="Admin.HallSeatLayouts.Save" xml:space="preserve"><value>حفظ المخطط</value></data>
   <data name="Admin.HallSeatLayouts.Saved" xml:space="preserve"><value>تم حفظ المخطط.</value></data>
   <data name="Admin.SessionSeatPlans.Title" xml:space="preserve"><value>مخطط مقاعد الجلسات</value></data>
+  <data name="Admin.SessionSeatPlans.Legend.Free" xml:space="preserve"><value>متاح</value></data>
+  <data name="Admin.SessionSeatPlans.Legend.User" xml:space="preserve"><value>محجوز (زائر)</value></data>
+  <data name="Admin.SessionSeatPlans.Legend.Admin" xml:space="preserve"><value>محجوز (إدارة)</value></data>
+  <data name="Admin.SessionSeatPlans.Legend.Random" xml:space="preserve"><value>عشوائي</value></data>
+  <data name="Admin.SessionSeatPlans.Seat.ReservedTitle" xml:space="preserve"><value>المقعد {0} — {1}</value></data>
   <data name="Admin.SessionSeatPlans.Pick" xml:space="preserve"><value>اختر جلسة</value></data>
   <data name="Admin.SessionSeatPlans.None" xml:space="preserve"><value>لا توجد جلسات متاحة.</value></data>
   <data name="Admin.SessionSeatPlans.NoReservations" xml:space="preserve"><value>لا توجد حجوزات نشطة لهذه الجلسة.</value></data>
@@ -2081,6 +2124,20 @@
   <data name="Admin.Comments.LoadFailed" xml:space="preserve"><value>تعذر تحميل التعليقات. حاول مرة أخرى.</value></data>
   <data name="Admin.Comments.SessionsLoadFailed" xml:space="preserve"><value>تعذر تحميل الجلسات. حاول مرة أخرى.</value></data>
 
+  <!-- FR-506 — session-attendance dashboard (read-only). -->
+  <data name="Admin.Attendance.Title" xml:space="preserve"><value>حضور الجلسات</value></data>
+  <data name="Admin.Attendance.Loading" xml:space="preserve"><value>جارٍ تحميل الحضور…</value></data>
+  <data name="Admin.Attendance.None" xml:space="preserve"><value>لم يُسجَّل أي حضور بعد.</value></data>
+  <data name="Admin.Attendance.LoadFailed" xml:space="preserve"><value>تعذّر تحميل الحضور. حاول مرة أخرى.</value></data>
+  <data name="Admin.Attendance.Stat.LiveNow" xml:space="preserve"><value>الحاضرون الآن</value></data>
+  <data name="Admin.Attendance.Stat.SessionsWithAttendance" xml:space="preserve"><value>جلسات بها حضور</value></data>
+  <data name="Admin.Attendance.Stat.TotalArrivals" xml:space="preserve"><value>إجمالي الوصول</value></data>
+  <data name="Admin.Attendance.Col.Code" xml:space="preserve"><value>الرمز</value></data>
+  <data name="Admin.Attendance.Col.Session" xml:space="preserve"><value>الجلسة</value></data>
+  <data name="Admin.Attendance.Col.Hall" xml:space="preserve"><value>القاعة</value></data>
+  <data name="Admin.Attendance.Col.Start" xml:space="preserve"><value>البداية (UTC)</value></data>
+  <data name="Admin.Attendance.Col.TotalAttendees" xml:space="preserve"><value>إجمالي الحضور</value></data>
+  <data name="Admin.Attendance.Col.LiveNow" xml:space="preserve"><value>الآن</value></data>
   <!-- D-202 Track-2 — Statistics dashboard (read-only). -->
   <data name="Admin.Statistics.Title" xml:space="preserve"><value>الإحصائيات</value></data>
   <data name="Admin.Statistics.Loading" xml:space="preserve"><value>جارٍ تحميل الإحصائيات…</value></data>
@@ -2366,6 +2423,9 @@
   <data name="Grid.PageSize" xml:space="preserve"><value>عرض</value></data>
   <data name="Grid.Page" xml:space="preserve"><value>صفحة {0} من {1}</value></data>
   <data name="Grid.Summary" xml:space="preserve"><value>عرض {0}–{1} من {2}</value></data>
+  <!-- D-353 — CRUD presentation toggle (dialog vs full page) -->
+  <data name="Grid.View.Dialog" xml:space="preserve"><value>فتح كنافذة منبثقة</value></data>
+  <data name="Grid.View.Page" xml:space="preserve"><value>فتح كصفحة كاملة</value></data>
   <data name="Grid.Add" xml:space="preserve"><value>إضافة</value></data>
   <data name="Grid.Edit" xml:space="preserve"><value>تعديل</value></data>
   <data name="Grid.Details" xml:space="preserve"><value>تفاصيل</value></data>
@@ -2373,6 +2433,15 @@
   <data name="Grid.Close" xml:space="preserve"><value>إغلاق</value></data>
   <data name="Grid.Active" xml:space="preserve"><value>مُفعّل</value></data>
   <data name="Grid.Inactive" xml:space="preserve"><value>غير مُفعّل</value></data>
+  <data name="Grid.Export" xml:space="preserve"><value>تصدير</value></data>
+  <data name="Grid.Import" xml:space="preserve"><value>استيراد</value></data>
+  <data name="Grid.Import.Picker" xml:space="preserve"><value>اختر ملف Excel (.xlsx) للاستيراد</value></data>
+  <data name="Grid.Import.ResultTitle" xml:space="preserve"><value>نتائج الاستيراد</value></data>
+  <data name="Grid.Import.ResultBody" xml:space="preserve"><value>تم إنشاء {0}، وتحديث {1}، وتخطّي {2}.</value></data>
+  <data name="Grid.Import.RowError" xml:space="preserve"><value>الصف {0} ({1}): {2}</value></data>
+  <data name="Grid.Import.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Grid.Import.Failed" xml:space="preserve"><value>تعذّر إكمال الاستيراد.</value></data>
+  <data name="Grid.Import.Done" xml:space="preserve"><value>اكتمل الاستيراد.</value></data>
   <data name="Admin.AiPrompts.Active.Yes" xml:space="preserve"><value>مُفعّل</value></data>
   <data name="Admin.AiPrompts.Active.No" xml:space="preserve"><value>غير مُفعّل</value></data>
   <!-- SIMF-FDS-014 (D-281/C2) — shared Contact directory -->
@@ -2426,4 +2495,164 @@
   <data name="Admin.Contacts.Picker.Clear" xml:space="preserve"><value>إزالة</value></data>
   <data name="Admin.Contacts.Picker.Linked" xml:space="preserve"><value>مرتبطة بـ: {0}</value></data>
   <data name="Admin.Contacts.Picker.NotLinked" xml:space="preserve"><value>لا توجد جهة اتصال مرتبطة</value></data>
+  <data name="Admin.Themes.Delete.Title" xml:space="preserve"><value>تعطيل المحور</value></data>
+  <data name="Admin.Themes.Delete.Message" xml:space="preserve"><value>تعطيل المحور "{0}"؟ سيُخفى من جدول الأعمال ومنتقي محرر الجلسة. يمكنك إعادة تفعيله لاحقاً بتعديله.</value></data>
+  <data name="Admin.Halls.Delete.Title" xml:space="preserve"><value>إلغاء تفعيل القاعة</value></data>
+  <data name="Admin.Halls.Delete.Message" xml:space="preserve"><value>هل تريد إلغاء تفعيل القاعة "{0}"؟ لن تكون متاحة لإسناد الجلسات بعد ذلك.</value></data>
+  <data name="Admin.Gates.Delete.Title" xml:space="preserve"><value>إلغاء تفعيل البوابة</value></data>
+  <data name="Admin.Gates.Delete.Message" xml:space="preserve"><value>إلغاء تفعيل "{0}"؟ ستتوقف عن قبول عمليات المسح وستُخفى من قائمة البوابات. يمكنك إعادة تفعيلها لاحقًا عبر التعديل.</value></data>
+  <data name="Admin.SessionCategories.Details.Title" xml:space="preserve"><value>تفاصيل التصنيف</value></data>
+  <data name="Admin.SessionCategories.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.SessionCategories.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.SessionCategories.Delete.Title" xml:space="preserve"><value>تعطيل التصنيف</value></data>
+  <data name="Admin.SessionCategories.Delete.Message" xml:space="preserve"><value>تعطيل "{0}"؟ سيُخفى من أداة اختيار تصنيف الجلسات. يمكنك إعادة تفعيله لاحقًا عبر التعديل.</value></data>
+  <data name="Admin.Roles.Delete.Title" xml:space="preserve"><value>حذف الدور</value></data>
+  <data name="Admin.Roles.Delete.Message" xml:space="preserve"><value>حذف الدور "{0}"؟ سيفقد كل من يملكه الصلاحيات التي يمنحها. لا يمكن التراجع عن هذا الإجراء.</value></data>
+  <data name="Admin.Configuration.Details.Title" xml:space="preserve"><value>تفاصيل الإعداد</value></data>
+  <data name="Admin.Configuration.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Configuration.Delete.Title" xml:space="preserve"><value>حذف الإعداد</value></data>
+  <data name="Admin.Configuration.Delete.Message" xml:space="preserve"><value>هل تريد حذف الإعداد ”{0}“؟ سيؤدي ذلك إلى تعطيله.</value></data>
+  <data name="Admin.Configuration.Field.KeyHint" xml:space="preserve"><value>معرّف فريد، مثل registration.open. لا يمكن تغييره لاحقًا.</value></data>
+  <data name="Admin.Configuration.Field.KeyReadOnly" xml:space="preserve"><value>المفتاح ثابت بعد إنشاء الإعداد.</value></data>
+  <data name="Admin.Configuration.Field.KeyInvalid" xml:space="preserve"><value>أدخل مفتاحًا (حتى 128 حرفًا).</value></data>
+  <data name="Admin.Configuration.Field.ValueInvalid" xml:space="preserve"><value>أدخل قيمة (حتى 1024 حرفًا).</value></data>
+  <data name="Admin.Configuration.Field.DescriptionHint" xml:space="preserve"><value>ملاحظة اختيارية تشرح وظيفة هذا الإعداد.</value></data>
+  <data name="Admin.Configuration.Field.DescriptionInvalid" xml:space="preserve"><value>يجب ألا يتجاوز الوصف 512 حرفًا.</value></data>
+  <data name="Admin.Configuration.New.Submit" xml:space="preserve"><value>إنشاء إعداد</value></data>
+  <data name="Admin.Configuration.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء…</value></data>
+  <data name="Admin.Configuration.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.Configuration.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
+  <data name="Admin.Configuration.Fallback" xml:space="preserve"><value>حدث خطأ ما. يرجى المحاولة مرة أخرى.</value></data>
+  <data name="Admin.Contacts.Details.Title" xml:space="preserve"><value>تفاصيل جهة الاتصال</value></data>
+  <data name="Admin.Contacts.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Contacts.Delete.Title" xml:space="preserve"><value>تعطيل جهة الاتصال</value></data>
+  <data name="Admin.Contacts.Delete.Message" xml:space="preserve"><value>هل تريد تعطيل "{0}"؟ لن تكون متاحة للربط من الرعاة أو العارضين أو الشركاء الإعلاميين أو المتحدثين أو الأجنحة.</value></data>
+  <data name="Admin.Contacts.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.News.Details.Title" xml:space="preserve"><value>تفاصيل الخبر</value></data>
+  <data name="Admin.News.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.News.Delete.Title" xml:space="preserve"><value>حذف الخبر</value></data>
+  <data name="Admin.News.Delete.Message" xml:space="preserve"><value>هل تريد حذف «{0}»؟ ستتم إزالته من الواجهة العامة فورًا.</value></data>
+  <data name="Admin.AiPrompts.Details.Title" xml:space="preserve"><value>تفاصيل محفّز الذكاء الاصطناعي</value></data>
+  <data name="Admin.AiPrompts.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.AiPrompts.Delete.Title" xml:space="preserve"><value>تعطيل محفّز الذكاء الاصطناعي</value></data>
+  <data name="Admin.AiPrompts.Delete.Message" xml:space="preserve"><value>هل تريد تعطيل المحفّز «{0}»؟ لن يُقدَّم بعد ذلك للميزات.</value></data>
+  <data name="Admin.AiPrompts.Required" xml:space="preserve"><value>الاسم (بالإنجليزية والعربية) مطلوب.</value></data>
+  <data name="Admin.AiPrompts.Field.KeyRequired" xml:space="preserve"><value>المفتاح مطلوب.</value></data>
+  <data name="Admin.Banners.Details.Title" xml:space="preserve"><value>تفاصيل اللافتة</value></data>
+  <data name="Admin.Banners.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Banners.Delete.Title" xml:space="preserve"><value>تعطيل اللافتة</value></data>
+  <data name="Admin.Banners.Delete.Message" xml:space="preserve"><value>تعطيل اللافتة ‏«{0}»؟ سيتوقف عرضها في الموقع العام.</value></data>
+  <data name="Admin.Banners.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.Banners.Required" xml:space="preserve"><value>يرجى إكمال الحقول المطلوبة.</value></data>
+  <data name="Admin.ContentBlocks.Add.Title" xml:space="preserve"><value>كتلة محتوى جديدة</value></data>
+  <data name="Admin.ContentBlocks.Details.Title" xml:space="preserve"><value>تفاصيل كتلة المحتوى</value></data>
+  <data name="Admin.ContentBlocks.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.ContentBlocks.Action.Delete" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.ContentBlocks.Delete.Title" xml:space="preserve"><value>حذف كتلة المحتوى</value></data>
+  <data name="Admin.ContentBlocks.Delete.Message" xml:space="preserve"><value>هل تريد حذف كتلة المحتوى "{0}"؟ سيؤدي ذلك إلى إزالتها من الموقع.</value></data>
+  <data name="Admin.ContentBlocks.Required" xml:space="preserve"><value>المفتاح مطلوب (حتى 128 حرفًا).</value></data>
+  <data name="Admin.MediaPartners.Details.Title" xml:space="preserve"><value>تفاصيل الشريك الإعلامي</value></data>
+  <data name="Admin.MediaPartners.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.MediaPartners.Delete.Title" xml:space="preserve"><value>حذف الشريك الإعلامي</value></data>
+  <data name="Admin.MediaPartners.Delete.Message" xml:space="preserve"><value>هل تريد حذف "{0}"؟ سيُزال من القائمة العامة فورًا.</value></data>
+  <data name="Admin.Archive.Details.Title" xml:space="preserve"><value>تفاصيل النسخة</value></data>
+  <data name="Admin.Archive.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Archive.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.Archive.Delete.Title" xml:space="preserve"><value>تعطيل النسخة</value></data>
+  <data name="Admin.Archive.Delete.Message" xml:space="preserve"><value>تعطيل «{0}»؟ ستتم إزالتها من الأرشيف العام فورًا.</value></data>
+  <data name="Admin.Media.Details.Title" xml:space="preserve"><value>تفاصيل عنصر الوسائط</value></data>
+  <data name="Admin.Media.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Media.Action.Deactivate" xml:space="preserve"><value>حذف</value></data>
+  <data name="Admin.Media.Delete.Title" xml:space="preserve"><value>حذف عنصر الوسائط</value></data>
+  <data name="Admin.Media.Delete.Message" xml:space="preserve"><value>هل تريد حذف “{0}”؟ ستتم إزالته من المعرض العام.</value></data>
+  <data name="Admin.Organisations.Details.Title" xml:space="preserve"><value>تفاصيل الجهة</value></data>
+  <data name="Admin.Organisations.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Organisations.Delete.Title" xml:space="preserve"><value>تعطيل الجهة</value></data>
+  <data name="Admin.Organisations.Delete.Message" xml:space="preserve"><value>تعطيل «{0}»؟ ستُزال من قائمة البحث العامة.</value></data>
+  <data name="Admin.Organisations.Action.Deactivate" xml:space="preserve"><value>تعطيل</value></data>
+  <data name="Admin.Sponsors.Details.Title" xml:space="preserve"><value>تفاصيل الراعي</value></data>
+  <data name="Admin.Sponsors.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Sponsors.Delete.Title" xml:space="preserve"><value>حذف الراعي</value></data>
+  <data name="Admin.Sponsors.Delete.Message" xml:space="preserve"><value>هل تريد حذف الراعي "{0}"؟ سيُزال من قائمة الرعاة العامة فورًا. يمكنك إعادة تفعيله لاحقًا بتعديله.</value></data>
+  <data name="Admin.Sponsors.New.Submit" xml:space="preserve"><value>إضافة راعٍ</value></data>
+  <data name="Admin.Sponsors.New.Submitting" xml:space="preserve"><value>جارٍ الإضافة</value></data>
+  <data name="Admin.Sponsors.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.Sponsors.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Admin.Sponsors.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
+  <data name="Admin.Exhibitors.Details.Title" xml:space="preserve"><value>تفاصيل العارض</value></data>
+  <data name="Admin.Exhibitors.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Exhibitors.Delete.Title" xml:space="preserve"><value>إلغاء تفعيل العارض</value></data>
+  <data name="Admin.Exhibitors.Delete.Message" xml:space="preserve"><value>هل تريد إلغاء تفعيل العارض "{0}"؟ سيُزال من قائمة العارضين العامة فورًا. يمكنك إعادة تفعيله لاحقًا بتعديله.</value></data>
+  <data name="Admin.Exhibitors.Action.Deactivate" xml:space="preserve"><value>إلغاء التفعيل</value></data>
+  <data name="Admin.Speakers.Delete.Title" xml:space="preserve"><value>تعطيل المتحدّث</value></data>
+  <data name="Admin.Speakers.Delete.Message" xml:space="preserve"><value>تعطيل المتحدّث "{0}"؟ سيُخفى من قائمة المتحدّثين العامة ومنتقي محرر الجلسة. يمكنك إعادة تفعيله لاحقاً بتعديله.</value></data>
+  <!-- D-353 — CrudShell host titles + reusable Add/Edit/View/Delete form labels. -->
+  <data name="Admin.Booths.Details.Title" xml:space="preserve"><value>تفاصيل الجناح</value></data>
+  <data name="Admin.Booths.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Booths.Delete.Title" xml:space="preserve"><value>حذف الجناح</value></data>
+  <data name="Admin.Booths.Delete.Message" xml:space="preserve"><value>هل تريد حذف الجناح ”{0}“؟ ستتم إزالته من قائمة المعرض العامة وخريطة الموقع فوراً.</value></data>
+  <data name="Admin.Booths.Fallback" xml:space="preserve"><value>تعذّر إكمال الطلب. يُرجى المحاولة مرة أخرى.</value></data>
+  <data name="Admin.Booths.New.Submit" xml:space="preserve"><value>إنشاء الجناح</value></data>
+  <data name="Admin.Booths.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء…</value></data>
+  <data name="Admin.Booths.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.Booths.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ…</value></data>
+  <data name="Admin.VenueMap.Col.Hall" xml:space="preserve"><value>القاعة المرتبطة</value></data>
+  <data name="Admin.VenueMap.Col.Booth" xml:space="preserve"><value>الجناح المرتبط</value></data>
+  <data name="Admin.VenueMap.Details.Title" xml:space="preserve"><value>تفاصيل عقدة الخريطة</value></data>
+  <data name="Admin.VenueMap.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.VenueMap.Delete.Title" xml:space="preserve"><value>حذف عقدة الخريطة</value></data>
+  <data name="Admin.VenueMap.Delete.Message" xml:space="preserve"><value>هل تريد حذف عقدة الخريطة "{0}"؟ ستختفي من خريطة التطبيق ثنائية الأبعاد فورًا. يمكنك إعادة تفعيلها لاحقًا بتعديلها.</value></data>
+  <data name="Admin.VenueMap.New.Submit" xml:space="preserve"><value>إنشاء عقدة</value></data>
+  <data name="Admin.VenueMap.New.Submitting" xml:space="preserve"><value>جارٍ الإنشاء</value></data>
+  <data name="Admin.VenueMap.Edit.Submit" xml:space="preserve"><value>حفظ التغييرات</value></data>
+  <data name="Admin.VenueMap.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Admin.VenueMap.Fallback" xml:space="preserve"><value>تعذّر إكمال العملية.</value></data>
+  <data name="Admin.Invitations.Col.RecipientEn" xml:space="preserve"><value>المستلم (الإنجليزية)</value></data>
+  <data name="Admin.Invitations.Col.RecipientAr" xml:space="preserve"><value>المستلم (العربية)</value></data>
+  <data name="Admin.Invitations.Col.JobTitle" xml:space="preserve"><value>المسمى الوظيفي</value></data>
+  <data name="Admin.Invitations.Col.Email" xml:space="preserve"><value>البريد الإلكتروني</value></data>
+  <data name="Admin.Invitations.Col.RespondedAt" xml:space="preserve"><value>تاريخ الرد</value></data>
+  <data name="Admin.Invitations.Col.UpdatedAt" xml:space="preserve"><value>تاريخ التحديث</value></data>
+  <data name="Admin.Invitations.Details.Title" xml:space="preserve"><value>تفاصيل الدعوة</value></data>
+  <data name="Admin.Invitations.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.Invitations.Delete.Title" xml:space="preserve"><value>إلغاء الدعوة</value></data>
+  <data name="Admin.Invitations.Delete.Message" xml:space="preserve"><value>هل تريد إلغاء الدعوة الموجَّهة إلى "{0}"؟ ستتم إزالتها من القائمة فورًا. يمكنك إعادة تفعيلها لاحقًا بتعديلها.</value></data>
+  <data name="Admin.Invitations.New.Submitting" xml:space="preserve"><value>جارٍ الإرسال</value></data>
+  <data name="Admin.Invitations.Edit.Submitting" xml:space="preserve"><value>جارٍ الحفظ</value></data>
+  <data name="Admin.Invitations.RecipientRequired" xml:space="preserve"><value>أدخل معرّف ملف مستخدم صالح للمستلم.</value></data>
+  <data name="Admin.Invitations.Saved" xml:space="preserve"><value>تم حفظ الدعوة.</value></data>
+  <data name="Admin.Invitations.Fallback" xml:space="preserve"><value>تعذّر إتمام العملية.</value></data>
+  <data name="Admin.Sessions.Delete.Title" xml:space="preserve"><value>إلغاء تفعيل الجلسة</value></data>
+  <data name="Admin.Sessions.Delete.Message" xml:space="preserve"><value>هل تريد إلغاء تفعيل الجلسة "{0}"؟ سيتم إخفاؤها من البرنامج العام.</value></data>
+  <data name="Module.MediaLibrary" xml:space="preserve"><value>مكتبة الوسائط</value></data>
+  <data name="Admin.MediaLibrary.Title" xml:space="preserve"><value>مكتبة الوسائط</value></data>
+  <data name="Admin.MediaLibrary.Col.Category" xml:space="preserve"><value>الفئة</value></data>
+  <data name="Admin.MediaLibrary.Col.Owner" xml:space="preserve"><value>العنصر</value></data>
+  <data name="Admin.MediaLibrary.Col.Preview" xml:space="preserve"><value>معاينة</value></data>
+  <data name="Admin.MediaLibrary.Col.Kind" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.MediaLibrary.Col.Type" xml:space="preserve"><value>المصدر</value></data>
+  <data name="Admin.MediaLibrary.Col.Url" xml:space="preserve"><value>الرابط</value></data>
+  <data name="Admin.MediaLibrary.Type.Upload" xml:space="preserve"><value>ملف مرفوع</value></data>
+  <data name="Admin.MediaLibrary.Type.Link" xml:space="preserve"><value>رابط خارجي</value></data>
+  <data name="Admin.MediaLibrary.Manage" xml:space="preserve"><value>إدارة</value></data>
+  <data name="Admin.MediaLibrary.Details.Title" xml:space="preserve"><value>تفاصيل الأصل</value></data>
+  <data name="Admin.MediaLibrary.Details.Close" xml:space="preserve"><value>إغلاق</value></data>
+  <data name="Admin.MediaLibrary.Deactivate" xml:space="preserve"><value>إلغاء التفعيل</value></data>
+  <data name="Admin.MediaLibrary.Restore" xml:space="preserve"><value>استعادة</value></data>
+  <data name="Admin.MediaLibrary.None" xml:space="preserve"><value>لا توجد أصول وسائط بعد.</value></data>
+  <data name="Admin.MediaLibrary.Deactivated" xml:space="preserve"><value>تم إلغاء تفعيل الأصل.</value></data>
+  <data name="Admin.MediaLibrary.Restored" xml:space="preserve"><value>تمت استعادة الأصل.</value></data>
+  <data name="Admin.MediaLibrary.LoadFailed" xml:space="preserve"><value>تعذّر تحميل أصول الوسائط.</value></data>
+  <data name="Admin.Asset.Heading" xml:space="preserve"><value>الصورة</value></data>
+  <data name="Admin.Asset.SaveFirst" xml:space="preserve"><value>احفظ السجل أولاً ثم أضف صورة.</value></data>
+  <data name="Admin.Asset.UploadTab" xml:space="preserve"><value>رفع ملف</value></data>
+  <data name="Admin.Asset.LinkTab" xml:space="preserve"><value>رابط خارجي</value></data>
+  <data name="Admin.Asset.File" xml:space="preserve"><value>الملف</value></data>
+  <data name="Admin.Asset.Upload" xml:space="preserve"><value>رفع</value></data>
+  <data name="Admin.Asset.Url" xml:space="preserve"><value>الرابط</value></data>
+  <data name="Admin.Asset.Kind" xml:space="preserve"><value>النوع</value></data>
+  <data name="Admin.Asset.Kind.Image" xml:space="preserve"><value>صورة</value></data>
+  <data name="Admin.Asset.Kind.Video" xml:space="preserve"><value>فيديو</value></data>
+  <data name="Admin.Asset.Kind.Document" xml:space="preserve"><value>مستند</value></data>
+  <data name="Admin.Asset.SaveLink" xml:space="preserve"><value>حفظ الرابط</value></data>
 </root>

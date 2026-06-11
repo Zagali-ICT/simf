@@ -76,20 +76,28 @@ sign-in requires the email, password and a TOTP code, per SIMF-API-001.
 
 ### 5.1 Module map
 
-The Control Panel is organised into nine navigation groups. A group, and each
-item under it, is shown only to users whose role permits it.
+The Control Panel is organised into thirteen navigation groups. A group, and each
+item under it, is shown only to users whose role permits it. (The former 23-item
+"System" group was split into coherent groups: People absorbed the Visitor/Other
+accounts, and Scientific committee / Public relations / Gates & arrivals /
+Reference data were carved out, leaving a slim System group. The list below is a
+representative summary; `CpNavigation.cs` is the authoritative map.)
 
 | Group | Modules |
 |-------|---------|
-| Overview | Dashboard |
-| People | Registration requests · Attendees · Roles & permissions |
-| Programme | Themes & pillars · Sessions · Halls & seating · Speakers · Bookings |
+| Overview | Dashboard · Statistics · Session attendance |
+| People | Attendees · Visitors (+ pending) · Other users (+ pending) · Print badge |
+| Access control | Admins (+ pending) · Roles & permissions · Reset 2FA |
+| Programme | Themes & pillars · Sessions · Session categories · Timeline · Halls & seating · Speakers · Bookings · Meeting tables · Business meetings |
+| Scientific committee | Session moderators · Question queue · Session summaries |
 | Exhibition | Exhibitors · Booths · Sponsors · Venue map |
-| Engagement | Live sessions · Moderation queue |
-| Knowledge & AI | FAQ groups & entries · AI settings |
-| Content | Media Center · News · Previous editions |
-| Communications | Notifications |
-| System | Configuration · Operation log · Settings |
+| Engagement | Live sessions · Moderation queue · Ratings |
+| Knowledge & AI | FAQ · AI prompts · AI invocations log |
+| Content | Content blocks · Banners · Media Center · News · Media partners · Previous editions |
+| Public relations | Invitations · VIPs |
+| Gates & arrivals | Gates · Gate operator · Hall arrivals · Gates dashboard |
+| Reference data | Interests · Countries · Organisations · Contacts · Profile types |
+| System | Configuration · Logs · Operation log · Operations toggles |
 
 ### 5.2 What each module is for
 

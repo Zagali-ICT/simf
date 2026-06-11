@@ -1,0 +1,144 @@
+@* D-353 — reusable Admin-user Add/Edit form, hosted by CrudShell (popup or full
+   page) from UsersList. Inherits CrudAddEditFormBase<AdminUserSummary> so it
+   exposes the standard CRUD-form surface (IsEdit / Initial / OnSuccess /
+   OnCancel). This is an account/security page: the two modes call the EXACT same
+   routes + DTOs the inline SimfModal forms used, byte-for-byte —
+     • IsEdit=false → Add a new Control-Panel admin via the existing reusable
+       CreateAdminForm (POST /account/api/admin/admins through CreateAdminForm).
+       Its OnSuccess(AdminCreateUserResponse) is bridged to this form's OnSuccess
+       carrying the Initial row (null in Add mode) so the host reloads the grid.
+     • IsEdit=true → Edit the user's RBAC roles (Issue-1): load the assignable
+       roles + the user's current roles, then PUT /account/api/admin/admins/{id}/roles
+       with the complete set. Identical load/save logic, identical routes. *@
+@inherits CrudAddEditFormBase<AdminUserSummary>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (!IsEdit)
+{
+    @* Add — host the same reusable CreateAdminForm the inline Add modal used.
+       It owns its own validation, EditForm, alerts and POST. *@
+    <CreateAdminForm OnSuccess="OnCreatedAsync"
+                     OnCancel="OnCancel"
+                     CancelLabel="@L["Admin.Users.Add.Close"]" />
+}
+else
+{
+    @* Edit roles — the exact RBAC-roles editor lifted from the inline modal. *@
+    @if (_editError is not null)
+    {
+        <SimfAlert Variant="error">@_editError</SimfAlert>
+    }
+    @if (_editLoading)
+    {
+        <p>@L["Admin.Users.EditRoles.Loading"]</p>
+    }
+    else if (_availableRoles.Count == 0)
+    {
+        <p>@L["Admin.Users.EditRoles.NoRoles"]</p>
+    }
+    else
+    {
+        <p>@L["Admin.Users.EditRoles.Intro"]</p>
+        @foreach (var roleName in _availableRoles)
+        {
+            <SimfCheckbox Value="_editSelectedRoles.Contains(roleName)"
+                          ValueChanged="@((bool on) => ToggleEditRole(roleName, on))"
+                          Disabled="_editBusy">
+                @roleName
+            </SimfCheckbox>
+        }
+    }
+
+    <div class="simf-form__actions">
+        <SimfButton Type="button" Variant="primary" Loading="_editBusy"
+                    LoadingLabel="@L["Admin.Users.EditRoles.Saving"]"
+                    Disabled="@(_editLoading || _availableRoles.Count == 0)"
+                    OnClick="SaveRolesAsync">
+            @L["Admin.Users.EditRoles.Save"]
+        </SimfButton>
+        <SimfButton Type="button" Variant="secondary" Disabled="_editBusy" OnClick="OnCancel">
+            @L["Admin.Users.EditRoles.Cancel"]
+        </SimfButton>
+    </div>
+}
+
+@code {
+    // Issue-1 — the assignable CP roles (fetched) and the user's current selection.
+    private readonly List<string> _availableRoles = new();
+    private readonly HashSet<string> _editSelectedRoles = new(StringComparer.Ordinal);
+    private bool _editLoading;
+    private bool _editBusy;
+    private string? _editError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Only Edit mode loads roles; Add mode is entirely handled by CreateAdminForm.
+        if (!IsEdit || Initial is null) { return; }
+
+        _editError = null;
+        _editLoading = true;
+        _availableRoles.Clear();
+        _editSelectedRoles.Clear();
+        try
+        {
+            var roles = await JS.InvokeAsync<ApiResult<GridPage<AdminRoleSummary>>>(
+                "simfAccount.postJson", "/account/api/admin/roles/list",
+                new GridQuery { Top = 200, Sort = "name" });
+            if (roles is { Success: true, Data: not null })
+            {
+                _availableRoles.AddRange(roles.Data.Items.Select(role => role.Name));
+            }
+
+            var current = await JS.InvokeAsync<ApiResult<AdminUserRolesResponse>>(
+                "simfAccount.getJson", $"/account/api/admin/admins/{Initial.Id}/roles");
+            if (current is { Success: true, Data: not null })
+            {
+                foreach (var roleName in current.Data.Roles)
+                {
+                    _editSelectedRoles.Add(roleName);
+                }
+            }
+        }
+        catch (JSException)
+        {
+            _editError = L["Admin.Users.EditRoles.LoadFailed"];
+        }
+        finally { _editLoading = false; }
+    }
+
+    // Add — bridge CreateAdminForm's response back to the standard CRUD surface.
+    // The host's OnSavedAsync only needs the row identity (it reloads the grid);
+    // in Add mode there is no Initial, so it passes null, matching the base type.
+    private Task OnCreatedAsync(AdminCreateUserResponse created) =>
+        OnSuccess.InvokeAsync(Initial);
+
+    private void ToggleEditRole(string roleName, bool on)
+    {
+        if (on) { _editSelectedRoles.Add(roleName); }
+        else { _editSelectedRoles.Remove(roleName); }
+    }
+
+    private async Task SaveRolesAsync()
+    {
+        if (Initial is null || _editBusy) { return; }
+        _editBusy = true;
+        _editError = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.putJson", $"/account/api/admin/admins/{Initial.Id}/roles",
+                new AdminSetUserRolesRequest { Roles = _editSelectedRoles.ToList() });
+            if (envelope is { Success: true })
+            {
+                await OnSuccess.InvokeAsync(Initial);
+            }
+            else
+            {
+                _editError = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Users.EditRoles.Fallback"];
+            }
+        }
+        finally { _editBusy = false; }
+    }
+}

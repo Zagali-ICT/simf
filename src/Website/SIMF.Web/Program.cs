@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Production secrets/config arrive as SIMF_-prefixed Machine-scope environment
 // variables (deploy/set-env-*.ps1, SIMF-OPS-001 section 6). This source strips
 // the prefix, so SIMF_Api__BaseUrl binds to Api:BaseUrl. ASPNETCORE_ENVIRONMENT
-// stays un-prefixed (the host reads it before configuration sources load).
+// stays un-prefixed (the host reads it before configuration sources load). (D-355)
 builder.Configuration.AddEnvironmentVariables("SIMF_");
 
 // P6 — per-project log files under {Storage:LogDirectory}/SIMF.Web/log-{Date}.log.
@@ -88,7 +88,7 @@ builder.Services.AddHttpContextAccessor();
 // SIMF_Api__AllowSelfSignedCertificate=true → accept the API's self-signed
 // certificate on the server-to-server API calls (the API uses a self-signed
 // cert whose name does not match the host). Default false → normal TLS
-// validation, so dev and any other environment are unaffected.
+// validation, so dev and any other environment are unaffected. (D-355)
 var allowSelfSignedApiCert =
     builder.Configuration.GetValue<bool>("Api:AllowSelfSignedCertificate");
 Func<HttpMessageHandler> apiPrimaryHandler = () =>
@@ -102,44 +102,21 @@ Func<HttpMessageHandler> apiPrimaryHandler = () =>
     return handler;
 };
 
-// The typed clients for the SIMF API. Server-to-server calls; the access
-// token never reaches the browser.
-builder.Services.AddHttpClient<SimfAuthClient>(client =>
-{
-    var baseUrl = builder.Configuration["Api:BaseUrl"]
-        ?? throw new InvalidOperationException(
-            "Configuration value 'Api:BaseUrl' is required but was not found.");
-    var baseUri = new Uri(baseUrl);
-    if (!builder.Environment.IsDevelopment() && baseUri.Scheme != Uri.UriSchemeHttps)
-    {
-        throw new InvalidOperationException(
-            "'Api:BaseUrl' must use HTTPS outside the Development environment.");
-    }
-    client.BaseAddress = baseUri;
-})
+// Typed clients share one validated API base address (SimfApiBaseAddress) —
+// server-to-server, so the token never reaches the browser. The self-signed
+// cert handler (above) is applied to each so production over a self-signed
+// API cert works when SIMF_Api__AllowSelfSignedCertificate=true.
+var apiBaseUri = SimfApiBaseAddress.Resolve(
+    builder.Configuration["Api:BaseUrl"], builder.Environment.IsDevelopment());
+
+builder.Services.AddHttpClient<SimfAuthClient>(client => client.BaseAddress = apiBaseUri)
     .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
-builder.Services.AddHttpClient<SimfAccountClient>(client =>
-{
-    var baseUrl = builder.Configuration["Api:BaseUrl"]!;
-    client.BaseAddress = new Uri(baseUrl);
-})
+builder.Services.AddHttpClient<SimfAccountClient>(client => client.BaseAddress = apiBaseUri)
     .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
 // The typed client for the SIMF anonymous public-read endpoints (D-199).
 // Anonymous, so no bearer token; BaseAddress only — the public endpoints do
 // not require an X-App-Key header in this build.
-builder.Services.AddHttpClient<SimfPublicClient>(client =>
-{
-    var baseUrl = builder.Configuration["Api:BaseUrl"]
-        ?? throw new InvalidOperationException(
-            "Configuration value 'Api:BaseUrl' is required but was not found.");
-    var baseUri = new Uri(baseUrl);
-    if (!builder.Environment.IsDevelopment() && baseUri.Scheme != Uri.UriSchemeHttps)
-    {
-        throw new InvalidOperationException(
-            "'Api:BaseUrl' must use HTTPS outside the Development environment.");
-    }
-    client.BaseAddress = baseUri;
-})
+builder.Services.AddHttpClient<SimfPublicClient>(client => client.BaseAddress = apiBaseUri)
     .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
 
 var app = builder.Build();
@@ -181,6 +158,7 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapAuthEndpoints();
 app.MapAccountEndpoints();
+app.MapSiteContentEndpoints();
 app.MapCultureEndpoint();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

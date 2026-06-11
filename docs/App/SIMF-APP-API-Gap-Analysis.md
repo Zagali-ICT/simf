@@ -31,8 +31,9 @@ Legend: ✅ exists · 🟡 partial (exists but a gap) · ❌ missing (build) · 
 
 > **RESOLVED 2026-06-03 → `DECISIONS_LOG` D-249.** The owner accepted the
 > recommendations ("recommended", "do"). Per-item outcome: **D2** = client-side
-> caps only (server stays 256/128, frozen-schema aligned); **D4** Nafath, **D8**
-> T&C consent record (Identity freeze-lift), **D10** live provider, **D11** mockup
+> caps only (server stays 256/128, frozen-schema aligned); **D4** = **DROPPED**
+> (removed from the mockup, D-270 — email+password+biometric only); **D8** T&C
+> consent record (Identity freeze-lift), **D10** live provider, **D11** mockup
 > decorations = **DEFERRED**; all others accepted as written. Builds that follow:
 > `GET /app/users/me`, D1 refresh-lifetime config-bind (→5d), `GET /app/bootstrap`,
 > and the `Page_014` aggregates. See D-249 for the full resolution.
@@ -41,7 +42,7 @@ Legend: ✅ exists · 🟡 partial (exists but a gap) · ❌ missing (build) · 
 | **D1** | 003 | "Session 5 days" vs implemented **30-day** refresh/device-key (hardcoded `TimeSpan.FromDays(30)`, not config). | Make it **config-bound** + set to your number (5d?). |
 | **D2** | 003/004 | Field caps: owner email ≤50 / pwd ≤32 vs validators email ≤256 / no pwd-max (sign-up pwd 8–128). | Align validators to **50/32** (small change). |
 | **D3** | 003 | 2FA email-OTP branch (`verify-otp`) at sign-in — app must handle it. | App handles; no API change. |
-| **D4** | 003 | **Nafath** button in mockup, **not** in your spec, no endpoint. | Confirm: **drop** for now, or scope a Nafath integration (large). |
+| **D4** | 003 | **DROPPED** — removed from the mockup (D-270); login is email+password (+biometric) only, no provider endpoint, never built. | **Resolved: dropped.** Do not scope. |
 | **D5** | 004 | ⚠️ **Conflict:** you want **409 "already have account → reset/login"**; backend (D-198) is **enumeration-resistant** — returns generic 201, no 409 (emails owner out-of-band). App has a dead 409 path. | **Keep D-198** (security) + rewrite app UX to the generic "check your email" screen. Building a 409 re-introduces account enumeration. |
 | **D6** | 007 | **Company** lookup — visitor profile has **no company** (company = exhibitor/sponsor CP concept). | **Drop** company from the visitor profile (or freeze-lift to add it — confirm intent). |
 | **D7** | 008 | Interests save: today bundled into the **full profile upsert** (can't save interests alone); response lacks **userId+contact**; "complete" is an `AccountState` side-effect. | Either **app reads userId/email from cached sign-in** (no build), or extend the save response + add a profile-complete flag (small build). |

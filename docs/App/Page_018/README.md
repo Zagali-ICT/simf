@@ -18,7 +18,7 @@ Per-page documentation folder. Everything about this app page lives here.
 | Section | 2 — Core screens |
 | Nature | **Visual hall seat-map** — all seats + status + my seat highlighted; navigate + share |
 | App privilege | **Visitor (approved) — login-only.** The seat-map endpoint requires an approved account; the route is auth-gated (D-254). |
-| Status | API **BUILT** (reuses existing endpoints — D-267); Flutter screen is a mockup |
+| Status | API **BUILT** (reuses existing endpoints — D-267); **Flutter screen BUILT (D-301)** — read-only grid + derived status + navigate + share (picker is the later mode, L-4) |
 
 ## Sources of truth (read first)
 `Mockup.html` screen 18 (the visual) · `SIMF_Screen_Guide_and_User_Journey`

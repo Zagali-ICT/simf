@@ -80,8 +80,8 @@ public sealed record PublicSessionDetail(
     // session has a live feed (the app shows the LIVE player + badge); null =
     // recorded/scheduled. LiveSignLanguageUrl = the optional sign-language
     // interpretation feed (drives the live screen's لغة الإشارة toggle).
-    // Appended (append-only, D-219). Interim manual-URL stub provider (real
-    // provider deferred, D-211 D7).
+    // Appended (append-only, D-219). D-349: the provider is YouTube (POC) with a
+    // direct HLS/MP4 URL as a fallback — validated by LiveStreamUrlPolicy.
     string? LiveStreamUrl = null,
     string? LiveSignLanguageUrl = null);
 

@@ -1,0 +1,280 @@
+@* D-353 â€” reusable Archive (Past Editions) Add/Edit form, hosted by CrudShell
+   (as a popup or a full page) from ArchiveList.razor. Inherits
+   CrudAddEditFormBase so it exposes the standard CRUD-form parameter surface
+   (IsEdit / Initial / OnSuccess / OnCancel). IsEdit=false runs Create (POST);
+   IsEdit=true runs Edit (PUT against Initial) and shows the IsActive checkbox.
+   Supersedes the inline SimfModal form that lived in ArchiveList. Each edition
+   carries a year, bilingual title + summary, the headline attendees / sessions
+   / speakers counts, an optional cover-image relative path, place + date label,
+   and the active flag that gates public visibility. *@
+@inherits CrudAddEditFormBase<AdminArchiveEditionSummary>
+@using SIMF.Contracts.Archive
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.Archive.Field.Year"]</span>
+            <input class="simf-field__input" type="number" min="2000" max="2100"
+                   value="@_model.Year"
+                   @onchange="OnYearChanged"
+                   disabled="@_busy" />
+        </label>
+        <SimfTextField Label="@L["Admin.Archive.Field.TitleEn"]"
+                       @bind-Value="_model.TitleEn" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Archive.Field.TitleAr"]"
+                       @bind-Value="_model.TitleAr" Disabled="_busy" />
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.Archive.Field.SummaryEn"]</span>
+            <textarea class="simf-field__input" rows="4"
+                      value="@_model.SummaryEn"
+                      @onchange="OnSummaryEnChanged"
+                      disabled="@_busy"></textarea>
+        </label>
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.Archive.Field.SummaryAr"]</span>
+            <textarea class="simf-field__input" rows="4"
+                      value="@_model.SummaryAr"
+                      @onchange="OnSummaryArChanged"
+                      disabled="@_busy"></textarea>
+        </label>
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.Archive.Field.Attendees"]</span>
+            <input class="simf-field__input" type="number" min="0" max="1000000"
+                   value="@_model.Attendees"
+                   @onchange="OnAttendeesChanged"
+                   disabled="@_busy" />
+        </label>
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.Archive.Field.Sessions"]</span>
+            <input class="simf-field__input" type="number" min="0" max="1000000"
+                   value="@_model.Sessions"
+                   @onchange="OnSessionsChanged"
+                   disabled="@_busy" />
+        </label>
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.Archive.Field.Speakers"]</span>
+            <input class="simf-field__input" type="number" min="0" max="1000000"
+                   value="@_model.Speakers"
+                   @onchange="OnSpeakersChanged"
+                   disabled="@_busy" />
+        </label>
+        <SimfTextField Label="@L["Admin.Archive.Field.CoverImageRelativePath"]"
+                       @bind-Value="_model.CoverImageRelativePath" Disabled="_busy" />
+        @* Â§9 (screen 24-01) â€” place + date label for the edition detail.
+           MaxLength mirrors EF HasMaxLength + FluentValidation (256/128). *@
+        <SimfTextField Label="@L["Admin.Archive.Field.LocationEn"]"
+                       MaxLength="256"
+                       @bind-Value="_model.LocationEn" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Archive.Field.LocationAr"]"
+                       MaxLength="256"
+                       @bind-Value="_model.LocationAr" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Archive.Field.DateLabelEn"]"
+                       MaxLength="128"
+                       @bind-Value="_model.DateLabelEn" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Archive.Field.DateLabelAr"]"
+                       MaxLength="128"
+                       @bind-Value="_model.DateLabelAr" Disabled="_busy" />
+        @if (IsEdit)
+        {
+            <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
+                @L["Admin.Archive.Field.IsActive"]
+            </SimfCheckbox>
+        }
+        @* D-357 — cover image via the unified media-asset pipeline (edit only; the
+           row must exist before bytes can be attached). *@
+        @if (IsEdit && Initial is not null)
+        {
+            <div class="simf-field">
+                <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
+                <SimfImageUpload Category="ArchiveCover" OwnerId="@Initial.Id" Alt="@_model.TitleEn" />
+            </div>
+        }
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy" LoadingLabel="@L["Admin.Archive.Save"]">
+            @L["Admin.Archive.Save"]
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy" OnClick="OnCancel">
+                @L["Admin.Archive.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private readonly Model _model = new();
+    private EditContext _editContext = default!;
+    private bool _busy;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        if (Initial is not null)
+        {
+            _model.Year = Initial.Year;
+            _model.TitleEn = Initial.TitleEn;
+            _model.TitleAr = Initial.TitleAr;
+            _model.SummaryEn = Initial.SummaryEn;
+            _model.SummaryAr = Initial.SummaryAr;
+            _model.Attendees = Initial.Attendees;
+            _model.Sessions = Initial.Sessions;
+            _model.Speakers = Initial.Speakers;
+            _model.CoverImageRelativePath = Initial.CoverImageRelativePath;
+            _model.LocationEn = Initial.LocationEn;
+            _model.LocationAr = Initial.LocationAr;
+            _model.DateLabelEn = Initial.DateLabelEn;
+            _model.DateLabelAr = Initial.DateLabelAr;
+            _model.IsActive = Initial.IsActive;
+        }
+        else
+        {
+            _model.Year = DateTime.UtcNow.Year;
+        }
+        _editContext = new EditContext(_model);
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_model.TitleEn)
+            || string.IsNullOrWhiteSpace(_model.TitleAr))
+        {
+            _error = L["Admin.Archive.Validation.TitleRequired"]; return;
+        }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminArchiveEditionDetail>? envelope;
+            if (!IsEdit)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminArchiveEditionDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/archive",
+                    new CreateArchiveEditionRequest
+                    {
+                        Year = _model.Year,
+                        TitleEn = _model.TitleEn.Trim(),
+                        TitleAr = _model.TitleAr.Trim(),
+                        SummaryEn = _model.SummaryEn,
+                        SummaryAr = _model.SummaryAr,
+                        Attendees = _model.Attendees,
+                        Sessions = _model.Sessions,
+                        Speakers = _model.Speakers,
+                        CoverImageRelativePath = _model.CoverImageRelativePath,
+                        LocationEn = _model.LocationEn,
+                        LocationAr = _model.LocationAr,
+                        DateLabelEn = _model.DateLabelEn,
+                        DateLabelAr = _model.DateLabelAr,
+                    });
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminArchiveEditionDetail>>(
+                    "simfAccount.putJson", $"/account/api/admin/archive/{Initial!.Id}",
+                    new UpdateArchiveEditionRequest
+                    {
+                        Year = _model.Year,
+                        TitleEn = _model.TitleEn.Trim(),
+                        TitleAr = _model.TitleAr.Trim(),
+                        SummaryEn = _model.SummaryEn,
+                        SummaryAr = _model.SummaryAr,
+                        Attendees = _model.Attendees,
+                        Sessions = _model.Sessions,
+                        Speakers = _model.Speakers,
+                        CoverImageRelativePath = _model.CoverImageRelativePath,
+                        LocationEn = _model.LocationEn,
+                        LocationAr = _model.LocationAr,
+                        DateLabelEn = _model.DateLabelEn,
+                        DateLabelAr = _model.DateLabelAr,
+                        IsActive = _model.IsActive,
+                    });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(ToSummary(envelope.Data));
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Archive.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.Archive.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+
+    // The save endpoint returns the detail; the host grid is keyed on the
+    // summary, so project the saved row back to a summary for OnSuccess.
+    private static AdminArchiveEditionSummary ToSummary(AdminArchiveEditionDetail d) =>
+        new(d.Id, d.Year, d.TitleEn, d.TitleAr, d.SummaryEn, d.SummaryAr,
+            d.Attendees, d.Sessions, d.Speakers, d.CoverImageRelativePath,
+            d.IsActive, d.CreatedAt,
+            d.LocationEn, d.LocationAr, d.DateLabelEn, d.DateLabelAr);
+
+    private void OnYearChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _model.Year = n;
+    }
+
+    private void OnAttendeesChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _model.Attendees = n;
+    }
+
+    private void OnSessionsChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _model.Sessions = n;
+    }
+
+    private void OnSpeakersChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _model.Speakers = n;
+    }
+
+    private void OnSummaryEnChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        _model.SummaryEn = string.IsNullOrWhiteSpace(raw) ? null : raw;
+    }
+
+    private void OnSummaryArChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        _model.SummaryAr = string.IsNullOrWhiteSpace(raw) ? null : raw;
+    }
+
+    private sealed class Model
+    {
+        public int Year { get; set; }
+        public string TitleEn { get; set; } = string.Empty;
+        public string TitleAr { get; set; } = string.Empty;
+        public string? SummaryEn { get; set; }
+        public string? SummaryAr { get; set; }
+        public int Attendees { get; set; }
+        public int Sessions { get; set; }
+        public int Speakers { get; set; }
+        public string? CoverImageRelativePath { get; set; }
+        // Â§9 (screen 24-01) â€” place + date label.
+        public string? LocationEn { get; set; }
+        public string? LocationAr { get; set; }
+        public string? DateLabelEn { get; set; }
+        public string? DateLabelAr { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+}

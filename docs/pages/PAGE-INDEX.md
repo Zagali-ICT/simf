@@ -46,7 +46,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/contacts` | ✅ Real (D-281) | Administrator | — | [e2e/cp-admin-contacts.md](../tests/e2e/cp-admin-contacts.md) |
 | `/admin/countries` | ✅ Real | Administrator | — | [e2e/cp-admin-countries.md](../tests/e2e/cp-admin-countries.md) |
 | `/admin/vips` | ✅ Real | Administrator | — | [e2e/cp-admin-vips.md](../tests/e2e/cp-admin-vips.md) |
-| `/admin/invitations` | ✅ Real | Administrator | — | [e2e/cp-admin-invitations.md](../tests/e2e/cp-admin-invitations.md) |
+| `/admin/invitations` | ✅ Real | Administrator | [cp/admin-invitations.md](cp/admin-invitations.md) | [e2e/cp-admin-invitations.md](../tests/e2e/cp-admin-invitations.md) |
 | `/admin/reset-2fa` | ✅ Real | Administrator | [cp/admin-reset-2fa.md](cp/admin-reset-2fa.md) | [e2e/cp-admin-reset-2fa.md](../tests/e2e/cp-admin-reset-2fa.md) |
 | `/admin/roles` | ✅ Real | Administrator | [cp/admin-roles.md](cp/admin-roles.md) | [e2e/cp-admin-roles.md](../tests/e2e/cp-admin-roles.md) |
 | `/admin/roles/{id}/permissions` | ✅ Real | Administrator | — | [e2e/cp-admin-roles-permissions.md](../tests/e2e/cp-admin-roles-permissions.md) |
@@ -54,9 +54,9 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/themes` | ✅ Real | Administrator | [cp/admin-themes.md](cp/admin-themes.md) | [e2e/cp-admin-themes.md](../tests/e2e/cp-admin-themes.md) |
 | `/admin/halls` | ✅ Real | Administrator | [cp/admin-halls.md](cp/admin-halls.md) | [e2e/cp-admin-halls.md](../tests/e2e/cp-admin-halls.md) |
 | `/admin/halls/seat-layouts` | ✅ Real | Administrator | — | [e2e/cp-admin-halls-seat-layouts.md](../tests/e2e/cp-admin-halls-seat-layouts.md) |
-| `/admin/speakers` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-speakers.md](../tests/e2e/cp-admin-speakers.md) |
+| `/admin/speakers` | ✅ Real (D-199) | Administrator | [cp/admin-speakers.md](cp/admin-speakers.md) | [e2e/cp-admin-speakers.md](../tests/e2e/cp-admin-speakers.md) |
 | `/admin/speaker-presentations` | ✅ Real (D-228) | Administrator | — | [e2e/cp-admin-speaker-presentations.md](../tests/e2e/cp-admin-speaker-presentations.md) |
-| `/admin/sessions` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-sessions.md](../tests/e2e/cp-admin-sessions.md) |
+| `/admin/sessions` | ✅ Real (D-199) | Administrator | [cp/admin-sessions.md](cp/admin-sessions.md) | [e2e/cp-admin-sessions.md](../tests/e2e/cp-admin-sessions.md) |
 | `/admin/sessions/seat-plans` | ✅ Real | Administrator | — | [e2e/cp-admin-sessions-seat-plans.md](../tests/e2e/cp-admin-sessions-seat-plans.md) |
 | `/admin/session-categories` | ✅ Real (D-226) | Administrator | — | [e2e/cp-admin-session-categories.md](../tests/e2e/cp-admin-session-categories.md) |
 | `/admin/session-moderators` | ✅ Real | Administrator | — | [e2e/cp-admin-session-moderators.md](../tests/e2e/cp-admin-session-moderators.md) |
@@ -74,14 +74,16 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/hall-arrivals` | ✅ Real (D-244) | Administrator/operator | — | [e2e/cp-admin-hall-arrivals.md](../tests/e2e/cp-admin-hall-arrivals.md) |
 | **Exhibition** | | | | |
 | `/admin/companies` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-companies.md](../tests/e2e/cp-admin-companies.md) |
-| `/admin/booths` | ✅ Real (D-199/D-222) | Administrator | — | [e2e/cp-admin-booths.md](../tests/e2e/cp-admin-booths.md) |
-| `/admin/sponsors` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-sponsors.md](../tests/e2e/cp-admin-sponsors.md) |
+| `/admin/exhibitors` | ✅ Real (D-202/D-274) | Administrator | [cp/admin-exhibitors.md](cp/admin-exhibitors.md) | [e2e/cp-admin-exhibitors.md](../tests/e2e/cp-admin-exhibitors.md) |
+| `/admin/booths` | ✅ Real (D-199/D-222) | Administrator | [cp/admin-booths.md](cp/admin-booths.md) | [e2e/cp-admin-booths.md](../tests/e2e/cp-admin-booths.md) |
+| `/admin/sponsors` | ✅ Real (D-199) | Administrator | [cp/admin-sponsors.md](cp/admin-sponsors.md) | [e2e/cp-admin-sponsors.md](../tests/e2e/cp-admin-sponsors.md) |
 | `/admin/media-partners` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-media-partners.md](../tests/e2e/cp-admin-media-partners.md) |
-| `/admin/venue-map` | ✅ Real (D-230) | Administrator | — | [e2e/cp-admin-venue-map.md](../tests/e2e/cp-admin-venue-map.md) |
+| `/admin/venue-map` | ✅ Real (D-230) | Administrator | [cp/admin-venue-map.md](cp/admin-venue-map.md) | [e2e/cp-admin-venue-map.md](../tests/e2e/cp-admin-venue-map.md) |
 | **Content & media** | | | | |
 | `/admin/news` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-news.md](../tests/e2e/cp-admin-news.md) |
 | `/admin/media` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-media.md](../tests/e2e/cp-admin-media.md) |
 | `/admin/archive` | ✅ Real (D-199) | Administrator | — | [e2e/cp-admin-archive.md](../tests/e2e/cp-admin-archive.md) |
+| `/admin/media-library` | ✅ Real (D-357) | Administrator | [cp/media-library.md](cp/media-library.md) | [e2e/cp-admin-media-library.md](../tests/e2e/cp-admin-media-library.md) |
 | `/admin/banners` | ✅ Real | Administrator | — | [e2e/cp-admin-banners.md](../tests/e2e/cp-admin-banners.md) |
 | `/admin/content-blocks` | ✅ Real | Administrator | — | [e2e/cp-admin-content-blocks.md](../tests/e2e/cp-admin-content-blocks.md) |
 | **Knowledge & AI** | | | | |
@@ -97,6 +99,7 @@ have one — see [`docs/tests/e2e/README.md`](../tests/e2e/README.md)).
 | `/admin/operation-log` | ✅ Real | Administrator | [cp/admin-operation-log.md](cp/admin-operation-log.md) | [e2e/cp-admin-operation-log.md](../tests/e2e/cp-admin-operation-log.md) |
 | `/admin/logs` | ✅ Real | Administrator | [cp/admin-logs.md](cp/admin-logs.md) | [e2e/cp-admin-logs.md](../tests/e2e/cp-admin-logs.md) |
 | `/admin/statistics` | ✅ Real | Administrator | — | [e2e/cp-admin-statistics.md](../tests/e2e/cp-admin-statistics.md) |
+| `/admin/attendance` | ✅ Real (FR-506) | Administrator | — | [e2e/cp-admin-attendance.md](../tests/e2e/cp-admin-attendance.md) |
 | `/m/{module}` | 🚧 Stub | Administrator | — | — |
 
 ### CP auth + account pages (not in main nav)
@@ -125,6 +128,7 @@ No public nav per D-064 — every page is reached via direct URL or auth redirec
 
 | Route | Status | Audience | Doc | Test |
 |-------|--------|----------|-----|------|
+| `/` (marketing landing) | ✅ Real (D-294 dynamic) | Public | [web/landing.md](web/landing.md) | [e2e/web-landing.md](../tests/e2e/web-landing.md) |
 | `/account` | ✅ Real | Any signed-in | [web/home.md](web/home.md) | [e2e/web-home.md](../tests/e2e/web-home.md) |
 | `/programme` | ✅ Real (D-199) | Public | — | [e2e/web-programme.md](../tests/e2e/web-programme.md) |
 | `/visit` | ✅ Real | Public | — | [e2e/web-visit.md](../tests/e2e/web-visit.md) |
@@ -157,22 +161,45 @@ testing (see [`SIMF-APP-Build-Plan.md`](../App/SIMF-APP-Build-Plan.md)).
 | #1 `splash` | 🟢 Screen built | Guest | [App/Page_001](../App/Page_001/README.md) | [e2e/mobile-splash.md](../tests/e2e/mobile-splash.md) |
 | #2 `onboarding` | 🟢 Screen built | Guest | [App/Page_002](../App/Page_002/README.md) | [e2e/mobile-onboarding.md](../tests/e2e/mobile-onboarding.md) |
 | #3 `signIn` (+ verify-otp / forgot / reset) | 🟢 Screen built | Guest | [App/Page_003](../App/Page_003/README.md) | [e2e/mobile-sign-in.md](../tests/e2e/mobile-sign-in.md) |
-| #4 `signUpType` | 🟢 Screen built | Guest | [App/Page_004](../App/Page_004/README.md) | [e2e/mobile-sign-up-type.md](../tests/e2e/mobile-sign-up-type.md) |
+| ~~#4 `signUpType`~~ **REMOVED (D-332)** — invented; not in the mockup. Sign-up goes Page 003 → Page 005 directly | ⛔ Removed | — | [App/Page_004](../App/Page_004/README.md) | [e2e/mobile-sign-up-type.md](../tests/e2e/mobile-sign-up-type.md) |
 | #5 `signUpForm` | 🟢 Screen built | Guest | [App/Page_005](../App/Page_005/README.md) | [e2e/mobile-sign-up-form.md](../tests/e2e/mobile-sign-up-form.md) |
 | #6 `emailOtp` | 🟢 Screen built | Guest | [App/Page_006](../App/Page_006/README.md) | [e2e/mobile-email-otp.md](../tests/e2e/mobile-email-otp.md) |
-| #7 `signUpVisitor` (`POST /app/account/user-profile` + 4 lookups + id-image) | 🟢 Screen built | Visitor | [App/Page_007](../App/Page_007/README.md) | [e2e/mobile-sign-up-visitor.md](../tests/e2e/mobile-sign-up-visitor.md) |
+| #7 `signUpVisitor` — **profile data** (نوع التسجيل Visitor/Other + ProfileType + 3 lookups; **Next → interests**) | 🟠 Docs reworked (D-332), Flutter rebuild pending | Visitor | [App/Page_007](../App/Page_007/README.md) | [e2e/mobile-sign-up-visitor.md](../tests/e2e/mobile-sign-up-visitor.md) |
+| #7‑01 `signUpInterests` — **interests (1–10) + the single `POST /app/account/user-profile` save** | 🟠 Docs created (D-332), Flutter build pending | Visitor | [App/Page_007-01](../App/Page_007-01/README.md) | [e2e/mobile-sign-up-interests.md](../tests/e2e/mobile-sign-up-interests.md) |
 | #9 `terms` (`GET /app/content/terms`) | 🟢 Screen built | Guest | [App/Page_009](../App/Page_009/README.md) | [e2e/mobile-terms.md](../tests/e2e/mobile-terms.md) |
 | #10 `registrationSuccess` | 🟢 Screen built | Visitor (pending) | [App/Page_010](../App/Page_010/README.md) | [e2e/mobile-registration-success.md](../tests/e2e/mobile-registration-success.md) |
 | #11 `registrationStatus` (`GET /app/users/me`) | 🟢 Screen built | Visitor (pending) | [App/Page_011](../App/Page_011/README.md) | [e2e/mobile-registration-status.md](../tests/e2e/mobile-registration-status.md) |
-| #13 `home` (`GET /app/bootstrap`) | ✅ API built | Guest+ | [App/Page_013](../App/Page_013/README.md) | [e2e/mobile-home.md](../tests/e2e/mobile-home.md) |
-| #14 `myArea` (`GET /app/account/dashboard` + `.ics`/`.vcf`) | ✅ API built | Visitor | [App/Page_014](../App/Page_014/README.md) | [e2e/mobile-my-area.md](../tests/e2e/mobile-my-area.md) |
-| #15 `venueMap` | 📄 Doc | Guest | [App/Page_015](../App/Page_015/README.md) | — |
-| #16 `sessions` (`GET /app/programme/sessions`) | ✅ API built | Guest+ | [App/Page_016](../App/Page_016/README.md) | [e2e/mobile-agenda.md](../tests/e2e/mobile-agenda.md) |
-| #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats`) | ✅ API built (reuse, D-265) | Guest+ (seat card: Visitor) | [App/Page_017](../App/Page_017/README.md) | [e2e/mobile-session-detail.md](../tests/e2e/mobile-session-detail.md) |
-| #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | ✅ API built (reuse, D-267) | Visitor (login-only) | [App/Page_018](../App/Page_018/README.md) | [e2e/mobile-my-seat.md](../tests/e2e/mobile-my-seat.md) |
-| #19 `speakers` (`GET /app/speakers`) | ✅ API built (reuse, D-199) | Guest+ | [App/Page_019](../App/Page_019/README.md) | [e2e/mobile-speakers.md](../tests/e2e/mobile-speakers.md) |
-| #20 `speakerProfile` (`GET /app/speakers/{id}` + `…/meeting-requests`) | ✅ API built (reads D-199; meeting D-269) | Guest+ (meeting: Visitor) | [App/Page_020](../App/Page_020/README.md) | [e2e/mobile-speaker-profile.md](../tests/e2e/mobile-speaker-profile.md) |
+| #13 `home` (`GET /app/bootstrap` + `…/notifications/unread-count`) | 🟢 Screen built | Guest+ | [App/Page_013](../App/Page_013/README.md) | [e2e/mobile-home.md](../tests/e2e/mobile-home.md) |
+| #14 `myArea` (`GET /app/account/dashboard` + `.ics`/`.vcf`) | 🟢 Screen built | Visitor | [App/Page_014](../App/Page_014/README.md) | [e2e/mobile-my-area.md](../tests/e2e/mobile-my-area.md) |
+| #15 `venueMap` (`GET /app/venue-map` + `/app/booths` + `/{id}`) | 🟢 Screen built | Guest | [App/Page_015](../App/Page_015/README.md) | [e2e/mobile-venue-map.md](../tests/e2e/mobile-venue-map.md) |
+| #16 `sessions` (`GET /app/programme/sessions`) | 🟢 Screen built (D-299) | Guest+ | [App/Page_016](../App/Page_016/README.md) | [e2e/mobile-agenda.md](../tests/e2e/mobile-agenda.md) |
+| #17 `sessionDetail` (`GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats`) | 🟢 Screen built (D-300) | Guest+ (seat card: Visitor) | [App/Page_017](../App/Page_017/README.md) | [e2e/mobile-session-detail.md](../tests/e2e/mobile-session-detail.md) |
+| #18 `mySeat` (`GET /app/sessions/{id}/seats` + reserve/release) | 🟢 Screen built (D-301) | Visitor (login-only) | [App/Page_018](../App/Page_018/README.md) | [e2e/mobile-my-seat.md](../tests/e2e/mobile-my-seat.md) |
+| #19 `speakers` (`GET /app/speakers`) | 🟢 Screen built (D-302) | Guest+ | [App/Page_019](../App/Page_019/README.md) | [e2e/mobile-speakers.md](../tests/e2e/mobile-speakers.md) |
+| #20 `speakerProfile` (`GET /app/speakers/{id}` + `…/meeting-requests`) | 🟢 Screen built (D-303) | Guest+ (meeting: Visitor) | [App/Page_020](../App/Page_020/README.md) | [e2e/mobile-speaker-profile.md](../tests/e2e/mobile-speaker-profile.md) |
+| #22 `booths` (`GET /app/booths` + `/{id}`) | 🟢 Screen built (D-304) | Guest+ | [App/Page_022](../App/Page_022/README.md) | [e2e/mobile-booths.md](../tests/e2e/mobile-booths.md) |
+| #23 `sponsors` (`GET /app/sponsors`) | 🟢 Screen built (D-305) | Guest+ | [App/Page_023](../App/Page_023/README.md) | [e2e/mobile-sponsors.md](../tests/e2e/mobile-sponsors.md) |
+| #24 `archive` (`GET /app/archive` + `/{id}`) | 🟢 Screen built (D-307) | Guest+ | [App/Page_024](../App/Page_024/README.md) | [e2e/mobile-archive.md](../tests/e2e/mobile-archive.md) |
+| #29 `news` (`GET /app/news` + `/{id}`) | 🟢 Screen built (D-308) | Guest+ | [App/Page_029](../App/Page_029/README.md) | [e2e/mobile-news.md](../tests/e2e/mobile-news.md) |
+| #30 `gallery` (`GET /app/media` + `/{id}/image`) | 🟢 Screen built (D-309); tile bitmaps (D-342) | Guest+ | [App/Page_030](../App/Page_030/README.md) | [e2e/mobile-gallery.md](../tests/e2e/mobile-gallery.md) |
+| #37 `aboutForum` (`GET /app/content/about`) | 🟢 Screen built (D-311) | Guest+ | [App/Page_037](../App/Page_037/README.md) | [e2e/mobile-about.md](../tests/e2e/mobile-about.md) |
+| #40 `rate` (`POST /app/feedback/rate`) | 🟢 Screen built (D-310) | Visitor (login-only) | [App/Page_040](../App/Page_040/README.md) | [e2e/mobile-rate.md](../tests/e2e/mobile-rate.md) |
+| #31 `mediaPartners` (`GET /app/media-partners`) | 🟢 Screen built (D-306) | Guest+ | [App/Page_031](../App/Page_031/README.md) | [e2e/mobile-media-partners.md](../tests/e2e/mobile-media-partners.md) |
+| #12 `guestMode` (no API) | 🟢 Screen built (D-316) | Guest | [App/Page_012](../App/Page_012/README.md) | [e2e/mobile-guest-mode.md](../tests/e2e/mobile-guest-mode.md) |
+| #33 `notifications` (`POST /app/account/notifications/list` + `/{id}/read` + `/read-all`) | 🟢 Screen built (D-312) | Signed-in | [App/Page_033](../App/Page_033/README.md) | [e2e/mobile-notifications.md](../tests/e2e/mobile-notifications.md) |
+| #35 `meetPeople` (`GET /app/account/recommendations/meet-like-you`) | 🟢 Screen built (D-313) | Visitor (login-only) | [App/Page_035](../App/Page_035/README.md) | [e2e/mobile-meet-people.md](../tests/e2e/mobile-meet-people.md) |
+| #38 `accessibility` (no API) | 🟢 Screen built (D-314); persisted + applied app-wide (D-327) | Guest+ | [App/Page_038](../App/Page_038/README.md) | [e2e/mobile-accessibility.md](../tests/e2e/mobile-accessibility.md) |
+| #41 `more` (no API) | 🟢 Screen built (D-315) | Guest+ | [App/Page_041](../App/Page_041/README.md) | [e2e/mobile-more.md](../tests/e2e/mobile-more.md) |
+| #34 `aiSummary` (`GET /app/programme/sessions/{id}/summary`) | 🟢 Screen built (D-317) | Guest+ | [App/Page_034](../App/Page_034/README.md) | [e2e/mobile-ai-summary.md](../tests/e2e/mobile-ai-summary.md) |
+| #26 `sendQuestion` (`POST /app/sessions/{id}/questions`) | 🟢 Screen built (D-318) | Visitor (login-only) | [App/Page_026](../App/Page_026/README.md) | [e2e/mobile-send-question.md](../tests/e2e/mobile-send-question.md) |
+| #28 `audienceComments` (`GET/POST /app/sessions/{id}/comments` + like) | 🟢 Screen built (D-319) | Visitor (login-only) | [App/Page_028](../App/Page_028/README.md) | [e2e/mobile-audience-comments.md](../tests/e2e/mobile-audience-comments.md) |
+| #32 `badge` (`GET /app/account/dashboard`) | 🟢 Screen built (D-320) | Signed-in | [App/Page_032](../App/Page_032/README.md) | [e2e/mobile-badge.md](../tests/e2e/mobile-badge.md) |
+| #25 `liveBroadcast` (`GET /app/programme/sessions/{id}`) | 🟢 Screen built (D-321; YouTube provider D-349) | Guest+ | [App/Page_025](../App/Page_025/README.md) | [e2e/mobile-live.md](../tests/e2e/mobile-live.md) |
+| #36 `chatbot` (interim shell — no API) | 🟢 Screen built (D-322) | Guest+ | [App/Page_036](../App/Page_036/README.md) | [e2e/mobile-chatbot.md](../tests/e2e/mobile-chatbot.md) |
 | #24-01 `archiveDetail` (`GET /app/archive/{id}`) | ✅ API built (NEW, D-273) | Public (anonymous) | [App/Page_024-01](../App/Page_024-01/README.md) | [e2e/mobile-archive-detail.md](../tests/e2e/mobile-archive-detail.md) |
+| `shareMyContact` (`GET/POST /app/account/share-token` + `.vcf`) — FDS-014, additive | 🟢 Screen built (D-324) | Visitor (approved) | [App/FDS-014-Contact-UI](../App/FDS-014-Contact-UI/README.md) | [e2e/mobile-my-contacts.md](../tests/e2e/mobile-my-contacts.md) |
+| `scanContact` (`POST /app/contacts/resolve` + `/save`) — FDS-014, additive | 🟢 Screen built (D-324) | Visitor (approved) | [App/FDS-014-Contact-UI](../App/FDS-014-Contact-UI/README.md) | [e2e/mobile-my-contacts.md](../tests/e2e/mobile-my-contacts.md) |
+| `myContacts` (`GET /app/contacts` + `/{id}` delete + `/{id}/vcard`) — FDS-014, additive | 🟢 Screen built (D-324) | Visitor (approved) | [App/FDS-014-Contact-UI](../App/FDS-014-Contact-UI/README.md) | [e2e/mobile-my-contacts.md](../tests/e2e/mobile-my-contacts.md) |
 
 ---
 
@@ -194,8 +221,10 @@ The reverse rule: **a page that exists in code but not on this index has not
 shipped.** At PR review, search this file for the route; a missing row = an
 incomplete PR.
 
-> **Doc-column debt (2026-06-02):** the ~33 event-module + P2–P5 pages now have
-> full E2E catalogue files (Test column) but their `docs/pages/cp/{slug}.md`
-> reference docs are not yet authored (Doc = "—"). Authoring those reference
-> docs is tracked as a follow-up; the E2E files are the executable source of
-> truth in the meantime.
+> **Doc-column debt (updated 2026-06-10, D-356 Phase 5):** D-356 Phase 5 authored
+> reference docs for the seven full-CrudShell conversions — Exhibitors, Booths,
+> Sponsors, Venue-map, Speakers, Sessions, Invitations (Doc now links, not "—") —
+> and refreshed eight existing ones. The remaining `docs/pages/cp/{slug}.md` "—"
+> rows are the export-only / lookup CP pages that only gained Excel **export** in
+> D-356; each is fully covered by its E2E catalogue file (the executable source of
+> truth) and authoring their reference docs stays tracked as a follow-up.

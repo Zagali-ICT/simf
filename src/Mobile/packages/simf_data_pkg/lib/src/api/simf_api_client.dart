@@ -198,9 +198,50 @@ class SimfApiClient {
     );
   }
 
+  /// Fetches a **raw text** body (not the `ApiResult` envelope) — for the file
+  /// export endpoints that return `text/calendar` / `text/vcard` (Page_014
+  /// E2/E3). Refreshes + replays once on a 401 like the envelope path. Throws
+  /// [ApiFailure] on a transport error or a non-2xx status.
+  Future<String> getText(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    CancelToken? cancelToken,
+  }) async {
+    final response = await _execute(
+      (options) => _dio.get<dynamic>(
+        path,
+        queryParameters: queryParameters,
+        cancelToken: cancelToken,
+        options: (options ?? Options())..responseType = ResponseType.plain,
+      ),
+    );
+
+    final status = response.statusCode ?? 0;
+    if (status < 200 || status >= 300) {
+      throw ApiFailure(
+        code: ApiErrorCodes.clientNetwork,
+        message: 'Request failed with status $status.',
+        httpStatus: status,
+      );
+    }
+
+    final body = response.data;
+    return body is String ? body : (body?.toString() ?? '');
+  }
+
   Future<T> _send<T>(
     Future<Response<dynamic>> Function(Options? options) call,
     T Function(Object? data) decodeData,
+  ) async {
+    final response = await _execute(call);
+    return _parseEnvelope<T>(response, decodeData);
+  }
+
+  /// Sends [call], refreshing + replaying once on a single 401, and returns the
+  /// raw [Response]. Shared by the envelope path ([_send]) and the raw-text path
+  /// ([getText]).
+  Future<Response<dynamic>> _execute(
+    Future<Response<dynamic>> Function(Options? options) call,
   ) async {
     Response<dynamic> response;
     try {
@@ -229,7 +270,7 @@ class SimfApiClient {
       }
     }
 
-    return _parseEnvelope<T>(response, decodeData);
+    return response;
   }
 
   T _parseEnvelope<T>(

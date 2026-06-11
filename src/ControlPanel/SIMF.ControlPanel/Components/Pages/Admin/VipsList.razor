@@ -28,6 +28,8 @@
                       RowKey="@(r => r.UserProfileId.ToString())"
                       RowLabel="@(r => RecipientLabel(r))"
                       OnSelectionChanged="OnSelectionChanged"
+                      OnExport="OnExportAsync"
+                      ExportLabel="@L["Grid.Export"]"
                       Caption="@L["Admin.Vips.Title"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
@@ -166,6 +168,19 @@
         _query = next;
         await LoadAsync();
     }
+
+    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // download via the generic /export proxy. Export only — the VIP list is a
+    // derived view (no add/edit/import); the page's only action is bulk-notify.
+    // The row id is the UserProfileId (the grid's row key).
+    private Task OnExportAsync(IReadOnlyList<AdminVipSummary> selected) =>
+        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/vips/export",
+            new AdminGridExportRequest
+            {
+                Ids = selected.Select(row => row.UserProfileId).ToList(),
+                Query = selected.Count == 0 ? _query : null,
+            }).AsTask();
 
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);

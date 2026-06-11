@@ -6,7 +6,9 @@ using SIMF.Common;
 using SIMF.Contracts.Admin;
 using SIMF.Contracts.Ai;
 using SIMF.Contracts.Archive;
+using SIMF.Contracts.Attendance;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.BusinessMeetings;
 using SIMF.Contracts.Exhibition;
 using SIMF.Contracts.Exhibitors;
 using SIMF.Contracts.Faq;
@@ -183,6 +185,57 @@ public sealed class SimfAdminClient(HttpClient http)
             or TaskCanceledException)
         {
             return ((int)HttpStatusCode.ServiceUnavailable, Array.Empty<byte>());
+        }
+    }
+
+    /// <summary>D-356 — generic grid XLSX export by resource slug (e.g. "interests").
+    /// Posts the selected ids / grid query and returns the workbook bytes.</summary>
+    public Task<(int StatusCode, byte[] Bytes)> ExportGridAsync(
+        string resource,
+        SIMF.Contracts.Admin.AdminGridExportRequest request,
+        string accessToken,
+        CancellationToken cancellationToken = default) =>
+        PostForBytesAsync($"{resource}/export", request, accessToken, cancellationToken);
+
+    /// <summary>D-356 — generic grid XLSX import by resource slug. Multipart
+    /// upload, single file field "file"; returns the per-row outcome summary.</summary>
+    public async Task<ApiCallResult<SIMF.Contracts.Admin.AdminGridImportResult>> ImportGridAsync(
+        string resource,
+        byte[] xlsx,
+        string fileName,
+        string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        using var content = new MultipartFormDataContent();
+        var file = new ByteArrayContent(xlsx);
+        file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        content.Add(file, "file", fileName);
+
+        using var message = new HttpRequestMessage(HttpMethod.Post, BasePath + $"{resource}/import")
+        {
+            Content = content,
+        };
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            var body = await response.Content.ReadFromJsonAsync<ApiResult<SIMF.Contracts.Admin.AdminGridImportResult>>(
+                JsonOptions, cancellationToken);
+            return new ApiCallResult<SIMF.Contracts.Admin.AdminGridImportResult>(
+                (int)response.StatusCode,
+                body ?? TransportFailure<SIMF.Contracts.Admin.AdminGridImportResult>(
+                    "The server returned an empty response.",
+                    "أعاد الخادم استجابة فارغة."));
+        }
+        catch (Exception exception) when (exception is HttpRequestException
+            or TaskCanceledException or JsonException)
+        {
+            return new ApiCallResult<SIMF.Contracts.Admin.AdminGridImportResult>(
+                (int)HttpStatusCode.ServiceUnavailable,
+                TransportFailure<SIMF.Contracts.Admin.AdminGridImportResult>(
+                    "The SIMF service could not be reached. Please try again.",
+                    "تعذّر الوصول إلى خدمة SIMF. حاول مرة أخرى."));
         }
     }
 
@@ -950,6 +1003,109 @@ public sealed class SimfAdminClient(HttpClient http)
             HttpMethod.Delete, $"halls/{id}", content: null,
             accessToken, cancellationToken);
 
+    // -- SIMF-FDS-013 (D-248) — meeting tables + hall allocations + meetings -
+
+    public Task<ApiCallResult<bool>> SetHallPurposeAsync(
+        Guid hallId, SetHallPurposeRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Put, $"halls/{hallId}/purpose",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<MeetingTableRow>>> ListMeetingTablesAsync(
+        Guid hallId, GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<MeetingTableRow>>(
+            HttpMethod.Post, $"halls/{hallId}/meeting-tables/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<MeetingTableRow>> CreateMeetingTableAsync(
+        Guid hallId, CreateMeetingTableRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<MeetingTableRow>(
+            HttpMethod.Post, $"halls/{hallId}/meeting-tables",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<MeetingTableRow>> UpdateMeetingTableAsync(
+        Guid id, UpdateMeetingTableRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<MeetingTableRow>(
+            HttpMethod.Put, $"meeting-tables/{id}",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> DeleteMeetingTableAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"meeting-tables/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<MeetingTablesGenerated>> GenerateMeetingTablesAsync(
+        Guid hallId, GenerateMeetingTablesRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<MeetingTablesGenerated>(
+            HttpMethod.Post, $"halls/{hallId}/meeting-tables/generate",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<HallAllocationRow>>> ListHallAllocationsAsync(
+        Guid hallId, GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<HallAllocationRow>>(
+            HttpMethod.Post, $"halls/{hallId}/hall-allocations/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<HallAllocationRow>> CreateHallAllocationAsync(
+        Guid hallId, CreateHallAllocationRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<HallAllocationRow>(
+            HttpMethod.Post, $"halls/{hallId}/hall-allocations",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> ReleaseHallAllocationAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Delete, $"hall-allocations/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<BusinessMeetingRow>>> ListBusinessMeetingsAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<BusinessMeetingRow>>(
+            HttpMethod.Post, "business-meetings/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<BusinessMeetingDetail>> GetBusinessMeetingAsync(
+        Guid id, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<BusinessMeetingDetail>(
+            HttpMethod.Get, $"business-meetings/{id}", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<BusinessMeetingScheduled>> ScheduleBusinessMeetingAsync(
+        ScheduleMeetingRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<BusinessMeetingScheduled>(
+            HttpMethod.Post, "business-meetings",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<bool>> CancelBusinessMeetingAsync(
+        Guid id, CancelMeetingRequest request, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Post, $"business-meetings/{id}/cancel",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
     // -- D-151 — Country admin lookup CRUD ----------------------------------
 
     public Task<ApiCallResult<GridPage<AdminCountrySummary>>> ListCountriesAsync(
@@ -1032,10 +1188,15 @@ public sealed class SimfAdminClient(HttpClient http)
 
     // -- D-165 (gap doc G3) — Session admin CRUD -----------------------------
 
-    public Task<ApiCallResult<GridPage<AdminSessionSummaryDetail>>> ListSessionsAsync(
+    // NOTE: returns AdminSessionSummary (the sessions GRID row — Code/Title/Hall/
+    // times/capacity/status), NOT AdminSessionSummaryDetail (the AI session-summary
+    // detail). The two names collide and the wrong one was bound here, which made
+    // /admin/sessions deserialize every row to defaults (blank code, 0001 dates,
+    // inactive). The CP SessionsList grid is TItem="AdminSessionSummary".
+    public Task<ApiCallResult<GridPage<AdminSessionSummary>>> ListSessionsAsync(
         GridQuery query, string accessToken,
         CancellationToken cancellationToken = default) =>
-        SendAsync<GridPage<AdminSessionSummaryDetail>>(
+        SendAsync<GridPage<AdminSessionSummary>>(
             HttpMethod.Post, "sessions/list",
             JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
@@ -1905,6 +2066,85 @@ public sealed class SimfAdminClient(HttpClient http)
             accessToken, cancellationToken);
     }
 
+    // -- D-357 — unified media-asset pipeline (one upload / link / fetch for every entity) --
+
+    /// <summary>Upload (or replace) a media asset's file for (category, owner).</summary>
+    public Task<ApiCallResult<bool>> UploadAssetImageAsync(
+        string category, Guid ownerId, string kind,
+        byte[] content, string contentType, string fileName,
+        string accessToken, CancellationToken cancellationToken = default)
+    {
+        var multipart = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(content);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        multipart.Add(fileContent, "file", fileName);
+        multipart.Add(new StringContent(kind), "kind");
+        return SendAsync<bool>(
+            HttpMethod.Post, $"assets/{category}/{ownerId}/image", multipart,
+            accessToken, cancellationToken);
+    }
+
+    /// <summary>Set (or replace) a media asset to an external link for (category, owner).</summary>
+    public Task<ApiCallResult<bool>> SetAssetLinkAsync(
+        string category, Guid ownerId,
+        SIMF.Contracts.Assets.SetAssetLinkRequest request,
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(
+            HttpMethod.Put, $"assets/{category}/{ownerId}/link",
+            JsonContent.Create(request, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>Fetch an asset's bytes for the CP admin preview proxy (the API
+    /// 302s an external-link asset, which HttpClient follows transparently).</summary>
+    public async Task<(int StatusCode, string? ContentType, byte[] Bytes)> FetchAssetImageAsync(
+        string category, Guid ownerId, string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(
+            HttpMethod.Get, $"{BasePath}assets/{category}/{ownerId}/image");
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        try
+        {
+            using var response = await http.SendAsync(message, cancellationToken);
+            if (!response.IsSuccessStatusCode) { return ((int)response.StatusCode, null, []); }
+            var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            return ((int)response.StatusCode,
+                response.Content.Headers.ContentType?.MediaType, bytes);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
+        {
+            return (503, null, []);
+        }
+    }
+
+    /// <summary>One page of all media assets for the central Media Library.</summary>
+    public Task<ApiCallResult<GridPage<SIMF.Contracts.Assets.AdminAssetSummary>>> ListAssetsAsync(
+        GridQuery query, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<SIMF.Contracts.Assets.AdminAssetSummary>>(
+            HttpMethod.Post, "assets/list",
+            JsonContent.Create(query, options: JsonOptions),
+            accessToken, cancellationToken);
+
+    /// <summary>One media asset by id.</summary>
+    public Task<ApiCallResult<SIMF.Contracts.Assets.AdminAssetSummary>> GetAssetAsync(
+        Guid id, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<SIMF.Contracts.Assets.AdminAssetSummary>(
+            HttpMethod.Get, $"assets/item/{id}", null, accessToken, cancellationToken);
+
+    /// <summary>Soft-delete (deactivate) a media asset.</summary>
+    public Task<ApiCallResult<bool>> DeactivateAssetAsync(
+        Guid id, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(HttpMethod.Delete, $"assets/item/{id}", null, accessToken, cancellationToken);
+
+    /// <summary>Restore a soft-deleted media asset.</summary>
+    public Task<ApiCallResult<bool>> RestoreAssetAsync(
+        Guid id, string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<bool>(HttpMethod.Post, $"assets/item/{id}/restore", null, accessToken, cancellationToken);
+
     // -- D-199 — Media-partner admin CRUD (SIMF.Contracts.PublicRelations) --
 
     public Task<ApiCallResult<GridPage<AdminMediaPartnerSummary>>> ListMediaPartnersAsync(
@@ -2440,6 +2680,22 @@ public sealed class SimfAdminClient(HttpClient http)
         string accessToken, CancellationToken cancellationToken = default) =>
         SendAsync<StatisticsDashboard>(
             HttpMethod.Get, "statistics", content: null,
+            accessToken, cancellationToken);
+
+    // -- FR-506 — session-attendance dashboard (SIMF.Contracts.Attendance) ----
+
+    public Task<ApiCallResult<SessionAttendanceSummary>> GetSessionAttendanceSummaryAsync(
+        string accessToken, CancellationToken cancellationToken = default) =>
+        SendAsync<SessionAttendanceSummary>(
+            HttpMethod.Get, "attendance/summary", content: null,
+            accessToken, cancellationToken);
+
+    public Task<ApiCallResult<GridPage<SessionAttendanceRow>>> ListSessionAttendanceAsync(
+        GridQuery query, string accessToken,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<GridPage<SessionAttendanceRow>>(
+            HttpMethod.Post, "attendance/sessions/list",
+            JsonContent.Create(query, options: JsonOptions),
             accessToken, cancellationToken);
 
     // -- D-202 Track-2 — Exhibitor admin CRUD + account provisioning --------

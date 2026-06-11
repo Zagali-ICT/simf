@@ -13,12 +13,43 @@ import '../features/auth/reset_password_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/auth/sign_up_email_verify_screen.dart';
 import '../features/auth/sign_up_form_screen.dart';
-import '../features/auth/sign_up_type_screen.dart';
+import '../features/about/about_screen.dart';
+import '../features/archive/archive_screen.dart';
+import '../features/booths/booths_screen.dart';
 import '../features/content/terms_screen.dart';
+import '../features/feedback/rate_screen.dart';
+import '../features/gallery/gallery_screen.dart';
+import '../features/home/home_screen.dart';
+import '../features/media_partners/media_partners_screen.dart';
+import '../features/news/news_screen.dart';
+import '../features/accessibility/accessibility_screen.dart';
+import '../features/ai_summary/session_summary_screen.dart';
+import '../features/badge/badge_screen.dart';
+import '../features/chatbot/chatbot_screen.dart';
+import '../features/comments/audience_comments_screen.dart';
+import '../features/contacts/my_contacts_screen.dart';
+import '../features/contacts/scan_contact_screen.dart';
+import '../features/contacts/share_my_contact_screen.dart';
+import '../features/guest/guest_mode_screen.dart';
+import '../features/live/live_broadcast_screen.dart';
+import '../features/meet/meet_people_screen.dart';
+import '../features/more/more_screen.dart';
+import '../features/notifications/notifications_screen.dart';
+import '../features/questions/send_question_screen.dart';
+import '../features/myarea/my_area_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
+import '../features/venuemap/venue_map_screen.dart';
+import '../features/profile/data/profile_models.dart';
+import '../features/profile/sign_up_interests_screen.dart';
 import '../features/profile/sign_up_visitor_screen.dart';
 import '../features/registration/registration_status_screen.dart';
 import '../features/registration/registration_success_screen.dart';
+import '../features/sessions/my_seat_screen.dart';
+import '../features/sessions/session_detail_screen.dart';
+import '../features/sessions/sessions_screen.dart';
+import '../features/sponsors/sponsors_screen.dart';
+import '../features/speakers/speaker_profile_screen.dart';
+import '../features/speakers/speakers_screen.dart';
 import '../features/splash/splash_screen.dart';
 import 'route_names.dart';
 import 'route_resume.dart';
@@ -48,10 +79,13 @@ const List<_Route> _routes = <_Route>[
   _Route(number: 1, name: RouteNames.splash, path: '/splash', labelAr: 'البداية', labelEn: 'Splash'),
   _Route(number: 2, name: RouteNames.onboarding, path: '/onboarding', labelAr: 'التهيئة', labelEn: 'Onboarding'),
   _Route(number: 3, name: RouteNames.signIn, path: '/sign-in', labelAr: 'تسجيل الدخول', labelEn: 'Sign in'),
-  _Route(number: 4, name: RouteNames.signUpType, path: '/sign-up/type', labelAr: 'إنشاء حساب — النوع', labelEn: 'Sign up — type'),
+  // Screen 04 (sign-up — type) removed — invented; not in the mockup (D-332).
   _Route(number: 5, name: RouteNames.signUpForm, path: '/sign-up', labelAr: 'إنشاء حساب', labelEn: 'Sign up'),
   _Route(number: 6, name: RouteNames.emailOtp, path: '/sign-up/otp', labelAr: 'التحقق بالبريد', labelEn: 'Email verification'),
-  _Route(number: 7, name: RouteNames.signUpVisitor, path: '/sign-up/visitor', labelAr: 'إنشاء حساب · زائر', labelEn: 'Sign up — visitor'),
+  _Route(number: 7, name: RouteNames.signUpVisitor, path: '/sign-up/visitor', labelAr: 'إنشاء حساب · زائر', labelEn: 'Sign up — profile'),
+  // Page 007‑01 (interests) — mockup 5‑01; split out of #7 (D-332). Sentinel
+  // number 701 so it never collides with a mockup screen number; auth-gated.
+  _Route(number: 701, name: RouteNames.signUpInterests, path: '/sign-up/interests', labelAr: 'اهتماماتي', labelEn: 'My interests'),
   // Screen 08 (exhibitor self-sign-up) removed — exhibitors are CP-only (D-199 / §9).
   _Route(number: 9, name: RouteNames.terms, path: '/terms', labelAr: 'الشروط والأحكام', labelEn: 'Terms & conditions'),
   _Route(number: 10, name: RouteNames.registrationSuccess, path: '/registration/success', labelAr: 'تم التسجيل بنجاح', labelEn: 'Registration success'),
@@ -99,6 +133,12 @@ const List<_Route> _routes = <_Route>[
   // Screen 39 (cybersecurity policy) removed from the app — §9 / D-276.
   _Route(number: 40, name: RouteNames.rate, path: '/rate', labelAr: 'تقييم', labelEn: 'Rate'),
   _Route(number: 41, name: RouteNames.more, path: '/more', labelAr: 'المزيد', labelEn: 'More'),
+
+  // FDS-014 visitor contact sharing (D-286; additive, not mockup-numbered →
+  // sentinel numbers 100+ so they never collide with mockup 1–41 or the aux 0s).
+  _Route(number: 100, name: RouteNames.myContacts, path: '/contacts', labelAr: 'جهات اتصالي', labelEn: 'My Contacts'),
+  _Route(number: 101, name: RouteNames.shareMyContact, path: '/contacts/share', labelAr: 'شارك جهة اتصالي', labelEn: 'Share my contact'),
+  _Route(number: 102, name: RouteNames.scanContact, path: '/contacts/scan', labelAr: 'مسح رمز QR', labelEn: 'Scan QR'),
 ];
 
 /// Auxiliary auth routes that aren't numbered in the mockup but live in
@@ -113,15 +153,21 @@ const List<_Route> _auxRoutes = <_Route>[
 /// SIMF-RPM-001 closes (SIMF-MAA-001 OI-3) this list is conservative —
 /// Phase 1 only gates the few obvious cases. Phase 2 / Phase 3 may extend.
 const Set<int> _authenticatedRoutes = <int>{
-  7, // Sign up — visitor (profile completion; AUTH-only, Page_007 L-1)
+  7, // Sign up — visitor profile data (AUTH-only, Page_007 L-1)
+  701, // Sign up — interests + the single save (AUTH-only, Page_007-01, D-332)
   10, // Registration success (signed-in, pending; Page_010)
   11, // Registration status (signed-in, not-yet-approved gate; Page_011 L-1)
   14, // My area
   18, // My seat
   26, // Send question
+  28, // Audience comments (approved-only, D-319)
   32, // Badge / QR
   33, // Notifications
   35, // Meet people
+  40, // Rate (feedback — approved-only, D-310)
+  100, // My Contacts (FDS-014, approved-only — D-286)
+  101, // Share my contact (FDS-014, approved-only — D-286)
+  102, // Scan contact QR (FDS-014, approved-only — D-286)
 };
 
 /// Builds the go_router instance.
@@ -154,23 +200,12 @@ GoRouter buildRouter(Ref ref) {
         unawaited(prefs.setString(StorageKeys.lastRoute, goingTo));
       }
 
-      // While the cold-start restore is still running, hold on the splash; the
-      // splash itself routes out once auth resolves (Page_001 Logic L-5).
-      if (authState is AuthStateInitial && goingTo != '/splash') {
-        return '/splash';
-      }
-
-      if (routePathRequiresAuth(state.fullPath) && !isSignedIn) {
-        return '/sign-in';
-      }
-
-      // A signed-in user has no business on the sign-in screen. (The splash is
-      // left to route itself out, so a resume target is never clobbered here.)
-      if (isSignedIn && goingTo == '/sign-in') {
-        return '/';
-      }
-
-      return null;
+      return redirectDecision(
+        isInitial: authState is AuthStateInitial,
+        isSignedIn: isSignedIn,
+        goingTo: goingTo,
+        fullPath: state.fullPath,
+      );
     },
     routes: <RouteBase>[
       for (final r in _routes)
@@ -191,9 +226,6 @@ GoRouter buildRouter(Ref ref) {
             if (r.name == RouteNames.signIn) {
               return const SignInScreen();
             }
-            if (r.name == RouteNames.signUpType) {
-              return const SignUpTypeScreen();
-            }
             if (r.name == RouteNames.signUpForm) {
               return const SignUpFormScreen();
             }
@@ -204,6 +236,12 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.signUpVisitor) {
               return const SignUpVisitorScreen();
+            }
+            if (r.name == RouteNames.signUpInterests) {
+              final extra = state.extra;
+              return SignUpInterestsScreen(
+                draft: extra is SignUpProfileDraft ? extra : null,
+              );
             }
             if (r.name == RouteNames.terms) {
               // `?consent=1` shows the in-flow accept gate; standalone reads omit it.
@@ -217,6 +255,110 @@ GoRouter buildRouter(Ref ref) {
             }
             if (r.name == RouteNames.registrationStatus) {
               return const RegistrationStatusScreen();
+            }
+            if (r.name == RouteNames.home) {
+              return const HomeScreen();
+            }
+            if (r.name == RouteNames.myArea) {
+              return const MyAreaScreen();
+            }
+            if (r.name == RouteNames.venueMap) {
+              return const VenueMapScreen();
+            }
+            if (r.name == RouteNames.sessions) {
+              return const SessionsScreen();
+            }
+            if (r.name == RouteNames.sessionDetail) {
+              return SessionDetailScreen(
+                sessionId: state.pathParameters['sessionId'] ?? '',
+              );
+            }
+            if (r.name == RouteNames.mySeat) {
+              return MySeatScreen(
+                sessionId: state.pathParameters['sessionId'] ?? '',
+              );
+            }
+            if (r.name == RouteNames.speakers) {
+              return const SpeakersScreen();
+            }
+            if (r.name == RouteNames.speakerProfile) {
+              return SpeakerProfileScreen(
+                speakerId: state.pathParameters['speakerId'] ?? '',
+              );
+            }
+            if (r.name == RouteNames.booths) {
+              return const BoothsScreen();
+            }
+            if (r.name == RouteNames.sponsors) {
+              return const SponsorsScreen();
+            }
+            if (r.name == RouteNames.mediaPartners) {
+              return const MediaPartnersScreen();
+            }
+            if (r.name == RouteNames.archive) {
+              return const ArchiveScreen();
+            }
+            if (r.name == RouteNames.news) {
+              return const NewsScreen();
+            }
+            if (r.name == RouteNames.gallery) {
+              return const GalleryScreen();
+            }
+            if (r.name == RouteNames.aboutForum) {
+              return const AboutScreen();
+            }
+            if (r.name == RouteNames.rate) {
+              return const RateScreen();
+            }
+            if (r.name == RouteNames.notifications) {
+              return const NotificationsScreen();
+            }
+            if (r.name == RouteNames.meetPeople) {
+              return const MeetPeopleScreen();
+            }
+            if (r.name == RouteNames.accessibility) {
+              return const AccessibilityScreen();
+            }
+            if (r.name == RouteNames.more) {
+              return const MoreScreen();
+            }
+            if (r.name == RouteNames.guestMode) {
+              return const GuestModeScreen();
+            }
+            if (r.name == RouteNames.aiSummary) {
+              return AiSummaryScreen(
+                sessionId: state.uri.queryParameters['sessionId'],
+              );
+            }
+            if (r.name == RouteNames.sendQuestion) {
+              return SendQuestionScreen(
+                sessionId: state.uri.queryParameters['sessionId'],
+              );
+            }
+            if (r.name == RouteNames.audienceComments) {
+              return AudienceCommentsScreen(
+                sessionId: state.uri.queryParameters['sessionId'],
+              );
+            }
+            if (r.name == RouteNames.liveBroadcast) {
+              return LiveBroadcastScreen(
+                sessionId: state.uri.queryParameters['sessionId'],
+              );
+            }
+            if (r.name == RouteNames.badge) {
+              return const BadgeScreen();
+            }
+            if (r.name == RouteNames.chatbot) {
+              return const ChatbotScreen();
+            }
+            if (r.name == RouteNames.myContacts) {
+              return const MyContactsScreen();
+            }
+            if (r.name == RouteNames.shareMyContact) {
+              return const ShareMyContactScreen();
+            }
+            if (r.name == RouteNames.scanContact) {
+              return const ScanContactScreen();
             }
             return ComingSoonScreen(
               screenNumber: r.number,
@@ -284,5 +426,37 @@ int? routeNumberForPath(String? fullPath) {
 /// Whether the matched route pattern needs a signed-in user (the auth gate).
 bool routePathRequiresAuth(String? fullPath) =>
     _authenticatedRoutes.contains(routeNumberForPath(fullPath));
+
+/// The pure auth-gate redirect decision (testable in isolation, like
+/// [routePathRequiresAuth]). Returns the path to redirect to, or null to allow
+/// the navigation. [goingTo] is the matched location; [fullPath] is the matched
+/// route *pattern*.
+///
+/// A signed-in user landing on `/sign-in` is intentionally **not** bounced here
+/// (D-295). Post-sign-in routing belongs to `SignInScreen._routeAfterSignIn`,
+/// which sends a profile-incomplete visitor to the profile screen (Page_007). A
+/// blunt `/sign-in -> /` redirect fired on the auth-state change, disposed the
+/// SignInScreen before its post-sign-in router could run, and stranded
+/// incomplete profiles on Home.
+String? redirectDecision({
+  required bool isInitial,
+  required bool isSignedIn,
+  required String goingTo,
+  required String? fullPath,
+}) {
+  // Hold *protected* routes on the splash while the cold-start restore resolves
+  // (Page_001 L-5 / D-295); the splash routes itself out to a public entry
+  // screen once auth resolves, so a public route is never pinned here —
+  // otherwise a stalled restore would strand the user on the splash (L-6).
+  if (isInitial && goingTo != '/splash' && routePathRequiresAuth(fullPath)) {
+    return '/splash';
+  }
+  // The auth gate (SIMF-MAA-001 §8): a protected route while signed out goes to
+  // the sign-in entry.
+  if (routePathRequiresAuth(fullPath) && !isSignedIn) {
+    return '/sign-in';
+  }
+  return null;
+}
 
 final routerProvider = Provider<GoRouter>(buildRouter);

@@ -1,0 +1,179 @@
+@* FR-506 (SIMF-SRS-001 §3.5; FDS-003 §5.5) — session-attendance dashboard.
+   Read-only: a live top-line (people currently inside a hall, active sessions
+   with attendance, total arrivals) plus a server-paged per-session grid of
+   distinct-attendee / live-now counts. Every value is an on-demand aggregate
+   over the existing HallAttendance arrival records (D-241) — no create / edit /
+   delete, so the grid carries no row actions (filter + sort + pager only). *@
+@page "/admin/attendance"
+@layout CpShellLayout
+@attribute [RequirePermission(PermissionCatalog.Attendance.View)]
+@using SIMF.Contracts.Attendance
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+<PageTitle>@L["Admin.Attendance.Title"] · SIMF</PageTitle>
+
+<SimfBanner Title="@L["Admin.Attendance.Title"]" />
+
+<div class="simf-page-wide">
+    <div class="simf-surface">
+        @if (_toast is not null)
+        {
+            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+        }
+
+        @* Live top-line — same stat-card layout as the Statistics dashboard. *@
+        @if (_summary is not null)
+        {
+            <div class="simf-form__actions">
+                <SimfStatCard Title="@L["Admin.Attendance.Stat.LiveNow"]"
+                              Value="@Count(_summary.LiveAttendeesNow)" />
+                <SimfStatCard Title="@L["Admin.Attendance.Stat.SessionsWithAttendance"]"
+                              Value="@Count(_summary.SessionsWithAttendance)" />
+                <SimfStatCard Title="@L["Admin.Attendance.Stat.TotalArrivals"]"
+                              Value="@Count(_summary.TotalArrivals)" />
+            </div>
+        }
+
+        <SimfDataGrid TItem="SessionAttendanceRow"
+                      Query="_query"
+                      Page="_page"
+                      Loading="_loading"
+                      OnQueryChanged="OnQueryChangedAsync"
+                      Caption="@L["Admin.Attendance.Title"]"
+                      FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      PrevLabel="@L["Grid.Prev"]"
+                      NextLabel="@L["Grid.Next"]"
+                      FirstLabel="@L["Grid.First"]"
+                      LastLabel="@L["Grid.Last"]"
+                      PageSizeLabel="@L["Grid.PageSize"]"
+                      PageFormatter="@FormatPage"
+                      LoadingLabel="@L["Admin.Attendance.Loading"]"
+                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                      SummaryFormatter="@FormatSummary">
+            <Columns>
+                <SimfDataGridColumn TItem="SessionAttendanceRow" Key="code"
+                                    Header="@L["Admin.Attendance.Col.Code"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Code</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="SessionAttendanceRow" Key="title"
+                                    Header="@L["Admin.Attendance.Col.Session"]"
+                                    Sortable="true" Filterable="true">
+                    <CellTemplate>@context.Title</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="SessionAttendanceRow" Key="hall"
+                                    Header="@L["Admin.Attendance.Col.Hall"]">
+                    <CellTemplate>@context.HallName</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="SessionAttendanceRow" Key="startUtc"
+                                    Header="@L["Admin.Attendance.Col.Start"]"
+                                    Sortable="true">
+                    <CellTemplate>@context.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="SessionAttendanceRow" Key="total"
+                                    Header="@L["Admin.Attendance.Col.TotalAttendees"]">
+                    <CellTemplate>@context.TotalAttendees</CellTemplate>
+                </SimfDataGridColumn>
+                <SimfDataGridColumn TItem="SessionAttendanceRow" Key="live"
+                                    Header="@L["Admin.Attendance.Col.LiveNow"]">
+                    <CellTemplate>
+                        @if (context.LiveNow > 0)
+                        {
+                            <SimfPill Variant="on">@context.LiveNow</SimfPill>
+                        }
+                        else
+                        {
+                            <span>0</span>
+                        }
+                    </CellTemplate>
+                </SimfDataGridColumn>
+            </Columns>
+            <EmptyTemplate>
+                <SimfEmptyState Title="@L["Admin.Attendance.None"]" />
+            </EmptyTemplate>
+        </SimfDataGrid>
+    </div>
+</div>
+
+@code {
+    private record Toast(string Variant, string Message);
+
+    private SessionAttendanceSummary? _summary;
+    private GridQuery _query = new() { Top = 20, Sort = "startUtc" };
+    private GridPage<SessionAttendanceRow> _page = new();
+    private bool _loading;
+    private Toast? _toast;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Flip the grid into its loading state from the very first paint:
+        // OnInitializedAsync first yields at the summary fetch below, so without
+        // this the in-progress frame would render with _loading == false and the
+        // spinner would never show on first load. LoadAsync's finally clears it.
+        _loading = true;
+        await LoadSummaryAsync();
+        await LoadAsync();
+    }
+
+    private async Task OnQueryChangedAsync(GridQuery next)
+    {
+        _query = next;
+        await LoadAsync();
+    }
+
+    private string FormatSummary(int skip, int taken, int total) =>
+        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+
+    private string FormatPage(int current, int total) =>
+        string.Format(L["Grid.Page"], current, total);
+
+    private static string Count(int value) =>
+        value.ToString(CultureInfo.InvariantCulture);
+
+    private async Task LoadSummaryAsync()
+    {
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<SessionAttendanceSummary>>(
+                "simfAccount.getJson",
+                "/account/api/admin/attendance/summary");
+            if (env is { Success: true, Data: not null })
+            {
+                _summary = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Attendance.LoadFailed"]);
+            }
+        }
+        catch
+        {
+            _toast = new Toast("error", L["Admin.Attendance.LoadFailed"]);
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            var env = await JS.InvokeAsync<ApiResult<GridPage<SessionAttendanceRow>>>(
+                "simfAccount.postJson",
+                "/account/api/admin/attendance/sessions/list", _query);
+            if (env is { Success: true, Data: not null })
+            {
+                _page = env.Data;
+            }
+            else
+            {
+                _toast = new Toast("error",
+                    env?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Attendance.LoadFailed"]);
+            }
+        }
+        finally { _loading = false; }
+    }
+}

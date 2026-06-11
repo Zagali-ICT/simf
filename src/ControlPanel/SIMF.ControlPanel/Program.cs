@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Production secrets/config arrive as SIMF_-prefixed Machine-scope environment
 // variables (deploy/set-env-*.ps1, SIMF-OPS-001 section 6). This source strips
 // the prefix, so SIMF_Api__BaseUrl binds to Api:BaseUrl. ASPNETCORE_ENVIRONMENT
-// stays un-prefixed (the host reads it before configuration sources load).
+// stays un-prefixed (the host reads it before configuration sources load). (D-355)
 builder.Configuration.AddEnvironmentVariables("SIMF_");
 
 // P6 — per-project log files under {Storage:LogDirectory}/SIMF.ControlPanel/log-{Date}.log.
@@ -115,6 +115,11 @@ builder.Services.AddScoped<SimfAuthSession>();
 // layout (reads to render) and the profile page (writes on load + change).
 builder.Services.AddScoped<SimfUserChrome>();
 
+// D-353 — per-user, per-page CRUD display preferences (dialog vs full page),
+// persisted in the browser's localStorage. Scoped per circuit (it uses the
+// circuit's IJSRuntime).
+builder.Services.AddScoped<CpPreferences>();
+
 // HttpContext access — the profile page captures the access token from the
 // cookie auth result during the initial (prerendered) render, then holds it
 // in the circuit for the interactive callbacks that follow.
@@ -123,7 +128,7 @@ builder.Services.AddHttpContextAccessor();
 // SIMF_Api__AllowSelfSignedCertificate=true → accept the API's self-signed
 // certificate on the server-to-server API calls (the API uses a self-signed
 // cert whose name does not match the host). Default false → normal TLS
-// validation, so dev and any other environment are unaffected.
+// validation, so dev and any other environment are unaffected. (D-355)
 var allowSelfSignedApiCert =
     builder.Configuration.GetValue<bool>("Api:AllowSelfSignedCertificate");
 Func<HttpMessageHandler> apiPrimaryHandler = () =>
@@ -137,36 +142,18 @@ Func<HttpMessageHandler> apiPrimaryHandler = () =>
     return handler;
 };
 
-// The typed client for the SIMF Login API. The call is server-to-server, so
-// the access token never reaches the browser and there is no cross-origin
-// concern.
-builder.Services.AddHttpClient<SimfAuthClient>(client =>
-{
-    var baseUrl = builder.Configuration["Api:BaseUrl"]
-        ?? throw new InvalidOperationException(
-            "Configuration value 'Api:BaseUrl' is required but was not found.");
-    var baseUri = new Uri(baseUrl);
-    if (!builder.Environment.IsDevelopment() && baseUri.Scheme != Uri.UriSchemeHttps)
-    {
-        throw new InvalidOperationException(
-            "'Api:BaseUrl' must use HTTPS outside the Development environment.");
-    }
-    client.BaseAddress = baseUri;
-})
-    .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
+// Typed clients share one validated API base address (SimfApiBaseAddress) —
+// server-to-server, so the token never reaches the browser. The self-signed
+// cert handler (above) is applied to each so production over a self-signed
+// API cert works when SIMF_Api__AllowSelfSignedCertificate=true.
+var apiBaseUri = SimfApiBaseAddress.Resolve(
+    builder.Configuration["Api:BaseUrl"], builder.Environment.IsDevelopment());
 
-builder.Services.AddHttpClient<SimfAccountClient>(client =>
-{
-    var baseUrl = builder.Configuration["Api:BaseUrl"]!;
-    client.BaseAddress = new Uri(baseUrl);
-})
+builder.Services.AddHttpClient<SimfAuthClient>(client => client.BaseAddress = apiBaseUri)
     .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
-
-builder.Services.AddHttpClient<SimfAdminClient>(client =>
-{
-    var baseUrl = builder.Configuration["Api:BaseUrl"]!;
-    client.BaseAddress = new Uri(baseUrl);
-})
+builder.Services.AddHttpClient<SimfAccountClient>(client => client.BaseAddress = apiBaseUri)
+    .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
+builder.Services.AddHttpClient<SimfAdminClient>(client => client.BaseAddress = apiBaseUri)
     .ConfigurePrimaryHttpMessageHandler(apiPrimaryHandler);
 
 var app = builder.Build();

@@ -1,0 +1,48 @@
+@* D-353 — reusable Visitor Add/Edit form, hosted by CrudShell (popup or full
+   page) from VisitorsList. Inherits CrudAddEditFormBase so it exposes the
+   standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). This is
+   an ACCOUNT (security-sensitive) page, so the create/edit behaviour is
+   preserved byte-for-byte from the inline SimfModal flows: Add hosts the D-127
+   walk-in CreateVisitorForm wizard (its own success modal mints the QR), and
+   Edit hosts the D-214 EditAccountForm (Scope=visitors, IsVisitorScope=true).
+   Both child forms keep their own DTOs + simfAccount.* routes; this wrapper only
+   bridges their completion callbacks onto the base OnSuccess. *@
+@inherits CrudAddEditFormBase<AdminUserSummary>
+@inject IStringLocalizer<Strings> L
+
+@if (!IsEdit)
+{
+    @* D-114 / D-127 — Add visitor: the walk-in registration wizard. *@
+    <CreateVisitorForm OnSuccess="OnAddSucceededAsync"
+                       OnCancel="OnCancel"
+                       CancelLabel="@L["Admin.Visitors.Add.Close"]" />
+}
+else if (Initial is not null)
+{
+    @* P1.3 (D-214) — real Edit: email + display name + tier. EditAccountForm
+       self-loads the account by AccountId, so no pre-fetch is needed. *@
+    <EditAccountForm AccountId="Initial.Id" Scope="visitors" IsVisitorScope="true"
+                     OnSaved="OnEditSavedAsync"
+                     OnCancel="OnCancel" />
+}
+
+@code {
+    // The walk-in wizard reports an AdminCreateUserResponse; the base OnSuccess
+    // is typed to the grid-row summary, so map the new account onto a summary
+    // shell. The host only uses the callback to close the shell + reload the
+    // grid (which re-reads the row from the server), so the unfilled summary
+    // fields are never displayed.
+    private Task OnAddSucceededAsync(AdminCreateUserResponse created) =>
+        OnSuccess.InvokeAsync(new AdminUserSummary(
+            created.UserId,
+            created.Email,
+            string.Empty,
+            string.Empty,
+            false,
+            false,
+            DateTimeOffset.UtcNow));
+
+    // EditAccountForm raises a payload-less OnSaved; bubble the row we already
+    // hold so the host closes the shell + reloads.
+    private Task OnEditSavedAsync() => OnSuccess.InvokeAsync(Initial!);
+}

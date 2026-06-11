@@ -39,7 +39,11 @@ internal sealed class PublicArchiveService(
                 edition.Attendees,
                 edition.Sessions,
                 edition.Speakers,
-                edition.CoverImageRelativePath))
+                edition.CoverImageRelativePath,
+                edition.LocationEn,
+                edition.LocationAr,
+                edition.DateLabelEn,
+                edition.DateLabelAr))
             .ToListAsync(cancellationToken);
 
         return new PublicArchive(items);

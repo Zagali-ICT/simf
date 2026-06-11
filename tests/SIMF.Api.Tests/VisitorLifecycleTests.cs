@@ -102,6 +102,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
         //    to PendingApproval and revokes the visitor's refresh token.
         // ----------------------------------------------------------------
         var interestId = await SeedInterestAsync();
+        var organisationId = await SeedOrganisationAsync();
         var upsertRequest = new HttpRequestMessage(
             HttpMethod.Post, "/api/v1/app/account/user-profile")
         {
@@ -115,6 +116,7 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
                 PlaceOfBirth = "Riyadh",
                 IsSaudi = true,
                 NationalId = "1101798278",
+                OrganisationId = organisationId,
             }),
         };
         upsertRequest.Headers.Authorization =
@@ -206,6 +208,24 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
         await db.SaveChangesAsync();
         await appDb.SaveChangesAsync();
         return interest.Id;
+    }
+
+    // B3 — D-221: organisation is now required on the profile upsert.
+    private async Task<Guid> SeedOrganisationAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var org = new SIMF.Domain.Organisations.Organisation
+        {
+            Id = Guid.NewGuid(),
+            NameArabic = "جهة دورة الحياة",
+            Name = $"Lifecycle Org {Guid.NewGuid():N}",
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        appDb.Organisations.Add(org);
+        await appDb.SaveChangesAsync();
+        return org.Id;
     }
 
     private async Task<string> CreateAdministratorAndSignInAsync()

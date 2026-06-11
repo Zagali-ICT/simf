@@ -6,14 +6,16 @@ namespace SIMF.ControlPanel.Tests;
 public sealed class CpNavigationTests
 {
     [Fact]
-    public void There_are_nine_navigation_groups()
+    public void There_are_thirteen_navigation_groups()
     {
-        // D-132 removed the standalone Notifications group (9 → 8). Issue-1
-        // then added the "Access control" group (Admins + Roles & permissions
-        // + Reset 2FA, pulled together out of People/System), so the canonical
-        // count is 9: Overview, People, Access control, Programme, Exhibition,
-        // Engagement, Knowledge, Content, System.
-        Assert.Equal(9, CpNavigation.Groups.Count);
+        // The former 23-item "System" junk drawer was split into coherent groups:
+        // People absorbed the Visitor/Other accounts (+ pending), and four new
+        // groups were carved out — Scientific committee, Public relations,
+        // Gates & arrivals, Reference data — leaving a slim System group. The
+        // canonical count is 13: Overview, People, Access control, Programme,
+        // Scientific committee, Exhibition, Engagement, Knowledge, Content,
+        // Public relations, Gates & arrivals, Reference data, System.
+        Assert.Equal(13, CpNavigation.Groups.Count);
     }
 
     [Fact]

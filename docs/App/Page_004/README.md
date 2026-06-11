@@ -1,49 +1,30 @@
-# Page 004 — إنشاء حساب — النوع · Sign up — type
+# Page 004 — REMOVED · إنشاء حساب — النوع · Sign up — type
 
-Per-page documentation folder. Everything about this app page lives here.
+> **This screen was REMOVED (D-332, 2026-06-07).** It was an *invented* account-type
+> gate that does **not** exist in `Mockup.html`. The owner directed the app to follow
+> the mockup, where sign-up goes straight from **Sign in (Page 003)** to **Register
+> (Page 005 — email + password + confirm)** with no type chooser. The account
+> category (**Visitor / Other**, the `ProfileType.IsForVisitor` split) is chosen
+> **inside the profile form** ([Page 007](../Page_007/README.md)), not on a separate
+> screen.
 
-| Aspect | Document | What it holds |
-|--------|----------|---------------|
-| Function | [Page_004_Function.md](Page_004_Function.md) | What the page does — elements, user actions, navigation, acceptance criteria |
-| Logic | [Page_004_Logic.md](Page_004_Logic.md) | Business rules — type gating, why App accounts are Visitor-only, state transitions, edge cases |
-| API | [Page_004_API.md](Page_004_API.md) | Backend contract for this page — there is **no** SIMF API; this is a client-only UI gate |
-| Design | [Page_004_Design.md](Page_004_Design.md) | Flutter screen design — layout, components, states, RTL, localization |
+## Why it was removed
+- **Mockup:** there is no type screen. The flow is
+  Login `03` → Register `04` (email + pwd + confirm) → OTP `4-01` →
+  Data `05` (نوع التسجيل Visitor/Other + التصنيف ProfileType + fields) →
+  Interests `5-01` → Success `10`.
+- **API:** there is **no "registration type" field** — the only stored value is
+  `ProfileTypeId` (the `VisitorType` discriminator was dropped in P8;
+  `UpsertUserProfileRequestValidator` confirms). So nothing on a "type" screen
+  could ever be sent to the server.
+- This folder previously documented (**D-268**) a restructure that *added* a
+  standalone type gate, citing "controlled docs override the mockup." The **owner
+  overruled** that and chose mockup fidelity (D-332).
 
-## Identity
-| | |
-|---|---|
-| Mockup page | **4** (`Mockup.html`) · owner page **004** |
-| Route | `RouteNames.signUpType` → `/sign-up/type` |
-| Titles | AR **إنشاء حساب — النوع** · EN **Sign up — type** |
-| Section | 1 — Onboarding / authentication |
-| Nature | **Account-type chooser** (a UI gate, not a data step) |
-| App privilege | **Guest** (pre-auth — reachable before any account exists) |
-| Status | **Built** (Flutter screen — client-only type gate, **no API**; Visitor enabled, Exhibitor/Sponsor disabled per D-199; Continue → Page 005 carrying `type=visitor`) · D-268 |
+## Corrected flow
+See **[D-332](../../decisions/DECISIONS_LOG.md)**, the reworked
+**[Page 007](../Page_007/README.md)** (profile data incl. the Visitor/Other
+filter + ProfileType select), and the new **[Page 007-01](../Page_007-01/README.md)**
+(interests, 1–10).
 
-## Purpose
-Lets a guest choose which kind of account to create. In SIMF, **App accounts are
-Visitor-only** — exhibitor and sponsor are **Control-Panel concepts** (CP-managed
-Company + accounts, D-199), never self-registered from the App. So in the shipped
-App this screen is **largely a UI gate**: the visitor path is the only one that
-proceeds, leading to the sign-up form on **[Page 005](../Page_005/README.md)**.
-There is **no SIMF API** call on this screen.
-
-## Mockup divergence (bug-check finding, D-268)
-The `Mockup.html` layout splits the sign-up flow differently from this doc:
-mockup **screen 04** is an email/password/confirm **credentials** form, and the
-account-**type** chips (`زائر` / `جهة عارضة`) are embedded at the **top of mockup
-screen 05**'s profile form — there is no standalone type-chooser frame in the
-mockup. This controlled doc **restructures** that into a dedicated type gate
-(screen 4) + form (screen 5), grounded in **D-199** (Visitor-only self-registration;
-Exhibitor/Sponsor are CP-only). The **doc governs** (CLAUDE.md: controlled docs
-override the mockup, which is a visual reference); the built screen follows the doc.
-The final visuals come from the external designer (SIMF-VID-001) regardless.
-
-## Sources of truth
-`Mockup.html` (visual, pages 4–5) · `SIMF_Screen_Guide_and_User_Journey` (narrative, Screen 4) ·
-SIMF-MOB-API-001 (shared API conventions + auth) · SIMF-MAA-001 (mobile architecture).
-
-> Part of the per-page documentation structure (`docs/App/Page_NNN/`). The
-> exhibitor/sponsor = CP-only rule is recorded in `docs/decisions/DECISIONS_LOG.md`
-> (D-199); the four App privileges (Guest/Visitor/Moderator/Staff) are the App's
-> own enum, separate from the CP `UserType`.
+The `Page_004_*` sub-docs are kept only as a removed-screen marker.

@@ -7,23 +7,24 @@ behind each call are in [Page_013_Logic.md](Page_013_Logic.md).
 > **Status:** Home is a **router/landing screen with no data of its own for now**.
 > It makes **one** live, best-effort call (the notification count). The **privilege**
 > comes from the **JWT claim** (no call), and the **on-login bundle**
-> `GET /app/bootstrap` is now **BUILT (D-251)**.
+> `GET /app/bootstrap` is now **BUILT (D-251)**. The **Flutter screen is built**
+> (D-296).
 >
 > **Path-prefix note:** App routes are under **`/api/v1/app/*`** (App↔CP split, D-247)
-> — so the route below is `GET /api/v1/app/account/notifications`.
+> — so the route below is `GET /api/v1/app/account/notifications/unread-count`.
 
 ## Privilege — from the JWT claim (no call)
 The app privilege (`Guest` / `Visitor` / `Staff` / `Moderator`) is **read from the
 JWT claim**, not fetched. No token ⇒ `Guest`. There is **no endpoint** for Home to
 "ask its privilege" — the client decodes the cached token (Logic L-1).
 
-## E1 — `GET /app/account/notifications`  (unread count for the bell badge) — **EXISTS**
+## E1 — `GET /app/account/notifications/unread-count`  (unread count for the bell badge) — **EXISTS**
 | | |
 |---|---|
-| Route | `GET /api/v1/app/account/notifications` |
-| Access | Approved account (`RequireApprovedAccount`); own `sub`. Signed-in only — `Guest` does not call it. No new permission code. |
+| Route | `GET /api/v1/app/account/notifications/unread-count` |
+| Access | Authenticated (own `sub`); signed-in only — `Guest` does not call it. No permission code. |
 | App privilege | Visitor and above |
-| Returns | `ApiResult<…>` — Home consumes the **unread count** for the badge |
+| Returns | `ApiResult<UnreadCountResponse>` = `{ unreadCount }` — Home reads the count for the badge |
 | Behaviour on Home | **Best-effort + non-blocking**: on any error the badge shows **no count** (Logic L-5) |
 
 ```jsonc
@@ -38,10 +39,11 @@ JWT claim**, not fetched. No token ⇒ `Guest`. There is **no endpoint** for Hom
 }
 ```
 
-> Verify the exact payload field name / shape against the shipped endpoint before
-> binding — this page only needs the **unread count**, not the list. If the count is
-> exposed under a different field, bind to that; the Home contract is "give me the
-> unread number, best-effort".
+> **As-built (D-296):** verified against the shipped endpoint —
+> `SIMF.Contracts.Notifications.UnreadCountResponse` → `{ unreadCount }`. The Flutter
+> bell binds to that field via `NotificationsRepository.getUnreadCount()`. (An earlier
+> draft of this doc named the bare `…/notifications` path; the real route is
+> `…/notifications/unread-count` — corrected here.)
 
 ## E2 — `GET /app/bootstrap`  (on-login bundle) — **BUILT (D-251)**
 | | |
@@ -82,7 +84,7 @@ is **no request, no response shape, and no error state** for the banner.
 | Call | Route | Status | Used for |
 |---|---|---|---|
 | Privilege | — (JWT claim) | shipped | gating tiles/actions (Logic L-1/L-2) |
-| E1 notifications | `GET /api/v1/app/account/notifications` | **exists** | bell unread badge (best-effort) |
+| E1 notifications | `GET /api/v1/app/account/notifications/unread-count` | **exists** | bell unread badge (best-effort) |
 | E2 bootstrap | `GET /api/v1/app/bootstrap` | **BUILT (D-251)** | on-login user + unread + server-time cache |
 | E3 live banner | — | **no API (D10)** | live/YouTube promo |
 

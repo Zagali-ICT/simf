@@ -3,11 +3,37 @@
 // automatically (same origin), so the Blazor circuit never has to
 // handle the access token directly.
 
+// Safely read a JSON envelope from a fetch Response. An empty body → null; a
+// non-JSON body (a framework 4xx/5xx HTML/text error page — e.g. the
+// "incorrect Content-type" 400 that used to crash /admin/business-meetings) is
+// turned into a structured ApiResult error so the calling page shows a toast
+// instead of throwing a JSException that trips the global Blazor error UI.
+async function simfReadEnvelope(response) {
+    const text = await response.text();
+    if (text.length === 0) {
+        return null;
+    }
+    try {
+        return JSON.parse(text);
+    } catch {
+        return {
+            success: false,
+            data: null,
+            error: {
+                code: 'BAD_RESPONSE',
+                message: 'The server returned an unexpected response (HTTP ' + response.status + ').',
+                messageArabic: 'أعاد الخادم استجابة غير متوقعة (HTTP ' + response.status + ').',
+                details: [],
+            },
+            meta: null,
+        };
+    }
+}
+
 window.simfAccount = {
     async getJson(url) {
         const response = await fetch(url, { credentials: 'same-origin' });
-        const text = await response.text();
-        return text.length === 0 ? null : JSON.parse(text);
+        return await simfReadEnvelope(response);
     },
 
     async postJson(url, body) {
@@ -17,8 +43,7 @@ window.simfAccount = {
             headers: { 'Content-Type': 'application/json' },
             body: body === undefined || body === null ? null : JSON.stringify(body),
         });
-        const text = await response.text();
-        return text.length === 0 ? null : JSON.parse(text);
+        return await simfReadEnvelope(response);
     },
 
     async deleteJson(url) {
@@ -26,8 +51,7 @@ window.simfAccount = {
             method: 'DELETE',
             credentials: 'same-origin',
         });
-        const text = await response.text();
-        return text.length === 0 ? null : JSON.parse(text);
+        return await simfReadEnvelope(response);
     },
 
     async putJson(url, body) {
@@ -37,8 +61,7 @@ window.simfAccount = {
             headers: { 'Content-Type': 'application/json' },
             body: body === undefined || body === null ? null : JSON.stringify(body),
         });
-        const text = await response.text();
-        return text.length === 0 ? null : JSON.parse(text);
+        return await simfReadEnvelope(response);
     },
 
     // Force a server-side sign-out via a hidden form POST — Nav.NavigateTo
@@ -65,8 +88,7 @@ window.simfAccount = {
             credentials: 'same-origin',
             body: form,
         });
-        const text = await response.text();
-        return text.length === 0 ? null : JSON.parse(text);
+        return await simfReadEnvelope(response);
     },
 
     // Reads the first file from a file input as a base64 data URL.
@@ -108,8 +130,7 @@ window.simfAccount = {
                 credentials: 'same-origin',
                 body: form,
             });
-            const text = await response.text();
-            return text.length === 0 ? null : JSON.parse(text);
+            return await simfReadEnvelope(response);
         } catch (e) {
             return { success: false, error: { code: 'AVATAR_UPLOAD_FAILED', message: 'The upload failed.', messageArabic: 'فشل الرفع.' } };
         }
@@ -176,6 +197,12 @@ window.simfAccount = {
 window.simfModal = (function () {
     let openCount = 0;
     const bindings = new WeakMap();
+    // D-353 — ordered stack of currently-bound panels. When modals stack
+    // (e.g. a delete SimfConfirm opened over a CrudDialogFrame form), only the
+    // TOPMOST modal traps Tab/Esc. Without this the outer panel's trap — whose
+    // focusable list includes the inner panel's buttons (the inner panel is a
+    // DOM descendant) — fights the inner modal's trap.
+    const stack = [];
     const focusableSelector =
         'a[href], button:not([disabled]), input:not([disabled]), '
         + 'select:not([disabled]), textarea:not([disabled]), '
@@ -198,6 +225,7 @@ window.simfModal = (function () {
             if (!panel) return;
             if (bindings.has(panel)) return;       // already bound
 
+            stack.push(panel);
             const previousActive = document.activeElement;
             openCount++;
             if (openCount === 1) {
@@ -206,6 +234,8 @@ window.simfModal = (function () {
             focusFirst(panel);
 
             const handler = (event) => {
+                // D-353 — only the topmost modal handles keys when modals stack.
+                if (stack.length > 0 && stack[stack.length - 1] !== panel) return;
                 if (event.key === 'Escape' && allowEsc) {
                     event.preventDefault();
                     dotNetRef.invokeMethodAsync('OnEscPressed');
@@ -240,6 +270,8 @@ window.simfModal = (function () {
             const { handler, previousActive } = bindings.get(panel);
             document.removeEventListener('keydown', handler, true);
             bindings.delete(panel);
+            const stackIndex = stack.indexOf(panel);
+            if (stackIndex !== -1) { stack.splice(stackIndex, 1); }
 
             openCount = Math.max(0, openCount - 1);
             if (openCount === 0) {

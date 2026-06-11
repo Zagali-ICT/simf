@@ -32,7 +32,7 @@ var builder = WebApplication.CreateBuilder(args);
 // variables (deploy/set-env-*.ps1, SIMF-OPS-001 section 6). This source strips
 // the prefix, so SIMF_ConnectionStrings__SimfAppDb binds to
 // ConnectionStrings:SimfAppDb. ASPNETCORE_ENVIRONMENT stays un-prefixed (the
-// host reads it before configuration sources load).
+// host reads it before configuration sources load). (D-355)
 builder.Configuration.AddEnvironmentVariables("SIMF_");
 
 // Structured logging through Serilog (SIMF-SAD-001 section 11).
@@ -216,6 +216,10 @@ builder.Services.SwaggerDocument(options =>
         settings.DocumentName = "app";
         settings.Version = "v1";
     };
+    // Explicit so a future FastEndpoints default change can't silently drop the
+    // "Authorize" (JWT bearer) button — every protected endpoint authenticates
+    // on the default Bearer scheme (D-355; the package default is already true).
+    options.EnableJWTBearerAuth = true;
     options.EndpointFilter = ep =>
         ep.Routes?.Any(route => route.Contains("app/") && !route.Contains("admin/")) == true;
 });
@@ -227,12 +231,29 @@ builder.Services.SwaggerDocument(options =>
         settings.DocumentName = "cp";
         settings.Version = "v1";
     };
+    options.EnableJWTBearerAuth = true;
     options.EndpointFilter = ep =>
         ep.Routes?.Any(route => route.Contains("admin/")) == true;
 });
 
 // Readiness checks (SIMF-OPS-001 Amendment A.4).
 builder.Services.AddHealthChecks();
+
+// Dev-only CORS — lets a `flutter run -d chrome` web session (a different
+// origin, e.g. http://localhost:8080) call the App API for local diagnostics.
+// NEVER registered outside Development: production is single-origin behind the
+// reverse proxy, so no browser cross-origin call exists there. Origins come
+// from Cors:DevWebOrigins (appsettings.Development.json); default localhost:8080.
+const string devWebCorsPolicy = "DevWebCors";
+if (builder.Environment.IsDevelopment())
+{
+    var devWebOrigins =
+        builder.Configuration.GetSection("Cors:DevWebOrigins").Get<string[]>()
+        ?? ["http://localhost:8080"];
+    builder.Services.AddCors(options => options.AddPolicy(
+        devWebCorsPolicy,
+        policy => policy.WithOrigins(devWebOrigins).AllowAnyHeader().AllowAnyMethod()));
+}
 
 // JWT signing settings. The key must be present and long enough for HMAC-SHA256
 // — a missing or weak key would let an attacker forge tokens.
@@ -280,6 +301,12 @@ builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHand
 var knownProxies =
     builder.Configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? [];
 
+// D-355 — OpenAPI UI exposure (SIMF-API-001 §13). Off in production unless
+// explicitly enabled, and then only behind the Basic-auth gate below.
+var swaggerOptions =
+    builder.Configuration.GetSection(SwaggerOptions.SectionName).Get<SwaggerOptions>()
+    ?? new SwaggerOptions();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment()
@@ -289,6 +316,19 @@ if (!app.Environment.IsDevelopment()
     throw new InvalidOperationException(
         "ReverseProxy:KnownProxies must be configured outside Development — "
         + "the rate limiter and the audit-log source IP depend on a trusted proxy.");
+}
+
+// D-355 — never expose the OpenAPI UI unauthenticated in production. If it is
+// enabled there, the Basic-auth credentials must be present, or refuse to start.
+if (app.Environment.IsProduction()
+    && swaggerOptions.AllowSwagger
+    && (string.IsNullOrWhiteSpace(swaggerOptions.Username)
+        || string.IsNullOrWhiteSpace(swaggerOptions.Password)))
+{
+    throw new InvalidOperationException(
+        "Swagger:Username and Swagger:Password must be configured when "
+        + "Swagger:AllowSwagger is true in Production — the OpenAPI UI must not "
+        + "be served without the Basic-auth gate.");
 }
 
 // Apply the migrations and seed the super-admin. Skipped under the test host,
@@ -310,6 +350,14 @@ if (!app.Environment.IsEnvironment("Testing"))
     await services.GetRequiredService<SimfAppDbContext>().Database.MigrateAsync();
     await services.GetRequiredService<SimfIdentityDbContext>().Database.MigrateAsync();
     await services.GetRequiredService<IdentitySeeder>().SeedAsync();
+
+    // B3 — D-221 — in Development only, seed a few sample organisations so the
+    // registration organisation picker has data before the gov Excel import.
+    if (app.Environment.IsDevelopment())
+    {
+        await services.GetRequiredService<SIMF.Infrastructure.Organisations.OrganisationSeeder>()
+            .SeedFakeAsync();
+    }
 }
 
 // Recover the real client IP — but only from a trusted proxy (see above).
@@ -336,6 +384,14 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 
 // Error handling wraps the rest of the pipeline (SIMF-Sprint1 plan section 7).
 app.UseMiddleware<ErrorHandlingMiddleware>();
+
+// Dev-only: apply the web CORS policy before rate-limiting/auth so the browser
+// preflight (OPTIONS) is answered and the cross-origin App-API call succeeds.
+// Gated to Development to match the registration above.
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors(devWebCorsPolicy);
+}
 
 // H7 — D-062: peek the request body for the email field on credential
 // paths so the "auth-email" rate-limit policy can key its partition on
@@ -372,9 +428,17 @@ app.UseFastEndpoints(config =>
         });
 });
 
-// The OpenAPI UI is available outside production only (SIMF-API-001 section 13).
-if (!app.Environment.IsProduction())
+// The OpenAPI UI is served outside production always, and in production only
+// when explicitly enabled (Swagger:AllowSwagger) — and there only behind the
+// Basic-auth gate, because the API is public via the reverse proxy
+// (SAD-001 §10.1). SIMF-API-001 §13 + D-355.
+if (!app.Environment.IsProduction() || swaggerOptions.AllowSwagger)
 {
+    if (app.Environment.IsProduction())
+    {
+        app.UseMiddleware<SwaggerBasicAuthMiddleware>(swaggerOptions);
+    }
+
     app.UseSwaggerGen();
 }
 

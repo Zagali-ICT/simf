@@ -23,6 +23,34 @@ dependencies:
   # pick → bytes → multipart upload via simf_data_pkg. Native permission strings
   # (Info.plist / manifest) land in the generated folders (simf-run).
   image_picker: ^1.1.2
+  # Native OS share sheet for My-Area (Page_014): share the user's contact-card
+  # (.vcf) and calendar (.ics) fetched from the App API. Native share config lands
+  # in the generated folders (simf-run).
+  share_plus: ^10.0.0
+  # "Add to calendar" for the session detail (Page_017 E4) — opens the device
+  # calendar's add-event editor pre-filled from the cached session (intent-based,
+  # needs no Android permission). The local-notification "reminder" CTA is deferred
+  # to the notifications platform pass (D-300); the server worker (D-217) is the
+  # production reminder path.
+  add_2_calendar: ^3.0.1
+  # Entry-badge QR (Page_032) — pure-Dart QR painter (no native config) rendering
+  # the account qrId from GET /app/account/dashboard.
+  qr_flutter: ^4.1.0
+  # Live-broadcast player (Page_025) — plays the session liveStreamUrl. Native
+  # config (manifest / Info.plist) lands in the generated folders (simf-run);
+  # the real stream provider is still a stub (D-211 D7).
+  video_player: ^2.9.1
+  # Live-broadcast YouTube player (Page 025, D-349) — plays a YouTube
+  # liveStreamUrl / sign-language feed via the official IFrame Player API (rides
+  # on webview_flutter; native config lands in the generated folders at
+  # simf-run). YouTube is the POC live-video provider; HLS/MP4 (video_player
+  # above) stays the fallback when the feed is not a YouTube link.
+  youtube_player_iframe: ^6.0.2
+  # QR scanner for visitor contact sharing (Scan QR — FDS-014, D-286). Reads
+  # another visitor's share token. Camera permission (manifest / Info.plist)
+  # lands in the generated folders (simf-run). A manual code-entry fallback is
+  # always available, so the resolve→preview→save flow works without the camera.
+  mobile_scanner: ^5.2.3
 
   simf_data_pkg:
     path: packages/simf_data_pkg
@@ -32,9 +60,29 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # End-to-end harness: boots the assembled app (real router + screens) with
+  # deterministic provider overrides and drives cross-screen flows. Runs headless
+  # via `flutter test integration_test/`, or on a device with `-d <id>`.
+  integration_test:
+    sdk: flutter
   flutter_lints: ^5.0.0
   mocktail: ^1.0.4
 
 flutter:
   uses-material-design: true
   generate: false
+  # Mockup typography — IBM Plex Sans Arabic (the Mockup.html app font, OFL),
+  # bundled as an asset so it renders offline + deterministically on every
+  # platform incl. web (no runtime font fetch). Applied app-wide by SimfTheme
+  # via `fontFamily` so the UI matches the approved design (D-329).
+  fonts:
+    - family: IBMPlexSansArabic
+      fonts:
+        - asset: assets/fonts/IBMPlexSansArabic-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/IBMPlexSansArabic-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexSansArabic-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/IBMPlexSansArabic-Bold.ttf
+          weight: 700

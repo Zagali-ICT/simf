@@ -60,6 +60,8 @@
                           Caption="@L["Admin.Comments.Title"]"
                           FilterColumnLabel="@L["Grid.FilterColumn"]"
                           OnDeleteOne="OnDeleteAsync"
+                          OnExport="OnExportAsync"
+                          ExportLabel="@L["Grid.Export"]"
                           PrevLabel="@L["Grid.Prev"]"
                           NextLabel="@L["Grid.Next"]"
                           FirstLabel="@L["Grid.First"]"
@@ -293,6 +295,36 @@
             }
         }
         finally { _busy = false; }
+    }
+
+    // D-356 — Excel export (selected rows, or the whole picked-session set).
+    // Direct download via the generic /export proxy. The moderation list is
+    // session-scoped, so the picked session id rides in the query's filters
+    // (the export endpoint reads Filters["sessionId"]); the export covers
+    // every status, matching the desk's default view. Export only — comments
+    // are submitted by the audience, so there is no import path.
+    private Task OnExportAsync(IReadOnlyList<SessionCommentModerationRow> selected)
+    {
+        if (_selectedSessionId is null) return Task.CompletedTask;
+        // The on-screen body filter maps to the service's free-text Search
+        // (the comment body is the only searchable column), exactly as
+        // LoadCommentsAsync does, so the export honours the filtered set.
+        _query.Filters.TryGetValue("body", out var bodyFilter);
+        var query = new GridQuery
+        {
+            Top = _query.Top,
+            Sort = _query.Sort,
+            SortDescending = _query.SortDescending,
+            Search = string.IsNullOrWhiteSpace(bodyFilter) ? null : bodyFilter,
+            Filters = new Dictionary<string, string> { ["sessionId"] = _selectedSessionId.Value.ToString() },
+        };
+        return JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/comments-moderation/export",
+            new AdminGridExportRequest
+            {
+                Ids = selected.Select(row => row.Id).ToList(),
+                Query = query,
+            }).AsTask();
     }
 
     private string FormatSummary(int skip, int taken, int total) =>

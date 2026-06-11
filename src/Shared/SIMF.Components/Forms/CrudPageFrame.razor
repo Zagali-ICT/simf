@@ -1,0 +1,32 @@
+@* CrudPageFrame — the "open as a full page" presentation for a CRUD form
+   (D-353). Renders in the normal content flow (no overlay) with its own
+   title + close header, so the form takes over the content area while the
+   app chrome stays put. The hosted form supplies its own action buttons. *@
+@namespace SIMF.Components.Forms
+
+<section class="simf-crudpage" aria-label="@Title">
+    <header class="simf-crudpage__head">
+        <button type="button" class="simf-crudpage__close"
+                aria-label="@CloseLabel" @onclick="OnClose">
+            <SimfIcon Name="close" Size="18" />
+        </button>
+        <h2 class="simf-crudpage__title">@Title</h2>
+    </header>
+    <div class="simf-crudpage__body">
+        @ChildContent
+    </div>
+</section>
+
+@code {
+    /// <summary>The page title shown in the frame header.</summary>
+    [Parameter] public string Title { get; set; } = string.Empty;
+
+    /// <summary>The accessible label for the close button.</summary>
+    [Parameter] public string CloseLabel { get; set; } = "Close";
+
+    /// <summary>Raised when the user closes the page (returns to the list).</summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    /// <summary>The hosted form.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page shape (read from `SpeakerPresentationsList.razor`, D-228 / FR-407, SIMF-FDS-004 §5.3;
 > converted raw table → `SimfDataGrid` by D-256).**
@@ -58,6 +58,7 @@
 | E2E-SPP-014 | RTL render — Arabic toggle mirrors page, labels, table, buttons | i18n | P1 | _to author_ |
 | E2E-SPP-015 | Per-column filter — typing in the File / Session column filter narrows the grid (client-side, Skip→0) | happy | P1 | _to author_ |
 | E2E-SPP-016 | Column sort toggles — clicking the File column header sorts asc then desc (client-side) | happy | P2 | _to author_ |
+| E2E-SPP-017 | Excel export (D-356) — toolbar Export downloads an .xlsx of the selected speaker's presentations (whole set vs selected rows) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -310,6 +311,39 @@ Scenario: Clicking a sortable column header toggles ascending / descending in me
   And sorting on "Size" instead applies Sort = "sizeBytes" (smallest → largest, then toggled)
 ```
 
+### E2E-SPP-017 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the selected speaker's presentations to an XLSX workbook
+  Given the administrator is on /admin/speaker-presentations
+  And they have selected Speaker "Dr. Speaker" who has at least two presentation rows
+  And the grid toolbar shows the "Export" action (this page is export-only — there is no Import button)
+  When the administrator clicks "Export" with no rows selected
+  Then simfAccount.downloadXlsx fires a POST /account/api/admin/speaker-presentations/export
+  And the body is an AdminGridExportRequest with an empty Ids list and Query.Filters["speakerId"] = the selected speaker's id
+  And the API authorises against PermissionCatalog.Speakers.Export
+  And the endpoint lists that speaker's files via ListForSpeakerAsync (master-detail; no GridQuery list)
+  And the browser saves a file named simf-speaker-presentations-{timestamp}.xlsx
+  And the workbook's "SpeakerPresentations" sheet has the header row
+    FileName | Session | SessionArabic | ContentType | SizeBytes | CreatedAt
+  And the sheet contains one data row per active presentation of that speaker
+
+  When the administrator instead selects exactly two rows then clicks "Export"
+  Then the POST body carries those two row Ids in Ids (plus the same speakerId filter)
+  And the workbook contains exactly those two rows
+
+  When no speaker is selected (the placeholder "— Select a speaker —" is showing)
+  Then there is no grid and therefore no Export action to invoke
+    (with no speakerId filter the endpoint would return an empty workbook — the grid's
+     "one speaker at a time" contract is preserved)
+```
+
+**Evidence captured:**
+- Export with no selection → network shows POST `/account/api/admin/speaker-presentations/export` returning 200 with `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+- The saved workbook's first row matches `FileName | Session | SessionArabic | ContentType | SizeBytes | CreatedAt`
+- Console errors: 0 expected
+- The API caps the export at 5000 rows
+
 ---
 
 ## Implementation notes
@@ -348,4 +382,9 @@ Scenario: Clicking a sortable column header toggles ascending / descending in me
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle). Added E2E-SPP-017
+(Excel export). This page is **export-only** (no import — the export endpoint explicitly
+adds no generic import) and has **no presentation toggle**; Delete still uses the native
+`confirm()` (no SimfConfirm/CrudShell on this master-detail upload page), so no toggle,
+import, or SimfConfirm-delete scenarios were added.
+Prior: 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

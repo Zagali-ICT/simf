@@ -8,7 +8,7 @@
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
 | **Required permission** | `PermissionCatalog.Others.View` (`Others.View`) on the page; row/action endpoints additionally gated by `Others.Create` / `Others.Edit` / `Others.Delete` / `Others.Export` / `Others.Import` / `Others.RegisterOnsite` |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **What this page is.** Type-scoped management grid for **Other-typed accounts**
 > (exhibitor reps, sponsor staff, press, contractors — every non-visitor,
@@ -44,6 +44,9 @@
 | E2E-OTH-019 | No Other profile-type seeded → walk-in wizard shows the seed prompt | error | P2 | _to author_ |
 | E2E-OTH-020 | Server 500 on `/list` → empty page renders, no rows, no crash | resilience | P2 | _to author_ |
 | E2E-OTH-021 | RTL/Arabic render mirrors page + walk-in wizard + modals | i18n | P1 | _to author_ |
+| E2E-OTH-022 | Organisation required + digit-only IDs on the Others walk-in (D-354) | error | P1 | _to author_ |
+| E2E-OTH-023 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
+| E2E-OTH-024 | Full-page mode: Add (walk-in) / Edit / Details take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -407,6 +410,62 @@ Scenario: Arabic toggle mirrors the page, wizard and modals
   Then the title reads "حذف الحسابات الأخرى" and the reason field + actions mirror
 ```
 
+### E2E-OTH-022 — Organisation required + digit-only IDs on the Others walk-in (D-354)
+
+```gherkin
+Scenario: The Others walk-in requires an organisation too (shared form)
+  Given the administrator opens the Add modal on /admin/others (Kind=Other)
+  And fills a valid partner badge type, names, nationality/ID and a mobile
+  But leaves the Organisation (الجهة) field unpicked
+  When they press Register
+  Then the form does not submit and an inline "Pick an organisation." error shows
+  And the National ID / Iqama field strips any non-digit typed into it
+```
+
+### E2E-OTH-023 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/others with the default "dialog" presentation
+  And the grid toolbar shows the CrudPresentationToggle ("Open as full page", maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.others" holds {"v":1,"presentation":"page"}
+  When they reload /admin/others
+  Then OnInitializedAsync rehydrates the choice via Prefs.GetPresentationAsync("others")
+  And the toggle still reads "Open as dialog"
+  And opening "Add" now renders the full-page CrudShell frame (not a popup)
+```
+
+### E2E-OTH-024 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add (walk-in) / Edit / Details take over the content area; Save returns to the grid
+  Given the presentation is set to "full page" (toggle in the page state)
+  When the administrator clicks "Add" on the toolbar
+  Then the SimfBanner + grid are replaced by the CrudShell full-page frame
+      (title "Add Other user" + close header + the OthersAddEdit body)
+  And there is no modal backdrop (GridHidden = FormOpen && presentation == Page)
+  And the framed body hosts the walk-in CreateOtherForm wizard (Kind=Other, no Interests section)
+  When they complete the wizard and the register-onsite succeeds
+  Then the full-page frame closes
+  And the grid re-appears with the new row and the green "Account created for {email}..." toast
+
+  When the administrator clicks the "Edit" icon on a row
+  Then GET /account/api/admin/others/{id}/profile returns 200
+  And the full-page frame opens hosting OthersAddEdit → the shared EditAccountForm (Scope="others")
+  When they change Display name and click "Save"
+  Then PUT /account/api/admin/others/{id} returns 200
+  And the frame closes and the grid re-appears with the "The account was updated." toast
+
+  When the administrator clicks the "Details" icon on a row
+  Then the full-page frame opens hosting the read-only OthersViewDelete profile body
+      (Details-only — it renders NO Delete button; single-row delete stays the reason-gated
+       /bulk-delete dialog, not a CrudShell+SimfConfirm gate)
+  When they click "Close"
+  Then the frame closes and the grid re-appears unchanged
+```
+
 ---
 
 ## Implementation notes
@@ -436,4 +495,4 @@ Scenario: Arabic toggle mirrors the page, wizard and modals
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; D-353 presentation toggle scenarios added).

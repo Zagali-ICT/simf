@@ -1,4 +1,4 @@
-
+
 MOBILE APP · PROPOSAL DOCUMENT
 SIMF 2026
 Mobile Application — Screen Guide &amp; User Journey
@@ -90,16 +90,14 @@ WHERE IT FITS IN THE JOURNEY
 One-time screen for new installs — shown on Journeys A, B and C only on the first launch.
 SCREEN03
 تسجيل الدخول   Login
-Returning users sign in with their email and password, or use Nafath.
+Returning users sign in with their email and password.
 KEY ELEMENTS
 Email field.
 Password field.
 Primary button: دخول (Log in).
-Alternative login: الدخول عبر نفاذ (Nafath).
 Footer link to إنشاء حساب (Create account).
 NAVIGATION / LINKS
 دخول: → Home dashboard (13)
-الدخول عبر نفاذ: → Nafath flow → returns to Home (13)
 إنشاء حساب: → Sign-up step 1 (4)
 WHERE IT FITS IN THE JOURNEY
 Start of Journey B (returning attendee).

@@ -7,6 +7,8 @@ rules are in [Page_015_Logic.md](Page_015_Logic.md).
 > **Status:** **built.** `GET /app/venue-map` is D-230 (FR-605);
 > `GET /app/booths` + `/app/booths/{id}` are D-199. All three are **public,
 > read-only** reads — no schema change, no enum change, no migration on this page.
+> The **Flutter screen is built** (D-298) and binds to the camelCase field names
+> below (the booth field names were corrected from an earlier `nameEn/nameAr` draft).
 >
 > **Path-prefix note:** App routes are under **`/api/v1/app/*`** — so the routes
 > below resolve to `GET /api/v1/app/venue-map`, `/api/v1/app/booths`,
@@ -50,18 +52,20 @@ Returns the **full** active node set in one call — no paging, no viewport quer
 
 ```jsonc
 // PublicBoothSummary  (src/Shared/SIMF.Contracts/Exhibition/BoothContracts.cs)
+// FIELD NAMES corrected (D-298): the shipped DTO is Name/NameArabic/ExhibitorName/
+// Sector (NOT nameEn/nameAr) → camelCase JSON below. An earlier draft was wrong.
 {
-  "id":              "guid",
-  "code":            "string",
-  "nameEn":          "string",
-  "nameAr":          "string",
-  "exhibitorNameEn": "string?",
-  "exhibitorNameAr": "string?",
-  "sectorEn":        "string?",
-  "sectorAr":        "string?",
-  "hallId":          "guid?",   // bare Guid — NO hall name ships (D11)
-  "mapX":            0.0,        // double? — booth's own map coordinates
-  "mapY":            0.0         // double?
+  "id":                  "guid",
+  "code":                "string",
+  "name":                "string",
+  "nameArabic":          "string",
+  "exhibitorName":       "string?",
+  "exhibitorNameArabic": "string?",
+  "sector":              "string?",
+  "sectorArabic":        "string?",
+  "hallId":              "guid?",   // bare Guid — NO hall name ships (D11)
+  "mapX":                0.0,        // double? — booth's own map coordinates
+  "mapY":                0.0         // double?
 }
 ```
 > **No `logoUrl` field exists** on this DTO — a booth logo in the popup is
@@ -79,19 +83,19 @@ Returns the **full** active node set in one call — no paging, no viewport quer
 ```jsonc
 // PublicBoothDetail  (src/Shared/SIMF.Contracts/Exhibition/BoothContracts.cs)
 {
-  "id":              "guid",
-  "code":            "string",
-  "nameEn":          "string",
-  "nameAr":          "string",
-  "exhibitorNameEn": "string?",
-  "exhibitorNameAr": "string?",
-  "sectorEn":        "string?",
-  "sectorAr":        "string?",
-  "descriptionEn":   "string?",  // ← the extra field over the summary
-  "descriptionAr":   "string?",
-  "hallId":          "guid?",     // bare Guid — NO hall name (D11)
-  "mapX":            0.0,
-  "mapY":            0.0
+  "id":                  "guid",
+  "code":                "string",
+  "name":                "string",
+  "nameArabic":          "string",
+  "exhibitorName":       "string?",
+  "exhibitorNameArabic": "string?",
+  "sector":              "string?",
+  "sectorArabic":        "string?",
+  "description":         "string?",  // ← the extra field over the summary
+  "descriptionArabic":   "string?",
+  "hallId":              "guid?",     // bare Guid — NO hall name (D11)
+  "mapX":                0.0,
+  "mapY":                0.0
 }
 ```
 

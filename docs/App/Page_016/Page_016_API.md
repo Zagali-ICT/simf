@@ -4,13 +4,16 @@ Authoritative backend contract for this page. Inherits the `ApiResult<T>` envelo
 headers, error model and auth from SIMF-API-001 + SIMF-MOB-API-001 §3–§4. The
 counter/filter rules are in [Page_016_Logic.md](Page_016_Logic.md).
 
-> **Status:** **BUILT.** The list (`GET /app/programme/sessions`) shipped in D-199,
-> was **enriched in D-252** so the cached payload also carries the body + the
-> ordered speaker cards, and was **further enriched in D-271** so each speaker also
-> carries its **country (id + EN/AR name) + photo**. The detail
-> (`GET /app/programme/sessions/{id}`) is unchanged on this page. Both
-> `AllowAnonymous`. Covered by `tests/SIMF.Api.Tests/ProgrammeSessionsTests.cs`
-> (incl. `Session_speaker_carries_country_flag_and_photo`).
+> **Status:** **BUILT** (API) · **Flutter screen built (D-299).** The list
+> (`GET /app/programme/sessions`) shipped in D-199, was **enriched in D-252** so the
+> cached payload also carries the body + the ordered speaker cards, and was
+> **further enriched in D-271** so each speaker also carries its **country (id +
+> EN/AR name) + photo**. The detail (`GET /app/programme/sessions/{id}`) is
+> unchanged on this page. Both `AllowAnonymous`. Covered by
+> `tests/SIMF.Api.Tests/ProgrammeSessionsTests.cs` (incl.
+> `Session_speaker_carries_country_flag_and_photo`). The Flutter screen + the
+> tolerant int-enum decode are covered by
+> `src/Mobile/simf_app/test/features/sessions/` (D-299).
 >
 > **Rename (D-271):** the screen is renamed **الأجندة · Agenda → الجلسات ·
 > Sessions** (title + nav label + pills). The **API route is unchanged**
@@ -46,7 +49,7 @@ counter/filter rules are in [Page_016_Logic.md](Page_016_Logic.md).
   "categoryId":        "guid?",   // ← the "is main session / type" tag (SessionCategory, D-226)
   "categoryName":      "string?", //   e.g. "Main Session"
   "categoryNameArabic":"string?", //   e.g. "جلسة رئيسية"
-  "status":            "Scheduled", // broadcast lifecycle badge
+  "status":            0,           // int! SessionStatus 0=Scheduled 1=Held 2=Recorded 3=Published (wire is int — D-299)
   // --- added D-252 so the cached payload also drives the detail/preview ---
   "description":        "string?",  // body
   "descriptionArabic":  "string?",
@@ -57,7 +60,7 @@ counter/filter rules are in [Page_016_Logic.md](Page_016_Logic.md).
       "nameArabic": "string",
       "title": "string?",   // the speaker's rank/role (e.g. "Chief Scientist")
       "displayOrder": 0,
-      "role": "Speaker",    // "Speaker" | "Host"  (D-225 — the mockup's "host" marker)
+      "role": 0,            // int! SessionSpeakerRole 0=Speaker 1=Host (wire is int — D-225/D-299; the mockup's "host" marker)
       // --- added D-271 (append-only, D-219): country flag + photo on the speaker ---
       "countryId":     null,   // int? → the client renders the FLAG from this id
       "countryNameEn": null,   // string? → country label / no-flag text fallback
@@ -69,6 +72,13 @@ counter/filter rules are in [Page_016_Logic.md](Page_016_Logic.md).
 ```
 
 ### Notes
+- **Enum wire format = int (D-299).** `status` (`SessionStatus`) and the speaker
+  `role` (`SessionSpeakerRole`) serialise as **integers**, not their names — there
+  is no `JsonStringEnumConverter` anywhere in `SIMF.Api` (same as the venue-map
+  `kind`, D-298). An earlier draft of this sample showed `"status":"Scheduled"` /
+  `"role":"Speaker"`; corrected with D-299. The Flutter client decodes **tolerantly**
+  (accepts int **or** name; unknown → a safe default) so a future converter flip is
+  non-breaking.
 - **Full programme, cacheable, guest-allowed** — exactly the owner directive; the
   Upcoming/Forum pills, day strip and search are **client-side** over the cache.
 - **"is main session / type" = `category*`** (SessionCategory, D-226) — "Main

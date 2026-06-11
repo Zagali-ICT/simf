@@ -13,8 +13,11 @@ prompted to sign in.
 
 ## Elements (top → bottom, from the mockup)
 1. **Live video frame** — the live broadcast at the top (same look as screen 25).
-2. **Three live-mode tabs** — `طلب مقابلة` (27) · `تعليقات الجمهور` (live comments)
-   · **`إرسال سؤال`** (26, active). The tabs switch between the live-mode views.
+2. **Live-mode area** — in the mockup the live frame carries a live-mode tab
+   strip. In the app the live-mode functions are **separate auth-gated routes**:
+   **`إرسال سؤال`** (26, this screen) and **audience comments** (28,
+   [Page_028](../Page_028/README.md), built D-319). The `طلب مقابلة`
+   request-interview tab (27) was **removed** (D-278).
 3. **Recipient picker** — two pills: **المتحدث (Speaker)** / **المضيف (Host)** —
    chooses the question's addressee (`Recipient`).
 4. **Question text area** — the question body (`QuestionText`, 1–1000 chars).
@@ -62,6 +65,8 @@ A submission is only accepted when **all three** hold (Page_026_Logic L-2):
   Committee approval.
 
 ## Where it fits in the journey
-**Journey D — conference-day live mode.** One of the three live-mode tabs layered
-over the live session screen (25): `إرسال سؤال` (26) · `طلب مقابلة` (27) ·
-`تعليقات الجمهور` (28, now folded into the live screen — Page_026_Logic L-6).
+**Journey D — conference-day live mode.** The live-mode **question composer**,
+reached over the live session screen (25). The other live-mode functions are
+separate screens: **audience comments** (28, [Page_028](../Page_028/README.md),
+built D-319). The `طلب مقابلة` request-interview screen (27) was **removed**
+(D-278).

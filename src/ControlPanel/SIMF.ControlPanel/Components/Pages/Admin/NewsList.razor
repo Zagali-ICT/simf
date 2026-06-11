@@ -3,238 +3,180 @@
    PublishedAt / DisplayOrder; admins control the title, body, category,
    image, publish date and order here. The admin grid shows every row
    regardless of IsActive / publish window so editors can manage drafts
-   and reactivate soft-deleted items. *@
+   and reactivate soft-deleted items. Centralized dialog/full-page framing
+   D-353: Add / Edit / View / Delete are hosted by CrudShell, which frames
+   the reusable NewsAddEdit and NewsViewDelete forms as a popup or a full
+   page per the admin's toolbar choice (persisted in localStorage via
+   CpPreferences). The inline SimfModal form + native confirm() delete it
+   used to carry are gone. *@
 @page "/admin/news"
 @layout CpShellLayout
 @attribute [RequirePermission(PermissionCatalog.News.View)]
 @using SIMF.Contracts.PublicRelations
 @inject IStringLocalizer<Strings> L
 @inject IJSRuntime JS
+@inject CpPreferences Prefs
 
 <PageTitle>@L["Admin.News.Title"] · SIMF</PageTitle>
 
-<SimfBanner Title="@L["Admin.News.Title"]" />
-
-<div class="simf-page-wide">
-    <div class="simf-surface">
-        @if (_toast is not null)
-        {
-            <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
-        }
-
-        <SimfDataGrid TItem="AdminNewsSummary"
-                      Query="_query"
-                      Page="_page"
-                      Loading="_loading"
-                      OnQueryChanged="OnQueryChangedAsync"
-                      Multiselect="true"
-                      RowKey="@(r => r.Id.ToString())"
-                      RowLabel="@(r => r.Title)"
-                      Caption="@L["Admin.News.Title"]"
-                      FilterColumnLabel="@L["Grid.FilterColumn"]"
-                      OnAdd="OnAdd"
-                      OnEditOne="OnEditAsync"
-                      OnDeleteOne="OnDeleteAsync"
-                      PrevLabel="@L["Grid.Prev"]"
-                      NextLabel="@L["Grid.Next"]"
-                      FirstLabel="@L["Grid.First"]"
-                      LastLabel="@L["Grid.Last"]"
-                      PageSizeLabel="@L["Grid.PageSize"]"
-                      PageFormatter="@FormatPage"
-                      LoadingLabel="@L["Admin.News.Loading"]"
-                      FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
-                      ActionsHeader="@L["Grid.Actions"]"
-                      SelectAllLabel="@L["Grid.SelectAll"]"
-                      SelectRowLabel="@L["Grid.SelectRow"]"
-                      AddLabel="@L["Grid.Add"]"
-                      EditLabel="@L["Grid.Edit"]"
-                      DeleteLabel="@L["Grid.Delete"]"
-                      SummaryFormatter="@FormatSummary">
-            <Columns>
-                <SimfDataGridColumn TItem="AdminNewsSummary" Key="title"
-                                    Header="@L["Admin.News.Col.TitleEn"]"
-                                    Sortable="true" Filterable="true">
-                    <CellTemplate>@context.Title</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminNewsSummary" Key="titlearabic"
-                                    Header="@L["Admin.News.Col.TitleAr"]"
-                                    Filterable="true">
-                    <CellTemplate>@context.TitleArabic</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminNewsSummary" Key="category"
-                                    Header="@L["Admin.News.Col.CategoryEn"]"
-                                    Filterable="true">
-                    <CellTemplate>@context.Category</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminNewsSummary" Key="categoryarabic"
-                                    Header="@L["Admin.News.Col.CategoryAr"]"
-                                    Filterable="true">
-                    <CellTemplate>@context.CategoryArabic</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminNewsSummary" Key="publishedat"
-                                    Header="@L["Admin.News.Col.PublishedAt"]"
-                                    Sortable="true">
-                    <CellTemplate>@context.PublishedAt.ToString("yyyy-MM-dd")</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminNewsSummary" Key="displayorder"
-                                    Header="@L["Admin.News.Col.DisplayOrder"]"
-                                    Sortable="true">
-                    <CellTemplate>@context.DisplayOrder</CellTemplate>
-                </SimfDataGridColumn>
-                <SimfDataGridColumn TItem="AdminNewsSummary" Key="isactive"
-                                    Header="@L["Admin.News.Col.Active"]">
-                    <CellTemplate>
-                        @if (context.IsActive)
-                        {
-                            <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
-                        }
-                        else
-                        {
-                            <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
-                        }
-                    </CellTemplate>
-                </SimfDataGridColumn>
-            </Columns>
-            <EmptyTemplate>
-                <SimfEmptyState Title="@L["Admin.News.None"]" />
-            </EmptyTemplate>
-        </SimfDataGrid>
-    </div>
-</div>
-
-@if (_editOpen)
+@if (!GridHidden)
 {
-    <SimfModal Open="true"
-               Title="@(_isEdit ? L["Admin.News.Edit.Title"] : L["Admin.News.Add.Title"])"
-               OnClose="@(() => _editOpen = false)">
-        <ChildContent>
-            <div class="simf-form__fields">
-                <SimfTextField Label="@L["Admin.News.Field.TitleEn"]"
-                               Value="@_form.Title"
-                               ValueChanged="@(v => _form.Title = v)"
-                               ValueExpression="@(() => _form.Title)"
-                               MaxLength="200"
-                               Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.News.Field.TitleAr"]"
-                               Value="@_form.TitleArabic"
-                               ValueChanged="@(v => _form.TitleArabic = v)"
-                               ValueExpression="@(() => _form.TitleArabic)"
-                               MaxLength="200"
-                               Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.News.Field.CategoryEn"]"
-                               Value="@_form.Category"
-                               ValueChanged="@(v => _form.Category = v)"
-                               ValueExpression="@(() => _form.Category)"
-                               MaxLength="100"
-                               Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.News.Field.CategoryAr"]"
-                               Value="@_form.CategoryArabic"
-                               ValueChanged="@(v => _form.CategoryArabic = v)"
-                               ValueExpression="@(() => _form.CategoryArabic)"
-                               MaxLength="100"
-                               Disabled="_busy" />
-                <SimfTextarea Label="@L["Admin.News.Field.ExcerptEn"]"
-                              Value="@_form.Excerpt"
-                              ValueChanged="@(v => _form.Excerpt = v)"
-                              Rows="2"
-                              MaxLength="500"
-                              Disabled="_busy" />
-                <SimfTextarea Label="@L["Admin.News.Field.ExcerptAr"]"
-                              Value="@_form.ExcerptArabic"
-                              ValueChanged="@(v => _form.ExcerptArabic = v)"
-                              Rows="2"
-                              MaxLength="500"
-                              Disabled="_busy" />
-                <SimfTextarea Label="@L["Admin.News.Field.BodyEn"]"
-                              Value="@_form.Body"
-                              ValueChanged="@(v => _form.Body = v)"
-                              Rows="6"
-                              MaxLength="8000"
-                              Disabled="_busy" />
-                <SimfTextarea Label="@L["Admin.News.Field.BodyAr"]"
-                              Value="@_form.BodyArabic"
-                              ValueChanged="@(v => _form.BodyArabic = v)"
-                              Rows="6"
-                              MaxLength="8000"
-                              Disabled="_busy" />
-                <SimfTextField Label="@L["Admin.News.Field.ImageRelativePath"]"
-                               Value="@_form.ImageRelativePath"
-                               ValueChanged="@(v => _form.ImageRelativePath = v)"
-                               ValueExpression="@(() => _form.ImageRelativePath)"
-                               MaxLength="512"
-                               Disabled="_busy" />
-                <label class="simf-field">
-                    <span class="simf-field__label">@L["Admin.News.Field.PublishedAt"]</span>
-                    <input class="simf-field__input" type="date"
-                           value="@_publishedAtText"
-                           @onchange="OnPublishedAtChanged"
-                           disabled="@_busy" />
-                </label>
-                <label class="simf-field">
-                    <span class="simf-field__label">@L["Admin.News.Field.DisplayOrder"]</span>
-                    <input class="simf-field__input" type="number" min="0" max="99999"
-                           value="@_form.DisplayOrder"
-                           @onchange="OnDisplayOrderChanged"
-                           disabled="@_busy" />
-                </label>
-                @if (_isEdit)
-                {
-                    <SimfCheckbox Value="_form.IsActive"
-                                  ValueChanged="@(v => _form.IsActive = v)"
-                                  Disabled="_busy">
-                        @L["Admin.News.Field.IsActive"]
-                    </SimfCheckbox>
-                }
-            </div>
-        </ChildContent>
-        <Footer>
-            <SimfButton Type="button" Variant="secondary" Disabled="_busy" OnClick="@(() => _editOpen = false)">
-                @L["Admin.News.Cancel"]
-            </SimfButton>
-            <SimfButton Type="button" OnClick="SaveAsync" Loading="_busy">
-                @L["Admin.News.Save"]
-            </SimfButton>
-        </Footer>
-    </SimfModal>
+    <SimfBanner Title="@L["Admin.News.Title"]" />
+
+    <div class="simf-page-wide">
+        <div class="simf-surface">
+            @if (_toast is not null)
+            {
+                <SimfAlert Variant="@_toast.Variant">@_toast.Message</SimfAlert>
+            }
+
+            <SimfDataGrid TItem="AdminNewsSummary"
+                          Query="_query"
+                          Page="_page"
+                          Loading="_loading"
+                          OnQueryChanged="OnQueryChangedAsync"
+                          Multiselect="true"
+                          RowKey="@(r => r.Id.ToString())"
+                          RowLabel="@(r => r.Title)"
+                          Caption="@L["Admin.News.Title"]"
+                          FilterColumnLabel="@L["Grid.FilterColumn"]"
+                          OnAdd="OnAddAsync"
+                          OnEditOne="OnEditAsync"
+                          OnDetailsOne="OnDetailsAsync"
+                          OnDeleteOne="OnDeleteAsync"
+                          OnExport="OnExportAsync"
+                          OnImport="OnImportAsync"
+                          PrevLabel="@L["Grid.Prev"]"
+                          NextLabel="@L["Grid.Next"]"
+                          FirstLabel="@L["Grid.First"]"
+                          LastLabel="@L["Grid.Last"]"
+                          PageSizeLabel="@L["Grid.PageSize"]"
+                          PageFormatter="@FormatPage"
+                          LoadingLabel="@L["Admin.News.Loading"]"
+                          FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
+                          ActionsHeader="@L["Grid.Actions"]"
+                          SelectAllLabel="@L["Grid.SelectAll"]"
+                          SelectRowLabel="@L["Grid.SelectRow"]"
+                          AddLabel="@L["Grid.Add"]"
+                          EditLabel="@L["Grid.Edit"]"
+                          DetailsLabel="@L["Grid.Details"]"
+                          DeleteLabel="@L["Grid.Delete"]"
+                          ExportLabel="@L["Grid.Export"]"
+                          ImportLabel="@L["Grid.Import"]"
+                          SummaryFormatter="@FormatSummary">
+                <CustomToolbar>
+                    <CrudPresentationToggle PageKey="@PageKey" @bind-Value="_presentation" />
+                </CustomToolbar>
+                <Columns>
+                    <SimfDataGridColumn TItem="AdminNewsSummary" Key="title"
+                                        Header="@L["Admin.News.Col.TitleEn"]"
+                                        Sortable="true" Filterable="true">
+                        <CellTemplate>@context.Title</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminNewsSummary" Key="titlearabic"
+                                        Header="@L["Admin.News.Col.TitleAr"]"
+                                        Filterable="true">
+                        <CellTemplate>@context.TitleArabic</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminNewsSummary" Key="category"
+                                        Header="@L["Admin.News.Col.CategoryEn"]"
+                                        Filterable="true">
+                        <CellTemplate>@context.Category</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminNewsSummary" Key="categoryarabic"
+                                        Header="@L["Admin.News.Col.CategoryAr"]"
+                                        Filterable="true">
+                        <CellTemplate>@context.CategoryArabic</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminNewsSummary" Key="publishedat"
+                                        Header="@L["Admin.News.Col.PublishedAt"]"
+                                        Sortable="true">
+                        <CellTemplate>@context.PublishedAt.ToString("yyyy-MM-dd")</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminNewsSummary" Key="displayorder"
+                                        Header="@L["Admin.News.Col.DisplayOrder"]"
+                                        Sortable="true">
+                        <CellTemplate>@context.DisplayOrder</CellTemplate>
+                    </SimfDataGridColumn>
+                    <SimfDataGridColumn TItem="AdminNewsSummary" Key="isactive"
+                                        Header="@L["Admin.News.Col.Active"]">
+                        <CellTemplate>
+                            @if (context.IsActive)
+                            {
+                                <SimfPill Variant="on">@L["Grid.Active"]</SimfPill>
+                            }
+                            else
+                            {
+                                <SimfPill Variant="off">@L["Grid.Inactive"]</SimfPill>
+                            }
+                        </CellTemplate>
+                    </SimfDataGridColumn>
+                </Columns>
+                <EmptyTemplate>
+                    <SimfEmptyState Title="@L["Admin.News.None"]" />
+                </EmptyTemplate>
+            </SimfDataGrid>
+
+            <CrudGridExcel @ref="_excel" Resource="news"
+                           OnImported="OnImportedAsync" OnError="OnExcelError" />
+        </div>
+    </div>
+}
+
+@if (FormOpen)
+{
+    <CrudShell Open="true" Presentation="_presentation"
+               Title="@FormTitle" CloseLabel="@L["Admin.News.Details.Close"]"
+               OnClose="CloseForm">
+        @if (_form == FormKind.AddEdit)
+        {
+            <NewsAddEdit IsEdit="_isEdit" Initial="_target"
+                         OnSuccess="OnSavedAsync" OnCancel="CloseForm" />
+        }
+        else if (_form == FormKind.ViewDelete)
+        {
+            <NewsViewDelete IsDelete="_isDelete" Initial="_target"
+                            OnDeleted="OnDeletedAsync" OnCancel="CloseForm" />
+        }
+    </CrudShell>
 }
 
 @code {
     private record Toast(string Variant, string Message);
 
-    private sealed class FormModel
-    {
-        public string Title { get; set; } = string.Empty;
-        public string TitleArabic { get; set; } = string.Empty;
-        public string Excerpt { get; set; } = string.Empty;
-        public string ExcerptArabic { get; set; } = string.Empty;
-        public string Body { get; set; } = string.Empty;
-        public string BodyArabic { get; set; } = string.Empty;
-        public string Category { get; set; } = string.Empty;
-        public string CategoryArabic { get; set; } = string.Empty;
-        public string ImageRelativePath { get; set; } = string.Empty;
-        public DateTimeOffset PublishedAt { get; set; } = DateTimeOffset.UtcNow;
-        public int DisplayOrder { get; set; }
-        public bool IsActive { get; set; } = true;
-    }
+    private enum FormKind { None, AddEdit, ViewDelete }
+
+    private const string PageKey = "news";
 
     private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminNewsSummary> _page = new();
     private bool _loading;
-    private bool _busy;
     private Toast? _toast;
 
-    private bool _editOpen;
+    private CrudPresentation _presentation = CrudPresentation.Dialog;
+    private FormKind _form = FormKind.None;
     private bool _isEdit;
-    private Guid _editingId;
-    private FormModel _form = new();
+    private bool _isDelete;
+    private AdminNewsDetail? _target;
+    private CrudGridExcel? _excel;
 
-    // The <input type="date"> value mirror — kept as the yyyy-MM-dd text the
-    // browser exchanges so the field round-trips cleanly against the
-    // DateTimeOffset on the form model.
-    private string _publishedAtText = string.Empty;
+    private bool FormOpen => _form != FormKind.None;
+    private bool GridHidden => FormOpen && _presentation == CrudPresentation.Page;
+
+    private string FormTitle => _form switch
+    {
+        FormKind.AddEdit => _isEdit
+            ? L["Admin.News.Edit.Title"]
+            : L["Admin.News.Add.Title"],
+        FormKind.ViewDelete => _isDelete
+            ? L["Admin.News.Delete.Title"]
+            : L["Admin.News.Details.Title"],
+        _ => string.Empty,
+    };
 
     protected override async Task OnInitializedAsync()
     {
+        _presentation = await Prefs.GetPresentationAsync(PageKey);
         await LoadAsync();
     }
 
@@ -245,7 +187,7 @@
     }
 
     private string FormatSummary(int skip, int taken, int total) =>
-        string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);
+        string.Format(L["Admin.News.Summary"], skip + 1, skip + taken, total);
 
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
@@ -272,190 +214,91 @@
         finally { _loading = false; }
     }
 
-    private void OnAdd()
+    private Task OnAddAsync()
     {
-        _editOpen = true;
-        _isEdit = false;
-        _editingId = Guid.Empty;
-        _form = new FormModel();
-        _publishedAtText = _form.PublishedAt.ToString("yyyy-MM-dd");
         _toast = null;
+        _form = FormKind.AddEdit;
+        _isEdit = false;
+        _target = null;
+        return Task.CompletedTask;
     }
 
     private async Task OnEditAsync(AdminNewsSummary row)
     {
-        if (_busy) return;
-        _busy = true;
-        _toast = null;
-        try
-        {
-            // The grid summary omits the body / excerpt / image, so load the
-            // full detail before opening the edit modal (mirrors the
-            // InvitationsList detail fetch).
-            var env = await JS.InvokeAsync<ApiResult<AdminNewsDetail>>(
-                "simfAccount.getJson",
-                $"/account/api/admin/news/{row.Id}");
-            if (env is { Success: true, Data: not null })
-            {
-                var d = env.Data;
-                _editingId = d.Id;
-                _form = new FormModel
-                {
-                    Title = d.Title,
-                    TitleArabic = d.TitleArabic,
-                    Excerpt = d.Excerpt ?? string.Empty,
-                    ExcerptArabic = d.ExcerptArabic ?? string.Empty,
-                    Body = d.Body,
-                    BodyArabic = d.BodyArabic,
-                    Category = d.Category,
-                    CategoryArabic = d.CategoryArabic,
-                    ImageRelativePath = d.ImageRelativePath ?? string.Empty,
-                    PublishedAt = d.PublishedAt,
-                    DisplayOrder = d.DisplayOrder,
-                    IsActive = d.IsActive,
-                };
-                _publishedAtText = d.PublishedAt.ToString("yyyy-MM-dd");
-                _isEdit = true;
-                _editOpen = true;
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.News.LoadFailed"]);
-            }
-        }
-        finally { _busy = false; }
+        var detail = await LoadDetailAsync(row.Id);
+        if (detail is null) return;
+        _form = FormKind.AddEdit;
+        _isEdit = true;
+        _target = detail;
     }
 
-    private async Task SaveAsync()
+    private async Task OnDetailsAsync(AdminNewsSummary row)
     {
-        if (_busy) return;
-
-        // Required-field client guards (the server validator is authoritative;
-        // these stop a no-op round-trip and give an immediate message).
-        if (string.IsNullOrWhiteSpace(_form.Title)
-            || string.IsNullOrWhiteSpace(_form.TitleArabic)
-            || string.IsNullOrWhiteSpace(_form.Body)
-            || string.IsNullOrWhiteSpace(_form.BodyArabic)
-            || string.IsNullOrWhiteSpace(_form.Category)
-            || string.IsNullOrWhiteSpace(_form.CategoryArabic))
-        {
-            _toast = new Toast("error", L["Admin.News.RequiredFields"]);
-            return;
-        }
-
-        _busy = true;
-        _toast = null;
-        try
-        {
-            ApiResult<AdminNewsDetail>? env;
-            if (_isEdit)
-            {
-                env = await JS.InvokeAsync<ApiResult<AdminNewsDetail>>(
-                    "simfAccount.putJson",
-                    $"/account/api/admin/news/{_editingId}",
-                    new UpdateNewsRequest
-                    {
-                        Title = _form.Title,
-                        TitleArabic = _form.TitleArabic,
-                        Excerpt = NullIfBlank(_form.Excerpt),
-                        ExcerptArabic = NullIfBlank(_form.ExcerptArabic),
-                        Body = _form.Body,
-                        BodyArabic = _form.BodyArabic,
-                        Category = _form.Category,
-                        CategoryArabic = _form.CategoryArabic,
-                        ImageRelativePath = NullIfBlank(_form.ImageRelativePath),
-                        PublishedAt = _form.PublishedAt,
-                        DisplayOrder = _form.DisplayOrder,
-                        IsActive = _form.IsActive,
-                    });
-            }
-            else
-            {
-                env = await JS.InvokeAsync<ApiResult<AdminNewsDetail>>(
-                    "simfAccount.postJson",
-                    "/account/api/admin/news",
-                    new CreateNewsRequest
-                    {
-                        Title = _form.Title,
-                        TitleArabic = _form.TitleArabic,
-                        Excerpt = NullIfBlank(_form.Excerpt),
-                        ExcerptArabic = NullIfBlank(_form.ExcerptArabic),
-                        Body = _form.Body,
-                        BodyArabic = _form.BodyArabic,
-                        Category = _form.Category,
-                        CategoryArabic = _form.CategoryArabic,
-                        ImageRelativePath = NullIfBlank(_form.ImageRelativePath),
-                        PublishedAt = _form.PublishedAt,
-                        DisplayOrder = _form.DisplayOrder,
-                    });
-            }
-            if (env is { Success: true })
-            {
-                _editOpen = false;
-                _toast = new Toast("success", L["Admin.News.Saved"]);
-                await LoadAsync();
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.News.LoadFailed"]);
-            }
-        }
-        finally { _busy = false; }
+        var detail = await LoadDetailAsync(row.Id);
+        if (detail is null) return;
+        _form = FormKind.ViewDelete;
+        _isDelete = false;
+        _target = detail;
     }
 
     private async Task OnDeleteAsync(AdminNewsSummary row)
     {
-        if (_busy) return;
-        // Confirm destructive actions: a stray click soft-deletes the article
-        // and pulls it from the public feed immediately, with no undo button
-        // (recovery is a manual reactivate via Edit).
-        var confirmed = await JS.InvokeAsync<bool>(
-            "confirm", L["Admin.News.Delete.Confirm"].Value);
-        if (!confirmed) return;
-        _busy = true;
-        try
-        {
-            var env = await JS.InvokeAsync<ApiResult<bool>>(
-                "simfAccount.deleteJson",
-                $"/account/api/admin/news/{row.Id}");
-            if (env is { Success: true })
-            {
-                _toast = new Toast("success", L["Admin.News.Deleted"]);
-                await LoadAsync();
-            }
-            else
-            {
-                _toast = new Toast("error",
-                    env?.Error?.MessageForCurrentCulture()
-                    ?? L["Admin.News.LoadFailed"]);
-            }
-        }
-        finally { _busy = false; }
+        var detail = await LoadDetailAsync(row.Id);
+        if (detail is null) return;
+        _form = FormKind.ViewDelete;
+        _isDelete = true;
+        _target = detail;
     }
 
-    private void OnPublishedAtChanged(ChangeEventArgs e)
+    // Edit / View / Delete all work against the full detail (the grid summary
+    // omits the body / excerpt / image). Returns null and surfaces a toast on
+    // failure.
+    private async Task<AdminNewsDetail?> LoadDetailAsync(Guid id)
     {
-        var raw = e.Value?.ToString();
-        if (string.IsNullOrWhiteSpace(raw)
-            || !DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture,
-                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
-                out var parsed))
+        _toast = null;
+        var env = await JS.InvokeAsync<ApiResult<AdminNewsDetail>>(
+            "simfAccount.getJson", $"/account/api/admin/news/{id}");
+        if (env is { Success: true, Data: not null })
         {
-            return;
+            return env.Data;
         }
-        _form.PublishedAt = parsed;
-        _publishedAtText = parsed.ToString("yyyy-MM-dd");
+        _toast = new Toast("error",
+            env?.Error?.MessageForCurrentCulture()
+            ?? L["Admin.News.LoadFailed"]);
+        return null;
     }
 
-    private void OnDisplayOrderChanged(ChangeEventArgs e)
+    private void CloseForm()
     {
-        if (int.TryParse(e.Value?.ToString(), out var n)) _form.DisplayOrder = n;
+        _form = FormKind.None;
+        _target = null;
     }
 
-    private static string? NullIfBlank(string value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value;
+    // D-356 — Excel export/import wired to the reusable CrudGridExcel component.
+    private Task OnExportAsync(IReadOnlyList<AdminNewsSummary> selected) =>
+        _excel!.ExportAsync(selected.Select(row => row.Id).ToList(), _query);
+
+    private Task OnImportAsync() => _excel!.TriggerImportAsync();
+
+    private async Task OnImportedAsync()
+    {
+        _toast = new Toast("success", L["Grid.Import.Done"]);
+        await LoadAsync();
+    }
+
+    private void OnExcelError(string message) => _toast = new Toast("error", message);
+
+    private async Task OnSavedAsync(AdminNewsDetail saved)
+    {
+        CloseForm();
+        _toast = new Toast("success", L["Admin.News.Saved"]);
+        await LoadAsync();
+    }
+
+    private async Task OnDeletedAsync(AdminNewsDetail deleted)
+    {
+        CloseForm();
+        _toast = new Toast("success", L["Admin.News.Deleted"]);
+        await LoadAsync();
+    }
 }

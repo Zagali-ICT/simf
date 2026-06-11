@@ -1,0 +1,216 @@
+@* D-353 — reusable Sponsor Add/Edit form, hosted by CrudShell (popup or full
+   page) from SponsorsList. Inherits CrudAddEditFormBase so it exposes the
+   standard CRUD-form surface (IsEdit / Initial / OnSuccess / OnCancel). IsEdit
+   =false runs Create (POST); IsEdit=true runs Edit (PUT against Initial) and
+   shows the IsActive checkbox. Preserves the tier dropdown, the optional
+   shared-Contact link (SIMF-FDS-014 / D-283) and the same create/update request
+   DTOs + JS calls the inline SimfModal form used. *@
+@inherits CrudAddEditFormBase<AdminSponsorDetail>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        <SimfTextField Label="@L["Admin.Sponsors.Field.NameEn"]"
+                       Value="@_model.NameEn"
+                       ValueChanged="@(v => _model.NameEn = v)"
+                       ValueExpression="@(() => _model.NameEn)"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Sponsors.Field.NameAr"]"
+                       Value="@_model.NameAr"
+                       ValueChanged="@(v => _model.NameAr = v)"
+                       ValueExpression="@(() => _model.NameAr)"
+                       Disabled="_busy" />
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.Sponsors.Field.Tier"]</span>
+            <select class="simf-field__input"
+                    value="@_model.Tier.ToString()"
+                    @onchange="OnTierChanged"
+                    disabled="@_busy">
+                @foreach (var tier in _tiers)
+                {
+                    <option value="@tier.Value">@tier.Name</option>
+                }
+            </select>
+        </label>
+        <SimfTextField Label="@L["Admin.Sponsors.Field.Url"]"
+                       Value="@_model.Url"
+                       ValueChanged="@(v => _model.Url = v)"
+                       ValueExpression="@(() => _model.Url)"
+                       Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.Sponsors.Field.Logo"]"
+                       Value="@_model.LogoRelativePath"
+                       ValueChanged="@(v => _model.LogoRelativePath = v)"
+                       ValueExpression="@(() => _model.LogoRelativePath)"
+                       Disabled="_busy" />
+        @* SIMF-FDS-014 (D-283) — optional link to a shared Contact directory record. *@
+        <ContactPicker Value="_model.ContactId"
+                       ValueChanged="@(v => _model.ContactId = v)" Disabled="_busy" />
+        <label class="simf-field">
+            <span class="simf-field__label">@L["Admin.Sponsors.Field.DisplayOrder"]</span>
+            <input class="simf-field__input" type="number" min="0" max="99999"
+                   value="@_model.DisplayOrder"
+                   @onchange="OnDisplayOrderChanged"
+                   disabled="@_busy" />
+        </label>
+        @if (IsEdit)
+        {
+            <SimfCheckbox Value="_model.IsActive"
+                          ValueChanged="@(v => _model.IsActive = v)"
+                          Disabled="_busy">
+                @L["Admin.Sponsors.Field.IsActive"]
+            </SimfCheckbox>
+        }
+        @* D-357 — logo via the unified media-asset pipeline (edit only; the row
+           must exist before bytes can be attached). *@
+        @if (IsEdit && Initial is not null)
+        {
+            <div class="simf-field">
+                <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
+                <SimfImageUpload Category="SponsorLogo" OwnerId="@Initial.Id" Alt="@_model.NameEn" />
+            </div>
+        }
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy"
+                    LoadingLabel="@(IsEdit ? L["Admin.Sponsors.Edit.Submitting"] : L["Admin.Sponsors.New.Submitting"])">
+            @(IsEdit ? L["Admin.Sponsors.Edit.Submit"] : L["Admin.Sponsors.New.Submit"])
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy" OnClick="OnCancel">
+                @L["Admin.Sponsors.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    // SponsorTier lives in SIMF.Domain (not referenced by the CP project), so
+    // mirror its frozen value/name pairs here for the form dropdown. Keep
+    // aligned with SIMF.Domain.Sponsors.SponsorTier.
+    private sealed record TierOption(int Value, string Name);
+
+    private static readonly IReadOnlyList<TierOption> _tiers =
+    [
+        new(10, "Platinum"),
+        new(20, "Gold"),
+        new(30, "Silver"),
+        new(40, "Bronze"),
+    ];
+
+    private readonly Model _model = new();
+    private EditContext _editContext = default!;
+    private bool _busy;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        if (Initial is not null)
+        {
+            _model.NameEn = Initial.NameEn;
+            _model.NameAr = Initial.NameAr;
+            _model.Tier = Initial.Tier;
+            _model.LogoRelativePath = Initial.LogoRelativePath ?? string.Empty;
+            _model.Url = Initial.Url ?? string.Empty;
+            _model.DisplayOrder = Initial.DisplayOrder;
+            _model.ContactId = Initial.ContactId;
+            _model.IsActive = Initial.IsActive;
+        }
+        _editContext = new EditContext(_model);
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_model.NameEn) || string.IsNullOrWhiteSpace(_model.NameAr))
+        {
+            _error = L["Admin.Sponsors.NameRequired"]; return;
+        }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminSponsorDetail>? envelope;
+            if (!IsEdit)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminSponsorDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/sponsors",
+                    new AdminCreateSponsorRequest
+                    {
+                        NameEn = _model.NameEn.Trim(),
+                        NameAr = _model.NameAr.Trim(),
+                        Tier = _model.Tier,
+                        LogoRelativePath = NullIfBlank(_model.LogoRelativePath),
+                        Url = NullIfBlank(_model.Url),
+                        DisplayOrder = _model.DisplayOrder,
+                        ContactId = _model.ContactId,
+                    });
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminSponsorDetail>>(
+                    "simfAccount.putJson", $"/account/api/admin/sponsors/{Initial!.Id}",
+                    new AdminUpdateSponsorRequest
+                    {
+                        NameEn = _model.NameEn.Trim(),
+                        NameAr = _model.NameAr.Trim(),
+                        Tier = _model.Tier,
+                        LogoRelativePath = NullIfBlank(_model.LogoRelativePath),
+                        Url = NullIfBlank(_model.Url),
+                        DisplayOrder = _model.DisplayOrder,
+                        ContactId = _model.ContactId,
+                        IsActive = _model.IsActive,
+                    });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Sponsors.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.Sponsors.Fallback"];
+        }
+        finally { _busy = false; }
+    }
+
+    private void OnTierChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _model.Tier = n;
+    }
+
+    private void OnDisplayOrderChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var n)) _model.DisplayOrder = n;
+    }
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private sealed class Model
+    {
+        public string NameEn { get; set; } = string.Empty;
+        public string NameAr { get; set; } = string.Empty;
+        public int Tier { get; set; } = 10;
+        public string LogoRelativePath { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;
+        public int DisplayOrder { get; set; }
+        public Guid? ContactId { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+}

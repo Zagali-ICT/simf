@@ -40,6 +40,14 @@ define the visual design — colours, typography, illustration, motion — which
 the external UI/UX designer's deliverable (section 12). It does not define the
 backend; that is SIMF-SAD-001 and SIMF-API-001.
 
+**Web is a developer-diagnostics target only**, not a shipped platform: the app
+can be built and run on web (`flutter run -d chrome`) for local API/UX testing —
+the storage and HTTP layers are platform-conditional so they compile and run in
+a browser (D-328) — but **Android and iOS remain the only product targets**. On
+web `flutter_secure_storage` is **not encrypted** (browser storage) and live API
+calls need a Development-only CORS allowance on the API, so a web run must use
+non-production credentials only.
+
 The functional scope of the app is the 41 screens in the agreed mockup
 (`Mockup.html`), as recorded in SIMF-CON-001. This document is about how those
 screens are built, not what each one does.

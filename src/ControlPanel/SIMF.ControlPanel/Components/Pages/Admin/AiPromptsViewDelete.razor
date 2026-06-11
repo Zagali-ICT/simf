@@ -1,0 +1,106 @@
+@* D-353 — reusable AI-prompt View/Delete form, hosted by CrudShell (as a popup
+   or a full page) from AiPromptsList.razor. Inherits CrudViewDeleteFormBase so
+   it exposes the standard parameter surface (IsDelete / Initial / OnDeleted /
+   OnCancel). Read-only details always show; when IsDelete=true a Deactivate
+   button appears and a SimfConfirm gates the destructive call (replaces the
+   old one-click delete action on the list). Adds the View path the inline
+   form never had. *@
+@inherits CrudViewDeleteFormBase<AdminAiPromptDetail>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.AiPrompts.Col.Key"]</dt>
+        <dd><code>@Initial.Key</code></dd>
+        <dt>@L["Admin.AiPrompts.Col.Feature"]</dt>
+        <dd>@Initial.Feature</dd>
+        <dt>@L["Admin.AiPrompts.Col.DisplayName"]</dt>
+        <dd>@Initial.DisplayName</dd>
+        <dt>@L["Admin.AiPrompts.Field.DisplayNameArabic"]</dt>
+        <dd>@Initial.DisplayNameArabic</dd>
+        <dt>@L["Admin.AiPrompts.Col.Provider"]</dt>
+        <dd>@Initial.Provider</dd>
+        <dt>@L["Admin.AiPrompts.Col.Model"]</dt>
+        <dd>@Initial.Model</dd>
+        <dt>@L["Admin.AiPrompts.Field.SystemPrompt"]</dt>
+        <dd><pre class="simf-pre--wrap">@Initial.SystemPrompt</pre></dd>
+        <dt>@L["Admin.AiPrompts.Field.UserPromptTemplate"]</dt>
+        <dd><pre class="simf-pre--wrap">@Initial.UserPromptTemplate</pre></dd>
+        <dt>@L["Admin.AiPrompts.Field.Temperature"]</dt>
+        <dd>@Initial.Temperature.ToString(CultureInfo.InvariantCulture)</dd>
+        <dt>@L["Admin.AiPrompts.Field.MaxOutputTokens"]</dt>
+        <dd>@Initial.MaxOutputTokens</dd>
+        <dt>@L["Admin.AiPrompts.Col.Version"]</dt>
+        <dd>v@(Initial.Version)</dd>
+        <dt>@L["Admin.AiPrompts.Col.Active"]</dt>
+        <dd>@(Initial.IsActive ? L["Admin.AiPrompts.Active.Yes"] : L["Admin.AiPrompts.Active.No"])</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.AiPrompts.Delete"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.AiPrompts.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.AiPrompts.Delete.Title"]"
+                 Message="@string.Format(L["Admin.AiPrompts.Delete.Message"], Initial.Key)"
+                 ConfirmLabel="@L["Admin.AiPrompts.Delete"]"
+                 CancelLabel="@L["Admin.AiPrompts.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/ai/prompts/{Initial.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                // Close the confirm first so the error lands on the visible
+                // form body, not behind the (still-open) confirm overlay.
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.AiPrompts.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.AiPrompts.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+}

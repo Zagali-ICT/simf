@@ -7,6 +7,7 @@ using SIMF.Contracts.Admin;
 using SIMF.Contracts.Ai;
 using SIMF.Contracts.Archive;
 using SIMF.Contracts.Authentication;
+using SIMF.Contracts.BusinessMeetings;
 using SIMF.Contracts.Exhibitors;
 using SIMF.Contracts.Exhibition;
 using SIMF.Contracts.Faq;
@@ -357,6 +358,15 @@ internal static class AccountEndpoints
             return Forward(await api.GetProfileCountriesAsync(token));
         });
 
+        // B3 — D-221 — organisations picker for the walk-in form's الجهة field.
+        group.MapGet("/admin/walk-in/organisations",
+            async (string? search, int? top, HttpContext http, SimfAccountClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.SearchOrganisationsAsync(search, top ?? 20, token));
+        });
+
         // D-127 — active interests picker for the visitor walk-in form.
         group.MapGet("/interests",
             async (HttpContext http, SimfAccountClient api) =>
@@ -521,6 +531,47 @@ internal static class AccountEndpoints
             return Forward(await api.ImportUsersAsync(
                 stream.ToArray(), file.FileName, token));
         }).DisableAntiforgery();
+
+        // D-356 — generic grid Excel proxies. One line per resource registers
+        // both /admin/{slug}/export (binary) and /admin/{slug}/import (multipart),
+        // forwarding to the API's generic grid endpoints. Interests is the pilot.
+        MapGridExcel(group, "interests");
+        MapGridExcel(group, "countries");
+        MapGridExcel(group, "themes");
+        MapGridExcel(group, "halls");
+        MapGridExcel(group, "gates");
+        MapGridExcel(group, "session-categories");
+        MapGridExcel(group, "roles");
+        MapGridExcel(group, "banners"); 
+        MapGridExcel(group, "content-blocks"); 
+        MapGridExcel(group, "media-partners"); 
+        MapGridExcel(group, "archive"); 
+        MapGridExcel(group, "media"); 
+        MapGridExcel(group, "system-settings"); 
+        MapGridExcel(group, "contacts"); 
+        MapGridExcel(group, "news"); 
+        MapGridExcel(group, "ai/prompts");
+        MapGridExcel(group, "sponsors");
+        MapGridExcel(group, "exhibitors");
+        MapGridExcel(group, "speakers");
+        MapGridExcel(group, "booths");
+        MapGridExcel(group, "venue-map");
+        MapGridExport(group, "invitations");
+        MapGridExport(group, "comments-moderation");
+        MapGridExport(group, "ratings");
+        MapGridExport(group, "speaker-presentations");
+        MapGridExport(group, "vips");
+        MapGridExport(group, "bookings");
+        MapGridExport(group, "session-summaries");
+        MapGridExport(group, "speaker-meeting-requests");
+        MapGridExport(group, "meeting-tables");
+        MapGridExcel(group, "sessions");
+        MapGridExport(group, "session-moderators");
+        MapGridExport(group, "questions");
+        MapGridExport(group, "business-meetings");
+        // Organisations keeps its bespoke government-Excel bulk import, so it
+        // gets the generic EXPORT only (no generic /import route).
+        MapGridExport(group, "organisations");
 
         // D-118 — D-113 type-scoped bulk proxies for Visitors and Others.
         // The visitors/others CP list pages (D-114) call these JS endpoints
@@ -1001,6 +1052,121 @@ internal static class AccountEndpoints
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
             return Forward(await api.DeactivateHallAsync(id, token));
+        });
+
+        // SIMF-FDS-013 (D-248) — meeting tables + hall allocations + business
+        // meetings BFF passthroughs (mirrors the Halls block above). Without
+        // these the /admin/meeting-tables + /admin/business-meetings pages 400
+        // on every data call (the backend endpoints exist; only these proxies
+        // were missing).
+        group.MapPut("/admin/halls/{hallId:guid}/purpose",
+            async (Guid hallId, SetHallPurposeRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.SetHallPurposeAsync(hallId, body, token));
+        });
+
+        group.MapPost("/admin/halls/{hallId:guid}/meeting-tables/list",
+            async (Guid hallId, GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListMeetingTablesAsync(hallId, body, token));
+        });
+
+        group.MapPost("/admin/halls/{hallId:guid}/meeting-tables",
+            async (Guid hallId, CreateMeetingTableRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateMeetingTableAsync(hallId, body, token));
+        });
+
+        group.MapPut("/admin/meeting-tables/{id:guid}",
+            async (Guid id, UpdateMeetingTableRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.UpdateMeetingTableAsync(id, body, token));
+        });
+
+        group.MapDelete("/admin/meeting-tables/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeleteMeetingTableAsync(id, token));
+        });
+
+        group.MapPost("/admin/halls/{hallId:guid}/meeting-tables/generate",
+            async (Guid hallId, GenerateMeetingTablesRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GenerateMeetingTablesAsync(hallId, body, token));
+        });
+
+        group.MapPost("/admin/halls/{hallId:guid}/hall-allocations/list",
+            async (Guid hallId, GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListHallAllocationsAsync(hallId, body, token));
+        });
+
+        group.MapPost("/admin/halls/{hallId:guid}/hall-allocations",
+            async (Guid hallId, CreateHallAllocationRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CreateHallAllocationAsync(hallId, body, token));
+        });
+
+        group.MapDelete("/admin/hall-allocations/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ReleaseHallAllocationAsync(id, token));
+        });
+
+        group.MapPost("/admin/business-meetings/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListBusinessMeetingsAsync(body, token));
+        });
+
+        group.MapGet("/admin/business-meetings/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetBusinessMeetingAsync(id, token));
+        });
+
+        group.MapPost("/admin/business-meetings",
+            async (ScheduleMeetingRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ScheduleBusinessMeetingAsync(body, token));
+        });
+
+        group.MapPost("/admin/business-meetings/{id:guid}/cancel",
+            async (Guid id, CancelMeetingRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.CancelBusinessMeetingAsync(id, body, token));
         });
 
         // D-151 — Country admin lookup BFF passthroughs.
@@ -1901,6 +2067,82 @@ internal static class AccountEndpoints
             return Forward(await api.DeleteMediaAsync(id, token));
         });
 
+        // D-357 — unified media-asset pipeline BFF passthroughs: per-entity upload /
+        // link / preview-fetch + the central Media Library list / get / deactivate /
+        // restore. Reused by every entity form's SimfImageUpload + the Media Library page.
+        group.MapPost("/admin/assets/{category}/{ownerId:guid}/image",
+            async (string category, Guid ownerId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.ValidationFailed,
+                    Message = "A file is required.",
+                    MessageArabic = "الملف مطلوب.",
+                }));
+            }
+            var kind = http.Request.Query["kind"].ToString();
+            if (string.IsNullOrWhiteSpace(kind)) { kind = form["kind"].ToString(); }
+            if (string.IsNullOrWhiteSpace(kind)) { kind = "Image"; }
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return Forward(await api.UploadAssetImageAsync(
+                category, ownerId, kind, stream.ToArray(), file.ContentType, file.FileName, token));
+        }).DisableAntiforgery();
+
+        group.MapPut("/admin/assets/{category}/{ownerId:guid}/link",
+            async (string category, Guid ownerId, SIMF.Contracts.Assets.SetAssetLinkRequest body,
+                   HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.SetAssetLinkAsync(category, ownerId, body, token));
+        });
+
+        group.MapGet("/admin/assets/{category}/{ownerId:guid}/image",
+            async (string category, Guid ownerId, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, contentType, bytes) = await api.FetchAssetImageAsync(category, ownerId, token);
+            if (status != 200 || bytes.Length == 0) { return Results.StatusCode(status); }
+            return Results.File(bytes, contentType ?? "application/octet-stream");
+        });
+
+        group.MapPost("/admin/assets/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListAssetsAsync(body, token));
+        });
+        group.MapGet("/admin/assets/item/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetAssetAsync(id, token));
+        });
+        group.MapDelete("/admin/assets/item/{id:guid}",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.DeactivateAssetAsync(id, token));
+        });
+        group.MapPost("/admin/assets/item/{id:guid}/restore",
+            async (Guid id, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.RestoreAssetAsync(id, token));
+        });
+
         // P2.3 (D-228) — speaker presentation files (list / upload / download / delete).
         group.MapGet("/admin/speakers/{speakerId:guid}/presentations",
             async (Guid speakerId, HttpContext http, SimfAdminClient api) =>
@@ -2437,6 +2679,22 @@ internal static class AccountEndpoints
             return Forward(await api.GetStatisticsAsync(token));
         });
 
+        // FR-506 — session-attendance dashboard BFF passthroughs.
+        group.MapGet("/admin/attendance/summary",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.GetSessionAttendanceSummaryAsync(token));
+        });
+        group.MapPost("/admin/attendance/sessions/list",
+            async (GridQuery body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            return Forward(await api.ListSessionAttendanceAsync(body, token));
+        });
+
         // D-202 Track-2 — Exhibitor admin CRUD + account-provisioning BFF passthroughs.
         group.MapPost("/admin/exhibitors/list",
             async (GridQuery body, HttpContext http, SimfAdminClient api) =>
@@ -2497,4 +2755,60 @@ internal static class AccountEndpoints
     /// </summary>
     private static IResult Forward<T>(ApiCallResult<T> result) =>
         Results.Json(result.Body, statusCode: result.StatusCode);
+
+    /// <summary>
+    /// D-356 — registers the generic grid Excel EXPORT proxy for one resource:
+    /// <c>POST /admin/{slug}/export</c> returns the XLSX bytes for the browser to
+    /// save, forwarding to the API with the cookie's access token (the browser
+    /// never sees it). Used standalone for a resource that has a bespoke import
+    /// (e.g. Organisations) and as half of <see cref="MapGridExcel"/>.
+    /// </summary>
+    private static void MapGridExport(IEndpointRouteBuilder group, string slug)
+    {
+        group.MapPost($"/admin/{slug}/export",
+            async (AdminGridExportRequest body, HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var (status, bytes) = await api.ExportGridAsync(slug, body, token);
+            if (status != 200 || bytes.Length == 0)
+            {
+                return Results.StatusCode(status);
+            }
+            return Results.File(bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"simf-{slug}-{DateTimeOffset.UtcNow:yyyyMMddHHmmss}.xlsx");
+        });
+    }
+
+    /// <summary>
+    /// D-356 — registers the generic grid Excel proxy PAIR for one resource:
+    /// <see cref="MapGridExport"/> + <c>POST /admin/{slug}/import</c> (multipart
+    /// upload, forwards the per-row result).
+    /// </summary>
+    private static void MapGridExcel(IEndpointRouteBuilder group, string slug)
+    {
+        MapGridExport(group, slug);
+
+        group.MapPost($"/admin/{slug}/import",
+            async (HttpContext http, SimfAdminClient api) =>
+        {
+            var token = await http.GetTokenAsync("access_token");
+            if (token is null) return Results.Unauthorized();
+            var form = await http.Request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0)
+            {
+                return Results.BadRequest(ApiResult<object>.Fail(new ApiError
+                {
+                    Code = ErrorCodes.AdminImportEmpty,
+                    Message = "An Excel file is required.",
+                    MessageArabic = "ملف Excel مطلوب.",
+                }));
+            }
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            return Forward(await api.ImportGridAsync(slug, stream.ToArray(), file.FileName, token));
+        }).DisableAntiforgery();
+    }
 }

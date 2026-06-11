@@ -631,7 +631,13 @@ behind both. They are kept in step: an endpoint change updates the document for
 its surface.
 
 In non-production environments the Swagger UI exposes both documents for
-developers and testers. In production it is disabled.
+developers and testers. In production it is **disabled by default**: it is
+served only when `Swagger:AllowSwagger` is explicitly enabled, and then only
+behind an HTTP Basic-auth gate (`Swagger:Username` / `Swagger:Password`), because
+the API is publicly reachable through the reverse proxy (SAD-001 §10.1) and the
+App + CP contract must not be anonymously enumerable. The API refuses to start
+if it is enabled in production without those credentials (D-355). The
+"Authorize" (JWT bearer) button is enabled on both documents.
 
 ## 14. Conventions for future endpoints
 

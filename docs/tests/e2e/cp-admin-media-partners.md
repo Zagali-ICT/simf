@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page facts grounded in source** (`Components/Pages/Admin/MediaPartnersList.razor`,
 > `Endpoints/PublicRelations/MediaPartnerEndpoints.cs`,
@@ -33,14 +33,25 @@
 >   **Active** checkbox (`SimfCheckbox`). The Active checkbox is shown for both
 >   Add and Edit, but Create always persists `IsActive = true` server-side
 >   regardless (the create request carries no IsActive); Edit honours it.
-> - **No Details modal** on this page (unlike Interests) — view = grid row only.
+> - **Add / Edit / View / Delete** are now hosted by `CrudShell` (D-353) — popup or
+>   full page per the toolbar `CrudPresentationToggle` (`PageKey = "media-partners"`,
+>   persisted in `localStorage` "simf.cp.prefs.media-partners" via `CpPreferences`).
+>   `MediaPartnerAddEdit` carries Add/Edit; `MediaPartnerViewDelete` carries the
+>   read-only **Details/View** path (a view path the old inline form never had) and,
+>   when `IsDelete=true`, the Delete button.
 > - **Delete** is a soft-deactivate (HTTP `DELETE` → `IsActive = false`), guarded
->   by a JS `confirm()` dialog (`Admin.MediaPartners.Delete.Confirm`). A
->   deactivated row is **dropped from the public list** but, because the admin
->   list is unfiltered, it still appears in the admin grid with Active = `—`.
+>   by a `SimfConfirm` dialog inside `MediaPartnerViewDelete` (title
+>   `Admin.MediaPartners.Delete.Title`, message `Admin.MediaPartners.Delete.Message`
+>   formatted with the partner name) — **not** a native JS `confirm()` (the inline
+>   `SimfModal` form + `confirm()` it used to carry are gone, D-353). A deactivated
+>   row is **dropped from the public list** but, because the admin list is
+>   unfiltered, it still appears in the admin grid with the "Inactive" pill.
 > - BFF passthroughs (`AccountEndpoints.cs`): `POST /account/api/admin/media-partners/list`,
 >   `POST /account/api/admin/media-partners`, `PUT /account/api/admin/media-partners/{id}`,
->   `DELETE /account/api/admin/media-partners/{id}`.
+>   `DELETE /account/api/admin/media-partners/{id}`, plus the D-356 Excel pair
+>   `POST /account/api/admin/media-partners/export` (AdminGridExportRequest { Ids, Query })
+>   and `POST /account/api/admin/media-partners/import` (multipart .xlsx; export + import
+>   both capped at 5000 rows; a non-.xlsx upload is rejected with HTTP 400).
 > - API error codes: `VALIDATION_FAILED` (400, name length / logo / url / order),
 >   `MEDIA_PARTNER_NAME_DUPLICATE` (409, English name clash, case-insensitive),
 >   `NOT_FOUND` (404, unknown id).
@@ -64,6 +75,13 @@
 | E2E-MPR-011 | RTL/Arabic render: page + modal mirror | i18n | P1 | _to author_ |
 | E2E-MPR-012 | Per-column filter narrows the grid (`nameen`/`namear`) | grid | P1 | _to author_ |
 | E2E-MPR-013 | Column sort toggles (`displayorder`/`nameen`) | grid | P2 | _to author_ |
+| E2E-MPR-014 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
+| E2E-MPR-015 | Full-page mode: Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-MPR-016 | Delete confirmation gate: ViewDelete + SimfConfirm — Cancel = no DELETE, confirm = one DELETE (D-353) | error | P0 | _to author_ |
+| E2E-MPR-017 | Excel export: toolbar Export → POST /export (whole grid vs selected rows) (D-356) | happy | P1 | _to author_ |
+| E2E-MPR-018 | Excel import: upload a workbook → rows created + result modal "N created…" (D-356) | happy | P1 | _to author_ |
+| E2E-MPR-019 | Excel import: non-.xlsx / wrong-sheet upload → 400 + bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-MPR-020 | Logo via the unified media-asset pipeline — upload then external link (D-357) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -109,8 +127,8 @@ Scenario: Create, edit, then deactivate one media partner
   And the "Naval Times" row now shows Display order=5 and Link="https://navaltimes.example"
 
   When the administrator clicks the "Naval Times" row's Delete (trash) action
-  Then a browser confirm dialog appears reading "Delete this media partner? It will be removed from the public list immediately."
-  When they accept the confirm dialog
+  Then the MediaPartnerViewDelete form opens (CrudShell) showing the read-only details and a red "Delete" button
+  When they click "Delete" and then confirm in the SimfConfirm dialog (which names "Naval Times")
   Then a DELETE /account/api/admin/media-partners/{id} returns 200
   And a green toast reads "Media partner deleted." / "تم حذف الشريك الإعلامي."
   And the "Naval Times" row remains in the admin grid but its Active pill now reads "Inactive"
@@ -164,8 +182,8 @@ Scenario: Editing the Active checkbox flips the row's Active pill
 Scenario: Cancelling the confirm dialog makes no API call
   Given a media partner "Gulf Maritime Press" exists in the grid
   When the administrator clicks that row's Delete (trash) action
-  Then a browser confirm dialog appears
-  When they dismiss/cancel the confirm dialog
+  Then the MediaPartnerViewDelete form opens (CrudShell) and they click "Delete" to raise the SimfConfirm dialog
+  When they cancel the SimfConfirm dialog
   Then no DELETE /account/api/admin/media-partners/{id} request fires
   And the row is unchanged (its Active pill still reads "Active")
   And no toast appears
@@ -317,6 +335,112 @@ Scenario: Clicking a sortable header toggles ascending/descending
 > Note: only `nameen`, `namear` and `displayorder` are `Sortable="true"`; the Logo,
 > Link and Active columns are not sortable.
 
+### E2E-MPR-014 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/media-partners with the default "dialog" presentation
+  And the grid toolbar shows the CrudPresentationToggle ("Open as full page", maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.media-partners" holds {"v":1,"presentation":"page"}
+  When they reload /admin/media-partners
+  Then OnInitializedAsync reads the preference (Prefs.GetPresentationAsync("media-partners"))
+  And the toggle still reads "Open as dialog"
+  And opening "Add media partner" now renders the full-page frame (not a popup)
+```
+
+### E2E-MPR-015 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page"
+  When the administrator clicks "Add media partner"
+  Then the grid + banner are hidden (GridHidden) and the CrudShell renders as a full page
+  And the page shows the title "Add media partner" with a close header and the MediaPartnerAddEdit form
+  And there is no modal backdrop
+  When they fill Name (English)="Naval Times", Name (Arabic)="أوقات البحرية", Display order="100"
+  And they click "Save"
+  Then a POST /account/api/admin/media-partners returns 200
+  And the page frame closes and the grid re-appears with the new row
+  And a green toast reads "Media partner saved." / "تم حفظ الشريك الإعلامي."
+  When they click the new row's Edit (pencil) action and then the frame's "Close" button
+  Then the form closes and the grid re-appears unchanged (no PUT fires)
+```
+
+### E2E-MPR-016 — Delete confirmation gate (CrudShell + SimfConfirm) (D-353)
+
+```gherkin
+Scenario: Deactivate opens the ViewDelete form and SimfConfirm gates the call
+  Given a media partner "Naval Times" exists in the grid
+  When the administrator clicks that row's Delete (trash) action
+  Then the MediaPartnerViewDelete form opens (CrudShell, dialog by default)
+  And it shows the row's read-only details (Name En/Ar, Logo, Link, Display order, Active)
+  And a red "Delete" button is visible
+  When they click "Delete"
+  Then a SimfConfirm dialog appears titled "Delete media partner"
+  And its message names the partner ("Naval Times")
+  And it shows a danger "Delete" confirm button and a "Cancel" button
+  When they click "Cancel"
+  Then no DELETE /account/api/admin/media-partners/{id} request fires
+  And the form stays open and the row is unchanged
+  When they click "Delete" again and then the confirm "Delete" button
+  Then exactly one DELETE /account/api/admin/media-partners/{id} returns 200
+  And the form closes
+  And a green toast reads "Media partner deleted." / "تم حذف الشريك الإعلامي."
+  And the "Naval Times" row's Active pill now reads "Inactive"
+```
+
+### E2E-MPR-017 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the media-partner grid to an XLSX workbook
+  Given the administrator is on /admin/media-partners with at least two media partners
+  When they click the toolbar "Export" action with no rows selected
+  Then a POST /account/api/admin/media-partners/export fires carrying AdminGridExportRequest
+    with an empty Ids list and the current Query (the whole filtered grid)
+  And the browser saves a media-partners .xlsx workbook with a header row
+  When they instead select two rows then click "Export"
+  Then the POST carries those two ids in Ids (and no Query) and the workbook contains exactly those two rows
+```
+
+> Note: the page wires `OnExport=OnExportAsync`, which calls
+> `_excel.ExportAsync(selected ids, _query)` on the `<CrudGridExcel Resource="media-partners" />`.
+> The API caps export at 5000 rows.
+
+### E2E-MPR-018 — Excel import (D-356)
+
+```gherkin
+Scenario: Import media partners from a workbook and see the per-row outcome
+  Given the administrator is on /admin/media-partners
+  When they click the toolbar "Import" action
+  Then the hidden file input "media-partners-import-input" (accept=".xlsx") opens the file picker
+  When they choose an .xlsx whose sheet has rows for two new media partners
+  Then a POST /account/api/admin/media-partners/import fires as multipart form data
+  And the import-result modal shows "2 created, 0 updated, 0 skipped."
+  And a green toast reads the shared Grid.Import.Done copy
+  And the grid reloads and lists both new media partners
+  When they import a workbook containing one duplicate English name and one new name
+  Then the modal shows 1 created and a per-row error naming the duplicate row
+```
+
+> Note: the page wires `OnImport=OnImportAsync` → `_excel.TriggerImportAsync()`;
+> `OnImported` fires `OnImportedAsync`, which raises the `Grid.Import.Done` toast and
+> reloads the grid. The API caps import at 5000 rows.
+
+### E2E-MPR-019 — Excel import rejection (bad / wrong-sheet upload) (D-356)
+
+```gherkin
+Scenario: A bad upload is rejected without creating anything
+  Given the administrator is on /admin/media-partners
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic check, or exceeds the 5MB gate)
+  Then the request returns HTTP 400 and the page shows a bilingual error toast (CrudGridExcel OnError → OnExcelError)
+  And no media partner is created
+  When they import a workbook whose sheet is not the expected media-partners sheet
+  Then the request returns HTTP 400 with the bilingual wrong-worksheet message
+  And nothing is created
+```
+
 ---
 
 ## Implementation notes
@@ -338,6 +462,26 @@ Scenario: Clicking a sortable header toggles ascending/descending
   E2E-MPR-006/007/008/009 mirror those at the browser layer (including the
   client-only NameRequired guard, which has no API equivalent).
 
+### E2E-MPR-020 — Logo via the unified media-asset pipeline (D-357)
+
+```gherkin
+Scenario: Upload logo, then switch it to an external link
+  Given an Administrator is editing a media partner
+  When they open the "Image" control, choose "Upload file", pick a PNG and click Upload
+  Then a success message shows and the preview thumbnail refreshes
+  And GET /account/api/admin/assets/MediaPartnerLogo/{ownerId}/image returns the bytes (200)
+  And /admin/media-library lists it as MediaPartnerLogo - this entity - Image - Uploaded file - active
+  When they switch to "External link", enter https://cdn.example/x.jpg and click Save link
+  Then the asset Source becomes "External link" and GET /app/assets/MediaPartnerLogo/{ownerId}/image 302s to that URL
+  And the same-origin /content/assets/MediaPartnerLogo/{ownerId}/image proxy serves it for any public page that renders this entity
+```
+
+**Evidence:** the Asset DB row + the out-of-row file (or stored link); the Media Library row;
+0 console errors; audit `AssetUploaded` then `AssetLinked`. Validation: a non-image / over-5 MB /
+video upload is 400; deactivate->restore round-trips; restoring when a live (category,owner) asset
+already exists is 409 (covered by `tests/SIMF.Api.Tests/AssetEndpointsTests.cs`).
+
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; appended E2E-MPR-014..019).
+Earlier: 2026-06-03 (E2E catalogue rebuild, D-256/D-257 grid affordances reconciled).

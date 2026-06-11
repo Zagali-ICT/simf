@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Permission gate:** the page carries `@attribute [RequirePermission(PermissionCatalog.Themes.View)]`
 > (`Themes.View`). The API endpoints are gated per-action:
@@ -37,6 +37,12 @@
 | E2E-THM-016 | Conflict: duplicate Code → 409 `THEME_CODE_DUPLICATE` | error | P0 | _to author_ |
 | E2E-THM-017 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-THM-018 | RTL / Arabic render mirrors page + Add modal | i18n | P1 | _to author_ |
+| E2E-THM-019 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
+| E2E-THM-020 | Full-page mode: Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-THM-021 | Delete confirmation: Deactivate opens View/Delete → SimfConfirm gates the call (D-353) | error | P0 | _to author_ |
+| E2E-THM-022 | Excel export: toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
+| E2E-THM-023 | Excel import: upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
+| E2E-THM-024 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -99,6 +105,9 @@ Scenario: Create, edit, view, then deactivate one theme
   Then the modal closes
 
   When the administrator clicks the "Deactivate" icon on that row
+  Then the View/Delete form opens (dialog by default) showing the row's read-only details
+      and a red "Deactivate" button (D-353 — was a one-click DELETE)
+  When they click "Deactivate" and confirm the SimfConfirm dialog
   Then the DELETE /account/api/admin/themes/{id} call returns HTTP 200
   And a green toast reads 'Theme "Defence & Security" was deactivated.'
   And the row's Status pill changes to the grey "Inactive" pill
@@ -169,6 +178,8 @@ Scenario: Details modal renders every field read-only
 Scenario: Deactivate soft-deletes the theme
   Given a theme with Code="DEF" exists and is Active
   When the administrator clicks the "Deactivate" icon on its row
+  Then the View/Delete form opens with the row's read-only details and a red "Deactivate" button
+  When they click "Deactivate" and confirm the SimfConfirm dialog (D-353 — was a one-click DELETE)
   Then the DELETE /account/api/admin/themes/{id} call returns HTTP 200 (Success=true)
   And a green toast reads 'Theme "Defence & Security" was deactivated.'
   And the row stays visible with the grey "Inactive" pill
@@ -359,6 +370,117 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   And the form actions appear in reverse order
 ```
 
+### E2E-THM-019 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/themes with the default "dialog" presentation
+  And the grid toolbar shows the CrudPresentationToggle ("Open as full page", maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.themes" holds {"v":1,"presentation":"page"}
+  When they reload /admin/themes
+  Then the page reads the persisted preference via Prefs.GetPresentationAsync("themes")
+  And the toggle still reads "Open as dialog"
+  And opening "Add theme" now renders the full-page frame (not a popup)
+```
+
+### E2E-THM-020 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page"
+  When the administrator clicks "Add theme"
+  Then the grid + banner are hidden (GridHidden) and the CrudShell renders ThemesAddEdit
+      as a full page (title "Add theme" + close header + the form)
+  And there is no modal backdrop
+  When they fill Code="OPS", Name (English)="Naval Operations", Name (Arabic)="العمليات البحرية",
+      Display order="30", Page color="#244A77"
+  And they click "Create theme"
+  Then the page frame closes
+  And the grid re-appears with the new "OPS" row and the success toast
+      'Theme "Naval Operations" was created.'
+  When they click the "Edit" icon and then the CrudShell close (X) button
+  Then the form closes and the grid re-appears unchanged (no PUT fired)
+```
+
+### E2E-THM-021 — Delete confirmation gate (D-353)
+
+```gherkin
+Scenario: Deactivate requires explicit confirmation via SimfConfirm
+  Given the administrator is on /admin/themes
+  When they click the "Deactivate" icon on a theme row (Code="OPS")
+  Then a GET /account/api/admin/themes/{id} loads the detail
+  And the ThemesViewDelete form opens (CrudShell) showing the row's read-only
+      details (Code, Name, Name (Arabic), Description, Description (Arabic),
+      Order, Page color, Status) and a red "Deactivate" button
+  When they click "Deactivate"
+  Then a SimfConfirm dialog appears reading
+      'Deactivate the theme "Naval Operations"? It will be hidden from the agenda
+       and the Session editor picker. You can reactivate it later by editing it.' /
+      'تعطيل المحور "Naval Operations"؟ سيُخفى من جدول الأعمال ومنتقي محرر الجلسة.
+       يمكنك إعادة تفعيله لاحقاً بتعديله.'
+  When they click "Cancel" on the SimfConfirm
+  Then no DELETE request fires and the row is unchanged
+  When they re-open Deactivate, click "Deactivate", then confirm
+  Then exactly one DELETE /account/api/admin/themes/{id} fires
+  And the success toast 'Theme "Naval Operations" was deactivated.' appears
+  And the row's pill turns grey "Inactive"
+```
+
+### E2E-THM-022 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the filtered grid / selected rows to an XLSX workbook
+  Given the administrator is on /admin/themes with at least two themes
+  When they click the toolbar "Export" action with no rows selected
+  Then a POST /account/api/admin/themes/export fires with an
+      AdminGridExportRequest of an empty Ids list and the current Query
+      (whole filtered grid)
+  And the browser saves a file named simf-themes-{timestamp}.xlsx
+  And the workbook's "Themes" sheet header row reads
+      Code | Name | NameArabic | DisplayOrder | PageColor | IsActive
+  When they instead select two rows then click "Export"
+  Then the request carries those two Ids (Query omitted) and the workbook
+      contains exactly those two themes
+  And the export is capped at 5000 rows server-side
+```
+
+### E2E-THM-023 — Excel import (D-356)
+
+```gherkin
+Scenario: Import themes from a workbook and see the per-row outcome
+  Given the administrator is on /admin/themes
+  When they click the toolbar "Import" action
+  Then the hidden file input "themes-import-input" (accept=".xlsx") opens the picker
+  When they choose an .xlsx whose "Themes" sheet has the required headers
+      Code | Name | NameArabic | PageColor and two new theme rows
+  Then a POST /account/api/admin/themes/import fires as multipart form data
+  And the import-result modal "Import results" shows "2 created, 0 updated, 0 skipped."
+  And the shared success toast reads "Import complete." / "اكتمل الاستيراد."
+  And the grid reloads and lists both new themes
+  When they import a workbook with one duplicate Code and one new Code
+  Then the modal shows 1 created and one per-row error
+      ("Row {n} ({Code}): …") naming the duplicate code
+      (import is insert-only — a duplicate is a row error, not a batch abort)
+```
+
+### E2E-THM-024 — Excel import rejection (D-356)
+
+```gherkin
+Scenario: A bad / wrong-sheet upload is rejected without creating anything
+  Given the administrator is on /admin/themes
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic check)
+      or exceeds the 5 MB cap
+  Then the request returns HTTP 400 and the page shows a bilingual error toast
+  And no theme is created
+  When they import a workbook whose sheet is not named "Themes"
+      (or is missing a required header: Code / Name / NameArabic / PageColor)
+  Then the request returns HTTP 400 with the bilingual rejection
+      ("worksheet named 'Themes'" / required-header message)
+  And the import is capped at 5000 rows server-side
+```
+
 ---
 
 ## Implementation notes
@@ -385,4 +507,4 @@ Scenario: Arabic toggle mirrors the page and the Add modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel export + import + D-353 Page↔Popup toggle).

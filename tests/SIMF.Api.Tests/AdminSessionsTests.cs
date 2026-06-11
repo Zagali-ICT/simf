@@ -251,6 +251,121 @@ public sealed class AdminSessionsTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    // D-349 — a YouTube live URL (and a YouTube sign-language feed) is accepted
+    // and round-trips on the detail.
+    [Fact]
+    public async Task Create_with_a_youtube_live_url_succeeds_and_round_trips()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 10);
+        var response = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(), Title = "Live", TitleArabic = "مباشر",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                LiveStreamUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                LiveSignLanguageUrl = "https://youtu.be/abc123XYZ_-",
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var detail = (await response.Content
+            .ReadFromJsonAsync<ApiResult<AdminSessionDetail>>())!.Data!;
+        Assert.Equal(
+            "https://www.youtube.com/watch?v=dQw4w9WgXcQ", detail.LiveStreamUrl);
+        Assert.Equal("https://youtu.be/abc123XYZ_-", detail.LiveSignLanguageUrl);
+    }
+
+    // D-349 — a direct HLS stream URL is still accepted (the fallback path).
+    [Fact]
+    public async Task Create_with_an_hls_live_url_succeeds()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 10);
+        var response = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(), Title = "HLS", TitleArabic = "بث",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                LiveStreamUrl = "https://live.example.sa/stream.m3u8",
+            },
+            token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    // D-349 — a URL that is neither YouTube nor HLS/MP4 is rejected (400).
+    [Fact]
+    public async Task Create_with_an_invalid_live_url_is_400_SESSION_INVALID()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 10);
+        var response = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(), Title = "Bad", TitleArabic = "خطأ",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                LiveStreamUrl = "https://vimeo.com/12345",
+            },
+            token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionInvalid, body.Error!.Code);
+    }
+
+    // D-349 — a YouTube URL with no extractable video id (a channel/handle/feed
+    // link) is rejected, since the player needs the id.
+    [Fact]
+    public async Task Create_with_a_youtube_url_without_a_video_id_is_400_SESSION_INVALID()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 10);
+        var response = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(), Title = "NoId", TitleArabic = "بدون",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                LiveStreamUrl = "https://www.youtube.com/@SIMFchannel",
+            },
+            token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionInvalid, body.Error!.Code);
+    }
+
+    // D-349 security — a cleartext http live URL is rejected (https only), so a
+    // feed cannot be silently downgraded / man-in-the-middled.
+    [Fact]
+    public async Task Create_with_an_http_live_url_is_400_SESSION_INVALID()
+    {
+        var token = await CreateAdministratorAndSignInAsync();
+        var hall = await SeedHallAsync(capacity: 10);
+        var response = await PostAuthAsync(
+            "/api/v1/admin/sessions",
+            new AdminCreateSessionRequest
+            {
+                Code = NewCode(), Title = "Cleartext", TitleArabic = "غير آمن",
+                HallId = hall.Id,
+                StartUtc = DateTimeOffset.UtcNow.AddHours(1),
+                EndUtc = DateTimeOffset.UtcNow.AddHours(2),
+                LiveStreamUrl = "http://live.example.sa/stream.m3u8",
+            },
+            token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.SessionInvalid, body.Error!.Code);
+    }
+
     // -- Helpers --------------------------------------------------------------
 
     private static string NewCode() =>

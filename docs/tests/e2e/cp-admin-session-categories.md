@@ -7,14 +7,26 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page background.** B9b (D-226) — CP management for the dynamic session-category
 > lookup (SIMF-FDS-004 §5.4). A small bilingual lookup (NameEn / NameAr / display
 > order / active) that backs the category picker on the session form. The table
 > **ships empty** and is seeded by the team once the client confirms the list
 > (open item OI-2), so the empty-state path is the default first render. Mirrors
-> `BoothsList` / the Organisation lookup. **RequiredPermission:** the page is gated
+> `BoothsList` / the Organisation lookup.
+>
+> **Centralized framing (D-353) + Excel (D-356).** Add / Edit / View / Delete are
+> no longer inline `SimfModal` forms — they are hosted by `CrudShell`, which frames
+> the reusable `SessionCategoriesAddEdit` and `SessionCategoriesViewDelete` forms as
+> a **popup or a full page** per the admin's toolbar choice (a
+> `<CrudPresentationToggle PageKey="session-categories">` persisted in localStorage
+> via `CpPreferences`). Delete now runs through `SessionCategoriesViewDelete` + a
+> `SimfConfirm` gate — the old native `confirm()` is gone. The toolbar also wires
+> **Excel Export + Import** through a shared `<CrudGridExcel Resource="session-categories">`
+> (`OnExport` / `OnImport`).
+>
+> **RequiredPermission:** the page is gated
 > by `PermissionCatalog.SessionCategories.View`; the toolbar/row actions are gated
 > by `.Create` / `.Edit` / `.Delete` (all `AdminOnly` baseline).
 >
@@ -37,7 +49,7 @@
 | E2E-SCT-003 | Auth: signed-in admin lacking `SessionCategories.View` → `/not-permitted` | auth | P0 | _to author_ |
 | E2E-SCT-004 | New-category button: opens Add modal with 4 fields | function | P1 | _to author_ |
 | E2E-SCT-005 | Edit button: pre-fills modal from GET detail + shows Active checkbox | function | P1 | _to author_ |
-| E2E-SCT-006 | Delete button: native confirm → soft-delete (row flips to "—") | function | P1 | _to author_ |
+| E2E-SCT-006 | Delete button: ViewDelete form + SimfConfirm → soft-delete (pill flips to Inactive) (D-353) | function | P1 | _to author_ |
 | E2E-SCT-007 | Delete cancelled at confirm dialog → no request, no change | function | P2 | _to author_ |
 | E2E-SCT-008 | Cancel button in modal closes it without saving | function | P2 | _to author_ |
 | E2E-SCT-009 | Validation: blank NameEn or NameAr → client "Both names are required." | error | P1 | _to author_ |
@@ -48,6 +60,11 @@
 | E2E-SCT-014 | RTL render: Arabic toggle mirrors page + Add modal | i18n | P1 | _to author_ |
 | E2E-SCT-015 | Per-column filter narrows the grid (Name (English) / Name (Arabic)) | function | P1 | _to author_ |
 | E2E-SCT-016 | Column sort toggles (Name (English) / Order) | function | P2 | _to author_ |
+| E2E-SCT-017 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
+| E2E-SCT-018 | Full-page mode: Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-SCT-019 | Excel export: toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
+| E2E-SCT-020 | Excel import: upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
+| E2E-SCT-021 | Excel import: a non-workbook / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -94,10 +111,11 @@ Scenario: Create, edit (toggle Active off), then delete one category
   And the "Keynote" row now reads Order=5 and Active="—"
 
   When the administrator clicks the "Keynote" row's Delete (trash) action
-  And accepts the browser confirm dialog "Delete this category?" / "حذف هذا التصنيف؟"
+  Then the View/Delete form (SessionCategoriesViewDelete) opens showing the read-only details and a red "Deactivate" button
+  When they click "Deactivate" and confirm in the SimfConfirm dialog (which names "Keynote")
   Then a DELETE /account/api/admin/session-categories/{id} fires and returns 200
   And a green toast reads "Category deleted." / "تم حذف التصنيف."
-  And the "Keynote" row remains visible with Active="—" (soft-delete; the list has no active filter)
+  And the "Keynote" row remains visible with the grey "Inactive" pill (soft-delete; the list has no active filter)
 ```
 
 **Evidence captured:**
@@ -159,29 +177,32 @@ Scenario: Edit fetches the row detail and pre-fills the modal
   And the buttons are disabled while the GET is in flight (_busy guard)
 ```
 
-### E2E-SCT-006 — Delete soft-deletes via native confirm
+### E2E-SCT-006 — Delete soft-deletes via the ViewDelete form + SimfConfirm
 
 ```gherkin
 Scenario: Delete confirms then soft-deletes the row
-  Given an active session category "Panel" exists with Active="✓"
+  Given an active session category "Panel" exists with the green "Active" pill
   When the administrator clicks the "Panel" row's Delete (trash) action
-  Then a browser confirm dialog appears reading "Delete this category?" / "حذف هذا التصنيف؟"
-  When they accept the dialog
+  Then the View/Delete form (SessionCategoriesViewDelete) opens showing the read-only details and a red "Deactivate" button
+  When they click "Deactivate"
+  Then a SimfConfirm dialog appears naming "Panel" (D-353, replaces the old native confirm())
+  When they confirm via the dialog's "Deactivate" button
   Then a DELETE /account/api/admin/session-categories/{id} fires and returns 200
   And a green toast reads "Category deleted." / "تم حذف التصنيف."
-  And the "Panel" row remains in the grid but its Active column reads "—"
+  And the "Panel" row remains in the grid but its Active column shows the grey "Inactive" pill
   And re-deleting the same already-inactive row is idempotent (no error)
 ```
 
 ### E2E-SCT-007 — Delete cancelled at the confirm dialog
 
 ```gherkin
-Scenario: Dismissing the confirm dialog makes no change
+Scenario: Cancelling the SimfConfirm dialog makes no change
   Given an active session category "Roundtable" exists
   When the administrator clicks the "Roundtable" row's Delete (trash) action
-  And they dismiss the browser confirm dialog
+  And the View/Delete form opens and they click "Deactivate"
+  And they click "Cancel" in the SimfConfirm dialog
   Then no DELETE request fires
-  And the "Roundtable" row is unchanged (Active still "✓")
+  And the "Roundtable" row is unchanged (still the green "Active" pill)
   And no toast appears
 ```
 
@@ -319,24 +340,110 @@ Scenario: Clicking a sortable column header toggles ascending/descending
   And the default (unsorted) order is DisplayOrder then NameEn
 ```
 
+### E2E-SCT-017 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/session-categories with the default "dialog" presentation
+  And the grid toolbar shows the CrudPresentationToggle "Open as full page" control (maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.session-categories" holds {"v":1,"presentation":"page"}
+  When they reload /admin/session-categories
+  Then OnInitializedAsync reads the preference back (Prefs.GetPresentationAsync("session-categories"))
+  And the toggle still reads "Open as dialog"
+  And opening Add now renders the full-page CrudShell frame (not a popup)
+```
+
+### E2E-SCT-018 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page" (_presentation = Page)
+  When the administrator clicks the grid toolbar's "Add" action
+  Then the grid + SimfBanner are hidden (GridHidden) and the CrudShell renders the
+       full-page frame titled "Add category" with a close header and the SessionCategoriesAddEdit form
+  And there is no modal backdrop
+  When they fill Name (English)="Plenary", Name (Arabic)="جلسة عامة", Display order="3" and click "Save"
+  Then the page frame closes (CloseForm)
+  And the grid re-appears with the new "Plenary" row and the green "Category saved." toast
+  When they click the "Plenary" row's Edit (pencil) action and then the frame's close (X) button
+  Then the form closes and the grid re-appears unchanged
+  When they click the "Plenary" row's Details (eye) action
+  Then the full-page frame renders SessionCategoriesViewDelete read-only (no Deactivate button)
+  And clicking "Close" returns to the grid
+```
+
+### E2E-SCT-019 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the grid to an XLSX workbook (whole grid vs selected rows)
+  Given the administrator is on /admin/session-categories with at least two categories
+  When they click the toolbar "Export" action with no rows selected
+  Then a POST /account/api/admin/session-categories/export fires carrying
+       AdminGridExportRequest { Ids = [], Query = <current GridQuery> }
+  And the browser saves an .xlsx workbook of the whole filtered grid
+  And the workbook header row reads Name | NameArabic | DisplayOrder | IsActive
+  When they instead tick two row checkboxes then click "Export"
+  Then the POST carries those two ids in Ids (Query omitted) and the workbook contains exactly those two rows
+  And the API caps the export at 5000 rows
+```
+
+### E2E-SCT-020 — Excel import (D-356)
+
+```gherkin
+Scenario: Import categories from a workbook and see the per-row outcome
+  Given the administrator is on /admin/session-categories
+  When they click the toolbar "Import" action (OnImport → _excel.TriggerImportAsync())
+  And the hidden file input "session-categories-import-input" (accept=".xlsx") opens
+  And they choose an .xlsx whose sheet has Name/NameArabic rows for two new categories
+  Then a POST /account/api/admin/session-categories/import fires as multipart form data
+  And the import-result modal shows "2 created, 0 updated, 0 skipped." with an empty error list
+  And the shared "Grid.Import.Done" success toast appears and the grid reloads listing both new categories
+  When they import a workbook containing one row matching an existing name and one new name
+  Then the modal shows the created/updated/skipped tally plus a per-row error/skip line for the matched row
+```
+
+### E2E-SCT-021 — Excel import rejection (D-356)
+
+```gherkin
+Scenario: A bad upload is rejected without creating anything
+  Given the administrator is on /admin/session-categories
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic check) or exceeds the 5MB cap
+  Then the request returns HTTP 400 and OnExcelError surfaces a bilingual error toast
+  And no session category is created
+  When they import a workbook whose worksheet is not the expected categories sheet
+  Then the request returns HTTP 400 with the bilingual wrong-sheet message
+  And the grid is unchanged
+```
+
 ---
 
 ## Implementation notes
 
-- **No Details modal on this page.** Unlike the Interests page, this lookup has
-  only an Add/Edit modal — Edit re-fetches the row via
-  `GET /account/api/admin/session-categories/{id}` to pre-fill. There is no
-  read-only details view to test.
-- **Delete is a soft-delete (Deactivate) behind a native `confirm()`.** The page
-  calls the browser `confirm` dialog with "Delete this category?" before the
-  `DELETE`; the service runs `category.Deactivate()` (sets `IsActive = false`) and
-  is idempotent on already-inactive rows. The list endpoint applies **no default
-  active filter** (the page sends `GridQuery { Top = 20 }`), so a deleted row
-  stays visible — its Active column flips from the on pill ("Active") to the off
-  pill ("Inactive") rather than disappearing — assert that, not row removal. (The
-  older "✓"/"—" glyphs in the scenarios above are the pre-grid representation; the
-  post-D-256 grid renders a `SimfPill` on/off badge.) When driving via Chrome
-  DevTools MCP, pre-arm the dialog handler (`handle_dialog`) before clicking Delete.
+- **Add / Edit / View / Delete are CrudShell-hosted (D-353).** The page no longer
+  carries inline `SimfModal` forms — `CrudShell` frames the reusable
+  `SessionCategoriesAddEdit` (Add/Edit) and `SessionCategoriesViewDelete`
+  (View/Delete) forms as a **popup or a full page** per the
+  `CrudPresentationToggle` choice (persisted in localStorage key
+  `simf.cp.prefs.session-categories`). Unlike Interests there is no separate
+  Details glyph — the Details (eye) action opens the same `SessionCategoriesViewDelete`
+  form in read-only mode (`IsDelete=false`, no Deactivate button). Edit re-fetches
+  the row via `GET /account/api/admin/session-categories/{id}` to pre-fill.
+- **Delete is a soft-delete (Deactivate) behind a `SimfConfirm` gate (D-353).** The
+  Delete (trash) action opens `SessionCategoriesViewDelete` (`IsDelete=true`); its
+  red "Deactivate" button raises a `SimfConfirm` dialog (titled "Delete category" /
+  message naming the row) — the old native `confirm()` on the list is **gone**.
+  Only the dialog's confirm button fires `DELETE`; the service runs
+  `category.Deactivate()` (sets `IsActive = false`) and is idempotent on
+  already-inactive rows. The list endpoint applies **no default active filter** (the
+  page sends `GridQuery { Top = 20 }`), so a deleted row stays visible — its Active
+  column flips from the on pill ("Active") to the off pill ("Inactive") rather than
+  disappearing — assert that, not row removal. (The older "✓"/"—" glyphs in the
+  scenarios above are the pre-grid representation; the post-D-256 grid renders a
+  `SimfPill` on/off badge.) Driving via Chrome DevTools MCP no longer needs
+  `handle_dialog` pre-arming — the confirm is an in-page Blazor component, not a
+  browser dialog.
 - **Two distinct validation layers.** "Both names are required." is a **client**
   guard in `SaveAsync` (no request fires). The 1–128 length bound is enforced
   **server-side** and returns `SESSION_CATEGORY_INVALID` (HTTP 400) with the
@@ -360,7 +467,23 @@ Scenario: Clicking a sortable column header toggles ascending/descending
 - **Audit keys:** `SessionCategory.Created`, `SessionCategory.Updated`,
   `SessionCategory.Deactivated` (`AuditEvents`), one row per mutation with the
   actor id.
+- **Excel export + import (D-356).** The toolbar wires both `OnExport` and
+  `OnImport` through a shared `<CrudGridExcel @ref="_excel" Resource="session-categories">`.
+  Export POSTs `AdminGridExportRequest { Ids, Query }` to
+  `/account/api/admin/session-categories/export` (empty `Ids` + current `Query` =
+  whole filtered grid; selected row ids = just those, `Query` omitted). Import opens
+  the hidden `session-categories-import-input` (accept `.xlsx`) and POSTs multipart to
+  `/account/api/admin/session-categories/import`, then shows the
+  "{Created} created, {Updated} updated, {Skipped} skipped" result modal + a per-row
+  error list, the shared `Grid.Import.Done` success toast, and reloads the grid. The
+  API caps both export and import at 5000 rows and rejects a non-`.xlsx` upload
+  (ZIP-magic + 5MB gate) with HTTP 400 surfaced via `OnExcelError`.
+- **Presentation toggle (D-353).** `<CrudPresentationToggle PageKey="session-categories">`
+  in the grid `CustomToolbar` switches Add/Edit/View/Delete between a popup and a
+  full-page CrudShell frame; the choice is persisted in localStorage
+  `simf.cp.prefs.session-categories` and read back by
+  `Prefs.GetPresentationAsync("session-categories")` in `OnInitializedAsync`.
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle; D-353 CrudShell/SimfConfirm reconciled). Earlier: 2026-06-03 (D-256/D-257 grid affordances).

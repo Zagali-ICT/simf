@@ -549,6 +549,72 @@ namespace SIMF.Infrastructure.Persistence.Migrations.App
                     b.ToTable("ArchiveEditions", (string)null);
                 });
 
+            modelBuilder.Entity("SIMF.Domain.Assets.Asset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Category")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ExternalUrl")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OriginalFileName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long?>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("SourceType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StoragePath")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Category", "IsActive");
+
+                    b.HasIndex("Category", "OwnerId")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
+
+                    b.ToTable("Assets", (string)null);
+                });
+
             modelBuilder.Entity("SIMF.Domain.Auditing.OperationLogEntry", b =>
                 {
                     b.Property<Guid>("Id")

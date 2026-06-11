@@ -26,7 +26,7 @@ Per-page documentation folder. Everything about this app page lives here.
 | Section | 2 — Core screens |
 | Nature | **Filterable schedule of all sessions** (day selector + search) |
 | App privilege | **Guest and above** — anonymous; a guest can browse the sessions list (Screen Guide Journey C) |
-| Status | API **BUILT** (enriched, D-252; speaker country+photo, D-271); Flutter screen is a mockup |
+| Status | API **BUILT** (enriched, D-252; speaker country+photo, D-271); **Flutter screen BUILT (D-299)** — fetch-once + client-side pills/day-strip/search |
 
 ## Sources of truth (read first)
 `Mockup.html` screen 16 (the visual) · `SIMF_Screen_Guide_and_User_Journey`

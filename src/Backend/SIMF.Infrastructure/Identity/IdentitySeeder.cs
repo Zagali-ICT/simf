@@ -181,6 +181,34 @@ public sealed class IdentitySeeder(
         // missing, matches the existing EnsureProfileTypeAsync pattern.
         await EnsureCybersecurityPolicyContentAsync(admin.Id, cancellationToken);
 
+        // Seed the public marketing landing's hero CMS text blocks so the
+        // Website's /content/site proxy can serve them and the CP CMS editor
+        // can manage them. Idempotent — same insert-when-absent shape.
+        await EnsureLandingHeroContentAsync(admin.Id, cancellationToken);
+
+        // Seed the landing's editorial sections below the hero — About, the
+        // global-landscape stats strip, the Pillars header and the Goals
+        // block — so the same /content/site proxy + CP CMS editor drive them
+        // instead of the page's hardcoded copy. Idempotent, additive data.
+        await EnsureLandingSectionsContentAsync(admin.Id, cancellationToken);
+
+        // D-345 — seed a demo speaker roster so the public /app/speakers list
+        // (and the Website speakers strip + the app speakers screen) render a
+        // populated, realistic set out of the box instead of a single lonely
+        // row. Idempotent by Code; admins manage / replace with real speakers
+        // via the CP, and can deactivate these at will.
+        await EnsureDemoSpeakersAsync(admin.Id, cancellationToken);
+
+        // D-347 — seed a few past-edition rows (and enrich the existing one) so
+        // the public Archive timeline shows several years with real detail
+        // (title / summary / place / date / counters), which the Website's
+        // per-year archive page renders. Idempotent by Year.
+        await EnsureDemoArchiveEditionsAsync(admin.Id, cancellationToken);
+
+        // D-348 — seed sponsors + media partners with test logos so the public
+        // partners strip shows a populated logo row (was name-only text).
+        await EnsureDemoPartnersAsync(admin.Id, cancellationToken);
+
         // D-176 (gap doc G12) — seed the default AI prompt catalogue.
         // One prompt per feature; admin can edit at runtime via the CP.
         await EnsureDefaultAiPromptsAsync(admin.Id, cancellationToken);
@@ -453,6 +481,436 @@ public sealed class IdentitySeeder(
         logger.LogInformation(
             "D-174: cybersecurity policy content blocks ensured (seeded {NewCount} of {Total}).",
             seed.Length - existingKeys.Count, seed.Length);
+    }
+
+    /// <summary>Seed the public marketing landing's hero CMS text blocks
+    /// (read by the Website's <c>/content/site</c> proxy and editable from the
+    /// CP CMS editor). Keys are lowercase to match the CMS service's key
+    /// normalisation; the Arabic values are the landing's current hardcoded
+    /// defaults verbatim, with paired English translations. Idempotent: each
+    /// block is inserted only when its key is absent.</summary>
+    private async Task EnsureLandingHeroContentAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        // (Key, EN, AR) — the landing's data-cms="hero.*" bindings. Keys come
+        // from the shared LandingHeroContentKeys so the seeder and the Website
+        // proxy cannot drift on the exact key strings.
+        var seed = new[]
+        {
+            (LandingHeroContentKeys.TitleStart,
+             "The future of",
+             "مستقبل أمن"),
+            (LandingHeroContentKeys.TitleHighlight,
+             "seabed security",
+             "قاع البحار"),
+            (LandingHeroContentKeys.TitleEnd,
+             "and global supply chains",
+             "وسلاسل الإمداد العالميّة"),
+            (LandingHeroContentKeys.Tagline,
+             "A global Saudi platform bringing leaders, decision-makers and experts together to shape the future of maritime security and protect vital corridors amid accelerating geopolitical and technological change.",
+             "منصّة سعوديّة عالميّة تجمع القادة وصنّاع القرار والخبراء لاستشراف مستقبل الأمن البحري وحماية الممرّات الحيوية في ظل التحولّات الجيوسياسيّة والتقنيّة المتسارعة."),
+            (LandingHeroContentKeys.MetaDate,
+             "23 — 25 November 2026",
+             "23 — 25 نوفمبر 2026"),
+            (LandingHeroContentKeys.MetaVenue,
+             "Sofitel Riyadh Hotel & Convention Centre",
+             "فندق ومركز مؤتمرات سوفيتيل الرياض"),
+            (LandingHeroContentKeys.CtaSecondary,
+             "Browse the programme",
+             "تصفّح البرنامج"),
+        };
+
+        var now = timeProvider.GetUtcNow();
+        var existingKeys = await appDbContext.ContentBlocks
+            .Where(b => seed.Select(s => s.Item1).Contains(b.Key))
+            .Select(b => b.Key)
+            .ToListAsync(cancellationToken);
+
+        foreach (var (key, en, ar) in seed)
+        {
+            if (existingKeys.Contains(key)) { continue; }
+            appDbContext.ContentBlocks.Add(new SIMF.Domain.Cms.ContentBlock
+            {
+                Id = Guid.NewGuid(),
+                Key = key,
+                Content = en,
+                ContentArabic = ar,
+                IsActive = true,
+                LastUpdatedByUserId = actorUserId,
+                CreatedAt = now,
+                LastUpdatedAt = now,
+            });
+        }
+        await appDbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "Landing hero content blocks ensured (seeded {NewCount} of {Total}).",
+            seed.Length - existingKeys.Count, seed.Length);
+    }
+
+    /// <summary>Seed the landing's editorial sections below the hero — About,
+    /// the global-landscape stats strip, the Pillars header and the Goals
+    /// block — as CMS content blocks read by the Website's
+    /// <c>/content/site</c> proxy and editable from the CP CMS editor. The
+    /// Arabic values are the landing's current hardcoded defaults verbatim,
+    /// with their paired English copy from the page's i18n dictionary. Keys
+    /// come from the shared <see cref="LandingSectionContentKeys"/> so the
+    /// seeder and the proxy cannot drift. Idempotent: each block is inserted
+    /// only when its key is absent; additive data — no migration.</summary>
+    private async Task EnsureLandingSectionsContentAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        // (Key, EN, AR) — mirrors the landing's data-cms="about.* / stats.* /
+        // pillars.* / goals.*" bindings.
+        var seed = new[]
+        {
+            // About — Mockup §01.
+            (LandingSectionContentKeys.AboutEyebrow,
+             "About the Forum",
+             "حول الملتقى"),
+            (LandingSectionContentKeys.AboutHeading,
+             "A Saudi global platform driving dialogue and cooperation on maritime security",
+             "منصة سعودية عالمية لدعم الحوار والتعاون في قضايا الأمن البحري"),
+            (LandingSectionContentKeys.AboutBody1,
+             "The Saudi International Maritime Forum is a high-level event that brings together leaders, officials, and experts to share experience and build a shared global understanding of the future of maritime security amid accelerating geopolitical and technological change.",
+             "الملتقى البحري السعودي الدولي حدث رفيع المستوى يجمع القادة والمسؤولين والخبراء لتبادل التجارب والخبرات، وتعزيز فهم عالمي مشترك لمستقبل الأمن البحري في ظل التحولات الجيوسياسية والتقنية المتسارعة."),
+            (LandingSectionContentKeys.AboutBody2,
+             "The Forum reflects the Kingdom of Saudi Arabia's strategic role in anchoring stability across the seas and supporting the resilience of the global economy through an integrated framework that protects the seabed and enhances the efficiency of energy and trade supply chains.",
+             "يعكس الملتقى الدور الاستراتيجي للمملكة العربية السعودية في ترسيخ استقرار البحار ودعم استدامة الاقتصاد العالمي، عبر منظومة متكاملة لحماية قاع البحار ورفع كفاءة سلاسل إمداد الطاقة والتجارة."),
+
+            // Global-landscape stats strip — Mockup §02.
+            (LandingSectionContentKeys.StatsEyebrow,
+             "Global Landscape",
+             "المشهد العالمي"),
+            (LandingSectionContentKeys.StatsIntro,
+             "The world is witnessing unprecedented shifts in maritime security. As threats to global supply chains escalate, seabed security emerges as an urgent international priority for stabilising the seas and sustaining the global economy.",
+             "يشهد العالم تحولات غير مسبوقة في أمن البحار، ومع تصاعد التهديدات التي تطال سلاسل الإمداد العالمية، يبرز أمن قاع البحار كأولوية دولية ملحة لتعزيز استقرار البحار وضمان استدامة الاقتصاد العالمي."),
+            (LandingSectionContentKeys.StatsHeading,
+             "A progressive path tracking the shifts in global maritime security",
+             "مسار متدرج يواكب تحولات الأمن البحري العالمي"),
+            (LandingSectionContentKeys.StatsCount1, "500", "500"),
+            (LandingSectionContentKeys.StatsLabel1,
+             "Participating countries", "دولة مشاركة"),
+            (LandingSectionContentKeys.StatsCount2, "220", "220"),
+            (LandingSectionContentKeys.StatsLabel2,
+             "Leaders & officials", "قائد ومسؤول"),
+            (LandingSectionContentKeys.StatsCount3, "100", "100"),
+            (LandingSectionContentKeys.StatsLabel3,
+             "International speakers", "متحدث دولي"),
+            (LandingSectionContentKeys.StatsCount4, "40", "40"),
+            (LandingSectionContentKeys.StatsLabel4,
+             "Sessions & dialogues", "جلسة وحوار"),
+
+            // Pillars header — Mockup §03.
+            (LandingSectionContentKeys.PillarsEyebrow, "Key Pillars", "المحاور الرئيسية"),
+            (LandingSectionContentKeys.PillarsHeading, "Key Pillars", "المحاور الرئيسية"),
+            (LandingSectionContentKeys.PillarsBody,
+             "Building a comprehensive strategic vision that addresses energy systems, trade, and the link between surface and depths through five core pillars that anchor maritime security and global economic stability.",
+             "لصياغة رؤية استراتيجية شاملة تعالج منظومات الطاقة والتجارة والاتصال بين السطح والأعماق عبر خمسة محاور رئيسية تشكل ركائز الأمن البحري واستقرار الاقتصاد العالمي."),
+
+            // Goals — Mockup §08.
+            (LandingSectionContentKeys.GoalsEyebrow, "Forum Goals", "أهداف الملتقى"),
+            (LandingSectionContentKeys.GoalsHeading, "Ambitious Goals", "أهداف طموحة"),
+            (LandingSectionContentKeys.GoalsBody,
+             "Building an integrated maritime security framework that supports international efforts to protect the seabed and enhance supply-chain efficiency, contributing to global economic stability in alignment with Saudi Vision 2030.",
+             "تعزيز منظومة أمن بحري متكاملة تدعم الجهود الدولية لحماية قاع البحار ورفع كفاءة سلاسل الإمداد، بما يسهم في استقرار الاقتصاد العالمي ويتّسق مع مستهدفات رؤية المملكة 2030."),
+            (LandingSectionContentKeys.GoalsButton,
+             "Browse all goals", "تصفّح الأهداف الكاملة"),
+            (LandingSectionContentKeys.Goal1Title,
+             "Strengthen regional and international maritime security",
+             "تعزيز الأمن البحري الإقليمي والدولي"),
+            (LandingSectionContentKeys.Goal1Body,
+             "Unifying efforts to protect vital maritime corridors and ensure the stability of global navigation.",
+             "توحيد الجهود لحماية الممرّات البحرية الحيويّة وضمان استقرار حركة الملاحة العالميّة."),
+            (LandingSectionContentKeys.Goal2Title,
+             "Protect subsea infrastructure",
+             "حماية البنية التحتيّة تحت السطح"),
+            (LandingSectionContentKeys.Goal2Body,
+             "Safeguarding cables, energy lines, and pipelines that connect the global economy beneath the sea.",
+             "صون الكابلات وخطوط الطاقة والأنابيب التي تربط الاقتصاد العالمي تحت قاع البحار."),
+            (LandingSectionContentKeys.Goal3Title,
+             "Enhance supply-chain efficiency",
+             "رفع كفاءة سلاسل الإمداد"),
+            (LandingSectionContentKeys.Goal3Body,
+             "Modernising ports, corridors, and shipping systems to increase resilience and reduce risk.",
+             "تطوير منظومات الموانئ والممرّات وأنظمة الشحن لرفع المرونة وتقليل المخاطر."),
+            (LandingSectionContentKeys.Goal4Title,
+             "Exchange knowledge and build capacity",
+             "تبادل المعرفة وبناء القدرات"),
+            (LandingSectionContentKeys.Goal4Body,
+             "Expanding the knowledge platform between leaders and experts to develop national and international talent.",
+             "توسيع منصّة المعرفة بين القادة والخبراء لصقل الكوادر الوطنيّة والدوليّة."),
+            (LandingSectionContentKeys.Goal5Title,
+             "Contribute to Vision 2030",
+             "الإسهام في تحقيق رؤية 2030"),
+            (LandingSectionContentKeys.Goal5Body,
+             "Strengthening the Kingdom's position as a global hub for maritime security and the blue economy.",
+             "تعزيز موقع المملكة قطبًا عالميًّا في الأمن البحري والاقتصاد الأزرق."),
+        };
+
+        var now = timeProvider.GetUtcNow();
+        var existingKeys = await appDbContext.ContentBlocks
+            .Where(b => seed.Select(s => s.Item1).Contains(b.Key))
+            .Select(b => b.Key)
+            .ToListAsync(cancellationToken);
+
+        foreach (var (key, en, ar) in seed)
+        {
+            if (existingKeys.Contains(key)) { continue; }
+            appDbContext.ContentBlocks.Add(new SIMF.Domain.Cms.ContentBlock
+            {
+                Id = Guid.NewGuid(),
+                Key = key,
+                Content = en,
+                ContentArabic = ar,
+                IsActive = true,
+                LastUpdatedByUserId = actorUserId,
+                CreatedAt = now,
+                LastUpdatedAt = now,
+            });
+        }
+        await appDbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "Landing section content blocks ensured (seeded {NewCount} of {Total}).",
+            seed.Length - existingKeys.Count, seed.Length);
+    }
+
+    /// <summary>D-345 — idempotent demo speaker roster. Inserts any missing
+    /// <c>DEMO-SPK-*</c> speaker so the anonymous <c>GET /app/speakers</c> read
+    /// returns a populated, on-theme set (maritime-security / supply-chain) for
+    /// the Website strip and the app screen. Country is left null on purpose:
+    /// <c>Speaker.CountryId</c> is a real FK to <c>Country</c>, and seeding a
+    /// country row is out of scope here. Active + ordered so they surface.</summary>
+    private async Task EnsureDemoSpeakersAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        // PhotoRelativePath carries a test portrait URL (D-346 — "use any photo
+        // for testing"): the field already exists (no migration), the
+        // /content/site proxy now passes it through, and the Website speaker
+        // card renders it when present. Placeholder portraits from pravatar.cc.
+        var seed = new (string Code, string Name, string NameArabic, string Rank, int Order, string Photo)[]
+        {
+            ("DEMO-SPK-01", "Dr. Sarah Al-Otaibi", "د. سارة العتيبي", "Maritime Security Strategist", 10, "https://i.pravatar.cc/300?img=47"),
+            ("DEMO-SPK-02", "Adm. James Whitmore", "الأدميرال جيمس ويتمور", "Former Fleet Commander", 20, "https://i.pravatar.cc/300?img=12"),
+            ("DEMO-SPK-03", "Prof. Khalid Al-Harbi", "أ.د. خالد الحربي", "Blue-Economy Researcher", 30, "https://i.pravatar.cc/300?img=33"),
+            ("DEMO-SPK-04", "Dr. Liang Chen", "د. ليانغ تشين", "Global Supply-Chain Economist", 40, "https://i.pravatar.cc/300?img=68"),
+            ("DEMO-SPK-05", "Capt. Maria Santos", "النقيب ماريا سانتوس", "Port Operations Expert", 50, "https://i.pravatar.cc/300?img=45"),
+            ("DEMO-SPK-06", "Dr. Yuki Tanaka", "د. يوكي تاناكا", "Naval Technology Advisor", 60, "https://i.pravatar.cc/300?img=60"),
+            ("DEMO-SPK-07", "Cdre. Olivier Dubois", "العميد أوليفييه دوبوا", "Coastal Defence Specialist", 70, "https://i.pravatar.cc/300?img=15"),
+        };
+
+        var now = timeProvider.GetUtcNow();
+        var codes = seed.Select(x => x.Code).ToList();
+        var existing = await appDbContext.Speakers
+            .Where(s => codes.Contains(s.Code))
+            .ToDictionaryAsync(s => s.Code, cancellationToken);
+
+        var inserted = 0;
+        foreach (var (code, name, nameArabic, rank, order, photo) in seed)
+        {
+            if (existing.TryGetValue(code, out var current))
+            {
+                // Already seeded — backfill the test photo if it is missing so an
+                // earlier photo-less seed still ends up with a portrait.
+                if (string.IsNullOrEmpty(current.PhotoRelativePath))
+                {
+                    current.PhotoRelativePath = photo;
+                }
+                continue;
+            }
+            appDbContext.Speakers.Add(new SIMF.Domain.Programme.Speaker
+            {
+                Id = Guid.NewGuid(),
+                Code = code,
+                Name = name,
+                NameArabic = nameArabic,
+                Rank = rank,
+                DisplayOrder = order,
+                PhotoRelativePath = photo,
+                IsActive = true,
+                CreatedBy = actorUserId,
+                CreatedAt = now,
+            });
+            inserted++;
+        }
+
+        await appDbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "Demo speakers ensured (inserted {NewCount}, total {Total}).",
+            inserted, seed.Length);
+    }
+
+    /// <summary>D-347 — idempotent past-edition roster (by Year). Inserts any
+    /// missing year and backfills the detail fields (title / summary / place /
+    /// date / session count) on a row that was created counters-only, so the
+    /// public Archive timeline and the per-year detail page have real content.
+    /// No migration — every column already exists on <c>ArchiveEdition</c>.</summary>
+    private async Task EnsureDemoArchiveEditionsAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        var seed = new (int Year, string TitleEn, string TitleAr, string SummaryEn, string SummaryAr,
+            string LocationEn, string LocationAr, string DateLabelEn, string DateLabelAr,
+            int Attendees, int Sessions, int Speakers)[]
+        {
+            (2022, "SIMF 2022", "سيمف 2022",
+             "The inaugural edition — charting a course for regional maritime security.",
+             "النسخة الأولى — رسم مسار الأمن البحري الإقليمي.",
+             "Riyadh · Saudi Arabia", "الرياض · المملكة العربية السعودية",
+             "November 2022 · 3 days", "نوفمبر 2022 · 3 أيام", 800, 24, 30),
+            (2023, "SIMF 2023", "سيمف 2023",
+             "Securing tomorrow's seas — resilience across the maritime domain.",
+             "تأمين بحار الغد — المرونة عبر القطاع البحري.",
+             "Riyadh · Saudi Arabia", "الرياض · المملكة العربية السعودية",
+             "November 2023 · 3 days", "نوفمبر 2023 · 3 أيام", 1000, 32, 35),
+            (2024, "SIMF 2024", "سيمف 2024",
+             "Resilient maritime supply chains for a connected world.",
+             "سلاسل إمداد بحرية مرنة لعالم مترابط.",
+             "Riyadh · Saudi Arabia", "الرياض · المملكة العربية السعودية",
+             "November 2024 · 3 days", "نوفمبر 2024 · 3 أيام", 1100, 38, 38),
+            (2025, "SIMF 2025", "سيمف 2025",
+             "The fourth edition — the future of seabed security and supply chains.",
+             "النسخة الرابعة — مستقبل أمن قاع البحار وسلاسل الإمداد.",
+             "Riyadh · Saudi Arabia", "الرياض · المملكة العربية السعودية",
+             "November 2025 · 3 days", "نوفمبر 2025 · 3 أيام", 1200, 40, 40),
+        };
+
+        var now = timeProvider.GetUtcNow();
+        var years = seed.Select(x => x.Year).ToList();
+        var existing = await appDbContext.ArchiveEditions
+            .Where(e => years.Contains(e.Year))
+            .ToDictionaryAsync(e => e.Year, cancellationToken);
+
+        var inserted = 0;
+        foreach (var s in seed)
+        {
+            if (existing.TryGetValue(s.Year, out var current))
+            {
+                // Backfill detail on a counters-only row created earlier.
+                if (string.IsNullOrWhiteSpace(current.TitleEn)) { current.TitleEn = s.TitleEn; }
+                if (string.IsNullOrWhiteSpace(current.TitleAr)) { current.TitleAr = s.TitleAr; }
+                current.SummaryEn ??= s.SummaryEn;
+                current.SummaryAr ??= s.SummaryAr;
+                current.LocationEn ??= s.LocationEn;
+                current.LocationAr ??= s.LocationAr;
+                current.DateLabelEn ??= s.DateLabelEn;
+                current.DateLabelAr ??= s.DateLabelAr;
+                if (current.Sessions == 0) { current.Sessions = s.Sessions; }
+                continue;
+            }
+            appDbContext.ArchiveEditions.Add(new SIMF.Domain.Archive.ArchiveEdition
+            {
+                Id = Guid.NewGuid(),
+                Year = s.Year,
+                TitleEn = s.TitleEn,
+                TitleAr = s.TitleAr,
+                SummaryEn = s.SummaryEn,
+                SummaryAr = s.SummaryAr,
+                LocationEn = s.LocationEn,
+                LocationAr = s.LocationAr,
+                DateLabelEn = s.DateLabelEn,
+                DateLabelAr = s.DateLabelAr,
+                Attendees = s.Attendees,
+                Sessions = s.Sessions,
+                Speakers = s.Speakers,
+                IsActive = true,
+                CreatedBy = actorUserId,
+                CreatedAt = now,
+            });
+            inserted++;
+        }
+
+        await appDbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "Demo archive editions ensured (inserted {NewCount}, total {Total}).",
+            inserted, seed.Length);
+    }
+
+    /// <summary>D-348 — idempotent sponsors + media partners with test logos so
+    /// the public partners strip renders a populated logo row instead of
+    /// name-only text. Idempotent by Name; backfills a test logo onto any active
+    /// row that still has none (incl. the pre-existing demo rows). Logos are test
+    /// placeholders (the column normally holds an asset path; the owner asked for
+    /// any test image while real artwork is pending).</summary>
+    private async Task EnsureDemoPartnersAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        const string logoBase = "https://placehold.co/260x130/ffffff/0a2e6b?text=";
+        string Logo(string label) => logoBase + Uri.EscapeDataString(label);
+        var now = timeProvider.GetUtcNow();
+
+        var sponsors = new (string Name, string NameAr, SponsorTier Tier, int Order)[]
+        {
+            ("Maritime Defense Systems", "نظم الدفاع البحري", SponsorTier.Platinum, 10),
+            ("Gulf Port Authority", "هيئة موانئ الخليج", SponsorTier.Gold, 20),
+            ("Blue Horizon Logistics", "آفاق زرقاء للخدمات اللوجستية", SponsorTier.Gold, 30),
+            ("Coastal Shield Technologies", "تقنيات الدرع الساحلي", SponsorTier.Silver, 40),
+        };
+        var sponsorNames = sponsors.Select(x => x.Name).ToList();
+        var existingSponsors = await appDbContext.Sponsors
+            .Where(s => sponsorNames.Contains(s.Name)).Select(s => s.Name)
+            .ToListAsync(cancellationToken);
+        foreach (var sp in sponsors)
+        {
+            if (existingSponsors.Contains(sp.Name)) { continue; }
+            appDbContext.Sponsors.Add(new SIMF.Domain.Sponsors.Sponsor
+            {
+                Id = Guid.NewGuid(),
+                Name = sp.Name,
+                NameArabic = sp.NameAr,
+                Tier = sp.Tier,
+                DisplayOrder = sp.Order,
+                LogoRelativePath = Logo(sp.Name),
+                IsActive = true,
+                CreatedBy = actorUserId,
+                CreatedAt = now,
+            });
+        }
+
+        var partners = new (string Name, string NameAr, int Order)[]
+        {
+            ("Maritime News Network", "شبكة الأخبار البحرية", 10),
+            ("Naval Affairs Review", "مجلة الشؤون البحرية", 20),
+            ("Sea Trade Daily", "تجارة البحار اليومية", 30),
+        };
+        var partnerNames = partners.Select(x => x.Name).ToList();
+        var existingPartners = await appDbContext.MediaPartners
+            .Where(m => partnerNames.Contains(m.Name)).Select(m => m.Name)
+            .ToListAsync(cancellationToken);
+        foreach (var mp in partners)
+        {
+            if (existingPartners.Contains(mp.Name)) { continue; }
+            appDbContext.MediaPartners.Add(new SIMF.Domain.PublicRelations.MediaPartner
+            {
+                Id = Guid.NewGuid(),
+                Name = mp.Name,
+                NameArabic = mp.NameAr,
+                DisplayOrder = mp.Order,
+                LogoRelativePath = Logo(mp.Name),
+                IsActive = true,
+                CreatedBy = actorUserId,
+                CreatedAt = now,
+            });
+        }
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        // Backfill a test logo onto any active row that still has none (e.g. the
+        // pre-existing single sponsor + partner) so the strip is all logos.
+        var logolessSponsors = await appDbContext.Sponsors
+            .Where(s => s.IsActive && (s.LogoRelativePath == null || s.LogoRelativePath == ""))
+            .ToListAsync(cancellationToken);
+        foreach (var s in logolessSponsors)
+        {
+            s.LogoRelativePath = Logo(string.IsNullOrWhiteSpace(s.Name) ? "Sponsor" : s.Name);
+        }
+        var logolessPartners = await appDbContext.MediaPartners
+            .Where(m => m.IsActive && (m.LogoRelativePath == null || m.LogoRelativePath == ""))
+            .ToListAsync(cancellationToken);
+        foreach (var m in logolessPartners)
+        {
+            m.LogoRelativePath = Logo(string.IsNullOrWhiteSpace(m.Name) ? "Partner" : m.Name);
+        }
+        await appDbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Demo partners ensured (sponsors + media partners with logos).");
     }
 
     /// <summary>D-176 (gap doc G12) — idempotently seeds the default

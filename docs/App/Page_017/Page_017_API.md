@@ -51,13 +51,14 @@ on open. Mapping:
   "startUtc": "2026-11-03T06:00:00Z", "endUtc": "2026-11-03T07:30:00Z",
   "themes":   [ { "id": "guid", "name": "string", "nameArabic": "string", "color": "#RRGGBB" } ],
   "speakers": [ { "id": "guid", "name": "string", "nameArabic": "string",
-                  "title": "string?", "displayOrder": 0, "role": "Speaker",
+                  "title": "string?", "displayOrder": 0, "role": 0,  // int! 0=Speaker 1=Host (wire is int — D-225/D-299)
                   // --- D-271 append-only (D-219): country flag + photo on the speaker ---
                   "countryId": null, "countryNameEn": null, "countryNameAr": null,
                   "photoRelativePath": null } ],
   "seats":    { "capacity": 0, "reserved": 0, "available": 0 },
   "categoryId": "guid?", "categoryName": "string?", "categoryNameArabic": "string?",
-  "status": "Scheduled", "publishedAt": "string?", "hasRecording": false,
+  "status": 0,  // int! SessionStatus 0=Scheduled 1=Held 2=Recorded 3=Published (wire is int — D-299)
+  "publishedAt": "string?", "hasRecording": false,
   // --- D-271 append-only (D-219): live-stream stub (drives screen 25) ---
   "liveStreamUrl": null,         // string? → non-null = the session has a LIVE broadcast (LIVE player + badge); null = recorded/scheduled
   "liveSignLanguageUrl": null    // string? → optional sign-language feed (the live screen's لغة الإشارة toggle)

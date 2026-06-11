@@ -294,12 +294,23 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
 
   Future<void> _restoreFromStorage() async {
     try {
-      final access = await _secureStorage.read(StorageKeys.accessToken);
-      final refresh = await _secureStorage.read(StorageKeys.refreshToken);
-      final expiresIso = await _secureStorage.read(
-        StorageKeys.accessTokenExpiresAtIso,
-      );
-      final userJson = await _secureStorage.read(StorageKeys.currentUserJson);
+      // Cold-start reads are time-boxed (D-295): a hung or slow platform
+      // keystore must never stall the restore, because the router holds the
+      // user on the splash while auth is still AuthStateInitial (router.dart),
+      // so a stalled read would strand them on the splash forever. On timeout
+      // the read throws and the catch-all below resolves to the signed-out
+      // entry (Page_001 Logic L-6). The reads are independent, so they run
+      // concurrently under a single cap well under the splash's 8s wait.
+      final stored = await Future.wait(<Future<String?>>[
+        _secureStorage.read(StorageKeys.accessToken),
+        _secureStorage.read(StorageKeys.refreshToken),
+        _secureStorage.read(StorageKeys.accessTokenExpiresAtIso),
+        _secureStorage.read(StorageKeys.currentUserJson),
+      ]).timeout(const Duration(seconds: 4));
+      final access = stored[0];
+      final refresh = stored[1];
+      final expiresIso = stored[2];
+      final userJson = stored[3];
 
       if (refresh == null || refresh.isEmpty) {
         state = const AuthStateSignedOut();

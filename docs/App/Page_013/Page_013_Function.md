@@ -23,7 +23,7 @@ for now** — its content is shaped entirely by the **app privilege**
 | Element | Description | Privilege | Action |
 |---|---|---|---|
 | App bar / title | AR **الرئيسية** / EN **Home** | All | — |
-| Notification bell + unread badge | Bell icon with unread count | All (count is `0` / hidden for `Guest`) | Tap → notifications screen; count from `GET /app/account/notifications` |
+| Notification bell + unread badge | Bell icon with unread count | All (count is `0` / hidden for `Guest`) | Tap → notifications screen; count from `GET /app/account/notifications/unread-count` |
 | Live / YouTube banner | Promo banner for the live stream | All | Tap → opens the live/stream view. **No API for now (D10)** — static/config-driven |
 | Entry tiles (navigation) | The home navigation tiles | Gated per privilege (Logic L-2) | Tap → routes to the matching screen |
 | Sign-in prompt (Guest only) | "Sign in" affordance for `Guest` | `Guest` only | Tap → sign-in flow |
@@ -33,7 +33,7 @@ for now** — its content is shaped entirely by the **app privilege**
 2. The app determines the **privilege from the JWT claim** (no token ⇒ `Guest`).
 3. Home renders the entry tiles/actions **allowed for that privilege** (Logic L-2).
 4. In the background the app reads the **unread-notification count**
-   (`GET /app/account/notifications`) and paints the bell badge. A failure here is
+   (`GET /app/account/notifications/unread-count`) and paints the bell badge. A failure here is
    silent — the badge simply shows no count (Logic L-5).
 5. The **live/YouTube banner** renders from static/config (no API for now, D10).
 6. The user taps a tile / the bell / the banner / the sign-in prompt and navigates on.

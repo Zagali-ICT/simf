@@ -1,0 +1,116 @@
+@* D-353 â€” reusable Banner View/Delete form, hosted by CrudShell (popup or
+   full page) from BannersList. Inherits CrudViewDeleteFormBase so it exposes
+   the standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
+   details always show (including a preview of the optional image asset); when
+   IsDelete=true a Deactivate button appears and a SimfConfirm gates the
+   soft-delete (was a one-click delete on the list). Adds the View path the
+   inline form never had. *@
+@inherits CrudViewDeleteFormBase<AdminBannerDetail>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Banners.Field.TitleEn"]</dt>
+        <dd>@Initial.Title</dd>
+        <dt>@L["Admin.Banners.Field.TitleAr"]</dt>
+        <dd>@Initial.TitleArabic</dd>
+        <dt>@L["Admin.Banners.Field.BodyEn"]</dt>
+        <dd>@Initial.Body</dd>
+        <dt>@L["Admin.Banners.Field.BodyAr"]</dt>
+        <dd>@Initial.BodyArabic</dd>
+        <dt>@L["Admin.Banners.Field.ImageUrl"]</dt>
+        <dd>
+            @if (string.IsNullOrWhiteSpace(Initial.ImageUrl))
+            {
+                <span>â€”</span>
+            }
+            else
+            {
+                <img class="simf-dl__image" src="@Initial.ImageUrl" alt="@Initial.Title" />
+            }
+        </dd>
+        <dt>@L["Admin.Banners.Field.LinkUrl"]</dt>
+        <dd>@(string.IsNullOrWhiteSpace(Initial.LinkUrl) ? "â€”" : Initial.LinkUrl)</dd>
+        <dt>@L["Admin.Banners.Field.StartUtc"]</dt>
+        <dd>@Initial.StartUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</dd>
+        <dt>@L["Admin.Banners.Field.EndUtc"]</dt>
+        <dd>@Initial.EndUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm")</dd>
+        <dt>@L["Admin.Banners.Col.DisplayOrder"]</dt>
+        <dd>@Initial.DisplayOrder</dd>
+        <dt>@L["Admin.Banners.Col.Active"]</dt>
+        <dd>@(Initial.IsActive ? L["Grid.Active"] : L["Grid.Inactive"])</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.Banners.Action.Deactivate"]
+            </SimfButton>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.Banners.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.Banners.Delete.Title"]"
+                 Message="@string.Format(L["Admin.Banners.Delete.Message"], TitleLabel(Initial))"
+                 ConfirmLabel="@L["Admin.Banners.Action.Deactivate"]"
+                 CancelLabel="@L["Admin.Banners.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/banners/{Initial.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                // Close the confirm first so the error lands on the visible
+                // form body, not behind the (still-open) confirm overlay.
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Banners.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.Banners.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+
+    private static string TitleLabel(AdminBannerDetail row) =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? row.TitleArabic
+            : row.Title;
+}

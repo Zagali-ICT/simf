@@ -1,6 +1,13 @@
 # SIMF — Implementation Gap Report
 
-**Date:** 2026-05-31  ·  **Branch:** `feature/login-api`  ·  **Status:** point-in-time snapshot
+> ⚠️ **SUPERSEDED (2026-06-08).** This is a **point-in-time snapshot from 2026-05-31**
+> and is now **stale** — it lists since-shipped features as "not implemented" (it
+> predates ~20 decisions, the branch is at D-350). Do **not** use it to judge what
+> remains. The authoritative, verified current state is
+> [`SIMF-Remaining-Work-Register.md`](SIMF-Remaining-Work-Register.md). The body
+> below is kept only as a historical record.
+
+**Date:** 2026-05-31  ·  **Branch:** `feature/login-api`  ·  **Status:** point-in-time snapshot (SUPERSEDED — see banner)
 
 This report cross-references the **intended functional scope** (Mockup 41 screens, SRS `FR-1xx…FR-12xx`,
 Programme-Plan stages/gates) against the **implemented surface** (API endpoints, Control Panel pages,

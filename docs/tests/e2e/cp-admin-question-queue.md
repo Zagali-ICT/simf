@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **What this page is.** P3.3 / D-234 — the Scientific-Committee central Q&A
 > queue (stage 2). It lists `Pending` questions across **all** sessions and lets
@@ -49,6 +49,7 @@
 | E2E-QQU-012 | AI-verdict + Phase rendering — verdict shows or em-dash; Phase localised Pre/Live | happy | P2 | _to author_ |
 | E2E-QQU-013 | Per-column filter narrows the grid — type into the Question / Submitter filter input → in-memory re-projection, Skip → 0, no round-trip | happy | P1 | _to author_ |
 | E2E-QQU-014 | Column sort toggles — click the Session header → asc → desc → in-memory re-order, Skip → 0 | happy | P2 | _to author_ |
+| E2E-QQU-015 | Excel export — toolbar Export downloads an .xlsx of the Pending queue; selected rows export just those (D-356) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -312,6 +313,43 @@ Scenario: Clicking a sortable header toggles ascending / descending in memory
 - As with the filter, sorting re-projects `_rows` in memory via `BuildPage()`; no
   GET /queue is re-issued.
 
+### E2E-QQU-015 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the Pending question queue to an XLSX workbook
+  Given the administrator is on /admin/question-queue with at least three Pending
+    rows loaded via GET /account/api/admin/questions/queue
+  And the grid toolbar shows the "Export" action (OnExport wired, label "Export")
+  When they click "Export" with no rows selected
+  Then the browser issues POST /account/api/admin/questions/export (via simfAccount.downloadXlsx)
+  And the request body is an AdminGridExportRequest with an empty Ids list and the
+    current Query (the page sends Query only when the selection is empty, so the
+    whole filtered Pending queue is exported)
+  And the API authorises the call against Questions.Export
+  And the browser saves a file named simf-questions-{timestamp}.xlsx
+  And the workbook's "Questions" sheet header row reads
+    Session | Question | Submitter | Email | Phase | Status | AiVerdict | AssignedToRole | Created
+
+  When they instead tick the select-all / per-row checkboxes for exactly two rows
+    then click "Export"
+  Then the AdminGridExportRequest carries those two row Ids and a null Query
+  And the workbook contains exactly those two rows (header + 2 data rows)
+
+  Note: this page is export-only — questions are audience-submitted and moderated
+  in place (approve / hide / escalate), so there is NO Import action and no import
+  file picker on the toolbar. The export uses the direct simfAccount.downloadXlsx
+  proxy, not the CrudGridExcel @ref helper. The server caps an export at 5000 rows,
+  though the queue list itself is already capped at 200 oldest-first Pending rows.
+```
+
+**Evidence captured:**
+- Network: a single POST `/account/api/admin/questions/export` returns 200 with an
+  `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` body; no
+  `/import` request exists (export-only page).
+- The toolbar shows an "Export" action but **no "Import" action** — assert the
+  import affordance is absent (this is not a full CrudShell conversion).
+- Console errors: 0 expected.
+
 ---
 
 ## Implementation notes
@@ -352,4 +390,4 @@ Scenario: Clicking a sortable header toggles ascending / descending in memory
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle); export-only (no import, no presentation toggle, no delete-confirm on this read-only triage grid). Prior: 2026-06-03 (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

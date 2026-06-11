@@ -16,7 +16,7 @@
         <SimfWordmark />
     </Brand>
     <Controls>
-        <SimfLanguageSwitch Href="@CultureHref" Label='@L["Shell.SwitchLanguage"]' />
+        <SimfLanguageSwitch Label='@L["Shell.SwitchLanguage"]' />
         <SimfThemeToggle LightLabel='@L["Shell.ThemeLight"]' DarkLabel='@L["Shell.ThemeDark"]' />
         <AuthorizeView>
             <SimfNotificationBell
@@ -45,20 +45,40 @@
         </form>
     </Controls>
     <SideNav>
+        <div class="simf-nav-search">
+            <SimfIcon Name="search" Class="simf-nav-search__icon" Size="16" />
+            <input type="search" class="simf-nav-search__input"
+                   placeholder="@L["Shell.NavSearchPlaceholder"]"
+                   aria-label="@L["Shell.NavSearch"]"
+                   @bind="_navFilter" @bind:event="oninput" />
+        </div>
+        @{
+            var anyMatch = false;
+        }
         @foreach (var group in CpNavigation.Groups)
         {
-            var visibleItems = group.Items.Where(CanSee).ToList();
+            var permitted = group.Items.Where(CanSee).ToList();
+            // A group whose own label matches the filter shows all its (permitted)
+            // items; otherwise only the items whose label matches.
+            var visibleItems = GroupLabelMatches(group) ? permitted
+                : permitted.Where(MatchesFilter).ToList();
             if (visibleItems.Count > 0)
             {
+                anyMatch = true;
                 <SimfNavGroup Label='@L[group.LabelKey]'>
                     @foreach (var item in visibleItems)
                     {
                         <SimfNavItem Href="@item.Href"
                                      Label='@L[item.LabelKey]'
+                                     Icon="@item.Icon"
                                      BadgeLabel='@(item.IsStub ? L["Nav.Soon"].Value : null)' />
                     }
                 </SimfNavGroup>
             }
+        }
+        @if (!anyMatch)
+        {
+            <p class="simf-nav-search__empty">@L["Shell.NavSearchEmpty"]</p>
         }
     </SideNav>
     <ChildContent>
@@ -67,17 +87,6 @@
 </SimfAppShell>
 
 @code {
-    // Switches to the other language and returns to the current page.
-    private string CultureHref
-    {
-        get
-        {
-            var next = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar" ? "en" : "ar";
-            var path = "/" + Nav.ToBaseRelativePath(Nav.Uri);
-            return $"/culture?culture={next}&redirectUri={Uri.EscapeDataString(path)}";
-        }
-    }
-
     // Issue-1 — the signed-in user's permission codes (copied from the JWT into
     // the cookie at sign-in). The side menu hides items the user lacks; an
     // Administrator carries the wildcard "*" and sees everything. Defaults to
@@ -92,6 +101,22 @@
         item.RequiredPermission is null
         || _hasAllPermissions
         || _permissions.Contains(item.RequiredPermission);
+
+    // The live side-menu filter (the search box at the top of the nav). Empty =
+    // show everything; otherwise an item is kept when its resolved label
+    // contains the query (culture-aware, case-insensitive), so it works in both
+    // English and Arabic.
+    private string _navFilter = string.Empty;
+
+    private bool MatchesFilter(CpNavigation.NavItem item) =>
+        string.IsNullOrWhiteSpace(_navFilter)
+        || L[item.LabelKey].Value.Contains(
+               _navFilter.Trim(), StringComparison.CurrentCultureIgnoreCase);
+
+    private bool GroupLabelMatches(CpNavigation.NavGroup group) =>
+        !string.IsNullOrWhiteSpace(_navFilter)
+        && L[group.LabelKey].Value.Contains(
+               _navFilter.Trim(), StringComparison.CurrentCultureIgnoreCase);
 
     protected override async Task OnInitializedAsync()
     {

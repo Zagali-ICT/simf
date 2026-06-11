@@ -394,18 +394,13 @@ internal sealed class BusinessMeetingService(
     {
         var (skip, top) = Page(query);
 
-        // Join meeting → table → hall up front so the CP grid can filter and sort
-        // on the joined Hall name / Table code as well as the meeting's own
-        // columns. Every projected column is an App-DB value (no cross-DB resolve),
-        // so all columns are EF-translatable and server-filterable / sortable.
-        var rows = appDbContext.BusinessMeetings.AsNoTracking()
-            .Join(appDbContext.MeetingTables.AsNoTracking(),
-                m => m.MeetingTableId, t => t.Id, (m, t) => new { m, t })
-            .Join(appDbContext.Halls.AsNoTracking(),
-                x => x.t.HallId, h => h.Id, (x, h) => new BusinessMeetingRow(
-                    x.m.Id, x.m.MeetingTableId, x.t.Code, h.Id, h.NameArabic,
-                    x.m.MeetingType, x.m.StartUtc, x.m.EndUtc, x.m.Status,
-                    x.m.Participants.Count));
+        // Filter + sort on the entity navigations first (all App-DB columns, so
+        // EF-translatable), and project into BusinessMeetingRow LAST — after
+        // Skip/Take. Ordering before projecting keeps the Participants.Count
+        // correlated subquery out of the ORDER BY: EF Core cannot translate an
+        // OrderBy whose key is a projection that embeds a subquery (both the old
+        // manual double-Join and a post-projection sort 500'd at execution).
+        var q = appDbContext.BusinessMeetings.AsNoTracking();
 
         // CP grid per-column filters (D-255). Unknown columns are ignored. The
         // legacy "status" filter (the old dropdown) still parses the enum name.
@@ -416,39 +411,45 @@ internal sealed class BusinessMeetingService(
             switch (column.ToLowerInvariant())
             {
                 case "hall":
-                    rows = rows.Where(r => r.HallName.Contains(v));
+                    q = q.Where(m => m.MeetingTable!.Hall!.NameArabic.Contains(v));
                     break;
                 case "table":
-                    rows = rows.Where(r => r.TableCode.Contains(v));
+                    q = q.Where(m => m.MeetingTable!.Code.Contains(v));
                     break;
                 case "status":
                     if (Enum.TryParse<BusinessMeetingStatus>(v, ignoreCase: true, out var status))
                     {
-                        rows = rows.Where(r => r.Status == status);
+                        q = q.Where(m => m.Status == status);
                     }
                     break;
             }
         }
 
         // CP grid sortable columns (D-255). Default: most recent start first.
-        rows = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
+        q = (query.Sort?.ToLowerInvariant(), query.SortDescending) switch
         {
-            ("hall", false) => rows.OrderBy(r => r.HallName).ThenByDescending(r => r.StartUtc),
-            ("hall", true) => rows.OrderByDescending(r => r.HallName).ThenByDescending(r => r.StartUtc),
-            ("table", false) => rows.OrderBy(r => r.TableCode).ThenByDescending(r => r.StartUtc),
-            ("table", true) => rows.OrderByDescending(r => r.TableCode).ThenByDescending(r => r.StartUtc),
-            ("type", false) => rows.OrderBy(r => r.MeetingType).ThenByDescending(r => r.StartUtc),
-            ("type", true) => rows.OrderByDescending(r => r.MeetingType).ThenByDescending(r => r.StartUtc),
-            ("start", false) => rows.OrderBy(r => r.StartUtc),
-            ("end", false) => rows.OrderBy(r => r.EndUtc),
-            ("end", true) => rows.OrderByDescending(r => r.EndUtc),
-            ("status", false) => rows.OrderBy(r => r.Status).ThenByDescending(r => r.StartUtc),
-            ("status", true) => rows.OrderByDescending(r => r.Status).ThenByDescending(r => r.StartUtc),
-            _ => rows.OrderByDescending(r => r.StartUtc),
+            ("hall", false) => q.OrderBy(m => m.MeetingTable!.Hall!.NameArabic).ThenByDescending(m => m.StartUtc),
+            ("hall", true) => q.OrderByDescending(m => m.MeetingTable!.Hall!.NameArabic).ThenByDescending(m => m.StartUtc),
+            ("table", false) => q.OrderBy(m => m.MeetingTable!.Code).ThenByDescending(m => m.StartUtc),
+            ("table", true) => q.OrderByDescending(m => m.MeetingTable!.Code).ThenByDescending(m => m.StartUtc),
+            ("type", false) => q.OrderBy(m => m.MeetingType).ThenByDescending(m => m.StartUtc),
+            ("type", true) => q.OrderByDescending(m => m.MeetingType).ThenByDescending(m => m.StartUtc),
+            ("start", false) => q.OrderBy(m => m.StartUtc),
+            ("end", false) => q.OrderBy(m => m.EndUtc),
+            ("end", true) => q.OrderByDescending(m => m.EndUtc),
+            ("status", false) => q.OrderBy(m => m.Status).ThenByDescending(m => m.StartUtc),
+            ("status", true) => q.OrderByDescending(m => m.Status).ThenByDescending(m => m.StartUtc),
+            _ => q.OrderByDescending(m => m.StartUtc),
         };
 
-        var total = await rows.CountAsync(cancellationToken);
-        var items = await rows.Skip(skip).Take(top).ToListAsync(cancellationToken);
+        var total = await q.CountAsync(cancellationToken);
+        var items = await q.Skip(skip).Take(top)
+            .Select(m => new BusinessMeetingRow(
+                m.Id, m.MeetingTableId, m.MeetingTable!.Code,
+                m.MeetingTable.HallId, m.MeetingTable.Hall!.NameArabic,
+                m.MeetingType, m.StartUtc, m.EndUtc, m.Status,
+                m.Participants.Count))
+            .ToListAsync(cancellationToken);
 
         return GridPage<BusinessMeetingRow>.Of(items, total, new GridQuery { Skip = skip, Top = top });
     }

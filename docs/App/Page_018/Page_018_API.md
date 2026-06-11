@@ -27,11 +27,11 @@ envelope, headers, error model and auth from SIMF-API-001 + SIMF-MOB-API-001
   "rowLabels": ["A","B","C","D","E","F","G","H"],   // ← grid rows
   "seatsPerRow": 12,                                  // ← cells per row
   "reservedCells": [                                  // ← the OCCUPIED seats only
-    { "reservationId": "guid", "rowLabel": "C", "seatNumber": 5, "kind": "UserBooking" },
-    { "reservationId": "guid", "rowLabel": "A", "seatNumber": 1, "kind": "AdminReservedRow" }
+    { "reservationId": "guid", "rowLabel": "C", "seatNumber": 5, "kind": 0 },  // int! 0=UserBooking 1=AdminReservedRow 2=RandomAssignment (wire is int — D-299/D-301)
+    { "reservationId": "guid", "rowLabel": "A", "seatNumber": 1, "kind": 1 }   // AdminReservedRow
   ],
   "myCell": {                                         // ← the user's own seat ("Main"); null if none
-    "reservationId": "guid", "rowLabel": "B", "seatNumber": 12, "kind": "UserBooking"
+    "reservationId": "guid", "rowLabel": "B", "seatNumber": 12, "kind": 0
   },
   "activeReservedCount": 13
 }

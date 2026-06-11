@@ -39,6 +39,8 @@
                       RowKey="@(r => r.Id.ToString())"
                       RowLabel="@(r => $"{r.Stars}/5")"
                       Caption="@L["Admin.Ratings.Title"]"
+                      OnExport="OnExportAsync"
+                      ExportLabel="@L["Grid.Export"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       FilterPlaceholder="@L["Grid.FilterPlaceholder"]"
                       ActionsHeader="@L["Grid.Actions"]"
@@ -120,6 +122,18 @@
 
     private string FormatPage(int current, int total) =>
         string.Format(L["Grid.Page"], current, total);
+
+    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // download via the generic /export proxy. Export only — ratings are owned by
+    // the attendees who submit them, so the admin view is read-only (no import).
+    private Task OnExportAsync(IReadOnlyList<AdminRatingSummary> selected) =>
+        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/ratings/export",
+            new AdminGridExportRequest
+            {
+                Ids = selected.Select(row => row.Id).ToList(),
+                Query = selected.Count == 0 ? _query : null,
+            }).AsTask();
 
     private async Task LoadAsync()
     {

@@ -34,6 +34,7 @@
 | E2E-MOB003-011 | RTL render (Arabic) — fields, errors, links mirror; email stays LTR | i18n | P1 | authored (screen) |
 | E2E-MOB003-012 | Biometric (device-key) re-open | happy | P0 | authored ✓ (Dart client + controller tests; **.NET↔Dart interop proven by backend golden-vector test, D-266**; on-device prompt → simf-run) |
 | E2E-MOB003-013 | Signed-in → profile-incomplete routes to Page_007 (`/sign-up/visitor`); complete → Home; probe failure → Home | happy | P0 | authored ✓ (widget test) |
+| E2E-MOB003-014 | "Browse without signing in" → guest landing (Page 012) → public Home, no token (D-325) | happy | P1 | authored ✓ (widget test) |
 
 ## Scenarios
 
@@ -161,6 +162,22 @@ Scenario: A signed-in visitor with an incomplete profile is sent to complete it
 routes home and stores the email" + "successful sign-in with an incomplete profile
 routes to the visitor profile screen (Page_007 auto-route)".
 
+### E2E-MOB003-014 — Browse without signing in (guest entry, D-325)
+
+```gherkin
+Feature: Open the app as a guest
+Scenario: A signed-out user enters the app without an account
+  Given the sign-in screen
+  When the user taps "Browse without signing in"
+  Then the guest-mode landing (Page 012) opens
+  And "Continue as guest" enters the public Home (#13) with no token
+  And Guest+ content (sessions, speakers, venue map, media) is browsable
+  And account-only actions (badge, notifications, booking, contacts) still gate to sign-in
+```
+
+**Evidence:** `sign_in_screen_test` — "browse-without-signing-in opens the guest
+screen (no auth)". The guest landing itself is `GuestModeScreen` (Page 012).
+
 ---
 
-_Last reviewed:_ `2026-06-05` by `SIMF Team`.
+_Last reviewed:_ `2026-06-06` by `SIMF Team`.

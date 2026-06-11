@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| Date | 2026-06-03 |
+| Date | 2026-06-06 |
 | Status | Active plan — orchestrates the controlled docs + the per-page folders into build phases |
 | Authority | Owner directive ("make plan for app design plan", "do") · decisions in `DECISIONS_LOG` D-249 |
 | Audience | The independent Flutter developer who builds the real app against the **App API** (`/api/v1/app/*`) |
@@ -56,34 +56,39 @@ Status legend: ✅ **ready** (endpoint shipped under `/app/*`) · 🟡 **to buil
 | 1 | `splash` | Guest | ✅ `POST /app/auth/refresh` + `GET /app/account/profile` (version = store-native, —) | [Page_001](Page_001/README.md) |
 | 2 | `onboarding` | Guest | — (no API; optional `GET /app/content/{key}`) | [Page_002](Page_002/README.md) |
 | 3 | `signIn` | Guest | ✅ sign-in, refresh, forgot/reset-password, verify-otp, device-key (biometric) | [Page_003](Page_003/README.md) |
-| 4 | `signUpType` | Guest | — (visitor-only app; UI gate) | [Page_004](Page_004/README.md) |
+| ~~4~~ | ~~`signUpType`~~ | — | **REMOVED (D-332)** — invented; not in the mockup. Sign-up goes #3 → #5 directly | [Page_004](Page_004/README.md) |
 | 5 | `signUpForm` | Guest | ✅ `POST /app/auth/sign-up` (D-198 enumeration-resistant; generic 201) | [Page_005](Page_005/README.md) |
 | 6 | `emailOtp` | Guest | ✅ `POST /app/auth/verify-email` + `resend-code` | [Page_006](Page_006/README.md) |
-| 7 | `signUpVisitor` | Visitor | ✅ user-profile upsert + countries + profile-types + interests + `GET /app/organisations` (interests picker is a sub-step here) | [Page_007](Page_007/README.md) |
+| 7 | `signUpVisitor` | Visitor | ✅ profile **data** (نوع التسجيل Visitor/Other filter + profile-types `?isVisitor=` + countries + `GET /app/organisations`); **Next → interests** (D-332) | [Page_007](Page_007/README.md) |
+| 7‑01 | `signUpInterests` | Visitor | ✅ interests lookup + the **single** user-profile upsert (Page-007 data **+** interestIds) + id-image — D-332 | [Page_007-01](Page_007-01/README.md) |
 | 8 | ~~`signUpExhibitor`~~ | — | **removed from the app (D-276)** — exhibitor/sponsor are CP concepts (D-199) | _n/a_ |
 | 9 | `terms` | Guest | ✅ `GET /app/content/{key}` (`terms`; accept is client-side, D8 consent record deferred) | [Page_009](Page_009/README.md) |
 | 10 | `registrationSuccess` | Visitor (pending) | ✅ `GET /app/users/me` (status poll) | [Page_010](Page_010/README.md) |
 | 11 | `registrationStatus` | Visitor (pending) | ✅ **`GET /app/users/me`** (built this wave, D-249) | [Page_011](Page_011/README.md) |
-| 12 | `guestMode` | Guest | — | _n/a (not in this batch)_ |
+| 12 | `guestMode` | Guest | — (no API) | 🟢 **screen built (D-316)**; guest entry wired from sign-in (D-325) — [Page_012](Page_012/README.md) |
 
 ### Section 2 — Core screens (13–20)
 
 | # | Route | Privilege | API status | Page doc |
 |---|-------|-----------|------------|----------|
-| 13 | `home` | Guest+ | ✅ `GET /app/account/notifications` (count) · ✅ **`GET /app/bootstrap`** (D-251) · live banner deferred (D10) | [Page_013](Page_013/README.md) |
-| 14 | `myArea` | Visitor | ✅ **BUILT (D-249)** `GET /app/account/dashboard` + `calendar.ics` + `contact-card.vcf` — unions held bookings + speaker meetings + confirmed business meetings | [Page_014](Page_014/README.md) |
-| 15 | `venueMap` | Guest | ✅ `GET /app/venue-map` (D-230) + `GET /app/booths` | [Page_015](Page_015/README.md) |
-| 16–20 | `sessions` (renamed from `agenda`, D-276), `sessionDetail`, `mySeat`, `speakers`, `speakerProfile` | Guest/Visitor | ⏳ existing `Endpoints/Programme/*`, `Endpoints/Sessions/SeatReservation*`, `Endpoints/Public/PublicSpeaker*` (later wave) | — |
+| 13 | `home` | Guest+ | 🟢 **screen built (D-296)** · `…/notifications/unread-count` (count) · `GET /app/bootstrap` (D-251) · live banner deferred (D10) | [Page_013](Page_013/README.md) |
+| 14 | `myArea` | Visitor | 🟢 **screen built (D-297)** · `GET /app/account/dashboard` + `calendar.ics` + `contact-card.vcf` (D-249) — unions held bookings + speaker meetings + confirmed business meetings | [Page_014](Page_014/README.md) |
+| 15 | `venueMap` | Guest | 🟢 **screen built (D-298)** · `GET /app/venue-map` (D-230) + `GET /app/booths` | [Page_015](Page_015/README.md) |
+| 16 | `sessions` (renamed from `agenda`, D-276) | Guest+ | 🟢 **screen built (D-299)** · `GET /app/programme/sessions` (D-199/D-252/D-271) — fetch-once + client-side pills/day-strip/search | [Page_016](Page_016/README.md) |
+| 17 | `sessionDetail` | Guest+ (seat: Visitor) | 🟢 **screen built (D-300)** · `GET /app/programme/sessions/{id}` + `…/sessions/{id}/seats` (D-265) — detail + my-seat card + real add-to-calendar (reminder deferred) | [Page_017](Page_017/README.md) |
+| 18 | `mySeat` | Visitor (login-only) | 🟢 **screen built (D-301)** · `GET /app/sessions/{id}/seats` (D-267) — read-only grid + derived status + navigate + share | [Page_018](Page_018/README.md) |
+| 19 | `speakers` | Guest+ | 🟢 **screen built (D-302)** · `GET /app/speakers` (D-199) | [Page_019](Page_019/README.md) |
+| 20 | `speakerProfile` | Guest+ (meeting: Visitor) | 🟢 **screen built (D-303)** · `GET /app/speakers/{id}` (D-199) + `POST …/meeting-requests` (D-269) | [Page_020](Page_020/README.md) |
 
 ### Sections 3–8 — content, live, media, badge, smart, settings (21–41)
 
-⏳ **Later waves.** The backend families already exist under `/app/*` for most of
-these (booths, sponsors, archive, live Q&A, audience comments, news,
-media gallery, media partners, badge/QR, notifications, AI summary, meet-people,
-chatbot, about, accessibility, cybersecurity, rate/feedback). They are catalogued
-at the index level in [`SIMF-MOB-API-001`](../SIMF-MOB-API-001-Mobile-API-Requirements.md)
-§7–§14 and will get their own `Page_NNN/` folders + per-page detail in the next
-documentation waves, screen by screen, as they are built.
+✅ **Built.** Screens 21–41 (excluding removed 08/39) are all built — each has its
+`Page_NNN/` folder and an indexed E2E catalogue file; see
+[`PAGE-INDEX.md`](../pages/PAGE-INDEX.md) for the per-screen build decision
+(D-304..D-322). The backend families they bind to live under `/app/*` and are
+catalogued in [`SIMF-MOB-API-001`](../SIMF-MOB-API-001-Mobile-API-Requirements.md)
+§7–§14. The additive FDS-014 visitor contact screens (share / scan / my-contacts)
+are built (D-324).
 
 ---
 
@@ -97,9 +102,9 @@ following the matching `Page_NNN/` Function/Logic/Design docs.
 | **P0 — Foundation** | app shell, router, theme/RTL, the typed `/app` API client, the auth state machine, secure token store | everything else depends on it | matches `SIMF-MAA-001` |
 | **P1 — Auth** | 1 splash, 3 signIn (+ biometric), 5/6 sign-up + OTP, forgot/reset | the only "must be ready" surface (owner) — and it **is** ready server-side | sign-in → token cached |
 | **P2 — Onboarding & registration** | 2 onboarding, 4 type, 7 profile + interests, 9 terms, 10 success, 11 status | completes the new-visitor journey end-to-end; all APIs ready (11 just built) | profile complete → pending → approved |
-| **P3 — Home & identity** | 13 home (privilege-gated tiles), 14 My-Area | the signed-in landing + the personal dashboard | 13 ready now; 14 unblocks when `bootstrap`+`dashboard` ship |
-| **P4 — Core event** | 15 map, 16–20 agenda/sessions/speakers/seat | the core attendee value | existing endpoints |
-| **P5+ — Content / Live / Media / Smart / Settings** | 21–41 | breadth, per the later doc waves | per-screen as documented |
+| **P3 — Home & identity** | 13 home (privilege-gated tiles), 14 My-Area | the signed-in landing + the personal dashboard | 13 + 14 **screen built (D-296 / D-297)** |
+| **P4 — Core event** | 15 map, 16–20 sessions/detail/seat/speakers | the core attendee value | **complete** — 15 (D-298), 16 (D-299), 17 (D-300), 18 (D-301), 19 (D-302), 20 (D-303) built |
+| **P5+ — Content / Live / Media / Smart / Settings** | 21–41 | breadth, per the later doc waves | **complete** — screens 21–41 built (D-304..D-322) + FDS-014 contact UI built (D-324) |
 
 ---
 
@@ -123,14 +128,11 @@ following the matching `Page_NNN/` Function/Logic/Design docs.
 - ✅ **FDS-014 Contact sharing (D-281 → D-287)** — the org `Contact` directory
   (CP `/admin/contacts` + picker in the five admin forms) and the visitor
   contact-sharing **app API** are live; public Sponsor/MediaPartner cards carry
-  the additive contact cluster (D-287). The **Flutter screens are not built yet**
-  (see the to-do below).
+  the additive contact cluster (D-287). The **Flutter screens are built** (D-324; see below).
 
-**Flutter to-do — FDS-014 Contact UI (API ready; screens pending):** the
-server side is shipped and tested; these screens bind to the live `/app/*`
-endpoints and are ready to build in the app **page-by-page workflow**. Add the
-routes only when `router.dart` is clean — do not collide with in-flight mobile
-edits.
+**FDS-014 Contact UI — built (D-324):** the four screens are shipped and wired to
+the live `/app/*` endpoints (routes 100–102 in `router.dart`), reached from the
+**More** screen. The four deliverables, all in:
 
 1. **Shared read-only contact-card widget** (FDS-014 Slice D) — reused by the
    org screens and by the scan-preview.
@@ -154,7 +156,7 @@ edits.
 items are the explicitly **deferred** ones below.
 
 **Deferred (not in this version) — do not build app paths that depend on them:**
-- D4 Nafath sign-in, D8 server-side T&C consent record, D10 live/YouTube banner,
+- D8 server-side T&C consent record, D10 live/YouTube banner,
   D11 mockup decorations (approval ref#+date, booth logo+hall-name).
 - **D1 — configurable 5-day session** → moved to **V2** (owner, 2026-06-03);
   see [`SIMF-V2-Plan.md`](../SIMF-V2-Plan.md) **V2-02**. The V1 refresh-token

@@ -32,6 +32,8 @@
                       Caption="@L["Admin.Bookings.Title"]"
                       OnApproveSelected="ApproveSelectedAsync"
                       ApproveSelectedLabel="@L["Admin.Bookings.Approve"]"
+                      OnExport="OnExportAsync"
+                      ExportLabel="@L["Grid.Export"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       PrevLabel="@L["Grid.Prev"]"
                       NextLabel="@L["Grid.Next"]"
@@ -164,6 +166,19 @@
         }
         finally { _loading = false; }
     }
+
+    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // download via the generic /export proxy. Export only — bookings are created
+    // by visitors in the app and approved/rejected from this queue, so there is
+    // no import path. The booking's key is ReservationId.
+    private Task OnExportAsync(IReadOnlyList<BookingQueueRow> selected) =>
+        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/bookings/export",
+            new AdminGridExportRequest
+            {
+                Ids = selected.Select(row => row.ReservationId).ToList(),
+                Query = selected.Count == 0 ? _query : null,
+            }).AsTask();
 
     private async Task ApproveAsync(Guid id)
     {

@@ -18,7 +18,7 @@ Per-page documentation folder. Everything about this app page lives here.
 | Section | 2 — Core screens |
 | Nature | **Full detail for one session** + my-seat card + add-to-calendar / reminder |
 | App privilege | **Guest and above** — the detail is anonymous (a guest can read it). The **my-seat card is login-only** (an approved account with an active reservation). |
-| Status | API **BUILT** (reuses existing endpoints — D-265; speaker country+photo + live-stream URLs appended, D-271); Flutter screen is a mockup |
+| Status | API **BUILT** (reuses existing endpoints — D-265; speaker country+photo + live-stream URLs appended, D-271); **Flutter screen BUILT (D-300)** — detail fetch-by-id + my-seat card + real add-to-calendar (reminder deferred) |
 
 ## Sources of truth (read first)
 `Mockup.html` screen 17 (the visual) · `SIMF_Screen_Guide_and_User_Journey`

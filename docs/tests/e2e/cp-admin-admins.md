@@ -8,7 +8,7 @@
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (canonical SIMF browser smoke). Convertible to Playwright later — keep scenario steps tool-agnostic. |
 | **Auth setup** | `superadmin@zagali-ict.com` / `Aa@123456789` + TOTP via the `Get-Totp` helper |
 | **Page permission** | `PermissionCatalog.Admins.View` (`@attribute [RequirePermission(PermissionCatalog.Admins.View)]`) |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > This is the **gold-standard D-117 CRUD reference page**. It carries the full
 > canonical toolbar (Add / Edit-roles / Details / Delete / Duplicate / Copy /
@@ -43,6 +43,9 @@
 | E2E-USR-019 | Auth gate — signed-in admin lacking `Admins.View` → `/not-permitted` | auth | P0 | _to author_ |
 | E2E-USR-020 | Server 500 on `/list` → empty grid, no crash | resilience | P2 | _to author_ |
 | E2E-USR-021 | RTL / Arabic render — page + Add modal mirror | i18n | P1 | _to author_ |
+| E2E-USR-022 | Presentation toggle persists across reload (`simf.cp.prefs.admins`) (D-353) | happy | P1 | _to author_ |
+| E2E-USR-023 | Full-page mode round-trip — Add/Details take over the content area, Save/Close returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-USR-024 | Excel import rejection — non-`.xlsx` / oversized / wrong-sheet upload → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -395,6 +398,67 @@ Scenario: Arabic toggle mirrors the page and the Add modal
   When the empty state shows, it reads "لا توجد حسابات بعد."
 ```
 
+### E2E-USR-022 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/admins with the default "dialog" presentation
+  And the grid toolbar (CustomToolbar) shows the CrudPresentationToggle "Open as full page" control (maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.admins" holds {"v":1,"presentation":"page"}
+    (PageKey = "admins"; persisted by CpPreferences)
+  When they reload /admin/admins
+  Then OnInitializedAsync rehydrates the choice via Prefs.GetPresentationAsync("admins")
+  And the toggle still reads "Open as dialog"
+  And opening the "Add" toolbar action now renders the full-page CrudShell frame (not a popup)
+```
+
+**Evidence captured:**
+- Screenshot of the toolbar toggle in both states: `docs/screenshots/cp-admin-admins-toggle-{dialog,page}.png`
+- Application tab: localStorage `simf.cp.prefs.admins` = `{"v":1,"presentation":"page"}`
+- Console errors: 0 expected
+
+### E2E-USR-023 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add / Details take over the content area; Save / Close returns to the grid
+  Given the presentation is set to "full page" (GridHidden = FormOpen && page mode)
+  When the administrator clicks the "Add" toolbar button
+  Then the grid + SimfBanner are replaced by the CrudShell frame (title "Add user" + close header + the hosted UsersAddEdit form)
+  And there is no modal backdrop
+  When they fill Email address="naval.ops@simf.test" + Display name="Naval Operations Lead", tick "Administrator", and click "Create user"
+  Then the CrudShell frame closes (CloseForm)
+  And the grid re-appears with the new row and the green success toast "Account created for naval.ops@simf.test…"
+  When they click the "Details" row action on a row
+  Then the full-page frame opens titled "User details — {email}" hosting the read-only UsersViewDelete form (IsDelete=false)
+  When they click the frame's close (X) / "Close" button
+  Then the form closes and the grid re-appears unchanged (no /account/api/admin call fired for Details)
+```
+
+### E2E-USR-024 — Excel import rejection (D-356)
+
+```gherkin
+Scenario: A bad upload is rejected without creating anything
+  Given the administrator is on /admin/admins and holds Admins.Import
+  When they click the toolbar "Import" action
+  Then the hidden file input #users-import-input (accept=".xlsx") opens the OS file picker
+  When they choose a file that is not a valid .xlsx (fails the ZIP-magic check)
+  Then simfAccount.uploadFile posts the multipart upload to /account/api/admin/admins/import
+  And the API returns HTTP 400 (ZIP-magic + 5 MB gate)
+  And the page shows a red bilingual error toast (envelope Error.MessageForCurrentCulture(), falling back to "Admin.Users.Import.Fallback")
+  And the import-result modal does NOT open and no admin account is created
+  When they instead upload a file larger than 5 MB
+  Then the request is rejected with HTTP 400 and the same bilingual error toast, nothing created
+  When they upload a workbook whose worksheet is not the expected admins sheet
+  Then the request returns 400 with the bilingual "worksheet" message and nothing is created
+```
+
+**Evidence captured:**
+- Screenshot of the error toast: `docs/screenshots/cp-admin-admins-import-rejected.png`
+- Network: `/account/api/admin/admins/import` returns 400; no follow-up `/list` create occurs
+- Console errors: 0 expected (the rejection is handled, not thrown)
+
 ---
 
 ## Implementation notes
@@ -430,4 +494,4 @@ Scenario: Arabic toggle mirrors the page and the Add modal
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle).

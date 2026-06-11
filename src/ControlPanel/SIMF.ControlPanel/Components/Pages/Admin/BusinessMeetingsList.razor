@@ -33,6 +33,8 @@
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
                       OnAdd="OnAddAsync"
                       OnDetailsOne="OnViewAsync"
+                      OnExport="OnExportAsync"
+                      ExportLabel="@L["Grid.Export"]"
                       PrevLabel="@L["Grid.Prev"]"
                       NextLabel="@L["Grid.Next"]"
                       FirstLabel="@L["Grid.First"]"
@@ -334,6 +336,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Flip the grid into its loading state from the very first paint:
+        // OnInitializedAsync first yields inside LoadPickersAsync, so without this
+        // the in-progress frame would render with _loading == false and the spinner
+        // would never show on first load. LoadAsync's finally clears it.
+        _loading = true;
         await LoadPickersAsync();
         await LoadAsync();
     }
@@ -373,6 +380,18 @@
         _query = next;
         await LoadAsync();
     }
+
+    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // download via the generic /export proxy. Export only — scheduling and
+    // cancelling stay on the page's bespoke modals. The row id is the grid key.
+    private Task OnExportAsync(IReadOnlyList<BusinessMeetingRow> selected) =>
+        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/business-meetings/export",
+            new AdminGridExportRequest
+            {
+                Ids = selected.Select(row => row.Id).ToList(),
+                Query = selected.Count == 0 ? _query : null,
+            }).AsTask();
 
     private string FormatSummary(int skip, int taken, int total) =>
         string.Format(L["Grid.Summary"], skip + 1, skip + taken, total);

@@ -55,8 +55,10 @@ RTL, Arabic-primary.
 - The mine/live accents (LIVE badge, active toggle) use **theme tokens** (no raw
   colours); the video surface itself is locale-neutral.
 
-## Provider note
-The live + sign-language feeds are an **interim manual-URL stub provider** set by an
-admin in the CP Session form (`/admin/sessions`, `Sessions.Edit`). A real managed
-live provider replaces this later — **deferred** (D-211 D7). The design should keep
-the player source pluggable so swapping the provider does not change the screen.
+## Provider note (D-349)
+The live-video **provider is YouTube** (proof of concept) with a direct **HLS/MP4**
+stream as a fallback. An admin pastes the URL in the CP Session form
+(`/admin/sessions`, `Sessions.Edit`); the player **sniffs** it (a YouTube link →
+the IFrame player, otherwise `video_player`). The player source stays pluggable, so
+a future **managed** provider can replace YouTube without changing the screen. This
+resolves the old D7 deferral.

@@ -94,8 +94,9 @@ This document only states the **minimum level** required per endpoint.
 ## 5. Authentication API (Auth-first — populated)
 
 These back the mockup **Section 1 — Start & entry** screens (`splash`, `onboarding`,
-`signIn`, `signUpType`, `signUpForm`, `emailOtp`, `signUpVisitor`, `signUpExhibitor`,
-`terms`, `registrationSuccess`, `registrationStatus`, `guestMode`) plus the auxiliary
+`signIn`, `signUpForm`, `emailOtp`, `signUpVisitor`, `signUpInterests`,
+`terms`, `registrationSuccess`, `registrationStatus`, `guestMode`; `signUpType` removed
+— D-332, `signUpExhibitor` removed — D-276) plus the auxiliary
 auth routes (`forgotPassword`, `resetPassword`, `verifyTotp`). Exact mockup screen
 numbers are per `Mockup.html` — reconcile the screen column before approval.
 

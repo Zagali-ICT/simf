@@ -7,14 +7,22 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-02 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
-> **Page surface (read from `SpeakersList.razor` + `SpeakerForm.razor`):** a
+> **Page surface (read from `SpeakersList.razor` + `SpeakersAddEdit.razor` +
+> `SpeakersViewDelete.razor`):** a
 > `SimfDataGrid` of speakers with columns Code, Name, Name (Arabic), Rank,
 > Country, Display order, Active; toolbar **Add speaker**; per-row **Edit**,
 > **Details**, **Deactivate** icons; multiselect checkboxes; the column filter
 > (Name), sort (Code, Name, Display order), and the pager (First / Prev / Next /
-> Last / page size). The Add/Edit modal hosts `SpeakerForm` with these fields:
+> Last / page size). The toolbar also carries the **D-353 presentation toggle**
+> (`CrudPresentationToggle PageKey="speakers"` — "Open as full page" / "Open as
+> dialog") and the **D-356** Excel **Export** + **Import** actions wired through
+> `CrudGridExcel Resource="speakers"`. Add / Edit / Details / Deactivate are now
+> framed by a **`CrudShell`** (popup or full page per the toggle) hosting the
+> reusable `SpeakersAddEdit` and `SpeakersViewDelete` forms — Deactivate opens the
+> View/Delete form whose red **Deactivate** button is gated by a **`SimfConfirm`**
+> dialog (no longer a one-click list delete). The Add/Edit form has these fields:
 > **Code** (2–16, required, upper-cased), **Name (English)** (1–128, required),
 > **Name (Arabic)** (1–128, required), **Rank / title** (≤64), **Country**
 > (picker, optional — loaded from `/account/api/admin/countries/list`), bilingual
@@ -47,6 +55,13 @@
 | E2E-SPK-014 | Server 500 on `/list` → bilingual fallback toast, no rows | resilience | P2 | _to author_ |
 | E2E-SPK-015 | Deactivate is idempotent — re-deactivate inactive speaker still succeeds | resilience | P2 | _to author_ |
 | E2E-SPK-016 | RTL / Arabic render mirrors page, grid + Add modal | i18n | P1 | _to author_ |
+| E2E-SPK-017 | Presentation toggle persists across reload (localStorage `simf.cp.prefs.speakers`) (D-353) | happy | P1 | _to author_ |
+| E2E-SPK-018 | Full-page mode round-trip — Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-SPK-019 | Delete confirmation gate — Deactivate opens View/Delete → SimfConfirm gates the call (D-353) | error | P0 | _to author_ |
+| E2E-SPK-020 | Excel export — toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
+| E2E-SPK-021 | Excel import — upload a workbook → rows created + result modal with per-row outcome (D-356) | happy | P1 | _to author_ |
+| E2E-SPK-022 | Excel import rejection — non-.xlsx / wrong-sheet upload → bilingual rejection, nothing created (D-356) | error | P1 | _to author_ |
+| E2E-SPK-023 | Photo via the unified media-asset pipeline — upload then external link (D-357) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -109,6 +124,9 @@ Scenario: Create, edit, view, deactivate one speaker
   Then the modal closes
 
   When the administrator clicks the "Deactivate" icon on that row
+  Then the View/Delete form opens (dialog by default) showing the row's read-only details
+  And a red "Deactivate" button is visible (D-353 — no longer a one-click list delete)
+  When they click "Deactivate" and confirm the SimfConfirm dialog
   Then a DELETE /account/api/admin/speakers/{id} returns HTTP 200
   And a green toast reads 'Speaker "Rear Admiral John Carter" was deactivated.'
   And the row remains visible but its pill changes to the grey "Inactive" pill
@@ -333,7 +351,8 @@ Scenario: API 500 on /list shows the fallback bilingual toast
 ```gherkin
 Scenario: Deactivating an already-inactive speaker still succeeds
   Given a speaker row whose pill is the grey "Inactive" pill
-  When the administrator clicks its "Deactivate" icon again
+  When the administrator clicks its "Deactivate" icon, then "Deactivate" in the
+    View/Delete form, then confirms the SimfConfirm dialog (D-353)
   Then DELETE /account/api/admin/speakers/{id} returns HTTP 200 (service is idempotent;
     it early-returns when IsActive is already false and writes no second audit row)
   And a green toast reads 'Speaker "{name}" was deactivated.'
@@ -356,6 +375,119 @@ Scenario: Arabic toggle mirrors page, grid and Add modal
   And the form actions appear in reverse order
   And submitting a blank Code shows the Arabic error
     "يجب أن يتراوح طول الرمز بين 2 و 16 حرفاً."
+```
+
+### E2E-SPK-017 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/speakers with the default "dialog" presentation
+  And the grid toolbar shows the "Open as full page" toggle (maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.speakers" holds {"v":1,"presentation":"page"}
+  When they reload /admin/speakers
+  Then OnInitializedAsync re-reads the preference via Prefs.GetPresentationAsync("speakers")
+  And the toggle still reads "Open as dialog"
+  And opening "Add speaker" now renders the full-page frame (not a popup)
+```
+
+### E2E-SPK-018 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page" (toggle reads "Open as dialog")
+  When the administrator clicks "Add speaker"
+  Then the grid + SimfBanner are hidden (GridHidden) and the CrudShell renders the
+    full-page frame titled "Add speaker" hosting SpeakersAddEdit
+  And there is no modal backdrop
+  When they fill Code="SPK-018", Name (English)="Captain Ada Reyes",
+    Name (Arabic)="النقيب آدا رييس", Display order="3" and click "Create speaker"
+  Then a POST /account/api/admin/speakers returns HTTP 200
+  And the page frame closes (CloseForm) and the grid re-appears with the new row
+    and the green toast 'Speaker "Captain Ada Reyes" was created.'
+  When they click the "Edit" icon and then the frame's "Close" (X) header button
+  Then the form closes and the grid re-appears unchanged (no PUT fires)
+```
+
+### E2E-SPK-019 — Delete confirmation gate (D-353)
+
+```gherkin
+Scenario: Deactivate requires explicit confirmation via SimfConfirm
+  Given the administrator is on /admin/speakers
+  When they click the "Deactivate" icon on a speaker row
+  Then GET /account/api/admin/speakers/{id} returns HTTP 200
+  And the SpeakersViewDelete form opens (dialog by default) showing the read-only
+    description list and a red "Deactivate" button
+  When they click "Deactivate"
+  Then a SimfConfirm dialog appears titled "Deactivate speaker" naming the speaker
+    (Admin.Speakers.Delete.Message — "Deactivate speaker \"{name}\"? …")
+  And it is a Danger confirm that cannot be dismissed by a backdrop click
+  When they click "Cancel"
+  Then no DELETE request fires and the row is unchanged
+  When they re-open and click "Deactivate" then the confirm "Deactivate" button
+  Then exactly one DELETE /account/api/admin/speakers/{id} fires and returns HTTP 200
+  And the form closes and a green toast reads 'Speaker "{name}" was deactivated.'
+  And the row's pill turns grey "Inactive"
+```
+
+### E2E-SPK-020 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the filtered grid (or selected rows) to an XLSX workbook
+  Given the administrator is on /admin/speakers with at least two speakers
+  And they hold the Speakers.Export permission
+  When they click the toolbar "Export" action with no rows selected
+  Then OnExportAsync calls _excel.ExportAsync with an empty ids list
+  And a POST /account/api/admin/speakers/export fires carrying
+    AdminGridExportRequest { Ids: [], Query: <current GridQuery> }
+  And the browser saves a file named simf-speakers-{yyyyMMddHHmmss}.xlsx
+  And the workbook's "Speakers" sheet header row is
+    Code | Name | NameArabic | Rank | Country | DisplayOrder | IsActive
+  When they instead select two rows then click "Export"
+  Then the request carries those two Ids and a null Query
+  And the workbook contains exactly those two speaker rows
+  And the whole-grid export is capped at 5000 rows server-side
+```
+
+### E2E-SPK-021 — Excel import (D-356)
+
+```gherkin
+Scenario: Import speakers from a workbook and see the per-row outcome
+  Given the administrator is on /admin/speakers and holds Speakers.Import
+  When they click the toolbar "Import" action
+  Then TriggerImportAsync clicks the hidden file input id "speakers-import-input"
+    (accept=".xlsx")
+  When they choose an .xlsx whose "Speakers" sheet has the required headers
+    Code, Name, NameArabic (Rank + DisplayOrder optional) for two new speakers
+  Then a POST /account/api/admin/speakers/import fires as multipart form data
+  And each row is created insert-only via AdminCreateSpeakerRequest (Code upper-cased;
+    Country, bilingual rich-text, social URLs + consent flags are NOT imported)
+  And the import-result modal titled "Import results" shows "2 created, 0 updated, 0 skipped."
+  And the shared green "Import complete." toast (Grid.Import.Done) appears
+  And the grid reloads and lists both new speakers
+  When they import a workbook containing one duplicate Code and one new speaker
+  Then the modal shows "1 created, 0 updated, 0 skipped." with one row error
+    "Row {n} ({CODE}): A speaker with code '{CODE}' already exists."
+    (SPEAKER_CODE_DUPLICATE — one bad row never aborts the batch)
+```
+
+### E2E-SPK-022 — Excel import rejection (D-356)
+
+```gherkin
+Scenario: A bad or wrong-sheet upload is rejected without creating anything
+  Given the administrator is on /admin/speakers
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic check)
+  Then the API returns HTTP 400 with the bilingual DataValidationException
+    "The file is not a valid Excel workbook." / "الملف ليس مصنف Excel صالحًا."
+  And CrudGridExcel raises OnError and the page shows that red error toast
+  And no speaker is created
+  When they import a workbook whose sheet is not named "Speakers"
+    (or is missing a required header Code/Name/NameArabic)
+  Then the parse fails with a 400 bilingual message and nothing is created
+  When they import an .xlsx larger than 5 MB
+  Then the API returns HTTP 413 "The Excel file is too large. The maximum is 5 MB."
+    and nothing is created
 ```
 
 ---
@@ -388,7 +520,44 @@ Scenario: Arabic toggle mirrors page, grid and Add modal
 - **Error codes** (from `ErrorCodes.cs`): `SPEAKER_INVALID` (400),
   `SPEAKER_NOT_FOUND` (404), `SPEAKER_CODE_DUPLICATE` (409). Create / update /
   deactivate are rate-limited via the `"auth"` limiter.
+- **D-353 framing + D-356 Excel (Phase 5).** Add / Edit / Details / Deactivate
+  are hosted by `CrudShell` (popup or full page, `CrudPresentationToggle
+  PageKey="speakers"`, persisted in localStorage `simf.cp.prefs.speakers`).
+  Deactivate now runs through `SpeakersViewDelete` + a `SimfConfirm` Danger
+  dialog (no native `window.confirm`). Excel export
+  (`POST /account/api/admin/speakers/export`, gated by `Speakers.Export`) and
+  import (`POST /account/api/admin/speakers/import`, gated by `Speakers.Import`)
+  go through the shared `CrudGridExcel Resource="speakers"`. Export columns:
+  Code, Name, NameArabic, Rank, Country, DisplayOrder, IsActive (sheet
+  "Speakers"); import is **insert-only** with required headers Code / Name /
+  NameArabic (Rank + DisplayOrder optional; Country, rich-text, social URLs and
+  consent flags are deliberately not imported). Both cap at 5000 rows; import
+  rejects a non-`.xlsx` (ZIP-magic, 400) and an over-5 MB upload (413). API
+  integration coverage: `tests/SIMF.Api.Tests/SpeakersExcelTests.cs`.
+- **Known gap (out of scope here).** The English resx is **missing**
+  `Admin.Speakers.Delete.Title` and `Admin.Speakers.Delete.Message` (both exist
+  only in `Strings.ar.resx`), so the EN SimfConfirm title/body fall back to the
+  resource keys until added. Flagged for a separate resx fix.
+
+### E2E-SPK-023 — Photo via the unified media-asset pipeline (D-357)
+
+```gherkin
+Scenario: Upload photo, then switch it to an external link
+  Given an Administrator is editing speaker "Dr. Ahmed Al-Faisal"
+  When they open the "Image" control, choose "Upload file", pick a PNG and click Upload
+  Then a success message shows and the preview thumbnail refreshes
+  And GET /account/api/admin/assets/SpeakerPhoto/{ownerId}/image returns the bytes (200)
+  And /admin/media-library lists it as SpeakerPhoto - this entity - Image - Uploaded file - active
+  When they switch to "External link", enter https://cdn.example/x.jpg and click Save link
+  Then the asset Source becomes "External link" and GET /app/assets/SpeakerPhoto/{ownerId}/image 302s to that URL
+  And the public website speaker card resolves its photo via /content/assets/SpeakerPhoto/{ownerId}/image (HasPhotoAsset)
+```
+
+**Evidence:** the Asset DB row + the out-of-row file (or stored link); the Media Library row;
+0 console errors; audit `AssetUploaded` then `AssetLinked`. Validation: a non-image / over-5 MB /
+video upload is 400; deactivate->restore round-trips; restoring when a live (category,owner) asset
+already exists is 409 (covered by `tests/SIMF.Api.Tests/AssetEndpointsTests.cs`).
 
 ---
 
-_Last reviewed:_ 2026-06-02 by Claude (E2E catalogue rebuild).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle).

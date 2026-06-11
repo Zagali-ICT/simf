@@ -1,0 +1,108 @@
+@* D-353 â€” reusable Role View/Delete form, hosted by CrudShell (popup or full
+   page) from RolesList. Inherits CrudViewDeleteFormBase so it exposes the
+   standard surface (IsDelete / Initial / OnDeleted / OnCancel). Read-only
+   details always show; in View mode the "Edit permissions" action is preserved
+   (gated by Roles.AssignPermissions); when IsDelete=true a Delete button
+   appears and a SimfConfirm gates the hard delete (was a one-click delete on
+   the list). Replaces the inline details modal + one-click delete that lived
+   in RolesList. *@
+@inherits CrudViewDeleteFormBase<AdminRoleSummary>
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+@if (Initial is not null)
+{
+    <dl class="simf-dl">
+        <dt>@L["Admin.Roles.Column.Name"]</dt>
+        <dd>@Initial.Name</dd>
+        <dt>@L["Admin.Roles.Column.Baseline"]</dt>
+        <dd>@(Initial.IsBaseline ? L["Admin.Roles.Baseline.Yes"] : L["Admin.Roles.Baseline.No"])</dd>
+        <dt>@L["Admin.Roles.Column.UserCount"]</dt>
+        <dd>@Initial.UserCount</dd>
+        <dt>@L["Admin.Roles.Column.PermissionCount"]</dt>
+        <dd>@Initial.PermissionCount</dd>
+    </dl>
+
+    <div class="simf-form__actions">
+        @if (IsDelete)
+        {
+            <SimfButton Type="button" Variant="danger"
+                        Disabled="_busy" OnClick="@(() => _confirming = true)">
+                @L["Admin.Roles.Action.Delete"]
+            </SimfButton>
+        }
+        else
+        {
+            <AuthorizedAction Permission="@PermissionCatalog.Roles.AssignPermissions">
+                <SimfButton Type="button" Variant="primary"
+                            Disabled="_busy" OnClick="OpenPermissionEditor">
+                    @L["Admin.Roles.Details.EditPermissions"]
+                </SimfButton>
+            </AuthorizedAction>
+        }
+        <SimfButton Type="button" Variant="secondary"
+                    Disabled="_busy" OnClick="OnCancel">
+            @L["Admin.Roles.Details.Close"]
+        </SimfButton>
+    </div>
+
+    <SimfConfirm Open="_confirming"
+                 Title="@L["Admin.Roles.Delete.Title"]"
+                 Message="@string.Format(L["Admin.Roles.Delete.Message"], Initial.Name)"
+                 ConfirmLabel="@L["Admin.Roles.Action.Delete"]"
+                 CancelLabel="@L["Admin.Roles.Cancel"]"
+                 Danger="true"
+                 Busy="_busy"
+                 OnConfirm="ConfirmDeleteAsync"
+                 OnCancel="@(() => _confirming = false)" />
+}
+
+@code {
+    private bool _busy;
+    private bool _confirming;
+    private string? _error;
+
+    // Issue-1 â€” open the per-role permission editor page.
+    private void OpenPermissionEditor()
+    {
+        if (Initial is null) return;
+        Nav.NavigateTo($"/admin/roles/{Initial.Id}/permissions");
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_busy || Initial is null) return;
+        _busy = true;
+        _error = null;
+        try
+        {
+            var envelope = await JS.InvokeAsync<ApiResult<bool>>(
+                "simfAccount.deleteJson", $"/account/api/admin/roles/{Initial.Id}");
+            if (envelope is { Success: true })
+            {
+                _confirming = false;
+                await OnDeleted.InvokeAsync(Initial);
+            }
+            else
+            {
+                // Close the confirm first so the error lands on the visible
+                // form body, not behind the (still-open) confirm overlay.
+                _confirming = false;
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.Roles.Fallback"];
+            }
+        }
+        catch (Exception)
+        {
+            _confirming = false;
+            _error = L["Admin.Roles.Fallback"];
+        }
+        finally { _busy = false; }
+    }
+}

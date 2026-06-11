@@ -84,6 +84,20 @@ Bulk-delete (`OnDeleteSelected`) is intentionally not wired — bulk-delete
 roles is a destructive operation whose UX would be more dangerous than
 useful for ≤ 10-row tables.
 
+**D-356 / D-353 (Uniform CRUD).** The toolbar also exposes **Export** and
+**Import** (.xlsx), wired through the reusable `CrudGridExcel`
+(`Resource="roles"`) to `POST /account/api/admin/roles/export` and
+`/import`; export posts `AdminGridExportRequest { Ids, Query }` (Query only
+when no rows are selected, otherwise the selected ids), and import uploads
+the chosen workbook (input id `roles-import-input`) and shows an
+"N created, N updated, N skipped" result modal with a per-row error list.
+The page also renders the **D-353 Page⇄Popup presentation toggle**
+(`CrudPresentationToggle`, `PageKey="roles"` → `localStorage`
+`simf.cp.prefs.roles`); Add/Edit/View/Delete are framed by `CrudShell` as a
+popup or a full page per that preference, and the delete is gated by a
+`SimfConfirm` dialog inside `RolesViewDelete` (no longer a one-click row
+delete).
+
 ### 4.3 Grid columns
 
 | Column | Source | Sortable | Filterable |
@@ -216,7 +230,8 @@ See [`docs/tests/e2e/cp-admin-roles.md`](../../tests/e2e/cp-admin-roles.md):
 | Date | Decision | Change |
 |------|----------|--------|
 | 2026-05-29 | D-134 Sprint A | Original implementation: list + create + rename + delete with IsBaseline + RoleInUse guards. Permission editor + user assignment deferred. |
+| 2026-06-10 | D-356 / D-353 | Uniform CRUD: added Excel Export + Import (.xlsx via `CrudGridExcel`, `Resource="roles"`) and the Page⇄Popup presentation toggle (`PageKey="roles"`); Add/Edit/View/Delete now framed by `CrudShell`, hard delete gated by `SimfConfirm`. E2E catalogue extended with E2E-ROL-019..024. |
 
 ---
 
-_Last reviewed:_ 2026-05-29 by Claude (D-134 Sprint A).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 / D-353 — Excel export+import + presentation toggle).

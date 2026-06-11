@@ -18,7 +18,7 @@ Per-page documentation folder. Everything about this app page lives here.
 | Section | 1 — Entry / auth screens |
 | Nature | **Authentication** (email + password, biometric re-open, forgot-password OTP) |
 | App privilege | **Guest** (unauthenticated entry point; promotes to Visitor/Admin on success) |
-| Status | **Built** (sign-in + email-OTP + forgot/reset + biometric device-key, wired to the live API; biometric uses a Dart ES256 client — **.NET ↔ Dart crypto interop proven by a backend golden-vector test, D-266**; `local_auth` native config + secure-enclave hardening land in simf-run); app-bar carries **dark/light + language placeholder buttons** (UI only, no wiring — D-272); API **built** (contract doc reconciled to the shipped `SIMF.Contracts.Authentication` records — D-279) |
+| Status | **Built** (sign-in + email-OTP + forgot/reset + biometric device-key, wired to the live API; biometric uses a Dart ES256 client — **.NET ↔ Dart crypto interop proven by a backend golden-vector test, D-266**; `local_auth` native config + secure-enclave hardening land in simf-run); app-bar carries **dark/light + language placeholder buttons** (UI only, no wiring — D-272); a **"Browse without signing in"** entry opens the guest landing (Page 012) → public Home (D-325); API **built** (contract doc reconciled to the shipped `SIMF.Contracts.Authentication` records — D-279) |
 
 ## Owner reference
 This is owner page **003** "signIn", path `/sign-in`. Email field UI cap **50**, password

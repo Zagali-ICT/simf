@@ -280,5 +280,17 @@ window.loadSiteContent = function () {
   return mergeWithDefaults(saved);
 };
 
-/* Remote loading is disabled — defaults above are the source of truth. */
-window.loadSiteContentRemote = async function () { return null; };
+/* Remote content — the Website proxy (/content/site) reshapes the API's public
+   anonymous reads into this content model (sessions, speakers, partners, news,
+   archive, spirit, hero). It only returns the sections it actually has data for,
+   so anything absent — or a failed/offline fetch returning null — leaves the
+   SITE_DEFAULTS above as the fallback. */
+window.loadSiteContentRemote = async function () {
+  try {
+    const res = await fetch('/content/site', { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
+};

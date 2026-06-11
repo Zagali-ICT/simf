@@ -1,0 +1,168 @@
+@* D-353 â€” reusable Media-Partner Add/Edit form, hosted by CrudShell (popup or
+   full page) from MediaPartnersList.razor. Inherits CrudAddEditFormBase so it
+   exposes the standard CRUD-form surface (IsEdit / Initial / OnSuccess /
+   OnCancel). IsEdit=false runs Create (POST); IsEdit=true runs Edit (PUT against
+   Initial) and shows the IsActive checkbox. Preserves the logo-path field and
+   the optional shared-Contact link (SIMF-FDS-014 / D-283). Supersedes the inline
+   SimfModal form that lived in MediaPartnersList. *@
+@inherits CrudAddEditFormBase<AdminMediaPartnerDetail>
+@using SIMF.Contracts.PublicRelations
+@inject IStringLocalizer<Strings> L
+@inject IJSRuntime JS
+
+@if (_error is not null)
+{
+    <SimfAlert Variant="error">@_error</SimfAlert>
+}
+
+<EditForm EditContext="_editContext" OnSubmit="HandleSubmitAsync" class="simf-form">
+    <div class="simf-form__fields">
+        <SimfTextField Label="@L["Admin.MediaPartners.Field.NameEn"]"
+                       MaxLength="256"
+                       @bind-Value="_model.Name" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.MediaPartners.Field.NameAr"]"
+                       MaxLength="256"
+                       @bind-Value="_model.NameArabic" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.MediaPartners.Field.Logo"]"
+                       MaxLength="512"
+                       @bind-Value="_model.LogoRelativePath" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.MediaPartners.Field.Url"]"
+                       MaxLength="512"
+                       @bind-Value="_model.Url" Disabled="_busy" />
+        @* SIMF-FDS-014 (D-283) â€” optional link to a shared Contact directory record. *@
+        <ContactPicker Value="_model.ContactId"
+                       ValueChanged="@(v => _model.ContactId = v)" Disabled="_busy" />
+        <SimfTextField Label="@L["Admin.MediaPartners.Field.DisplayOrder"]"
+                       Type="number"
+                       Value="@_displayOrderInput"
+                       ValueChanged="@(v => _displayOrderInput = v)"
+                       ValueExpression="@(() => _displayOrderInput)"
+                       Disabled="_busy" />
+        @if (IsEdit)
+        {
+            <SimfCheckbox @bind-Value="_model.IsActive" Disabled="_busy">
+                @L["Admin.MediaPartners.Field.IsActive"]
+            </SimfCheckbox>
+        }
+        @* D-357 — logo via the unified media-asset pipeline (edit only; the row
+           must exist before bytes can be attached). *@
+        @if (IsEdit && Initial is not null)
+        {
+            <div class="simf-field">
+                <span class="simf-field__label">@L["Admin.Asset.Heading"]</span>
+                <SimfImageUpload Category="MediaPartnerLogo" OwnerId="@Initial.Id" Alt="@_model.Name" />
+            </div>
+        }
+    </div>
+    <div class="simf-form__actions">
+        <SimfButton Loading="_busy" LoadingLabel="@L["Admin.MediaPartners.Save"]">
+            @L["Admin.MediaPartners.Save"]
+        </SimfButton>
+        @if (OnCancel.HasDelegate)
+        {
+            <SimfButton Type="button" Variant="secondary"
+                        Disabled="_busy" OnClick="OnCancel">
+                @L["Admin.MediaPartners.Cancel"]
+            </SimfButton>
+        }
+    </div>
+</EditForm>
+
+@code {
+    private readonly Model _model = new();
+    private string _displayOrderInput = "0";
+    private EditContext _editContext = default!;
+    private bool _busy;
+    private string? _error;
+
+    protected override void OnInitialized()
+    {
+        if (Initial is not null)
+        {
+            _model.Name = Initial.Name;
+            _model.NameArabic = Initial.NameArabic;
+            _model.LogoRelativePath = Initial.LogoRelativePath ?? string.Empty;
+            _model.Url = Initial.Url ?? string.Empty;
+            _model.ContactId = Initial.ContactId;
+            _model.IsActive = Initial.IsActive;
+            _displayOrderInput = Initial.DisplayOrder.ToString();
+        }
+        _editContext = new EditContext(_model);
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_busy) return;
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_model.Name) || string.IsNullOrWhiteSpace(_model.NameArabic))
+        {
+            _error = L["Admin.MediaPartners.NameRequired"]; return;
+        }
+        if (!int.TryParse(_displayOrderInput, out var order) || order < 0)
+        {
+            order = 0;
+        }
+
+        _busy = true;
+        try
+        {
+            ApiResult<AdminMediaPartnerDetail>? envelope;
+            if (!IsEdit)
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminMediaPartnerDetail>>(
+                    "simfAccount.postJson", "/account/api/admin/media-partners",
+                    new AdminCreateMediaPartnerRequest(
+                        _model.Name.Trim(),
+                        _model.NameArabic.Trim(),
+                        NullIfBlank(_model.LogoRelativePath),
+                        NullIfBlank(_model.Url),
+                        order,
+                        _model.ContactId));
+            }
+            else
+            {
+                envelope = await JS.InvokeAsync<ApiResult<AdminMediaPartnerDetail>>(
+                    "simfAccount.putJson", $"/account/api/admin/media-partners/{Initial!.Id}",
+                    new AdminUpdateMediaPartnerRequest
+                    {
+                        Name = _model.Name.Trim(),
+                        NameArabic = _model.NameArabic.Trim(),
+                        LogoRelativePath = NullIfBlank(_model.LogoRelativePath),
+                        Url = NullIfBlank(_model.Url),
+                        DisplayOrder = order,
+                        ContactId = _model.ContactId,
+                        IsActive = _model.IsActive,
+                    });
+            }
+
+            if (envelope is { Success: true, Data: not null })
+            {
+                await OnSuccess.InvokeAsync(envelope.Data);
+            }
+            else
+            {
+                _error = envelope?.Error?.MessageForCurrentCulture()
+                    ?? L["Admin.MediaPartners.LoadFailed"];
+            }
+        }
+        catch (Exception)
+        {
+            _error = L["Admin.MediaPartners.LoadFailed"];
+        }
+        finally { _busy = false; }
+    }
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private sealed class Model
+    {
+        public string Name { get; set; } = string.Empty;
+        public string NameArabic { get; set; } = string.Empty;
+        public string LogoRelativePath { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;
+        public Guid? ContactId { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+}

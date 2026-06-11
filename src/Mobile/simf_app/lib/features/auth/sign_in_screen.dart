@@ -322,10 +322,20 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   TextButton(
                     onPressed: _busy
                         ? null
-                        : () => context.pushNamed(RouteNames.signUpType),
+                        : () => context.pushNamed(RouteNames.signUpForm),
                     child: Text(l10n.createAccountLink),
                   ),
                 ],
+              ),
+              // Open the app without an account — routes to the guest-mode
+              // landing (Page_012), which explains what a guest can do and then
+              // continues to the public home. Guest+ routes need no token.
+              TextButton.icon(
+                onPressed: _busy
+                    ? null
+                    : () => context.pushNamed(RouteNames.guestMode),
+                icon: const Icon(Icons.explore_outlined),
+                label: Text(l10n.browseAsGuestLink),
               ),
             ],
           ),

@@ -45,13 +45,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               const _LogoMark(),
-              const SizedBox(height: SimfTokens.space5),
+              const SizedBox(height: SimfTokens.space6),
               Text(
                 l10n.splashTagline,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: SimfTokens.surface.withValues(alpha: 0.7),
-                  fontSize: SimfTokens.textXs,
+                style: const TextStyle(
+                  color: SimfTokens.txtTertiary,
+                  fontSize: 9,
                   letterSpacing: 2,
                   fontWeight: FontWeight.w600,
                 ),
@@ -62,18 +62,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: SimfTokens.surface,
-                  fontSize: SimfTokens.textXl,
+                  fontSize: 17,
                   fontWeight: FontWeight.w700,
-                  height: 1.4,
+                  height: 1.5,
                 ),
               ),
               const SizedBox(height: SimfTokens.space2),
               Text(
                 l10n.splashEventLine,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: SimfTokens.surface.withValues(alpha: 0.66),
-                  fontSize: SimfTokens.textSm,
+                style: const TextStyle(
+                  color: SimfTokens.txtSecondary,
+                  fontSize: 11,
                   height: 1.7,
                 ),
               ),
@@ -165,26 +165,30 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
 /// The interim brass-on-navy logo placeholder. Replaced by the real asset with
 /// SIMF-VID-001; no image asset is bundled yet (Page_001_Design — Design notes).
+/// Matches the mockup splash lockup: a hairline gold ring with the "SIMF"
+/// wordmark in gold, not a filled disc.
 class _LogoMark extends StatelessWidget {
   const _LogoMark();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 96,
-      height: 96,
+      width: 68,
+      height: 68,
       decoration: const BoxDecoration(
-        color: SimfTokens.accent,
         shape: BoxShape.circle,
+        border: Border.fromBorderSide(
+          BorderSide(color: SimfTokens.accent),
+        ),
       ),
       alignment: Alignment.center,
       child: const Text(
         'SIMF',
         style: TextStyle(
-          color: SimfTokens.navy,
-          fontWeight: FontWeight.w800,
-          fontSize: SimfTokens.textLg,
-          letterSpacing: 1.5,
+          color: SimfTokens.accent,
+          fontWeight: FontWeight.w700,
+          fontSize: SimfTokens.textSm,
+          letterSpacing: 2,
         ),
       ),
     );

@@ -69,7 +69,7 @@ void main() {
 
       expect(find.byType(SelectableText), findsOneWidget);
       expect(find.text('Last updated · 2026-09-01'), findsOneWidget);
-      expect(find.byType(CheckboxListTile), findsNothing);
+      expect(find.text('I accept the terms and conditions'), findsNothing);
     });
 
     testWidgets('consent mode shows the gate; Accept enables only after ticking',
@@ -80,12 +80,13 @@ void main() {
         requireConsent: true,
       );
 
-      expect(find.byType(CheckboxListTile), findsOneWidget);
+      // The mockup `.check` row (custom box + label inside an InkWell).
+      expect(find.text('I accept the terms and conditions'), findsOneWidget);
       final accept =
           find.widgetWithText(FilledButton, 'Accept & continue');
       expect(tester.widget<FilledButton>(accept).onPressed, isNull);
 
-      await tester.tap(find.byType(CheckboxListTile));
+      await tester.tap(find.text('I accept the terms and conditions'));
       await tester.pumpAndSettle();
 
       expect(tester.widget<FilledButton>(accept).onPressed, isNotNull);

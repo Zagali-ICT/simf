@@ -8,9 +8,11 @@ SCREEN26. RTL, Arabic-primary.
    screen 25). Driven by the session detail's `LiveStreamUrl`; the optional
    `لغة الإشارة` (sign-language) toggle is driven by `LiveSignLanguageUrl` (D-271
    live stub).
-2. **Live-mode tab bar** — three tabs: `طلب مقابلة` (→ 27) · `تعليقات الجمهور`
-   (live comments) · **`إرسال سؤال`** (this screen, active). The tabs switch
-   between the live-mode views.
+2. **Live-mode area** — in the mockup the live frame carries a live-mode tab
+   strip. In the shipped app the live-mode functions are **separate auth-gated
+   routes**, not in-frame tabs: **`إرسال سؤال`** (this screen) and **audience
+   comments** (`/live/comments`, [Page_028](../Page_028/README.md), built D-319).
+   The `طلب مقابلة` (request-interview) tab was **removed** (D-278).
 3. **Recipient picker** — two pills: **`المتحدث`** (Speaker) / **`المضيف`** (Host).
    One is selected; the selection is the `Recipient` field (default Speaker).
 4. **Question text area** — a multi-line input for `QuestionText` (1–1000 chars).
@@ -47,16 +49,17 @@ SCREEN26. RTL, Arabic-primary.
   (login-only); `404` → "session removed".
 
 ## RTL / localization
-- Whole screen mirrored RTL; the live-mode tab bar + recipient pills mirror RTL.
+- Whole screen mirrored RTL; the recipient pills mirror RTL.
 - The recipient pills (`المتحدث` / `المضيف`), the text-area placeholder, the brass
   `إرسال السؤال` button and the moderation note are bilingual per the active
   locale.
 - The brass accent on the primary submit button + the selected recipient pill use
   theme tokens (no raw colours).
 
-## Note — comments tab (28) folded into live
-The third live-mode tab is **audience comments**, which per D-271 no longer has a
-**standalone screen (28)** — the comments feed surfaces **inside** the session /
-live screen. The comments pipeline (2-stage AI-filter on submit → admin
-approve/hide via `/admin/comments-moderation`) is **already built**; this composer
-does not render or own it (Page_026_Logic L-6).
+## Note — audience comments (28) is a separate built screen
+Audience comments are **their own standalone screen** — `/live/comments`
+([Page_028](../Page_028/README.md), **built D-319**) — not folded into this
+composer and not removed. The comments pipeline (2-stage AI-filter on submit →
+admin approve/hide via `/admin/comments-moderation`) is built behind it; this
+composer does not render or own it (Page_026_Logic L-6). _(Earlier text said the
+screen was "folded into live per D-271"; that was incorrect — see L-6.)_

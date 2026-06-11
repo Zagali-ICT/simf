@@ -306,6 +306,15 @@ public static class DependencyInjection
             configuration.GetSection(SIMF.Infrastructure.Media.MediaImageStorageOptions.SectionName));
         services.AddSingleton<SIMF.Application.Abstractions.IMediaImageStorage,
             SIMF.Infrastructure.Media.FilesystemMediaImageStorage>();
+        // D-357 — unified media-asset pipeline: the single upload/download store
+        // every image-bearing entity shares (speaker photo, company / sponsor /
+        // media-partner logo, archive cover, news image).
+        services.Configure<SIMF.Infrastructure.Assets.ImageAssetStorageOptions>(
+            configuration.GetSection(SIMF.Infrastructure.Assets.ImageAssetStorageOptions.SectionName));
+        services.AddSingleton<SIMF.Application.Abstractions.IImageAssetStorage,
+            SIMF.Infrastructure.Assets.FilesystemImageAssetStorage>();
+        services.AddScoped<SIMF.Application.Assets.Abstractions.IAssetService,
+            SIMF.Infrastructure.Assets.AssetService>();
         services.AddScoped<SIMF.Application.Exhibition.Abstractions.IPublicBoothService,
             SIMF.Infrastructure.Exhibition.PublicBoothService>();
         services.AddScoped<SIMF.Application.Exhibition.Abstractions.IAdminBoothService,
@@ -317,6 +326,9 @@ public static class DependencyInjection
             SIMF.Infrastructure.Organisations.PublicOrganisationService>();
         services.AddScoped<SIMF.Application.Organisations.Abstractions.IOrganisationExcelReader,
             SIMF.Infrastructure.Excel.ClosedXmlOrganisationReader>();
+        // B3 — D-221 — dev-only sample-organisation seeder (Program.cs runs it in
+        // Development only; production uses the gov Excel import).
+        services.AddScoped<SIMF.Infrastructure.Organisations.OrganisationSeeder>();
         // SIMF-FDS-014 (D-261) — shared Contact directory admin CRUD.
         services.AddScoped<SIMF.Application.Contacts.Abstractions.IAdminContactService,
             SIMF.Infrastructure.Contacts.AdminContactService>();
@@ -353,6 +365,9 @@ public static class DependencyInjection
         // Exhibitor provisioning.
         services.AddScoped<SIMF.Application.Statistics.Abstractions.IStatisticsService,
             SIMF.Infrastructure.Statistics.StatisticsService>();
+        // FR-506 — read-only session-attendance dashboard over HallAttendance (D-241).
+        services.AddScoped<SIMF.Application.Attendance.Abstractions.ISessionAttendanceService,
+            SIMF.Infrastructure.Attendance.SessionAttendanceService>();
         services.AddScoped<SIMF.Application.Exhibitors.Abstractions.IAdminExhibitorService,
             SIMF.Infrastructure.Exhibitors.AdminExhibitorService>();
         // D-176 (gap doc G12) — centralised AI module: prompt
@@ -417,6 +432,10 @@ public static class DependencyInjection
         // P1.6 — export-only workbook builders for the read-only admin grids.
         services.AddSingleton<IOperationLogExcelService, ClosedXmlOperationLogExcelService>();
         services.AddSingleton<IAttendeeExcelService, ClosedXmlAttendeeExcelService>();
+        // D-356 — generic grid Excel engine (one hardened exporter/importer for
+        // every resource's export/import, driven by per-resource column descriptors).
+        services.AddSingleton<SIMF.Application.Excel.IGridExcelExporter, ClosedXmlGridExcelExporter>();
+        services.AddSingleton<SIMF.Application.Excel.IGridExcelImporter, ClosedXmlGridExcelImporter>();
         services.AddSingleton<IAvatarStorage, FilesystemAvatarStorage>();
         services.AddSingleton<IUserIdDocumentStorage, EncryptedUserIdDocumentStorage>();
         services.AddSingleton<ILogFileService, LogFileService>();

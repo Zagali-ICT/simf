@@ -39,11 +39,12 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
         var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
 
         var email = $"walkin-v-{Guid.NewGuid():N}@simf.test";
         var response = await PostAuthAsync(
             "/api/v1/admin/visitors/register-onsite",
-            BuildRequest(profileTypeId, email),
+            BuildRequest(profileTypeId, email, organisationId),
             adminToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -71,10 +72,11 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
         var profileTypeId = await GetOtherProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
 
         var response = await PostAuthAsync(
             "/api/v1/admin/others/register-onsite",
-            BuildRequest(profileTypeId, $"walkin-o-{Guid.NewGuid():N}@simf.test"),
+            BuildRequest(profileTypeId, $"walkin-o-{Guid.NewGuid():N}@simf.test", organisationId),
             adminToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -95,8 +97,9 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
         var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
 
-        var req = BuildRequest(profileTypeId, email: null);
+        var req = BuildRequest(profileTypeId, email: null, organisationId);
         var response = await PostAuthAsync(
             "/api/v1/admin/visitors/register-onsite", req, adminToken);
 
@@ -119,8 +122,9 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         // audit-event mapping.
         var adminToken = await CreateAdministratorAndSignInAsync();
         var partnerProfileTypeId = await GetOtherProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
 
-        var req = BuildRequest(partnerProfileTypeId, $"crossed-{Guid.NewGuid():N}@simf.test");
+        var req = BuildRequest(partnerProfileTypeId, $"crossed-{Guid.NewGuid():N}@simf.test", organisationId);
         var response = await PostAuthAsync(
             "/api/v1/admin/visitors/register-onsite", req, adminToken);
 
@@ -135,8 +139,9 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
         // D-186 review-pass: mirror of the above for the partner desk.
         var adminToken = await CreateAdministratorAndSignInAsync();
         var audienceProfileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
 
-        var req = BuildRequest(audienceProfileTypeId, $"crossed-{Guid.NewGuid():N}@simf.test");
+        var req = BuildRequest(audienceProfileTypeId, $"crossed-{Guid.NewGuid():N}@simf.test", organisationId);
         var response = await PostAuthAsync(
             "/api/v1/admin/others/register-onsite", req, adminToken);
 
@@ -150,17 +155,49 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
         var profileTypeId = await GetVisitorProfileTypeAsync();
+        var organisationId = await GetOrganisationIdAsync();
         var email = $"walkin-dup-{Guid.NewGuid():N}@simf.test";
 
         var first = await PostAuthAsync(
             "/api/v1/admin/visitors/register-onsite",
-            BuildRequest(profileTypeId, email), adminToken);
+            BuildRequest(profileTypeId, email, organisationId), adminToken);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
 
         var second = await PostAuthAsync(
             "/api/v1/admin/visitors/register-onsite",
-            BuildRequest(profileTypeId, email), adminToken);
+            BuildRequest(profileTypeId, email, organisationId), adminToken);
         Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+    }
+
+    [Fact]
+    public async Task Walk_in_without_organisation_returns_400()
+    {
+        // B3 — D-221: organisation is required; a null id fails validation.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+
+        var req = BuildRequest(profileTypeId, $"noorg-{Guid.NewGuid():N}@simf.test", organisationId: null);
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/register-onsite", req, adminToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Walk_in_with_unknown_organisation_returns_400()
+    {
+        // B3 — D-221: a non-null id that resolves to no active organisation is
+        // rejected by the service with OrganisationInvalid (clean 400, no FK error).
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var profileTypeId = await GetVisitorProfileTypeAsync();
+
+        var req = BuildRequest(profileTypeId, $"badorg-{Guid.NewGuid():N}@simf.test", Guid.NewGuid());
+        var response = await PostAuthAsync(
+            "/api/v1/admin/visitors/register-onsite", req, adminToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = (await response.Content.ReadFromJsonAsync<ApiResult<object>>())!;
+        Assert.Equal(ErrorCodes.OrganisationInvalid, body.Error!.Code);
     }
 
     [Fact]
@@ -179,7 +216,8 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
 
     // -- Helpers --------------------------------------------------------------
 
-    private static AdminWalkInRegistrationRequest BuildRequest(Guid profileTypeId, string? email) =>
+    private static AdminWalkInRegistrationRequest BuildRequest(
+        Guid profileTypeId, string? email, Guid? organisationId = null) =>
         new()
         {
             Email = email,
@@ -193,7 +231,31 @@ public sealed class WalkInRegistrationTests : IClassFixture<SimfApiFactory>
             IsSaudi = true,
             NationalId = "1234567890",
             SaudiMobile = "+966500000001",
+            // B3 — D-221: organisation is required at the desk.
+            OrganisationId = organisationId,
         };
+
+    // B3 — D-221: ensure an active organisation exists and return its id so the
+    // success-path requests satisfy the new required-organisation rule.
+    private async Task<Guid> GetOrganisationIdAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var existing = await appDb.Organisations.FirstOrDefaultAsync(o => o.IsActive);
+        if (existing is not null) return existing.Id;
+        var fresh = new SIMF.Domain.Organisations.Organisation
+        {
+            Id = Guid.NewGuid(),
+            NameArabic = "جهة اختبار",
+            Name = "Test Organisation",
+            CommercialRegistration = $"CR{Guid.NewGuid():N}"[..12],
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        appDb.Organisations.Add(fresh);
+        await appDb.SaveChangesAsync();
+        return fresh.Id;
+    }
 
     private async Task<Guid> GetVisitorProfileTypeAsync()
     {

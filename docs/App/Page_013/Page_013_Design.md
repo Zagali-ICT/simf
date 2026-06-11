@@ -19,14 +19,14 @@ A single scrollable landing surface:
 | Component | Role | Notes |
 |---|---|---|
 | App bar | Title + bell | Bell trailing (LTR) / leading (RTL) |
-| Notification badge | Unread count over the bell | From `GET /app/account/notifications`; hidden when `0` / for `Guest` |
+| Notification badge | Unread count over the bell | From `GET /app/account/notifications/unread-count`; hidden when `0` / for `Guest` |
 | Live banner card | Promo for the live stream | No API (D10); static/config; tap → live view |
 | Entry tile card | Navigation tile | One per allowed destination; privilege-gated |
 | Sign-in prompt | Guest affordance | Tap → sign-in flow; `Guest` only |
 
 ## Data binding
 - **Privilege** ← JWT claim (no fetch). Drives which tiles/prompt render (Logic L-1/L-2).
-- **Unread count** ← `GET /app/account/notifications` (best-effort; Logic L-5).
+- **Unread count** ← `GET /app/account/notifications/unread-count` (best-effort; Logic L-5).
 - **Tiles / banner** ← static/config for now ("no data for now"); the on-login bundle
   (`GET /app/bootstrap`, **TO BUILD, D9**) will back cached content later (Logic L-3).
 

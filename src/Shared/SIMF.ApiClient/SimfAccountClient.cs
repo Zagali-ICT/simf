@@ -5,6 +5,7 @@ using System.Text.Json;
 using SIMF.Common;
 using SIMF.Contracts.Authentication;
 using SIMF.Contracts.Notifications;
+using SIMF.Contracts.Organisations;
 using SIMF.Contracts.UserProfile;
 
 namespace SIMF.ApiClient;
@@ -171,6 +172,23 @@ public sealed class SimfAccountClient(HttpClient http)
         SendAsync<InterestListResponse>(
             HttpMethod.Get, "account/interests", null,
             accessToken, cancellationToken);
+
+    /// <summary>B3 — D-221 (الجهة): searches the active organisations lookup for
+    /// the registration picker. A blank term returns the first <paramref name="top"/>
+    /// by Arabic name; otherwise it matches the term across Arabic / English
+    /// name and city. Backs the Web profile + CP walk-in organisation picker.</summary>
+    public Task<ApiCallResult<IReadOnlyList<OrganisationPickerItem>>> SearchOrganisationsAsync(
+        string? search, int top, string accessToken,
+        CancellationToken cancellationToken = default)
+    {
+        var query = $"organisations?top={top}";
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query += $"&search={Uri.EscapeDataString(search.Trim())}";
+        }
+        return SendAsync<IReadOnlyList<OrganisationPickerItem>>(
+            HttpMethod.Get, query, null, accessToken, cancellationToken);
+    }
 
     // -- P12 — D-053: in-app notifications -----------------------------------
 

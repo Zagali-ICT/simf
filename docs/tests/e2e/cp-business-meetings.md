@@ -12,9 +12,9 @@
 | **Test runner** | Chrome DevTools MCP + PowerShell driver |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via `Get-Totp` helper |
 | **Permissions** | `BusinessMeetings.View` (page), `BusinessMeetings.Schedule`, `BusinessMeetings.Cancel` |
-| **API** | `POST /api/v1/admin/business-meetings/list`, `GET /api/v1/admin/business-meetings/{id}`, `POST /api/v1/admin/business-meetings`, `POST /api/v1/admin/business-meetings/{id}/cancel` |
-| **Backed by tests** | `tests/SIMF.Api.Tests/BusinessMeetingsTests.cs` |
-| **Last reviewed** | 2026-06-03 |
+| **API** | `POST /api/v1/admin/business-meetings/list`, `GET /api/v1/admin/business-meetings/{id}`, `POST /api/v1/admin/business-meetings`, `POST /api/v1/admin/business-meetings/{id}/cancel`, `POST /api/v1/admin/business-meetings/export` |
+| **Backed by tests** | `tests/SIMF.Api.Tests/BusinessMeetingsTests.cs`, `tests/SIMF.Api.Tests/BusinessMeetingsExcelTests.cs` |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel export added; export-only — no import, no toggle) |
 
 ## Coverage matrix
 
@@ -35,6 +35,7 @@
 | E2E-BMT-013 | RTL render (Arabic) | i18n | P1 | authored |
 | E2E-BMT-014 | Per-column filter narrows the grid | happy | P1 | _to author_ |
 | E2E-BMT-015 | Column sort toggles | happy | P2 | _to author_ |
+| E2E-BMT-016 | Excel export — toolbar Export downloads an .xlsx of the meetings grid (whole filtered set vs selected rows) (D-356) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -227,6 +228,42 @@ Scenario: Clicking a sortable column header toggles ascending/descending (D-256)
 - Sortable columns are Hall, Table, Type, Start, End, Status (the Parties count
   column is not sortable). The default (no Sort) order is StartUtc descending.
 
+### E2E-BMT-016 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the business-meetings grid to an XLSX workbook
+  Given an Administrator with BusinessMeetings.Export is on /admin/business-meetings
+  And the grid shows at least two confirmed meetings across halls "Majlis A" and "Majlis B"
+
+  When the admin clicks the toolbar "Export" action with no rows selected
+  Then a POST /account/api/admin/business-meetings/export fires (BFF -> API)
+    carrying AdminGridExportRequest with an empty Ids list and the current Query
+    (the page sends Query only when no rows are selected)
+  And the API caps the export at 5000 rows and resets Skip to 0
+  And the browser saves a file named simf-business-meetings-{yyyyMMddHHmmss}.xlsx
+  And the workbook's "BusinessMeetings" sheet header row reads
+    Hall | Table | Type | Start | End | Parties | Status
+  And the Type cells render "B2B"/"B2C" and the Status cells render "Confirmed"/"Cancelled" (display text, not the wire enum)
+
+  When the admin instead ticks exactly two meeting rows and clicks "Export"
+  Then the request carries those two row Ids and a null Query
+  And the workbook contains exactly those two meetings' rows (plus the header)
+
+Scenario: Export is permission-gated (export-only — no import)
+  Given a signed-in admin WITHOUT BusinessMeetings.Export
+  When they POST /account/api/admin/business-meetings/export
+  Then the API returns 403 (the endpoint is gated by PermissionCatalog.BusinessMeetings.Export)
+  And the page exposes no Import action — scheduling and cancelling stay on the page's bespoke modals
+```
+
+**Evidence captured:**
+- The grid wires `OnExport` only (no `OnImport`); `OnExportAsync` calls
+  `simfAccount.downloadXlsx("/account/api/admin/business-meetings/export", …)`.
+- This page has **no D-353 Page<->Popup presentation toggle** and **no CrudShell
+  delete/confirm flow** — meetings are scheduled/cancelled through the existing
+  `SimfModal` dialogs (see E2E-BMT-001 / E2E-BMT-005). Only the D-356 Excel
+  **export** was added; there is intentionally **no import** path.
+
 ---
 
-_Last reviewed:_ 2026-06-03 by the SIMF engineering team (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel export added; export-only, no import/toggle). Prior: 2026-06-03 (D-256/D-257 grid affordances reconciled).

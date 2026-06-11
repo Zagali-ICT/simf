@@ -33,6 +33,8 @@
                       RowLabel="@(r => r.RequesterName)"
                       Caption="@L["Admin.SpeakerMeetingRequests.Title"]"
                       FilterColumnLabel="@L["Grid.FilterColumn"]"
+                      OnExport="OnExportAsync"
+                      ExportLabel="@L["Grid.Export"]"
                       PrevLabel="@L["Grid.Prev"]"
                       NextLabel="@L["Grid.Next"]"
                       FirstLabel="@L["Grid.First"]"
@@ -219,6 +221,19 @@
         }
         finally { _loading = false; }
     }
+
+    // D-356 — Excel export (selected rows, or the current filtered set). Direct
+    // download via the generic /export proxy. Export only — speaker meeting
+    // requests are created from the app + responded to in the CP, so there is
+    // no import path.
+    private Task OnExportAsync(IReadOnlyList<AdminSpeakerMeetingRequestRow> selected) =>
+        JS.InvokeVoidAsync("simfAccount.downloadXlsx",
+            "/account/api/admin/speaker-meeting-requests/export",
+            new AdminGridExportRequest
+            {
+                Ids = selected.Select(row => row.Id).ToList(),
+                Query = selected.Count == 0 ? _query : null,
+            }).AsTask();
 
     private async Task OnRespondAsync(AdminSpeakerMeetingRequestRow row)
     {

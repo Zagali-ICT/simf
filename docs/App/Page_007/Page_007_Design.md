@@ -1,69 +1,62 @@
-# Page 007 — Design (إنشاء حساب · زائر · Sign up — visitor)
+# Page 007 — Design (إنشاء حساب · Sign up — profile data)
 
 Flutter screen design — layout, components, states, RTL, localization. Behaviour is
 in [Page_007_Function.md](Page_007_Function.md); rules in
 [Page_007_Logic.md](Page_007_Logic.md); contract in [Page_007_API.md](Page_007_API.md).
 
-## Layout
-A single scrollable form screen with an inline **interests sub-step**:
+> **Reworked (D-332).** Data form only (mockup 05). The interests grid moved to
+> [Page 007‑01](../Page_007-01/README.md); this screen ends with **Next**.
 
+## Layout (= mockup screen 05)
 ```
 ┌────────────────────────────────────────────┐
-│  AppBar — إنشاء حساب · زائر  / Sign up      │
+│  AppBar — إنشاء حساب / Sign up              │
 ├────────────────────────────────────────────┤
-│  Section 1 — Personal                       │
+│  نوع التسجيل / Registration type            │
+│   [ ● زائر / Visitor ] [ أخرى / Other ]     │  2 chips → filters ProfileType
+│  التصنيف / ProfileType        ▼ (filtered)  │
+│                                             │
 │   • Arabic name        • English name       │
-│   • Job title (optional)                    │
-│   • Nationality      ▼ (country lookup)     │
-│   • Is-Saudi toggle                         │
-│     └ national id / iqama / passport (cond.)│
-│   • Saudi mobile / international mobile      │
-│   • Date of birth · Place of birth          │
 │   • Gender           ▼                       │
-│                                             │
-│  Section 2 — Affiliation                    │
 │   • الجهة / Organisation  (typeahead search)│
-│   • Profile type        (card row)          │
+│   • Job title (optional)                    │
+│   • Document: is-Saudi toggle               │
+│     └ national id / iqama / passport (cond.)│
+│   • Mobile (Saudi / international)           │
+│   • Nationality      ▼ (country lookup)     │
+│   • Date of birth (≥18) · Place of birth    │  (D-197 / D-163 — additive to mockup)
+│   • المرفقات / ID attachment (optional)      │
 │                                             │
-│  Section 3 — Interests (sub-step, "008")    │
-│   ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐       │
-│   │ card │ │ card │ │ card │ │ card │  …     │
-│   └──────┘ └──────┘ └──────┘ └──────┘       │
-│   helper: pick 1–10 · counter "n/10"        │
-│                                             │
-│            [  Save / حفظ  ]                  │
+│            [  Next / التالي  ]               │  → Page 007‑01 (interests)
 └────────────────────────────────────────────┘
 ```
 
 ## Components
 | Component | Bound to | Notes |
 |-----------|----------|-------|
+| **Type chips** | client-only `isVisitor` (bool) | زائر / أخرى; selecting one re-filters the ProfileType picker; not sent to the server |
+| Profile-type cards | E4 `items[]` (`?isVisitor=`) | each card tinted with `pageColor`; value = `id`; optional |
 | Text fields | name / job title / mobiles / id numbers | AR field hints + EN labels |
 | Country dropdown | E3 `countries[]` | shows `nameArabic` (primary) + `name`; value = `code` |
-| Organisation typeahead | E6 `OrganisationPickerItem[]` | debounced search → `?search=&top=20`; value = `id`; subtitle = `city` |
-| Profile-type cards | E4 `items[]` | each card tinted with `pageColor`; value = `id`; optional |
+| Organisation typeahead | E6 `OrganisationPickerItem[]` | debounced `?search=&top=20`; value = `id`; subtitle = `city` |
 | Gender picker | `Gender` enum | Unspecified default |
-| **Interest cards** | E5 `interests[]` | multi-select, **min 1 / max 10**; selected count shown; ordered by `displayOrder` |
-| Save button | E2 upsert | disabled until valid + 1–10 interests |
-
-## RTL
-Arabic is the primary locale: the whole screen mirrors (fields right-aligned,
-dropdown carets and the interests grid flow right-to-left). Each lookup row carries
-its own `nameAr` / `nameEn`, so labels switch with the app locale without a re-fetch.
+| Date-of-birth picker | `dateOfBirth` | selectable range ends at *today − 18y* (D-197) |
+| **Next** button | navigation | enabled when the required data fields are valid; carries form state to Page 007‑01 — **no POST** |
 
 ## States
 | State | Trigger | UI |
 |-------|---------|----|
-| **Loading** | screen open → E1 + four lookups in flight | skeleton form; pickers show shimmer |
-| **Ready** | lookups returned, form pre-filled from E1 | editable form; Save disabled until valid |
-| **Empty lookup** | a lookup returns `[]` | that picker shows its empty state (e.g. "No organisations") — never a blocking error |
-| **Validating** | Save tapped, client checks | inline field errors; focus first invalid field |
-| **Submitting** | E2 POST in flight | Save shows spinner; form locked |
-| **Error** | E2 returns `Validation.Failed` / 500 | map code → field/toast (AR+EN); form state preserved |
-| **Success** | E2 `ApiResult.Ok` | profile marked complete → route to **wait-for-approval** |
+| **Loading** | screen open → E1 + three lookups in flight | skeleton form; pickers show shimmer |
+| **Ready** | lookups returned, form pre-filled from E1 | editable form; Next disabled until valid |
+| **Empty lookup** | a lookup returns `[]` | that picker shows its empty state — never a blocking error |
+| **Validating** | Next tapped, client checks | inline field errors; focus first invalid field |
+| **Advance** | required fields valid + Next | navigate to **Page 007‑01** with the form state |
+
+## RTL
+Arabic is the primary locale: the whole screen mirrors (type chips, fields, dropdown
+carets flow right-to-left). Each lookup row carries its own `nameAr` / `nameEn`, so
+labels switch with the app locale without a re-fetch.
 
 ## Localization
-All static labels come from AR/EN resources; all data labels come from the lookup
-rows (`nameAr` / `nameEn`, `name` / `nameArabic`). The interests helper text and the
-"n/10" counter are localized strings. Toasts for the error codes in
-[Page_007_API.md](Page_007_API.md) are bilingual.
+All static labels (type chips, field labels, Next) come from AR/EN resources; all data
+labels come from the lookup rows. No hard-coded strings.

@@ -7,7 +7,7 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
 > **Page summary.** The Content blocks page (D-173, gap doc G8, PDF §1, §2.1)
 > is the dynamic-CMS admin surface: editable key/value text blocks (welcome
@@ -17,7 +17,12 @@
 > Key, English (preview), Last updated and Active, a toolbar **Add ("New
 > block")** action, **one shared Add/Edit modal** carrying four fields
 > (`Key`, `Content (English)`, `Content (Arabic)` and an `Active` checkbox),
-> and quiet per-row **icon** actions: **Edit** (pencil) and **Delete** (trash).
+> and quiet per-row **icon** actions: **Edit** (pencil), **Details** (eye) and
+> **Delete** (trash). _(D-353/D-356, 2026-06-10) — the page now frames Add / Edit
+> / View / Delete through `CrudShell` (popup or full page per the toolbar toggle),
+> not the old inline `SimfModal`. Delete no longer one-clicks: it opens the
+> `ContentBlockViewDelete` form and a `SimfConfirm` gates the soft-delete-by-Key
+> (see E2E-CNT-017). The toolbar also carries **Export** + **Import** (Excel)._
 > The grid loads `new GridQuery { Top = 20 }`, so it shows up to **20 rows per
 > page** with the standard prev/next/first/last pager.
 >
@@ -61,6 +66,12 @@
 | E2E-CNT-012 | RTL / Arabic render: page + Add modal mirror | i18n | P1 | _to author_ |
 | E2E-CNT-013 | Per-column filter narrows the grid (Key / English) | happy | P1 | _to author_ |
 | E2E-CNT-014 | Column sort toggles (Key ascending ⇄ descending) | happy | P2 | _to author_ |
+| E2E-CNT-015 | Presentation toggle persists across reload (`simf.cp.prefs.content-blocks`) (D-353) | happy | P1 | _to author_ |
+| E2E-CNT-016 | Full-page mode round-trip: Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-CNT-017 | Delete confirmation gate (CrudShell + SimfConfirm; Cancel = no DELETE, confirm = one DELETE) (D-353) | error | P0 | _to author_ |
+| E2E-CNT-018 | Excel export — whole filtered grid vs selected rows (D-356) | happy | P1 | _to author_ |
+| E2E-CNT-019 | Excel import — upload workbook → result modal "N created…" + per-row error (D-356) | happy | P1 | _to author_ |
+| E2E-CNT-020 | Excel import rejection — non-.xlsx / wrong-sheet upload → 400 + bilingual toast, nothing created (D-356) | error | P1 | _to author_ |
 
 ## Scenarios
 
@@ -330,6 +341,143 @@ Scenario: Clicking a sortable header toggles ascending / descending
   # are Sortable; the Active column is not sortable.
 ```
 
+### E2E-CNT-015 — Presentation toggle persists across reload (D-353)
+
+```gherkin
+Scenario: Switch to full-page mode and it persists across reload
+  Given the administrator is on /admin/content-blocks with the default "dialog" presentation
+  And the grid toolbar shows the CrudPresentationToggle ("Open as full page", maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.content-blocks" holds {"v":1,"presentation":"page"}
+  When they reload /admin/content-blocks
+  Then OnInitializedAsync calls Prefs.GetPresentationAsync("content-blocks")
+  And the toggle still reads "Open as dialog"
+  And opening "New block" now renders the full-page CrudShell frame (not a popup)
+
+  # Grounding: ContentBlocksList sets PageKey="content-blocks"; the toggle binds
+  # _presentation and CpPreferences persists it to localStorage as
+  # "simf.cp.prefs.{PageKey}". Default is CrudPresentation.Dialog.
+```
+
+### E2E-CNT-016 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page" (simf.cp.prefs.content-blocks = "page")
+  When the administrator clicks "New block"
+  Then the grid + SimfBanner are hidden (GridHidden) and the CrudShell renders the
+      ContentBlockAddEdit form full-page titled "Add content block"
+  And there is no modal backdrop
+  When they fill Key="home.hero.subtitle"
+  And they fill Content (English)="A maritime forum for the region"
+  And they fill Content (Arabic)="منتدى بحري للمنطقة"
+  And they click "Save"
+  Then the CrudShell closes and the grid re-appears
+  And a green SimfAlert reads "Content block saved."
+  And the new row is present
+
+  When they click the row's Details (eye) action
+  Then the ContentBlockViewDelete form opens full-page in read-only mode
+      (no "Delete" button, IsDelete=false) showing Key, Content (English),
+      Content (Arabic), Last updated and Active in a description list
+  When they click the CrudShell "Close" (X) header / "Close" button
+  Then the form closes and the grid re-appears unchanged
+```
+
+### E2E-CNT-017 — Delete confirmation gate (CrudShell + SimfConfirm) (D-353)
+
+```gherkin
+Scenario: Delete requires explicit confirmation; Cancel fires no DELETE
+  Given the administrator is on /admin/content-blocks
+  And an active content block with Key="promo.banner" exists (Active = "✓")
+  When they click the row's Delete (trash) action
+  Then a CrudShell opens hosting the ContentBlockViewDelete form (IsDelete=true)
+      titled "Delete content block"
+  And it shows the row's read-only details and a red "Delete" button
+  When they click the red "Delete" button
+  Then a SimfConfirm dialog appears (Danger=true) titled "Delete content block"
+  And its message reads "Delete the content block \"promo.banner\"?" with the Key interpolated
+      (string.Format Admin.ContentBlocks.Delete.Message)
+  When they click "Cancel"
+  Then the SimfConfirm closes (_confirming=false)
+  And NO DELETE request fires and the row is unchanged
+
+  When they re-open Delete, click the red "Delete", then click the confirm "Delete" button
+  Then exactly one DELETE /account/api/admin/content-blocks/promo.banner fires
+      (the Key is Uri.EscapeDataString-encoded into the path — NOT a row id)
+  And the API returns HTTP 200 with ApiResult.Data = true
+  And the CrudShell closes
+  And a green SimfAlert reads "Content block deleted."
+  And the row's Active column flips from "✓" to "—" (soft deactivate, row stays visible)
+
+  # Grounding: delete is gated by SimfConfirm inside ContentBlockViewDelete, NOT a
+  # native window.confirm; the old one-click trash delete is gone (D-353).
+```
+
+### E2E-CNT-018 — Excel export (D-356)
+
+```gherkin
+Scenario: Export the filtered grid, then just the selected rows, to an XLSX workbook
+  Given the administrator is on /admin/content-blocks with at least two content blocks
+  When they click the toolbar "Export" action with NO rows selected
+  Then OnExportAsync calls _excel.ExportAsync with an empty Ids list and the current _query
+  And a POST /account/api/admin/content-blocks/export fires with
+      AdminGridExportRequest { Ids: [], Query: <the current GridQuery> }
+  And the browser saves an .xlsx workbook (the whole filtered grid, capped at 5000 rows)
+  And the workbook's header row carries the content-block columns (Key, Content, ContentArabic, IsActive)
+
+  When they instead tick two row checkboxes then click "Export"
+  Then OnExportAsync passes those two rows' Ids (and Query is omitted when rows are selected)
+  And a POST .../export fires with AdminGridExportRequest.Ids = [those two ids]
+  And the workbook contains exactly those two rows
+
+  # Grounding: ContentBlocksList wires OnExport=OnExportAsync and renders
+  # <CrudGridExcel Resource="content-blocks">; OnExportAsync =>
+  # _excel.ExportAsync(selected.Select(r => r.Id), _query).
+```
+
+### E2E-CNT-019 — Excel import (D-356)
+
+```gherkin
+Scenario: Import content blocks from a workbook and see the per-row outcome
+  Given the administrator is on /admin/content-blocks
+  When they click the toolbar "Import" action
+  Then OnImportAsync calls _excel.TriggerImportAsync(), opening the hidden
+      file <input id="content-blocks-import-input" accept=".xlsx">
+  When they choose an .xlsx whose sheet has Key / Content / ContentArabic rows for two new blocks
+  Then a POST /account/api/admin/content-blocks/import fires as multipart form data
+  And the import-result modal shows "2 created, 0 updated, 0 skipped."
+  And OnImportedAsync raises the shared "Grid.Import.Done" success toast and reloads the grid
+  And the grid now lists both new blocks
+
+  When they import a workbook containing one row whose Key already exists and one new Key
+  Then the modal reports 1 created and 1 updated (upsert-by-Key) — or surfaces a per-row
+      error list for any malformed row
+  And the import is capped at 5000 rows by the API
+
+  # Grounding: ContentBlocksList wires OnImport=OnImportAsync (=> _excel.TriggerImportAsync())
+  # AND OnImported=OnImportedAsync (success toast = Grid.Import.Done + LoadAsync()).
+```
+
+### E2E-CNT-020 — Excel import rejection (bad / wrong-sheet upload) (D-356)
+
+```gherkin
+Scenario: A bad upload is rejected without creating anything
+  Given the administrator is on /admin/content-blocks
+  When they import a file that is not a valid .xlsx (fails the ZIP-magic check, or exceeds the 5MB gate)
+  Then the API returns HTTP 400
+  And CrudGridExcel raises OnError, so OnExcelError surfaces a red bilingual SimfAlert
+  And no content block is created or updated
+
+  When they import a workbook whose worksheet is not the expected content-blocks sheet
+  Then the request returns HTTP 400 with the bilingual "expected worksheet" message
+  And nothing is created
+
+  # Grounding: the API caps export+import at 5000 rows and rejects a non-.xlsx
+  # upload (ZIP-magic + 5MB gate) with HTTP 400; OnExcelError sets an error Toast.
+```
+
 ---
 
 ## Implementation notes
@@ -370,4 +518,4 @@ Scenario: Clicking a sortable header toggles ascending / descending
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle): added E2E-CNT-015..020 (presentation toggle, full-page round-trip, CrudShell+SimfConfirm delete gate, Excel export, Excel import, Excel import rejection); prior review 2026-06-03 (D-256/D-257 grid affordances reconciled).

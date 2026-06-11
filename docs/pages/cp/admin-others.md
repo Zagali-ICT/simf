@@ -32,6 +32,22 @@ Identical to [`admin-visitors.md`](admin-visitors.md) except:
 - **Cross-kind security:** Visitor ids on `/admin/others/*` return 404 +
   `ErrorCodes.NotFound` (per D-113 / D-124 type-smuggling guard).
 
+## 6b. Presentation toggle + Excel (D-356 / D-353)
+
+- **D-353 Page↔Popup toggle.** The toolbar carries a `CrudPresentationToggle`
+  (`PageKey="others"`); Add / Edit / Details are framed by `CrudShell` and render
+  as either a popup (default) or a full-page frame per the admin's choice, persisted
+  in `localStorage` under `simf.cp.prefs.others` and rehydrated on load via
+  `CpPreferences.GetPresentationAsync("others")`. The forms are `OthersAddEdit`
+  (hosts the walk-in `CreateOtherForm` / shared `EditAccountForm`) and
+  `OthersViewDelete` (Details-only — no Delete button). Covered by E2E-OTH-023/024.
+- **D-356 uniform Excel (CrudGridExcel): N/A — account page.** Others is not on the
+  uniform-Excel/`CrudGridExcel` track; its single-row delete is the reason-gated
+  `/bulk-delete` dialog (not a `SimfConfirm` gate). The page keeps its existing
+  pre-D-356 direct export/import (`/account/api/admin/others/export` +
+  `/import` via the `#others-import-input` picker and the inline import-result
+  modal), already covered by E2E-OTH-009/010.
+
 ## 7. Edge cases
 
 - **Other walk-in with no profile-type seeded** → server 400
@@ -67,5 +83,6 @@ UC-OTH-DUPLICATE, UC-OTH-IMPORT, UC-OTH-EXPORT _(pending UCS)_.
 |------|----------|--------|
 | 2026-05-26 | D-113 + D-114 | Type-scoped endpoints + canonical CRUD adoption. |
 | 2026-05-28 | D-127 + D-129 | Walk-in wizard + ID-image upload. |
+| 2026-06-10 | D-353 + D-356 | Add/Edit/Details moved to `CrudShell` with the Page↔Popup `CrudPresentationToggle` (`simf.cp.prefs.others`). Uniform-Excel (`CrudGridExcel`) N/A — account page keeps its existing direct export/import. |
 
-_Last reviewed:_ 2026-05-28 by Claude (D-133 slice 3).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle).

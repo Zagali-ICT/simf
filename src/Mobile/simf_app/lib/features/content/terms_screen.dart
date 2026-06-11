@@ -120,27 +120,19 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
   Widget _buildContent(AppL10n l10n) {
     final block = _block!;
     final body = block.localizedBody(l10n.isArabic);
+    // .terms frame: a navy surface holding a scrollable .doc box, then the
+    // accept gate. The gap matches the mockup's column gap of 12px.
     return Column(
       children: <Widget>[
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(SimfTokens.space6),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                if (block.lastUpdatedAt != null) ...<Widget>[
-                  Text(
-                    l10n.termsLastUpdated(_formatDate(block.lastUpdatedAt!)),
-                    style: const TextStyle(
-                      color: SimfTokens.inkMuted,
-                      fontSize: SimfTokens.textSm,
-                    ),
-                  ),
-                  const SizedBox(height: SimfTokens.space4),
-                ],
-                SelectableText(body),
-              ],
+            padding: const EdgeInsets.fromLTRB(
+              SimfTokens.space4,
+              SimfTokens.space5,
+              SimfTokens.space4,
+              SimfTokens.space5,
             ),
+            child: _buildDocBox(l10n, block, body),
           ),
         ),
         if (widget.requireConsent) _buildConsentGate(l10n),
@@ -148,24 +140,53 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
     );
   }
 
+  // .terms .doc — white-4% fill, line2 hairline, radius 8.
+  Widget _buildDocBox(AppL10n l10n, ContentBlock block, String body) {
+    return Container(
+      padding: const EdgeInsets.all(SimfTokens.space4),
+      decoration: BoxDecoration(
+        color: SimfTokens.surfaceTint,
+        border: Border.all(color: SimfTokens.line2),
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          if (block.lastUpdatedAt != null) ...<Widget>[
+            Text(
+              l10n.termsLastUpdated(_formatDate(block.lastUpdatedAt!)),
+              style: const TextStyle(
+                color: SimfTokens.txtTertiary,
+                fontSize: SimfTokens.textSm,
+              ),
+            ),
+            const SizedBox(height: SimfTokens.space3),
+          ],
+          SelectableText(
+            body,
+            style: const TextStyle(
+              color: SimfTokens.txtSecondary,
+              fontSize: SimfTokens.textSm,
+              height: 1.8,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildConsentGate(AppL10n l10n) {
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space4),
       decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: SimfTokens.field)),
+        border: Border(top: BorderSide(color: SimfTokens.line2)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            controlAffinity: ListTileControlAffinity.leading,
-            value: _accepted,
-            onChanged: (value) => setState(() => _accepted = value ?? false),
-            title: Text(l10n.termsAcceptCheckbox),
-          ),
-          const SizedBox(height: SimfTokens.space2),
+          _buildCheckRow(l10n),
+          const SizedBox(height: SimfTokens.space3),
           FilledButton(
             onPressed: _accepted ? _accept : null,
             child: Text(l10n.termsAcceptButton),
@@ -179,6 +200,60 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
     );
   }
 
+  // .terms .check — bordered radius-6 row, accent box with navy tick + label.
+  Widget _buildCheckRow(AppL10n l10n) {
+    return InkWell(
+      onTap: () => setState(() => _accepted = !_accepted),
+      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall + 2),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: SimfTokens.space3,
+          vertical: SimfTokens.space2,
+        ),
+        decoration: BoxDecoration(
+          color: SimfTokens.surfaceTint,
+          border: Border.all(color: SimfTokens.line2),
+          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall + 2),
+        ),
+        child: Row(
+          children: <Widget>[
+            _buildCheckBox(),
+            const SizedBox(width: SimfTokens.space2),
+            Expanded(
+              child: Text(
+                l10n.termsAcceptCheckbox,
+                style: const TextStyle(
+                  color: SimfTokens.surface,
+                  fontSize: SimfTokens.textSm,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // .terms .box — 18px square, accent border + fill when ticked, navy ✓.
+  Widget _buildCheckBox() {
+    return Container(
+      width: 18,
+      height: 18,
+      decoration: BoxDecoration(
+        color: _accepted ? SimfTokens.accent : Colors.transparent,
+        border: Border.all(color: SimfTokens.accent, width: 1.5),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: _accepted
+          ? const Icon(
+              Icons.check,
+              size: 12,
+              color: SimfTokens.navy,
+            )
+          : null,
+    );
+  }
+
   Widget _buildMessage(AppL10n l10n, String message) {
     return Center(
       child: Padding(
@@ -186,7 +261,11 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text(message, textAlign: TextAlign.center),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: SimfTokens.txtSecondary),
+            ),
             const SizedBox(height: SimfTokens.space4),
             FilledButton(
               onPressed: _load,

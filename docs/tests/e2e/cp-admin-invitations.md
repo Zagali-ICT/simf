@@ -2,14 +2,14 @@
 
 | | |
 |--|--|
-| **Page** | [`cp/admin-invitations.md`](../../pages/cp/admin-invitations.md) _(reference doc not yet authored)_ |
+| **Page** | [`cp/admin-invitations.md`](../../pages/cp/admin-invitations.md) |
 | **Route** | `/admin/invitations` |
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-10 (D-356 Phase 5 — Excel + toggle) |
 
-> **Page facts (grounded in `InvitationsList.razor`, post D-256 SimfDataGrid migration):**
+> **Page facts (grounded in `InvitationsList.razor`, post D-256 SimfDataGrid migration; D-353 CrudShell framing + D-356 Excel export):**
 > - Page permission gate: `@attribute [RequirePermission(PermissionCatalog.Invitations.View)]` (`"Invitations.View"`).
 >   Baseline grant = **PublicRelations** role (and Administrator via the `"*"` wildcard).
 > - Write endpoints (`POST`/`PUT`/`DELETE`) are gated by `PermissionCatalog.Invitations.Manage` (`"Invitations.Manage"`)
@@ -20,13 +20,34 @@
 >   - `POST /account/api/admin/invitations` → API `POST /admin/invitations`
 >   - `PUT  /account/api/admin/invitations/{id}` → API `PUT  /admin/invitations/{id}`
 >   - `DELETE /account/api/admin/invitations/{id}` → API `DELETE /admin/invitations/{id}`
-> - The **Add** modal ("Send invitation") collects exactly two fields: **Recipient (UserProfile id)** (a free-text
->   GUID — `_newRecipientId`) and **Notes** (`_newNotes`). The page parses the GUID **client-side** before posting.
-> - The **Edit** modal ("Edit invitation") collects a **State** dropdown (`Pending` / `Confirmed` / `Declined`, from
->   the `InvitationState` enum) and **Notes**. It is opened by re-fetching the row via `GET .../{id}` first.
-> - Each grid row carries quiet **icon** actions inside the grid's `RowActions`: an **Edit** (pencil) action
->   (`OnEditOne` → `OnEditAsync`) and a **Delete / Cancel invitation** (trash) action (`OnDeleteOne` →
->   `OnDeleteOneAsync`, soft delete; no confirm dialog is wired). They are no longer filled text buttons.
+> - **D-353 framing (current):** Add / Edit / View / Delete are no longer inline `SimfModal`s. The page hosts a
+>   single `<CrudShell Presentation="_presentation" …>` that frames the reusable **`InvitationsAddEdit`** and
+>   **`InvitationsViewDelete`** forms as a popup (default) or a full page per the admin's toolbar toggle
+>   (`<CrudPresentationToggle PageKey="invitations" @bind-Value="_presentation" />`, persisted in localStorage
+>   via `CpPreferences` — key `simf.cp.prefs.invitations`, default `Dialog`). The two old inline `SimfModal`s
+>   (Send + Edit) are gone.
+> - The **Add** form (`InvitationsAddEdit` with `IsEdit=false`, title "Send invitation") collects exactly two
+>   fields: **Recipient (UserProfile id)** (a free-text GUID — `_model.RecipientId`) and **Notes**
+>   (`_model.Notes`). The form parses the GUID **client-side** (`Guid.TryParse`) before posting; a bad GUID shows
+>   the `Admin.Invitations.RecipientRequired` SimfAlert in the form and fires **no** POST.
+> - The **Edit** form (`InvitationsAddEdit` with `IsEdit=true`, title "Edit invitation") swaps the Recipient field
+>   for a **State** `SimfSelect` (`Pending` / `Confirmed` / `Declined`, from the `InvitationState` enum) plus
+>   **Notes**. It is opened by re-fetching the row via `GET .../{id}` first (`LoadDetailAsync`).
+> - The **View** form (`InvitationsViewDelete` with `IsDelete=false`, title "Invitation details") shows the full
+>   read-only `dl` (recipient EN/AR name, profile type, job title, email, state, notes, sent-by, created/responded/
+>   updated timestamps, active flag) and only a "Close" button.
+> - The **Delete** form (`InvitationsViewDelete` with `IsDelete=true`, title "Cancel invitation") shows the same
+>   read-only `dl` plus a danger "Cancel invitation" button that opens a **`SimfConfirm`** dialog
+>   (`Danger="true"`, message `Admin.Invitations.Delete.Message` naming the recipient); only confirming fires the
+>   `DELETE`. This replaces the earlier native-confirm/no-confirm behaviour.
+> - Each grid row carries quiet **icon** actions: **Edit** (pencil, `OnEditOne` → `OnEditAsync`), **Details**
+>   (`OnDetailsOne` → `OnDetailsAsync`), and **Delete / Cancel invitation** (trash, `OnDeleteOne` →
+>   `OnDeleteAsync`). Delete now opens the ViewDelete form's SimfConfirm gate rather than deleting directly.
+> - **D-356 Excel export (export only):** the grid wires `OnExport="OnExportAsync"`; `OnExportAsync` direct-downloads
+>   via `simfAccount.downloadXlsx` to `/account/api/admin/invitations/export`, posting
+>   `AdminGridExportRequest { Ids, Query }` (Ids = the selected rows; Query = the current grid query only when no
+>   rows are selected). **There is no import** — invitations are created/edited from the forms, so the page wires no
+>   `OnImport` and renders no import `<input>`.
 > - Grid columns (`SimfDataGrid`): Recipient (`recipient`), Profile type (`profileType`), State (`state`),
 >   Sent (`createdat`, `yyyy-MM-dd HH:mm 'UTC'`), Sent by (`sentBy`), Active (`active`), plus the row-actions column.
 > - **Grid now renders per-column filter + sort + pager** (post D-256). `Filterable="true"` is set on **State**
@@ -61,6 +82,10 @@
 | E2E-INV-012 | RTL / Arabic render mirrors page + Add modal | i18n | P1 | _to author_ |
 | E2E-INV-013 | Per-column filter (State) narrows the grid | grid | P1 | _to author_ |
 | E2E-INV-014 | Column sort toggles (State / Sent) | grid | P2 | _to author_ |
+| E2E-INV-015 | Presentation toggle: switch to full-page + persists across reload (D-353) | happy | P1 | _to author_ |
+| E2E-INV-016 | Full-page mode: Add/Edit/View take over the content area, Save returns to grid (D-353) | happy | P1 | _to author_ |
+| E2E-INV-017 | Delete confirmation: Cancel invitation opens View/Delete → SimfConfirm gates the DELETE (D-353) | error | P0 | _to author_ |
+| E2E-INV-018 | Excel export: toolbar Export downloads an .xlsx of the filtered grid / selected rows (D-356) | happy | P1 | _to author_ |
 
 ## Scenarios
 
@@ -196,8 +221,8 @@ Scenario: A recipient id that is not a GUID is rejected before any POST
   When the administrator fills Recipient (UserProfile id)="not-a-guid"
   And they click "Send"
   Then SubmitCreateAsync fails the Guid.TryParse guard
-  And a red toast appears reading "The invitations could not be loaded." / "تعذّر تحميل الدعوات."
-    (the page reuses the LoadFailed string as the parse-failure fallback)
+  And a red SimfAlert appears in the form reading the Admin.Invitations.RecipientRequired
+    message (e.g. "A valid recipient is required." / "يجب اختيار مستلم صالح.")
   And the modal stays open
   And NO POST /account/api/admin/invitations request fires
 ```
@@ -316,6 +341,83 @@ Scenario: Clicking a sortable column header cycles ascending → descending
   And the grid re-renders ordered by State
 ```
 
+### E2E-INV-015 — Presentation toggle persists (D-353)
+
+```gherkin
+Scenario: Switch the desk to full-page mode and it persists across reload
+  Given the administrator is on /admin/invitations with the default "dialog" presentation
+    (the page reads CpPreferences.GetPresentationAsync("invitations") in OnInitializedAsync)
+  And the grid toolbar's CustomToolbar slot shows the CrudPresentationToggle "Open as full page" control (maximize icon)
+  When they click the toggle
+  Then the toggle label changes to "Open as dialog" (window icon)
+  And localStorage key "simf.cp.prefs.invitations" holds {"v":1,"presentation":"page"}
+  When they reload /admin/invitations
+  Then the toggle still reads "Open as dialog"
+  And opening "New invitation" now renders the full-page CrudShell frame (not a popup)
+```
+
+### E2E-INV-016 — Full-page mode round-trip (D-353)
+
+```gherkin
+Scenario: Add/Edit/View take over the content area; Save returns to the grid
+  Given the presentation is set to "full page" (CrudPresentation.Page)
+  When the administrator clicks "New invitation"
+  Then the grid + SimfBanner are hidden (GridHidden = FormOpen && _presentation == Page)
+  And the CrudShell renders the InvitationsAddEdit form full-page with the title "Send invitation"
+    and a "Close" header — no modal backdrop
+  When they fill Recipient (UserProfile id)="11111111-1111-1111-1111-111111111111"
+  And they fill Notes="Full-page send"
+  And they click "Send"
+  Then POST /account/api/admin/invitations returns 200, the frame closes, and the grid re-appears
+  And a green success toast appears (key Admin.Invitations.Saved — AR "تم حفظ الدعوة.";
+    note the EN value is currently missing from Strings.resx, so EN falls back to the key — i18n parity gap)
+  When they click the row's Edit (pencil) action and then the frame's "Close" button
+  Then the form closes via CloseForm and the grid re-appears unchanged (no PUT fired)
+  When they click the row's Details action
+  Then the InvitationsViewDelete form opens full-page in read-only mode (no danger button), and "Close" returns to the grid
+```
+
+### E2E-INV-017 — Delete confirmation gate (D-353)
+
+```gherkin
+Scenario: Cancel invitation requires explicit SimfConfirm before the DELETE
+  Given the administrator is on /admin/invitations with an active invitation for "Capt. Faisal Al-Harbi"
+  When they click the row's Delete / Cancel invitation (trash) action
+  Then GET /account/api/admin/invitations/{id} fires and the InvitationsViewDelete form opens (IsDelete=true)
+    showing the row's read-only details and a red "Cancel invitation" button
+  When they click "Cancel invitation"
+  Then a SimfConfirm dialog appears (Danger=true) with the message
+    "Cancel the invitation to \"Capt. Faisal Al-Harbi\"? …" / the Arabic Admin.Invitations.Delete.Message
+  When they click the confirm dialog's "Cancel" (CancelLabel) button
+  Then _confirming is cleared, NO DELETE request fires, and the row is unchanged
+  When they re-open the form, click "Cancel invitation", then click the confirm "Cancel invitation" button
+  Then exactly one DELETE /account/api/admin/invitations/{id} fires and returns 200 (ApiResult<bool>.Ok(true))
+  And the form closes and a green toast reads "Invitation cancelled." / "تم إلغاء الدعوة." (Admin.Invitations.Deactivated)
+  And after the list reloads the row's Active column flips to "Inactive"
+```
+
+**Note:** this supersedes the pre-D-353 behaviour where the trash action soft-deleted directly with no confirm
+dialog — the delete now always routes through the InvitationsViewDelete form + its SimfConfirm gate.
+
+### E2E-INV-018 — Excel export (D-356, export only)
+
+```gherkin
+Scenario: Export the filtered grid (or selected rows) to an XLSX workbook
+  Given the administrator is on /admin/invitations with at least two invitations
+    and holds the Invitations.Export permission (PublicRelations baseline / Administrator wildcard)
+  When they click the toolbar "Export" action with no rows selected
+  Then OnExportAsync calls simfAccount.downloadXlsx against /account/api/admin/invitations/export
+  And the POST body is AdminGridExportRequest with an empty Ids list and the current Query
+    (Query is sent only because no rows are selected)
+  And the API ExportInvitationsEndpoint lists via AdminInvitationService.ListAllAsync (Skip reset to 0, Top capped at 5000)
+  And the browser saves a file named "simf-invitations-{yyyyMMddHHmmss}.xlsx"
+  And the workbook's "Invitations" sheet has the header row
+    RecipientEnglishName | RecipientArabicName | ProfileType | Email | State | Notes | SentBy | CreatedAt | RespondedAt | IsActive
+  When they instead select two rows then click "Export"
+  Then the POST body carries those two Ids and a null Query, and the workbook contains exactly those two rows
+  And there is NO Import action on this page — invitations are created/edited from the CP forms only
+```
+
 ---
 
 ## Implementation notes
@@ -342,9 +444,15 @@ Scenario: Clicking a sortable column header cycles ascending → descending
   per-column filter input on **State** (`state`), sortable **State** (`state`) + **Sent** (`createdat`) headers,
   and a Prev/Next/First/Last + page-size pager (`Top = 20`). The service still also honours an `isActive` filter,
   but no UI control drives it — do not author a scenario that filters by Active until the page grows that control.
-- **Page reference doc gap.** `docs/pages/cp/admin-invitations.md` does not exist yet; the linked path is a
-  placeholder for when the per-page reference doc is authored.
+- **Page reference doc.** The per-page reference doc now exists at
+  [`docs/pages/cp/admin-invitations.md`](../../pages/cp/admin-invitations.md) (authored under D-356 Phase 5).
+- **D-353 CrudShell framing.** Add/Edit/View/Delete are hosted by `CrudShell` (popup or full page per the
+  `CrudPresentationToggle`, persisted in `simf.cp.prefs.invitations`). Delete is gated by `SimfConfirm` inside
+  `InvitationsViewDelete` — there is no native `window.confirm` and no direct trash-icon delete (E2E-INV-015..017).
+- **D-356 Excel export (export only).** The grid wires `OnExport` to `ExportInvitationsEndpoint`
+  (`POST /admin/invitations/export`, `Invitations.Export` permission, "Invitations" sheet, 5000-row cap). No
+  import endpoint or UI exists for this resource (E2E-INV-018).
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-10 by Claude (D-356 Phase 5 — Excel + toggle). Earlier: 2026-06-03 (E2E catalogue rebuild, D-256/D-257 grid affordances reconciled).

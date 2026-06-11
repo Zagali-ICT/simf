@@ -1,0 +1,37 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import 'myarea_models.dart';
+
+/// App-local data layer for the My-Area dashboard (Page_014). The dashboard read
+/// is the `ApiResult` envelope; the calendar/contact exports are **raw** text
+/// bodies (`text/calendar` / `text/vcard`) fetched via [SimfApiClient.getText].
+/// All three require an **Approved** account (`RequireApprovedAccount`); a
+/// pending caller gets 403 and the screen shows the limited card (Page_014 L-5).
+class MyAreaRepository {
+  MyAreaRepository(this._client);
+
+  final SimfApiClient _client;
+
+  Future<MyAreaDashboard> getDashboard() {
+    return _client.get<MyAreaDashboard>(
+      '/app/account/dashboard',
+      decodeData: (data) => MyAreaDashboard.fromJson(_asMap(data)),
+    );
+  }
+
+  /// `GET /app/account/contact-card.vcf` → raw vCard 3.0 text (Page_014 E3).
+  Future<String> getContactCardVcf() =>
+      _client.getText('/app/account/contact-card.vcf');
+
+  /// `GET /app/account/calendar.ics` → raw RFC 5545 calendar text (Page_014 E2).
+  Future<String> getCalendarIcs() =>
+      _client.getText('/app/account/calendar.ics');
+
+  static Map<String, dynamic> _asMap(Object? data) =>
+      (data as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+}
+
+final myAreaRepositoryProvider = Provider<MyAreaRepository>((ref) {
+  return MyAreaRepository(ref.watch(simfApiClientProvider));
+});
