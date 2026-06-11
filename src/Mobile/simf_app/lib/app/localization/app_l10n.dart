@@ -70,25 +70,27 @@ class AppL10n {
         'مرحباً بك في تطبيق الملتقى',
         'Welcome to the SIMF app',
       );
+  // Step bodies — the KSA-Project onboarding copy (Figma 148:22 / 159:942 /
+  // 159:1052, D-362). All three steps share onboardingTitle1 as their title.
   String get onboardingBody1 => _t(
-        'دليلك المتكامل: الأجندة، المتحدثون، الخريطة التفاعلية، البطاقة الذكية، والبث المباشر — في تطبيق واحد.',
-        'Your complete guide: the agenda, speakers, interactive map, smart badge and live broadcast — in one app.',
+        'دليلك المتكامل: الأجندة، المتحدثون، الخريطة التفاعلية، البطاقة الذكية، والبث المباشر في تطبيق واحد.',
+        'Your complete guide: the agenda, speakers, interactive map, smart badge and live broadcast in one app.',
       );
   String get onboardingTitle2 => _t(
         'تابع الجلسات والمتحدثين',
         'Follow the sessions and speakers',
       );
   String get onboardingBody2 => _t(
-        'تصفّح الأجندة، احجز مقعدك، واستكشف أجنحة المعرض والخريطة التفاعلية للمكان.',
-        'Browse the agenda, reserve your seat, and explore the exhibition booths and the interactive venue map.',
+        'كل ما تحتاجه في مكان واحد: جدول الفعاليات، المتحدثون الرئيسيون، خريطة الموقع، معلومات التسجيل، والبث المباشر، كله في تطبيق واحد.',
+        'Everything you need in one place: the events schedule, keynote speakers, the venue map, registration information and the live broadcast — all in one app.',
       );
   String get onboardingTitle3 => _t(
         'بطاقتك الذكية وتواصلك',
         'Your smart badge and networking',
       );
   String get onboardingBody3 => _t(
-        'بطاقة دخول QR، إشعارات فورية، وتواصل مع مشاركين يشاركونك الاهتمامات.',
-        'A QR entry badge, instant notifications, and connect with attendees who share your interests.',
+        'كل ما تحتاجه في مكان واحد: جدول الفعاليات، المتحدثون، خريطة الموقع، معلومات الدخول، والبث المباشر.',
+        'Everything you need in one place: the events schedule, speakers, the venue map, entry information and the live broadcast.',
       );
 
   // Sign up — type (Page 004). Client-only account-type chooser (no API).

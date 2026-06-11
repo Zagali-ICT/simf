@@ -8,14 +8,26 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/simf_logo.dart';
 
-/// Page 002 — التهيئة · Onboarding (first-run only, Page_002 docs).
+const String _worldMapAsset = 'assets/images/onboarding_world_map.jpg';
+// The design's photo treatment on step 1: #01132D at 90% over the image.
+const Color _photoOverlay = Color(0xE601132D);
+// Pill page dots (Figma 148:22): active beige, inactive soft gold at 50%.
+const Color _dotInactive = Color(0x80D0AC77);
+
+/// Page 002 — التهيئة · Onboarding (first-run only). The KSA-Project Figma
+/// design (frames 148:22 / 159:942 / 159:1052 — D-362): a three-step static
+/// carousel — the world-map photo with a 90% navy overlay behind step 1, plain
+/// navy behind steps 2–3 — with the brand mark, the welcome copy per step,
+/// pill dots, the gold التالي button, a تخطي link (hidden on the last step)
+/// and a back chevron (steps 2–3). Replaces the interim intro-video
+/// placeholder per the owner's static-panels decision; the old screen is
+/// parked in `_legacy_mockup/`.
 ///
-/// A three-slide intro carousel — the interim stand-in for the intro videos
-/// (`introd_001..003`; the real YouTube/bundled player binds these logical
-/// names later). It runs only on the first launch: the splash gates on the
-/// `onboardingCompleted` flag, and finishing or skipping here sets that flag and
-/// routes to sign-in. There is **no SIMF API** (Page_002_API.md).
+/// Contract unchanged: finishing or skipping sets `onboardingCompleted` and
+/// routes to sign-in; the splash gates on that flag. There is **no SIMF API**
+/// (Page_002_API.md).
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -24,7 +36,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 }
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
-  static const int _slideCount = 3;
+  static const int _stepCount = 3;
 
   final PageController _pageController = PageController();
   int _index = 0;
@@ -48,7 +60,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   void _onSkip() => unawaited(_complete());
 
   void _onNext() {
-    if (_index >= _slideCount - 1) {
+    if (_index >= _stepCount - 1) {
       unawaited(_complete());
       return;
     }
@@ -60,76 +72,166 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
+  void _onBack() {
+    if (_index == 0) {
+      return;
+    }
+    unawaited(
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    final titles = <String>[
-      l10n.onboardingTitle1,
-      l10n.onboardingTitle2,
-      l10n.onboardingTitle3,
+    final bodies = <String>[
+      l10n.onboardingBody1,
+      l10n.onboardingBody2,
+      l10n.onboardingBody3,
     ];
-    final isLast = _index == _slideCount - 1;
+    final isLast = _index == _stepCount - 1;
 
     return Scaffold(
       backgroundColor: SimfTokens.navy,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space6),
-          child: Column(
-            children: <Widget>[
-              _ProgressSegments(count: _slideCount, activeIndex: _index),
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: _slideCount,
-                  onPageChanged: (i) => setState(() => _index = i),
-                  itemBuilder: (context, i) => _IntroVideoSlide(
-                    index: i,
-                    title: titles[i],
-                    videoName: 'introd_00${i + 1}',
-                  ),
+      body: Stack(
+        children: <Widget>[
+          // Step 1 sits over the world-map photo dimmed by the navy overlay;
+          // the later steps are plain navy (Figma 148:22 vs 159:942/159:1052).
+          if (_index == 0) ...<Widget>[
+            Positioned.fill(
+              child: Image.asset(_worldMapAsset, fit: BoxFit.cover),
+            ),
+            const Positioned.fill(
+              child: ColoredBox(color: _photoOverlay),
+            ),
+          ],
+          SafeArea(
+            child: Column(
+              children: <Widget>[
+                // Back chevron on steps 2-3; a fixed-height slot keeps the
+                // layout stable when it is absent on step 1.
+                SizedBox(
+                  height: 48,
+                  child: _index > 0
+                      ? Align(
+                          alignment: Alignment.topLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8, top: 8),
+                            // The frame draws the chevron pointing left even
+                            // in RTL; force LTR so it is not auto-mirrored.
+                            child: IconButton(
+                              onPressed: _onBack,
+                              icon: const Icon(
+                                Icons.arrow_back_ios_new,
+                                color: Colors.white,
+                                size: 20,
+                                textDirection: TextDirection.ltr,
+                              ),
+                            ),
+                          ),
+                        )
+                      : null,
                 ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  TextButton(
-                    onPressed: _onSkip,
-                    child: Text(
-                      l10n.onboardingSkip,
-                      style: const TextStyle(
-                        color: SimfTokens.txtTertiary,
-                        fontSize: SimfTokens.textSm,
+                const Spacer(),
+                const SimfLogo(size: 136),
+                const SizedBox(height: 40),
+                SizedBox(
+                  height: 170,
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: _stepCount,
+                    onPageChanged: (i) => setState(() => _index = i),
+                    itemBuilder: (context, i) => Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Text(
+                            // The design repeats one welcome title on all
+                            // three steps (148:22 / 159:943 / 159:1053).
+                            l10n.onboardingTitle1,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Flexible(
+                            child: Text(
+                              bodies[i],
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: SimfTokens.beigeBorder,
+                                fontSize: 18,
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  FilledButton(
-                    // The app's FilledButton theme sets a full-width minimum
-                    // (minimumSize: Size.fromHeight(48) == Size(infinity, 48)).
-                    // In a Column that harmlessly stretches to fill, but inside
-                    // this Row it demands an infinite width and throws a layout
-                    // assertion (D-295), collapsing the whole onboarding body.
-                    // Override to a content-width minimum for the in-Row usage.
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(0, 48),
-                    ),
-                    onPressed: _onNext,
-                    child: Text(
-                      isLast ? l10n.onboardingGetStarted : l10n.onboardingNext,
-                    ),
+                ),
+                const SizedBox(height: 24),
+                _Dots(count: _stepCount, activeIndex: _index),
+                const Spacer(flex: 2),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      FilledButton(
+                        onPressed: _onNext,
+                        child: Text(
+                          l10n.onboardingNext,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // The skip link disappears on the last step (159:1052);
+                      // the fixed-height slot keeps the button from jumping.
+                      SizedBox(
+                        height: 32,
+                        child: isLast
+                            ? null
+                            : TextButton(
+                                onPressed: _onSkip,
+                                style: TextButton.styleFrom(
+                                  foregroundColor: SimfTokens.accent,
+                                ),
+                                child: Text(
+                                  l10n.onboardingSkip,
+                                  style: const TextStyle(fontSize: 18),
+                                ),
+                              ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-class _ProgressSegments extends StatelessWidget {
-  const _ProgressSegments({required this.count, required this.activeIndex});
+/// The design's pill page dots — active 32×8 beige, inactive 16×8 soft gold.
+/// Forced LTR so the active dot travels left → right exactly as in the
+/// frames (which keep that progression even in the RTL design).
+class _Dots extends StatelessWidget {
+  const _Dots({required this.count, required this.activeIndex});
 
   final int count;
   final int activeIndex;
@@ -137,143 +239,20 @@ class _ProgressSegments extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      textDirection: TextDirection.ltr,
       children: <Widget>[
         for (int i = 0; i < count; i++)
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 3),
-            width: i == activeIndex ? 22 : 8,
-            height: 3,
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            width: i == activeIndex ? 32 : 16,
+            height: 8,
             decoration: BoxDecoration(
-              color: i == activeIndex ? SimfTokens.accent : SimfTokens.line,
-              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+              color: i == activeIndex ? SimfTokens.beigeBorder : _dotInactive,
+              borderRadius: BorderRadius.circular(999),
             ),
           ),
-      ],
-    );
-  }
-}
-
-/// One intro-video slide. The video player is an **interim placeholder frame**
-/// (Page_002 FE-1..4): the real source is YouTube (`introd_001..003`) with a
-/// bundled fallback, wired with SIMF-VID-001 — the clips are not delivered yet,
-/// so this renders a play/mute frame standing in for the embedded player.
-class _IntroVideoSlide extends StatelessWidget {
-  const _IntroVideoSlide({
-    required this.index,
-    required this.title,
-    required this.videoName,
-  });
-
-  final int index;
-  final String title;
-  final String videoName;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        SizedBox(
-          height: 172,
-          width: 300,
-          child: Container(
-            decoration: BoxDecoration(
-              color: SimfTokens.navyDeep,
-              borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
-              border: Border.all(color: SimfTokens.line2),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Stack(
-              children: <Widget>[
-                Center(
-                  child: Container(
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: SimfTokens.accent.withValues(alpha: 0.18),
-                      border: Border.all(color: SimfTokens.accent),
-                    ),
-                    child: const Icon(
-                      Icons.play_arrow_rounded,
-                      color: SimfTokens.accent,
-                      size: 20,
-                    ),
-                  ),
-                ),
-                PositionedDirectional(
-                  top: SimfTokens.space2,
-                  start: SimfTokens.space3,
-                  child: const Text(
-                    'YouTube',
-                    style: TextStyle(
-                      color: SimfTokens.txtTertiary,
-                      fontSize: SimfTokens.textXs,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-                PositionedDirectional(
-                  bottom: SimfTokens.space2,
-                  end: SimfTokens.space3,
-                  child: Text(
-                    videoName,
-                    textDirection: TextDirection.ltr,
-                    style: const TextStyle(
-                      color: SimfTokens.txtSecondary,
-                      fontSize: SimfTokens.textXs,
-                    ),
-                  ),
-                ),
-                PositionedDirectional(
-                  bottom: SimfTokens.space2,
-                  start: SimfTokens.space2,
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: SimfTokens.line2,
-                    ),
-                    child: IconButton(
-                      tooltip: l10n.onboardingMutedTooltip,
-                      padding: EdgeInsets.zero,
-                      iconSize: 14,
-                      onPressed: () {},
-                      icon: const Icon(
-                        Icons.volume_off_outlined,
-                        color: SimfTokens.txtSecondary,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: SimfTokens.space4),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: SimfTokens.surface,
-            fontSize: SimfTokens.textLg,
-            fontWeight: FontWeight.w700,
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: SimfTokens.space2),
-        Text(
-          '${l10n.onboardingVideoLabel} ${index + 1} / 3',
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: SimfTokens.txtSecondary,
-            fontSize: SimfTokens.textSm,
-            height: 1.8,
-          ),
-        ),
       ],
     );
   }

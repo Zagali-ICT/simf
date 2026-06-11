@@ -11,10 +11,21 @@
 |--|--|
 | **Page** | [`Page_002`](../../App/Page_002/README.md) (App page docs) |
 | **Route** | app screen #2 `/onboarding` · **no API** |
-| **Surface** | Mobile (Flutter) — first-run intro carousel (interim stand-in for the intro videos) |
+| **Surface** | Mobile (Flutter) — first-run intro carousel (three static panels — KSA design, D-362) |
 | **Test runner** | Flutter widget test (flag + navigation) · device/emulator drive for the visual + RTL |
 | **Auth setup** | None — runs at **Guest**, before sign-in. State driven by the local `onboardingCompleted` flag. **No token, no SIMF call.** |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-11 |
+
+> **KSA-Project redesign (D-362, Figma 148:22 / 159:942 / 159:1052):** the
+> intro **videos are dropped** (owner decision) for the design's three static
+> panels — world-map photo + 90% navy overlay behind step 1, plain navy behind
+> steps 2–3, `SimfLogo`, one shared welcome title, per-step body, pill dots,
+> the gold **التالي** on every step (no "ابدأ" variant), **تخطي** hidden on
+> the last step, a back chevron on steps 2–3. The flag + routing contract is
+> unchanged; the old placeholder screen is parked in
+> `lib/features/_legacy_mockup/`. Widget tests rewritten:
+> `onboarding_screen_test.dart` (skip / third-Next completes / skip hidden on
+> last step / back chevron).
 
 ## Coverage matrix
 
@@ -136,4 +147,4 @@ Scenario: The flag is only set on completion
 
 ---
 
-_Last reviewed:_ `2026-06-03` by `SIMF Team`.
+_Last reviewed:_ `2026-06-11` by `SIMF Team`.

@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/app/theme/app_theme.dart';
-import 'package:simf_app/features/onboarding/onboarding_screen.dart';
+import 'package:simf_app/features/_legacy_mockup/onboarding_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 /// In-memory [SimfPrefsStorage] so the test needs no platform channel.
@@ -80,7 +80,6 @@ Future<void> _pumpOnboarding(WidgetTester tester, _FakePrefs prefs) async {
         simfPrefsStorageProvider.overrideWithValue(prefs),
       ],
       child: MaterialApp.router(
-        theme: SimfTheme.dark(),
         routerConfig: router,
         locale: const Locale('en'),
         supportedLocales: AppL10n.supportedLocales,
@@ -97,7 +96,7 @@ Future<void> _pumpOnboarding(WidgetTester tester, _FakePrefs prefs) async {
 }
 
 void main() {
-  group('OnboardingScreen (Page 002 — KSA design, D-362)', () {
+  group('OnboardingScreen (Page 002)', () {
     testWidgets('Skip sets the first-run flag and routes to sign-in',
         (tester) async {
       final prefs = _FakePrefs();
@@ -111,54 +110,70 @@ void main() {
       expect(find.text('SIGN-IN-SCREEN'), findsOneWidget);
     });
 
-    testWidgets('the third Next completes onboarding (no Get-started label)',
+    testWidgets('finishing the last slide completes onboarding',
         (tester) async {
       final prefs = _FakePrefs();
       await _pumpOnboarding(tester, prefs);
 
+      // English locale: the button reads Next, Next, then Get started.
       await tester.tap(find.text('Next'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Next'));
       await tester.pumpAndSettle();
       expect(prefs.getBool(StorageKeys.onboardingCompleted), isNull);
 
-      await tester.tap(find.text('Next'));
+      await tester.tap(find.text('Get started'));
       await tester.pumpAndSettle();
 
       expect(prefs.getBool(StorageKeys.onboardingCompleted), isTrue);
       expect(find.text('SIGN-IN-SCREEN'), findsOneWidget);
     });
 
-    testWidgets('the skip link disappears on the last step', (tester) async {
-      final prefs = _FakePrefs();
-      await _pumpOnboarding(tester, prefs);
+    testWidgets(
+        'renders under the production theme without an infinite-width crash '
+        '(D-295)', (tester) async {
+      // Regression: the FilledButton theme sets minimumSize: Size.fromHeight(48)
+      // (== Size(infinity, 48)). Inside the onboarding bottom Row that demanded
+      // an infinite width and threw a layout assertion, collapsing the whole
+      // body + nav buttons (observed on a real device). The other tests miss it
+      // because they pump a bare MaterialApp with no theme; this one applies the
+      // real SimfTheme so the regression is locked in.
+      final router = GoRouter(
+        initialLocation: '/onboarding',
+        routes: <RouteBase>[
+          GoRoute(
+            name: RouteNames.onboarding,
+            path: '/onboarding',
+            builder: (context, state) => const OnboardingScreen(),
+          ),
+        ],
+      );
 
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: <Override>[
+            simfPrefsStorageProvider.overrideWithValue(_FakePrefs()),
+          ],
+          child: MaterialApp.router(
+            theme: SimfTheme.light(),
+            routerConfig: router,
+            locale: const Locale('en'),
+            supportedLocales: AppL10n.supportedLocales,
+            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+              ...AppL10n.localizationsDelegates,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      // The body + both nav buttons actually laid out (they did not before).
+      expect(find.text('Next'), findsOneWidget);
       expect(find.text('Skip'), findsOneWidget);
-      await tester.tap(find.text('Next'));
-      await tester.pumpAndSettle();
-      expect(find.text('Skip'), findsOneWidget);
-      await tester.tap(find.text('Next'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Skip'), findsNothing);
-    });
-
-    testWidgets('the back chevron steps back (hidden on step 1)',
-        (tester) async {
-      final prefs = _FakePrefs();
-      await _pumpOnboarding(tester, prefs);
-
-      expect(find.byIcon(Icons.arrow_back_ios_new), findsNothing);
-      await tester.tap(find.text('Next'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Next'));
-      await tester.pumpAndSettle();
-      expect(find.text('Skip'), findsNothing); // on the last step
-
-      await tester.tap(find.byIcon(Icons.arrow_back_ios_new));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Skip'), findsOneWidget); // back on step 2
     });
   });
 }
