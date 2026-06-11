@@ -3,6 +3,17 @@
 Screen design for the Flutter app. Layout from `Mockup.html` (screen #9); data binds to
 [Page_009_API.md](Page_009_API.md); rules in [Page_009_Logic.md](Page_009_Logic.md).
 
+> **As-built (KSA-Project redesign, 2026-06-11 — D-367, Figma 505:1553):**
+> navy `navySurface` + decorative sweep, custom header (back chevron +
+> centred title); **معلومات هامة لزوار الملتقى** heading + the last-updated
+> line; the server body rendered as **gold-hairline bullet cards** (radius 8,
+> gold • + `beigeBorder` 14/21 text — each non-empty body line is one card);
+> in consent mode a single always-enabled gold **موافق** button — the interim
+> checkbox row + Decline link are gone: the explicit موافق tap IS the consent
+> (still client-side only, D8; the back chevron declines via `pop(false)`).
+> Load/empty/404/error+retry contract unchanged; the old screen is parked in
+> `lib/features/_legacy_mockup/`.
+
 ## Layout (top → bottom)
 1. **App bar** — back ‹, centered title الشروط والأحكام.
 2. **Last-updated line** — "آخر تحديث · Last updated {date}" (from `lastUpdatedAt`, always present).

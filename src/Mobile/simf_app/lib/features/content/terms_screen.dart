@@ -8,20 +8,21 @@ import '../../app/theme/tokens.dart';
 import 'data/content_models.dart';
 import 'data/content_repository.dart';
 
-/// Page 009 — الشروط والأحكام · Terms & conditions (Page_009 docs).
+const Color _sweepTint = Color(0x0AFFFFFF);
+
+/// Page 009 — الشروط والأحكام · Terms & conditions. The KSA-Project Figma
+/// design (node 505:1553 — D-367): navy surface + sweep, custom header, the
+/// معلومات هامة لزوار الملتقى heading, the terms rendered as gold-hairline
+/// bullet cards, and (consent mode) the gold موافق button. The previous
+/// screen is parked in `_legacy_mockup/`.
 ///
-/// A read-only content view backed by the anonymous `GET /app/content/terms`
-/// (the `terms` content key). Two modes (Page_009 L-2), chosen by the caller:
-///   - **standalone read** ([requireConsent] = false): body only, no gate;
-///   - **in-flow consent** ([requireConsent] = true): a bottom accept gate
-///     (checkbox + Accept) whose acceptance is **client-side only** (D8 — no
-///     backend write) and hands control back to the calling flow via `pop`.
-///
-/// A missing/inactive key (404) renders the **empty** state; a transport/5xx
-/// failure renders the **error** state with retry (L-6). Reading is open to any
-/// privilege (Guest and above), so the route is not auth-gated. The body is
-/// shown as plain selectable text in this interim UI; rich HTML/markdown
-/// rendering lands with the final design (SIMF-VID-001).
+/// Contract: a read-only view over the anonymous `GET /app/content/terms`.
+/// Two modes (Page_009 L-2): standalone read (no gate) and in-flow consent —
+/// per the design the interim checkbox is gone and the explicit **موافق** tap
+/// IS the consent (still client-side only, D8 — control returns to the caller
+/// via `pop(true)`; the back chevron declines via `pop(false)`). Each
+/// non-empty line of the server body renders as one bullet card; a 404 is the
+/// empty state, transport/5xx is the error state with retry (L-6). Guest+.
 class TermsScreen extends ConsumerStatefulWidget {
   const TermsScreen({super.key, this.requireConsent = false});
 
@@ -36,7 +37,6 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
   bool _empty = false;
   String? _error;
   ContentBlock? _block;
-  bool _accepted = false;
 
   @override
   void initState() {
@@ -87,9 +87,10 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
     }
   }
 
-  void _decline() {
+  void _back() {
+    // In consent mode the chevron declines (the caller receives false).
     if (context.canPop()) {
-      context.pop(false);
+      context.pop(widget.requireConsent ? false : null);
     } else {
       context.go('/');
     }
@@ -99,14 +100,74 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.termsTitle)),
-      body: SafeArea(child: _buildBody(l10n)),
+      backgroundColor: SimfTokens.navySurface,
+      body: Stack(
+        children: <Widget>[
+          // Decorative diagonal sweep (Figma 505:1555, top-right area).
+          Positioned(
+            top: -180,
+            right: -40,
+            child: Transform.rotate(
+              angle: 0.4936, // 28.28°
+              child: Container(
+                width: 313,
+                height: 323,
+                decoration: BoxDecoration(
+                  color: _sweepTint,
+                  borderRadius: BorderRadius.circular(40),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              children: <Widget>[
+                // Header band (Figma 505:1558): chevron left, centred title.
+                SizedBox(
+                  height: 56,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: <Widget>[
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: IconButton(
+                            onPressed: _back,
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new,
+                              color: Colors.white,
+                              size: 20,
+                              textDirection: TextDirection.ltr,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        l10n.termsTitle,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(child: _buildBody(l10n)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildBody(AppL10n l10n) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: SimfTokens.accent),
+      );
     }
     if (_error != null) {
       return _buildMessage(l10n, _error!);
@@ -120,137 +181,78 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
   Widget _buildContent(AppL10n l10n) {
     final block = _block!;
     final body = block.localizedBody(l10n.isArabic);
-    // .terms frame: a navy surface holding a scrollable .doc box, then the
-    // accept gate. The gap matches the mockup's column gap of 12px.
+    // Each non-empty body line renders as one bullet card (Figma list items).
+    final items = body
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
     return Column(
       children: <Widget>[
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              SimfTokens.space4,
-              SimfTokens.space5,
-              SimfTokens.space4,
-              SimfTokens.space5,
-            ),
-            child: _buildDocBox(l10n, block, body),
-          ),
-        ),
-        if (widget.requireConsent) _buildConsentGate(l10n),
-      ],
-    );
-  }
-
-  // .terms .doc — white-4% fill, line2 hairline, radius 8.
-  Widget _buildDocBox(AppL10n l10n, ContentBlock block, String body) {
-    return Container(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      decoration: BoxDecoration(
-        color: SimfTokens.surfaceTint,
-        border: Border.all(color: SimfTokens.line2),
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          if (block.lastUpdatedAt != null) ...<Widget>[
-            Text(
-              l10n.termsLastUpdated(_formatDate(block.lastUpdatedAt!)),
-              style: const TextStyle(
-                color: SimfTokens.txtTertiary,
-                fontSize: SimfTokens.textSm,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      l10n.termsImportantInfoTitle,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  if (block.lastUpdatedAt != null) ...<Widget>[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        l10n.termsLastUpdated(
+                          _formatDate(block.lastUpdatedAt!),
+                        ),
+                        style: const TextStyle(
+                          color: SimfTokens.txtTertiary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  for (final item in items) ...<Widget>[
+                    _BulletCard(text: item),
+                    const SizedBox(height: 16),
+                  ],
+                  const SizedBox(height: 8),
+                ],
               ),
             ),
-            const SizedBox(height: SimfTokens.space3),
-          ],
-          SelectableText(
-            body,
-            style: const TextStyle(
-              color: SimfTokens.txtSecondary,
-              fontSize: SimfTokens.textSm,
-              height: 1.8,
-            ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildConsentGate(AppL10n l10n) {
-    return Container(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: SimfTokens.line2)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          _buildCheckRow(l10n),
-          const SizedBox(height: SimfTokens.space3),
-          FilledButton(
-            onPressed: _accepted ? _accept : null,
-            child: Text(l10n.termsAcceptButton),
-          ),
-          TextButton(
-            onPressed: _decline,
-            child: Text(l10n.declineLabel),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // .terms .check — bordered radius-6 row, accent box with navy tick + label.
-  Widget _buildCheckRow(AppL10n l10n) {
-    return InkWell(
-      onTap: () => setState(() => _accepted = !_accepted),
-      borderRadius: BorderRadius.circular(SimfTokens.radiusSmall + 2),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SimfTokens.space3,
-          vertical: SimfTokens.space2,
         ),
-        decoration: BoxDecoration(
-          color: SimfTokens.surfaceTint,
-          border: Border.all(color: SimfTokens.line2),
-          borderRadius: BorderRadius.circular(SimfTokens.radiusSmall + 2),
-        ),
-        child: Row(
-          children: <Widget>[
-            _buildCheckBox(),
-            const SizedBox(width: SimfTokens.space2),
-            Expanded(
-              child: Text(
-                l10n.termsAcceptCheckbox,
-                style: const TextStyle(
-                  color: SimfTokens.surface,
-                  fontSize: SimfTokens.textSm,
+        if (widget.requireConsent)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _accept,
+                child: Text(
+                  l10n.termsAcceptButton,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // .terms .box — 18px square, accent border + fill when ticked, navy ✓.
-  Widget _buildCheckBox() {
-    return Container(
-      width: 18,
-      height: 18,
-      decoration: BoxDecoration(
-        color: _accepted ? SimfTokens.accent : Colors.transparent,
-        border: Border.all(color: SimfTokens.accent, width: 1.5),
-        borderRadius: BorderRadius.circular(3),
-      ),
-      child: _accepted
-          ? const Icon(
-              Icons.check,
-              size: 12,
-              color: SimfTokens.navy,
-            )
-          : null,
+          ),
+      ],
     );
   }
 
@@ -283,5 +285,46 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
     final month = local.month.toString().padLeft(2, '0');
     final day = local.day.toString().padLeft(2, '0');
     return '$year-$month-$day';
+  }
+}
+
+/// One gold-hairline bullet card (Figma 505:1639): the gold • at the inline
+/// start, the term text in `beigeBorder`.
+class _BulletCard extends StatelessWidget {
+  const _BulletCard({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        border: Border.all(color: SimfTokens.accent, width: 0.4),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const Padding(
+            padding: EdgeInsetsDirectional.only(start: 4, end: 12),
+            child: Text(
+              '•',
+              style: TextStyle(color: SimfTokens.accent, fontSize: 16),
+            ),
+          ),
+          Expanded(
+            child: SelectableText(
+              text,
+              style: const TextStyle(
+                color: SimfTokens.beigeBorder,
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

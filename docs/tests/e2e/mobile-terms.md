@@ -15,14 +15,23 @@
 | **APIs** | `GET /api/v1/app/content/terms` → `ApiResult<PublicContentBlock>` = `{ key, content, contentArabic, lastUpdatedAt }` (anonymous; `Last-Modified`/`If-Modified-Since` 304 handshake). **No accept write** — acceptance is client-side only (D8). |
 | **Surface** | Mobile (Flutter) — Guest and above |
 | **Auth setup** | None — the terms read is anonymous. |
-| **Last reviewed** | 2026-06-05 |
+| **Last reviewed** | 2026-06-11 |
+
+> **KSA-Project redesign (D-367, Figma 505:1553):** the body now renders as
+> gold-hairline **bullet cards** (one per non-empty body line) under the
+> معلومات هامة لزوار الملتقى heading; in consent mode the interim
+> checkbox + Decline are replaced by one always-enabled gold **موافق** button —
+> the explicit tap IS the consent (client-side only, D8; the back chevron
+> declines). Load/empty/404/error contract unchanged; the old screen is
+> parked in `lib/features/_legacy_mockup/`. Consent-gate scenarios referring
+> to the checkbox should be read against the new single-button gate.
 
 ## Coverage matrix
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
 | E2E-MOB009-001 | Standalone read → body (active locale) + last-updated line, no accept gate | happy | P0 | authored ✓ (widget test) |
-| E2E-MOB009-002 | In-flow consent (`?consent=1`) → accept gate; Accept disabled until the checkbox is ticked | happy | P0 | authored ✓ (widget test) |
+| E2E-MOB009-002 | In-flow consent (`?consent=1`) → the always-enabled gold موافق button (D-367: the explicit tap is the consent — no checkbox) | happy | P0 | authored ✓ (widget test) |
 | E2E-MOB009-003 | Accept (ticked) → client-side consent only (no server call) → control returns to the caller (`pop`) | happy | P0 | authored (screen — `pop(true)`) |
 | E2E-MOB009-004 | Decline / back → no consent recorded; caller stays blocked | edge | P1 | authored (screen — `pop(false)`) |
 | E2E-MOB009-005 | Missing/inactive key (404) → empty state ("No content") + retry | edge | P0 | authored ✓ (widget test) |
@@ -49,15 +58,15 @@ Scenario: A guest reads the terms from a link
 ### E2E-MOB009-002 — In-flow consent gate
 
 ```gherkin
-Scenario: A consent step shows the accept gate
+Scenario: A consent step shows the agree gate (D-367)
   Given the page is opened in-flow as /terms?consent=1
-  Then a "I accept the terms and conditions" checkbox + an "Accept & continue" button show
-  And the Accept button is disabled until the checkbox is ticked
-  When the checkbox is ticked
-  Then the Accept button becomes enabled
+  Then the bullet-card terms render with a single gold "موافق / Agree" button
+  And the button is always enabled — the explicit tap IS the consent
+  And there is no checkbox row
 ```
 
-**Evidence:** `terms_screen_test` — "consent mode shows the gate; Accept enables only after ticking".
+**Evidence:** `terms_screen_test` — "consent mode shows the always-enabled Agree
+button (D-367)".
 
 ### E2E-MOB009-003 — Accept is client-side only (D8)
 
@@ -78,7 +87,7 @@ Scenario: Accepting records consent locally and returns to the caller
 ```gherkin
 Scenario: Declining records nothing
   Given the in-flow gate is shown
-  When the user taps "Decline" (or Back)
+  When the user taps the back chevron (or system back) instead of موافق
   Then no consent is recorded and the calling flow stays blocked (the screen pops with a negative result)
 ```
 
@@ -128,4 +137,4 @@ Scenario: The page mirrors under Arabic
 
 ---
 
-_Last reviewed:_ `2026-06-05` by `SIMF Team`.
+_Last reviewed:_ `2026-06-11` by `SIMF Team`.

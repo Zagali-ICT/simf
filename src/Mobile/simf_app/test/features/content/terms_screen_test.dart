@@ -72,7 +72,9 @@ void main() {
       expect(find.text('I accept the terms and conditions'), findsNothing);
     });
 
-    testWidgets('consent mode shows the gate; Accept enables only after ticking',
+    testWidgets(
+        'consent mode shows the always-enabled Agree button (D-367 — the '
+        'explicit tap IS the consent; the interim checkbox is gone)',
         (tester) async {
       await _pump(
         tester,
@@ -80,16 +82,9 @@ void main() {
         requireConsent: true,
       );
 
-      // The mockup `.check` row (custom box + label inside an InkWell).
-      expect(find.text('I accept the terms and conditions'), findsOneWidget);
-      final accept =
-          find.widgetWithText(FilledButton, 'Accept & continue');
-      expect(tester.widget<FilledButton>(accept).onPressed, isNull);
-
-      await tester.tap(find.text('I accept the terms and conditions'));
-      await tester.pumpAndSettle();
-
-      expect(tester.widget<FilledButton>(accept).onPressed, isNotNull);
+      expect(find.text('I accept the terms and conditions'), findsNothing);
+      final agree = find.widgetWithText(FilledButton, 'Agree');
+      expect(tester.widget<FilledButton>(agree).onPressed, isNotNull);
     });
 
     testWidgets('an empty body shows the empty state with retry',

@@ -243,7 +243,12 @@ class AppL10n {
         'أوافق على الشروط والأحكام',
         'I accept the terms and conditions',
       );
-  String get termsAcceptButton => _t('موافقة ومتابعة', 'Accept & continue');
+  // KSA-Project terms frame copy (Figma 505:1553, D-367).
+  String get termsImportantInfoTitle => _t(
+        'معلومات هامة لزوار الملتقى',
+        'Important information for forum visitors',
+      );
+  String get termsAcceptButton => _t('موافق', 'Agree');
   String get declineLabel => _t('رفض', 'Decline');
 
   // Registration success (Page 010).

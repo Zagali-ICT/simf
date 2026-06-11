@@ -64,7 +64,7 @@ Shared widgets: `lib/app/widgets/simf_logo.dart` (`SimfLogo`, 4x asset
 | 4 | Email-OTP verify (Page 006) | `/sign-up/otp` | 505:837 | ✅ shipped 2026-06-11 (D-364). The 2FA OTP screen (`/auth/verify-otp`) keeps its old look — restyling it with the same segmented-box pattern is a tracked follow-up. | — |
 | 5 | Interests picker (Page 007-01) | `/sign-up/interests` | 505:1083 | ✅ shipped 2026-06-11 (D-365 — live check N/A: auth+draft-gated; widget tests stand in) | — |
 | 6 | Registration success (Page 010) | `/registration/success` | 505:1451 | ✅ shipped 2026-06-11 (D-366 — masked reference card, visual-only contact tiles; live check N/A: auth-gated) | — |
-| 7 | Terms & conditions | `/terms` | 505:1553 | ⏳ pending | — |
+| 7 | Terms & conditions | `/terms` | 505:1553 | ✅ shipped 2026-06-11 (D-367 — bullet cards; checkbox gate replaced by the design's single موافق consent button) | — |
 
 ## Per-page gate checklist (every row above must pass all of these)
 
