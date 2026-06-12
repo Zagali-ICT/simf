@@ -6,6 +6,21 @@ states, RTL, and localization. Behaviour is in
 [Page_005_Logic.md](Page_005_Logic.md); contract in
 [Page_005_API.md](Page_005_API.md).
 
+> **As-built (KSA-Project redesign, 2026-06-12 — D-370, Figma 168:3454):** the
+> screen now uses the login-frame chrome — `navySurface` background with the
+> rotated sweep tint, the forced-LTR top controls (back chevron left, the
+> **wired globe language toggle** right, D-363 pattern), and the `SimfLogo` 44
+> + forum-name header over the beige `cardBeige` card (radius 4, padding 24).
+> Inside the card: centred **إنشاء حساب** head (24 SemiBold `headlineInk`),
+> the three fields in the login field language (12-grey label, 48 px
+> `beigeBorder`-bordered transparent input, radius 4, gold focus, eye-off
+> show/hide on both password fields), the gold **إنشاء حساب** button (48 px,
+> white bold 16), and the **هل لديك حساب ؟ / تسجيل الدخول** foot (grey 12 +
+> `linkNavy` semibold link). **Logic byte-identical** (validators, generic-201
+> → email-OTP forward, enumeration resistance, error/busy states). The ASCII
+> frame below documents the pre-redesign layout; states, RTL and localization
+> sections still apply. Old screen parked in `_legacy_mockup/`.
+
 ## Layout
 A single scrollable, vertically-centred auth form on a plain background.
 

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
+import 'package:simf_app/app/localization/locale_controller.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/auth/sign_up_form_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
@@ -34,10 +35,47 @@ class _FakeSignUpController extends AuthController {
   }
 }
 
+class _FakePrefs implements SimfPrefsStorage {
+  final Map<String, Object> _store = <String, Object>{};
+
+  @override
+  String? getString(String key) {
+    final v = _store[key];
+    return v is String ? v : null;
+  }
+
+  @override
+  Future<bool> setString(String key, String value) async {
+    _store[key] = value;
+    return true;
+  }
+
+  @override
+  bool? getBool(String key) => null;
+  @override
+  Future<bool> setBool(String key, bool value) async => true;
+  @override
+  double? getDouble(String key) => null;
+  @override
+  Future<bool> setDouble(String key, double value) async => true;
+  @override
+  int? getInt(String key) => null;
+  @override
+  Future<bool> setInt(String key, int value) async => true;
+  @override
+  Future<bool> remove(String key) async {
+    _store.remove(key);
+    return true;
+  }
+}
+
 Future<void> _pump(
-  WidgetTester tester,
-  _FakeSignUpController controller,
-) async {
+  WidgetTester tester, {
+  _FakeSignUpController? controller,
+  _FakePrefs? prefs,
+}) async {
+  final fakeController = controller ?? _FakeSignUpController();
+  final fakePrefs = prefs ?? _FakePrefs();
   final router = GoRouter(
     initialLocation: '/sign-up',
     routes: <RouteBase>[
@@ -63,7 +101,11 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
-        authControllerProvider.overrideWith(() => controller),
+        simfPrefsStorageProvider.overrideWithValue(fakePrefs),
+        authControllerProvider.overrideWith(() => fakeController),
+        localeControllerProvider.overrideWith(
+          () => LocaleController(prefs: fakePrefs),
+        ),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -99,11 +141,11 @@ Future<void> _tapCreate(WidgetTester tester) async {
 }
 
 void main() {
-  group('SignUpFormScreen (Page 005)', () {
+  group('SignUpFormScreen (Page 005 — KSA design, D-370)', () {
     testWidgets('valid input creates the account and routes to the email-OTP '
         'screen carrying the trimmed/lower-cased email', (tester) async {
       final controller = _FakeSignUpController();
-      await _pump(tester, controller);
+      await _pump(tester, controller: controller);
 
       await _fill(
         tester,
@@ -120,7 +162,7 @@ void main() {
     testWidgets('mismatched confirm shows the error and never calls sign-up',
         (tester) async {
       final controller = _FakeSignUpController();
-      await _pump(tester, controller);
+      await _pump(tester, controller: controller);
 
       await _fill(
         tester,
@@ -137,7 +179,7 @@ void main() {
 
     testWidgets('an invalid email blocks submit', (tester) async {
       final controller = _FakeSignUpController();
-      await _pump(tester, controller);
+      await _pump(tester, controller: controller);
 
       await _fill(
         tester,
@@ -153,7 +195,7 @@ void main() {
 
     testWidgets('a weak password blocks submit', (tester) async {
       final controller = _FakeSignUpController();
-      await _pump(tester, controller);
+      await _pump(tester, controller: controller);
 
       await _fill(
         tester,
@@ -181,7 +223,7 @@ void main() {
           ),
         ),
       );
-      await _pump(tester, controller);
+      await _pump(tester, controller: controller);
 
       await _fill(
         tester,
@@ -197,13 +239,35 @@ void main() {
     });
 
     testWidgets('the Sign in link leaves the sign-up flow', (tester) async {
-      final controller = _FakeSignUpController();
-      await _pump(tester, controller);
+      await _pump(tester);
 
+      await tester.ensureVisible(find.widgetWithText(TextButton, 'Sign in'));
       await tester.tap(find.widgetWithText(TextButton, 'Sign in'));
       await tester.pumpAndSettle();
 
       expect(find.text('SIGN-IN'), findsOneWidget);
+    });
+
+    testWidgets('the back chevron with no history falls back to sign-in '
+        '(D-370)', (tester) async {
+      await _pump(tester);
+
+      await tester.tap(find.byIcon(Icons.arrow_back_ios_new));
+      await tester.pumpAndSettle();
+
+      expect(find.text('SIGN-IN'), findsOneWidget);
+    });
+
+    testWidgets('the globe button toggles and persists the language (D-370)',
+        (tester) async {
+      final prefs = _FakePrefs();
+      await _pump(tester, prefs: prefs);
+
+      // Empty prefs boot the controller in Arabic; the toggle flips to EN.
+      await tester.tap(find.byIcon(Icons.language));
+      await tester.pumpAndSettle();
+
+      expect(prefs.getString(StorageKeys.preferredLanguage), equals('en'));
     });
   });
 }

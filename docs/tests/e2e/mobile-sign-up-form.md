@@ -16,7 +16,13 @@
 | **APIs** | `POST /api/v1/app/auth/sign-up` — `SignUpRequest { email, password, confirmPassword }` → **generic 201** `SignUpResponse { email, codeExpiresInSeconds }` (enumeration-resistant, D-198/D-270) |
 | **Surface** | Mobile (Flutter) — Guest (creates the account; does **not** sign in) |
 | **Auth setup** | None. No token, no `Authorization` header — this screen creates a Guest account. |
-| **Last reviewed** | 2026-06-04 |
+| **Last reviewed** | 2026-06-12 |
+
+> **Redesigned (D-370, 2026-06-12):** the screen now wears the KSA-Project
+> login chrome (Figma 168:3454) — navy surface + sweep, back chevron + globe
+> language toggle, logo header, beige card with bordered fields and the gold
+> button. All behaviour below is unchanged; scenarios 009/010 cover the new
+> chrome controls.
 
 ## Coverage matrix
 
@@ -30,6 +36,8 @@
 | E2E-MOB005-006 | Wire failure (network / 5xx / 429) → message shown, form kept, no navigation | resilience | P1 | authored ✓ (widget test) |
 | E2E-MOB005-007 | "Have an account? Sign in" leaves the sign-up flow → sign-in | happy | P1 | authored ✓ (widget test) |
 | E2E-MOB005-008 | RTL render (Arabic) — labels/errors/button mirror; the email field stays LTR | i18n | P1 | authored (screen) |
+| E2E-MOB005-009 | Back chevron pops; with no history it falls back to sign-in | happy | P2 | authored ✓ (widget test, D-370) |
+| E2E-MOB005-010 | Globe button toggles AR ↔ EN and persists the choice | i18n | P2 | authored ✓ (widget test, D-370) |
 
 ## Scenarios
 
@@ -151,6 +159,30 @@ Scenario: The form mirrors under Arabic
 > By construction: the screen uses localized `AppL10n` strings + Material RTL;
 > the email `TextFormField` pins `textDirection: TextDirection.ltr`.
 
+### E2E-MOB005-009 — Back chevron (D-370)
+
+```gherkin
+Scenario: Backing out of the sign-up form
+  Given the guest opened the sign-up form from sign-in
+  When they tap the back chevron (top-left, LTR-pinned)
+  Then the app returns to the previous screen
+  And with no navigation history it falls back to the sign-in screen
+```
+
+**Evidence:** `sign_up_form_screen_test` — "the back chevron with no history falls back to sign-in (D-370)".
+
+### E2E-MOB005-010 — Globe language toggle (D-370)
+
+```gherkin
+Scenario: Switching language from the sign-up form
+  Given the app is in Arabic
+  When the guest taps the globe button (top-right)
+  Then the UI switches to English
+  And the choice is persisted as the preferred language
+```
+
+**Evidence:** `sign_up_form_screen_test` — "the globe button toggles and persists the language (D-370)".
+
 ---
 
-_Last reviewed:_ `2026-06-04` by `SIMF Team`.
+_Last reviewed:_ `2026-06-12` by `SIMF Team`.
