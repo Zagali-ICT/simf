@@ -134,6 +134,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         _profileTypes = results[2] as List<ProfileTypeItem>;
         _organisationResults = results[3] as List<OrganisationItem>;
         _applyProfile(results[0] as UserProfileResponse);
+        _lockVisitorProfileType();
         _loading = false;
       });
     } on ApiFailure catch (failure) {
@@ -187,8 +188,29 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   // ---- نوع التسجيل (Visitor / Other) ---------------------------------------
 
+  /// C5 (D-371) — under the Visitor tab the profile type is locked to the
+  /// single seeded **"Normal" (عادي)** type: no picker is shown and the id is
+  /// auto-assigned (overriding any prefill — an admin-assigned tier still wins
+  /// server-side via the D-190 precedence). Falls back to the only row when
+  /// the lookup has exactly one; an empty lookup leaves null (admin assigns).
+  void _lockVisitorProfileType() {
+    if (!_isVisitorType) {
+      return;
+    }
+    final normal =
+        _profileTypes.where((t) => t.name == 'Normal').toList();
+    if (normal.isNotEmpty) {
+      _profileTypeId = normal.first.id;
+    } else if (_profileTypes.length == 1) {
+      _profileTypeId = _profileTypes.first.id;
+    } else {
+      _profileTypeId = null;
+    }
+  }
+
   /// Switching the type re-filters the ProfileType picker (`?isVisitor=`) and
-  /// drops any now-invalid ProfileType selection (Page_007 L-3).
+  /// drops any now-invalid ProfileType selection (Page_007 L-3). Under
+  /// Visitor the picker is hidden and the type auto-locks to Normal (C5).
   Future<void> _onTypeChanged(bool isVisitor) async {
     if (isVisitor == _isVisitorType) {
       return;
@@ -204,7 +226,10 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       if (!mounted) {
         return;
       }
-      setState(() => _profileTypes = types);
+      setState(() {
+        _profileTypes = types;
+        _lockVisitorProfileType();
+      });
     } on ApiFailure {
       // Non-blocking — the picker just stays empty until a retry.
     }
@@ -716,6 +741,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }
 
   Widget _buildProfileTypeField(AppL10n l10n) {
+    // C5 (D-371) — Visitor is locked to "Normal": no picker rendered, the
+    // id is auto-assigned by _lockVisitorProfileType.
+    if (_isVisitorType) {
+      return const SizedBox.shrink();
+    }
     if (_profileTypes.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -725,6 +755,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         _FieldLabel(l10n.profileTypeLabel),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
+          key: const ValueKey<String>('profileTypePicker'),
           initialValue: _profileTypeId,
           isExpanded: true,
           style: _inputStyle,
@@ -734,6 +765,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
             color: SimfTokens.greyText,
           ),
           decoration: _fieldDecoration(),
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          // C5 (D-371) — under "Other" a pick is required (the empty-lookup
+          // case is excluded above per L-6: never block on missing data).
+          validator: (value) =>
+              value == null ? l10n.profileTypeRequired : null,
           items: _profileTypes
               .map(
                 (type) => DropdownMenuItem<String>(

@@ -50,6 +50,8 @@
 | E2E-MOB007-011 | RTL render (Arabic) mirrors; lookup labels switch with locale | i18n | P1 | spec (D-332) |
 | E2E-MOB007-012 | Saudi mobile standard (C4, D-371): `0501234567` / `+966501234567` / separators accepted; `04…`, 9/11 digits, `+9664…` rejected — client inline + server 400 | validation | P0 | authored ✓ (client `phone_validation_test` + server `UserProfileTests` theories) |
 | E2E-MOB007-013 | International mobile E.164 (C4, D-371): `+447700900123` accepted (dash ok); `0044…`, `+0…`, too-short rejected — client inline + server 400 | validation | P0 | authored ✓ (client `phone_validation_test` + server `UserProfileTests` theories) |
+| E2E-MOB007-014 | Visitor type lock (C5, D-371): Visitor tab shows **no** profile-type picker; the draft auto-carries the seeded **"Normal" (عادي)** id; server rejects any other audience-tier self-pick with 400 | validation | P0 | authored ✓ (widget test + server C5 tests) |
+| E2E-MOB007-015 | Other tab (C5, D-371): the filtered picker is shown and a pick is **required** (inline error blocks Next); partner-side picks accepted by the server | validation | P0 | authored ✓ (widget test + server C5 test) |
 
 ## Scenarios
 

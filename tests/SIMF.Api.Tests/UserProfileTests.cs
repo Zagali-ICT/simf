@@ -292,6 +292,75 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    // C5 (D-371) — a self-registering visitor is locked to the single
+    // "Normal" audience profile type; richer audience tiers are admin-
+    // assigned only, while partner-side ("Other") picks stay free.
+    [Fact]
+    public async Task POST_rejects_a_non_Normal_audience_profile_type_self_pick()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.ProfileTypeId = await SeedProfileTypeAsync(
+            "VIP — C5 test", "كبار الشخصيات — اختبار", isForVisitor: true);
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_accepts_the_Normal_audience_profile_type_self_pick()
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.ProfileTypeId = await SeedProfileTypeAsync(
+            "Normal", "عادي", isForVisitor: true);
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_accepts_a_partner_side_profile_type_self_pick()
+    {
+        // The "Other" tab lists IsForVisitor=false types — they stay free.
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.ProfileTypeId = await SeedProfileTypeAsync(
+            "Media — C5 test", "إعلامي — اختبار", isForVisitor: false);
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    /// <summary>Finds-or-creates an active profile type by name directly on
+    /// the App DB (the C5 lock tests need specific audience/partner rows).</summary>
+    private async Task<Guid> SeedProfileTypeAsync(
+        string name, string nameArabic, bool isForVisitor)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var existing = await appDb.ProfileTypes
+            .SingleOrDefaultAsync(pt => pt.Name == name);
+        if (existing is not null)
+        {
+            return existing.Id;
+        }
+        var fresh = new UserProfileType
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            NameArabic = nameArabic,
+            PageColor = "#3B82F6",
+            IsForVisitor = isForVisitor,
+            MobileAppRole = MobileAppRole.None,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        appDb.ProfileTypes.Add(fresh);
+        await appDb.SaveChangesAsync();
+        return fresh.Id;
+    }
+
     [Fact]
     public async Task ID_image_round_trips_through_encrypted_storage()
     {
@@ -618,9 +687,11 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     {
         // D-190: the user self-picks a ProfileType from the public
         // picker on Screen 2; the upsert persists it; GET reflects
-        // it back so the mobile can render the selected row.
+        // it back so the mobile can render the selected row. C5 (D-371):
+        // the only valid audience self-pick is the "Normal" type.
         var (token, _) = await CreateEmailVerifiedVisitorAndSignInAsync();
-        var profileTypeId = await SeedProfileTypeAsync(isVisitor: true);
+        var profileTypeId = await SeedProfileTypeAsync(
+            "Normal", "عادي", isForVisitor: true);
 
         var request = await ValidSaudiRequestAsync();
         request.ProfileTypeId = profileTypeId;
@@ -669,10 +740,13 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     {
         // D-190: when the admin pre-assigned a ProfileType (e.g.
         // via /admin/others), the user's self-pick on the upsert is
-        // silently ignored. The admin's row stays.
+        // silently ignored. The admin's row stays. C5 (D-371): the
+        // user's pick must itself be a valid self-pick (Normal) to get
+        // past validation — admin-wins is then decided downstream.
         var (token, userId) = await CreateEmailVerifiedVisitorAndSignInAsync();
         var adminAssigned = await SeedProfileTypeAsync(isVisitor: false);
-        var userPickedDifferent = await SeedProfileTypeAsync(isVisitor: true);
+        var userPickedDifferent = await SeedProfileTypeAsync(
+            "Normal", "عادي", isForVisitor: true);
 
         // Seed a stub UserProfile with the admin's pre-assigned ProfileTypeId.
         using (var scope = _factory.Services.CreateScope())

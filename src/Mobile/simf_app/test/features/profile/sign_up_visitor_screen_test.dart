@@ -53,10 +53,23 @@ class _FakeProfileRepository implements ProfileRepository {
   @override
   Future<List<ProfileTypeItem>> getProfileTypes({bool? isVisitor}) async {
     lastProfileTypesIsVisitor = isVisitor;
+    // C5 (D-371) — the audience side carries the single "Normal" type the
+    // screen auto-locks to; the partner ("Other") side carries a pickable
+    // list, mirroring the seeded data shape.
+    if (isVisitor == false) {
+      return const <ProfileTypeItem>[
+        ProfileTypeItem(
+          id: 't2',
+          name: 'Media',
+          nameArabic: 'إعلامي',
+          isVisitor: false,
+        ),
+      ];
+    }
     return const <ProfileTypeItem>[
       ProfileTypeItem(
-        id: 't1',
-        name: 'Regular',
+        id: 'n1',
+        name: 'Normal',
         nameArabic: 'عادي',
         isVisitor: true,
       ),
@@ -89,11 +102,15 @@ class _FakeProfileRepository implements ProfileRepository {
       true;
 }
 
+/// The draft Next carried to the interests stub route (null until Next runs).
+SignUpProfileDraft? capturedDraft;
+
 Future<void> _pump(
   WidgetTester tester,
   _FakeProfileRepository repo, {
   Locale locale = const Locale('en'),
 }) async {
+  capturedDraft = null;
   final router = GoRouter(
     initialLocation: '/sign-up/visitor',
     routes: <RouteBase>[
@@ -102,11 +119,16 @@ Future<void> _pump(
         path: '/sign-up/visitor',
         builder: (c, s) => const SignUpVisitorScreen(),
       ),
-      // The Next destination — a stub so the navigation is observable.
+      // The Next destination — a stub so the navigation is observable; the
+      // carried draft is captured so tests can assert what Next collected.
       GoRoute(
         name: RouteNames.signUpInterests,
         path: '/sign-up/interests',
-        builder: (c, s) => const Scaffold(body: Text('INTERESTS')),
+        builder: (c, s) {
+          final extra = s.extra;
+          capturedDraft = extra is SignUpProfileDraft ? extra : null;
+          return const Scaffold(body: Text('INTERESTS'));
+        },
       ),
     ],
   );
@@ -235,6 +257,59 @@ void main() {
 
       expect(find.text('INTERESTS'), findsNothing);
       expect(find.text('Pick your organisation from the list'), findsOneWidget);
+    });
+
+    testWidgets(
+        'Visitor tab hides the profile-type picker and auto-locks Normal '
+        '(C5 — D-371)', (tester) async {
+      final repo = _FakeProfileRepository(profile: _completeProfile());
+      await _pump(tester, repo);
+
+      // No picker under the Visitor tab — the type is locked, not chosen.
+      expect(
+        find.byKey(const ValueKey<String>('profileTypePicker')),
+        findsNothing,
+      );
+
+      await _tapNext(tester);
+
+      expect(find.text('INTERESTS'), findsOneWidget);
+      expect(capturedDraft, isNotNull);
+      // The draft carries the auto-locked Normal type id.
+      expect(capturedDraft!.request.profileTypeId, equals('n1'));
+    });
+
+    testWidgets(
+        'Other tab shows the picker and requires a pick (C5 — D-371)',
+        (tester) async {
+      final repo = _FakeProfileRepository(profile: _completeProfile());
+      await _pump(tester, repo);
+
+      await tester.tap(find.text('Other'));
+      await tester.pumpAndSettle();
+
+      // The picker is back for the partner side.
+      const picker = ValueKey<String>('profileTypePicker');
+      expect(find.byKey(picker), findsOneWidget);
+
+      // Without a pick, Next is blocked with the required error.
+      await _tapNext(tester);
+      expect(find.text('INTERESTS'), findsNothing);
+      expect(
+        find.text('A profile type selection is required'),
+        findsOneWidget,
+      );
+
+      // Picking one unblocks Next and the draft carries it.
+      await tester.ensureVisible(find.byKey(picker));
+      await tester.tap(find.byKey(picker));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Media').last);
+      await tester.pumpAndSettle();
+      await _tapNext(tester);
+
+      expect(find.text('INTERESTS'), findsOneWidget);
+      expect(capturedDraft!.request.profileTypeId, equals('t2'));
     });
 
     testWidgets('a non-Saudi profile shows the Iqama / Passport document picker',

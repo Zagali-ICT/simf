@@ -235,6 +235,9 @@ class AppL10n {
         'An Iqama or passport number is required',
       );
   String get phoneInvalid => _t('رقم الجوال غير صالح', 'Invalid phone number');
+  // C5 (D-371) — under "Other" the profile-type pick is required.
+  String get profileTypeRequired =>
+      _t('يجب اختيار التصنيف', 'A profile type selection is required');
   // C4 (D-371) — the standard phone shapes, mirrored client/server.
   String get saudiMobileInvalid => _t(
         'يجب أن يكون رقم الجوال السعودي بصيغة 05XXXXXXXX أو +9665XXXXXXXX',

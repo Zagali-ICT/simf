@@ -97,8 +97,11 @@ public interface IUserProfileRepository
     Task SaveAppChangesAsync(CancellationToken cancellationToken = default);
 }
 
-/// <summary>Active + scope facts read off a <see cref="UserProfileType"/>.</summary>
-public sealed record ProfileTypeFacts(bool IsActive, UserType UserType);
+/// <summary>Active + scope facts read off a <see cref="UserProfileType"/>.
+/// C5 (D-371) added the audience flag + name so the self-pick lock
+/// ("Visitor → Normal only") can be enforced in the service.</summary>
+public sealed record ProfileTypeFacts(
+    bool IsActive, UserType UserType, bool IsForVisitor, string Name);
 
 /// <summary>Audience flag + mobile role read off an assigned profile type.</summary>
 public sealed record ProfileTypeRole(bool IsVisitor, MobileAppRole MobileAppRole);

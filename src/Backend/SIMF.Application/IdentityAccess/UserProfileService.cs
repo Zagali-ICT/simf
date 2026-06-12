@@ -115,6 +115,17 @@ internal sealed class UserProfileService(
                     "The selected profile type cannot be self-picked.",
                     "لا يمكن اختيار نوع الملف الشخصي هذا ذاتيًا.");
             }
+            // C5 (D-371) — a self-registering visitor (audience side,
+            // IsForVisitor=true) is locked to the single seeded "Normal"
+            // type; richer audience tiers (VVIP/VIP/...) are admin-assigned
+            // only. Partner-side ("Other") picks stay free.
+            if (pickedProfileType.IsForVisitor && pickedProfileType.Name != "Normal")
+            {
+                throw new ApiException(
+                    ErrorCodes.AdminProfileTypeInvalid, 400,
+                    "Visitors register under the Normal profile type; other tiers are assigned by the administration.",
+                    "يسجَّل الزوّار تحت النوع \"عادي\" فقط؛ الفئات الأخرى تُسند من الإدارة.");
+            }
         }
 
         // B3 — D-221: validate the الجهة pick exists and is active. Cross-

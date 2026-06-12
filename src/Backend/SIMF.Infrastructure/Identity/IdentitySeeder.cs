@@ -145,13 +145,21 @@ public sealed class IdentitySeeder(
             "Other — Staff", "Staff", "أخرى — فريق", "فريق",
             UserType.Visitor, cancellationToken);
 
+        // C5 (D-371) — the owner fixed the visitor self-registration type's
+        // name as "Normal" (عادي); rename any DB still carrying the P7-era
+        // "General" row in place (same idempotent machinery as D-124 above).
+        await RenameProfileTypeIfPresentAsync(
+            "General", "Normal", "عام", "عادي",
+            UserType.Visitor, cancellationToken);
+
         // P7 — seed the initial ProfileTypes set so the create / pending
         // pages have non-empty pickers from first boot. D-186 collapsed
         // every seeded row under UserType.Visitor; the partner-side
         // ones (Staff / Media / Sponsor) carry IsVisitor=false so the
-        // CP "Others" approval queue finds them.
+        // CP "Others" approval queue finds them. C5 (D-371): "Normal" is
+        // the single audience-side type a visitor self-registers under.
         await EnsureProfileTypeAsync(
-            "General", "عام", "#3B82F6",
+            "Normal", "عادي", "#3B82F6",
             isVisitor: true, MobileAppRole.None, cancellationToken);
         // D-161 — Staff is the canonical operational partner-side profile
         // type; the default mobile-app role is Staff (can perform gate
