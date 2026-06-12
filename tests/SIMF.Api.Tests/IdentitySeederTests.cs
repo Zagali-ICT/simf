@@ -80,4 +80,32 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
             .FindByEmailAsync(SuperAdminEmail);
         Assert.NotNull(admin);
     }
+
+    [Fact]
+    public async Task SeedAsync_seeds_the_registration_baseline_lookups_and_core_content()
+    {
+        // D-377 — the profile save REQUIRES interests + an organisation, so a
+        // fresh environment must boot with both populated, plus the app's
+        // terms/about content blocks. Double-run also proves idempotency
+        // (the counts must not grow on the second pass).
+        using var scope = _factory.Services.CreateScope();
+        var seeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
+
+        await seeder.SeedAsync();
+        var database = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var interestCount = database.Interests.Count();
+        var organisationCount = database.Organisations.Count();
+
+        Assert.True(interestCount > 0, "baseline interests must be seeded");
+        Assert.True(organisationCount > 0, "baseline organisations must be seeded");
+        Assert.Contains(database.ContentBlocks, b => b.Key == "terms" && b.IsActive);
+        Assert.Contains(database.ContentBlocks, b => b.Key == "about" && b.IsActive);
+        // The "Other — not listed" catch-all keeps a visitor whose organisation
+        // is missing from being blocked.
+        Assert.Contains(database.Organisations, o => o.Name == "Other — not listed");
+
+        await seeder.SeedAsync();
+        Assert.Equal(interestCount, database.Interests.Count());
+        Assert.Equal(organisationCount, database.Organisations.Count());
+    }
 }

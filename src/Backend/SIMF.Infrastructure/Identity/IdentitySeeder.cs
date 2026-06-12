@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿// Tests: SIMF.Api.Tests/IdentitySeederTests.cs (super-admin, TOTP, audit,
+//        idempotency, D-377 baseline lookups + core content)
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -199,6 +201,22 @@ public sealed class IdentitySeeder(
         // block — so the same /content/site proxy + CP CMS editor drive them
         // instead of the page's hardcoded copy. Idempotent, additive data.
         await EnsureLandingSectionsContentAsync(admin.Id, cancellationToken);
+
+        // D-377 — baseline lookups + core app content. Interests and the
+        // organisation lookup are REQUIRED by the visitor profile save
+        // (1–10 interests + an organisation pick), so an environment where
+        // either table is empty silently makes registration impossible —
+        // exactly what happened on the first production install (the rows
+        // were entered by hand through the admin API). Seed only when the
+        // table is completely empty: admins own the lists at runtime and a
+        // deliberate deletion must never be re-added on the next boot.
+        await EnsureBaselineInterestsAsync(admin.Id, cancellationToken);
+        await EnsureBaselineOrganisationsAsync(admin.Id, cancellationToken);
+
+        // D-377 — the app's terms + about content blocks (Page 009 / Page 037
+        // render their empty states without them). Insert-when-absent, same
+        // shape as the cyber/landing content seeds above.
+        await EnsureCoreAppContentAsync(admin.Id, cancellationToken);
 
         // D-345 — seed a demo speaker roster so the public /app/speakers list
         // (and the Website speakers strip + the app speakers screen) render a
@@ -679,6 +697,163 @@ public sealed class IdentitySeeder(
         await appDbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation(
             "Landing section content blocks ensured (seeded {NewCount} of {Total}).",
+            seed.Length - existingKeys.Count, seed.Length);
+    }
+
+    /// <summary>D-377 — baseline interests for the visitor profile picker.
+    /// The profile save REQUIRES 1–10 interests, so an empty table blocks
+    /// registration outright. Seeds only when the table is empty (admins own
+    /// the list at runtime; a deliberate deletion is never re-added).</summary>
+    private async Task EnsureBaselineInterestsAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        if (await appDbContext.Interests.AnyAsync(cancellationToken)) { return; }
+
+        var seed = new (string Name, string NameArabic, int Order)[]
+        {
+            ("Naval Defence Technologies", "تقنيات الدفاع البحري", 1),
+            ("Maritime Security", "الأمن البحري", 2),
+            ("Shipbuilding & Marine Industries", "بناء السفن والصناعات البحرية", 3),
+            ("Ports & Maritime Logistics", "الموانئ والخدمات اللوجستية البحرية", 4),
+            ("Hydrography & Marine Survey", "الهيدروغرافيا والمسح البحري", 5),
+            ("Marine Environment & Sustainability", "البيئة البحرية والاستدامة", 6),
+            ("Autonomous & Unmanned Systems", "الأنظمة ذاتية التشغيل وغير المأهولة", 7),
+            ("Maritime Cybersecurity", "الأمن السيبراني البحري", 8),
+            ("Investment & Local Content", "الاستثمار والمحتوى المحلي", 9),
+            ("Research & Innovation", "البحث والابتكار", 10),
+        };
+
+        var now = timeProvider.GetUtcNow();
+        foreach (var (name, nameArabic, order) in seed)
+        {
+            appDbContext.Interests.Add(new UserInterest
+            {
+                Id = Guid.NewGuid(),
+                Name = name,
+                NameArabic = nameArabic,
+                DisplayOrder = order,
+                IsActive = true,
+                CreatedBy = actorUserId,
+                CreatedAt = now,
+            });
+        }
+        await appDbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "D-377: baseline interests seeded ({Count} rows; table was empty).",
+            seed.Length);
+    }
+
+    /// <summary>D-377 — baseline organisation lookup for the profile's
+    /// required الجهة pick (B3 — D-221). Includes an explicit
+    /// "Other — not listed" row so a visitor whose organisation is missing
+    /// is never blocked. Seeds only when the table is empty.</summary>
+    private async Task EnsureBaselineOrganisationsAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        if (await appDbContext.Organisations.AnyAsync(cancellationToken)) { return; }
+
+        var seed = new (string NameArabic, string? Name, string? Sector)[]
+        {
+            ("القوات البحرية الملكية السعودية", "Royal Saudi Naval Forces", "Government"),
+            ("وزارة الدفاع", "Ministry of Defense", "Government"),
+            ("الهيئة العامة للموانئ (موانئ)", "Saudi Ports Authority (Mawani)", "Government"),
+            ("الشركة السعودية للصناعات العسكرية", "Saudi Arabian Military Industries (SAMI)", "Defence"),
+            ("الشركة الوطنية السعودية للنقل البحري (البحري)", "Bahri", "Shipping & Logistics"),
+            ("أرامكو السعودية", "Saudi Aramco", "Energy"),
+            ("شركة الزامل أوفشور", "Zamil Offshore", "Marine Services"),
+            ("جامعة الملك فهد للبترول والمعادن", "King Fahd University of Petroleum and Minerals", "Academia"),
+            ("جامعة الملك عبدالله للعلوم والتقنية", "King Abdullah University of Science and Technology (KAUST)", "Academia"),
+            ("أخرى — غير مدرجة", "Other — not listed", null),
+        };
+
+        var now = timeProvider.GetUtcNow();
+        foreach (var (nameArabic, name, sector) in seed)
+        {
+            appDbContext.Organisations.Add(new SIMF.Domain.Organisations.Organisation
+            {
+                Id = Guid.NewGuid(),
+                NameArabic = nameArabic,
+                Name = name,
+                Sector = sector,
+                IsActive = true,
+                CreatedBy = actorUserId,
+                CreatedAt = now,
+            });
+        }
+        await appDbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "D-377: baseline organisations seeded ({Count} rows; table was empty).",
+            seed.Length);
+    }
+
+    /// <summary>D-377 — the app's terms + about content blocks (the same
+    /// bilingual copy first entered on production by hand). Insert-when-
+    /// absent per key; admins edit at runtime via the CP Content Blocks
+    /// page. One term per line — the app renders each line as one
+    /// gold-bullet card (frame 505:1553).</summary>
+    private async Task EnsureCoreAppContentAsync(
+        Guid actorUserId, CancellationToken cancellationToken)
+    {
+        var termsEn = string.Join('\n',
+            "These terms and conditions govern the use of the Saudi International Maritime Forum app and attendance at its events; by using the app you agree to them.",
+            "Registration data must be accurate and match your official identity document; the forum administration may reject or cancel any incomplete or incorrect registration.",
+            "Entry to the forum venue is by the personal QR code issued in the app after registration approval; it must not be shared with others.",
+            "Bringing unlicensed photography or audio-recording equipment into the forum venue is prohibited.",
+            "Visitors must follow all security and organisational instructions issued by the forum administration and security personnel across all facilities.",
+            "Hazardous or legally prohibited materials are not allowed into the venue; bags and belongings are subject to security inspection.",
+            "The organiser may photograph and film the events; by attending you consent to the use of such material for documentation and media purposes.",
+            "Personal data is processed in accordance with the applicable laws of the Kingdom of Saudi Arabia and solely for the purposes of organising the forum.",
+            "The forum administration may amend these terms, the event programme, or schedules when necessary; updates are announced through the app.");
+        var termsAr = string.Join('\n',
+            "تسري هذه الشروط والأحكام على استخدام تطبيق الملتقى الدولي البحري وعلى حضور فعالياته، وباستخدامك للتطبيق فإنك توافق عليها.",
+            "يجب أن تكون بيانات التسجيل صحيحة ومطابقة للهوية الرسمية، ويحق لإدارة الملتقى رفض أو إلغاء أي تسجيل غير مكتمل أو غير صحيح.",
+            "الدخول إلى مقر الملتقى يتم بواسطة رمز الاستجابة السريعة (QR) الشخصي الصادر عبر التطبيق بعد اعتماد التسجيل، ولا يجوز مشاركته مع الغير.",
+            "يُمنع إدخال أي أجهزة تصوير أو تسجيل صوتي غير مرخصة إلى مقر الملتقى.",
+            "يلتزم الزائر بالتعليمات الأمنية والتنظيمية الصادرة عن إدارة الملتقى وأفراد الأمن في جميع المرافق.",
+            "يُمنع إدخال المواد الخطرة أو الممنوعة نظاماً إلى مقر الملتقى، وتخضع الحقائب والمقتنيات للتفتيش الأمني.",
+            "قد تقوم الجهة المنظمة بالتصوير الفوتوغرافي والمرئي للفعاليات، وبحضورك فإنك توافق على استخدام هذه المواد لأغراض التوثيق والإعلام.",
+            "تُعالج بياناتك الشخصية وفق الأنظمة المعمول بها في المملكة العربية السعودية ولأغراض تنظيم الملتقى فقط.",
+            "يحق لإدارة الملتقى تعديل هذه الشروط أو برنامج الفعاليات أو المواعيد عند الاقتضاء، ويتم الإشعار بأي تحديث عبر التطبيق.");
+
+        var aboutEn = string.Join('\n',
+            "The Saudi International Maritime Forum is hosted by the Royal Saudi Naval Forces, bringing together decision-makers, experts, and leading companies of the maritime and defence sector from around the world.",
+            "The forum aims to strengthen international cooperation, exchange expertise, and showcase the latest maritime technologies, supporting the goals of Saudi Vision 2030 in localising the defence and maritime industries.",
+            "The programme includes panel sessions, workshops, an accompanying exhibition, and professional networking opportunities for participants and visitors.");
+        var aboutAr = string.Join('\n',
+            "الملتقى الدولي البحري حدث تستضيفه القوات البحرية الملكية السعودية، يجمع صنّاع القرار والخبراء والشركات الرائدة في القطاع البحري والدفاعي من مختلف دول العالم.",
+            "يهدف الملتقى إلى تعزيز التعاون الدولي وتبادل الخبرات واستعراض أحدث التقنيات البحرية، بما يدعم مستهدفات رؤية المملكة 2030 في توطين الصناعات الدفاعية والبحرية.",
+            "يتضمن برنامج الملتقى جلسات حوارية وورش عمل ومعرضاً مصاحباً وفرصاً للتواصل المهني بين المشاركين والزوار.");
+
+        var seed = new[]
+        {
+            ("terms", termsEn, termsAr),
+            ("about", aboutEn, aboutAr),
+        };
+
+        var now = timeProvider.GetUtcNow();
+        var existingKeys = await appDbContext.ContentBlocks
+            .Where(b => seed.Select(s => s.Item1).Contains(b.Key))
+            .Select(b => b.Key)
+            .ToListAsync(cancellationToken);
+
+        foreach (var (key, en, ar) in seed)
+        {
+            if (existingKeys.Contains(key)) { continue; }
+            appDbContext.ContentBlocks.Add(new SIMF.Domain.Cms.ContentBlock
+            {
+                Id = Guid.NewGuid(),
+                Key = key,
+                Content = en,
+                ContentArabic = ar,
+                IsActive = true,
+                LastUpdatedByUserId = actorUserId,
+                CreatedAt = now,
+                LastUpdatedAt = now,
+            });
+        }
+        await appDbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation(
+            "D-377: core app content blocks ensured (seeded {NewCount} of {Total}).",
             seed.Length - existingKeys.Count, seed.Length);
     }
 
