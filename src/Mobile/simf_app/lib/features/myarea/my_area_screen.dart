@@ -277,8 +277,44 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
           icon: Icons.settings_outlined,
           onTap: () => context.pushNamed(RouteNames.more),
         ),
+        const SizedBox(height: SimfTokens.space2),
+        // D-373 — sign-out lives on the profile menu (owner-reported gap).
+        _UtilityLink(
+          label: l10n.signOutLink,
+          icon: Icons.logout,
+          onTap: () => unawaited(_confirmSignOut(l10n)),
+        ),
       ],
     );
+  }
+
+  /// D-373 — confirm, then revoke the session via the controller (the
+  /// server-side refresh token is revoked too) and land on sign-in.
+  Future<void> _confirmSignOut(AppL10n l10n) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.signOutLink),
+        content: Text(l10n.signOutConfirmBody),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.cancelLabel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.signOutLink),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    await ref.read(authControllerProvider.notifier).signOut();
+    if (mounted) {
+      context.goNamed(RouteNames.signIn);
+    }
   }
 }
 

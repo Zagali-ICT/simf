@@ -338,6 +338,11 @@ class AppL10n {
       _t('تعذر تحميل حالة الحساب.', 'Could not load your account status.');
   String get reCheckButton => _t('إعادة التحقق', 'Re-check');
   String get signOutLink => _t('تسجيل الخروج', 'Sign out');
+  // D-373 — the My-Area sign-out confirmation.
+  String get signOutConfirmBody => _t(
+        'هل تريد تسجيل الخروج من حسابك؟',
+        'Do you want to sign out of your account?',
+      );
   String get stagesTitle => _t('المراحل', 'Stages');
   String get stageDataSubmitted => _t('إرسال البيانات', 'Data submitted');
   String get stageEmailConfirmed =>
