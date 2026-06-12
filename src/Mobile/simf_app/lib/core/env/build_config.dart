@@ -42,6 +42,27 @@ class BuildConfig {
   static const String supportEmail =
       String.fromEnvironment('SIMF_SUPPORT_EMAIL');
 
+  /// Official social-profile links for the home "تابعنا" row (W2 home,
+  /// frame 203:1236). Same contract as the contact tiles (D-369): an empty
+  /// value keeps that button inert until the real URL is supplied at build
+  /// time via `--dart-define`.
+  static const String socialXUrl = String.fromEnvironment('SIMF_SOCIAL_X');
+  static const String socialInstagramUrl =
+      String.fromEnvironment('SIMF_SOCIAL_INSTAGRAM');
+  static const String socialLinkedInUrl =
+      String.fromEnvironment('SIMF_SOCIAL_LINKEDIN');
+  static const String socialYouTubeUrl =
+      String.fromEnvironment('SIMF_SOCIAL_YOUTUBE');
+  static const String socialTikTokUrl =
+      String.fromEnvironment('SIMF_SOCIAL_TIKTOK');
+
+  /// The روح السعودية discover link (guest + signed-in home). The default is
+  /// the public Visit Saudi site; overridable per build.
+  static const String visitSaudiUrl = String.fromEnvironment(
+    'SIMF_VISIT_SAUDI_URL',
+    defaultValue: 'https://www.visitsaudi.com',
+  );
+
   /// Whether to print request / response summaries in the dio logging
   /// interceptor. Forced off when `build == 'prod'`.
   static bool get enableRequestLogging => build != 'prod';

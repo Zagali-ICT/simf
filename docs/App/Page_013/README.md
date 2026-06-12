@@ -18,7 +18,7 @@ Per-page documentation folder. Everything about this app page lives here.
 | Section | 1 — Entry / router screen |
 | Nature | **Home landing** (router screen 13; entry surface after boot) |
 | App privilege | **All privileges** — Guest / Visitor / Staff / Moderator. **No login required.** |
-| Status | **Flutter screen BUILT (D-296)**; privilege-gated tiles + best-effort bell badge (`…/notifications/unread-count`); on-login bundle `GET /app/bootstrap` **BUILT (D-251)** |
+| Status | **Flutter screen BUILT (D-296), redesigned to the KSA Wave-2 frames (D-378)**; privilege-gated layouts + best-effort bell badge (`…/notifications/unread-count`); on-login bundle `GET /app/bootstrap` **BUILT (D-251)** |
 
 ## Sources of truth
 `Mockup.html` (visual) · `SIMF_Screen_Guide_and_User_Journey` (narrative, Screen 13) ·
@@ -48,3 +48,29 @@ The bell badge (signed-in only) reads the **best-effort** unread count via
 (bilateral-meetings tile, social feed, bottom-nav shell) are intentionally omitted
 — final visuals come from SIMF-VID-001. Tests: `home_screen_test.dart` (6) +
 `notifications_repository_test.dart` (3).
+
+## As-built — KSA Wave-2 redesign (D-378)
+
+The screen was rebuilt to the delivered KSA-Project frames — **guest =
+512:1492** (the owner-picked 2×2 option) and **signed-in = 203:1236** — on the
+shared shell (`KsaPage` + `SimfBottomNav` v2 + `KsaNavTile`/`KsaListRow`/
+`KsaSectionHeader`, `lib/app/widgets/ksa_shell.dart`). One route, two layouts
+off the cached privilege:
+
+- **Guest:** "الرئيسية • ضيف" header, the gold-highlight browse banner, 2×2
+  public tiles (الجلسات / المتحدثون / الخريطة / المعرض → booths), the **locked
+  بطاقتي card** (disabled palette, inert), the "معلومات مفتوحة للجميع" rows
+  (**FAQ → the About page** — no app FAQ endpoint exists yet, tracked
+  follow-up; **روح السعودية** → the configured Visit-Saudi link), and the gold
+  sign-in button.
+- **Signed-in:** greeting header (avatar initials, time-of-day greeting, name,
+  bell + unread badge, menu), the static red LIVE banner (D10 unchanged),
+  three tile sections (عن الملتقى / الأخبار والتغطية / الميزات الذكية), the
+  **تابعنا** row (5 brand buttons — config-driven URLs, inert while unset per
+  the D-369 contract), and the discover روح السعودية card. The frame's
+  "أحدث منشوراتنا" X-embed card is **omitted** (no API — owner-approved).
+
+The bottom nav (all pages) swapped the News tab for **Profile** per the frames
+(owner-approved); News keeps the bar with no active tab. The old mockup screen
++ test are parked in `_legacy_mockup/`. Tests: `home_screen_test.dart` (11) +
+`ksa_shell_test.dart` (11).

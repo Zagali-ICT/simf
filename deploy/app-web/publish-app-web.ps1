@@ -10,6 +10,9 @@
 #       -OutDir   "D:\SIMF\Publish\simf-app-web" `
 #       [-AppKey  "<prod app key>"] `
 #       [-SupportPhone "+9665XXXXXXXX"] [-SupportEmail "support@..."] `
+#       [-SocialX "https://x.com/..."] [-SocialInstagram "..."] `
+#       [-SocialLinkedIn "..."] [-SocialYouTube "..."] [-SocialTikTok "..."] `
+#       [-VisitSaudiUrl "https://www.visitsaudi.com"] `
 #       [-FlutterBat "D:\dev\flutter\bin\flutter.bat"]
 #
 # Notes:
@@ -24,6 +27,14 @@ param(
     [string] $AppKey = '',
     [string] $SupportPhone = '',
     [string] $SupportEmail = '',
+    # Home "تابعنا" social links + the روح السعودية URL (D-378) — empty keeps
+    # that button inert; VisitSaudiUrl falls back to the in-app default.
+    [string] $SocialX = '',
+    [string] $SocialInstagram = '',
+    [string] $SocialLinkedIn = '',
+    [string] $SocialYouTube = '',
+    [string] $SocialTikTok = '',
+    [string] $VisitSaudiUrl = '',
     [string] $FlutterBat = 'D:\dev\flutter\bin\flutter.bat'
 )
 
@@ -42,6 +53,12 @@ $defines = @(
 if ($AppKey)       { $defines += "--dart-define=SIMF_APP_KEY=$AppKey" }
 if ($SupportPhone) { $defines += "--dart-define=SIMF_SUPPORT_PHONE=$SupportPhone" }
 if ($SupportEmail) { $defines += "--dart-define=SIMF_SUPPORT_EMAIL=$SupportEmail" }
+if ($SocialX)         { $defines += "--dart-define=SIMF_SOCIAL_X=$SocialX" }
+if ($SocialInstagram) { $defines += "--dart-define=SIMF_SOCIAL_INSTAGRAM=$SocialInstagram" }
+if ($SocialLinkedIn)  { $defines += "--dart-define=SIMF_SOCIAL_LINKEDIN=$SocialLinkedIn" }
+if ($SocialYouTube)   { $defines += "--dart-define=SIMF_SOCIAL_YOUTUBE=$SocialYouTube" }
+if ($SocialTikTok)    { $defines += "--dart-define=SIMF_SOCIAL_TIKTOK=$SocialTikTok" }
+if ($VisitSaudiUrl)   { $defines += "--dart-define=SIMF_VISIT_SAUDI_URL=$VisitSaudiUrl" }
 
 Write-Host "Building simf_app web (release) with API base $ApiBase ..."
 Push-Location $appDir

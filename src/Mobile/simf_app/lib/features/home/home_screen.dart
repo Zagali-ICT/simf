@@ -1,22 +1,32 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
+import '../../core/env/build_config.dart';
 import '../notifications/data/notifications_repository.dart';
 
-/// Page 013 — الرئيسية · Home (router / landing screen #13, `path=/`).
+/// Page 013 — الرئيسية · Home (router / landing screen #13, `path=/`),
+/// rebuilt to the KSA Wave-2 frames: guest = 512:1492 (2×2 option,
+/// owner-picked), signed-in = 203:1236.
 ///
-/// A privilege-gated landing styled to `Mockup.html` screen 13: a "discover"
-/// hero, the live banner, the feature grid, and the app's bottom navigation.
-/// It opens for **everyone** (Guest included); the bell + profile avatar +
-/// Visitor-only tiles are shaped by the **cached app privilege** (Guest when
-/// signed out). Home carries no data of its own beyond the best-effort
-/// unread-notification count for the bell badge (Page_013 L-5).
+/// One route, two states off the cached auth privilege: the **guest** layout
+/// (browse banner, 2×2 public tiles, the locked بطاقتي card, the open-info
+/// rows, the gold sign-in button) and the **signed-in** layout (greeting
+/// header with bell + menu, the live banner, the three tile sections, the
+/// follow-us row, and the discover card). Home carries no data of its own
+/// beyond the best-effort unread-notification count (Page_013 L-5); the live
+/// banner stays static config (D10, L-6). The frame's "أحدث منشوراتنا"
+/// X-embed card is omitted (no API — owner-approved). Social + Visit-Saudi
+/// links are config-driven and inert while unset (the D-369 contract).
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -26,103 +36,171 @@ class HomeScreen extends ConsumerWidget {
     final auth = ref.watch(authControllerProvider);
     final user = auth is AuthStateSignedIn ? auth.session.user : null;
     final isGuest = (user?.appRole ?? AppRole.guest) == AppRole.guest;
-    // Best-effort: a guest or any wire error resolves to 0 (Logic L-5).
+
+    if (isGuest) {
+      return _GuestHome(l10n: l10n);
+    }
+    // Best-effort: any wire error resolves to 0 (Logic L-5).
     final unread = ref.watch(unreadNotificationCountProvider).maybeWhen(
           data: (count) => count,
           orElse: () => 0,
         );
-
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        leading: IconButton(
-          tooltip: l10n.moreTitle,
-          icon: const Icon(Icons.menu),
-          onPressed: () => context.pushNamed(RouteNames.more),
-        ),
-        title: Text(l10n.homeTitle),
-        actions: <Widget>[
-          // The bell + badge and the profile avatar are for signed-in users
-          // only; a guest has no personal notifications / area (Logic L-2).
-          if (!isGuest)
-            IconButton(
-              tooltip: l10n.notificationsTooltip,
-              onPressed: () => context.pushNamed(RouteNames.notifications),
-              icon: Badge.count(
-                count: unread,
-                isLabelVisible: unread > 0,
-                child: const Icon(Icons.notifications_outlined),
-              ),
-            ),
-          if (!isGuest)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: SimfTokens.space3),
-              child: _ProfileAvatar(
-                name: user?.displayName ?? '',
-                onTap: () => context.pushNamed(RouteNames.myArea),
-              ),
-            ),
-          if (isGuest) const SizedBox(width: SimfTokens.space2),
-        ],
-      ),
-      bottomNavigationBar: const SimfBottomNav(current: SimfTab.home),
-      body: SafeArea(
-        top: false,
-        child: ListView(
-          padding: const EdgeInsets.all(SimfTokens.space4),
-          children: <Widget>[
-            _HeroCard(l10n: l10n),
-            const SizedBox(height: SimfTokens.space3),
-            _LiveBanner(
-              l10n: l10n,
-              onTap: () => context.pushNamed(RouteNames.liveBroadcast),
-            ),
-            if (isGuest) ...<Widget>[
-              const SizedBox(height: SimfTokens.space3),
-              _GuestPrompt(
-                l10n: l10n,
-                onSignIn: () => context.pushNamed(RouteNames.signIn),
-              ),
-            ],
-            const SizedBox(height: SimfTokens.space5),
-            _HomeTileGrid(l10n: l10n, isGuest: isGuest),
-          ],
-        ),
-      ),
+    return _VisitorHome(
+      l10n: l10n,
+      name: user?.displayName ?? '',
+      unread: unread,
     );
   }
 }
 
-/// The "discover" hero (mockup `.dash-hero`).
-class _HeroCard extends StatelessWidget {
-  const _HeroCard({required this.l10n});
+/// The greeting word by local time of day (the frame's "صباح الخير" row).
+String homeGreeting(AppL10n l10n, DateTime now) =>
+    now.hour < 12 ? l10n.greetingMorning : l10n.greetingEvening;
+
+/// Opening an external link is best-effort — a missing handler must never
+/// crash the page (the D-369 contact-tile contract).
+Future<void> _launchExternal(String url) async {
+  try {
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  } catch (_) {
+    // No handler / malformed URL — keep the user on the page.
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Guest layout (frame 512:1492 — "الرئيسية • ضيف", 2×2 option)
+// ---------------------------------------------------------------------------
+
+class _GuestHome extends StatelessWidget {
+  const _GuestHome({required this.l10n});
 
   final AppL10n l10n;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
+    return KsaPage(
+      title: l10n.homeGuestTitle,
+      onBack: () => context.canPop()
+          ? context.pop()
+          : context.pushNamed(RouteNames.signIn),
+      tab: SimfTab.home,
+      showSweep: true,
+      body: ListView(
         padding: const EdgeInsets.all(SimfTokens.space4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              l10n.homeDiscoverTitle,
+        children: <Widget>[
+          _GuestBanner(l10n: l10n),
+          const SizedBox(height: SimfTokens.space4),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: KsaNavTile(
+                  label: l10n.tileSessions,
+                  icon: Icons.calendar_today_outlined,
+                  onTap: () => context.pushNamed(RouteNames.sessions),
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              Expanded(
+                child: KsaNavTile(
+                  label: l10n.tileSpeakers,
+                  icon: Icons.mic_none_outlined,
+                  onTap: () => context.pushNamed(RouteNames.speakers),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: SimfTokens.space2),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: KsaNavTile(
+                  label: l10n.tileVenueMap,
+                  icon: Icons.map_outlined,
+                  onTap: () => context.pushNamed(RouteNames.venueMap),
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              Expanded(
+                child: KsaNavTile(
+                  label: l10n.tileExhibition,
+                  icon: Icons.grid_view_outlined,
+                  onTap: () => context.pushNamed(RouteNames.booths),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          // The locked smart-badge card — a visual cue that signing in
+          // unlocks it; never tappable as a guest.
+          KsaNavTile(
+            label: l10n.tileMyBadgeShort,
+            icon: Icons.badge_outlined,
+            enabled: false,
+          ),
+          const SizedBox(height: SimfTokens.space6),
+          KsaSectionHeader(title: l10n.homeOpenInfoSection),
+          const SizedBox(height: SimfTokens.space3),
+          KsaListRow(
+            title: l10n.faqRowTitle,
+            subtitle: l10n.faqRowSubtitle,
+            badge: const Icon(
+              Icons.help_outline,
+              size: 32,
+              color: Colors.white,
+            ),
+            // No app FAQ endpoint exists yet — the about page carries the
+            // venue/event info this row promises (tracked follow-up).
+            onTap: () => context.pushNamed(RouteNames.aboutForum),
+          ),
+          const SizedBox(height: SimfTokens.space4),
+          _DiscoverSaudiRow(l10n: l10n),
+          const SizedBox(height: SimfTokens.space6),
+          FilledButton(
+            onPressed: () => context.pushNamed(RouteNames.signIn),
+            child: Text(l10n.guestSignInCta),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The "you are browsing as a guest" banner: a navy card with the gold
+/// highlighted phrase inside the beige copy (frame node 512:1499).
+class _GuestBanner extends StatelessWidget {
+  const _GuestBanner({required this.l10n});
+
+  final AppL10n l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space2,
+        vertical: SimfTokens.space3,
+      ),
+      decoration: BoxDecoration(
+        color: SimfTokens.navy,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        border: Border.all(color: SimfTokens.accent, width: 0.2),
+      ),
+      child: Text.rich(
+        TextSpan(
+          style: const TextStyle(
+            color: SimfTokens.beigeBorder,
+            fontSize: SimfTokens.textMd,
+            height: 1.5,
+          ),
+          children: <InlineSpan>[
+            TextSpan(text: l10n.guestBannerPrefix),
+            TextSpan(
+              text: l10n.guestBannerHighlight,
               style: const TextStyle(
-                fontSize: SimfTokens.textXl,
-                fontWeight: FontWeight.w700,
-                color: SimfTokens.surface,
+                color: SimfTokens.accent,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: SimfTokens.space1),
-            Text(
-              l10n.homeDiscoverSubtitle,
-              style: const TextStyle(
-                color: SimfTokens.txtSecondary,
-                fontSize: SimfTokens.textSm,
-              ),
-            ),
+            TextSpan(text: l10n.guestBannerSuffix),
           ],
         ),
       ),
@@ -130,54 +208,237 @@ class _HeroCard extends StatelessWidget {
   }
 }
 
-/// A small gold profile avatar (mockup `.prof-av`) opening My-Area.
-class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar({required this.name, required this.onTap});
+// ---------------------------------------------------------------------------
+// Signed-in layout (frame 203:1236 — greeting home)
+// ---------------------------------------------------------------------------
 
+class _VisitorHome extends StatelessWidget {
+  const _VisitorHome({
+    required this.l10n,
+    required this.name,
+    required this.unread,
+  });
+
+  final AppL10n l10n;
   final String name;
-  final VoidCallback onTap;
+  final int unread;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      customBorder: const CircleBorder(),
-      child: Container(
-        width: 30,
-        height: 30,
-        alignment: Alignment.center,
-        decoration: const BoxDecoration(
-          color: SimfTokens.accent,
-          shape: BoxShape.circle,
-        ),
-        child: Text(
-          _initials(name),
-          style: const TextStyle(
-            color: SimfTokens.navy,
-            fontWeight: FontWeight.w700,
-            fontSize: 11,
+    return KsaPage(
+      tab: SimfTab.home,
+      header: _GreetingHeader(l10n: l10n, name: name, unread: unread),
+      body: ListView(
+        padding: const EdgeInsets.all(SimfTokens.space4),
+        children: <Widget>[
+          _LiveBanner(
+            l10n: l10n,
+            onTap: () => context.pushNamed(RouteNames.liveBroadcast),
           ),
-        ),
+          const SizedBox(height: SimfTokens.space6),
+          KsaSectionHeader(
+            title: l10n.homeAboutSection,
+            moreLabel: l10n.moreTitle,
+            onMore: () => context.pushNamed(RouteNames.aboutForum),
+          ),
+          const SizedBox(height: SimfTokens.space3),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: KsaNavTile(
+                  label: l10n.tileSpeakers,
+                  icon: Icons.mic_none_outlined,
+                  onTap: () => context.pushNamed(RouteNames.speakers),
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              Expanded(
+                child: KsaNavTile(
+                  label: l10n.tileBooths,
+                  icon: Icons.storefront_outlined,
+                  onTap: () => context.pushNamed(RouteNames.booths),
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              Expanded(
+                child: KsaNavTile(
+                  label: l10n.tileSponsors,
+                  icon: Icons.workspace_premium_outlined,
+                  onTap: () => context.pushNamed(RouteNames.sponsors),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: SimfTokens.space6),
+          KsaSectionHeader(
+            title: l10n.tileNews,
+            moreLabel: l10n.moreTitle,
+            onMore: () => context.pushNamed(RouteNames.news),
+          ),
+          const SizedBox(height: SimfTokens.space3),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: KsaNavTile(
+                  label: l10n.tileBilateralMeetings,
+                  icon: Icons.videocam_outlined,
+                  onTap: () => context.pushNamed(RouteNames.gallery),
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              Expanded(
+                child: KsaNavTile(
+                  label: l10n.tileArchive,
+                  icon: Icons.archive_outlined,
+                  onTap: () => context.pushNamed(RouteNames.archive),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: SimfTokens.space6),
+          KsaSectionHeader(
+            title: l10n.homeSmartSection,
+            moreLabel: l10n.moreTitle,
+            onMore: () => context.pushNamed(RouteNames.more),
+          ),
+          const SizedBox(height: SimfTokens.space3),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: KsaNavTile(
+                  label: l10n.tileMeetPeople,
+                  icon: Icons.people_outline,
+                  onTap: () => context.pushNamed(RouteNames.meetPeople),
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              Expanded(
+                child: KsaNavTile(
+                  label: l10n.chatbotTitle,
+                  icon: Icons.chat_bubble_outline,
+                  onTap: () => context.pushNamed(RouteNames.chatbot),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: SimfTokens.space2),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: KsaNavTile(
+                  label: l10n.tileSessionSummary,
+                  icon: Icons.summarize_outlined,
+                  onTap: () => context.pushNamed(RouteNames.aiSummary),
+                ),
+              ),
+              const SizedBox(width: SimfTokens.space2),
+              Expanded(
+                child: KsaNavTile(
+                  label: l10n.tileEntryBadge,
+                  icon: Icons.credit_card_outlined,
+                  onTap: () => context.pushNamed(RouteNames.badge),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: SimfTokens.space6),
+          KsaSectionHeader(title: l10n.followUsSection),
+          const SizedBox(height: SimfTokens.space3),
+          const _SocialRow(),
+          const SizedBox(height: SimfTokens.space3),
+          Text(
+            l10n.followUsHandle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: SimfTokens.beigeBorder,
+              fontSize: SimfTokens.textSm,
+            ),
+          ),
+          const SizedBox(height: SimfTokens.space6),
+          KsaSectionHeader(title: l10n.discoverSection),
+          const SizedBox(height: SimfTokens.space3),
+          _DiscoverSaudiRow(l10n: l10n),
+        ],
       ),
     );
   }
+}
 
-  String _initials(String name) {
-    final parts = name
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((p) => p.isNotEmpty)
-        .toList();
-    String first(String s) =>
-        s.isEmpty ? '' : String.fromCharCode(s.runes.first).toUpperCase();
-    if (parts.isEmpty) return '·';
-    if (parts.length == 1) return first(parts.first);
-    return first(parts.first) + first(parts.last);
+/// The greeting header (frame node 203:1238): avatar + greeting + name at the
+/// inline start; the bell (with the unread badge) and the menu at the end.
+class _GreetingHeader extends StatelessWidget {
+  const _GreetingHeader({
+    required this.l10n,
+    required this.name,
+    required this.unread,
+  });
+
+  final AppL10n l10n;
+  final String name;
+  final int unread;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SimfTokens.space4,
+        vertical: SimfTokens.space2,
+      ),
+      child: Row(
+        children: <Widget>[
+          KsaAvatar(name: name),
+          const SizedBox(width: SimfTokens.space2),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  homeGreeting(l10n, DateTime.now()),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: SimfTokens.textMd,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$name 👋',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: SimfTokens.accent,
+                    fontSize: SimfTokens.textLg,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: l10n.notificationsTooltip,
+            onPressed: () => context.pushNamed(RouteNames.notifications),
+            icon: Badge.count(
+              count: unread,
+              isLabelVisible: unread > 0,
+              child: const Icon(
+                Icons.notifications_none_outlined,
+                color: Colors.white,
+                size: 26,
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: l10n.moreTitle,
+            onPressed: () => context.pushNamed(RouteNames.more),
+            icon: const Icon(Icons.menu, color: Colors.white, size: 26),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-/// The live-broadcast promo banner (mockup home LIVE strip) — static / config
-/// for now (no API, D10, Page_013 L-6); tapping it opens the live view.
+/// The red LIVE banner (frame node 210:736) — static config for now (no API,
+/// D10, Page_013 L-6); tapping it opens the live view.
 class _LiveBanner extends StatelessWidget {
   const _LiveBanner({required this.l10n, required this.onTap});
 
@@ -188,34 +449,31 @@ class _LiveBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        side: const BorderSide(color: SimfTokens.danger, width: 0.5),
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
-        child: Container(
-          padding: const EdgeInsets.all(SimfTokens.space3),
-          decoration: BoxDecoration(
-            color: SimfTokens.danger.withValues(alpha: 0.06),
-            border:
-                Border.all(color: SimfTokens.danger.withValues(alpha: 0.45)),
-            borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
-          ),
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        child: Padding(
+          padding: const EdgeInsets.all(SimfTokens.space2),
           child: Row(
             children: <Widget>[
               Container(
-                width: 34,
-                height: 34,
+                width: 60,
+                height: 60,
                 alignment: Alignment.center,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: SimfTokens.danger,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(SimfTokens.radius),
                 ),
                 child: Text(
                   l10n.liveNowLabel,
                   style: const TextStyle(
-                    color: SimfTokens.surface,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 7.5,
-                    letterSpacing: 0.5,
+                    color: Colors.white,
+                    fontSize: SimfTokens.textMd,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
@@ -225,144 +483,29 @@ class _LiveBanner extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      l10n.liveBannerTitle,
+                      l10n.homeLiveTitle,
                       style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: SimfTokens.surface,
-                        fontSize: SimfTokens.textSm,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: SimfTokens.textMd,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: SimfTokens.space1),
                     Text(
-                      l10n.liveBannerSubtitle,
+                      l10n.homeLiveSubtitle,
                       style: const TextStyle(
-                        color: SimfTokens.txtSecondary,
-                        fontSize: SimfTokens.textXs,
+                        color: Colors.white,
+                        fontSize: SimfTokens.textSm,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_left, color: SimfTokens.accent),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The guest sign-in prompt (Logic L-2) — shown only when signed out.
-class _GuestPrompt extends StatelessWidget {
-  const _GuestPrompt({required this.l10n, required this.onSignIn});
-
-  final AppL10n l10n;
-  final VoidCallback onSignIn;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SimfTokens.radius),
-        side: const BorderSide(color: SimfTokens.accent),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(
-              l10n.guestPromptText,
-              style: const TextStyle(color: SimfTokens.txtSecondary),
-            ),
-            const SizedBox(height: SimfTokens.space3),
-            FilledButton(
-              onPressed: onSignIn,
-              child: Text(l10n.guestSignInCta),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The privilege-gated feature grid (mockup `.bento2` / `.row2` tiles). Public
-/// tiles render for everyone; the Visitor+ tiles are appended when signed in.
-class _HomeTileGrid extends StatelessWidget {
-  const _HomeTileGrid({required this.l10n, required this.isGuest});
-
-  final AppL10n l10n;
-  final bool isGuest;
-
-  @override
-  Widget build(BuildContext context) {
-    final tiles = <_TileSpec>[
-      _TileSpec(l10n.tileSpeakers, Icons.groups_outlined, RouteNames.speakers),
-      _TileSpec(l10n.tileBooths, Icons.storefront_outlined, RouteNames.booths),
-      _TileSpec(
-        l10n.tileSponsors,
-        Icons.workspace_premium_outlined,
-        RouteNames.sponsors,
-      ),
-      _TileSpec(l10n.tileNews, Icons.article_outlined, RouteNames.news),
-      _TileSpec(l10n.tileArchive, Icons.bookmark_outline, RouteNames.archive),
-      _TileSpec(l10n.tileAbout, Icons.info_outline, RouteNames.aboutForum),
-      if (!isGuest) ...<_TileSpec>[
-        _TileSpec(l10n.tileMyArea, Icons.person_outline, RouteNames.myArea),
-        _TileSpec(
-          l10n.tileEntryBadge,
-          Icons.qr_code_2_outlined,
-          RouteNames.badge,
-        ),
-        _TileSpec(
-          l10n.tileMeetPeople,
-          Icons.connect_without_contact_outlined,
-          RouteNames.meetPeople,
-        ),
-      ],
-    ];
-
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: SimfTokens.space2,
-      crossAxisSpacing: SimfTokens.space2,
-      childAspectRatio: 1.6,
-      children: <Widget>[
-        for (final tile in tiles) _HomeTile(tile: tile),
-      ],
-    );
-  }
-}
-
-/// One feature tile (mockup `.bt`): an icon over a bold label.
-class _HomeTile extends StatelessWidget {
-  const _HomeTile({required this.tile});
-
-  final _TileSpec tile;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => context.pushNamed(tile.route),
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space3),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Icon(tile.icon, color: SimfTokens.txtSecondary, size: 22),
-              Text(
-                tile.label,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: SimfTokens.surface,
-                  fontSize: SimfTokens.textSm,
-                ),
+              const SizedBox(width: SimfTokens.space2),
+              const Icon(
+                Icons.arrow_left,
+                color: SimfTokens.accent,
+                size: 24,
               ),
             ],
           ),
@@ -372,11 +515,80 @@ class _HomeTile extends StatelessWidget {
   }
 }
 
-/// Immutable spec for one Home tile: its label, icon and destination route name.
-class _TileSpec {
-  const _TileSpec(this.label, this.icon, this.route);
+/// The follow-us row (frame node 522:2215): five bordered buttons with the
+/// design's brand glyphs. A button with no configured URL is inert (D-369).
+class _SocialRow extends StatelessWidget {
+  const _SocialRow();
 
-  final String label;
-  final IconData icon;
-  final String route;
+  @override
+  Widget build(BuildContext context) {
+    const links = <(String, String)>[
+      ('assets/images/social_x.png', BuildConfig.socialXUrl),
+      ('assets/images/social_instagram.png', BuildConfig.socialInstagramUrl),
+      ('assets/images/social_linkedin.png', BuildConfig.socialLinkedInUrl),
+      ('assets/images/social_youtube.png', BuildConfig.socialYouTubeUrl),
+      ('assets/images/social_tiktok.png', BuildConfig.socialTikTokUrl),
+    ];
+    return Row(
+      children: <Widget>[
+        for (final (asset, url) in links) ...<Widget>[
+          if (asset != links.first.$1) const SizedBox(width: SimfTokens.space4),
+          Expanded(child: _SocialButton(asset: asset, url: url)),
+        ],
+      ],
+    );
+  }
+}
+
+class _SocialButton extends StatelessWidget {
+  const _SocialButton({required this.asset, required this.url});
+
+  final String asset;
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: const BorderSide(color: SimfTokens.navyDeep, width: 0.8),
+      ),
+      child: InkWell(
+        onTap: url.isEmpty ? null : () => unawaited(_launchExternal(url)),
+        borderRadius: BorderRadius.circular(10),
+        child: SizedBox(
+          height: 48,
+          child: Center(
+            child: Image.asset(asset, width: 20, height: 20),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The روح السعودية discover row, shared by the guest + signed-in layouts —
+/// opens the configured Visit-Saudi link externally.
+class _DiscoverSaudiRow extends StatelessWidget {
+  const _DiscoverSaudiRow({required this.l10n});
+
+  final AppL10n l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return KsaListRow(
+      title: l10n.discoverSaudiTitle,
+      subtitle: l10n.discoverSaudiSubtitle,
+      badge: const Text(
+        'KSA',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: SimfTokens.textMd,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      onTap: () => unawaited(_launchExternal(BuildConfig.visitSaudiUrl)),
+    );
+  }
 }

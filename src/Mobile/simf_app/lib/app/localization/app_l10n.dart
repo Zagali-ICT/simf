@@ -460,6 +460,46 @@ class AppL10n {
   String get navAgenda => _t('الأجندة', 'Agenda');
   String get navProfile => _t('الملف الشخصي', 'Profile');
 
+  // Home — KSA Wave-2 redesign (guest 512:1492 / signed-in 203:1236).
+  String get homeGuestTitle => _t('الرئيسية • ضيف', 'Home • Guest');
+  String get guestBannerPrefix => _t(
+        'أنت تتصفح كضيف، سجّل دخولك للوصول إلى ',
+        'You are browsing as a guest. Sign in to access ',
+      );
+  String get guestBannerHighlight => _t('البطاقة الذكية', 'the smart badge');
+  String get guestBannerSuffix => _t(
+        '، طلبات المقابلات، والإشعارات الشخصية.',
+        ', meeting requests, and personal notifications.',
+      );
+  String get tileExhibition => _t('المعرض', 'Exhibition');
+  String get tileMyBadgeShort => _t('بطاقتي', 'My badge');
+  String get homeOpenInfoSection =>
+      _t('معلومات مفتوحة للجميع', 'Open to everyone');
+  String get faqRowTitle => _t('الأسئلة الشائعة', 'FAQ');
+  String get faqRowSubtitle =>
+      _t('FAQ • معلومات الموقع والفعالية', 'FAQ • Venue & event info');
+  String get discoverSaudiTitle => _t('روح السعودية', 'Spirit of Saudi');
+  String get discoverSaudiSubtitle =>
+      _t('Visit Saudi · استكشف الرياض', 'Visit Saudi · Discover Riyadh');
+  String get greetingMorning => _t('صباح الخير', 'Good morning');
+  String get greetingEvening => _t('مساء الخير', 'Good evening');
+  String get homeLiveTitle => _t(
+        'الجلسة الافتتاحية تُبث الآن',
+        'The opening session is live now',
+      );
+  String get homeLiveSubtitle =>
+      _t('شاهد البث المباشر', 'Watch the live stream');
+  String get homeAboutSection =>
+      _t('عن الملتقى · المحاور', 'About the forum · Themes');
+  String get homeSmartSection => _t('الميزات الذكية', 'Smart features');
+  String get tileBilateralMeetings =>
+      _t('اللقاءات الثنائية', 'Bilateral meetings');
+  String get tileSessionSummary => _t('ملخص الجلسات', 'Session summaries');
+  String get followUsSection => _t('تابعنا', 'Follow us');
+  // The official handle line — a proper noun, identical in both languages.
+  String get followUsHandle => '@SIMF_RSNF · الملتقى البحري السعودي الدولي';
+  String get discoverSection => _t('اكتشف', 'Discover');
+
   // My Area — personal dashboard (Page 014).
   String get myAreaTitle => _t('منطقتي', 'My area');
   String enrolledInSessions(int count) =>

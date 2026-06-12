@@ -13,7 +13,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 CurrentUser _visitor() => CurrentUser(
       id: 'u1',
       email: 'visitor@example.sa',
-      displayName: 'Visitor',
+      displayName: 'Ahmed Mohammed',
       appRole: AppRole.visitor,
       preferredLanguage: PreferredLanguage.fromJson('ar'),
       registrationStatus: RegistrationStatus.approved,
@@ -26,21 +26,16 @@ Session _session() => Session(
       user: _visitor(),
     );
 
-/// A signed-in (Visitor) controller — its `build()` returns a fixed state so
-/// the screen's privilege gate is testable without the real session machinery.
 class _SignedInController extends AuthController {
   @override
   AuthState build() => AuthStateSignedIn(_session());
 }
 
-/// A signed-out (Guest) controller.
 class _GuestController extends AuthController {
   @override
   AuthState build() => const AuthStateSignedOut();
 }
 
-/// A fake repository (via `implements`, so it needs no real [SimfApiClient])
-/// returning a fixed unread count — drives the bell badge deterministically.
 class _FakeNotificationsRepository implements NotificationsRepository {
   _FakeNotificationsRepository(this.count);
 
@@ -50,7 +45,10 @@ class _FakeNotificationsRepository implements NotificationsRepository {
   Future<int> getUnreadCount() async => count;
 
   @override
-  Future<List<NotificationItem>> getNotifications({int skip = 0, int top = 50}) async =>
+  Future<List<NotificationItem>> getNotifications({
+    int skip = 0,
+    int top = 50,
+  }) async =>
       const <NotificationItem>[];
 
   @override
@@ -74,21 +72,31 @@ Future<void> _pump(
         path: '/',
         builder: (c, s) => const HomeScreen(),
       ),
-      GoRoute(
-        name: RouteNames.sessions,
-        path: '/sessions',
-        builder: (c, s) => const Scaffold(body: Text('SESSIONS')),
-      ),
-      GoRoute(
-        name: RouteNames.signIn,
-        path: '/sign-in',
-        builder: (c, s) => const Scaffold(body: Text('SIGN-IN')),
-      ),
-      GoRoute(
-        name: RouteNames.notifications,
-        path: '/notifications',
-        builder: (c, s) => const Scaffold(body: Text('NOTIFICATIONS')),
-      ),
+      for (final (name, path, label) in <(String, String, String)>[
+        (RouteNames.sessions, '/sessions', 'SESSIONS'),
+        (RouteNames.speakers, '/speakers', 'SPEAKERS'),
+        (RouteNames.venueMap, '/map', 'MAP'),
+        (RouteNames.booths, '/booths', 'BOOTHS'),
+        (RouteNames.sponsors, '/sponsors', 'SPONSORS'),
+        (RouteNames.gallery, '/media', 'GALLERY'),
+        (RouteNames.archive, '/archive', 'ARCHIVE'),
+        (RouteNames.aboutForum, '/about', 'ABOUT'),
+        (RouteNames.meetPeople, '/meet', 'MEET'),
+        (RouteNames.chatbot, '/chatbot', 'CHATBOT'),
+        (RouteNames.aiSummary, '/ai-summary', 'AI-SUMMARY'),
+        (RouteNames.badge, '/badge', 'BADGE'),
+        (RouteNames.news, '/news', 'NEWS'),
+        (RouteNames.more, '/more', 'MORE'),
+        (RouteNames.notifications, '/notifications', 'NOTIFICATIONS'),
+        (RouteNames.liveBroadcast, '/live', 'LIVE'),
+        (RouteNames.signIn, '/sign-in', 'SIGN-IN'),
+        (RouteNames.myArea, '/my-area', 'MY-AREA'),
+      ])
+        GoRoute(
+          name: name,
+          path: path,
+          builder: (c, s) => Scaffold(body: Text(label)),
+        ),
     ],
   );
 
@@ -96,8 +104,6 @@ Future<void> _pump(
     ProviderScope(
       overrides: <Override>[
         authControllerProvider.overrideWith(() => controller),
-        // Drive the real unread-count provider through a fake repository (the
-        // signed-in path calls it; the guest path short-circuits to 0).
         notificationsRepositoryProvider
             .overrideWithValue(_FakeNotificationsRepository(unread)),
       ],
@@ -118,33 +124,128 @@ Future<void> _pump(
 }
 
 void main() {
-  group('HomeScreen (Page 013)', () {
-    testWidgets('guest sees the sign-in prompt + public tiles, no bell/visitor '
-        'tiles', (tester) async {
+  group('HomeScreen — guest layout (frame 512:1492)', () {
+    testWidgets('shows the guest banner, public tiles, locked badge card and '
+        'the sign-in button', (tester) async {
       await _pump(tester, controller: _GuestController());
 
-      expect(find.widgetWithText(FilledButton, 'Sign in'), findsOneWidget);
+      expect(find.text('Home • Guest'), findsOneWidget);
+      expect(find.textContaining('browsing as a guest'), findsOneWidget);
+      expect(find.text('Sessions'), findsOneWidget);
       expect(find.text('Speakers'), findsOneWidget);
-      // Visitor-only tiles are hidden for a guest (Logic L-2).
-      expect(find.text('My area'), findsNothing);
-      expect(find.text('My smart badge'), findsNothing);
-      // No notification bell for a guest.
+      expect(find.text('Exhibition'), findsOneWidget);
+      // The lower content mounts as the list scrolls.
+      for (final below in <String>[
+        'My badge', // the locked بطاقتي card — visible but inert
+        'Open to everyone',
+        'FAQ',
+        'Spirit of Saudi',
+      ]) {
+        await tester.scrollUntilVisible(
+          find.text(below),
+          120,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(find.text(below), findsOneWidget);
+      }
+      await tester.scrollUntilVisible(
+        find.widgetWithText(FilledButton, 'Sign in'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.widgetWithText(FilledButton, 'Sign in'), findsOneWidget);
+      // No signed-in chrome.
       expect(find.byTooltip('Notifications'), findsNothing);
     });
 
-    testWidgets('signed-in visitor sees the bell + visitor tiles, no prompt',
-        (tester) async {
-      await _pump(tester, controller: _SignedInController());
+    testWidgets('a public tile navigates to its route', (tester) async {
+      await _pump(tester, controller: _GuestController());
 
-      expect(find.byTooltip('Notifications'), findsOneWidget);
-      expect(find.text('My area'), findsOneWidget);
-      expect(find.text('My smart badge'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Sign in'), findsNothing);
+      await tester.tap(find.text('Speakers'));
+      await tester.pumpAndSettle();
+      expect(find.text('SPEAKERS'), findsOneWidget);
     });
 
-    testWidgets('unread badge is hidden when the count is 0', (tester) async {
+    testWidgets('the sign-in button opens /sign-in', (tester) async {
+      await _pump(tester, controller: _GuestController());
+
+      await tester.scrollUntilVisible(
+        find.widgetWithText(FilledButton, 'Sign in'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.pumpAndSettle();
+      expect(find.text('SIGN-IN'), findsOneWidget);
+    });
+
+    testWidgets('the FAQ row opens the about page (no app FAQ endpoint yet)',
+        (tester) async {
+      await _pump(tester, controller: _GuestController());
+
+      await tester.scrollUntilVisible(
+        find.text('FAQ'),
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('FAQ'));
+      await tester.pumpAndSettle();
+      expect(find.text('ABOUT'), findsOneWidget);
+    });
+
+    testWidgets('renders right-to-left in Arabic', (tester) async {
+      await _pump(
+        tester,
+        controller: _GuestController(),
+        locale: const Locale('ar'),
+      );
+
+      expect(find.text('الرئيسية • ضيف'), findsOneWidget);
+      expect(
+        Directionality.of(tester.element(find.text('المتحدثون'))),
+        TextDirection.rtl,
+      );
+    });
+  });
+
+  group('HomeScreen — signed-in layout (frame 203:1236)', () {
+    testWidgets('shows the greeting header, live banner and all three tile '
+        'sections', (tester) async {
       await _pump(tester, controller: _SignedInController());
-      expect(tester.widget<Badge>(find.byType(Badge)).isLabelVisible, isFalse);
+
+      expect(find.textContaining('Ahmed Mohammed'), findsOneWidget);
+      expect(find.byTooltip('Notifications'), findsOneWidget);
+      expect(find.text('LIVE'), findsOneWidget);
+      expect(find.text('About the forum · Themes'), findsOneWidget);
+      // The lower sections mount as the list scrolls.
+      for (final below in <String>[
+        'News & coverage',
+        'Bilateral meetings',
+        'Smart features',
+        'Session summaries',
+        'Follow us',
+        'Discover',
+      ]) {
+        await tester.scrollUntilVisible(
+          find.text(below),
+          120,
+          scrollable: find.byType(Scrollable).first,
+        );
+        expect(find.text(below), findsOneWidget);
+      }
+      // No guest chrome.
+      expect(find.widgetWithText(FilledButton, 'Sign in'), findsNothing);
+      expect(find.text('Home • Guest'), findsNothing);
+    });
+
+    testWidgets('greeting follows the time of day', (tester) async {
+      await _pump(tester, controller: _SignedInController());
+      final l10n = AppL10n.of(
+        tester.element(find.textContaining('Ahmed Mohammed')),
+      );
+
+      expect(homeGreeting(l10n, DateTime(2026, 1, 1, 9)), 'Good morning');
+      expect(homeGreeting(l10n, DateTime(2026, 1, 1, 15)), 'Good evening');
     });
 
     testWidgets('unread badge shows the count when greater than 0',
@@ -155,28 +256,40 @@ void main() {
       expect((badge.label! as Text).data, '3');
     });
 
-    testWidgets('tapping a nav destination navigates to its route',
+    testWidgets('bell opens notifications; a smart tile opens its route',
         (tester) async {
-      await _pump(tester, controller: _GuestController());
+      await _pump(tester, controller: _SignedInController());
 
-      // The KSA nav shows labels on the active tab only — tap by icon.
-      await tester.tap(find.byIcon(Icons.calendar_today_outlined));
+      await tester.tap(find.byTooltip('Notifications'));
       await tester.pumpAndSettle();
-      expect(find.text('SESSIONS'), findsOneWidget);
+      expect(find.text('NOTIFICATIONS'), findsOneWidget);
     });
 
-    testWidgets('renders right-to-left in Arabic', (tester) async {
-      await _pump(
-        tester,
-        controller: _GuestController(),
-        locale: const Locale('ar'),
-      );
+    testWidgets('the live banner opens the live broadcast', (tester) async {
+      await _pump(tester, controller: _SignedInController());
 
-      expect(find.text('المتحدثون'), findsOneWidget);
-      expect(
-        Directionality.of(tester.element(find.text('المتحدثون'))),
-        TextDirection.rtl,
+      await tester.tap(find.text('LIVE'));
+      await tester.pumpAndSettle();
+      expect(find.text('LIVE'), findsOneWidget);
+      expect(find.text('Smart features'), findsNothing);
+    });
+
+    testWidgets('the social row renders all five brand buttons',
+        (tester) async {
+      await _pump(tester, controller: _SignedInController());
+
+      await tester.scrollUntilVisible(
+        find.text('Follow us'),
+        120,
+        scrollable: find.byType(Scrollable).first,
       );
+      await tester.pumpAndSettle();
+      final images = tester
+          .widgetList<Image>(find.byType(Image))
+          .map((w) => (w.image as AssetImage).assetName)
+          .where((n) => n.contains('social_'))
+          .toList();
+      expect(images, hasLength(5));
     });
   });
 }

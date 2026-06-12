@@ -337,6 +337,81 @@ class KsaStatTile extends StatelessWidget {
   }
 }
 
+/// The gold rounded-square avatar (home header 203:1238 / profile identity
+/// cards): the photo when [imageUrl] is set (falling back on error), else the
+/// name's initials on gold.
+class KsaAvatar extends StatelessWidget {
+  const KsaAvatar({
+    required this.name,
+    this.imageUrl,
+    this.size = 42,
+    super.key,
+  });
+
+  final String name;
+  final String? imageUrl;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final initials = _Initials(name: name, size: size);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(SimfTokens.radius),
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: imageUrl == null
+            ? initials
+            : Image.network(
+                imageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => initials,
+              ),
+      ),
+    );
+  }
+}
+
+class _Initials extends StatelessWidget {
+  const _Initials({required this.name, required this.size});
+
+  final String name;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: SimfTokens.accent,
+      child: Center(
+        child: Text(
+          ksaInitials(name),
+          style: TextStyle(
+            color: SimfTokens.navy,
+            fontWeight: FontWeight.w700,
+            fontSize: size * 0.33,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The first letters of the first + last name parts (`·` when empty) — the
+/// avatar fallback used wherever no photo is available.
+String ksaInitials(String name) {
+  final parts =
+      name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+  String first(String s) =>
+      s.isEmpty ? '' : String.fromCharCode(s.runes.first).toUpperCase();
+  if (parts.isEmpty) {
+    return '·';
+  }
+  if (parts.length == 1) {
+    return first(parts.first);
+  }
+  return first(parts.first) + first(parts.last);
+}
+
 /// One navy list row (frames' FAQ / روح السعودية / المزيد rows): a gold badge
 /// box at the inline start, a bold title + muted subtitle, and a gold
 /// forward arrow at the inline end.
