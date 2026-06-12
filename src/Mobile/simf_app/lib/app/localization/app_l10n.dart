@@ -836,6 +836,9 @@ class AppL10n {
         'Your badge is available once your account is approved.',
       );
   String get badgeError => _t('تعذّر تحميل بطاقتك.', 'Could not load your badge.');
+  // KSA Wave-2 frame 221:769 copy.
+  String get badgeScanToEnter => _t('امسح للدخول', 'Scan to enter');
+  String get badgeAddPerson => _t('امسح لإضافة شخص', 'Scan to add a contact');
 
   // Live broadcast (Page 025). liveNowLabel already exists (reused for the badge).
   String get liveBroadcastTitle => _t('البث المباشر', 'Live broadcast');

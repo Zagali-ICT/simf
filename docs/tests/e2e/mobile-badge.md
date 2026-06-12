@@ -5,9 +5,15 @@
 > `RequireApprovedAccount`, D-300); the screen consumes **only** the identity
 > (`qrId`, `fullNameEn`/`fullNameAr`) from it and reuses the My-Area data layer
 > (`MyAreaRepository.getDashboard()` + `MyAreaDashboard` — no duplicate model).
-> The **Flutter screen is built** and widget-tested in
-> `src/Mobile/simf_app/test/features/badge/badge_screen_test.dart` (issued QR +
-> name, null-qrId pending state, error→retry, Arabic).
+> The **Flutter screen is built** and was **rebuilt to KSA Wave-2 frame
+> 221:769 "QR"** (D-378 batch): the gold-bordered white card (QR 230 +
+> "امسح للدخول" + the gold identity strip with avatar/name/tier and the
+> **masked `ID · •••• tail`**), plus the bordered **امسح لإضافة شخص** action
+> → the existing `/contacts/scan` (FDS-014). Widget-tested in
+> `src/Mobile/simf_app/test/features/badge/badge_screen_test.dart` (issued QR
+> card + strip + masked id, add-person → scanner, null-qrId pending state,
+> error→retry, Arabic, the mask helper). The old mockup screen + test are
+> parked in `_legacy_mockup/`.
 
 | | |
 |--|--|

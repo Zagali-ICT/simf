@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
-import 'package:simf_app/app/route_names.dart';
-import 'package:simf_app/features/badge/badge_screen.dart';
+import 'package:simf_app/features/_legacy_mockup/badge_screen.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
@@ -16,8 +14,6 @@ MyAreaDashboard _dashboard({String? qrId}) => MyAreaDashboard(
         fullNameAr: 'رائد السالم',
         fullNameEn: 'Raed Al-Salem',
         qrId: qrId,
-        tierNameEn: 'VIP',
-        tierNameAr: 'VIP',
       ),
       counters: const MyAreaCounters(bookedSessionsCount: 0, meetingsCount: 0),
       todaySchedule: const <MyAreaScheduleItem>[],
@@ -55,36 +51,13 @@ Future<void> _pump(
   required MyAreaRepository repo,
   Locale locale = const Locale('en'),
 }) async {
-  final router = GoRouter(
-    initialLocation: '/badge',
-    routes: <RouteBase>[
-      GoRoute(
-        name: RouteNames.badge,
-        path: '/badge',
-        builder: (c, s) => const BadgeScreen(),
-      ),
-      for (final (name, path, label) in <(String, String, String)>[
-        (RouteNames.scanContact, '/contacts/scan', 'SCAN-CONTACT'),
-        (RouteNames.home, '/', 'HOME'),
-        (RouteNames.sessions, '/sessions', 'SESSIONS'),
-        (RouteNames.venueMap, '/map', 'MAP'),
-        (RouteNames.myArea, '/my-area', 'MY-AREA'),
-      ])
-        GoRoute(
-          name: name,
-          path: path,
-          builder: (c, s) => Scaffold(body: Text(label)),
-        ),
-    ],
-  );
-
   await tester.pumpWidget(
     ProviderScope(
       overrides: <Override>[
         myAreaRepositoryProvider.overrideWithValue(repo),
       ],
-      child: MaterialApp.router(
-        routerConfig: router,
+      child: MaterialApp(
+        home: const BadgeScreen(),
         locale: locale,
         supportedLocales: AppL10n.supportedLocales,
         localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
@@ -100,33 +73,17 @@ Future<void> _pump(
 }
 
 void main() {
-  group('BadgeScreen (Page 032 — KSA frame 221:769)', () {
-    testWidgets('an issued qrId renders the QR card, identity strip and the '
-        'add-person action', (tester) async {
-      await _pump(
-        tester,
-        repo: _FakeMyAreaRepository(dashboard: _dashboard(qrId: 'ABC123')),
-      );
-
-      expect(find.byType(QrImageView), findsOneWidget);
-      expect(find.text('Scan to enter'), findsOneWidget);
-      expect(find.text('Raed Al-Salem'), findsOneWidget);
-      expect(find.text('VIP'), findsOneWidget);
-      // The strip masks the id down to its last 4 characters.
-      expect(find.text('ID · •••• C123'), findsOneWidget);
-      expect(find.text('Scan to add a contact'), findsOneWidget);
-    });
-
-    testWidgets('the add-person action opens the contact scanner',
+  group('BadgeScreen (Page 032)', () {
+    testWidgets('an issued qrId renders the QR badge + the name',
         (tester) async {
       await _pump(
         tester,
         repo: _FakeMyAreaRepository(dashboard: _dashboard(qrId: 'ABC123')),
       );
 
-      await tester.tap(find.text('Scan to add a contact'));
-      await tester.pumpAndSettle();
-      expect(find.text('SCAN-CONTACT'), findsOneWidget);
+      expect(find.byType(QrImageView), findsOneWidget);
+      expect(find.text('Raed Al-Salem'), findsOneWidget);
+      expect(find.text('Show this at entry'), findsOneWidget);
     });
 
     testWidgets('a null qrId shows the pending state, no QR', (tester) async {
@@ -156,7 +113,7 @@ void main() {
       expect(repo.dashboardCalls, greaterThanOrEqualTo(2));
     });
 
-    testWidgets('renders the Arabic name in Arabic', (tester) async {
+    testWidgets('renders the Arabic name + hint in Arabic', (tester) async {
       await _pump(
         tester,
         repo: _FakeMyAreaRepository(dashboard: _dashboard(qrId: 'ABC123')),
@@ -165,12 +122,6 @@ void main() {
 
       expect(find.byType(QrImageView), findsOneWidget);
       expect(find.text('رائد السالم'), findsOneWidget);
-    });
-
-    test('maskedBadgeId keeps the last 4 characters only', () {
-      expect(maskedBadgeId('ABC123'), '•••• C123');
-      expect(maskedBadgeId('AB12'), 'AB12');
-      expect(maskedBadgeId(''), '');
     });
   });
 }

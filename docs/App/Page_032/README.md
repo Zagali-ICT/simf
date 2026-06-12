@@ -11,7 +11,7 @@ Per-page documentation folder (App screen 32).
 | Section | 6 — Badge & notifications |
 | Nature | **The visitor's QR entry badge** — a scannable QR (the account `qrId`) + the visitor's name |
 | App privilege | **Signed-in (Approved).** The dashboard read is `RequireApprovedAccount`; the route is in `_authenticatedRoutes`. |
-| Status | API **BUILT** (reuse — `GET /app/account/dashboard`, D-300); **Flutter screen BUILT** |
+| Status | API **BUILT** (reuse — `GET /app/account/dashboard`, D-300); **Flutter screen BUILT, redesigned to KSA Wave-2 frame 221:769 (D-378)** — gold-bordered white QR card + gold identity strip (masked id tail) + امسح لإضافة شخص → `/contacts/scan`; old screen parked in `_legacy_mockup/` |
 
 ## API (authoritative contract)
 Reuses the shipped My-Area dashboard read (no new API) — the screen consumes

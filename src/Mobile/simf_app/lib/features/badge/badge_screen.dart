@@ -2,25 +2,30 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../myarea/data/myarea_models.dart';
 import '../myarea/data/myarea_repository.dart';
 
-/// Page 032 — بطاقة الدخول · Entry badge (#32, `/badge`).
+/// Page 032 — بطاقة الدخول · Entry badge (#32, `/badge`), rebuilt to the
+/// KSA Wave-2 frame **221:769 "QR"** on the shared shell.
 ///
-/// **Auth-gated** (route 32 is in `_authenticatedRoutes`). The screen reuses the
-/// shipped My-Area data layer (`myAreaRepositoryProvider.getDashboard()` →
-/// `GET /app/account/dashboard`, `RequireApprovedAccount`) and renders **only**
-/// the identity's `qrId` as a scannable entry badge, with the visitor's localized
-/// name and a "show this at entry" hint. When `qrId` is null/empty — a pending
-/// account whose badge is not yet issued (Page_014 L-1) — it shows the pending
-/// state instead. loading / error+retry are the standard surfaces. The QR encodes
-/// the opaque `qrId` only; the final visuals come from SIMF-VID-001.
+/// **Auth-gated** (route 32 in `_authenticatedRoutes`); data contract
+/// unchanged: the shipped My-Area layer (`GET /app/account/dashboard`,
+/// `RequireApprovedAccount`) supplies the identity, and the QR encodes the
+/// opaque `qrId` only. Frame mapping: the gold-bordered **white card**
+/// holding the QR, the "امسح للدخول" hint and the **gold identity strip**
+/// (avatar, name, tier line, the masked `ID · …` reference), plus the
+/// bordered **امسح لإضافة شخص** action → the existing contact-QR scanner
+/// (`/contacts/scan`, FDS-014). A pending account (null `qrId`) keeps the
+/// pending state; load failures keep the retry surface (Page_014 L-1).
 class BadgeScreen extends ConsumerStatefulWidget {
   const BadgeScreen({super.key});
 
@@ -68,10 +73,13 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.badgeTitle)),
-      bottomNavigationBar: const SimfBottomNav(current: SimfTab.badge),
-      body: SafeArea(top: false, child: _buildBody(l10n)),
+    return KsaPage(
+      title: l10n.badgeTitle,
+      onBack: () =>
+          context.canPop() ? context.pop() : context.goNamed(RouteNames.home),
+      tab: SimfTab.badge,
+      showSweep: true,
+      body: _buildBody(l10n),
     );
   }
 
@@ -90,68 +98,145 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
     if (qrId.isEmpty) {
       return _PendingState(message: l10n.badgePendingBody);
     }
-    return _Badge(
-      qrId: qrId,
-      name: identity.localizedName(l10n.isArabic),
-      hint: l10n.badgeShowAtEntry,
-    );
+    return _Badge(l10n: l10n, identity: identity, qrId: qrId);
   }
 }
 
-/// The issued badge: a centred QR inside a white card with the visitor's name
-/// below it and the "show this at entry" hint.
-class _Badge extends StatelessWidget {
-  const _Badge({required this.qrId, required this.name, required this.hint});
+/// The opaque badge id with all but the last 4 characters masked — the strip
+/// shows a recognisable tail without exposing the full scan value on screen.
+String maskedBadgeId(String qrId) {
+  if (qrId.length <= 4) {
+    return qrId;
+  }
+  return '•••• ${qrId.substring(qrId.length - 4)}';
+}
 
+/// The issued badge (frame node tree under 221:769): the gold-bordered white
+/// card (QR + hint + gold identity strip) and the add-person action below it.
+class _Badge extends StatelessWidget {
+  const _Badge({required this.l10n, required this.identity, required this.qrId});
+
+  final AppL10n l10n;
+  final MyAreaIdentity identity;
   final String qrId;
-  final String name;
-  final String hint;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Card(
-              margin: EdgeInsets.zero,
-              color: SimfTokens.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(SimfTokens.radiusLarge),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(SimfTokens.space6),
+    final isArabic = l10n.isArabic;
+    final name = identity.localizedName(isArabic);
+    final tier = identity.localizedTier(isArabic);
+    return ListView(
+      padding: const EdgeInsets.all(SimfTokens.space4),
+      children: <Widget>[
+        Container(
+          padding: const EdgeInsets.all(SimfTokens.space4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(SimfTokens.radiusXl - 4),
+            border: Border.all(color: SimfTokens.accent, width: 1.5),
+          ),
+          child: Column(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(SimfTokens.space4),
                 child: QrImageView(
                   data: qrId,
                   version: QrVersions.auto,
-                  size: 240,
+                  size: 230,
                   gapless: true,
                 ),
               ),
-            ),
-            const SizedBox(height: SimfTokens.space5),
-            Text(
-              name,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textXl,
+              Text(
+                l10n.badgeScanToEnter,
+                style: const TextStyle(
+                  color: SimfTokens.greyText,
+                  fontSize: SimfTokens.textSm,
+                ),
               ),
-            ),
-            const SizedBox(height: SimfTokens.space2),
-            Text(
-              hint,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: SimfTokens.inkMuted,
-                fontSize: SimfTokens.textSm,
+              const SizedBox(height: SimfTokens.space4),
+              Container(
+                padding: const EdgeInsets.all(SimfTokens.space2),
+                decoration: BoxDecoration(
+                  color: SimfTokens.accent,
+                  borderRadius: BorderRadius.circular(SimfTokens.radius),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    KsaAvatar(
+                      name: name,
+                      imageUrl: identity.avatarUrl,
+                      size: 56,
+                    ),
+                    const SizedBox(width: SimfTokens.space3),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: SimfTokens.textLg,
+                            ),
+                          ),
+                          if (tier != null) ...<Widget>[
+                            const SizedBox(height: 2),
+                            Text(
+                              tier,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: SimfTokens.textXs,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 2),
+                          Text(
+                            'ID · ${maskedBadgeId(qrId)}',
+                            textDirection: TextDirection.ltr,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: SimfTokens.textXs,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+        const SizedBox(height: SimfTokens.space4),
+        // The add-person action → the FDS-014 contact scanner.
+        OutlinedButton.icon(
+          onPressed: () => context.pushNamed(RouteNames.scanContact),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(48),
+            side: const BorderSide(color: SimfTokens.beigeBorder, width: 0.5),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+            ),
+          ),
+          icon: const Icon(
+            Icons.qr_code_scanner,
+            size: 20,
+            color: Colors.white,
+          ),
+          label: Text(
+            l10n.badgeAddPerson,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: SimfTokens.textMd,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -174,13 +259,13 @@ class _PendingState extends StatelessWidget {
             const Icon(
               Icons.qr_code_2_outlined,
               size: 56,
-              color: SimfTokens.inkMuted,
+              color: SimfTokens.beigeBorder,
             ),
             const SizedBox(height: SimfTokens.space3),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.inkMuted),
+              style: const TextStyle(color: SimfTokens.beigeBorder),
             ),
           ],
         ),
@@ -204,7 +289,11 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text(message, textAlign: TextAlign.center),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white),
+            ),
             const SizedBox(height: SimfTokens.space4),
             FilledButton(onPressed: onRetry, child: Text(l10n.retryLabel)),
           ],
