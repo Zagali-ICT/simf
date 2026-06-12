@@ -88,6 +88,10 @@ public sealed class RegistrationService(
             DisplayName = request.Email,
             AccountState = AccountState.Registered,
             CreatedAt = now,
+            // D-373 — the email-OTP second factor is ON for every new visitor
+            // account (owner rule); an admin may disable it per account via
+            // the CP. Previously off by default (D-033).
+            TwoFactorEnabled = true,
         };
 
         AccountCode? issuedCode = null;

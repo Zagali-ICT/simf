@@ -31,6 +31,17 @@ contract lives in [Page_007_API.md](Page_007_API.md); the user flow in
 > when added, the same camera-only + face-check rules apply (recorded
 > assumption, D-371).
 
+> **D-373 amendments (owner, 2026-06-12):** form **defaults** = Visitor +
+> **Male** + nationality **Saudi Arabia**; the country picker is
+> **searchable** (type-to-filter); the **"سعودي الجنسية" switch is removed** —
+> `isSaudi` derives from the nationality pick (SA → national-ID, else the
+> Iqama/Passport choice; wire contract unchanged); the **selected** segment of
+> both segmented switches renders **white-background/ink-text**; the **plate
+> field is the last input before the attach box**; the registration
+> **reference number** (`SIMF-<year>-<8-digit sequence>`, DB-generated,
+> unique, NOT the QR id) is created at profile-row creation and surfaced via
+> the profile API / success screen / CP search.
+
 ## L-1 — Auth gate
 AUTH-only. Every call requires a signed-in bearer token; **no role, no permission
 code, not approval-gated, not `AllowAnonymous`** (D7). The lookups sit in the `auth`

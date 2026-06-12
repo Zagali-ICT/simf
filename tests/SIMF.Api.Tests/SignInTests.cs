@@ -288,7 +288,9 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
                 Email = email,
                 Code = GetActiveCode(email, AccountCodePurpose.EmailVerification),
             });
-        // TwoFactorEnabled stays false (Identity default) — the API short-circuits.
+        // D-373 — registration enables 2FA; disable it to model the
+        // admin-disabled account, where the API short-circuits to tokens.
+        DisableTwoFactor(email);
 
         var response = await SignInAsync(email, Password);
 
@@ -308,8 +310,9 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
     {
         // D-198 — a verified user who hasn't completed their profile gets
         // AccountStateInfo.State = EmailVerified so the client routes them to
-        // the profile form. 2FA is off by default, so the direct-issue path
-        // (where the info is surfaced) runs; the account_state JWT claim
+        // the profile form. The direct-issue path (where the info surfaces)
+        // needs 2FA off — D-373 enables it at registration, so disable it to
+        // model the admin-disabled account; the account_state JWT claim
         // carries the same signal on the email-OTP path.
         var email = NewEmail();
         await SignUpAsync(email);
@@ -320,6 +323,7 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
                 Email = email,
                 Code = GetActiveCode(email, AccountCodePurpose.EmailVerification),
             });
+        DisableTwoFactor(email);
 
         var response = await SignInAsync(email, Password);
 
@@ -357,6 +361,9 @@ public sealed class SignInTests : IClassFixture<SimfApiFactory>
                 Email = email,
                 Code = GetActiveCode(email, AccountCodePurpose.EmailVerification),
             });
+        // D-373 — registration enables 2FA; this test models the
+        // admin-disabled account.
+        DisableTwoFactor(email);
 
         await SignInAsync(email, Password);
 

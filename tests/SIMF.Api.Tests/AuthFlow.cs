@@ -15,11 +15,11 @@ internal static class AuthFlow
     public const string Password = "Passw0rd!";
 
     /// <summary>
-    /// Signs a brand-new visitor up, verifies the email, and turns on two-factor
-    /// authentication so the sign-in OTP path runs. Returns the address.
-    /// Decision D-033 (2026-05-23): when <c>TwoFactorEnabled = false</c> the API
-    /// returns tokens directly from sign-in; the existing visitor integration
-    /// tests need the OTP flow, so this helper switches 2FA on for them.
+    /// Signs a brand-new visitor up, verifies the email, and ensures two-factor
+    /// authentication is on so the sign-in OTP path runs. Returns the address.
+    /// D-373 made 2FA the registration DEFAULT, so the explicit enable below is
+    /// now a belt-and-braces no-op kept for clarity (it also documents the
+    /// pre-D-373 reason this helper exists — D-033 had it off by default).
     /// </summary>
     public static async Task<string> RegisterVerifiedVisitorAsync(
         HttpClient client,
@@ -51,9 +51,22 @@ internal static class AuthFlow
         database.SaveChanges();
     }
 
+    /// <summary>Turns two-factor authentication OFF for the account, directly in
+    /// the database — the admin-disabled scenario, the only 2FA-off path now
+    /// that D-373 activates it for every new registration.</summary>
+    public static void DisableTwoFactor(SimfApiFactory factory, string email)
+    {
+        using var scope = factory.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = database.Users.Single(candidate => candidate.Email == email);
+        user.TwoFactorEnabled = false;
+        database.SaveChanges();
+    }
+
     /// <summary>
-    /// Signs a brand-new visitor up, verifies the email and signs in without
-    /// turning 2FA on — so the password step issues tokens directly (D-033).
+    /// Signs a brand-new visitor up, verifies the email and signs in with 2FA
+    /// explicitly DISABLED (the admin-disabled scenario — D-373 turns 2FA on at
+    /// every registration) — so the password step issues tokens directly.
     /// Returns the issued token pair, used by the TOTP-enrolment integration tests.
     /// </summary>
     public static async Task<AuthTokens> SignInVisitorWithoutTwoFactorAsync(
@@ -72,7 +85,9 @@ internal static class AuthFlow
                 Email = email,
                 Code = GetActiveCode(factory, email, AccountCodePurpose.EmailVerification),
             });
-        // TwoFactorEnabled stays at the Identity default (false).
+        // D-373: registration now enables 2FA — switch it off to model the
+        // admin-disabled account this helper exists for.
+        DisableTwoFactor(factory, email);
 
         var response = await client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-in",

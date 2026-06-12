@@ -64,6 +64,21 @@ public sealed class RegistrationEndpointsTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task SignUp_activates_two_factor_by_default()
+    {
+        // D-373 — every new visitor account registers with the email-OTP
+        // second factor ON; only an admin can disable it per account.
+        var email = NewEmail();
+
+        await SignUpAsync(email);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var user = db.Users.Single(u => u.Email == email);
+        Assert.True(user.TwoFactorEnabled);
+    }
+
+    [Fact]
     public async Task SignUp_on_an_unverified_account_restarts_with_a_fresh_code_and_the_new_password()
     {
         var email = NewEmail();
@@ -82,8 +97,9 @@ public sealed class RegistrationEndpointsTests : IClassFixture<SimfApiFactory>
         var verify = await VerifyEmailAsync(email, GetActiveCode(email));
         Assert.Equal(HttpStatusCode.OK, verify.StatusCode);
 
-        // The newly typed password is now the account password (2FA off by
-        // default → the password step is the whole sign-in); the old one is gone.
+        // The newly typed password is now the account password (the 200 here
+        // carries the D-373 OTP challenge, not tokens — the password gate is
+        // what's under test); the old one is gone.
         var signInNew = await SignInAsync(email, "Newpass1!");
         Assert.Equal(HttpStatusCode.OK, signInNew.StatusCode);
         var signInOld = await SignInAsync(email, ValidPassword);
