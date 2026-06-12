@@ -47,6 +47,8 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.PassportNumber).HasMaxLength(32);
         builder.Property(profile => profile.SaudiMobile).HasMaxLength(20);
         builder.Property(profile => profile.InternationalMobile).HasMaxLength(24);
+        // C6 — D-371: stored normalized (3 letters + 1–4 digits, no separators).
+        builder.Property(profile => profile.PlateNumber).HasMaxLength(7);
         builder.Property(profile => profile.IdImageRelativePath).HasMaxLength(256);
 
         // D-106: QrId on UserProfile. 12-char Crockford base32, unique

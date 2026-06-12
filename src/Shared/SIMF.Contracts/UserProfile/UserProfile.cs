@@ -33,6 +33,10 @@ public sealed class UserProfileResponse
     public string? SaudiMobile { get; set; }
     public string? InternationalMobile { get; set; }
 
+    /// <summary>C6 — D-371 (رقم اللوحة): the optional Saudi vehicle plate,
+    /// stored normalized (3 letters + 1–4 digits, ≤ 7 chars, no separators).</summary>
+    public string? PlateNumber { get; set; }
+
     /// <summary>B3 — D-221 (الجهة): the picked <see cref="Organisation"/> id,
     /// or null when the user has not picked one.</summary>
     public Guid? OrganisationId { get; set; }
@@ -88,6 +92,12 @@ public sealed class UpsertUserProfileRequest
     public string? PassportNumber { get; set; }
     public string? SaudiMobile { get; set; }
     public string? InternationalMobile { get; set; }
+
+    /// <summary>C6 — D-371 (رقم اللوحة): optional Saudi vehicle plate. When
+    /// present the validator requires 3 letters (Arabic or Latin) + 1–4
+    /// digits, ≤ 7 chars after separators are stripped; the service stores
+    /// the normalized value.</summary>
+    public string? PlateNumber { get; set; }
 
     /// <summary>B3 — D-221 (الجهة): the user's self-picked
     /// <see cref="Organisation"/> id (from <c>GET /api/v1/organisations</c>).

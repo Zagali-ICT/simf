@@ -15,6 +15,7 @@ import '../../app/widgets/simf_logo.dart';
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
 import 'phone_validation.dart';
+import 'plate_validation.dart';
 
 const Color _sweepTint = Color(0x0AFFFFFF);
 const BorderRadius _radius4 =
@@ -60,6 +61,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   final TextEditingController _documentNumber = TextEditingController();
   final TextEditingController _saudiMobile = TextEditingController();
   final TextEditingController _internationalMobile = TextEditingController();
+  final TextEditingController _plate = TextEditingController();
   final TextEditingController _organisationSearch = TextEditingController();
 
   /// نوع التسجيل: Visitor (true) / Other (false) — the `ProfileType.IsForVisitor`
@@ -107,6 +109,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _documentNumber.dispose();
     _saudiMobile.dispose();
     _internationalMobile.dispose();
+    _plate.dispose();
     _organisationSearch.dispose();
     super.dispose();
   }
@@ -167,6 +170,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     }
     _saudiMobile.text = profile.saudiMobile ?? '';
     _internationalMobile.text = profile.internationalMobile ?? '';
+    _plate.text = profile.plateNumber ?? '';
     _gender = profile.gender;
 
     final code = profile.nationalityCode;
@@ -369,6 +373,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       saudiMobile: isSaudi ? _emptyToNull(_saudiMobile.text) : null,
       internationalMobile:
           !isSaudi ? _emptyToNull(_internationalMobile.text) : null,
+      plateNumber: _emptyToNull(_plate.text),
       organisationId: _organisationId,
       gender: _gender,
     );
@@ -423,6 +428,18 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return isStandardInternationalMobile(phone)
         ? null
         : AppL10n.of(context).internationalMobileInvalid;
+  }
+
+  /// C6 (D-371) — optional plate; Saudi standard when filled (the shape
+  /// lives in `plate_validation.dart`, mirroring the server).
+  String? _validatePlate(String? value) {
+    final plate = value?.trim() ?? '';
+    if (plate.isEmpty) {
+      return null;
+    }
+    return isStandardPlateNumber(plate)
+        ? null
+        : AppL10n.of(context).plateNumberInvalid;
   }
 
   /// The globe button toggles AR ↔ EN and persists the choice (D-363 pattern).
@@ -663,6 +680,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     const SizedBox(height: 16),
                     _buildMobileField(l10n),
                     const SizedBox(height: 16),
+                    _buildPlateField(l10n),
+                    const SizedBox(height: 16),
                     _buildDateOfBirthField(l10n),
                     const SizedBox(height: 16),
                     _FieldLabel(l10n.placeOfBirthLabel),
@@ -886,6 +905,28 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         decoration: _fieldDecoration(counterText: ''),
       ),
     ];
+  }
+
+  /// C6 (D-371) — رقم اللوحة: optional; validated to the Saudi standard
+  /// when filled (3 letters + 1–4 digits; separators ignored). The frame
+  /// (Figma 168:2972) draws it as "رقم اللوحة (اختياري)".
+  Widget _buildPlateField(AppL10n l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _FieldLabel(l10n.plateNumberLabel),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _plate,
+          textDirection: TextDirection.ltr,
+          maxLength: 9,
+          style: _inputStyle,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          validator: _validatePlate,
+          decoration: _fieldDecoration(),
+        ),
+      ],
+    );
   }
 
   Widget _buildMobileField(AppL10n l10n) {

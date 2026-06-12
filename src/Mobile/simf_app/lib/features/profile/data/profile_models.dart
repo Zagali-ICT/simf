@@ -39,6 +39,7 @@ class UpsertUserProfileRequest {
     this.passportNumber,
     this.saudiMobile,
     this.internationalMobile,
+    this.plateNumber,
     this.organisationId,
   });
 
@@ -56,6 +57,8 @@ class UpsertUserProfileRequest {
   final String? passportNumber;
   final String? saudiMobile;
   final String? internationalMobile;
+  /// C6 (D-371) — رقم اللوحة, optional; Saudi standard when filled.
+  final String? plateNumber;
   final String? organisationId;
   final AppGender gender;
 
@@ -74,6 +77,7 @@ class UpsertUserProfileRequest {
         'passportNumber': passportNumber,
         'saudiMobile': saudiMobile,
         'internationalMobile': internationalMobile,
+        'plateNumber': plateNumber,
         'organisationId': organisationId,
         'gender': gender.value,
       };
@@ -98,6 +102,7 @@ class UpsertUserProfileRequest {
       passportNumber: passportNumber,
       saudiMobile: saudiMobile,
       internationalMobile: internationalMobile,
+      plateNumber: plateNumber,
       organisationId: organisationId,
     );
   }
@@ -142,6 +147,7 @@ class UserProfileResponse {
     this.passportNumber,
     this.saudiMobile,
     this.internationalMobile,
+    this.plateNumber,
     this.organisationId,
     this.qrId,
   });
@@ -160,6 +166,8 @@ class UserProfileResponse {
   final String? passportNumber;
   final String? saudiMobile;
   final String? internationalMobile;
+  /// C6 (D-371) — رقم اللوحة, optional Saudi vehicle plate.
+  final String? plateNumber;
   final String? organisationId;
   final AppGender gender;
   final bool hasIdImage;
@@ -192,6 +200,7 @@ class UserProfileResponse {
       passportNumber: json['passportNumber'] as String?,
       saudiMobile: json['saudiMobile'] as String?,
       internationalMobile: json['internationalMobile'] as String?,
+      plateNumber: json['plateNumber'] as String?,
       organisationId: json['organisationId'] as String?,
       gender: AppGender.fromValue((json['gender'] as num?)?.toInt()),
       hasIdImage: json['hasIdImage'] as bool? ?? false,

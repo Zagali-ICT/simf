@@ -292,6 +292,62 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    // C6 (D-371) — رقم اللوحة: optional, but when present it must match
+    // the Saudi standard (3 letters + 1–4 digits, ≤ 7 chars, separators
+    // stripped); the service stores the normalized upper-cased value.
+    [Theory]
+    [InlineData("ABJ1234", "ABJ1234")]
+    [InlineData("abj 1234", "ABJ1234")]   // separators stripped + upper-cased
+    [InlineData("1234-ABJ", "1234ABJ")]   // digits-first order
+    [InlineData("أبج1234", "أبج1234")]    // Arabic letters
+    [InlineData("ABJ1", "ABJ1")]          // single digit
+    public async Task POST_accepts_a_standard_plate_and_stores_it_normalized(
+        string plate, string stored)
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.PlateNumber = plate;
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var saved = (await response.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        Assert.Equal(stored, saved.PlateNumber);
+    }
+
+    [Theory]
+    [InlineData("AB1234")]    // only 2 letters
+    [InlineData("ABCD123")]   // 4 letters
+    [InlineData("ABJ12345")]  // 5 digits
+    [InlineData("ABJ")]       // no digits
+    [InlineData("1234567")]   // digits only
+    [InlineData("AB!1234")]   // symbol
+    public async Task POST_rejects_a_non_standard_plate(string plate)
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.PlateNumber = plate;
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task POST_with_no_plate_stays_valid_and_GET_returns_null()
+    {
+        // C6 — the plate is optional; omitting it never blocks the save.
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+
+        var save = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, save.StatusCode);
+
+        var get = await GetAuthAsync(Path, token);
+        var fetched = (await get.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        Assert.Null(fetched.PlateNumber);
+    }
+
     // C5 (D-371) — a self-registering visitor is locked to the single
     // "Normal" audience profile type; richer audience tiers are admin-
     // assigned only, while partner-side ("Other") picks stay free.

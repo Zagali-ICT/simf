@@ -90,10 +90,11 @@ rules are in [Page_007_Logic.md](Page_007_Logic.md).
 **[Page 007‑01 API](../Page_007-01/Page_007-01_API.md)**. The ID-document image upload
 (`POST` multipart, after the profile row exists) also runs on save.
 
-> **D-371 contract changes (TO BUILD):** (1) the upsert request/response gain the
-> optional `plateNumber` field — server validates the Saudi standard (3 letters +
-> 1–4 digits, ≤ 7 chars) and rejects `VALIDATION_FAILED` when malformed; backed by
-> the additive `UserProfile.PlateNumber` column (owner-authorised freeze lift).
+> **D-371 contract changes:** (1) **BUILT** — the upsert request/response carry the
+> optional `plateNumber` field; the server validates the Saudi standard (3 letters +
+> 1–4 digits, ≤ 7 chars, separators stripped), stores it normalized upper-cased in
+> the additive `UserProfile.PlateNumber` column (migration
+> `App/D371_AddUserProfilePlateNumber`), and rejects malformed values 400.
 > (2) `POST /app/account/user-profile/id-image` runs a **server-side human-face
 > detection** check and rejects uploads with no detectable human face (new error
 > code, bilingual message). (3) **image-required for `gender = male`**: the
@@ -101,8 +102,9 @@ rules are in [Page_007_Logic.md](Page_007_Logic.md).
 > upsert-then-upload (the upload needs the profile row), and the **server treats
 > a male profile without a stored image as profile-incomplete** — so the male
 > registrant cannot reach the complete/wait-for-approval state without a
-> face-checked image. (4) `saudiMobile` / `internationalMobile` validation
-> tightens to the C4 standard patterns.
+> face-checked image. (4) **BUILT** — `saudiMobile` / `internationalMobile`
+> validation tightened to the C4 standard patterns (B1). The C5 type-lock
+> (Visitor self-pick = "Normal" only, server-enforced) shipped with B2.
 
 ## Error codes (envelope `ApiResult<T>.Error`)
 | Code | When | Bilingual surface |

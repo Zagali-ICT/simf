@@ -52,6 +52,18 @@ public sealed class UpsertUserProfileRequestValidator
     public static bool IsStandardInternationalMobile(string value)
         => E164Shape.IsMatch(NormalizePhone(value.Trim()));
 
+    // C6 (D-371) — the Saudi plate standard: exactly 3 letters (Arabic or
+    // Latin) + 1–4 digits, either order, ≤ 7 chars once separators are
+    // stripped. The Arabic range covers the letter block used on plates.
+    private static readonly System.Text.RegularExpressions.Regex PlateShape =
+        new(@"^([A-Za-zء-ي]{3}\d{1,4}|\d{1,4}[A-Za-zء-ي]{3})$",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    /// <summary>C6 (D-371) Saudi vehicle-plate standard check (separators
+    /// stripped first).</summary>
+    public static bool IsStandardPlateNumber(string value)
+        => PlateShape.IsMatch(NormalizePhone(value.Trim()));
+
     public UpsertUserProfileRequestValidator()
     {
         // D-190 — ProfileTypeId is optional. Only shape-check here
@@ -199,6 +211,14 @@ public sealed class UpsertUserProfileRequestValidator
             .Bilingual(
                 "The international mobile must be in the +<country code><number> (E.164) format.",
                 "يجب أن يكون رقم الجوال الدولي بالصيغة الدولية ‎+‎ يليها رمز الدولة والرقم (E.164).");
+
+        // C6 (D-371) — رقم اللوحة: optional, but when present it must match
+        // the Saudi standard (3 letters + 1–4 digits, ≤ 7 chars).
+        RuleFor(request => request.PlateNumber)
+            .Must(value => string.IsNullOrEmpty(value) || IsStandardPlateNumber(value))
+            .Bilingual(
+                "The plate number must be 3 letters and up to 4 digits (Saudi standard).",
+                "يجب أن يتكوّن رقم اللوحة من 3 أحرف وحتى 4 أرقام (المعيار السعودي).");
     }
 
     // D-197 — the registrant must be at least 18. Uses UtcNow date-only;

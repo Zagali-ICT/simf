@@ -235,6 +235,13 @@ class AppL10n {
         'An Iqama or passport number is required',
       );
   String get phoneInvalid => _t('رقم الجوال غير صالح', 'Invalid phone number');
+  // C6 (D-371) — رقم اللوحة, optional; Saudi standard when filled.
+  String get plateNumberLabel =>
+      _t('رقم اللوحة (اختياري)', 'Plate number (optional)');
+  String get plateNumberInvalid => _t(
+        'يجب أن يتكوّن رقم اللوحة من 3 أحرف وحتى 4 أرقام (المعيار السعودي)',
+        'The plate number must be 3 letters and up to 4 digits (Saudi standard)',
+      );
   // C5 (D-371) — under "Other" the profile-type pick is required.
   String get profileTypeRequired =>
       _t('يجب اختيار التصنيف', 'A profile type selection is required');

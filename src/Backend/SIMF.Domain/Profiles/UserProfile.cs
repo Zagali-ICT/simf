@@ -103,6 +103,11 @@ public class UserProfile : BaseAuditEntity
     /// <summary>International mobile (+<code>cc</code>-<code>local</code>) — optional.</summary>
     public string? InternationalMobile { get; set; }
 
+    /// <summary>C6 — D-371 (رقم اللوحة): optional Saudi vehicle plate,
+    /// stored normalized — 3 letters + 1–4 digits, ≤ 7 chars, no
+    /// separators. Additive column (owner-authorised freeze lift).</summary>
+    public string? PlateNumber { get; set; }
+
 
 
     /// <summary>

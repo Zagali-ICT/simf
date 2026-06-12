@@ -52,6 +52,7 @@
 | E2E-MOB007-013 | International mobile E.164 (C4, D-371): `+447700900123` accepted (dash ok); `0044…`, `+0…`, too-short rejected — client inline + server 400 | validation | P0 | authored ✓ (client `phone_validation_test` + server `UserProfileTests` theories) |
 | E2E-MOB007-014 | Visitor type lock (C5, D-371): Visitor tab shows **no** profile-type picker; the draft auto-carries the seeded **"Normal" (عادي)** id; server rejects any other audience-tier self-pick with 400 | validation | P0 | authored ✓ (widget test + server C5 tests) |
 | E2E-MOB007-015 | Other tab (C5, D-371): the filtered picker is shown and a pick is **required** (inline error blocks Next); partner-side picks accepted by the server | validation | P0 | authored ✓ (widget test + server C5 test) |
+| E2E-MOB007-016 | Plate number (C6, D-371): optional — empty saves fine; `ABJ1234` / `abj 1234` / `1234-ABJ` / `أبج1234` accepted and stored normalized upper-cased; 2/4 letters, 5 digits, digits-only, symbols rejected — client inline + server 400 | validation | P0 | authored ✓ (client `plate_validation_test` + server `UserProfileTests` theories incl. stored-value round-trip) |
 
 ## Scenarios
 

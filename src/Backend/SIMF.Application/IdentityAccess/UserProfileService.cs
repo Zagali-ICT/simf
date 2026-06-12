@@ -188,6 +188,9 @@ internal sealed class UserProfileService(
         profile.PassportNumber = request.IsSaudi ? null : request.PassportNumber;
         profile.SaudiMobile = NormaliseOptional(request.SaudiMobile);
         profile.InternationalMobile = NormaliseOptional(request.InternationalMobile);
+        // C6 — D-371: رقم اللوحة, stored normalized (validator-checked shape;
+        // separators stripped so the column holds the canonical ≤7 chars).
+        profile.PlateNumber = NormalisePlate(request.PlateNumber);
         // B3 — D-221: الجهة + الجنس.
         profile.OrganisationId = request.OrganisationId;
         profile.Gender = request.Gender;
@@ -558,6 +561,7 @@ internal sealed class UserProfileService(
             PassportNumber = profile.PassportNumber,
             SaudiMobile = profile.SaudiMobile,
             InternationalMobile = profile.InternationalMobile,
+            PlateNumber = profile.PlateNumber,
             OrganisationId = profile.OrganisationId,
             Gender = profile.Gender,
             HasIdImage = !string.IsNullOrEmpty(profile.IdImageRelativePath),
@@ -566,4 +570,15 @@ internal sealed class UserProfileService(
 
     private static string? NormaliseOptional(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    /// <summary>C6 — D-371: the plate is stored canonical — trimmed,
+    /// upper-cased, separators (spaces/dashes) stripped — so the 7-char
+    /// column always holds the same shape the validator checked.</summary>
+    private static string? NormalisePlate(string? value) =>
+        string.IsNullOrWhiteSpace(value)
+            ? null
+            : value.Trim()
+                .Replace(" ", string.Empty)
+                .Replace("-", string.Empty)
+                .ToUpperInvariant();
 }
