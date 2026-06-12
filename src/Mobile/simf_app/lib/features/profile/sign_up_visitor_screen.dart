@@ -69,7 +69,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   /// نوع التسجيل: Visitor (true) / Other (false) — the `ProfileType.IsForVisitor`
   /// filter (D-332). Client-only; not persisted.
   bool _isVisitorType = true;
-  bool _isSaudi = true;
+  // D-373 — Saudi-ness derives from the nationality pick (the explicit
+  // switch was removed): SA → national-ID field, else Iqama/Passport.
+  bool get _isSaudi => _nationalityCode == 'SA';
   _DocType _docType = _DocType.iqama;
   DateTime? _dateOfBirth;
   AppGender _gender = AppGender.unspecified;
@@ -164,7 +166,6 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _englishName.text = profile.englishName;
     _jobTitle.text = profile.jobTitle ?? '';
     _placeOfBirth.text = profile.placeOfBirth;
-    _isSaudi = profile.isSaudi;
     _nationalId.text = profile.nationalId ?? '';
     if ((profile.iqamaNumber ?? '').isNotEmpty) {
       _docType = _DocType.iqama;
@@ -176,11 +177,17 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _saudiMobile.text = profile.saudiMobile ?? '';
     _internationalMobile.text = profile.internationalMobile ?? '';
     _plate.text = profile.plateNumber ?? '';
-    _gender = profile.gender;
+    // D-373 defaults — Male and Saudi Arabia pre-selected on a first-time
+    // (empty) profile; a saved profile keeps its own values.
+    _gender = profile.gender == AppGender.unspecified
+        ? AppGender.male
+        : profile.gender;
     _hasExistingIdImage = profile.hasIdImage;
 
     final code = profile.nationalityCode;
-    _nationalityCode = _countries.any((c) => c.code == code) ? code : null;
+    _nationalityCode = _countries.any((c) => c.code == code)
+        ? code
+        : (_countries.any((c) => c.code == 'SA') ? 'SA' : null);
 
     final typeId = profile.profileTypeId;
     _profileTypeId = _profileTypes.any((t) => t.id == typeId) ? typeId : null;
@@ -703,28 +710,11 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                     const SizedBox(height: 16),
                     _buildNationalityField(l10n),
                     const SizedBox(height: 16),
-                    // The Saudi switch drives national-ID vs iqama/passport —
-                    // kept from the shipped contract (the frame omits it).
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      value: _isSaudi,
-                      activeThumbColor: SimfTokens.accent,
-                      onChanged: (value) => setState(() => _isSaudi = value),
-                      title: Text(
-                        l10n.isSaudiLabel,
-                        style: const TextStyle(
-                          color: SimfTokens.headlineInk,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
+                    // D-373 — the Saudi switch is gone: the nationality pick
+                    // drives national-ID vs iqama/passport (SA → national ID).
                     ..._buildDocumentFields(l10n),
                     const SizedBox(height: 16),
                     _buildMobileField(l10n),
-                    const SizedBox(height: 16),
-                    _buildPlateField(l10n),
                     const SizedBox(height: 16),
                     _buildDateOfBirthField(l10n),
                     const SizedBox(height: 16),
@@ -736,6 +726,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
                       style: _inputStyle,
                       decoration: _fieldDecoration(counterText: ''),
                     ),
+                    const SizedBox(height: 16),
+                    // D-373 — the plate is the last input before the attach.
+                    _buildPlateField(l10n),
                     const SizedBox(height: 16),
                     _buildIdImageField(l10n),
                     const SizedBox(height: 16),
@@ -874,40 +867,75 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     );
   }
 
+  /// D-373 — the 57-country list gets a searchable picker (type-to-filter
+  /// modal sheet) instead of a plain dropdown. Switching nationality also
+  /// drives the document section (SA → national ID, else Iqama/Passport).
   Widget _buildNationalityField(AppL10n l10n) {
+    final selected = _countries
+        .where((c) => c.code == _nationalityCode)
+        .toList();
+    final label = selected.isEmpty
+        ? l10n.nationalityLabel
+        : (l10n.isArabic ? selected.first.nameArabic : selected.first.name);
+    final showError = _triedSubmit && _nationalityCode == null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(l10n.nationalityLabel),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          initialValue: _nationalityCode,
-          isExpanded: true,
-          style: _inputStyle,
-          dropdownColor: SimfTokens.cardBeige,
-          icon: const Icon(
-            Icons.keyboard_arrow_down,
-            color: SimfTokens.greyText,
+        InkWell(
+          key: const ValueKey<String>('nationalityPicker'),
+          onTap: () => unawaited(_pickNationality(l10n)),
+          borderRadius: _radius4,
+          child: InputDecorator(
+            decoration: _fieldDecoration(
+              errorText: showError ? l10n.nationalityRequired : null,
+              suffixIcon: const Icon(
+                Icons.keyboard_arrow_down,
+                color: SimfTokens.greyText,
+              ),
+            ),
+            child: Text(
+              label,
+              style: selected.isEmpty
+                  ? _inputStyle.copyWith(color: SimfTokens.greyText)
+                  : _inputStyle,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          decoration: _fieldDecoration(),
-          items: _countries
-              .map(
-                (c) => DropdownMenuItem<String>(
-                  value: c.code,
-                  child: Text(
-                    l10n.isArabic ? c.nameArabic : c.name,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              )
-              .toList(),
-          validator: (value) => (value == null || value.isEmpty)
-              ? l10n.nationalityRequired
-              : null,
-          onChanged: (value) => setState(() => _nationalityCode = value),
         ),
       ],
     );
+  }
+
+  /// Opens the searchable country sheet and applies the pick. Clearing the
+  /// stale national-id/iqama input when the Saudi-ness flips keeps the
+  /// derived document section consistent (D-373).
+  Future<void> _pickNationality(AppL10n l10n) async {
+    final picked = await showModalBottomSheet<CountryItem>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: SimfTokens.cardBeige,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      builder: (sheetContext) => _CountrySearchSheet(
+        countries: _countries,
+        isArabic: l10n.isArabic,
+        searchHint: l10n.searchCountryHint,
+      ),
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() {
+      final wasSaudi = _isSaudi;
+      _nationalityCode = picked.code;
+      if (wasSaudi != _isSaudi) {
+        _nationalId.clear();
+        _documentNumber.clear();
+      }
+    });
   }
 
   List<Widget> _buildDocumentFields(AppL10n l10n) {
@@ -1306,10 +1334,10 @@ class _FieldLabel extends StatelessWidget {
   }
 }
 
-/// The design's beige segmented tabs (Figma 505:1075 / 505:1030): a
-/// `beigeBorder` container; the **unselected** segment is a white pill with
-/// ink text, the **selected** segment shows the container beige with white
-/// text.
+/// The design's beige segmented tabs (Figma 505:1075 / 505:1030) — D-373
+/// owner fix: the **selected** segment is a **white pill** with navy text
+/// (the old selected-beige-on-beige rendered invisible); the unselected
+/// segment stays on the container beige with white text.
 class _BeigeTabs extends StatelessWidget {
   const _BeigeTabs({
     required this.options,
@@ -1342,17 +1370,18 @@ class _BeigeTabs extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: i == selectedIndex
-                        ? SimfTokens.beigeBorder
-                        : Colors.white,
+                        ? Colors.white
+                        : Colors.transparent,
                     borderRadius: _radius4,
                   ),
                   child: Text(
                     options[i],
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontWeight:
+                          i == selectedIndex ? FontWeight.w600 : FontWeight.w500,
                       color:
-                          i == selectedIndex ? Colors.white : SimfTokens.navy,
+                          i == selectedIndex ? SimfTokens.navy : Colors.white,
                     ),
                   ),
                 ),
@@ -1360,6 +1389,103 @@ class _BeigeTabs extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// D-373 — the searchable country sheet: a type-to-filter list over the
+/// 57-country lookup, matching either language's name. Returns the picked
+/// [CountryItem] via the sheet's pop.
+class _CountrySearchSheet extends StatefulWidget {
+  const _CountrySearchSheet({
+    required this.countries,
+    required this.isArabic,
+    required this.searchHint,
+  });
+
+  final List<CountryItem> countries;
+  final bool isArabic;
+  final String searchHint;
+
+  @override
+  State<_CountrySearchSheet> createState() => _CountrySearchSheetState();
+}
+
+class _CountrySearchSheetState extends State<_CountrySearchSheet> {
+  static const TextStyle _itemStyle = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: SimfTokens.inputInk,
+  );
+
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final term = _query.trim().toLowerCase();
+    final filtered = term.isEmpty
+        ? widget.countries
+        : widget.countries
+            .where(
+              (c) =>
+                  c.name.toLowerCase().contains(term) ||
+                  c.nameArabic.contains(term),
+            )
+            .toList();
+    return SafeArea(
+      child: Padding(
+        // Keeps the search field above the soft keyboard.
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.7,
+          child: Column(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: TextField(
+                  key: const ValueKey<String>('countrySearchField'),
+                  autofocus: true,
+                  style: _itemStyle,
+                  onChanged: (value) => setState(() => _query = value),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    hintText: widget.searchHint,
+                    hintStyle: const TextStyle(color: SimfTokens.greyText),
+                    prefixIcon:
+                        const Icon(Icons.search, color: SimfTokens.greyText),
+                    enabledBorder: const OutlineInputBorder(
+                      borderRadius: _radius4,
+                      borderSide: BorderSide(color: SimfTokens.beigeBorder),
+                    ),
+                    focusedBorder: const OutlineInputBorder(
+                      borderRadius: _radius4,
+                      borderSide: BorderSide(color: SimfTokens.accent),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    final country = filtered[index];
+                    return ListTile(
+                      dense: true,
+                      title: Text(
+                        widget.isArabic ? country.nameArabic : country.name,
+                        style: _itemStyle,
+                      ),
+                      onTap: () => Navigator.of(context).pop(country),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

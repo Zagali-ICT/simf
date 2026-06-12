@@ -210,10 +210,18 @@ void main() {
       expect(repo.lastProfileTypesIsVisitor, isFalse);
     });
 
-    testWidgets('a first-time empty form blocks Next with required errors',
+    testWidgets('a first-time empty form blocks Next with required errors '
+        'and shows the D-373 defaults (SA + national-ID branch)',
         (tester) async {
       final repo = _FakeProfileRepository();
       await _pump(tester, repo);
+
+      // D-373 defaults: nationality pre-set to Saudi Arabia, which drives
+      // the national-ID branch (no Iqama/Passport picker, no nationality
+      // error on submit).
+      expect(find.text('Saudi Arabia'), findsOneWidget);
+      expect(find.text('National ID'), findsOneWidget);
+      expect(find.text('Iqama'), findsNothing);
 
       await _tapNext(tester);
 
@@ -221,7 +229,7 @@ void main() {
       expect(find.text('INTERESTS'), findsNothing);
       expect(repo.upserted, isNull);
       expect(find.text('This field is required'), findsWidgets);
-      expect(find.text('Nationality is required'), findsOneWidget);
+      expect(find.text('Nationality is required'), findsNothing);
       expect(find.text('Date of birth is required'), findsOneWidget);
     });
 
@@ -349,26 +357,43 @@ void main() {
       expect(capturedDraft!.request.profileTypeId, equals('t2'));
     });
 
-    testWidgets('a non-Saudi profile shows the Iqama / Passport document picker',
-        (tester) async {
+    testWidgets(
+        'picking a non-Saudi country via the searchable sheet switches the '
+        'document section to Iqama / Passport (D-373)', (tester) async {
       await _pump(tester, _FakeProfileRepository());
 
-      expect(find.text('Iqama'), findsOneWidget); // segment label
-      expect(find.text('Passport'), findsOneWidget);
-      expect(find.text('National ID'), findsNothing);
-    });
+      // Defaults: SA → national ID.
+      expect(find.text('National ID'), findsOneWidget);
 
-    testWidgets('toggling "Saudi national" switches to the National ID field',
-        (tester) async {
-      await _pump(tester, _FakeProfileRepository());
-
-      final toggle = find.byType(SwitchListTile);
-      await tester.ensureVisible(toggle);
-      await tester.tap(toggle);
+      // Open the searchable picker, filter, and pick the United States.
+      const picker = ValueKey<String>('nationalityPicker');
+      await tester.ensureVisible(find.byKey(picker));
+      await tester.tap(find.byKey(picker));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('countrySearchField')),
+        'United',
+      );
+      await tester.pumpAndSettle();
+      // (The form behind the sheet still shows the current selection, so
+      // only the filtered match is asserted.)
+      await tester.tap(find.text('United States'));
       await tester.pumpAndSettle();
 
+      // The derivation flips the document section (no switch — D-373).
+      expect(find.text('Iqama'), findsOneWidget);
+      expect(find.text('Passport'), findsOneWidget);
+      expect(find.text('National ID'), findsNothing);
+      expect(find.byType(SwitchListTile), findsNothing);
+
+      // Picking SA back restores the national-ID branch.
+      await tester.ensureVisible(find.byKey(picker));
+      await tester.tap(find.byKey(picker));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Saudi Arabia').last);
+      await tester.pumpAndSettle();
       expect(find.text('National ID'), findsOneWidget);
-      expect(find.text('Passport'), findsNothing);
+      expect(find.text('Iqama'), findsNothing);
     });
 
     testWidgets('a load failure shows the retry, which reloads the form',

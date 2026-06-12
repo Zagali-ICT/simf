@@ -122,7 +122,8 @@ class AppL10n {
   // Sign-up email verification (Page 006).
   String get emailVerifyTitle => _t('التحقق بالبريد', 'Email verification');
   String get emailVerifySentTo =>
-      _t('أرسلنا رمزًا من 6 أرقام إلى', 'We sent a 6-digit code to');
+      // D-373 — the digit count is visually obvious from the code boxes.
+      _t('أرسلنا رمز التحقق إلى', 'We sent a verification code to');
   String get emailVerifiedToast => _t('تم التحقق من البريد', 'Email verified');
   String get resendCodeButton => _t('إعادة إرسال الرمز', 'Resend code');
   // KSA-Project OTP frame copy (Figma 505:837, D-364).
@@ -235,6 +236,9 @@ class AppL10n {
         'An Iqama or passport number is required',
       );
   String get phoneInvalid => _t('رقم الجوال غير صالح', 'Invalid phone number');
+  // D-373 — the searchable country picker.
+  String get searchCountryHint =>
+      _t('ابحث عن الجنسية', 'Search for a country');
   // C7 (D-371) — the male-mandatory camera photo + face check.
   String get idImageRequiredForMen => _t(
         'الصورة الشخصية مطلوبة — التقطها بالكاميرا',
