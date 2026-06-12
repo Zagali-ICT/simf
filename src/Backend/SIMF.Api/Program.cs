@@ -239,20 +239,31 @@ builder.Services.SwaggerDocument(options =>
 // Readiness checks (SIMF-OPS-001 Amendment A.4).
 builder.Services.AddHealthChecks();
 
-// Dev-only CORS — lets a `flutter run -d chrome` web session (a different
-// origin, e.g. http://localhost:8080) call the App API for local diagnostics.
-// NEVER registered outside Development: production is single-origin behind the
-// reverse proxy, so no browser cross-origin call exists there. Origins come
-// from Cors:DevWebOrigins (appsettings.Development.json); default localhost:8080.
+// Web-app CORS (D-376). Two origin sources, both explicit allow-lists:
+// - Cors:WebAppOrigins — ANY environment; empty/absent = no CORS at all
+//   (the pre-D-376 production posture). Set it only when the published
+//   Flutter web app is hosted on a different origin than this API.
+// - Cors:DevWebOrigins — Development only; defaults to localhost:8080 for
+//   a local `flutter run -d chrome` diagnostics session.
+// Never a wildcard: origins are always named, headers/methods scoped to the
+// app's needs by the browser preflight.
 const string devWebCorsPolicy = "DevWebCors";
+var webAppOrigins =
+    builder.Configuration.GetSection("Cors:WebAppOrigins").Get<string[]>()
+    ?? [];
 if (builder.Environment.IsDevelopment())
 {
     var devWebOrigins =
         builder.Configuration.GetSection("Cors:DevWebOrigins").Get<string[]>()
         ?? ["http://localhost:8080"];
+    webAppOrigins = [.. webAppOrigins, .. devWebOrigins];
+}
+var webCorsEnabled = webAppOrigins.Length > 0;
+if (webCorsEnabled)
+{
     builder.Services.AddCors(options => options.AddPolicy(
         devWebCorsPolicy,
-        policy => policy.WithOrigins(devWebOrigins).AllowAnyHeader().AllowAnyMethod()));
+        policy => policy.WithOrigins(webAppOrigins).AllowAnyHeader().AllowAnyMethod()));
 }
 
 // JWT signing settings. The key must be present and long enough for HMAC-SHA256
@@ -385,10 +396,10 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 // Error handling wraps the rest of the pipeline (SIMF-Sprint1 plan section 7).
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
-// Dev-only: apply the web CORS policy before rate-limiting/auth so the browser
+// Apply the web CORS policy before rate-limiting/auth so the browser
 // preflight (OPTIONS) is answered and the cross-origin App-API call succeeds.
-// Gated to Development to match the registration above.
-if (app.Environment.IsDevelopment())
+// Active only when origins are configured (D-376) — matching the registration.
+if (webCorsEnabled)
 {
     app.UseCors(devWebCorsPolicy);
 }

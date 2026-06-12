@@ -10,6 +10,12 @@ SIMF web apps and deploy them to IIS, mirroring the V10 ERP pipeline.
 | SimfCP | `src/ControlPanel/SIMF.ControlPanel/SIMF.ControlPanel.csproj` | `cp/SIMF.ControlPanel.zip` | site `SIMF.CP`, path `D:\SIMF\CP` |
 | SimfWeb | `src/Website/SIMF.Web/SIMF.Web.csproj` | `web/SIMF.Web.zip` | site `SIMF.WEB`, path `D:\SIMF\WEB` |
 
+The **Flutter app's web build** (a static IIS site, proof of concept — D-376) is
+published separately by [`app-web/publish-app-web.ps1`](app-web/publish-app-web.ps1)
+with the API base compiled in; guide:
+[`docs/deploy/SIMF-AppWeb-IIS-Deploy.md`](../docs/deploy/SIMF-AppWeb-IIS-Deploy.md).
+It is not part of the .NET pipeline above.
+
 ## Pipeline shape
 
 ```

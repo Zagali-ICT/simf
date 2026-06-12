@@ -68,6 +68,10 @@ $vars = [ordered]@{
     # --- Reverse proxy (trusted hops for X-Forwarded-For) ---
     "SIMF_ReverseProxy__KnownProxies__0"           = ""  # [REQUIRED for prod] first trusted proxy IP; add __1, __2 ...
 
+    # --- Web-app CORS (D-376) — ONLY when the published Flutter web app is
+    #     hosted on a DIFFERENT origin than this API; empty = no CORS ---
+    "SIMF_Cors__WebAppOrigins__0"                  = ""  # optional, e.g. https://simf.zagali-ict.com; add __1 ...
+
     # --- Rate limits (defaults exist; tighten for a public-facing deploy) ---
     "SIMF_RateLimit__PermitLimit"                  = ""  # optional (default 20)
     "SIMF_RateLimit__WindowSeconds"                = ""  # optional (default 60)
