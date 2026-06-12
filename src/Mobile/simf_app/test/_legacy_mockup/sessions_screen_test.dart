@@ -5,10 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
-import 'package:simf_app/app/theme/tokens.dart';
 import 'package:simf_app/features/sessions/data/session_models.dart';
 import 'package:simf_app/features/sessions/data/sessions_repository.dart';
-import 'package:simf_app/features/sessions/sessions_screen.dart';
+import 'package:simf_app/features/_legacy_mockup/sessions_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 SessionListItem _session({
@@ -40,7 +39,7 @@ final _future = _session(
 );
 final _future2 = _session(
   id: 'fut2',
-  startUtc: DateTime.utc(2099, 11, 26, 11),
+  startUtc: DateTime.utc(2099, 11, 25, 11),
   title: 'Maritime security panel',
 );
 final _past = _session(
@@ -50,10 +49,7 @@ final _past = _session(
 );
 
 class _FakeSessionsRepository implements SessionsRepository {
-  _FakeSessionsRepository({
-    this.sessions = const <SessionListItem>[],
-    this.fail = false,
-  });
+  _FakeSessionsRepository({this.sessions = const <SessionListItem>[], this.fail = false});
 
   final List<SessionListItem> sessions;
   final bool fail;
@@ -75,10 +71,10 @@ Future<void> _pump(
   Locale locale = const Locale('en'),
 }) async {
   final router = GoRouter(
-    initialLocation: '/sessions',
+    initialLocation: '/',
     routes: <RouteBase>[
       GoRoute(
-        path: '/sessions',
+        path: '/',
         name: RouteNames.sessions,
         builder: (_, __) => const SessionsScreen(),
       ),
@@ -89,17 +85,6 @@ Future<void> _pump(
           body: Text('DETAIL ${state.pathParameters['sessionId']}'),
         ),
       ),
-      for (final (name, path, label) in <(String, String, String)>[
-        (RouteNames.home, '/', 'HOME'),
-        (RouteNames.badge, '/badge', 'BADGE'),
-        (RouteNames.venueMap, '/map', 'MAP'),
-        (RouteNames.myArea, '/my-area', 'MY-AREA'),
-      ])
-        GoRoute(
-          name: name,
-          path: path,
-          builder: (c, s) => Scaffold(body: Text(label)),
-        ),
     ],
   );
 
@@ -125,9 +110,8 @@ Future<void> _pump(
 }
 
 void main() {
-  group('SessionsScreen (Page 016 — KSA frame 215:767)', () {
-    testWidgets('renders the agenda chrome and a numbered row per session',
-        (tester) async {
+  group('SessionsScreen (Page 016)', () {
+    testWidgets('renders a row per session with an index chip', (tester) async {
       await _pump(
         tester,
         repo: _FakeSessionsRepository(
@@ -135,14 +119,10 @@ void main() {
         ),
       );
 
-      expect(find.text('Agenda'), findsWidgets); // header + active nav label
-      expect(find.text('Schedule'), findsOneWidget);
-      expect(find.text('Event agenda'), findsOneWidget);
-      expect(find.text('Upcoming agenda'), findsOneWidget);
-      expect(find.textContaining('Closing keynote'), findsOneWidget);
-      expect(find.textContaining('Maritime security panel'), findsOneWidget);
-      expect(find.textContaining('01'), findsOneWidget);
-      expect(find.textContaining('02'), findsOneWidget);
+      expect(find.text('Closing keynote'), findsOneWidget);
+      expect(find.text('Maritime security panel'), findsOneWidget);
+      expect(find.text('01'), findsOneWidget);
+      expect(find.text('02'), findsOneWidget);
     });
 
     testWidgets('the search box filters the list', (tester) async {
@@ -156,12 +136,12 @@ void main() {
       await tester.enterText(find.byType(TextField), 'keynote');
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Closing keynote'), findsOneWidget);
-      expect(find.textContaining('Maritime security panel'), findsNothing);
+      expect(find.text('Closing keynote'), findsOneWidget);
+      expect(find.text('Maritime security panel'), findsNothing);
     });
 
-    testWidgets('the Event-agenda pill reveals past sessions hidden by '
-        'Upcoming', (tester) async {
+    testWidgets('the Forum pill reveals past sessions hidden by Upcoming',
+        (tester) async {
       await _pump(
         tester,
         repo: _FakeSessionsRepository(
@@ -170,65 +150,22 @@ void main() {
       );
 
       // Default view is Upcoming → the past session is hidden.
-      expect(find.textContaining('Archived opening'), findsNothing);
-      expect(find.textContaining('Closing keynote'), findsOneWidget);
+      expect(find.text('Archived opening'), findsNothing);
+      expect(find.text('Closing keynote'), findsOneWidget);
 
       await tester.tap(find.text('Event agenda'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Archived opening'), findsOneWidget);
+      expect(find.text('Archived opening'), findsOneWidget);
     });
 
-    testWidgets('the day strip filters to one day and re-tap clears it',
-        (tester) async {
-      await _pump(
-        tester,
-        repo: _FakeSessionsRepository(
-          sessions: <SessionListItem>[_future, _future2],
-        ),
-      );
-
-      // Two distinct programme days → two day cells.
-      final dayOne = find.text(_future.startLocal.day.toString());
-      expect(dayOne, findsOneWidget);
-
-      await tester.tap(dayOne);
-      await tester.pumpAndSettle();
-      expect(find.textContaining('Closing keynote'), findsOneWidget);
-      expect(find.textContaining('Maritime security panel'), findsNothing);
-
-      // Re-tap clears back to all days (no "all days" pill in the frame).
-      await tester.tap(dayOne);
-      await tester.pumpAndSettle();
-      expect(find.textContaining('Maritime security panel'), findsOneWidget);
-    });
-
-    testWidgets('the selected day cell inverts to navy', (tester) async {
+    testWidgets('tapping a row navigates to the session detail', (tester) async {
       await _pump(
         tester,
         repo: _FakeSessionsRepository(sessions: <SessionListItem>[_future]),
       );
 
-      final dayText = _future.startLocal.day.toString();
-      await tester.tap(find.text(dayText));
-      await tester.pumpAndSettle();
-
-      final cell = tester.widget<Container>(
-        find
-            .ancestor(of: find.text(dayText), matching: find.byType(Container))
-            .first,
-      );
-      expect((cell.decoration! as BoxDecoration).color, SimfTokens.navy);
-    });
-
-    testWidgets('tapping a row navigates to the session detail',
-        (tester) async {
-      await _pump(
-        tester,
-        repo: _FakeSessionsRepository(sessions: <SessionListItem>[_future]),
-      );
-
-      await tester.tap(find.textContaining('Closing keynote'));
+      await tester.tap(find.text('Closing keynote'));
       await tester.pumpAndSettle();
 
       expect(find.text('DETAIL fut'), findsOneWidget);
@@ -251,21 +188,6 @@ void main() {
       await tester.tap(retry);
       await tester.pumpAndSettle();
       expect(repo.calls, greaterThanOrEqualTo(2));
-    });
-
-    testWidgets('renders right-to-left in Arabic', (tester) async {
-      await _pump(
-        tester,
-        repo: _FakeSessionsRepository(sessions: <SessionListItem>[_future]),
-        locale: const Locale('ar'),
-      );
-
-      expect(find.text('الأجندة'), findsWidgets);
-      expect(find.text('المواعيد'), findsOneWidget);
-      expect(
-        Directionality.of(tester.element(find.text('المواعيد'))),
-        TextDirection.rtl,
-      );
     });
   });
 }

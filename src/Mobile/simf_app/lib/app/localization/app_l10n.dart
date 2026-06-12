@@ -538,10 +538,11 @@ class AppL10n {
   // Sessions — daily schedule (Page 016). The two pills + the day strip + the
   // search box all filter the cached programme client-side (Page_016 L-1).
   String get sessionsTitle => _t('الجلسات', 'Sessions');
-  String get sessionsViewUpcoming => _t('الجلسات القادمة', 'Upcoming');
-  String get sessionsViewForum => _t('جلسات الفعالية', 'Forum');
+  String get sessionsViewUpcoming => _t('الأجندة القادمة', 'Upcoming agenda');
+  String get sessionsViewForum => _t('أجندة الفعالية', 'Event agenda');
   String get sessionsAllDays => _t('كل الأيام', 'All days');
-  String get sessionsSearchHint => _t('ابحث في الجلسات', 'Search sessions');
+  String get sessionsSearchHint => _t('البحث', 'Search');
+  String get sessionsScheduleSection => _t('المواعيد', 'Schedule');
   String get sessionsEmpty => _t('لا توجد جلسات', 'No sessions');
   String get sessionsError =>
       _t('تعذّر تحميل الجلسات.', 'Could not load the sessions.');

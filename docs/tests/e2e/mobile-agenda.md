@@ -3,13 +3,21 @@
 > **Authority:** SIMF E2E test catalogue template (D-133 slice 7). Mobile
 > catalogue — the public programme API is built (D-199) + enriched (D-252); the
 > API implementation lives in `tests/SIMF.Api.Tests/ProgrammeSessionsTests.cs`.
-> The **Flutter screen is built (D-299)** — fetch-once + client-side
-> Upcoming/Forum pills, data-driven day strip and search; widget/model tests in
+> The **Flutter screen is built (D-299)** and was **rebuilt to KSA Wave-2
+> frame 215:767 "الأجندة"** (D-378 batch) — same fetch-once + client-side
+> filtering contract, new chrome: bordered search field, gold/navy view pills
+> (أجندة الفعالية / الأجندة القادمة), the **white day strip** (selected day
+> inverts to navy; weekend Fri/Sat weekday labels red; **re-tapping the
+> selected day clears to all days** — the frame carries no all-days pill),
+> and المواعيد rows with the two-line time chip + gold numbered title.
+> Widget/model tests in
 > `src/Mobile/simf_app/test/features/sessions/sessions_screen_test.dart`
-> (rows + index, search filter, Forum-pill reveal, row-tap → detail, empty,
-> error→retry) and `…/session_models_test.dart` (tolerant int-enum decode, the
-> real wire field names incl. the D-271 speaker country+photo, the client-side
-> filter + day-strip helpers).
+> (chrome + numbered rows, search filter, Event-agenda-pill reveal, day-strip
+> filter + re-tap clear, selected-cell inversion, row-tap → detail, empty,
+> error→retry, RTL) and `…/session_models_test.dart` (tolerant int-enum
+> decode, the real wire field names incl. the D-271 speaker country+photo,
+> the client-side filter + day-strip helpers). The old mockup screen + test
+> are parked in `_legacy_mockup/`.
 >
 > **Filename note:** this catalogue keeps its legacy `mobile-agenda.md` name; the
 > screen/route is renamed **Sessions** (D-276). A rename to `mobile-sessions.md`
