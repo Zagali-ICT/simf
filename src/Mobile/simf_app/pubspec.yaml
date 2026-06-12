@@ -73,6 +73,10 @@ dev_dependencies:
   # D-372 regression test only — drives the real SimfApiClient over a
   # header-recording adapter (same major as simf_data_pkg's pin).
   dio: ^5.7.0
+  # D-373 — generates the SIMF launcher icon into the scaffolded native
+  # folders. Run AFTER `flutter create --platforms=android .` (the folders
+  # are generated, not committed): `dart run flutter_launcher_icons`.
+  flutter_launcher_icons: ^0.14.1
   # End-to-end harness: boots the assembled app (real router + screens) with
   # deterministic provider overrides and drives cross-screen flows. Runs headless
   # via `flutter test integration_test/`, or on a device with `-d <id>`.
@@ -81,12 +85,26 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   mocktail: ^1.0.4
 
+# D-373 — the SIMF app icon (the brand mark on the navy brand colour).
+# Applied by `dart run flutter_launcher_icons` against the generated
+# android/ios folders (see the dev-run recipe; this tree has no native dirs).
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/simf_logo.png"
+  adaptive_icon_background: "#01132D"
+  adaptive_icon_foreground: "assets/images/simf_logo.png"
+
 flutter:
   uses-material-design: true
   generate: false
   # Login v2 design-preview logo (Figma KSA-Project 168:2800 — D-358).
+  # D-373: assets/videos/ carries the onboarding background clips
+  # (onboard_01..03.mp4 — the same hero clip ×3 until the owner supplies
+  # the real 2nd/3rd videos; replace in place).
   assets:
     - assets/images/
+    - assets/videos/
   # Mockup typography — IBM Plex Sans Arabic (the Mockup.html app font, OFL),
   # bundled as an asset so it renders offline + deterministically on every
   # platform incl. web (no runtime font fetch). Applied app-wide by SimfTheme

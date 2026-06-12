@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
@@ -11,6 +12,13 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
 
 const String _worldMapAsset = 'assets/images/onboarding_world_map.jpg';
+// D-373 — one looping, muted background video per step. The same hero clip
+// ships as all three placeholders; the owner replaces 02/03 in place later.
+const List<String> _videoAssets = <String>[
+  'assets/videos/onboard_01.mp4',
+  'assets/videos/onboard_02.mp4',
+  'assets/videos/onboard_03.mp4',
+];
 // The design's photo treatment on step 1: #01132D at 90% over the image.
 const Color _photoOverlay = Color(0xE601132D);
 // Pill page dots (Figma 148:22): active beige, inactive soft gold at 50%.
@@ -41,8 +49,49 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _index = 0;
 
+  // D-373 — one decoder at a time: the controller follows the active step.
+  VideoPlayerController? _video;
+  bool _videoReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadVideo(0));
+  }
+
+  /// Best-effort background video for the given step — a missing decoder
+  /// (tests / unsupported runtime) silently falls back to the static
+  /// image / navy background.
+  Future<void> _loadVideo(int index) async {
+    final old = _video;
+    _video = null;
+    _videoReady = false;
+    if (mounted) {
+      setState(() {});
+    }
+    await old?.dispose();
+    final controller = VideoPlayerController.asset(_videoAssets[index]);
+    try {
+      await controller.initialize();
+      await controller.setLooping(true);
+      await controller.setVolume(0);
+      await controller.play();
+      if (!mounted || _index != index) {
+        await controller.dispose();
+        return;
+      }
+      setState(() {
+        _video = controller;
+        _videoReady = true;
+      });
+    } catch (_) {
+      await controller.dispose();
+    }
+  }
+
   @override
   void dispose() {
+    unawaited(_video?.dispose());
     _pageController.dispose();
     super.dispose();
   }
@@ -98,16 +147,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       backgroundColor: SimfTokens.navy,
       body: Stack(
         children: <Widget>[
-          // Step 1 sits over the world-map photo dimmed by the navy overlay;
-          // the later steps are plain navy (Figma 148:22 vs 159:942/159:1052).
-          if (_index == 0) ...<Widget>[
+          // D-373 — every step plays its looping background video under the
+          // navy overlay; until the decoder is ready (or when it is
+          // unavailable) the step-1 world-map photo / plain navy shows.
+          if (_videoReady && _video != null)
+            Positioned.fill(
+              child: FittedBox(
+                fit: BoxFit.cover,
+                clipBehavior: Clip.hardEdge,
+                child: SizedBox(
+                  width: _video!.value.size.width,
+                  height: _video!.value.size.height,
+                  child: VideoPlayer(_video!),
+                ),
+              ),
+            )
+          else if (_index == 0)
             Positioned.fill(
               child: Image.asset(_worldMapAsset, fit: BoxFit.cover),
             ),
-            const Positioned.fill(
-              child: ColoredBox(color: _photoOverlay),
-            ),
-          ],
+          const Positioned.fill(
+            child: ColoredBox(color: _photoOverlay),
+          ),
           SafeArea(
             child: Column(
               children: <Widget>[
@@ -143,7 +204,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   child: PageView.builder(
                     controller: _pageController,
                     itemCount: _stepCount,
-                    onPageChanged: (i) => setState(() => _index = i),
+                    onPageChanged: (i) {
+                      setState(() => _index = i);
+                      // D-373 — swap the background video to the new step.
+                      unawaited(_loadVideo(i));
+                    },
                     itemBuilder: (context, i) => Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Column(
