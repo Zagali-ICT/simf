@@ -31,6 +31,9 @@ class _FakeProfileRepository implements ProfileRepository {
 
   UserProfileResponse profile;
   bool throwOnLoad;
+  // D-375 — lets a test fail ONLY the profile-types lookup (the per-switch
+  // fetch), exercising the picker's inline loading/retry state.
+  bool throwOnProfileTypes = false;
   int loadCalls = 0;
   bool? lastProfileTypesIsVisitor;
   UpsertUserProfileRequest? upserted;
@@ -53,6 +56,9 @@ class _FakeProfileRepository implements ProfileRepository {
   @override
   Future<List<ProfileTypeItem>> getProfileTypes({bool? isVisitor}) async {
     lastProfileTypesIsVisitor = isVisitor;
+    if (throwOnProfileTypes) {
+      throw const ApiFailure(code: 'X', message: 'lookup boom');
+    }
     // C5 (D-371) — the audience side carries the single "Normal" type the
     // screen auto-locks to; the partner ("Other") side carries a pickable
     // list, mirroring the seeded data shape.
@@ -355,6 +361,38 @@ void main() {
 
       expect(find.text('INTERESTS'), findsOneWidget);
       expect(capturedDraft!.request.profileTypeId, equals('t2'));
+    });
+
+    testWidgets(
+        'a failed Other profile-types lookup shows the inline retry — never '
+        'a silently hidden picker (D-375)', (tester) async {
+      final repo = _FakeProfileRepository(profile: _completeProfile());
+      await _pump(tester, repo);
+
+      // Fail the per-switch lookup, then switch to Other.
+      repo.throwOnProfileTypes = true;
+      await tester.tap(find.text('Other'));
+      await tester.pumpAndSettle();
+
+      // The field area stays visible: inline error + retry, no dropdown.
+      expect(find.text('Could not load the list.'), findsOneWidget);
+      const retry = ValueKey<String>('profileTypeRetry');
+      expect(find.byKey(retry), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('profileTypePicker')),
+        findsNothing,
+      );
+
+      // Recover + retry → the picker appears with the partner list.
+      repo.throwOnProfileTypes = false;
+      await tester.tap(find.byKey(retry));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('profileTypePicker')),
+        findsOneWidget,
+      );
+      expect(find.text('Could not load the list.'), findsNothing);
     });
 
     testWidgets(

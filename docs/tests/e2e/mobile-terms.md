@@ -30,7 +30,7 @@
 
 | ID | Scenario | Type | Priority | Status |
 |----|----------|------|----------|--------|
-| E2E-MOB009-001 | Standalone read → body (active locale) + last-updated line, no accept gate | happy | P0 | authored ✓ (widget test) |
+| E2E-MOB009-001 | Standalone read → bullet-card body (active locale), no last-updated line, موافق present but non-binding (D-375) | happy | P0 | authored ✓ (widget test) |
 | E2E-MOB009-002 | In-flow consent (`?consent=1`) → the always-enabled gold موافق button (D-367: the explicit tap is the consent — no checkbox) | happy | P0 | authored ✓ (widget test) |
 | E2E-MOB009-003 | Accept (ticked) → client-side consent only (no server call) → control returns to the caller (`pop`) | happy | P0 | authored (screen — `pop(true)`) |
 | E2E-MOB009-004 | Decline / back → no consent recorded; caller stays blocked | edge | P1 | authored (screen — `pop(false)`) |
@@ -48,12 +48,14 @@ Feature: Terms & conditions
 Scenario: A guest reads the terms from a link
   Given a guest opens /terms (no consent flag)
   When GET /app/content/terms returns the terms block
-  Then the localized body renders as scrollable selectable text
-  And a "Last updated · {date}" line shows when lastUpdatedAt is present
-  And there is no accept checkbox or Accept button
+  Then the localized body renders as gold-hairline bullet cards (frame 505:1553)
+  And there is NO "Last updated" line (removed per the frame — D-375)
+  And the gold موافق button shows here too (D-375 — per the frame it is
+      always present; in standalone it simply leaves the page, no consent)
 ```
 
-**Evidence:** `terms_screen_test` — "standalone mode renders the body + last-updated, no gate".
+**Evidence:** `terms_screen_test` — "standalone mode renders the body, no
+last-updated line, and the always-visible Agree button (D-375 — frame 505:1553)".
 
 ### E2E-MOB009-002 — In-flow consent gate
 

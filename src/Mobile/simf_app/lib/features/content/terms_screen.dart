@@ -11,18 +11,20 @@ import 'data/content_repository.dart';
 const Color _sweepTint = Color(0x0AFFFFFF);
 
 /// Page 009 — الشروط والأحكام · Terms & conditions. The KSA-Project Figma
-/// design (node 505:1553 — D-367): navy surface + sweep, custom header, the
-/// معلومات هامة لزوار الملتقى heading, the terms rendered as gold-hairline
-/// bullet cards, and (consent mode) the gold موافق button. The previous
+/// design (node 505:1553 — D-367, fidelity pass D-375): navy surface + sweep,
+/// custom header, the معلومات هامة لزوار الملتقى heading, the terms rendered
+/// as gold-hairline bullet cards, and the gold موافق button — per the frame
+/// the button always shows and there is no last-updated line. The previous
 /// screen is parked in `_legacy_mockup/`.
 ///
 /// Contract: a read-only view over the anonymous `GET /app/content/terms`.
-/// Two modes (Page_009 L-2): standalone read (no gate) and in-flow consent —
-/// per the design the interim checkbox is gone and the explicit **موافق** tap
-/// IS the consent (still client-side only, D8 — control returns to the caller
-/// via `pop(true)`; the back chevron declines via `pop(false)`). Each
-/// non-empty line of the server body renders as one bullet card; a 404 is the
-/// empty state, transport/5xx is the error state with retry (L-6). Guest+.
+/// Two modes (Page_009 L-2): standalone read (موافق simply leaves the page)
+/// and in-flow consent — per the design the interim checkbox is gone and the
+/// explicit **موافق** tap IS the consent (still client-side only, D8 —
+/// control returns to the caller via `pop(true)`; the back chevron declines
+/// via `pop(false)`). Each non-empty line of the server body renders as one
+/// bullet card; a 404 is the empty state, transport/5xx is the error state
+/// with retry (L-6). Guest+.
 class TermsScreen extends ConsumerStatefulWidget {
   const TermsScreen({super.key, this.requireConsent = false});
 
@@ -80,8 +82,9 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
 
   void _accept() {
     // Client-side consent only (D8) — hand control back to the calling flow.
+    // Standalone (no gate): موافق simply leaves the page, same as the chevron.
     if (context.canPop()) {
-      context.pop(true);
+      context.pop(widget.requireConsent ? true : null);
     } else {
       context.go('/');
     }
@@ -209,21 +212,6 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
                       ),
                     ),
                   ),
-                  if (block.lastUpdatedAt != null) ...<Widget>[
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: Text(
-                        l10n.termsLastUpdated(
-                          _formatDate(block.lastUpdatedAt!),
-                        ),
-                        style: const TextStyle(
-                          color: SimfTokens.txtTertiary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
                   const SizedBox(height: 16),
                   for (final item in items) ...<Widget>[
                     _BulletCard(text: item),
@@ -235,23 +223,24 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
             ),
           ),
         ),
-        if (widget.requireConsent)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _accept,
-                child: Text(
-                  l10n.termsAcceptButton,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
+        // The frame shows موافق unconditionally (505:1684); standalone it
+        // simply leaves the page, in consent mode it returns true (D-375).
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _accept,
+              child: Text(
+                l10n.termsAcceptButton,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
           ),
+        ),
       ],
     );
   }
@@ -279,13 +268,6 @@ class _TermsScreenState extends ConsumerState<TermsScreen> {
     );
   }
 
-  static String _formatDate(DateTime date) {
-    final local = date.toLocal();
-    final year = local.year.toString().padLeft(4, '0');
-    final month = local.month.toString().padLeft(2, '0');
-    final day = local.day.toString().padLeft(2, '0');
-    return '$year-$month-$day';
-  }
 }
 
 /// One gold-hairline bullet card (Figma 505:1639): the gold • at the inline
@@ -300,7 +282,9 @@ class _BulletCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        border: Border.all(color: SimfTokens.accent, width: 0.4),
+        // The frame's hairline (505:1639 — 0.2px); kept ≥0.2 so it still
+        // rasterises on every phone density.
+        border: Border.all(color: SimfTokens.accent, width: 0.2),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(

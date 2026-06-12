@@ -175,13 +175,32 @@ Scenario: An anonymous open is impossible
 
 **Evidence:** `router_gate_test` — `routePathRequiresAuth('/sign-up/visitor')` is true.
 
-### E2E-MOB007-010 — Empty lookup is not an error
+### E2E-MOB007-010 — Lookup fetch states are always visible (D-375)
 
 ```gherkin
 Scenario: A lookup that returns no rows shows an empty state
   Given the profile-types (or organisation) lookup returns []
   Then that picker shows its empty state (not a blocking error)
+
+Scenario: A profile-types lookup in flight shows loading, a failure shows retry
+  Given the user switches نوع التسجيل to "أخرى" (Other)
+  Then while GET /app/account/profile-types?isVisitor=false is in flight the
+       التصنيف field shows a loading spinner (never a blank gap)
+  When the lookup fails (network / 5xx)
+  Then the field stays visible with the bilingual "Could not load the list."
+       message and an inline Retry button
+  And tapping Retry re-runs the lookup and, on success, renders the dropdown
+       with the partner types (Media / Sponsor / Staff)
+
+Scenario: An organisation search failure is not dressed as "no matches"
+  Given the user has typed in the الجهة / المنظمة typeahead
+  Then while the search is in flight a small spinner row shows
+  And a failed search shows "Could not load the list." + Retry —
+       "no matches" only ever describes a completed empty search
 ```
+
+**Evidence:** `sign_up_visitor_screen_test` — "a failed Other profile-types
+lookup shows the inline retry — never a silently hidden picker (D-375)".
 
 ### E2E-MOB007-011 — RTL render (Arabic)
 

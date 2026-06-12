@@ -88,6 +88,14 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   List<ProfileTypeItem> _profileTypes = const <ProfileTypeItem>[];
   List<OrganisationItem> _organisationResults = const <OrganisationItem>[];
 
+  // D-375 — API-fed pickers always surface their fetch state (owner rule:
+  // every dropdown loaded from the API shows loading, and a failure is a
+  // visible retry — never a silently missing/empty control).
+  bool _profileTypesLoading = false;
+  bool _profileTypesFailed = false;
+  bool _organisationSearching = false;
+  bool _organisationSearchFailed = false;
+
   Timer? _organisationDebounce;
   Uint8List? _idImageBytes;
   // C7 (D-371) — true when the server already stores an image for this
@@ -237,18 +245,36 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
       _profileTypeId = null;
       _profileTypes = const <ProfileTypeItem>[];
     });
+    await _fetchProfileTypes();
+  }
+
+  /// D-375 — the picker fetch with a visible state machine: loading spinner
+  /// while in flight, inline retry on failure. Pre-D-375 a failure here
+  /// silently hid the التصنيف field (the owner-reported "removed list").
+  Future<void> _fetchProfileTypes() async {
+    setState(() {
+      _profileTypesLoading = true;
+      _profileTypesFailed = false;
+    });
     final repo = ref.read(profileRepositoryProvider);
     try {
-      final types = await repo.getProfileTypes(isVisitor: isVisitor);
+      final types = await repo.getProfileTypes(isVisitor: _isVisitorType);
       if (!mounted) {
         return;
       }
       setState(() {
         _profileTypes = types;
+        _profileTypesLoading = false;
         _lockVisitorProfileType();
       });
     } on ApiFailure {
-      // Non-blocking — the picker just stays empty until a retry.
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _profileTypesLoading = false;
+        _profileTypesFailed = true;
+      });
     }
   }
 
@@ -263,15 +289,31 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }
 
   Future<void> _runOrganisationSearch(String value) async {
+    // D-375 — the typeahead surfaces its fetch state: a spinner while in
+    // flight and a visible retry on failure (a failed search previously
+    // read as "no matches", which is misleading).
+    setState(() {
+      _organisationSearching = true;
+      _organisationSearchFailed = false;
+    });
     final repo = ref.read(profileRepositoryProvider);
     try {
       final results = await repo.searchOrganisations(search: value, top: 20);
       if (!mounted) {
         return;
       }
-      setState(() => _organisationResults = results);
+      setState(() {
+        _organisationResults = results;
+        _organisationSearching = false;
+      });
     } on ApiFailure {
-      // A typeahead failure is non-blocking; keep the last results.
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _organisationSearching = false;
+        _organisationSearchFailed = true;
+      });
     }
   }
 
@@ -802,8 +844,71 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     if (_isVisitorType) {
       return const SizedBox.shrink();
     }
-    if (_profileTypes.isEmpty) {
-      return const SizedBox.shrink();
+    // D-375 — under "Other" the field is ALWAYS visible: loading, inline
+    // retry on failure/empty, or the loaded dropdown. Never silently hidden.
+    if (_profileTypesLoading) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          _FieldLabel(l10n.profileTypeLabel),
+          const SizedBox(height: 8),
+          InputDecorator(
+            decoration: _fieldDecoration(),
+            child: Row(
+              children: <Widget>[
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: SimfTokens.accent,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  l10n.loadingLabel,
+                  style: const TextStyle(
+                    color: SimfTokens.greyText,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+    if (_profileTypesFailed || _profileTypes.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          _FieldLabel(l10n.profileTypeLabel),
+          const SizedBox(height: 8),
+          InputDecorator(
+            decoration: _fieldDecoration(),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    l10n.lookupLoadError,
+                    style: const TextStyle(
+                      color: SimfTokens.danger,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  key: const ValueKey<String>('profileTypeRetry'),
+                  onPressed: () => unawaited(_fetchProfileTypes()),
+                  style:
+                      TextButton.styleFrom(foregroundColor: SimfTokens.accent),
+                  child: Text(l10n.retryLabel),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1199,7 +1304,57 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         ),
         if (_organisationSearch.text.trim().isNotEmpty) ...<Widget>[
           const SizedBox(height: 8),
-          if (_organisationResults.isEmpty)
+          // D-375 — fetch state first: spinner while searching, retry on
+          // failure; "no matches" only describes a COMPLETED empty search.
+          if (_organisationSearching)
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                children: <Widget>[
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: SimfTokens.accent,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    l10n.loadingLabel,
+                    style: const TextStyle(color: SimfTokens.greyText),
+                  ),
+                ],
+              ),
+            )
+          else if (_organisationSearchFailed)
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      l10n.lookupLoadError,
+                      style: const TextStyle(
+                        color: SimfTokens.danger,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    key: const ValueKey<String>('organisationRetry'),
+                    onPressed: () => unawaited(
+                      _runOrganisationSearch(_organisationSearch.text.trim()),
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: SimfTokens.accent,
+                    ),
+                    child: Text(l10n.retryLabel),
+                  ),
+                ],
+              ),
+            )
+          else if (_organisationResults.isEmpty)
             Padding(
               padding: const EdgeInsets.all(8),
               child: Text(

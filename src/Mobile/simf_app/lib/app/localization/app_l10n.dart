@@ -42,6 +42,8 @@ class AppL10n {
   String get cancelLabel => _t('إلغاء', 'Cancel');
   String get retryLabel => _t('إعادة المحاولة', 'Retry');
   String get loadingLabel => _t('جارٍ التحميل…', 'Loading…');
+  String get lookupLoadError =>
+      _t('تعذر تحميل القائمة.', 'Could not load the list.');
   String get errorTitle => _t('حدث خطأ', 'Something went wrong');
   String get networkErrorBody => _t(
         'تعذر الاتصال بالخادم. تحقق من الاتصال بالإنترنت وحاول مرة أخرى.',

@@ -63,13 +63,17 @@ ContentBlock _block() => ContentBlock(
 
 void main() {
   group('TermsScreen (Page 009)', () {
-    testWidgets('standalone mode renders the body + last-updated, no gate',
+    testWidgets(
+        'standalone mode renders the body, no last-updated line, and the '
+        'always-visible Agree button (D-375 — frame 505:1553)',
         (tester) async {
       await _pump(tester, _FakeContentRepository(block: _block()));
 
       expect(find.byType(SelectableText), findsOneWidget);
-      expect(find.text('Last updated · 2026-09-01'), findsOneWidget);
+      expect(find.text('Last updated · 2026-09-01'), findsNothing);
       expect(find.text('I accept the terms and conditions'), findsNothing);
+      final agree = find.widgetWithText(FilledButton, 'Agree');
+      expect(tester.widget<FilledButton>(agree).onPressed, isNotNull);
     });
 
     testWidgets(
