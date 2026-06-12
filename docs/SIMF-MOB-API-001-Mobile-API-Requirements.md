@@ -111,7 +111,7 @@ these under one App-auth tag (tracked as a §5 cleanup item, no behaviour change
 | `signUpForm` | `POST /auth/sign-up` | Anonymous | Create account (email + password + confirm). |
 | `emailOtp` | `POST /auth/verify-email` | Anonymous | Verify the email with the emailed code. |
 | `emailOtp` | `POST /auth/resend-code` | Anonymous | Resend the verification / OTP code. |
-| `registrationStatus` | `GET /app/users/me` **(BUILT — D-249)** | Signed-in (incl. pending) | `{id,email,displayName,appRole,preferredLanguage,registrationStatus,avatarUrl}`; pending/approved/rejected drives routing — full contract in [`Page_011_API.md`](App/Page_011/Page_011_API.md). |
+| `registrationStatus` | `GET /app/users/me` **(BUILT — D-249; +`profileComplete` D-374)** | Signed-in (incl. pending) | `{id,email,displayName,appRole,preferredLanguage,registrationStatus,avatarUrl,profileComplete}`; pending/approved/rejected drives routing — full contract in [`Page_011_API.md`](App/Page_011/Page_011_API.md). `profileComplete` is server-computed (names + ≥1 interest + male→ID-photo) and drives the app's add-profile-first route after sign-in / the 2FA OTP step (D-374). |
 
 > Sign-up's profile + interests steps (mockup `signUpVisitor` / `signUpExhibitor`)
 > call **Account** endpoints (`/account/*`), catalogued in §6, not §5.

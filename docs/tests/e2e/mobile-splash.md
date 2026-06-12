@@ -88,10 +88,12 @@ Scenario: A valid cached session lands on Home
   When the app cold-starts
   Then the session is restored
   And GET /api/v1/app/users/me is called to refresh the authoritative privilege
-  And the app routes to Home (#13 /) when no resumable screen is saved
+  And when the hydrated profileComplete flag is false the app routes to the
+      Page_007 profile form instead — even over a saved route (D-374)
+  And the app routes to Home (#13 /) when complete and no resumable screen is saved
 ```
 
-**Evidence:** `auth_controller_restore_test` — "a valid cached token restores, then hydrates the real privilege".
+**Evidence:** `auth_controller_restore_test` — "a valid cached token restores, then hydrates the real privilege"; `splash_controller_test` — "a signed-in user with an incomplete profile is gated to the profile form, even over a saved route (D-374)".
 
 ### E2E-MOB001-004 — Expired access token triggers silent refresh
 

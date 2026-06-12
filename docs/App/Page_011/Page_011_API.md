@@ -30,7 +30,10 @@ status-mapping and state rules are in [Page_011_Logic.md](Page_011_Logic.md).
   "appRole":            "string",   // "Visitor" | "Staff" | "Moderator" (name form)
   "preferredLanguage":  "string",   // "ar" | "en"  (server default "ar" today)
   "registrationStatus": "string",   // "Approved" | "Pending" | "Rejected"  ← drives this screen
-  "avatarUrl":          "string?"   // avatar image URL, null if none
+  "avatarUrl":          "string?",  // avatar image URL, null if none
+  "profileComplete":    "bool"      // D-374 — server-computed (names + ≥1 interest +
+                                    // male→ID-photo, C7); drives the post-sign-in
+                                    // add-profile-first route (Page_007)
 }
 ```
 
@@ -62,7 +65,8 @@ floor — so an authenticated user is never read back as `Guest`.
     "appRole": "Visitor",
     "preferredLanguage": "ar",
     "registrationStatus": "Pending",
-    "avatarUrl": null
+    "avatarUrl": null,
+    "profileComplete": false
   },
   "error": null
 }

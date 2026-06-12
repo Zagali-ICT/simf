@@ -43,7 +43,7 @@
 | E2E-MOB003-010 | Network / 500 → non-blocking error; fields preserved; no token mutation | resilience | P1 | authored (error surface) |
 | E2E-MOB003-011 | RTL render (Arabic) — fields, errors, links mirror; email stays LTR | i18n | P1 | authored (screen) |
 | E2E-MOB003-012 | Biometric (device-key) re-open | happy | P0 | authored ✓ (Dart client + controller tests; **.NET↔Dart interop proven by backend golden-vector test, D-266**; on-device prompt → simf-run) |
-| E2E-MOB003-013 | Signed-in → profile-incomplete routes to Page_007 (`/sign-up/visitor`); complete → Home; probe failure → Home | happy | P0 | authored ✓ (widget test) |
+| E2E-MOB003-013 | Signed-in → server `profileComplete=false` routes to Page_007 (`/sign-up/visitor`); true → Home (D-374, both auth paths) | happy | P0 | authored ✓ (widget + API tests) |
 | E2E-MOB003-014 | "Browse without signing in" → guest landing (Page 012) → public Home, no token (D-325) | happy | P1 | authored ✓ (widget test) |
 | E2E-MOB003-015 | Remember-me unchecked → the email is NOT stored for the next prefill (D-360) | edge | P1 | authored ✓ (widget test) |
 | E2E-MOB003-016 | Globe button toggles AR ↔ EN and persists the preference (D-363) | happy | P1 | authored ✓ (widget test) |
@@ -89,7 +89,8 @@ Scenario: A 2FA visitor completes the email OTP
   And the app routes to the email-OTP screen
   When they enter the code emailed to them
   Then the app calls POST /app/auth/verify-otp and receives tokens
-  And routes to Home
+  And routes by the profileComplete flag — Home when complete, the Page_007
+      profile form when not (same rule as the password path, D-374)
 ```
 
 **Evidence:** `sign_in_screen_test` (routes to OTP); `auth_controller_signin_test` ("email-OTP (2FA) hydrates the real app-role").
@@ -122,6 +123,7 @@ Scenario: Request a reset code
   When the user enters their email on Forgot password and taps Send code
   Then the app calls POST /app/auth/forgot-password
   And (enumeration-resistant) the app always proceeds to the reset screen with the email carried forward
+  And the screen renders on the KSA entry chrome (navy + beige card, same as sign-in — D-374)
 ```
 
 ### E2E-MOB003-008 — Reset password
@@ -133,6 +135,7 @@ Scenario: Reset with the emailed code
   Then the app calls POST /app/auth/reset-password
   And on success returns to /sign-in with the email pre-filled
   And a mismatched confirmation is blocked client-side before any call
+  And the screen renders on the KSA entry chrome (navy + beige card, same as sign-in — D-374)
 ```
 
 ### E2E-MOB003-012 — Biometric re-open (pending)
@@ -158,21 +161,23 @@ Scenario: Face/biometric re-open within the window
 > Info.plist / MainActivity) + a secure-enclave key — the on-device biometric
 > prompt — land in simf-run, where android/ios exist.
 
-### E2E-MOB003-013 — Profile-completion auto-route (D-288)
+### E2E-MOB003-013 — Profile-completion auto-route (D-288, reworked D-374)
 
 ```gherkin
 Scenario: A signed-in visitor with an incomplete profile is sent to complete it
-  Given a visitor signs in successfully (password or device-key)
-  When the app probes GET /app/account/user-profile once
-  Then if the profile is incomplete (no Arabic/English name or no interests) it
-       routes to the visitor profile-completion screen (Page_007, /sign-up/visitor)
-  And if the profile is complete it routes Home (#13)
-  And if the probe fails (network / 5xx) it falls back Home — sign-in is never blocked
+  Given a visitor completes sign-in (password, device-key, or the 2FA OTP step)
+  Then the server-computed profileComplete flag on the session user decides the route
+       (GET /app/users/me hydration — names + ≥1 interest + male→ID-photo)
+  And if profileComplete is false it routes to the visitor profile-completion
+       screen (Page_007, /sign-up/visitor)
+  And if profileComplete is true it routes Home (#13)
+  And no extra client-side profile probe is made (the old GET user-profile probe is gone)
 ```
 
 **Evidence:** `sign_in_screen_test` — "successful sign-in with a complete profile
 routes home and stores the email" + "successful sign-in with an incomplete profile
-routes to the visitor profile screen (Page_007 auto-route)".
+routes to the visitor profile screen (Page_007 auto-route)"; server flag:
+`SIMF.Api.Tests/UserProfileTests.Me_profileComplete_*`.
 
 ### E2E-MOB003-014 — Browse without signing in (guest entry, D-325)
 
