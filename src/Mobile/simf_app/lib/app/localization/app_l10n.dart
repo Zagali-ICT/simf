@@ -506,6 +506,7 @@ class AppL10n {
       _t('مسجّل في $count جلسات', 'Enrolled in $count sessions');
   String get shareLabel => _t('مشاركة', 'Share');
   String get shareContact => _t('مشاركة جهة اتصال', 'Share contact');
+  String get shareMyProfile => _t('مشاركة ملفي', 'Share my profile');
   String get shareCalendar => _t('مشاركة جدولي', 'Share my calendar');
   String get shareFailed =>
       _t('تعذّرت المشاركة. حاول مرة أخرى.', 'Could not share. Try again.');

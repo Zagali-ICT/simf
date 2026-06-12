@@ -3,12 +3,20 @@
 > **Authority:** SIMF E2E test catalogue template (D-133 slice 7). Mobile
 > catalogue — the App API endpoints are built (D-249); the API implementation
 > lives in `tests/SIMF.Api.Tests/MyAreaDashboardTests.cs`.
-> The **Flutter screen is built** (D-297) and widget-tested in
+> The **Flutter screen is built** (D-297) and was **rebuilt to KSA Wave-2
+> frame 512:1780 "منطقتي"** (D-378 batch): identity card (avatar + tier ·
+> enrolled line + gold #qrId + bordered مشاركة button), the 2×3 tile grid —
+> wired **العربية • English** language toggle, **disabled المظهر theme tile**
+> (no light theme yet, owner decision), **مشاركة ملفي** → the share-my-contact
+> QR screen, **مشاركة جهة اتصال** (.vcf), the two API stat tiles — then
+> جدولي اليوم rows and المزيد rows (smart badge, settings + the
+> function-preserving calendar-export and sign-out rows). Widget tests in
 > `src/Mobile/simf_app/test/features/myarea/my_area_screen_test.dart` (approved
-> card+counters+schedule, empty schedule, pending→limited card with no dashboard
-> call, 403→limited, error→retry→refetch, session-row→detail, RTL); the dashboard
-> parser is covered in
-> `src/Mobile/simf_app/test/features/myarea/myarea_models_test.dart`.
+> card+tiles+stats+schedule, disabled theme tile, share-my-profile nav, empty
+> schedule, pending→limited card with no dashboard call, 403→limited,
+> error→retry→refetch, session-row→detail, RTL); the dashboard parser is
+> covered in `src/Mobile/simf_app/test/features/myarea/myarea_models_test.dart`.
+> The old mockup screen + test are parked in `_legacy_mockup/`.
 
 | | |
 |--|--|
@@ -31,6 +39,8 @@
 | E2E-MOB014-006 | No token → 401 | auth | P0 | authored ✓ (`Dashboard_without_a_token_returns_401`) |
 | E2E-MOB014-007 | Not-yet-approved account → 403 (RequireApprovedAccount) | auth | P0 | authored ✓ (`Dashboard_for_a_not_yet_approved_account_is_forbidden`) |
 | E2E-MOB014-008 | RTL render of card + counters + Arabic tier/hall labels | i18n | P1 | authored ✓ (screen — Arabic RTL + pending/403 limited card + session-row nav) |
+| E2E-MOB014-009 | KSA layout: language tile toggles AR/EN; theme tile visible but disabled | happy | P1 | authored ✓ (screen — disabled palette + no tap) |
+| E2E-MOB014-010 | مشاركة ملفي opens the share-my-contact QR screen | happy | P2 | authored ✓ (screen) |
 
 ## Scenarios
 

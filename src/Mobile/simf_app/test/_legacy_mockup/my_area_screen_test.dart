@@ -5,11 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
-import 'package:simf_app/app/theme/tokens.dart';
-import 'package:simf_app/app/widgets/ksa_shell.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
-import 'package:simf_app/features/myarea/my_area_screen.dart';
+import 'package:simf_app/features/_legacy_mockup/my_area_screen.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -110,20 +108,16 @@ Future<void> _pump(
         builder: (c, s) =>
             Scaffold(body: Text('SESSION ${s.pathParameters['sessionId']}')),
       ),
-      for (final (name, path, label) in <(String, String, String)>[
-        (RouteNames.badge, '/badge', 'BADGE'),
-        (RouteNames.more, '/more', 'MORE'),
-        (RouteNames.shareMyContact, '/contacts/share', 'SHARE-MY-CONTACT'),
-        (RouteNames.home, '/', 'HOME'),
-        (RouteNames.sessions, '/sessions', 'SESSIONS'),
-        (RouteNames.venueMap, '/map', 'MAP'),
-        (RouteNames.signIn, '/sign-in', 'SIGN-IN'),
-      ])
-        GoRoute(
-          name: name,
-          path: path,
-          builder: (c, s) => Scaffold(body: Text(label)),
-        ),
+      GoRoute(
+        name: RouteNames.badge,
+        path: '/badge',
+        builder: (c, s) => const Scaffold(body: Text('BADGE')),
+      ),
+      GoRoute(
+        name: RouteNames.more,
+        path: '/more',
+        builder: (c, s) => const Scaffold(body: Text('MORE')),
+      ),
     ],
   );
 
@@ -149,19 +143,10 @@ Future<void> _pump(
   await tester.pumpAndSettle();
 }
 
-Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
-  await tester.scrollUntilVisible(
-    finder,
-    120,
-    scrollable: find.byType(Scrollable).first,
-  );
-  await tester.pumpAndSettle();
-}
-
 void main() {
-  group('MyAreaScreen (Page 014 — KSA frame 512:1780)', () {
-    testWidgets('approved visitor sees the identity card, tiles, stats and '
-        'schedule', (tester) async {
+  group('MyAreaScreen (Page 014)', () {
+    testWidgets('approved visitor sees the card, counters and schedule',
+        (tester) async {
       await _pump(
         tester,
         controller: _AuthController(RegistrationStatus.approved),
@@ -169,55 +154,11 @@ void main() {
       );
 
       expect(find.text('Raed Al-Salem'), findsOneWidget);
-      expect(find.text('#ABC123'), findsOneWidget);
-      expect(find.textContaining('VIP'), findsOneWidget);
-      expect(find.text('العربية · English'), findsOneWidget);
-      expect(find.text('Share my profile'), findsOneWidget);
-      expect(find.text('Share contact'), findsOneWidget);
       expect(find.text('6'), findsOneWidget); // booked-sessions stat
       expect(find.text('3'), findsOneWidget); // meetings stat
-      await _scrollTo(tester, find.text('Opening'));
-      expect(find.text('Opening'), findsOneWidget);
-      await _scrollTo(tester, find.text('My smart badge'));
+      expect(find.text('Opening'), findsOneWidget); // schedule row
+      expect(find.text('Share contact'), findsOneWidget);
       expect(find.text('My smart badge'), findsOneWidget);
-      await _scrollTo(tester, find.text('Sign out'));
-      expect(find.text('Sign out'), findsOneWidget);
-    });
-
-    testWidgets('the theme tile renders disabled (no light theme yet)',
-        (tester) async {
-      await _pump(
-        tester,
-        controller: _AuthController(RegistrationStatus.approved),
-        repo: _FakeMyAreaRepository(dashboard: _dashboard()),
-      );
-
-      final tile = tester.widget<KsaNavTile>(
-        find.widgetWithText(KsaNavTile, 'Light / dark mode'),
-      );
-      expect(tile.enabled, isFalse);
-      final material = tester.widget<Material>(
-        find
-            .ancestor(
-              of: find.text('Light / dark mode'),
-              matching: find.byType(Material),
-            )
-            .first,
-      );
-      expect(material.color, SimfTokens.navyDisabled);
-    });
-
-    testWidgets('the share-my-profile tile opens the contact-QR screen',
-        (tester) async {
-      await _pump(
-        tester,
-        controller: _AuthController(RegistrationStatus.approved),
-        repo: _FakeMyAreaRepository(dashboard: _dashboard()),
-      );
-
-      await tester.tap(find.text('Share my profile'));
-      await tester.pumpAndSettle();
-      expect(find.text('SHARE-MY-CONTACT'), findsOneWidget);
     });
 
     testWidgets('empty schedule shows the no-items placeholder',
@@ -230,7 +171,6 @@ void main() {
         ),
       );
 
-      await _scrollTo(tester, find.text('No items today'));
       expect(find.text('No items today'), findsOneWidget);
     });
 
@@ -245,7 +185,10 @@ void main() {
 
       expect(repo.dashboardCalls, 0); // approved-only endpoint not called (L-5)
       expect(find.text('Raed Al-Salem'), findsOneWidget); // cached name
-      expect(find.textContaining('under review'), findsOneWidget);
+      expect(
+        find.textContaining('under review'),
+        findsOneWidget,
+      );
       expect(find.text('6'), findsNothing); // counters hidden
       expect(find.text('My smart badge'), findsNothing);
     });
@@ -290,8 +233,10 @@ void main() {
         repo: _FakeMyAreaRepository(dashboard: _dashboard()),
       );
 
-      await _scrollTo(tester, find.text('Opening'));
-      await tester.tap(find.text('Opening'));
+      final row = find.text('Opening');
+      await tester.ensureVisible(row);
+      await tester.pumpAndSettle();
+      await tester.tap(row);
       await tester.pumpAndSettle();
       expect(find.text('SESSION s1'), findsOneWidget);
     });
@@ -305,7 +250,6 @@ void main() {
       );
 
       expect(find.text('منطقتي'), findsWidgets);
-      await _scrollTo(tester, find.text('الافتتاح'));
       expect(
         Directionality.of(tester.element(find.text('الافتتاح'))),
         TextDirection.rtl,

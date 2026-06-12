@@ -3,26 +3,38 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
+import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
+import '../../app/widgets/simf_bottom_nav.dart';
 import '../../core/sharing/content_sharer.dart';
 import 'data/myarea_models.dart';
 import 'data/myarea_repository.dart';
 
-/// Page 014 — منطقتي · My Area (personal dashboard, #14, `/my-area`).
+/// Page 014 — منطقتي · My Area (#14, `/my-area`), rebuilt to the KSA Wave-2
+/// frame **512:1780 "My Place"** (owner-picked over 213:963) on the shared
+/// shell.
 ///
-/// A signed-in attendee's hub: identity card, two counters, today's merged
-/// schedule, and share actions. An **Approved** user loads
-/// `GET /app/account/dashboard`; a signed-in **pending/rejected** user (effective
-/// Guest) gets the limited card from the cached identity **without** calling the
-/// dashboard (it is Approved-only and would 403 — Page_014 L-5). Share fetches the
-/// raw `.vcf`/`.ics` exports and hands them to the native share sheet. The UI is
-/// interim; the final visuals come from SIMF-VID-001.
+/// Behaviour contract unchanged from the mockup build: an **Approved** user
+/// loads `GET /app/account/dashboard`; a signed-in pending/rejected user gets
+/// the limited cached-identity view without calling it (Approved-only, would
+/// 403 — Page_014 L-5); share actions fetch the raw `.vcf`/`.ics` exports for
+/// the native share sheet; sign-out (D-373) confirms then revokes.
+///
+/// Frame mapping: identity card (avatar 64 + name + tier·enrolled line +
+/// gold #qrId + the bordered مشاركة contact button), the 2×3 tile grid —
+/// **العربية • English** (wired language toggle) / **المظهر • ليلي/نهاري**
+/// (visible but DISABLED — no light theme exists, owner decision) /
+/// **مشاركة ملفي** (→ the share-my-contact QR screen) / **مشاركة جهة اتصال**
+/// (.vcf share) / the two API counters — then جدولي اليوم rows and the
+/// المزيد rows (بطاقتي الذكية، اعدادات الحساب + the function-preserving
+/// مشاركة جدولي and تسجيل الخروج rows the frame's list does not show).
 class MyAreaScreen extends ConsumerStatefulWidget {
   const MyAreaScreen({super.key});
 
@@ -116,175 +128,12 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.myAreaTitle)),
-      body: SafeArea(child: _buildBody(l10n)),
-    );
-  }
-
-  Widget _buildBody(AppL10n l10n) {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_error) {
-      return _buildErrorState(l10n);
-    }
-    final dashboard = _dashboard;
-    if (dashboard == null) {
-      return _buildLimited(l10n);
-    }
-    return _buildDashboard(l10n, dashboard);
-  }
-
-  Widget _buildErrorState(AppL10n l10n) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(l10n.myAreaError, textAlign: TextAlign.center),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(
-              onPressed: () => unawaited(_load()),
-              child: Text(l10n.retryLabel),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// The signed-in-but-pending view: the identity card from the cached account
-  /// plus an under-review note. No counters / schedule / badge / share (L-5).
-  Widget _buildLimited(AppL10n l10n) {
-    final user = _currentUser;
-    final name = user?.displayName ?? '';
-    return ListView(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      children: <Widget>[
-        _ProfileCard(name: name, line: l10n.myAreaPendingNote),
-        const SizedBox(height: SimfTokens.space4),
-        _UtilityLink(
-          label: l10n.accountSettingsLink,
-          icon: Icons.settings_outlined,
-          onTap: () => context.pushNamed(RouteNames.more),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDashboard(AppL10n l10n, MyAreaDashboard dashboard) {
-    final isArabic = l10n.isArabic;
-    final identity = dashboard.identity;
-    final tier = identity.localizedTier(isArabic);
-    final enrolled = l10n.enrolledInSessions(dashboard.counters.bookedSessionsCount);
-    final subtitle = tier == null ? enrolled : '$tier · $enrolled';
-
-    return ListView(
-      padding: const EdgeInsets.all(SimfTokens.space4),
-      children: <Widget>[
-        _ProfileCard(
-          name: identity.localizedName(isArabic),
-          line: subtitle,
-          reference: identity.qrId == null ? null : '#${identity.qrId}',
-          onShare: () => unawaited(_shareContact()),
-          shareTooltip: l10n.shareLabel,
-        ),
-        const SizedBox(height: SimfTokens.space3),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: _ActionTile(
-                label: l10n.shareContact,
-                icon: Icons.contact_page_outlined,
-                onTap: () => unawaited(_shareContact()),
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space3),
-            Expanded(
-              child: _ActionTile(
-                label: l10n.shareCalendar,
-                icon: Icons.event_available_outlined,
-                onTap: () => unawaited(_shareCalendar()),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: SimfTokens.space3),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: _StatTile(
-                value: dashboard.counters.bookedSessionsCount,
-                label: l10n.statBookedSessions,
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space3),
-            Expanded(
-              child: _StatTile(
-                value: dashboard.counters.meetingsCount,
-                label: l10n.statMeetings,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: SimfTokens.space5),
-        Text(
-          l10n.todayScheduleTitle,
-          style: const TextStyle(
-            color: SimfTokens.txtTertiary,
-            fontWeight: FontWeight.w700,
-            fontSize: SimfTokens.textXs,
-            letterSpacing: 0.8,
-          ),
-        ),
-        const SizedBox(height: SimfTokens.space2),
-        if (dashboard.todaySchedule.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: SimfTokens.space4),
-            child: Text(
-              l10n.scheduleEmpty,
-              style: const TextStyle(color: SimfTokens.txtSecondary),
-            ),
-          )
-        else
-          for (final item in dashboard.todaySchedule)
-            _ScheduleRow(
-              item: item,
-              isArabic: isArabic,
-              onTap: item.isSession && item.sessionId != null
-                  ? () => context.pushNamed(
-                        RouteNames.sessionDetail,
-                        pathParameters: <String, String>{
-                          'sessionId': item.sessionId!,
-                        },
-                      )
-                  : null,
-            ),
-        const SizedBox(height: SimfTokens.space5),
-        _UtilityLink(
-          label: l10n.smartBadgeLink,
-          icon: Icons.qr_code_2_outlined,
-          onTap: () => context.pushNamed(RouteNames.badge),
-        ),
-        const SizedBox(height: SimfTokens.space2),
-        _UtilityLink(
-          label: l10n.accountSettingsLink,
-          icon: Icons.settings_outlined,
-          onTap: () => context.pushNamed(RouteNames.more),
-        ),
-        const SizedBox(height: SimfTokens.space2),
-        // D-373 — sign-out lives on the profile menu (owner-reported gap).
-        _UtilityLink(
-          label: l10n.signOutLink,
-          icon: Icons.logout,
-          onTap: () => unawaited(_confirmSignOut(l10n)),
-        ),
-      ],
+  void _toggleLanguage() {
+    final isArabic = ref.read(localeControllerProvider).languageCode == 'ar';
+    unawaited(
+      ref
+          .read(localeControllerProvider.notifier)
+          .setLanguage(isArabic ? 'en' : 'ar'),
     );
   }
 
@@ -316,220 +165,334 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
       context.goNamed(RouteNames.signIn);
     }
   }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppL10n.of(context);
+    return KsaPage(
+      title: l10n.myAreaTitle,
+      onBack: () =>
+          context.canPop() ? context.pop() : context.goNamed(RouteNames.home),
+      tab: SimfTab.profile,
+      showSweep: true,
+      body: _buildBody(l10n),
+    );
+  }
+
+  Widget _buildBody(AppL10n l10n) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error) {
+      return _buildErrorState(l10n);
+    }
+    final dashboard = _dashboard;
+    if (dashboard == null) {
+      return _buildLimited(l10n);
+    }
+    return _buildDashboard(l10n, dashboard);
+  }
+
+  Widget _buildErrorState(AppL10n l10n) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              l10n.myAreaError,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white),
+            ),
+            const SizedBox(height: SimfTokens.space4),
+            FilledButton(
+              onPressed: () => unawaited(_load()),
+              child: Text(l10n.retryLabel),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The signed-in-but-pending view: the identity card from the cached account
+  /// plus an under-review note. No counters / schedule / badge / share (L-5).
+  Widget _buildLimited(AppL10n l10n) {
+    final user = _currentUser;
+    final name = user?.displayName ?? '';
+    return ListView(
+      padding: const EdgeInsets.all(SimfTokens.space4),
+      children: <Widget>[
+        _IdentityCard(name: name, line: l10n.myAreaPendingNote),
+        const SizedBox(height: SimfTokens.space4),
+        _MoreRow(
+          label: l10n.accountSettingsLink,
+          onTap: () => context.pushNamed(RouteNames.more),
+        ),
+        const SizedBox(height: SimfTokens.space4),
+        _MoreRow(
+          label: l10n.signOutLink,
+          onTap: () => unawaited(_confirmSignOut(l10n)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDashboard(AppL10n l10n, MyAreaDashboard dashboard) {
+    final isArabic = l10n.isArabic;
+    final identity = dashboard.identity;
+    final tier = identity.localizedTier(isArabic);
+    final enrolled =
+        l10n.enrolledInSessions(dashboard.counters.bookedSessionsCount);
+    final subtitle = tier == null ? enrolled : '$tier · $enrolled';
+
+    return ListView(
+      padding: const EdgeInsets.all(SimfTokens.space4),
+      children: <Widget>[
+        _IdentityCard(
+          name: identity.localizedName(isArabic),
+          line: subtitle,
+          reference: identity.qrId == null ? null : '#${identity.qrId}',
+          avatarUrl: identity.avatarUrl,
+          shareLabel: l10n.shareLabel,
+          onShare: () => unawaited(_shareContact()),
+        ),
+        const SizedBox(height: SimfTokens.space4),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: KsaNavTile(
+                label: l10n.languageToggleLabel,
+                icon: Icons.language,
+                onTap: _toggleLanguage,
+              ),
+            ),
+            const SizedBox(width: SimfTokens.space2),
+            // Visible but disabled — the app has no light theme yet (owner
+            // decision: keep the frame's tile as a locked control).
+            Expanded(
+              child: KsaNavTile(
+                label: l10n.themeToggleTooltip,
+                icon: Icons.dark_mode_outlined,
+                enabled: false,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: SimfTokens.space2),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: KsaNavTile(
+                label: l10n.shareMyProfile,
+                icon: Icons.person_pin_outlined,
+                onTap: () => context.pushNamed(RouteNames.shareMyContact),
+              ),
+            ),
+            const SizedBox(width: SimfTokens.space2),
+            Expanded(
+              child: KsaNavTile(
+                label: l10n.shareContact,
+                icon: Icons.swap_horiz,
+                onTap: () => unawaited(_shareContact()),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: SimfTokens.space2),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: KsaStatTile(
+                value: dashboard.counters.meetingsCount,
+                label: l10n.statMeetings,
+              ),
+            ),
+            const SizedBox(width: SimfTokens.space2),
+            Expanded(
+              child: KsaStatTile(
+                value: dashboard.counters.bookedSessionsCount,
+                label: l10n.statBookedSessions,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: SimfTokens.space6),
+        KsaSectionHeader(title: l10n.todayScheduleTitle),
+        const SizedBox(height: SimfTokens.space3),
+        if (dashboard.todaySchedule.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: SimfTokens.space4),
+            child: Text(
+              l10n.scheduleEmpty,
+              style: const TextStyle(color: SimfTokens.beigeBorder),
+            ),
+          )
+        else
+          for (final item in dashboard.todaySchedule)
+            Padding(
+              padding: const EdgeInsets.only(bottom: SimfTokens.space3),
+              child: _ScheduleRow(
+                item: item,
+                isArabic: isArabic,
+                onTap: item.isSession && item.sessionId != null
+                    ? () => context.pushNamed(
+                          RouteNames.sessionDetail,
+                          pathParameters: <String, String>{
+                            'sessionId': item.sessionId!,
+                          },
+                        )
+                    : null,
+              ),
+            ),
+        const SizedBox(height: SimfTokens.space3),
+        KsaSectionHeader(title: l10n.moreTitle),
+        const SizedBox(height: SimfTokens.space3),
+        _MoreRow(
+          label: l10n.smartBadgeLink,
+          onTap: () => context.pushNamed(RouteNames.badge),
+        ),
+        const SizedBox(height: SimfTokens.space4),
+        _MoreRow(
+          label: l10n.accountSettingsLink,
+          onTap: () => context.pushNamed(RouteNames.more),
+        ),
+        const SizedBox(height: SimfTokens.space4),
+        // Function-preserving rows the frame's (non-exhaustive) list omits:
+        // the calendar export kept from the mockup build + sign-out (D-373).
+        _MoreRow(
+          label: l10n.shareCalendar,
+          onTap: () => unawaited(_shareCalendar()),
+        ),
+        const SizedBox(height: SimfTokens.space4),
+        _MoreRow(
+          label: l10n.signOutLink,
+          onTap: () => unawaited(_confirmSignOut(l10n)),
+        ),
+      ],
+    );
+  }
 }
 
-/// The identity card — avatar (initials), name, a subtitle line, an optional
-/// reference (`#qrId`), and an optional brass Share button.
-class _ProfileCard extends StatelessWidget {
-  const _ProfileCard({
+/// The identity card (frame node 512:2047): avatar 64, name + tier·enrolled
+/// line + gold reference, and the bordered gold مشاركة button.
+class _IdentityCard extends StatelessWidget {
+  const _IdentityCard({
     required this.name,
     required this.line,
     this.reference,
+    this.avatarUrl,
+    this.shareLabel,
     this.onShare,
-    this.shareTooltip,
   });
 
   final String name;
   final String line;
   final String? reference;
+  final String? avatarUrl;
+  final String? shareLabel;
   final VoidCallback? onShare;
-  final String? shareTooltip;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space4),
-        child: Row(
-          children: <Widget>[
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: SimfTokens.accent,
-              child: Text(
-                _initials(name),
-                style: const TextStyle(
-                  color: SimfTokens.navy,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            const SizedBox(width: SimfTokens.space3),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      color: SimfTokens.surface,
-                      fontWeight: FontWeight.w700,
-                      fontSize: SimfTokens.textLg,
-                    ),
+    return Container(
+      padding: const EdgeInsets.all(SimfTokens.space2),
+      decoration: BoxDecoration(
+        color: SimfTokens.navyDeep,
+        borderRadius: BorderRadius.circular(SimfTokens.radius),
+        border: Border.all(color: SimfTokens.accent, width: 0.2),
+      ),
+      child: Row(
+        children: <Widget>[
+          KsaAvatar(name: name, imageUrl: avatarUrl, size: 64),
+          const SizedBox(width: SimfTokens.space3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
                   ),
-                  const SizedBox(height: SimfTokens.space1),
+                ),
+                const SizedBox(height: SimfTokens.space2),
+                Text(
+                  line,
+                  style: const TextStyle(
+                    color: SimfTokens.beigeBorder,
+                    fontSize: SimfTokens.textSm,
+                  ),
+                ),
+                if (reference != null) ...<Widget>[
+                  const SizedBox(height: SimfTokens.space2),
                   Text(
-                    line,
+                    reference!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textDirection: TextDirection.ltr,
                     style: const TextStyle(
-                      color: SimfTokens.txtSecondary,
+                      color: SimfTokens.accent,
                       fontSize: SimfTokens.textSm,
                     ),
                   ),
-                  if (reference != null) ...<Widget>[
-                    const SizedBox(height: SimfTokens.space1),
-                    Text(
-                      reference!,
-                      style: const TextStyle(
-                        color: SimfTokens.accent,
-                        fontSize: SimfTokens.textXs,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
                 ],
-              ),
+              ],
             ),
-            if (onShare != null)
-              Tooltip(
-                message: shareTooltip ?? '',
-                child: InkWell(
-                  onTap: onShare,
-                  borderRadius: BorderRadius.circular(SimfTokens.radius),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: SimfTokens.space2,
-                      vertical: SimfTokens.space2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: SimfTokens.accent.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(SimfTokens.radius),
-                      border: Border.all(color: SimfTokens.accent),
-                    ),
+          ),
+          if (onShare != null) ...<Widget>[
+            const SizedBox(width: SimfTokens.space2),
+            InkWell(
+              onTap: onShare,
+              borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: SimfTokens.navy,
+                  borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+                  border: Border.all(color: SimfTokens.accent, width: 0.5),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Padding(
+                    padding: const EdgeInsets.all(SimfTokens.space1),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         const Icon(
-                          Icons.ios_share,
-                          size: 16,
+                          Icons.share_outlined,
+                          size: 18,
                           color: SimfTokens.accent,
                         ),
-                        if (shareTooltip != null) ...<Widget>[
-                          const SizedBox(height: SimfTokens.space1),
+                        if (shareLabel != null)
                           Text(
-                            shareTooltip!,
+                            shareLabel!,
                             style: const TextStyle(
                               color: SimfTokens.accent,
-                              fontSize: SimfTokens.textXs,
-                              fontWeight: FontWeight.w700,
+                              fontSize: SimfTokens.textSm,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ],
                       ],
                     ),
                   ),
                 ),
               ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static String _initials(String name) {
-    final parts =
-        name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
-    if (parts.isEmpty) {
-      return '–';
-    }
-    if (parts.length == 1) {
-      return parts.first.characters.first.toUpperCase();
-    }
-    return (parts.first.characters.first + parts.last.characters.first)
-        .toUpperCase();
-  }
-}
-
-/// A square-ish action tile (icon + label) used for the two share affordances.
-class _ActionTile extends StatelessWidget {
-  const _ActionTile({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space3),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Icon(icon, size: 18, color: SimfTokens.accent),
-              const SizedBox(width: SimfTokens.space2),
-              Flexible(
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: SimfTokens.textSm),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A stat tile — a big number over a label.
-class _StatTile extends StatelessWidget {
-  const _StatTile({required this.value, required this.label});
-
-  final int value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: SimfTokens.space4),
-        child: Column(
-          children: <Widget>[
-            Text(
-              '$value',
-              style: const TextStyle(
-                color: SimfTokens.accent,
-                fontWeight: FontWeight.w700,
-                fontSize: SimfTokens.textXl,
-              ),
-            ),
-            const SizedBox(height: SimfTokens.space1),
-            Text(
-              label,
-              style: const TextStyle(
-                color: SimfTokens.txtSecondary,
-                fontSize: SimfTokens.textXs,
-              ),
             ),
           ],
-        ),
+        ],
       ),
     );
   }
 }
 
-/// One schedule row — time · title (+ optional hall) · kind icon. Session rows
-/// are tappable (→ session detail); meeting rows are not (no detail page yet).
+/// One schedule row (frame node 512:2116): bold time at the inline start,
+/// the title (+ hall, when present), and the gold star at the inline end.
+/// Session rows are tappable (→ session detail); meeting rows are not.
 class _ScheduleRow extends StatelessWidget {
   const _ScheduleRow({
     required this.item,
@@ -543,38 +506,44 @@ class _ScheduleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final time = DateFormat('HH:mm').format(item.startUtc.toLocal());
+    final time = DateFormat('hh:mm a').format(item.startUtc.toLocal());
     final hall = item.localizedHall(isArabic);
-    return Card(
-      margin: const EdgeInsets.only(bottom: SimfTokens.space2),
-      clipBehavior: Clip.antiAlias,
+    return Material(
+      color: SimfTokens.navyDeep,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        side: const BorderSide(color: SimfTokens.beigeBorder, width: 0.2),
+      ),
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
         child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space3),
+          padding: const EdgeInsets.symmetric(
+            horizontal: SimfTokens.space2,
+            vertical: SimfTokens.space4,
+          ),
           child: Row(
             children: <Widget>[
-              SizedBox(
-                width: 44,
-                child: Text(
-                  time,
-                  style: const TextStyle(
-                    color: SimfTokens.accent,
-                    fontWeight: FontWeight.w700,
-                    fontSize: SimfTokens.textSm,
-                  ),
+              Text(
+                time,
+                textDirection: TextDirection.ltr,
+                style: const TextStyle(
+                  color: SimfTokens.beigeBorder,
+                  fontWeight: FontWeight.w700,
+                  fontSize: SimfTokens.textSm,
                 ),
               ),
-              const SizedBox(width: SimfTokens.space2),
+              const SizedBox(width: SimfTokens.space3),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: <Widget>[
                     Text(
                       item.localizedTitle(isArabic),
                       style: const TextStyle(
-                        color: SimfTokens.surface,
-                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                        fontSize: SimfTokens.textMd,
                       ),
                     ),
                     if (hall != null) ...<Widget>[
@@ -582,7 +551,7 @@ class _ScheduleRow extends StatelessWidget {
                       Text(
                         hall,
                         style: const TextStyle(
-                          color: SimfTokens.txtTertiary,
+                          color: SimfTokens.beigeBorder,
                           fontSize: SimfTokens.textXs,
                         ),
                       ),
@@ -590,9 +559,10 @@ class _ScheduleRow extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                item.isSession ? Icons.event_note_outlined : Icons.people_outline,
-                size: 18,
+              const SizedBox(width: SimfTokens.space3),
+              const Icon(
+                Icons.star_rounded,
+                size: 20,
                 color: SimfTokens.accent,
               ),
             ],
@@ -603,31 +573,46 @@ class _ScheduleRow extends StatelessWidget {
   }
 }
 
-/// A full-width utility link row (label + chevron).
-class _UtilityLink extends StatelessWidget {
-  const _UtilityLink({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
+/// One المزيد row (frame node 512:2126): the label at the inline start and a
+/// white forward chevron at the inline end, on the tile chrome.
+class _MoreRow extends StatelessWidget {
+  const _MoreRow({required this.label, required this.onTap});
 
   final String label;
-  final IconData icon;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        leading: Icon(icon, color: SimfTokens.accent),
-        title: Text(label),
-        trailing: const Icon(
-          Icons.chevron_left,
-          color: SimfTokens.txtTertiary,
-        ),
+    return Material(
+      color: SimfTokens.navyDeep,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        side: const BorderSide(color: SimfTokens.beigeBorder, width: 0.2),
+      ),
+      child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: SimfTokens.space2,
+            vertical: SimfTokens.space4,
+          ),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                    fontSize: SimfTokens.textMd,
+                  ),
+                ),
+              ),
+              const Icon(Icons.chevron_left, size: 20, color: Colors.white),
+            ],
+          ),
+        ),
       ),
     );
   }
