@@ -130,6 +130,9 @@ public sealed class QuestionQueueExcelTests : IClassFixture<SimfApiFactory>
                 Code = AuthFlow.GetActiveCode(_factory, email, AccountCodePurpose.EmailVerification),
             });
         AuthFlow.SetAccountState(_factory, email, AccountState.Approved);
+        // D-373 — registration enables 2FA; this auth plumbing needs the
+        // direct-token path (the admin-disabled scenario).
+        AuthFlow.DisableTwoFactor(_factory, email);
 
         var sign = await _client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-in",

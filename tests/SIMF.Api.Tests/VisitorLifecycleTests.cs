@@ -80,8 +80,9 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
         Assert.Equal(AccountState.EmailVerified, GetAccountState(email));
 
         // ----------------------------------------------------------------
-        // 3. Sign in (Web audience, default no-2FA) — get tokens for
-        //    the profile-upsert call.
+        // 3. Sign in (Web audience) — D-373: registration enables 2FA, so
+        //    the password step returns the email-OTP challenge and the
+        //    tokens are minted by verify-otp.
         // ----------------------------------------------------------------
         var firstSignIn = await _client.PostAsJsonAsync(
             "/api/v1/app/auth/sign-in",
@@ -89,9 +90,19 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, firstSignIn.StatusCode);
         var firstBody = (await firstSignIn.Content
             .ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        Assert.False(firstBody.Data!.MfaRequired);
-        Assert.NotNull(firstBody.Data.Tokens);
-        var emailVerifiedAccessToken = firstBody.Data.Tokens!.AccessToken;
+        Assert.True(firstBody.Data!.MfaRequired);
+        Assert.NotNull(firstBody.Data.OtpToken);
+        var firstOtp = await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/verify-otp",
+            new VerifyOtpRequest
+            {
+                OtpToken = firstBody.Data.OtpToken!,
+                Code = AuthFlow.GetActiveCode(
+                    _factory, email, AccountCodePurpose.SignInOtp),
+            });
+        Assert.Equal(HttpStatusCode.OK, firstOtp.StatusCode);
+        var emailVerifiedAccessToken = (await firstOtp.Content
+            .ReadFromJsonAsync<ApiResult<AuthTokens>>())!.Data!.AccessToken;
 
         // The JWT carries account_state=EmailVerified at this hop.
         Assert.Equal("EmailVerified", JwtClaim(emailVerifiedAccessToken, "account_state"));
@@ -139,7 +150,8 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
         Assert.False(string.IsNullOrEmpty(qrId));
 
         // ----------------------------------------------------------------
-        // 6. Visitor signs in on the App audience — the new JWT must carry
+        // 6. Visitor signs in on the App audience — D-373: the email-OTP
+        //    second factor runs; the verify-otp JWT must carry
         //    account_state=Approved and user_type=Visitor.
         // ----------------------------------------------------------------
         var finalSignIn = await _client.PostAsJsonAsync(
@@ -151,11 +163,22 @@ public sealed class VisitorLifecycleTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, finalSignIn.StatusCode);
         var finalBody = (await finalSignIn.Content
             .ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
-        Assert.False(finalBody.Data!.MfaRequired);
-        Assert.NotNull(finalBody.Data.Tokens);
+        Assert.True(finalBody.Data!.MfaRequired);
+        Assert.NotNull(finalBody.Data.OtpToken);
+        var finalOtp = await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/verify-otp",
+            new VerifyOtpRequest
+            {
+                OtpToken = finalBody.Data.OtpToken!,
+                Code = AuthFlow.GetActiveCode(
+                    _factory, email, AccountCodePurpose.SignInOtp),
+            });
+        Assert.Equal(HttpStatusCode.OK, finalOtp.StatusCode);
+        var finalTokens = (await finalOtp.Content
+            .ReadFromJsonAsync<ApiResult<AuthTokens>>())!.Data!;
 
-        Assert.Equal("Approved", JwtClaim(finalBody.Data.Tokens!.AccessToken, "account_state"));
-        Assert.Equal("Visitor", JwtClaim(finalBody.Data.Tokens.AccessToken, "user_type"));
+        Assert.Equal("Approved", JwtClaim(finalTokens.AccessToken, "account_state"));
+        Assert.Equal("Visitor", JwtClaim(finalTokens.AccessToken, "user_type"));
     }
 
     // ----------------------------------------------------------------------
