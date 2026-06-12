@@ -233,15 +233,63 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact]
-    public async Task POST_accepts_a_permissive_international_phone()
+    // C4 (D-371) — the standard phone shapes (supersedes the old
+    // permissive-phone test): Saudi 05XXXXXXXX / +9665XXXXXXXX,
+    // international E.164; separators are stripped before the match.
+    [Theory]
+    [InlineData("+44-7700900123")] // UK E.164 with a dash separator
+    [InlineData("+12025550123")]   // US E.164
+    public async Task POST_accepts_a_standard_international_phone(string phone)
     {
         var token = await CreateUserAndSignInAsync();
         var request = await ValidSaudiRequestAsync();
-        request.InternationalMobile = "+44-7700900123";  // UK shape
+        request.InternationalMobile = phone;
 
         var response = await PostAuthAsync(Path, request, token);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("00447700900123")] // no "+" — not E.164
+    [InlineData("+0447700900123")] // leading zero after "+"
+    [InlineData("+44")]            // too short
+    public async Task POST_rejects_a_non_standard_international_phone(string phone)
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.InternationalMobile = phone;
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("0501234567")]     // local Saudi mobile
+    [InlineData("+966501234567")]  // the same number in international form
+    [InlineData("050 123-4567")]   // separators stripped before the match
+    public async Task POST_accepts_a_standard_Saudi_mobile(string phone)
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.SaudiMobile = phone;
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("0401234567")]    // not the 05 mobile plan
+    [InlineData("050123456")]     // 9 digits — too short
+    [InlineData("05012345678")]   // 11 digits — too long
+    [InlineData("+966401234567")] // +966 but not the 5 mobile prefix
+    public async Task POST_rejects_a_non_standard_Saudi_mobile(string phone)
+    {
+        var token = await CreateUserAndSignInAsync();
+        var request = await ValidSaudiRequestAsync();
+        request.SaudiMobile = phone;
+
+        var response = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]

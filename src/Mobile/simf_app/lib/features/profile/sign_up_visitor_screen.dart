@@ -14,6 +14,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
 import 'data/profile_models.dart';
 import 'data/profile_repository.dart';
+import 'phone_validation.dart';
 
 const Color _sweepTint = Color(0x0AFFFFFF);
 const BorderRadius _radius4 =
@@ -377,13 +378,26 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     return valid ? null : l10n.passportInvalid;
   }
 
-  String? _validatePhone(String? value) {
+  /// C4 (D-371) — the standard shapes live in `phone_validation.dart`,
+  /// mirroring `UpsertUserProfileRequestValidator` exactly.
+  String? _validateSaudiMobile(String? value) {
     final phone = value?.trim() ?? '';
     if (phone.isEmpty) {
       return null;
     }
-    final valid = RegExp(r'^\+?\d{1,4}[-\s]?\d{4,15}$').hasMatch(phone);
-    return valid ? null : AppL10n.of(context).phoneInvalid;
+    return isStandardSaudiMobile(phone)
+        ? null
+        : AppL10n.of(context).saudiMobileInvalid;
+  }
+
+  String? _validateInternationalMobile(String? value) {
+    final phone = value?.trim() ?? '';
+    if (phone.isEmpty) {
+      return null;
+    }
+    return isStandardInternationalMobile(phone)
+        ? null
+        : AppL10n.of(context).internationalMobileInvalid;
   }
 
   /// The globe button toggles AR ↔ EN and persists the choice (D-363 pattern).
@@ -853,7 +867,8 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
           textDirection: TextDirection.ltr,
           style: _inputStyle,
           autovalidateMode: AutovalidateMode.onUserInteraction,
-          validator: _validatePhone,
+          validator:
+              saudi ? _validateSaudiMobile : _validateInternationalMobile,
           decoration: _fieldDecoration(),
         ),
       ],

@@ -235,6 +235,15 @@ class AppL10n {
         'An Iqama or passport number is required',
       );
   String get phoneInvalid => _t('رقم الجوال غير صالح', 'Invalid phone number');
+  // C4 (D-371) — the standard phone shapes, mirrored client/server.
+  String get saudiMobileInvalid => _t(
+        'يجب أن يكون رقم الجوال السعودي بصيغة 05XXXXXXXX أو +9665XXXXXXXX',
+        'The Saudi mobile must be 05XXXXXXXX or +9665XXXXXXXX',
+      );
+  String get internationalMobileInvalid => _t(
+        'يجب أن يكون رقم الجوال الدولي بالصيغة الدولية (E.164)',
+        'The international mobile must be in the +<country code><number> (E.164) format',
+      );
   String get dateOfBirthRequired =>
       _t('تاريخ الميلاد مطلوب', 'Date of birth is required');
   String get ageRequirement => _t(

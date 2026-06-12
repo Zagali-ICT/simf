@@ -48,6 +48,8 @@
 | E2E-MOB007-009 | Auth gate — anonymous open redirects to sign-in | auth | P0 | authored ✓ (router-gate test) |
 | E2E-MOB007-010 | Empty lookup → picker empty state, never a blocking error | edge | P1 | spec (D-332) |
 | E2E-MOB007-011 | RTL render (Arabic) mirrors; lookup labels switch with locale | i18n | P1 | spec (D-332) |
+| E2E-MOB007-012 | Saudi mobile standard (C4, D-371): `0501234567` / `+966501234567` / separators accepted; `04…`, 9/11 digits, `+9664…` rejected — client inline + server 400 | validation | P0 | authored ✓ (client `phone_validation_test` + server `UserProfileTests` theories) |
+| E2E-MOB007-013 | International mobile E.164 (C4, D-371): `+447700900123` accepted (dash ok); `0044…`, `+0…`, too-short rejected — client inline + server 400 | validation | P0 | authored ✓ (client `phone_validation_test` + server `UserProfileTests` theories) |
 
 ## Scenarios
 
@@ -187,4 +189,4 @@ Scenario: The form mirrors under Arabic
 
 ---
 
-_Last reviewed:_ `2026-06-11` by `SIMF Team` — reworked under D-332 (data screen; interests + save → Page 007‑01).
+_Last reviewed:_ `2026-06-12` by `SIMF Team` — reworked under D-332 (data screen; interests + save → Page 007‑01); C4 phone-standard scenarios (012/013) added under D-371.

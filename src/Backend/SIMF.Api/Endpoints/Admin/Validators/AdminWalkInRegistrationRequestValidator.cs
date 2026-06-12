@@ -1,5 +1,6 @@
 using FastEndpoints;
 using FluentValidation;
+using SIMF.Api.Endpoints.Account.Validators;
 using SIMF.Api.Endpoints.Auth.Validators;
 using SIMF.Contracts.Authentication;
 
@@ -123,6 +124,29 @@ public sealed class AdminWalkInRegistrationRequestValidator
             .Bilingual(
                 "A mobile number is required (Saudi or international).",
                 "رقم الجوال مطلوب (سعودي أو دولي).");
+
+        // C4 (D-371) — the same standard phone shapes as the self-service
+        // profile upsert (UpsertUserProfileRequestValidator), separators
+        // stripped first.
+        When(request => !string.IsNullOrWhiteSpace(request.SaudiMobile), () =>
+        {
+            RuleFor(request => request.SaudiMobile!)
+                .Must(value => UpsertUserProfileRequestValidator
+                    .IsStandardSaudiMobile(value))
+                .Bilingual(
+                    "The Saudi mobile must be 05XXXXXXXX or +9665XXXXXXXX.",
+                    "يجب أن يكون رقم الجوال السعودي بصيغة 05XXXXXXXX أو +9665XXXXXXXX.");
+        });
+
+        When(request => !string.IsNullOrWhiteSpace(request.InternationalMobile), () =>
+        {
+            RuleFor(request => request.InternationalMobile!)
+                .Must(value => UpsertUserProfileRequestValidator
+                    .IsStandardInternationalMobile(value))
+                .Bilingual(
+                    "The international mobile must be in the +<country code><number> (E.164) format.",
+                    "يجب أن يكون رقم الجوال الدولي بالصيغة الدولية ‎+‎ يليها رمز الدولة والرقم (E.164).");
+        });
 
         RuleFor(request => request.PlaceOfBirth)
             .MaximumLength(128).Bilingual(

@@ -11,9 +11,10 @@ namespace SIMF.Api.Endpoints.Account.Validators;
 /// <c>VisitorType</c> string-discriminator rule was dropped in P8 — the
 /// profile-type now flows through the <c>UserProfile.ProfileTypeId</c>
 /// FK assigned by an admin, not a free-text claim by the user. The
-/// phone rules are deliberately permissive — any country code + local
-/// number is accepted ("any phone, not only Saudi, with +xx" — user
-/// guidance during D-046 design).
+/// phone rules follow the C4 standard (D-371, superseding the permissive
+/// D-046 guidance): Saudi mobile <c>05XXXXXXXX</c> or <c>+9665XXXXXXXX</c>;
+/// international mobile E.164 (<c>+</c> then 8–15 digits). Spaces and
+/// dashes are stripped before the match, client and server identically.
 ///
 /// <para>D-151 — the nationality code shape is checked here; the
 /// existence check (must resolve to a row in the <c>Country</c> table)
@@ -24,12 +25,32 @@ namespace SIMF.Api.Endpoints.Account.Validators;
 public sealed class UpsertUserProfileRequestValidator
     : Validator<UpsertUserProfileRequest>
 {
-    // Permissive phone shape: optional "+" + 1-4 digit country code, then
-    // an optional separator (space or "-") and 4-15 more digits. Trims
-    // typical whitespace before checking.
-    private static readonly System.Text.RegularExpressions.Regex PhoneShape =
-        new(@"^\+?\d{1,4}[-\s]?\d{4,15}$",
+    // C4 (D-371) — the Saudi mobile standard: local 05XXXXXXXX or the
+    // +9665XXXXXXXX international form of the same plan.
+    private static readonly System.Text.RegularExpressions.Regex SaudiMobileShape =
+        new(@"^(05\d{8}|\+9665\d{8})$",
             System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    // C4 (D-371) — international mobiles must be E.164: "+", a non-zero
+    // leading digit, 8–15 digits total.
+    private static readonly System.Text.RegularExpressions.Regex E164Shape =
+        new(@"^\+[1-9]\d{7,14}$",
+            System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    /// <summary>Strips the separators users habitually type (spaces and
+    /// dashes) so "+9665 0123-4567" and "+966501234567" validate alike.</summary>
+    private static string NormalizePhone(string value)
+        => value.Replace(" ", string.Empty).Replace("-", string.Empty);
+
+    /// <summary>C4 (D-371) Saudi-mobile standard check — shared with the
+    /// walk-in registration validator so the rule lives once.</summary>
+    public static bool IsStandardSaudiMobile(string value)
+        => SaudiMobileShape.IsMatch(NormalizePhone(value.Trim()));
+
+    /// <summary>C4 (D-371) E.164 international-mobile standard check —
+    /// shared with the walk-in registration validator.</summary>
+    public static bool IsStandardInternationalMobile(string value)
+        => E164Shape.IsMatch(NormalizePhone(value.Trim()));
 
     public UpsertUserProfileRequestValidator()
     {
@@ -166,17 +187,18 @@ public sealed class UpsertUserProfileRequestValidator
                     "يجب إدخال رقم الإقامة أو رقم جواز السفر.");
         });
 
+        // C4 (D-371) — standard shapes, separators stripped first.
         RuleFor(request => request.SaudiMobile)
-            .Must(value => string.IsNullOrEmpty(value) || PhoneShape.IsMatch(value.Trim()))
+            .Must(value => string.IsNullOrEmpty(value) || IsStandardSaudiMobile(value))
             .Bilingual(
-                "The Saudi mobile is not a recognised phone number.",
-                "رقم الجوال السعودي ليس بصيغة معروفة.");
+                "The Saudi mobile must be 05XXXXXXXX or +9665XXXXXXXX.",
+                "يجب أن يكون رقم الجوال السعودي بصيغة 05XXXXXXXX أو +9665XXXXXXXX.");
 
         RuleFor(request => request.InternationalMobile)
-            .Must(value => string.IsNullOrEmpty(value) || PhoneShape.IsMatch(value.Trim()))
+            .Must(value => string.IsNullOrEmpty(value) || IsStandardInternationalMobile(value))
             .Bilingual(
-                "The international mobile is not a recognised phone number.",
-                "رقم الجوال الدولي ليس بصيغة معروفة.");
+                "The international mobile must be in the +<country code><number> (E.164) format.",
+                "يجب أن يكون رقم الجوال الدولي بالصيغة الدولية ‎+‎ يليها رمز الدولة والرقم (E.164).");
     }
 
     // D-197 — the registrant must be at least 18. Uses UtcNow date-only;
