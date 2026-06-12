@@ -6,6 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../data/auth_api.dart';
 import '../data/auth_repository_impl.dart';
+import 'auth_providers.dart';
 import '../data/device_key_client.dart';
 import '../domain/app_role.dart';
 import '../domain/auth_failure.dart';
@@ -67,6 +68,13 @@ class AuthController extends Notifier<AuthState> implements AuthTokenSource {
   AuthState build() {
     _repository = ref.watch(authRepositoryProvider);
     _secureStorage = ref.watch(simfSecureStorageProvider);
+    // D-372 — register this controller as the live token source behind the
+    // data package's interceptors. The read goes controller → token source
+    // (the acyclic direction); the bridge carries no provider dependencies.
+    final tokenSource = ref.read(authTokenSourceProvider);
+    if (tokenSource is AuthTokenBridge) {
+      tokenSource.delegate = this;
+    }
     // Kicks off the cold-start restore asynchronously. The state stays
     // `Initial` until restore finishes, at which point it becomes either
     // `SignedIn` or `SignedOut`.

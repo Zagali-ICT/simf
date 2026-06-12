@@ -70,6 +70,9 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # D-372 regression test only — drives the real SimfApiClient over a
+  # header-recording adapter (same major as simf_data_pkg's pin).
+  dio: ^5.7.0
   # End-to-end harness: boots the assembled app (real router + screens) with
   # deterministic provider overrides and drives cross-screen flows. Runs headless
   # via `flutter test integration_test/`, or on a device with `-d <id>`.

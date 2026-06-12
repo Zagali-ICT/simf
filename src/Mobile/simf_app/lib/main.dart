@@ -43,14 +43,13 @@ Future<void> main() async {
           return () => ref.read(localeControllerProvider).languageCode;
         }),
 
-        // The auth-token-source override — points the data package's
-        // interceptors at the auth controller (which implements
-        // AuthTokenSource). Reading the notifier is safe because the
-        // controller's `build()` reads its own dependencies from the
-        // overridden providers above.
-        authTokenSourceProvider.overrideWith((ref) {
-          return ref.read(authControllerProvider.notifier);
-        }),
+        // The auth-token-source override — the passive bridge the auth
+        // controller registers itself into at build time (D-372). The old
+        // eager `ref.read(authControllerProvider.notifier)` pattern formed
+        // a circular provider dependency that left the interceptors with a
+        // never-initialised controller, so authenticated requests went out
+        // without their bearer token (caught by the Wave-1 live E2E).
+        authTokenSourceProvider.overrideWith((ref) => AuthTokenBridge()),
       ],
       child: const SimfApp(),
     ),
