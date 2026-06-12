@@ -17,6 +17,7 @@ class CurrentUserDto {
     required this.preferredLanguage,
     required this.registrationStatus,
     this.avatarUrl,
+    this.profileComplete = false,
   });
 
   factory CurrentUserDto.fromJson(Map<String, dynamic> json) {
@@ -28,6 +29,9 @@ class CurrentUserDto {
       preferredLanguage: json['preferredLanguage'],
       registrationStatus: json['registrationStatus'],
       avatarUrl: json['avatarUrl'] as String?,
+      // D-374 — server-computed; absent on old payloads → false (the app
+      // then routes to the profile form, the safe direction).
+      profileComplete: json['profileComplete'] as bool? ?? false,
     );
   }
 
@@ -42,6 +46,9 @@ class CurrentUserDto {
   final Object? registrationStatus;
   final String? avatarUrl;
 
+  /// D-374 — server-computed profile completeness from `/app/users/me`.
+  final bool profileComplete;
+
   CurrentUser toDomain() {
     return CurrentUser(
       id: id,
@@ -51,6 +58,7 @@ class CurrentUserDto {
       preferredLanguage: PreferredLanguage.fromJson(preferredLanguage),
       registrationStatus: RegistrationStatus.fromJson(registrationStatus),
       avatarUrl: avatarUrl,
+      profileComplete: profileComplete,
     );
   }
 }

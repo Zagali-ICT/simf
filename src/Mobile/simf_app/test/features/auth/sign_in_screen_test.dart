@@ -7,8 +7,6 @@ import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/localization/locale_controller.dart';
 import 'package:simf_app/app/route_names.dart';
 import 'package:simf_app/features/auth/sign_in_screen.dart';
-import 'package:simf_app/features/profile/data/profile_models.dart';
-import 'package:simf_app/features/profile/data/profile_repository.dart';
 import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -18,9 +16,13 @@ enum _Outcome { success, otp, invalid }
 /// so the screen's UI → navigation/error glue can be tested in isolation
 /// (same harness as sign_in_screen_test.dart).
 class _FakeAuthController extends AuthController {
-  _FakeAuthController(this.outcome);
+  _FakeAuthController(this.outcome, {this.profileComplete = true});
 
   final _Outcome outcome;
+
+  /// D-374 — the completeness flag rides on the signed-in session
+  /// (`/users/me` → `profileComplete`); the old profile probe is gone.
+  final bool profileComplete;
 
   @override
   AuthState build() => const AuthStateSignedOut();
@@ -41,6 +43,7 @@ class _FakeAuthController extends AuthController {
               appRole: AppRole.visitor,
               preferredLanguage: PreferredLanguage.fromJson('ar'),
               registrationStatus: RegistrationStatus.approved,
+              profileComplete: profileComplete,
             ),
           ),
         );
@@ -90,49 +93,6 @@ class _FakePrefs implements SimfPrefsStorage {
     _store.remove(key);
     return true;
   }
-}
-
-/// Fake profile repo for the post-sign-in completeness probe. Only
-/// `getMyProfile` is exercised by the sign-in route; the rest are unused.
-class _FakeProfileRepository implements ProfileRepository {
-  _FakeProfileRepository({required this.complete});
-
-  final bool complete;
-
-  @override
-  Future<UserProfileResponse> getMyProfile() async => UserProfileResponse(
-        interestIds: complete ? const <String>['i1'] : const <String>[],
-        arabicName: complete ? 'راكان' : '',
-        englishName: complete ? 'Rakan' : '',
-        nationalityCode: complete ? 'SA' : '',
-        placeOfBirth: '',
-        isSaudi: true,
-        gender: AppGender.unspecified,
-        hasIdImage: false,
-      );
-
-  @override
-  Future<UserProfileResponse> upsertMyProfile(UpsertUserProfileRequest r) =>
-      throw UnimplementedError();
-  @override
-  Future<List<CountryItem>> getCountries() => throw UnimplementedError();
-  @override
-  Future<List<ProfileTypeItem>> getProfileTypes({bool? isVisitor}) =>
-      throw UnimplementedError();
-  @override
-  Future<List<InterestItem>> getInterests() => throw UnimplementedError();
-  @override
-  Future<List<OrganisationItem>> searchOrganisations({
-    String? search,
-    int top = 20,
-  }) =>
-      throw UnimplementedError();
-  @override
-  Future<bool> uploadIdImage({
-    required List<int> bytes,
-    required String filename,
-  }) =>
-      throw UnimplementedError();
 }
 
 Future<void> _pump(
@@ -191,9 +151,8 @@ Future<void> _pump(
     ProviderScope(
       overrides: <Override>[
         simfPrefsStorageProvider.overrideWithValue(prefs),
-        authControllerProvider.overrideWith(() => _FakeAuthController(outcome)),
-        profileRepositoryProvider.overrideWithValue(
-          _FakeProfileRepository(complete: profileComplete),
+        authControllerProvider.overrideWith(
+          () => _FakeAuthController(outcome, profileComplete: profileComplete),
         ),
         localeControllerProvider.overrideWith(
           () => LocaleController(prefs: prefs),

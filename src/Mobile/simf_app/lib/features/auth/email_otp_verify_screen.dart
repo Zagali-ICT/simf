@@ -8,6 +8,7 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
+import 'post_auth_route.dart';
 import 'widgets/otp_code_boxes.dart';
 
 const Color _sweepTint = Color(0x0AFFFFFF);
@@ -64,7 +65,8 @@ class _EmailOtpVerifyScreenState extends ConsumerState<EmailOtpVerifyScreen> {
         return;
       }
       if (ref.read(authControllerProvider) is AuthStateSignedIn) {
-        context.go('/');
+        // D-374 — an incomplete profile goes to the add-profile stage first.
+        routeAfterAuth(context, ref);
       }
     } on AuthFailure catch (failure) {
       if (!mounted) {

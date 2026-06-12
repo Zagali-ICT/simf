@@ -18,6 +18,7 @@ class CurrentUser {
     required this.preferredLanguage,
     required this.registrationStatus,
     this.avatarUrl,
+    this.profileComplete = false,
   });
 
   final String id;
@@ -27,6 +28,11 @@ class CurrentUser {
   final PreferredLanguage preferredLanguage;
   final RegistrationStatus registrationStatus;
   final String? avatarUrl;
+
+  /// D-374 — server-computed: the profile carries both names, ≥1 interest
+  /// and satisfies the C7 male-photo rule. False until the hydration call
+  /// returns, which is the safe default (routes to the profile form).
+  final bool profileComplete;
 
   /// Convenience: is this user allowed past the auth wall? Pending and
   /// rejected accounts can sign in but cannot see Visitor-protected
@@ -40,6 +46,7 @@ class CurrentUser {
     PreferredLanguage? preferredLanguage,
     RegistrationStatus? registrationStatus,
     String? avatarUrl,
+    bool? profileComplete,
   }) {
     return CurrentUser(
       id: id,
@@ -49,6 +56,7 @@ class CurrentUser {
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
       registrationStatus: registrationStatus ?? this.registrationStatus,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      profileComplete: profileComplete ?? this.profileComplete,
     );
   }
 }

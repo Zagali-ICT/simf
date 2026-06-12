@@ -12,7 +12,7 @@ import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/simf_logo.dart';
-import '../profile/data/profile_repository.dart';
+import 'post_auth_route.dart';
 
 // Screen-local shorthands for the KSA-Project design tokens. The palette was
 // promoted into SimfTokens in Phase 0 of the app redesign (D-359), closing the
@@ -109,7 +109,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (state is AuthStateAwaitingOtp) {
         context.goNamed(RouteNames.verifyOtp);
       } else if (state is AuthStateSignedIn) {
-        await _onSignedIn();
+        _onSignedIn();
       }
     } on AuthFailure catch (failure) {
       if (!mounted) {
@@ -128,13 +128,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
-  Future<void> _onSignedIn() async {
+  void _onSignedIn() {
     // Best-effort enrolment for future Face-ID sign-in; uses the
     // container-level controller so it survives this screen's disposal.
     unawaited(
       _maybeEnrolBiometric(ref.read(authControllerProvider.notifier)),
     );
-    await _routeAfterSignIn();
+    // D-374 — the profileComplete flag rides the sign-in hydration, so the
+    // shared post-auth rule routes directly (the old getMyProfile probe is
+    // gone); the same rule runs after the 2FA OTP step and the splash restore.
+    routeAfterAuth(context, ref);
   }
 
   Future<void> _maybeEnrolBiometric(AuthController notifier) async {
@@ -148,28 +151,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       await notifier.enrolDeviceKey();
     } catch (_) {
       // Enrolment is best-effort; never block sign-in on it.
-    }
-  }
-
-  /// After a successful sign-in, route a profile-incomplete visitor to the
-  /// profile-completion screen (Page_007); everyone else goes home
-  /// (D-288 Slice 3).
-  Future<void> _routeAfterSignIn() async {
-    try {
-      final profile =
-          await ref.read(profileRepositoryProvider).getMyProfile();
-      if (!mounted) {
-        return;
-      }
-      if (!profile.isComplete) {
-        context.goNamed(RouteNames.signUpVisitor);
-        return;
-      }
-    } catch (_) {
-      // Never block sign-in on the profile probe — fall through to home.
-    }
-    if (mounted) {
-      context.go('/');
     }
   }
 
@@ -198,7 +179,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         return;
       }
       if (ref.read(authControllerProvider) is AuthStateSignedIn) {
-        await _routeAfterSignIn();
+        routeAfterAuth(context, ref);
       }
     } on AuthFailure catch (failure) {
       if (mounted) {

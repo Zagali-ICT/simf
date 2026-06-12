@@ -439,6 +439,7 @@ Map<String, dynamic> _currentUserToMap(CurrentUser u) {
     'preferredLanguage': u.preferredLanguage.code,
     'registrationStatus': u.registrationStatus.wireName,
     'avatarUrl': u.avatarUrl,
+    'profileComplete': u.profileComplete,
   };
 }
 
@@ -451,5 +452,6 @@ CurrentUser _restoreCurrentUserFromMap(Map<String, dynamic> json) {
     preferredLanguage: PreferredLanguage.fromJson(json['preferredLanguage']),
     registrationStatus: RegistrationStatus.fromJson(json['registrationStatus']),
     avatarUrl: json['avatarUrl'] as String?,
+    profileComplete: json['profileComplete'] as bool? ?? false,
   );
 }

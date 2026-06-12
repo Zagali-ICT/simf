@@ -116,6 +116,15 @@ class SplashController extends Notifier<SplashState> {
     final prefs = ref.read(simfPrefsStorageProvider);
 
     if (auth is AuthStateSignedIn) {
+      // D-374 — the add-profile-first gate also applies to the cold-start
+      // restore (same rule as routeAfterAuth after sign-in / the OTP step);
+      // the restore re-hydrates /users/me, so the flag is fresh.
+      if (!auth.session.user.profileComplete) {
+        return SplashReady(
+          routeName: RouteNames.signUpVisitor,
+          softUpdate: softUpdate,
+        );
+      }
       final saved = prefs.getString(StorageKeys.lastRoute);
       if (saved != null && isResumableLocation(saved)) {
         return SplashReady(location: saved, softUpdate: softUpdate);

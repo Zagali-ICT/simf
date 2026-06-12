@@ -96,7 +96,7 @@ class _FakePrefs implements SimfPrefsStorage {
   }
 }
 
-Session _signedInSession() => Session(
+Session _signedInSession({bool profileComplete = true}) => Session(
       accessToken: 'A',
       refreshToken: 'R',
       accessTokenExpiresAt: DateTime.now().add(const Duration(hours: 1)),
@@ -107,6 +107,7 @@ Session _signedInSession() => Session(
         appRole: AppRole.visitor,
         preferredLanguage: PreferredLanguage.fromJson('ar'),
         registrationStatus: RegistrationStatus.approved,
+        profileComplete: profileComplete,
       ),
     );
 
@@ -214,6 +215,24 @@ void main() {
 
       final state = await _resolve(container);
       expect((state as SplashReady).routeName, equals(RouteNames.home));
+      expect(state.location, isNull);
+    });
+
+    test(
+        'a signed-in user with an incomplete profile is gated to the '
+        'profile form, even over a saved route (D-374)', () async {
+      final container = _container(
+        auth: AuthStateSignedIn(_signedInSession(profileComplete: false)),
+        update: AppUpdateStatus.upToDate,
+        prefs: <String, Object>{StorageKeys.lastRoute: '/sessions'},
+      );
+      addTearDown(container.dispose);
+
+      final state = await _resolve(container);
+      expect(
+        (state as SplashReady).routeName,
+        equals(RouteNames.signUpVisitor),
+      );
       expect(state.location, isNull);
     });
 
