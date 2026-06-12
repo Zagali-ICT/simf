@@ -124,7 +124,7 @@ void main() {
       await _pump(tester, controller: _GuestController());
 
       expect(find.widgetWithText(FilledButton, 'Sign in'), findsOneWidget);
-      expect(find.text('Sessions'), findsOneWidget);
+      expect(find.text('Speakers'), findsOneWidget);
       // Visitor-only tiles are hidden for a guest (Logic L-2).
       expect(find.text('My area'), findsNothing);
       expect(find.text('My smart badge'), findsNothing);
@@ -155,13 +155,12 @@ void main() {
       expect((badge.label! as Text).data, '3');
     });
 
-    testWidgets('tapping a tile navigates to its route', (tester) async {
+    testWidgets('tapping a nav destination navigates to its route',
+        (tester) async {
       await _pump(tester, controller: _GuestController());
 
-      final sessions = find.text('Sessions');
-      await tester.ensureVisible(sessions);
-      await tester.pumpAndSettle();
-      await tester.tap(sessions);
+      // The KSA nav shows labels on the active tab only — tap by icon.
+      await tester.tap(find.byIcon(Icons.calendar_today_outlined));
       await tester.pumpAndSettle();
       expect(find.text('SESSIONS'), findsOneWidget);
     });
@@ -173,9 +172,9 @@ void main() {
         locale: const Locale('ar'),
       );
 
-      expect(find.text('الجلسات'), findsOneWidget);
+      expect(find.text('المتحدثون'), findsOneWidget);
       expect(
-        Directionality.of(tester.element(find.text('الجلسات'))),
+        Directionality.of(tester.element(find.text('المتحدثون'))),
         TextDirection.rtl,
       );
     });

@@ -456,6 +456,10 @@ class AppL10n {
   String get tileEntryBadge => _t('بطاقتي الذكية', 'My smart badge');
   String get tileMeetPeople => _t('قابل أشخاص مثلك', 'Meet people like you');
 
+  // Bottom navigation (KSA Wave-2 shell — frames 512:1492 / 213:963).
+  String get navAgenda => _t('الأجندة', 'Agenda');
+  String get navProfile => _t('الملف الشخصي', 'Profile');
+
   // My Area — personal dashboard (Page 014).
   String get myAreaTitle => _t('منطقتي', 'My area');
   String enrolledInSessions(int count) =>

@@ -31,7 +31,9 @@ class NewsScreen extends ConsumerWidget {
     final news = ref.watch(newsListProvider);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.newsTitle)),
-      bottomNavigationBar: const SimfBottomNav(current: SimfTab.media),
+      // News left the bottom nav in the KSA Wave-2 shell (the Profile tab
+      // took its slot) — the bar stays, with no destination highlighted.
+      bottomNavigationBar: const SimfBottomNav(current: null),
       body: SafeArea(
         top: false,
         child: news.when(

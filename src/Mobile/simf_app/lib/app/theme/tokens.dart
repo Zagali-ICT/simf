@@ -33,6 +33,12 @@ class SimfTokens {
   static const Color linkNavy = Color(0xFF00245E); // inline links on light surfaces
   static const Color inputInk = Color(0xCC111827); // input text on light surfaces (#111827 at 80%)
 
+  // KSA main-shell disabled palette (W2 frames 512:1492 / 512:1780): the
+  // "بطاقتي" locked card and the disabled theme tile render on these.
+  static const Color navyDisabled = Color(0xFF0A1628); // disabled card fill
+  static const Color navyDisabledBorder = Color(0xFF1E3A5F); // disabled card border
+  static const Color navyDisabledText = Color(0xFF4A6080); // disabled label/icon
+
   // On-navy hairlines + muted text + light-surface hairline, straight from
   // Mockup.html (--line / --line-2 / --txt-2 / --txt-3 / --line-light). These
   // drive the dark theme's cards, dividers, borders and secondary text.
