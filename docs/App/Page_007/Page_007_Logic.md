@@ -7,6 +7,30 @@ contract lives in [Page_007_API.md](Page_007_API.md); the user flow in
 > **Reworked (D-332).** Data screen only. The **interests** rule and the **save** moved
 > to [Page 007‑01](../Page_007-01/README.md). This screen ends with **Next**.
 
+> **Owner constraint set (2026-06-12 — D-371).** The owner fixed seven binding
+> rules for this form ahead of the Wave-1 production-readiness gate. C1–C3 were
+> already as-built; C4–C7 are the build items. The authoritative wording:
+> **C1** Saudi → national ID: starts with `1`, 10 digits, Luhn. **C2** non-Saudi
+> → Iqama (`2` + 10 digits + Luhn) **or** passport (6–9 alphanumeric) — never
+> the national-ID field. **C3** password ≥ 8 chars with a letter and a digit
+> (server-authoritative). **C4** phones validate to the standard: Saudi mobile
+> `05XXXXXXXX` or `+9665XXXXXXXX`; international mobile **E.164** (`+`, then
+> 8–15 digits) — client and server enforce the same rule (supersedes the old
+> permissive `+CC` shape in L-4). **C5** نوع التسجيل: **Visitor → the profile
+> type is locked to the single "Normal" (عادي) type — no picker shown**; Other
+> → the filtered picker is shown and a selection is **required** (extends L-3).
+> **C6** **plate number**: optional; when provided it must match the Saudi
+> standard — **exactly 3 letters (Arabic or Latin equivalents) + 1–4 digits,
+> max 7 characters** excluding separators (owner wrote "17" — read as 7, the
+> only total consistent with 3 letters + max 4 digits; flagged for correction).
+> New additive `UserProfile.PlateNumber` column (owner-authorised freeze lift).
+> **C7** profile image: **mandatory for gender = male**, captured by **camera
+> only** (no gallery), and must pass a **human-face detection** check —
+> on-device (ML Kit) for instant feedback **and** server-side on the
+> `id-image` endpoint as the authority. For women the image stays optional;
+> when added, the same camera-only + face-check rules apply (recorded
+> assumption, D-371).
+
 ## L-1 — Auth gate
 AUTH-only. Every call requires a signed-in bearer token; **no role, no permission
 code, not approval-gated, not `AllowAnonymous`** (D7). The lookups sit in the `auth`
@@ -39,7 +63,11 @@ captured here**:
 - **Date of birth:** **required**, registrant must be **≥ 18** (D-197 — leap-safe `today − 18y`). Place of birth optional (≤ 128); job title optional (≤ 128).
 - **Organisation:** optional; if present must be a valid, active organisation id.
 - **ProfileType:** optional self-pick; rejects unknown / inactive / Admin-scope rows. Admin pre-pick wins over the user self-pick (`UserProfileService.UpsertMineAsync`).
-- **Identity-doc shape:** keyed off the is-Saudi flag — Saudi → national id required, `^1\d{9}$` + Luhn; non-Saudi → an Iqama (`^2\d{9}$` + Luhn) **or** a passport (`^[A-Za-z0-9]{6,9}$`) is required. Mobiles optional, permissive `+CC` shape.
+- **Identity-doc shape:** keyed off the is-Saudi flag — Saudi → national id required, `^1\d{9}$` + Luhn; non-Saudi → an Iqama (`^2\d{9}$` + Luhn) **or** a passport (`^[A-Za-z0-9]{6,9}$`) is required.
+- **Mobiles (C4, D-371):** optional; when present they must match the standard — `saudiMobile`: `^05\d{8}$` or `^\+9665\d{8}$`; `internationalMobile`: E.164 `^\+[1-9]\d{7,14}$`. Client and server enforce identically (supersedes the old permissive shape).
+- **Plate number (C6, D-371):** optional; when present — exactly **3 letters + 1–4 digits, ≤ 7 chars** (Arabic letters or Latin equivalents; separators stripped before validation). Stored in the new additive `UserProfile.PlateNumber` column.
+- **Profile image (C7, D-371):** required when `gender = male` before the Page 007‑01 save is allowed; capture is **camera-only**; the image must pass the human-face check (on-device ML Kit + the server-side detector on the `id-image` endpoint — the server is the authority).
+- **ProfileType lock (C5, D-371):** Visitor → `profileTypeId` is forced to the seeded **"Normal"** type and the picker is hidden; Other → a pick from the `?isVisitor=false` list is **required** (no longer optional).
 
 The client blocks **Next** until these required data fields are valid. **The 1–10
 interests rule and the upsert call are enforced on [Page 007‑01](../Page_007-01/README.md).**

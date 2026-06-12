@@ -19,11 +19,14 @@ in [Page_007_Function.md](Page_007_Function.md); rules in
 > plus mark; thumbnail + remove once attached); the underlined
 > **الموافقة على الشروط والأحكام؟** link → Page 009; the gold **التالي**.
 > **Logic byte-identical** (lookups, prefill, typeahead, Luhn, draft → 007-01).
-> **Design deltas (D-368):** the frame's "رقم اللوحة (اختياري)" has **no
-> backend field** and is not rendered (flagged to the owner); date of birth,
-> place of birth and the Saudi-national switch + national-ID path are **kept**
-> (API-required) in the same styling although the frame omits them. The old
-> screen is parked in `lib/features/_legacy_mockup/`.
+> **Design deltas (D-368):** ~~the frame's "رقم اللوحة (اختياري)" has **no
+> backend field** and is not rendered (flagged to the owner)~~ — **superseded
+> (D-371):** the owner mandated the plate field; it gets the additive backend
+> column and returns to the form (optional, Saudi-standard validated). Date of
+> birth, place of birth and the Saudi-national switch + national-ID path are
+> **kept** (API-required) in the same styling although the frame omits them.
+> The old screen is parked in `lib/features/_legacy_mockup/`. The attach box
+> becomes a **camera capture** with the C7 face-check rules (D-371).
 
 ## Layout (= mockup screen 05)
 ```

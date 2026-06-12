@@ -43,6 +43,7 @@ rules are in [Page_007_Logic.md](Page_007_Logic.md).
   "internationalMobile": "string?",
   "organisationId":  "guid?",   // الجهة (D-221)
   "gender":          0,         // Gender enum; Unspecified until picked (D-221)
+  "plateNumber":     "string?", // (TO BUILD, C6/D-371) Saudi plate: 3 letters + 1–4 digits, ≤7 chars
   "hasIdImage":      false,
   "interestIds":     ["guid"],  // consumed on Page 007‑01
   "qrId":            "string?"  // 12-char Crockford id; null until Approved
@@ -88,6 +89,20 @@ rules are in [Page_007_Logic.md](Page_007_Logic.md).
 `interestIds`) and the `GET /app/account/interests` lookup are documented on
 **[Page 007‑01 API](../Page_007-01/Page_007-01_API.md)**. The ID-document image upload
 (`POST` multipart, after the profile row exists) also runs on save.
+
+> **D-371 contract changes (TO BUILD):** (1) the upsert request/response gain the
+> optional `plateNumber` field — server validates the Saudi standard (3 letters +
+> 1–4 digits, ≤ 7 chars) and rejects `VALIDATION_FAILED` when malformed; backed by
+> the additive `UserProfile.PlateNumber` column (owner-authorised freeze lift).
+> (2) `POST /app/account/user-profile/id-image` runs a **server-side human-face
+> detection** check and rejects uploads with no detectable human face (new error
+> code, bilingual message). (3) **image-required for `gender = male`**: the
+> client blocks the save until a camera capture is attached; the save flow stays
+> upsert-then-upload (the upload needs the profile row), and the **server treats
+> a male profile without a stored image as profile-incomplete** — so the male
+> registrant cannot reach the complete/wait-for-approval state without a
+> face-checked image. (4) `saudiMobile` / `internationalMobile` validation
+> tightens to the C4 standard patterns.
 
 ## Error codes (envelope `ApiResult<T>.Error`)
 | Code | When | Bilingual surface |
