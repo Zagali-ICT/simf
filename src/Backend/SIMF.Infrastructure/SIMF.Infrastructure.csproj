@@ -6,6 +6,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="FaceAiSharp.Bundle" Version="0.6.35" />
     <PackageReference Include="MailKit" Version="4.16.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
@@ -16,6 +17,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.8" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.8" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.8" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.26.0" />
     <PackageReference Include="Otp.NET" Version="1.4.1" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.18.0" />

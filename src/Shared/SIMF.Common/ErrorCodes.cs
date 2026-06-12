@@ -93,6 +93,8 @@ public static class ErrorCodes
     public const string VisitorIdImageTooLarge = "VISITOR_ID_IMAGE_TOO_LARGE";
     public const string VisitorIdImageMimeUnsupported = "VISITOR_ID_IMAGE_MIME_UNSUPPORTED";
     public const string VisitorIdImageNotFound = "VISITOR_ID_IMAGE_NOT_FOUND";
+    // C7 (D-371) — the server-side human-face gate on the profile image.
+    public const string VisitorIdImageNoFace = "VISITOR_ID_IMAGE_NO_FACE";
 
     // User profile — nationality (P8 renamed from VISITOR_NATIONALITY_UNKNOWN
     // so the wire code matches the new domain vocabulary).

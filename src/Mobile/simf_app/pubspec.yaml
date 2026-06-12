@@ -19,10 +19,15 @@ dependencies:
   # Native config (manifest / Info.plist / MainActivity) lands in the generated
   # android/ios folders (simf-run); absent in this source tree.
   local_auth: ^2.3.0
-  # ID-document image picker for the visitor profile (Page_007). Gallery/camera
-  # pick → bytes → multipart upload via simf_data_pkg. Native permission strings
-  # (Info.plist / manifest) land in the generated folders (simf-run).
+  # ID-document image picker for the visitor profile (Page_007). C7 (D-371):
+  # camera-only capture → bytes → multipart upload via simf_data_pkg. Native
+  # permission strings (Info.plist / manifest) land in the generated folders
+  # (simf-run).
   image_picker: ^1.1.2
+  # C7 (D-371) — on-device human-face check over the profile camera capture
+  # (instant feedback; the server's offline FaceAiSharp gate is the
+  # authority). Android/iOS only — web/test runtimes defer to the server.
+  google_mlkit_face_detection: ^0.13.1
   # Native OS share sheet for My-Area (Page_014): share the user's contact-card
   # (.vcf) and calendar (.ics) fetched from the App API. Native share config lands
   # in the generated folders (simf-run).

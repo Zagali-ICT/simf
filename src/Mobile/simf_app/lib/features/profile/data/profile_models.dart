@@ -175,12 +175,15 @@ class UserProfileResponse {
 
   /// The profile is complete when the required fields are present — names and
   /// ≥1 interest (the server validator requires 1–10 interests on every save,
-  /// so a saved profile always has them). Used to gate the post-sign-in route
-  /// to the profile screen (Page_007).
+  /// so a saved profile always has them). C7 (D-371): a male profile without
+  /// a stored photo is treated as incomplete, so the post-sign-in route sends
+  /// the registrant back to Page 007 to capture one. Used to gate the
+  /// post-sign-in route to the profile screen (Page_007).
   bool get isComplete =>
       arabicName.trim().isNotEmpty &&
       englishName.trim().isNotEmpty &&
-      interestIds.isNotEmpty;
+      interestIds.isNotEmpty &&
+      (gender != AppGender.male || hasIdImage);
 
   static UserProfileResponse fromJson(Map<String, dynamic> json) {
     return UserProfileResponse(

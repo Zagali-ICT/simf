@@ -154,15 +154,19 @@ Future<void> _pump(
   await tester.pumpAndSettle();
 }
 
-UserProfileResponse _completeProfile() => const UserProfileResponse(
-      interestIds: <String>['i1'],
+UserProfileResponse _completeProfile({
+  AppGender gender = AppGender.male,
+  bool hasIdImage = true, // C7 — a male profile needs a stored photo
+}) =>
+    UserProfileResponse(
+      interestIds: const <String>['i1'],
       arabicName: 'راكان السالم',
       englishName: 'Rakan Alsalem',
       nationalityCode: 'SA',
       placeOfBirth: 'Riyadh',
       isSaudi: true,
-      gender: AppGender.male,
-      hasIdImage: false,
+      gender: gender,
+      hasIdImage: hasIdImage,
       nationalId: '1000000008', // matches ^1\d{9}$ and is Luhn-valid
       dateOfBirth: '2000-01-31',
       organisationId: 'o1', // B3 — D-221: organisation is now required
@@ -257,6 +261,39 @@ void main() {
 
       expect(find.text('INTERESTS'), findsNothing);
       expect(find.text('Pick your organisation from the list'), findsOneWidget);
+    });
+
+    testWidgets(
+        'a male profile without a stored photo blocks Next with the '
+        'camera-capture error (C7 — D-371)', (tester) async {
+      final repo = _FakeProfileRepository(
+        profile: _completeProfile(hasIdImage: false),
+      );
+      await _pump(tester, repo);
+
+      await _tapNext(tester);
+
+      expect(find.text('INTERESTS'), findsNothing);
+      expect(
+        find.text('A photo is required — capture it with the camera'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets(
+        'a female profile without a photo proceeds — the image stays '
+        'optional for women (C7 — D-371)', (tester) async {
+      final repo = _FakeProfileRepository(
+        profile: _completeProfile(
+          gender: AppGender.female,
+          hasIdImage: false,
+        ),
+      );
+      await _pump(tester, repo);
+
+      await _tapNext(tester);
+
+      expect(find.text('INTERESTS'), findsOneWidget);
     });
 
     testWidgets(

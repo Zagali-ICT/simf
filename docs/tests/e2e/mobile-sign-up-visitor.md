@@ -53,6 +53,8 @@
 | E2E-MOB007-014 | Visitor type lock (C5, D-371): Visitor tab shows **no** profile-type picker; the draft auto-carries the seeded **"Normal" (عادي)** id; server rejects any other audience-tier self-pick with 400 | validation | P0 | authored ✓ (widget test + server C5 tests) |
 | E2E-MOB007-015 | Other tab (C5, D-371): the filtered picker is shown and a pick is **required** (inline error blocks Next); partner-side picks accepted by the server | validation | P0 | authored ✓ (widget test + server C5 test) |
 | E2E-MOB007-016 | Plate number (C6, D-371): optional — empty saves fine; `ABJ1234` / `abj 1234` / `1234-ABJ` / `أبج1234` accepted and stored normalized upper-cased; 2/4 letters, 5 digits, digits-only, symbols rejected — client inline + server 400 | validation | P0 | authored ✓ (client `plate_validation_test` + server `UserProfileTests` theories incl. stored-value round-trip) |
+| E2E-MOB007-017 | Male photo gate (C7, D-371): gender=male + no stored/attached photo → Next blocked with the camera-capture error; female without a photo proceeds (optional); capture is **camera-only** (no gallery) | validation | P0 | authored ✓ (widget tests; camera source by code — live camera drive needs the emulator) |
+| E2E-MOB007-018 | Face check (C7, D-371): on-device ML Kit rejects a no-face capture with the retake toast; the server's offline FaceAiSharp gate rejects a no-face/undecodable upload with 400 `VISITOR_ID_IMAGE_NO_FACE` (audited) | validation | P0 | authored ✓ (server `UserProfileFaceGateTests` against the real ONNX model; positive real-face path → Wave-1 live run) |
 
 ## Scenarios
 

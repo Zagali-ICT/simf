@@ -425,6 +425,11 @@ public static class DependencyInjection
         services.AddScoped<IAdminApprovalReadService, AdminApprovalReadService>();
         services.AddScoped<IQrIdMinter, QrIdMinter>();
         services.AddScoped<IUserProfileService, UserProfileService>();
+        // C7 (D-371) — the offline human-face gate on the profile-image
+        // upload. Singleton: the ONNX detector session is expensive.
+        services.Configure<FaceDetectionOptions>(
+            configuration.GetSection(FaceDetectionOptions.SectionName));
+        services.AddSingleton<IFaceDetectionService, FaceAiSharpFaceDetectionService>();
         services.AddScoped<IInterestService, InterestService>();
         services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
         services.AddScoped<INotificationService, NotificationService>();

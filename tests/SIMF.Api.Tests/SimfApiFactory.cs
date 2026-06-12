@@ -85,6 +85,11 @@ public class SimfApiFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable(
             "Storage__UserIdDocumentEncryptionKey",
             "VnY3R0V2YnFwT0ZQUE1XdjJxQjJlbzVwUFp4MnNYbWY=");
+        // C7 — D-371: the human-face gate is OFF for the general suite (the
+        // fixture images are synthetic 1x1 PNGs that carry no face);
+        // UserProfileFaceGateTests re-enables it via FaceGateApiFactory to
+        // exercise the real offline ONNX model.
+        Environment.SetEnvironmentVariable("FaceDetection__Enabled", "false");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

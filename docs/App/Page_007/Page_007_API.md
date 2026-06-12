@@ -95,14 +95,17 @@ rules are in [Page_007_Logic.md](Page_007_Logic.md).
 > 1–4 digits, ≤ 7 chars, separators stripped), stores it normalized upper-cased in
 > the additive `UserProfile.PlateNumber` column (migration
 > `App/D371_AddUserProfilePlateNumber`), and rejects malformed values 400.
-> (2) `POST /app/account/user-profile/id-image` runs a **server-side human-face
-> detection** check and rejects uploads with no detectable human face (new error
-> code, bilingual message). (3) **image-required for `gender = male`**: the
-> client blocks the save until a camera capture is attached; the save flow stays
-> upsert-then-upload (the upload needs the profile row), and the **server treats
-> a male profile without a stored image as profile-incomplete** — so the male
-> registrant cannot reach the complete/wait-for-approval state without a
-> face-checked image. (4) **BUILT** — `saudiMobile` / `internationalMobile`
+> (2) **BUILT** — `POST /app/account/user-profile/id-image` runs the
+> **server-side human-face gate** (FaceAiSharp SCRFD ONNX, fully offline /
+> NCA-compatible; `FaceDetection:Enabled` + `MinConfidence` options) and
+> rejects no-face or undecodable uploads with **400
+> `VISITOR_ID_IMAGE_NO_FACE`** (bilingual, audited). (3) **BUILT** —
+> **image-required for `gender = male`**: the client blocks Next until a
+> **camera-only** capture (gallery removed) passes the on-device ML Kit face
+> check; the save flow stays upsert-then-upload, and the client's
+> profile-completeness rule treats a male profile without a stored image as
+> incomplete (post-sign-in routes back to Page 007). Women: optional, same
+> camera+face rules when added (D-371 recorded assumption). (4) **BUILT** — `saudiMobile` / `internationalMobile`
 > validation tightened to the C4 standard patterns (B1). The C5 type-lock
 > (Visitor self-pick = "Normal" only, server-enforced) shipped with B2.
 

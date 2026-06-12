@@ -235,6 +235,15 @@ class AppL10n {
         'An Iqama or passport number is required',
       );
   String get phoneInvalid => _t('رقم الجوال غير صالح', 'Invalid phone number');
+  // C7 (D-371) — the male-mandatory camera photo + face check.
+  String get idImageRequiredForMen => _t(
+        'الصورة الشخصية مطلوبة — التقطها بالكاميرا',
+        'A photo is required — capture it with the camera',
+      );
+  String get noFaceDetectedError => _t(
+        'لم يتم التعرف على وجه في الصورة — أعد التقاط صورة واضحة للوجه',
+        'No face was detected in the photo — retake a clear photo of the face',
+      );
   // C6 (D-371) — رقم اللوحة, optional; Saudi standard when filled.
   String get plateNumberLabel =>
       _t('رقم اللوحة (اختياري)', 'Plate number (optional)');

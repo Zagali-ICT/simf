@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
@@ -86,6 +88,9 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   Timer? _organisationDebounce;
   Uint8List? _idImageBytes;
+  // C7 (D-371) — true when the server already stores an image for this
+  // profile (prefill), so a male re-entry is not forced to recapture.
+  bool _hasExistingIdImage = false;
   String? _idImageName;
 
   bool _loading = true;
@@ -172,6 +177,7 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     _internationalMobile.text = profile.internationalMobile ?? '';
     _plate.text = profile.plateNumber ?? '';
     _gender = profile.gender;
+    _hasExistingIdImage = profile.hasIdImage;
 
     final code = profile.nationalityCode;
     _nationalityCode = _countries.any((c) => c.code == code) ? code : null;
@@ -299,12 +305,26 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   Future<void> _pickIdImage() async {
     try {
-      final file = await ImagePicker().pickImage(source: ImageSource.gallery);
+      // C7 (D-371) — camera-only capture; the gallery path was removed by
+      // owner rule (the photo must be taken live).
+      final file = await ImagePicker().pickImage(source: ImageSource.camera);
       if (file == null) {
         return;
       }
       final bytes = await file.readAsBytes();
+      // C7 — on-device human-face check for instant feedback; the server
+      // re-checks authoritatively on upload (the on-device pass is skipped
+      // on web / when the plugin is unavailable).
+      final hasFace = await _containsFace(file.path);
       if (!mounted) {
+        return;
+      }
+      if (!hasFace) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(AppL10n.of(context).noFaceDetectedError)),
+          );
         return;
       }
       setState(() {
@@ -312,8 +332,27 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
         _idImageName = file.name;
       });
     } catch (_) {
-      // The picker is unavailable (e.g. no native plugin in this tree). The
-      // image is optional and can be added later — fail silently.
+      // The camera is unavailable (e.g. no native plugin in this tree).
+      // Fail silently — the C7 male gate on Next reports the missing image.
+    }
+  }
+
+  /// C7 (D-371) — runs the on-device ML Kit face detector over the capture.
+  /// Returns true (defer to the server gate) on web or when the detector
+  /// plugin is unavailable in the current runtime.
+  Future<bool> _containsFace(String path) async {
+    if (kIsWeb) {
+      return true;
+    }
+    final detector = FaceDetector(options: FaceDetectorOptions());
+    try {
+      final faces = await detector.processImage(InputImage.fromFilePath(path));
+      return faces.isNotEmpty;
+    } catch (_) {
+      // Detector unavailable (tests / desktop) — the server still checks.
+      return true;
+    } finally {
+      unawaited(detector.close());
     }
   }
 
@@ -336,7 +375,12 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     final dateOfBirthValid = _dateOfBirth != null;
     // B3 — D-221 (الجهة): organisation is required (server enforces it too).
     final organisationValid = _organisationId != null;
-    if (!formValid || !dateOfBirthValid || !organisationValid) {
+    // C7 (D-371) — the photo is mandatory for men: a camera capture must be
+    // attached (or already stored server-side) before the flow continues.
+    final imageValid = _gender != AppGender.male ||
+        _idImageBytes != null ||
+        _hasExistingIdImage;
+    if (!formValid || !dateOfBirthValid || !organisationValid || !imageValid) {
       setState(() {});
       return;
     }
@@ -982,14 +1026,27 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   }
 
   /// The attach box (Figma 505:1322): a 56 px bordered row with the plus mark;
-  /// once attached it shows the thumbnail + name + remove.
+  /// once attached it shows the thumbnail + name + remove. C7 (D-371): the
+  /// capture is camera-only and mandatory for men — the inline error renders
+  /// after a blocked Next.
   Widget _buildIdImageField(AppL10n l10n) {
     final bytes = _idImageBytes;
+    final showRequiredError = _triedSubmit &&
+        _gender == AppGender.male &&
+        bytes == null &&
+        !_hasExistingIdImage;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(l10n.attachmentsLabel),
         const SizedBox(height: 8),
+        if (showRequiredError) ...<Widget>[
+          Text(
+            l10n.idImageRequiredForMen,
+            style: const TextStyle(color: SimfTokens.danger, fontSize: 12),
+          ),
+          const SizedBox(height: 8),
+        ],
         if (bytes == null)
           InkWell(
             onTap: () => unawaited(_pickIdImage()),

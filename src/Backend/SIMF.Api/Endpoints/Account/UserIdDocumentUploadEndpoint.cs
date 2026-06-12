@@ -27,6 +27,7 @@ public sealed class UserIdDocumentUploadRequest
 /// </summary>
 public sealed class UserIdDocumentUploadEndpoint(
     IUserProfileService service,
+    IFaceDetectionService faceDetection,
     IAuditLog auditLog)
     : Endpoint<UserIdDocumentUploadRequest, ApiResult<bool>>
 {
@@ -84,6 +85,17 @@ public sealed class UserIdDocumentUploadEndpoint(
                 ErrorCodes.VisitorIdImageMimeUnsupported, 400,
                 "The ID image must be PNG, JPEG or WebP.",
                 "يجب أن تكون صورة الهوية بصيغة PNG أو JPEG أو WebP.");
+        }
+
+        // C7 (D-371) — the server-side human-face gate (the authority over
+        // the client's on-device check). Runs offline (FaceAiSharp ONNX).
+        if (!await faceDetection.ContainsHumanFaceAsync(bytes, ct))
+        {
+            await AuditRejectAsync(actorId, ErrorCodes.VisitorIdImageNoFace, ct);
+            throw new ApiException(
+                ErrorCodes.VisitorIdImageNoFace, 400,
+                "No human face was detected in the photo — retake a clear photo of the face.",
+                "لم يتم التعرف على وجه بشري في الصورة — أعد التقاط صورة واضحة للوجه.");
         }
 
         await service.UploadIdImageAsync(actorId, bytes, normalisedContentType, ct);
