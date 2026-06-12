@@ -23,7 +23,7 @@ public booths read. The whole screen is **public** content — no sign-in needed
 | Section | 2 — Core screens |
 | Nature | **2D venue map** (positioned nodes + booth popups) |
 | App privilege | **Public** (AllowAnonymous) — Guest and above |
-| Status | **Flutter screen BUILT (D-298)**; API **built** (D-230 venue-map, D-199 booths) |
+| Status | **Flutter screen BUILT (D-298), redesigned to KSA Wave-2 frame 215:562 (D-378)** — venue 2D plane (NOT the frame's Google map, owner directive), gold zoom/recentre controls, node tap → bottom info card (أرشدني + عرض التفاصيل); old screen parked in `_legacy_mockup/`; API **built** (D-230 venue-map, D-199 booths) |
 
 ## Sources of truth
 `Mockup.html` (visual) · `SIMF_Screen_Guide_and_User_Journey` (narrative, Screen 15) ·

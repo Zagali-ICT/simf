@@ -534,6 +534,9 @@ class AppL10n {
   String get legendZone => _t('منطقة', 'Zone');
   String get legendBooth => _t('جناح', 'Booth');
   String get legendPoi => _t('نقطة اهتمام', 'Point of interest');
+  // KSA Wave-2 frame 215:562 copy (the selected-node info card).
+  String get venueMapDirectMe => _t('أرشدني', 'Guide me');
+  String get venueMapViewDetails => _t('عرض التفاصيل', 'View details');
 
   // Sessions — daily schedule (Page 016). The two pills + the day strip + the
   // search box all filter the cached programme client-side (Page_016 L-1).

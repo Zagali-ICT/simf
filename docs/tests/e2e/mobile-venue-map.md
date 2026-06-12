@@ -3,12 +3,21 @@
 > **Authority:** SIMF E2E test catalogue template (D-133 slice 7). Mobile
 > catalogue — the public reads are built (D-230 venue-map, D-199 booths); the
 > booth API is covered by `tests/SIMF.Api.Tests/PublicBoothsTests.cs`. The
-> **Flutter screen is built** (D-298) and widget-tested in
-> `src/Mobile/simf_app/test/features/venuemap/venue_map_screen_test.dart` (markers
-> + legend, booth popup with lazy detail, detail-404 fallback, empty, error→retry,
-> RTL chrome vs LTR canvas); the model parsers (kind tolerant-decode, real booth
-> field names) are covered in
+> **Flutter screen is built** (D-298) and was **rebuilt to KSA Wave-2 frame
+> 215:562 "Location"** (D-378 batch) with the frame's Google geographic map
+> **replaced by the venue 2D node plane** (owner directive): full-bleed
+> pan/zoom plane, floating gold zoom-in/zoom-out/recentre controls, node tap →
+> the **bottom white info card** (gold box, name, exhibitor·sector, code chip,
+> gold **أرشدني** centring the map on the node + **عرض التفاصيل** opening the
+> lazy-description sheet). The old legend strip gave way to the frame's info
+> card. Widget-tested in
+> `src/Mobile/simf_app/test/features/venuemap/venue_map_screen_test.dart`
+> (markers + controls, booth card + actions, details sheet with lazy detail,
+> detail-404 fallback, non-booth card + close, empty, error→retry, LTR
+> canvas); the model parsers (kind tolerant-decode, real booth field names)
+> are covered in
 > `src/Mobile/simf_app/test/features/venuemap/venue_map_models_test.dart`.
+> The old mockup screen + test are parked in `_legacy_mockup/`.
 
 | | |
 |--|--|

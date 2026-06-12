@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_models.dart';
 import 'package:simf_app/features/venuemap/data/venue_map_repository.dart';
-import 'package:simf_app/features/venuemap/venue_map_screen.dart';
+import 'package:simf_app/features/_legacy_mockup/venue_map_screen.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 const _boothNode = VenueMapNode(
@@ -28,7 +28,7 @@ const _hallNode = VenueMapNode(
 );
 
 // A second node far from the booth so the booth normalises to the top-left of
-// the canvas (clear of the bottom info-card overlay), keeping it tappable.
+// the canvas (clear of the bottom legend overlay), keeping its marker tappable.
 const _farNode = VenueMapNode(
   id: 'n3',
   label: 'Far',
@@ -128,9 +128,8 @@ Future<void> _pump(
 }
 
 void main() {
-  group('VenueMapScreen (Page 015 — KSA frame 215:562, venue plane)', () {
-    testWidgets('renders a marker per node + the floating map controls',
-        (tester) async {
+  group('VenueMapScreen (Page 015)', () {
+    testWidgets('renders a marker per node + the legend', (tester) async {
       await _pump(
         tester,
         repo: _FakeVenueMapRepository(
@@ -141,35 +140,12 @@ void main() {
 
       expect(find.text('Booth A-12'), findsOneWidget);
       expect(find.text('Hall A'), findsOneWidget);
-      expect(find.byIcon(Icons.add), findsOneWidget);
-      expect(find.byIcon(Icons.remove), findsOneWidget);
-      expect(find.byIcon(Icons.my_location), findsOneWidget);
-      // No info card until a node is selected.
-      expect(find.text('Guide me'), findsNothing);
+      // Legend chips for the four kinds.
+      expect(find.text('Booth'), findsOneWidget);
+      expect(find.text('Point of interest'), findsOneWidget);
     });
 
-    testWidgets('tapping a booth node opens the info card with name, code, '
-        'and both actions', (tester) async {
-      await _pump(
-        tester,
-        repo: _FakeVenueMapRepository(
-          nodes: const <VenueMapNode>[_boothNode, _farNode],
-          booths: const <BoothSummary>[_booth],
-          detail: _detail,
-        ),
-      );
-
-      await tester.tap(find.text('Booth A-12'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('SAMI'), findsWidgets); // name (card + gold box)
-      expect(find.text('A-12'), findsOneWidget); // code chip
-      expect(find.text('SAMI Co · Defense'), findsOneWidget);
-      expect(find.text('Guide me'), findsOneWidget);
-      expect(find.text('View details'), findsOneWidget);
-    });
-
-    testWidgets('View details opens the description sheet (lazy detail)',
+    testWidgets('tapping a booth node opens the popup with name, code, detail',
         (tester) async {
       await _pump(
         tester,
@@ -182,13 +158,13 @@ void main() {
 
       await tester.tap(find.text('Booth A-12'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('View details'));
-      await tester.pumpAndSettle();
 
+      expect(find.text('SAMI'), findsOneWidget); // booth name (sheet)
+      expect(find.text('A-12'), findsOneWidget); // code chip
       expect(find.text('World-class maritime systems.'), findsOneWidget);
     });
 
-    testWidgets('a detail 404 keeps the summary sheet without a description',
+    testWidgets('a detail 404 keeps the summary and drops the description',
         (tester) async {
       await _pump(
         tester,
@@ -201,32 +177,9 @@ void main() {
 
       await tester.tap(find.text('Booth A-12'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('View details'));
-      await tester.pumpAndSettle();
 
-      expect(find.text('SAMI'), findsWidgets); // summary kept
-      expect(find.text('World-class maritime systems.'), findsNothing);
-    });
-
-    testWidgets('a non-booth node shows the card with Guide-me only and '
-        'closes via the X', (tester) async {
-      await _pump(
-        tester,
-        repo: _FakeVenueMapRepository(
-          nodes: const <VenueMapNode>[_hallNode, _farNode],
-          booths: const <BoothSummary>[],
-        ),
-      );
-
-      await tester.tap(find.text('Hall A'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Guide me'), findsOneWidget);
-      expect(find.text('View details'), findsNothing);
-
-      await tester.tap(find.byIcon(Icons.close));
-      await tester.pumpAndSettle();
-      expect(find.text('Guide me'), findsNothing);
+      expect(find.text('SAMI'), findsOneWidget); // summary kept
+      expect(find.text('A-12'), findsOneWidget);
     });
 
     testWidgets('an empty node list shows the empty state', (tester) async {
@@ -248,7 +201,8 @@ void main() {
       expect(repo.nodeCalls, greaterThanOrEqualTo(2));
     });
 
-    testWidgets('the canvas geometry stays LTR in Arabic', (tester) async {
+    testWidgets('chrome mirrors in Arabic but the canvas geometry does not',
+        (tester) async {
       await _pump(
         tester,
         repo: _FakeVenueMapRepository(
@@ -258,8 +212,13 @@ void main() {
         locale: const Locale('ar'),
       );
 
-      // The map canvas (and its node labels) stays LTR — venue geometry is
-      // not mirrored (Page_015 L-3).
+      // The legend (chrome) follows the locale → RTL.
+      expect(
+        Directionality.of(tester.element(find.text('قاعة'))),
+        TextDirection.rtl,
+      );
+      // The map canvas (and its node labels) stays LTR — venue geometry is not
+      // mirrored (Page_015 L-3).
       expect(
         Directionality.of(tester.element(find.text('القاعة أ'))),
         TextDirection.ltr,
