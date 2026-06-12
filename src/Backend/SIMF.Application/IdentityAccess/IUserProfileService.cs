@@ -79,6 +79,13 @@ public interface IUserProfileService
     /// app).</summary>
     Task<SIMF.Common.Enums.MobileAppRole> ResolveMobileAppRoleAsync(
         Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>D-374 — server-computed profile completeness (names + ≥1
+    /// interest + the C7 male-photo rule). Surfaced on the login flow's
+    /// <c>/app/users/me</c> so the app forces the add-profile stage after
+    /// ANY login path without a separate probe.</summary>
+    Task<bool> IsProfileCompleteAsync(
+        Guid userId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>The decrypted ID-image bytes + the content type for the response.</summary>

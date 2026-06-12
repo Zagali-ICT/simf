@@ -46,6 +46,12 @@ public interface IUserProfileRepository
     Task<ProfileTypeRole?> GetAssignedProfileTypeRoleAsync(
         Guid userId, CancellationToken cancellationToken = default);
 
+    /// <summary>D-374 — the scalar facts behind the profile-completeness
+    /// flag (one projected row, no entity/Interests hydration — this runs on
+    /// every <c>/users/me</c> hydration), or null when no profile row exists.</summary>
+    Task<ProfileCompletenessFacts?> GetCompletenessFactsAsync(
+        Guid userId, CancellationToken cancellationToken = default);
+
     // --- App DB: lookup validation -----------------------------------------
 
     /// <summary>The active + scope facts for a profile type, or null when the
@@ -111,6 +117,12 @@ public sealed record ProfileTypeFacts(
 
 /// <summary>Audience flag + mobile role read off an assigned profile type.</summary>
 public sealed record ProfileTypeRole(bool IsVisitor, MobileAppRole MobileAppRole);
+
+/// <summary>D-374 — the facts the completeness rule reads (names + ≥1
+/// interest + the C7 male-photo rule), projected in one row.</summary>
+public sealed record ProfileCompletenessFacts(
+    string? Name, string? NameArabic, Gender Gender,
+    string? IdImageRelativePath, bool HasInterests);
 
 /// <summary>An approved Admin account — a notification recipient.</summary>
 public sealed record PendingAdminRecipient(Guid Id, string? Email, string? DisplayName);

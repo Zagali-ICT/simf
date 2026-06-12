@@ -98,4 +98,9 @@ public sealed record CurrentUserResponse(
     string AppRole,
     string PreferredLanguage,
     string RegistrationStatus,
-    string? AvatarUrl);
+    string? AvatarUrl,
+    // D-374 — server-computed profile completeness so the app can force the
+    // add-profile stage right after ANY login path (names + ≥1 interest +
+    // the C7 male-photo rule), without a separate profile probe. Additive
+    // wire field (append-only contract).
+    bool ProfileComplete = false);

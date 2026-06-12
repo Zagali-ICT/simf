@@ -55,6 +55,44 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Me_profileComplete_is_false_before_and_true_after_a_full_profile_upsert()
+    {
+        // D-374 — the app's add-profile-first gate reads this flag off the
+        // sign-in hydration; the stub profile row (QR only) must read as
+        // incomplete, a full upsert (names + interests) as complete.
+        var token = await CreateUserAndSignInAsync();
+
+        var before = await GetAuthAsync("/api/v1/app/users/me", token);
+        Assert.Equal(HttpStatusCode.OK, before.StatusCode);
+        var beforeBody = (await before.Content.ReadFromJsonAsync<ApiResult<CurrentUserResponse>>())!;
+        Assert.False(beforeBody.Data!.ProfileComplete);
+
+        var upsert = await PostAuthAsync(Path, await ValidSaudiRequestAsync(), token);
+        Assert.Equal(HttpStatusCode.OK, upsert.StatusCode);
+
+        var after = await GetAuthAsync("/api/v1/app/users/me", token);
+        var afterBody = (await after.Content.ReadFromJsonAsync<ApiResult<CurrentUserResponse>>())!;
+        Assert.True(afterBody.Data!.ProfileComplete);
+    }
+
+    [Fact]
+    public async Task Me_profileComplete_stays_false_for_a_male_profile_without_the_id_photo()
+    {
+        // C7 (D-371) makes the camera photo mandatory for males, so a male
+        // profile with no image is still incomplete for the D-374 gate.
+        var token = await CreateUserAndSignInAsync();
+
+        var request = await ValidSaudiRequestAsync();
+        request.Gender = Gender.Male;
+        var upsert = await PostAuthAsync(Path, request, token);
+        Assert.Equal(HttpStatusCode.OK, upsert.StatusCode);
+
+        var me = await GetAuthAsync("/api/v1/app/users/me", token);
+        var body = (await me.Content.ReadFromJsonAsync<ApiResult<CurrentUserResponse>>())!;
+        Assert.False(body.Data!.ProfileComplete);
+    }
+
+    [Fact]
     public async Task POST_upsert_creates_a_profile_and_a_second_call_updates_it()
     {
         var token = await CreateUserAndSignInAsync();

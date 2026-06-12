@@ -1,4 +1,5 @@
 // Tests: SIMF.Api.Tests/ProfileEndpointsTests.cs
+//        SIMF.Api.Tests/UserProfileTests.cs (D-374 Me_profileComplete)
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
@@ -64,6 +65,9 @@ internal sealed class AccountService(
         // The app-role lookup reads the App database (ProfileType.MobileAppRole)
         // — a second query on the other context, never a cross-DB join (D-157).
         var mobileAppRole = await userProfiles.ResolveMobileAppRoleAsync(user.Id, cancellationToken);
+        // D-374 — completeness rides on the login flow so the app can force
+        // the add-profile stage without a separate profile probe.
+        var profileComplete = await userProfiles.IsProfileCompleteAsync(user.Id, cancellationToken);
 
         return new CurrentUserResponse(
             user.Id,
@@ -75,7 +79,8 @@ internal sealed class AccountService(
             // it locally. Emitted for wire-shape completeness.
             PreferredLanguageDefault,
             MapRegistrationStatus(user.AccountState),
-            BuildAvatarUrl(user));
+            BuildAvatarUrl(user),
+            profileComplete);
     }
 
     public async Task<RecoveryCodesResponse> RegenerateRecoveryCodesAsync(

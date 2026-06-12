@@ -1,5 +1,6 @@
 // Tests: SIMF.Api.Tests/UserProfileTests.cs (upsert round-trip, ID image
-//        round-trip, get-empty-when-not-saved-yet, nationality-unknown)
+//        round-trip, get-empty-when-not-saved-yet, nationality-unknown,
+//        D-374 Me_profileComplete flip + male-without-photo)
 //        SIMF.Api.Tests/UserProfileRollbackTests.cs (H16 — transaction rollback)
 using Microsoft.Extensions.Logging;
 using SIMF.Application.Abstractions;
@@ -369,6 +370,25 @@ internal sealed class UserProfileService(
             return MobileAppRole.Visitor;
         }
         return profileType.MobileAppRole;
+    }
+
+    public async Task<bool> IsProfileCompleteAsync(
+        Guid userId, CancellationToken cancellationToken = default)
+    {
+        // D-374 — the server-side completeness rule: both names + at least
+        // one interest (the validator demands 1–10 on every save) + the C7
+        // male-photo rule. Reads a single projected row — this runs on every
+        // /users/me hydration (sign-in + app boot).
+        var facts = await profiles.GetCompletenessFactsAsync(userId, cancellationToken);
+        if (facts is null)
+        {
+            return false;
+        }
+        var hasNames = !string.IsNullOrWhiteSpace(facts.NameArabic)
+            && !string.IsNullOrWhiteSpace(facts.Name);
+        var malePhotoSatisfied = facts.Gender != Gender.Male
+            || !string.IsNullOrEmpty(facts.IdImageRelativePath);
+        return hasNames && facts.HasInterests && malePhotoSatisfied;
     }
 
     private async Task DispatchProfileSubmittedAsync(

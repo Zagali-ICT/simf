@@ -81,6 +81,16 @@ internal sealed class UserProfileRepository(
         return string.IsNullOrEmpty(path) ? null : path;
     }
 
+    public Task<ProfileCompletenessFacts?> GetCompletenessFactsAsync(
+        Guid userId, CancellationToken cancellationToken = default) =>
+        appDbContext.UserProfiles
+            .AsNoTracking()
+            .Where(p => p.UserId == userId)
+            .Select(p => new ProfileCompletenessFacts(
+                p.Name, p.NameArabic, p.Gender,
+                p.IdImageRelativePath, p.Interests.Any()))
+            .SingleOrDefaultAsync(cancellationToken);
+
     public Task<ProfileTypeRole?> GetAssignedProfileTypeRoleAsync(
         Guid userId, CancellationToken cancellationToken = default) =>
         appDbContext.UserProfiles
