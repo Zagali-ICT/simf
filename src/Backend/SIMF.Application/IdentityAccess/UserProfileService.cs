@@ -160,6 +160,15 @@ internal sealed class UserProfileService(
         // already set (e.g. via /admin/others). Preserve it.
         profile ??= new UserProfile { UserId = actorUserId, CreatedAt = now };
 
+        // D-373 — issue the human-friendly registration reference once
+        // (SIMF-<year>-<8-digit sequence>); covers brand-new rows and any
+        // pre-D-373 / admin-stub rows that never received one.
+        if (string.IsNullOrEmpty(profile.ReferenceNumber))
+        {
+            var sequenceValue = await profiles.NextRegistrationReferenceAsync(cancellationToken);
+            profile.ReferenceNumber = $"SIMF-{now.Year}-{sequenceValue:D8}";
+        }
+
         // D-190 — admin-wins precedence for ProfileTypeId.
         //   • Admin pre-assigned (existing profile.ProfileTypeId != null):
         //       keep the admin's pick; the user's self-pick is silently
@@ -562,6 +571,7 @@ internal sealed class UserProfileService(
             SaudiMobile = profile.SaudiMobile,
             InternationalMobile = profile.InternationalMobile,
             PlateNumber = profile.PlateNumber,
+            ReferenceNumber = profile.ReferenceNumber,
             OrganisationId = profile.OrganisationId,
             Gender = profile.Gender,
             HasIdImage = !string.IsNullOrEmpty(profile.IdImageRelativePath),

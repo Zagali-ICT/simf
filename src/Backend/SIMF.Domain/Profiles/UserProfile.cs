@@ -108,6 +108,13 @@ public class UserProfile : BaseAuditEntity
     /// separators. Additive column (owner-authorised freeze lift).</summary>
     public string? PlateNumber { get; set; }
 
+    /// <summary>D-373 — the human-friendly registration reference
+    /// (<c>SIMF-2026-00000001</c>): issued once from the
+    /// <c>RegistrationReferenceSequence</c> SQL sequence when the profile
+    /// row is first created, unique, used for customer-facing lookup. NOT
+    /// the QR id. Additive column (owner-authorised).</summary>
+    public string? ReferenceNumber { get; set; }
+
 
 
     /// <summary>

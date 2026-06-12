@@ -31,6 +31,32 @@ internal sealed class UserProfileRepository(
 
     public void Add(UserProfile profile) => appDbContext.UserProfiles.Add(profile);
 
+    public async Task<long> NextRegistrationReferenceAsync(
+        CancellationToken cancellationToken = default)
+    {
+        // D-373 — a SQL sequence is the concurrency-safe issuer for the
+        // human-quotable registration reference. Raw ADO because SQL Server
+        // forbids NEXT VALUE FOR inside the derived table EF wraps
+        // SqlQueryRaw results into.
+        var connection = appDbContext.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+        {
+            await connection.OpenAsync(cancellationToken);
+        }
+        await using var command = connection.CreateCommand();
+        command.CommandText =
+            "SELECT NEXT VALUE FOR [dbo].[RegistrationReferenceSequence];";
+        var transaction = appDbContext.Database.CurrentTransaction;
+        if (transaction is not null)
+        {
+            command.Transaction =
+                Microsoft.EntityFrameworkCore.Storage.DbContextTransactionExtensions
+                    .GetDbTransaction(transaction);
+        }
+        var value = await command.ExecuteScalarAsync(cancellationToken);
+        return (long)value!;
+    }
+
     public async Task<RejectionText?> GetRejectionTextAsync(
         Guid userId, CancellationToken cancellationToken = default)
     {

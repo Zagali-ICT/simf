@@ -37,6 +37,11 @@ public sealed class UserProfileResponse
     /// stored normalized (3 letters + 1–4 digits, ≤ 7 chars, no separators).</summary>
     public string? PlateNumber { get; set; }
 
+    /// <summary>D-373 — the registration reference (<c>SIMF-2026-00000001</c>),
+    /// issued once at profile creation. Customer-facing lookup key; NOT the
+    /// QR id.</summary>
+    public string? ReferenceNumber { get; set; }
+
     /// <summary>B3 — D-221 (الجهة): the picked <see cref="Organisation"/> id,
     /// or null when the user has not picked one.</summary>
     public Guid? OrganisationId { get; set; }

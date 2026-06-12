@@ -726,9 +726,21 @@ internal sealed partial class AdminAccountService(
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var term = query.Search.Trim();
+            // D-373 — the registration reference (SIMF-YYYY-NNNNNNNN) lives
+            // on the App-DB profile row; cross-DB means resolve the matching
+            // user ids first (never a JOIN — D-157). Capped: a reference
+            // search is effectively exact, so the set is tiny.
+            var referenceUserIds = await appDbContext.UserProfiles
+                .AsNoTracking()
+                .Where(p => p.ReferenceNumber != null
+                    && EF.Functions.Like(p.ReferenceNumber, $"%{term}%"))
+                .Select(p => p.UserId)
+                .Take(200)
+                .ToListAsync(cancellationToken);
             users = users.Where(u =>
                 (u.Email != null && EF.Functions.Like(u.Email, $"%{term}%"))
-                || EF.Functions.Like(u.DisplayName, $"%{term}%"));
+                || EF.Functions.Like(u.DisplayName, $"%{term}%")
+                || referenceUserIds.Contains(u.Id));
         }
 
         // -- Per-column filters --------------------------------------------

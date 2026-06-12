@@ -53,6 +53,12 @@ public interface IUserProfileRepository
     Task<ProfileTypeFacts?> FindProfileTypeAsync(
         Guid profileTypeId, CancellationToken cancellationToken = default);
 
+    /// <summary>D-373 — the next value of the registration-reference SQL
+    /// sequence (concurrency-safe, monotonic). The service formats it as
+    /// <c>SIMF-&lt;year&gt;-&lt;value:D8&gt;</c>.</summary>
+    Task<long> NextRegistrationReferenceAsync(
+        CancellationToken cancellationToken = default);
+
     /// <summary>The subset of <paramref name="ids"/> that are active
     /// interests — the count is compared against the request to reject
     /// unknown / deactivated picks.</summary>

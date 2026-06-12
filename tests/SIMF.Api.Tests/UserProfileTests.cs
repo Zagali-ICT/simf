@@ -348,6 +348,47 @@ public sealed class UserProfileTests : IClassFixture<SimfApiFactory>
         Assert.Null(fetched.PlateNumber);
     }
 
+    // D-373 — the registration reference: SIMF-<year>-<8-digit sequence>,
+    // issued once at profile creation, stable across re-saves, unique and
+    // monotonic across users.
+    [Fact]
+    public async Task First_save_issues_a_registration_reference_and_resaves_keep_it()
+    {
+        var token = await CreateUserAndSignInAsync();
+
+        var first = await PostAuthAsync(Path, await ValidSaudiRequestAsync(), token);
+        var raw = await first.Content.ReadAsStringAsync();
+        Assert.True(
+            first.StatusCode == HttpStatusCode.OK,
+            $"expected 200, got {(int)first.StatusCode}: {raw}");
+        var firstBody = (await first.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        Assert.NotNull(firstBody.ReferenceNumber);
+        Assert.Matches(@"^SIMF-\d{4}-\d{8}$", firstBody.ReferenceNumber!);
+
+        var second = await PostAuthAsync(Path, await ValidSaudiRequestAsync(), token);
+        var secondBody = (await second.Content
+            .ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        Assert.Equal(firstBody.ReferenceNumber, secondBody.ReferenceNumber);
+    }
+
+    [Fact]
+    public async Task References_are_distinct_and_increasing_across_users()
+    {
+        var tokenA = await CreateUserAndSignInAsync();
+        var tokenB = await CreateUserAndSignInAsync();
+
+        var a = (await (await PostAuthAsync(Path, await ValidSaudiRequestAsync(), tokenA))
+            .Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+        var b = (await (await PostAuthAsync(Path, await ValidSaudiRequestAsync(), tokenB))
+            .Content.ReadFromJsonAsync<ApiResult<UserProfileResponse>>())!.Data!;
+
+        Assert.NotEqual(a.ReferenceNumber, b.ReferenceNumber);
+        var seqA = long.Parse(a.ReferenceNumber![^8..]);
+        var seqB = long.Parse(b.ReferenceNumber![^8..]);
+        Assert.True(seqB > seqA, $"expected {seqB} > {seqA}");
+    }
+
     // C5 (D-371) — a self-registering visitor is locked to the single
     // "Normal" audience profile type; richer audience tiers are admin-
     // assigned only, while partner-side ("Other") picks stay free.

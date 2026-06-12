@@ -251,7 +251,12 @@ GoRouter buildRouter(Ref ref) {
               );
             }
             if (r.name == RouteNames.registrationSuccess) {
-              return const RegistrationSuccessScreen();
+              // D-373 — the interests screen passes the freshly issued
+              // registration reference as the route extra.
+              final extra = state.extra;
+              return RegistrationSuccessScreen(
+                referenceNumber: extra is String ? extra : null,
+              );
             }
             if (r.name == RouteNames.registrationStatus) {
               return const RegistrationStatusScreen();

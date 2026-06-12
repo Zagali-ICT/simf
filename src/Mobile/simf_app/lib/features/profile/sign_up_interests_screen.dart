@@ -121,7 +121,7 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
     });
     final repo = ref.read(profileRepositoryProvider);
     try {
-      await repo.upsertMyProfile(
+      final saved = await repo.upsertMyProfile(
         draft.request.copyWith(interestIds: _selected.toList()),
       );
       final imageFailed = await _uploadIdImageIfAny(repo, draft);
@@ -137,7 +137,12 @@ class _SignUpInterestsScreenState extends ConsumerState<SignUpInterestsScreen> {
             ),
           ),
         );
-      context.goNamed(RouteNames.registrationSuccess);
+      // D-373 — the save response carries the freshly issued registration
+      // reference; the success screen renders it without another fetch.
+      context.goNamed(
+        RouteNames.registrationSuccess,
+        extra: saved.referenceNumber,
+      );
     } on ApiFailure catch (failure) {
       if (!mounted) {
         return;

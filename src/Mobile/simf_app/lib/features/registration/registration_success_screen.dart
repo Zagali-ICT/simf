@@ -15,9 +15,10 @@ const Color _tileBorder = Color(0xFF253660);
 const Color _refCardFill = Color(0xCC01132D); // #01132D at 80%
 const Color _sweepTint = Color(0x0AFFFFFF);
 
-/// The design's masked reference shown until the account is approved — the
-/// real badge/reference surfaces later on the badge/status pages (owner
-/// decision, D-366). A literal mask, deliberately not localized.
+/// The fallback mask when no real reference is available (offline arrival or
+/// a pre-D-373 save). D-373 superseded the D-366 always-masked rule: the save
+/// response now carries the DB-issued `SIMF-YYYY-NNNNNNNN` reference and the
+/// interests screen passes it here via the route extra.
 const String _maskedReference = 'SIMF-2026-xxxx';
 
 /// Page 010 — تم التسجيل · Registration success. The KSA-Project Figma design
@@ -26,14 +27,17 @@ const String _maskedReference = 'SIMF-2026-xxxx';
 /// outlined الانتقال للرئيسية actions, and the visual-only تواصل معانا tiles.
 /// The previous screen is parked in `_legacy_mockup/`.
 ///
-/// Contract unchanged: terminal confirmation of sign-up, **no API**,
-/// offline-safe, reached as a replacement. Primary action → Page_011 status;
-/// secondary → home. Owner decisions (D-366): the reference card renders the
-/// design's masked value (no fetch — the page stays offline-safe) and the
-/// contact tiles are visual-only until official contact details exist
-/// (tracked on the programme board).
+/// Contract: terminal confirmation of sign-up, offline-safe, reached as a
+/// replacement. Primary action → Page_011 status; secondary → home.
+/// D-373: the reference card renders the real DB-issued registration
+/// reference carried from the save ([referenceNumber]); the literal mask
+/// remains only as the no-data fallback so the page stays offline-safe.
 class RegistrationSuccessScreen extends StatelessWidget {
-  const RegistrationSuccessScreen({super.key});
+  const RegistrationSuccessScreen({super.key, this.referenceNumber});
+
+  /// The `SIMF-YYYY-NNNNNNNN` reference issued by the save (D-373); null on
+  /// an offline / out-of-flow arrival → the mask renders.
+  final String? referenceNumber;
 
   void _back(BuildContext context) {
     if (context.canPop()) {
@@ -177,10 +181,10 @@ class RegistrationSuccessScreen extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  const Text(
-                                    _maskedReference,
+                                  Text(
+                                    referenceNumber ?? _maskedReference,
                                     textDirection: TextDirection.ltr,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       color: SimfTokens.accent,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,

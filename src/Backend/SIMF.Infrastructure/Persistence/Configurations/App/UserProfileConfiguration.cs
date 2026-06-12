@@ -49,6 +49,12 @@ internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserPr
         builder.Property(profile => profile.InternationalMobile).HasMaxLength(24);
         // C6 — D-371: stored normalized (3 letters + 1–4 digits, no separators).
         builder.Property(profile => profile.PlateNumber).HasMaxLength(7);
+        // D-373 — SIMF-YYYY-NNNNNNNN is 18 chars; 20 leaves headroom for a
+        // longer sequence. Unique among the rows that have one.
+        builder.Property(profile => profile.ReferenceNumber).HasMaxLength(20);
+        builder.HasIndex(profile => profile.ReferenceNumber)
+            .IsUnique()
+            .HasFilter("[ReferenceNumber] IS NOT NULL");
         builder.Property(profile => profile.IdImageRelativePath).HasMaxLength(256);
 
         // D-106: QrId on UserProfile. 12-char Crockford base32, unique
