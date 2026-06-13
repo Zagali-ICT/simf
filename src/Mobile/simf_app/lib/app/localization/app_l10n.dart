@@ -707,6 +707,14 @@ class AppL10n {
   String get notificationsMarkAll => _t('تعليم الكل كمقروء', 'Mark all read');
   String get notificationsMarkAllFailed =>
       _t('تعذّر تعليم الإشعارات كمقروءة.', 'Could not mark the notifications read.');
+  String get notificationsSearchHint => _t('البحث', 'Search');
+  String get notificationsFilterAll => _t('الكل', 'All');
+  String get notificationsFilterSessions => _t('جلسات', 'Sessions');
+  String get notificationsFilterVip => _t('VIP', 'VIP');
+  String get notificationsNoMatches =>
+      _t('لا توجد إشعارات مطابقة', 'No matching notifications');
+  String get dayToday => _t('اليوم', 'Today');
+  String get dayYesterday => _t('أمس', 'Yesterday');
 
   // Meet people (Page 035).
   String get meetPeopleTitle => _t('قابل أشخاص مثلك', 'Meet people');

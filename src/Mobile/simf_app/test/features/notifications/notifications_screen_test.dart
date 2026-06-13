@@ -11,12 +11,13 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 NotificationItem _item({
   String id = 'n1',
   String title = 'Session starts soon',
+  String kind = 'SessionReminder',
   bool isRead = false,
   NotificationSeverity severity = NotificationSeverity.warning,
 }) {
   return NotificationItem(
     id: id,
-    kind: 'SessionReminder',
+    kind: kind,
     title: title,
     titleArabic: '',
     body: 'Hall A in 15 minutes.',
@@ -91,7 +92,7 @@ Future<void> _pump(
 }
 
 void main() {
-  group('NotificationsScreen (Page 033)', () {
+  group('NotificationsScreen (Page 033 — KSA frame 223:4264)', () {
     testWidgets('renders the notification list', (tester) async {
       await _pump(
         tester,
@@ -101,6 +102,46 @@ void main() {
       );
       expect(find.text('Session starts soon'), findsOneWidget);
       expect(find.text('Hall A in 15 minutes.'), findsOneWidget);
+      // The frame chrome: search + the three filter chips.
+      expect(find.text('All'), findsOneWidget);
+      expect(find.text('Sessions'), findsOneWidget);
+      expect(find.text('VIP'), findsOneWidget);
+    });
+
+    testWidgets('the Sessions chip filters to session-kind items',
+        (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeNotificationsRepository(
+          items: <NotificationItem>[
+            _item(id: 's1', title: 'Seat confirmed', kind: 'BookingConfirmed'),
+            _item(id: 'v1', title: 'VIP invitation', kind: 'VipBroadcast'),
+          ],
+        ),
+      );
+      expect(find.text('Seat confirmed'), findsOneWidget);
+      expect(find.text('VIP invitation'), findsOneWidget);
+
+      await tester.tap(find.text('Sessions'));
+      await tester.pumpAndSettle();
+      expect(find.text('Seat confirmed'), findsOneWidget);
+      expect(find.text('VIP invitation'), findsNothing);
+    });
+
+    testWidgets('search filters by title', (tester) async {
+      await _pump(
+        tester,
+        repo: _FakeNotificationsRepository(
+          items: <NotificationItem>[
+            _item(id: 'a', title: 'Opening ceremony'),
+            _item(id: 'b', title: 'Lunch break'),
+          ],
+        ),
+      );
+      await tester.enterText(find.byType(TextField), 'lunch');
+      await tester.pumpAndSettle();
+      expect(find.text('Lunch break'), findsOneWidget);
+      expect(find.text('Opening ceremony'), findsNothing);
     });
 
     testWidgets('empty list shows the empty state', (tester) async {
@@ -133,7 +174,7 @@ void main() {
         items: <NotificationItem>[_item()],
       );
       await _pump(tester, repo: repo);
-      await tester.tap(find.byIcon(Icons.done_all));
+      await tester.tap(find.widgetWithText(TextButton, 'Mark all read'));
       await tester.pumpAndSettle();
       expect(repo.markAllCalls, 1);
     });
@@ -145,7 +186,7 @@ void main() {
           items: <NotificationItem>[_item(isRead: true)],
         ),
       );
-      expect(find.byIcon(Icons.done_all), findsNothing);
+      expect(find.text('Mark all read'), findsNothing);
     });
   });
 }
