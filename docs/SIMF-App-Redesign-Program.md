@@ -76,14 +76,16 @@ each with its own plan→approve step before code.
 | # | Screen | Route | Figma node(s) | Status | Commit |
 |---|--------|-------|---------------|--------|--------|
 | W2-1 | Register (Page 005) | `/sign-up` | 168:3454 | ✅ shipped 2026-06-12 (D-370 — login chrome + beige card; logic byte-identical) | — |
-| W2-2 | Home (guest) | `/` | 203:1236 | pending | — |
-| W2-3 | Visitor home states 1–3 | `/` (signed-in) | 512:1335 / 512:1492 / 512:1659 | pending | — |
-| W2-4 | Profile | TBD (profile/account — frame review first) | 213:963 | pending | — |
-| W2-5 | My Place (منطقتي) | `/my-area` | 512:1780 | pending | — |
-| W2-6 | Location (venue map) | `/map` | 215:562 | pending | — |
-| W2-7 | Calendar (sessions) | `/sessions` | 215:767 | pending | — |
-| W2-8 | QR (badge) | `/badge` | 221:769 | pending | — |
+| W2-0 | **Shared KSA shell** (bottom nav v2 + `ksa_shell.dart`: KsaPage/KsaCard/KsaNavTile/KsaStatTile/KsaListRow/KsaTileRow/KsaAvatar/KsaError-EmptyState) | all W2 pages | nav component 206:1669 | ✅ shipped 2026-06-13 (D-378 — News tab → Profile tab, owner-approved) | `174132c` (+ simplify `2fd7816`) |
+| W2-2 | Home — **guest** (note: the original board had guest/signed-in swapped; frames corrected) | `/` | 512:1492 (owner-picked 2×2 option over 512:1335) | ✅ shipped 2026-06-13 (D-378 — FAQ row → About pending an app FAQ endpoint; latest-post card omitted) | `17bb238` |
+| W2-3 | Home — **signed-in** | `/` (signed-in) | 203:1236 | ✅ shipped 2026-06-13 (D-378 — same changeset as W2-2; social + Visit-Saudi links config-driven) | `17bb238` |
+| W2-4 | Profile | superseded — the owner picked 512:1780 for `/my-area` (213:963 not built; its "الأرشيف" stat has no API field) | 213:963 | ❌ not built (owner pick) | — |
+| W2-5 | My Place (منطقتي) | `/my-area` | 512:1780 | ✅ shipped 2026-06-13 (D-378 — language tile wired, theme tile visible-but-disabled per owner) | `734b6a7` |
+| W2-6 | Location (venue map) | `/map` | 215:562 | ✅ shipped 2026-06-13 (D-378 — Google map replaced by the venue 2D plane per owner; bottom info card + gold controls) | `cf7214e` |
+| W2-7 | Calendar (sessions) | `/sessions` | 215:767 | ✅ shipped 2026-06-13 (D-378 — white day strip, re-tap clears; pills relabelled to the frame copy) | `8a0387f` |
+| W2-8 | QR (badge) | `/badge` | 221:769 | ✅ shipped 2026-06-13 (D-378 — gold identity strip with masked id tail; امسح لإضافة شخص → `/contacts/scan`) | `f35ffe3` |
 | W2-9 | Notifications | `/notifications` | 223:4264 | pending | — |
+| W2-10 | Visitor home state 512:1659 | `/` | 512:1659 | not reviewed yet — folded under the home follow-up | — |
 
 ## Per-page gate checklist (every row above must pass all of these)
 
@@ -96,7 +98,50 @@ each with its own plan→approve step before code.
 5. Docs in the same changeset: E2E catalogue file, PAGE-INDEX row, per-page doc.
 6. Decisions-log entry; commit with a descriptive message.
 
+## W2 batch close-out evidence (2026-06-13, D-378)
+
+Live browser drive of a release web build (`localhost:8080`) against the local
+API (`localhost:5175`, Development): **all five pages rendered live** — the
+signed-in home (real session via `/auth/refresh`, live unread badge, all
+sections + the 5 brand glyphs: `docs/screenshots/app-w2-home-signedin-live.png`),
+منطقتي (dashboard 200, disabled theme tile, live stat tiles, empty-schedule
+placeholder: `app-w2-myarea-live.png`), the agenda (real seeded sessions, white
+day strip WED/THU, two-line time chips: `app-w2-agenda-live.png`), the venue
+map (real seeded node, gold controls, node tap → info card + selection ring:
+`app-w2-map-live.png` / `app-w2-map-infocard-live.png`), the QR badge (this
+test user is pre-approval → the pending state rendered; the issued-QR path is
+widget-test covered: `app-w2-badge-live.png`), and the guest home reached via a
+**live D-373 sign-out → الدخول كزائر → المتابعة كضيف** chain
+(`app-w2-home-guest-live.png`). Console: zero errors across the drive (only
+Chrome's standard form-autofill notices); network: **every request 200**
+(refresh / me / dashboard / sessions / venue-map / booths / sign-out), no
+broken assets; `scrollWidth == clientWidth` (no horizontal overflow). Suites:
+**403/403**, analyze clean. Simplify pass applied as commit `2fd7816`.
+
+Minor recorded deviation: the floating map controls sit at the directional
+end (left in RTL) while the frame's static mock shows them right — directional
+placement keeps the LTR locale correct; flag to the designer if exact RTL-right
+is wanted.
+
 ## Known open items
+
+- **App FAQ screen + endpoint (W2 batch follow-up, D-378):** the guest home's
+  الأسئلة الشائعة row currently opens the About page — only **admin** FAQ CRUD
+  exists (D-218); a public `GET /app/faq` + a dedicated screen is the proper
+  destination. Owner to schedule.
+- **Social/Visit-Saudi link values (D-378):** `SIMF_SOCIAL_X/_INSTAGRAM/
+  _LINKEDIN/_YOUTUBE/_TIKTOK` are unset (buttons inert) until the owner
+  supplies the official profile URLs; `SIMF_VISIT_SAUDI_URL` defaults to the
+  public Visit-Saudi site. Wired into `publish-app-web.ps1`.
+- **Legacy-deletion sweep additions (W2):** when `_legacy_mockup/` is deleted
+  at programme close, also remove the l10n getters only it still references
+  (`sessionsAllDays`, `legendHall/Zone/Booth/Poi`, `badgeShowAtEntry`,
+  `homeDiscoverTitle/Subtitle`, `liveBannerTitle/Subtitle`, `guestPromptText`,
+  `sessionsTitle`) and consolidate the 7 initials helpers onto `ksaInitials`.
+- **Deferred efficiency notes (simplify pass, recorded not actioned):** a
+  shared cached dashboard provider for `/my-area` + `/badge` (currently two
+  identical `GET /app/account/dashboard` calls when navigating between them);
+  per-item precomputed search haystacks in `filterSessions`.
 
 - **Contact tiles (Page 010) — wired via config (D-369):** the tiles open the
   OS dialer/mail through `url_launcher` (owner-approved) gated on
