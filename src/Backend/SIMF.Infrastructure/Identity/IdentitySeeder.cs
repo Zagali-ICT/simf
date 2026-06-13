@@ -1,5 +1,6 @@
 ﻿// Tests: SIMF.Api.Tests/IdentitySeederTests.cs (super-admin, TOTP, audit,
-//        idempotency, D-377 baseline lookups + core content)
+//        idempotency, D-377 baseline lookups + core content,
+//        D-390 2FA-disable-persists-across-reseed)
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -96,18 +97,21 @@ public sealed class IdentitySeeder(
             await accounts.UpdateAsync(admin).EnsureSuccessAsync();
         }
 
-        // D-101: idempotently enforce the configured TOTP secret on an
-        // EXISTING admin row. Pre-D-101 the TOTP-setup block was inside
-        // CreateSuperAdminAsync — it only ran on first creation, so an
-        // operator who set SuperAdmin:TotpSecret AFTER the admin row was
-        // created (or who rotated the secret in appsettings) ended up
-        // with a row whose active authenticator key did not match config
-        // and whose TwoFactorEnabled flag was still false. The result was
-        // the owner's "TOTP not working" complaint: sign-in bypassed the
-        // second factor entirely. Compare the active key to config and
-        // re-apply when they differ — the operator's appsettings value
-        // is authoritative.
-        if (!string.IsNullOrWhiteSpace(settings.TotpSecret))
+        // D-101 (amended D-390): keep the configured TOTP secret in sync on an
+        // EXISTING admin row, but NEVER force two-factor back on. The original
+        // D-101 re-enabled 2FA on every boot so the super-admin always carried
+        // the second factor — but that meant an operator who deliberately
+        // disabled the super-admin's 2FA found it switched back on after the
+        // next restart. D-390 reverses that: the disabled choice must survive a
+        // restart. The self-heal therefore runs ONLY while 2FA is enabled —
+        // when it is on, the active authenticator key is compared to config and
+        // re-applied if it drifted (the original "TOTP not working" fix; the
+        // appsettings value stays authoritative). When 2FA is off the seeder
+        // leaves the row untouched: disabling 2FA wipes the active key
+        // (TotpEnrollmentService.DisableAsync), so re-pinning it here would both
+        // resurrect an orphan secret and mutate the row on every boot. 2FA is
+        // still enabled once, at first creation, in CreateSuperAdminAsync.
+        if (admin.TwoFactorEnabled && !string.IsNullOrWhiteSpace(settings.TotpSecret))
         {
             var activeSecret = await accounts.GetAuthenticationTokenAsync(
                 admin, AuthenticatorKeyProvider, AuthenticatorKeyTokenName, cancellationToken);
@@ -118,14 +122,6 @@ public sealed class IdentitySeeder(
                     settings.TotpSecret, cancellationToken).EnsureSuccessAsync();
                 logger.LogInformation(
                     "Super-admin TOTP secret re-applied from configuration for {Email}.",
-                    settings.Email);
-            }
-            if (!admin.TwoFactorEnabled)
-            {
-                await accounts.SetTwoFactorEnabledAsync(
-                    admin, true, cancellationToken).EnsureSuccessAsync();
-                logger.LogInformation(
-                    "Super-admin TwoFactorEnabled re-enabled for {Email}.",
                     settings.Email);
             }
         }

@@ -55,6 +55,61 @@ public sealed class IdentitySeederTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task SeedAsync_keeps_a_super_admin_2FA_disable_across_a_reseed()
+    {
+        // D-390 — a super-admin whose 2FA an operator deliberately disabled must
+        // stay disabled after a restart (the seeder used to force it back on
+        // every boot). A real disable also wipes the active authenticator key
+        // (TotpEnrollmentService.DisableAsync), and the seeder must NOT resurrect
+        // it while 2FA is off — re-pinning runs only when 2FA is enabled.
+        using var scope = _factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var seeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
+
+        // ASP.NET Identity's authenticator-key token coordinates (the same ones
+        // the seeder uses); GetAuthenticatorKeyAsync reads this exact token.
+        const string keyProvider = "[AspNetUserStore]";
+        const string keyName = "AuthenticatorKey";
+
+        await seeder.SeedAsync();
+        var admin = await userManager.FindByEmailAsync(SuperAdminEmail);
+        Assert.NotNull(admin);
+        var originalKey = await userManager.GetAuthenticatorKeyAsync(admin!);
+
+        try
+        {
+            // Mimic a deliberate disable: 2FA off + active authenticator key gone.
+            await userManager.SetTwoFactorEnabledAsync(admin!, false);
+            await userManager.RemoveAuthenticationTokenAsync(admin!, keyProvider, keyName);
+
+            // The next boot re-runs the seeder — it must leave the disable alone.
+            await seeder.SeedAsync();
+
+            var reloaded = await userManager.FindByEmailAsync(SuperAdminEmail);
+            Assert.NotNull(reloaded);
+            Assert.False(
+                await userManager.GetTwoFactorEnabledAsync(reloaded!),
+                "a super-admin 2FA disable must survive a re-seed (D-390)");
+            Assert.Null(await userManager.GetAuthenticatorKeyAsync(reloaded!));
+        }
+        finally
+        {
+            // Restore the shared-fixture admin to the state the other tests in
+            // this class expect (2FA on, with its provisioned key).
+            var restore = await userManager.FindByEmailAsync(SuperAdminEmail);
+            if (restore is not null)
+            {
+                if (originalKey is not null)
+                {
+                    await userManager.SetAuthenticationTokenAsync(
+                        restore, keyProvider, keyName, originalKey);
+                }
+                await userManager.SetTwoFactorEnabledAsync(restore, true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task SeedAsync_writes_a_SuperAdminSeeded_audit_entry()
     {
         using var scope = _factory.Services.CreateScope();
