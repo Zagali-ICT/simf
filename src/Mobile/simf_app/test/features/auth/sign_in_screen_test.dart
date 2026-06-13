@@ -231,6 +231,28 @@ void main() {
       expect(prefs.getString(StorageKeys.lastEmail), isNull);
     });
 
+    testWidgets('re-checking remember-me re-arms the email store',
+        (tester) async {
+      final prefs = _FakePrefs();
+      await _pump(tester, _Outcome.success, prefs);
+
+      await _enterCreds(tester);
+      // Default is on → toggle off, then back on: the store must re-arm, not
+      // stay disabled after a prior opt-out.
+      await tester.tap(find.byType(Checkbox));
+      await tester.pump();
+      await tester.tap(find.byType(Checkbox));
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('HOME'), findsOneWidget);
+      expect(
+        prefs.getString(StorageKeys.lastEmail),
+        equals('visitor@example.sa'),
+      );
+    });
+
     testWidgets('successful sign-in with an incomplete profile routes to the '
         'visitor profile screen (Page_007 auto-route)', (tester) async {
       final prefs = _FakePrefs();

@@ -480,6 +480,40 @@ void main() {
       expect(find.text('Nationality is required'), findsOneWidget);
     });
 
+    testWidgets(
+        'an unknown nationality code with SA present falls back to Saudi '
+        'Arabia, so the gate is satisfied and Next proceeds (D-373 fallback)',
+        (tester) async {
+      // The positive arm of the same fallback the null-nationality test
+      // exercises negatively: code 'ZZ' matches no country, but the default
+      // list contains SA, so _nationalityCode resolves to 'SA' (national-ID
+      // branch) — the gate passes and Next navigates.
+      const profileUnknownCode = UserProfileResponse(
+        interestIds: <String>['i1'],
+        arabicName: 'راكان السالم',
+        englishName: 'Rakan Alsalem',
+        nationalityCode: 'ZZ',
+        placeOfBirth: 'Riyadh',
+        isSaudi: true,
+        gender: AppGender.female,
+        hasIdImage: false,
+        nationalId: '1000000008',
+        dateOfBirth: '2000-01-31',
+        organisationId: 'o1',
+      );
+      // Default countries include SA, so the fallback can fire.
+      final repo = _FakeProfileRepository(profile: profileUnknownCode);
+      await _pump(tester, repo);
+
+      expect(find.text('Saudi Arabia'), findsOneWidget);
+      expect(find.text('National ID'), findsOneWidget);
+      expect(find.text('Nationality is required'), findsNothing);
+
+      await _tapNext(tester);
+
+      expect(find.text('INTERESTS'), findsOneWidget);
+    });
+
     testWidgets('a load failure shows the retry, which reloads the form',
         (tester) async {
       final repo = _FakeProfileRepository(throwOnLoad: true);
