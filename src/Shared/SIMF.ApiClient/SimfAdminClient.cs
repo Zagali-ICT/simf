@@ -445,12 +445,15 @@ public sealed class SimfAdminClient(HttpClient http)
             JsonContent.Create(request, options: JsonOptions),
             accessToken, cancellationToken);
 
-    /// <summary>Approves a pending Visitor (P4).</summary>
+    /// <summary>Approves a pending Visitor (P4). CS-D (D-386) — an optional
+    /// <paramref name="profileTypeId"/> sets the visitor's tier as part of
+    /// the approval; null sends an empty body (backward-compatible).</summary>
     public Task<ApiCallResult<bool>> ApproveVisitorAsync(
-        Guid subjectId, string accessToken, CancellationToken cancellationToken = default) =>
+        Guid subjectId, string accessToken, Guid? profileTypeId = null,
+        CancellationToken cancellationToken = default) =>
         SendAsync<bool>(
             HttpMethod.Post, $"visitors/{subjectId}/approve",
-            JsonContent.Create(new { }, options: JsonOptions),
+            JsonContent.Create(new { ProfileTypeId = profileTypeId }, options: JsonOptions),
             accessToken, cancellationToken);
 
     /// <summary>Rejects a pending Visitor with a free-text reason (P4).</summary>

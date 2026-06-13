@@ -25,7 +25,7 @@ internal sealed partial class AdminAccountService
 {
     private async Task ApproveAsync(
         Guid actorUserId, Guid subjectUserId, ApprovalScope scope,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, Guid? profileTypeId = null)
     {
         var subject = await LoadPendingSubjectAsync(
             actorUserId, subjectUserId, scope, cancellationToken);
@@ -44,6 +44,29 @@ internal sealed partial class AdminAccountService
         profile.RejectionReason = null;
         profile.RejectionReasonArabic = null;
         await qrIdMinter.MintIfMissingAsync(profile, cancellationToken);
+
+        // CS-D (D-386) — optional tier assignment on approve. Only the
+        // AudienceVisitor dispatcher passes a non-null id; the Other /
+        // Admin dispatchers always pass null. A supplied id must be an
+        // active, audience-side (IsForVisitor=true) ProfileType — the
+        // same shape CreateAccountAsync enforces — else the approval is
+        // rejected before any save. Runs inside the same unit of work so
+        // the tier lands atomically with the QR + state flip.
+        Guid? assignedProfileTypeId = null;
+        if (profileTypeId is { } chosenTypeId)
+        {
+            var chosenType = await appDbContext.ProfileTypes
+                .SingleOrDefaultAsync(p => p.Id == chosenTypeId, cancellationToken);
+            if (chosenType is null || !chosenType.IsActive || !chosenType.IsForVisitor)
+            {
+                throw new ApiException(
+                    ErrorCodes.AdminProfileTypeInvalid, 400,
+                    "The selected profile type is not valid for a visitor.",
+                    "نوع الملف الشخصي المحدّد غير صالح للزائر.");
+            }
+            profile.ProfileTypeId = chosenTypeId;
+            assignedProfileTypeId = chosenTypeId;
+        }
 
         await accounts.UpdateAsync(subject).EnsureSuccessAsync();
         // D-167: UserProfile lives on App DB; save it separately from
@@ -65,7 +88,11 @@ internal sealed partial class AdminAccountService
             ActorUserId = actorUserId,
             SubjectUserId = subject.Id,
             SubjectEmail = subject.Email,
-            Detail = profile.QrId,
+            // CS-D (D-386) — record the assigned tier when one was set so the
+            // approve-time tier assignment is auditable alongside the QR id.
+            Detail = assignedProfileTypeId is { } tierId
+                ? $"{profile.QrId}; profileType={tierId}"
+                : profile.QrId,
         }, cancellationToken);
 
         // P13 — D-054: notify the approved user (with their QR id) +

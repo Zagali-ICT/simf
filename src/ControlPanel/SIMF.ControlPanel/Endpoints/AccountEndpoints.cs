@@ -216,12 +216,15 @@ internal static class AccountEndpoints
             return Forward(await api.RejectOtherAsync(id, body, token));
         });
 
+        // CS-D (D-386) — the approve body may optionally carry a ProfileTypeId
+        // to set the visitor's tier on approval. An empty body ({}) keeps the
+        // tier unchanged (backward-compatible with the bulk / no-tier paths).
         group.MapPost("/admin/visitors/{id:guid}/approve",
-            async (Guid id, HttpContext http, SimfAdminClient api) =>
+            async (Guid id, ApproveVisitorBody? body, HttpContext http, SimfAdminClient api) =>
         {
             var token = await http.GetTokenAsync("access_token");
             if (token is null) return Results.Unauthorized();
-            return Forward(await api.ApproveVisitorAsync(id, token));
+            return Forward(await api.ApproveVisitorAsync(id, token, body?.ProfileTypeId));
         });
 
         group.MapPost("/admin/visitors/{id:guid}/reject",
@@ -2811,4 +2814,9 @@ internal static class AccountEndpoints
             return Forward(await api.ImportGridAsync(slug, stream.ToArray(), file.FileName, token));
         }).DisableAntiforgery();
     }
+
+    /// <summary>CS-D (D-386) — optional body for the approve-visitor
+    /// passthrough. <see cref="ProfileTypeId"/> null (or an empty body)
+    /// leaves the visitor's tier unchanged.</summary>
+    private sealed record ApproveVisitorBody(Guid? ProfileTypeId);
 }

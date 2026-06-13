@@ -37,10 +37,15 @@ public interface IAdminUserApprovalService
         AdminRejectRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Approve a pending Visitor (P4).</summary>
+    /// <summary>Approve a pending Visitor (P4). CS-D (D-386) — an optional
+    /// <paramref name="profileTypeId"/> sets the visitor's tier as part of
+    /// the approval; null leaves it unchanged. A non-null id must be an
+    /// active, audience-side (IsForVisitor=true) ProfileType — otherwise the
+    /// call fails with <c>ADMIN_PROFILE_TYPE_INVALID</c> (400).</summary>
     Task ApproveVisitorAsync(
         Guid actorUserId,
         Guid subjectUserId,
+        Guid? profileTypeId = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>Reject a pending Visitor (P4). Reason is mandatory.</summary>

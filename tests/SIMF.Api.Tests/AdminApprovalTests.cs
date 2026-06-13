@@ -188,6 +188,131 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
     }
 
     [Fact]
+    public async Task Approve_visitor_with_a_valid_audience_tier_sets_the_profile_type()
+    {
+        // CS-D (D-386) — the approve body may carry an optional ProfileTypeId
+        // to set the visitor's tier as part of the approval. A valid active,
+        // audience-side (IsForVisitor=true) id must land on UserProfile.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var subjectId = await CreateVisitorSubjectAsync(adminToken);
+        var tierId = await GetAudienceProfileTypeAsync();
+
+        var response = await PostAuthAsync(
+            $"/api/v1/admin/visitors/{subjectId}/approve",
+            new ApproveVisitorBody(tierId), adminToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var scope = _factory.Services.CreateScope();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var profile = await appDb.UserProfiles.SingleAsync(p => p.UserId == subjectId);
+        Assert.Equal(tierId, profile.ProfileTypeId);
+    }
+
+    [Fact]
+    public async Task Approve_visitor_with_a_partner_tier_returns_400_ADMIN_PROFILE_TYPE_INVALID()
+    {
+        // CS-D (D-386) — a partner-side (IsForVisitor=false) tier is not valid
+        // for a visitor; the approve must reject with the standard error code.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var subjectId = await CreateVisitorSubjectAsync(adminToken);
+        var partnerTierId = await GetPartnerProfileTypeAsync();
+
+        var response = await PostAuthAsync(
+            $"/api/v1/admin/visitors/{subjectId}/approve",
+            new ApproveVisitorBody(partnerTierId), adminToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.Equal(ErrorCodes.AdminProfileTypeInvalid, body!.Error!.Code);
+
+        // The subject stays pending — the invalid-tier approve is a no-op.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var subject = await db.Users.SingleAsync(u => u.Id == subjectId);
+        Assert.Equal(AccountState.PendingApproval, subject.AccountState);
+    }
+
+    [Fact]
+    public async Task Approve_visitor_with_a_null_tier_leaves_the_existing_tier_unchanged()
+    {
+        // CS-D (D-386) — backward-compat: an approve with NO ProfileTypeId must
+        // NOT touch the visitor's existing tier (the picker's "Keep current").
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var subjectId = await CreateVisitorSubjectAsync(adminToken);
+        var tierId = await GetAudienceProfileTypeAsync();
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var profile = await appDb.UserProfiles
+                .FirstOrDefaultAsync(p => p.UserId == subjectId);
+            if (profile is null)
+            {
+                profile = new UserProfile
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = subjectId,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                };
+                appDb.UserProfiles.Add(profile);
+            }
+            profile.ProfileTypeId = tierId;
+            await appDb.SaveChangesAsync();
+        }
+
+        var response = await PostAuthAsync(
+            $"/api/v1/admin/visitors/{subjectId}/approve",
+            new ApproveVisitorBody(null), adminToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var verify = _factory.Services.CreateScope();
+        var verifyDb = verify.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var saved = await verifyDb.UserProfiles.SingleAsync(p => p.UserId == subjectId);
+        Assert.Equal(tierId, saved.ProfileTypeId);
+    }
+
+    [Fact]
+    public async Task Approve_visitor_with_an_inactive_tier_returns_400_ADMIN_PROFILE_TYPE_INVALID()
+    {
+        // CS-D (D-386) — the !IsActive branch of the same guard: an inactive
+        // audience-side tier is rejected too, and the subject stays pending.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var subjectId = await CreateVisitorSubjectAsync(adminToken);
+
+        Guid inactiveTierId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+            var inactive = new UserProfileType
+            {
+                Id = Guid.NewGuid(),
+                Name = "Inactive Visitor Tier — ApprovalTestSeed",
+                NameArabic = "فئة غير نشطة — اختبار",
+                PageColor = "#9CA3AF",
+                IsForVisitor = true,
+                IsActive = false,
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            appDb.ProfileTypes.Add(inactive);
+            await appDb.SaveChangesAsync();
+            inactiveTierId = inactive.Id;
+        }
+
+        var response = await PostAuthAsync(
+            $"/api/v1/admin/visitors/{subjectId}/approve",
+            new ApproveVisitorBody(inactiveTierId), adminToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ApiResult<object>>();
+        Assert.Equal(ErrorCodes.AdminProfileTypeInvalid, body!.Error!.Code);
+
+        using var verify = _factory.Services.CreateScope();
+        var db = verify.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var subject = await db.Users.SingleAsync(u => u.Id == subjectId);
+        Assert.Equal(AccountState.PendingApproval, subject.AccountState);
+    }
+
+    [Fact]
     public async Task Reject_visitor_requires_a_reason_of_at_least_10_characters()
     {
         var adminToken = await CreateAdministratorAndSignInAsync();
@@ -278,6 +403,60 @@ public sealed class AdminApprovalTests : IClassFixture<SimfApiFactory>
         var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
         var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
         return (await db.Users.SingleAsync(u => u.Email == email)).Id;
+    }
+
+    // CS-D (D-386) — the optional approve body carrying a tier. Mirrors the
+    // API's ApproveVisitorRequest body shape (the route supplies the id).
+    private sealed record ApproveVisitorBody(Guid? ProfileTypeId);
+
+    // CS-D (D-386) — an active, audience-side (IsForVisitor=true) ProfileType.
+    // Mirrors WalkInRegistrationTests.GetVisitorProfileTypeAsync.
+    private async Task<Guid> GetAudienceProfileTypeAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var seeded = await appDb.ProfileTypes
+            .FirstOrDefaultAsync(p => p.IsForVisitor == true && p.IsActive);
+        if (seeded is not null) return seeded.Id;
+        var fresh = new UserProfileType
+        {
+            Id = Guid.NewGuid(),
+            Name = "Visitor — ApprovalTestSeed",
+            NameArabic = "زائر — اختبار",
+            PageColor = "#3B82F6",
+            IsForVisitor = true,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        appDb.ProfileTypes.Add(fresh);
+        await appDb.SaveChangesAsync();
+        return fresh.Id;
+    }
+
+    // CS-D (D-386) — an active, partner-side (IsForVisitor=false) ProfileType.
+    // Mirrors WalkInRegistrationTests.GetOtherProfileTypeAsync.
+    private async Task<Guid> GetPartnerProfileTypeAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<SimfIdentityDbContext>();
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        var seeded = await appDb.ProfileTypes
+            .FirstOrDefaultAsync(p => p.IsForVisitor == false && p.IsActive);
+        if (seeded is not null) return seeded.Id;
+        var fresh = new UserProfileType
+        {
+            Id = Guid.NewGuid(),
+            Name = "Other — ApprovalTestSeed",
+            NameArabic = "أخرى — اختبار",
+            PageColor = "#10B981",
+            IsForVisitor = false,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+        };
+        appDb.ProfileTypes.Add(fresh);
+        await appDb.SaveChangesAsync();
+        return fresh.Id;
     }
 
     private async Task<string> CreateAdministratorAndSignInAsync()

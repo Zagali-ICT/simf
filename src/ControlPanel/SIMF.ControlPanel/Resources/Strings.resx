@@ -899,6 +899,9 @@
   <data name="Admin.Pending.ApproveReview.Confirm" xml:space="preserve"><value>Confirm approval</value></data>
   <data name="Admin.Pending.ApproveReview.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Admin.Pending.ApproveReview.Body" xml:space="preserve"><value>Review the registration data below. Approving will mint the QR badge and allow the account to sign in.</value></data>
+  <!-- CS-D (D-386) — optional tier picker on the approve modal. -->
+  <data name="Admin.Pending.ApproveReview.ProfileType" xml:space="preserve"><value>Profile type (tier)</value></data>
+  <data name="Admin.Pending.ApproveReview.ProfileType.Keep" xml:space="preserve"><value>Keep current</value></data>
   <data name="Admin.Pending.Reject.Title" xml:space="preserve"><value>Reject account</value></data>
   <data name="Admin.Pending.Reject.Confirm" xml:space="preserve"><value>Reject {0}? This sets the account to Rejected and writes an audit row.</value></data>
   <data name="Admin.Pending.Reject.Reason" xml:space="preserve"><value>Reason</value></data>

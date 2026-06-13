@@ -233,6 +233,29 @@
                 {
                     <SimfAlert Variant="info">@L["Admin.Pending.View.Empty"]</SimfAlert>
                 }
+
+                @* CS-D (D-386) — optional tier picker, approve mode only.
+                   Lists the active audience-side (IsVisitor=true) profile
+                   types; the blank first option keeps the current tier. *@
+                @if (_approveMode)
+                {
+                    <div class="simf-field">
+                        <label class="simf-field__label" for="approve-profile-type">
+                            @L["Admin.Pending.ApproveReview.ProfileType"]
+                        </label>
+                        <div class="simf-field__control">
+                            <select id="approve-profile-type" class="simf-field__input"
+                                    value="@(_approveProfileTypeId?.ToString() ?? string.Empty)"
+                                    @onchange="OnApproveProfileTypeChanged">
+                                <option value="">@L["Admin.Pending.ApproveReview.ProfileType.Keep"]</option>
+                                @foreach (var pt in _approveProfileTypes)
+                                {
+                                    <option value="@pt.Id">@ProfileTypeLabel(pt)</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                }
             }
         </ChildContent>
         <Footer>
@@ -279,6 +302,12 @@
     private bool _viewLoading;
     private string? _viewError;
     private bool _approveMode;
+
+    // CS-D (D-386) — approve-modal tier picker state. The list holds the
+    // active audience-side profile types; the selection (null = keep current)
+    // is sent in the approve POST.
+    private AdminProfileTypeSummary[] _approveProfileTypes = Array.Empty<AdminProfileTypeSummary>();
+    private Guid? _approveProfileTypeId;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -332,7 +361,7 @@
         finally { _busy = false; }
     }
 
-    private async Task ApproveAsync(AdminPendingUserSummary user)
+    private async Task ApproveAsync(AdminPendingUserSummary user, Guid? profileTypeId = null)
     {
         if (_busy) return;
         _busy = true;
@@ -340,7 +369,8 @@
         {
             var envelope = await JS.InvokeAsync<ApiResult<bool>>(
                 "simfAccount.postJson",
-                $"/account/api/admin/visitors/{user.Id}/approve", new { });
+                $"/account/api/admin/visitors/{user.Id}/approve",
+                new { ProfileTypeId = profileTypeId });
             if (envelope is { Success: true })
             {
                 _toast = string.Format(L["Admin.Pending.Approved.Toast"], user.Email);
@@ -443,6 +473,8 @@
         _viewError = null;
         _viewLoading = true;
         _approveMode = approveMode;
+        _approveProfileTypeId = null;
+        _approveProfileTypes = Array.Empty<AdminProfileTypeSummary>();
         try
         {
             var envelope = await JS.InvokeAsync<ApiResult<PendingProfileResponse>>(
@@ -451,6 +483,15 @@
             if (envelope is { Success: true, Data: not null })
             {
                 _viewProfile = envelope.Data;
+                // CS-D (D-386) — only the approve flow needs the tier picker.
+                // Reuse the same list call the walk-in form uses, then keep
+                // only the active audience-side rows; pre-select the visitor's
+                // current tier (null shows "Keep current").
+                if (_approveMode)
+                {
+                    _approveProfileTypeId = _viewProfile.ProfileTypeId;
+                    await LoadApproveProfileTypesAsync();
+                }
             }
             else
             {
@@ -465,14 +506,37 @@
         finally { _viewLoading = false; }
     }
 
+    private async Task LoadApproveProfileTypesAsync()
+    {
+        var envelope = await JS.InvokeAsync<ApiResult<IReadOnlyList<AdminProfileTypeSummary>>>(
+            "simfAccount.getJson", "/account/api/admin/profile-types?userType=Visitor");
+        _approveProfileTypes = envelope is { Success: true, Data: not null }
+            ? envelope.Data.Where(p => p.IsActive && p.IsVisitor)
+                .OrderBy(p => p.Name).ToArray()
+            : Array.Empty<AdminProfileTypeSummary>();
+    }
+
+    private void OnApproveProfileTypeChanged(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString();
+        _approveProfileTypeId = Guid.TryParse(raw, out var id) ? id : null;
+    }
+
+    private static string ProfileTypeLabel(AdminProfileTypeSummary pt) =>
+        System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar"
+            ? pt.NameArabic
+            : pt.Name;
+
     private async Task ConfirmApproveFromReviewAsync()
     {
         if (_viewTarget is null) return;
         var target = _viewTarget;
+        // CS-D (D-386) — carry the optionally-picked tier (null = keep current).
+        var profileTypeId = _approveProfileTypeId;
         // Close the review modal before firing the approve call so the
         // toast that surfaces from ApproveAsync isn't covered by it.
         CloseView();
-        await ApproveAsync(target);
+        await ApproveAsync(target, profileTypeId);
     }
 
     private void CloseView()
@@ -482,6 +546,8 @@
         _viewError = null;
         _viewLoading = false;
         _approveMode = false;
+        _approveProfileTypeId = null;
+        _approveProfileTypes = Array.Empty<AdminProfileTypeSummary>();
     }
 
     private static bool HasProfileForm(PendingProfileResponse profile) =>

@@ -847,8 +847,10 @@ internal sealed partial class AdminAccountService(
         ApproveAsync(actorUserId, subjectUserId, ApprovalScope.PartnerOther, cancellationToken);
 
     public Task ApproveVisitorAsync(
-        Guid actorUserId, Guid subjectUserId, CancellationToken cancellationToken = default) =>
-        ApproveAsync(actorUserId, subjectUserId, ApprovalScope.AudienceVisitor, cancellationToken);
+        Guid actorUserId, Guid subjectUserId, Guid? profileTypeId = null,
+        CancellationToken cancellationToken = default) =>
+        ApproveAsync(actorUserId, subjectUserId, ApprovalScope.AudienceVisitor,
+            cancellationToken, profileTypeId);
 
     public Task RejectAdminAsync(
         Guid actorUserId, Guid subjectUserId, AdminRejectRequest request,

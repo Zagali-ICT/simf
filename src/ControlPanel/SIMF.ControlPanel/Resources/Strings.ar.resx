@@ -889,6 +889,9 @@
   <data name="Admin.Pending.ApproveReview.Confirm" xml:space="preserve"><value>تأكيد الاعتماد</value></data>
   <data name="Admin.Pending.ApproveReview.Cancel" xml:space="preserve"><value>إلغاء</value></data>
   <data name="Admin.Pending.ApproveReview.Body" xml:space="preserve"><value>راجع بيانات التسجيل أدناه. الاعتماد ينشئ شارة QR ويفعّل تسجيل الدخول.</value></data>
+  <!-- CS-D (D-386) — optional tier picker on the approve modal. -->
+  <data name="Admin.Pending.ApproveReview.ProfileType" xml:space="preserve"><value>نوع الملف (الفئة)</value></data>
+  <data name="Admin.Pending.ApproveReview.ProfileType.Keep" xml:space="preserve"><value>إبقاء الحالي</value></data>
   <data name="Admin.Pending.Reject.Title" xml:space="preserve"><value>رفض الحساب</value></data>
   <data name="Admin.Pending.Reject.Confirm" xml:space="preserve"><value>رفض {0}؟ هذا يضبط الحساب إلى مرفوض ويسجّل صفّاً في التدقيق.</value></data>
   <data name="Admin.Pending.Reject.Reason" xml:space="preserve"><value>السبب</value></data>
