@@ -840,6 +840,11 @@ class AppL10n {
         'Your badge is available once your account is approved.',
       );
   String get badgeError => _t('تعذّر تحميل بطاقتك.', 'Could not load your badge.');
+  String get badgeNotApprovedBody => _t(
+        'حسابك غير معتمد بعد. ستتوفر بطاقة الدخول بعد اعتماد حسابك.',
+        'Your account is not approved yet. Your entry badge will be available '
+            'once your account is approved.',
+      );
   // KSA Wave-2 frame 221:769 copy.
   String get badgeScanToEnter => _t('امسح للدخول', 'Scan to enter');
   String get badgeAddPerson => _t('امسح لإضافة شخص', 'Scan to add a contact');

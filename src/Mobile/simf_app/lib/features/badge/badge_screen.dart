@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
@@ -36,18 +37,35 @@ class BadgeScreen extends ConsumerStatefulWidget {
 class _BadgeScreenState extends ConsumerState<BadgeScreen> {
   bool _loading = true;
   bool _error = false;
+  bool _notApproved = false;
   MyAreaIdentity? _identity;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_load());
+    final user = _currentUser;
+    if (user != null &&
+        user.registrationStatus == RegistrationStatus.approved) {
+      unawaited(_load());
+    } else {
+      // Signed in but not approved: the badge is issued only on approval
+      // (Page_014 L-1). Show the not-approved state instead of calling the
+      // Approved-only dashboard (which would 403).
+      _loading = false;
+      _notApproved = true;
+    }
+  }
+
+  CurrentUser? get _currentUser {
+    final auth = ref.read(authControllerProvider);
+    return auth is AuthStateSignedIn ? auth.session.user : null;
   }
 
   Future<void> _load() async {
     setState(() {
       _loading = true;
       _error = false;
+      _notApproved = false;
     });
     try {
       final dashboard = await ref.read(myAreaRepositoryProvider).getDashboard();
@@ -58,12 +76,15 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
         _identity = dashboard.identity;
         _loading = false;
       });
-    } on ApiFailure {
+    } on ApiFailure catch (e) {
       if (!mounted) {
         return;
       }
       setState(() {
-        _error = true;
+        // 403 = signed-in but not approved (status drifted since boot) → the
+        // not-approved state; any other failure shows the retry surface.
+        _notApproved = e.httpStatus == 403;
+        _error = e.httpStatus != 403;
         _identity = null;
         _loading = false;
       });
@@ -85,6 +106,13 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
   Widget _buildBody(AppL10n l10n) {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
+    }
+    if (_notApproved) {
+      // Signed-in but not approved — show "account not approved", not the QR.
+      return KsaEmptyState(
+        icon: Icons.lock_outline,
+        message: l10n.badgeNotApprovedBody,
+      );
     }
     final identity = _identity;
     if (_error || identity == null) {
