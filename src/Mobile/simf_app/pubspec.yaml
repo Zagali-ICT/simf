@@ -85,15 +85,23 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   mocktail: ^1.0.4
 
-# D-373 — the SIMF app icon (the brand mark on the navy brand colour).
-# Applied by `dart run flutter_launcher_icons` against the generated
-# android/ios folders (see the dev-run recipe; this tree has no native dirs).
+# D-373 / D-388 — the SIMF app icon (the white brand mark on the navy brand
+# colour). Android/iOS are applied by `dart run flutter_launcher_icons` against
+# the generated native folders (this tree has no native dirs). Web icons
+# (web/favicon.png + web/icons/*) ship committed in the web/ folder, brand-matched
+# to the same navy #01132D; the web: block below keeps a future regenerate
+# consistent with the committed assets.
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/images/simf_logo.png"
   adaptive_icon_background: "#01132D"
   adaptive_icon_foreground: "assets/images/simf_logo.png"
+  web:
+    generate: true
+    image_path: "assets/images/simf_logo.png"
+    background_color: "#01132D"
+    theme_color: "#01132D"
 
 flutter:
   uses-material-design: true
