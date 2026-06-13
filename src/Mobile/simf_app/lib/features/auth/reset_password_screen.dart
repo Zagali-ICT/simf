@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -66,9 +67,15 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             newPassword: _password.text,
             confirmPassword: _confirm.text,
           );
-      await ref
-          .read(simfPrefsStorageProvider)
-          .setString(StorageKeys.lastEmail, widget.email);
+      // Pre-fill the just-reset email on the sign-in screen — but NOT on the
+      // web PoC, where prefs are shared-browser localStorage and the address
+      // would surface to the next kiosk user (D-384 — web = PoC exception;
+      // matches the sign-in remember-me-OFF-on-web default).
+      if (!kIsWeb) {
+        await ref
+            .read(simfPrefsStorageProvider)
+            .setString(StorageKeys.lastEmail, widget.email);
+      }
       if (!mounted) {
         return;
       }

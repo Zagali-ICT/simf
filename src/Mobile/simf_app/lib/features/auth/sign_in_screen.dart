@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -58,7 +59,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   final LocalAuthentication _localAuth = LocalAuthentication();
   bool _obscure = true;
   bool _busy = false;
-  bool _rememberMe = true;
+  // Default ON natively; OFF on the web PoC, where prefs live in shared browser
+  // localStorage and a remembered email could surface to the next user on a
+  // kiosk (D-384 — web = PoC exception; production is mobile-only).
+  bool _rememberMe = !kIsWeb;
   String? _error;
 
   @override

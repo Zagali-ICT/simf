@@ -354,9 +354,14 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
 
   Future<void> _pickIdImage() async {
     try {
-      // C7 (D-371) — camera-only capture; the gallery path was removed by
-      // owner rule (the photo must be taken live).
-      final file = await ImagePicker().pickImage(source: ImageSource.camera);
+      // C7 (D-371) — native is camera-only (the photo must be taken live).
+      // The web build is a proof-of-concept channel only (production is
+      // mobile-only), where the browser camera is unreliable, so web falls
+      // back to the gallery; the server-side face gate stays the authority on
+      // either source. (D-384 — web = PoC exception.)
+      final file = await ImagePicker().pickImage(
+        source: kIsWeb ? ImageSource.gallery : ImageSource.camera,
+      );
       if (file == null) {
         return;
       }
