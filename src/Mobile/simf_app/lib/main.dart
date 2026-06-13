@@ -7,10 +7,17 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 import 'app/app.dart';
 import 'app/localization/locale_controller.dart';
 import 'core/env/build_config.dart';
+import 'core/net/self_signed_api_tls.dart'
+    if (dart.library.io) 'core/net/self_signed_api_tls_io.dart';
 import 'features/accessibility/data/accessibility_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // D-394 (PoC): the SIMF API is served over a self-signed certificate, so the
+  // native HttpClient would reject it. Accept it for the configured API host
+  // ONLY (no-op on web; every other host keeps full TLS validation).
+  installSelfSignedApiTlsBypass();
 
   // Eagerly resolve the two values the providers need at construction time
   // (Prefs and the device type), then build the override list.
