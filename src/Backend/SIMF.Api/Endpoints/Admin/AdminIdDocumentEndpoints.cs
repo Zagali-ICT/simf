@@ -1,4 +1,5 @@
-// Tests: SIMF.Api.Tests/WalkInRegistrationTests.cs (round-trip smoke)
+// Tests: SIMF.Api.Tests/WalkInRegistrationTests.cs (round-trip smoke),
+//        SIMF.Api.Tests/UserProfileFaceGateTests.cs (admin walk-in face gate)
 using System.Security.Claims;
 using FastEndpoints;
 using SIMF.Application.IdentityAccess;
@@ -14,7 +15,9 @@ namespace SIMF.Api.Endpoints.Admin;
 /// MIME + magic-byte gate as the self-service variant; storage layer
 /// AES-GCM-encrypts at rest.
 /// </summary>
-public abstract class AdminIdDocumentUploadEndpointBase(IUserProfileService service)
+public abstract class AdminIdDocumentUploadEndpointBase(
+    IUserProfileService service,
+    IFaceDetectionService faceDetection)
     : Endpoint<EmptyRequest, ApiResult<bool>>
 {
     /// <summary>5 MB cap — same as the self-service upload.</summary>
@@ -63,6 +66,18 @@ public abstract class AdminIdDocumentUploadEndpointBase(IUserProfileService serv
                 "يجب أن تكون صورة الهوية بصيغة PNG أو JPEG أو WebP.");
         }
 
+        // C7 (D-371) — server-side human-face gate, parity with the
+        // self-service upload. The walk-in operator's device runs no on-device
+        // pre-check, so the server is the only face authority on this path.
+        // Offline FaceAiSharp ONNX; fails closed on an undecodable image.
+        if (!await faceDetection.ContainsHumanFaceAsync(bytes, ct))
+        {
+            throw new ApiException(
+                ErrorCodes.VisitorIdImageNoFace, 400,
+                "No human face was detected in the photo — retake a clear photo of the face.",
+                "لم يتم التعرف على وجه بشري في الصورة — أعد التقاط صورة واضحة للوجه.");
+        }
+
         await service.UploadIdImageForSubjectAsync(
             actorId, SubjectId, ExpectedKind, bytes, contentType, ct);
         await Send.OkAsync(ApiResult<bool>.Ok(true), ct);
@@ -89,8 +104,9 @@ public abstract class AdminIdDocumentUploadEndpointBase(IUserProfileService serv
 }
 
 /// <summary><c>POST /api/v1/admin/visitors/{id}/id-document</c>.</summary>
-public sealed class UploadVisitorIdDocumentEndpoint(IUserProfileService service)
-    : AdminIdDocumentUploadEndpointBase(service)
+public sealed class UploadVisitorIdDocumentEndpoint(
+    IUserProfileService service, IFaceDetectionService faceDetection)
+    : AdminIdDocumentUploadEndpointBase(service, faceDetection)
 {
     public override Guid SubjectId => Route<Guid>("id");
     public override UserType ExpectedKind => UserType.Visitor;
@@ -108,8 +124,9 @@ public sealed class UploadVisitorIdDocumentEndpoint(IUserProfileService service)
 }
 
 /// <summary><c>POST /api/v1/admin/others/{id}/id-document</c>.</summary>
-public sealed class UploadOtherIdDocumentEndpoint(IUserProfileService service)
-    : AdminIdDocumentUploadEndpointBase(service)
+public sealed class UploadOtherIdDocumentEndpoint(
+    IUserProfileService service, IFaceDetectionService faceDetection)
+    : AdminIdDocumentUploadEndpointBase(service, faceDetection)
 {
     public override Guid SubjectId => Route<Guid>("id");
     // D-186: Other accounts are Visitor-typed under the hood; the

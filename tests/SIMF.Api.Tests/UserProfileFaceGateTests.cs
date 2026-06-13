@@ -90,6 +90,83 @@ public sealed class UserProfileFaceGateTests : IClassFixture<FaceGateApiFactory>
         Assert.Equal(ErrorCodes.VisitorIdImageNoFace, body.Error!.Code);
     }
 
+    [Fact]
+    public async Task Admin_walk_in_upload_with_no_detectable_face_is_rejected_with_NO_FACE()
+    {
+        // Parity with the self-service gate: the admin walk-in id-document
+        // upload must also reject a faceless image, because the operator's
+        // device runs no on-device pre-check — the server is the only face
+        // authority on this path.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var visitorId = await CreatePendingVisitorAsync();
+
+        var png = ValidFacelessPng();
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(png);
+        file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        // The admin endpoint reads the field via Files.GetFile("file").
+        form.Add(file, "file", "no-face.png");
+
+        using var upload = new HttpRequestMessage(
+            HttpMethod.Post, $"/api/v1/admin/visitors/{visitorId}/id-document")
+        {
+            Content = form,
+        };
+        upload.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _client.SendAsync(upload);
+
+        var raw = await response.Content.ReadAsStringAsync();
+        Assert.True(
+            response.StatusCode == HttpStatusCode.BadRequest,
+            $"Expected 400, got {(int)response.StatusCode}: {raw}");
+        var body = System.Text.Json.JsonSerializer.Deserialize<ApiResult<object>>(
+            raw,
+            new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            })!;
+        Assert.Equal(ErrorCodes.VisitorIdImageNoFace, body.Error!.Code);
+    }
+
+    [Fact]
+    public async Task Admin_others_upload_with_no_detectable_face_is_rejected_with_NO_FACE()
+    {
+        // Parity guard for the OTHER desk: it is a distinct endpoint with its
+        // own permission (Others.Edit) that shares the same base face gate, so
+        // this pins the invariant that a future refactor cannot silently drop
+        // the gate from one desk.
+        var adminToken = await CreateAdministratorAndSignInAsync();
+        var subjectId = await CreatePendingVisitorAsync();
+
+        var png = ValidFacelessPng();
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(png);
+        file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        form.Add(file, "file", "no-face.png");
+
+        using var upload = new HttpRequestMessage(
+            HttpMethod.Post, $"/api/v1/admin/others/{subjectId}/id-document")
+        {
+            Content = form,
+        };
+        upload.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+        var response = await _client.SendAsync(upload);
+
+        var raw = await response.Content.ReadAsStringAsync();
+        Assert.True(
+            response.StatusCode == HttpStatusCode.BadRequest,
+            $"Expected 400, got {(int)response.StatusCode}: {raw}");
+        var body = System.Text.Json.JsonSerializer.Deserialize<ApiResult<object>>(
+            raw,
+            new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            })!;
+        Assert.Equal(ErrorCodes.VisitorIdImageNoFace, body.Error!.Code);
+    }
+
     /// <summary>A valid, decodable 64x64 solid-colour PNG — passes the
     /// magic-byte gate and the decoder, carries no face. (The 1x1 fixture
     /// used by the round-trip test has a corrupt IDAT CRC, which the
@@ -133,5 +210,60 @@ public sealed class UserProfileFaceGateTests : IClassFixture<FaceGateApiFactory>
             new SignInRequest { Email = email, Password = AuthFlow.Password });
         var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
         return body.Data!.Tokens!.AccessToken;
+    }
+
+    private async Task<string> CreateAdministratorAndSignInAsync()
+    {
+        var email = $"admin-face-{Guid.NewGuid():N}@simf.test";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<SimfRole>>();
+            if (!await roles.RoleExistsAsync(AppRoles.Administrator))
+            {
+                await roles.CreateAsync(new SimfRole { Name = AppRoles.Administrator });
+            }
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+            var user = new SimfUser
+            {
+                UserName = email, Email = email, EmailConfirmed = true,
+                DisplayName = "Face Gate Admin",
+                AccountState = AccountState.Approved,
+                UserType = UserType.Admin,
+            };
+            await users.CreateAsync(user, AuthFlow.Password);
+            await users.AddToRoleAsync(user, AppRoles.Administrator);
+        }
+        var sign = await _client.PostAsJsonAsync(
+            "/api/v1/app/auth/sign-in",
+            new SignInRequest
+            {
+                Email = email, Password = AuthFlow.Password, Audience = SignInAudience.Cp,
+            });
+        var body = (await sign.Content.ReadFromJsonAsync<ApiResult<SignInResponse>>())!;
+        return body.Data!.Tokens!.AccessToken;
+    }
+
+    private async Task<Guid> CreatePendingVisitorAsync()
+    {
+        var email = $"visitor-face-{Guid.NewGuid():N}@simf.test";
+        using var scope = _factory.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<SimfUser>>();
+        var user = new SimfUser
+        {
+            UserName = email, Email = email, EmailConfirmed = true,
+            DisplayName = "Pending Visitor",
+            AccountState = AccountState.PendingApproval,
+            UserType = UserType.Visitor,
+        };
+        await users.CreateAsync(user, AuthFlow.Password);
+        var appDb = scope.ServiceProvider.GetRequiredService<SimfAppDbContext>();
+        appDb.UserProfiles.Add(new SIMF.Domain.Profiles.UserProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await appDb.SaveChangesAsync();
+        return user.Id;
     }
 }
