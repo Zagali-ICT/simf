@@ -538,12 +538,18 @@
                     : null;
                 // CS-D (D-386) — only the approve flow needs the tier picker.
                 // Reuse the same list call the walk-in form uses, then keep
-                // only the active audience-side rows; pre-select the visitor's
-                // current tier (null shows "Keep current").
+                // only the active audience-side rows.
+                // D-392 (owner: "default is 0 normal") — pre-select the seeded
+                // "Normal" audience type by default rather than the visitor's
+                // current tier, so the desk just reviews the photo/data and
+                // approves. Falls back to the visitor's current tier if a
+                // "Normal" row is somehow absent.
                 if (_approveMode)
                 {
-                    _approveProfileTypeId = _viewProfile.ProfileTypeId;
                     await LoadApproveProfileTypesAsync();
+                    var normal = _approveProfileTypes.FirstOrDefault(p =>
+                        string.Equals(p.Name, "Normal", StringComparison.OrdinalIgnoreCase));
+                    _approveProfileTypeId = normal?.Id ?? _viewProfile.ProfileTypeId;
                 }
             }
             else

@@ -404,8 +404,9 @@ Scenario: Selected interests are listed by name
 Scenario: Approving and choosing a tier sets the visitor's profile-type
   Given the administrator (holding Visitors.Approve AND ProfileTypes.View) opens the
       Approve modal for visitor.tier@example.com
-  And the approve modal shows a profile-type picker defaulting to "Keep current"
-      populated with the active audience-side profile types (via ProfileTypes.View)
+  And the approve modal shows a profile-type picker defaulting to "Normal" (D-392;
+      "Keep current" remains a selectable option) populated with the active
+      audience-side profile types (via ProfileTypes.View)
   When the administrator selects the tier "VIP" and clicks "Confirm approval"
   Then POST /account/api/admin/visitors/{id}/approve fires with body
       { "profileTypeId": "{VIP-guid}" } and returns 200
