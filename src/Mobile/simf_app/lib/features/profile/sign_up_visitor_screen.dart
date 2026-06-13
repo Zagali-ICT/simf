@@ -1177,19 +1177,26 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
   /// after a blocked Next.
   Widget _buildIdImageField(AppL10n l10n) {
     final bytes = _idImageBytes;
-    final showRequiredError = _triedSubmit &&
-        _gender == AppGender.male &&
+    // C7 (D-371) — the photo is mandatory for men. Surface the requirement
+    // UP FRONT (not only after a failed Next): a male with no photo attached
+    // always sees the "required" hint, escalating to the danger colour once
+    // they have actually tried to submit. The Next gate is unchanged.
+    final maleNeedsImage = _gender == AppGender.male &&
         bytes == null &&
         !_hasExistingIdImage;
+    final triedAndMissing = _triedSubmit && maleNeedsImage;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         _FieldLabel(l10n.attachmentsLabel),
         const SizedBox(height: 8),
-        if (showRequiredError) ...<Widget>[
+        if (maleNeedsImage) ...<Widget>[
           Text(
             l10n.idImageRequiredForMen,
-            style: const TextStyle(color: SimfTokens.danger, fontSize: 12),
+            style: TextStyle(
+              color: triedAndMissing ? SimfTokens.danger : SimfTokens.greyText,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 8),
         ],

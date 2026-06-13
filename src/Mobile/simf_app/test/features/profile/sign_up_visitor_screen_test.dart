@@ -305,6 +305,22 @@ void main() {
     });
 
     testWidgets(
+        'a male profile shows the photo-required hint UP FRONT, before any '
+        'submit attempt (C7 — D-371)', (tester) async {
+      final repo = _FakeProfileRepository(
+        profile: _completeProfile(hasIdImage: false),
+      );
+      await _pump(tester, repo);
+
+      // The requirement is visible immediately for a male with no photo —
+      // not only after a failed Next — so the enforcement is unmistakable.
+      expect(
+        find.text('A photo is required — capture it with the camera'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets(
         'a female profile without a photo proceeds — the image stays '
         'optional for women (C7 — D-371)', (tester) async {
       final repo = _FakeProfileRepository(
