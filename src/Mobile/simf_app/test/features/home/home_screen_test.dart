@@ -154,8 +154,10 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.widgetWithText(FilledButton, 'Sign in'), findsOneWidget);
-      // No signed-in chrome.
-      expect(find.byTooltip('Notifications'), findsNothing);
+      // The shared shell's top controller (notifications + ☰) is on every
+      // KsaPage including the guest home (D-395; owner: same top bar on all
+      // pages). Tapping the bell on a guest just routes through the auth gate.
+      expect(find.byTooltip('Notifications'), findsOneWidget);
     });
 
     testWidgets('a public tile navigates to its route', (tester) async {
