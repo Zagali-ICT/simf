@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../localization/app_l10n.dart';
 import '../route_names.dart';
 import '../theme/tokens.dart';
+import 'more_drawer.dart';
 import 'simf_bottom_nav.dart';
 
 /// Shared KSA main-shell chrome for the Wave-2 in-app pages (frames
@@ -60,10 +62,14 @@ class KsaPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final headerRow =
-        header ?? (title == null && onBack == null ? null : _defaultHeader());
+    final headerRow = header ??
+        (title == null && onBack == null ? null : _defaultHeader(context));
     return Scaffold(
       backgroundColor: SimfTokens.navySurface,
+      // The shared shell's side menu — the same المزيد drawer on every page
+      // that uses this scaffold (opened by the header ☰; RTL slides from the
+      // right). Detail/secondary pages inherit it as they migrate onto KsaPage.
+      drawer: const MoreDrawer(),
       bottomNavigationBar: SimfBottomNav(current: tab),
       body: Stack(
         children: <Widget>[
@@ -82,7 +88,8 @@ class KsaPage extends StatelessWidget {
     );
   }
 
-  Widget _defaultHeader() {
+  Widget _defaultHeader(BuildContext context) {
+    final l10n = AppL10n.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: SimfTokens.space3,
@@ -91,6 +98,8 @@ class KsaPage extends StatelessWidget {
       child: Row(
         textDirection: TextDirection.ltr,
         children: <Widget>[
+          // Leading: the back chevron on pushed pages; nothing on a tab root
+          // (the ☰ in the trailing controller opens the menu instead).
           SizedBox(
             width: 40,
             height: 40,
@@ -109,8 +118,23 @@ class KsaPage extends StatelessWidget {
               ),
             ),
           ),
-          // Balances the back button so the title stays centred.
-          const SizedBox(width: 40, height: 40),
+          // The shared top controller — notifications + the drawer ☰, the same
+          // on every shell page. The ☰ opens the side menu via the nearest
+          // Scaffold (the Builder gives a context below it).
+          IconButton(
+            tooltip: l10n.notificationsTooltip,
+            onPressed: () => context.pushNamed(RouteNames.notifications),
+            icon: const Icon(
+              Icons.notifications_none_outlined,
+              color: Colors.white,
+              size: 22,
+            ),
+          ),
+          Builder(
+            builder: (ctx) => KsaMenuButton(
+              onTap: () => Scaffold.of(ctx).openDrawer(),
+            ),
+          ),
         ],
       ),
     );
@@ -138,6 +162,27 @@ class KsaBackButton extends StatelessWidget {
         size: 18,
         textDirection: TextDirection.ltr,
       ),
+    );
+  }
+}
+
+/// The circled drawer ☰ control (same dark circle as [KsaBackButton]) — opens
+/// the shell's side menu. Lives in the shared header's trailing controller.
+class KsaMenuButton extends StatelessWidget {
+  const KsaMenuButton({required this.onTap, super.key});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onTap,
+      tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+      style: IconButton.styleFrom(
+        backgroundColor: SimfTokens.navyDeep,
+        shape: const CircleBorder(),
+      ),
+      icon: const Icon(Icons.menu, color: Colors.white, size: 20),
     );
   }
 }

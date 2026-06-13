@@ -390,7 +390,9 @@ class _GreetingHeader extends StatelessWidget {
           ),
           IconButton(
             tooltip: l10n.moreTitle,
-            onPressed: () => context.pushNamed(RouteNames.more),
+            // Opens the shared side drawer (this header renders inside KsaPage's
+            // Scaffold, so the nearest Scaffold is the shell's).
+            onPressed: () => Scaffold.of(context).openDrawer(),
             icon: const Icon(Icons.menu, color: Colors.white, size: 26),
           ),
         ],
