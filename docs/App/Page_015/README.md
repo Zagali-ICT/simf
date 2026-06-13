@@ -4,8 +4,10 @@ Per-page documentation folder. Everything about this app page lives here.
 
 The page is the **2D venue map**: the app fetches a flat list of positioned
 **nodes** (halls / zones / booths / points-of-interest) and renders them on a
-single 2D plane. Tapping a booth node opens a **booth popup** sourced from the
-public booths read. The whole screen is **public** content — no sign-in needed.
+single pan/zoom 2D plane. Tapping **any** node selects it and shows a bottom
+**info card** (sourced from the public booths read for booth nodes); the card's
+**عرض التفاصيل** action opens the booth **detail sheet**. The whole screen is
+**public** content — no sign-in needed.
 
 | Aspect | Document | What it holds |
 |--------|----------|---------------|
@@ -39,19 +41,27 @@ DECISIONS_LOG **D-230** (venue-map nodes) + **D-199 / D-222** (booths).
 > shipped booth DTOs carry no `LogoUrl` and only a `HallId` (a bare Guid),
 > not a hall name — see [Page_015_Logic.md](Page_015_Logic.md) L-6.
 
-## As-built (D-298)
+## As-built (D-298, redesigned D-378 — 2026-06-13, commit `cf7214e`)
 
-The Flutter `VenueMapScreen` (`features/venuemap/venue_map_screen.dart`) replaces
-the `ComingSoonScreen` placeholder. On open it loads `GET /app/venue-map` +
-`GET /app/booths` in parallel (`VenueMapRepository`), normalises each node's
-`(x, y)` against the loaded set's bounds (L-4), and renders a kind-styled marker
-per node on an `InteractiveViewer` pan/zoom plane. Tapping a **Booth** marker
-opens a bottom-sheet popup composed from the cached `PublicBoothSummary` plus a
-lazy `GET /app/booths/{id}` for the description — a 404/transport failure keeps the
-summary and drops the description (L-5/L-8). A four-kind **legend** overlays the
-map. The canvas is forced **LTR** so venue geometry is not mirrored in Arabic;
-only the chrome/labels follow the locale (L-3). **Pre-build fix:** the booth DTO
-field names in this folder were `nameEn/nameAr/…` but the shipped contract is
-`name/nameArabic/exhibitorName/sector/description` — corrected here and bound
-correctly. Logo + hall-name stay **decoration** (D11 / L-6). Tests:
-`venue_map_screen_test.dart` (6) + `venue_map_models_test.dart` (7).
+The Flutter `VenueMapScreen` (`features/venuemap/venue_map_screen.dart`) was
+rebuilt to the KSA Wave-2 frame **215:562 "Location"** — with the frame's
+Google geographic map **replaced by the venue 2D node plane** per owner
+directive (the `VenueMapNodes` data is the map). The data contract is unchanged
+from D-298: on open it loads `GET /app/venue-map` + `GET /app/booths` in
+parallel (`VenueMapRepository`), precomputes each node's canvas position
+(normalised against the loaded set's bounds onto a 1000×1000 plane, L-4) and a
+booth-by-id lookup, and renders a kind-styled marker per node on an
+`InteractiveViewer` pan/zoom plane inside a **collapsed-header `KsaPage`**
+(map tab active, no app bar). Tapping **any** marker selects it (gold ring) and
+shows the bottom **white info card** (gold name box · title · exhibitor · sector
+· code chip / close ✕) with **أرشدني** (centres the map on the node at scale
+1.5) and — booth nodes only — **عرض التفاصيل**, which opens the detail sheet:
+cached summary immediately plus a lazy `GET /app/booths/{id}` for the
+description — a 404/transport failure keeps the summary and drops the
+description (L-5/L-8). **40px gold zoom-in / zoom-out / reset controls** float
+at the directional end (left in RTL — recorded deviation from the frame's
+right-side mock). The old four-kind **legend was removed** in favour of the
+info card. The canvas is forced **LTR** so venue geometry is not mirrored in
+Arabic; only the chrome/labels follow the locale (L-3). Logo + hall-name stay
+**decoration** (D11 / L-6). Old screen + test parked in `_legacy_mockup/`.
+Tests: `venue_map_screen_test.dart` (8) + `venue_map_models_test.dart` (7).

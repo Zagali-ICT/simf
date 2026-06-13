@@ -1,6 +1,7 @@
 # Page 014 — Logic (منطقتي · My Area)
 
-Business rules behind the page. Verified against the domain model on 2026-06-02.
+Business rules behind the page. Verified against the domain model on 2026-06-02;
+re-verified against the as-built KSA-redesign screen on 2026-06-13 (D-378).
 
 ## L-1 Reference id
 The card reference is the existing **`UserProfile.QrId`** (a 12-char Crockford code).
@@ -37,16 +38,28 @@ Each item carries its `status` so the UI can badge a still-Pending booking.
 
 ## L-5 Role gating
 - Reachable only when signed-in. Full dashboard at **Visitor** and above.
-- A signed-in **pending/rejected** user is effective **Guest**: render the identity card
-  (name/avatar) but hide/disable the badge QR, counters, schedule, and share actions.
+- A signed-in **pending/rejected** user is effective **Guest**: the screen makes
+  **no dashboard call** (it is Approved-only and would 403) and renders the limited
+  view — the identity card from the **cached** account (display name + the
+  under-review note) plus only the اعدادات الحساب and تسجيل الخروج rows. No badge
+  QR, counters, schedule, or share actions.
+- An unexpected **403** on the dashboard (approval revoked mid-session) falls back
+  to the same limited view; any other failure shows the error + retry surface.
 - App authorization is expressed in the four app roles only (Guest/Visitor/Moderator/Staff),
   never the CP `UserType` or the permission catalogue.
 
 ## L-6 Edge cases
-- `avatarUrl` null → initials placeholder (mockup shows "RS").
-- `QrId` null (not yet approved) → hide reference + badge actions.
-- Empty counters → show `0`; empty today's schedule → "no items today" placeholder.
-- Single aggregate call → one retry surface on error.
+- `avatarUrl` null (or the image fails to load) → initials fallback rendered from
+  the name (`ksaInitials` — first letters of the first + last name parts).
+- `QrId` null (not yet approved) → hide the `#…` reference (badge QR lives on Page 32).
+- Empty counters → show `0`; empty today's schedule → "لا يوجد لديك مواعيد اليوم" placeholder.
+- Single aggregate call → one retry surface on error (`KsaErrorState`).
+- A failed `.vcf`/`.ics` fetch → "تعذّرت المشاركة. حاول مرة أخرى." snackbar (the page stays).
+- `identity.pageColor` and each schedule item's `status`/`endUtc` are decoded but
+  **unused** in the KSA design — the accent is the token gold and rows carry no
+  pending badge.
+- Sign-out is **confirm-first** (D-373) and **best-effort** on the wire: the local
+  session is cleared and the app lands on `/sign-in` even if the revoke call fails.
 
 ## L-7 Dependencies
 - **B2B/B2C meeting module is BUILT (D-248).** It is the CP-managed, pre-reserved
@@ -59,4 +72,8 @@ Each item carries its `status` so the UI can badge a still-Pending booking.
 ## L-8 Localization
 Arabic primary (RTL), English secondary. Bilingual data comes paired from the API
 (`fullNameAr`/`fullNameEn`, `titleAr`/`titleEn`, `tierNameAr`/`tierNameEn`); the app
-selects per active locale. Times rendered in the device timezone from UTC.
+selects per active locale with cross-language fallback when one side is empty (a
+title-less business meeting falls back to its `subject`). The page's **العربية ·
+English tile** flips the locale via `LocaleController.toggle()` (persisted to prefs;
+Arabic default). Times rendered in the device timezone from UTC, 12-hour `hh:mm a`,
+LTR-pinned (as is the `#qrId` reference).

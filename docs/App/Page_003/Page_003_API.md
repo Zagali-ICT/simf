@@ -5,13 +5,20 @@ headers, error model and auth from SIMF-API-001 + SIMF-MOB-API-001 §3–§4. Se
 biometric and OTP rules are in [Page_003_Logic.md](Page_003_Logic.md).
 
 > **Status:** all endpoints below are **built** (maintainer-verified). The device-key
-> (biometric) endpoints exist under `/app/auth/device-key`.
+> (biometric) endpoints exist under `/app/auth/device-keys`.
 >
 > **Path-prefix note:** App routes are under **`/api/v1/app/*`** (App↔CP split, D-247) —
 > so the routes below resolve to `POST /api/v1/app/auth/sign-in`, etc.
 >
-> **Caps note (Logic D2):** the UI caps email at 50 and password at 32, but the **server
-> contract stays email ≤256 / password ≤128**. The client must not assume 50/32 server-side.
+> **Caps note (Logic D2):** the UI caps email at 50 and password at 32, but the server
+> validates **email ≤256** (`SignInRequestValidator`). The sign-in password is only
+> checked **NotEmpty** (no server max at sign-in); the **≤128 password policy**
+> (`PasswordRules`) applies where a password is *set* — sign-up / reset / change. The
+> client must not assume 50/32 server-side.
+>
+> **Rate-limit note:** every endpoint below sits behind the `auth` rate-limit policy;
+> sign-in, forgot-password and reset-password additionally carry the per-email
+> `auth-email` policy (keyed by `EmailRateLimitKeyMiddleware`).
 
 ## E1 — `POST /app/auth/sign-in`
 | | |
@@ -61,8 +68,13 @@ biometric and OTP rules are in [Page_003_Logic.md](Page_003_Logic.md).
 | `VALIDATION_FAILED` | Missing/invalid email or password. |
 
 > A not-yet-approved account is **not** an error: sign-in returns `200` with
-> `accountState` populated (`Pending` / `Rejected`) and `tokens` still issued, and
-> the app routes to the registration-status screen (Page 011).
+> `accountState` populated (`Pending` / `Rejected`) and `tokens` still issued.
+>
+> **How the app decodes it** (`SignInResponseData.fromJson`): `mfaRequired == true`
+> → an OTP challenge carrying `otpToken` (the admin TOTP `mfaToken` path does not
+> apply to the app); otherwise the nested `tokens` object. The app ignores
+> `accountState` / `passwordChangeToken` on this response — the registration status
+> is read separately from `GET /app/users/me` (Page 011).
 
 ## E2 — `POST /app/auth/verify-otp`  (2FA email-OTP branch — Logic D3/L-5)
 | | |
@@ -173,10 +185,13 @@ to the reset step regardless.
 | Crypto | **ES256** (ECDSA P-256). Public key = base64 `SubjectPublicKeyInfo`; signature = base64 **IEEE-P1363** (`r‖s`, 64 bytes) over **SHA-256(challenge bytes)**. Challenge = 32 random bytes (base64), 5-minute single-use lifetime. |
 | Returns | `ApiResult<...>` |
 
-The 5-day session window (D1) is the **config-bound device-key refresh lifetime**. The biometric
-re-open path signs a fresh server challenge to mint tokens without a typed password; enrolment
-registers the device-key after a successful password sign-in. The private scalar never leaves the
-device (secure storage; a secure-enclave key is the simf-run hardening follow-up).
+There is **no 5-day window as-built** (Logic D1): the device-key stays usable until revoked, and
+the session minted by a device-key sign-in carries a refresh token with the same fixed **30-day**
+lifetime as a password sign-in (`DeviceKeyService.RefreshTokenLifetime` — a server constant, not
+config). The biometric re-open path signs a fresh server challenge to mint tokens without a typed
+password; enrolment registers the device-key **best-effort automatically** after a successful
+password sign-in (`_maybeEnrolBiometric`). The private scalar never leaves the device (secure
+storage; a secure-enclave key is the simf-run hardening follow-up).
 
 ```jsonc
 // Enrol (after password sign-in) — RegisterDeviceKeyRequest
@@ -220,3 +235,9 @@ device (secure storage; a secure-enclave key is the simf-run hardening follow-up
   array and **no** `traceId`.
 - Anonymous access here is the documented exception for SignIn / ForgotPassword / reset /
   refresh / OTP-verify (auth bootstrap) — every other App endpoint requires a valid token.
+- After a completed sign-in (password, OTP or device-key) the app **hydrates the session**
+  from `GET /app/users/me` (`CurrentUserResponse`) — `appRole`, `registrationStatus` and
+  the server-computed **`profileComplete`** flag (D-374) that drives the post-auth route.
+
+*Last updated: 2026-06-13 — as-built conformance pass (D-360/D-369; D-374 `profileComplete`
+hydration note; device-key window corrected to the as-built 30-day constant).*

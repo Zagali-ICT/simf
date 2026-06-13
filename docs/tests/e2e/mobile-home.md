@@ -30,7 +30,7 @@
 | E2E-MOB013-003 | Bootstrap reflects an approved account (pending → approved routing) | happy | P0 | authored ✓ (`Bootstrap_reflects_an_approved_account`) |
 | E2E-MOB013-004 | No token → 401 | auth | P0 | authored ✓ (`Bootstrap_without_a_token_returns_401`) |
 | E2E-MOB013-005 | Guest (no token) renders the KSA guest layout, no bootstrap call | happy | P1 | authored ✓ (screen — guest banner + 2×2 tiles + sign-in CTA, no bell) |
-| E2E-MOB013-006 | Privilege from the JWT claim picks the layout | auth | P1 | authored ✓ (screen — signed-in greeting header + tile sections) |
+| E2E-MOB013-006 | Privilege from the cached auth session picks the layout | auth | P1 | authored ✓ (screen — signed-in greeting header + tile sections) |
 | E2E-MOB013-007 | RTL render of Home tiles + bell badge | i18n | P1 | authored ✓ (screen — Arabic RTL + badge hidden/shown) |
 | E2E-MOB013-008 | Locked بطاقتي card is visible but inert as a guest | auth | P1 | authored ✓ (screen — disabled tile ignores taps) |
 | E2E-MOB013-009 | FAQ row opens the About page (no app FAQ endpoint yet) | happy | P2 | authored ✓ (screen) |

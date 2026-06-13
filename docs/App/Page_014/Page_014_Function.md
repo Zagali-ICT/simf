@@ -12,36 +12,42 @@ an editable profile form (editing lives under Settings / More, Page 41).
 
 ## Actors
 - **Visitor** (approved) — full dashboard.
-- **Signed-in but pending** (effective Guest) — identity card + notifications only; no
-  badge QR, no counters/schedule actions.
+- **Signed-in but pending/rejected** (effective Guest) — limited view: identity card
+  (cached name + under-review note) plus only the Account-settings and Sign-out rows;
+  no dashboard call, no counters/schedule/badge/share.
 - Anonymous Guests do not reach this page (they get Guest mode, Page 12).
 
-## Functional elements
+## Functional elements (as built, D-378 — KSA frame 512:1780)
 | # | Element | Behaviour |
 |---|---------|-----------|
-| FE-1 | Profile card | Shows avatar, full name (AR/EN), tier word (e.g. "VIP"), the reference id, and a count "enrolled in N sessions". |
-| FE-2 | Share button (on card) | Opens the native share intent for the user's contact (vCard). |
-| FE-3 | Share-contact tile | مشاركة جهة اتصال — share contact (vCard) via native intent. |
-| FE-4 | Share-profile tile | مشاركة ملفي — share the user's profile/calendar via native intent. |
-| FE-5 | Stat tile — booked sessions | Count of sessions the user has booked (جلسات محفوظة). |
-| FE-6 | Stat tile — meetings | Count of the user's confirmed meetings (مقابلات مؤكدة). |
-| FE-7 | Today's schedule | جدولي اليوم — a single time-ordered list of the user's sessions **and** meetings for today. |
-| FE-8 | Utility link — Smart Badge | بطاقتي الذكية → Badge QR (Page 32). |
-| FE-9 | Utility link — Account settings | إعدادات الحساب → More / settings (Page 41). |
+| FE-1 | Identity card | Avatar 64 (photo / initials fallback), localized full name, line "{tier} · مسجّل في N جلسات" (tier omitted when none), gold reference `#{qrId}` (only when present), bordered gold **مشاركة** button → contact vCard share. |
+| FE-2 | Language tile | **العربية · English** — toggles the app language AR ↔ EN, persisted to prefs (wired, D-378). |
+| FE-3 | Theme tile | **المظهر · ليلي/نهاري** — visible but **disabled** (no light theme exists; owner decision, D-378). |
+| FE-4 | Share-profile tile | مشاركة ملفي → the share-my-contact QR screen (`/contacts/share`). |
+| FE-5 | Share-contact tile | مشاركة جهة اتصال — share contact (vCard) via the native share sheet. |
+| FE-6 | Stat tiles | مقابلات مؤكدة (`meetingsCount`) · جلسات محفوظة (`bookedSessionsCount`) — display-only. |
+| FE-7 | Today's schedule | جدولي اليوم — a single time-ordered list of the user's sessions **and** meetings for today; empty → "لا يوجد لديك مواعيد اليوم". |
+| FE-8 | المزيد rows | بطاقتي الذكية → Badge QR (Page 32) · اعدادات الحساب → More (Page 41) · مشاركة جدولي → `.ics` share · تسجيل الخروج → confirm dialog then sign out (D-373). |
 
 ## User actions & navigation
 | Action | Result |
 |--------|--------|
-| Tap Share / share tiles | Native share sheet with vCard (contact) and/or `.ics` (calendar). |
-| Tap a schedule row | Session → Session detail (Page 17); Meeting → meeting detail (TBD page). |
-| Tap Smart Badge | Badge QR (Page 32). |
-| Tap Account settings | More (Page 41). |
-| Tap an avatar elsewhere (Home) | Arrives at this page. |
+| Tap مشاركة (card) / مشاركة جهة اتصال | Native share sheet with the vCard (`simf.vcf`). |
+| Tap مشاركة جدولي | Native share sheet with the calendar (`simf.ics`). |
+| Tap مشاركة ملفي | Share-my-contact QR screen (`/contacts/share`). |
+| Tap the language tile | UI flips AR ↔ EN immediately; choice persists across launches. |
+| Tap a schedule row | Session → Session detail (Page 17); Meeting rows are non-tappable (no meeting detail page). |
+| Tap بطاقتي الذكية | Badge QR (Page 32). |
+| Tap اعدادات الحساب | More (Page 41). |
+| Tap تسجيل الخروج | Confirm dialog (إلغاء / تسجيل الخروج); confirming revokes the session and lands on sign-in. |
+| Bottom-nav Profile tab (any page) | Arrives at this page (Profile tab renders active here). |
 
 ## Acceptance criteria (functional)
-- AC-1 The card shows the user's own name (AR + EN), tier, reference, avatar.
-- AC-2 The two counters reflect the user's own booked sessions and confirmed meetings.
+- AC-1 The card shows the user's own localized name, tier·enrolled line, reference, avatar.
+- AC-2 The two counters reflect the user's own confirmed meetings and booked sessions.
 - AC-3 Today's schedule merges sessions + meetings, ordered by time, today only.
-- AC-4 Share produces a vCard (contact) and an `.ics` (calendar) through the OS share intent.
-- AC-5 Smart Badge and Account-settings links route to Pages 32 and 41.
-- AC-6 A pending (unapproved) user sees the card but not the badge/counters/schedule actions.
+- AC-4 Share produces a vCard (contact) and an `.ics` (calendar) through the OS share sheet; a failed share shows the "تعذّرت المشاركة…" snackbar.
+- AC-5 Smart Badge and Account-settings rows route to Pages 32 and 41; Share-my-profile routes to `/contacts/share`.
+- AC-6 A pending (unapproved) user — and an unexpected 403 — sees the limited card + Account-settings + Sign-out only; no dashboard call is made when pending.
+- AC-7 The language tile toggles and persists the locale; the theme tile renders disabled.
+- AC-8 Sign-out requires an explicit confirmation before the session is revoked (D-373).

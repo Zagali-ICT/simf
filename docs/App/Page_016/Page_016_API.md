@@ -1,10 +1,16 @@
-# Page 016 — API (الجلسات · Sessions)
+# Page 016 — API (الأجندة · Sessions agenda)
 
 Authoritative backend contract for this page. Inherits the `ApiResult<T>` envelope,
 headers, error model and auth from SIMF-API-001 + SIMF-MOB-API-001 §3–§4. The
 counter/filter rules are in [Page_016_Logic.md](Page_016_Logic.md).
 
-> **Status:** **BUILT** (API) · **Flutter screen built (D-299).** The list
+Last updated: 2026-06-13 — KSA Wave-2 redesign (D-378). The redesign is
+**UI-only**: the endpoint, auth, wire fields and the app's fetch + decode are
+all unchanged.
+
+> **Status:** **BUILT** (API) · **Flutter screen built (D-299), redesigned to
+> KSA frame 215:767 (D-378, commit `8a0387f`) — same single fetch + decode.**
+> The list
 > (`GET /app/programme/sessions`) shipped in D-199, was **enriched in D-252** so the
 > cached payload also carries the body + the ordered speaker cards, and was
 > **further enriched in D-271** so each speaker also carries its **country (id +
@@ -13,11 +19,14 @@ counter/filter rules are in [Page_016_Logic.md](Page_016_Logic.md).
 > `tests/SIMF.Api.Tests/ProgrammeSessionsTests.cs` (incl.
 > `Session_speaker_carries_country_flag_and_photo`). The Flutter screen + the
 > tolerant int-enum decode are covered by
-> `src/Mobile/simf_app/test/features/sessions/` (D-299).
+> `src/Mobile/simf_app/test/features/sessions/` (D-299; widget tests rebuilt
+> against the KSA screen with D-378).
 >
-> **Rename (D-271):** the screen is renamed **الأجندة · Agenda → الجلسات ·
-> Sessions** (title + nav label + pills). The **API route is unchanged**
-> (`/app/programme/sessions`) — the rename is UI-only.
+> **Rename history (D-271 → D-378):** D-271 renamed the screen **الأجندة ·
+> Agenda → الجلسات · Sessions**; the D-378 KSA rebuild re-titles the visible
+> header + nav label back to **الأجندة · Agenda** (`l10n.navAgenda`) with the
+> frame's pill copy (أجندة الفعالية / الأجندة القادمة). The **API route is
+> unchanged** throughout (`/app/programme/sessions`) — both renames are UI-only.
 >
 > **Path-prefix note:** App routes are under **`/api/v1/app/*`** (App↔CP split,
 > D-247) — so the routes below are `GET /api/v1/app/programme/sessions` etc.

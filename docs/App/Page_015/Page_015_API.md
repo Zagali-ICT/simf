@@ -7,8 +7,10 @@ rules are in [Page_015_Logic.md](Page_015_Logic.md).
 > **Status:** **built.** `GET /app/venue-map` is D-230 (FR-605);
 > `GET /app/booths` + `/app/booths/{id}` are D-199. All three are **public,
 > read-only** reads — no schema change, no enum change, no migration on this page.
-> The **Flutter screen is built** (D-298) and binds to the camelCase field names
-> below (the booth field names were corrected from an earlier `nameEn/nameAr` draft).
+> The **Flutter screen is built** (D-298) and was **redesigned to the KSA Wave-2
+> frame 215:562 (D-378, 2026-06-13, commit `cf7214e`) with this contract
+> unchanged** — it binds to the camelCase field names below (the booth field
+> names were corrected from an earlier `nameEn/nameAr` draft).
 >
 > **Path-prefix note:** App routes are under **`/api/v1/app/*`** — so the routes
 > below resolve to `GET /api/v1/app/venue-map`, `/api/v1/app/booths`,
@@ -41,7 +43,7 @@ Envelope: `{ "success": true, "data": [ ...nodes ], "error": null }`.
 Returns the **full** active node set in one call — no paging, no viewport query
 (Logic L-2).
 
-## E2 — `GET /app/booths`  (booth lookup for popups)
+## E2 — `GET /app/booths`  (booth lookup for the info card / detail sheet)
 | | |
 |---|---|
 | Full route | `GET /api/v1/app/booths` |
@@ -68,8 +70,10 @@ Returns the **full** active node set in one call — no paging, no viewport quer
   "mapY":                0.0         // double?
 }
 ```
-> **No `logoUrl` field exists** on this DTO — a booth logo in the popup is
-> **decoration** (D11 / Logic L-6).
+> **No `logoUrl` field exists** on this DTO — a booth logo in the info card /
+> detail sheet is **decoration** (D11 / Logic L-6). The Flutter `BoothSummary`
+> model does not decode `mapX`/`mapY` — the screen positions nodes from the
+> venue-map read (E1) only.
 
 ## E3 — `GET /app/booths/{id}`  (booth detail — description paragraph)
 | | |
@@ -115,7 +119,8 @@ three reads. None of the three requires a request body or query parameters
   D-230) is out of scope here.
 
 ## TO BUILD on this page
-- **None for rendering.** The map + booth popup are fully served by E1–E3 above.
+- **None for rendering.** The map + info card + booth detail sheet are fully
+  served by E1–E3 above (unchanged by the D-378 redesign).
 - **Hall-node → agenda deep link (Logic L-7) — TO BUILD:** depends on the agenda
   screen accepting a hall filter; **no new endpoint** is needed for the map.
 - **Booth logo / hall-name fields (D11 / Logic L-6):** **not in the contract.**

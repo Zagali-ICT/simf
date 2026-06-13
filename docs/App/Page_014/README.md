@@ -49,7 +49,7 @@ network-image fetch. Tests: `my_area_screen_test.dart` (7) +
 **Mockup toggles relocated (D-334) — superseded by D-378:** the interim build
 dropped the theme/language tiles (navy-always D-331; language on Page 038,
 D-327). The KSA Wave-2 frame **512:1780** brings both tiles back on this
-screen: the **العربية • English tile is wired** (same locale controller as
+screen: the **العربية · English tile is wired** (same locale controller as
 Page 038 — the Accessibility control remains too), and the **المظهر tile is
 visible but DISABLED** (owner decision — no light theme exists; building one
 without light-mode frames would be invention).

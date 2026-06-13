@@ -18,23 +18,28 @@ Per-page documentation folder. Everything about this app page lives here.
 | Section | 1 — Entry / router screen |
 | Nature | **Home landing** (router screen 13; entry surface after boot) |
 | App privilege | **All privileges** — Guest / Visitor / Staff / Moderator. **No login required.** |
-| Status | **Flutter screen BUILT (D-296), redesigned to the KSA Wave-2 frames (D-378)**; privilege-gated layouts + best-effort bell badge (`…/notifications/unread-count`); on-login bundle `GET /app/bootstrap` **BUILT (D-251)** |
+| Status | **Flutter screen BUILT (D-296), redesigned to the KSA Wave-2 frames (D-378, 2026-06-13)**; guest vs signed-in layouts + best-effort bell badge (`…/notifications/unread-count`); on-login bundle `GET /app/bootstrap` **BUILT (D-251) but not called by the shipped app** |
 
 ## Sources of truth
-`Mockup.html` (visual) · `SIMF_Screen_Guide_and_User_Journey` (narrative, Screen 13) ·
+**KSA-Project Figma frames 512:1492 (guest) + 203:1236 (signed-in)** (visual, D-378) ·
+`docs/SIMF-App-Redesign-Program.md` (W2-2/W2-3 rows) ·
+`SIMF_Screen_Guide_and_User_Journey` (narrative, Screen 13) ·
 SIMF-MOB-API-001 (shared API conventions + auth) · SIMF-MAA-001 (mobile architecture).
+`Mockup.html` page 13 is the **superseded** pre-redesign visual.
 
 > **Owner-ref note:** the owner calls this screen **"Page 012"** in conversation,
 > but it is router screen **#13** (`path=/`) in `Mockup.html`. This folder is keyed
 > to the mockup number (013) to stay consistent with the rest of `docs/App/Page_NNN/`.
 >
 > Home is a **privilege-gated landing**. It needs **no login** to open and carries
-> **no data of its own for now**. What it shows is shaped by the app privilege
-> (`Guest`/`Visitor`/`Staff`/`Moderator`), which comes from the **JWT claim**. On a
-> successful login the app fetches **all data + privileges once** and caches them
-> (the on-login bootstrap bundle, `GET /app/bootstrap`, is **BUILT** — D-251).
+> **no data of its own** beyond the best-effort unread count. What it shows is
+> shaped by the app privilege (`Guest`/`Visitor`/`Staff`/`Moderator`), read from
+> the **cached auth session** (`AuthStateSignedIn.session.user.appRole`; no
+> session ⇒ `Guest`). The session is cached at **sign-in**; the on-login bootstrap
+> bundle `GET /app/bootstrap` is **BUILT (D-251)** on the backend but the shipped
+> app does **not call it**.
 
-## As-built (D-296)
+## As-built (D-296) — superseded by the D-378 redesign below
 
 The Flutter `HomeScreen` (`features/home/home_screen.dart`) replaces the
 `ComingSoonScreen` placeholder. It reads the **privilege from the cached auth

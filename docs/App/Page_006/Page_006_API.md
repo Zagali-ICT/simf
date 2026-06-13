@@ -1,5 +1,7 @@
 # Page 006 — API (التحقق بالبريد · Email verification)
 
+_Last updated: 2026-06-13 — as-built conformance pass (D-364/D-369; contract unchanged by the redesign)._
+
 Authoritative backend contract for this page. Inherits the `ApiResult<T>` envelope,
 headers, error model and rate-limiting from SIMF-API-001 §12.4 + SIMF-MOB-API-001 §3–§4.
 The client + server logic is in [Page_006_Logic.md](Page_006_Logic.md).
@@ -58,7 +60,7 @@ The client + server logic is in [Page_006_Logic.md](Page_006_Logic.md).
 | Access | **Anonymous** (`AllowAnonymous`), `auth` rate limiter. No permission code. |
 | App privilege | Anonymous (mid sign-up) |
 | Returns | `ApiResult<ResendCodeResponse>` |
-| Effect | Issues a fresh `EmailVerification` code (invalidating the previous one) and enqueues the verification email. Subject to an account-scoped resend cap independent of the IP limiter. |
+| Effect | Issues a fresh `EmailVerification` code (invalidating the previous one), enqueues the verification email and dispatches the in-app `NotificationKind.CredentialEmailVerificationResent` trail (best-effort). Subject to an account-scoped resend cap independent of the IP limiter. |
 
 **Request — `ResendCodeRequest`**
 ```jsonc
@@ -73,7 +75,7 @@ The client + server logic is in [Page_006_Logic.md](Page_006_Logic.md).
   "success": true,
   "data": {
     "email": "string",
-    "codeExpiresInSeconds": 0   // lifetime of the new code → drives the client resend cooldown
+    "codeExpiresInSeconds": 600   // lifetime of the new code (CodeLifetime = 10 min) → drives the client resend cooldown
   },
   "error": null
 }
@@ -91,6 +93,15 @@ The client + server logic is in [Page_006_Logic.md](Page_006_Logic.md).
 ## Notes
 - Both endpoints existed before this page was documented; this screen is a **client of**
   the shared sign-up auth contract (SIMF-API-001 §12.4) — no new endpoint, schema, enum
-  or migration is introduced by Page 006.
-- `MaxCodeAttempts` (verify) and the resend cap (resend) are server-owned constants in
-  `RegistrationService`; the client only reflects their outcomes via the bilingual errors.
+  or migration is introduced by Page 006. The D-364 redesign changed visuals only; the
+  wire contract is byte-identical.
+- Server-owned constants in `RegistrationService`: `CodeLifetime` = 10 minutes (so
+  `codeExpiresInSeconds` = 600), `MaxCodeAttempts` = 5 (verify), and the resend cap =
+  `MaxCodesPerWindow` 5 codes per rolling `ResendWindow` of 1 hour (shared with the
+  D-198 unverified-restart sign-up path). The client only reflects their outcomes via
+  the returned errors.
+- `error.message` arrives in the **request's language** (the app sends `Accept-Language`
+  `ar`/`en`; SIMF-API-001 §11) — one message field on the wire, displayed as-is.
+- Client consumption: the app reads only `codeExpiresInSeconds` from the resend
+  response (the `email` field is ignored) and the verify success is consumed as
+  envelope-success only (the `{ email, emailVerified }` data is not read).

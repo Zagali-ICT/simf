@@ -12,6 +12,11 @@ schedule rules are in [Page_014_Logic.md](Page_014_Logic.md).
 > **Path-prefix note:** App routes are under **`/api/v1/app/*`** (App↔CP split,
 > D-247) — so the routes below are `GET /api/v1/app/account/dashboard`,
 > `/api/v1/app/account/calendar.ics`, `/api/v1/app/account/contact-card.vcf`.
+>
+> **App consumption (D-297/D-378):** the dashboard is decoded from the
+> `ApiResult` envelope (`MyAreaRepository.getDashboard`); the two exports are
+> fetched as **raw text** (`SimfApiClient.getText`) and handed to the native
+> share sheet (temp file on Android/iOS/desktop; raw text on web).
 
 ## E1 — `GET /app/account/dashboard`  **(BUILT — D-249)**
 | | |
@@ -72,7 +77,7 @@ schedule rules are in [Page_014_Logic.md](Page_014_Logic.md).
 |---|---|
 | Full route | `GET /api/v1/app/account/calendar.ics` |
 | Access | Approved account; own `sub` |
-| Returns | `text/calendar; charset=utf-8` (RFC 5545), `Content-Disposition: attachment; filename="simf.ics"`. One **VEVENT per item across all days** — every held booked session + every accepted speaker meeting + every confirmed business meeting. `DTSTART`/`DTEND` from the item (UTC), `SUMMARY` = session title or meeting subject, `LOCATION` = hall name, `UID` = item id. Text fields RFC-5545-escaped. |
+| Returns | `text/calendar; charset=utf-8` (RFC 5545), `Content-Disposition: attachment; filename="simf.ics"`. One **VEVENT per item across all days** — every held booked session + every accepted speaker meeting + every confirmed business meeting. `DTSTART`/`DTEND` from the item (UTC; `DTEND` omitted when the source carries no end), `DTSTAMP` = now, `SUMMARY` = session title or meeting subject, `LOCATION` = hall name, `UID` = `{itemId:N}@simf`. Text fields RFC-5545-escaped. |
 
 App fetches and hands to the native **share intent** / add-to-calendar.
 
@@ -81,9 +86,23 @@ App fetches and hands to the native **share intent** / add-to-calendar.
 |---|---|
 | Full route | `GET /api/v1/app/account/contact-card.vcf` |
 | Access | Approved account; own `sub` |
-| Returns | `text/vcard; charset=utf-8` (vCard 3.0), `Content-Disposition: attachment; filename="simf.vcf"` — `FN`/`N` (name, EN preferred then AR), `TITLE` (`UserProfile.JobTitle`), `ORG` (`Organisation.NameEn ?? NameAr`), `UID` + `NOTE` = `QrId` (the badge's unique key). |
+| Returns | `text/vcard; charset=utf-8` (vCard 3.0), `Content-Disposition: attachment; filename="simf.vcf"` — `FN`/`N` (name, EN preferred then AR), `TITLE` (`UserProfile.JobTitle`), `ORG` (`Organisation.NameEn ?? NameAr`), `UID` = `QrId` and `NOTE` = `SIMF {QrId}` (the badge's unique key; both omitted when `QrId` is null). |
 
-App hands to the native **share intent**. No badge-image endpoint — the QR is rendered client-side from `qrId`.
+App hands to the native **share intent** — from BOTH the identity-card **مشاركة**
+button and the **مشاركة جهة اتصال** tile. No badge-image endpoint — the QR is
+rendered client-side from `qrId`.
+
+## E4 — `POST /app/auth/sign-out`  (تسجيل الخروج row, D-373)  **(BUILT — pre-existing auth endpoint)**
+| | |
+|---|---|
+| Full route | `POST /api/v1/app/auth/sign-out` |
+| Access | Any authenticated caller (valid access token; rate-limited `auth` policy) |
+| Returns | `ApiResult<SignOutResponse>` — ends **every** session for the account (SIMF-API-001 §12.4) |
+
+Called via `AuthController.signOut()` after the confirm dialog. The client sends
+`{ "refreshToken": ... }` in the body (the endpoint takes no request — revocation
+is account-wide off the token's `sub`); the call is **best-effort**: the local
+session is cleared and the app lands on `/sign-in` even if the wire call fails.
 
 ## Reused existing reads (no contract change)
 | Source | Used for |

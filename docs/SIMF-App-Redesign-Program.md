@@ -61,11 +61,11 @@ Shared widgets: `lib/app/widgets/simf_logo.dart` (`SimfLogo`, 4x asset
 | P0 | Design system (tokens/theme/logo) | — | variables + 159:580 | ✅ shipped 2026-06-11 | `e7f8c7b` |
 | P1 | Promote Login v2 → official sign-in | `/sign-in` | 168:2800 | ✅ shipped 2026-06-11 (D-360) | preview `be81082`; promotion — see git log |
 | 1 | Splash (Page 001) | `/splash` | 159:573 | ✅ shipped 2026-06-11 (D-361) | — |
-| 2 | Onboarding carousel (Page 002) | `/onboarding` | 148:22, 159:942, 159:1052 | ✅ shipped 2026-06-11 (D-362 — videos dropped for static panels, owner decision) | — |
+| 2 | Onboarding carousel (Page 002) | `/onboarding` | 148:22, 159:942, 159:1052 | ✅ shipped 2026-06-11 (D-362 — intro videos dropped for static panels, owner decision; D-373 later added looping muted *background* videos per step, bundled assets) | — |
 | 3 | Profile-data form (Page 007) | `/sign-up/visitor` | 168:2972 | ✅ shipped 2026-06-11 (D-368 — frame's "رقم اللوحة" skipped: no backend field; DOB/place-of-birth/national-ID path kept: API-required; live check N/A: auth-gated). ~~Page 005 register keeps its current UI (no frame delivered)~~ — superseded: the register frame arrived in Wave 2 and shipped as W2-1 (D-370). | — |
-| 4 | Email-OTP verify (Page 006) | `/sign-up/otp` | 505:837 | ✅ shipped 2026-06-11 (D-364). The 2FA OTP screen (`/auth/verify-otp`) keeps its old look — restyling it with the same segmented-box pattern is a tracked follow-up. | — |
+| 4 | Email-OTP verify (Page 006) | `/sign-up/otp` | 505:837 | ✅ shipped 2026-06-11 (D-364). ~~The 2FA OTP screen (`/auth/verify-otp`) keeps its old look — restyling it is a tracked follow-up~~ — delivered by D-369 (shared `OtpCodeBoxes`/`OtpMark`). | — |
 | 5 | Interests picker (Page 007-01) | `/sign-up/interests` | 505:1083 | ✅ shipped 2026-06-11 (D-365 — live check N/A: auth+draft-gated; widget tests stand in) | — |
-| 6 | Registration success (Page 010) | `/registration/success` | 505:1451 | ✅ shipped 2026-06-11 (D-366 — masked reference card, visual-only contact tiles; live check N/A: auth-gated) | — |
+| 6 | Registration success (Page 010) | `/registration/success` | 505:1451 | ✅ shipped 2026-06-11 (D-366; superseded in part — D-369 wired the contact tiles via `SIMF_SUPPORT_PHONE`/`SIMF_SUPPORT_EMAIL` config, D-373 put the real DB-issued `referenceNumber` on the card with the mask as offline fallback; live check N/A: auth-gated) | — |
 | 7 | Terms & conditions | `/terms` | 505:1553 | ✅ shipped 2026-06-11 (D-367 — bullet cards; checkbox gate replaced by the design's single موافق consent button) | — |
 
 ## Wave 2 status board (11 new frames, owner-approved 2026-06-12 — D-370)
