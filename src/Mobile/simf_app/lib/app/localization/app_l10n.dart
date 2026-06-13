@@ -512,6 +512,7 @@ class AppL10n {
       _t('تعذّرت المشاركة. حاول مرة أخرى.', 'Could not share. Try again.');
   String get statBookedSessions => _t('جلسات محفوظة', 'Booked sessions');
   String get statMeetings => _t('مقابلات مؤكدة', 'Confirmed meetings');
+  String get statisticsTitle => _t('الإحصائيات', 'Statistics');
   String get todayScheduleTitle => _t('جدولي اليوم', "Today's schedule");
   String get scheduleEmpty =>
       _t('لا يوجد لديك مواعيد اليوم', 'No items today');

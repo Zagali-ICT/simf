@@ -1,20 +1,32 @@
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:simf_auth_pkg/simf_auth_pkg.dart';
+import 'package:simf_data_pkg/simf_data_pkg.dart';
+
+import '../../core/sharing/content_sharer.dart';
 import '../../features/more/more_menu_items.dart';
+import '../../features/myarea/data/myarea_repository.dart';
 import '../localization/app_l10n.dart';
+import '../localization/locale_controller.dart';
+import '../route_names.dart';
 import '../theme/tokens.dart';
 
 /// The shell's side drawer — the المزيد menu as a slide-in panel, opened by the
-/// shared top bar's ☰ (in RTL it slides from the right). Same items as the
-/// full-page [MoreScreen] (single source: [moreMenuEntries]) in the navy KSA
-/// styling. Tapping an item closes the drawer and pushes its route.
-class MoreDrawer extends StatelessWidget {
+/// shared top bar's ☰ (in RTL it slides from the right). Holds the navigation
+/// hub items (single source: [moreMenuEntries], shared with the full-page
+/// [MoreScreen]) plus the account actions moved off the منطقتي page (D-396):
+/// the language toggle, the (inert) theme control, the calendar export and
+/// sign-out. The session-bound actions show only when signed in.
+class MoreDrawer extends ConsumerWidget {
   const MoreDrawer({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppL10n.of(context);
+    final signedIn = ref.watch(authControllerProvider) is AuthStateSignedIn;
     return Drawer(
       backgroundColor: SimfTokens.navySurface,
       child: SafeArea(
@@ -39,17 +51,45 @@ class MoreDrawer extends StatelessWidget {
                     const EdgeInsets.symmetric(vertical: SimfTokens.space2),
                 children: <Widget>[
                   for (final entry in moreMenuEntries(l10n))
-                    ListTile(
-                      leading: Icon(entry.icon, color: SimfTokens.accent),
-                      title: Text(
-                        entry.title,
-                        style: const TextStyle(color: Colors.white),
-                      ),
+                    _DrawerTile(
+                      icon: entry.icon,
+                      title: entry.title,
                       onTap: () {
-                        // Close the drawer first, then navigate.
                         Navigator.of(context).pop();
                         context.pushNamed(entry.routeName);
                       },
+                    ),
+                  const Divider(color: SimfTokens.beigeBorder, height: 1),
+                  // Account actions moved here from منطقتي (D-396).
+                  _DrawerTile(
+                    icon: Icons.language,
+                    title: l10n.languageToggleLabel,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      unawaited(
+                        ref.read(localeControllerProvider.notifier).toggle(),
+                      );
+                    },
+                  ),
+                  // Visible but inert — the app has no light theme yet (owner
+                  // decision, carried over from the profile tile).
+                  _DrawerTile(
+                    icon: Icons.dark_mode_outlined,
+                    title: l10n.themeToggleTooltip,
+                    enabled: false,
+                  ),
+                  if (signedIn)
+                    _DrawerTile(
+                      icon: Icons.calendar_today_outlined,
+                      title: l10n.shareCalendar,
+                      onTap: () => unawaited(_shareCalendar(context, ref, l10n)),
+                    ),
+                  if (signedIn)
+                    _DrawerTile(
+                      icon: Icons.logout,
+                      title: l10n.signOutLink,
+                      onTap: () =>
+                          unawaited(_confirmSignOut(context, ref, l10n)),
                     ),
                 ],
               ),
@@ -67,6 +107,88 @@ class MoreDrawer extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  /// Fetches the user's `.ics` and hands it to the native share sheet — the
+  /// same export the profile page used to own.
+  Future<void> _shareCalendar(
+    BuildContext context,
+    WidgetRef ref,
+    AppL10n l10n,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final repo = ref.read(myAreaRepositoryProvider);
+    Navigator.of(context).pop();
+    try {
+      final ics = await repo.getCalendarIcs();
+      await shareTextContent(
+        content: ics,
+        filename: 'simf.ics',
+        mimeType: 'text/calendar',
+      );
+    } on ApiFailure {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.shareFailed)));
+    }
+  }
+
+  /// Confirms, then revokes the session (D-373) and lands on sign-in. The
+  /// captured router survives the await; context is not used after it.
+  Future<void> _confirmSignOut(
+    BuildContext context,
+    WidgetRef ref,
+    AppL10n l10n,
+  ) async {
+    final router = GoRouter.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.signOutLink),
+        content: Text(l10n.signOutConfirmBody),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.cancelLabel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.signOutLink),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) {
+      return;
+    }
+    await ref.read(authControllerProvider.notifier).signOut();
+    router.goNamed(RouteNames.signIn);
+  }
+}
+
+/// One drawer row in the navy KSA styling: a gold leading icon over a white
+/// title. [enabled] false renders the muted, non-tappable variant.
+class _DrawerTile extends StatelessWidget {
+  const _DrawerTile({
+    required this.icon,
+    required this.title,
+    this.onTap,
+    this.enabled = true,
+  });
+
+  final IconData icon;
+  final String title;
+  final VoidCallback? onTap;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = enabled ? SimfTokens.accent : SimfTokens.inkMuted;
+    final titleColor = enabled ? Colors.white : SimfTokens.inkMuted;
+    return ListTile(
+      enabled: enabled,
+      leading: Icon(icon, color: color),
+      title: Text(title, style: TextStyle(color: titleColor)),
+      onTap: onTap,
     );
   }
 }

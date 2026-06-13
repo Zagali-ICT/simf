@@ -8,7 +8,6 @@ import 'package:simf_auth_pkg/simf_auth_pkg.dart';
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
-import '../../app/localization/locale_controller.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
@@ -103,12 +102,6 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
         'text/vcard',
       );
 
-  Future<void> _shareCalendar() => _share(
-        () => ref.read(myAreaRepositoryProvider).getCalendarIcs(),
-        'simf.ics',
-        'text/calendar',
-      );
-
   Future<void> _share(
     Future<String> Function() fetch,
     String filename,
@@ -128,39 +121,6 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppL10n.of(context).shareFailed)),
       );
-    }
-  }
-
-  void _toggleLanguage() {
-    unawaited(ref.read(localeControllerProvider.notifier).toggle());
-  }
-
-  /// D-373 — confirm, then revoke the session via the controller (the
-  /// server-side refresh token is revoked too) and land on sign-in.
-  Future<void> _confirmSignOut(AppL10n l10n) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.signOutLink),
-        content: Text(l10n.signOutConfirmBody),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.cancelLabel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.signOutLink),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) {
-      return;
-    }
-    await ref.read(authControllerProvider.notifier).signOut();
-    if (mounted) {
-      context.goNamed(RouteNames.signIn);
     }
   }
 
@@ -212,11 +172,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
           label: l10n.accountSettingsLink,
           onTap: () => context.pushNamed(RouteNames.more),
         ),
-        const SizedBox(height: SimfTokens.space4),
-        _MoreRow(
-          label: l10n.signOutLink,
-          onTap: () => unawaited(_confirmSignOut(l10n)),
-        ),
+        // Sign-out lives in the shell's side drawer now (D-396).
       ],
     );
   }
@@ -241,23 +197,8 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
           onShare: () => unawaited(_shareContact()),
         ),
         const SizedBox(height: SimfTokens.space4),
-        KsaTileRow(
-          children: <Widget>[
-            KsaNavTile(
-              label: l10n.languageToggleLabel,
-              icon: Icons.language,
-              onTap: _toggleLanguage,
-            ),
-            // Visible but disabled — the app has no light theme yet (owner
-            // decision: keep the frame's tile as a locked control).
-            KsaNavTile(
-              label: l10n.themeToggleTooltip,
-              icon: Icons.dark_mode_outlined,
-              enabled: false,
-            ),
-          ],
-        ),
-        const SizedBox(height: SimfTokens.space2),
+        // Frame 213:963 — the two share actions (مشاركة ملفي + مشاركة جهة اتصال).
+        // Language / theme moved to the shell's side drawer (D-396).
         KsaTileRow(
           children: <Widget>[
             KsaNavTile(
@@ -272,7 +213,11 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
             ),
           ],
         ),
-        const SizedBox(height: SimfTokens.space2),
+        const SizedBox(height: SimfTokens.space6),
+        // الإحصائيات (frame 213:963). الأرشيف has no API counter, so the right
+        // tile keeps the real مقابلات مؤكدة count (D-396); جلسات محفوظة = booked.
+        KsaSectionHeader(title: l10n.statisticsTitle),
+        const SizedBox(height: SimfTokens.space3),
         KsaTileRow(
           children: <Widget>[
             KsaStatTile(
@@ -325,18 +270,8 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
           label: l10n.accountSettingsLink,
           onTap: () => context.pushNamed(RouteNames.more),
         ),
-        const SizedBox(height: SimfTokens.space4),
-        // Function-preserving rows the frame's (non-exhaustive) list omits:
-        // the calendar export kept from the mockup build + sign-out (D-373).
-        _MoreRow(
-          label: l10n.shareCalendar,
-          onTap: () => unawaited(_shareCalendar()),
-        ),
-        const SizedBox(height: SimfTokens.space4),
-        _MoreRow(
-          label: l10n.signOutLink,
-          onTap: () => unawaited(_confirmSignOut(l10n)),
-        ),
+        // Calendar export + sign-out moved to the shell's side drawer (D-396),
+        // matching frame 213:963 which ends المزيد at اعدادات الحساب.
       ],
     );
   }
