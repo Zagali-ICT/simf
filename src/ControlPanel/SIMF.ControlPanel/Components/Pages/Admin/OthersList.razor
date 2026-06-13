@@ -105,7 +105,7 @@
 @* D-353 — Add / Edit / Details hosted by CrudShell (popup or full page). *@
 @if (FormOpen)
 {
-    <CrudShell Open="true" Presentation="_presentation"
+    <CrudShell Open="true" Presentation="EffectivePresentation"
                Title="@FormTitle" CloseLabel="@L["Admin.Others.Details.Close"]"
                OnClose="CloseForm">
         @if (_form == FormKind.AddEdit)
@@ -231,7 +231,14 @@
     private Toast? _toast;
 
     private bool FormOpen => _form != FormKind.None;
-    private bool GridHidden => FormOpen && _presentation == CrudPresentation.Page;
+    // D-393 — the wide Add form (the same WalkInRegistrationForm as visitors)
+    // opens full-page regardless of the admin's popup/page preference; Edit +
+    // Details keep the preference.
+    private CrudPresentation EffectivePresentation =>
+        _form == FormKind.AddEdit && !_isEdit
+            ? CrudPresentation.Page
+            : _presentation;
+    private bool GridHidden => FormOpen && EffectivePresentation == CrudPresentation.Page;
 
     private string FormTitle => _form switch
     {

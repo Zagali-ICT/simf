@@ -57,6 +57,12 @@
         }
     </fieldset>
 
+    @* D-393 — wide single-page layout: the badge picker stays full-width on
+       top; the rest of the record lays out in up to three columns so the whole
+       form is visible at once (collapses to 2 then 1 column when narrow). *@
+    <div class="simf-walkin__columns">
+      <div class="simf-walkin__col">
+
     @* -- Section 2: Identity -------------------------------------------
        Field order matches the conversation at the desk: badge name first
        (it's the most visible part of the printed badge), then DOB on the
@@ -109,6 +115,8 @@
                            @bind-Value="_model.PlaceOfBirth" />
         </div>
     </fieldset>
+      </div>
+      <div class="simf-walkin__col">
 
     @* -- Section 2b: Organisation (الجهة) — required (B3 / D-221) --------
        Searchable typeahead over the active organisations lookup; mirrors the
@@ -260,6 +268,8 @@
             </div>
         }
     </fieldset>
+      </div>
+      <div class="simf-walkin__col">
 
     @* -- Section 4: Contact ------------------------------------------- *@
     <fieldset class="simf-walkin__section" disabled="@(_busy ? "disabled" : null)">
@@ -324,6 +334,8 @@
             </div>
         </fieldset>
     }
+      </div>
+    </div>
 
     @* -- Submit row ---------------------------------------------------- *@
     <div class="simf-form__actions simf-walkin__actions">

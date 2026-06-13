@@ -2369,6 +2369,10 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
   gap: var(--space-6);
   display: flex;
   flex-direction: column;
+  /* D-393 — grow to a comfortable wide width for the 3-column layout. */
+  inline-size: 100%;
+  max-inline-size: 1280px;
+  margin-inline: auto;
 }
 .simf-walkin__section {
   border: 1px solid var(--color-border);
@@ -2417,6 +2421,37 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
 @media (max-width: 720px) {
   .simf-walkin__grid { grid-template-columns: 1fr; }
 }
+
+/* D-393 — wide single-page walk-in layout. The form grows to a comfortable
+   wide width and arranges its sections in up to three columns so the whole
+   record is entered at once without scrolling; collapses to 2 then 1 column on
+   narrower viewports. Tokens only (CSS rules §8). The wide width itself is set
+   on the base .simf-walkin rule above. */
+.simf-walkin__columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-5);
+  align-items: start;
+  margin-block-start: var(--space-5);
+}
+.simf-walkin__col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-inline-size: 0;
+}
+/* Each column is ~one-third width, so the in-section two-up field grid stacks. */
+.simf-walkin__col .simf-walkin__grid { grid-template-columns: 1fr; }
+@media (max-width: 1180px) {
+  .simf-walkin__columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .simf-walkin__columns { grid-template-columns: 1fr; }
+}
+
+/* Wide host for the full-page walk-in form (the /admin/visitors/new page card;
+   the CrudShell full-page frame is already 1600px). */
+.simf-page-card--wide { max-inline-size: 1280px; }
 
 /* Profile-type tiles — clickable cards with a brand-coloured stripe. */
 .simf-walkin__cards {
