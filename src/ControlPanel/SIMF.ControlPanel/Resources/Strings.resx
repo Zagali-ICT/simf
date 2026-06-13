@@ -856,6 +856,8 @@
   <data name="Admin.WalkIn.Error.OrganisationRequired" xml:space="preserve"><value>Pick an organisation.</value></data>
   <data name="Admin.Pending.View.Field.QrId" xml:space="preserve"><value>QR id</value></data>
   <data name="Admin.Pending.View.Field.IdImage" xml:space="preserve"><value>ID document</value></data>
+  <data name="Admin.Pending.View.Image.ViewFull" xml:space="preserve"><value>View full size</value></data>
+  <data name="Admin.Pending.View.Image.Download" xml:space="preserve"><value>Download</value></data>
 
   <!-- D-130 — Print-bag station. -->
   <data name="Module.PrintBag" xml:space="preserve"><value>Print badge</value></data>

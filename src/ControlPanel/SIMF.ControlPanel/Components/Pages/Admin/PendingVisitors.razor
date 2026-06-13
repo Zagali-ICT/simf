@@ -222,10 +222,24 @@
                     </dl>
                     @if (_viewProfile.HasIdImage)
                     {
+                        @* CS-E (D-387) — thumbnail is a button that opens a
+                           full-size lightbox; a download link sits beneath it.
+                           _imageUrl is captured once in OpenViewAsync so the
+                           cache-buster doesn't re-fetch on every render. *@
                         <div class="simf-walkin__id-image">
                             <h4>@L["Admin.Pending.View.Field.IdImage"]</h4>
-                            <img src="@($"/account/api/admin/visitors/{_viewProfile.Id}/id-document?v={DateTime.UtcNow.Ticks}")"
-                                 alt="@L["Admin.Pending.View.Field.IdImage"]" />
+                            <button type="button" class="simf-walkin__id-image-trigger"
+                                    aria-label="@L["Admin.Pending.View.Image.ViewFull"]"
+                                    @onclick="@(() => _imageZoomOpen = true)">
+                                <img src="@_imageUrl"
+                                     alt="@L["Admin.Pending.View.Field.IdImage"]" />
+                            </button>
+                            <div class="simf-walkin__id-image-actions">
+                                <a href="@_imageUrl" class="simf-walkin__id-image-download"
+                                   download="@($"visitor-{_viewProfile.Id}-photo")">
+                                    @L["Admin.Pending.View.Image.Download"]
+                                </a>
+                            </div>
                         </div>
                     }
                 }
@@ -281,6 +295,33 @@
     </SimfModal>
 }
 
+@* CS-E (D-387) — full-size lightbox for the captured face photo. Renders the
+   same image at natural size; download link repeated in the footer. *@
+@if (_imageZoomOpen && _viewProfile is not null)
+{
+    <SimfModal Open="true"
+               Title="@L["Admin.Pending.View.Field.IdImage"]"
+               CloseLabel="@L["Admin.Pending.View.Close"]"
+               OnClose="@(() => _imageZoomOpen = false)">
+        <ChildContent>
+            <div class="simf-walkin__id-image-full">
+                <img src="@_imageUrl"
+                     alt="@L["Admin.Pending.View.Field.IdImage"]" />
+            </div>
+        </ChildContent>
+        <Footer>
+            <a href="@_imageUrl" class="simf-walkin__id-image-download"
+               download="@($"visitor-{_viewProfile.Id}-photo")">
+                @L["Admin.Pending.View.Image.Download"]
+            </a>
+            <SimfButton Type="button" Variant="secondary"
+                        OnClick="@(() => _imageZoomOpen = false)">
+                @L["Admin.Pending.View.Close"]
+            </SimfButton>
+        </Footer>
+    </SimfModal>
+}
+
 @code {
     private GridQuery _query = new() { Top = 20 };
     private GridPage<AdminPendingUserSummary>? _page;
@@ -302,6 +343,11 @@
     private bool _viewLoading;
     private string? _viewError;
     private bool _approveMode;
+
+    // CS-E (D-387) — full-size image lightbox. _imageUrl is captured once when
+    // the view modal opens so the cache-buster stays stable across re-renders.
+    private bool _imageZoomOpen;
+    private string? _imageUrl;
 
     // CS-D (D-386) — approve-modal tier picker state. The list holds the
     // active audience-side profile types; the selection (null = keep current)
@@ -472,6 +518,8 @@
         _viewProfile = null;
         _viewError = null;
         _viewLoading = true;
+        _imageZoomOpen = false;
+        _imageUrl = null;
         _approveMode = approveMode;
         _approveProfileTypeId = null;
         _approveProfileTypes = Array.Empty<AdminProfileTypeSummary>();
@@ -483,6 +531,11 @@
             if (envelope is { Success: true, Data: not null })
             {
                 _viewProfile = envelope.Data;
+                // CS-E (D-387) — capture the cache-buster URL once so the
+                // thumbnail and lightbox share a stable src and don't re-fetch.
+                _imageUrl = _viewProfile.HasIdImage
+                    ? $"/account/api/admin/visitors/{_viewProfile.Id}/id-document?v={DateTime.UtcNow.Ticks}"
+                    : null;
                 // CS-D (D-386) — only the approve flow needs the tier picker.
                 // Reuse the same list call the walk-in form uses, then keep
                 // only the active audience-side rows; pre-select the visitor's
@@ -545,6 +598,8 @@
         _viewProfile = null;
         _viewError = null;
         _viewLoading = false;
+        _imageZoomOpen = false;
+        _imageUrl = null;
         _approveMode = false;
         _approveProfileTypeId = null;
         _approveProfileTypes = Array.Empty<AdminProfileTypeSummary>();

@@ -7,14 +7,16 @@
 | **Surface** | Control Panel |
 | **Test runner** | Chrome DevTools MCP + PowerShell `Get-Totp` helper (Playwright later — keep steps tool-agnostic) |
 | **Auth setup** | `superadmin@zagali-ict.com` + TOTP via the `Get-Totp` helper |
-| **Last reviewed** | 2026-06-03 |
+| **Last reviewed** | 2026-06-13 |
 
 > **Page permission:** the page itself is gated by
 > `[RequirePermission(PermissionCatalog.Visitors.View)]` (`"Visitors.View"`).
 > The **Approve** action API is gated by `Visitors.Approve`, **Reject** (single +
 > bulk) by `Visitors.Reject`. A holder of `Visitors.View` alone can *open* the page
 > and read profiles but the per-row / bulk approve & reject calls return 403 — this
-> is its own scenario (E2E-VPN-010).
+> is its own scenario (E2E-VPN-010). The approve-time **profile-type (tier)
+> picker** (D-386) additionally needs **`ProfileTypes.View`** to populate its
+> options — an admin without it can still approve (the tier is left unchanged).
 
 ## Coverage matrix
 
@@ -36,6 +38,14 @@
 | E2E-VPN-014 | RTL / Arabic render mirrors page + Reject modal | i18n | P1 | _to author_ |
 | E2E-VPN-015 | Per-column filter (Email / Display name) narrows the grid | happy | P1 | _to author_ |
 | E2E-VPN-016 | Column sort toggles on Email / Display name | happy | P2 | _to author_ |
+| E2E-VPN-017 | View/Approve modal shows ALL captured profile data (Job title, Gender, Organisation, Plate number, Reference number) for a fully-populated visitor (D-385) | happy | P0 | _to author_ |
+| E2E-VPN-018 | Selected interests render as NAMES, not a bare count (D-385) | happy | P1 | _to author_ |
+| E2E-VPN-019 | Approve WITH a profile-type (tier) → visitor's `ProfileTypeId` is set (D-386) | happy | P0 | _to author_ |
+| E2E-VPN-020 | Approve with a partner / inactive tier → 400 `ADMIN_PROFILE_TYPE_INVALID` bilingual toast (D-386) | error | P1 | _to author_ |
+| E2E-VPN-021 | Approve with "Keep current" (null `ProfileTypeId`) → tier unchanged (D-386) | happy | P1 | _to author_ |
+| E2E-VPN-022 | Face photo thumbnail opens full / original-size in the stacked lightbox (D-387) | happy | P1 | _to author_ |
+| E2E-VPN-023 | Face photo downloads via the `<a download>` link (thumbnail + lightbox footer) (D-387) | happy | P2 | _to author_ |
+| E2E-VPN-024 | RTL / Arabic render of the View / Approve modal — all-data `<dl>`, tier picker, photo lightbox (D-385/386/387) | i18n | P1 | _to author_ |
 
 ## Scenarios
 
@@ -351,6 +361,140 @@ Scenario: Sort the queue by Email then Display name, toggling direction
   And the "created" column header is not sortable (no sort call fires when clicked)
 ```
 
+### E2E-VPN-017 — Modal shows ALL captured profile data (D-385)
+
+```gherkin
+Scenario: The View / Approve modal renders every captured profile field
+  Given a fully-populated pending visitor visitor.full@example.com whose profile has
+      a Job title, Gender, an Organisation, a Plate number and a Reference number
+  When the administrator clicks "View" (or "Approve") on that row
+  Then GET /account/api/admin/visitors/{id}/profile-for-approval returns 200
+      with a PendingProfileResponse populated by AdminApprovalReadService
+  And the profile description list additionally renders:
+    | Job title       | (the captured job title)            |
+    | Gender          | (Male / Female per the captured value) |
+    | Organisation    | (the org name, bilingual)           |
+    | Plate number    | (the captured plate)                |
+    | Reference number| (the captured reference)            |
+  And these render alongside the existing identity + form fields
+  And the modal does NOT show QrId or RejectionReason (excluded from the pending preview)
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-visitors-pending-alldata.png`
+- Network: `GET /account/api/admin/visitors/{id}/profile-for-approval` → 200
+- Assert the `<dl>` contains Job title, Gender, Organisation, Plate number,
+  Reference number and contains neither "QR" nor "Rejection reason"
+
+### E2E-VPN-018 — Interests render as names, not a count (D-385)
+
+```gherkin
+Scenario: Selected interests are listed by name
+  Given a pending visitor whose profile has 3 selected interests
+      (e.g. "Maritime security", "Naval logistics", "Shipbuilding")
+  When the administrator opens the View / Approve modal
+  Then the "Selected interests" field lists the interest NAMES
+      ("Maritime security, Naval logistics, Shipbuilding")
+  And it does NOT show a bare count such as "3 interests"
+```
+
+### E2E-VPN-019 — Approve WITH a profile-type sets the tier (D-386)
+
+```gherkin
+Scenario: Approving and choosing a tier sets the visitor's profile-type
+  Given the administrator (holding Visitors.Approve AND ProfileTypes.View) opens the
+      Approve modal for visitor.tier@example.com
+  And the approve modal shows a profile-type picker defaulting to "Keep current"
+      populated with the active audience-side profile types (via ProfileTypes.View)
+  When the administrator selects the tier "VIP" and clicks "Confirm approval"
+  Then POST /account/api/admin/visitors/{id}/approve fires with body
+      { "profileTypeId": "{VIP-guid}" } and returns 200
+  And the visitor's UserProfile.ProfileTypeId is set to the VIP id
+  And a green toast reads "Approved visitor.tier@example.com."
+  And the grid reloads and the row no longer appears
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-visitors-pending-tier-picker.png`
+- Network: `POST /account/api/admin/visitors/{id}/approve` with `profileTypeId` → 200
+- Side effect: subject `UserProfile.ProfileTypeId` = the selected tier id
+
+### E2E-VPN-020 — Approve with a partner / inactive tier is rejected (D-386)
+
+```gherkin
+Scenario: A partner-side or inactive tier on approve returns a 400 error
+  Given the Approve modal is open for a pending visitor
+  When a request hits POST /account/api/admin/visitors/{id}/approve with a
+      profileTypeId that is partner-side, inactive, or unknown
+  Then the API returns HTTP 400 with ApiResult.Error.Code = "ADMIN_PROFILE_TYPE_INVALID"
+  And a red toast surfaces the bilingual MessageForCurrentCulture()
+      (English / Arabic invalid-profile-type message)
+  And the visitor stays in AccountState=PendingApproval (no approval, no QR minted)
+  And the row remains on the queue
+```
+
+### E2E-VPN-021 — Approve with "Keep current" leaves the tier unchanged (D-386)
+
+```gherkin
+Scenario: Approving with the default "Keep current" does not change the tier
+  Given a pending visitor whose UserProfile.ProfileTypeId is currently {existing} (or null)
+  And the administrator opens the Approve modal and leaves the picker on "Keep current"
+  When they click "Confirm approval"
+  Then POST /account/api/admin/visitors/{id}/approve fires with profileTypeId = null
+      (the key absent / null) and returns 200
+  And the visitor's UserProfile.ProfileTypeId is unchanged ({existing} / still null)
+  And the account is now Approved and the row leaves the queue
+```
+
+### E2E-VPN-022 — Photo opens full-size in the lightbox (D-387)
+
+```gherkin
+Scenario: Clicking the face-photo thumbnail opens the original-size lightbox
+  Given a pending visitor whose profile has a captured face photo
+  When the administrator opens the View / Approve modal
+  Then a photo thumbnail renders whose src is
+      /account/api/admin/visitors/{id}/id-document (same-origin cookie auth)
+  When the administrator clicks the thumbnail
+  Then a stacked SimfModal lightbox opens showing the full / original-size image
+  And the lightbox footer shows a "Download" link
+  When the administrator closes the lightbox
+  Then the underlying View / Approve modal is still open (the lightbox is stacked on top)
+```
+
+**Evidence captured:**
+- Screenshot: `docs/screenshots/cp-admin-visitors-pending-photo-lightbox.png`
+- Network: `GET /account/api/admin/visitors/{id}/id-document` → 200 image content-type
+
+### E2E-VPN-023 — Photo downloads (D-387)
+
+```gherkin
+Scenario: The Download link saves the original photo
+  Given the View / Approve modal (and/or the photo lightbox) is open for a visitor
+      whose profile has a face photo
+  Then a "Download" link (<a download>) appears under the thumbnail and in the
+      lightbox footer, href = /account/api/admin/visitors/{id}/id-document
+  When the administrator clicks "Download"
+  Then the browser downloads the original image file (same-origin admin cookie auth)
+  And GET /account/api/admin/visitors/{id}/id-document returns 200 with an image content-type
+```
+
+### E2E-VPN-024 — RTL / Arabic render of the modal (D-385/386/387)
+
+```gherkin
+Scenario: Arabic toggle mirrors the all-data modal, tier picker and photo lightbox
+  Given the administrator is on /admin/visitors/pending with the UI language set to العربية
+  And a fully-populated pending visitor row is shown
+  When the administrator clicks "عرض" (View) / "اعتماد" (Approve) on that row
+  Then the modal opens RTL (<html dir="rtl" lang="ar">)
+  And the description list labels (Job title, Gender, Organisation, Plate number,
+      Reference number, Selected interests) render in Arabic, mirrored
+  And the Organisation name shows its Arabic value
+  And the approve-mode profile-type picker label + "Keep current" option render in Arabic
+  And the photo thumbnail + "Download"/"تنزيل" link mirror correctly
+  When the administrator clicks the photo thumbnail
+  Then the stacked lightbox opens RTL with its footer Download link mirrored
+```
+
 ---
 
 ## Implementation notes
@@ -384,4 +528,7 @@ Scenario: Sort the queue by Email then Display name, toggling direction
 
 ---
 
-_Last reviewed:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).
+_Last reviewed:_ 2026-06-13 by Claude (D-385/386/387 — modal all-data display,
+approve-time profile-type picker + `ADMIN_PROFILE_TYPE_INVALID`, photo lightbox +
+download; added E2E-VPN-017..024).
+_Earlier:_ 2026-06-03 by Claude (E2E catalogue rebuild) (D-256/D-257 grid affordances reconciled).

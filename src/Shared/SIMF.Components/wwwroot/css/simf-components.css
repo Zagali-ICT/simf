@@ -2607,4 +2607,31 @@ h1:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
   background: var(--color-background);
 }
 
+/* CS-E (D-387) — clickable thumbnail + download + full-size lightbox image. */
+.simf-walkin__id-image-trigger {
+  display: inline-block;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+.simf-walkin__id-image-actions {
+  margin-block-start: var(--space-2);
+}
+.simf-walkin__id-image-download {
+  color: var(--color-link);
+  text-decoration: underline;
+}
+.simf-walkin__id-image-download:hover {
+  color: var(--color-link-hover);
+}
+.simf-walkin__id-image-full img {
+  inline-size: auto;
+  max-inline-size: 100%;
+  block-size: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+}
+
 
