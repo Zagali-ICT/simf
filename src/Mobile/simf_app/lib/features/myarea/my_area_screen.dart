@@ -20,23 +20,24 @@ import 'data/myarea_repository.dart';
 final DateFormat _timeFormat = DateFormat('hh:mm a');
 
 /// Page 014 — منطقتي · My Area (#14, `/my-area`), rebuilt to the KSA Wave-2
-/// frame **512:1780 "My Place"** (owner-picked over 213:963) on the shared
-/// shell.
+/// frame **213:963** (owner re-pick, D-396; the earlier build used 512:1780)
+/// on the shared shell.
 ///
 /// Behaviour contract unchanged from the mockup build: an **Approved** user
 /// loads `GET /app/account/dashboard`; a signed-in pending/rejected user gets
 /// the limited cached-identity view without calling it (Approved-only, would
-/// 403 — Page_014 L-5); share actions fetch the raw `.vcf`/`.ics` exports for
-/// the native share sheet; sign-out (D-373) confirms then revokes.
+/// 403 — Page_014 L-5); the contact share fetches the raw `.vcf` export for
+/// the native share sheet.
 ///
-/// Frame mapping: identity card (avatar 64 + name + tier·enrolled line +
-/// gold #qrId + the bordered مشاركة contact button), the 2×3 tile grid —
-/// **العربية • English** (wired language toggle) / **المظهر • ليلي/نهاري**
-/// (visible but DISABLED — no light theme exists, owner decision) /
-/// **مشاركة ملفي** (→ the share-my-contact QR screen) / **مشاركة جهة اتصال**
-/// (.vcf share) / the two API counters — then جدولي اليوم rows and the
-/// المزيد rows (بطاقتي الذكية، اعدادات الحساب + the function-preserving
-/// مشاركة جدولي and تسجيل الخروج rows the frame's list does not show).
+/// Frame mapping (213:963): identity card (avatar 64 + name + tier·enrolled
+/// line + gold #qrId + the bordered مشاركة contact button), the two share
+/// actions (**مشاركة ملفي** → the share-my-contact QR screen / **مشاركة جهة
+/// اتصال** → .vcf share), the **الإحصائيات** section (two stat tiles —
+/// جلسات محفوظة = booked sessions; the second keeps the real مقابلات مؤكدة
+/// count since الأرشيف has no API counter, D-396), جدولي اليوم rows, then the
+/// المزيد rows (بطاقتي الذكية، اعدادات الحساب). The language toggle, the
+/// (inert) theme tile, the calendar export and sign-out moved to the shell's
+/// side drawer (D-396).
 class MyAreaScreen extends ConsumerStatefulWidget {
   const MyAreaScreen({super.key});
 
@@ -53,8 +54,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   void initState() {
     super.initState();
     final user = _currentUser;
-    if (user != null &&
-        user.registrationStatus == RegistrationStatus.approved) {
+    if (user != null && user.isApproved) {
       unawaited(_load());
     } else {
       // Pending / rejected: render the limited card from cache; no dashboard

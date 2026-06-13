@@ -44,8 +44,7 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
   void initState() {
     super.initState();
     final user = _currentUser;
-    if (user != null &&
-        user.registrationStatus == RegistrationStatus.approved) {
+    if (user != null && user.isApproved) {
       unawaited(_load());
     } else {
       // Signed in but not approved: the badge is issued only on approval

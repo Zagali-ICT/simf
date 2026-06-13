@@ -5,8 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:simf_app/app/localization/app_l10n.dart';
 import 'package:simf_app/app/route_names.dart';
-import 'package:simf_app/app/theme/tokens.dart';
-import 'package:simf_app/app/widgets/ksa_shell.dart';
 import 'package:simf_app/features/myarea/data/myarea_models.dart';
 import 'package:simf_app/features/myarea/data/myarea_repository.dart';
 import 'package:simf_app/features/myarea/my_area_screen.dart';
@@ -159,7 +157,7 @@ Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
-  group('MyAreaScreen (Page 014 — KSA frame 512:1780)', () {
+  group('MyAreaScreen (Page 014 — KSA frame 213:963)', () {
     testWidgets('approved visitor sees the identity card, tiles, stats and '
         'schedule', (tester) async {
       await _pump(
@@ -171,40 +169,20 @@ void main() {
       expect(find.text('Raed Al-Salem'), findsOneWidget);
       expect(find.text('#ABC123'), findsOneWidget);
       expect(find.textContaining('VIP'), findsOneWidget);
-      expect(find.text('العربية · English'), findsOneWidget);
       expect(find.text('Share my profile'), findsOneWidget);
       expect(find.text('Share contact'), findsOneWidget);
+      expect(find.text('Statistics'), findsOneWidget); // الإحصائيات header
       expect(find.text('6'), findsOneWidget); // booked-sessions stat
       expect(find.text('3'), findsOneWidget); // meetings stat
       await _scrollTo(tester, find.text('Opening'));
       expect(find.text('Opening'), findsOneWidget);
       await _scrollTo(tester, find.text('My smart badge'));
       expect(find.text('My smart badge'), findsOneWidget);
-      await _scrollTo(tester, find.text('Sign out'));
-      expect(find.text('Sign out'), findsOneWidget);
-    });
-
-    testWidgets('the theme tile renders disabled (no light theme yet)',
-        (tester) async {
-      await _pump(
-        tester,
-        controller: _AuthController(RegistrationStatus.approved),
-        repo: _FakeMyAreaRepository(dashboard: _dashboard()),
-      );
-
-      final tile = tester.widget<KsaNavTile>(
-        find.widgetWithText(KsaNavTile, 'Light / dark mode'),
-      );
-      expect(tile.enabled, isFalse);
-      final material = tester.widget<Material>(
-        find
-            .ancestor(
-              of: find.text('Light / dark mode'),
-              matching: find.byType(Material),
-            )
-            .first,
-      );
-      expect(material.color, SimfTokens.navyDisabled);
+      // Language / theme / calendar export / sign-out moved to the shell's
+      // side drawer (D-396) — they must NOT be on the profile page anymore.
+      expect(find.text('العربية · English'), findsNothing);
+      expect(find.text('Light / dark mode'), findsNothing);
+      expect(find.text('Sign out'), findsNothing);
     });
 
     testWidgets('the share-my-profile tile opens the contact-QR screen',

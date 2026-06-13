@@ -140,6 +140,7 @@ class MoreDrawer extends ConsumerWidget {
     AppL10n l10n,
   ) async {
     final router = GoRouter.of(context);
+    final auth = ref.read(authControllerProvider.notifier);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -160,7 +161,7 @@ class MoreDrawer extends ConsumerWidget {
     if (confirmed != true) {
       return;
     }
-    await ref.read(authControllerProvider.notifier).signOut();
+    await auth.signOut();
     router.goNamed(RouteNames.signIn);
   }
 }
