@@ -75,8 +75,7 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
     final l10n = AppL10n.of(context);
     return KsaPage(
       title: l10n.badgeTitle,
-      onBack: () =>
-          context.canPop() ? context.pop() : context.goNamed(RouteNames.home),
+      onBack: () => ksaBackOrHome(context),
       tab: SimfTab.badge,
       showSweep: true,
       body: _buildBody(l10n),
@@ -89,14 +88,19 @@ class _BadgeScreenState extends ConsumerState<BadgeScreen> {
     }
     final identity = _identity;
     if (_error || identity == null) {
-      return _ErrorState(
+      return KsaErrorState(
         message: l10n.badgeError,
+        retryLabel: l10n.retryLabel,
         onRetry: () => unawaited(_load()),
       );
     }
     final qrId = identity.qrId?.trim() ?? '';
     if (qrId.isEmpty) {
-      return _PendingState(message: l10n.badgePendingBody);
+      // Pending approval — the badge is issued once approved (Page_014 L-1).
+      return KsaEmptyState(
+        icon: Icons.qr_code_2_outlined,
+        message: l10n.badgePendingBody,
+      );
     }
     return _Badge(l10n: l10n, identity: identity, qrId: qrId);
   }
@@ -132,7 +136,7 @@ class _Badge extends StatelessWidget {
           padding: const EdgeInsets.all(SimfTokens.space4),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(SimfTokens.radiusXl - 4),
+            borderRadius: BorderRadius.circular(SimfTokens.radiusLg),
             border: Border.all(color: SimfTokens.accent, width: 1.5),
           ),
           child: Column(
@@ -217,7 +221,10 @@ class _Badge extends StatelessWidget {
           onPressed: () => context.pushNamed(RouteNames.scanContact),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size.fromHeight(48),
-            side: const BorderSide(color: SimfTokens.beigeBorder, width: 0.5),
+            side: const BorderSide(
+              color: SimfTokens.beigeBorder,
+              width: SimfTokens.hairlineBold,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
             ),
@@ -241,64 +248,3 @@ class _Badge extends StatelessWidget {
   }
 }
 
-/// Shown when the account has no `qrId` yet (pending approval — Page_014 L-1):
-/// the badge is issued once the account is approved.
-class _PendingState extends StatelessWidget {
-  const _PendingState({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const Icon(
-              Icons.qr_code_2_outlined,
-              size: 56,
-              color: SimfTokens.beigeBorder,
-            ),
-            const SizedBox(height: SimfTokens.space3),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: SimfTokens.beigeBorder),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white),
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(onPressed: onRetry, child: Text(l10n.retryLabel)),
-          ],
-        ),
-      ),
-    );
-  }
-}

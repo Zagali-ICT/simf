@@ -21,23 +21,26 @@ class SimfBottomNav extends StatelessWidget {
 
   final SimfTab? current;
 
+  // The bar never changes shape — built once, not per host-page rebuild.
+  static final BoxDecoration _barDecoration = BoxDecoration(
+    color: SimfTokens.navy,
+    borderRadius: const BorderRadius.vertical(
+      top: Radius.circular(SimfTokens.radiusLg),
+    ),
+    boxShadow: <BoxShadow>[
+      BoxShadow(
+        color: SimfTokens.goldSoft.withValues(alpha: 0.16),
+        offset: const Offset(0, -1),
+        blurRadius: 6,
+      ),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
     return Container(
-      decoration: BoxDecoration(
-        color: SimfTokens.navy,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(SimfTokens.radiusXl - 4),
-        ),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: SimfTokens.goldSoft.withValues(alpha: 0.16),
-            offset: const Offset(0, -1),
-            blurRadius: 6,
-          ),
-        ],
-      ),
+      decoration: _barDecoration,
       child: SafeArea(
         top: false,
         child: Padding(
@@ -154,6 +157,18 @@ class _CentreAction extends StatelessWidget {
   final bool active;
   final VoidCallback onTap;
 
+  static final BoxDecoration _decoration = BoxDecoration(
+    color: SimfTokens.accent,
+    shape: BoxShape.circle,
+    border: Border.all(color: SimfTokens.navy, width: 3),
+    boxShadow: <BoxShadow>[
+      BoxShadow(
+        color: SimfTokens.goldSoft.withValues(alpha: 0.35),
+        blurRadius: 10,
+      ),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     return Expanded(
@@ -164,17 +179,7 @@ class _CentreAction extends StatelessWidget {
           child: Container(
             width: 56,
             height: 56,
-            decoration: BoxDecoration(
-              color: SimfTokens.accent,
-              shape: BoxShape.circle,
-              border: Border.all(color: SimfTokens.navy, width: 3),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: SimfTokens.goldSoft.withValues(alpha: 0.35),
-                  blurRadius: 10,
-                ),
-              ],
-            ),
+            decoration: _decoration,
             child: const Icon(
               Icons.qr_code_2_rounded,
               color: SimfTokens.navy,

@@ -6,6 +6,7 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/theme/tokens.dart';
+import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import 'data/venue_map_models.dart';
 import 'data/venue_map_repository.dart';
@@ -44,11 +45,12 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
   bool _loading = true;
   bool _error = false;
   List<VenueMapNode> _nodes = const <VenueMapNode>[];
-  List<BoothSummary> _booths = const <BoothSummary>[];
   VenueMapNode? _selected;
 
-  // The map viewport size from the last layout pass — drives "centre on node".
-  Size _viewport = Size.zero;
+  // Derived once per load (the node/booth lists are immutable afterwards):
+  // each node's canvas position and the booth lookup by id.
+  Map<String, Offset> _positions = const <String, Offset>{};
+  Map<String, BoothSummary> _boothById = const <String, BoothSummary>{};
 
   @override
   void initState() {
@@ -77,9 +79,14 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
       if (!mounted) {
         return;
       }
+      final nodes = results[0] as List<VenueMapNode>;
+      final booths = results[1] as List<BoothSummary>;
       setState(() {
-        _nodes = results[0] as List<VenueMapNode>;
-        _booths = results[1] as List<BoothSummary>;
+        _nodes = nodes;
+        _positions = _canvasPositions(nodes);
+        _boothById = <String, BoothSummary>{
+          for (final booth in booths) booth.id: booth,
+        };
         _loading = false;
       });
     } on ApiFailure {
@@ -93,22 +100,26 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
     }
   }
 
-  BoothSummary? _boothFor(VenueMapNode node) {
-    if (node.boothId == null) {
-      return null;
+  BoothSummary? _boothFor(VenueMapNode node) =>
+      node.boothId == null ? null : _boothById[node.boothId];
+
+  /// Normalises every node's `(x, y)` onto the canvas once (Page_015 L-4).
+  static Map<String, Offset> _canvasPositions(List<VenueMapNode> nodes) {
+    if (nodes.isEmpty) {
+      return const <String, Offset>{};
     }
-    for (final booth in _booths) {
-      if (booth.id == node.boothId) {
-        return booth;
-      }
-    }
-    return null;
+    final bounds = _Bounds.of(nodes);
+    return <String, Offset>{
+      for (final node in nodes)
+        node.id: Offset(
+          _pad + bounds.normX(node.x) * (_canvas - 2 * _pad),
+          _pad + bounds.normY(node.y) * (_canvas - 2 * _pad),
+        ),
+    };
   }
 
-  Offset _toCanvas(VenueMapNode node, _Bounds bounds) => Offset(
-        _pad + bounds.normX(node.x) * (_canvas - 2 * _pad),
-        _pad + bounds.normY(node.y) * (_canvas - 2 * _pad),
-      );
+  /// The map viewport — the page body's render size at action time.
+  Size get _viewport => context.size ?? Size.zero;
 
   void _zoomBy(double factor) {
     final scale = (_transform.value.getMaxScaleOnAxis() * factor)
@@ -130,7 +141,7 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
   /// Centres the plane on [node] at a readable scale (the أرشدني action).
   void _centreOn(VenueMapNode node) {
     const scale = 1.5;
-    final position = _toCanvas(node, _Bounds.of(_nodes));
+    final position = _positions[node.id] ?? Offset.zero;
     _transform.value = Matrix4.identity()
       ..translateByDouble(
         _viewport.width / 2 - position.dx * scale,
@@ -176,10 +187,10 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppL10n.of(context);
-    return Scaffold(
-      backgroundColor: SimfTokens.navySurface,
-      bottomNavigationBar: const SimfBottomNav(current: SimfTab.map),
-      body: SafeArea(child: _buildBody(l10n)),
+    // Full-bleed page: no title/back → the KsaPage header collapses.
+    return KsaPage(
+      tab: SimfTab.map,
+      body: _buildBody(l10n),
     );
   }
 
@@ -197,130 +208,90 @@ class _VenueMapScreenState extends ConsumerState<VenueMapScreen> {
   }
 
   Widget _buildError(AppL10n l10n) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              l10n.venueMapError,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white),
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(
-              onPressed: () => unawaited(_load()),
-              child: Text(l10n.retryLabel),
-            ),
-          ],
-        ),
-      ),
+    return KsaErrorState(
+      message: l10n.venueMapError,
+      retryLabel: l10n.retryLabel,
+      onRetry: () => unawaited(_load()),
     );
   }
 
   Widget _buildEmpty(AppL10n l10n) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          const Icon(
-            Icons.map_outlined,
-            size: 56,
-            color: SimfTokens.beigeBorder,
-          ),
-          const SizedBox(height: SimfTokens.space3),
-          Text(
-            l10n.venueMapEmpty,
-            style: const TextStyle(color: SimfTokens.beigeBorder),
-          ),
-        ],
-      ),
-    );
+    return KsaEmptyState(icon: Icons.map_outlined, message: l10n.venueMapEmpty);
   }
 
   Widget _buildMap(AppL10n l10n) {
     final isArabic = l10n.isArabic;
-    final bounds = _Bounds.of(_nodes);
     final selected = _selected;
+    final selectedBooth = selected == null ? null : _boothFor(selected);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        _viewport = constraints.biggest;
-        return Stack(
-          children: <Widget>[
-            // The canvas geometry must NOT mirror in RTL (node positions are
-            // physical venue coordinates, L-3) — force LTR for the map plane.
-            Directionality(
-              textDirection: TextDirection.ltr,
-              child: InteractiveViewer(
-                constrained: false,
-                transformationController: _transform,
-                minScale: 0.3,
-                maxScale: 4,
-                boundaryMargin: const EdgeInsets.all(200),
-                child: SizedBox(
-                  width: _canvas,
-                  height: _canvas,
-                  child: Stack(
-                    children: <Widget>[
-                      for (final node in _nodes)
-                        Positioned(
-                          left: _toCanvas(node, bounds).dx - 40,
-                          top: _toCanvas(node, bounds).dy - 40,
-                          width: 80,
-                          child: _NodeMarker(
-                            node: node,
-                            isArabic: isArabic,
-                            selected: node.id == selected?.id,
-                            onTap: () => setState(() => _selected = node),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            // Floating gold map controls (frame right-edge stack).
-            PositionedDirectional(
-              end: SimfTokens.space4,
-              top: SimfTokens.space4,
-              child: Column(
+    return Stack(
+      children: <Widget>[
+        // The canvas geometry must NOT mirror in RTL (node positions are
+        // physical venue coordinates, L-3) — force LTR for the map plane.
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: InteractiveViewer(
+            constrained: false,
+            transformationController: _transform,
+            minScale: 0.3,
+            maxScale: 4,
+            boundaryMargin: const EdgeInsets.all(200),
+            child: SizedBox(
+              width: _canvas,
+              height: _canvas,
+              child: Stack(
                 children: <Widget>[
-                  _MapControl(
-                    icon: Icons.my_location,
-                    tooltip: l10n.retryLabel,
-                    onTap: _resetView,
-                  ),
-                  const SizedBox(height: SimfTokens.space2),
-                  _MapControl(icon: Icons.add, onTap: () => _zoomBy(_zoomStep)),
-                  const SizedBox(height: SimfTokens.space2),
-                  _MapControl(
-                    icon: Icons.remove,
-                    onTap: () => _zoomBy(1 / _zoomStep),
-                  ),
+                  for (final node in _nodes)
+                    Positioned(
+                      left: (_positions[node.id] ?? Offset.zero).dx - 40,
+                      top: (_positions[node.id] ?? Offset.zero).dy - 40,
+                      width: 80,
+                      child: _NodeMarker(
+                        node: node,
+                        isArabic: isArabic,
+                        selected: node.id == selected?.id,
+                        onTap: () => setState(() => _selected = node),
+                      ),
+                    ),
                 ],
               ),
             ),
-            if (selected != null)
-              Positioned(
-                left: SimfTokens.space4,
-                right: SimfTokens.space4,
-                bottom: SimfTokens.space4,
-                child: _NodeInfoCard(
-                  l10n: l10n,
-                  node: selected,
-                  booth: _boothFor(selected),
-                  onDirect: () => _centreOn(selected),
-                  onDetails: selected.isBooth
-                      ? () => _openDetails(selected, _boothFor(selected))
-                      : null,
-                  onClose: () => setState(() => _selected = null),
-                ),
+          ),
+        ),
+        // Floating gold map controls (frame right-edge stack).
+        PositionedDirectional(
+          end: SimfTokens.space4,
+          top: SimfTokens.space4,
+          child: Column(
+            children: <Widget>[
+              _MapControl(icon: Icons.my_location, onTap: _resetView),
+              const SizedBox(height: SimfTokens.space2),
+              _MapControl(icon: Icons.add, onTap: () => _zoomBy(_zoomStep)),
+              const SizedBox(height: SimfTokens.space2),
+              _MapControl(
+                icon: Icons.remove,
+                onTap: () => _zoomBy(1 / _zoomStep),
               ),
-          ],
-        );
-      },
+            ],
+          ),
+        ),
+        if (selected != null)
+          Positioned(
+            left: SimfTokens.space4,
+            right: SimfTokens.space4,
+            bottom: SimfTokens.space4,
+            child: _NodeInfoCard(
+              l10n: l10n,
+              node: selected,
+              booth: selectedBooth,
+              onDirect: () => _centreOn(selected),
+              onDetails: selected.isBooth
+                  ? () => _openDetails(selected, selectedBooth)
+                  : null,
+              onClose: () => setState(() => _selected = null),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -355,11 +326,10 @@ class _Bounds {
 
 /// One floating gold map control (frame nodes: locate / + / −).
 class _MapControl extends StatelessWidget {
-  const _MapControl({required this.icon, required this.onTap, this.tooltip});
+  const _MapControl({required this.icon, required this.onTap});
 
   final IconData icon;
   final VoidCallback onTap;
-  final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
@@ -530,9 +500,9 @@ class _NodeInfoCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space4),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusXl - 4),
+        borderRadius: BorderRadius.all(Radius.circular(SimfTokens.radiusLg)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

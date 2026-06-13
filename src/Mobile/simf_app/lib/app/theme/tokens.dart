@@ -72,7 +72,13 @@ class SimfTokens {
   static const double radiusSmall = 4;
   static const double radius = 8;
   static const double radiusLarge = 12;
+  static const double radiusLg = 16; // W2 cards / nav bar top corners
   static const double radiusXl = 20;
+
+  // Hairline border weights (the KSA frames' 0.2px card hairline and the
+  // 0.5px emphasised hairline).
+  static const double hairline = 0.2;
+  static const double hairlineBold = 0.5;
 
   // Type scale (Material text styles override these for actual rendering;
   // tokens here are for places that need a raw size).
@@ -80,6 +86,7 @@ class SimfTokens {
   static const double textSm = 12;
   static const double textMd = 14;
   static const double textLg = 16;
+  static const double textTitle = 18; // KSA "Sub-title 18" (Phase-0 type scale)
   static const double textXl = 20;
   static const double textHero = 28;
 }

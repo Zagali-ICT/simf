@@ -17,6 +17,9 @@ import '../../core/sharing/content_sharer.dart';
 import 'data/myarea_models.dart';
 import 'data/myarea_repository.dart';
 
+/// One 12-hour formatter for the schedule rows (hoisted off the build path).
+final DateFormat _timeFormat = DateFormat('hh:mm a');
+
 /// Page 014 — منطقتي · My Area (#14, `/my-area`), rebuilt to the KSA Wave-2
 /// frame **512:1780 "My Place"** (owner-picked over 213:963) on the shared
 /// shell.
@@ -129,12 +132,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   }
 
   void _toggleLanguage() {
-    final isArabic = ref.read(localeControllerProvider).languageCode == 'ar';
-    unawaited(
-      ref
-          .read(localeControllerProvider.notifier)
-          .setLanguage(isArabic ? 'en' : 'ar'),
-    );
+    unawaited(ref.read(localeControllerProvider.notifier).toggle());
   }
 
   /// D-373 — confirm, then revoke the session via the controller (the
@@ -171,8 +169,7 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
     final l10n = AppL10n.of(context);
     return KsaPage(
       title: l10n.myAreaTitle,
-      onBack: () =>
-          context.canPop() ? context.pop() : context.goNamed(RouteNames.home),
+      onBack: () => ksaBackOrHome(context),
       tab: SimfTab.profile,
       showSweep: true,
       body: _buildBody(l10n),
@@ -194,25 +191,10 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
   }
 
   Widget _buildErrorState(AppL10n l10n) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              l10n.myAreaError,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white),
-            ),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(
-              onPressed: () => unawaited(_load()),
-              child: Text(l10n.retryLabel),
-            ),
-          ],
-        ),
-      ),
+    return KsaErrorState(
+      message: l10n.myAreaError,
+      retryLabel: l10n.retryLabel,
+      onRetry: () => unawaited(_load()),
     );
   }
 
@@ -259,62 +241,47 @@ class _MyAreaScreenState extends ConsumerState<MyAreaScreen> {
           onShare: () => unawaited(_shareContact()),
         ),
         const SizedBox(height: SimfTokens.space4),
-        Row(
+        KsaTileRow(
           children: <Widget>[
-            Expanded(
-              child: KsaNavTile(
-                label: l10n.languageToggleLabel,
-                icon: Icons.language,
-                onTap: _toggleLanguage,
-              ),
+            KsaNavTile(
+              label: l10n.languageToggleLabel,
+              icon: Icons.language,
+              onTap: _toggleLanguage,
             ),
-            const SizedBox(width: SimfTokens.space2),
             // Visible but disabled — the app has no light theme yet (owner
             // decision: keep the frame's tile as a locked control).
-            Expanded(
-              child: KsaNavTile(
-                label: l10n.themeToggleTooltip,
-                icon: Icons.dark_mode_outlined,
-                enabled: false,
-              ),
+            KsaNavTile(
+              label: l10n.themeToggleTooltip,
+              icon: Icons.dark_mode_outlined,
+              enabled: false,
             ),
           ],
         ),
         const SizedBox(height: SimfTokens.space2),
-        Row(
+        KsaTileRow(
           children: <Widget>[
-            Expanded(
-              child: KsaNavTile(
-                label: l10n.shareMyProfile,
-                icon: Icons.person_pin_outlined,
-                onTap: () => context.pushNamed(RouteNames.shareMyContact),
-              ),
+            KsaNavTile(
+              label: l10n.shareMyProfile,
+              icon: Icons.person_pin_outlined,
+              onTap: () => context.pushNamed(RouteNames.shareMyContact),
             ),
-            const SizedBox(width: SimfTokens.space2),
-            Expanded(
-              child: KsaNavTile(
-                label: l10n.shareContact,
-                icon: Icons.swap_horiz,
-                onTap: () => unawaited(_shareContact()),
-              ),
+            KsaNavTile(
+              label: l10n.shareContact,
+              icon: Icons.swap_horiz,
+              onTap: () => unawaited(_shareContact()),
             ),
           ],
         ),
         const SizedBox(height: SimfTokens.space2),
-        Row(
+        KsaTileRow(
           children: <Widget>[
-            Expanded(
-              child: KsaStatTile(
-                value: dashboard.counters.meetingsCount,
-                label: l10n.statMeetings,
-              ),
+            KsaStatTile(
+              value: dashboard.counters.meetingsCount,
+              label: l10n.statMeetings,
             ),
-            const SizedBox(width: SimfTokens.space2),
-            Expanded(
-              child: KsaStatTile(
-                value: dashboard.counters.bookedSessionsCount,
-                label: l10n.statBookedSessions,
-              ),
+            KsaStatTile(
+              value: dashboard.counters.bookedSessionsCount,
+              label: l10n.statBookedSessions,
             ),
           ],
         ),
@@ -416,7 +383,7 @@ class _IdentityCard extends StatelessWidget {
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
-                    fontSize: 18,
+                    fontSize: SimfTokens.textTitle,
                   ),
                 ),
                 const SizedBox(height: SimfTokens.space2),
@@ -506,18 +473,11 @@ class _ScheduleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final time = DateFormat('hh:mm a').format(item.startUtc.toLocal());
+    final time = _timeFormat.format(item.startUtc.toLocal());
     final hall = item.localizedHall(isArabic);
-    return Material(
-      color: SimfTokens.navyDeep,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        side: const BorderSide(color: SimfTokens.beigeBorder, width: 0.2),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        child: Padding(
+    return KsaCard(
+      onTap: onTap,
+      child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: SimfTokens.space2,
             vertical: SimfTokens.space4,
@@ -567,7 +527,6 @@ class _ScheduleRow extends StatelessWidget {
               ),
             ],
           ),
-        ),
       ),
     );
   }
@@ -583,16 +542,9 @@ class _MoreRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: SimfTokens.navyDeep,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        side: const BorderSide(color: SimfTokens.beigeBorder, width: 0.2),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        child: Padding(
+    return KsaCard(
+      onTap: onTap,
+      child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: SimfTokens.space2,
             vertical: SimfTokens.space4,
@@ -612,7 +564,6 @@ class _MoreRow extends StatelessWidget {
               const Icon(Icons.chevron_left, size: 20, color: Colors.white),
             ],
           ),
-        ),
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/localization/app_l10n.dart';
 import '../../../app/localization/locale_controller.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../app/widgets/ksa_shell.dart';
 import '../../../app/widgets/simf_logo.dart';
 
 /// Shared KSA field/button styling for screens built on [KsaAuthScaffold]
@@ -153,22 +154,8 @@ class KsaAuthScaffold extends ConsumerWidget {
       backgroundColor: SimfTokens.navySurface,
       body: Stack(
         children: <Widget>[
-          // Decorative diagonal sweep (the login frame's 28.28° rectangle).
-          Positioned(
-            top: -156,
-            left: 60,
-            child: Transform.rotate(
-              angle: 0.4936,
-              child: Container(
-                width: 313,
-                height: 323,
-                decoration: BoxDecoration(
-                  color: SimfTokens.surfaceTint,
-                  borderRadius: BorderRadius.circular(40),
-                ),
-              ),
-            ),
-          ),
+          // Decorative diagonal sweep — the shared shell owns the transform.
+          const KsaSweep(),
           SafeArea(
             child: Stack(
               children: <Widget>[

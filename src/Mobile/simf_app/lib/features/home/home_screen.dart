@@ -12,6 +12,7 @@ import '../../app/theme/tokens.dart';
 import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import '../../core/env/build_config.dart';
+import '../../core/external_link.dart';
 import '../notifications/data/notifications_repository.dart';
 
 /// Page 013 — الرئيسية · Home (router / landing screen #13, `path=/`),
@@ -57,15 +58,9 @@ class HomeScreen extends ConsumerWidget {
 String homeGreeting(AppL10n l10n, DateTime now) =>
     now.hour < 12 ? l10n.greetingMorning : l10n.greetingEvening;
 
-/// Opening an external link is best-effort — a missing handler must never
-/// crash the page (the D-369 contact-tile contract).
-Future<void> _launchExternal(String url) async {
-  try {
-    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-  } catch (_) {
-    // No handler / malformed URL — keep the user on the page.
-  }
-}
+/// Opens a configured link in the external browser (best-effort, D-369).
+Future<void> _openLink(String url) =>
+    launchExternalUri(Uri.parse(url), mode: LaunchMode.externalApplication);
 
 // ---------------------------------------------------------------------------
 // Guest layout (frame 512:1492 — "الرئيسية • ضيف", 2×2 option)
@@ -90,42 +85,32 @@ class _GuestHome extends StatelessWidget {
         children: <Widget>[
           _GuestBanner(l10n: l10n),
           const SizedBox(height: SimfTokens.space4),
-          Row(
+          KsaTileRow(
             children: <Widget>[
-              Expanded(
-                child: KsaNavTile(
-                  label: l10n.tileSessions,
-                  icon: Icons.calendar_today_outlined,
-                  onTap: () => context.pushNamed(RouteNames.sessions),
-                ),
+              KsaNavTile(
+                label: l10n.tileSessions,
+                icon: Icons.calendar_today_outlined,
+                onTap: () => context.pushNamed(RouteNames.sessions),
               ),
-              const SizedBox(width: SimfTokens.space2),
-              Expanded(
-                child: KsaNavTile(
-                  label: l10n.tileSpeakers,
-                  icon: Icons.mic_none_outlined,
-                  onTap: () => context.pushNamed(RouteNames.speakers),
-                ),
+              KsaNavTile(
+                label: l10n.tileSpeakers,
+                icon: Icons.mic_none_outlined,
+                onTap: () => context.pushNamed(RouteNames.speakers),
               ),
             ],
           ),
           const SizedBox(height: SimfTokens.space2),
-          Row(
+          KsaTileRow(
             children: <Widget>[
-              Expanded(
-                child: KsaNavTile(
-                  label: l10n.tileVenueMap,
-                  icon: Icons.map_outlined,
-                  onTap: () => context.pushNamed(RouteNames.venueMap),
-                ),
+              KsaNavTile(
+                label: l10n.tileVenueMap,
+                icon: Icons.map_outlined,
+                onTap: () => context.pushNamed(RouteNames.venueMap),
               ),
-              const SizedBox(width: SimfTokens.space2),
-              Expanded(
-                child: KsaNavTile(
-                  label: l10n.tileExhibition,
-                  icon: Icons.grid_view_outlined,
-                  onTap: () => context.pushNamed(RouteNames.booths),
-                ),
+              KsaNavTile(
+                label: l10n.tileExhibition,
+                icon: Icons.grid_view_outlined,
+                onTap: () => context.pushNamed(RouteNames.booths),
               ),
             ],
           ),
@@ -242,30 +227,22 @@ class _VisitorHome extends StatelessWidget {
             onMore: () => context.pushNamed(RouteNames.aboutForum),
           ),
           const SizedBox(height: SimfTokens.space3),
-          Row(
+          KsaTileRow(
             children: <Widget>[
-              Expanded(
-                child: KsaNavTile(
-                  label: l10n.tileSpeakers,
-                  icon: Icons.mic_none_outlined,
-                  onTap: () => context.pushNamed(RouteNames.speakers),
-                ),
+              KsaNavTile(
+                label: l10n.tileSpeakers,
+                icon: Icons.mic_none_outlined,
+                onTap: () => context.pushNamed(RouteNames.speakers),
               ),
-              const SizedBox(width: SimfTokens.space2),
-              Expanded(
-                child: KsaNavTile(
-                  label: l10n.tileBooths,
-                  icon: Icons.storefront_outlined,
-                  onTap: () => context.pushNamed(RouteNames.booths),
-                ),
+              KsaNavTile(
+                label: l10n.tileBooths,
+                icon: Icons.storefront_outlined,
+                onTap: () => context.pushNamed(RouteNames.booths),
               ),
-              const SizedBox(width: SimfTokens.space2),
-              Expanded(
-                child: KsaNavTile(
-                  label: l10n.tileSponsors,
-                  icon: Icons.workspace_premium_outlined,
-                  onTap: () => context.pushNamed(RouteNames.sponsors),
-                ),
+              KsaNavTile(
+                label: l10n.tileSponsors,
+                icon: Icons.workspace_premium_outlined,
+                onTap: () => context.pushNamed(RouteNames.sponsors),
               ),
             ],
           ),
@@ -276,22 +253,17 @@ class _VisitorHome extends StatelessWidget {
             onMore: () => context.pushNamed(RouteNames.news),
           ),
           const SizedBox(height: SimfTokens.space3),
-          Row(
+          KsaTileRow(
             children: <Widget>[
-              Expanded(
-                child: KsaNavTile(
-                  label: l10n.tileBilateralMeetings,
-                  icon: Icons.videocam_outlined,
-                  onTap: () => context.pushNamed(RouteNames.gallery),
-                ),
+              KsaNavTile(
+                label: l10n.tileBilateralMeetings,
+                icon: Icons.videocam_outlined,
+                onTap: () => context.pushNamed(RouteNames.gallery),
               ),
-              const SizedBox(width: SimfTokens.space2),
-              Expanded(
-                child: KsaNavTile(
-                  label: l10n.tileArchive,
-                  icon: Icons.archive_outlined,
-                  onTap: () => context.pushNamed(RouteNames.archive),
-                ),
+              KsaNavTile(
+                label: l10n.tileArchive,
+                icon: Icons.archive_outlined,
+                onTap: () => context.pushNamed(RouteNames.archive),
               ),
             ],
           ),
@@ -302,42 +274,32 @@ class _VisitorHome extends StatelessWidget {
             onMore: () => context.pushNamed(RouteNames.more),
           ),
           const SizedBox(height: SimfTokens.space3),
-          Row(
+          KsaTileRow(
             children: <Widget>[
-              Expanded(
-                child: KsaNavTile(
-                  label: l10n.tileMeetPeople,
-                  icon: Icons.people_outline,
-                  onTap: () => context.pushNamed(RouteNames.meetPeople),
-                ),
+              KsaNavTile(
+                label: l10n.tileMeetPeople,
+                icon: Icons.people_outline,
+                onTap: () => context.pushNamed(RouteNames.meetPeople),
               ),
-              const SizedBox(width: SimfTokens.space2),
-              Expanded(
-                child: KsaNavTile(
-                  label: l10n.chatbotTitle,
-                  icon: Icons.chat_bubble_outline,
-                  onTap: () => context.pushNamed(RouteNames.chatbot),
-                ),
+              KsaNavTile(
+                label: l10n.chatbotTitle,
+                icon: Icons.chat_bubble_outline,
+                onTap: () => context.pushNamed(RouteNames.chatbot),
               ),
             ],
           ),
           const SizedBox(height: SimfTokens.space2),
-          Row(
+          KsaTileRow(
             children: <Widget>[
-              Expanded(
-                child: KsaNavTile(
-                  label: l10n.tileSessionSummary,
-                  icon: Icons.summarize_outlined,
-                  onTap: () => context.pushNamed(RouteNames.aiSummary),
-                ),
+              KsaNavTile(
+                label: l10n.tileSessionSummary,
+                icon: Icons.summarize_outlined,
+                onTap: () => context.pushNamed(RouteNames.aiSummary),
               ),
-              const SizedBox(width: SimfTokens.space2),
-              Expanded(
-                child: KsaNavTile(
-                  label: l10n.tileEntryBadge,
-                  icon: Icons.credit_card_outlined,
-                  onTap: () => context.pushNamed(RouteNames.badge),
-                ),
+              KsaNavTile(
+                label: l10n.tileEntryBadge,
+                icon: Icons.credit_card_outlined,
+                onTap: () => context.pushNamed(RouteNames.badge),
               ),
             ],
           ),
@@ -531,8 +493,8 @@ class _SocialRow extends StatelessWidget {
     ];
     return Row(
       children: <Widget>[
-        for (final (asset, url) in links) ...<Widget>[
-          if (asset != links.first.$1) const SizedBox(width: SimfTokens.space4),
+        for (final (index, (asset, url)) in links.indexed) ...<Widget>[
+          if (index > 0) const SizedBox(width: SimfTokens.space4),
           Expanded(child: _SocialButton(asset: asset, url: url)),
         ],
       ],
@@ -555,7 +517,7 @@ class _SocialButton extends StatelessWidget {
         side: const BorderSide(color: SimfTokens.navyDeep, width: 0.8),
       ),
       child: InkWell(
-        onTap: url.isEmpty ? null : () => unawaited(_launchExternal(url)),
+        onTap: url.isEmpty ? null : () => unawaited(_openLink(url)),
         borderRadius: BorderRadius.circular(10),
         child: SizedBox(
           height: 48,
@@ -588,7 +550,7 @@ class _DiscoverSaudiRow extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
       ),
-      onTap: () => unawaited(_launchExternal(BuildConfig.visitSaudiUrl)),
+      onTap: () => unawaited(_openLink(BuildConfig.visitSaudiUrl)),
     );
   }
 }

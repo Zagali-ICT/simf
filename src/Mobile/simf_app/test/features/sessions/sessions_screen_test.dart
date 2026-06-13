@@ -141,8 +141,10 @@ void main() {
       expect(find.text('Upcoming agenda'), findsOneWidget);
       expect(find.textContaining('Closing keynote'), findsOneWidget);
       expect(find.textContaining('Maritime security panel'), findsOneWidget);
-      expect(find.textContaining('01'), findsOneWidget);
-      expect(find.textContaining('02'), findsOneWidget);
+      // The gold row indices (the trailing space keeps the matcher off the
+      // zero-padded time chips, e.g. "02:00").
+      expect(find.textContaining('01 '), findsOneWidget);
+      expect(find.textContaining('02 '), findsOneWidget);
     });
 
     testWidgets('the search box filters the list', (tester) async {

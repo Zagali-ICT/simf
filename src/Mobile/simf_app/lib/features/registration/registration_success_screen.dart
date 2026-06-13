@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/localization/app_l10n.dart';
 import '../../app/route_names.dart';
 import '../../app/theme/tokens.dart';
 import '../../core/env/build_config.dart';
+import '../../core/external_link.dart';
 
 // Success-frame colours (Figma 505:1451) not yet shared by a second screen.
 const Color _green = Color(0xFF22C55E);
@@ -48,14 +48,8 @@ class RegistrationSuccessScreen extends StatelessWidget {
   }
 
   /// Opening the dialer / mail app is best-effort — a missing handler must
-  /// never crash the confirmation screen.
-  static Future<void> _launchContact(Uri uri) async {
-    try {
-      await launchUrl(uri);
-    } catch (_) {
-      // No app can handle the scheme — silently keep the user on the page.
-    }
-  }
+  /// never crash the confirmation screen (the shared D-369 helper).
+  static Future<void> _launchContact(Uri uri) => launchExternalUri(uri);
 
   @override
   Widget build(BuildContext context) {

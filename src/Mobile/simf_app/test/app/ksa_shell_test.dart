@@ -152,14 +152,22 @@ void main() {
         tester,
         const KsaPage(
           header: Text('CUSTOM-HEADER'),
-          showBottomNav: false,
           body: SizedBox.shrink(),
         ),
       );
 
       expect(find.byType(KsaBackButton), findsNothing);
       expect(find.text('CUSTOM-HEADER'), findsOneWidget);
-      expect(find.byType(SimfBottomNav), findsNothing);
+    });
+
+    testWidgets('no header, title or onBack → the header row collapses',
+        (tester) async {
+      await _pump(tester, const KsaPage(body: Text('FULL-BLEED')));
+
+      expect(find.byType(KsaBackButton), findsNothing);
+      expect(find.text('FULL-BLEED'), findsOneWidget);
+      // The bar is always carried by the page.
+      expect(find.byType(SimfBottomNav), findsOneWidget);
     });
   });
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:simf_data_pkg/simf_data_pkg.dart';
 
 import '../../app/localization/app_l10n.dart';
@@ -12,6 +13,11 @@ import '../../app/widgets/ksa_shell.dart';
 import '../../app/widgets/simf_bottom_nav.dart';
 import 'data/session_models.dart';
 import 'data/sessions_repository.dart';
+
+// The time-chip's two lines, formatted once (hoisted off the build path).
+// Same 12-hour convention as the profile schedule's `hh:mm a`.
+final DateFormat _chipHourFormat = DateFormat('hh:mm');
+final DateFormat _chipPeriodFormat = DateFormat('a');
 
 /// Page 016 — الأجندة · Sessions agenda (#16, `/sessions`), rebuilt to the
 /// KSA Wave-2 frame **215:767 "Calander"** on the shared shell.
@@ -38,6 +44,9 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
   bool _loading = true;
   bool _error = false;
   List<SessionListItem> _all = const <SessionListItem>[];
+  // The distinct programme days — derived from [_all] once per load, not on
+  // every (per-keystroke) rebuild.
+  List<DateTime> _days = const <DateTime>[];
 
   SessionsView _view = SessionsView.upcoming;
   DateTime? _selectedDay;
@@ -61,6 +70,7 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
       }
       setState(() {
         _all = sessions;
+        _days = sessionDays(sessions);
         _loading = false;
       });
     } on ApiFailure {
@@ -86,8 +96,7 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
     final l10n = AppL10n.of(context);
     return KsaPage(
       title: l10n.navAgenda,
-      onBack: () =>
-          context.canPop() ? context.pop() : context.goNamed(RouteNames.home),
+      onBack: () => ksaBackOrHome(context),
       tab: SimfTab.sessions,
       showSweep: true,
       body: _buildBody(l10n),
@@ -99,14 +108,14 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_error) {
-      return _ErrorState(
+      return KsaErrorState(
         message: l10n.sessionsError,
+        retryLabel: l10n.retryLabel,
         onRetry: () => unawaited(_load()),
       );
     }
 
     final isArabic = l10n.isArabic;
-    final days = sessionDays(_all);
     final filtered = filterSessions(
       _all,
       view: _view,
@@ -137,11 +146,11 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
             onChanged: (view) => setState(() => _view = view),
           ),
         ),
-        if (days.isNotEmpty)
+        if (_days.isNotEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: SimfTokens.space4),
             child: _DayStrip(
-              days: days,
+              days: _days,
               selected: _selectedDay,
               onChanged: (day) => setState(() => _selectedDay = day),
             ),
@@ -157,7 +166,10 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
         ),
         Expanded(
           child: filtered.isEmpty
-              ? _EmptyState(message: l10n.sessionsEmpty)
+              ? KsaEmptyState(
+                  icon: Icons.event_busy_outlined,
+                  message: l10n.sessionsEmpty,
+                )
               : ListView.separated(
                   padding: const EdgeInsets.fromLTRB(
                     SimfTokens.space4,
@@ -275,28 +287,19 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    return KsaCard(
+      onTap: active ? null : onTap,
       color: active ? SimfTokens.accent : SimfTokens.navyDeep,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        side: BorderSide(
-          color: active ? SimfTokens.accent : SimfTokens.beigeBorder,
-          width: 0.2,
-        ),
-      ),
-      child: InkWell(
-        onTap: active ? null : onTap,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        child: SizedBox(
-          height: 48,
-          child: Center(
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: SimfTokens.textSm,
-                fontWeight: FontWeight.w600,
-              ),
+      borderColor: active ? SimfTokens.accent : SimfTokens.beigeBorder,
+      child: SizedBox(
+        height: 48,
+        child: Center(
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: SimfTokens.textSm,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -320,19 +323,23 @@ class _DayStrip extends StatelessWidget {
   final DateTime? selected;
   final ValueChanged<DateTime?> onChanged;
 
-  bool _isSelected(DateTime day) =>
-      selected != null &&
-      selected!.year == day.year &&
-      selected!.month == day.month &&
-      selected!.day == day.day;
+  Widget _cell(DateTime day) {
+    final isSelected = DateUtils.isSameDay(selected, day);
+    return _DayCell(
+      day: day,
+      selected: isSelected,
+      onTap: () => onChanged(isSelected ? null : day),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(SimfTokens.space2),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+        borderRadius:
+            BorderRadius.all(Radius.circular(SimfTokens.radiusSmall)),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -343,11 +350,7 @@ class _DayStrip extends StatelessWidget {
                 padding: const EdgeInsetsDirectional.only(
                   end: SimfTokens.space2,
                 ),
-                child: _DayCell(
-                  day: day,
-                  selected: _isSelected(day),
-                  onTap: () => onChanged(_isSelected(day) ? null : day),
-                ),
+                child: _cell(day),
               ),
           ],
         ),
@@ -429,16 +432,9 @@ class _SessionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final description = session.localizedDescription(isArabic);
 
-    return Material(
-      color: SimfTokens.navyDeep,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        side: const BorderSide(color: SimfTokens.beigeBorder, width: 0.2),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        child: Padding(
+    return KsaCard(
+      onTap: onTap,
+      child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: SimfTokens.space2,
             vertical: SimfTokens.space4,
@@ -492,7 +488,6 @@ class _SessionRow extends StatelessWidget {
               const Icon(Icons.chevron_left, size: 20, color: Colors.white),
             ],
           ),
-        ),
       ),
     );
   }
@@ -506,80 +501,22 @@ class _TimeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final minute = local.minute.toString().padLeft(2, '0');
-    final period = local.hour < 12 ? 'AM' : 'PM';
-    final hour12 = local.hour % 12 == 0 ? 12 : local.hour % 12;
-    return Container(
-      width: 52,
-      height: 48,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: SimfTokens.navyDeep,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        border: Border.all(color: SimfTokens.beigeBorder, width: 0.2),
-      ),
-      child: Text(
-        '$hour12:$minute\n$period',
-        textAlign: TextAlign.center,
-        textDirection: TextDirection.ltr,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: SimfTokens.textSm,
-          fontWeight: FontWeight.w700,
-          height: 1.4,
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          const Icon(
-            Icons.event_busy_outlined,
-            size: 56,
-            color: SimfTokens.txtTertiary,
-          ),
-          const SizedBox(height: SimfTokens.space3),
-          Text(message, style: const TextStyle(color: SimfTokens.txtSecondary)),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppL10n.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SimfTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white),
+    return KsaCard(
+      child: SizedBox(
+        width: 52,
+        height: 48,
+        child: Center(
+          child: Text(
+            '${_chipHourFormat.format(local)}\n${_chipPeriodFormat.format(local)}',
+            textAlign: TextAlign.center,
+            textDirection: TextDirection.ltr,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: SimfTokens.textSm,
+              fontWeight: FontWeight.w700,
+              height: 1.4,
             ),
-            const SizedBox(height: SimfTokens.space4),
-            FilledButton(onPressed: onRetry, child: Text(l10n.retryLabel)),
-          ],
+          ),
         ),
       ),
     );

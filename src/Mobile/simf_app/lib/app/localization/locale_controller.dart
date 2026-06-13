@@ -23,6 +23,10 @@ class LocaleController extends Notifier<Locale> {
     await prefs.setString(StorageKeys.preferredLanguage, next.languageCode);
     state = next;
   }
+
+  /// Flips AR ↔ EN — the language-toggle controls' single code path.
+  Future<void> toggle() =>
+      setLanguage(state.languageCode == 'ar' ? 'en' : 'ar');
 }
 
 final localeControllerProvider =

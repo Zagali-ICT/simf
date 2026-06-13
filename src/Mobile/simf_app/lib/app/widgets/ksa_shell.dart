@@ -1,21 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../route_names.dart';
 import '../theme/tokens.dart';
 import 'simf_bottom_nav.dart';
 
 /// Shared KSA main-shell chrome for the Wave-2 in-app pages (frames
 /// 512:1492 / 203:1236 / 512:1780 / 215:767 / 221:769 / 215:562): the navy
-/// page scaffold with the standard header, plus the tile / list-row /
-/// section-header building blocks every page composes. One widget per
+/// page scaffold with the standard header, plus the card / tile / list-row /
+/// state-surface building blocks every page composes. One widget per
 /// repeated frame element — pages never copy-paste shell markup.
+
+/// The standard back action: pop when possible, else land on home.
+void ksaBackOrHome(BuildContext context) {
+  if (context.canPop()) {
+    context.pop();
+  } else {
+    context.goNamed(RouteNames.home);
+  }
+}
 
 /// The navy page scaffold: background, optional decorative sweep, a
 /// forced-LTR header (circled back chevron at the left, centred title — the
 /// D-363 chrome pattern), the page [body], and the shared bottom nav.
 ///
 /// Pages with a non-standard header (e.g. the signed-in home's greeting row)
-/// pass [header] instead of [title]; [tab] null hides the bottom nav (e.g.
-/// in-flow pages), and [onBack] null hides the back button.
+/// pass [header] instead of [title]; with no [header], [title] and [onBack]
+/// the header row collapses entirely (full-bleed pages like the map).
+/// [onBack] null hides the back button.
 class KsaPage extends StatelessWidget {
   const KsaPage({
     required this.body,
@@ -23,9 +35,7 @@ class KsaPage extends StatelessWidget {
     this.header,
     this.onBack,
     this.tab,
-    this.showBottomNav = true,
     this.showSweep = false,
-    this.background = SimfTokens.navySurface,
     super.key,
   });
 
@@ -45,20 +55,16 @@ class KsaPage extends StatelessWidget {
   /// The active bottom-nav tab; null shows the bar with no active tab.
   final SimfTab? tab;
 
-  /// False removes the bottom nav entirely.
-  final bool showBottomNav;
-
   /// Renders the decorative rotated sweep (the entry frames' 28.28° block).
   final bool showSweep;
 
-  final Color background;
-
   @override
   Widget build(BuildContext context) {
+    final headerRow =
+        header ?? (title == null && onBack == null ? null : _defaultHeader());
     return Scaffold(
-      backgroundColor: background,
-      bottomNavigationBar:
-          showBottomNav ? SimfBottomNav(current: tab) : null,
+      backgroundColor: SimfTokens.navySurface,
+      bottomNavigationBar: SimfBottomNav(current: tab),
       body: Stack(
         children: <Widget>[
           if (showSweep) const KsaSweep(),
@@ -66,7 +72,7 @@ class KsaPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                header ?? _defaultHeader(),
+                if (headerRow != null) headerRow,
                 Expanded(child: body),
               ],
             ),
@@ -137,7 +143,8 @@ class KsaBackButton extends StatelessWidget {
 }
 
 /// The decorative rotated sweep block from the KSA entry frames (28.28°,
-/// white-4% fill) — shared so pages stop copy-pasting the transform.
+/// white-4% fill) — the single home for the transform (the auth chrome
+/// consumes it too).
 class KsaSweep extends StatelessWidget {
   const KsaSweep({super.key});
 
@@ -151,11 +158,50 @@ class KsaSweep extends StatelessWidget {
         child: Container(
           width: 313,
           height: 323,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: SimfTokens.surfaceTint,
-            borderRadius: BorderRadius.circular(40),
+            borderRadius: BorderRadius.all(Radius.circular(40)),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The W2 base card chrome — the `navyDeep` fill with the beige hairline on
+/// the small radius — shared by every tile/row in the batch so the border /
+/// fill / radius have one owner. [onTap] null renders a plain surface.
+class KsaCard extends StatelessWidget {
+  const KsaCard({
+    required this.child,
+    this.onTap,
+    this.color = SimfTokens.navyDeep,
+    this.borderColor = SimfTokens.beigeBorder,
+    this.borderWidth = SimfTokens.hairline,
+    super.key,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final Color color;
+  final Color borderColor;
+  final double borderWidth;
+
+  static const BorderRadius _radius =
+      BorderRadius.all(Radius.circular(SimfTokens.radiusSmall));
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: color,
+      shape: RoundedRectangleBorder(
+        borderRadius: _radius,
+        side: BorderSide(color: borderColor, width: borderWidth),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: _radius,
+        child: child,
       ),
     );
   }
@@ -194,7 +240,8 @@ class KsaSectionHeader extends StatelessWidget {
         if (onMore != null && moreLabel != null)
           InkWell(
             onTap: onMore,
-            borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
+            borderRadius:
+                const BorderRadius.all(Radius.circular(SimfTokens.radiusSmall)),
             child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: SimfTokens.space2,
@@ -214,17 +261,36 @@ class KsaSectionHeader extends StatelessWidget {
   }
 }
 
+/// A row of equally sized tiles with the standard gap between them — the
+/// frames' 2- and 3-up tile rows (home sections, profile grid).
+class KsaTileRow extends StatelessWidget {
+  const KsaTileRow({required this.children, super.key});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        for (final (index, child) in children.indexed) ...<Widget>[
+          if (index > 0) const SizedBox(width: SimfTokens.space2),
+          Expanded(child: child),
+        ],
+      ],
+    );
+  }
+}
+
 /// One navy feature tile (frame tiles "المتحدثون" / "الجلسات" / …): a 72-high
-/// `navyDeep` card with a gold icon over a small white label. [enabled]
-/// false renders the locked variant (the "بطاقتي" card / the disabled theme
-/// tile) on the disabled palette with no tap.
+/// card with a gold icon over a small white label. [enabled] false renders
+/// the locked variant (the "بطاقتي" card / the disabled theme tile) on the
+/// disabled palette with no tap.
 class KsaNavTile extends StatelessWidget {
   const KsaNavTile({
     required this.label,
     required this.icon,
     this.onTap,
     this.enabled = true,
-    this.trailing,
     super.key,
   });
 
@@ -233,54 +299,22 @@ class KsaNavTile extends StatelessWidget {
   final VoidCallback? onTap;
   final bool enabled;
 
-  /// Optional second line under the label (e.g. a stat value uses its own
-  /// widget instead — see [KsaStatTile]).
-  final Widget? trailing;
-
   @override
   Widget build(BuildContext context) {
     final foreground =
         enabled ? SimfTokens.accent : SimfTokens.navyDisabledText;
     final labelColor = enabled ? Colors.white : SimfTokens.navyDisabledText;
-    return Material(
+    return KsaCard(
+      onTap: enabled ? onTap : null,
       color: enabled ? SimfTokens.navyDeep : SimfTokens.navyDisabled,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        side: BorderSide(
-          color: enabled
-              ? SimfTokens.beigeBorder
-              : SimfTokens.navyDisabledBorder,
-          width: enabled ? 0.2 : 1,
-        ),
-      ),
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 72),
-          child: Padding(
-            padding: const EdgeInsets.all(SimfTokens.space2),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Icon(icon, size: 24, color: foreground),
-                const SizedBox(height: SimfTokens.space2),
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: SimfTokens.textSm,
-                    fontWeight: FontWeight.w600,
-                    color: labelColor,
-                  ),
-                ),
-                if (trailing != null) trailing!,
-              ],
-            ),
-          ),
-        ),
+      borderColor: enabled
+          ? SimfTokens.beigeBorder
+          : SimfTokens.navyDisabledBorder,
+      borderWidth: enabled ? SimfTokens.hairline : 1,
+      child: _TileBody(
+        top: Icon(icon, size: 24, color: foreground),
+        label: label,
+        labelColor: labelColor,
       ),
     );
   }
@@ -296,41 +330,58 @@ class KsaStatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: SimfTokens.navyDeep,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        side: const BorderSide(color: SimfTokens.beigeBorder, width: 0.2),
-      ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 72),
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space2),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(
-                '$value',
-                style: const TextStyle(
-                  fontSize: SimfTokens.textXl,
-                  fontWeight: FontWeight.w700,
-                  color: SimfTokens.accent,
-                ),
-              ),
-              const SizedBox(height: SimfTokens.space1),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: SimfTokens.textSm,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ],
+    return KsaCard(
+      child: _TileBody(
+        top: Text(
+          '$value',
+          style: const TextStyle(
+            fontSize: SimfTokens.textXl,
+            fontWeight: FontWeight.w700,
+            color: SimfTokens.accent,
           ),
+        ),
+        label: label,
+        labelColor: Colors.white,
+      ),
+    );
+  }
+}
+
+/// The shared tile interior: a centred top element over the small bold label.
+class _TileBody extends StatelessWidget {
+  const _TileBody({
+    required this.top,
+    required this.label,
+    required this.labelColor,
+  });
+
+  final Widget top;
+  final String label;
+  final Color labelColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 72),
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space2),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            top,
+            const SizedBox(height: SimfTokens.space2),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: SimfTokens.textSm,
+                fontWeight: FontWeight.w600,
+                color: labelColor,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -356,7 +407,7 @@ class KsaAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final initials = _Initials(name: name, size: size);
     return ClipRRect(
-      borderRadius: BorderRadius.circular(SimfTokens.radius),
+      borderRadius: const BorderRadius.all(Radius.circular(SimfTokens.radius)),
       child: SizedBox(
         width: size,
         height: size,
@@ -433,65 +484,125 @@ class KsaListRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: SimfTokens.navyDeep,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        side: const BorderSide(color: SimfTokens.goldSoft, width: 0.5),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(SimfTokens.radiusSmall),
-        child: Padding(
-          padding: const EdgeInsets.all(SimfTokens.space2),
-          child: Row(
-            children: <Widget>[
-              if (badge != null) ...<Widget>[
-                Container(
-                  width: 72,
-                  height: 64,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: SimfTokens.accent,
-                    borderRadius: BorderRadius.circular(SimfTokens.radius),
-                  ),
-                  child: badge,
+    return KsaCard(
+      onTap: onTap,
+      borderColor: SimfTokens.goldSoft,
+      borderWidth: SimfTokens.hairlineBold,
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space2),
+        child: Row(
+          children: <Widget>[
+            if (badge != null) ...<Widget>[
+              Container(
+                width: 72,
+                height: 64,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: SimfTokens.accent,
+                  borderRadius:
+                      BorderRadius.all(Radius.circular(SimfTokens.radius)),
                 ),
-                const SizedBox(width: SimfTokens.space3),
-              ],
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
+                child: badge,
+              ),
+              const SizedBox(width: SimfTokens.space3),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: SimfTokens.textLg,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  if (subtitle != null) ...<Widget>[
+                    const SizedBox(height: SimfTokens.space2),
                     Text(
-                      title,
+                      subtitle!,
                       style: const TextStyle(
-                        fontSize: SimfTokens.textLg,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        fontSize: SimfTokens.textMd,
+                        color: SimfTokens.beigeBorder,
                       ),
                     ),
-                    if (subtitle != null) ...<Widget>[
-                      const SizedBox(height: SimfTokens.space2),
-                      Text(
-                        subtitle!,
-                        style: const TextStyle(
-                          fontSize: SimfTokens.textMd,
-                          color: SimfTokens.beigeBorder,
-                        ),
-                      ),
-                    ],
                   ],
-                ),
+                ],
               ),
-              const SizedBox(width: SimfTokens.space2),
-              const Icon(
-                Icons.arrow_left,
-                color: SimfTokens.accent,
-                size: 24,
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: SimfTokens.space2),
+            const Icon(
+              Icons.arrow_left,
+              color: SimfTokens.accent,
+              size: 24,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The standard error surface: the message over a gold retry button — one
+/// home for the retry chrome instead of a per-screen copy.
+class KsaErrorState extends StatelessWidget {
+  const KsaErrorState({
+    required this.message,
+    required this.retryLabel,
+    required this.onRetry,
+    super.key,
+  });
+
+  final String message;
+  final String retryLabel;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white),
+            ),
+            const SizedBox(height: SimfTokens.space4),
+            FilledButton(onPressed: onRetry, child: Text(retryLabel)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The standard empty / pending surface: a muted icon over the message.
+class KsaEmptyState extends StatelessWidget {
+  const KsaEmptyState({required this.icon, required this.message, super.key});
+
+  final IconData icon;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(SimfTokens.space6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(icon, size: 56, color: SimfTokens.beigeBorder),
+            const SizedBox(height: SimfTokens.space3),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: SimfTokens.beigeBorder),
+            ),
+          ],
         ),
       ),
     );
