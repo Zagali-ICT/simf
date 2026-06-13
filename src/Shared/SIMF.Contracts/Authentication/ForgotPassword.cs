@@ -1,6 +1,6 @@
 namespace SIMF.Contracts.Authentication;
 
-/// <summary>The body of <c>POST /api/v1/auth/forgot-password</c> (SIMF-API-001 section 12.7).</summary>
+/// <summary>The body of <c>POST /api/v1/app/auth/forgot-password</c> (SIMF-API-001 section 12.7).</summary>
 public sealed class ForgotPasswordRequest
 {
     public string Email { get; set; } = string.Empty;

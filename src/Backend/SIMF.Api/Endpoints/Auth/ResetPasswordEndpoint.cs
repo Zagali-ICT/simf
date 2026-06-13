@@ -7,7 +7,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// <c>POST /api/v1/auth/reset-password</c> — sets a new password with the
+/// <c>POST /api/v1/app/auth/reset-password</c> — sets a new password with the
 /// emailed reset code (SIMF-API-001 section 12.4).
 /// </summary>
 public sealed class ResetPasswordEndpoint(IPasswordService passwordService)

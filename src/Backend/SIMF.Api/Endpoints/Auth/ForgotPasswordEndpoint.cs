@@ -7,7 +7,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// <c>POST /api/v1/auth/forgot-password</c> — emails a password-reset code
+/// <c>POST /api/v1/app/auth/forgot-password</c> — emails a password-reset code
 /// (SIMF-API-001 section 12.4). The response never reveals whether the account
 /// exists.
 /// </summary>

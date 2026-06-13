@@ -8,7 +8,7 @@ using SIMF.Contracts.UserProfile;
 namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
-/// <c>GET /api/v1/account/user-profile</c> — returns the actor's
+/// <c>GET /api/v1/app/account/user-profile</c> — returns the actor's
 /// profile (decisions D-046 b, P8 — D-049; renamed from
 /// <c>/account/visitor-profile</c>). Auth required; the actor reads
 /// their own row only. The unrelated <c>/account/profile</c> endpoint

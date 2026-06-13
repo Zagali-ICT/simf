@@ -9,7 +9,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// D-096: <c>GET /api/v1/auth/totp/pairing</c> — returns the QR + otpauth
+/// D-096: <c>GET /api/v1/app/auth/totp/pairing</c> — returns the QR + otpauth
 /// URI for the caller's CURRENT authenticator secret without rotating it.
 /// Used by the CP's <c>/account/totp-pairing</c> page so an admin whose
 /// authenticator device was lost can re-scan against the same secret the

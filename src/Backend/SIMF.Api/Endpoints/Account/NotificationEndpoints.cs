@@ -8,7 +8,7 @@ using SIMF.Contracts.Notifications;
 namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
-/// <c>POST /api/v1/account/notifications/list</c> — one page of the
+/// <c>POST /api/v1/app/account/notifications/list</c> — one page of the
 /// signed-in user's notifications, newest first (P12 — D-053). The
 /// optional <c>unreadOnly=true</c> filter is what the bell dropdown
 /// uses.
@@ -38,7 +38,7 @@ public sealed class ListNotificationsEndpoint(INotificationService service)
 }
 
 /// <summary>
-/// <c>GET /api/v1/account/notifications/unread-count</c> — polled every
+/// <c>GET /api/v1/app/account/notifications/unread-count</c> — polled every
 /// 60 s by the notification bell. Auth-only.
 /// </summary>
 public sealed class UnreadNotificationCountEndpoint(INotificationService service)
@@ -65,7 +65,7 @@ public sealed class UnreadNotificationCountEndpoint(INotificationService service
     }
 }
 
-/// <summary><c>POST /api/v1/account/notifications/{id}/read</c> — mark one
+/// <summary><c>POST /api/v1/app/account/notifications/{id}/read</c> — mark one
 /// notification as read. Idempotent.</summary>
 public sealed class MarkNotificationReadRequest
 {
@@ -97,7 +97,7 @@ public sealed class MarkNotificationReadEndpoint(INotificationService service)
     }
 }
 
-/// <summary><c>POST /api/v1/account/notifications/read-all</c> — mark
+/// <summary><c>POST /api/v1/app/account/notifications/read-all</c> — mark
 /// every unread notification as read.</summary>
 public sealed class MarkAllNotificationsReadEndpoint(INotificationService service)
     : EndpointWithoutRequest<ApiResult<bool>>
@@ -123,7 +123,7 @@ public sealed class MarkAllNotificationsReadEndpoint(INotificationService servic
     }
 }
 
-/// <summary><c>DELETE /api/v1/account/notifications/{id}</c> — remove
+/// <summary><c>DELETE /api/v1/app/account/notifications/{id}</c> — remove
 /// one notification. Idempotent.</summary>
 public sealed class DeleteNotificationRequest
 {

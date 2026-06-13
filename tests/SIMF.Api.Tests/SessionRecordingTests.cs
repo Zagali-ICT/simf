@@ -78,7 +78,11 @@ public sealed class SessionRecordingTests : IClassFixture<SimfApiFactory>
         var body = (await response.Content
             .ReadFromJsonAsync<ApiResult<RecordingStreamTokenResponse>>())!.Data!;
         Assert.False(string.IsNullOrWhiteSpace(body.Token));
-        Assert.Contains($"/recording/stream", body.StreamUrl);
+        // The minted URL must be the real, registered stream route (incl. the
+        // /app segment from the D-247 route split) — a client uses it verbatim.
+        Assert.Equal(
+            $"/api/v1/app/programme/sessions/{session}/recording/stream",
+            body.StreamUrl);
         Assert.True(body.ExpiresInSeconds > 0);
     }
 

@@ -15,7 +15,7 @@ public sealed class AvatarUploadRequest
 }
 
 /// <summary>
-/// <c>POST /api/v1/account/avatar</c> — uploads a new avatar image for the
+/// <c>POST /api/v1/app/account/avatar</c> — uploads a new avatar image for the
 /// signed-in user. Accepts PNG, JPEG or WebP up to 2 MB (myComment #11).
 /// </summary>
 public sealed class AvatarUploadEndpoint(IAccountService accountService)

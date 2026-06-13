@@ -7,7 +7,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// <c>POST /api/v1/auth/verify-totp</c> — completes a Control Panel sign-in with
+/// <c>POST /api/v1/app/auth/verify-totp</c> — completes a Control Panel sign-in with
 /// the authenticator TOTP code (SIMF-API-001 section 12.4).
 /// </summary>
 public sealed class VerifyTotpEndpoint(ISignInService signInService)

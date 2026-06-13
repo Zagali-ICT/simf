@@ -8,7 +8,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// <c>POST /api/v1/auth/verify-recovery-code</c> — completes sign-in using a
+/// <c>POST /api/v1/app/auth/verify-recovery-code</c> — completes sign-in using a
 /// single-use recovery code in place of an authenticator-app TOTP code
 /// (decision D-040). Same MFA-token gate and same lockout budget as
 /// <c>verify-totp</c>; the only difference is which secret the user proves.

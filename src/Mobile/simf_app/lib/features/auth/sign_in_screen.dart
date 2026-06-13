@@ -97,10 +97,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       await ref
           .read(authControllerProvider.notifier)
           .signIn(email: email, password: password);
+      final prefs = ref.read(simfPrefsStorageProvider);
       if (_rememberMe) {
-        await ref
-            .read(simfPrefsStorageProvider)
-            .setString(StorageKeys.lastEmail, email);
+        await prefs.setString(StorageKeys.lastEmail, email);
+      } else {
+        // Honour an unchecked "remember me" in both directions: forget any
+        // email a previous remembered sign-in stored, so unchecking actually
+        // stops the address pre-filling next time.
+        await prefs.remove(StorageKeys.lastEmail);
       }
       if (!mounted) {
         return;

@@ -9,7 +9,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// <c>POST /api/v1/auth/totp/setup</c> — begins authenticator-app enrolment
+/// <c>POST /api/v1/app/auth/totp/setup</c> — begins authenticator-app enrolment
 /// (myComment item #11). Returns a fresh secret, the <c>otpauth://</c> URI and
 /// an SVG QR code to render in the page. Requires a valid access token.
 /// </summary>

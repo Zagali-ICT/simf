@@ -213,6 +213,24 @@ void main() {
       expect(prefs.getString(StorageKeys.lastEmail), isNull);
     });
 
+    testWidgets('unchecking remember-me forgets a previously remembered email',
+        (tester) async {
+      final prefs = _FakePrefs();
+      // A prior remembered sign-in left an address stored (and pre-filling).
+      await prefs.setString(StorageKeys.lastEmail, 'old@example.sa');
+      await _pump(tester, _Outcome.success, prefs);
+
+      await _enterCreds(tester);
+      await tester.tap(find.byType(Checkbox));
+      await tester.pump();
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('HOME'), findsOneWidget);
+      // The opt-out is honoured in both directions: the old email is cleared.
+      expect(prefs.getString(StorageKeys.lastEmail), isNull);
+    });
+
     testWidgets('successful sign-in with an incomplete profile routes to the '
         'visitor profile screen (Page_007 auto-route)', (tester) async {
       final prefs = _FakePrefs();

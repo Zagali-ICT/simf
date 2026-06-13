@@ -1,7 +1,7 @@
 namespace SIMF.Contracts.Authentication;
 
 /// <summary>
-/// The body of <c>POST /api/v1/auth/change-password</c> — for an authenticated
+/// The body of <c>POST /api/v1/app/auth/change-password</c> — for an authenticated
 /// user changing their own password (SIMF-API-001 section 12.7).
 /// </summary>
 public sealed class ChangePasswordRequest

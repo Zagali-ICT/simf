@@ -1,7 +1,7 @@
 namespace SIMF.Contracts.Cms;
 
 /// <summary>D-173 (gap doc G8, PDF §1) — public payload for one
-/// content block. Served by <c>GET /api/v1/content/{key}</c>.</summary>
+/// content block. Served by <c>GET /api/v1/app/content/{key}</c>.</summary>
 public sealed record PublicContentBlock(
     string Key,
     string Content,

@@ -8,7 +8,7 @@ using SIMF.Contracts.UserProfile;
 namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
-/// <c>POST /api/v1/account/user-profile</c> — creates / updates the
+/// <c>POST /api/v1/app/account/user-profile</c> — creates / updates the
 /// signed-in user's profile (decisions D-046 b, P8 — D-049; renamed
 /// from <c>/account/visitor-profile</c>). The unrelated
 /// <c>/account/profile</c> endpoint serves the lightweight identity

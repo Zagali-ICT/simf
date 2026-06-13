@@ -6,7 +6,7 @@ using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Auth;
 
-/// <summary><c>POST /api/v1/auth/resend-code</c> (SIMF-API-001 section 12.4).</summary>
+/// <summary><c>POST /api/v1/app/auth/resend-code</c> (SIMF-API-001 section 12.4).</summary>
 public sealed class ResendCodeEndpoint(IRegistrationService registrationService)
     : Endpoint<ResendCodeRequest, ApiResult<ResendCodeResponse>>
 {

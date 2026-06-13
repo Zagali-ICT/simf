@@ -9,7 +9,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>D-190 (D-186 follow-up, mobile sign-up unblock) —
-/// <c>GET /api/v1/account/profile-types</c> returns the active
+/// <c>GET /api/v1/app/account/profile-types</c> returns the active
 /// ProfileType list the mobile sign-up Screen 2 dropdown reads.
 ///
 /// <para>Auth required (the bog-standard <c>auth</c> rate-limit

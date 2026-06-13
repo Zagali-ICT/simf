@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Networking;
 
-/// <summary>B6 — D-224: body for <c>POST /api/v1/account/connections</c> —
+/// <summary>B6 — D-224: body for <c>POST /api/v1/app/account/connections</c> —
 /// the caller asks to connect with <see cref="TargetUserId"/>.</summary>
 public sealed class SendConnectionRequest
 {

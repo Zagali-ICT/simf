@@ -8,7 +8,7 @@ using SIMF.Infrastructure.Persistence;
 namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
-/// <c>GET /api/v1/account/user-profile/countries</c> — returns the
+/// <c>GET /api/v1/app/account/user-profile/countries</c> — returns the
 /// supported nationality picker list (decisions D-046 b, P8 — D-049;
 /// renamed from <c>/account/visitor-profile/countries</c>). Auth required; the data
 /// is not sensitive, but the endpoint sits under the same /account/

@@ -8,7 +8,7 @@ namespace SIMF.Contracts.Programme;
 /// (first by the session's theme order) drives the "Hall · Kind" line
 /// and the agenda colour chip. <see cref="StartUtc"/>/<see cref="EndUtc"/>
 /// are UTC — the Flutter agenda renders local time per the device tz.
-/// Served by <c>GET /api/v1/programme/sessions</c>.</summary>
+/// Served by <c>GET /api/v1/app/programme/sessions</c>.</summary>
 public sealed record PublicSessionListItem(
     Guid Id,
     string Code,
@@ -45,7 +45,7 @@ public sealed record PublicSessions(IReadOnlyList<PublicSessionListItem> Items);
 /// of one session: bilingual title + abstract, hall EN/AR, the time
 /// window, every tagged theme (ordered), the ordered speaker list, and
 /// a cheap seat-availability summary. Served by
-/// <c>GET /api/v1/programme/sessions/{id}</c>.</summary>
+/// <c>GET /api/v1/app/programme/sessions/{id}</c>.</summary>
 public sealed record PublicSessionDetail(
     Guid Id,
     string Code,
@@ -133,7 +133,7 @@ public sealed record PublicSessionSeatSummary(
 /// published session's recorded Q&amp;A archive — the Committee-approved
 /// questions, attributed to the asker. <see cref="IsPushed"/> marks the ones
 /// that were pushed to the speaker live (answered on stage). Served by
-/// <c>GET /api/v1/programme/sessions/{id}/recorded-questions</c> for an
+/// <c>GET /api/v1/app/programme/sessions/{id}/recorded-questions</c> for an
 /// approved (signed-in) account.</summary>
 public sealed record PublicRecordedQuestion(
     Guid Id,
@@ -149,7 +149,7 @@ public sealed record PublicRecordedQuestion(
 /// <see cref="KeyPoints"/>/<see cref="KeyPointsArabic"/> are newline-delimited
 /// (one bullet per non-empty line). <see cref="GeneratedByAi"/> drives the
 /// "auto-generated" banner. Served by
-/// <c>GET /api/v1/programme/sessions/{id}/summary</c> only once the Committee
+/// <c>GET /api/v1/app/programme/sessions/{id}/summary</c> only once the Committee
 /// has published it (else 404).</summary>
 public sealed record PublicSessionSummary(
     Guid SessionId,

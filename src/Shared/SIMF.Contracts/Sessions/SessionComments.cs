@@ -4,7 +4,7 @@ namespace SIMF.Contracts.Sessions;
 
 /// <summary>D-199 (Mockup page 28 — "Audience comments") — audience
 /// submission request body for
-/// <c>POST /api/v1/sessions/{sessionId}/comments</c>. The endpoint's
+/// <c>POST /api/v1/app/sessions/{sessionId}/comments</c>. The endpoint's
 /// own route shape merges this with the SessionId route param.</summary>
 public sealed class SubmitSessionCommentRequest
 {

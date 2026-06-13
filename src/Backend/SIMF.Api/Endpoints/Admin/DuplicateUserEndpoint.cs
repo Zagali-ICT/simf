@@ -9,7 +9,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/users/duplicate</c> — creates a copy of an existing
+/// <c>POST /api/v1/admin/admins/duplicate</c> — creates a copy of an existing
 /// user with a new email and a fresh invite (decision D-044 b).
 /// </summary>
 public sealed class DuplicateUserEndpoint(IAdminUserProvisioningService adminAccountService)

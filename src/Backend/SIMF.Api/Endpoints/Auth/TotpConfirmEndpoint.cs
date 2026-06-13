@@ -9,7 +9,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// <c>POST /api/v1/auth/totp/confirm</c> — verifies the first authenticator
+/// <c>POST /api/v1/app/auth/totp/confirm</c> — verifies the first authenticator
 /// code against the staged secret; on success the secret becomes active and
 /// <c>TwoFactorEnabled</c> is turned on. Requires a valid access token.
 /// </summary>

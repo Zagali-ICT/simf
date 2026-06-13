@@ -5,7 +5,7 @@ namespace SIMF.Contracts.Programme;
 /// avatar (resolved from <see cref="PhotoRelativePath"/> by the client),
 /// the rank line, and the bilingual name. <see cref="DisplayOrder"/> is
 /// carried so the client can keep a stable order if it re-sorts locally.
-/// Served by <c>GET /api/v1/speakers</c>. Mirrors the
+/// Served by <c>GET /api/v1/app/speakers</c>. Mirrors the
 /// <c>PublicBoothSummary</c> public-read shape (D-199).</summary>
 public sealed record PublicSpeakerSummary(
     Guid Id,
@@ -40,7 +40,7 @@ public sealed record PublicSpeakers(IReadOnlyList<PublicSpeakerSummary> Items);
 /// affordance. The <c>UserProfileId</c> account link is deliberately NOT
 /// surfaced on the public projection.</para>
 ///
-/// Served by <c>GET /api/v1/speakers/{id}</c>.</summary>
+/// Served by <c>GET /api/v1/app/speakers/{id}</c>.</summary>
 public sealed record PublicSpeakerDetail(
     Guid Id,
     string Name,

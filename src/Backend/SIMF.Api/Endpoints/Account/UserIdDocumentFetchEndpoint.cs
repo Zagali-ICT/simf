@@ -7,7 +7,7 @@ using SIMF.Common;
 namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
-/// <c>GET /api/v1/account/user-profile/id-image</c> — streams the
+/// <c>GET /api/v1/app/account/user-profile/id-image</c> — streams the
 /// signed-in user's ID-document image back to the browser (decrypted
 /// on the fly from the AES-GCM file). Returns 404 when no image is
 /// set. Auth-only — only the owning user can read it. Renamed from

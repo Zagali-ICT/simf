@@ -9,7 +9,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/users/bulk-delete</c> — soft-deletes one or many
+/// <c>POST /api/v1/admin/admins/bulk-delete</c> — soft-deletes one or many
 /// users (decision D-044 b). Self / Administrator targets are silently
 /// skipped per-target so the batch never fails on a single guarded row.
 /// One audit row per subject so the SOC sees every deletion.

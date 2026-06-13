@@ -9,7 +9,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
-/// <c>GET /api/v1/account/profile</c> — the signed-in user's profile
+/// <c>GET /api/v1/app/account/profile</c> — the signed-in user's profile
 /// (myComment item #11). Returns id, email, display name, the avatar as a
 /// data URI, the two-factor flag and the roles.
 /// </summary>

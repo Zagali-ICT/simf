@@ -8,7 +8,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// <c>POST /api/v1/auth/sign-out</c> — ends every session for the authenticated
+/// <c>POST /api/v1/app/auth/sign-out</c> — ends every session for the authenticated
 /// caller (SIMF-API-001 section 12.4). Requires a valid access token.
 /// </summary>
 public sealed class SignOutEndpoint(ISessionService sessionService)

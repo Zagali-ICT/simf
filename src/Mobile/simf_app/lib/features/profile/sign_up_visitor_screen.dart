@@ -424,12 +424,20 @@ class _SignUpVisitorScreenState extends ConsumerState<SignUpVisitorScreen> {
     final dateOfBirthValid = _dateOfBirth != null;
     // B3 — D-221 (الجهة): organisation is required (server enforces it too).
     final organisationValid = _organisationId != null;
+    // D-373 — nationality drives the document section and is required server-
+    // side; the picker is not a FormField, so its inline error (line ~985)
+    // must also gate Next, otherwise an empty code reaches the server (400).
+    final nationalityValid = _nationalityCode != null;
     // C7 (D-371) — the photo is mandatory for men: a camera capture must be
     // attached (or already stored server-side) before the flow continues.
     final imageValid = _gender != AppGender.male ||
         _idImageBytes != null ||
         _hasExistingIdImage;
-    if (!formValid || !dateOfBirthValid || !organisationValid || !imageValid) {
+    if (!formValid ||
+        !dateOfBirthValid ||
+        !organisationValid ||
+        !nationalityValid ||
+        !imageValid) {
       setState(() {});
       return;
     }

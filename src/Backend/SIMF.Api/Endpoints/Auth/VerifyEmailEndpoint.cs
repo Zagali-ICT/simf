@@ -6,7 +6,7 @@ using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Auth;
 
-/// <summary><c>POST /api/v1/auth/verify-email</c> (SIMF-API-001 section 12.4).</summary>
+/// <summary><c>POST /api/v1/app/auth/verify-email</c> (SIMF-API-001 section 12.4).</summary>
 public sealed class VerifyEmailEndpoint(IRegistrationService registrationService)
     : Endpoint<VerifyEmailRequest, ApiResult<VerifyEmailResponse>>
 {

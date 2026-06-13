@@ -8,7 +8,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// <c>POST /api/v1/auth/change-password</c> — an authenticated user changes
+/// <c>POST /api/v1/app/auth/change-password</c> — an authenticated user changes
 /// their own password (SIMF-API-001 section 12.4). Requires a valid access token.
 /// </summary>
 public sealed class ChangePasswordEndpoint(IPasswordService passwordService)

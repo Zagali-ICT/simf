@@ -5,7 +5,7 @@ using SIMF.Common.Enums;
 namespace SIMF.Contracts.Authentication;
 
 /// <summary>
-/// The body of <c>POST /api/v1/admin/users/reset-two-factor</c>. The actor
+/// The body of <c>POST /api/v1/admin/admins/reset-two-factor</c>. The actor
 /// must hold the Administrator role; the target may not be the actor and
 /// may not also hold the Administrator role (decision D-041).
 /// </summary>
@@ -175,7 +175,7 @@ public sealed record AdminUserSummary(
     bool IsAdministrator,
     DateTimeOffset CreatedAt);
 
-/// <summary>The body of <c>POST /api/v1/admin/users/bulk-delete</c>
+/// <summary>The body of <c>POST /api/v1/admin/admins/bulk-delete</c>
 /// (decision D-044 b). One audit row is written per subject so SOC has
 /// per-user visibility even on a batch action.</summary>
 public sealed class AdminBulkDeleteRequest
@@ -245,7 +245,7 @@ public sealed record AdminBulkRejectResponse(
     int Skipped,
     IReadOnlyList<AdminBulkApprovalFailure> Failures);
 
-/// <summary>The body of <c>POST /api/v1/admin/users/duplicate</c> (D-044 b).
+/// <summary>The body of <c>POST /api/v1/admin/admins/duplicate</c> (D-044 b).
 /// Creates a new user as a copy of the source — same display-name pattern,
 /// same Administrator-role membership, no password, fresh invite email.</summary>
 public sealed class AdminDuplicateUserRequest
@@ -257,7 +257,7 @@ public sealed class AdminDuplicateUserRequest
     public string NewEmail { get; set; } = string.Empty;
 }
 
-/// <summary>The body of <c>POST /api/v1/admin/users/export</c> (D-044 b).
+/// <summary>The body of <c>POST /api/v1/admin/admins/export</c> (D-044 b).
 /// When <see cref="Ids"/> is empty, the endpoint exports every user that
 /// matches the (optional) <see cref="Query"/>.</summary>
 public sealed class AdminExportUsersRequest

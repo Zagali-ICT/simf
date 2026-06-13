@@ -6,7 +6,7 @@ using SIMF.Contracts.Authentication;
 
 namespace SIMF.Api.Endpoints.Auth;
 
-/// <summary><c>POST /api/v1/auth/sign-in</c> — the password step (SIMF-API-001 section 12.4).</summary>
+/// <summary><c>POST /api/v1/app/auth/sign-in</c> — the password step (SIMF-API-001 section 12.4).</summary>
 public sealed class SignInEndpoint(ISignInService signInService)
     : Endpoint<SignInRequest, ApiResult<SignInResponse>>
 {

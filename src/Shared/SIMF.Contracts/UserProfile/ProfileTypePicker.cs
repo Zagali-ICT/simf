@@ -13,6 +13,6 @@ public sealed record ProfileTypePickerDto(
     bool IsVisitor);
 
 /// <summary>D-190 — response body for
-/// <c>GET /api/v1/account/profile-types</c>.</summary>
+/// <c>GET /api/v1/app/account/profile-types</c>.</summary>
 public sealed record ProfileTypePickerListResponse(
     IReadOnlyList<ProfileTypePickerDto> Items);

@@ -7,7 +7,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// <c>POST /api/v1/auth/complete-password-change</c> — D-206: sets a new
+/// <c>POST /api/v1/app/auth/complete-password-change</c> — D-206: sets a new
 /// password against the single-use ticket the sign-in step issued for a Control
 /// Panel account holding a forced-change (seeded/admin-rotated) credential.
 /// Anonymous like <c>verify-totp</c> — the ticket, not a session, authorises the

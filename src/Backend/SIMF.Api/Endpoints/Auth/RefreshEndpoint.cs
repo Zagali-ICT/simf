@@ -7,7 +7,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// <c>POST /api/v1/auth/refresh</c> — exchanges a refresh token for a new
+/// <c>POST /api/v1/app/auth/refresh</c> — exchanges a refresh token for a new
 /// access token and a rotated refresh token (SIMF-API-001 section 12.4).
 /// </summary>
 public sealed class RefreshEndpoint(ISessionService sessionService)

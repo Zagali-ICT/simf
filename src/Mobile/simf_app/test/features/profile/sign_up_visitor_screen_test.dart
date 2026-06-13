@@ -15,8 +15,21 @@ import 'package:simf_data_pkg/simf_data_pkg.dart';
 /// Next glue is testable without a real HTTP client. (Reworked D-332: this screen
 /// no longer saves — the upsert moved to the interests screen.)
 class _FakeProfileRepository implements ProfileRepository {
-  _FakeProfileRepository({UserProfileResponse? profile, this.throwOnLoad = false})
-      : profile = profile ?? _emptyProfile;
+  _FakeProfileRepository({
+    UserProfileResponse? profile,
+    this.throwOnLoad = false,
+    List<CountryItem>? countries,
+  })  : profile = profile ?? _emptyProfile,
+        countries = countries ?? _defaultCountries;
+
+  static const List<CountryItem> _defaultCountries = <CountryItem>[
+    CountryItem(code: 'SA', name: 'Saudi Arabia', nameArabic: 'السعودية'),
+    CountryItem(code: 'US', name: 'United States', nameArabic: 'أمريكا'),
+  ];
+
+  /// The country lookup the screen builds the nationality picker from. A test
+  /// can omit Saudi Arabia to prove the SA fallback can leave the code null.
+  final List<CountryItem> countries;
 
   static const UserProfileResponse _emptyProfile = UserProfileResponse(
     interestIds: <String>[],
@@ -48,10 +61,7 @@ class _FakeProfileRepository implements ProfileRepository {
   }
 
   @override
-  Future<List<CountryItem>> getCountries() async => const <CountryItem>[
-        CountryItem(code: 'SA', name: 'Saudi Arabia', nameArabic: 'السعودية'),
-        CountryItem(code: 'US', name: 'United States', nameArabic: 'أمريكا'),
-      ];
+  Future<List<CountryItem>> getCountries() async => countries;
 
   @override
   Future<List<ProfileTypeItem>> getProfileTypes({bool? isVisitor}) async {
@@ -432,6 +442,42 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('National ID'), findsOneWidget);
       expect(find.text('Iqama'), findsNothing);
+    });
+
+    testWidgets(
+        'a null nationality (no SA fallback) blocks Next with the inline '
+        'picker error — it is not a FormField (D-373 gate)', (tester) async {
+      // Country list without Saudi Arabia + a profile code that matches nothing
+      // → the SA fallback cannot fire, so _nationalityCode stays null. Every
+      // other field is valid (non-Saudi branch with a passport, female so no
+      // photo), making the nationality picker the ONLY blocker. Before the
+      // gate, Next navigated and sent nationalityCode: '' (a server 400).
+      const profileNoNationality = UserProfileResponse(
+        interestIds: <String>['i1'],
+        arabicName: 'راكان السالم',
+        englishName: 'Rakan Alsalem',
+        nationalityCode: 'ZZ',
+        placeOfBirth: 'Riyadh',
+        isSaudi: false,
+        gender: AppGender.female,
+        hasIdImage: false,
+        passportNumber: 'P1234567',
+        dateOfBirth: '2000-01-31',
+        organisationId: 'o1',
+      );
+      final repo = _FakeProfileRepository(
+        profile: profileNoNationality,
+        countries: const <CountryItem>[
+          CountryItem(code: 'US', name: 'United States', nameArabic: 'أمريكا'),
+        ],
+      );
+      await _pump(tester, repo);
+
+      await _tapNext(tester);
+
+      expect(find.text('INTERESTS'), findsNothing);
+      expect(repo.upserted, isNull);
+      expect(find.text('Nationality is required'), findsOneWidget);
     });
 
     testWidgets('a load failure shows the retry, which reloads the form',

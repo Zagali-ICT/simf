@@ -9,7 +9,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// <c>POST /api/v1/auth/totp/disable</c> — turns 2FA off after the user
+/// <c>POST /api/v1/app/auth/totp/disable</c> — turns 2FA off after the user
 /// proves a current authenticator code. Requires a valid access token.
 /// </summary>
 public sealed class TotpDisableEndpoint(ITotpEnrollmentService totpEnrollment)

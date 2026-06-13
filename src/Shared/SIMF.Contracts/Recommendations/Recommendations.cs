@@ -22,6 +22,6 @@ public sealed record MatchedInterest(
     string NameArabic);
 
 /// <summary>D-170 — the public response shape for
-/// <c>GET /api/v1/account/recommendations/meet-like-you</c>.</summary>
+/// <c>GET /api/v1/app/account/recommendations/meet-like-you</c>.</summary>
 public sealed record RecommendationsResponse(
     IReadOnlyList<RecommendationEntry> Matches);

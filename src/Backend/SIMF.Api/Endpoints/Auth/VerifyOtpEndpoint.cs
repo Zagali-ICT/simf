@@ -7,7 +7,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// <c>POST /api/v1/auth/verify-otp</c> — completes a visitor sign-in with the
+/// <c>POST /api/v1/app/auth/verify-otp</c> — completes a visitor sign-in with the
 /// emailed one-time code (SIMF-API-001 Amendment A.1).
 /// </summary>
 public sealed class VerifyOtpEndpoint(ISignInService signInService)

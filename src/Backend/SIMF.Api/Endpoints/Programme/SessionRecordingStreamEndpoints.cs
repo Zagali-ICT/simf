@@ -42,7 +42,7 @@ public sealed class RequestRecordingStreamTokenEndpoint(
         }
 
         var token = tokens.CreateRecordingStreamToken(req.Id);
-        var streamUrl = $"/api/v1/programme/sessions/{req.Id}/recording/stream";
+        var streamUrl = $"/api/v1/app/programme/sessions/{req.Id}/recording/stream";
         await Send.OkAsync(ApiResult<RecordingStreamTokenResponse>.Ok(
             new RecordingStreamTokenResponse(
                 token.Value, token.ExpiresInSeconds, streamUrl)), ct);

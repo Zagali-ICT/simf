@@ -9,7 +9,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Account;
 
 /// <summary>
-/// <c>DELETE /api/v1/account/avatar</c> — removes the signed-in user's avatar
+/// <c>DELETE /api/v1/app/account/avatar</c> — removes the signed-in user's avatar
 /// (myComment #11). Idempotent — succeeds whether or not one is currently set.
 /// </summary>
 public sealed class AvatarDeleteEndpoint(IAccountService accountService)

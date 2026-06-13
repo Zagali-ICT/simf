@@ -9,7 +9,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Auth;
 
 /// <summary>
-/// D-102: <c>POST /api/v1/auth/totp/pairing/verify</c> — confirms the
+/// D-102: <c>POST /api/v1/app/auth/totp/pairing/verify</c> — confirms the
 /// caller has successfully scanned the QR returned by
 /// <c>GET /auth/totp/pairing</c>. Verifies the code against the active
 /// authenticator secret WITHOUT mutating state — no replay-guard update,

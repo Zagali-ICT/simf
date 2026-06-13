@@ -9,7 +9,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/users/import</c> — bulk-creates users from an XLSX
+/// <c>POST /api/v1/admin/admins/import</c> — bulk-creates users from an XLSX
 /// workbook upload (decision D-044 b, hardened in D-045 H1). Multipart form
 /// upload, single file field "file". Returns the per-row outcome summary.
 ///

@@ -13,7 +13,7 @@ using SIMF.Common.Enums;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/users/reset-two-factor</c> — an Administrator resets
+/// <c>POST /api/v1/admin/admins/reset-two-factor</c> — an Administrator resets
 /// another user's 2FA (decision D-041). Requires the Administrator role; the
 /// target cannot be the actor or another Administrator. Audits both sides
 /// with a mandatory reason.

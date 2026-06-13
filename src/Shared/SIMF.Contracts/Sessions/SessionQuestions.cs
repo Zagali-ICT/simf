@@ -4,7 +4,7 @@ namespace SIMF.Contracts.Sessions;
 
 /// <summary>D-169 (gap doc G6, PDF §2.7.2) — public audience-submission
 /// request body for
-/// <c>POST /api/v1/sessions/{sessionId}/questions</c>. The endpoint's
+/// <c>POST /api/v1/app/sessions/{sessionId}/questions</c>. The endpoint's
 /// own route shape merges this with the SessionId route param.</summary>
 public sealed class SubmitSessionQuestionRequest
 {

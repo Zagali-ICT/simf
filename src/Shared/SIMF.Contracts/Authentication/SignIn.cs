@@ -2,7 +2,7 @@ using SIMF.Common.Enums;
 
 namespace SIMF.Contracts.Authentication;
 
-/// <summary>The body of <c>POST /api/v1/auth/sign-in</c> (SIMF-API-001 section 12.4).</summary>
+/// <summary>The body of <c>POST /api/v1/app/auth/sign-in</c> (SIMF-API-001 section 12.4).</summary>
 public sealed class SignInRequest
 {
     public string Email { get; set; } = string.Empty;

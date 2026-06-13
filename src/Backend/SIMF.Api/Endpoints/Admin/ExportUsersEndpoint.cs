@@ -9,7 +9,7 @@ using SIMF.Contracts.Authentication;
 namespace SIMF.Api.Endpoints.Admin;
 
 /// <summary>
-/// <c>POST /api/v1/admin/users/export</c> — returns an XLSX workbook of the
+/// <c>POST /api/v1/admin/admins/export</c> — returns an XLSX workbook of the
 /// selected users (or the whole grid result if no ids are given).
 /// Decision D-044 b.
 /// </summary>

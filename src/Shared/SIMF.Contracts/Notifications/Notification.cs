@@ -25,5 +25,5 @@ public sealed record NotificationDto(
     string? RelatedEntityType,
     Guid? RelatedEntityId);
 
-/// <summary>The body of <c>GET /api/v1/account/notifications/unread-count</c>.</summary>
+/// <summary>The body of <c>GET /api/v1/app/account/notifications/unread-count</c>.</summary>
 public sealed record UnreadCountResponse(int UnreadCount);

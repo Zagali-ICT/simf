@@ -17,7 +17,7 @@ public sealed class UserIdDocumentUploadRequest
 }
 
 /// <summary>
-/// <c>POST /api/v1/account/user-profile/id-image</c> — uploads the
+/// <c>POST /api/v1/app/account/user-profile/id-image</c> — uploads the
 /// user's ID-document image attachment (decisions D-046 b, P8 —
 /// D-048; renamed from <c>/account/visitor-profile/id-image</c>). PNG / JPEG /
 /// WebP, up to 5 MB, content-type + magic-byte verified before the
